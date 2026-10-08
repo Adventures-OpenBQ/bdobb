@@ -1,6 +1,6 @@
 tip e8bdb7ca181858ff052e4da564bff176ee2df795 merged with 3e4630d5521264af1162ad9cf690842ab28791a2
 
-> bdobb@3.0.0 build:web /private/tmp/claude-501/-Users-artcashin-Developer-bdobb-v2--claude-worktrees-bdobb-agent-instructions-1d925b/c165dc35-4c3a-481d-bbc2-7facef85570e/scratchpad/v3-tip-check
+> bdobb@3.0.0 build:web <scratchpad>/v3-tip-check
 > node scripts/build-web.mjs
 
 vite v6.4.3 building for browser...
@@ -69,15 +69,15 @@ dist/web/assets/index-Cvl8DizM.js                          2,249.68 kB │ gzip:
 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
 ✓ built in 10.01s
-Private web function built at /private/tmp/claude-501/-Users-artcashin-Developer-bdobb-v2--claude-worktrees-bdobb-agent-instructions-1d925b/c165dc35-4c3a-481d-bbc2-7facef85570e/scratchpad/v3-tip-check/.vercel/output/functions/preview.func. Nothing deployed.
+Private web function built at <scratchpad>/v3-tip-check/.vercel/output/functions/preview.func. Nothing deployed.
 
-> bdobb@3.0.0 test:web:browser /private/tmp/claude-501/-Users-artcashin-Developer-bdobb-v2--claude-worktrees-bdobb-agent-instructions-1d925b/c165dc35-4c3a-481d-bbc2-7facef85570e/scratchpad/v3-tip-check
+> bdobb@3.0.0 test:web:browser <scratchpad>/v3-tip-check
 > node web/browser-smoke.mjs
 
 PASS: HTTPS login form, private assets, seeded built-ins dashboard, per-user state saved + reseeded on reload, lapsed session goes to sign-in, CSRF logout, mobile login; no external requests.
 exit 0
 
- RUN  v2.1.9 /private/tmp/claude-501/-Users-artcashin-Developer-bdobb-v2--claude-worktrees-bdobb-agent-instructions-1d925b/c165dc35-4c3a-481d-bbc2-7facef85570e/scratchpad/v3-tip-check
+ RUN  v2.1.9 <scratchpad>/v3-tip-check
 
  ✓ src/lib/appsJson.d008.test.ts (3 tests) 3ms
  ✓ src/components/DashboardGrid.layout.test.tsx (1 test) 39ms
