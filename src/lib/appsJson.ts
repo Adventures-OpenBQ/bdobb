@@ -707,7 +707,10 @@ export function importApps(
 
       // "param" and "endpointParam" alike: bdobb's ParamGroup has no such
       // distinction, and both bind one paramName to one value.
-      const defaultValue = typeof rawGroup.defaultValue === "string" ? rawGroup.defaultValue : "";
+      // openbb-api serves an endpoint param's default as an array
+      // (["CES0500000023"]); the group value is the same comma-joined string
+      // a card param gets (D-008). Anything paramString cannot render is "".
+      const defaultValue = paramString(rawGroup.defaultValue) ?? "";
       /** The param this member binds: its own claim, else the group's name. */
       const boundName = (card: DashboardCard) =>
         claimedBindings.get(card)?.get(name) ?? paramName;
