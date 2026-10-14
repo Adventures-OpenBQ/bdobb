@@ -1,5 +1,5 @@
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
-// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+// SPDX-License-Identifier: Apache-2.0
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -10,9 +10,9 @@ import type { WidgetDef } from "./types";
 
 /**
  * Every file under docs/examples is served to users: `pnpm apps:sync` writes
- * each into the apps.json of the openbb-docker backend that owns its widgets
- * (OWNER in scripts/apps-sync.mjs), served at that backend's /apps.json and
- * opened from the rail's Apps catalogue. So each one is parsed and imported
+ * them all into openbq-docker's one combined examples/bdobb/apps.json (SERVED
+ * in scripts/apps-sync.mjs), served at the API's /apps.json and opened from
+ * the rail's Apps catalogue. So each one is parsed and imported
  * here exactly as opening it would, against a registry that serves every
  * widget id the file names. A shipped example that fails to import is a
  * broken promise, and nothing else in the suite reads those files.
@@ -45,9 +45,10 @@ function load(file: string): { apps: App[]; ids: string[] } {
 }
 
 describe("docs/examples", () => {
-  // REVIEW (examples audit 2026-10-14): was "ships at least the three known
-  // examples". Renamed; the arrayContaining check is unchanged, and the list
-  // must now name every example file, so a new one is added here too.
+  // REVIEW (user ruling 2026-10-14, openbq-docker pairing): was "ships at
+  // least the three known examples". Renamed; the arrayContaining check is
+  // unchanged, and the list must now name every example file, so a new one is
+  // added here too.
   const KNOWN = [
     "v3.1.0-builtins.apps.json",
     "v3.1.0-demo-providers.apps.json",
@@ -56,6 +57,31 @@ describe("docs/examples", () => {
   it("ships every known example file, and no file the list does not name", () => {
     expect(files).toEqual(expect.arrayContaining(KNOWN));
     expect([...files].sort()).toEqual([...KNOWN].sort());
+  });
+
+  // The Demo providers cards are openbq-docker's widget ids (its /widgets.json
+  // as BDOBB's v6 regression run captured it): EIA and BLS search under their
+  // openbq-docker names, and Nasdaq's keyless historical EPS where Alpha
+  // Vantage's demo-key card was; EconDB and Videos are the extensions
+  // openbq-docker v3 adds.
+  it("v3.1.0-demo-providers: openbq-docker's widget ids, Nasdaq EPS in place of Alpha Vantage", () => {
+    const { apps, ids } = load("v3.1.0-demo-providers.apps.json");
+    expect(apps.map((a) => a.name)).toEqual(["Demo providers"]);
+    expect(ids).toEqual([
+      "eia_short_term_energy_outlook_eia_obb",
+      "uscongress_bills_congress_gov_obb",
+      "bls_search_bls_obb",
+      "cftc_cot_cftc_obb",
+      "economy_indicators_econdb_obb",
+      "nasdaq_equity_fundamental_historical_eps_nasdaq_obb",
+      "videos_video_custom_obb",
+    ]);
+    const layout = Object.values(apps[0].tabs).flatMap((t) => t.layout);
+    expect(layout.find((l) => l.i === "nasdaq_equity_fundamental_historical_eps_nasdaq_obb")?.state?.params).toEqual({ symbol: "IBM" });
+    expect(layout.find((l) => l.i === "bls_search_bls_obb")?.state?.params).toEqual({ category: "cpi", query: "CUUR0000SA0" });
+    expect(apps[0].description).toContain("openbq-docker v3");
+    expect(apps[0].description).toContain("credentials.demo.env");
+    expect(apps[0].description).not.toContain("openbb-docker");
   });
 
   // The card id is the openbb-videos extension's own widget id (path

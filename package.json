@@ -88,5 +88,6 @@
     "vite": "^6.0.3",
     "vitest": "^2.1.8"
   },
-  "openbbDocker": "v3.0.1"
+  "openbbDocker": "v3.0.1",
+  "openbqDocker": "v3.0.0"
 }
