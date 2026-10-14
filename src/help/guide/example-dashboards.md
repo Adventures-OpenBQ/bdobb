@@ -5,11 +5,11 @@ tags: [bdobb, help, examples, apps-json, demo-providers]
 
 # Example Dashboards
 
-From v3.1.0, two example dashboards ship with the `openbb-docker` stack (a third, the Video Library, from v3.2.1) — the built-in widgets, and every OpenBB provider that answers with a demo key or no key at all. Each is an ordinary `apps.json` file (see [[importing-dashboards|Importing Dashboards]]), served by openbb-api the same way any backend serves an `apps.json`, and each opens with nothing entered: no key, no sign-up, no configuration.
+From v3.1.0, two example dashboards ship with the `openbb-docker` stack — the built-in widgets, and every OpenBB provider that answers with a demo key or no key at all. A third, the Video Library, ships in the app's `docs/examples` from v3.2.1, but its card needs a stack whose openbb-api carries the `openbb-videos` extension, and `openbb-docker` v3.0.1, the stack this version pairs with, does not (see *Video Library* below). Each is an ordinary `apps.json` file (see [[importing-dashboards|Importing Dashboards]]), served by openbb-api the same way any backend serves an `apps.json`, and each opens with nothing entered: no key, no sign-up, no configuration.
 
 ## How they get there
 
-The source of every example is `docs/examples/*.apps.json` in the `BDOBB` repository, one file per version line. `pnpm apps:sync` reads each file, checks it against `OWNER` (a table naming which backend's `apps.json` carries it — an unowned example fails the sync, since a file nobody serves is a promise nobody sees), and writes it into the matching file in an `openbb-docker` checkout. That write is committed in `openbb-docker`, so it ships with the stack's own next release; `src/lib/appsJson.examples.test.ts` in `BDOBB` parses and imports every example exactly as opening it would, so a broken example fails the gate before it ships.
+The source of every example is `docs/examples/*.apps.json` in the `BDOBB` repository, one file per version line. `pnpm apps:sync` reads each file, checks it against `OWNER` (a table naming which backend's `apps.json` carries it — an unowned example fails the sync, since a file nobody serves is a promise nobody sees), and writes it into the matching file in an `openbb-docker` checkout. The file names record the sub-release that introduced each example, not the release that ships it: BDOBB 3.0.0 carries `v3.1.0-builtins.apps.json`, `v3.1.0-demo-providers.apps.json` and `v3.2.0-video-library.apps.json` under those names, because the sync keys on them. That write is committed in `openbb-docker`, so it ships with the stack's own next release; `src/lib/appsJson.examples.test.ts` in `BDOBB` parses and imports every example exactly as opening it would, so a broken example fails the gate before it ships.
 
 ## Built-in widgets
 
@@ -17,7 +17,7 @@ One dashboard, six tabs: **Note**, **Markdown**, **Clock** (shown in both the ve
 
 ## Demo providers
 
-One dashboard, one card per OpenBB provider that works with no sign-up on the `openbb-docker` v3.0.1 image, and from v3.2.1 a seventh card, the Video Library (see below):
+One dashboard, one card per OpenBB provider that works with no sign-up on the `openbb-docker` v3.0.1 image, and from v3.2.1 a seventh card, the Video Library (see below). That seventh card needs the `openbb-videos` extension: `openbb-docker` v3.0.1 serves this dashboard with the six provider cards only.
 
 | Provider | What the card shows |
 |---|---|
@@ -32,11 +32,11 @@ Each of these rides on a demo or empty key the stack's `credentials.env.example`
 
 ## Video Library
 
-From v3.2.1, a third example holds one **YouTube** card, the Video Library: pick one of two sample videos and the card plays it. The same card is the seventh on the Demo providers dashboard. The widget (`videos_video_custom_obb`) is served by openbb-api itself, from the `openbb-videos` extension, and needs no key; its endpoint answers a bare watch URL and the card frames it. A stack whose openbb-api does not carry that extension has no such widget, and an imported card then reads *Widget videos_video_custom_obb is not on any connected backend.*
+From v3.2.1, a third example holds one **YouTube** card, the Video Library: pick one of two sample videos and the card plays it. The same card is the seventh on the Demo providers dashboard. The widget (`videos_video_custom_obb`) is served by openbb-api itself, from the `openbb-videos` extension, and needs no key; its endpoint answers a bare watch URL and the card frames it. A stack whose openbb-api does not carry that extension has no such widget, and an imported card then reads *Widget videos_video_custom_obb is not on any connected backend.* **`openbb-docker` v3.0.1, the stack this version pairs with, is such a stack:** it has no `openbb-videos` extension, so it serves neither this example nor the Demo providers dashboard's video card. Both need a stack with that extension.
 
 In the desktop app the card frames a small page the app serves itself on `127.0.0.1`, which embeds the video; YouTube refuses an embed framed straight from the app's own pages. The web preview frames `youtube.com` directly.
 
-*Source: BDOBB v3.1.0 `docs/examples/v3.1.0-builtins.apps.json` and `docs/examples/v3.1.0-demo-providers.apps.json`; `BDOBB` `scripts/apps-sync.mjs` at `v3.1.0`; `docs/examples/v3.2.0-video-library.apps.json`, `src-tauri/src/video_wrapper.rs`, `src/lib/youtube.ts` and `web/server.mjs` at `v3.2.1`.*
+*Source: BDOBB v3.1.0 `docs/examples/v3.1.0-builtins.apps.json` and `docs/examples/v3.1.0-demo-providers.apps.json`; `BDOBB` `scripts/apps-sync.mjs` at `v3.1.0`; `docs/examples/v3.2.0-video-library.apps.json`, `src-tauri/src/video_wrapper.rs`, `src/lib/youtube.ts` and `web/server.mjs` at `v3.2.1`; `openbb-docker` `Dockerfile`, `extension-constraints.txt` and `workspace_apps.json` at `v3.0.1` (no `openbb-videos`; Built-in widgets and a six-card Demo providers).*
 *See also: [[importing-dashboards|Importing Dashboards]] · [[built-in-widgets|Built-in Widgets]] · [[card-parameters|Card Parameters]] · [[reference-validation|Reference Validation]] · [[provider-keys|Provider Keys]]*
 
 ---

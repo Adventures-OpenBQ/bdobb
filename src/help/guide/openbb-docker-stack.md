@@ -27,7 +27,7 @@ Other processes on the same Docker host can reach the bridged services directly,
 | v1.0.0 | Ep. 1 — Your Own Bloomberg in a Cabinet | Tailscale sidecar + OpenBB Platform API, Serve-only ingress, provider keys |
 | v2.0.0 | Ep. 2 — The Borrowed Terminal | HTTP Basic auth on the API, Funnel on port 443 only |
 | v3.0.0 | Ep. 3 | key-maint: the transport-tiered key status backend |
-| v3.0.1 | Ep. 3 | the funnel gateway carried onto the v3 line (opt-in, the `web` profile); demo provider keys in `credentials.env.example` (EIA, Congress.gov, Alpha Vantage); `/apps.json` serves the Episode 3 example dashboards — see [[example-dashboards\|Example Dashboards]] |
+| v3.0.1 | Ep. 3 | the funnel gateway carried onto the v3 line (opt-in, the `web` profile); demo provider keys in `credentials.env.example` (EIA, Congress.gov, Alpha Vantage); `/apps.json` serves two Episode 3 example dashboards, Built-in widgets and Demo providers (its six provider cards); not the Video Library or the Demo providers' video card, which need the `openbb-videos` extension this image does not have — see [[example-dashboards\|Example Dashboards]] |
 
 ## Before first start
 

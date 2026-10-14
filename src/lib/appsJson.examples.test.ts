@@ -45,14 +45,17 @@ function load(file: string): { apps: App[]; ids: string[] } {
 }
 
 describe("docs/examples", () => {
-  it("ships at least the three known examples", () => {
-    expect(files).toEqual(
-      expect.arrayContaining([
-        "v3.1.0-builtins.apps.json",
-        "v3.1.0-demo-providers.apps.json",
-        "v3.2.0-video-library.apps.json",
-      ]),
-    );
+  // REVIEW (examples audit 2026-10-14): was "ships at least the three known
+  // examples". Renamed; the arrayContaining check is unchanged, and the list
+  // must now name every example file, so a new one is added here too.
+  const KNOWN = [
+    "v3.1.0-builtins.apps.json",
+    "v3.1.0-demo-providers.apps.json",
+    "v3.2.0-video-library.apps.json",
+  ];
+  it("ships every known example file, and no file the list does not name", () => {
+    expect(files).toEqual(expect.arrayContaining(KNOWN));
+    expect([...files].sort()).toEqual([...KNOWN].sort());
   });
 
   // The card id is the openbb-videos extension's own widget id (path
