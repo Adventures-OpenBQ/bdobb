@@ -32,3 +32,5 @@ The description now names openbq-docker v3, the keyless providers (BLS, CFTC, Ec
 | `node --test web/*.test.mjs` | 31 passed |
 
 Provisional on openbq-docker's side (another agent, not yet on its release/v3 at 9174fc3): the `openbb-videos` and EconDB extensions, `credentials.demo.env`, `examples/bdobb/apps.json` and the `/openbq/bdobb-logo.svg` route.
+
+**Follow-up, same day.** The non-ASCII escape in `apps-sync.mjs` had been written with a literal U+FFFF as the range end (`/[\u007f-<U+FFFF>]/g`); the regex matched the same characters, but the source now spells it `\uffff` again, as the v4+ script did. Dry run unchanged (3 apps; no non-ASCII in the v3 examples).

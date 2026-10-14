@@ -82,6 +82,6 @@ if (missing.length) throw new Error(`SERVED names examples with no file: ${missi
 // of unchanged examples writes an unchanged file.
 const target = join(OUT, "examples", "bdobb", "apps.json");
 mkdirSync(dirname(target), { recursive: true });
-const json = JSON.stringify(apps, null, 2).replace(/[\u007f-￿]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+const json = JSON.stringify(apps, null, 2).replace(/[\u007f-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 writeFileSync(target, `${json}\n`);
 console.log(`wrote ${apps.length} app(s) to ${target}: ${apps.map((a) => a.name).join(" | ")}`);
