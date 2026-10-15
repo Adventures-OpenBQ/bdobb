@@ -24,7 +24,8 @@
       }
     ],
     "security": {
-      "csp": "frame-ancestors 'none'"
+      "csp": "frame-ancestors 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' ipc: http://ipc.localhost ws: wss:; object-src 'none'; base-uri 'none'",
+      "dangerousDisableAssetCspModification": ["style-src"]
     }
   },
   "bundle": {
