@@ -94,6 +94,12 @@ describe("parseFeed on Atom", () => {
     expect(second.date).toBe(Date.parse("2026-08-24T09:00:00Z"));
   });
 
+  it("takes a link with no rel as the alternate, ahead of an earlier enclosure", () => {
+    const xml = `<feed xmlns="http://www.w3.org/2005/Atom"><title>J</title><entry><title>T</title>` +
+      `<link rel="enclosure" href="https://journal.example/a.mp3"/><link href="https://journal.example/page"/></entry></feed>`;
+    expect(parseFeed(xml)[0]!.link).toBe("https://journal.example/page");
+  });
+
   it("reads a prefixed Atom document, whose nodeName carries the prefix", () => {
     const xml = `<atom:feed xmlns:atom="http://www.w3.org/2005/Atom">` +
       `<atom:title>Prefixed</atom:title><atom:entry><atom:title>Story</atom:title>` +

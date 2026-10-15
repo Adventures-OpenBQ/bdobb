@@ -71,11 +71,11 @@ function link(raw: string): string | undefined {
   return safeUrl(raw) ?? undefined;
 }
 
-/** Atom: `<link rel="alternate" href>` wins; otherwise the first `href`. */
+/** Atom: the alternate link wins (a link with no `rel` is alternate, RFC 4287 §4.2.7.2); otherwise the first `href`. */
 function atomLink(entry: Element): string | undefined {
   const links = kids(entry, "link");
   const chosen =
-    links.find((el) => el.getAttribute("rel") === "alternate") ??
+    links.find((el) => (el.getAttribute("rel") ?? "alternate") === "alternate") ??
     links.find((el) => el.getAttribute("href"));
   return link(chosen?.getAttribute("href") ?? "");
 }

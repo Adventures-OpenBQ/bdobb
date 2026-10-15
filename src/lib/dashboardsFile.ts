@@ -77,7 +77,7 @@ function withGroupType(groups: StoredGroup[] | undefined): ParamGroup[] | undefi
 function withBindings(card: StoredCard, groups: ParamGroup[]): DashboardCard {
   const { groupIds, ...rest } = card;
   if (!groupIds) return rest;
-  const bindings = rest.bindings ?? [];
+  const bindings = [...(rest.bindings ?? [])];
   for (const id of groupIds) {
     const group = groups.find((g) => g.id === id);
     if (group && !bindings.some((b) => b.paramName === group.paramName)) {
