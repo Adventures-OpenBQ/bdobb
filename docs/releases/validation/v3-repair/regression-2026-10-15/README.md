@@ -39,3 +39,13 @@ openbq-docker `release/v3` e12bbb0 = 1279da2 + `claude/v3-key-maint` (key-maint 
 **Backend report (not a client gate):** V3-010, the full OpenBQ widget sweep, runs after this receipt; its result is recorded in the run folder.
 
 Run folder (outside the repo): `adventures-in-openbb-articles/output/regression/v3-0590bd6-20261015T163820Z/`; NAS verify `…/backend-verify/v3.0.0-e12bbb0/`.
+
+## Full-codebase review (user order, same day)
+
+Five read-only reviewers covered the whole v3 tree of both repositories (bdobb: `src/lib`; components, hooks and stores; native, web, scripts and CI. openbq-docker: lanes, key-maint, Workspace, compose; provider fixes, yfinance, the reference demo). No Critical finding. Fixed before the re-cut, each with a test:
+
+- `useChildDialog` closes its dialog on cleanup, as `useModalDialog` does (StrictMode's dev-only re-run threw `InvalidStateError` in a real browser for every child dialog).
+- `feed.ts`: an Atom link with no `rel` is the alternate (RFC 4287 §4.2.7.2). `dashboardsFile.ts`: `withBindings` copies instead of pushing into the stored card's array.
+- openbq-docker: key-maint sets its admin directory to 0700 itself; the Dallas Fed overlays raise a clear error on a third sheet rename instead of a 500; check-public allows the providers' public demo keys in JSON form.
+
+Held for the user (hardening, not defects): a tighter desktop CSP (packaged-only breakage risk, needs a native check), narrowing the `http://*:*` capability, a macOS CI job for `save_panel.rs`, key-maint as non-root.
