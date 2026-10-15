@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { encode } from "@auth/core/jwt";
 import { WebSocket } from "ws";
 import { readConfig, SESSION_COOKIE } from "./config.mjs";
@@ -32,6 +33,22 @@ async function cookie(patch = {}, secret = env.AUTH_SECRET) {
     token: { githubId: "42", epoch: "test-1", deadline: Date.now() / 1000 + 3600, ...patch },
     secret, salt: SESSION_COOKIE, maxAge: 3600,
   })}`;
+}
+// A request that keeps the raw bytes (no decoding) and reports a response cut off mid-body --
+// or reset before any of it, which is the same refusal.
+function raw(port, path, headers) {
+  return new Promise((resolve, reject) => {
+    const req = request({ hostname: "127.0.0.1", port, path, headers: { host: "preview.example.com", ...headers } }, res => {
+      const chunks = []; let aborted = false;
+      res.on("data", chunk => chunks.push(chunk));
+      res.on("error", () => { aborted = true; });
+      res.on("close", () => resolve({ status: res.statusCode, headers: res.headers,
+        body: Buffer.concat(chunks), aborted: aborted || !res.complete }));
+    });
+    req.on("error", error => error.code === "ECONNRESET"
+      ? resolve({ status: 0, headers: {}, body: Buffer.alloc(0), aborted: true }) : reject(error));
+    req.end();
+  });
 }
 async function fixture(t, options = {}) {
   const assets = await mkdtemp(join(tmpdir(), "bdobb-auth-"));
@@ -503,24 +520,57 @@ test("the /api root documents come from openbb-api, not from this process", asyn
   assert.deepEqual(seen, ["/api/widgets.json", "/api/apps.json"]);
 });
 
-test("a full-catalogue widgets.json fits the body cap; one past it is an honest 502", async t => {
-  // Measured against the live v12.4 openbb-api on 2026-09-20: 331 widgets,
-  // 1,678,152 bytes of compact JSON. The 2 MiB cap both proxies already apply
-  // carries that with about 20% to spare -- and the failure mode when a future
-  // catalogue outgrows it is a 502, never a truncated manifest the app would
-  // parse as a smaller catalogue.
+test("manifests stream at up to 16 MiB, gzipped on request; data routes keep 2 MiB", async t => {
+  // openbq-api's widgets.json measured 5.0 MB (998 widgets) on 2026-10-15: past the 2 MiB
+  // every other body is held to, and past a Vercel Function's ~4.5 MB response unless gzipped.
   const manifest = size => JSON.stringify(Object.fromEntries(
     Array.from({ length: 400 }, (_, i) => [`w${i}`, "x".repeat(Math.ceil(size / 400))])));
+  const five = manifest(5_000_000);
   const headers = { cookie: await cookie() };
-  const big = await fixture(t, { fetchUpstream: async () =>
-    new Response(manifest(1_700_000), { headers: { "content-type": "application/json" } }) });
-  const ok = await big.call("/api/widgets.json", { headers });
-  assert.equal(ok.status, 200);
-  assert.ok(ok.body.length > 1_600_000, String(ok.body.length));
-  assert.equal(Object.keys(JSON.parse(ok.body)).length, 400);
-  const over = await fixture(t, { fetchUpstream: async () =>
-    new Response(manifest(2 * 1024 * 1024 + 1024), { headers: { "content-type": "application/json" } }) });
-  assert.equal((await over.call("/api/widgets.json", { headers })).status, 502);
+  const json = (text, extra = {}) => async () =>
+    new Response(text, { headers: { "content-type": "application/json", "set-cookie": "private=value", ...extra } });
+  const big = await fixture(t, { fetchUpstream: json(five) });
+  for (const path of ["/api/widgets.json", "/api/apps.json", "/ref/widgets.json", "/ref/apps.json"]) {
+    const ok = await big.call(path, { headers });
+    assert.equal(ok.status, 200, path);
+    assert.equal(ok.body, five);
+    assert.equal(ok.headers["content-encoding"], undefined);
+    assert.equal(ok.headers["content-length"], undefined);
+    assert.equal(ok.headers.vary, "Accept-Encoding");
+    assert.equal(ok.headers["x-content-type-options"], "nosniff");
+    assert.equal(ok.headers["cache-control"], "private, no-store");
+    assert.equal(ok.headers["set-cookie"], undefined);
+  }
+  // gzip on request: the same bytes after decompression, a fraction of them on the wire.
+  const zipped = await raw(big.port, "/api/widgets.json", { ...headers, "accept-encoding": "gzip, deflate, br" });
+  assert.equal(zipped.status, 200);
+  assert.equal(zipped.headers["content-encoding"], "gzip");
+  assert.equal(zipped.headers.vary, "Accept-Encoding");
+  assert.equal(zipped.headers["content-length"], undefined);
+  assert.ok(zipped.body.length < 1_000_000, String(zipped.body.length));
+  assert.equal(gunzipSync(zipped.body).toString(), five);
+  // The same 5 MB, and anything past 2 MiB, on a data route is still a 502.
+  const quote = "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd";
+  assert.equal((await big.call(quote, { headers })).status, 502);
+  const two = await fixture(t, { fetchUpstream: json(manifest(2 * 1024 * 1024 + 1024)) });
+  assert.equal((await two.call(quote, { headers })).status, 502);
+  // Over 16 MiB: a declared length is refused before any byte; an undeclared one is cut off
+  // mid-stream, so the client sees an aborted response, never a short manifest.
+  const huge = manifest(16 * 1024 * 1024 + 1024);
+  const declared = await fixture(t, { fetchUpstream: json(huge, { "content-length": String(huge.length) }) });
+  assert.equal((await declared.call("/api/widgets.json", { headers })).status, 502);
+  const undeclared = await fixture(t, { fetchUpstream: json(huge) });
+  const cut = await raw(undeclared.port, "/api/widgets.json", headers);
+  assert.equal(cut.aborted, true);
+  assert.ok(cut.body.length <= 16 * 1024 * 1024);
+  // The same, arriving in 1 MiB chunks: headers and the first 16 MiB go out, then it is cut.
+  let sent = 0;
+  const chunked = await fixture(t, { fetchUpstream: async () => new Response(new ReadableStream({
+    pull(controller) { if (sent++ < 17) controller.enqueue(new Uint8Array(1024 * 1024).fill(32)); else controller.close(); },
+  }), { headers: { "content-type": "application/json" } }) });
+  const midway = await raw(chunked.port, "/api/widgets.json", headers);
+  assert.equal(midway.aborted, true);
+  assert.ok(midway.body.length <= 16 * 1024 * 1024, String(midway.body.length));
 });
 
 // ---- Socket tickets: a socket held open through a Vercel Function bills function time

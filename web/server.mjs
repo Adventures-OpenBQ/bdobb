@@ -3,6 +3,9 @@
 
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
+import { Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { createGzip } from "node:zlib";
 import { resolve, extname } from "node:path";
 import { readConfig } from "./config.mjs";
 import { handleAuth, identity } from "./auth.mjs";
@@ -64,6 +67,11 @@ function requestUrl(req, config) {
   if (url.origin !== config.origin || url.pathname !== req.url.split("?")[0]) return null;
   return url;
 }
+// The root manifests are catalogue documents, not data: openbq-api's widgets.json is 5.0 MB
+// (998 widgets), past a Vercel Function's ~4.5 MB response limit. They get 16 MiB and are
+// streamed (gzipped when the browser takes it); every other body stays buffered at 2 MiB.
+const MANIFESTS = new Set(["/api/widgets.json", "/api/apps.json", "/ref/widgets.json", "/ref/apps.json"]);
+const MANIFEST_MAX = 16 * 1024 * 1024;
 async function boundedBody(stream, max) {
   const parts = []; let size = 0;
   for await (const part of stream) {
@@ -256,6 +264,24 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!response.ok) { await response.body?.cancel(); return reply(res, 502, "Backend request failed."); }
         if (!response.headers.get("content-type")?.includes("application/json")) {
           await response.body?.cancel(); return reply(res, 502, "Unexpected backend response.");
+        }
+        if (MANIFESTS.has(path)) {
+          // A declared length over the cap is an honest 502. One that only shows mid-stream
+          // destroys the response (the catch below): an aborted body, never a short manifest.
+          if (Number(response.headers.get("content-length")) > MANIFEST_MAX) {
+            await response.body?.cancel(); return reply(res, 502, "Backend request failed.");
+          }
+          const source = Readable.fromWeb(response.body);
+          let size = 0;
+          const capped = new Transform({ transform(chunk, _, done) {
+            size += chunk.length; done(size > MANIFEST_MAX ? new Error("Body limit") : null, chunk);
+          } });
+          // ponytail: substring match ignores "gzip;q=0"; parse q-values if a client ever sends it.
+          const gzip = /\bgzip\b/i.test(req.headers["accept-encoding"] ?? "");
+          // No upstream Content-Length is relayed: the body is chunked, and gzip changes its size.
+          res.writeHead(200, { "Content-Type": MIME[".json"], Vary: "Accept-Encoding",
+            ...(gzip ? { "Content-Encoding": "gzip" } : {}) });
+          return await pipeline(source, capped, ...(gzip ? [createGzip()] : []), res);
         }
         const body = await boundedBody(response.body, 2 * 1024 * 1024);
         return reply(res, 200, body, MIME[".json"]);
