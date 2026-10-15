@@ -344,7 +344,6 @@ describe("socket shim (web preview tickets)", () => {
   });
 });
 
-
 describe("opener shim", () => {
   it("opens a new tab and records the url on window.__bdobb.opened", async () => {
     const open = vi.fn();

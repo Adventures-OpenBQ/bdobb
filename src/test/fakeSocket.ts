@@ -3,10 +3,7 @@
 
 /**
  * A spec-accurate stand-in for `WebSocket` for a test that stubs the global
- * constructor: the web preview's socket shim (`src/browser-shim/shims.test.ts`)
- * and the News wire's ticketed path (`src/hooks/useNewsWire.tickets.test.tsx`).
- * `useNewsWire.test.tsx` predates it and keeps its own richer fake, whose seed
- * and reply plumbing this one has no use for.
+ * constructor: the web preview's socket shim (`src/browser-shim/shims.test.ts`).
  */
 export class FakeSocket {
   static last: FakeSocket | null = null;

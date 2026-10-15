@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 /**
- * pnpm gateway:vendor <openbb-docker tag>
+ * pnpm gateway:vendor <openbq-docker tag>
  *
  * Copies the stack's route contract (funnel-gateway/policy.mjs at that tag) into
  * web/policy.mjs, verbatim, under a header that names the tag and the SHA-256 of
@@ -25,6 +25,6 @@ const OD = process.env.OPENBB_DOCKER_DIR ?? join(homedir(), "Developer", "openbb
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const body = execFileSync("git", ["-C", OD, "show", `${tag}:funnel-gateway/policy.mjs`], { encoding: "utf8" });
 const sha256 = createHash("sha256").update(body).digest("hex");
-writeFileSync(join(ROOT, "web", "policy.mjs"), `// vendored from openbb-docker ${tag} funnel-gateway/policy.mjs sha256:${sha256}\n${body}`);
+writeFileSync(join(ROOT, "web", "policy.mjs"), `// vendored from openbq-docker ${tag} funnel-gateway/policy.mjs sha256:${sha256}\n${body}`);
 writeFileSync(join(ROOT, "web", "policy.vendored.json"), JSON.stringify({ tag, sha256 }, null, 2) + "\n");
-console.log(`web/policy.mjs <- openbb-docker ${tag} funnel-gateway/policy.mjs (${sha256})`);
+console.log(`web/policy.mjs <- openbq-docker ${tag} funnel-gateway/policy.mjs (${sha256})`);

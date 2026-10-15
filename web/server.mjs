@@ -223,10 +223,9 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       if (url.pathname === "/preview-bootstrap.js") return reply(res, 200, bootstrap(cfg, await savedState(cfg, who)), MIME[".js"]);
       // A ticket is what a signed-in browser shows the gateway instead of the machine
       // token it must never hold (policy.mjs socketTicket). It names one validated socket
-      // target and lasts thirty seconds. At this line socketTarget always returns null --
-      // no socket route exists yet (the first one arrives with news at od v8.0.3) -- so
-      // this route always 404s. It stays wired exactly like this so the day a route does
-      // exist, only policy.mjs's vendored copy has to change.
+      // target and lasts thirty seconds. At v3 the one target socketTarget admits is
+      // /ref/live_grid_ws (the reference backend's Live Grid); anything else 404s. The
+      // browser opens that socket on the gateway itself, not through this layer.
       if (url.pathname === "/socket-ticket") {
         const asked = url.searchParams.getAll("for");
         const target = asked.length === 1 && [...url.searchParams.keys()].length === 1
@@ -285,10 +284,9 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
   server.on("upgrade", async (req, socket) => {
     socket.on("error", () => {});
     socket.setTimeout(15000, () => socket.destroy());
-    // No socket route exists at this line -- socketTarget (policy.mjs) always
-    // returns null, matching this rejection. The first family to arrive (news,
-    // od v8.0.3) gives this handler a real body; until then every upgrade is
-    // refused the same way a request naming an unmatched path would be.
+    // Every socket is refused here by design: the one socket v3 has
+    // (/ref/live_grid_ws, see socketTarget in policy.mjs) is opened by the browser on
+    // the gateway with a ticket, never through this Vercel Function.
     try {
       const cfg = config();
       const url = requestUrl(req, cfg);

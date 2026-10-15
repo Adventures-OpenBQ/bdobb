@@ -660,7 +660,7 @@ test("the reference family is admitted under /ref and the live grid socket is a 
 test("web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag", () => {
   const text = readFileSync(new URL("./policy.mjs", import.meta.url), "utf8");
   const pin = JSON.parse(readFileSync(new URL("./policy.vendored.json", import.meta.url), "utf8"));
-  const header = /^\/\/ vendored from openbb-docker (v\d+\.\d+\.\d+) funnel-gateway\/policy\.mjs sha256:([0-9a-f]{64})\n/.exec(text);
+  const header = /^\/\/ vendored from openbq-docker (v\d+\.\d+\.\d+) funnel-gateway\/policy\.mjs sha256:([0-9a-f]{64})\n/.exec(text);
   assert.ok(header, "first line names the tag and the hash");
   assert.equal(header[1], pin.tag);
   assert.equal(header[2], pin.sha256);
