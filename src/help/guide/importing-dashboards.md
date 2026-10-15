@@ -5,7 +5,7 @@ tags: [bdobb, help, getting-started, dashboards, import, apps-json]
 
 # Importing Dashboards
 
-Once a backend is connected (see [[connecting-a-backend|Connecting a Backend]]), don't build dashboards widget by widget if someone has already arranged them. An `apps.json` — OpenBB Workspace's format for a set of dashboards with widgets already arranged, parameterised and grouped — unfolds into the whole set in one import. At this version the app does not fetch a backend's own `apps.json`: the file has to reach it as a file.
+Once a backend is connected (see [[connecting-a-backend|Connecting a Backend]]), don't build dashboards widget by widget if someone has already arranged them. An `apps.json` — OpenBB Workspace's format for a set of dashboards with widgets already arranged, parameterised and grouped — unfolds into the whole set in one import. A backend's own `apps.json` needs no file at all: the rail's **Apps** row lists the apps every connected backend serves, grouped by backend, and opens the one you pick as a dashboard (the example dashboards arrive this way; see [[example-dashboards|Example Dashboards]]). An `apps.json` you hold as a file imports as below.
 
 ## Importing an `apps.json` file
 
