@@ -64,6 +64,14 @@ describe("docs/examples", () => {
   // openbq-docker names, and Nasdaq's keyless historical EPS where Alpha
   // Vantage's demo-key card was; EconDB and Videos are the extensions
   // openbq-docker v3 adds.
+  // REVIEW (2026-10-15, EconDB card): the pinned EconDB id was
+  // "economy_indicators_econdb_obb", the ODP 4 shared economy router's id,
+  // which openbq-docker v3+ does not serve. Its vendored openbb-econdb
+  // (v3/econdb, econdb_router.py) mounts under openbb-core 2's provider
+  // namespace, so the widget is econdb_economy_indicators_econdb_obb, and a
+  // country-level symbol without a country answers 422. The id list keeps its
+  // exact-order toEqual; the EconDB params are newly pinned below, so this is a
+  // correction plus a new assertion, not a weaker one.
   it("v3.1.0-demo-providers: openbq-docker's widget ids, Nasdaq EPS in place of Alpha Vantage", () => {
     const { apps, ids } = load("v3.1.0-demo-providers.apps.json");
     expect(apps.map((a) => a.name)).toEqual(["Demo providers"]);
@@ -72,13 +80,14 @@ describe("docs/examples", () => {
       "uscongress_bills_congress_gov_obb",
       "bls_search_bls_obb",
       "cftc_cot_cftc_obb",
-      "economy_indicators_econdb_obb",
+      "econdb_economy_indicators_econdb_obb",
       "nasdaq_equity_fundamental_historical_eps_nasdaq_obb",
       "videos_video_custom_obb",
     ]);
     const layout = Object.values(apps[0].tabs).flatMap((t) => t.layout);
     expect(layout.find((l) => l.i === "nasdaq_equity_fundamental_historical_eps_nasdaq_obb")?.state?.params).toEqual({ symbol: "IBM" });
     expect(layout.find((l) => l.i === "bls_search_bls_obb")?.state?.params).toEqual({ category: "cpi", query: "CUUR0000SA0" });
+    expect(layout.find((l) => l.i === "econdb_economy_indicators_econdb_obb")?.state?.params).toEqual({ symbol: "RGDP", country: "US" });
     expect(apps[0].description).toContain("openbq-docker v3");
     expect(apps[0].description).toContain("credentials.demo.env");
     expect(apps[0].description).not.toContain("openbb-docker");
