@@ -217,6 +217,134 @@ describe("http shim", () => {
   });
 });
 
+describe("socket shim (web preview tickets)", () => {
+  // A socket through a Vercel Function bills function time while it is open, so the
+  // preview's sockets open on the gateway: the shim asks this origin for a ticketed
+  // URL first (web/server.mjs /socket-ticket) and only then constructs the real socket.
+  const assign = vi.fn();
+  const gatewayUrl = "wss://gateway.example.com/ref/live_grid_ws?ticket=1.n.s";
+  let FakeSocket: typeof import("../test/fakeSocket").FakeSocket;
+  beforeEach(async () => {
+    assign.mockClear();
+    ({ FakeSocket } = await import("../test/fakeSocket"));
+    FakeSocket.last = null;
+    FakeSocket.all = [];
+    vi.stubGlobal("WebSocket", FakeSocket);
+    vi.stubGlobal("location", { origin: "https://preview.example.com", host: "preview.example.com", href: "https://preview.example.com/", assign });
+  });
+  afterEach(() => {
+    delete window.__bdobbSocketTickets;
+  });
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const ticketed = () =>
+    vi.fn().mockImplementation(async () => new Response(JSON.stringify({ url: gatewayUrl }), { status: 200 }));
+
+  it("does nothing unless the preview says tickets are on", async () => {
+    await import("./socket");
+    expect(globalThis.WebSocket).toBe(FakeSocket);
+  });
+
+  it("is carried into the bundle by the http shim, the module the app always loads", async () => {
+    window.__bdobbSocketTickets = true;
+    await import("./http");
+    expect(globalThis.WebSocket).not.toBe(FakeSocket);
+  });
+
+  it("opens a same-origin socket on the ticketed gateway URL and relays it", async () => {
+    window.__bdobbSocketTickets = true;
+    const fetchSpy = ticketed();
+    vi.stubGlobal("fetch", fetchSpy);
+    await import("./socket");
+    const ws = new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+    const opened = vi.fn(),
+      messages: unknown[] = [];
+    ws.onopen = opened;
+    ws.onmessage = (e) => messages.push(e.data);
+    expect(ws.readyState).toBe(0);
+    await settle();
+    expect(fetchSpy.mock.calls[0][0]).toBe("/socket-ticket?for=" + encodeURIComponent("/ref/live_grid_ws"));
+    expect(fetchSpy.mock.calls[0][1]).toEqual({ cache: "no-store" });
+    const real = FakeSocket.last!;
+    expect(real.url).toBe(gatewayUrl);
+    real.open();
+    real.emit({ type: "tick" });
+    expect(opened).toHaveBeenCalledTimes(1);
+    expect(ws.readyState).toBe(1);
+    expect(messages).toEqual(['{"type":"tick"}']);
+    ws.send("hello");
+    expect(real.sent).toEqual(["hello"]);
+    const closed = vi.fn();
+    ws.onclose = closed;
+    ws.close();
+    expect(real.closed).toBe(true);
+    expect(closed).toHaveBeenCalledTimes(1);
+    // A caller that compares against the constructor's constant still can.
+    expect(globalThis.WebSocket.OPEN).toBe(1);
+  });
+
+  it("asks for a fresh ticket for every socket: a ticket is single use", async () => {
+    window.__bdobbSocketTickets = true;
+    const fetchSpy = ticketed();
+    vi.stubGlobal("fetch", fetchSpy);
+    await import("./socket");
+    new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+    new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+    await settle();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(FakeSocket.all).toHaveLength(2);
+  });
+
+  it("leaves another origin's socket to the real constructor", async () => {
+    window.__bdobbSocketTickets = true;
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    await import("./socket");
+    const ws = new globalThis.WebSocket("wss://elsewhere.example.com/ws");
+    expect(ws).toBe(FakeSocket.last);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("a refused ticket is a drop the hook retries; a lapsed session goes to sign-in", async () => {
+    window.__bdobbSocketTickets = true;
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("x", { status: 401 })));
+    await import("./socket");
+    const ws = new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+    const closed = vi.fn();
+    ws.onclose = closed;
+    await settle();
+    expect(FakeSocket.last).toBeNull(); // no real socket was ever constructed
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(ws.readyState).toBe(3);
+    expect(assign).toHaveBeenCalledWith("/auth/signin");
+  });
+
+  it("a ticket the preview will not issue (404, 503) is a drop, with no sign-in", async () => {
+    window.__bdobbSocketTickets = true;
+    for (const status of [404, 503]) {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("x", { status })));
+      await import("./socket");
+      const ws = new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+      const closed = vi.fn();
+      ws.onclose = closed;
+      await settle();
+      expect(closed).toHaveBeenCalledTimes(1);
+    }
+    expect(FakeSocket.last).toBeNull();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it("closed while the ticket is in flight never opens the real socket", async () => {
+    window.__bdobbSocketTickets = true;
+    vi.stubGlobal("fetch", ticketed());
+    await import("./socket");
+    const ws = new globalThis.WebSocket("wss://preview.example.com/ref/live_grid_ws");
+    ws.close();
+    await settle();
+    expect(FakeSocket.last).toBeNull();
+  });
+});
+
+
 describe("opener shim", () => {
   it("opens a new tab and records the url on window.__bdobb.opened", async () => {
     const open = vi.fn();

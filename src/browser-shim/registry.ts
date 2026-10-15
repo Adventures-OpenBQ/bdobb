@@ -18,11 +18,14 @@ declare global {
     __bdobbSeed?: Record<string, string>;
     /**
      * Set by the web preview's bootstrap only when it READ the user's saved
-     * state: fs.ts then mirrors the app's JSON stores to /state. This line's
-     * gateway has no socket route, so there is no matching
-     * __bdobbSocketTickets flag — socketTarget always returns null here.
+     * state: fs.ts then mirrors the app's JSON stores to /state.
      */
     __bdobbPersist?: boolean;
+    /**
+     * Set by the web preview's bootstrap only when a gateway is configured:
+     * socket.ts then swaps globalThis.WebSocket for the ticketing one.
+     */
+    __bdobbSocketTickets?: boolean;
     /**
      * Paths memfs must fail every operation on, the driver's half of
      * `__failPath`. A seed can only describe files that ARE readable, and

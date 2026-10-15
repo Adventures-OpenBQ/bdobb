@@ -1,6 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import "./socket";
+
 /**
  * Stands in for @tauri-apps/plugin-http: the browser's own fetch, minus the
  * Tauri-only connectTimeout option — which is why a caller that needs a real
@@ -9,9 +11,9 @@
  * two runtimes abort the same way; only connectTimeout is dropped, because
  * the browser has nothing to map it onto.
  *
- * No socket shim imports this back (this line's gateway has no socket route,
- * so there is no socket.ts) -- unlike later lines, this module has no cycle
- * to be benign about.
+ * Importing the socket shim here is the carry point: there is no Tauri socket
+ * module to alias, and this is the network stand-in the app always loads. The
+ * fetch<->socket cycle is benign (socket.ts only calls fetch at use time).
  */
 export async function fetch(
   input: string | URL | Request,
