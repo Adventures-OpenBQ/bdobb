@@ -34,6 +34,10 @@ export function useChildDialog(onClose: () => void): RefObject<HTMLDialogElement
     return () => {
       modalStack.remove(entry);
       dialog?.removeEventListener("cancel", onCancel);
+      // As in useModalDialog: under StrictMode's dev-only re-run the element
+      // survives this cleanup, and the second showModal() on an open dialog
+      // throws InvalidStateError.
+      dialog?.close();
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
     };
   }, []);

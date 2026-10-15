@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { modalStack } from "./modalStack";
 import { useChildDialog } from "./useChildDialog";
@@ -55,5 +55,19 @@ describe("useChildDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "close" }));
     expect(document.activeElement).toBe(opener);
     expect(depth()).toBe(0);
+  });
+
+  it("survives StrictMode's re-run when showModal() throws on an open dialog, as browsers do", () => {
+    const real = HTMLDialogElement.prototype.showModal;
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      if (this.open) throw new DOMException("already open", "InvalidStateError");
+      real.call(this);
+    };
+    try {
+      expect(() => render(<StrictMode><Child onClose={() => {}} /></StrictMode>)).not.toThrow();
+      expect(screen.getByRole("dialog", { name: "child" })).toHaveProperty("open", true);
+    } finally {
+      HTMLDialogElement.prototype.showModal = real;
+    }
   });
 });
