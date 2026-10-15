@@ -8,9 +8,9 @@
  * vendored stack contract, verbatim from openbb-docker's funnel-gateway --
  * this file is never vendored, and nothing here changes what a route admits.
  *
- * At this line (paired stack: openbb-docker v2.1.0) the policy serves only
- * /api and /state -- no socket route exists, so there is no ticket flag to
- * set (src/browser-shim has no socket.ts either). The seed is the built-ins
+ * At this line the policy serves /api, /state and the /ref family, with
+ * /ref/live_grid_ws as the one socket target, so the ticket flag is set (when
+ * a gateway is configured) and the reference backend is seeded. The seed is the built-ins
  * dashboard: it needs no backend, no key and no sign-up, so it is the one
  * thing the preview can show correctly with nothing configured.
  */
@@ -29,6 +29,11 @@ export function bootstrap(config, saved) {
         id: "preview-api", name: "OpenBB API (preview)", baseUrl: config.origin + "/api",
         authLocation: "header", validateWidgets: false,
       },
+      // Only with a gateway: /ref is relayed through it, so without one the backend would just 404.
+      ...(config.backend ? [{
+        id: "preview-ref", name: "OpenBQ Reference (preview)", baseUrl: config.origin + "/ref",
+        authLocation: "header", validateWidgets: false,
+      }] : []),
     ]),
     "dashboards/preview.json": JSON.stringify({
       id: "preview",
@@ -88,12 +93,15 @@ export function bootstrap(config, saved) {
       groups: [{ id: "g1", name: "Ticker", paramName: "ticker", groupType: "ticker", value: "AAPL" }],
     }),
   };
+  // Read by src/browser-shim/socket.ts: same-origin sockets fetch a ticket and open
+  // on the gateway instead of here. Without a gateway there is no socket to ticket.
+  const tickets = config.backend ? "window.__bdobbSocketTickets=true;\n" : "";
   // Read by src/browser-shim/fs.ts: writes to the app's JSON stores are mirrored to /state.
   const persist = saved ? "window.__bdobbPersist=true;\n" : "";
   // Saved state REPLACES the default seed: merged, a dashboard the user deleted would return.
   const files = saved && Object.keys(saved).length ? saved : seed;
   const notice = saved ? "Changes are saved to your account" : "Changes reset on reload";
-  return `${persist}window.__bdobbSeed=${JSON.stringify(files).replaceAll("<", "\\u003c")};
+  return `${tickets}${persist}window.__bdobbSeed=${JSON.stringify(files).replaceAll("<", "\\u003c")};
 document.addEventListener("DOMContentLoaded",()=>{
  const bar=document.createElement("div");
  bar.className="web-preview-notice";

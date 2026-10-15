@@ -225,6 +225,18 @@ test("bootstrap contains only same-origin routes, never server configuration or 
   assert.ok(noBackend.includes('\\"widgetId\\":\\"param_echo\\"'));
 });
 
+test("the reference backend is seeded only with a gateway, and tickets turn on with it", () => {
+  const withGw = bootstrap(configuration());
+  assert.ok(withGw.includes("OpenBQ Reference (preview)"));
+  assert.ok(withGw.includes('\\"preview-ref\\"') || withGw.includes('"preview-ref"'));
+  assert.ok(withGw.includes("https://preview.example.com/ref"));
+  assert.match(withGw, /window\.__bdobbSocketTickets=true;/);
+  const cfg = configuration(); cfg.backend = null; cfg.token = null;
+  const noGw = bootstrap(cfg);
+  assert.ok(!noGw.includes("preview-ref"));
+  assert.doesNotMatch(noGw, /__bdobbSocketTickets/);
+});
+
 test("anonymous visitors see login, not UI, metadata, JavaScript or data", async t => {
   const { call } = await fixture(t);
   const root = await call("/");
