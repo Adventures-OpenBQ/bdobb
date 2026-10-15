@@ -1,27 +1,33 @@
-// vendored from openbb-docker v3.0.1 funnel-gateway/policy.mjs sha256:639fce5a9663a831b10876823a05a21b15eea5e45de43d1fc9be5f2e916f52f2
+// vendored from openbb-docker v3.0.0 funnel-gateway/policy.mjs sha256:3e4a1c0c58907a5895eab6ae3474c290cfeb8b13461f790864ad4618bcb5cfca
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 /**
- * The route contract of the stack's public door (the funnel-gateway service,
- * openbb-docker v2.1.0). This file is CANONICAL: bdobb-v2's web layer vendors
- * a pinned copy (web/policy.mjs, `pnpm gateway:vendor <tag>`) and tests its
- * hash, so the app and the stack can never disagree about what is admitted.
+ * The route contract of the stack's public door: openbq-docker's funnel-gateway,
+ * the opt-in `web` compose profile (openbq-docker v3.0.0). Brought down from
+ * openbq-docker v8.0.0 (ported from bdobb-dev/openbb-docker v8.0.3, 775354f, with
+ * the /ai (Rita) family removed) without the /news family, which stays at v8, and
+ * and without PR #10's managed-table routes. This
+ * file is CANONICAL: BDOBB's web layer vendors a pinned copy (web/policy.mjs)
+ * and tests its hash, so the app and the stack can never disagree about what is
+ * admitted.
  *
  * Not a generic reverse proxy. If a path is not matched below, it is refused.
- * At this tag the stack serves one upstream behind the door:
- *   /api/...   -> openbb-api   (the whole OpenBB widget catalogue)
- * Later episodes add their families with their tags (news at Ep. 8, live-grid
- * at Ep. 10, Rita at Ep. 6); at each tag this file holds exactly the families
- * that tag's stack serves. MCP, key-maint, provider-key paths and openbb-api's
- * own /docs, /openapi.json and /redoc are never routes this door forwards.
+ * At this tag the stack serves two upstreams behind the door, plus /state:
+ *   /api/...   -> openbq-api    (the whole ODP widget catalogue)
+ *   /ref/...   -> openbq-reference (Episode 3's keyless reference backend; its one
+ *                 socket, /ref/live_grid_ws, through the ticketed socket door below)
+ *   /state/... -> the gateway's own per-user store (server.mjs, stateFile below)
+ * /ai (Rita) is not served by openbq-docker. MCP, provider-key paths and the
+ * API's own /docs, /openapi.json and /redoc are never routes this door forwards.
+ * Later lines add their families with their tags (/news at v8, /grid at v10).
  */
 
 /**
- * The openbb-api side, since the owner's 2026-09-20 decision to "make all
- * widgets available in vercel". openbb-api's real /widgets.json IS the whole
+ * The openbq-api side, since the owner's 2026-09-20 decision to "make all
+ * widgets available in vercel". openbq-api's real /widgets.json IS the whole
  * OpenBB catalogue -- 331 widgets over 181 distinct endpoints at v12.4 -- and
  * the GitHub allowlist, not a curated manifest, is what gates the preview. So
  * the /api side forwards the catalogue unfiltered, and the widgets' data calls
@@ -47,10 +53,17 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
  * Verified against the live v12.4 catalogue on 2026-09-20: all 181 widget
  * endpoints and all 11 parameter optionsEndpoints match OPENBB_ROUTE_RE, and
  * no declared paramName fails PARAM_NAME_RE. What stays refused is everything
- * OUTSIDE /api/api/v1/: openbb-api's /docs, /openapi.json and /redoc are not
+ * OUTSIDE /api/api/v1/: openbq-api's /docs, /openapi.json and /redoc are not
  * routes the client fetches, so they are not routes this door forwards.
  */
 const OPENBB_ROUTE_RE = /^\/api\/api\/v1\/[a-z0-9_/-]{1,200}$/;
+// The reference backend's routes (Episode 3): same lowercase-segment class as /api/api/v1.
+// No empty segments, so "//" can never reach the upstream URL parser as a host.
+const REF_ROUTE_RE = /^\/ref\/[a-z0-9_-]{1,100}(?:\/[a-z0-9_-]{1,100})*$/;
+// Its root documents and logo, forwarded as exact paths with no query (dotted, so outside
+// REF_ROUTE_RE; the four extra ones ruled in 2026-10-15).
+const REF_DOCUMENTS = new Set(["/ref/widgets.json", "/ref/apps.json", "/ref/agents.json",
+  "/ref/bundle.apps.json", "/ref/market-examples.apps.json", "/ref/assets/bdobb-logo.svg"]);
 const PARAM_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.[\]-]{0,63}$/;
 // Not a regex: a control-character class is exactly what eslint's
 // no-control-regex forbids, and a comparison says the same thing plainly.
@@ -62,6 +75,27 @@ const MAX_QUERY_PAIRS = 40;
 const MAX_VALUE_CHARS = 1024;
 const MAX_URL_CHARS = 4096;
 
+// calendar/trading (openbb-docker feat/calendar-trading-endpoint): a MIC and
+// a year inside the client's own window (1990-2040; tradingCalendar.ts never
+// queries outside it, so wider years here would only widen the attack set).
+const MIC_RE = /^[A-Z]{4}$/;
+const YEAR_RE = /^(?:199\d|20[0-3]\d|2040)$/;
+
+function onlyKeys(params, allowed) {
+  return ![...params.keys()].some(k => !allowed.includes(k));
+}
+
+/** The one bounded-query rule shared by /api/api/v1 and /ref: pairs, names, lengths, control chars, re-serialised. */
+function boundedForward(url) {
+  const pairs = [...url.searchParams];
+  if (pairs.length > MAX_QUERY_PAIRS) return null;
+  for (const [name, value] of pairs) {
+    if (!PARAM_NAME_RE.test(name) || value.length > MAX_VALUE_CHARS || hasControlChar(value)) return null;
+  }
+  const forwarded = url.pathname + (pairs.length ? "?" + url.searchParams.toString() : "");
+  return forwarded.length <= MAX_URL_CHARS ? forwarded : null;
+}
+
 /** The /api family takes bounds; a later family takes a reviewed route with its own tests. */
 export function upstreamPath(url) {
   const params = url.searchParams;
@@ -69,7 +103,7 @@ export function upstreamPath(url) {
 
   // The two root documents the client fetches from a backend -- dataClient.ts'
   // fetchWidgetsJson (required; a 404 is what marks a backend offline) and
-  // fetchAppsJson (optional). There is no third: openbb-api answers 404 for
+  // fetchAppsJson (optional). There is no third: the API answers 404 for
   // templates.json, and agents.json is a Rita host's document, not a backend's.
   // Exact path, no query.
   if (url.pathname === "/api/widgets.json" || url.pathname === "/api/apps.json") {
@@ -77,18 +111,46 @@ export function upstreamPath(url) {
     return url.pathname;
   }
 
+  // The EODHD v2 trading-calendar envelope the client consults for bd
+  // resolution. A 404 from an older backend is the designed "no calendar"
+  // answer, so this route against a v10.1.2/12.4.0 upstream without the
+  // endpoint degrades exactly like a client with no calendar at all.
+  //
+  // This is the one /api route that KEEPS its own narrow grammar after the
+  // catalogue was opened up, because it adds protection the generic rule below
+  // cannot: no widget in the real catalogue calls it, so the client's own
+  // helper is its only caller and a MIC plus a year inside the client's window
+  // is the whole legitimate parameter space. The generic rule never sees it --
+  // this block refuses definitively rather than falling through.
+  if (url.pathname === "/api/api/v1/calendar/trading") {
+    if (!onlyKeys(params, ["exchange", "year"])) return null;
+    if (!MIC_RE.test(params.get("exchange") ?? "")) return null;
+    if (!YEAR_RE.test(params.get("year") ?? "")) return null;
+    return "/api/api/v1/calendar/trading?" + params.toString();
+  }
+
   // Every widget's own data call, and every parameter dropdown's
   // optionsEndpoint, under the bounds documented at the top of this file.
   if (url.pathname.startsWith("/api/api/v1/")) {
     if (!OPENBB_ROUTE_RE.test(url.pathname)) return null;
-    const pairs = [...params];
-    if (pairs.length > MAX_QUERY_PAIRS) return null;
-    for (const [name, value] of pairs) {
-      if (!PARAM_NAME_RE.test(name) || value.length > MAX_VALUE_CHARS ||
-          hasControlChar(value)) return null;
-    }
-    const forwarded = url.pathname + (pairs.length ? "?" + params.toString() : "");
-    return forwarded.length <= MAX_URL_CHARS ? forwarded : null;
+    return boundedForward(url);
+  }
+
+  // --- the reference backend (Episode 3), offered whole through /ref. The upstream is
+  // openbq-reference:17783, a keyless local fixture, so NO credential is injected
+  // (server.mjs target()). The root documents exactly, no query; every other GET
+  // under the SAME structural bounds as /api/api/v1 (lowercase segments, no dot, no %,
+  // bounded query, re-serialised). /ref/omni* is refused so no code-executing Omni route
+  // is ever forwarded. Dotted paths pass only as the exact REF_DOCUMENTS.
+  if (REF_DOCUMENTS.has(url.pathname)) {
+    if (url.search) return null;
+    return url.pathname;
+  }
+  if (url.pathname.startsWith("/ref/")) {
+    if (!REF_ROUTE_RE.test(url.pathname) || url.pathname.length > 200) return null;
+    // Any segment starting "omni", at any depth, is refused.
+    if (url.pathname.split("/").some(segment => segment.startsWith("omni"))) return null;
+    return boundedForward(url);
   }
 
   return null;
@@ -106,9 +168,8 @@ export function upstreamPath(url) {
  * the bearer itself never signs anything a browser sees. Thirty seconds covers
  * a connect; the gateway also refuses a nonce it has already admitted.
  *
- * At v2.1.0 the verifier ships and no socket route does: the first socket family
- * arrives with the news feed (Ep. 8). The verifier is here so the contract the web
- * layer signs against is the stack's from the first tag that has a door.
+ * One socket route at this tag, /ref/live_grid_ws (socketTarget below); /news/ws/news
+ * arrives at v8, /grid/live_grid_ws at v10.
  */
 const TICKET_MS = 30_000;
 const ticketKey = token => createHmac("sha256", token).update("bdobb socket ticket v1").digest();
@@ -133,15 +194,39 @@ export function socketTicketNonce(token, target, ticket, now = Date.now()) {
 export const socketTicketValid = (...args) => socketTicketNonce(...args) !== null;
 
 /**
- * The socket a ticket may name, under exactly the rules the upgrade handler applies.
- * Returns the canonical target, or null. No upgrade route exists at this tag, so
- * every target is null; Ep. 8 adds /news/ws/news, Ep. 10 /grid/live_grid_ws.
+ * The socket a ticket may name, under exactly the rules the upgrade handler applies -- and
+ * the SAME function the web layer's ticket signer calls, so the two can never drift. One
+ * route at this tag, and it takes no query: the whole subscription is the frame.
  */
 export function socketTarget(raw, origin) {
   if (typeof raw !== "string" || !raw.startsWith("/") || raw.startsWith("//")) return null;
   let url; try { url = new URL(raw, origin); } catch { return null; }
   if (url.origin !== origin || url.hash) return null;
+  // raw === pathname: no query (not even a bare "?"), and no "..", "%" or case folding.
+  if (url.pathname === "/ref/live_grid_ws" && raw === url.pathname) return url.pathname;
   return null;
+}
+
+// The reference live grid's symbol grammar: one symbol, or a comma watchlist (user ruling
+// 2026-10-15). `^` for an index symbol (^GSPC), `.` for an exchange suffix (AAPL.US).
+const SYMBOL_LIST_RE = /^[A-Za-z0-9.^_,-]{1,240}$/;
+
+/**
+ * A /ref/live_grid_ws frame: `{"params":{"symbol":"A,B"}}`, sent on open and again on
+ * every symbol change over the same open socket. Re-validated on every frame (not just the
+ * first). The frame that reaches the reference is rebuilt from the one value that passed,
+ * so no extra property, no second key and no display name of the caller's is ever forwarded.
+ * Returns the frame to forward, or null to close the socket.
+ */
+export function refSubscription(data) {
+  let frame;
+  try { frame = JSON.parse(data.toString()); } catch { return null; }
+  if (!frame || typeof frame !== "object" || Object.keys(frame).join() !== "params") return null;
+  const params = frame.params;
+  if (!params || typeof params !== "object" || Object.keys(params).join() !== "symbol") return null;
+  const raw = params.symbol;
+  if (typeof raw !== "string" || !SYMBOL_LIST_RE.test(raw)) return null;
+  return JSON.stringify({ params: { symbol: raw } });
 }
 
 /**

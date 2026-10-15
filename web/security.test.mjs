@@ -14,7 +14,7 @@ import { encode } from "@auth/core/jwt";
 import { WebSocket } from "ws";
 import { readConfig, SESSION_COOKIE } from "./config.mjs";
 import { authConfig, identity } from "./auth.mjs";
-import { socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
+import { socketTarget, socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 import { createPreviewServer } from "./server.mjs";
 
@@ -631,6 +631,20 @@ test("nothing saved yet seeds the default dashboard and still saves; a store tha
   }
 });
 
+test("the reference family is admitted under /ref and the live grid socket is a valid target", () => {
+  const cfg = configuration();
+  for (const ok of ["/ref/widgets.json", "/ref/apps.json", "/ref/metric_widget", "/ref/data/prices",
+    "/ref/agents.json", "/ref/assets/bdobb-logo.svg"]) {
+    assert.equal(upstreamPath(new URL(ok, cfg.origin), cfg), ok, ok);
+  }
+  for (const bad of ["/ref/widgets.json?x=1", "/ref/omni-sql-widget", "/ref/assets/other.svg", "/ref/Metric_Widget"]) {
+    assert.equal(upstreamPath(new URL(bad, cfg.origin), cfg), null, bad);
+  }
+  assert.equal(socketTarget("/ref/live_grid_ws", cfg.origin), "/ref/live_grid_ws");
+  assert.equal(socketTarget("/ref/live_grid_ws?x=1", cfg.origin), null);
+  assert.equal(socketTarget("/news/ws/news", cfg.origin), null);
+});
+
 test("web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag", () => {
   const text = readFileSync(new URL("./policy.mjs", import.meta.url), "utf8");
   const pin = JSON.parse(readFileSync(new URL("./policy.vendored.json", import.meta.url), "utf8"));
@@ -640,7 +654,7 @@ test("web/policy.mjs is the stack's contract, verbatim, at or below the paired s
   assert.equal(header[2], pin.sha256);
   assert.equal(createHash("sha256").update(text.slice(header[0].length)).digest("hex"), pin.sha256);
   // The at-or-below rule: an app line never vendors a contract newer than the stack it pairs with.
-  const paired = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).openbbDocker;
+  const paired = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).openbqDocker;
   const num = v => v.replace(/^v/, "").split(".").map(Number);
   assert.ok(num(pin.tag).every((n, i) => n <= num(paired)[i] || num(pin.tag).slice(0, i).some((m, j) => m < num(paired)[j])),
     `${pin.tag} is above the paired stack tag ${paired}`);
