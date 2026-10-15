@@ -34,9 +34,11 @@ openbq-docker `release/v3` e12bbb0 = 1279da2 + `claude/v3-key-maint` (key-maint 
 | OpenBQ: Apps walk | 36/36 non-BLS apps; BLS 5/5 (one request in flight) |
 | NAS backend verify | app layouts, provider fixes, heavy routes (242 probes, max 0.66 s), cftc-responsive, smoke.py, isolation: pass; key-maint on the host loopback: widget, key rows (tier 2), live FRED test OK |
 
-**NOT_RUN (needs the user):** native gestures (fresh-profile load, Apps import and Save-panel export, expanded Save panel + New Folder, restart): computer use was declined. Workspace sign-in. key-maint over the tailnet (needs the `svc:openbq-keys` Tailscale Service on a tagged host). The NAS dashboard/settings sync verifies (the NAS API runs with auth off by ruling).
+**Native, by the user (2026-10-15 evening, packaged build whose native code equals this tag):** PASS on all six native gestures. E05-053, a real Finder drop of `practice.csv`: 3 of 12 rows (300/500/350), then Clear gives 12 of 12. E05-032, quit and relaunch: the card is restored. E05-001, apps.json export through the Save panel and import through the Open panel: 14 tabs and 70 cards, imported beside the original as "(2)". E05-033, Cancel in the expanded Save panel: creates nothing. E05-045, New Folder in the Save panel: the file is saved inside it. E05-062, a fresh profile: no settings banner.
 
-**Backend report (not a client gate):** V3-010, the full OpenBQ widget sweep, runs after this receipt; its result is recorded in the run folder.
+**NOT_RUN (needs the user):** Workspace sign-in. key-maint over the tailnet (needs the `svc:openbq-keys` Tailscale Service on a tagged host). The NAS dashboard/settings sync verifies (the NAS API runs with auth off by ruling).
+
+**Backend report (not a client gate):** V3-010, the full OpenBQ widget sweep, against openbq-docker v3.0.0 on the NAS: 1,675 renders. 1,455 rendered; 162 show the backend's own error; 58 need review, mostly empty-result notices. Every non-render is an upstream or backend answer the card presents verbatim (upstream 502/504, OECD 55 s, EIA rate limit, Yahoo/Fed refusals, required params). No client defect. One widget is not rendered, because its body crashes the Chromium renderer above the 40 MB cut.
 
 Run folder (outside the repo): `adventures-in-openbb-articles/output/regression/v3-0590bd6-20261015T163820Z/`; NAS verify `…/backend-verify/v3.0.0-e12bbb0/`.
 
