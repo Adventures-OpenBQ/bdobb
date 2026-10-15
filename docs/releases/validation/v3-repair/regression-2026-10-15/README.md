@@ -49,3 +49,15 @@ Five read-only reviewers covered the whole v3 tree of both repositories (bdobb: 
 - openbq-docker: key-maint sets its admin directory to 0700 itself; the Dallas Fed overlays raise a clear error on a third sheet rename instead of a 500; check-public allows the providers' public demo keys in JSON form.
 
 Held for the user (hardening, not defects): a tighter desktop CSP (packaged-only breakage risk, needs a native check), narrowing the `http://*:*` capability, a macOS CI job for `save_panel.rs`, key-maint as non-root.
+
+## The packaged-app CSP (user ruling: do it in v3)
+
+`tauri.conf.json` now sets `script-src 'self' 'wasm-unsafe-eval'`, `connect-src 'self' ipc: http://ipc.localhost ws: wss:`, `object-src 'none'`, `base-uri 'none'` beside `frame-ancestors 'none'`, and stops Tauri stamping a style nonce. Checked natively on a packaged build against the NAS reference: the Live Grid streams over `wss`; Plotly, TradingView, YouTube and pdf.js (base64 and URL) render; a fresh profile shows no settings banner.
+
+## The reference backend through the Funnel door (user ruling: in v3)
+
+Spec `docs/superpowers/specs/2026-10-15-reference-socket-through-funnel-design.md`, plan `docs/superpowers/plans/2026-10-15-reference-socket-through-funnel.md`, executed task by task with a review per task and a final whole-branch review (every finding fixed, minors included). openbq-docker v3 gains `funnel-gateway` (`ghcr.io/adventures-openbq/openbq-funnel-gateway:3.0.0@sha256:76b50f88…`); this line re-vendors its `policy.mjs`, seeds "OpenBQ Reference (preview)" at `<origin>/ref`, ports the ticketed socket shim, and streams the two catalogue documents (16 MiB cap, gzip).
+
+Deployed on the NAS behind the recycled public Funnel door (user ruling; the openbb-docker preview gateway it served is stopped), API left open by ruling. Live, through the public ingress: anonymous 401; `/ref/widgets.json`, a data route, `live_grid_data` and the logo 200; Omni and `//` 404; `/api/widgets.json` 200 (5,045,104 bytes); a ticketed `wss` upgrade minted on a clock 3 s ahead → 101 and live rows; replay 401; wrong Origin 403. The scratch `previewOrigin` used for that test is removed again: ticketed sockets stay refused until a Vercel project exists (open item: the deployed-Vercel run).
+
+Final gate on this head: typecheck, lint, scrub, notices, test:web 34, unit 3246 / 8 skipped, help 45, build:web + web smoke, build, smoke, e2e 100, cargo 16 — all pass.
