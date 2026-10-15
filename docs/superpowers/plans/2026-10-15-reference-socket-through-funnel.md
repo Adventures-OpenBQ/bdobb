@@ -43,7 +43,7 @@ Read-only in every repository except the BDOBB v3 worktree, where only this plan
 
 The spec's explicit contract is the authority; these are inputs its prose implies but no single task's happy-path test exercises. Each line names the input and the behaviour a reasonable operator/user expects; the owning task adds the test.
 
-- **Dotted reference documents and the logo asset** (Task 2). The reference also serves `/agents.json`, `/bundle.apps.json`, `/market-examples.apps.json` and `/assets/bdobb-logo.svg`. All contain a dot, so the structural `/ref/<path>` rule (no dot) **refuses them** and they are not in the exact-path list (`widgets.json`/`apps.json` only). The spec's "every GET" scope collides with its concrete no-dot rule; the plan follows the concrete rule (authority) and pins the refusal, so the consequence (the preview's reference logo 404s, the extra apps bundles unreachable) is a deliberate, tested fact, not a surprise. **See Ambiguity 1 — a ruling may widen this.**
+- **Dotted reference documents and the logo asset** (Task 2). RULED 2026-10-15 (user: "allow all four exact paths"): `/ref/agents.json`, `/ref/bundle.apps.json`, `/ref/market-examples.apps.json` and `/ref/assets/bdobb-logo.svg` are admitted as EXACT paths with no query (`REF_DOCUMENTS`), beside `/ref/widgets.json` and `/ref/apps.json`. Any other dotted path stays refused by the no-dot rule — pin `/ref/assets/other.svg` and `/ref/agents.json?x=1` refused.
 - **A multi-symbol watchlist frame on the socket** (Task 3). `LiveGridRenderer` sends `{params:{symbol}}` where `symbol` may be a comma list. `refSubscription` must admit the list grammar (`SYMBOL_LIST_RE`), or a legitimate watchlist frame silently closes the socket. Pin both a single symbol and `AAPL,MSFT`, and that a second key / extra property / wrong shape closes it.
 - **A replayed or expired ticket, and a wrong Origin** (Task 3). The upgrade must 401 a reused nonce and an expired ticket, and 403 an Origin that is neither `previewOrigin` nor refused outright; `previewOrigin` unset refuses every ticketed upgrade (401). Pin each.
 - **An open socket that never sends a frame, or outlives its welcome** (Task 3). A client that connects and says nothing must be dropped at `firstFrameMs`; any socket must be torn down at 240 s (`socketMs`), and the slot returned (`sockets--`). Pin both deadlines against injected `socketMs`/`firstFrameMs`.
@@ -128,9 +128,12 @@ test("every reference GET forwards under the shape bounds, re-serialised; Omni r
   for (const bad of ["/ref/omni-widget", "/ref/omni-sql-widget", "/ref/omni-python-widget"]) {
     assert.equal(route(bad), null, bad);
   }
-  // Dotted documents and the logo asset are refused by the no-dot rule (see spec Ambiguity 1).
-  for (const bad of ["/ref/agents.json", "/ref/bundle.apps.json",
+  // The four exact dotted documents (ruled 2026-10-15) forward, no query; other dotted paths stay refused.
+  for (const ok of ["/ref/agents.json", "/ref/bundle.apps.json",
     "/ref/market-examples.apps.json", "/ref/assets/bdobb-logo.svg"]) {
+    assert.equal(route(ok), ok, ok);
+  }
+  for (const bad of ["/ref/agents.json?x=1", "/ref/assets/other.svg", "/ref/assets/bdobb-logo.svg/x"]) {
     assert.equal(route(bad), null, bad);
   }
   // Same structural refusals as /api: uppercase, dot, control char, duplicate key, 41 pairs.
@@ -154,6 +157,10 @@ In `policy.mjs`, add near `OPENBB_ROUTE_RE`:
 ```js
 // The reference backend's routes (Episode 3): same lowercase-segment class as /api/api/v1.
 const REF_ROUTE_RE = /^\/ref\/[a-z0-9_/-]{1,200}$/;
+// Its root documents and logo, forwarded as exact paths with no query (dotted, so outside
+// REF_ROUTE_RE; the four extra ones ruled in 2026-10-15).
+const REF_DOCUMENTS = new Set(["/ref/widgets.json", "/ref/apps.json", "/ref/agents.json",
+  "/ref/bundle.apps.json", "/ref/market-examples.apps.json", "/ref/assets/bdobb-logo.svg"]);
 ```
 
 In `upstreamPath`, after the `/api` blocks and before `return null;`:
@@ -164,9 +171,8 @@ In `upstreamPath`, after the `/api` blocks and before `return null;`:
 // (server.mjs target()). The two root documents exactly, no query; every other GET
 // under the SAME structural bounds as /api/api/v1 (lowercase segments, no dot, no %,
 // bounded query, re-serialised). /ref/omni* is refused so no code-executing Omni route
-// is ever forwarded, and the dotted documents (agents/bundle/market-examples) and the
-// logo asset fall outside the no-dot class by the same rule.
-if (url.pathname === "/ref/widgets.json" || url.pathname === "/ref/apps.json") {
+// is ever forwarded. Dotted paths pass only as the exact REF_DOCUMENTS.
+if (REF_DOCUMENTS.has(url.pathname)) {
   if (url.search) return null;
   return url.pathname;
 }
@@ -217,11 +223,11 @@ Expected: PASS.
 In `gateway.test.mjs`, model a loopback upstream exactly as the existing `/api` upstream test (`"the OpenBB root documents and every api/v1 route forward…"`): stand a fixture HTTP server, point the gateway at it (inject `requestJson` or spin an `http` server and set `refOrigin` via `getJson`'s `target`), and assert:
 
 ```js
-test("a reference GET forwards with no credential; Omni and dotted docs 404; a down reference is 502", async t => {
+test("a reference GET forwards with no credential; Omni and unlisted dotted paths 404; a down reference is 502", async t => {
   // Fixture that records the Authorization header it receives and echoes {ok:true}.
   // Drive /ref/metric_widget with the token+Origin and assert 200 and that NO
   // Authorization header reached the fixture (keyless upstream).
-  // Drive /ref/omni-sql-widget and /ref/agents.json and assert 404 (refused by policy).
+  // Drive /ref/omni-sql-widget and /ref/assets/other.svg and assert 404 (refused by policy); /ref/assets/bdobb-logo.svg returns the fixture's body with 200.
   // Point refOrigin at a dead port and assert /ref/metric_widget is 502, body is the
   // door's own {"error":"Request refused"}, never the upstream's.
 });
@@ -609,8 +615,10 @@ test("the reference family is admitted under /ref and the live grid socket is a 
   for (const ok of ["/ref/widgets.json", "/ref/apps.json", "/ref/metric_widget", "/ref/data/prices"]) {
     assert.equal(upstreamPath(new URL(ok, cfg.origin), cfg), ok, ok);
   }
-  for (const bad of ["/ref/widgets.json?x=1", "/ref/omni-sql-widget", "/ref/agents.json",
-    "/ref/assets/bdobb-logo.svg", "/ref/Metric_Widget"]) {
+  for (const ok of ["/ref/agents.json", "/ref/assets/bdobb-logo.svg"]) {
+    assert.equal(upstreamPath(new URL(ok, cfg.origin), cfg), ok, ok);
+  }
+  for (const bad of ["/ref/widgets.json?x=1", "/ref/omni-sql-widget", "/ref/assets/other.svg", "/ref/Metric_Widget"]) {
     assert.equal(upstreamPath(new URL(bad, cfg.origin), cfg), null, bad);
   }
   assert.equal(socketTarget("/ref/live_grid_ws", cfg.origin), "/ref/live_grid_ws");
@@ -757,8 +765,8 @@ Documents the `/ref` family and the socket, and runs the whole v3 gate.
 
 In `web/README.md`, under "Backend ingress contract", add a `/ref` block to the upstream-paths table and a socket row:
 
-- `GET /ref/widgets.json`, `GET /ref/apps.json` — the reference's two root documents, no query, no credential injected (the reference is keyless).
-- `GET /ref/**` — every other reference GET under the same structural bounds as `/api/api/v1/**`; `/ref/omni*` refused; dotted documents and the logo asset fall outside the no-dot class.
+- `GET /ref/widgets.json`, `/ref/apps.json`, `/ref/agents.json`, `/ref/bundle.apps.json`, `/ref/market-examples.apps.json`, `/ref/assets/bdobb-logo.svg` — exact paths, no query, no credential injected (the reference is keyless).
+- `GET /ref/**` — every other reference GET under the same structural bounds as `/api/api/v1/**`; `/ref/omni*` refused; any other dotted path refused.
 - `WSS /ref/live_grid_ws` — one ticketed socket; the browser opens it on the gateway with a thirty-second single-use ticket from `/socket-ticket`; each client frame is re-validated (`{"params":{"symbol":…}}` only) and the socket lives at most 240 s.
 
 Update the "Sockets:" checklist line: the reference's live grid socket **is** served at this version; the ticket machinery is now live behind `previewOrigin`.
@@ -933,8 +941,8 @@ POST routes through the door; a Vercel project, OAuth app or DNS; any other sock
 ## Self-review notes (for the executor)
 
 - **Spec coverage.** Gateway `/ref` routes + socket → Tasks 2–3; policy `upstreamPath`/`socketTarget`/`refSubscription` → Tasks 2–3; compose/env/Serve/CI/docs → Task 4; BDOBB policy re-vendor + pin + hash → Task 5; seed → Task 6; socket shim → Task 7; `connect-src`/upgrade-refusal "unchanged" → no code task (verified in Tasks 5/8 via existing tests); docs → Task 8; deployment → Tasks 9–10; live verification → Task 11.
-- **Ambiguity 1 (dotted docs/logo).** The spec's "every GET" scope conflicts with its concrete no-dot `/ref/<path>` rule, which refuses `/ref/agents.json`, `/ref/bundle.apps.json`, `/ref/market-examples.apps.json` and `/ref/assets/bdobb-logo.svg`. The plan follows the concrete rule (authority) and pins the refusal (Task 2); a ruling could widen the exact-path list to include these.
-- **Ambiguity 2 (symbol grammar).** The spec writes the frame as `{"params":{"symbol":"<symbol>"}}` (singular), but `LiveGridRenderer` can send a comma watchlist; the plan admits the list grammar (`SYMBOL_LIST_RE`) so a real watchlist frame is not rejected. Narrow to a single symbol only if a ruling says the reference serves one symbol per socket.
+- **Ambiguity 1 (dotted docs/logo) — RULED 2026-10-15:** the four dotted paths are admitted as exact paths (`REF_DOCUMENTS`, Task 2); other dotted paths stay refused.
+- **Ambiguity 2 (symbol grammar).** The spec writes the frame as `{"params":{"symbol":"<symbol>"}}` (singular), but `LiveGridRenderer` can send a comma watchlist; the plan admits the list grammar (`SYMBOL_LIST_RE`) so a real watchlist frame is not rejected. RULED 2026-10-15: admit lists.
 - **No per-frame vendor metering on the `/ref` socket** (unlike v10's grid): the reference is a keyless local fixture, so the spec's socket budget (upgrade `spend(6)`, `maxSockets`, 240 s lifetime) is the whole accounting. An open socket can send unlimited valid frames within 240 s; acceptable for a local fixture.
 - **`security.test.mjs` "pins the new hash"** is satisfied by re-vendoring: `policy.vendored.json` records the new sha256 and the existing test recomputes and enforces it — no literal hash is hand-edited.
 - **`refOrigin` is a fixed compose address, not a setting** (like `apiOrigin`), because the reference (`episode3-demo` / `openbq-reference`) is a mandatory part of the v3 overlay; running the `web` profile without the v3 overlay makes `/ref/*` answer 502.
