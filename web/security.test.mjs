@@ -14,7 +14,7 @@ import { encode } from "@auth/core/jwt";
 import { WebSocket } from "ws";
 import { readConfig, SESSION_COOKIE } from "./config.mjs";
 import { authConfig, identity } from "./auth.mjs";
-import { socketTarget, socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
+import { refSubscription, socketTarget, socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 import { createPreviewServer } from "./server.mjs";
 
@@ -228,7 +228,8 @@ test("bootstrap contains only same-origin routes, never server configuration or 
 test("the reference backend is seeded only with a gateway, and tickets turn on with it", () => {
   const withGw = bootstrap(configuration());
   assert.ok(withGw.includes("OpenBQ Reference (preview)"));
-  assert.ok(withGw.includes('\\"preview-ref\\"') || withGw.includes('"preview-ref"'));
+  // Double-encoded like every seeded value (see the widgetId assertions above).
+  assert.ok(withGw.includes('\\"id\\":\\"preview-ref\\"'));
   assert.ok(withGw.includes("https://preview.example.com/ref"));
   assert.match(withGw, /window\.__bdobbSocketTickets=true;/);
   const cfg = configuration(); cfg.backend = null; cfg.token = null;
@@ -655,6 +656,22 @@ test("the reference family is admitted under /ref and the live grid socket is a 
   assert.equal(socketTarget("/ref/live_grid_ws", cfg.origin), "/ref/live_grid_ws");
   assert.equal(socketTarget("/ref/live_grid_ws?x=1", cfg.origin), null);
   assert.equal(socketTarget("/news/ws/news", cfg.origin), null);
+  // The live grid's frames: a symbol or a comma list, rebuilt; any other key or shape is refused.
+  // (A binary frame is refused before this, by the gateway's message handler: its own tests.)
+  assert.equal(refSubscription('{"params":{"symbol":"AAPL"}}'), '{"params":{"symbol":"AAPL"}}');
+  assert.equal(refSubscription('{ "params": { "symbol": "AAPL,MSFT" } }'), '{"params":{"symbol":"AAPL,MSFT"}}');
+  for (const bad of ['{"params":{"symbol":"AAPL"},"admin":1}', '{"params":{"symbol":"AAPL","x":1}}',
+    '{"params":["AAPL"]}', '{"params":{"symbol":7}}', '"AAPL"', "not-json"]) assert.equal(refSubscription(bad), null, bad);
+});
+
+test("/ref paths that only a raw request can spell never reach the gateway", async t => {
+  const seen = [];
+  const { call } = await fixture(t, { fetchUpstream: async url => { seen.push(url);
+    return new Response("{}", { headers: { "content-type": "application/json" } }); } });
+  const headers = { cookie: await cookie() };
+  assert.equal((await call("/ref//x", { headers })).status, 404); // an empty segment: no route
+  assert.equal((await call("/ref/x/../y", { headers })).status, 421); // a URL would normalise it away
+  assert.deepEqual(seen, []);
 });
 
 test("web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag", () => {

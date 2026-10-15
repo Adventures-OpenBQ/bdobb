@@ -21,7 +21,8 @@ import { fileURLToPath } from "node:url";
 
 const tag = process.argv[2];
 if (!/^v\d+\.\d+\.\d+$/.test(tag ?? "")) { console.error("usage: pnpm gateway:vendor vX.Y.Z"); process.exit(2); }
-const OD = process.env.OPENBB_DOCKER_DIR ?? join(homedir(), "Developer", "openbb-docker");
+// OPENBQ_DOCKER_DIR is preferred; OPENBB_DOCKER_DIR (the older name) still works.
+const OD = process.env.OPENBQ_DOCKER_DIR ?? process.env.OPENBB_DOCKER_DIR ?? join(homedir(), "Developer", "openbq-docker");
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const body = execFileSync("git", ["-C", OD, "show", `${tag}:funnel-gateway/policy.mjs`], { encoding: "utf8" });
 const sha256 = createHash("sha256").update(body).digest("hex");

@@ -232,8 +232,8 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
           ? socketTarget(asked[0], cfg.origin) : null;
         if (!target) return reply(res, 404);
         if (!cfg.backend) return reply(res, 503, "Backend ingress is not configured.");
-        // One unit: a ticket is a signature, not a socket this layer holds open (which is
-        // what six paid for, and still does for the relay below).
+        // One unit: a ticket is a signature, not a socket this layer holds open (six paid
+        // for that when this layer relayed sockets; its upgrade handler now refuses them all).
         if (!spend(who.id)) return reply(res, 429, "Preview request budget exceeded.");
         const ticket = socketTicket(cfg.token, target);
         return reply(res, 200, JSON.stringify({
