@@ -88,6 +88,8 @@ describe("docs/examples", () => {
     expect(layout.find((l) => l.i === "nasdaq_equity_fundamental_historical_eps_nasdaq_obb")?.state?.params).toEqual({ symbol: "IBM" });
     expect(layout.find((l) => l.i === "bls_search_bls_obb")?.state?.params).toEqual({ category: "cpi", query: "CUUR0000SA0" });
     expect(layout.find((l) => l.i === "econdb_economy_indicators_econdb_obb")?.state?.params).toEqual({ symbol: "RGDP", country: "US" });
+    // The COT card needs a market code to load at all; 067651 is WTI crude oil (NYMEX).
+    expect(layout.find((l) => l.i === "cftc_cot_cftc_obb")?.state?.params).toEqual({ code: "067651" });
     expect(apps[0].description).toContain("openbq-docker v3");
     expect(apps[0].description).toContain("credentials.demo.env");
     expect(apps[0].description).not.toContain("openbb-docker");
@@ -100,6 +102,12 @@ describe("docs/examples", () => {
   it("v3.2.0-video-library: one Video Library card, and demo-providers carries it too", () => {
     expect(load("v3.2.0-video-library.apps.json").ids).toEqual(["videos_video_custom_obb"]);
     expect(load("v3.1.0-demo-providers.apps.json").ids).toContain("videos_video_custom_obb");
+  });
+
+  // The description is what the Apps card shows: a reader's summary, not
+  // implementation notes (those live in the comments above).
+  it.each(files)("%s describes itself in a few sentences", (file) => {
+    for (const app of load(file).apps) expect(app.description.length).toBeLessThanOrEqual(400);
   });
 
   it.each(files)("%s imports every card against a registry that serves it", (file) => {

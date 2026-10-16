@@ -30,6 +30,13 @@ function renderDialog(over: { conflict?: ImportConflict; index?: number; total?:
 }
 
 describe("ImportConflictDialog", () => {
+  it("says 1 tab and 1 card in the singular", () => {
+    renderDialog({ conflict: { ...conflict("Solo"), yours: { tabs: 1, cards: 1 }, incoming: { tabs: 1, cards: 0 } } });
+
+    expect(screen.getByText("Yours: 1 tab, 1 card")).toBeInTheDocument();
+    expect(screen.getByText("In the file: 1 tab, 0 cards")).toBeInTheDocument();
+  });
+
   it("names the conflict, shows both sides, and focuses Keep both", () => {
     renderDialog();
 

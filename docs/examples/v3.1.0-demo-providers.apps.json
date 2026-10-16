@@ -1,7 +1,7 @@
 [
   {
     "name": "Demo providers",
-    "description": "One card per provider that answers on the openbq-docker v3 stack (Adventures-OpenBQ/openbq-docker v3.0.0) with no sign-up. Keyless: BLS, CFTC, EconDB, Nasdaq (historical EPS for IBM, in place of the Alpha Vantage card of earlier releases) and the Video Library. EIA and Congress.gov run on the public demo keys in openbq-docker's committed credentials.demo.env, which the stack uses when there is no credentials.env; your own keys in credentials.env take their place. Widget ids are openbq-docker's, checked 2026-10-14 against its /widgets.json as captured by BDOBB's v6 regression run; the EconDB and Video Library (openbb-videos) cards are the extensions openbq-docker v3 adds. EconDB answers under openbb-core 2's provider-prefixed id econdb_economy_indicators_econdb_obb (the ODP 4 id economy_indicators_econdb_obb came from a shared economy router openbq-docker does not install), and its Indicators route needs a country as well as a symbol: RGDP for US, since symbol=RGDP alone is a 422. The BLS card uses bls_search (category=cpi, query=CUUR0000SA0), not bls_series: BLS's own HTTP API needs no key for either fetcher, but openbb-bls's BlsSeriesFetcher never overrides the base Fetcher class's require_credentials=True the way BlsSearchFetcher does, so bls_series 400s on a blank BLS_API_KEY -- bls_search answers 200 with real data on first import, which is the point of this dashboard.",
+    "description": "One card per data provider that answers on the openbq-docker v3 stack without a sign-up of your own. BLS, CFTC, EconDB and Nasdaq need no key; EIA and Congress.gov use the providers' public demo keys from credentials.demo.env, and a key of your own in credentials.env takes their place. Demo keys are rate-limited, so answers can vary between runs.",
     "img": "",
     "img_dark": "",
     "img_light": "",
@@ -41,7 +41,7 @@
             "y": 12,
             "w": 20,
             "h": 12,
-            "state": { "params": {} }
+            "state": { "params": { "code": "067651" } }
           },
           {
             "i": "econdb_economy_indicators_econdb_obb",

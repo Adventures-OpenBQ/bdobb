@@ -13,6 +13,10 @@ type Choice = ImportDecision | "cancel";
  * shell and the HelpDialog idiom: a real <dialog> opened with showModal(),
  * Escape handled on document with the native close request refused.
  */
+function counts({ tabs, cards }: { tabs: number; cards: number }): string {
+  return `${tabs} tab${tabs === 1 ? "" : "s"}, ${cards} card${cards === 1 ? "" : "s"}`;
+}
+
 export function ImportConflictDialog({
   conflict,
   index,
@@ -76,8 +80,8 @@ export function ImportConflictDialog({
         {total > 1 ? (
           <p className="import-conflict-count">{`Conflict ${index + 1} of ${total}`}</p>
         ) : null}
-        <p>{`Yours: ${conflict.yours.tabs} tabs, ${conflict.yours.cards} cards`}</p>
-        <p>{`In the file: ${conflict.incoming.tabs} tabs, ${conflict.incoming.cards} cards`}</p>
+        <p>{`Yours: ${counts(conflict.yours)}`}</p>
+        <p>{`In the file: ${counts(conflict.incoming)}`}</p>
         <div className="import-conflict-actions">
           <button
             type="button"
