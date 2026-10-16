@@ -122,7 +122,7 @@ test("importing an apps.json creates its cards, one of them unresolved", async (
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Import apps.json…" }).click();
 
-  await expect(page.getByRole("status")).toHaveText("Imported 1 dashboards, 2 cards (1 unresolved)");
+  await expect(page.getByRole("status")).toHaveText("Imported 1 dashboard, 2 cards (1 unresolved)");
 
   // The imported dashboard is activated, so its cards are what is on screen.
   await expect(page.locator(".widget-card")).toHaveCount(2);

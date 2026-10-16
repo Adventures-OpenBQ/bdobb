@@ -92,7 +92,7 @@ test("import feedback sits directly under the bottom controls and hides when the
   await page.locator("nav.left-rail [data-testid='rail-section-label']", { hasText: "My Dashboards" })
     .click({ button: "right" });
   await page.getByRole("menuitem", { name: "Import apps.json…" }).click();
-  await expect(page.getByRole("status")).toContainText("Imported 1 dashboards");
+  await expect(page.getByRole("status")).toContainText("Imported 1 dashboard");
 
   await openRail(page);
   const help = await page.getByRole("button", { name: "Help", exact: true }).boundingBox();

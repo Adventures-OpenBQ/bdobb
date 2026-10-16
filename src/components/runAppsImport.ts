@@ -72,6 +72,7 @@ export async function runAppsImport(text: string, bytes: number): Promise<string
   ]
     .filter((part) => part !== "")
     .join(", ");
-  const notice = `Imported ${written.length} dashboards${extras ? ` (${extras})` : ""}, ${cards.length} cards (${unresolved} unresolved)`;
+  const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  const notice = `Imported ${plural(written.length, "dashboard")}${extras ? ` (${extras})` : ""}, ${plural(cards.length, "card")} (${unresolved} unresolved)`;
   return [notice, ...failures].join("; ");
 }

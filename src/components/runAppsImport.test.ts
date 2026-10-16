@@ -48,7 +48,7 @@ describe("runAppsImport", () => {
     decide.mockResolvedValue([]);
 
     expect(await run(appsFile(["New", "Main"]))).toBe(
-      "Imported 1 dashboards, 0 cards (0 unresolved)",
+      "Imported 1 dashboard, 0 cards (0 unresolved)",
     );
     expect(useDashboardStore.getState().dashboards.map((d) => d.name)).toEqual(["A", "B", "New"]);
   });
@@ -58,7 +58,7 @@ describe("runAppsImport", () => {
 
     const notice = await run(appsFile(["B", "From file"]));
 
-    expect(notice).toBe("Imported 1 dashboards (1 replaced), 0 cards (0 unresolved)");
+    expect(notice).toBe("Imported 1 dashboard (1 replaced), 0 cards (0 unresolved)");
     expect(decide.mock.calls[0][0].map((c) => c.imported.name)).toEqual(["B"]);
     const { dashboards } = useDashboardStore.getState();
     expect(dashboards.map((d) => d.id)).toEqual(["dA", "dB"]);
@@ -114,7 +114,7 @@ describe("runAppsImport", () => {
 
     // __failPath makes the write throw an `EIO: <path>` error.
     expect(notice).toContain(
-      'Imported 1 dashboards (1 replaced), 0 cards (0 unresolved); Could not replace "A": EIO',
+      'Imported 1 dashboard (1 replaced), 0 cards (0 unresolved); Could not replace "A": EIO',
     );
     const { dashboards } = useDashboardStore.getState();
     expect(dashboards[0].tabs[0].name).toBe("Main");
@@ -154,7 +154,7 @@ describe("runAppsImport", () => {
     __failPath("settings.json");
 
     expect(await run(appsFile(["New", "Main"]))).toBe(
-      "Imported 1 dashboards, 0 cards (0 unresolved)",
+      "Imported 1 dashboard, 0 cards (0 unresolved)",
     );
     const log = __read("logs/bdobb.log") ?? "";
     expect(log).toContain("failed to persist dashboard order: EIO");
