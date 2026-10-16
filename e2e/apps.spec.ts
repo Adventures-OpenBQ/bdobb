@@ -152,7 +152,7 @@ test("opening an app whose name is taken asks, and Replace swaps the app into yo
   await dialog.getByRole("button", { name: "Open Macro" }).click();
   const ask = conflictDialog(page);
   await expect(ask).toBeVisible();
-  await expect(ask).toContainText("Yours: 1 tabs, 0 cards");
+  await expect(ask).toContainText("Yours: 1 tab, 0 cards");
   await expect(ask).toContainText("In the file: 2 tabs, 2 cards");
   await ask.getByRole("button", { name: /^Replace/ }).click();
 
