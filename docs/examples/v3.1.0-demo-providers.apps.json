@@ -41,7 +41,7 @@
             "y": 12,
             "w": 20,
             "h": 12,
-            "state": { "params": { "code": "067651" } }
+            "state": { "params": { "code": "067651", "start_date": "2025-01-01" } }
           },
           {
             "i": "econdb_economy_indicators_econdb_obb",
