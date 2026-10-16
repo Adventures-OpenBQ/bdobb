@@ -48,4 +48,6 @@ test("reference Apps, grouped company controls and unsupported analytical import
     await expect(page.getByRole("dialog", {name: "Apps", exact: true})).toContainText("UNSUPPORTED_EXTENSION");
     expect((await memfs(page).list()).filter((f) => f.startsWith("dashboards/"))).toEqual(filesBefore.filter((f) => f.startsWith("dashboards/")));
   }
+  // Card polls are still in flight through the CORS adapter when the test ends.
+  await page.unrouteAll({behavior: "ignoreErrors"});
 });
