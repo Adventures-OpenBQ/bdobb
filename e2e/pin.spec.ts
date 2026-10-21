@@ -240,3 +240,18 @@ test("a pinned band takes at most 40% of the area, so the grid, the other band, 
   const stored = JSON.parse((await read(page, "dashboards/d1.json"))!);
   expect(stored.tabs[0].cards.find((c: { id: string }) => c.id === "markdown").layout.h).toBe(40);
 });
+
+test("a band under its cap keeps its full height while the tab below it scrolls", async ({ page }) => {
+  // The scroll region's content is far taller than the area; it must take
+  // only what the bands leave, not shrink them alongside itself.
+  await seedCards(page, [
+    ...tallTab(),
+    { id: "c-top", widgetId: "quote", backendId: "b1", params: { symbol: "AAPL" }, layout: { x: 20, y: 0, w: 20, h: 5 }, pinned: "top" },
+    { id: "c-bottom", widgetId: "quote", backendId: "b1", params: { symbol: "AAPL" }, layout: { x: 20, y: 5, w: 20, h: 4 }, pinned: "bottom" },
+  ]);
+  for (const edge of ["top", "bottom"]) {
+    const band = page.locator(`.card-dock-${edge}`);
+    const wanted = parseFloat(await band.evaluate((el) => el.style.height));
+    expect((await settledBox(band)).height).toBeCloseTo(wanted, 0);
+  }
+});
