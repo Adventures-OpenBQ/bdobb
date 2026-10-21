@@ -47,7 +47,7 @@ A `.json` of 10 MB or less is sniffed first — if it turns out to be an `apps.j
 
 Everything else becomes a **Local file** card whose title is the original filename. It lands **below everything already on the tab**, and a drop of several files stacks them downward. The bytes are copied into the app's own data directory, so the card keeps working if you move the original. The result goes through the ordinary table renderer, so filtering, pinning, sorting and transpose all apply; cell clicks do not, because a dropped-file table sets no parameters. Only the first sheet of a workbook is read (SheetJS does the reading, and is credited under **Credits**).
 
-**Removing the card deletes the stored copy.** Duplicating a dashboard does not copy the file — both cards point at the same copy, deleted only when the last card naming it is removed. Exporting such a card to `apps.json` carries a reference that means nothing on another machine.
+**Removing the card deletes the stored copy.** Duplicating a dashboard does not copy the file — both cards point at the same copy, deleted only when the last card naming it is removed. Exporting such a card in the **Strict OpenBB Workspace** format carries a reference that means nothing on another machine; the **BDOBB Workspace** format refuses the dashboard instead, with *Local assets require a repository archive.*
 
 Data files are capped at **50 MB**, checked before a byte is read: *name is 51.2 MB; the limit is 50 MB.* One drop leaves one notice line, however many files had something to say. Dropping onto a viewer window does nothing — there is no veil there — and neither is a drop taken while a dialog or the widget library is open over the dashboard, because the gesture was aimed at the overlay.
 

@@ -11,7 +11,7 @@ with a **Format** pop-up under the file name. It writes that one dashboard in
 OpenBB Workspace's app shape. Cancelling does nothing. You get a one-line
 notice in the rail: *Exported Markets.* or *Export failed*, with the message.
 
-**Strict OpenBB Workspace**, the default format, writes the plain OpenBB shape. **BDOBB Workspace** also preserves dashboard/card names and ordinary table state in a validated BDOBB extension: sort, filters, column order, hidden columns, pinned columns and transposed view; its notice reads *Exported Markets with BDOBB v3 state.* Dropped file bytes and credentials are never included. Analytical model extensions are unsupported in v3 and are refused before any write. In the browser build, which has no Save panel, **Save…** opens a small menu of the two formats first.
+**Strict OpenBB Workspace**, the default format, writes the plain OpenBB shape. **BDOBB Workspace** also preserves dashboard/card names and ordinary table state in a validated BDOBB extension: sort, filters, column order, hidden columns, column widths, pinned columns, the card's view (table, chart, raw or transposed) and whether it is minimized; its notice reads *Exported Markets with BDOBB v3 state.* Dropped file bytes and credentials are never included. A card carrying state outside that set is refused before any write. In the browser build, which has no Save panel, **Save…** opens a small menu of the two formats first.
 
 **Import** opens a file picker and adds every app in the file as a new
 dashboard. Dropping an `apps.json` on the dashboard does the same.
@@ -70,8 +70,11 @@ A file that is not an array of apps fails with *not an apps.json file*.
 The Settings dialog has its own **Export…** and **Import…**, for moving your
 preferences and your rail's folder tree between machines. Import has two ways
 in — the dialog's button, or simply **drop the file on the dashboard**, which
-is recognised by its shape rather than its name and runs exactly the same
-import with the same limits and the same notice.
+is recognised by its shape rather than its name. Both parse the file the same
+way, but they end differently: the dialog's **Import…** shows a per-field
+review of what would change, with **Apply** and **Discard**, and nothing
+reaches disk until **Done**; a drop applies at once and leaves a notice in the
+rail.
 
 **Export** writes your preferences and the folder tree. It does **not** write
 the dashboard order: importing dashboards gives them new ids, so an exported
@@ -83,7 +86,7 @@ file cannot quietly reset the rest. The folder tree is the exception: it is
 **replaced**, because merging two trees has no sensible answer for two
 folders that share an id and disagree about their parent.
 
-The notice reads *Imported settings and 3 folders.* when the file carries a
+A drop's notice reads *Imported settings and 3 folders.* when the file carries a
 folder tree with folders, or *Imported settings.* when the file carries no folder
 tree at all — which is what **Export…** now writes for a machine with no
 folders of its own, so it never wipes a destination's tree by accident. If a

@@ -1,6 +1,6 @@
 # Built-in widgets
 
-Five widgets need no backend at all. They are listed in the library under the
+Six widgets need no backend at all. They are listed in the library under the
 **Built-in** category, and because they have no provider they appear under
 **All providers** but under no particular one.
 
@@ -30,7 +30,7 @@ What is stored is Markdown, in a hidden parameter, so it does not clutter
 the header's controls row and it travels with the dashboard on export. Raw HTML
 or unusual Markdown pasted in may be simplified on the first edit.
 
-The card's **⋯** menu carries two items. **Open file…** copies a `.md`,
+The card's **⋯** menu carries two items of its own. **Open file…** copies a `.md`,
 `.markdown` or `.txt` file into the note (it asks first if the note is not
 empty, and refuses a file over 1 MB). **Save as…** writes the note out as a
 `.md` file. Both are copies: the card keeps no link to the file, so editing

@@ -21,6 +21,8 @@ This BDOBB uses the original BDOBB's identifier. On its first launch it copies i
 | `backends.json` | your connections, including any credential you typed, in the clear |
 | `folders.json` | the rail's folder tree, sibling order, placement and collapsed state |
 | `dashboards/<id>.json` | one file per dashboard — its tabs, cards, layouts, parameters, groups, and every card's saved state (table columns) |
+| `workspace.json` | your OpenBB Workspace connections — never a password or a session token |
+| `workspaceSync.json` | the links between your dashboards and the Workspace server dashboards they sync with |
 | `files/<uuid>.<ext>` | a copy of every data file you have dropped on a dashboard, deleted when the last card naming it is removed |
 | `logs/bdobb.log` | the app log, plus up to five rotated generations |
 

@@ -16,9 +16,9 @@ The rail is the strip down the left edge. It rests at 48 pixels wide and expands
 The fixed rows surround your folders and dashboards. Top to bottom:
 
 - **Add widget (⌘K)** — opens the widget library. Its `+` is the one accented icon in the rail. See [[widget-library|The Widget Library]].
-- **Apps** — opens the backend-served app catalog, grouped by backend. **Search apps** and the **Backend** select (*All backends*, or one connection that serves apps) narrow it together. Choose **Open** to import an app as a dashboard; name conflicts ask before writing.
 - *LIBRARY*
 - **Widget Library** — the same overlay as **Add widget**.
+- **Apps** — opens the backend-served app catalog, grouped by backend. **Search apps** and the **Backend** select (*All backends*, or one connection that serves apps) narrow it together. Choose **Open** to import an app as a dashboard; name conflicts ask before writing.
 - *MY DASHBOARDS*
 - Your folders and dashboards. See [[dashboards-and-folders|Dashboards and Folders]].
 
@@ -36,7 +36,7 @@ The first nine dashboards carry an `⌥1` to `⌥9` badge where the fixed rows' 
 
 ## The tab strip
 
-Each dashboard has its own strip of tabs directly above the grid, pinned to the top of the dashboard area so a tall dashboard scrolls underneath it. Left to right: the tabs, the add-tab `＋`, a `grouping off` tag if that dashboard has grouping disabled, `↻` (refresh every card on this tab), and the green quick-add `+` (the widget library, one click closer). See [[dashboard-tabs|Dashboard Tabs]].
+Each dashboard has its own strip of tabs directly above the grid, pinned to the top of the dashboard area so a tall dashboard scrolls underneath it. Left to right: the tabs, the add-tab `＋`, a `grouping off` tag if that dashboard has grouping disabled, the parameter-group chips, `↻` (refresh every card on this tab), and the green quick-add `+` (the widget library, one click closer). See [[dashboard-tabs|Dashboard Tabs]].
 
 ## Viewer windows
 

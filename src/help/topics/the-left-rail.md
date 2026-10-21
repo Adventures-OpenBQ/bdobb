@@ -15,9 +15,9 @@ asked to drop onto a 48-pixel sliver.
 
 - **Add widget (⌘K)** — opens the widget library. Its `+` is the one accented
   icon in the rail.
-- **Apps** — discovers backend-served apps and opens them as dashboards, grouped by backend. **Search apps** and the **Backend** select (*All backends*, or one connection that serves apps) narrow the list together. Duplicate names use the import conflict dialog.
 - *LIBRARY*
 - **Widget Library** — the same overlay as **Add widget**.
+- **Apps** — discovers backend-served apps and opens them as dashboards, grouped by backend. **Search apps** and the **Backend** select (*All backends*, or one connection that serves apps) narrow the list together. Duplicate names use the import conflict dialog.
 - *MY DASHBOARDS*
 - Your folders and dashboards.
 

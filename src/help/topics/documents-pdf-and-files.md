@@ -82,9 +82,11 @@ pinning, sorting and cell clicks all apply. Only the first sheet of a workbook
 is read.
 
 **Removing the card deletes the stored copy.** Duplicating a dashboard does not
-copy the file — both cards point at the same copy, and deleting either card
-deletes it. Exporting such a card to `apps.json` carries a reference that means
-nothing on another machine.
+copy the file — both cards point at the same copy, which is deleted only when
+the last card naming it goes. Exporting such a card to `apps.json` in the
+**Strict OpenBB Workspace** format carries a reference that means nothing on
+another machine; the **BDOBB Workspace** format refuses the dashboard with
+*Local assets require a repository archive.*
 
 Data files are capped at 50 MB, checked before a byte is read:
 *name is 51.2 MB; the limit is 50 MB.* Dropping onto a viewer window does

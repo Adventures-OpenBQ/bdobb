@@ -13,11 +13,11 @@ The dialog's header also carries **Export…** and **Import…**, which write an
 
 ## General
 
-- **Theme** — **Dark mode** or **Light mode**. Dark by default. It applies everywhere, including charts the app draws itself; a ready-made figure from a provider keeps its own colours. The app does **not** follow the system theme.
+- **Theme** — **Light** or **Dark**. Dark by default. It applies everywhere, including charts the app draws itself; a ready-made figure from a provider keeps its own colours. The app does **not** follow the system theme.
 - **Font size** — **Medium** (the default) or **Large**.
-- **Auto-refresh every** — **Off** (the default), **1 minute**, **5 minutes**, **15 minutes**, **30 minutes** or **60 minutes**. A widget's own declared interval wins over this. See [[running-and-refreshing|Running and Refreshing]].
+- **Auto-refresh** — **Off** (the default), **Every minute**, **Every 5 minutes**, **Every 15 minutes**, **Every 30 minutes** or **Every hour**. A widget's own declared interval wins over this. See [[running-and-refreshing|Running and Refreshing]].
 - **Default widget ticker** — used when you add a widget that takes a symbol. It stages on every keystroke; nothing is written until **Done**. Clearing it removes the setting.
-- **Match the symbol on the dashboard to which you are adding the widget.** — off by default. When on it wins over the default ticker: a new card copies the symbol from the most recently added sibling card on that tab.
+- **Match dashboard symbol** — *Use the dashboard's symbol when adding a widget.* Off by default. When on it wins over the default ticker: a new card copies the symbol from the most recently added sibling card on that tab.
 
 ## User Settings and Workspace connections
 
@@ -79,7 +79,7 @@ Backends, provider keys and dropped files are not synchronized. Live account sig
 
 - **Maximum decimal places** — six choices, 0 to 5, labelled with worked examples in your own locale rather than with digits. The default is 2. It is a genuine maximum: trailing zeros are trimmed, and it applies to abbreviated numbers too. It does not affect a Metric card's headline number, a column with its own declared precision, or exports.
 - **Minimize button on header** — off by default. See [[widget-cards|Widget Cards]].
-- **Collapse widget controls behind a chevron** — off by default. Hides a card's header controls behind a single `⌄`.
+- **Collapse widget controls** — off by default. Hides a card's header controls behind a single `⌄`.
 
 ## Layout
 
@@ -101,7 +101,7 @@ If a backend's section disappears while you are on it — the backend removed, o
 
 The **Logs** tab is the only log viewer. It shows the log file's full path — so you can go find it — and the last hundred lines, oldest first. A line is a UTC timestamp, a level and a message: `2026-08-29T09:12:44.108Z ERROR failed to save dashboard 3f2a: permission denied`.
 
-Almost everything written is `ERROR` — the app logs what went wrong, not what went right. A handful of `INFO` lines exist too: a viewer window refusing an edit it is not allowed to make; an unsupported parameter type or date token; and a frame or a cell click naming a parameter its widget does not declare. All but the refusal are written once per session, so a repeating cause does not fill the file.
+Almost everything written is `ERROR` — the app logs what went wrong, not what went right. A handful of `INFO` lines exist too: a viewer window refusing an edit it is not allowed to make; an unsupported parameter type or date token; a frame or a cell click naming a parameter its widget does not declare; a TradingView chart whose refetch or chart library failed; and each dashboard Workspace sync uploads or deletes. All but the sync lines and the refusal are written once per session, so a repeating cause does not fill the file.
 
 The file is read each time you open the **Logs** tab, and **Refresh** re-reads it. It is a snapshot, not a live tail. On a fresh install with nothing logged you get *No log entries yet.*, which is a normal empty state rather than an error. On disk the log is `logs/bdobb.log` inside the app's data directory, rotating at 10 MB with up to five generations beside it.
 

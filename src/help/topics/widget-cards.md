@@ -9,16 +9,17 @@ header.
 
 - The **title**. This is also the drag handle.
 - `⌄` **Show widget controls** — only when
-  **Settings ▸ Widget ▸ Collapse widget controls behind a chevron** is on
+  **Settings ▸ Widget ▸ Collapse widget controls** is on
   (off by default). Everything after this point then hides behind it.
-- **Parameters (N)** — only when the widget has at least one visible
-  parameter. See **Card parameters**.
-- The **view toggle** — a segmented control. Its first segment is named for the
-  card's own kind: `Table`, `Chart`, `Markdown`, `HTML`, `Page`, `Metric`,
-  `Note`, `Clock`, `Keys`, `PDF` or `Files`. A `Chart` segment is added to any
-  non-chart card whose rows turn out to contain a time column, or any other
-  axis column with numeric columns beside it, and a `Raw`
-  segment appears on any card that actually fetches data.
+- The **controls row** — one control per visible parameter, on its own line
+  under the title, whenever the widget has at least one. See **Card parameters**.
+- The **view dropdown**. Its first entry is named for the card's own kind:
+  `Table`, `Chart`, `Markdown`, `HTML`, `Page`, `Metric`, `Note`, `Clock`,
+  `Feed` or `Keys`, or `Default` for a kind it has no name for. A `Chart` entry
+  is added to any non-chart card whose rows turn out to contain a time column,
+  or any other axis column with numeric columns beside it, a `Raw` entry
+  appears on any card that actually fetches data, and `Transposed` on table
+  cards. PDF and multi-file cards have no dropdown.
 - `⌕` **Filter rows** — table cards only. See **Tables**.
 - **Refresh** — or **Run**, on a widget that declares a run button. See
   **Running and refreshing**.
@@ -31,7 +32,7 @@ header.
 
 **Rename…**, **Maximize** (or **Restore**), **Export ▸** (CSV, JSON, Excel),
 and for tables **Columns ▸** and **Reset table**. It appears only on cards that
-fetch data, and never on a PDF card.
+fetch data and on a Markdown note, and never on a PDF card.
 
 ## Moving and resizing
 
@@ -66,7 +67,8 @@ today's name onto the card, so the card follows the backend again if the widget
 is renamed upstream. While a custom title is set, hovering it shows the
 widget's real name.
 
-The title is saved per card, but it is not carried in an `apps.json` export.
+The title is saved per card. A **Strict OpenBB Workspace** `apps.json` export
+does not carry it; the **BDOBB Workspace** format does.
 
 Cards with no `⋯` menu — framed pages, the keys panel, document viewers, PDFs
 and the built-ins — can still be renamed by double-clicking the title.

@@ -2,7 +2,8 @@
 
 Each dashboard has its own strip of tabs, directly above the grid. Left to
 right it holds the tabs themselves, then the add-tab `＋`, then a `grouping off`
-tag if that dashboard has grouping disabled, then `↻`, then the quick-add `+`.
+tag if that dashboard has grouping disabled, then the parameter-group chips,
+then `↻`, then the quick-add `+`.
 
 ![A dashboard's tab strip with four tabs](./shots/dashboard-tabs.png)
 

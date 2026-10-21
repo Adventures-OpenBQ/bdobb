@@ -25,14 +25,14 @@ with no explanation.
 ## A card shows raw JSON instead of what you expected
 
 An unfamiliar widget type falls through to the raw-JSON view rather than
-erroring. `live_grid`, news feeds, and the Highcharts and Vega-Lite chart
-variants all land here. That is the app telling you it fetched something fine
+erroring, and so does a Highcharts or Vega-Lite specification the app cannot
+translate into a chart. That is the app telling you it fetched something fine
 and does not know how to draw it.
 
 ## A framed page is blank
 
-Many sites refuse to be embedded. The card says so when it can prove it, and
-otherwise carries a footer reading *Blank? The site may refuse to be embedded.*
+Many sites refuse to be embedded. The card cannot tell, so it always carries a
+footer reading *Blank? The site may refuse to be embedded.*
 with an **Open externally ↗** button. See **HTML and iframe widgets**.
 
 ## A backend will not answer

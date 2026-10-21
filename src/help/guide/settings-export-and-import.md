@@ -22,7 +22,7 @@ A drop's result is one line in the rail. **Import…** in the dialog shows the r
 
 Two things, and only two:
 
-- **Your preferences** — every control on the Settings dialog's **General**, **Widget** and **Layout** tabs: theme, font size, the auto-refresh interval, the default widget ticker, *Match the symbol on the dashboard*, maximum decimal places, the minimize button, the widget-controls chevron, corner drag handles, the quick-add toolbar and the collapsed rail width.
+- **Your preferences** — every control on the Settings dialog's **General**, **Widget** and **Layout** tabs: theme, font size, the auto-refresh interval, the default widget ticker, *Match dashboard symbol*, maximum decimal places, the minimize button, the widget-controls chevron, corner drag handles, the quick-add toolbar and the collapsed rail width.
 - **The rail's folder tree** — your folders, their sibling order, where each dashboard sits, and which folders are collapsed. A machine with no folders of its own writes no folder tree at all, deliberately; see the notices below.
 
 Deliberately **not** exported:

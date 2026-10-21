@@ -37,7 +37,7 @@ At this version a badge row wider than its card — a long provider name beside 
 - **Double-click** adds the widget **once** and then takes you back to that tab, closing the library. The first click of the pair did the adding; the second only means "and take me there".
 - **Drag** a card onto a **dashboard row in the rail** to add it to *that* dashboard. Dropping on a different dashboard lands the card on its first tab and switches to it; the library stays open. Cards can only be dropped on rail rows — not on the grid and not on a tab.
 
-New cards land **below everything already on the tab**, whichever way they were added. A widget that takes a `symbol` starts from **Settings ▸ General ▸ Default widget ticker**, or from the most recently added sibling card's symbol when *Match the symbol on the dashboard* is on — see [[card-parameters|Card Parameters]].
+New cards land **below everything already on the tab**, whichever way they were added. A widget that takes a `symbol` starts from **Settings ▸ General ▸ Default widget ticker**, or from the most recently added sibling card's symbol when *Match dashboard symbol* is on — see [[card-parameters|Card Parameters]].
 
 ## How you know it worked
 

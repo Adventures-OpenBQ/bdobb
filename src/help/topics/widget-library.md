@@ -70,8 +70,8 @@ Below the badges is the widget's own description.
   tab you are looking at. The library stays open. Cards can only be dropped on
   rail rows — not on the grid and not on a tab.
 
-A single click is scheduled a quarter of a second later, so a double-click can
-cancel it. Escape inside that window cancels every pending add.
+A single click adds at once; the second click of a double-click adds nothing
+more, it only takes you there.
 
 ## How you know it worked
 
@@ -85,7 +85,8 @@ moving the rail's active-dashboard marker to the row you dropped on.
 
 Widgets of type `keys` and `settings` are never listed — those surfaces live
 in the Settings dialog, as **Provider API Keys** and whatever other sections a
-backend adds, and are not cards you add.
+backend adds, and are not cards you add. Nor is `local_table`: such a card is
+made by dropping a data file on the dashboard.
 
 If nothing is listed at all: *No widgets discovered. Add a backend in
 Connections to populate the library.* If your search and filters match nothing:

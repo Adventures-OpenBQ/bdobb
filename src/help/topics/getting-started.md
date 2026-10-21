@@ -8,7 +8,7 @@ Three things to do first.
 
 ## 1. Connect a backend
 
-Open the left rail, click **Connections**, then **Connect Backend**. A backend
+Open the left rail, click **Connections**, then **Connect backend**. A backend
 is any server that answers OpenBB Workspace's `widgets.json` contract; the app
 ships with one already listed, named `Local` at `http://localhost:6900`, which
 you will usually need to edit to point at wherever your own API actually runs.
@@ -26,7 +26,7 @@ when it tried and failed, and grey before it has tried at all.
 
 Press `⌘K`, or click **Add widget (⌘K)** in the rail. Everything every
 connected backend serves is listed here, searchable, with filters for
-**Category**, **Subcategory**, **Provider** and **Type**.
+**Backend**, **Category**, **Subcategory**, **Provider** and **Type**.
 
 ## 3. Put a widget on the grid
 
@@ -50,6 +50,9 @@ directory — on macOS that is
 - `backends.json` — your connections, including any credential you typed
 - `folders.json` — the rail's folder tree
 - `dashboards/<id>.json` — one file per dashboard
+- `workspace.json` and `workspaceSync.json` — your OpenBB Workspace
+  connections (never a password or token) and the links between synced
+  dashboards
 - `logs/bdobb.log` — the app log, plus up to five rotated generations
 
 Writes are atomic: the app writes a temporary file and renames it over the

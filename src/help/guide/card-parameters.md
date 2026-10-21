@@ -33,7 +33,7 @@ Each control shows its label beside it and carries the parameter's description a
 
 A new card starts from whatever defaults the widget declares. The one token the app resolves is `$currentDate`, which becomes today's date in your own time zone. A date control shows today but keeps storing the token until you edit it; the first edit replaces it with a literal date permanently, and re-picking today deliberately does not count as an edit. Suffixed forms like `$currentDate-7d` are not supported and are sent verbatim.
 
-**Settings ▸ General ▸ Default widget ticker** is used when you add a widget that takes a `symbol`. Directly under it, *Match the symbol on the dashboard to which you are adding the widget.* — when that is on it wins, and the new card copies the symbol from the most recently added sibling card on the same tab that has one, falling back to the default ticker only when there is none.
+**Settings ▸ General ▸ Default widget ticker** is used when you add a widget that takes a `symbol`. Directly under it, the **Match dashboard symbol** switch — when that is on it wins, and the new card copies the symbol from the most recently added sibling card on the same tab that has one, falling back to the default ticker only when there is none.
 
 If a required parameter is empty the card does not fetch at all, and says so: *Enter Commodity, Year, Month to load this widget.*
 

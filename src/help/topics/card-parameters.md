@@ -61,9 +61,9 @@ today deliberately does not count as an edit, so it will not burn the token.
 Suffixed forms like `$currentDate-7d` are not supported and are sent verbatim.
 
 **Settings ▸ General ▸ Default widget ticker** is used when you add a widget
-that takes a `symbol`. Directly under it is a checkbox reading *Match the
-symbol on the dashboard to which you are adding the widget.* — when that is on
-it wins, and the new card copies the symbol from the most recently added
+that takes a `symbol`. Directly under it is a switch, **Match dashboard
+symbol** (*Use the dashboard's symbol when adding a widget.*), off by default —
+when that is on it wins, and the new card copies the symbol from the most recently added
 sibling card on the same tab that has one, falling back to the default ticker
 only when there is none.
 

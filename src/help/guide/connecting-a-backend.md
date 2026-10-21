@@ -13,7 +13,7 @@ Open the rail and click **Connections**.
 
 ## Adding one
 
-**Connect Backend** opens the same form **Edit** does, in its own dialog stacked over the list — titled **Connect backend** or **Edit backend**:
+**Connect backend** opens the same form **Edit** does, in its own dialog stacked over the list — titled **Connect backend** or **Edit backend**:
 
 - **Name** — required, and what identifies the connection everywhere in the UI. Ids are generated internally; there is no id field.
 - **Endpoint URL** — required. The base the app appends `/widgets.json` to.

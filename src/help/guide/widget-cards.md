@@ -12,7 +12,7 @@ A card is one widget on the grid. Everything you can do to it lives in its heade
 ## The header, left to right
 
 - The **title**. This is also the drag handle.
-- `⌄` **Show widget controls** — only when **Settings ▸ Widget ▸ Collapse widget controls behind a chevron** is on (off by default). Everything after this point then hides behind it.
+- `⌄` **Show widget controls** — only when **Settings ▸ Widget ▸ Collapse widget controls** is on (off by default). Everything after this point then hides behind it.
 - The **controls row** — one control per visible parameter, on its own line directly under the title. It is there whenever the widget has at least one visible parameter. See [[card-parameters|Card Parameters]].
 - The **view dropdown**. Its first entry is named for the card's own kind — `Table`, `Chart`, `Markdown`, `HTML`, `Page`, `Metric`, `Note`, `Clock`, `Feed`, `Keys`, or `Default` for a kind it has no name for, such as the Markdown note — and choosing it clears any saved view. Then, when they apply: `Chart`, added to any non-chart card whose rows turn out to contain a time column, or any other axis column with numeric columns beside it; `Raw`, on any card that actually fetches data; and `Transposed`, on table cards. PDF and multi-file cards have no dropdown at all. A saved view the list no longer offers — a chart view whose rows lost their time column, say — is shown as an extra **disabled** entry, so the control never claims to be showing something it is not.
 - `⌕` **Filter rows** — table cards only. See [[tables|Tables]].
@@ -34,7 +34,7 @@ The in-app manual's "Widget cards" topic at this version says every built-in lac
 
 ## Rename
 
-Double-click the title, or choose **Rename…**. Either way you get the same field: focused, fully selected, **Enter** to save, **Escape** to cancel, clicking away saves, empty or unchanged does nothing. Typing the widget's own name back *removes* the override rather than freezing today's name onto the card, so the card follows the backend again if the widget is renamed upstream. While a custom title is set, hovering it shows the widget's real name. The title is saved per card but is not carried in an `apps.json` export.
+Double-click the title, or choose **Rename…**. Either way you get the same field: focused, fully selected, **Enter** to save, **Escape** to cancel, clicking away saves, empty or unchanged does nothing. Typing the widget's own name back *removes* the override rather than freezing today's name onto the card, so the card follows the backend again if the widget is renamed upstream. While a custom title is set, hovering it shows the widget's real name. The title is saved per card; a **Strict OpenBB Workspace** `apps.json` export does not carry it, and the **BDOBB Workspace** format does.
 
 ## Maximize
 

@@ -45,6 +45,9 @@ dashboards both called `X copy`.
 - A dashboard: *Delete dashboard "Markets"?*
 - A folder: *Delete folder "Research"? Its dashboards move up one level.*
 
+A dashboard synced with an OpenBB Workspace server asks
+*Delete "Markets" here and on <server>?* instead — see **Settings and logs**.
+
 The folder wording is literal — deleting a folder never deletes what is inside
 it. Everything one level down is re-parented to wherever the folder was.
 

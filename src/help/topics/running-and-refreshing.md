@@ -31,8 +31,8 @@ Cards on tabs you are not looking at are not mounted, and are not refreshed.
 A widget's `refetchInterval` may also be a five-field cron expression; such a card refetches on each minute boundary the expression matches, and your app-wide setting does not apply to it.
 
 
-**Settings ▸ General ▸ Auto-refresh every** offers **Off**, **1 minute**,
-**5 minutes**, **15 minutes**, **30 minutes** and **60 minutes**. It is **Off**
+**Settings ▸ General ▸ Auto-refresh** offers **Off**, **Every minute**,
+**Every 5 minutes**, **Every 15 minutes**, **Every 30 minutes** and **Every hour**. It is **Off**
 by default.
 
 A widget may declare its own `refetchInterval`, in milliseconds. When it is a

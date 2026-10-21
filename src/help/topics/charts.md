@@ -3,8 +3,8 @@
 Charts are drawn with Plotly. There are two ways to get one.
 
 A widget whose declared type is `chart` is always a chart. Any other card whose
-rows turn out to carry a time column also gains a **Chart** segment in its view
-toggle, beside **Table** and **Raw** — decided by the data that actually
+rows turn out to carry a time column also gains a **Chart** entry in its view
+dropdown, beside **Table** and **Raw** — decided by the data that actually
 arrived, so it can appear only after the first load.
 
 ![A price chart drawn from a table payload](./shots/charts.png)
@@ -41,8 +41,21 @@ x-axis.
 
 If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick and bar traces. A ready-made
+The bundled Plotly draws scatter, candlestick, bar and heatmap traces. A ready-made
 figure asking for anything else says so and names the trace type it wanted.
+
+## Highcharts, Vega-Lite and TradingView
+
+A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or
+Vega-Lite specification instead. The app translates the common cases — line,
+area, bar, column and scatter — into the same bundled Plotly, so they draw as
+ordinary chart cards. A specification the translation does not cover shows as
+raw JSON.
+
+An `advanced_charting` widget is drawn with TradingView Lightweight Charts
+rather than Plotly: daily candles for the widget's default symbol, with volume
+bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
+The mouse wheel scrolls the card rather than zooming the chart.
 
 ## Zoom, pan and reset
 

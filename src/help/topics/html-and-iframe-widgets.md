@@ -14,34 +14,15 @@ not `http` or `https` reads
 
 ## Why some sites refuse to be framed
 
-Before framing an address, the app asks the site out of band whether it permits
-it. The frame is shown while that is in flight, not a spinner.
-
-Only a definite refusal replaces the frame. When one comes back you get a panel
-saying **This site refuses to be embedded.**, the site's **hostname** — never
-the full address, which a crafted URL could use to misrepresent where it
-goes — the exact header that forbade it, and an **Open externally ↗** button.
-
-The headers you will see named are `X-Frame-Options: DENY`,
-`X-Frame-Options: SAMEORIGIN` (which permits only the site framing itself,
-which this app never is), and `Content-Security-Policy: frame-ancestors …`.
-
-When the check could not get an answer, the frame is still shown — a failed
-check is never treated as a refusal — and a permanent footer sits under it
-reading **Blank? The site may refuse to be embedded.**, or
-**Not checked:** followed by a reason, beside the same **Open externally ↗**
-button. That
-footer is there because a cross-origin frame a site refused to serve looks
-exactly like one that merely rendered nothing.
+Many sites send `X-Frame-Options` or `Content-Security-Policy: frame-ancestors`
+and will not be shown inside another app. A cross-origin frame a site refused
+to serve looks exactly like one that merely rendered nothing, and the card
+cannot tell the two apart. So every iframe card carries a permanent footer
+under the frame reading **Blank? The site may refuse to be embedded.**, beside
+an **Open externally ↗** button. At this version the app makes no check of its
+own before framing an address.
 
 **Open externally ↗** opens the address in your default browser.
-
-Addresses that are loopback, link-local or private-range IP literals are not
-checked — no network call is made, on the first hop or on any redirect — and
-the page is still framed, with the footer reading **Not checked:** *… is a
-private or local address*. A hostname that *resolves* to a private address is
-not caught either — this raises the bar against the obvious cases; it is not a
-security boundary.
 
 ## Talking to the app from inside the frame
 

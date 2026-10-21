@@ -65,7 +65,7 @@ A `columnColor` column is coloured by its `colorRules`, like any other column; w
 
 A `hoverCard` column holds an object in each cell. The cell shows the one field the column names. Pointing at the cell, or focusing it, opens a small card filled in from the column's markdown template. When the column is also a click target, a click sends the value the cell shows.
 
-Sorting, filters, column order, hidden columns, widths and pins are all saved per card. None of it is included in an `apps.json` export, and none of it is saved from a viewer window.
+Sorting, filters, column order, hidden columns, widths and pins are all saved per card. None of it is included in a **Strict OpenBB Workspace** `apps.json` export — the **BDOBB Workspace** format carries it, see [[import-and-export|Import and Export]] — and none of it is saved from a viewer window.
 
 ---
 *Source: BDOBB v3.3.0 in-app manual, "Tables"; `BDOBB` `TableRenderer`, `columnRender`, `SparklineCell` and `dotFont` at `v3.3.0`; `BDOBB` `src/lib/tableColumns.ts` and `src/components/renderers/HoverCardCell.tsx` at `v3.0.5`; `BDOBB` `src/lib/sparkline.ts` at `v3.2.2`.*

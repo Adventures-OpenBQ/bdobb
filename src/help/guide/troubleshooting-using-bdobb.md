@@ -62,8 +62,8 @@ It no longer does. Discovery gives each backend's `widgets.json` ten seconds end
 **The widget count says `275, 12 skipped`.**
 The number counts manifest entries validation found a problem with, not entries dropped: an entry that is not a JSON object is dropped, while an entry with malformed parameters is kept with those parameters removed — all of them if its `params` is not a list. Set **Validate widgets** to No to take the payload as it comes, if you want to see them anyway.
 
-**A widget arrives with no parameter controls at all.**
-Some OpenBB backends publish a widget's parameters in sections, as a list of lists rather than one flat list. At this version each section is read as one malformed parameter and dropped, so the widget is listed and added as usual but has no controls. With **Validate widgets** on, the backend's widget count also reports it as *skipped*.
+**A widget's parameters are not in sections.**
+Some OpenBB backends publish a widget's parameters in sections, as a list of lists rather than one flat list. The app reads every section's controls but has no sections of its own, so they appear as one flat row.
 
 ## The rail
 
@@ -95,8 +95,6 @@ There is no drop veil in a viewer window, and no drop is taken while a dialog or
 **An `apps.json` import failed.**
 *File is … MB; the limit is 10 MB*, *File holds 501 dashboards; the limit is 500*, or *not an apps.json file*. See [[importing-dashboards|Importing Dashboards]].
 
-**An imported dashboard's cards do not move together, and no parameter says *(shared)*.**
-At this version the import reads a group's members only from the `widgetIds` list on the group. A file that declares membership on each card instead, as OpenBB Workspace writes it, arrives with no groups, and nothing says so. A file exported from BDOBB itself carries the list. See [[importing-dashboards|Importing Dashboards]].
 
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Troubleshooting"; the Gotchas section of `docs/specs/v3.0.0-features.md`; `BDOBB` `widgetTypes`, `widgetsJson`, `appsJson`, `bootstrap`, `jsonStore`, `dataClient`, `src/App.tsx`, `src/components/LeftRail.tsx` and `src/styles.css` at `v3.0.1`; `src/lib/widgetTypes.ts` at `v3.3.0`; `BDOBB` `src/components/renderers/MarkdownRenderer.tsx` at `v3.0.5`; `BDOBB` `src/hooks/useReconnectingSocket.ts` at `v3.2.2`; `BDOBB` `src/components/renderers/OmniRenderer.tsx` at `v3.3.2`.*

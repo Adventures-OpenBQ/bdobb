@@ -23,6 +23,10 @@ validation was on and some entries in `widgets.json` were malformed, or
 Every card offers **Edit** and **Remove**. **Remove** asks first: a
 confirmation names the backend, and only its **Remove** button deletes it.
 
+Above the backends, a **Workspace** section lists OpenBB Workspace accounts
+with **Add Workspace** — see **Settings and logs**. **Refresh**, beside the
+*Your backends* heading, re-runs discovery.
+
 With nothing configured you get *No backends configured. Connect a backend to
 populate your widget library.*
 
@@ -34,7 +38,7 @@ Choose **Apps** in the left rail to search the available catalog, then **Open** 
 
 ## Adding and editing
 
-**Connect Backend** opens the same form **Edit** does, in its own dialog
+**Connect backend** opens the same form **Edit** does, in its own dialog
 stacked over the list — titled **Connect backend** or **Edit backend**:
 
 - **Name** — required, and what identifies the connection everywhere in the

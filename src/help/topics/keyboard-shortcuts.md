@@ -22,7 +22,7 @@ a text area, a dropdown or anything editable — and while a dialog is open.
 
 - `⌥0` — Go back to the dashboard and tab the library was opened from, and
   close it.
-- `Escape` — Close the library, cancelling any add still pending.
+- `Escape` — Close the library.
 
 ## In a PDF card
 
@@ -47,9 +47,8 @@ One press does exactly one thing. In order:
    rail's Help menu. A maximized card underneath stays maximized and restores
    on the next press.
 3. **An open dialog closes** — Settings, Connections, Quick Help or the
-   Reference Manual. With one dialog over another (Quick Help opened with
-   `⌘?` over Settings), only the one on top closes; the one underneath stays
-   open with its changes. A menu
+   Reference Manual. With one dialog over another, only the one on top
+   closes; the one underneath stays open with its changes. A menu
    nested *inside* one of them still wins, by rule 2. Escape on Settings is
    **Cancel**: its unsaved changes, an uncommitted **Default widget ticker**
    included, are discarded.

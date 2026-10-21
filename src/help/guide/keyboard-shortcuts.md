@@ -54,7 +54,7 @@ One press does exactly one thing. In order:
 
 1. **A rename in progress cancels.** Nothing else sees the press.
 2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu, a column menu, the rail's right-click menu, the Provider-keys row menu, the rail's Help menu. A maximized card underneath stays maximized and restores on the next press.
-3. **An open dialog closes** — Settings, Connections, Quick Help or the Reference Manual. With one dialog over another (Quick Help opened with `⌘?` over Settings), only the one on top closes; the one underneath stays open with its changes. A menu nested *inside* one of them still wins, by rule 2. Escape on Settings is **Cancel**: its unsaved changes, an uncommitted **Default widget ticker** included, are discarded. Escape closes a help dialog even with a search typed into it: one press does one thing, and that thing does not depend on where the caret is. Clearing the search is the `✕` beside the field.
+3. **An open dialog closes** — Settings, Connections, Quick Help or the Reference Manual. With one dialog over another, only the one on top closes; the one underneath stays open with its changes. A menu nested *inside* one of them still wins, by rule 2. Escape on Settings is **Cancel**: its unsaved changes, an uncommitted **Default widget ticker** included, are discarded. Escape closes a help dialog even with a search typed into it: one press does one thing, and that thing does not depend on where the caret is. Clearing the search is the `✕` beside the field.
 4. **A maximized card restores.**
 5. Otherwise, nothing.
 
