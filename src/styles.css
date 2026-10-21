@@ -569,10 +569,15 @@ body {
    above a bottom band, and the grid's 10px framing lives inside it. A finger
    pans it and pinches as before (touch-action stays auto); contain keeps a
    scroll that reaches the end from chaining to the page, which body's
-   overscroll-behavior already stops rubber-banding. */
+   overscroll-behavior already stops rubber-banding. A zero basis, not auto:
+   with auto the basis is the whole grid's height, and flex shrinks every item
+   in proportion to its basis -- so a tall tab squeezed the bands too, clipping
+   a pinned clock's labels and half the news strip. At zero the region takes
+   only what the bands leave, down to a fifth of the area: past that the
+   bands give way instead, so an overfull edge never hides the grid. */
 .dashboard-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 1 1 0;
+  min-height: 20%;
   overflow: auto;
   overscroll-behavior: contain;
 }
