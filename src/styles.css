@@ -134,6 +134,12 @@ button, input, select, textarea { font: inherit; }
    none that did. `background` is left alone so each site keeps the fill it
    already sets (transparent, a token, or the accent for a pressed toggle). */
 button { -webkit-appearance: none; appearance: none; color: inherit; }
+/* `color: inherit` above also out-ranks the browser's own greyed :disabled
+   label, so without this a disabled button (an empty Rita Send, Clear
+   selection with nothing selected) reads as clickable. :where keeps it at the
+   reset's specificity: any component that colours its own buttons still wins,
+   exactly as it did over the browser default before the reset. */
+button:where(:disabled) { color: var(--text-muted); }
 
 body {
   margin: 0;
