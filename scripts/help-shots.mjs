@@ -106,6 +106,8 @@ const PENDING_MARKER = /^\[shot-pending\]:[ \t]*\S+[ \t]*$/m;
  * timestamps render as a fixed "23h ago" rather than drifting per run. */
 const FIXED_TIME = new Date("2026-08-26T13:30:00Z");
 const SEED = 20260829;
+/** The market's zone: FIXED_TIME then reads 09:30, the session open the period shots show. */
+const TIMEZONE = "America/New_York";
 const VIEWPORT = { width: 1280, height: 800 };
 
 /** A blinking caret and a scrollbar that appears on hover are the two things
@@ -334,7 +336,12 @@ const SHOTS = [
       }]),
     }),
     prepare: async (page) => {
-      await page.getByRole("columnheader", { name: /sector/i }).click({ button: "right" });
+      // The pointer, not locator.click(): Sector runs past the card's right
+      // edge, and click() first scrolls its target fully into view -- which
+      // slides Company under the pinned Ticker. A user right-clicks the part
+      // they can see, and the table does not move.
+      const box = await page.getByRole("columnheader", { name: /sector/i }).boundingBox();
+      await page.mouse.click(box.x + 10, box.y + box.height / 2, { button: "right" });
       await page.getByRole("menu").waitFor();
     },
     // The grid, not the page: the card is 20 rows tall on an 800px viewport,
@@ -668,6 +675,9 @@ async function shoot(browser, shot, theme) {
     // The app reads settings.theme, but any third-party CSS that consults
     // prefers-color-scheme must not disagree with it.
     colorScheme: theme,
+    // Dates and clock faces render in the browser's zone, which is otherwise
+    // the host's -- so a shot taken on another machine would move.
+    timezoneId: TIMEZONE,
   });
   const page = await context.newPage();
 
