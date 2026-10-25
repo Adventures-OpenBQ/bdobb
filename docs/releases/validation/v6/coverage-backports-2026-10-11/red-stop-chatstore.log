@@ -1,0 +1,33 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/stores/chatStore.test.ts (64 tests | 1 failed | 63 skipped) 60ms
+   × chatStore.send > Stop while an MCP tool call is running aborts that call's request 59ms
+     → expected undefined to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/stores/chatStore.test.ts > chatStore.send > Stop while an MCP tool call is running aborts that call's request
+AssertionError: expected undefined to be false // Object.is equality
+
+- Expected: 
+false
+
++ Received: 
+undefined
+
+ ❯ src/stores/chatStore.test.ts:352:27
+    350|     const turn = useChatStore.getState().send("quote AAPL");
+    351|     await vi.waitFor(() => expect(callMcpTool).toHaveBeenCalled());
+    352|     expect(seen?.aborted).toBe(false);
+       |                           ^
+    353|     useChatStore.getState().abort();
+    354|     await turn;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 63 skipped (64)
+   Start at  12:48:10
+   Duration  1.82s (transform 588ms, setup 119ms, collect 799ms, tests 60ms, environment 350ms, prepare 51ms)
+

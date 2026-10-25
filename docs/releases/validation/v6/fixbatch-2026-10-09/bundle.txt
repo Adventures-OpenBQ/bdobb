@@ -1,0 +1,13 @@
+src-tauri/target/release/bundle/macos/BDOBB Clean v6.app
+com.artcashin.bdobb.clean.v6
+6.0.0
+main binary sha256:
+97a4a2545dbd3fb1f6b79296c50f73d4a865986b15f9c4a86f8fa5bb62679137  src-tauri/target/release/bundle/macos/BDOBB Clean v6.app/Contents/MacOS/bdobb2
+bundle tree sha256 (sha256 of the sorted per-file sha256 list, paths relative to the .app):
+47f584813340d94f7b0a99a6436fb6f4af7abb141297d7b0220d12e320ed190e  -
+Identifier=bdobb2-bbbe1291534b8f03
+Signature=adhoc
+TeamIdentifier=not set
+batch markers in dist/assets:
+index-B-LRXQdc.js
+HelpDialog-BLbQf8PC.js

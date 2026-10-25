@@ -1,0 +1,4 @@
+Section,Line item,FY2025 · Value
+statement/income/1.0.0/section/Expenses,statement/income/1.0.0/line/cost_of_revenue,60
+statement/income/1.0.0/section/Income,statement/income/1.0.0/line/revenue,100
+statement/income/1.0.0/section/Profit,statement/income/1.0.0/line/calculated_gross_profit,40

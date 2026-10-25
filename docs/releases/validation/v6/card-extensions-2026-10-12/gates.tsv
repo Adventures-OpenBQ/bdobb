@@ -1,0 +1,8 @@
+typecheck|exit=0|dur=43s|load=4.09, 4.79, 3.75|cmd=pnpm typecheck
+lint|exit=0|dur=38s|load=3.56, 4.57, 3.73|cmd=pnpm lint
+unit|exit=0|dur=507s|load=5.09, 4.85, 3.86|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+build|exit=0|dur=70s|load=4.65, 4.75, 4.22|cmd=pnpm build
+scrub|exit=0|dur=5s|load=6.18, 5.12, 4.39|cmd=pnpm scrub
+e2e-sync|exit=0|dur=207s|load=6.49, 5.20, 4.42|cmd=env BDOBB_BROWSER_PORT=4621 BDOBB_MOCK_PORT=4622 pnpm exec playwright test -c playwright.scratch.config.ts --reporter=list e2e/dashboard-sync.spec.ts e2e/dashboards.spec.ts e2e/workspaces.spec.ts
+diff-check|exit=0|dur=0s|load=10.49, 8.13, 5.77|cmd=git diff --check e0c0a0c HEAD -- . :!docs/releases/validation/**/*.log
+DONE

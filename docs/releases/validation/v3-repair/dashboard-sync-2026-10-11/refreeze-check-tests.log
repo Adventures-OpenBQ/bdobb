@@ -1,0 +1,11 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/header-check.test.mjs (4 tests) 324ms
+ ✓ scripts/scrub-check.test.mjs (8 tests) 794ms
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  07:37:51
+   Duration  1.34s (transform 30ms, setup 231ms, collect 12ms, tests 1.12s, environment 0ms, prepare 89ms)
+

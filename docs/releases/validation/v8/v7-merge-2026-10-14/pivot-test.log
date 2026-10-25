@@ -1,0 +1,263 @@
+
+> bdobb@8.0.0 pivot:test <worktree>
+> cargo +1.98.1 test --locked --manifest-path crates/pivot-core/Cargo.toml && cargo +1.98.1 test --locked --manifest-path crates/pivot-wasm/Cargo.toml && vitest run src/lib/tableExecution/rust/wireCodec.test.ts
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running unittests src/lib.rs (crates/pivot-core/target/debug/deps/pivot_core-d23be9361416db20)
+
+running 4 tests
+test formulas::binding::token_tests::canonical_ambiguity_tokens_and_unrepresentable_name_fallback ... ok
+test scopes::lookup_work_tests::boolean_filter_coerces_the_cell_before_comparing_the_filter_type ... ok
+test statement::presentation::tests::json_len_matches_json_stringify_bytes ... ok
+test scopes::lookup_work_tests::scope_errors_build_one_index_and_lookup_once_per_row ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/analytical.rs (crates/pivot-core/target/debug/deps/analytical-67e4ddb610a68df8)
+
+running 16 tests
+test diagnostic_cut_inside_surrogate_pair_refuses ... ok
+test diagnostic_compaction_counts_utf16_units ... ok
+test forged_ordered_recipe_evidence_refuses_the_view ... ok
+test aggregate_total_and_group_errors_preserve_upstream_dependencies ... ok
+test aggregate_error_dependencies_follow_only_the_visited_if_branch ... ok
+test manually_constructed_unknown_saved_version_refuses_calculation ... ok
+test aggregate_upstream_missing_and_empty_dependency_lists_preserve_field_evidence ... ok
+test frozen_runtime_group_apply_filters_native_calculation_before_selection ... ok
+test result_filter_error_preserves_source_order_in_compact_preview ... ok
+test count_producer_strings_normalize_only_with_operator_metadata ... ok
+test configured_measure_with_unavailable_source_is_a_binding_error ... ok
+test incoming_invalid_count_error_names_only_affected_record ... ok
+test aggregate_provenance_traces_only_visited_source_dependencies_in_order ... ok
+test aggregate_columns_evaluate_each_exact_scope_once ... ok
+test frozen_analytical_columns_formats_completeness ... ok
+test frozen_analytical_cells_and_recalculated_totals ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.01s
+
+     Running tests/formulas.rs (crates/pivot-core/target/debug/deps/formulas-b7082c32275bf87c)
+
+running 19 tests
+test empty_calls_report_position_after_consuming_closing_parenthesis ... ok
+test escaped_utf16_surrogates_refuse_lone_units_and_preserve_pairs ... ok
+test authoring_function_whitelist_is_uppercase_only ... ok
+test authoring_names_ambiguity_and_scoped_binding ... ok
+test committed_bindings_and_error_distinctions ... ok
+test authoring_retains_committed_ids_across_edits_and_distinguishes_scopes ... ok
+test measure_labels_use_baseline_operator_names_and_duplicate_ordinals ... ok
+test lazy_if_and_actual_dependencies ... ok
+test cycles_and_transitive_blocking ... ok
+test graph_cross_kind_cycles_scope_refusal_missing_and_ambiguous_ids ... ok
+test unicode_identifier_and_ecmascript_whitespace_boundaries ... ok
+test preserves_metadata_deduplicates_and_normalizes_only_count ... ok
+test source_dependency_evidence_preserves_visit_order_for_provenance ... ok
+test ambiguous_measure_suggestions_quote_canonical_tokens ... ok
+test source_blanks_input_errors_counts_and_output_collision ... ok
+test ast_node_byte_depth_and_arity_boundaries ... ok
+test parser_limits_precedence_and_unsafe_syntax ... ok
+test authoring_refuses_serialized_ast_budget_after_explicit_binding ... ok
+test frozen_source_values_errors_and_authoring_refusal_projection ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/legacy_pivot.rs (crates/pivot-core/target/debug/deps/legacy_pivot-7c15c4db04ce138f)
+
+running 20 tests
+test decimal_midpoint_preserves_member_identity_and_distinct_count ... ok
+test host_compatibility_refusal_and_malformed_permutations_are_explicit ... ok
+test accepts_500_columns_refuses_501_and_pivot_off ... ok
+test number_identity_uses_javascript_exponent_thresholds ... ok
+test numeric_large_axis_sort_and_nonfinite_ties ... ok
+test opaque_string_coercion_refuses_only_when_consumed ... ok
+test finite_number_keys_match_javascript_shortest_decimal ... ok
+test hover_display_retains_primitive_cells_and_reads_array_own_indices ... ok
+test split_axis_exact_500_boundary ... ok
+test non_total_64_member_axis_matches_current_host_permutation ... ok
+test date_buckets_completeness_and_split_metadata ... ok
+test cached_order_avoids_repeated_host_crossings_without_changing_ties ... ok
+test unordered_primary_stops_secondary_leaf_sort ... ok
+test frozen_legacy_oracle_projection ... ok
+test typed_paths_stable_ties_folds_leaf_sort_and_missing_last ... ok
+test nested_axes_category_sort_unset_measures_and_object_display ... ok
+test aggregation_blanks_dates_and_distinct_normalization ... ok
+test split_column_limit_empty_totals_and_date_tie_last ... ok
+test overflow_group_multisort_and_non_total_first_last_use_host_order ... ok
+test conservative_domains_use_one_host_batch_and_total_keys_stay_local ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.60s
+
+     Running tests/ordering.rs (crates/pivot-core/target/debug/deps/ordering-be8c6e006ff83f95)
+
+running 2 tests
+test sorting_moves_payload_and_no_keys_do_not_clone ... ok
+test scalar_and_raw_callbacks_have_independent_success_only_caches_with_combined_bound ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/provider_contract.rs (crates/pivot-core/target/debug/deps/provider_contract-5f2d7b36e4fdf38e)
+
+running 4 tests
+test unavailable_counts_are_explicit_and_never_exact_zero ... ok
+test statement_needs_sum_but_not_unused_last_aggregation ... ok
+test unsupported_function_fiscal_version_and_selection_refuse_before_apply ... ok
+test complete_scope_schema_totals_and_reversed_windows_match_frozen_baseline ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/resources.rs (crates/pivot-core/target/debug/deps/resources-05da3d1a60db5197)
+
+running 12 tests
+test exported_batch_accounts_for_completeness_diagnostic_envelope ... ok
+test model_and_transient_reservation_refuse_before_ordering_and_keep_old_result ... ok
+test pull_backpressure_limit_is_recoverable_and_cancel_releases_slot ... ok
+test resource_usage_tracks_transfer_release_and_disposal ... ok
+test row_block_and_export_include_metadata_and_transfer_slots_release ... ok
+test failing_later_export_batch_does_not_advance_sequence ... ok
+test hidden_source_and_compound_metadata_count_toward_state ... ok
+test rows_refuse_reacquisition_and_keep_old_publication ... ok
+test reserved_capacity_and_nonascii_compound_values_cannot_hide_behind_encoded_rows ... ok
+test unsupported_state_profile_refuses_before_preparation_without_disabling_other_caps ... ok
+test output_width_refusal_keeps_old_schema ... ok
+test retained_cache_counts_full_model_pools_instead_of_only_display_rows ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/scopes.rs (crates/pivot-core/target/debug/deps/scopes-c442628c20f55529)
+
+running 40 tests
+test authoritative_stub_and_independent_quarter ... ok
+test compound_fy_recipe_array_refuses_direct_typed_context ... ok
+test compound_fy_recipe_record_refuses_direct_typed_context ... ok
+test fiscal_authority_period_error_boundaries ... ok
+test authoring_refuses_absent_ordered_recipe_source ... ok
+test annual_quarter_scalars_use_strict_equality_and_explicit_compound_boundary ... ok
+test fiscal_metadata_rejects_unsupported_extra_graph_values ... ok
+test category_failed_source_keeps_blocked_dependency ... ok
+test authoring_recipe_preserves_raw_reachable_ast_order ... ok
+test empty_scope_and_page_do_not_expand ... ok
+test authoritative_evidence_refuses_month_approximation ... ok
+test domain_typed_paging_and_unsupported_omissions ... ok
+test group_resolution_typed_collisions_literal_ambiguity_and_budget ... ok
+test ordered_recipe_json_uses_integer_own_key_order ... ok
+test observed_authoring_symbols_retain_typed_members ... ok
+test indexed_scope_errors_keep_first_universe_row_and_absent_ids ... ok
+test per_company_fiscal_and_no_december_default ... ok
+test quarterly_metadata_still_requires_numeric_integer_one_through_four ... ok
+test original_recipe_graph_counts_missing_and_array_length ... ok
+test recipe_preserves_raw_binding_property_order ... ok
+test recipe_source_semantics_cannot_be_forged ... ok
+test frozen_runtime_domain_and_matches ... ok
+test retained_slices_union_company_and_fields ... ok
+test runtime_filter_survives_pivot_disabled ... ok
+test runtime_order_is_js_object_entries_and_rejects_duplicates ... ok
+test runtime_group_unmatched_and_empty_authored_diagnostics ... ok
+test runtime_validation_refuses_before_calculation ... ok
+test scope_diagnostics_keep_constraint_insertion_order ... ok
+test scopes_replace_page_retain_context_and_distinguish_errors ... ok
+test frozen_member_refusal_messages_and_context ... ok
+test source_search_uses_baseline_raw_cell_while_category_uses_declared_display ... ok
+test source_numeric_bounds_use_js_hex_and_singleton_array ... ok
+test original_recipe_graph_exact_node_and_depth_boundaries ... ok
+test fiscal_recipe_preserves_host_collation_ties ... ok
+test baseline_structured_clone_normalizes_null_prototype_bounds ... ok
+test annual_quarter_evidence_survives_parser_recipe_and_overlap ... ok
+test recipe_comparison_uses_default_collation_separate_from_pivot ... ok
+test runtime_preview_budget_preserves_early_entries ... ok
+test frozen_fiscal_group_keys_and_alignment_warning ... ok
+test numeric_source_filter_coercion_matches_actual_baseline ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.16s
+
+     Running tests/session.rs (crates/pivot-core/target/debug/deps/session-edaa9b7963eb8c77)
+
+running 29 tests
+test duplicate_scoped_binding_refuses_at_authoring_boundary ... ok
+test known_ast_missing_formula_reference_preserves_independent_values ... ok
+test authoring_and_preview_use_candidate_context_instead_of_active_runtime_warnings ... ok
+test legacy_count_leaf_counts_the_row_not_its_value ... ok
+test legacy_equal_values_keep_ordinal_identity_and_metadata ... ok
+test native_authoring_domains_binding_and_inspection_match_frozen_trace ... ok
+test group_domain_obeys_encoded_preview_budget_and_progresses ... ok
+test ordinary_sort_requires_declared_column_even_when_row_values_retain_it ... ok
+test acquired_freshness_diagnostics_survive_registration_and_publication ... ok
+test reversed_bounded_blocks_preserve_frozen_rows_and_counts ... ok
+test failed_candidate_preserves_active_schema_and_refuses_failed_revision ... ok
+test native_inspection_rejects_unrelated_optional_selectors ... ok
+test host_ordering_failure_leaves_published_revision_and_schema_usable ... ok
+test all_matching_chart_and_export_share_selection_but_totals_keep_source_scope ... ok
+test review_round1::witness_keeps_safe_missing_binding_as_successful_unknown ... ok
+test native_request_validation_rejects_empty_ids_and_unsafe_coordinates ... ok
+test review_round1::witness_propagates_host_failure_without_guessing_diagnostic_codes ... ok
+test stale_apply_and_mismatched_registration_cannot_replace_active_revision ... ok
+test witness_and_visible_selection_enforce_existing_identity_budget ... ok
+test transfers_enforce_ceiling_and_cancel_releases_slot ... ok
+test witness_refuses_transformed_ancestry_and_proves_ordinary_absence ... ok
+test review_round1::bounded_rows_and_identity_summary_copy_only_requested_payloads ... ok
+test admission_export_and_cache_limits_refuse_without_corrupting_publication ... ok
+test review_round1::tiny_export_budget_never_copies_all_payloads_before_refusal ... ok
+test review_round1::bounded_export_and_linked_pulls_copy_only_each_batch ... ok
+test pull_transfers_reject_out_of_order_and_disposal_cannot_be_reused ... ok
+test filtered_split_retains_unfiltered_chart_binding_columns ... ok
+test scalar_aggregate_and_raw_sort_order_failures_refuse_atomic_candidates ... ok
+test oracle::all_frozen_native_session_consumers ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.00s
+
+     Running tests/statement.rs (crates/pivot-core/target/debug/deps/statement-f8a64221319bdd55)
+
+running 8 tests
+test schema_dispatch_cannot_decode_invalid_statement_as_table ... ok
+test optional_lines_blank_and_required_lines_fail_without_facts ... ok
+test stock_negative_zero_remains_a_valid_explicit_wire_value ... ok
+test statement_presentation_follows_overrides_and_matches_typescript ... ok
+test stock_and_flow_recalculate_over_multiple_authoritative_periods ... ok
+test frozen_statement_columns_scoped_formats_and_completeness ... ok
+test frozen_statement_declared_derived_missing_and_policy_cells ... ok
+test line_policy_matches_actual_typescript_for_coverage_endpoints_and_context ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.19s
+
+     Running tests/wire.rs (crates/pivot-core/target/debug/deps/wire-e934838eda404664)
+
+running 9 tests
+test unit_tags_reject_any_content_including_null_in_both_field_orders ... ok
+test tagged_nonfinite_values_survive_transport_but_refuse_arithmetic ... ok
+test malformed_values_and_unknown_versions_refuse ... ok
+test structural_validation_checks_layout_ids_arity_and_nonfinite_literals ... ok
+test missing_null_bigint_records_and_array_positions_round_trip ... ok
+test recipe_equivalence_normalizes_zero_sign_but_keeps_typed_literal_and_refuses_forgery ... ok
+test ast_text_limit_counts_cumulative_utf8_literal_reference_and_member_strings ... ok
+test saved_legacy_definition_and_source_metadata_preserve_omission ... ok
+test ast_selector_arrays_preserve_the_baseline_1024_entry_limit ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests pivot_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (crates/pivot-wasm/target/debug/deps/pivot_wasm-e132f58ecf38785f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pivot_wasm
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/lib/tableExecution/rust/wireCodec.test.ts (17 tests) 4ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  12:12:35
+   Duration  1.48s (transform 278ms, setup 177ms, collect 354ms, tests 4ms, environment 355ms, prepare 139ms)
+

@@ -1,0 +1,12 @@
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/table-toolkit.spec.ts:27:1 › columnsDefs reach the browser: header names, a hidden column, formatting and colours (1.1s)
+  ✓  2 [chromium] › e2e/table-toolkit.spec.ts:60:1 › a pinned column stays put while the rest of the table scrolls sideways (819ms)
+  ✓  3 [chromium] › e2e/table-toolkit.spec.ts:104:1 › the filter row narrows the rows and keeps the count honest (1.1s)
+  ✓  4 [chromium] › e2e/table-toolkit.spec.ts:168:1 › a sort and a filter survive a reload (1.7s)
+  ✓  5 [chromium] › e2e/table-toolkit.spec.ts:213:1 › Columns hides a column and Reset table puts everything back (1.0s)
+  ✓  6 [chromium] › e2e/table-toolkit.spec.ts:242:1 › a widget table's border-collapse and cell borders are unchanged by the switch (813ms)
+  ✓  7 [chromium] › e2e/table-toolkit.spec.ts:295:1 › a column pinned from the header menu survives a reload, and Reset table unpins it (1.7s)
+
+  7 passed (10.3s)

@@ -1,0 +1,24 @@
+typecheck start 10:18:46 load: 19.39 24.42 30.77
+typecheck exit 0 duration 13s
+lint start 10:18:59 load: 20.74 24.48 30.68
+lint exit 0 duration 11s
+scrub start 10:19:10 load: 19.94 24.19 30.50
+scrub exit 0 duration 2s
+unit start 10:19:21 load: 18.25 23.68 30.25
+unit exit 0 duration 205s
+e2e start 10:22:50 load: 41.67 30.88 31.69
+e2e exit 0 duration 564s
+live-all start 10:32:37 load: 125.44 80.82 55.03
+live-all exit 1 duration 214s
+live-all start 10:42:38 load: 160.67 118.41 85.37
+live-all exit 1 duration 196s
+live-table-model start 10:45:54 load: 86.23 104.90 86.84
+live-table-model exit 1 duration 42s
+typecheck-final start 10:46:55 load: 44.72 90.05 82.54
+typecheck-final exit 0 duration 12s
+lint-final start 10:47:07 load: 40.25 87.60 81.76
+lint-final exit 0 duration 9s
+unit-final start 10:47:16 load: 36.58 85.25 81.00
+unit-final exit 0 duration 188s
+scrub-final start 10:50:46 load: 21.79 52.75 67.88
+scrub-final exit 0 duration 2s

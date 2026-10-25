@@ -1,0 +1,192 @@
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Loaded \"Historical Prices\" data.","group":"reasoning","artifacts":[{"type":"table","uuid":"6e3535ac-7017-4d26-8042-364c5392c260","name":"Historical Prices","description":"Rows loaded from Historical Prices","content":[{"date":"2026-08-26","open":231.1,"high":233.4,"low":230.05,"close":232.8,"volume":41235600},{"date":"2026-08-27","open":232.9,"high":235.2,"low":232.1,"close":234.65,"volume":39872100},{"date":"2026-08-28","open":234.5,"high":236,"low":233.2,"close":235.1,"volume":37650400},{"date":"2026-08-31","open":235,"high":237.85,"low":234.6,"close":237.4,"volume":44120900},{"date":"2026-09-01","open":237.2,"high":238.9,"low":236.3,"close":238.15,"volume":40318700}]}]}
+
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Fetching latest AAPL price from historical data","group":"reasoning","details":["```sql\nSELECT date, close FROM historical_prices ORDER BY date DESC LIMIT 1\n```"],"tool_call":{"tool_name":"execute_sql","input":{"display_summary":"Fetching latest AAPL price from historical data","sql":"SELECT date, close FROM historical_prices ORDER BY date DESC LIMIT 1"}}}
+
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotMessageChunk
+data: {"delta":"Based"}
+
+event: copilotMessageChunk
+data: {"delta":" on"}
+
+event: copilotMessageChunk
+data: {"delta":" the"}
+
+event: copilotMessageChunk
+data: {"delta":" Historical"}
+
+event: copilotMessageChunk
+data: {"delta":" Price"}
+
+event: copilotMessageChunk
+data: {"delta":"s widget"}
+
+event: copilotMessageChunk
+data: {"delta":" data"}
+
+event: copilotMessageChunk
+data: {"delta":" for"}
+
+event: copilotMessageChunk
+data: {"delta":" AAP"}
+
+event: copilotMessageChunk
+data: {"delta":"L"}
+
+event: copilotMessageChunk
+data: {"delta":","}
+
+event: copilotMessageChunk
+data: {"delta":" the"}
+
+event: copilotMessageChunk
+data: {"delta":" most"}
+
+event: copilotMessageChunk
+data: {"delta":" recent"}
+
+event: copilotMessageChunk
+data: {"delta":" price"}
+
+event: copilotMessageChunk
+data: {"delta":" shown"}
+
+event: copilotMessageChunk
+data: {"delta":" i"}
+
+event: copilotMessageChunk
+data: {"delta":"s **"}
+
+event: copilotMessageChunk
+data: {"delta":"$"}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":"3"}
+
+event: copilotMessageChunk
+data: {"delta":"8"}
+
+event: copilotMessageChunk
+data: {"delta":"."}
+
+event: copilotMessageChunk
+data: {"delta":"1"}
+
+event: copilotMessageChunk
+data: {"delta":"5"}
+
+event: copilotMessageChunk
+data: {"delta":"**,"}
+
+event: copilotMessageChunk
+data: {"delta":" which"}
+
+event: copilotMessageChunk
+data: {"delta":" wa"}
+
+event: copilotMessageChunk
+data: {"delta":"s the"}
+
+event: copilotMessageChunk
+data: {"delta":" closing"}
+
+event: copilotMessageChunk
+data: {"delta":" price"}
+
+event: copilotMessageChunk
+data: {"delta":" on"}
+
+event: copilotMessageChunk
+data: {"delta":" September"}
+
+event: copilotMessageChunk
+data: {"delta":" "}
+
+event: copilotMessageChunk
+data: {"delta":"1"}
+
+event: copilotMessageChunk
+data: {"delta":","}
+
+event: copilotMessageChunk
+data: {"delta":" "}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":"0"}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":"6"}
+
+event: copilotMessageChunk
+data: {"delta":" ("}
+
+event: copilotMessageChunk
+data: {"delta":"the"}
+
+event: copilotMessageChunk
+data: {"delta":" last"}
+
+event: copilotMessageChunk
+data: {"delta":" trading"}
+
+event: copilotMessageChunk
+data: {"delta":" day"}
+
+event: copilotMessageChunk
+data: {"delta":" before"}
+
+event: copilotMessageChunk
+data: {"delta":" today"}
+
+event: copilotMessageChunk
+data: {"delta":","}
+
+event: copilotMessageChunk
+data: {"delta":" September"}
+
+event: copilotMessageChunk
+data: {"delta":" "}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":","}
+
+event: copilotMessageChunk
+data: {"delta":" "}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":"0"}
+
+event: copilotMessageChunk
+data: {"delta":"2"}
+
+event: copilotMessageChunk
+data: {"delta":"6"}
+
+event: copilotMessageChunk
+data: {"delta":")."}
+
+event: copilotCitationCollection
+data: {"citations":[{"id":"4745c5ad-de57-5475-b64f-67fb34974aee","source_info":{"type":"widget","uuid":"4745c5ad-de57-5475-b64f-67fb34974aee","origin":"reference","widget_id":"historical_prices","name":"Historical Prices","description":"Daily historical OHLCV prices for a ticker.","metadata":{"input_args":{"symbol":"AAPL"},"widget_uuid":"11111111-2222-3333-4444-555555555555"},"citable":true},"details":[{"Source type":"widget","Origin":"reference","Data source":"Historical Prices","symbol":"AAPL"}],"signature":""}]}
+

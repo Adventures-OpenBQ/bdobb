@@ -1,0 +1,46 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import {useEffect,useRef,useState} from 'react';
+import {useModalDialog} from '../hooks/useModalDialog';
+import {useTableCommit} from '../hooks/useTableCommit';
+import {collectPivotGroupProof,validatePivotGroupProof,type FullPivotMatchProof,type PivotGroupProofContext} from '../lib/tableExecution/pivotGroupProof';
+import {planGroupChange,type GroupChangeKind,type PivotGroupPlan} from '../lib/pivotGroupChange';
+import type {PivotParamView} from '../lib/tableModel/pivotParams';
+import type {FacetResult} from '../lib/tableExecution/types';
+import {tableExecutionStore} from '../stores/tableExecutionStore';
+import {presentPivotGroupUndo} from './PivotGroupUndo';
+const names:Record<GroupChangeKind,string>={create:'Create group',link:'Link group',push:'Push values to group',edit:'Edit shared value',unlink:'Unlink group'};
+type Review={context:PivotGroupProofContext;proof:FullPivotMatchProof;plan:PivotGroupPlan};
+export function PivotGroupDialog({dashboardId,widgetId,param,kind,targetGroupId,members,onClose}:{dashboardId:string;widgetId:string;param:PivotParamView;kind:GroupChangeKind;targetGroupId?:string;members?:FacetResult['members'];onClose:()=>void}){
+ const commits=useTableCommit(dashboardId,widgetId);const [busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[error,setError]=useState('');const [name,setName]=useState(param.label+' group'),[direction,setDirection]=useState<'pull'|'push'>('pull');const [keys,setKeys]=useState<string[]|null>(kind==='edit'?null:param.memberKeys);const [baseline,setBaseline]=useState<FullPivotMatchProof>();const [review,setReview]=useState<Review>();
+ const groupId=useRef(crypto.randomUUID());const attempt=useRef(0),controller=useRef<AbortController|undefined>(undefined),alive=useRef(true);const latest=useRef({name,direction,keys});latest.current={name,direction,keys};
+ const close=()=>{if(!busy){controller.current?.abort();onClose();}};const ref=useModalDialog(close);
+ useEffect(()=>{alive.current=true;return()=>{alive.current=false;controller.current?.abort();};},[]);
+ useEffect(()=>{const dialog=ref.current;if(!dialog)return;const wrap=(event:KeyboardEvent)=>{if(event.key!=='Tab'||event.isComposing)return;const controls=Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),summary')).filter(el=>!el.closest('details:not([open])')||el.tagName==='SUMMARY');const first=controls[0],last=controls.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}};dialog.addEventListener('keydown',wrap);return()=>dialog.removeEventListener('keydown',wrap);},[ref]);
+ const invalidate=()=>{attempt.current++;controller.current?.abort();setReview(undefined);setLoading(false);setError('');};
+ const collect=async(seed=false)=>{
+  const own=++attempt.current;controller.current?.abort();const signal=new AbortController();controller.current=signal;setLoading(true);setReview(undefined);setError('');const draft=latest.current;
+  const selected=seed&&kind==='edit'?undefined:draft.keys??undefined;const context=commits.coordinator.groupProofContext(commits.coordinator.authoringBase(),param.key,{targetGroupId,selectedKeys:selected});
+  if(!context){setLoading(false);setError('Current owner and settled table are required. Refresh review when ready.');return;}
+  const result=await collectPivotGroupProof(context,signal.signal);if(!alive.current||own!==attempt.current)return;setLoading(false);
+  if(!result.ok){setError(result.reason);return;}setBaseline(result.proof);
+  if(seed&&kind==='edit'){setKeys([...result.proof.matchedKeys]);latest.current={...draft,keys:[...result.proof.matchedKeys]};void collect(false);return;}
+  const planned=planGroupChange(kind,{proof:result.proof,proofContext:context,selectedKeys:selected,direction:draft.direction,newGroup:{id:groupId.current,name:draft.name}});
+  if(!planned.ok){setError(planned.reason);return;}setReview({context,proof:result.proof,plan:planned.plan});
+ };
+ const initialCollect=useRef(collect);initialCollect.current=collect;
+ useEffect(()=>{void initialCollect.current(true);return()=>controller.current?.abort();},[]); // A changed draft needs explicit Review, never an automatic save.
+ const confirm=async()=>{if(!review||busy)return;if(!validatePivotGroupProof(review.proof,review.context)){invalidate();setError('The reviewed table or group changed. Refresh review before confirming.');return;}const expected={sourceIdentity:review.proof.fence.sourceIdentity,executor:review.context.read().executor,input:review.proof.fence.revision.input,sourceRevision:JSON.stringify(tableExecutionStore.readView(dashboardId,widgetId).sourceRevision)};setBusy(true);const result=await commits.coordinator.commitPivotGroupChange(commits.coordinator.authoringBase(),review.plan,review.context);if(result.status==='saved'){presentPivotGroupUndo(result.undo,dashboardId,widgetId,`${names[kind]} saved.`,expected);if(alive.current)onClose();}else if(alive.current){setBusy(false);setReview(undefined);setError(result.message+('durableUncertain' in result&&result.durableUncertain?' Saved state is uncertain.':''));}};
+ const sends=kind==='create'||kind==='edit'||kind==='push'||kind==='link'&&direction==='push';const options=new Map((members??[]).map(m=>[m.key,m.label||'(Blank)']));for(const m of baseline?.matchedMembers??[])if(!options.has(m.key))options.set(m.key,m.transport+' (excluded or unavailable)');for(const key of keys??[])if(!options.has(key))options.set(key,key+' (unavailable)');
+ return <dialog ref={ref} className="pivot-group-dialog" aria-label={names[kind]} onPointerDown={e=>{if(e.target===e.currentTarget){const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}}}>
+  <h2>{names[kind]}</h2><div className="pivot-group-dialog-body">
+  <p>{param.label} · {param.source}</p>{baseline?<><p>{baseline.total} observed identities · {baseline.matchedCount} matched · {baseline.unmatchedCount} absent group values</p><details><summary>Group and source details</summary><dl><dt>Source field</dt><dd>{baseline.fence.sourceFieldId}</dd><dt>Shared group</dt><dd>{baseline.fence.group?.name??name}</dd><dt>Complete shared transport</dt><dd>{baseline.fence.group?.value??'(New group)'}</dd></dl></details></>:null}{kind==='create'?<label>Group name<input value={name} disabled={busy} onChange={e=>{invalidate();setName(e.target.value);}}/></label>:null}
+  {kind==='link'?<fieldset><legend>Link direction</legend><label className="pivot-group-option"><input type="radio" name="direction" checked={direction==='pull'} disabled={busy} onChange={()=>{invalidate();setDirection('pull');}}/>Use the group's value</label><label className="pivot-group-option"><input type="radio" name="direction" checked={direction==='push'} disabled={busy} onChange={()=>{invalidate();setDirection('push');}}/>Send this card's value to the group</label></fieldset>:null}
+  {sends?<fieldset><legend>Explicit shared values</legend><p>Shared changes affect all linked cards. One native value may match several typed source identities.</p><button type="button" disabled={busy} onClick={()=>{invalidate();setKeys([]);}}>None</button>{keys===null?<p>All is not a finite shared selection. Choose explicit values or None.</p>:null}<div className="pivot-group-values">{[...options].map(([key,label])=><label key={key} title={key}><input type="checkbox" checked={!!keys?.includes(key)} disabled={busy} onChange={e=>{invalidate();setKeys(e.target.checked?[...keys??[],key]:(keys??[]).filter(k=>k!==key));}}/>{label}</label>)}</div></fieldset>:null}
+  {loading?<p role="status">Collecting complete worker proof…</p>:null}
+  {review?<><strong>{kind==='unlink'?`Keep all ${review.plan.summary.retainedCount} matched values`:`${review.plan.summary.groupName} · ${review.plan.summary.retainedCount} values`}</strong><p>{kind==='unlink'?'All matched identities, including excluded observed values, are retained. Other filters still apply. The shared group and its other cards stay unchanged.':direction==='pull'&&kind==='link'?'This card follows the shared group. Its authored defaults are preserved.':'Confirm saves the reviewed shared selection.'}</p><details><summary>Complete reviewed values ({review.plan.summary.retainedCount})</summary><ol>{(kind==='unlink'||kind==='link'&&direction==='pull'?review.proof.matchedMembers:review.proof.selectedMembers).map(m=><li key={m.key}><span>{m.transport||'(Blank)'}</span> <code>{m.key}</code></li>)}</ol></details></>:null}
+  {error?<p role="alert">{error}</p>:null}
+  <p>No changes are saved until Confirm. Viewer session values are not sent.</p>
+  </div><footer><button type="button" disabled={busy} onClick={close}>Cancel</button><button type="button" disabled={busy||loading||!commits.canReplace} onClick={()=>void collect()}>Refresh review</button><button type="button" className="pivot-group-confirm" disabled={busy||loading||!review||!commits.canReplace} onClick={()=>void confirm()}>{busy?'Saving…':'Confirm'}</button></footer>
+ </dialog>;
+}

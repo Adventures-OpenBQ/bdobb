@@ -1,0 +1,11 @@
+app: src-tauri/target/release/bundle/macos/BDOBB Clean v6.app
+CFBundleIdentifier: com.artcashin.bdobb.clean.v6
+CFBundleName: BDOBB Clean v6
+CFBundleShortVersionString: 6.0.0
+CFBundleExecutable: bdobb
+main binary sha256: e05c55cd271d03491069700e16fc1fe8e36be790fd1f8a683a4ca643c0643839
+bundle tree sha256: 5867b49dd666afb9b9122a3946184c64b47e46008575e407d8fae3f3512fcaad
+Identifier=bdobb-1a7f98eac178d492
+Signature=adhoc
+TeamIdentifier=not set
+D-017 add_widget description present in index-Cpft_Q6r.js (dist built by this tauri build)

@@ -1,0 +1,44 @@
+name: Windows build
+
+# A native Windows build of the desktop app: the NSIS installer from
+# `tauri build`, then the built exe launched for 30 s as a smoke test. This
+# proves the app builds and starts on real Windows. Manual only: windows-latest
+# runs bill per minute, so nothing here starts on a push.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nsis:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install pinned Wasm glue generator
+        run: cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
+      # vite build (tauri's beforeBuildCommand) bundles the generated pivot Wasm.
+      - run: pnpm pivot:build
+      - run: pnpm tauri build --bundles nsis
+      - name: Launch the exe; alive after 30 s is the pass condition
+        shell: pwsh
+        run: |
+          $p = Start-Process src-tauri/target/release/bdobb.exe -PassThru
+          Start-Sleep 30
+          if ($p.HasExited) { throw "bdobb.exe exited early with code $($p.ExitCode)" }
+          Stop-Process $p
+          "LAUNCH OK"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bdobb-windows-nsis
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 7

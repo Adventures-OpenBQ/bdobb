@@ -1,0 +1,7 @@
+typecheck|exit=0|dur=5s|cmd=pnpm typecheck
+lint|exit=0|dur=5s|cmd=pnpm lint
+unit|exit=0|dur=64s|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=8s|cmd=pnpm build
+e2e|exit=0|dur=93s|cmd=env BDOBB_BROWSER_PORT=4483 BDOBB_MOCK_PORT=4484 pnpm e2e
+scrub|exit=1|dur=2s|cmd=pnpm scrub
+diff-check|exit=0|dur=0s|cmd=git diff --check f063ca4 HEAD

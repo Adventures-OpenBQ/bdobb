@@ -1,0 +1,18 @@
+typecheck|exit=0|dur=9s|load=50.50 48.38 45.57|cmd=pnpm typecheck
+lint|exit=0|dur=9s|load=49.66 48.24 45.53|cmd=pnpm lint
+unit|exit=0|dur=177s|load=48.31 48.00 45.48|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+revision-test|exit=0|dur=2s|load=72.61 57.25 49.64|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=11s|load=72.61 57.25 49.64|cmd=pnpm build
+e2e|exit=0|dur=447s|load=68.87 56.96 49.63|cmd=env BDOBB_BROWSER_PORT=4383 BDOBB_MOCK_PORT=4384 pnpm e2e
+web|exit=0|dur=1s|load=47.80 51.97 50.54|cmd=pnpm test:web
+build-web|exit=0|dur=8s|load=47.80 51.97 50.54|cmd=pnpm build:web
+web-browser|exit=0|dur=4s|load=47.74 51.89 50.52|cmd=pnpm test:web:browser
+cargo|exit=0|dur=0s|load=49.84 52.26 50.65|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=1|dur=7s|load=49.84 52.26 50.65|cmd=pnpm scrub
+help|exit=0|dur=4s|load=47.50 51.67 50.47|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+cargo-test|exit=0|dur=2s|load=47.50 51.67 50.47|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --offline -j 2
+e2e-webkit|exit=1|dur=48s|load=47.30 51.56 50.43|cmd=env BDOBB_BROWSER_PORT=4783 BDOBB_MOCK_PORT=4784 pnpm exec playwright test -c .superpowers/playwright.webkit.config.ts e2e/drop.spec.ts e2e/layout.spec.ts e2e/rail.spec.ts e2e/rita-arrange.spec.ts e2e/rita-edit-bar.spec.ts e2e/rita-no-url.spec.ts e2e/rita.spec.ts e2e/smoke.spec.ts e2e/rail-after-dialog.webkit.spec.ts
+notices-check|exit=0|dur=2s|load=68.16 55.94 52.07|cmd=pnpm notices:check
+dashsync|exit=0|dur=18s|load=70.47 56.62 52.33|cmd=env BDOBB_BROWSER_PORT=4491 BDOBB_MOCK_PORT=4492 pnpm test:dashsync --reporter=line
+diff-check|exit=0|dur=0s|load=78.82 59.17 53.32|cmd=git diff --check 88d297f HEAD -- . :!docs/releases/validation/**/*.log
+DONE

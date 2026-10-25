@@ -1,0 +1,37 @@
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+
+ ✓ src/components/renderers/LocalTableRenderer.execution.test.tsx (39 tests) 25982ms
+   ✓ file pivot edits keep source schema and bounded expanded children use stable paths 1474ms
+   ✓ zero matching file rows retain filter controls and Clear restores the worker result 787ms
+   ✓ selection does not change group folds 650ms
+   ✓ root refresh durably removes vanished selections and shows the reconciliation notice 538ms
+   ✓ duplicate edits save one durable definition before worker publication and preserve source acquisition 1276ms
+   ✓ failed durable Duplicate keeps the last valid definition and result 865ms
+   ✓ does not publish a Duplicate whose durable save completes after the renderer unmounts 893ms
+   ✓ acknowledges durable Move to Available before fast-worker invalid-group selection reconciliation 1151ms
+   ✓ acknowledges durable Move to Column Groups before fast-worker invalid-group selection reconciliation 427ms
+   ✓ read-only analytical inspection requests bound operators and footer errors without authoring 425ms
+   ✓ simultaneous page facets and inspection settlement enable inspector pagination 329ms
+   ✓ activates only on explicit request and migrates existing measure instances and temporal recipes into canonical authority 942ms
+   ✓ failed report activation keeps canonical definition and old rows/totals 524ms
+   ✓ source formula filters use bounded stable-ID metadata and preserve prior result on failed durable change 443ms
+   ✓ all-error source formulas require an explicit filter type and retain incomplete empty results 731ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":99} 522ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":1,"params":{"promotePage":true,"filters":[]},"enabled":true,"categories":[],"measures":[],"formulas":[],"layout":null,"checklists":{},"resultFilters":[],"subtotals":{"grandTotal":true,"groups":false}} 364ms
+   ✓ report activation preserves hidden/order and a second header Hide keeps earlier hidden inputs private 360ms
+   ✓ reactively toggles the actual dismiss checkbox twice and applies table dismissal without panel rerenders 351ms
+   ✓ Statement held preview is inert after source changes and retains draft 1459ms
+   ✓ Statement held preview is inert after refresh changes and retains draft 1083ms
+   ✓ Statement held preview is inert after viewer changes and retains draft 1848ms
+   ✓ Statement held preview is inert after cancel changes and retains draft 1608ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:false) 550ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:false) 1637ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:true) 1819ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:true) 746ms
+
+ Test Files  1 passed (1)
+      Tests  39 passed (39)
+   Start at  11:52:44
+   Duration  29.72s (transform 1.46s, setup 230ms, collect 2.36s, tests 25.98s, environment 524ms, prepare 54ms)
+

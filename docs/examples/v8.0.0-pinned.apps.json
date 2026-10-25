@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Example Dashboard - Version 8.0.0 - Pinned Cards",
+    "description": "The v8.0.0 pinned cards: a Note pinned to the top of the tab and a Clock to the bottom, with a long Markdown card between them that scrolls while the bands stay put and walks through Pin widget ▸. The pins travel in BDOBB's v8 extension, so this file opens in BDOBB 8.0.0 or later. Every widget is a built-in, and the file carries no locked widgets, which would replace your own.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "pinned": {
+        "id": "pinned",
+        "name": "Pinned",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 7,
+            "state": {
+              "params": {
+                "text": "## Pinned cards\n\nThis Note is **pinned to the top** of the tab and the Clock to the **bottom**. Scroll the tab: the Markdown card between them moves, and the two bands stay put.\n\nOn any card, **⋯ ▸ Pin widget ▸** has **Pin to top**, **Pin to bottom** and **Unpin**. Drag a band's corner grips to make it taller or shorter. One card per edge per tab: pinning a second swaps the first back into the grid."
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "markdown",
+            "x": 0,
+            "y": 7,
+            "w": 40,
+            "h": 40,
+            "state": {
+              "params": {
+                "text": "# Scroll me\n\nThis long card sits in the grid between the two pinned bands. Scroll the tab and it moves while the Note above and the Clock below stay in view.\n\n## Try\n\n1. Open this card's **⋯** menu and choose **Pin widget ▸ Pin to top**. It swaps places with the Note, which goes back into the grid.\n2. Choose **Unpin** on it to put it back where it was.\n3. **Maximize** a pinned card: it covers the bands, and **Escape** puts it back.\n\n## Where a pin travels\n\nA pin is saved with the dashboard and syncs with it. **Save…** in the **BDOBB Workspace** format carries it in BDOBB's v8 extension, which is why this file needs BDOBB 8.0.0 or later. **Duplicate** and **Copy to** never copy a pin.\n\n## Locked widgets are different\n\nA widget along an edge of every dashboard is *locked*, not pinned, and is set up in **Settings ▸ Locked Widgets**. This example carries none: importing locked widgets replaces your own.\n\n---\n\nMore room to scroll.\n\n---\n\nAnd a little more."
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "clock",
+            "x": 0,
+            "y": 47,
+            "w": 40,
+            "h": 7,
+            "state": {
+              "params": {
+                "zones": "America/New_York,Europe/London,Asia/Tokyo",
+                "layout": "horizontal",
+                "hourCycle": "24",
+                "face": "dots"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v8",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "pinned"
+          ]
+        },
+        "cards": [
+          {
+            "tab": "pinned",
+            "index": 0,
+            "pinned": "top"
+          },
+          {
+            "tab": "pinned",
+            "index": 2,
+            "pinned": "bottom"
+          }
+        ]
+      }
+    }
+  }
+]

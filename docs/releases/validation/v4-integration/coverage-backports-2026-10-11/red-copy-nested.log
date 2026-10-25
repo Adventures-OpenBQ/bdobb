@@ -1,0 +1,32 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/stores/dashboardStore.legacyV4.test.ts (158 tests | 2 failed | 156 skipped) 8ms
+   × duplicateCard / copyCardTo > duplicate gives the copy its own nested objects 7ms
+     → params: expected { symbol: 'AAPL' } not to be { symbol: 'AAPL' } // Object.is equality
+   × duplicateCard / copyCardTo > copy to gives the copy its own nested objects 1ms
+     → params: expected { symbol: 'AAPL' } not to be { symbol: 'AAPL' } // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/stores/dashboardStore.legacyV4.test.ts > duplicateCard / copyCardTo > duplicate gives the copy its own nested objects
+ FAIL  src/stores/dashboardStore.legacyV4.test.ts > duplicateCard / copyCardTo > copy to gives the copy its own nested objects
+AssertionError: params: expected { symbol: 'AAPL' } not to be { symbol: 'AAPL' } // Object.is equality
+
+Compared values have no visual difference.
+
+ ❯ src/stores/dashboardStore.legacyV4.test.ts:2447:51
+    2445|     for (const k of nested) {
+    2446|       expect(copy[k as keyof typeof copy], k).toEqual(source[k as keyo…
+    2447|       expect(copy[k as keyof typeof copy], k).not.toBe(source[k as key…
+       |                                                   ^
+    2448|     }
+    2449|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 156 skipped (158)
+   Start at  12:37:30
+   Duration  1.20s (transform 279ms, setup 151ms, collect 341ms, tests 8ms, environment 336ms, prepare 59ms)
+

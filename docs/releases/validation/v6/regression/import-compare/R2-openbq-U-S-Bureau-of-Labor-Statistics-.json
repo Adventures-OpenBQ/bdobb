@@ -1,0 +1,409 @@
+{
+ "app": "U.S. Bureau of Labor Statistics",
+ "served_tabs": 5,
+ "saved_tabs": 5,
+ "tabs": [
+  {
+   "served_name": "Release Calendar",
+   "saved_name": "Release Calendar",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_calendar_bls_obb",
+      0,
+      2,
+      40,
+      23
+     ],
+     "saved": [
+      "bls_calendar_bls_obb",
+      0,
+      0,
+      40,
+      23
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "Real Earnings",
+   "saved_name": "Real Earnings",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_real_earnings_documents_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_real_earnings_documents_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "JOLTS",
+   "saved_name": "JOLTS",
+   "served_cards": 10,
+   "saved_cards": 10,
+   "cards": [
+    {
+     "served": [
+      "bls_jolts_documents_bls_obb",
+      0,
+      2,
+      40,
+      27
+     ],
+     "saved": [
+      "bls_jolts_documents_bls_obb",
+      0,
+      2,
+      40,
+      27
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_revisions_bls_obb",
+      0,
+      29,
+      40,
+      24
+     ],
+     "saved": [
+      "bls_jolts_revisions_bls_obb",
+      0,
+      29,
+      40,
+      24
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_change_analysis_bls_obb",
+      0,
+      53,
+      40,
+      23
+     ],
+     "saved": [
+      "bls_jolts_change_analysis_bls_obb",
+      0,
+      53,
+      40,
+      23
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_unemp_per_opening_bls_obb",
+      0,
+      76,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_unemp_per_opening_bls_obb",
+      0,
+      76,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_openings_hires_seps_levels_bls_obb",
+      0,
+      96,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_openings_hires_seps_levels_bls_obb",
+      0,
+      96,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_openings_hires_seps_rates_bls_obb",
+      0,
+      116,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_openings_hires_seps_rates_bls_obb",
+      0,
+      116,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_hires_seps_rates_bls_obb",
+      0,
+      136,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_hires_seps_rates_bls_obb",
+      0,
+      136,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_openings_by_industry_bls_obb",
+      0,
+      156,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_openings_by_industry_bls_obb",
+      0,
+      156,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_openings_hires_seps_by_region_bls_obb",
+      0,
+      176,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_openings_hires_seps_by_region_bls_obb",
+      0,
+      176,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_jolts_beveridge_curve_bls_obb",
+      0,
+      196,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_jolts_beveridge_curve_bls_obb",
+      0,
+      196,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "U.S. Import & Export Price Indexes",
+   "saved_name": "U.S. Import & Export Price Indexes",
+   "served_cards": 7,
+   "saved_cards": 7,
+   "cards": [
+    {
+     "served": [
+      "bls_import_export_documents_bls_obb",
+      0,
+      2,
+      40,
+      29
+     ],
+     "saved": [
+      "bls_import_export_documents_bls_obb",
+      0,
+      2,
+      40,
+      29
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_price_indexes_bls_obb",
+      0,
+      31,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_price_indexes_bls_obb",
+      0,
+      31,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_imports_by_category_bls_obb",
+      0,
+      51,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_imports_by_category_bls_obb",
+      0,
+      51,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_exports_by_category_bls_obb",
+      0,
+      71,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_exports_by_category_bls_obb",
+      0,
+      71,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_imports_by_origin_bls_obb",
+      0,
+      91,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_imports_by_origin_bls_obb",
+      0,
+      91,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_exports_by_grains_bls_obb",
+      0,
+      111,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_exports_by_grains_bls_obb",
+      0,
+      111,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_import_export_air_passenger_fares_bls_obb",
+      0,
+      131,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_import_export_air_passenger_fares_bls_obb",
+      0,
+      131,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Search & Series",
+   "saved_name": "Search & Series",
+   "served_cards": 2,
+   "saved_cards": 2,
+   "cards": [
+    {
+     "served": [
+      "bls_search_bls_obb",
+      0,
+      2,
+      40,
+      18
+     ],
+     "saved": [
+      "bls_search_bls_obb",
+      0,
+      2,
+      40,
+      18
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_series_bls_obb",
+      0,
+      20,
+      40,
+      22
+     ],
+     "saved": [
+      "bls_series_bls_obb",
+      0,
+      20,
+      40,
+      22
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 1,
+ "served_cards_total": 21,
+ "saved_cards_total": 21,
+ "served_groups": 3,
+ "saved_groups": 2
+}

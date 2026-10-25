@@ -1,0 +1,6 @@
+reference-BASELINE|exit=0|dur=4s|load=19.68 22.90 33.68
+reference-CURATED|exit=0|dur=5s|load=22.27 23.38 33.78
+live-run1|exit=1|dur=132s|load=22.89 23.49 33.76
+DONE
+live-run2 (RERUN of run1: MCP env corrected to id=url by operator; also the one allowed model-conduct rerun)|exit=1|dur=128s|load=19.34 27.07 33.88
+live real-endpoints only (dummy OPENBB_NAS_AUTH as Part C; backend needs no auth)|exit=0|dur=15s

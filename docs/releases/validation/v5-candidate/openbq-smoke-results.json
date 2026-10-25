@@ -1,0 +1,89 @@
+{
+  "source": "openbq-docker final-source image",
+  "inventory": 995,
+  "yfinanceWidgets": 68,
+  "target": 9,
+  "results": [
+    {
+      "id": "cboe_equity_quote_cboe_obb",
+      "widgetId": "cboe_equity_quote_cboe_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tAsset Type\n\tName\n\tBid\n\tBid Size\n\tAsk\n\tAsk Size\n\tLast Price\n\tLast Tick\n\tLast Timestamp\n\tOpen\n\tHigh\n\tLow\n\tClose\n\tVolume\n\tPrev Close\n\tChange\n\tChange Percent\n\tYear High\n\tYear Low\n\tIV30\n\tIV30 Annual High\n\tHV30 Annual High\n\tIV30 Annual Low\n\tHV30 Annual Low\n\tIV60 Annual High\n\tHV60 Annual High\n\tIV60 Annual Low\n\tHV60 Annual Low\n\tIV90 Annual High\n\tHV90 Annual High\n\tIV90 Annual Low\n\tHV90 Annual Low\n\nAMD\tstock\tADVANCED MICRO DEVICES INC COM\t652.02\t100\t652.25\t100\t652.05\tdown\t2026-10-06\t648.1\t658.52\t628\t649.42\t24.25M\t631.75\t17.67\t2.8 %\t645.46\t188.22\t0.54\t0.89\t0.94\t0.42\t0.36\t0.82\t0.87\t0.49\t0.52\t0.79\t0.82\t0.49\t0.55",
+      "reason": "{\"text\":\"SymbolAsset TypeNameBidBid SizeAskAsk SizeLast PriceLast TickLast TimestampOpenHighLowCloseVolumePrev CloseChangeChange PercentYear HighYear LowIV30IV30 Annual HighHV30 Annual HighIV30 Annual LowHV30 Annual LowIV60 Annual HighHV60 Annual HighIV60 Annual LowHV60 Annual LowIV90 Annual HighHV90 Annual HighIV90 Annual LowHV90 Annual LowAMDstockADVANCED MICRO DEVICES INC COM652.02100652.25100652.05down2026-10-06648.1658.52628649.4224.25M631.7517.672.8 %645.46188.220.540.890.940.420.360.820.870.490.520.790.820.490.55\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":8750}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_equity_historical_yfinance_obb",
+      "widgetId": "yfinance_equity_historical_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Date\n\tSymbol\n\tOpen\n\tHigh\n\tLow\n\tClose\n\tVolume\n\tAdjusted Close\n\n2026-09-08\tAMD\t488.92\t512.36\t486.57\t505.74\t28.17M\t505.74\n2026-09-09\tAMD\t507.5\t526.79\t506.36\t521.1\t22.15M\t521.1\n2026-09-10\tAMD\t509.07\t516.33\t502.81\t503.6\t16.01M\t503.6\n2026-09-11\tAMD\t510.71\t521.06\t501.35\t516.13\t19.03M\t516.13\n2026-09-14\tAMD\t486.28\t498.39\t480.33\t493.41\t24.81M\t493.41\n2026-09-15\tAMD\t501.7\t513.67\t497.51\t504.2\t17.13M\t504.2\n2026-09-16\tAMD\t517.39\t527.25\t506.05\t512.5\t22.32M\t512.5\n2026-09-17\tAMD\t533.6\t551.42\t527.6\t545.09\t28.46M\t545.09\n2026-09-18\tAMD\t547.37\t559.91\t541.53\t559.82\t31.87M\t559.82\n2026-09-21\tAMD\t583.88\t616.69\t582.27\t615.52\t44.49M\t615.52\n2026-09-22\tAMD\t606.57\t624.52\t606.31\t623.77\t28.28M\t623.77\n2026-09-23\tAMD\t621.5\t624.69\t608.08\t614.61\t16.34M\t614.61\n2026-09-24\tAMD\t600.27\t630.8\t599.24\t629.26\t25.32M\t629.26\n2026-09-25\tAMD\t634.54\t639\t625.52\t630.63\t17.63M\t630.63\n2026-09-28\tAMD\t624.9\t629.75\t596.07\t607.87\t22.12M\t607.87\n2026-09-29\tAMD\t616.74\t624.13\t605.25\t607.57\t16.51M\t607.57\n2026-09-30\tAMD\t609.89\t615.17\t600.1\t611.76\t16",
+      "reason": "{\"text\":\"DateSymbolOpenHighLowCloseVolumeAdjusted Close2026-09-08AMD488.92512.36486.57505.7428.17M505.742026-09-09AMD507.5526.79506.36521.122.15M521.12026-09-10AMD509.07516.33502.81503.616.01M503.62026-09-11AMD510.71521.06501.35516.1319.03M516.132026-09-14AMD486.28498.39480.33493.4124.81M493.412026-09-15AMD501.7513.67497.51504.217.13M504.22026-09-16AMD517.39527.25506.05512.522.32M512.52026-09-17AMD533.6551.42527.6545.0928.46M545.092026-09-18AMD547.37559.91541.53559.8231.87M559.822026-09-21AMD583.88616.69582.27615.5244.49M615.522026-09-22AMD606.57624.52606.31623.7728.28M623.772026-09-23AMD621.5624.69608.08614.6116.34M614.612026-09-24AMD600.27630.8599.24629.2625.32M629.262026-09-25AMD634.54639625.52630.6317.63M630.632026-09-28AMD624.9629.75596.07607.8722.12M607.872026-09-29AMD616.74624.13605.25607.5716.51M607.572026-09-30AMD609.89615.17600.1611.7616.75M611.762026-10-01AMD612.7619.3601.5615.7317.13M615.732026-10-02AMD635.95645.46628.55633.9119.87M633.912026-10-05AMD630.61633.5619.99631.7513.72M631.752026-10-06AMD648.04658.52628649.4224.2M649.42\",\"svg\":0,\"canvas\":0,\"rows\":22,\"iframe\":0,\"img\":0,\"html\":9584}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_equity_quote_yfinance_obb",
+      "widgetId": "yfinance_equity_quote_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tAsset Type\n\tName\n\tExchange\n\tBid\n\tAsk\n\tLast Price\n\tLast Timestamp\n\tOpen\n\tHigh\n\tLow\n\tVolume\n\tPrev Close\n\tChange\n\tChange Percent\n\tCurrency\n\tMarket Cap\n\nAMD\tEQUITY\tAdvanced Micro Devices, Inc.\tNMS\t615.79\t653.62\t649.42\t2026-10-06\t648.04\t658.52\t628\t24.22M\t631.75\t17.67\t2.8 %\tUSD\t1.06T",
+      "reason": "{\"text\":\"SymbolAsset TypeNameExchangeBidAskLast PriceLast TimestampOpenHighLowVolumePrev CloseChangeChange PercentCurrencyMarket CapAMDEQUITYAdvanced Micro Devices, Inc.NMS615.79653.62649.422026-10-06648.04658.5262824.22M631.7517.672.8 %USD1.06T\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":4277}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_equity_profile_yfinance_obb",
+      "widgetId": "yfinance_equity_profile_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tData\n\nAMD\t{\"address1\":\"2485 Augustine Drive\",\"city\":\"Santa Clara\",\"state\":\"CA\",\"zip\":\"95054\",\"country\":\"United States\",\"phone\":\"408 749 4000\",\"website\":\"https://www.amd.com\",\"industry\":\"Semiconductors\",\"industry_key\":\"semiconductors\",\"industry_disp\":\"Semiconductors\",\"sector\":\"Technology\",\"sector_key\":\"technology\",\"sector_disp\":\"Technology\",\"long_business_summary\":\"Advanced Micro Devices, Inc. operates as a semiconductor company internationally. It operates in three segments: Data Center, Client and Gaming, and Embedded. The company offers artificial intelligence (AI) accelerators, microprocessors, and graphics processing units (GPUs) as standalone devices or as incorporated into accelerated processing units, chipsets, and data center and professional GPUs; and embedded processors and semi-custom system-on-chip (SoC) products, microprocessor and SoC development services and technology, data processing units, field programmable gate arrays (FPGA), system on modules, AI network in",
+      "reason": "{\"text\":\"SymbolDataAMD{\\\"address1\\\":\\\"2485 Augustine Drive\\\",\\\"city\\\":\\\"Santa Clara\\\",\\\"state\\\":\\\"CA\\\",\\\"zip\\\":\\\"95054\\\",\\\"country\\\":\\\"United States\\\",\\\"phone\\\":\\\"408 749 4000\\\",\\\"website\\\":\\\"https://www.amd.com\\\",\\\"industry\\\":\\\"Semiconductors\\\",\\\"industry_key\\\":\\\"semiconductors\\\",\\\"industry_disp\\\":\\\"Semiconductors\\\",\\\"sector\\\":\\\"Technology\\\",\\\"sector_key\\\":\\\"technology\\\",\\\"sector_disp\\\":\\\"Technology\\\",\\\"long_business_summary\\\":\\\"Advanced Micro Devices, Inc. operates as a semiconductor company internationally. It operates in three segments: Data Center, Client and Gaming, and Embedded. The company offers artificial intelligence (AI) accelerators, microprocessors, and graphics processing units (GPUs) as standalone devices or as incorporated into accelerated processing units, chipsets, and data center and professional GPUs; and embedded processors and semi-custom system-on-chip (SoC) products, microprocessor and SoC development services and technology, data processing units, field programmable gate arrays (FPGA), system on modules, AI network interface cards, and adaptive SoC products. It provides processors under the AMD Ryzen, AMD Ryzen AI, AMD Ryzen PRO, AMD Ryzen Threadripper, AMD Ryzen Threadripper PRO, AMD Athlon, and AMD PRO A-Series brands; graphics under the AMD Radeon graphics and AMD Embedded Radeon graphics; professional graphics under the AMD Radeon Pro graphics brand; and AI and general-purpose compute infrastructure for hyperscale providers. The company offers data center graphics under the AMD Instinct accelerators and Radeon PRO V-series brands; server microprocessors under the AMD EPYC brand; low power solutions under the AMD Athlon, AMD Geode, AMD Ryzen, AMD EPYC, and AMD R-Series and G-Series brands; FPGA products under the Virtex-6, Virtex-7, Virtex UltraScale+, Kintex-7, Kintex UltraScale, Kintex UltraScale+, Art\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":9936}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_equity_fast_info_yfinance_obb",
+      "widgetId": "yfinance_equity_fast_info_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tData\n\nAMD\t{\"currency\":\"USD\",\"day_high\":658.52001953125,\"day_low\":628,\"exchange\":\"NMS\",\"fifty_day_average\":515.7302014160156,\"last_price\":649.4199829101562,\"last_volume\":24200600,\"market_cap\":1060161913876.8966,\"open\":648.0399780273438,\"previous_close\":632.5,\"quote_type\":\"EQUITY\",\"regular_market_previous_close\":631.75,\"shares\":1632475042,\"ten_day_average_volume\":19367640,\"three_month_average_volume\":23538973,\"timezone\":\"America/New_York\",\"two_hundred_day_average\":376.83650047302245,\"year_change\":1.986856490980534,\"year_high\":645.4600219726562,\"year_low\":188.22000122070312}",
+      "reason": "{\"text\":\"SymbolDataAMD{\\\"currency\\\":\\\"USD\\\",\\\"day_high\\\":658.52001953125,\\\"day_low\\\":628,\\\"exchange\\\":\\\"NMS\\\",\\\"fifty_day_average\\\":515.7302014160156,\\\"last_price\\\":649.4199829101562,\\\"last_volume\\\":24200600,\\\"market_cap\\\":1060161913876.8966,\\\"open\\\":648.0399780273438,\\\"previous_close\\\":632.5,\\\"quote_type\\\":\\\"EQUITY\\\",\\\"regular_market_previous_close\\\":631.75,\\\"shares\\\":1632475042,\\\"ten_day_average_volume\\\":19367640,\\\"three_month_average_volume\\\":23538973,\\\"timezone\\\":\\\"America/New_York\\\",\\\"two_hundred_day_average\\\":376.83650047302245,\\\"year_change\\\":1.986856490980534,\\\"year_high\\\":645.4600219726562,\\\"year_low\\\":188.22000122070312}\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":1227}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_fundamental_income_yfinance_obb",
+      "widgetId": "yfinance_fundamental_income_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tDate\n\tPeriod\n\tLine Item\n\tValue\n\nAMD\t2025-12-31\tannual\ttax_effect_of_unusual_items\t76.86M\nAMD\t2025-12-31\tannual\ttax_rate_for_calcs\t0.21\nAMD\t2025-12-31\tannual\tnormalized_ebitda\t6.91B\nAMD\t2025-12-31\tannual\ttotal_unusual_items\t366M\nAMD\t2025-12-31\tannual\ttotal_unusual_items_excluding_goodwill\t366M\nAMD\t2025-12-31\tannual\tnet_income_from_continuing_operation_net_minority_interest\t4.27B\nAMD\t2025-12-31\tannual\treconciled_depreciation\t3B\nAMD\t2025-12-31\tannual\treconciled_cost_of_revenue\t15.71B\nAMD\t2025-12-31\tannual\tebitda\t7.28B\nAMD\t2025-12-31\tannual\tebit\t4.27B\nAMD\t2025-12-31\tannual\tnet_interest_income\t84M\nAMD\t2025-12-31\tannual\tinterest_expense\t131M\nAMD\t2025-12-31\tannual\tinterest_income\t215M\nAMD\t2025-12-31\tannual\tnormalized_income\t3.98B\nAMD\t2025-12-31\tannual\tnet_income_from_continuing_and_discontinued_operation\t4.34B\nAMD\t2025-12-31\tannual\ttotal_expenses\t30.95B\nAMD\t2025-12-31\tannual\ttotal_operating_income_as_reported\t3.69B\nAMD\t2025-12-31\tannual\tdiluted_average_shares\t1.64B\nAMD\t2025-12-31\tannu",
+      "reason": "{\"text\":\"SymbolDatePeriodLine ItemValueAMD2025-12-31annualtax_effect_of_unusual_items76.86MAMD2025-12-31annualtax_rate_for_calcs0.21AMD2025-12-31annualnormalized_ebitda6.91BAMD2025-12-31annualtotal_unusual_items366MAMD2025-12-31annualtotal_unusual_items_excluding_goodwill366MAMD2025-12-31annualnet_income_from_continuing_operation_net_minority_interest4.27BAMD2025-12-31annualreconciled_depreciation3BAMD2025-12-31annualreconciled_cost_of_revenue15.71BAMD2025-12-31annualebitda7.28BAMD2025-12-31annualebit4.27BAMD2025-12-31annualnet_interest_income84MAMD2025-12-31annualinterest_expense131MAMD2025-12-31annualinterest_income215MAMD2025-12-31annualnormalized_income3.98BAMD2025-12-31annualnet_income_from_continuing_and_discontinued_operation4.34BAMD2025-12-31annualtotal_expenses30.95BAMD2025-12-31annualtotal_operating_income_as_reported3.69BAMD2025-12-31annualdiluted_average_shares1.64BAMD2025-12-31annualbasic_average_shares1.62BAMD2025-12-31annualdiluted_eps2.65AMD2025-12-31annualbasic_eps2.67AMD2025-12-31annualdiluted_ni_availto_com_stockholders4.34BAMD2025-12-31annualaverage_dilution_earnings—AMD2025-12-31annualnet_income_common_stockholders4.34BAMD2025-12-31annualnet_income4.34BAMD2025-12-31annualnet_income_including_noncontrolling_interests4.34BAMD2025-12-31annualnet_income_discontinuous_operations66MAMD2025-12-31annualnet_income_continuous_operations4.27BAMD2025-12-31annualearnings_from_equity_interest_net_of_tax26MAMD2025-12-31annualtax_provision-103MAMD2025-12-31annualpretax_income4.14BAMD2025-12-31annualother_income_expense362MAMD2025-12-31annualother_non_operating_income_expenses-4MAMD2025-12-31annualspecial_income_charges0AMD2025-12-31annualother_special_charges—AMD2025-12-31annualrestructuring_and_mergern_acquisition0AMD2025-12-31annualearnings_from_equity_interest—AMD2025-12\",\"svg\":0,\"canvas\":0,\"rows\":54,\"iframe\":0,\"img\":0,\"html\":16532}",
+      "errors": []
+    },
+    {
+      "id": "yfinance_fundamental_balance_yfinance_obb",
+      "widgetId": "yfinance_fundamental_balance_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tDate\n\tPeriod\n\tLine Item\n\tValue\n\nAMD\t2025-12-31\tannual\ttreasury_shares_number\t65M\nAMD\t2025-12-31\tannual\tordinary_shares_number\t1.63B\nAMD\t2025-12-31\tannual\tshare_issued\t1.7B\nAMD\t2025-12-31\tannual\ttotal_debt\t3.85B\nAMD\t2025-12-31\tannual\ttangible_book_value\t21.17B\nAMD\t2025-12-31\tannual\tinvested_capital\t66.22B\nAMD\t2025-12-31\tannual\tworking_capital\t17.49B\nAMD\t2025-12-31\tannual\tnet_tangible_assets\t21.17B\nAMD\t2025-12-31\tannual\tcapital_lease_obligations\t625M\nAMD\t2025-12-31\tannual\tcommon_stock_equity\t63B\nAMD\t2025-12-31\tannual\ttotal_capitalization\t65.35B\nAMD\t2025-12-31\tannual\ttotal_equity_gross_minority_interest\t63B\nAMD\t2025-12-31\tannual\tstockholders_equity\t63B\nAMD\t2025-12-31\tannual\tgains_losses_not_affecting_retained_earnings\t-3M\nAMD\t2025-12-31\tannual\tother_equity_adjustments\t-3M\nAMD\t2025-12-31\tannual\ttreasury_stock\t7.08B\nAMD\t2025-12-31\tannual\tretained_earnings\t6.7B\nAMD\t2025-12-31\tannual\tadditional_paid_in_capital\t63.37B\nAMD\t2025-12-31\tannual\tcapital_stock\t17M\nAMD\t2025-12-31\tannual\tcommon",
+      "reason": "{\"text\":\"SymbolDatePeriodLine ItemValueAMD2025-12-31annualtreasury_shares_number65MAMD2025-12-31annualordinary_shares_number1.63BAMD2025-12-31annualshare_issued1.7BAMD2025-12-31annualtotal_debt3.85BAMD2025-12-31annualtangible_book_value21.17BAMD2025-12-31annualinvested_capital66.22BAMD2025-12-31annualworking_capital17.49BAMD2025-12-31annualnet_tangible_assets21.17BAMD2025-12-31annualcapital_lease_obligations625MAMD2025-12-31annualcommon_stock_equity63BAMD2025-12-31annualtotal_capitalization65.35BAMD2025-12-31annualtotal_equity_gross_minority_interest63BAMD2025-12-31annualstockholders_equity63BAMD2025-12-31annualgains_losses_not_affecting_retained_earnings-3MAMD2025-12-31annualother_equity_adjustments-3MAMD2025-12-31annualtreasury_stock7.08BAMD2025-12-31annualretained_earnings6.7BAMD2025-12-31annualadditional_paid_in_capital63.37BAMD2025-12-31annualcapital_stock17MAMD2025-12-31annualcommon_stock17MAMD2025-12-31annualtotal_liabilities_net_minority_interest13.93BAMD2025-12-31annualtotal_non_current_liabilities_net_minority_interest4.47BAMD2025-12-31annualother_non_current_liabilities1.19BAMD2025-12-31annualnon_current_deferred_liabilities313MAMD2025-12-31annualnon_current_deferred_taxes_liabilities313MAMD2025-12-31annuallong_term_debt_and_capital_lease_obligation2.97BAMD2025-12-31annuallong_term_capital_lease_obligation625MAMD2025-12-31annuallong_term_debt2.35BAMD2025-12-31annualcurrent_liabilities9.46BAMD2025-12-31annualother_current_liabilities402MAMD2025-12-31annualcurrent_deferred_liabilities—AMD2025-12-31annualcurrent_deferred_revenue—AMD2025-12-31annualcurrent_debt_and_capital_lease_obligation874MAMD2025-12-31annualcurrent_debt874MAMD2025-12-31annualother_current_borrowings874MAMD2025-12-31annualpensionand_other_post_retirement_benefit_plans_current1.65BAMD2025-12-31annualpay\",\"svg\":0,\"canvas\":0,\"rows\":54,\"iframe\":0,\"img\":0,\"html\":16484}",
+      "errors": []
+    },
+    {
+      "id": "sec_equity_search_sec_obb",
+      "widgetId": "sec_equity_search_sec_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tName\n\tCIK\n\nAMD\tADVANCED MICRO DEVICES INC\t2488",
+      "reason": "{\"text\":\"SymbolNameCIKAMDADVANCED MICRO DEVICES INC2488\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":891}",
+      "errors": []
+    },
+    {
+      "id": "historical-chart",
+      "widgetId": "yfinance_equity_historical_yfinance_obb",
+      "type": "table",
+      "status": "rendered",
+      "text": "Sep 92026\nSep 12\nSep 15\nSep 18\nSep 21\nSep 24\nSep 27\nSep 30\nOct 3\nOct 6\n480\n500\n520\n540\n560\n580\n600\n620\n640\n660\n0\n10M\n20M\n30M\n40M\ntrace 0\nVolume",
+      "reason": "{\"text\":\"Sep 92026Sep 12Sep 15Sep 18Sep 21Sep 24Sep 27Sep 30Oct 3Oct 6480500520540560580600620640660010M20M30M40Mtrace 0Volume\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":32109}",
+      "errors": []
+    }
+  ]
+}

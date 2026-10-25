@@ -1,0 +1,8 @@
+typecheck|exit=0|dur=11s|cmd=pnpm typecheck
+lint|exit=0|dur=10s|cmd=pnpm lint
+unit|exit=0|dur=201s|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+revision-test|exit=0|dur=2s|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+dashsync|exit=0|dur=17s|cmd=env BDOBB_BROWSER_PORT=4491 BDOBB_MOCK_PORT=4492 pnpm test:dashsync --reporter=line
+notices-check|exit=0|dur=2s|cmd=pnpm notices:check
+diff-check|exit=0|dur=0s|cmd=git diff --check ee24ca2 HEAD -- . :!docs/releases/validation/**/*.log :!src-tauri/vendor/
+scrub|exit=0|dur=10s|cmd=pnpm scrub

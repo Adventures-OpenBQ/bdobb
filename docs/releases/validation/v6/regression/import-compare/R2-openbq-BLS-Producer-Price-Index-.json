@@ -1,0 +1,290 @@
+{
+ "app": "BLS Producer Price Index",
+ "served_tabs": 5,
+ "saved_tabs": 5,
+ "tabs": [
+  {
+   "served_name": "Documents",
+   "saved_name": "Documents",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_ppi_documents_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_ppi_documents_bls_obb",
+      0,
+      0,
+      40,
+      28
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "Detailed Report",
+   "saved_name": "Detailed Report",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_ppi_detailed_report_bls_obb",
+      0,
+      2,
+      40,
+      25
+     ],
+     "saved": [
+      "bls_ppi_detailed_report_bls_obb",
+      0,
+      2,
+      40,
+      25
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Reference Tables",
+   "saved_name": "Reference Tables",
+   "served_cards": 2,
+   "saved_cards": 2,
+   "cards": [
+    {
+     "served": [
+      "bls_ppi_relative_importance_bls_obb",
+      0,
+      2,
+      40,
+      21
+     ],
+     "saved": [
+      "bls_ppi_relative_importance_bls_obb",
+      0,
+      2,
+      40,
+      21
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_seasonal_factors_bls_obb",
+      0,
+      23,
+      40,
+      21
+     ],
+     "saved": [
+      "bls_ppi_seasonal_factors_bls_obb",
+      0,
+      23,
+      40,
+      21
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Final Demand",
+   "saved_name": "Final Demand",
+   "served_cards": 4,
+   "saved_cards": 4,
+   "cards": [
+    {
+     "served": [
+      "bls_ppi_final_demand_1m_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_final_demand_1m_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_final_demand_12m_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_final_demand_12m_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_final_demand_components_1m_bls_obb",
+      0,
+      42,
+      40,
+      41
+     ],
+     "saved": [
+      "bls_ppi_final_demand_components_1m_bls_obb",
+      0,
+      42,
+      40,
+      41
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_final_demand_components_12m_bls_obb",
+      0,
+      83,
+      40,
+      41
+     ],
+     "saved": [
+      "bls_ppi_final_demand_components_12m_bls_obb",
+      0,
+      83,
+      40,
+      41
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Intermediate Demand",
+   "saved_name": "Intermediate Demand",
+   "served_cards": 6,
+   "saved_cards": 6,
+   "cards": [
+    {
+     "served": [
+      "bls_ppi_intermediate_unprocessed_1m_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_unprocessed_1m_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_intermediate_unprocessed_12m_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_unprocessed_12m_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_intermediate_processed_1m_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_processed_1m_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_intermediate_processed_12m_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_processed_12m_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_intermediate_services_1m_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_services_1m_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_ppi_intermediate_services_12m_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_ppi_intermediate_services_12m_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 1,
+ "served_cards_total": 14,
+ "saved_cards_total": 14,
+ "served_groups": 0,
+ "saved_groups": 0
+}

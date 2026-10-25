@@ -1,0 +1,89 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/help/index.test.ts (14 tests) 5ms
+ ✓ src/help/search.test.ts (15 tests) 4ms
+ ✓ src/help/shots.test.ts (5 tests) 10ms
+ ✓ src/help/windowMenu.test.ts (1 test) 1ms
+ ❯ src/help/guide.test.ts (13 tests | 1 failed) 20ms
+   × example dashboards guide documents the v5.0.0 Treasury calendar example > names the file, the Calendar view and that no key is needed 8ms
+     → expected '# Example Dashboards\n\nFrom v3.1.0, …' to contain '## Version 5.0.0'
+ ❯ src/lib/appsJson.examples.test.ts (9 tests | 1 failed) 9ms
+   × docs/examples > v5.0.0-treasury-calendar: two Treasury auction cards, each in the Calendar view 3ms
+     → ENOENT: no such file or directory, open '<worktree>/docs/examples/v5.0.0-treasury-calendar.apps.json'
+ ✓ src/help/shots.unit.test.tsx (5 tests) 191ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/help/guide.test.ts > example dashboards guide documents the v5.0.0 Treasury calendar example > names the file, the Calendar view and that no key is needed
+AssertionError: expected '# Example Dashboards\n\nFrom v3.1.0, …' to contain '## Version 5.0.0'
+
+- Expected
++ Received
+
+- ## Version 5.0.0
++ # Example Dashboards
++
++ From v3.1.0, two example dashboards ship with the `openbb-docker` stack (a third, the Video Library, from v3.2.1) — the built-in widgets, and every OpenBB provider that answers with a demo key or no key at all. Each is an ordinary `apps.json` file (see [Importing Dashboards](#guide/importing-dashboards)), served by openbb-api the same way any backend serves an `apps.json`, and each opens with nothing entered: no key, no sign-up, no configuration.
++
++ ## How they get there
++
++ The source of every example is `docs/examples/*.apps.json` in the `BDOBB` repository, one file per version line. `pnpm apps:sync` reads each file, checks it against `OWNER` (a table naming which backend's `apps.json` carries it — an unowned example fails the sync, since a file nobody serves is a promise nobody sees), and writes it into the matching file in an `openbb-docker` checkout. That write is committed in `openbb-docker`, so it ships with the stack's own next release; `src/lib/appsJson.examples.test.ts` in `BDOBB` parses and imports every example exactly as opening it would, so a broken example fails the gate before it ships.
++
++ ## Built-in widgets
++
++ One dashboard, six tabs: **Note**, **Markdown**, **Clock** (shown in both the vertical and horizontal layouts), **Website** (framing the OpenBB Workspace docs), **RSS** (a public business-news feed), and **Grouping** — two **Parameter echo** cards sharing one Ticker group, so the chain-link, the numbered badge and the Groups menu are all visible on the same tab without touching a real backend. Every card on this dashboard is a built-in (see [Built-in Widgets](#guide/built-in-widgets)); none needs a connection at all.
++
++ ## Demo providers
++
++ One dashboard, one card per OpenBB provider that works with no sign-up on the `openbb-docker` v3.0.1 image, and from v3.2.1 a seventh card, the Video Library (see below):
++
++ | Provider | What the card shows |
++ |---|---|
++ | EIA | Short Term Energy Outlook — no key needed at all |
++ | Congress.gov | Congressional bills |
++ | BLS | A named economic series (`CUUR0000SA0`, CPI-U) |
++ | CFTC | Commitment of Traders |
++ | EconDB | An economic indicator |
++ | Alpha Vantage | Historical EPS for `IBM` — the provider's demo key answers only its own documented example calls, so `IBM` is the one symbol this card can use; the point is that the call goes through and the table renders |
++
++ Each of these rides on a demo or empty key the stack's `credentials.env.example` ships with — nothing here is app state, and BDOBB itself carries no provider keys; its Provider API Keys panel only reads and writes the stack's (see [Provider Keys](#guide/provider-keys)). The full survey of which providers answer keyless and why is in the reference-validation testing notes the app repository carries alongside the reference backend.
++
++ ## Video Library
++
++ From v3.2.1, a third example holds one **YouTube** card, the Video Library: pick one of two sample videos and the card plays it. The same card is the seventh on the Demo providers dashboard. The widget (`videos_video_custom_obb`) is served by openbb-api itself, from the `openbb-videos` extension, and needs no key; its endpoint answers a bare watch URL and the card frames it. A stack whose openbb-api does not carry that extension has no such widget, and an imported card then reads *Widget videos_video_custom_obb is not on any connected backend.*
++
++ In the desktop app the card frames a small page the app serves itself on `127.0.0.1`, which embeds the video; YouTube refuses an embed framed straight from the app's own pages. The web preview frames `youtube.com` directly.
++
++ *Source: BDOBB v3.1.0 `docs/examples/v3.1.0-builtins.apps.json` and `docs/examples/v3.1.0-demo-providers.apps.json`; `BDOBB` `scripts/apps-sync.mjs` at `v3.1.0`; `docs/examples/v3.2.0-video-library.apps.json`, `src-tauri/src/video_wrapper.rs`, `src/lib/youtube.ts` and `web/server.mjs` at `v3.2.1`.*
++ *See also: [Importing Dashboards](#guide/importing-dashboards) · [Built-in Widgets](#guide/built-in-widgets) · [Card Parameters](#guide/card-parameters) · [Reference Validation](#guide/reference-validation) · [Provider Keys](#guide/provider-keys)*
++
+
+ ❯ src/help/guide.test.ts:120:124
+    118|   const body = GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}exam…
+    119|   it("names the file, the Calendar view and that no key is needed", ()…
+    120|     for (const s of ["## Version 5.0.0", "v5.0.0-treasury-calendar.app…
+       |                                                                                                                            ^
+    121|   });
+    122| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lib/appsJson.examples.test.ts > docs/examples > v5.0.0-treasury-calendar: two Treasury auction cards, each in the Calendar view
+Error: ENOENT: no such file or directory, open '<worktree>/docs/examples/v5.0.0-treasury-calendar.apps.json'
+ ❯ load src/lib/appsJson.examples.test.ts:40:35
+     38| 
+     39| function load(file: string): { apps: App[]; ids: string[] } {
+     40|   const raw: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"…
+       |                                   ^
+     41|   expect(isAppsJson(raw), `${file} is an apps.json array`).toBe(true);
+     42|   const apps = raw as App[];
+ ❯ src/lib/appsJson.examples.test.ts:71:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  2 failed | 5 passed (7)
+      Tests  2 failed | 60 passed (62)
+   Start at  12:57:56
+   Duration  1.45s (transform 448ms, setup 1.53s, collect 1.24s, tests 241ms, environment 3.36s, prepare 399ms)
+

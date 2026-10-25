@@ -1,0 +1,71 @@
+service	app	tab	widget_id	backend_default	backend_nondefault	renderer	interaction	note	screenshot
+REFERENCE_BASELINE	Onboarding App for Devs	Types	metric_widget	200	not_applicable	PASS	NOT_RUN	1,234,567 Total Users	010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	markdown_widget	200	not_applicable	PASS	NOT_RUN		010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	markdown_widget_with_error_handling	500	not_applicable	PASS	NOT_RUN	intentional HTTP 500 shown with Retry (E05-067)	010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	pdf_widget_base64	200	not_applicable	PASS	NOT_RUN	sample.pdf 1/1 rendered	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	pdf_widget_url	200	not_applicable	PASS	NOT_RUN	UPSTREAM: S3 asset returns 403 (curl confirms); client shows 'Sample.pdf: HTTP 403' + Retry	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	table_widget	200	not_applicable	PASS	NOT_RUN	Ethereum/Bitcoin/Solana 45B/35B/8B	010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	table_widget_from_api_endpoint	500	not_applicable	PASS	NOT_RUN	renders live rows; backend GET earlier returned transient 500	010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	markdown_widget_with_local_image	200	not_applicable	PASS	NOT_RUN		
+REFERENCE_BASELINE	Onboarding App for Devs	Types	markdown_widget_with_image_from_url	500	not_applicable	PASS	NOT_RUN	Star History image renders; backend GET earlier transient 500	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	/multi_pdf_base64	405	not_applicable	PARTIAL	BLOCKED	rail lists Sample + Bitcoin Whitepaper; selection popover closes under background input (hover)	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	/multi_pdf_url	405	not_applicable	PARTIAL	BLOCKED	'Choose documents in the rail' shown; selection not exercised	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	sample_newsfeed	200	200	PASS	NOT_RUN	5 articles; inner scroll works	010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Types	html_widget	200	not_applicable	NOT_RUN	NOT_RUN	below fold, not captured	
+REFERENCE_BASELINE	Onboarding App for Devs	Types	markdown_widget_with_category_and_subcategory	200	not_applicable	PASS	NOT_RUN		010-baseline-types-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_run_button	200	not_applicable	PASS	PASS	Run: 19:36:25 -> 19:36:33	011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_refetch_interval_and_shorter_stale_time	200	not_applicable	PASS	NOT_RUN		011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_cron_refetch_only	200	not_applicable	PASS	NOT_RUN	backend schedule shown	011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_cron_refetch_interval	200	not_applicable	PASS	NOT_RUN		011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_data_update_display_only	200	not_applicable	PASS	NOT_RUN		011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_short_refetch_interval	200	not_applicable	PASS	NOT_RUN	above fold of capture	011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_short_refetch_interval_and_run_button	200	not_applicable	PASS	NOT_RUN		011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Settings	markdown_widget_with_stale_time	200	not_applicable	PASS	NOT_RUN	above fold of capture	011-baseline-settings.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_boolean	200	200	PASS	PASS	toggle -> 'Toggle: disabled' (E05-017 boolean part)	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_date_picker	200	not_applicable	PASS	BLOCKED	default 2026-02-20 echoed; edit needs text entry	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_number_input	200	not_applicable	PASS	BLOCKED	needs text entry	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_text_input	200	not_applicable	PASS	BLOCKED	needs text entry	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	dropdown_dependent_widget	200	200	PASS	BLOCKED	dropdown refused in background	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_organized_params	200	not_applicable	PASS	BLOCKED		012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_dropdown	200	200	PASS	BLOCKED	'Selection of Days: 1'	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_multi_select_dropdown	200	200	PASS	BLOCKED	AAPL,MSFT	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_multi_select_advanced_dropdown	200	200	PASS	BLOCKED	AAPL,MSFT	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_multi_text_input	200	not_applicable	PASS	BLOCKED	var1,var2,var3	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	markdown_widget_with_str_and_int	200	not_applicable	PASS	BLOCKED	Hello / 42	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Params	table_widget_with_str_filter_param	200	not_applicable	PASS	BLOCKED	Alpha..Delta 4 rows	012-baseline-input-params-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Grouping	company_details	200	200	PASS	BLOCKED	Toyota/2024 default; dropdown refused	013-baseline-grouping-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Grouping	company_performance	200	200	PASS	BLOCKED	10.5M Global Sales TM/2024	013-baseline-grouping-defaults.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Grouping	widget_managed_by_parameter_from_cell_click_on_table_widget	200	200	PASS	PASS	MSFT cell click -> Microsoft details (E05-003)	014-E05-003-msft-cell-click-updates-group.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Grouping	table_widget_with_grouping_by_cell_click	200	200	PASS	PASS	Price sort ascending numeric	015-E05-006-price-sort-ascending-zoom.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	AgGrid	table_widget_with_hover_card	200	not_applicable	PASS	BLOCKED	hover card needs hover	
+REFERENCE_BASELINE	Onboarding App for Devs	AgGrid	table_widget_with_render_functions	200	not_applicable	PASS	NOT_RUN	45B/35B/8B with color render fns	
+REFERENCE_BASELINE	Onboarding App for Devs	AgGrid	table_widget_with_column_definitions	200	not_applicable	PASS	PASS	Price sort AAPL 150.25/MSFT 340.5/GOOGL 2.8K (E05-006 oracle)	016-E05-006-oracle-table-sort.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	AgGrid	table_to_chart_widget	200	not_applicable	PASS	BLOCKED	Q1-Q4 grouped bars; Table/Chart switch is a dropdown (refused)	016-E05-006-oracle-table-sort.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	AgGrid	table_to_time_series_widget	200	not_applicable	PASS	BLOCKED	Jan-Jun revenue/profit lines; switch refused	016-E05-006-oracle-table-sort.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_chart	200	not_applicable	PASS	NOT_RUN		017-baseline-plotly-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_chart_with_theme	200	not_applicable	PASS	NOT_RUN		017-baseline-plotly-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_chart_with_theme_and_toolbar	200	not_applicable	PASS	NOT_RUN	partially in captures	018-baseline-plotly-heatmaps.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_chart_with_theme_and_toolbar_using_config_file	200	not_applicable	NOT_RUN	NOT_RUN	between captures	
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_heatmap	200	200	PASS	NOT_RUN	correlation matrix	018-baseline-plotly-heatmaps.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Plotly	plotly_heatmap_with_raw_data	200	200	PASS	NOT_RUN		018-baseline-plotly-heatmaps.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Highcharts	chains_highchart	500	not_applicable	PASS	NOT_RUN	Top 30 Chains by TVL (after load); backend GET earlier transient 500	019-baseline-highcharts.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Vega-Lite	vega_bar	200	not_applicable	PASS	NOT_RUN		020-baseline-vegalite.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Vega-Lite	vega_line	200	not_applicable	PASS	NOT_RUN		020-baseline-vegalite.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Vega-Lite	vega_scatter	200	not_applicable	PASS	NOT_RUN		020-baseline-vegalite.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Input Form	all_forms	200	not_applicable	PASS	BLOCKED	form fields render; submit needs text entry	021-baseline-input-form.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	TradingView	/udf	404	not_applicable	PASS	NOT_RUN	candlestick+volume 'Rendered by TradingView'	025-baseline-tradingview-renders.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Omni SQL Python	omni-widget	405	405	PASS	BLOCKED	prompt widgets render; prompt needs text entry	022-baseline-omni-blocked-exec.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Omni SQL Python	omni-sql-widget	405	not_applicable	PASS	NOT_APPLICABLE	explicitly blocked: 'sql' not allowed for backend (no-exec exclusion)	022-baseline-omni-blocked-exec.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Omni SQL Python	omni-python-widget	405	not_applicable	PASS	NOT_APPLICABLE	explicitly blocked: 'python' not allowed (no-exec exclusion)	022-baseline-omni-blocked-exec.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Omni SQL Python	omni-widget	405	405	PASS	BLOCKED	prompt widgets render; prompt needs text entry	022-baseline-omni-blocked-exec.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Omni SQL Python	omni-widget	405	405	PASS	BLOCKED	prompt widgets render; prompt needs text entry	022-baseline-omni-blocked-exec.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	sparkline	200	not_applicable	PASS	NOT_RUN		023-baseline-sparkline-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	sparkline-bar	200	not_applicable	PASS	NOT_RUN		023-baseline-sparkline-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	sparkline-line	200	not_applicable	PASS	NOT_RUN		023-baseline-sparkline-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	sparkline-column	200	not_applicable	PASS	NOT_RUN		023-baseline-sparkline-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	sparkline-area	200	not_applicable	NOT_RUN	NOT_RUN	below fold	
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	table_widget_basic_sparklines	200	not_applicable	PASS	NOT_RUN		023-baseline-sparkline-top.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	Sparkline	table_widget_custom_formatter	200	not_applicable	NOT_RUN	NOT_RUN	below fold	
+REFERENCE_BASELINE	Onboarding App for Devs	Live Grid	live_grid_data	200	200	PASS	NOT_RUN	TSLA/MSFT/AMZN live rows, cell flash	024-baseline-livegrid.jpg
+REFERENCE_BASELINE	Onboarding App for Devs	YouTube	/get_video	200	200	PASS	NOT_RUN	embed renders	
+REFERENCE_BASELINE	Onboarding App for Devs	YouTube	/get_video_with_transcript	200	200	PASS	NOT_RUN	UPSTREAM: YouTube 'Video unavailable' (uploader account closed); embed renders the provider message	

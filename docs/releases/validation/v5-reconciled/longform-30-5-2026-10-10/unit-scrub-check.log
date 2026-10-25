@@ -1,0 +1,13 @@
+10:41  up 3 days, 4 mins, 2 users, load averages: 459.45 453.76 484.58
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/scrub-check.test.mjs (7 tests) 1797ms
+   ✓ scrub-check > scans the design and plan documents under docs/superpowers 337ms
+   ✓ scrub-check > flags a macOS or Linux home path 402ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  10:41:11
+   Duration  2.55s (transform 51ms, setup 238ms, collect 12ms, tests 1.80s, environment 0ms, prepare 72ms)
+

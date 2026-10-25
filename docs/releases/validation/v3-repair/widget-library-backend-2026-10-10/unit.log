@@ -1,0 +1,465 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/stores/dashboardStore.test.ts (139 tests) 266ms
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer sticky offsets come from measured widths > measures a pinned column named __proto__ like any other
+`NaN` is an invalid value for the `width` css style property.
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > resizes immediately but saves once, 300ms after the last move
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > collapses a burst of moves into a single save
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > does not save again at unmount once the debounced save has landed
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer column menu > closes the menu when a refresh drops the column it was opened on
+[Table] Column with id 'close' does not exist.
+
+ ✓ src/components/renderers/TableRenderer.test.tsx (119 tests) 5603ms
+   ✓ TableRenderer filter row > narrows 10,000 rows by a contains filter and updates the count 2239ms
+   ✓ TableRenderer filter row > narrows by a number range across the whole set, not the rendered window 388ms
+stderr | src/components/WidgetCard.test.tsx > advanced_charting > hands the widget's UDF spec and the Refresh key to the TradingView renderer
+An update to WidgetCard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WidgetCard.test.tsx (190 tests) 6881ms
+   ✓ WidgetCard export menu > shows a notice and logs the failure, without ever logging the data 414ms
+   ✓ WidgetCard markdown editor > dispatches to the editor with the stored text even though its data is null 306ms
+stderr | src/components/dialogs/SettingsDialog.test.tsx > SettingsDialog > shows a conflict notice, then replaces on the second Done
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/LeftRail.test.tsx (96 tests) 3495ms
+ ✓ src/lib/dataClient.test.ts (107 tests) 354ms
+stderr | src/components/dialogs/SettingsDialog.test.tsx > service sections > sit between Layout and Logs, sorted by backend name then widget name
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/SettingsDialog.test.tsx > service sections > has no Keys tab when no backend runs key-maint
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/SettingsDialog.test.tsx > service sections > labels the Keys tab from an old stack's keys widget alone, falling back to Provider API Keys
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/SettingsDialog.test.tsx > service sections > gives each key-maint backend its own Keys section, named for its backend
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/SettingsDialog.test.tsx (82 tests) 7180ms
+   ✓ SettingsDialog > Done writes one save with only the dirty fields and closes 319ms
+   ✓ SettingsDialog > stages General tab's font size, auto-refresh and match-dashboard-symbol controls into the draft 572ms
+   ✓ SettingsDialog > stages Layout tab switches and the RangeRow slider into the draft, with no widget-spacing control 363ms
+   ✓ User Settings > a refused key shows 'Key refused by <name>; fix the key in Connections.' in the row, keeps the previous value and saves nothing (ruling R1) 425ms
+   ✓ User Settings > saves the server once connected and synced 306ms
+   ✓ User Settings > locks the User Settings controls and Done while a connect is pending, so the last choice cannot be overwritten 441ms
+ ✓ src/components/dialogs/ConnectionsDialog.test.tsx (56 tests) 2852ms
+   ✓ ConnectionsDialog > disables Add until both name and base URL are non-blank 309ms
+ ✓ src/hooks/useWidgetData.test.tsx (54 tests) 6756ms
+   ✓ useWidgetData > does not refetch when params is a new object with the same values 396ms
+   ✓ useWidgetData auto-refresh > never has two requests in flight, even when the endpoint is far slower than the interval 757ms
+   ✓ useWidgetData stale data across a loading pass > drops the old payload the moment the params change, so the previous symbol's rows cannot sit under the new one 526ms
+   ✓ useWidgetData with a run button > arms on the render where the widget resolves, not on mount before it does 358ms
+   ✓ useWidgetData with a run button > fetches nothing when the parameters change, and reports the card stale 356ms
+ ✓ src/components/renderers/PdfView.test.tsx (38 tests) 1852ms
+   ✓ PdfView > re-fits on a resize only while the zoom mode is fit, and drops the pending timer on unmount 436ms
+ ✓ src/components/ParamControls.test.tsx (33 tests) 3351ms
+   ✓ ParamControls with optionsEndpoint params > keeps a downstream value the new list still offers 334ms
+   ✓ ParamControls with optionsEndpoint params > never clears a stored value on the first result after the row opens, even one the list does not offer 311ms
+   ✓ ParamControls with optionsEndpoint params > does not clear a downstream value when an unrelated edit leaves its key alone 329ms
+   ✓ ParamControls with optionsEndpoint params > clears a downstream value when the upstream changes while its first list is still in flight 331ms
+   ✓ ParamControls with optionsEndpoint params > keeps a stored value when a backend appears while the row is open 317ms
+   ✓ ParamControls with optionsEndpoint params > fetches nothing for a hidden param 311ms
+   ✓ ParamControls multi-select params > uses the static list, and issues no request, for a multi param with no endpoint 307ms
+ ✓ src/lib/appsJson.test.ts (81 tests) 326ms
+ ✓ src/lib/widgetsJson.test.ts (80 tests) 16ms
+ ✓ src/components/WidgetLibrary.test.tsx (41 tests) 1349ms
+stderr | src/components/TabBar.test.tsx > TabBar in viewer mode > shows a grouping-off tag only while the dashboard has grouping disabled
+An update to TabBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/TabBar.test.tsx (37 tests) 1188ms
+ ✓ src/lib/workspaceAccount.test.ts (71 tests) 86ms
+ ✓ src/components/renderers/MultiFileRenderer.test.tsx (26 tests) 2263ms
+   ✓ MultiFileRenderer > lists the selector's choices and issues no POST until Open 445ms
+   ✓ MultiFileRenderer > refreshing before anything was opened requests nothing 325ms
+   ✓ MultiFileRenderer > treats a 204 as an empty answer, not a malformed one 345ms
+ ✓ src/lib/tableColumns.test.ts (67 tests) 10ms
+ ✓ src/stores/backendsStore.test.ts (27 tests) 1031ms
+   ✓ updateBackend > does not let a slow probe of the old URL mark the fixed backend offline 326ms
+ ✓ src/components/dialogs/KeysPanel.test.tsx (18 tests) 1444ms
+ ✓ src/components/dialogs/AppsDialog.test.tsx (36 tests) 1347ms
+   ✓ AppsDialog > opens as a real modal dialog, and refuses the native close request 343ms
+ ✓ src/components/renderers/KeysRenderer.test.tsx (43 tests) 1719ms
+ ✓ src/lib/params.test.ts (52 tests) 421ms
+ ✓ src/lib/discovery.test.ts (27 tests) 1739ms
+   ✓ discoverBackend fetches both documents concurrently > takes about one delay, not two 310ms
+ ✓ src/components/runWorkspaceSync.test.ts (30 tests) 27ms
+ ✓ src/components/renderers/IframeRenderer.test.tsx (26 tests) 590ms
+ ✓ src/components/dialogs/BackendEditForm.test.tsx (29 tests) 1031ms
+ ✓ src/stores/workspaceStore.test.ts (24 tests) 118ms
+ ✓ src/hooks/useDashboardShortcuts.test.tsx (28 tests) 113ms
+ ✓ src/hooks/useParamOptions.test.tsx (12 tests) 2134ms
+   ✓ useParamOptions > serves a second hook with the same key from the module cache, synchronously and with no second request 394ms
+   ✓ useParamOptions > does not refetch when values is a new object with the same content, or an unrelated param changes 362ms
+   ✓ useParamOptions > drops a response whose key the param has already moved past 419ms
+   ✓ useParamOptions > issues nothing at all for a widget with no endpoint params 304ms
+ ✓ src/App.apps.test.tsx (11 tests) 2145ms
+   ✓ opening an app > asks again when the same app is opened a second time 335ms
+ ✓ src/browser-shim/shims.test.ts (21 tests) 489ms
+ ✓ src/components/DropZone.test.tsx (20 tests) 609ms
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > adds the corner-handles class when cornerDragHandles is on, and omits it when off
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/DashboardGrid.test.tsx (18 tests) 551ms
+ ✓ src/components/renderers/ChartRenderer.test.tsx (19 tests) 153ms
+ ✓ src/lib/appsExtensionsV3.test.ts (35 tests) 16ms
+ ✓ src/lib/format.test.ts (38 tests) 31ms
+ ✓ src/lib/chartShapes.test.ts (41 tests) 20ms
+ ✓ src/components/RowContextMenu.test.tsx (22 tests) 363ms
+ ✓ src/components/keys/ProviderDetailsDialog.test.tsx (11 tests) 737ms
+ ✓ src/components/railMenu.test.tsx (20 tests) 878ms
+ ✓ src/lib/jsonStore.test.ts (23 tests) 11ms
+ ✓ src/lib/providerAvailability.test.ts (21 tests) 24ms
+ ✓ src/components/dialogs/HelpDialog.test.tsx (21 tests) 2610ms
+stderr | src/App.test.tsx > App > re-applies --rail-width when the setting is saved
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/App.test.tsx (13 tests) 601ms
+ ✓ src/components/WidgetCard.paramFlow.test.tsx (4 tests) 2221ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > issues exactly one request on mount, one more on a committed edit, and none for an unrelated dashboard edit 1513ms
+   ✓ iframe widgets issue no request (Finding 1, real store + real DashboardGrid/WidgetCard) > renders the frame and issues zero requests to the backend 361ms
+   ✓ built-in widgets issue no request (Finding 2, real store + real DashboardGrid/WidgetCard) > renders the note and issues zero requests to the backend 323ms
+ ✓ src/components/dialogs/settings/SettingsForm.test.tsx (12 tests) 846ms
+ ✓ src/lib/settingsFile.test.ts (40 tests) 14ms
+ ✓ src/components/renderers/RssRenderer.test.tsx (17 tests) 625ms
+ ✓ src/components/LibraryFilters.test.tsx (36 tests) 447ms
+ ✓ src/components/renderers/MarkdownEditorRenderer.test.tsx (15 tests) 249ms
+ ✓ src/lib/export.test.ts (37 tests) 38ms
+ ✓ src/lib/settingsBundle.test.ts (20 tests) 16ms
+ ✓ src/lib/columnRender.test.ts (26 tests) 5ms
+ ✓ src/lib/zones.test.ts (25 tests) 52ms
+ ✓ src/stores/settingsStore.test.ts (18 tests) 16ms
+ ✓ src/stores/widgetRegistryStore.test.ts (19 tests) 6ms
+ ✓ src/components/dialogs/WorkspaceDialogs.test.tsx (10 tests) 2409ms
+   ✓ WorkspaceConnectionForm > has name, address and Ask for credentials on startup, and no credential fields 920ms
+   ✓ WorkspaceSignInForm > shows the refusal, clears the password after every attempt, and passes Remember me 418ms
+   ✓ askWorkspaceSignIn > is a Skip-able step at startup, and resolves true once the store signs in 312ms
+ ✓ src/lib/paramGroups.test.ts (25 tests) 5ms
+ ✓ src/lib/backendsFile.test.ts (23 tests) 14ms
+ ✓ src/components/renderers/TradingViewRenderer.test.tsx (15 tests) 902ms
+ ✓ src/stores/foldersStore.test.ts (16 tests) 6ms
+ ✓ src/lib/builtins.test.ts (30 tests) 6ms
+ ✓ src/lib/bootstrap.test.ts (10 tests) 196ms
+ ✓ src/components/GroupLink.test.tsx (10 tests) 868ms
+   ✓ GroupLink > is a chain-link named for the param when unbound, and opens a menu of compatible groups 353ms
+ ✓ src/components/renderers/OmniRenderer.test.tsx (10 tests) 1102ms
+   ✓ OmniRenderer code-executing widgets > offers the prompt and sends a code widget's request to its backend 418ms
+ ✓ src/stores/providerKeysStore.test.ts (11 tests) 34ms
+ ✓ src/components/renderers/TableFilterRow.test.tsx (14 tests) 986ms
+   ✓ FilterControl > reports each keystroke of a contains box, and an empty box as undefined-by-value 753ms
+ ✓ src/components/renderers/ClockRenderer.test.tsx (17 tests) 3100ms
+   ✓ ClockRenderer > renders one digital row per zone by default 402ms
+   ✓ ClockRenderer > uses the default zone list when none is given 329ms
+   ✓ ClockRenderer > treats an empty timezone string as absent and uses the default list 478ms
+   ✓ ClockRenderer > treats whitespace-only timezone as absent and uses the default list 321ms
+ ✓ src/components/renderers/LocalTableRenderer.test.tsx (13 tests) 978ms
+   ✓ LocalTableRenderer > renders the stored csv through the table 317ms
+ ✓ src/components/renderers/PdfRenderer.test.tsx (10 tests) 265ms
+ ✓ src/lib/dashboardsFile.test.ts (17 tests) 23ms
+stderr | src/components/renderers/MarkdownRenderer.test.tsx > MarkdownRenderer images > still blanks a data: src that is not an image
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+
+ ✓ src/components/renderers/MarkdownRenderer.test.tsx (15 tests) 869ms
+   ✓ MarkdownRenderer > renders a markdown string as HTML 553ms
+ ✓ src/components/runAppsImport.test.ts (10 tests) 10ms
+ ✓ src/lib/iframeProtocol.test.ts (33 tests) 10ms
+ ✓ src/lib/feed.test.ts (17 tests) 202ms
+ ✓ src/lib/sparkline.test.ts (17 tests) 97ms
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > asks once per conflict, in order, and hands each hint the answers so far
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns cancelled, and leaves no dialog behind, when the second answer is Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after an answer
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/ImportConflictDialog.test.tsx (14 tests) 2320ms
+   ✓ ImportConflictDialog > names the conflict, shows both sides, and focuses Keep both 673ms
+   ✓ decideImportConflicts > asks once per conflict, in order, and hands each hint the answers so far 478ms
+ ✓ src/lib/appIcons.test.ts (6 tests) 172ms
+ ✓ src/components/keys/ProviderDashboard.test.tsx (8 tests) 1986ms
+   ✓ ProviderDashboard > renders a card per provider with status, credential and a Details button, and never probes on render 963ms
+   ✓ ProviderDashboard > Check all calls onProbe exactly once; Details calls onOpenDetails with the provider 394ms
+ ✓ src/test/memfs.test.ts (20 tests) 7ms
+ ✓ src/lib/providerKeys.test.ts (19 tests) 4ms
+ ✓ src/lib/documents.test.ts (13 tests) 17ms
+ ✓ src/components/renderers/NoteRenderer.test.tsx (12 tests) 1674ms
+   ✓ NoteRenderer > renders the text as markdown 683ms
+ ✓ src/hooks/useModalDialog.test.tsx (6 tests) 932ms
+   ✓ useModalDialog > opens modal on mount and suppresses the native cancel event 599ms
+ ✓ src/test/mockServer.test.ts (9 tests) 374ms
+ ✓ src/lib/lwChart.test.ts (6 tests) 13ms
+ ✓ src/lib/folderTree.test.ts (12 tests) 4ms
+ ✓ src/help/search.test.ts (15 tests) 12ms
+ ✓ src/lib/serialize.test.ts (8 tests) 178ms
+ ✓ src/lib/settingsSections.test.ts (11 tests) 20ms
+ ✓ src/lib/transpose.test.ts (12 tests) 3ms
+ ✓ src/lib/plotly.test.ts (7 tests) 9ms
+ ✓ src/lib/appsJson.examples.test.ts (6 tests) 16ms
+ ✓ src/hooks/useReconnectingSocket.test.tsx (4 tests) 193ms
+ ✓ src/components/InlineRename.test.tsx (9 tests) 1244ms
+   ✓ InlineRename > mounts focused with its text selected, so typing replaces the old name 545ms
+ ✓ src/lib/localFiles.test.ts (18 tests) 211ms
+ ✓ src/help/shots.test.ts (5 tests) 25ms
+ ✓ src/lib/saveTextFile.test.ts (7 tests) 14ms
+ ✓ src/lib/vegaLite.test.ts (6 tests) 6ms
+ ✓ src/components/renderers/YouTubeRenderer.test.tsx (8 tests) 1201ms
+   ✓ YouTubeRenderer > frames the embed URL for a watch-URL payload 487ms
+ ✓ src/components/renderers/HtmlRenderer.test.tsx (6 tests) 1682ms
+   ✓ HtmlRenderer > sandboxes without allow-same-origin 456ms
+   ✓ HtmlRenderer widget messages > still answers a srcdoc frame's connect with the current params 863ms
+ ✓ src/hooks/useHoverPanel.test.ts (8 tests) 177ms
+ ✓ src/help/guide.test.ts (9 tests) 84ms
+ ✓ src/lib/logger.test.ts (8 tests) 5ms
+ ✓ src/components/renderers/SparklineCell.test.tsx (7 tests) 344ms
+ ✓ src/lib/udf.test.ts (10 tests) 7ms
+ ✓ src/components/dialogs/DialogTabs.test.tsx (5 tests) 892ms
+   ✓ DialogTabs > renders one tab per item with roving tabindex and aria wiring 550ms
+ ✓ src/components/DashboardGrid.layout.test.tsx (1 test) 592ms
+   ✓ DashboardGrid first display (real react-grid-layout) > keeps imported coordinates instead of compacting and persisting them 591ms
+ ✓ src/help/index.test.ts (8 tests) 4ms
+ ✓ src/lib/settingsForm.test.ts (4 tests) 3ms
+ ✓ src/lib/paramOptions.test.ts (11 tests) 101ms
+ ✓ src/lib/foldersFile.test.ts (13 tests) 6ms
+ ✓ src/components/ViewToggle.test.tsx (7 tests) 891ms
+   ✓ ViewToggle > renders one option per mode inside a select named View 435ms
+ ✓ src/lib/youtube.test.ts (11 tests) 7ms
+ ✓ src/components/dialogs/DialogShell.test.tsx (3 tests) 741ms
+   ✓ DialogShell > renders the header, body and footer with aria wiring 611ms
+ ✓ src/lib/markdownNote.test.ts (7 tests) 4ms
+ ✓ src/components/renderers/LiveGridRenderer.test.tsx (2 tests) 607ms
+   ✓ LiveGridRenderer > renders the snapshot, updates a row by id, and appends an unknown one 377ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 651ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 649ms
+ ✓ src/lib/highcharts.test.ts (5 tests) 5ms
+ ✓ src/lib/logViewer.test.ts (7 tests) 5ms
+ ✓ src/lib/jsonStore.unreadable.test.ts (3 tests) 3ms
+ ✓ src/hooks/useChildDialog.test.tsx (2 tests) 177ms
+ ✓ src/lib/omni.test.ts (4 tests) 4ms
+ ✓ src/hooks/useMinuteTick.test.ts (5 tests) 21ms
+ ✓ src/components/renderers/AnalogFace.test.tsx (6 tests) 62ms
+ ✓ src/components/renderers/NewsfeedRenderer.test.tsx (4 tests) 198ms
+ ✓ src/components/services/ServiceCard.test.tsx (2 tests) 100ms
+ ✓ src/components/RailIcon.test.tsx (6 tests) 48ms
+ ✓ src/components/renderers/OmniCitations.test.tsx (4 tests) 312ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 8ms
+ ✓ src/hooks/useMediaQuery.test.ts (5 tests) 95ms
+ ✓ src/lib/importLimits.test.ts (8 tests) 2ms
+ ✓ src/lib/widgetTypes.test.ts (3 tests) 2ms
+ ✓ src/components/services/PreferencePill.test.tsx (2 tests) 272ms
+ ✓ src/components/services/ServiceStatus.test.tsx (2 tests) 216ms
+ ✓ src/components/renderers/DotMatrix.test.tsx (3 tests) 152ms
+ ✓ src/components/renderers/MetricRenderer.test.tsx (4 tests) 236ms
+ ✓ src/lib/safeUrl.test.ts (8 tests) 4ms
+ ✓ src/lib/dotFont.test.ts (4 tests) 16ms
+ ✓ deploy/reference-demo/vercel/demo-seed.test.mjs (2 tests) 6ms
+ ✓ src/components/renderers/ParamEchoRenderer.test.tsx (2 tests) 212ms
+ ✓ src/lib/naming.test.ts (5 tests) 6ms
+ ✓ src/lib/csp.test.ts (1 test) 5ms
+ ✓ src/lib/dragDrop.test.ts (4 tests) 2ms
+ ✓ src/hooks/modalStack.test.ts (1 test) 10ms
+ ↓ src/test/integration/reference-backend.test.ts (7 tests | 7 skipped)
+ ❯ scripts/reference-backend.test.mjs (5 tests | 1 failed) 30819ms
+   ✓ reference-backend.sh refusals > names git when git is missing 563ms
+   ✓ reference-backend.sh refusals > names python when python3 is missing 9118ms
+   ✓ reference-backend.sh refusals > refuses a python older than 3.10, naming the floor 631ms
+   × reference-backend.sh checkout origin > re-clones a checkout whose origin is not REPO 20237ms
+     → expected '-C <scratch>' to match /clone .*github\.com\/bdobb-…/bdobb-dev\
+ ✓ scripts/scrub-check.test.mjs (5 tests) 29481ms
+   ✓ scrub-check > passes a clean tree 3382ms
+   ✓ scrub-check > scans the design and plan documents under docs/superpowers 9041ms
+   ✓ scrub-check > still skips the verbatim rebuild documents in docs/specs 5819ms
+   ✓ scrub-check > flags a GitHub token 7382ms
+   ✓ scrub-check > flags a PEM private key 3857ms
+ ✓ src/lib/pdfLegacy.test.ts (3 tests) 2ms
+ ✓ scripts/release.test.mjs (6 tests) 74763ms
+   ✓ release.sh > refuses to build without every signing value 6325ms
+   ✓ release.sh > refuses to publish when origin's tag points at another commit 19087ms
+   ✓ release.sh > stops before publishing when the tag push fails 25122ms
+   ✓ release.sh > pushes an absent tag, then creates the release against that tag only 14137ms
+   ✓ release.sh > publishes this version's dmg even when an older build left another in the bundle dir 8344ms
+   ✓ release.sh > replaces an existing release's files in place, never deleting the release first 1747ms
+ ✓ src/lib/abortSignalAny.test.ts (3 tests) 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  scripts/reference-backend.test.mjs > reference-backend.sh checkout origin > re-clones a checkout whose origin is not REPO
+AssertionError: expected '-C <scratch>' to match /clone .*github\.com\/bdobb-…/bdobb-dev\
+
+- Expected: 
+/clone .*github\.com\/bdobb-dev\/backends-for-openbb/
+
++ Received: 
+"-C <scratch> remote get-url origin
+"
+
+ ❯ scripts/reference-backend.test.mjs:128:19
+    126|       const log = existsSync(calls) ? readFileSync(calls, "utf8") : "";
+    127|       expect(out).toContain("re-cloning");
+    128|       expect(log).toMatch(/clone .*github\.com\/bdobb-dev\/backends-fo…
+       |                   ^
+    129|     } finally {
+    130|       rmSync(root, { recursive: true, force: true });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 149 passed | 1 skipped (151)
+      Tests  1 failed | 3093 passed | 7 skipped (3101)
+   Start at  09:55:08
+   Duration  500.34s (transform 5.89s, setup 66.73s, collect 39.46s, tests 236.08s, environment 166.58s, prepare 24.87s)
+

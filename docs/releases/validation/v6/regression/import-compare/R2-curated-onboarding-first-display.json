@@ -1,0 +1,1314 @@
+{
+ "app": "Onboarding App for Devs",
+ "served_tabs": 14,
+ "saved_tabs": 14,
+ "tabs": [
+  {
+   "served_name": "Types",
+   "saved_name": "Types",
+   "served_cards": 14,
+   "saved_cards": 14,
+   "cards": [
+    {
+     "served": [
+      "metric_widget",
+      0,
+      2,
+      40,
+      5
+     ],
+     "saved": [
+      "metric_widget",
+      0,
+      0,
+      40,
+      5
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "markdown_widget",
+      0,
+      7,
+      12,
+      4
+     ],
+     "saved": [
+      "markdown_widget",
+      0,
+      5,
+      12,
+      4
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "markdown_widget_with_error_handling",
+      0,
+      15,
+      16,
+      8
+     ],
+     "saved": [
+      "markdown_widget_with_error_handling",
+      0,
+      13,
+      16,
+      8
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "pdf_widget_base64",
+      0,
+      39,
+      20,
+      15
+     ],
+     "saved": [
+      "pdf_widget_base64",
+      0,
+      37,
+      20,
+      15
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "pdf_widget_url",
+      20,
+      39,
+      20,
+      15
+     ],
+     "saved": [
+      "pdf_widget_url",
+      20,
+      37,
+      20,
+      15
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "table_widget",
+      12,
+      7,
+      13,
+      8
+     ],
+     "saved": [
+      "table_widget",
+      12,
+      5,
+      13,
+      8
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "table_widget_from_api_endpoint",
+      25,
+      7,
+      15,
+      8
+     ],
+     "saved": [
+      "table_widget_from_api_endpoint",
+      25,
+      5,
+      15,
+      8
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "markdown_widget_with_local_image",
+      0,
+      23,
+      20,
+      16
+     ],
+     "saved": [
+      "markdown_widget_with_local_image",
+      0,
+      21,
+      20,
+      16
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "markdown_widget_with_image_from_url",
+      20,
+      23,
+      20,
+      16
+     ],
+     "saved": [
+      "markdown_widget_with_image_from_url",
+      20,
+      21,
+      20,
+      16
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "/multi_pdf_base64",
+      0,
+      54,
+      20,
+      15
+     ],
+     "saved": [
+      "/multi_pdf_base64",
+      0,
+      52,
+      20,
+      15
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "/multi_pdf_url",
+      20,
+      54,
+      20,
+      15
+     ],
+     "saved": [
+      "/multi_pdf_url",
+      20,
+      52,
+      20,
+      15
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "sample_newsfeed",
+      16,
+      15,
+      24,
+      8
+     ],
+     "saved": [
+      "sample_newsfeed",
+      16,
+      13,
+      24,
+      8
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "html_widget",
+      0,
+      69,
+      40,
+      22
+     ],
+     "saved": [
+      "html_widget",
+      0,
+      67,
+      40,
+      22
+     ],
+     "ok": false
+    },
+    {
+     "served": [
+      "markdown_widget_with_category_and_subcategory",
+      0,
+      11,
+      12,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_category_and_subcategory",
+      0,
+      9,
+      12,
+      4
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "Settings",
+   "saved_name": "Settings",
+   "served_cards": 8,
+   "saved_cards": 8,
+   "cards": [
+    {
+     "served": [
+      "markdown_widget_with_run_button",
+      0,
+      12,
+      20,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_run_button",
+      0,
+      12,
+      20,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_refetch_interval_and_shorter_stale_time",
+      0,
+      7,
+      40,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_refetch_interval_and_shorter_stale_time",
+      0,
+      7,
+      40,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_cron_refetch_only",
+      0,
+      17,
+      40,
+      7
+     ],
+     "saved": [
+      "markdown_widget_with_cron_refetch_only",
+      0,
+      17,
+      40,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_cron_refetch_interval",
+      0,
+      24,
+      20,
+      7
+     ],
+     "saved": [
+      "markdown_widget_with_cron_refetch_interval",
+      0,
+      24,
+      20,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_data_update_display_only",
+      20,
+      24,
+      20,
+      7
+     ],
+     "saved": [
+      "markdown_widget_with_data_update_display_only",
+      20,
+      24,
+      20,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_short_refetch_interval",
+      20,
+      2,
+      20,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_short_refetch_interval",
+      20,
+      2,
+      20,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_short_refetch_interval_and_run_button",
+      20,
+      12,
+      20,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_short_refetch_interval_and_run_button",
+      20,
+      12,
+      20,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_stale_time",
+      0,
+      2,
+      20,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_stale_time",
+      0,
+      2,
+      20,
+      5
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Input Params",
+   "saved_name": "Input Params",
+   "served_cards": 12,
+   "saved_cards": 12,
+   "cards": [
+    {
+     "served": [
+      "markdown_widget_with_boolean",
+      0,
+      6,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_boolean",
+      0,
+      6,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_date_picker",
+      20,
+      6,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_date_picker",
+      20,
+      6,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_number_input",
+      20,
+      2,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_number_input",
+      20,
+      2,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_text_input",
+      0,
+      2,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_text_input",
+      0,
+      2,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "dropdown_dependent_widget",
+      0,
+      23,
+      20,
+      5
+     ],
+     "saved": [
+      "dropdown_dependent_widget",
+      0,
+      23,
+      20,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_organized_params",
+      0,
+      28,
+      40,
+      9
+     ],
+     "saved": [
+      "markdown_widget_with_organized_params",
+      0,
+      28,
+      40,
+      9
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_dropdown",
+      0,
+      10,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_dropdown",
+      0,
+      10,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_multi_select_dropdown",
+      20,
+      10,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_multi_select_dropdown",
+      20,
+      10,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_multi_select_advanced_dropdown",
+      20,
+      14,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_multi_select_advanced_dropdown",
+      20,
+      14,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_multi_text_input",
+      0,
+      14,
+      20,
+      4
+     ],
+     "saved": [
+      "markdown_widget_with_multi_text_input",
+      0,
+      14,
+      20,
+      4
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "markdown_widget_with_str_and_int",
+      0,
+      18,
+      20,
+      5
+     ],
+     "saved": [
+      "markdown_widget_with_str_and_int",
+      0,
+      18,
+      20,
+      5
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_with_str_filter_param",
+      20,
+      18,
+      20,
+      10
+     ],
+     "saved": [
+      "table_widget_with_str_filter_param",
+      20,
+      18,
+      20,
+      10
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Grouping",
+   "saved_name": "Grouping",
+   "served_cards": 4,
+   "saved_cards": 4,
+   "cards": [
+    {
+     "served": [
+      "company_details",
+      0,
+      2,
+      19,
+      9
+     ],
+     "saved": [
+      "company_details",
+      0,
+      2,
+      19,
+      9
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "company_performance",
+      19,
+      2,
+      21,
+      9
+     ],
+     "saved": [
+      "company_performance",
+      19,
+      2,
+      21,
+      9
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "widget_managed_by_parameter_from_cell_click_on_table_widget",
+      19,
+      11,
+      21,
+      9
+     ],
+     "saved": [
+      "widget_managed_by_parameter_from_cell_click_on_table_widget",
+      19,
+      11,
+      21,
+      9
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_with_grouping_by_cell_click",
+      0,
+      11,
+      19,
+      9
+     ],
+     "saved": [
+      "table_widget_with_grouping_by_cell_click",
+      0,
+      11,
+      19,
+      9
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "AgGrid",
+   "saved_name": "AgGrid",
+   "served_cards": 5,
+   "saved_cards": 5,
+   "cards": [
+    {
+     "served": [
+      "table_widget_with_hover_card",
+      27,
+      2,
+      13,
+      7
+     ],
+     "saved": [
+      "table_widget_with_hover_card",
+      27,
+      2,
+      13,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_with_render_functions",
+      12,
+      2,
+      15,
+      7
+     ],
+     "saved": [
+      "table_widget_with_render_functions",
+      12,
+      2,
+      15,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_with_column_definitions",
+      0,
+      2,
+      12,
+      7
+     ],
+     "saved": [
+      "table_widget_with_column_definitions",
+      0,
+      2,
+      12,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_to_chart_widget",
+      0,
+      9,
+      20,
+      12
+     ],
+     "saved": [
+      "table_to_chart_widget",
+      0,
+      9,
+      20,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_to_time_series_widget",
+      20,
+      9,
+      20,
+      12
+     ],
+     "saved": [
+      "table_to_time_series_widget",
+      20,
+      9,
+      20,
+      12
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Plotly",
+   "saved_name": "Plotly",
+   "served_cards": 6,
+   "saved_cards": 6,
+   "cards": [
+    {
+     "served": [
+      "plotly_chart",
+      0,
+      2,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_chart",
+      0,
+      2,
+      40,
+      15
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "plotly_chart_with_theme",
+      0,
+      17,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_chart_with_theme",
+      0,
+      17,
+      40,
+      15
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "plotly_chart_with_theme_and_toolbar",
+      0,
+      32,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_chart_with_theme_and_toolbar",
+      0,
+      32,
+      40,
+      15
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "plotly_chart_with_theme_and_toolbar_using_config_file",
+      0,
+      47,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_chart_with_theme_and_toolbar_using_config_file",
+      0,
+      47,
+      40,
+      15
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "plotly_heatmap",
+      0,
+      62,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_heatmap",
+      0,
+      62,
+      40,
+      15
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "plotly_heatmap_with_raw_data",
+      0,
+      77,
+      40,
+      15
+     ],
+     "saved": [
+      "plotly_heatmap_with_raw_data",
+      0,
+      77,
+      40,
+      15
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Highcharts",
+   "saved_name": "Highcharts",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "chains_highchart",
+      0,
+      2,
+      40,
+      14
+     ],
+     "saved": [
+      "chains_highchart",
+      0,
+      2,
+      40,
+      14
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Vega-Lite",
+   "saved_name": "Vega-Lite",
+   "served_cards": 3,
+   "saved_cards": 3,
+   "cards": [
+    {
+     "served": [
+      "vega_bar",
+      0,
+      2,
+      20,
+      12
+     ],
+     "saved": [
+      "vega_bar",
+      0,
+      2,
+      20,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "vega_line",
+      20,
+      2,
+      20,
+      12
+     ],
+     "saved": [
+      "vega_line",
+      20,
+      2,
+      20,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "vega_scatter",
+      10,
+      14,
+      20,
+      12
+     ],
+     "saved": [
+      "vega_scatter",
+      10,
+      14,
+      20,
+      12
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Input Form",
+   "saved_name": "Input Form",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "all_forms",
+      0,
+      2,
+      40,
+      10
+     ],
+     "saved": [
+      "all_forms",
+      0,
+      2,
+      40,
+      10
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "TradingView",
+   "saved_name": "TradingView",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "/udf",
+      0,
+      2,
+      40,
+      21
+     ],
+     "saved": [
+      "/udf",
+      0,
+      2,
+      40,
+      21
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Omni SQL Python",
+   "saved_name": "Omni SQL Python",
+   "served_cards": 5,
+   "saved_cards": 5,
+   "cards": [
+    {
+     "served": [
+      "omni-widget",
+      0,
+      2,
+      13,
+      13
+     ],
+     "saved": [
+      "omni-widget",
+      0,
+      2,
+      13,
+      13
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "omni-sql-widget",
+      0,
+      15,
+      20,
+      18
+     ],
+     "saved": [
+      "omni-sql-widget",
+      0,
+      15,
+      20,
+      18
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "omni-python-widget",
+      20,
+      15,
+      20,
+      18
+     ],
+     "saved": [
+      "omni-python-widget",
+      20,
+      15,
+      20,
+      18
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "omni-widget",
+      13,
+      2,
+      14,
+      13
+     ],
+     "saved": [
+      "omni-widget",
+      13,
+      2,
+      14,
+      13
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "omni-widget",
+      27,
+      2,
+      13,
+      13
+     ],
+     "saved": [
+      "omni-widget",
+      27,
+      2,
+      13,
+      13
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Sparkline",
+   "saved_name": "Sparkline",
+   "served_cards": 7,
+   "saved_cards": 7,
+   "cards": [
+    {
+     "served": [
+      "sparkline",
+      0,
+      9,
+      40,
+      7
+     ],
+     "saved": [
+      "sparkline",
+      0,
+      9,
+      40,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "sparkline-bar",
+      0,
+      36,
+      40,
+      8
+     ],
+     "saved": [
+      "sparkline-bar",
+      0,
+      36,
+      40,
+      8
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "sparkline-line",
+      0,
+      16,
+      40,
+      6
+     ],
+     "saved": [
+      "sparkline-line",
+      0,
+      16,
+      40,
+      6
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "sparkline-column",
+      0,
+      29,
+      40,
+      7
+     ],
+     "saved": [
+      "sparkline-column",
+      0,
+      29,
+      40,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "sparkline-area",
+      0,
+      22,
+      40,
+      7
+     ],
+     "saved": [
+      "sparkline-area",
+      0,
+      22,
+      40,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_basic_sparklines",
+      0,
+      2,
+      40,
+      7
+     ],
+     "saved": [
+      "table_widget_basic_sparklines",
+      0,
+      2,
+      40,
+      7
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "table_widget_custom_formatter",
+      0,
+      44,
+      40,
+      9
+     ],
+     "saved": [
+      "table_widget_custom_formatter",
+      0,
+      44,
+      40,
+      9
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Live Grid",
+   "saved_name": "Live Grid",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "live_grid_data",
+      0,
+      2,
+      40,
+      11
+     ],
+     "saved": [
+      "live_grid_data",
+      0,
+      2,
+      40,
+      11
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "YouTube",
+   "saved_name": "YouTube",
+   "served_cards": 2,
+   "saved_cards": 2,
+   "cards": [
+    {
+     "served": [
+      "/get_video",
+      0,
+      2,
+      20,
+      14
+     ],
+     "saved": [
+      "/get_video",
+      0,
+      2,
+      20,
+      14
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "/get_video_with_transcript",
+      20,
+      2,
+      20,
+      14
+     ],
+     "saved": [
+      "/get_video_with_transcript",
+      20,
+      2,
+      20,
+      14
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 14,
+ "served_cards_total": 70,
+ "saved_cards_total": 70,
+ "served_groups": 3,
+ "saved_groups": 3
+}

@@ -1,0 +1,22 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/header-check.test.mjs (4 tests) 18083ms
+   ✓ header-check > passes when every source file carries the house header 7449ms
+   ✓ header-check > fails on a source file without it, and names the file 3905ms
+   ✓ header-check > accepts the header below a shebang, in a CSS comment or an HTML comment 2999ms
+   ✓ header-check > does not check data or docs, and skips paths listed in scripts/header-exempt.txt 3730ms
+ ✓ scripts/scrub-check.test.mjs (7 tests) 44476ms
+   ✓ scrub-check > passes a clean tree 9998ms
+   ✓ scrub-check > scans the design and plan documents under docs/superpowers 8572ms
+   ✓ scrub-check > still skips the verbatim rebuild documents in docs/specs 2917ms
+   ✓ scrub-check > flags a GitHub token 5009ms
+   ✓ scrub-check > flags a PEM private key 4991ms
+   ✓ scrub-check > flags a macOS or Linux home path 9053ms
+   ✓ scrub-check > ignores a worktree's .git file and the gitignored .vercel build output 3936ms
+
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+   Start at  12:00:45
+   Duration  46.68s (transform 94ms, setup 1.03s, collect 75ms, tests 62.56s, environment 0ms, prepare 220ms)
+

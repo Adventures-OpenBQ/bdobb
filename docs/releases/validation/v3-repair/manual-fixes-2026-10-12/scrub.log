@@ -1,0 +1,17 @@
+
+> bdobb@3.0.0 scrub ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+> bash scripts/scrub-check.sh && bash scripts/header-check.sh
+
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/build-web.log:2:> bdobb@3.0.0 build:web ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/build-web.log:71:Private web function built at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair/.vercel/output/functions/preview.func. Nothing deployed.
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/scrub.log:2:> bdobb@3.0.0 scrub ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/lint.log:2:> bdobb@3.0.0 lint ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/typecheck.log:2:> bdobb@3.0.0 typecheck ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/web.log:2:> bdobb@3.0.0 test:web ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/smoke.log:2:> bdobb@3.0.0 smoke ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/web-browser.log:2:> bdobb@3.0.0 test:web:browser ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/unit.log:2: RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/e2e.log:2:> bdobb@3.0.0 e2e ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+./docs/releases/validation/v3-repair/manual-fixes-2026-10-12/build.log:2:> bdobb@3.0.0 build ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+scrub-check: FAILED — private infrastructure details found above.
+ ELIFECYCLE  Command failed with exit code 1.

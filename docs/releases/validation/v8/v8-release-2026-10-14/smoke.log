@@ -1,0 +1,5 @@
+
+> bdobb@8.0.0 smoke <worktree>
+> node scripts/smoke.mjs
+
+smoke: clean — React mounted (7681 bytes under #root), no console errors

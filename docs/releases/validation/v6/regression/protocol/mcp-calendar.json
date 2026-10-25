@@ -1,0 +1,44 @@
+{
+ "available_tools_calendar": {
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+   "_meta": {
+    "fastmcp": {
+     "wrap_result": true
+    }
+   },
+   "content": [
+    {
+     "text": "[{\"name\":\"calendar_trading\",\"description\":\"Trading hours and holidays for one exchange and year, in EODHD v2 shape.\"},{\"name\":\"calendar_trading_table\",\"description\":\"Holidays and early closes for one exchange and year.\"}]",
+     "type": "text"
+    }
+   ],
+   "isError": false,
+   "structuredContent": {
+    "result": [
+     {
+      "name": "calendar_trading",
+      "description": "Trading hours and holidays for one exchange and year, in EODHD v2 shape."
+     },
+     {
+      "name": "calendar_trading_table",
+      "description": "Holidays and early closes for one exchange and year."
+     }
+    ]
+   }
+  }
+ },
+ "calendar_tool_names": [
+  "calendar_trading",
+  "calendar_trading_table"
+ ],
+ "call_calendar_trading": {
+  "isError": false,
+  "text_head": "{\"data\":{\"Name\":\"New York Stock Exchange\",\"Code\":\"XNYS\",\"OperatingMIC\":\"XNYS\",\"Timezone\":\"America/New_York\",\"TradingHours\":{\"Open\":\"09:30:00\",\"Close\":\"16:00:00\",\"WorkingDays\":\"Mon, Tue, Wed, Thu, Fri\"},\"ExchangeHolidays\":{\"2026-01-01\":{\"Holiday\":\"New Year's Day\",\"Type\":\"Official\"},\"2026-01-19\":{\"Holiday\":\"Dr. Martin Luther King Jr. Day\",\"Type\":\"Official\"},\"2026-02-16\":{\"Holiday\":\"President's Day\","
+ },
+ "call_calendar_trading_table": {
+  "isError": false,
+  "text_head": "{\"result\":[{\"date\":\"2026-01-01\",\"holiday\":\"New Year's Day\",\"type\":\"Official\",\"early_close\":null},{\"date\":\"2026-01-19\",\"holiday\":\"Dr. Martin Luther King Jr. Day\",\"type\":\"Official\",\"early_close\":null},{\"date\":\"2026-02-16\",\"holiday\":\"President's Day\",\"type\":\"Official\",\"early_close\":null},{\"date\":\"2026-04-03\",\"holiday\":\"Good Friday\",\"type\":\"Official\",\"early_close\":null},{\"date\":\"2026-05-25\",\"holiday\":"
+ }
+}

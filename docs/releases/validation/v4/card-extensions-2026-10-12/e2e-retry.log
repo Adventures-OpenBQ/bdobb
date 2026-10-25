@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/documents.spec.ts:26:1 › a pdf card renders its document through the bundled pdf.js worker (10.0s)
+  ✓  2 [chromium] › e2e/pivot-table-frame.spec.ts:12:37 › real worker table frame in dark (5.2s)
+  ✓  3 [chromium] › e2e/pivot-table-frame.spec.ts:12:37 › real worker table frame in light (4.9s)
+
+  3 passed (26.2s)

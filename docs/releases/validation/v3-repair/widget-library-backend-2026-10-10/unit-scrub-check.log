@@ -1,0 +1,13 @@
+10:31  up 2 days, 23:55, 2 users, load averages: 610.91 640.75 546.85
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/scrub-check.test.mjs (7 tests) 1649ms
+   ✓ scrub-check > passes a clean tree 352ms
+   ✓ scrub-check > flags a macOS or Linux home path 486ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  10:31:49
+   Duration  2.28s (transform 39ms, setup 178ms, collect 28ms, tests 1.65s, environment 1ms, prepare 54ms)
+

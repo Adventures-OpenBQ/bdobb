@@ -1,0 +1,93 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/stores/dashboardStore.legacyV4.test.ts (156 tests) 627ms
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > resizes immediately but saves once, 300ms after the last move
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > collapses a burst of moves into a single save
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > does not save again at unmount once the debounced save has landed
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer column menu > closes the menu when a refresh drops the column it was opened on
+[Table] Column with id 'close' does not exist.
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > autosizes visible columns from header and cell text when autosizeKey changes
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > does not re-apply autosize on a remount with the same autosizeKey (Reset columns, a view switch)
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+ ✓ src/components/renderers/TableRenderer.test.tsx (135 tests) 8902ms
+   ✓ TableRenderer row virtualisation > sorts across the whole set, not the window, and returns to the top 373ms
+   ✓ TableRenderer filter row > narrows 10,000 rows by a contains filter and updates the count 1956ms
+   ✓ TableRenderer filter row > narrows by a number range across the whole set, not the rendered window 1393ms
+   ✓ TableRenderer filter row > Clear drops every filter and restores the count 372ms
+   ✓ pivot > keeps the scroll position across ticks while a stale sort entry is dropped 415ms
+ ✓ src/stores/dashboardStore.test.ts (142 tests) 539ms
+stderr | src/components/WidgetCard.test.tsx > advanced_charting > hands the widget's UDF spec and the Refresh key to the TradingView renderer
+An update to WidgetCard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WidgetCard.test.tsx (216 tests) 14463ms
+   ✓ WidgetCard in viewer mode > offers a period control's Relative tab read-only: chips and Apply, but no Save as preset and no × 441ms
+   ✓ WidgetCard markdown editor > dispatches to the editor with the stored text even though its data is null 329ms
+   ✓ the ⋯ menu, v5.5.0 items > Parameters opens the full control row in a docked panel with visible labels; Escape leaves it open 324ms
+ ✓ src/components/LeftRail.test.tsx (97 tests) 5701ms

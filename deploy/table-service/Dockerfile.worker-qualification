@@ -1,0 +1,17 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+# Qualification only; production gateway/Compose integration is a separate task.
+FROM rust:1.98.1-slim-trixie@sha256:4cd829461bd5c4d511c32e269da9cb8929223b666519d8004e35fc8d1d771ab7
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl g++ make pkg-config python3 xz-utils && rm -rf /var/lib/apt/lists/*
+ARG ICU_SHA256=f06bcab72736ee9d55689033b8198a178562354128cf38edb2afc2e67e3fd931
+RUN curl --fail --location --retry 3 https://codeload.github.com/unicode-org/icu/tar.gz/refs/tags/release-78.3 -o /tmp/icu.tar.gz \
+ && echo "$ICU_SHA256  /tmp/icu.tar.gz" | sha256sum -c - \
+ && tar -xzf /tmp/icu.tar.gz -C /tmp \
+ && cd /tmp/icu-release-78.3/icu4c/source \
+ && ./configure --prefix=/usr/local --disable-samples --disable-tests \
+ && make -j4 && make install && ldconfig \
+ && mkdir -p /usr/local/share/licenses/icu \
+ && cp /tmp/icu-release-78.3/LICENSE /usr/local/share/licenses/icu/LICENSE \
+ && rm -rf /tmp/icu*
+WORKDIR /work
+ENV CARGO_TARGET_DIR=/target

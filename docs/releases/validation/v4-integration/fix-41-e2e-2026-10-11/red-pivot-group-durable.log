@@ -1,0 +1,140 @@
+
+Running 3 tests using 1 worker
+
+[1/3] [chromium] › e2e/pivot-group-durable.spec.ts:9:1 › owner durable Page unlink push and Undo retain union and exact CSV public cascade without root reacquisition
+  1) [chromium] › e2e/pivot-group-durable.spec.ts:9:1 › owner durable Page unlink push and Undo retain union and exact CSV public cascade without root reacquisition 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -8,10 +8,11 @@
+            "value": "Actual,Budget",
+          },
+        ],
+        "id": "d1",
+        "name": "Main",
+    +   "revision": 4,
+        "tabs": Array [
+          Object {
+            "cards": Array [
+              Object {
+                "backendId": "builtin",
+
+      28 |  },file);
+      29 |  for(const state of [result.before,result.retained,result.restored,result.union]){expect(state.totals.values).toMatchObject({revenueSum:30,budget:20});expect(state.rows.root.map(r=>r.values.revenue)).toEqual([10,20]);expect(state.rows.leaf.map(r=>r.values.revenue)).toEqual([20]);}expect(result.budget.totals.values).toMatchObject({revenueSum:20,budget:20});expect(result.budget.rows.root.map(r=>r.values.revenue)).toEqual([20]);expect(result.unlinked).toEqual({status:'saved',writes:1});expect(result.undone).toEqual({status:'saved',writes:1});expect(result.pushUndo).toEqual({status:'saved',writes:1});
+    > 30 |  expect((result.retained.definition.analytical as TableModelV1).layout.page!.memberKeys).toEqual([k('Actual'),k('Budget')]);for(const state of [result.retained,result.restored,result.budget,result.union]){expect(state.input).toBe(result.before.input);expect(state.source).toBe(result.before.source);expect(state.childSource).toEqual(state.root);expect(state.leafSource).toEqual(state.child);expect(state.chart).toEqual(state.leaf);for(const row of state.rows.root)expect(row.values).not.toHaveProperty('secret');expect(JSON.parse(state.disk!)).toEqual(JSON.parse(state.memory!));expect(state.capability.error).toBeUndefined();expect(state.capability.canReplace).toBe(true);}expect(JSON.parse(result.union.disk!)).toEqual(JSON.parse(saved));expect(await read(page,'dashboards/d1.json')).toBe(result.union.disk);const plot=page.locator('.widget-card').filter({has:page.locator('header').getByText('Chart',{exact:true})}).locator('.js-plotly-plot');await expect.poll(()=>plot.evaluate(el=>(el as unknown as {data:{y:number[]}[]}).data.map(t=>t.y))).toEqual([[20]]);await expect.poll(()=>requests.at(-1)).toBe('Actual,Budget');expect(requests.slice(initialRequests)).toEqual(['Budget','Actual,Budget']);await info.attach('durable-group-cascade',{body:JSON.stringify(result),contentType:'application/json'});
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ^
+      31 | });
+      32 | for(const key of ['pivot:page','pivot:filter:cat'])test(`actual CSV durable ${key} keeps all112 observed matches beyond preview and explicit None Undo`,async({page},info)=>{
+      33 |  const file='00000000-0000-0000-0000-000000000001.csv';const analytical:TableModelV1={schemaVersion:1,enabled:true,params:{promotePage:true,filters:[{id:'p',categoryId:'cat',label:'Region',multiSelect:true}]},categories:[{id:'cat',name:'Region',sourceFieldId:'region',transform:'native'}],measures:[],formulas:[],layout:{rows:[],columns:[],values:[],...(key==='pivot:page'?{page:{categoryId:'cat',memberKeys:[k('R0')]}}:{})},checklists:[],resultFilters:[],subtotals:{grandTotal:false,groups:false}};
+        at <worktree>/e2e/pivot-group-durable.spec.ts:30:714
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-owner--5920e--without-root-reacquisition-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/pivot-group-durable-owner--5920e--without-root-reacquisition-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-owner--5920e--without-root-reacquisition-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/pivot-group-durable-owner--5920e--without-root-reacquisition-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[2/3] [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:page keeps all112 observed matches beyond preview and explicit None Undo
+  2) [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:page keeps all112 observed matches beyond preview and explicit None Undo 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -8,10 +8,11 @@
+            "value": "R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,R32,R33,R34,R35,R36,R37,R38,R39,R40,R41,R42,R43,R44,R45,R46,R47,R48,R49,R50,R51,R52,R53,R54,R55,R56,R57,R58,R59,R60,R61,R62,R63,R64,R65,R66,R67,R68,R69,R70,R71,R72,R73,R74,R75,R76,R77,R78,R79,R80,R81,R82,R83,R84,R85,R86,R87,R88,R89,R90,R91,R92,R93,R94,R95,R96,R97,R98,R99,R100,R101,R102,R103,R104,R105,R106,R107,R108,R109,R110,R111",
+          },
+        ],
+        "id": "d1",
+        "name": "Main",
+    +   "revision": 4,
+        "tabs": Array [
+          Object {
+            "cards": Array [
+              Object {
+                "backendId": "builtin",
+
+      38 |   const before=await snap();fs.__failRead('files/'+file);const unlink=await perform('unlink'),retained=await snap();if(key==='pivot:page'){const previous=coordinator;const until=async(test:()=>boolean)=>{const start=performance.now();while(!test()){if(performance.now()-start>3000)throw new Error('Tab coordinator did not settle');await new Promise(r=>setTimeout(r,10));}};dashboards.getState().setActiveTab('other');await until(()=>!previous.getSnapshot().canReplace);await Promise.resolve();dashboards.getState().setActiveTab('t');await until(()=>coordinators.get('d1','root').getSnapshot().canReplace);coordinator=coordinators.get('d1','root');if(coordinator===previous)throw new Error('Expected real tab owner recreation');}const undo=await coordinator.undoPivotGroupChange(coordinator.authoringBase(),unlink.result.undo);await snap();const empty=await perform('push',[]),none=await snap();const emptyUndo=await coordinator.undoPivotGroupChange(coordinator.authoringBase(),empty.result.undo),restored=await snap();return{before,retained,none,restored,matched:unlink.matched,undo,emptyUndo};
+      39 |  },{key,file});
+    > 40 |  expect(result.matched).toBe(112);const retained=result.retained.definition.analytical as TableModelV1;expect(key==='pivot:page'?retained.layout.page!.memberKeys:retained.checklists.find(c=>c.categoryId==='cat')!.memberKeys).toEqual(Array.from({length:112},(_,i)=>k('R'+i)));for(const state of [result.before,result.retained,result.restored]){expect(state.rows).toHaveLength(109);expect(state.rows.reduce((sum,r)=>sum+Number(r.values.revenue),0)).toBe(6213);expect(state.input).toBe(result.before.input);for(const row of state.rows)expect(row.values).not.toHaveProperty('secret');}expect(result.none.rows).toEqual([]);expect(result.undo).toEqual({status:'saved',writes:1});expect(result.emptyUndo).toEqual({status:'saved',writes:1});expect(JSON.parse(result.restored.disk!)).toEqual(JSON.parse(saved));await info.attach('durable-full-retention',{body:JSON.stringify(result),contentType:'application/json'});
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+      41 | });
+      42 |
+        at <worktree>/e2e/pivot-group-durable.spec.ts:40:776
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-actual-6767b-view-and-explicit-None-Undo-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/pivot-group-durable-actual-6767b-view-and-explicit-None-Undo-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-actual-6767b-view-and-explicit-None-Undo-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/pivot-group-durable-actual-6767b-view-and-explicit-None-Undo-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[3/3] [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:filter:cat keeps all112 observed matches beyond preview and explicit None Undo
+  3) [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:filter:cat keeps all112 observed matches beyond preview and explicit None Undo 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -8,10 +8,11 @@
+            "value": "R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,R13,R14,R15,R16,R17,R18,R19,R20,R21,R22,R23,R24,R25,R26,R27,R28,R29,R30,R31,R32,R33,R34,R35,R36,R37,R38,R39,R40,R41,R42,R43,R44,R45,R46,R47,R48,R49,R50,R51,R52,R53,R54,R55,R56,R57,R58,R59,R60,R61,R62,R63,R64,R65,R66,R67,R68,R69,R70,R71,R72,R73,R74,R75,R76,R77,R78,R79,R80,R81,R82,R83,R84,R85,R86,R87,R88,R89,R90,R91,R92,R93,R94,R95,R96,R97,R98,R99,R100,R101,R102,R103,R104,R105,R106,R107,R108,R109,R110,R111",
+          },
+        ],
+        "id": "d1",
+        "name": "Main",
+    +   "revision": 4,
+        "tabs": Array [
+          Object {
+            "cards": Array [
+              Object {
+                "backendId": "builtin",
+
+      38 |   const before=await snap();fs.__failRead('files/'+file);const unlink=await perform('unlink'),retained=await snap();if(key==='pivot:page'){const previous=coordinator;const until=async(test:()=>boolean)=>{const start=performance.now();while(!test()){if(performance.now()-start>3000)throw new Error('Tab coordinator did not settle');await new Promise(r=>setTimeout(r,10));}};dashboards.getState().setActiveTab('other');await until(()=>!previous.getSnapshot().canReplace);await Promise.resolve();dashboards.getState().setActiveTab('t');await until(()=>coordinators.get('d1','root').getSnapshot().canReplace);coordinator=coordinators.get('d1','root');if(coordinator===previous)throw new Error('Expected real tab owner recreation');}const undo=await coordinator.undoPivotGroupChange(coordinator.authoringBase(),unlink.result.undo);await snap();const empty=await perform('push',[]),none=await snap();const emptyUndo=await coordinator.undoPivotGroupChange(coordinator.authoringBase(),empty.result.undo),restored=await snap();return{before,retained,none,restored,matched:unlink.matched,undo,emptyUndo};
+      39 |  },{key,file});
+    > 40 |  expect(result.matched).toBe(112);const retained=result.retained.definition.analytical as TableModelV1;expect(key==='pivot:page'?retained.layout.page!.memberKeys:retained.checklists.find(c=>c.categoryId==='cat')!.memberKeys).toEqual(Array.from({length:112},(_,i)=>k('R'+i)));for(const state of [result.before,result.retained,result.restored]){expect(state.rows).toHaveLength(109);expect(state.rows.reduce((sum,r)=>sum+Number(r.values.revenue),0)).toBe(6213);expect(state.input).toBe(result.before.input);for(const row of state.rows)expect(row.values).not.toHaveProperty('secret');}expect(result.none.rows).toEqual([]);expect(result.undo).toEqual({status:'saved',writes:1});expect(result.emptyUndo).toEqual({status:'saved',writes:1});expect(JSON.parse(result.restored.disk!)).toEqual(JSON.parse(saved));await info.attach('durable-full-retention',{body:JSON.stringify(result),contentType:'application/json'});
+         |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ^
+      41 | });
+      42 |
+        at <worktree>/e2e/pivot-group-durable.spec.ts:40:776
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-actual-18165-view-and-explicit-None-Undo-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/pivot-group-durable-actual-18165-view-and-explicit-None-Undo-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/pivot-group-durable-actual-18165-view-and-explicit-None-Undo-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/pivot-group-durable-actual-18165-view-and-explicit-None-Undo-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  3 failed
+    [chromium] › e2e/pivot-group-durable.spec.ts:9:1 › owner durable Page unlink push and Undo retain union and exact CSV public cascade without root reacquisition 
+    [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:page keeps all112 observed matches beyond preview and explicit None Undo 
+    [chromium] › e2e/pivot-group-durable.spec.ts:32:52 › actual CSV durable pivot:filter:cat keeps all112 observed matches beyond preview and explicit None Undo 

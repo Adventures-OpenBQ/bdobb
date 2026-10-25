@@ -1,0 +1,12 @@
+{
+  // Keep the Welcome tab from opening into the editor layout on startup.
+  "workbench.startupEditor": "none",
+  "workbench.editor.restoreViewState": true,
+
+  // The shell and Claude Code panes are terminals in the editor area. VS Code
+  // destroys those on quit and there is no setting that changes it — see
+  // docs/vscode-layout.md. They are rebuilt each session by hand.
+  "terminal.integrated.defaultProfile.osx": "zsh",
+
+  "explorer.compactFolders": false
+}

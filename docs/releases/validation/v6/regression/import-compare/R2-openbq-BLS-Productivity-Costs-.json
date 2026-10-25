@@ -1,0 +1,553 @@
+{
+ "app": "BLS Productivity & Costs",
+ "served_tabs": 6,
+ "saved_tabs": 6,
+ "tabs": [
+  {
+   "served_name": "Documents",
+   "saved_name": "Documents",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_documents_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_productivity_documents_bls_obb",
+      0,
+      0,
+      40,
+      28
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "Tables",
+   "saved_name": "Tables",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_tables_bls_obb",
+      0,
+      2,
+      40,
+      23
+     ],
+     "saved": [
+      "bls_productivity_tables_bls_obb",
+      0,
+      2,
+      40,
+      23
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Labor Productivity & Costs",
+   "saved_name": "Labor Productivity & Costs",
+   "served_cards": 8,
+   "saved_cards": 8,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_by_sector_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_productivity_by_sector_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_nonfarm_business_productivity_bls_obb",
+      0,
+      30,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_nonfarm_business_productivity_bls_obb",
+      0,
+      30,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_manufacturing_productivity_bls_obb",
+      0,
+      50,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_manufacturing_productivity_bls_obb",
+      0,
+      50,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_nonfarm_business_labor_costs_bls_obb",
+      0,
+      70,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_nonfarm_business_labor_costs_bls_obb",
+      0,
+      70,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_manufacturing_labor_costs_bls_obb",
+      0,
+      90,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_manufacturing_labor_costs_bls_obb",
+      0,
+      90,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_nonfarm_business_indexes_bls_obb",
+      0,
+      110,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_nonfarm_business_indexes_bls_obb",
+      0,
+      110,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_manufacturing_indexes_bls_obb",
+      0,
+      130,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_manufacturing_indexes_bls_obb",
+      0,
+      130,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_nonfinancial_corporations_indexes_bls_obb",
+      0,
+      150,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_nonfinancial_corporations_indexes_bls_obb",
+      0,
+      150,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Total Factor Productivity",
+   "saved_name": "Total Factor Productivity",
+   "served_cards": 6,
+   "saved_cards": 6,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_tfp_combined_inputs_output_bls_obb",
+      0,
+      2,
+      40,
+      71
+     ],
+     "saved": [
+      "bls_productivity_tfp_combined_inputs_output_bls_obb",
+      0,
+      2,
+      40,
+      71
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_tfp_percent_change_bls_obb",
+      0,
+      73,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_productivity_tfp_percent_change_bls_obb",
+      0,
+      73,
+      40,
+      28
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_tfp_output_and_inputs_bls_obb",
+      0,
+      101,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_tfp_output_and_inputs_bls_obb",
+      0,
+      101,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_tfp_contributions_bls_obb",
+      0,
+      121,
+      40,
+      34
+     ],
+     "saved": [
+      "bls_productivity_tfp_contributions_bls_obb",
+      0,
+      121,
+      40,
+      34
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_tfp_ict_trends_bls_obb",
+      0,
+      155,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_tfp_ict_trends_bls_obb",
+      0,
+      155,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_tfp_fire_trends_bls_obb",
+      0,
+      175,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_tfp_fire_trends_bls_obb",
+      0,
+      175,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Wholesale & Retail Trade",
+   "saved_name": "Wholesale & Retail Trade",
+   "served_cards": 7,
+   "saved_cards": 7,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_wr_productivity_change_bls_obb",
+      0,
+      16,
+      18,
+      24
+     ],
+     "saved": [
+      "bls_productivity_wr_productivity_change_bls_obb",
+      0,
+      16,
+      18,
+      24
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_productivity_by_period_bls_obb",
+      0,
+      2,
+      40,
+      14
+     ],
+     "saved": [
+      "bls_productivity_wr_productivity_by_period_bls_obb",
+      0,
+      2,
+      40,
+      14
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_indexes_by_sector_bls_obb",
+      0,
+      40,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_wr_indexes_by_sector_bls_obb",
+      0,
+      40,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_lp_by_industry_bls_obb",
+      0,
+      80,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_wr_lp_by_industry_bls_obb",
+      0,
+      80,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_1yr_change_bls_obb",
+      18,
+      16,
+      22,
+      24
+     ],
+     "saved": [
+      "bls_productivity_wr_1yr_change_bls_obb",
+      18,
+      16,
+      22,
+      24
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_longterm_change_bls_obb",
+      0,
+      100,
+      40,
+      44
+     ],
+     "saved": [
+      "bls_productivity_wr_longterm_change_bls_obb",
+      0,
+      100,
+      40,
+      44
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_wr_labor_cost_by_sector_bls_obb",
+      0,
+      60,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_wr_labor_cost_by_sector_bls_obb",
+      0,
+      60,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Mining & Manufacturing",
+   "saved_name": "Mining & Manufacturing",
+   "served_cards": 6,
+   "saved_cards": 6,
+   "cards": [
+    {
+     "served": [
+      "bls_productivity_mm_productivity_change_bls_obb",
+      0,
+      22,
+      40,
+      72
+     ],
+     "saved": [
+      "bls_productivity_mm_productivity_change_bls_obb",
+      0,
+      22,
+      40,
+      72
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_mm_productivity_by_period_bls_obb",
+      0,
+      94,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_mm_productivity_by_period_bls_obb",
+      0,
+      94,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_mm_indexes_by_industry_bls_obb",
+      0,
+      114,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_mm_indexes_by_industry_bls_obb",
+      0,
+      114,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_mm_1yr_change_bls_obb",
+      19,
+      134,
+      21,
+      28
+     ],
+     "saved": [
+      "bls_productivity_mm_1yr_change_bls_obb",
+      19,
+      134,
+      21,
+      28
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_mm_longterm_change_bls_obb",
+      0,
+      134,
+      19,
+      28
+     ],
+     "saved": [
+      "bls_productivity_mm_longterm_change_bls_obb",
+      0,
+      134,
+      19,
+      28
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_productivity_mm_labor_cost_by_industry_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_productivity_mm_labor_cost_by_industry_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 1,
+ "served_cards_total": 29,
+ "saved_cards_total": 29,
+ "served_groups": 0,
+ "saved_groups": 0
+}

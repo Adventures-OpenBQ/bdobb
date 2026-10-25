@@ -1,0 +1,8 @@
+typecheck rc=0 dur=8s load=36.75 99.40 198.13
+lint rc=0 dur=8s load=38.29 98.68 197.30
+unit rc=0 dur=162s endload=46.23 77.79 170.85
+build rc=0 dur=11s load=44.06 75.77 168.51
+e2e rc=1 dur=867s load=35.94 37.36 83.45
+web rc=0 dur=1s load=35.94 37.36 83.45
+cargo rc=0 dur=2s load=36.02 37.36 83.18
+scrub rc=0 dur=2s load=36.02 37.36 83.18

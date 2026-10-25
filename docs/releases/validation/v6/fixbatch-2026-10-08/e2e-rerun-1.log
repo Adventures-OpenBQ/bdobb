@@ -1,0 +1,14 @@
+
+> bdobb@6.0.0 e2e <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> playwright test e2e/table.spec.ts
+
+
+Running 5 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/table.spec.ts:19:1 › a 5,000-row table mounts promptly with only a window of rows in the DOM (962ms)
+  ✓  2 [chromium] › e2e/table.spec.ts:32:1 › every row stays reachable by scrolling, under a header that stays put (781ms)
+  ✓  3 [chromium] › e2e/table.spec.ts:66:1 › the collapsed controls dropdown stays clickable above a table's sticky header (830ms)
+  ✓  4 [chromium] › e2e/table.spec.ts:88:1 › the same dropdown stays clickable over a table with a PINNED column (803ms)
+  ✓  5 [chromium] › e2e/table.spec.ts:114:1 › Transposed turns the quote table on its side and persists to the dashboard file (790ms)
+
+  5 passed (6.2s)

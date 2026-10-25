@@ -1,0 +1,316 @@
+{
+ "app": "BLS Consumer Price Index",
+ "served_tabs": 4,
+ "saved_tabs": 4,
+ "tabs": [
+  {
+   "served_name": "Documents",
+   "saved_name": "Documents",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_cpi_documents_bls_obb",
+      0,
+      2,
+      40,
+      27
+     ],
+     "saved": [
+      "bls_cpi_documents_bls_obb",
+      0,
+      0,
+      40,
+      27
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "News Release Tables",
+   "saved_name": "News Release Tables",
+   "served_cards": 7,
+   "saved_cards": 7,
+   "cards": [
+    {
+     "served": [
+      "bls_cpi_t1_expenditure_category_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t1_expenditure_category_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t2_detailed_expenditure_bls_obb",
+      0,
+      14,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t2_detailed_expenditure_bls_obb",
+      0,
+      14,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t3_special_aggregates_bls_obb",
+      0,
+      26,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t3_special_aggregates_bls_obb",
+      0,
+      26,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t4_selected_areas_bls_obb",
+      0,
+      38,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t4_selected_areas_bls_obb",
+      0,
+      38,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t5_chained_vs_cpiu_bls_obb",
+      0,
+      50,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t5_chained_vs_cpiu_bls_obb",
+      0,
+      50,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t6_1m_analysis_bls_obb",
+      0,
+      62,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t6_1m_analysis_bls_obb",
+      0,
+      62,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_t7_12m_analysis_bls_obb",
+      0,
+      74,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_t7_12m_analysis_bls_obb",
+      0,
+      74,
+      40,
+      12
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Reference Tables",
+   "saved_name": "Reference Tables",
+   "served_cards": 3,
+   "saved_cards": 3,
+   "cards": [
+    {
+     "served": [
+      "bls_cpi_seasonal_factors_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_seasonal_factors_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_relative_importance_bls_obb",
+      0,
+      14,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_cpi_relative_importance_bls_obb",
+      0,
+      14,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_supplemental_tables_bls_obb",
+      0,
+      26,
+      40,
+      16
+     ],
+     "saved": [
+      "bls_cpi_supplemental_tables_bls_obb",
+      0,
+      26,
+      40,
+      16
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Charts",
+   "saved_name": "Charts",
+   "served_cards": 5,
+   "saved_cards": 5,
+   "cards": [
+    {
+     "served": [
+      "bls_cpi_by_category_bls_obb",
+      0,
+      2,
+      40,
+      36
+     ],
+     "saved": [
+      "bls_cpi_by_category_bls_obb",
+      0,
+      2,
+      40,
+      36
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_by_category_line_bls_obb",
+      0,
+      38,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_cpi_by_category_line_bls_obb",
+      0,
+      38,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_by_region_bls_obb",
+      0,
+      58,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_cpi_by_region_bls_obb",
+      0,
+      58,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_by_metro_bls_obb",
+      0,
+      78,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_cpi_by_metro_bls_obb",
+      0,
+      78,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_cpi_average_prices_bls_obb",
+      0,
+      98,
+      40,
+      30
+     ],
+     "saved": [
+      "bls_cpi_average_prices_bls_obb",
+      0,
+      98,
+      40,
+      30
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 1,
+ "served_cards_total": 16,
+ "saved_cards_total": 16,
+ "served_groups": 0,
+ "saved_groups": 0
+}

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"policy":"legacy-v1","cases":[{"expression":"T-MON","referenceInstant":"2026-09-28T16:00:00Z","zone":"America/New_York","expected":"2026-09-28"},{"expression":"T+MON","referenceInstant":"2026-09-28T16:00:00Z","zone":"America/New_York","expected":"2026-09-28"}]}

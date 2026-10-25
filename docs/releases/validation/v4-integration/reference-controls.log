@@ -1,0 +1,4 @@
+PASS reference numeric refresh and Run request gating {
+  markdown_widget_with_short_refetch_interval: 3,
+  markdown_widget_with_run_button: 3
+}

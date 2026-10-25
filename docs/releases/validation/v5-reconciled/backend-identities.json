@@ -1,0 +1,18 @@
+{
+  "reference": {
+    "container": "3bc7119d6ea6",
+    "image": "openbq-regression:reference-final-source",
+    "url": "http://127.0.0.1:7780"
+  },
+  "openbq": {
+    "container": "381c1b453af1",
+    "name": "bdobb-v3-odp-final",
+    "image": "openbq-regression:v3-final-source",
+    "url": "http://127.0.0.1:6912",
+    "restartRequired": true,
+    "previousStopReason": "OOMKilled",
+    "restoredToPriorStoppedStateAfterNinePassingCases": true
+  },
+  "openbbDockerSource": "c3223c3e9c1a4c2b26471655b35fe467f4ae0177",
+  "nativeProfileAbsentBeforeFirstLaunch": true
+}

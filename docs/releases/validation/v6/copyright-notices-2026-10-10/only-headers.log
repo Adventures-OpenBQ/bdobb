@@ -1,0 +1,28 @@
+diff --git a/package.json b/package.json
+index 305e9bf..96054e4 100644
+--- a/package.json
++++ b/package.json
+@@ -16,7 +16,9 @@
+     "test": "vitest",
+     "test:run": "vitest run",
+     "test:reference": "OPENBB_REFERENCE=1 vitest run src/test/integration/reference-backend.test.ts",
+-    "scrub": "bash scripts/scrub-check.sh",
++    "scrub": "bash scripts/scrub-check.sh && bash scripts/header-check.sh",
++    "notices": "node scripts/third-party-notices.mjs",
++    "notices:check": "node scripts/third-party-notices.mjs --check",
+     "release": "bash scripts/release.sh",
+     "reference-backend": "bash scripts/reference-backend.sh",
+     "tauri": "tauri",
+
+90 modified files checked; non-header changes: 0
+new files:
+NOTICE
+THIRD_PARTY_NOTICES.md
+docs/releases/validation/v6/copyright-notices-2026-10-10/check-tests.log
+docs/releases/validation/v6/copyright-notices-2026-10-10/gates.tsv
+docs/releases/validation/v6/copyright-notices-2026-10-10/lint.log
+docs/releases/validation/v6/copyright-notices-2026-10-10/notices-check.log
+docs/releases/validation/v6/copyright-notices-2026-10-10/typecheck.log
+scripts/header-check.sh
+scripts/header-check.test.mjs
+scripts/third-party-notices.mjs

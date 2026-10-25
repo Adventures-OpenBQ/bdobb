@@ -1,0 +1,5 @@
+
+> bdobb@7.0.0 test:web:browser <worktree>
+> node web/browser-smoke.mjs
+
+PASS: HTTPS login form, private assets, seeded built-ins dashboard, per-user state saved + reseeded on reload, lapsed session goes to sign-in, CSRF logout, mobile login; no external requests.

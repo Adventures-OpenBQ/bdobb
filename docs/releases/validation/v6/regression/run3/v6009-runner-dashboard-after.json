@@ -1,0 +1,870 @@
+{
+  "id": "71500dd1-8a48-4363-a0b5-40f4d163ffdf",
+  "name": "Market AI Starter Kit — Rita Tab Runner",
+  "tabs": [
+    {
+      "id": "d3f123b9-1712-41db-84e7-55fc634a9491",
+      "name": "01 Desk",
+      "cards": [
+        {
+          "id": "952c9dec-638f-44ae-9c86-b4cd96f30245",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 01: Set up your desk\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Set up your desk](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Establish the demo desk configuration from supplied answers: AAPL/MSFT stocks, backend price tables, weeks-to-months horizon, moderate tolerance for swings. Summarize scope and list missing information. No waiting for another response: answers are already provided.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Establish the demo desk configuration from supplied answers: AAPL/MSFT stocks, backend price tables, weeks-to-months horizon, moderate tolerance for swings. Summarize scope and list missing information. No waiting for another response: answers are already provided.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "b21c1f58-72c3-4d63-8224-547da9996813",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 01 — Set up your desk\nVerification run: V6-RUN3\n**Review note:** AI draft checks against frozen evidence; scope is educational.\n\n**Scope**\nThis educational demo uses frozen Yahoo Finance daily rows (Jan 2 – Mar 31, 2025) for AAPL and MSFT. We evaluate on a weeks-to-months horizon with moderate swing tolerance.\n\n**Portfolio & Trade**\nThe fictional portfolio totals $10,000: $5,000 in AAPL, $3,000 in MSFT, and $2,000 in cash. The planned trade buys $2,000 of AAPL using existing cash, increasing AAPL concentration to 70% and leaving $0 cash.\n\n**Observed Performance (60 days)**\n| Asset | First Close | Last Close | Return | Max Drawdown |\n|-------|-------------|------------|--------|--------------|\n| AAPL  | 243.85      | 222.13     | -8.91% | -15.14%      |\n| MSFT  | 418.58      | 375.39     | -10.32%| -16.06%      |\n\nBoth equities faced downward pressure. MSFT declined slightly more, while AAPL saw a deeper maximum drawdown.\n\n**Missing Information**\n* Forward-looking guidance or consensus estimates.\n* Risk-adjusted return metrics (e.g., Sharpe ratio).\n* Correlation between AAPL and MSFT.\n* Transaction costs or slippage assumptions.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "11254d5a-f31d-45d3-b83c-e5ce89f4086a",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**BDOBB Widget Analysis: Educational Demo Configuration**\n\n**Scope and Setup**\nThis fictional educational case establishes a demo desk configuration using frozen public Yahoo Finance daily rows as of March 31, 2025. The analysis covers a weeks-to-months horizon, focusing on Apple (AAPL) and Microsoft (MSFT). The backend price tables reflect historical data from January 2, 2025, through March 31, 2025, comprising 60 rows per asset. The configured risk profile indicates a moderate tolerance for market swings.\n\n**Portfolio and Trade Data**\nThe hypothetical portfolio holds a total value of $10,000 USD, allocated as $5,000 in AAPL, $3,000 in MSFT, and $2,000 in cash. A specific hypothetical trade involves purchasing $2,000 worth of AAPL using existing cash.\n\n**Performance Metrics**\nDuring the observed period, AAPL closed at $222.13, down 8.91% from its opening close of $243.85, with a maximum drawdown of -15.14%. MSFT closed at $375.39, down 10.32% from $418.58, with a maximum drawdown of -16.06%. Daily return volatility was 1.81% for AAPL and 1.63% for MSFT.\n\n**Missing Information**\nThe following inputs are unavailable for this configuration:\n*   Specific risk-adjusted return metrics (e.g., Sharpe ratio).\n*   Correlation data between AAPL and MSFT.\n*   Transaction costs or slippage assumptions for the hypothetical trade.\n*   Future forecast data or forward-looking guidance beyond the provided historical window.\n\nThis analysis serves strictly as an educational demonstration of widget configuration based on supplied static evidence.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "df96b0d9-4e15-4ac4-bf15-8259a6e57564",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "0919636c-c51b-4859-accd-bf095ef6a726",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "1f6d60d3-47e3-48ac-9d92-90877e006a41",
+      "name": "02 Read",
+      "cards": [
+        {
+          "id": "78feca5e-3cee-415e-bd9a-2281e8df3162",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 02: Read what the market is doing\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Read what the market is doing](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Describe the AAPL trend over the frozen period, the size of observed daily moves, and price areas worth inspecting. Explain any support/resistance inference and its uncertainty. End with a one-sentence chart description. Distinguish an observed low/high from a validated support/resistance level.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Describe the AAPL trend over the frozen period, the size of observed daily moves, and price areas worth inspecting. Explain any support/resistance inference and its uncertainty. End with a one-sentence chart description. Distinguish an observed low/high from a validated support/resistance level.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "049297cc-9c94-4885-b1ab-32aa88a2a220",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 02 — Read what the market is doing\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**AAPL Trend & Volatility**\nOver the 60-day frozen window, AAPL exhibited a distinct downward trend, closing at $222.13 (down 8.91% from the $243.85 opening close). The observed maximum drawdown was -15.14%, indicating sustained bearish pressure.\n\n**Daily Moves**\nPrice action was volatile. Daily returns had a sample standard deviation of 1.81%, with the largest single-day close return at +3.65% and the smallest at -4.85%. These figures suggest high variance and sharp swings rather than gradual drift.\n\n**Price Areas to Inspect**\nThe highest daily high reached $250.00, and the lowest daily low was $208.42. While these define the observed range, they are raw data points, not validated structural support or resistance levels. Inference of a structural floor near $208–$222 remains uncertain; the price closed above the low but failed to reclaim the high.\n\n**Chart Description**\nThe chart depicts a volatile, bearish trend with a nearly 9% decline, where observed extremes define the range but do not confirm structural market levels.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "494abfe8-ec35-40f4-a08d-b650aaec0c3e",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**AAPL Trend Analysis (Jan 2 – Mar 31, 2025)**\n\nThe Apple Inc. (AAPL) asset exhibited a distinct downward trend during the frozen 60-day period. The price declined from a first close of $243.85 to a last close of $222.13, resulting in a close-to-close return of -8.91%. This negative trajectory is corroborated by an observed close max drawdown of -15.14%, indicating significant intraperiod volatility and bearish pressure.\n\n**Daily Volatility and Moves**\nDaily price movements were substantial, characterized by a sample standard deviation of daily returns at 1.81%. The largest single-day close return was +3.65%, while the smallest was -4.85%. These figures suggest high daily variance, with the asset experiencing sharp swings rather than gradual drift.\n\n**Price Areas and Support/Resistance**\nThe highest daily high reached $250.00, and the lowest daily low was $208.42. While $250.00 represents the observed peak and $208.42 the observed trough, these are raw data points, not validated support or resistance levels. Inference of structural support near the $208–$222 range is uncertain; the price closed above the low but failed to reclaim the high, leaving the validity of any specific level unconfirmed by this dataset alone. No external news impact is quantified here, though Q1 2025 revenue growth of 4% YoY was reported.\n\n**Conclusion**\nThe chart depicts a volatile, bearish trend with a nearly 9% decline, where observed extremes define the range but do not confirm structural market levels.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "f61288ea-cc25-4d64-95fb-20c8180bb4f8",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "0ff4e708-0271-439f-87e2-7900012e4f95",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "96a2ec5a-6e2f-41aa-9118-af1be2e6aa02",
+      "name": "03 Call",
+      "cards": [
+        {
+          "id": "fc83a844-fcd9-4e6d-953d-237a287c9619",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 03: The buy, hold, or wait call\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [The buy, hold, or wait call](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Independently review AAPL and choose a conditional educational BUY, HOLD, or WAIT stance for the fictional weeks-to-months scenario. Give three data-based reasons, qualitative confidence, and observable invalidation criteria. Do not invent precise entry/exit targets; do not use another prompt output.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Independently review AAPL and choose a conditional educational BUY, HOLD, or WAIT stance for the fictional weeks-to-months scenario. Give three data-based reasons, qualitative confidence, and observable invalidation criteria. Do not invent precise entry/exit targets; do not use another prompt output.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "10001bfc-83c5-45b6-abf8-4cc6e58f8415",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 03 — The buy, hold, or wait call\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**Stance: WAIT**\n\n**Analysis of AAPL**\nGiven the frozen data, a conditional WAIT stance prioritizes capital preservation amid recent volatility.\n\n**Reasons:**\n1. **Significant Downward Momentum:** AAPL closed at $222.13, down 8.91% from its January start. A maximum drawdown of -15.14% indicates sustained selling pressure and a lack of immediate bullish reversal signals.\n2. **High Volatility:** With a daily return standard deviation of 1.81% and a largest single-day drop of -4.85%, short-term trading carries elevated risk, making precise entry timing difficult.\n3. **Fundamental-Price Divergence:** Despite Q1 revenue growth (+4% YoY) and EPS growth (+10%), the stock price declined. This disconnect suggests the market is pricing in future concerns, warranting caution.\n\n**Qualitative Confidence:** Moderate. The data reflects a clear downtrend with high variance, reducing short-term predictive reliability.\n\n**Observable Invalidation Criteria:**\n* A sustained close above the $243.85 initial level with decreasing volatility.\n* The price stabilizes and holds above the observed low of $208.42.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "c3d3926b-eb92-48c3-9bc8-3b66a147da23",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** Volume-based institutional accumulation is a proposed interpretation, not demonstrated by the supplied metrics. Price thresholds are judgment calls, not validated signals.\n\n---\n\n**Stance: WAIT**\n\n**Analysis of AAPL (Fictional Case)**\n\nBased on the provided frozen Yahoo Finance data as of March 31, 2025, a conditional WAIT stance is recommended for the upcoming weeks-to-months horizon. This position prioritizes capital preservation amid recent volatility and structural weakness, rather than immediate entry.\n\n**Data-Based Reasons:**\n\n1.  **Significant Downward Momentum:** AAPL closed at $222.13, down 8.91% from its January 2 start ($243.85). The asset experienced a maximum drawdown of -15.14%, indicating sustained selling pressure and a lack of immediate bullish reversal signals in the price action.\n2.  **High Volatility Profile:** With a daily return standard deviation of 1.81%, AAPL exhibits notable price instability. The largest single-day drop of -4.85% suggests that short-term trading carries elevated risk, making precise entry timing difficult without clearer trend confirmation.\n3.  **Fundamental-Price Divergence:** Despite Q1 2025 revenue growth of 4% YoY to $124.3 billion and EPS growth of 10%, the stock price declined. This disconnect suggests the market may be pricing in future concerns or sector-wide headwinds that outweigh current earnings strength, warranting caution.\n\n**Qualitative Confidence:** Moderate. The data reflects a clear downtrend with high variance, reducing the reliability of short-term predictive models.\n\n**Observable Invalidation Criteria:**\n*   **Bullish Reversal:** A sustained close above the $243.85 initial level with decreasing volatility.\n*   **Support Hold:** The price stabilizes and holds above the observed low of $208.42 without breaking lower.\n*   **Volume Confirmation:** Increased trading volume accompanying upward price movements, signaling institutional accumulation.\n\n*Note: This is a fictional educational analysis. Not financial advice.*\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "cd06fcdc-ffcb-40f9-9ae1-ea9a6c61c4a3",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "91d0a3cf-96df-4c45-93f1-e6d41616a12b",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "6ff9f73e-480a-4540-a5a0-01f4b8cd925e",
+      "name": "04 Risk",
+      "cards": [
+        {
+          "id": "0ed60410-1d99-4683-91c3-80a6b8fa6002",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 04: The risk check\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [The risk check](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Assess a fictional additional $2,000 AAPL position against the supplied $10,000 portfolio. Calculate losses for -10%, -20%, and -40% price shocks and the resulting AAPL concentration assuming cash funds the purchase. Explain that scenarios are not worst-case forecasts; identify gaps and liquidity/event risks.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Assess a fictional additional $2,000 AAPL position against the supplied $10,000 portfolio. Calculate losses for -10%, -20%, and -40% price shocks and the resulting AAPL concentration assuming cash funds the purchase. Explain that scenarios are not worst-case forecasts; identify gaps and liquidity/event risks.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "6116b6b3-aa91-4f0b-af98-854515710e81",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 04 — The risk check\nVerification run: V6-RUN3\n**Review note:** AI draft checks calculations against supporting data.\n\n**Scenario Context**\nAs of March 31, 2025, the portfolio holds $10,000 total: $5,000 AAPL, $3,000 MSFT, and $2,000 cash. Adding $2,000 AAPL (funded by cash) raises the AAPL position to $7,000 (70% concentration).\n\n**Hypothetical Loss Scenarios**\nApplying price shocks to the new $7,000 AAPL holding:\n| Shock | Loss Amount | Portfolio Value | AAPL Concentration* |\n|-------|-------------|-----------------|---------------------|\n| -10%  | $700        | $9,300          | 70.0%               |\n| -20%  | $1,400      | $8,600          | 72.5%               |\n| -40%  | $2,800      | $7,200          | 77.8%               |\n\n*Concentration recalculated on the reduced total portfolio value.\n\n**Risk & Gaps**\nThese scenarios are not worst-case forecasts. The dataset shows an observed max drawdown of -15.14% for AAPL, suggesting a -40% move is outside the recent observed range. Key gaps include:\n1. **Liquidity:** Assumes immediate execution at the last close; no bid-ask spread or slippage data is available.\n2. **Event Risk:** The provided Q1 earnings news is dated Jan 30. Risks between that date and Mar 31 are unquantified.\n3. **Correlation:** MSFT also declined (-10.32%), indicating potential sector-wide risk.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "5fbd417e-607d-442c-9990-f15e32e11eca",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** MSFT remains 30%; its concentration does not drop after cash funds the AAPL purchase. Shock arithmetic applies to the full post-trade holding.\n\n---\n\n**BDOBB Widget Analysis: Fictional AAPL Position Add**\n\n**Portfolio Context**\nAs of 2025-03-31, the fictional portfolio holds $10,000 total value: $5,000 AAPL, $3,000 MSFT, and $2,000 cash. The proposed trade adds $2,000 AAPL, funded entirely by existing cash. This assumes the \"Frozen public Yahoo Finance daily rows\" are historical educational data, not live quotes.\n\n**Concentration Impact**\nPost-trade, total portfolio value remains $10,000. AAPL position rises to $7,000. AAPL concentration increases from 50% to 70%. MSFT concentration drops to 30%. Cash becomes $0.\n\n**Hypothetical Loss Scenarios**\nUsing the last close of $222.13 for AAPL, the new $7,000 position faces these hypothetical losses:\n*   **-10% Shock:** Loss of $700. Portfolio value: $9,300.\n*   **-20% Shock:** Loss of $1,400. Portfolio value: $8,600.\n*   **-40% Shock:** Loss of $2,800. Portfolio value: $7,200.\n\n**Risk & Gaps**\nThese scenarios are not worst-case forecasts. The dataset shows an observed max drawdown of -15.14% for AAPL, suggesting -40% is outside the recent observed range. Key gaps include:\n1.  **Liquidity:** The trade assumes immediate execution at the last close. No bid-ask spread or slippage data is available.\n2.  **Event Risk:** The provided news (Q1 2025 results) is dated 2025-01-30. It does not reflect risks between that date and the portfolio as-of date (2025-03-31) or future events.\n3.  **Correlation:** MSFT also declined (-10.32%), indicating potential sector-wide risk not isolated in this single-asset view.\n\nThis analysis is for educational demonstration only. No investment advice is implied.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "bd44ce98-6a27-4354-85bc-bc62d85e703f",
+          "widgetId": "fictional_portfolio",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "b59ca6ca-35d2-44f3-becc-086bd8431e95",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "19cae030-5f5f-46ee-aef4-7fbcbb712725",
+      "name": "05 Compare",
+      "cards": [
+        {
+          "id": "330a0257-dfb0-49e9-bd6b-ad311a9753a3",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 05: Compare two ideas\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Compare two ideas](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Compare AAPL and MSFT on like-for-like period return, daily return volatility and observed drawdown. Explain which has the more favorable historical setup for this fictional scenario, or why neither does. Use only supplied metrics and disclose the lack of a forecast.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Compare AAPL and MSFT on like-for-like period return, daily return volatility and observed drawdown. Explain which has the more favorable historical setup for this fictional scenario, or why neither does. Use only supplied metrics and disclose the lack of a forecast.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "e047d1a4-face-4884-8791-dbbe2474a101",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 05 — Compare two ideas\nVerification run: V6-RUN3\n**Review note:** AI draft checks calculations against supporting data.\n\n**Performance Comparison**\nBased on the frozen 60-day window, both equities experienced negative returns. Apple (AAPL) posted a close-to-close return of **-8.91%**, while Microsoft (MSFT) declined by **-10.32%**. AAPL outperformed MSFT in absolute return over this period.\n\n**Volatility and Risk**\nRisk metrics reveal divergent behavior:\n| Asset | Return | Daily Volatility (Std Dev) | Max Drawdown |\n|-------|--------|----------------------------|--------------|\n| AAPL  | -8.91% | 1.81%                      | -15.14%      |\n| MSFT  | -10.32%| 1.63%                      | -16.06%      |\n\nMSFT exhibited slightly lower daily volatility, but AAPL recorded a shallower maximum drawdown.\n\n**Fictional Scenario Assessment**\nIn this hypothetical context, AAPL presents a more favorable historical setup relative to MSFT. It delivered a higher return and experienced a smaller peak-to-trough loss. Although MSFT showed slightly lower daily variance, AAPL’s superior return profile and reduced drawdown magnitude suggest better relative performance for this specific period.\n\n**Disclaimer**\nThis analysis relies solely on the provided static evidence. No forward-looking forecasts are included.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "186b48f1-163c-41ef-9a3e-a2a09a2d5345",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** The historical metrics agree, but no risk-adjusted-return ratio was computed. A favorable future setup does not follow from these figures alone.\n\n---\n\n**BDOBB Widget Analysis: AAPL vs. MSFT (Jan 2 – Mar 31, 2025)**\n\n**Performance Comparison**\nBased on the supplied frozen Yahoo Finance dataset, both equities experienced negative returns during the 60-day period. Apple (AAPL) posted a close-to-close return of **-8.91%**, while Microsoft (MSFT) declined by **-10.32%**. AAPL outperformed MSFT in absolute return over this specific window.\n\n**Volatility and Risk**\nRisk metrics reveal divergent behavior. MSFT exhibited lower daily return volatility, with a sample standard deviation of **1.63%**, compared to AAPL’s **1.81%**. However, regarding peak-to-trough losses, AAPL recorded a smaller maximum drawdown of **-15.14%**, whereas MSFT suffered a deeper drawdown of **-16.06%**.\n\n**Fictional Scenario Assessment**\nIn this hypothetical educational context, AAPL presents a more favorable historical setup relative to MSFT. It delivered a higher return (-8.91% vs. -10.32%) and experienced a shallower maximum drawdown (-15.14% vs. -16.06%). Although MSFT showed slightly lower daily volatility, AAPL’s superior return profile and reduced drawdown magnitude suggest better risk-adjusted performance for this specific period.\n\n**Disclaimer**\nThis analysis relies solely on the provided static evidence. No forward-looking forecasts, predictive models, or future performance guarantees are included. The data represents a historical educational demo as of March 31, 2025, and does not constitute investment advice.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "8cd97cd0-076c-4b48-9ae1-52abe94779d8",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "d1134bdf-2ad1-46e9-9241-0e6a85ccfa52",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "b9d002b2-7b2c-4ec1-a9c6-b0461a158839",
+      "name": "06 Portfolio",
+      "cards": [
+        {
+          "id": "7ab217a0-c7bc-4d56-ab4b-85dc0fca0047",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 06: Portfolio gut check\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Portfolio gut check](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Review the fictional AAPL/MSFT/cash portfolio. Calculate concentration and dollar losses if both equity positions fall 20% while cash is unchanged. Discuss shared technology exposure and two general ways to reduce concentration; do not infer real user holdings.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Review the fictional AAPL/MSFT/cash portfolio. Calculate concentration and dollar losses if both equity positions fall 20% while cash is unchanged. Discuss shared technology exposure and two general ways to reduce concentration; do not infer real user holdings.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "58854368-0c5d-4cad-8582-07d1f8016c9d",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 06 — Portfolio gut check\nVerification run: V6-RUN3\n**Review note:** AI draft checks calculations against supporting data.\n\n**Concentration Risk**\nThe fictional portfolio totals $10,000. Apple (AAPL) represents 50% ($5,000) and Microsoft (MSFT) represents 30% ($3,000). Cash accounts for 20% ($2,000). This structure indicates high concentration in two specific equities.\n\n**Hypothetical Loss Calculation**\nAssuming a 20% decline in both equity positions while cash remains unchanged:\n*   **AAPL Loss:** $5,000 × 20% = $1,000\n*   **MSFT Loss:** $3,000 × 20% = $600\n*   **Total Dollar Loss:** $1,600\n*   **New Portfolio Value:** $8,400\n\n**Shared Technology Exposure**\nBoth AAPL and MSFT are major technology sector constituents. Holding both creates correlated exposure to the tech industry. Historical data shows both assets experienced significant drawdowns (AAPL: -15.14%, MSFT: -16.06%), illustrating how sector-specific risks can simultaneously impact multiple holdings.\n\n**Mitigation Strategies**\nTo reduce concentration risk, investors might consider:\n1.  **Diversification:** Allocating capital to non-correlated asset classes or sectors outside of technology.\n2.  **Position Sizing:** Reducing the weight of individual holdings so no single asset or sector dominates the portfolio.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "06a82831-62d6-4fb9-ba11-d22c533adc66",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**Fictional Portfolio Analysis (AAPL/MSFT/Cash)**\n\n**Concentration Risk**\nThe hypothetical portfolio totals $10,000. Apple (AAPL) represents 50% ($5,000) and Microsoft (MSFT) represents 30% ($3,000) of the total value. Cash accounts for the remaining 20% ($2,000). This structure indicates high concentration in two specific equity positions.\n\n**Hypothetical Loss Calculation**\nAssuming a 20% decline in both equity positions while cash remains unchanged:\n*   **AAPL Loss:** $5,000 × 20% = $1,000\n*   **MSFT Loss:** $3,000 × 20% = $600\n*   **Total Dollar Loss:** $1,600\n*   **New Portfolio Value:** $8,400\n\n**Shared Technology Exposure**\nBoth AAPL and MSFT are major technology sector constituents. Holding both creates correlated exposure to the tech industry. Historical data from January 2025 to March 31, 2025, shows both assets experienced significant drawdowns (AAPL: -15.14%, MSFT: -16.06%), illustrating how sector-specific risks can simultaneously impact multiple holdings.\n\n**Mitigation Strategies**\nTo reduce concentration risk, investors might consider:\n1.  **Diversification:** Allocating capital to non-correlated asset classes or sectors outside of technology to balance portfolio volatility.\n2.  **Position Sizing:** Reducing the weight of individual holdings to ensure no single asset or sector dominates the portfolio’s overall risk profile.\n\n*Note: This analysis is based on fictional educational data. It does not constitute financial advice or reflect real-world holdings.*\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "920c6293-c3b3-406f-a5fa-4ded6b961266",
+          "widgetId": "fictional_portfolio",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "59fe9bc6-e3bc-40f1-8012-9b54aed728a2",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "d1649045-bd85-412e-8175-9d391d984d86",
+      "name": "07 News",
+      "cards": [
+        {
+          "id": "53f02ea7-a2bb-4fff-a6b5-06bd95ac44b6",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 07: Make sense of the news\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Make sense of the news](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Interpret the supplied Apple January 30, 2025 earnings release retrospectively. Separate release facts from hypotheses about price effects. Present favorable and unfavorable interpretations, explain what missing expectations/valuation data prevents concluding, and cite the supplied primary source. Do not attribute a price move causally to the headline.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Interpret the supplied Apple January 30, 2025 earnings release retrospectively. Separate release facts from hypotheses about price effects. Present favorable and unfavorable interpretations, explain what missing expectations/valuation data prevents concluding, and cite the supplied primary source. Do not attribute a price move causally to the headline.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "90538417-9541-4a69-9de9-577fdd956224",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 07 — Make sense of the news\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**Source Data**\nThe primary source is Apple’s January 30, 2025 earnings release (fiscal period ending December 28, 2024). Reported facts:\n*   Revenue: $124.3 billion (+4% YoY)\n*   Diluted EPS: $2.40 (+10% YoY)\n\n**Favorable Interpretations**\nThe headline metrics indicate robust operational performance. A 10% year-over-year increase in diluted EPS suggests improved profitability. Revenue growth of 4% demonstrates continued demand despite macroeconomic headwinds.\n\n**Unfavorable Interpretations**\nMarket reaction diverged from the positive headline. During the Jan 2 – Mar 31 window, AAPL closed at $222.13, down 8.91% from $243.85, with a max drawdown of 15.14%. This underperformance contrasts with the positive earnings data, suggesting the market may have priced in higher expectations or focused on non-reported metrics.\n\n**Missing Data & Conclusion**\nIt is unavailable whether the negative reaction was directly caused by the earnings report. Critical valuation data, such as pre-release consensus estimates, forward guidance, or specific segment breakdowns, is missing. Without this context, no causal link between the headline earnings and the price move can be established.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "9e923dcf-facd-4ced-8363-e9be6d102ee5",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** Jan 2–Mar 31 is not a window following Jan 30. No consensus data establishes an earnings surprise or a causal market reaction.\n\n---\n\n**BDOBB Widget Analysis: Apple Q1 2025 Earnings Retrospective**\n\n**Source Data**\nThe primary source is Apple’s January 30, 2025 earnings release (fiscal period ending December 28, 2024). Reported revenue was $124.3 billion (+4% YoY), with diluted EPS of $2.40 (+10% YoY).\n\n**Favorable Interpretations**\nThe headline metrics indicate robust operational performance. A 10% year-over-year increase in diluted EPS suggests improved profitability or share efficiency. Revenue growth of 4% demonstrates continued demand despite macroeconomic headwinds. These figures represent strong fundamental execution for the quarter.\n\n**Unfavorable Interpretations**\nMarket reaction diverged from the positive headline. In the 60-day window following the release (Jan 2 – Mar 31, 2025), AAPL closed at $222.13, down 8.91% from its pre-release close of $243.85. The stock experienced a maximum drawdown of 15.14%, hitting a low of $208.42. This underperformance contrasts with the positive earnings surprise, suggesting the market may have priced in higher expectations or focused on non-reported metrics.\n\n**Missing Data & Conclusion**\nIt is unavailable whether the market’s negative reaction was directly caused by the earnings report. Critical valuation data, such as pre-release consensus estimates, forward guidance, or specific segment breakdowns, is missing. Without this context, we cannot determine if the price decline resulted from the reported numbers, broader sector trends (MSFT also fell 10.32%), or unrelated macro factors. Therefore, no causal link between the headline earnings and the price move can be established. This analysis is a fictional educational case study and not a personal recommendation.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "13d13878-684c-4bfb-9e64-3a9849153d58",
+          "widgetId": "market_news",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "d5af7972-68d3-4733-a22d-7797751a832a",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "f2730d52-17f1-4e01-b8ac-adbaaebd37e1",
+      "name": "08 Routine",
+      "cards": [
+        {
+          "id": "e26f3a74-af3c-4267-9818-ca8bf285681d",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 08: Build a 5-minute daily routine\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Build a 5-minute daily routine](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Design a five-minute manual BDOBB review using the supplied price chart/table, news note and fictional risk inputs. Give a timed sequence, a compact journal row and a reason to defer action. Explicitly state this saved demo does not schedule or refresh itself.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Design a five-minute manual BDOBB review using the supplied price chart/table, news note and fictional risk inputs. Give a timed sequence, a compact journal row and a reason to defer action. Explicitly state this saved demo does not schedule or refresh itself.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "8275db9a-bbe8-437a-a596-729c6a379a5d",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 08 — Build a 5-minute daily routine\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**Disclaimer:** This saved demo does not schedule or refresh itself. It is a static educational exercise.\n\n**Five-Minute Manual Review Sequence**\n1.  **Minute 1 (Context):** Verify data currency. The dataset is frozen as of 2025-03-31 (60-day window).\n2.  **Minute 2 (Price Action):** Assess AAPL. Closed at 222.13, down 8.91%. Volatility is evident (daily return std dev 1.81%).\n3.  **Minute 3 (News Integration):** Review the Jan 30 earnings report. Revenue $124.3B (+4% YoY), EPS $2.40 (+10% YoY). Price declined despite positive fundamentals.\n4.  **Minute 4 (Portfolio Impact):** Evaluate the hypothetical $2,000 AAPL trade (20% of the $10,000 portfolio).\n5.  **Minute 5 (Risk Check):** Compare against MSFT. MSFT shows a steeper decline (-10.32%) and higher drawdown (-16.06%). AAPL is marginally more stable.\n\n**Compact Journal Row**\n| Asset | Date | Price | Return | Volatility |\n|-------|------|-------|--------|------------|\n| AAPL  | 03-31| 222.13| -8.91% | 1.81%      |\n\n**Reason to Defer Action**\nDefer immediate execution. The negative close-to-close return and significant max drawdown suggest ongoing downward pressure. Wait for clearer trend confirmation or updated live data before considering the hypothetical allocation.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "4451a098-417d-4afa-99bb-487fbf7778a0",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**BDOBB Widget Analysis: Fictional Educational Case**\n\n**Disclaimer:** This saved demo does not schedule or refresh itself. It is a static educational exercise, not a live quote or personal recommendation.\n\n**Five-Minute Manual Review Sequence**\n1.  **Minute 1 (Context):** Verify data currency. The dataset is frozen as of 2025-03-31, sourced from historical Yahoo Finance rows. Note the 60-day window (2025-01-02 to 2025-03-31).\n2.  **Minute 2 (Price Action):** Assess AAPL performance. The asset closed at 222.13, down 8.91% from the period start (243.85). Volatility is evident with a daily return standard deviation of 1.81% and a max drawdown of -15.14%.\n3.  **Minute 3 (News Integration):** Review the Jan 30, 2025 earnings report. Revenue reached $124.3B (+4% YoY) with diluted EPS of $2.40 (+10% YoY). Despite positive fundamentals, the price declined, indicating a potential disconnect between earnings news and market sentiment during this period.\n4.  **Minute 4 (Portfolio Impact):** Evaluate the hypothetical trade. A $2,000 AAPL purchase using existing cash would represent 20% of the total $10,000 fictional portfolio. The portfolio currently holds $5,000 in AAPL and $3,000 in MSFT.\n5.  **Minute 5 (Risk Check):** Compare against MSFT. MSFT shows a steeper decline (-10.32%) and higher max drawdown (-16.06%). AAPL’s relative stability is marginal.\n\n**Compact Journal Row**\n| Asset | Date | Action | Price | Return | Volatility |\n|-------|------|--------|-------|--------|------------|\n| AAPL | 2025-03-31 | Hold | 222.13 | -8.91% | 1.81% |\n\n**Reason to Defer Action**\nDefer immediate execution. The negative close-to-close return (-8.91%) and significant max drawdown (-15.14%) suggest ongoing downward pressure despite positive Q1 earnings. The static nature of this demo prevents real-time entry timing. Wait for clearer trend confirmation or updated live data before considering the hypothetical $2,000 allocation.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "e1b1f057-7c68-48ee-863d-97c15a1d5119",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "1499f115-b322-4cb4-97f0-db8d08da64fd",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "02f75ee7-1119-47b1-967e-715fa8f3413f",
+      "name": "09 Checklist",
+      "cards": [
+        {
+          "id": "c09032dd-89b7-49dd-9862-25f3de96bab1",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 09: Pre-trade checklist\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Pre-trade checklist](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Create a pre-trade reflection checklist for the fictional $2,000 AAPL idea, using a hypothetical 20% loss scenario. Identify thesis, position size, exit-plan questions and missing personal affordability information. Do not give a personal green light or imply an order was executed.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Create a pre-trade reflection checklist for the fictional $2,000 AAPL idea, using a hypothetical 20% loss scenario. Identify thesis, position size, exit-plan questions and missing personal affordability information. Do not give a personal green light or imply an order was executed.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "6c61cefa-c48e-43ef-9393-9fbe85fe2951",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 09 — Pre-trade checklist\nVerification run: V6-RUN3\n**Review note:** AI draft checks calculations against supporting data.\n\n**1. Thesis Verification**\n*   **Fundamental Context:** Q1 2025 revenue $124.3B (+4% YoY), diluted EPS $2.40 (+10% YoY) as of Jan 30.\n*   **Market Context:** Declined 8.91% from period start ($243.85) to last close ($222.13).\n*   **Risk Profile:** Observed max drawdown -15.14%, daily return volatility (std dev) 1.81%.\n\n**2. Position Sizing & Loss Scenario**\n*   **Trade Size:** $2,000 funded by existing cash.\n*   **Hypothetical 20% Loss:** A 20% decline on the $2,000 position results in a $400 loss.\n*   **Portfolio Impact:** This loss represents 4% of the total fictional portfolio value ($10,000).\n*   **Affordability Check:** **Unavailable.** Personal income, net worth, and risk tolerance are not provided.\n\n**3. Exit-Plan Questions**\n*   **Stop-Loss:** Given the max drawdown (-15.14%), is a stop below the recent low of $208.42 appropriate, or does it risk premature exit?\n*   **Take-Profit:** With a recent high of $250.00, what is the target return relative to the ~$222.13 entry?\n*   **Time Horizon:** Does the 60-day observation window align with the thesis duration?\n\n**4. Missing Inputs**\nPersonal financial situation, specific entry price, and transaction costs.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "a6437d1e-c386-4d74-a11a-d741dc136531",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**BDOBB Widget: Pre-Trade Reflection Checklist**\n**Asset:** AAPL | **Hypothetical Trade:** $2,000 Long | **Date:** 2025-03-31\n\n**1. Thesis Verification**\n*   **Fundamental Context:** Apple reported Q1 2025 revenue of $124.3B (+4% YoY) and diluted EPS of $2.40 (+10% YoY) as of Jan 30, 2025.\n*   **Market Context:** The asset has declined 8.91% from its period start ($243.85) to the last close ($222.13).\n*   **Risk Profile:** Observed max drawdown was -15.14%, with daily return volatility (std dev) at 1.81%.\n\n**2. Position Sizing & Loss Scenario**\n*   **Trade Size:** $2,000 funded by existing cash.\n*   **Hypothetical 20% Loss:** A 20% decline on the $2,000 position results in a $400 loss.\n*   **Portfolio Impact:** This loss represents 4% of the total fictional portfolio value ($10,000).\n*   **Affordability Check:** **Unavailable.** Personal income, net worth, and risk tolerance are not provided. The user must independently verify if a $400 loss is financially acceptable.\n\n**3. Exit-Plan Questions**\n*   **Stop-Loss:** Given the observed max drawdown (-15.14%) and daily volatility (1.81%), is a stop-loss below the recent low of $208.42 appropriate, or does it risk premature exit?\n*   **Take-Profit:** With a recent high of $250.00, what is the target return relative to the entry price of ~$222.13?\n*   **Time Horizon:** Does the 60-day observation window (Jan 2–Mar 31) align with the investment thesis duration?\n\n**4. Missing Inputs**\n*   Personal financial situation.\n*   Specific entry price (only last close provided).\n*   Transaction costs.\n\n**Disclaimer:** This is a fictional educational case. No personal recommendation is implied. Do not execute based on this analysis alone.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "373240a4-8a7f-492d-ac52-3acecf04dd56",
+          "widgetId": "fictional_portfolio",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "fde9d1f1-5af5-4750-b7a4-07cd7bb915b1",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "5096f936-c8b6-433c-9e54-c7d6fd81fc41",
+      "name": "10 Explain",
+      "cards": [
+        {
+          "id": "0a2220aa-7753-45b1-8904-3823f7a226ee",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 10: Explain it like I am 12\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Explain it like I am 12](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Explain drawdown with an everyday analogy. Use the supplied observed AAPL maximum drawdown as a labeled historical example. Distinguish drawdown from total return and from a guaranteed future loss. Keep the language simple.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Explain drawdown with an everyday analogy. Use the supplied observed AAPL maximum drawdown as a labeled historical example. Distinguish drawdown from total return and from a guaranteed future loss. Keep the language simple.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "13e0f5fe-71b4-4d86-bcf2-ec0b83d30bfa",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 10 — Explain it like I am 12\nVerification run: V6-RUN3\n**Review note:** Close-based drawdown is 15.14%; $250 to $208.42 is a different intraday calculation (16.63%). Period return excludes dividends.\n\n**The Analogy**\nImagine hiking up a mountain. Your \"total return\" is how high you are above sea level at the end of the day. \"Drawdown\" is the deepest dip you experienced from your highest peak during that hike. Even if you end higher than you started, the drawdown measures the stress of the descent you had to climb back up from.\n\n**Historical Example: AAPL**\nUsing the provided frozen data for Apple Inc. (Jan 2 – Mar 31, 2025):\n*   **Observed Maximum Drawdown:** -15.1437%\n*   **Context:** AAPL peaked at a daily high of $250.00 and fell to a low of $208.42. The -15.1437% figure represents the largest percentage drop from that peak to the subsequent trough. This is a historical observation, not a prediction.\n\n**Key Distinctions**\n1.  **Drawdown vs. Total Return:** Total return measures the net change from start to finish. Here, AAPL’s close-to-close return was -8.9071%. The drawdown (-15.1437%) was larger because it captures internal volatility.\n2.  **Drawdown vs. Guaranteed Loss:** A drawdown is a past measurement of volatility. It does not guarantee future losses. The data shows what *did* happen, not what *will* happen.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "dae90283-3b1f-4d70-9ec1-8ffa21354a69",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** Close-based drawdown is 15.14%; $250 to $208.42 is a different intraday-extreme calculation (16.63%). The supplied period return excludes dividend reinvestment.\n\n---\n\n**Understanding Drawdown: A Fictional Educational Case**\n\n**The Analogy**\nImagine hiking up a mountain. Your \"total return\" is how high you are above sea level at the end of the day. \"Drawdown\" is the deepest dip you experienced from your highest peak during that hike. Even if you end higher than you started, the drawdown measures the emotional and financial stress of the descent you had to climb back up from.\n\n**Historical Example: AAPL**\nUsing the provided frozen Yahoo Finance data for Apple Inc. (AAPL) from January 2, 2025, through March 31, 2025:\n*   **Observed Maximum Drawdown:** -15.1437%\n*   **Context:** During this period, AAPL’s price peaked at a daily high of $250.00 and fell to a low of $208.42. The -15.1437% figure represents the largest percentage drop from that peak to the subsequent trough. This is a historical observation, not a prediction.\n\n**Key Distinctions**\n1.  **Drawdown vs. Total Return:** Total return measures the net change from start to finish. In this dataset, AAPL’s close-to-close return was -8.9071%. The drawdown (-15.1437%) was larger because it captures the internal volatility and peak-to-trough decline, regardless of the final closing price.\n2.  **Drawdown vs. Guaranteed Loss:** A drawdown is a past measurement of volatility. It does not guarantee future losses. The data shows what *did* happen, not what *will* happen. Future performance is influenced by many variables, including the reported Q1 2025 revenue growth of 4% year-over-year, but past drawdowns do not dictate future outcomes.\n\nThis analysis is for educational purposes only, based on the supplied fictional dataset.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "2f9a7a1b-1c66-4420-9f82-e6a444c469d5",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "74c65a5c-f981-48fe-b6fb-900e76f2870d",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "e6d15233-7dcd-4f01-8859-5172d6961dee",
+      "name": "11 Opposite",
+      "cards": [
+        {
+          "id": "c391b13f-d1ac-4cd0-8f41-a5c8a43716f9",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 11: Steelman the opposite\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Steelman the opposite](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Challenge the fictional thesis that AAPL will rebound after its observed Q1 decline. Use independent arguments from the supplied price evidence, label business/valuation claims as unknown where no source is provided, and list evidence that could weaken the bearish case. Do not quote another run.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** March 31, 2025. [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Challenge the fictional thesis that AAPL will rebound after its observed Q1 decline. Use independent arguments from the supplied price evidence, label business/valuation claims as unknown where no source is provided, and list evidence that could weaken the bearish case. Do not quote another run.\n\nEvidence:\n{\"dataset\": \"Frozen public Yahoo Finance daily rows; historical educational demo, not live quotes\", \"as_of\": \"2025-03-31\", \"price_metrics\": {\"AAPL\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 243.85, \"last_close\": 222.13, \"close_to_close_return_pct\": -8.9071, \"daily_return_sample_std_pct\": 1.8092, \"observed_close_max_drawdown_pct\": -15.1437, \"lowest_daily_low\": 208.42, \"highest_daily_high\": 250.0, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.848}, \"MSFT\": {\"rows\": 60, \"from\": \"2025-01-02\", \"through\": \"2025-03-31\", \"first_close\": 418.58, \"last_close\": 375.39, \"close_to_close_return_pct\": -10.3182, \"daily_return_sample_std_pct\": 1.6276, \"observed_close_max_drawdown_pct\": -16.0577, \"lowest_daily_low\": 367.24, \"highest_daily_high\": 448.38, \"largest_daily_close_return_pct\": 4.1307, \"smallest_daily_close_return_pct\": -6.1809}}, \"fictional_portfolio\": {\"total_usd\": 10000, \"AAPL_usd\": 5000, \"MSFT_usd\": 3000, \"cash_usd\": 2000}, \"hypothetical_trade\": {\"asset\": \"AAPL\", \"purchase_usd\": 2000, \"funding\": \"existing cash\"}, \"news\": {\"source\": \"https://www.apple.com/newsroom/2025/01/apple-reports-first-quarter-results/\", \"published\": \"2025-01-30\", \"fiscal_period_end\": \"2024-12-28\", \"revenue_usd_billion\": 124.3, \"revenue_yoy_pct\": 4, \"diluted_eps_usd\": 2.4, \"eps_yoy_pct\": 10}}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "b4f4a75e-dfe3-45bf-bdc7-0b0685e1df96",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 11 — Steelman the opposite\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**Challenging the AAPL Rebound Thesis**\nThe hypothesis that Apple Inc. (AAPL) will rebound following its Q1 2025 decline is challenged by the supplied price evidence.\n\nFrom January 2 to March 31, AAPL closed at $222.13, down 8.91% from its opening price of $243.85. This downward trend is reinforced by a significant observed maximum drawdown of 15.14%, with the stock reaching a low daily price of $208.42. The volatility, indicated by a daily return standard deviation of 1.81%, suggests persistent instability rather than a stable base for immediate recovery.\n\nWhile the news source reports a 4% year-over-year revenue increase and 10% EPS growth, these fundamental metrics are labeled **unknown** regarding their direct impact on future price action, as no source links these results to forward-looking valuation or market sentiment.\n\n**Evidence Weakening the Bearish Case**\n*   The stock reached a high of $250.00 during the period, demonstrating the capacity for upward movement.\n*   A largest daily close return of 3.65% indicates the potential for sharp positive reversals.\n\nHowever, without additional valuation data, forward guidance, or observed volume confirmation, the rebound thesis remains unsupported by the supplied price evidence.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "b8ad8455-594f-4ba9-89e4-8e390dbfad1c",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; data through Mar 31, 2025. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** AI draft: check interpretations against the supporting data. Successful generation is not a factual-accuracy pass.\n\n---\n\n**Analysis of AAPL Rebound Thesis (Fictional Case)**\n\nThe hypothesis that Apple Inc. (AAPL) will rebound following its Q1 2025 decline is challenged by the provided price evidence. From January 2, 2025, to March 31, 2025, AAPL closed at $222.13, down 8.91% from its opening price of $243.85. This downward trend is reinforced by a significant observed close-to-close maximum drawdown of 15.14%, with the stock reaching a low daily price of $208.42. The volatility, indicated by a daily return standard deviation of 1.81%, suggests persistent instability rather than a stable base for immediate recovery.\n\nWhile the news source reports a 4% year-over-year revenue increase to $124.3 billion and a 10% EPS growth to $2.40 for the fiscal period ending December 28, 2024, these fundamental metrics are labeled **unknown** regarding their direct impact on future price action, as no source links these results to forward-looking valuation or market sentiment. The price data alone does not support a guaranteed rebound.\n\nEvidence that could weaken the bearish case includes the stock’s ability to reach a high of $250.00 during the period, demonstrating capacity for upward movement, and a largest daily close return of 3.65%, indicating potential for sharp positive reversals. However, without additional valuation data or forward guidance, the thesis remains unsupported by the supplied price evidence.\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "90e7fc5a-d9eb-4158-aef8-42c8a6607547",
+          "widgetId": "market_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "3ef6c328-9af3-430d-8ee5-a4fbeb638283",
+          "widgetId": "market_metrics",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "b40a1a61-baae-4ae2-a57d-27f554bfaa27",
+      "name": "12 Event",
+      "cards": [
+        {
+          "id": "5e101c62-3457-4fbf-be36-ff6742212532",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Prompt 12: Earnings or event prep\n\n**Source prompts © consultance.ai.**\n\n**Original prompt reference:** [Earnings or event prep](https://consultance.ai/library/market-ai-starter-kit). The task below is the OpenBB adaptation used for both analyses.\n\n**Task sent to both routes:** Prepare for the historical January 30, 2025 AAPL earnings event as a simulation dated January 29. Use only price rows through January 29 and do not use actual earnings results or later prices. Explain event-gap risk, information needed, and general options for handling exposure. No outcome forecast or fabricated consensus estimates.\n\n**Shared instructions:** Concise Markdown, at most 220 words; use only supplied evidence; fictional educational case; no tools, searches or follow-up questions; label missing inputs unavailable; do not invent data, numerical confidence, forecasts or facts.\n\n**Evidence cutoff:** January 29, 2025 (before the event). [Full executed prompts and evidence](http://127.0.0.1:16900/market-kit/prompts.json).\n\n### Full executed prompt and evidence\n\nProduce a concise Markdown analysis for a BDOBB widget, at most 220 words. Use only the supplied evidence. Treat this as a fictional educational case, never a personal recommendation. No tools, web searches or follow-up questions are needed. Missing inputs must be labeled unavailable. Do not invent data, numerical confidence, forecasts, or facts.\n\nTask: Prepare for the historical January 30, 2025 AAPL earnings event as a simulation dated January 29. Use only price rows through January 29 and do not use actual earnings results or later prices. Explain event-gap risk, information needed, and general options for handling exposure. No outcome forecast or fabricated consensus estimates.\n\nEvidence:\n{\"dataset\": \"Historical event-preparation simulation, not live\", \"as_of\": \"2025-01-29\", \"event\": {\"asset\": \"AAPL\", \"earnings_date\": \"2025-01-30\"}, \"price_metrics\": {\"AAPL\": {\"rows\": 18, \"from\": \"2025-01-02\", \"through\": \"2025-01-29\", \"first_close\": 243.85, \"last_close\": 239.36, \"close_to_close_return_pct\": -1.8413, \"daily_return_sample_std_pct\": 1.9979, \"observed_close_max_drawdown_pct\": -9.1265, \"lowest_daily_low\": 219.38, \"highest_daily_high\": 249.1, \"largest_daily_close_return_pct\": 3.6544, \"smallest_daily_close_return_pct\": -4.04}}, \"daily_rows\": [{\"date\": \"2025-01-02\", \"open\": 248.92999267578125, \"high\": 249.10000610351562, \"low\": 241.82000732421875, \"close\": 243.85000610351562, \"volume\": 55740700, \"dividend\": 0.0}, {\"date\": \"2025-01-03\", \"open\": 243.36000061035156, \"high\": 244.17999267578125, \"low\": 241.88999938964844, \"close\": 243.36000061035156, \"volume\": 40244100, \"dividend\": 0.0}, {\"date\": \"2025-01-06\", \"open\": 244.30999755859375, \"high\": 247.3300018310547, \"low\": 243.1999969482422, \"close\": 245.0, \"volume\": 45045600, \"dividend\": 0.0}, {\"date\": \"2025-01-07\", \"open\": 242.97999572753906, \"high\": 245.5500030517578, \"low\": 241.35000610351562, \"close\": 242.2100067138672, \"volume\": 40856000, \"dividend\": 0.0}, {\"date\": \"2025-01-08\", \"open\": 241.9199981689453, \"high\": 243.7100067138672, \"low\": 240.0500030517578, \"close\": 242.6999969482422, \"volume\": 37628900, \"dividend\": 0.0}, {\"date\": \"2025-01-10\", \"open\": 240.00999450683594, \"high\": 240.16000366210938, \"low\": 233.0, \"close\": 236.85000610351562, \"volume\": 61710900, \"dividend\": 0.0}, {\"date\": \"2025-01-13\", \"open\": 233.52999877929688, \"high\": 234.6699981689453, \"low\": 229.72000122070312, \"close\": 234.39999389648438, \"volume\": 49630700, \"dividend\": 0.0}, {\"date\": \"2025-01-14\", \"open\": 234.75, \"high\": 236.1199951171875, \"low\": 232.47000122070312, \"close\": 233.27999877929688, \"volume\": 39435300, \"dividend\": 0.0}, {\"date\": \"2025-01-15\", \"open\": 234.63999938964844, \"high\": 238.9600067138672, \"low\": 234.42999267578125, \"close\": 237.8699951171875, \"volume\": 39832000, \"dividend\": 0.0}, {\"date\": \"2025-01-16\", \"open\": 237.35000610351562, \"high\": 238.00999450683594, \"low\": 228.02999877929688, \"close\": 228.25999450683594, \"volume\": 71759100, \"dividend\": 0.0}, {\"date\": \"2025-01-17\", \"open\": 232.1199951171875, \"high\": 232.2899932861328, \"low\": 228.47999572753906, \"close\": 229.97999572753906, \"volume\": 68488300, \"dividend\": 0.0}, {\"date\": \"2025-01-21\", \"open\": 224.0, \"high\": 224.4199981689453, \"low\": 219.3800048828125, \"close\": 222.63999938964844, \"volume\": 98070400, \"dividend\": 0.0}, {\"date\": \"2025-01-22\", \"open\": 219.7899932861328, \"high\": 224.1199951171875, \"low\": 219.7899932861328, \"close\": 223.8300018310547, \"volume\": 64126500, \"dividend\": 0.0}, {\"date\": \"2025-01-23\", \"open\": 224.74000549316406, \"high\": 227.02999877929688, \"low\": 222.3000030517578, \"close\": 223.66000366210938, \"volume\": 60234800, \"dividend\": 0.0}, {\"date\": \"2025-01-24\", \"open\": 224.77999877929688, \"high\": 225.6300048828125, \"low\": 221.41000366210938, \"close\": 222.77999877929688, \"volume\": 54697900, \"dividend\": 0.0}, {\"date\": \"2025-01-27\", \"open\": 224.02000427246094, \"high\": 232.14999389648438, \"low\": 223.97999572753906, \"close\": 229.86000061035156, \"volume\": 94863400, \"dividend\": 0.0}, {\"date\": \"2025-01-28\", \"open\": 230.85000610351562, \"high\": 240.19000244140625, \"low\": 230.80999755859375, \"close\": 238.25999450683594, \"volume\": 75707600, \"dividend\": 0.0}, {\"date\": \"2025-01-29\", \"open\": 234.1199951171875, \"high\": 239.86000061035156, \"low\": 234.00999450683594, \"close\": 239.36000061035156, \"volume\": 45486100, \"dividend\": 0.0}]}"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "06ce364a-e608-4a84-aebf-0cec5b8baf4a",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Rita output 12 — Earnings or event prep\nVerification run: V6-RUN3\n**Review note:** AI draft checks interpretations against supporting data.\n\n**Event Context**\nThis simulation assesses AAPL ahead of the January 30, 2025 earnings release. Data reflects market conditions strictly through January 29, 2025.\n\n**Price Action & Volatility**\nAAPL closed at **$239.36** on January 29, down **-1.84%** from the period start of $243.85. The asset experienced significant volatility, with a **largest daily close return of +3.65%** and a **smallest of -4.04%**. The **daily return sample standard deviation is 1.9979%**, indicating high price fluctuation. Price range spanned from a low of **$219.38** to a high of **$249.10**, with an observed max drawdown of **-9.13%**.\n\n**Event-Gap Risk**\nEarnings announcements often cause price gaps as new information is priced in rapidly. Given the recent high volatility and the decline from the period high, the potential for a significant overnight gap—up or down—is elevated.\n\n**Information Needed**\nTo properly assess risk, the following inputs are **unavailable**:\n*   Consensus earnings estimates (EPS and Revenue).\n*   Implied volatility or options pricing data.\n*   Forward guidance details.\n\n**Handling Exposure**\nGeneral strategies include position sizing, using options to define risk, holding cash reserves, or waiting to enter post-announcement.\n\n© 2026 consultance.ai · AI, implemented."
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "021826a2-531e-40af-8f84-ab3a1045a13d",
+          "widgetId": "markdown",
+          "backendId": "builtin",
+          "params": {
+            "text": "## Independent Qwen — imported Markdown file\n\n**Independent Qwen · fresh independent session · qwen3.6-35b**\n\nHistorical educational demo; as of Jan 29, 2025, before the event. Portfolio amounts are fictional. [Exact full input](http://127.0.0.1:16900/market-kit/prompts.json) · No order execution.\n\n**Review note:** Daily close-return standard deviation does not measure intraday fluctuation or prove sensitivity to earnings news. The options discussion is not a tested hedge or an implementation.\n\n---\n\n# BDOBB Widget Analysis: AAPL Earnings Simulation (Jan 29, 2025)\n\n**Event Context**\nThis simulation assesses AAPL ahead of the January 30, 2025 earnings release. Data reflects market conditions through January 29, 2025.\n\n**Price Action & Volatility**\nAAPL closed at **$239.36** on January 29, down **-1.84%** from the period start of $243.85. The asset experienced significant volatility, with a **largest daily close return of +3.65%** and a **smallest of -4.04%**. The **daily return sample standard deviation is 1.9979%**, indicating high intraday fluctuation. Price range spanned from a low of **$219.38** to a high of **$249.10**, with an observed close-to-close max drawdown of **-9.13%**.\n\n**Event-Gap Risk**\nEarnings announcements often cause price gaps as new information is priced in rapidly. Given the recent high volatility (std dev ~2%) and the sharp decline from the period high, the potential for a significant overnight gap—up or down—is elevated. The stock’s sensitivity to news is evidenced by the wide daily ranges observed throughout January.\n\n**Information Needed**\nTo properly assess risk, the following inputs are **unavailable** in the current dataset:\n*   Consensus earnings estimates (EPS and Revenue).\n*   Implied volatility or options pricing data.\n*   Forward guidance details.\n*   Sector-specific comparative metrics.\n\n**Handling Exposure**\nGeneral strategies for managing earnings exposure include:\n1.  **Position Sizing:** Reducing share count to limit capital at risk.\n2.  **Hedging:** Using put or call options to define risk boundaries.\n3.  **Cash Reserve:** Holding cash to avoid forced liquidation if a gap occurs against the position.\n4.  **Wait-and-See:** Exiting prior to the event and re-entering post-announcement to avoid binary risk.\n\n*Note: This is a fictional educational case. No forecasts or personal recommendations are provided.*\n"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "39127339-8d02-4c09-b468-98717aafaad1",
+          "widgetId": "event_chart",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        },
+        {
+          "id": "4ea49cfd-b3ae-4c0e-8ef6-e14bf568842f",
+          "widgetId": "event_prices",
+          "backendId": "fadeca0a-d199-4d4a-a34d-91d159bec21b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 26,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    }
+  ]
+}

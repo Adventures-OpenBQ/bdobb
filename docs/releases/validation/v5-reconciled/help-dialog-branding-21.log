@@ -1,0 +1,17 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/components/dialogs/HelpDialog.test.tsx (21 tests) 4628ms
+   ✓ HelpDialog: Quick Help > opens on the first topic and lists every topic in reading order 400ms
+   ✓ HelpDialog: Quick Help > narrows the list as you type but leaves the content pane alone 427ms
+   ✓ HelpDialog: Quick Help > shows the empty state when nothing matches 387ms
+   ✓ HelpDialog: Quick Help > clears the query with the clear button and restores the full list 424ms
+   ✓ HelpDialog: Quick Help > closes on Escape, even with a query typed 418ms
+   ✓ HelpDialog: Quick Help > shows a snippet under each hit, and no snippet in the unfiltered list 327ms
+   ✓ HelpDialog: Reference Manual > filters its own pages by the search term, and never lists a quick topic 417ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  01:44:54
+   Duration  13.21s (transform 1.01s, setup 539ms, collect 2.68s, tests 4.63s, environment 712ms, prepare 131ms)
+

@@ -1,0 +1,45 @@
+
+> bdobb@4.0.0 test:dashsync <worktree>
+> DASHSYNC_TEST=1 playwright test e2e/dashboard-sync.spec.ts --reporter=line -g 'removing a tab'
+
+
+Running 1 test using 1 worker
+
+[1/1] [chromium] › e2e/dashboard-sync.spec.ts:267:3 › Workspace dashboard sync against a real key-mode server › removing a tab reaches the server
+  1) [chromium] › e2e/dashboard-sync.spec.ts:267:3 › Workspace dashboard sync against a real key-mode server › removing a tab reaches the server 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      283 |     await page.getByRole("button", { name: "Delete tab Extra" }).click();
+      284 |     await expect(page.getByRole("tab", { name: "Extra" })).toHaveCount(0);
+    > 285 |     await expect.poll(() => ownedTabKeys(request, uuid).then((k) => k.length), { timeout: 15_000 }).toBe(1);
+          |                                                                                                     ^
+      286 |   });
+      287 | });
+      288 |
+        at <worktree>/e2e/dashboard-sync.spec.ts:285:101
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/dashboard-sync-Workspace-d-eb007-ng-a-tab-reaches-the-server-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/dashboard-sync-Workspace-d-eb007-ng-a-tab-reaches-the-server-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/dashboard-sync-Workspace-d-eb007-ng-a-tab-reaches-the-server-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/dashboard-sync-Workspace-d-eb007-ng-a-tab-reaches-the-server-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  1 failed
+    [chromium] › e2e/dashboard-sync.spec.ts:267:3 › Workspace dashboard sync against a real key-mode server › removing a tab reaches the server 
+ ELIFECYCLE  Command failed with exit code 1.

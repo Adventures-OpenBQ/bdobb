@@ -1,0 +1,14 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ✓ src/help/search.test.ts (15 tests) 5ms
+ ✓ src/help/shots.test.ts (5 tests) 19ms
+ ✓ src/help/guide.test.ts (9 tests) 18ms
+ ✓ src/help/index.test.ts (8 tests) 6ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 291ms
+
+ Test Files  5 passed (5)
+      Tests  42 passed (42)
+   Start at  00:42:02
+   Duration  14.31s (transform 965ms, setup 1.76s, collect 2.20s, tests 339ms, environment 5.29s, prepare 826ms)
+

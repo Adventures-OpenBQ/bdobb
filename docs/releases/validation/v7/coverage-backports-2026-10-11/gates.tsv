@@ -1,0 +1,20 @@
+typecheck|exit=0|dur=10s|load=32.53 32.99 43.69|cmd=pnpm typecheck
+lint|exit=0|dur=8s|load=30.14 32.46 43.38|cmd=pnpm lint
+unit|exit=0|dur=180s|load=27.27 31.77 43.00|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+revision-test|exit=0|dur=2s|load=19.39 25.12 38.00|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=11s|load=19.39 25.12 38.00|cmd=pnpm build
+e2e|exit=0|dur=434s|load=19.19 24.79 37.65|cmd=env BDOBB_BROWSER_PORT=4383 BDOBB_MOCK_PORT=4384 pnpm e2e
+web|exit=0|dur=1s|load=30.42 26.81 33.59|cmd=pnpm test:web
+build-web|exit=0|dur=9s|load=30.31 26.85 33.57|cmd=pnpm build:web
+web-browser|exit=0|dur=3s|load=30.76 27.00 33.58|cmd=pnpm test:web:browser
+cargo|exit=0|dur=1s|load=32.62 27.45 33.70|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=1|dur=8s|load=32.62 27.45 33.70|cmd=pnpm scrub
+help|exit=0|dur=4s|load=31.83 27.46 33.63|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+cargo-test|exit=0|dur=2s|load=31.83 27.46 33.63|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --offline -j 2
+e2e-webkit|exit=1|dur=45s|load=32.89 27.75 33.70|cmd=env BDOBB_BROWSER_PORT=4783 BDOBB_MOCK_PORT=4784 pnpm exec playwright test -c .superpowers/playwright.webkit.config.ts e2e/drop.spec.ts e2e/layout.spec.ts e2e/rail.spec.ts e2e/rita-arrange.spec.ts e2e/rita-edit-bar.spec.ts e2e/rita-no-url.spec.ts e2e/rita.spec.ts e2e/smoke.spec.ts e2e/rail-after-dialog.webkit.spec.ts
+notices-check|exit=0|dur=2s|load=29.10 27.57 33.33|cmd=pnpm notices:check
+dashsync|exit=0|dur=17s|load=29.10 27.57 33.33|cmd=env BDOBB_BROWSER_PORT=4491 BDOBB_MOCK_PORT=4492 pnpm test:dashsync --reporter=line
+ios-check|exit=0|dur=2s|load=27.41 27.29 33.10|cmd=pnpm ios:check
+ios-sim|exit=0|dur=82s|load=27.41 27.29 33.10|cmd=pnpm ios:sim F4CD05FE-434D-492C-9A38-44FC92CEEAE2
+diff-check|exit=0|dur=0s|load=35.36 28.72 33.02|cmd=git diff --check 8eb9ff6 HEAD -- . :!docs/releases/validation/**/*.log :!src-tauri/vendor/
+DONE

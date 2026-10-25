@@ -1,0 +1,11 @@
+
+> bdobb@7.0.0 ios:check <worktree>
+> bash scripts/ios.sh check
+
+iOS toolchain preflight
+  ok    Xcode 27.0 (/Applications/Xcode.app/Contents/Developer)
+  ok    iOS simulator runtime
+  ok    CocoaPods 1.17.0
+  ok    Rust iOS targets
+  ok    llvm-objcopy (Xcode 27 internalizes Swift @_cdecl exports)
+toolchain complete.

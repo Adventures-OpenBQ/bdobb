@@ -1,0 +1,952 @@
+
+> bdobb@7.0.0 ios:sim <worktree>
+> bash scripts/ios.sh sim F4CD05FE-434D-492C-9A38-44FC92CEEAE2
+
+
+> bdobb@7.0.0 tauri <worktree>
+> tauri ios build --target aarch64-sim
+
+        Info Looking up installed tauri packages to check mismatched versions...
+     Running beforeBuildCommand `node scripts/generate-capabilities.mjs && node scripts/sync-ios-icons.mjs && vite build`
+vite v6.4.3 building for production...
+transforming...
+✓ 3550 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) <worktree>/src/lib/logger.ts is dynamically imported by <worktree>/src/lib/tableColumns.ts but also statically imported by <worktree>/src/App.tsx, <worktree>/src/components/DashboardGrid.tsx, <worktree>/src/components/DropZone.tsx, <worktree>/src/components/ErrorBoundary.tsx, <worktree>/src/components/GroupLink.tsx, <worktree>/src/components/LeftRail.tsx, <worktree>/src/components/TabBar.tsx, <worktree>/src/components/WidgetCard.tsx, <worktree>/src/components/WidgetLibrary.tsx, <worktree>/src/components/WorkspaceTile.tsx, <worktree>/src/components/ai/AILibrary.tsx, <worktree>/src/components/ai/McpServersTab.tsx, <worktree>/src/components/dialogs/ConnectionsDialog.tsx, <worktree>/src/components/dialogs/KeysPanel.tsx, <worktree>/src/components/dialogs/SettingsDialog.tsx, <worktree>/src/components/dialogs/settings/SettingsForm.tsx, <worktree>/src/components/renderers/ChartRenderer.tsx, <worktree>/src/components/renderers/MarkdownEditorRenderer.tsx, <worktree>/src/components/renderers/MultiFileRenderer.tsx, <worktree>/src/components/renderers/TradingViewRenderer.tsx, <worktree>/src/components/rita/AgentEditBar.tsx, <worktree>/src/components/rita/ArtifactView.tsx, <worktree>/src/components/rita/ChatPane.tsx, <worktree>/src/components/runAppsImport.ts, <worktree>/src/components/runDashboardSync.ts, <worktree>/src/components/runWorkspaceSync.ts, <worktree>/src/hooks/useFiscalYearEnd.ts, <worktree>/src/hooks/useTradingCalendar.ts, <worktree>/src/hooks/useWidgetData.ts, <worktree>/src/hooks/useWindowMenuPins.ts, <worktree>/src/lib/agent/agents-json.ts, <worktree>/src/lib/agent/events.ts, <worktree>/src/lib/agent/execute.ts, <worktree>/src/lib/agent/importedMcp.ts, <worktree>/src/lib/agent/query.ts, <worktree>/src/lib/agent/sse.ts, <worktree>/src/lib/bootstrap.ts, <worktree>/src/lib/calendar.ts, <worktree>/src/lib/dashboardSync.ts, <worktree>/src/lib/dateExpressions.ts, <worktree>/src/lib/discovery.ts, <worktree>/src/lib/jsonStore.ts, <worktree>/src/lib/logViewer.ts, <worktree>/src/lib/params.ts, <worktree>/src/lib/skillsFiles.ts, <worktree>/src/lib/widgetsJson.ts, <worktree>/src/lib/workspaceFocus.ts, <worktree>/src/stores/chatStore.ts, <worktree>/src/stores/dashboardStore.ts, <worktree>/src/stores/providerKeysStore.ts, <worktree>/src/stores/workspaceStore.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) <worktree>/src/stores/dashboardStore.ts is dynamically imported by <worktree>/src/stores/tableExecutionStore.ts but also statically imported by <worktree>/src/App.tsx, <worktree>/src/components/CardRemovalUndo.tsx, <worktree>/src/components/DashboardGrid.tsx, <worktree>/src/components/DropZone.tsx, <worktree>/src/components/GroupLink.tsx, <worktree>/src/components/LeftRail.tsx, <worktree>/src/components/LinkedGroupInspector.tsx, <worktree>/src/components/LinkedWidgetDialog.tsx, <worktree>/src/components/PivotGroupLink.tsx, <worktree>/src/components/PivotGroupUndo.tsx, <worktree>/src/components/PivotParamRow.tsx, <worktree>/src/components/TabBar.tsx, <worktree>/src/components/TableExecutionRuntime.tsx, <worktree>/src/components/WidgetCard.tsx, <worktree>/src/components/WidgetLibrary.tsx, <worktree>/src/components/WorkspaceArrangeBar.tsx, <worktree>/src/components/WorkspaceGrid.tsx, <worktree>/src/components/WorkspaceTile.tsx, <worktree>/src/components/ai/McpServersTab.tsx, <worktree>/src/components/dialogs/WorkspaceDialog.tsx, <worktree>/src/components/renderers/LocalTableRenderer.tsx, <worktree>/src/components/runAppsImport.ts, <worktree>/src/components/runDashboardSync.ts, <worktree>/src/hooks/useDashboardShortcuts.ts, <worktree>/src/hooks/useFormulaAuthoring.ts, <worktree>/src/hooks/useWidgetData.ts, <worktree>/src/lib/agent/localTools.ts, <worktree>/src/lib/agent/tableModel/arrange.ts, <worktree>/src/lib/agent/tableModel/target.ts, <worktree>/src/lib/bootstrap.ts, <worktree>/src/lib/workspaceFocus.ts, <worktree>/src/stores/chatStore.ts, <worktree>/src/stores/tableCommitCoordinator.ts, <worktree>/src/stores/tableExecutionStore.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/standard_fonts/LICENSE_FOXIT                           1.55 kB
+dist/index.html                                             3.52 kB │ gzip:   1.66 kB
+dist/standard_fonts/LICENSE_LIBERATION                      4.41 kB
+dist/assets/dashboard-tabs-light-IosMN9pV.png               5.33 kB
+dist/assets/dashboard-tabs-dark-BkQagQKL.png                5.39 kB
+dist/assets/cursor-editorTextHighlight-kG3uUOwL.svg         5.40 kB │ gzip:   2.20 kB
+dist/assets/running-and-refreshing-light-HZjkxIp5.png       9.20 kB
+dist/assets/running-and-refreshing-dark-oTUgV_mh.png        9.41 kB
+dist/assets/workspace-account-light-B-6OuwG1.png            9.64 kB
+dist/assets/workspace-account-dark-DGGhDrz1.png             9.79 kB
+dist/assets/statement-view-light-sZ2wiv0q.png              16.48 kB
+dist/assets/statement-view-dark-Dr4K-WFO.png               16.61 kB
+dist/standard_fonts/FoxitSymbol.pfb                        16.73 kB
+dist/standard_fonts/FoxitFixed.pfb                         17.60 kB
+dist/standard_fonts/FoxitFixedBold.pfb                     18.06 kB
+dist/assets/charts-light-Df99dE9p.png                      18.10 kB
+dist/assets/charts-dark-D42xJbeH.png                       18.24 kB
+dist/assets/date-expression-light-awR5hcA3.png             18.42 kB
+dist/assets/date-expression-dark-CJ6qeFKg.png              18.49 kB
+dist/standard_fonts/FoxitFixedItalic.pfb                   18.75 kB
+dist/standard_fonts/FoxitFixedBoldItalic.pfb               19.15 kB
+dist/standard_fonts/FoxitSerifBold.pfb                     19.40 kB
+dist/standard_fonts/FoxitSerif.pfb                         19.47 kB
+dist/assets/troubleshooting-light-B9Iujxmg.png             19.66 kB
+dist/assets/troubleshooting-dark-MCvAVacA.png              19.83 kB
+dist/assets/html-and-iframe-widgets-light-CE97PADm.png     20.05 kB
+dist/assets/html-and-iframe-widgets-dark-BX9UTns1.png      20.13 kB
+dist/standard_fonts/FoxitSerifBoldItalic.pfb               20.73 kB
+dist/standard_fonts/FoxitSerifItalic.pfb                   21.23 kB
+dist/assets/the-left-rail-light-DsnVeuYP.png               22.46 kB
+dist/assets/documents-pdf-and-files-light-BNq2zc3X.png     22.69 kB
+dist/assets/the-left-rail-dark-DH0X_xXc.png                22.90 kB
+dist/assets/documents-pdf-and-files-dark-bhDTL40f.png      22.96 kB
+dist/assets/widget-cards-light-CEDZ_QQn.png                23.06 kB
+dist/assets/widget-cards-dark-CMgulR-9.png                 23.32 kB
+dist/assets/fy-ends-light-BuKXL6Oz.png                     23.49 kB
+dist/assets/fy-ends-dark-CPHi-Bbm.png                      24.00 kB
+dist/assets/import-and-export-light-CztH3oHp.png           24.74 kB
+dist/assets/import-and-export-dark-BhLyAiBz.png            24.97 kB
+dist/assets/card-parameters-light-Tz43zPcM.png             25.60 kB
+dist/assets/card-parameters-dark-Q6zhtLKK.png              25.81 kB
+dist/assets/rita-light-ByZm2noT.png                        26.75 kB
+dist/assets/rita-dark-Cr3vskdo.png                         28.29 kB
+dist/standard_fonts/FoxitDingbats.pfb                      29.51 kB
+dist/assets/connections-light-B9noUYVT.png                 29.88 kB
+dist/assets/connections-dark-qhnjN2-3.png                  30.50 kB
+dist/assets/period-quarter-range-light-DvK8ZpwV.png        33.69 kB
+dist/assets/period-quarter-range-dark-DUY0biFU.png         34.29 kB
+dist/assets/workspaces-light-Cf53TSa_.png                  34.72 kB
+dist/assets/workspaces-dark-BzXNmhV0.png                   34.80 kB
+dist/assets/calendar-view-light-yO5Y93yY.png               40.12 kB
+dist/assets/calendar-view-dark-DeE_SFOg.png                40.81 kB
+dist/assets/dashboards-and-folders-light-BYUb4AEF.png      43.52 kB
+dist/assets/dashboards-and-folders-dark-B-rsMV83.png       44.29 kB
+dist/assets/period-quarter-light-DbpUHULK.png              47.69 kB
+dist/assets/period-quarter-dark-a08qeNXl.png               48.52 kB
+dist/assets/period-datetime-light-BZCIhfec.png             48.58 kB
+dist/assets/period-datetime-dark-C83NgDea.png              49.58 kB
+dist/assets/period-relative-light-AywiJtB0.png             54.42 kB
+dist/assets/period-relative-dark-BGZr6aiF.png              55.30 kB
+dist/assets/provider-keys-dark-tOIQOAb9.png                59.86 kB
+dist/assets/provider-keys-light-7n3wkBb6.png               60.00 kB
+dist/assets/settings-and-logs-light-BsZAn8Fi.png           76.49 kB
+dist/assets/settings-and-logs-dark-uXPFy8LH.png            77.21 kB
+dist/assets/ai-library-dark-Dv4dmjJX.png                   83.93 kB
+dist/assets/ai-library-light-kj-HC82J.png                  83.96 kB
+dist/assets/built-in-widgets-light-DN1Z3Yeq.png            94.24 kB
+dist/assets/built-in-widgets-dark-CDPe4NuK.png             95.12 kB
+dist/assets/widget-library-light-B3i37F9T.png             109.35 kB
+dist/assets/widget-library-dark-DeQf9XI2.png              110.11 kB
+dist/assets/tables-light-D9BlLCrI.png                     119.96 kB
+dist/assets/tables-dark-B3ttJnzE.png                      127.97 kB
+dist/assets/getting-started-light-CL0QRX2W.png            129.32 kB
+dist/standard_fonts/LiberationSans-BoldItalic.ttf         135.12 kB
+dist/assets/getting-started-dark-BUz5VOel.png             135.61 kB
+dist/standard_fonts/LiberationSans-Bold.ttf               137.05 kB
+dist/standard_fonts/LiberationSans-Regular.ttf            139.51 kB
+dist/standard_fonts/LiberationSans-Italic.ttf             162.04 kB
+dist/assets/ipad-light-CJb-XIYx.png                       177.44 kB
+dist/assets/ipad-dark-CB-wCN3f.png                        198.35 kB
+dist/assets/table.worker-WWjZkj6G.js                      224.32 kB
+dist/assets/xlsx-DT5WGBCc.js                              499.91 kB
+dist/assets/pdf.worker.min-Dr1KORA9.mjs                 1,286.28 kB
+dist/assets/MarkdownEditorRenderer-C76-PK2L.css           239.90 kB │ gzip:  37.60 kB
+dist/assets/index-DXO8EXJO.css                            404.85 kB │ gzip:  66.41 kB
+dist/assets/module-RjUF93sV.js                             77.31 kB │ gzip:  27.62 kB │ map:    240.30 kB
+dist/assets/lightweight-charts.production-ClhRhmPB.js     180.25 kB │ gzip:  57.06 kB │ map:    455.12 kB
+dist/assets/pdf_viewer-D9A2Yh6Q.js                        223.23 kB │ gzip:  69.09 kB │ map:    780.61 kB
+dist/assets/native-48B9X9Wg.js                            432.80 kB │ gzip:  83.21 kB │ map:      0.10 kB
+dist/assets/pdf-lPevIYiG.js                               474.22 kB │ gzip: 143.49 kB │ map:  1,733.49 kB
+dist/assets/xlsx-DBvuKzsv.js                              499.91 kB │ gzip: 161.71 kB │ map:  1,916.04 kB
+dist/assets/HelpDialog-DD6p5aXg.js                        507.43 kB │ gzip: 178.91 kB │ map:    567.09 kB
+dist/assets/MarkdownEditorRenderer-ziSZo8IG.js            916.56 kB │ gzip: 275.51 kB │ map:  3,694.07 kB
+dist/assets/index-Dh_d3Czw.js                           3,023.33 kB │ gzip: 979.11 kB │ map: 13,712.59 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 10.54s
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -allowProvisioningUpdates -scheme bdobb_iOS -workspace <worktree>/src-tauri/gen/apple/bdobb.xcodeproj/project.xcworkspace/ -sdk iphonesimulator -configuration release build
+
+Build settings from command line:
+    SDKROOT = iphonesimulator27.0
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+{ platform:iOS Simulator, arch:arm64, id:AD4FEED2-A053-485E-B560-9C47A930D774, OS:26.5, name:BDOBB Episode 7 Rehearsal }
+{ platform:iOS Simulator, arch:arm64, id:F4CD05FE-434D-492C-9A38-44FC92CEEAE2, OS:17.0, name:iPad (10th generation) }
+{ platform:iOS Simulator, arch:arm64, id:370A4E85-F1E3-420E-BB8F-CED381156C4F, OS:26.5, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:4BF2A946-B7FA-4E38-A7EA-E541807AE83C, OS:27.0, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:23DAD2EA-888D-4BEC-8518-74F22495956E, OS:17.0, name:iPad Air (5th generation) }
+{ platform:iOS Simulator, arch:arm64, id:91A4EBA4-E5BC-4DD7-9257-107794E0777D, OS:26.5, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:173D117C-541C-448A-95AE-9FFBD3DA2E42, OS:27.0, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:40BBA2B9-FE0A-40FA-A11B-839939A7D85F, OS:26.5, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:F7171D3E-2F45-433A-9CCD-7713F216B726, OS:27.0, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:C100E4C4-8E0F-4226-94A4-4BD1EAD6A3AF, OS:17.0, name:iPad Pro (11-inch) (4th generation) }
+{ platform:iOS Simulator, arch:arm64, id:1144C109-16C8-48D0-8A83-2E0B8058D802, OS:17.0, name:iPad Pro (12.9-inch) (6th generation) }
+{ platform:iOS Simulator, arch:arm64, id:9E6DDBEA-FA09-4600-A182-859CFEC26B31, OS:26.5, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:D76E7B04-A2BF-4139-9D44-7E75D4BA72AA, OS:27.0, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:86CD7752-C2C3-4842-B5AE-9B49CD447033, OS:26.5, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:40240F61-6844-4486-87FC-116867E09BE0, OS:27.0, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:5A117CEA-EF98-4A01-9C51-0E4A61CF6066, OS:17.0, name:iPad mini (6th generation) }
+{ platform:iOS Simulator, arch:arm64, id:DA10AB2F-EDCA-4E02-9E6D-42414EEF829D, OS:26.5, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:73ED27CD-9956-4D94-9424-F96F5BE88D3E, OS:27.0, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:20966A01-3A31-4F74-911A-8F66B7C1B1A8, OS:17.0, name:iPhone 15 }
+{ platform:iOS Simulator, arch:arm64, id:F74F0C93-4F7B-4DF8-BF69-2C8F34C20716, OS:17.0, name:iPhone 15 Plus }
+{ platform:iOS Simulator, arch:arm64, id:6BE76451-F830-4D9E-B92F-F5917B07EA20, OS:17.0, name:iPhone 15 Pro }
+{ platform:iOS Simulator, arch:arm64, id:36CDAE3A-8359-4E56-987F-0841E35F2767, OS:17.0, name:iPhone 15 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:6F28CEAE-92D9-4797-8409-590CAE99EB10, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:F95D1B7C-A2DA-4875-89AB-03824A130668, OS:27.0, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:17E9DAEA-C00B-4421-B159-F839314F80ED, OS:26.5, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:67880405-062B-424E-8CE2-83E5DDD55F4D, OS:26.5, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:92F37661-31D4-4DF4-9AD3-0A6F909063CE, OS:26.5, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:8FDABEC9-3D2D-4D94-A84D-F4CD487FC537, OS:27.0, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:3DD4A85D-1D48-4483-AAD9-5022D2321D83, OS:27.0, name:iPhone 18 Pro }
+{ platform:iOS Simulator, arch:arm64, id:AA822775-AD28-4B41-8CF0-5899FE81BFB3, OS:27.0, name:iPhone 18 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:A3FF2D0C-6C46-42F0-BB03-D2C5579CBEAD, OS:26.5, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:E68183AE-142A-4A66-99EA-1ABD865349E5, OS:27.0, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:19895055-BCBE-4313-A879-0FF9A5E4CBF5, OS:17.0, name:iPhone SE (3rd generation) }
+{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:00006001-0012304A2EF8801E, name:My Mac }
+{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'bdobb_iOS' in project 'bdobb' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x objective-c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 <worktree>/src-tauri/gen/apple/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 467de3b4673f14acb1e09a258b19bf8a
+Build description path: ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/XCBuildData/467de3b4673f14acb1e09a258b19bf8a.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk ~/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8dc58220667be655e1bcc261a7455254.sdkstatcache
+    cd <worktree>/src-tauri/gen/apple/bdobb.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o ~/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8dc58220667be655e1bcc261a7455254.sdkstatcache
+
+note: Run script build phase 'Build Rust Code' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'bdobb_iOS' from project 'bdobb')
+PhaseScriptExecution Build\ Rust\ Code ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Script-B7EA3486EDC53036A3BFC6CE.sh (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    export ACTION\=build
+    export AD_HOC_CODE_SIGNING_ALLOWED\=YES
+    export AGGREGATE_TRACKED_DOMAINS\=YES
+    export ALLOW_BUILD_REQUEST_OVERRIDES\=NO
+    export ALLOW_TARGET_PLATFORM_SPECIALIZATION\=NO
+    export ALTERNATE_GROUP\=staff
+    export ALTERNATE_MODE\=u+w,go-w,a+rX
+    export ALTERNATE_OWNER\=artcashin
+    export ALTERNATIVE_DISTRIBUTION_WEB\=NO
+    export ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES\=YES
+    export ALWAYS_SEARCH_USER_PATHS\=NO
+    export ALWAYS_USE_SEPARATE_HEADERMAPS\=NO
+    export APPLICATION_EXTENSION_API_ONLY\=NO
+    export APPLY_RULES_IN_COPY_FILES\=NO
+    export APPLY_RULES_IN_COPY_HEADERS\=NO
+    export APP_SHORTCUTS_ENABLE_FLEXIBLE_MATCHING\=YES
+    export ARCHS\=arm64
+    export ARCHS_BASE\=arm64
+    export ARCHS_STANDARD\=arm64\ x86_64
+    export ARCHS_STANDARD_32_64_BIT\=arm64\ x86_64
+    export ARCHS_STANDARD_64_BIT\=arm64\ x86_64
+    export ARCHS_STANDARD_INCLUDING_64_BIT\=arm64\ x86_64
+    export ARCHS_UNIVERSAL_IPHONE_OS\=arm64\ x86_64
+    export ASSETCATALOG_COMPILER_APPICON_NAME\=AppIcon
+    export AUTOMATICALLY_MERGE_DEPENDENCIES\=NO
+    export AUTOMATION_APPLE_EVENTS\=NO
+    export AVAILABLE_PLATFORMS\=android\ appletvos\ appletvsimulator\ driverkit\ freebsd\ iphoneos\ iphonesimulator\ linux\ macosx\ none\ openbsd\ qnx\ staticlinux\ watchos\ watchsimulator\ webassembly\ xros\ xrsimulator
+    export AppIdentifierPrefix\=7UKUHTS23T.
+    export BUILD_ACTIVE_RESOURCES_ONLY\=NO
+    export BUILD_COMPONENTS\=headers\ build
+    export BUILD_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products
+    export BUILD_LIBRARY_FOR_DISTRIBUTION\=NO
+    export BUILD_ONLY_KNOWN_LOCALIZATIONS\=NO
+    export BUILD_ROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products
+    export BUILD_STYLE\=
+    export BUILD_VARIANTS\=normal
+    export BUILT_PRODUCTS_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator
+    export BUNDLE_CONTENTS_FOLDER_PATH_deep\=Contents/
+    export BUNDLE_EXECUTABLE_FOLDER_NAME_deep\=MacOS
+    export BUNDLE_EXTENSIONS_FOLDER_PATH\=Extensions
+    export BUNDLE_FORMAT\=shallow
+    export BUNDLE_FRAMEWORKS_FOLDER_PATH\=Frameworks
+    export BUNDLE_PLUGINS_FOLDER_PATH\=PlugIns
+    export BUNDLE_PRIVATE_HEADERS_FOLDER_PATH\=PrivateHeaders
+    export BUNDLE_PUBLIC_HEADERS_FOLDER_PATH\=Headers
+    export CACHE_ROOT\=<scratch>
+    export CCHROOT\=<scratch>
+    export CHMOD\=/bin/chmod
+    export CHOWN\=chown
+    export CLANG_ANALYZER_NONNULL\=YES
+    export CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION\=YES_AGGRESSIVE
+    export CLANG_CACHE_FINE_GRAINED_OUTPUTS\=YES
+    export CLANG_CXX_LANGUAGE_STANDARD\=gnu++14
+    export CLANG_CXX_LIBRARY\=libc++
+    export CLANG_ENABLE_EXPLICIT_MODULES\=YES
+    export CLANG_ENABLE_MODULES\=YES
+    export CLANG_ENABLE_OBJC_ARC\=YES
+    export CLANG_ENABLE_OBJC_WEAK\=YES
+    export CLANG_MODULES_BUILD_SESSION_FILE\=~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation
+    export CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING\=YES
+    export CLANG_WARN_BOOL_CONVERSION\=YES
+    export CLANG_WARN_COMMA\=YES
+    export CLANG_WARN_CONSTANT_CONVERSION\=YES
+    export CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS\=YES
+    export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+    export CLANG_WARN_DOCUMENTATION_COMMENTS\=YES
+    export CLANG_WARN_EMPTY_BODY\=YES
+    export CLANG_WARN_ENUM_CONVERSION\=YES
+    export CLANG_WARN_INFINITE_RECURSION\=YES
+    export CLANG_WARN_INT_CONVERSION\=YES
+    export CLANG_WARN_NON_LITERAL_NULL_CONVERSION\=YES
+    export CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF\=YES
+    export CLANG_WARN_OBJC_LITERAL_CONVERSION\=YES
+    export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+    export CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER\=YES
+    export CLANG_WARN_RANGE_LOOP_ANALYSIS\=YES
+    export CLANG_WARN_STRICT_PROTOTYPES\=YES
+    export CLANG_WARN_SUSPICIOUS_MOVE\=YES
+    export CLANG_WARN_UNGUARDED_AVAILABILITY\=YES_AGGRESSIVE
+    export CLANG_WARN_UNREACHABLE_CODE\=YES
+    export CLANG_WARN__DUPLICATE_METHOD_MATCH\=YES
+    export CLASS_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/JavaClasses
+    export CLEAN_PRECOMPS\=YES
+    export CLONE_HEADERS\=NO
+    export CODESIGNING_FOLDER_PATH\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app
+    export CODE_SIGNING_ALLOWED\=YES
+    export CODE_SIGNING_REQUIRED\=YES
+    export CODE_SIGN_CONTEXT_CLASS\=XCiPhoneSimulatorCodeSignContext
+    export CODE_SIGN_ENTITLEMENTS\=bdobb_iOS/bdobb_iOS.entitlements
+    export CODE_SIGN_IDENTITY\=iPhone\ Developer
+    export CODE_SIGN_INJECT_BASE_ENTITLEMENTS\=YES
+    export COLOR_DIAGNOSTICS\=NO
+    export COMBINE_HIDPI_IMAGES\=NO
+    export COMPILATION_CACHE_CAS_PATH\=~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+    export COMPILATION_CACHE_KEEP_CAS_DIRECTORY\=YES
+    export COMPILER_INDEX_STORE_ENABLE\=Default
+    export COMPOSITE_SDK_DIRS\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/CompositeSDKs
+    export COMPRESS_PNG_FILES\=YES
+    export CONFIGURATION\=release
+    export CONFIGURATION_BUILD_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator
+    export CONFIGURATION_TEMP_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator
+    export CONTENTS_FOLDER_PATH\=BDOBB.app
+    export CONTENTS_FOLDER_PATH_SHALLOW_BUNDLE_NO\=BDOBB.app/Contents
+    export CONTENTS_FOLDER_PATH_SHALLOW_BUNDLE_YES\=BDOBB.app
+    export COPYING_PRESERVES_HFS_DATA\=NO
+    export COPY_HEADERS_RUN_UNIFDEF\=NO
+    export COPY_PHASE_STRIP\=NO
+    export CORRESPONDING_DEVICE_PLATFORM_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform
+    export CORRESPONDING_DEVICE_PLATFORM_NAME\=iphoneos
+    export CORRESPONDING_DEVICE_SDK_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.0.sdk
+    export CORRESPONDING_DEVICE_SDK_NAME\=iphoneos27.0
+    export CP\=/bin/cp
+    export CREATE_INFOPLIST_SECTION_IN_BINARY\=NO
+    export CURRENT_ARCH\=undefined_arch
+    export CURRENT_VARIANT\=normal
+    export DEAD_CODE_STRIPPING\=YES
+    export DEBUGGING_SYMBOLS\=YES
+    export DEBUG_INFORMATION_FORMAT\=dwarf-with-dsym
+    export DEBUG_INFORMATION_VERSION\=compiler-default
+    export DEFAULT_COMPILER\=com.apple.compilers.llvm.clang.1_0
+    export DEFAULT_DEXT_INSTALL_PATH\=/System/Library/DriverExtensions
+    export DEFAULT_KEXT_INSTALL_PATH\=/System/Library/Extensions
+    export DEFINES_MODULE\=NO
+    export DEPLOYMENT_LOCATION\=NO
+    export DEPLOYMENT_POSTPROCESSING\=NO
+    export DEPLOYMENT_TARGET_SETTING_NAME\=IPHONEOS_DEPLOYMENT_TARGET
+    export DEPLOYMENT_TARGET_SUGGESTED_VALUES\=15.0\ 15.1\ 15.2\ 15.3\ 15.4\ 15.5\ 15.6\ 16.0\ 16.1\ 16.2\ 16.3\ 16.4\ 16.5\ 16.6\ 17.0\ 17.1\ 17.2\ 17.3\ 17.4\ 17.5\ 17.6\ 18.0\ 18.1\ 18.2\ 18.3\ 18.4\ 18.5\ 18.6\ 26.0\ 26.2\ 26.3\ 26.4\ 26.5\ 26.6\ 27.0
+    export DERIVED_FILES_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources
+    export DERIVED_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources
+    export DERIVED_SOURCES_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources
+    export DEVELOPER_APPLICATIONS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications
+    export DEVELOPER_BIN_DIR\=/Applications/Xcode.app/Contents/Developer/usr/bin
+    export DEVELOPER_DIR\=/Applications/Xcode.app/Contents/Developer
+    export DEVELOPER_FRAMEWORKS_DIR\=/Applications/Xcode.app/Contents/Developer/Library/Frameworks
+    export DEVELOPER_FRAMEWORKS_DIR_QUOTED\=/Applications/Xcode.app/Contents/Developer/Library/Frameworks
+    export DEVELOPER_LIBRARY_DIR\=/Applications/Xcode.app/Contents/Developer/Library
+    export DEVELOPER_SDK_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs
+    export DEVELOPER_TOOLS_DIR\=/Applications/Xcode.app/Contents/Developer/Tools
+    export DEVELOPER_USR_DIR\=/Applications/Xcode.app/Contents/Developer/usr
+    export DEVELOPMENT_LANGUAGE\=en
+    export DIAGNOSE_MISSING_TARGET_DEPENDENCIES\=YES
+    export DIFF\=/usr/bin/diff
+    export DOCUMENTATION_FOLDER_PATH\=BDOBB.app/en.lproj/Documentation
+    export DONT_GENERATE_INFOPLIST_FILE\=NO
+    export DSTROOT\=/tmp/bdobb.dst
+    export DT_TOOLCHAIN_DIR\=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
+    export DWARF_DSYM_FILE_NAME\=BDOBB.app.dSYM
+    export DWARF_DSYM_FILE_SHOULD_ACCOMPANY_PRODUCT\=NO
+    export DWARF_DSYM_FOLDER_PATH\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator
+    export DYNAMIC_LIBRARY_EXTENSION\=dylib
+    export EAGER_COMPILATION_ALLOW_SCRIPTS\=NO
+    export EAGER_LINKING\=NO
+    export EFFECTIVE_PLATFORM_NAME\=-iphonesimulator
+    export EFFECTIVE_SWIFT_VERSION\=5
+    export EMBEDDED_CONTENT_CONTAINS_SWIFT\=NO
+    export EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE\=NO
+    export ENABLE_APP_SANDBOX\=NO
+    export ENABLE_BITCODE\=NO
+    export ENABLE_CODE_COVERAGE\=YES
+    export ENABLE_COHORT_ARCHS\=YES
+    export ENABLE_CPLUSPLUS_BOUNDS_SAFE_BUFFERS\=NO
+    export ENABLE_C_BOUNDS_SAFETY\=NO
+    export ENABLE_DEBUG_DYLIB\=NO
+    export ENABLE_DEFAULT_HEADER_SEARCH_PATHS\=YES
+    export ENABLE_DEFAULT_SEARCH_PATHS\=YES
+    export ENABLE_ENHANCED_SECURITY\=NO
+    export ENABLE_HARDENED_RUNTIME\=NO
+    export ENABLE_HARDWARE_CHECKED_POINTER_ARITHMETIC_SLICE\=NO
+    export ENABLE_HEADER_DEPENDENCIES\=YES
+    export ENABLE_INCOMING_NETWORK_CONNECTIONS\=NO
+    export ENABLE_NS_ASSERTIONS\=NO
+    export ENABLE_ON_DEMAND_RESOURCES\=YES
+    export ENABLE_OUTGOING_NETWORK_CONNECTIONS\=NO
+    export ENABLE_POINTER_AUTHENTICATION\=NO
+    export ENABLE_PREVIEWS\=NO
+    export ENABLE_RESOURCE_ACCESS_AUDIO_INPUT\=NO
+    export ENABLE_RESOURCE_ACCESS_BLUETOOTH\=NO
+    export ENABLE_RESOURCE_ACCESS_CALENDARS\=NO
+    export ENABLE_RESOURCE_ACCESS_CAMERA\=NO
+    export ENABLE_RESOURCE_ACCESS_CONTACTS\=NO
+    export ENABLE_RESOURCE_ACCESS_LOCATION\=NO
+    export ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY\=NO
+    export ENABLE_RESOURCE_ACCESS_PRINTING\=NO
+    export ENABLE_RESOURCE_ACCESS_USB\=NO
+    export ENABLE_SDK_IMPORTS\=NO
+    export ENABLE_SECURITY_COMPILER_WARNINGS\=NO
+    export ENABLE_STRICT_OBJC_MSGSEND\=YES
+    export ENABLE_TESTABILITY\=NO
+    export ENABLE_TESTING_SEARCH_PATHS\=NO
+    export ENABLE_USER_SCRIPT_SANDBOXING\=NO
+    export ENABLE_XOJIT_PREVIEWS\=NO
+    export ENFORCE_VALID_ARCHS\=YES
+    export ENTITLEMENTS_ALLOWED\=NO
+    export ENTITLEMENTS_DESTINATION\=__entitlements
+    export ENTITLEMENTS_REQUIRED\=NO
+    export EXCLUDED_INSTALLSRC_SUBDIRECTORY_PATTERNS\=.DS_Store\ .svn\ .git\ .hg\ CVS
+    export EXCLUDED_RECURSIVE_SEARCH_PATH_SUBDIRECTORIES\=\*.nib\ \*.lproj\ \*.framework\ \*.gch\ \*.xcode\*\ \*.xcassets\ \*.icon\ \(\*\)\ .DS_Store\ CVS\ .svn\ .git\ .hg\ \*.pbproj\ \*.pbxproj
+    export EXECUTABLES_FOLDER_PATH\=BDOBB.app/Executables
+    export EXECUTABLE_FOLDER_PATH\=BDOBB.app
+    export EXECUTABLE_FOLDER_PATH_SHALLOW_BUNDLE_NO\=BDOBB.app/MacOS
+    export EXECUTABLE_FOLDER_PATH_SHALLOW_BUNDLE_YES\=BDOBB.app
+    export EXECUTABLE_NAME\=BDOBB
+    export EXECUTABLE_PATH\=BDOBB.app/BDOBB
+    export EXPANDED_CODE_SIGN_IDENTITY\=-
+    export EXPANDED_CODE_SIGN_IDENTITY_NAME\=Sign\ to\ Run\ Locally
+    export EXTENSIONS_FOLDER_PATH\=BDOBB.app/Extensions
+    export FILE_LIST\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects/LinkFileList
+    export FIXED_FILES_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/FixedFiles
+    export FRAMEWORKS_FOLDER_PATH\=BDOBB.app/Frameworks
+    export FRAMEWORK_FLAG_PREFIX\=-framework
+    export FRAMEWORK_SEARCH_PATHS\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator\ \ \".\"
+    export FRAMEWORK_VERSION\=A
+    export FULL_PRODUCT_NAME\=BDOBB.app
+    export FUSE_BUILD_PHASES\=YES
+    export FUSE_BUILD_SCRIPT_PHASES\=NO
+    export GCC3_VERSION\=3.3
+    export GCC_C_LANGUAGE_STANDARD\=gnu11
+    export GCC_DYNAMIC_NO_PIC\=NO
+    export GCC_INLINES_ARE_PRIVATE_EXTERN\=YES
+    export GCC_NO_COMMON_BLOCKS\=YES
+    export GCC_OBJC_LEGACY_DISPATCH\=YES
+    export GCC_PFE_FILE_C_DIALECTS\=c\ objective-c\ c++\ objective-c++
+    export GCC_SYMBOLS_PRIVATE_EXTERN\=YES
+    export GCC_TREAT_WARNINGS_AS_ERRORS\=NO
+    export GCC_VERSION\=com.apple.compilers.llvm.clang.1_0
+    export GCC_VERSION_IDENTIFIER\=com_apple_compilers_llvm_clang_1_0
+    export GCC_WARN_64_TO_32_BIT_CONVERSION\=YES
+    export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+    export GCC_WARN_UNDECLARED_SELECTOR\=YES
+    export GCC_WARN_UNINITIALIZED_AUTOS\=YES_AGGRESSIVE
+    export GCC_WARN_UNUSED_FUNCTION\=YES
+    export GCC_WARN_UNUSED_VARIABLE\=YES
+    export GENERATED_MODULEMAP_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/GeneratedModuleMaps-iphonesimulator
+    export GENERATE_INFOPLIST_FILE\=NO
+    export GENERATE_INTERMEDIATE_TEXT_BASED_STUBS\=YES
+    export GENERATE_PKGINFO_FILE\=YES
+    export GENERATE_PRELINK_OBJECT_FILE\=NO
+    export GENERATE_PROFILING_CODE\=NO
+    export GENERATE_TEXT_BASED_STUBS\=NO
+    export GID\=20
+    export GROUP\=staff
+    export HEADERMAP_INCLUDES_FLAT_ENTRIES_FOR_TARGET_BEING_BUILT\=YES
+    export HEADERMAP_INCLUDES_FRAMEWORK_ENTRIES_FOR_ALL_PRODUCT_TYPES\=YES
+    export HEADERMAP_INCLUDES_FRAMEWORK_ENTRIES_FOR_TARGETS_NOT_BEING_BUILT\=YES
+    export HEADERMAP_INCLUDES_NONPUBLIC_NONPRIVATE_HEADERS\=YES
+    export HEADERMAP_INCLUDES_PROJECT_HEADERS\=YES
+    export HEADERMAP_USES_FRAMEWORK_PREFIX_ENTRIES\=YES
+    export HEADERMAP_USES_VFS\=NO
+    export HEADER_SEARCH_PATHS\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/include\ 
+    export HOME\=~
+    export HOST_ARCH\=arm64
+    export HOST_PLATFORM\=macosx
+    export ICONV\=/usr/bin/iconv
+    export IMPLICIT_DEPENDENCY_DOMAIN\=default
+    export INDEX_ENABLE_OPTIMIZATION_LEVEL_OVERRIDE\=YES
+    export INDEX_STORE_COMPRESS\=NO
+    export INDEX_STORE_ONLY_PROJECT_FILES\=NO
+    export INFOPLIST_ENABLE_CFBUNDLEICONS_MERGE\=YES
+    export INFOPLIST_EXPAND_BUILD_SETTINGS\=YES
+    export INFOPLIST_FILE\=bdobb_iOS/Info.plist
+    export INFOPLIST_OUTPUT_FORMAT\=binary
+    export INFOPLIST_PATH\=BDOBB.app/Info.plist
+    export INFOPLIST_PREPROCESS\=NO
+    export INFOSTRINGS_PATH\=BDOBB.app/en.lproj/InfoPlist.strings
+    export INLINE_PRIVATE_FRAMEWORKS\=NO
+    export INSTALLAPI_IGNORE_SKIP_INSTALL\=YES
+    export INSTALLHDRS_COPY_PHASE\=NO
+    export INSTALLHDRS_SCRIPT_PHASE\=NO
+    export INSTALL_DIR\=/tmp/bdobb.dst/Applications
+    export INSTALL_GROUP\=staff
+    export INSTALL_MODE_FLAG\=u+w,go-w,a+rX
+    export INSTALL_OWNER\=artcashin
+    export INSTALL_PATH\=/Applications
+    export INSTALL_ROOT\=/tmp/bdobb.dst
+    export IPHONEOS_DEPLOYMENT_TARGET\=16.4
+    export IS_UNOPTIMIZED_BUILD\=NO
+    export JAVAC_DEFAULT_FLAGS\=-J-Xms64m\ -J-XX:NewSize\=4M\ -J-Dfile.encoding\=UTF8
+    export JAVA_APP_STUB\=/System/Library/Frameworks/JavaVM.framework/Resources/MacOS/JavaApplicationStub
+    export JAVA_ARCHIVE_CLASSES\=YES
+    export JAVA_ARCHIVE_TYPE\=JAR
+    export JAVA_COMPILER\=/usr/bin/javac
+    export JAVA_FOLDER_PATH\=BDOBB.app/Java
+    export JAVA_FRAMEWORK_RESOURCES_DIRS\=Resources
+    export JAVA_JAR_FLAGS\=cv
+    export JAVA_SOURCE_SUBDIR\=.
+    export JAVA_USE_DEPENDENCIES\=YES
+    export JAVA_ZIP_FLAGS\=-urg
+    export JIKES_DEFAULT_FLAGS\=+E\ +OLDCSO
+    export KEEP_PRIVATE_EXTERNS\=NO
+    export LD_DEPENDENCY_INFO_FILE\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch/BDOBB_dependency_info.dat
+    export LD_ENTITLEMENTS_SECTION\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB.app-Simulated.xcent
+    export LD_ENTITLEMENTS_SECTION_DER\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB.app-Simulated.xcent.der
+    export LD_EXPORT_SYMBOLS\=YES
+    export LD_GENERATE_MAP_FILE\=NO
+    export LD_MAP_FILE_PATH\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB-LinkMap-normal-undefined_arch.txt
+    export LD_NO_PIE\=NO
+    export LD_QUOTE_LINKER_ARGUMENTS_FOR_COMPILER_DRIVER\=YES
+    export LD_RUNPATH_SEARCH_PATHS\=\ @executable_path/Frameworks
+    export LD_RUNPATH_SEARCH_PATHS_YES\=@loader_path/../Frameworks
+    export LD_SHARED_CACHE_ELIGIBLE\=Automatic
+    export LD_WARN_DUPLICATE_LIBRARIES\=NO
+    export LD_WARN_UNUSED_DYLIBS\=NO
+    export LEGACY_DEVELOPER_DIR\=/Applications/Xcode.app/Contents/PlugIns/Xcode3Core.ideplugin/Contents/SharedSupport/Developer
+    export LEX\=lex
+    export LIBRARY_DEXT_INSTALL_PATH\=/Library/DriverExtensions
+    export LIBRARY_FLAG_NOSPACE\=YES
+    export LIBRARY_FLAG_PREFIX\=-l
+    export LIBRARY_KEXT_INSTALL_PATH\=/Library/Extensions
+    export LIBRARY_SEARCH_PATHS\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator\ 
+    export LINKER_DISPLAYS_MANGLED_NAMES\=NO
+    export LINK_FILE_LIST_normal_arm64\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB.LinkFileList
+    export LINK_OBJC_RUNTIME\=YES
+    export LINK_WITH_STANDARD_LIBRARIES\=YES
+    export LLVM_TARGET_TRIPLE_OS_VERSION\=ios16.4
+    export LLVM_TARGET_TRIPLE_SUFFIX\=-simulator
+    export LLVM_TARGET_TRIPLE_VENDOR\=apple
+    export LM_AUX_CONST_METADATA_LIST_PATH_normal_arm64\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB.SwiftConstValuesFileList
+    export LOCALIZATION_EXPORT_SUPPORTED\=YES
+    export LOCALIZATION_PREFERS_STRING_CATALOGS\=NO
+    export LOCALIZED_RESOURCES_FOLDER_PATH\=BDOBB.app/en.lproj
+    export LOCALIZED_STRING_CODE_COMMENTS\=NO
+    export LOCALIZED_STRING_MACRO_NAMES\=NSLocalizedString\ CFCopyLocalizedString
+    export LOCALIZED_STRING_SWIFTUI_SUPPORT\=YES
+    export LOCAL_ADMIN_APPS_DIR\=/Applications/Utilities
+    export LOCAL_APPS_DIR\=/Applications
+    export LOCAL_DEVELOPER_DIR\=/Library/Developer
+    export LOCAL_LIBRARY_DIR\=/Library
+    export LOCROOT\=<worktree>/src-tauri/gen/apple
+    export LOCSYMROOT\=<worktree>/src-tauri/gen/apple
+    export MACH_O_TYPE\=mh_execute
+    export MAC_OS_X_PRODUCT_BUILD_VERSION\=26A434
+    export MAC_OS_X_VERSION_ACTUAL\=270001
+    export MAC_OS_X_VERSION_MAJOR\=270000
+    export MAC_OS_X_VERSION_MINOR\=270000
+    export MAKE_MERGEABLE\=NO
+    export MERGEABLE_LIBRARY\=NO
+    export MERGED_BINARY_TYPE\=none
+    export MERGE_LINKED_LIBRARIES\=NO
+    export METAL_LIBRARY_FILE_BASE\=default
+    export METAL_LIBRARY_OUTPUT_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app
+    export MODULES_FOLDER_PATH\=BDOBB.app/Modules
+    export MODULE_CACHE_DIR\=~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+    export MTL_ENABLE_DEBUG_INFO\=NO
+    export MTL_FAST_MATH\=YES
+    export NATIVE_ARCH\=arm64
+    export NATIVE_ARCH_32_BIT\=arm
+    export NATIVE_ARCH_64_BIT\=arm64
+    export NATIVE_ARCH_ACTUAL\=arm64
+    export NO_COMMON\=YES
+    export OBJC_ABI_VERSION\=2
+    export OBJECT_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects
+    export OBJECT_FILE_DIR_normal\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal
+    export OBJROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex
+    export ONLY_ACTIVE_ARCH\=NO
+    export ONLY_ARCH\=arm64
+    export OS\=MACOS
+    export OSAC\=/usr/bin/osacompile
+    export PACKAGE_TYPE\=com.apple.package-type.wrapper.application
+    export PASCAL_STRINGS\=YES
+    export PATH\=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:<worktree>/node_modules/.bin:/opt/homebrew/lib/node_modules/pnpm/dist/node-gyp-bin:/Library/Frameworks/Python.framework/Versions/3.13/bin:~/.pyenv/shims:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Applications/VMware\ Fusion.app/Contents/Public:/usr/local/share/dotnet:~/.kx/bin:~/Library/pnpm:~/.bun/bin:~/.local/bin:~/.pyenv/plugins/pyenv-virtualenv/shims:~/.pyenv/bin:~/.cargo/bin:~/.docker/bin
+    export PATH_PREFIXES_EXCLUDED_FROM_HEADER_DEPENDENCIES\=/usr/include\ /usr/local/include\ /System/Library/Frameworks\ /System/Library/PrivateFrameworks\ /Applications/Xcode.app/Contents/Developer/Headers\ /Applications/Xcode.app/Contents/Developer/SDKs\ /Applications/Xcode.app/Contents/Developer/Platforms
+    export PBDEVELOPMENTPLIST_PATH\=BDOBB.app/pbdevelopment.plist
+    export PER_ARCH_MODULE_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch
+    export PER_ARCH_OBJECT_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch
+    export PER_VARIANT_OBJECT_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal
+    export PKGINFO_FILE_PATH\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/PkgInfo
+    export PKGINFO_PATH\=BDOBB.app/PkgInfo
+    export PLATFORM_DEVELOPER_APPLICATIONS_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Applications
+    export PLATFORM_DEVELOPER_BIN_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin
+    export PLATFORM_DEVELOPER_LIBRARY_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library
+    export PLATFORM_DEVELOPER_SDK_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs
+    export PLATFORM_DEVELOPER_TOOLS_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Tools
+    export PLATFORM_DEVELOPER_USR_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr
+    export PLATFORM_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform
+    export PLATFORM_DISPLAY_NAME\=iOS\ Simulator
+    export PLATFORM_FAMILY_NAME\=iOS
+    export PLATFORM_NAME\=iphonesimulator
+    export PLATFORM_PREFERRED_ARCH\=x86_64
+    export PLATFORM_PRODUCT_BUILD_VERSION\=24A430
+    export PLATFORM_REQUIRES_SWIFT_AUTOLINK_EXTRACT\=NO
+    export PLATFORM_REQUIRES_SWIFT_MODULEWRAP\=NO
+    export PLATFORM_USES_DSYMS\=YES
+    export PLIST_FILE_OUTPUT_FORMAT\=binary
+    export PLUGINS_FOLDER_PATH\=BDOBB.app/PlugIns
+    export PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR\=YES
+    export PRECOMP_DESTINATION_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/PrefixHeaders
+    export PRELINK_DEPENDENCY_INFO_FILE\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch/BDOBB_prelink_dependency_info.dat
+    export PRIVATE_HEADERS_FOLDER_PATH\=BDOBB.app/PrivateHeaders
+    export PROCESSED_INFOPLIST_PATH\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch/Processed-Info.plist
+    export PRODUCT_BUNDLE_IDENTIFIER\=com.artcashin.bdobb
+    export PRODUCT_BUNDLE_PACKAGE_TYPE\=APPL
+    export PRODUCT_MODULE_NAME\=BDOBB
+    export PRODUCT_NAME\=BDOBB
+    export PRODUCT_SETTINGS_PATH\=<worktree>/src-tauri/gen/apple/bdobb_iOS/Info.plist
+    export PRODUCT_TYPE\=com.apple.product-type.application
+    export PROFILING_CODE\=NO
+    export PROJECT\=bdobb
+    export PROJECT_DERIVED_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/DerivedSources
+    export PROJECT_DIR\=<worktree>/src-tauri/gen/apple
+    export PROJECT_FILE_PATH\=<worktree>/src-tauri/gen/apple/bdobb.xcodeproj
+    export PROJECT_GUID\=ebf85b84ec6324ab9b8d5a7d4108d11c
+    export PROJECT_NAME\=bdobb
+    export PROJECT_TEMP_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build
+    export PROJECT_TEMP_ROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex
+    export PROVISIONING_PROFILE_REQUIRED\=NO
+    export PROVISIONING_PROFILE_REQUIRED_YES_YES\=YES
+    export PROVISIONING_PROFILE_SUPPORTED\=YES
+    export PUBLIC_HEADERS_FOLDER_PATH\=BDOBB.app/Headers
+    export RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET\=17.0
+    export RECURSIVE_SEARCH_PATHS_FOLLOW_SYMLINKS\=YES
+    export REMOVE_CVS_FROM_RESOURCES\=YES
+    export REMOVE_GIT_FROM_RESOURCES\=YES
+    export REMOVE_HEADERS_FROM_EMBEDDED_BUNDLES\=YES
+    export REMOVE_HG_FROM_RESOURCES\=YES
+    export REMOVE_STATIC_EXECUTABLES_FROM_EMBEDDED_BUNDLES\=YES
+    export REMOVE_SVN_FROM_RESOURCES\=YES
+    export RESCHEDULE_INDEPENDENT_HEADERS_PHASES\=YES
+    export REZ_COLLECTOR_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/ResourceManagerResources
+    export REZ_OBJECTS_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/ResourceManagerResources/Objects
+    export REZ_SEARCH_PATHS\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator\ 
+    export RPATH_ORIGIN\=@loader_path
+    export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+    export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+    export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+    export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+    export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+    export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+    export SCANNING_PCM_KEEP_CACHE_DIRECTORY\=YES
+    export SCAN_ALL_SOURCE_FILES_FOR_INCLUDES\=NO
+    export SCRIPTS_FOLDER_PATH\=BDOBB.app/Scripts
+    export SCRIPT_INPUT_FILE_COUNT\=0
+    export SCRIPT_INPUT_FILE_LIST_COUNT\=0
+    export SCRIPT_OUTPUT_FILE_0\=<worktree>/src-tauri/gen/apple/Externals/x86_64/release/libapp.a
+    export SCRIPT_OUTPUT_FILE_1\=<worktree>/src-tauri/gen/apple/Externals/arm64/release/libapp.a
+    export SCRIPT_OUTPUT_FILE_COUNT\=2
+    export SCRIPT_OUTPUT_FILE_LIST_COUNT\=0
+    export SDKROOT\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk
+    export SDK_DIR\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk
+    export SDK_DIR_iphonesimulator\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk
+    export SDK_DIR_iphonesimulator27_0\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk
+    export SDK_NAME\=iphonesimulator27.0
+    export SDK_NAMES\=iphonesimulator27.0
+    export SDK_PRODUCT_BUILD_VERSION\=24A430
+    export SDK_STAT_CACHE_DIR\=~/Library/Developer/Xcode/DerivedData
+    export SDK_STAT_CACHE_ENABLE\=YES
+    export SDK_STAT_CACHE_PATH\=~/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator27.0-24A430-8dc58220667be655e1bcc261a7455254.sdkstatcache
+    export SDK_VERSION\=27.0
+    export SDK_VERSION_ACTUAL\=270000
+    export SDK_VERSION_MAJOR\=270000
+    export SDK_VERSION_MINOR\=270000
+    export SED\=/usr/bin/sed
+    export SEPARATE_STRIP\=NO
+    export SEPARATE_SYMBOL_EDIT\=NO
+    export SET_DIR_MODE_OWNER_GROUP\=YES
+    export SET_FILE_MODE_OWNER_GROUP\=NO
+    export SHALLOW_BUNDLE\=YES
+    export SHALLOW_BUNDLE_TRIPLE\=ios-simulator
+    export SHALLOW_BUNDLE_ios_macabi\=NO
+    export SHALLOW_BUNDLE_macos\=NO
+    export SHARED_DERIVED_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/DerivedSources
+    export SHARED_FRAMEWORKS_FOLDER_PATH\=BDOBB.app/SharedFrameworks
+    export SHARED_PRECOMPS_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/PrecompiledHeaders
+    export SHARED_SUPPORT_FOLDER_PATH\=BDOBB.app/SharedSupport
+    export SKIP_COPYING_TEST_FRAMEWORKS\=YES
+    export SKIP_INSTALL\=NO
+    export SKIP_MERGEABLE_LIBRARY_BUNDLE_HOOK\=NO
+    export SOURCE_ROOT\=<worktree>/src-tauri/gen/apple
+    export SRCROOT\=<worktree>/src-tauri/gen/apple
+    export STRINGSDATA_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/undefined_arch
+    export STRINGSDATA_ROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build
+    export STRINGS_FILE_INFOPLIST_RENAME\=YES
+    export STRINGS_FILE_OUTPUT_ENCODING\=binary
+    export STRING_CATALOG_GENERATE_SYMBOLS\=NO
+    export STRIP_BITCODE_FROM_COPIED_FILES\=NO
+    export STRIP_INSTALLED_PRODUCT\=YES
+    export STRIP_STYLE\=all
+    export STRIP_SWIFT_SYMBOLS\=YES
+    export SUPPORTED_DEVICE_FAMILIES\=1,2
+    export SUPPORTED_PLATFORMS\=iphoneos\ iphonesimulator
+    export SUPPORTS_MACCATALYST\=NO
+    export SUPPORTS_ON_DEMAND_RESOURCES\=YES
+    export SUPPORTS_TEXT_BASED_API\=NO
+    export SUPPRESS_WARNINGS\=NO
+    export SWIFTC_PASS_SDKROOT\=YES
+    export SWIFTC_PASS_SYSROOT\=NO
+    export SWIFT_COLOR_DIAGNOSTICS\=NO
+    export SWIFT_COMPILATION_MODE\=wholemodule
+    export SWIFT_EMIT_CONST_VALUE_PROTOCOLS\=AnyResolverProviding\ AppEntity\ AppEnum\ AppExtension\ AppIntent\ AppIntentsPackage\ AppShortcutProviding\ AppShortcutsProvider\ AppUnionValue\ AppUnionValueCasesProviding\ DynamicOptionsProvider\ EntityQuery\ ExtensionPointDefining\ IntentValueQuery\ Resolver\ TransientEntity\ _AssistantIntentsProvider\ _GenerativeFunctionExtractable\ _IntentValueRepresentable
+    export SWIFT_EMIT_LOC_STRINGS\=NO
+    export SWIFT_ENABLE_EXPLICIT_MODULES\=YES
+    export SWIFT_OPTIMIZATION_LEVEL\=-O
+    export SWIFT_PLATFORM_TARGET_PREFIX\=ios
+    export SWIFT_RESPONSE_FILE_PATH_normal_arm64\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB.SwiftFileList
+    export SWIFT_VERSION\=5.0
+    export SYMROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products
+    export SYSROOT\=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk
+    export SYSTEM_ADMIN_APPS_DIR\=/Applications/Utilities
+    export SYSTEM_APPS_DIR\=/Applications
+    export SYSTEM_CORE_SERVICES_DIR\=/System/Library/CoreServices
+    export SYSTEM_DEMOS_DIR\=/Applications/Extras
+    export SYSTEM_DEVELOPER_APPS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications
+    export SYSTEM_DEVELOPER_BIN_DIR\=/Applications/Xcode.app/Contents/Developer/usr/bin
+    export SYSTEM_DEVELOPER_DEMOS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications/Utilities/Built\ Examples
+    export SYSTEM_DEVELOPER_DIR\=/Applications/Xcode.app/Contents/Developer
+    export SYSTEM_DEVELOPER_DOC_DIR\=/Applications/Xcode.app/Contents/Developer/ADC\ Reference\ Library
+    export SYSTEM_DEVELOPER_GRAPHICS_TOOLS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications/Graphics\ Tools
+    export SYSTEM_DEVELOPER_JAVA_TOOLS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications/Java\ Tools
+    export SYSTEM_DEVELOPER_PERFORMANCE_TOOLS_DIR\=/Applications/Xcode.app/Contents/Developer/Applications/Performance\ Tools
+    export SYSTEM_DEVELOPER_RELEASENOTES_DIR\=/Applications/Xcode.app/Contents/Developer/ADC\ Reference\ Library/releasenotes
+    export SYSTEM_DEVELOPER_TOOLS\=/Applications/Xcode.app/Contents/Developer/Tools
+    export SYSTEM_DEVELOPER_TOOLS_DOC_DIR\=/Applications/Xcode.app/Contents/Developer/ADC\ Reference\ Library/documentation/DeveloperTools
+    export SYSTEM_DEVELOPER_TOOLS_RELEASENOTES_DIR\=/Applications/Xcode.app/Contents/Developer/ADC\ Reference\ Library/releasenotes/DeveloperTools
+    export SYSTEM_DEVELOPER_USR_DIR\=/Applications/Xcode.app/Contents/Developer/usr
+    export SYSTEM_DEVELOPER_UTILITIES_DIR\=/Applications/Xcode.app/Contents/Developer/Applications/Utilities
+    export SYSTEM_DEXT_INSTALL_PATH\=/System/Library/DriverExtensions
+    export SYSTEM_DOCUMENTATION_DIR\=/Library/Documentation
+    export SYSTEM_EXTENSIONS_FOLDER_PATH\=BDOBB.app/SystemExtensions
+    export SYSTEM_EXTENSIONS_FOLDER_PATH_SHALLOW_BUNDLE_NO\=BDOBB.app/Library/SystemExtensions
+    export SYSTEM_EXTENSIONS_FOLDER_PATH_SHALLOW_BUNDLE_YES\=BDOBB.app/SystemExtensions
+    export SYSTEM_KEXT_INSTALL_PATH\=/System/Library/Extensions
+    export SYSTEM_LIBRARY_DIR\=/System/Library
+    export TAPI_DEMANGLE\=YES
+    export TAPI_ENABLE_PROJECT_HEADERS\=NO
+    export TAPI_LANGUAGE\=objective-c
+    export TAPI_LANGUAGE_STANDARD\=compiler-default
+    export TAPI_USE_SRCROOT\=YES
+    export TAPI_VERIFY_MODE\=Pedantic
+    export TARGETED_DEVICE_FAMILY\=1,2
+    export TARGETNAME\=bdobb_iOS
+    export TARGET_BUILD_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator
+    export TARGET_NAME\=bdobb_iOS
+    export TARGET_TEMP_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build
+    export TEMP_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build
+    export TEMP_FILES_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build
+    export TEMP_FILE_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build
+    export TEMP_ROOT\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex
+    export TEMP_SANDBOX_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/TemporaryTaskSandboxes
+    export TEST_FRAMEWORK_SEARCH_PATHS\=\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/Developer/Library/Frameworks
+    export TEST_LIBRARY_SEARCH_PATHS\=\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib
+    export TOOLCHAINS\=com.apple.dt.toolchain.XcodeDefault
+    export TOOLCHAIN_DIR\=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
+    export TREAT_MISSING_BASELINES_AS_TEST_FAILURES\=NO
+    export TREAT_MISSING_SCRIPT_PHASE_OUTPUTS_AS_ERRORS\=NO
+    export TeamIdentifierPrefix\=7UKUHTS23T.
+    export UID\=501
+    export UNINSTALLED_PRODUCTS_DIR\=~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/UninstalledProducts
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH\=BDOBB.app
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH_SHALLOW_BUNDLE_NO\=BDOBB.app/Resources
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH_SHALLOW_BUNDLE_YES\=BDOBB.app
+    export UNSTRIPPED_PRODUCT\=NO
+    export USER\=artcashin
+    export USER_APPS_DIR\=~/Applications
+    export USER_LIBRARY_DIR\=~/Library
+    export USE_DYNAMIC_NO_PIC\=YES
+    export USE_HEADERMAP\=YES
+    export USE_HEADER_SYMLINKS\=NO
+    export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+    export VALIDATE_PRODUCT\=NO
+    export VALID_ARCHS\=arm64
+    export VERBOSE_PBXCP\=NO
+    export VERSIONPLIST_PATH\=BDOBB.app/version.plist
+    export VERSION_INFO_BUILDER\=artcashin
+    export VERSION_INFO_FILE\=BDOBB_vers.c
+    export VERSION_INFO_STRING\=\"@\(\#\)PROGRAM:BDOBB\ \ PROJECT:bdobb-\"
+    export WORKSPACE_DIR\=<worktree>/src-tauri/gen/apple/bdobb.xcodeproj
+    export WRAPPER_EXTENSION\=app
+    export WRAPPER_NAME\=BDOBB.app
+    export WRAPPER_SUFFIX\=.app
+    export WRAP_ASSET_PACKS_IN_SEPARATE_DIRECTORIES\=NO
+    export XCODE_APP_SUPPORT_DIR\=/Applications/Xcode.app/Contents/Developer/Library/Xcode
+    export XCODE_PRODUCT_BUILD_VERSION\=27A266a
+    export XCODE_VERSION_ACTUAL\=2700
+    export XCODE_VERSION_MAJOR\=2700
+    export XCODE_VERSION_MINOR\=2700
+    export XPCSERVICES_FOLDER_PATH\=BDOBB.app/XPCServices
+    export YACC\=yacc
+    export _DISCOVER_COMMAND_LINE_LINKER_INPUTS\=YES
+    export _DISCOVER_COMMAND_LINE_LINKER_INPUTS_INCLUDE_WL\=YES
+    export _LD_MULTIARCH\=YES
+    export _SWIFT_EXPLICIT_MODULES_ALLOW_CXX_INTEROP\=YES
+    export _WRAPPER_CONTENTS_DIR_SHALLOW_BUNDLE_NO\=/Contents
+    export _WRAPPER_PARENT_PATH_SHALLOW_BUNDLE_NO\=/..
+    export _WRAPPER_RESOURCES_DIR_SHALLOW_BUNDLE_NO\=/Resources
+    export __ARCHS__\=arm64
+    export __DIAGNOSE_DEPRECATED_ARCHS\=YES
+    export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+    export __IS_NOT_MACOS\=YES
+    export __IS_NOT_MACOS_macosx\=NO
+    export __IS_NOT_SIMULATOR\=NO
+    export __IS_NOT_SIMULATOR_simulator\=NO
+    export __ORIGINAL_SDK_DEFINED_LLVM_TARGET_TRIPLE_SYS\=ios
+    export arch\=undefined_arch
+    export variant\=normal
+    /bin/sh -c ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Script-B7EA3486EDC53036A3BFC6CE.sh
+        Info connection; remote_addr=127.0.0.1:50191 conn_id=0
+
+> bdobb@7.0.0 tauri <worktree>
+> tauri ios xcode-script -v --platform iOS Simulator --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk --framework-search-paths '~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator  "."' --header-search-paths '~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/include ' --gcc-preprocessor-definitions '' --configuration release arm64
+
+[1m[92m   Compiling[0m bdobb v7.0.0 (<worktree>/src-tauri)
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 35.15s
+
+GenerateAssetSymbols <worktree>/src-tauri/gen/apple/Assets.xcassets (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool <worktree>/src-tauri/gen/apple/Assets.xcassets --compile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app --output-format human-readable-text --notices --warnings --export-dependency-info ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_dependencies --output-partial-info-plist ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.4 --platform iphonesimulator --bundle-identifier com.artcashin.bdobb --generate-objc-asset-symbols ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.document.warnings */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.compilation-results */
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols.h
+
+
+CompileAssetCatalogVariant thinned ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app <worktree>/src-tauri/gen/apple/Assets.xcassets (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool <worktree>/src-tauri/gen/apple/Assets.xcassets --compile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_dependencies_thinned --output-partial-info-plist ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 16.4 --platform iphonesimulator
+/* com.apple.actool.document.warnings */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.document.notices */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/[][ipad][76x76][][][1x][][][][]: notice: 76x76@1x app icons only apply to iPad apps targeting releases of iOS prior to 10.0.
+/* com.apple.actool.compilation-results */
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist_thinned
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/Assets.car
+
+
+Ld ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/BDOBB normal (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -Xlinker -reproducible -target arm64-apple-ios16.4-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -Os -Xlinker -no_warn_duplicate_libraries -L~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/EagerLinkingTBDs/release-iphonesimulator -L~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator -L<worktree>/src-tauri/gen/apple/Externals/arm64/release -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/usr/lib/swift -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/iphonesimulator -F~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/EagerLinkingTBDs/release-iphonesimulator -F~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator -F. -filelist ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB_lto.o -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/Objects-normal/arm64/BDOBB_dependency_info.dat -stdlib\=libc++ -fobjc-arc -fobjc-link-runtime -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB.app-Simulated.xcent.der -lapp -framework CoreGraphics -framework Metal -framework MetalKit -framework QuartzCore -framework Security -framework UIKit -framework WebKit -Xlinker -no_adhoc_codesign -o ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/BDOBB
+
+LinkAssetCatalog <worktree>/src-tauri/gen/apple/Assets.xcassets (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    builtin-linkAssetCatalog --thinned ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned --thinned-dependencies ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_dependencies_thinned --thinned-info-plist-content ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist_thinned --unthinned ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/unthinned --unthinned-dependencies ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist_unthinned --output ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app --plist-output ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist
+note: Emplaced ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Assets.car (in target 'bdobb_iOS' from project 'bdobb')
+note: Emplaced ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/AppIcon76x76@2x~ipad.png (in target 'bdobb_iOS' from project 'bdobb')
+note: Emplaced ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/AppIcon60x60@2x.png (in target 'bdobb_iOS' from project 'bdobb')
+
+ProcessInfoPlistFile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Info.plist <worktree>/src-tauri/gen/apple/bdobb_iOS/Info.plist (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    builtin-infoPlistUtility <worktree>/src-tauri/gen/apple/bdobb_iOS/Info.plist -producttype com.apple.product-type.application -genpkginfo ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/LaunchScreen-SBPartialInfo.plist -additionalcontentfile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist -o ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Info.plist
+
+CopySwiftLibs ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/BDOBB --scan-folder ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Frameworks --scan-folder ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/PlugIns --scan-folder ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/SystemExtensions --scan-folder ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Extensions --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/CoreGraphics.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/Metal.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/MetalKit.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/QuartzCore.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/Security.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/UIKit.framework --scan-folder /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk/System/Library/Frameworks/WebKit.framework --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+GenerateDSYMFile ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app.dSYM ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/BDOBB (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    export PATH\=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:<worktree>/node_modules/.bin:/opt/homebrew/lib/node_modules/pnpm/dist/node-gyp-bin:/Library/Frameworks/Python.framework/Versions/3.13/bin:~/.pyenv/shims:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Applications/VMware\ Fusion.app/Contents/Public:/usr/local/share/dotnet:~/.kx/bin:~/Library/pnpm:~/.bun/bin:~/.local/bin:~/.pyenv/plugins/pyenv-virtualenv/shims:~/.pyenv/bin:~/.cargo/bin:~/.docker/bin
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app/BDOBB -o ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app.dSYM
+
+CodeSign ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/bdobb.build/release-iphonesimulator/bdobb_iOS.build/BDOBB.app.xcent --timestamp\=none --generate-entitlement-der ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app
+
+Validate ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app (in target 'bdobb_iOS' from project 'bdobb')
+    cd <worktree>/src-tauri/gen/apple
+    builtin-validationUtility ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Products/release-iphonesimulator/BDOBB.app -shallow-bundle -infoplist-subpath Info.plist
+
+PruneExplicitPrecompiledModules ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/Library/Developer/Xcode/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+** BUILD SUCCEEDED **
+
+Setting version of project bdobb to: 
+    7.0.0.
+
+Also setting CFBundleVersion key (assuming it exists)
+
+Updating CFBundleVersion in Info.plist(s)...
+
+Updated CFBundleVersion in "bdobb.xcodeproj/../bdobb_iOS/Info.plist" to 7.0.0
+
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
+{ platform:iOS Simulator, arch:arm64, id:AD4FEED2-A053-485E-B560-9C47A930D774, OS:26.5, name:BDOBB Episode 7 Rehearsal }
+{ platform:iOS Simulator, arch:arm64, id:F4CD05FE-434D-492C-9A38-44FC92CEEAE2, OS:17.0, name:iPad (10th generation) }
+{ platform:iOS Simulator, arch:arm64, id:370A4E85-F1E3-420E-BB8F-CED381156C4F, OS:26.5, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:4BF2A946-B7FA-4E38-A7EA-E541807AE83C, OS:27.0, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:23DAD2EA-888D-4BEC-8518-74F22495956E, OS:17.0, name:iPad Air (5th generation) }
+{ platform:iOS Simulator, arch:arm64, id:91A4EBA4-E5BC-4DD7-9257-107794E0777D, OS:26.5, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:173D117C-541C-448A-95AE-9FFBD3DA2E42, OS:27.0, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:40BBA2B9-FE0A-40FA-A11B-839939A7D85F, OS:26.5, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:F7171D3E-2F45-433A-9CCD-7713F216B726, OS:27.0, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:C100E4C4-8E0F-4226-94A4-4BD1EAD6A3AF, OS:17.0, name:iPad Pro (11-inch) (4th generation) }
+{ platform:iOS Simulator, arch:arm64, id:1144C109-16C8-48D0-8A83-2E0B8058D802, OS:17.0, name:iPad Pro (12.9-inch) (6th generation) }
+{ platform:iOS Simulator, arch:arm64, id:9E6DDBEA-FA09-4600-A182-859CFEC26B31, OS:26.5, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:D76E7B04-A2BF-4139-9D44-7E75D4BA72AA, OS:27.0, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:86CD7752-C2C3-4842-B5AE-9B49CD447033, OS:26.5, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:40240F61-6844-4486-87FC-116867E09BE0, OS:27.0, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:5A117CEA-EF98-4A01-9C51-0E4A61CF6066, OS:17.0, name:iPad mini (6th generation) }
+{ platform:iOS Simulator, arch:arm64, id:DA10AB2F-EDCA-4E02-9E6D-42414EEF829D, OS:26.5, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:73ED27CD-9956-4D94-9424-F96F5BE88D3E, OS:27.0, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:20966A01-3A31-4F74-911A-8F66B7C1B1A8, OS:17.0, name:iPhone 15 }
+{ platform:iOS Simulator, arch:arm64, id:F74F0C93-4F7B-4DF8-BF69-2C8F34C20716, OS:17.0, name:iPhone 15 Plus }
+{ platform:iOS Simulator, arch:arm64, id:6BE76451-F830-4D9E-B92F-F5917B07EA20, OS:17.0, name:iPhone 15 Pro }
+{ platform:iOS Simulator, arch:arm64, id:36CDAE3A-8359-4E56-987F-0841E35F2767, OS:17.0, name:iPhone 15 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:6F28CEAE-92D9-4797-8409-590CAE99EB10, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:F95D1B7C-A2DA-4875-89AB-03824A130668, OS:27.0, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:17E9DAEA-C00B-4421-B159-F839314F80ED, OS:26.5, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:67880405-062B-424E-8CE2-83E5DDD55F4D, OS:26.5, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:92F37661-31D4-4DF4-9AD3-0A6F909063CE, OS:26.5, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:8FDABEC9-3D2D-4D94-A84D-F4CD487FC537, OS:27.0, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:3DD4A85D-1D48-4483-AAD9-5022D2321D83, OS:27.0, name:iPhone 18 Pro }
+{ platform:iOS Simulator, arch:arm64, id:AA822775-AD28-4B41-8CF0-5899FE81BFB3, OS:27.0, name:iPhone 18 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:A3FF2D0C-6C46-42F0-BB03-D2C5579CBEAD, OS:26.5, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:E68183AE-142A-4A66-99EA-1ABD865349E5, OS:27.0, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:19895055-BCBE-4313-A879-0FF9A5E4CBF5, OS:17.0, name:iPhone SE (3rd generation) }
+{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:00006001-0012304A2EF8801E, name:My Mac }
+        Info connection; remote_addr=127.0.0.1:50199 conn_id=1
+/* com.apple.actool.document.warnings */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.compilation-results */
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/DerivedSources/GeneratedAssetSymbols.h
+
+/* com.apple.actool.document.warnings */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/(null)[2d][AppIcon-20x20@1x.png]: warning: The app icon set "AppIcon" has 18 unassigned children.
+/* com.apple.actool.document.notices */
+<worktree>/src-tauri/gen/apple/Assets.xcassets:./AppIcon.appiconset/[][ipad][76x76][][][1x][][][][]: notice: 76x76@1x app icons only apply to iPad apps targeting releases of iOS prior to 10.0.
+/* com.apple.actool.compilation-results */
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_generated_info.plist_thinned
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+~/Library/Developer/Xcode/DerivedData/bdobb-beherlbpqmtppmcowoiokvzbwgce/Build/Intermediates.noindex/ArchiveIntermediates/bdobb_iOS/IntermediateBuildFilesPath/bdobb.build/release-iphonesimulator/bdobb_iOS.build/assetcatalog_output/thinned/Assets.car
+
+note: Run script build phase 'Build Rust Code' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'bdobb_iOS' from project 'bdobb')
+    Finished 1 iOS Bundle at:
+        <worktree>/src-tauri/gen/apple/build/arm64-sim/BDOBB.app
+
+relabelled the linked SDK to 26.0 (simulator) and ad-hoc re-signed.
+com.artcashin.bdobb: 25999
+installed and launched com.artcashin.bdobb on 'F4CD05FE-434D-492C-9A38-44FC92CEEAE2' (F4CD05FE-434D-492C-9A38-44FC92CEEAE2).
