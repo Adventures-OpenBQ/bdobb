@@ -286,3 +286,34 @@ it('syncs a calendar view card and a pivoted table card through Workspace',()=>{
  const [a,b]=fromWorkspace(toWorkspace(d,'dashboard'),'dashboard',[]).tabs[0].cards;
  expect(a.view).toBe('calendar');expect(a.calendar).toEqual(cal.calendar);expect(b.table).toEqual(piv.table);
 });
+
+it.each(["dashboard", "app"] as const)("preserves a named single tab through %s sync", (store) => {
+  const original: Dashboard = { id: "local-dashboard", name: "Pinned example", tabs: [{ id: "local-tab-uuid", name: "Pinned", cards: [makeCard({ widgetId: "clock", backendId: "builtin", params: { face: "dots" }, pinned: "bottom" })] }] };
+  const wire = toWorkspace(original, store);
+  expect(widgetsOf(wire, store).some((widget) => widget.widgetId === "navigation_bar")).toBe(false);
+  const reopened = fromWorkspace(wire, store, BUILTIN_WIDGETS);
+  expect(reopened.tabs.map((tab) => tab.name)).toEqual(["Pinned"]);
+  expect(reopened.tabs[0].cards[0]).toMatchObject({ widgetId: "clock", pinned: "bottom", params: { face: "dots" } });
+});
+
+it("preserves a renamed single server tab without rewriting an untouched unnamed tab", () => {
+  const wire = app();
+  const untouched = fromWorkspace(wire, "app", []);
+  expect(normalize(toWorkspace(untouched, "app"), "app")).toEqual(normalize(wire, "app"));
+  untouched.tabs[0].name = "Renamed research";
+  expect(fromWorkspace(toWorkspace(untouched, "app"), "app", []).tabs[0].name).toBe("Renamed research");
+});
+
+it("uses a valid saved tab label when navigation metadata is malformed, and prefers valid navigation labels", () => {
+  const wire = famaFrench();
+  const data = body(wire);
+  data.extensions = { bdobb: { tabNames: { factors: "Saved factors", portfolios: 42 } } };
+  const navigation = widgetsOf(wire).find((widget) => widget.widgetId === "navigation_bar")!;
+  const tabs = (navigation.storage as Rec).tabs as Rec[];
+  tabs[0].name = 42;
+  expect(fromWorkspace(wire, "dashboard", []).tabs[0].name).toBe("Saved factors");
+  tabs[0].name = "Navigation wins";
+  expect(fromWorkspace(wire, "dashboard", []).tabs[0].name).toBe("Navigation wins");
+  tabs[1].name = null;
+  expect(fromWorkspace(wire, "dashboard", []).tabs[1].name).toBe("portfolios");
+});
