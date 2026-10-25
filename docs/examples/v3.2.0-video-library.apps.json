@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Video Library",
+    "description": "One card: the Video Library, a YouTube widget served by openbb-api itself (the openbb-videos extension in openbb-docker, adapted from OpenBB's reference backend; MIT, see openbb-docker's THIRD_PARTY_NOTICES.md). Pick one of two sample videos; the endpoint answers the bare watch URL as text/plain and the YouTube card frames it. Widget id confirmed against the extension's own widgets.json build on OpenBB 5.0.0.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "video-library": {
+        "id": "video-library",
+        "name": "Video Library",
+        "layout": [
+          {
+            "i": "videos_video_custom_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "params": {
+                "video_name": "OpenBB Workspace Demo"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

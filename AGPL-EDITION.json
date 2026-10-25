@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "baseRepository": "Adventures-OpenBQ/bdobb",
+  "originalRelease": "v3.0.0",
+  "baseCommit": "be58990a6bd51e9b1e7a684e7d917478c52c6c26",
+  "migrationPatchSha256": "09cfa6893ad030211484cfcc97f4e285e59a18fa765b4a6b34bd871ce44f896f",
+  "preparedDate": "2026-10-24",
+  "status": "remote-review-edition-not-published",
+  "oldApacheGrantsPreserved": true,
+  "sourceRevisionReason": "Remote CI qualification fixes; earlier source editions retained"
+}

@@ -1,0 +1,26 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
+
+# Local smoke test, without a tailnet.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d caddy
+#   curl -u reviewer:<password> http://127.0.0.1:7780/widgets.json
+#
+# Publishes Caddy on the host's loopback ONLY, so the same lock and the same
+# corpus can be exercised before the node ever joins a tailnet.
+#
+# This necessarily attaches caddy to review-edge as well: a container on an
+# `internal: true` network alone cannot have a published port -- docker accepts
+# the ports block and silently maps nothing, which reads as a dead URL. The
+# reference backend stays internal-only either way, so the thing that is
+# actually cut off from the LAN still is.
+#
+# NEVER add this file to the real `up`. The production path publishes no ports
+# at all, and Serve is the only way in.
+services:
+  caddy:
+    networks:
+      - review-edge
+      - review-internal
+    ports:
+      - "127.0.0.1:7780:8080"

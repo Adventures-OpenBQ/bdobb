@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
+
+# Runs before every `git push` from this repo: lint, then typecheck. That is
+# the cheap part of the gate (well under a minute) and it catches most
+# mistakes before they reach the shared remote. The full gate -- unit suite,
+# build, cargo check, scrub, notices, e2e -- stays `pnpm check`, run before
+# a merge.
+#
+# Installed by package.json's `prepare` script (git config core.hooksPath
+# .githooks), which every `pnpm install` runs. A worktree on an older release
+# line has no .githooks directory, so git finds no hook there and skips it.
+#
+# Emergency bypass, for a push that must go out now: git push --no-verify.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+pnpm lint
+pnpm typecheck

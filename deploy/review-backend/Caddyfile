@@ -1,0 +1,15 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
+
+# The lock. Serve/Funnel terminates TLS and hands the request here; nothing
+# reaches the reference backend without credentials.
+#
+# Unlike openbb-docker's API -- where auth is a FastAPI dependency on
+# /api/v1 only, leaving /widgets.json open -- this covers EVERY path,
+# because the whole point is a URL that only the reviewer uses.
+:8080 {
+	basic_auth {
+		{$REVIEW_USER} {$REVIEW_PASSWORD_HASH}
+	}
+	reverse_proxy reference-backend:5050
+}

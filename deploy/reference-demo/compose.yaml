@@ -1,0 +1,67 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
+
+# Standalone Tailscale Funnel node for the public reference-backend demo.
+# Two containers: the reference app, and a Tailscale sidecar that funnels the
+# public :443 to it. No gateway, no auth — it is keyless demo data, deliberately
+# public. Runs on the NAS, separate from bdobb-funnel-gateway.
+#
+# Tailscale networking mirrors the working bdobb-funnel-gateway: kernel mode
+# with /dev/net/tun + NET_ADMIN/NET_RAW, and the app shares the tailscale
+# network namespace so Funnel reaches it at 127.0.0.1.
+#
+#   cp .env.example .env   # fill TS_AUTHKEY etc.
+#   docker compose up -d --build
+#
+# The public URL is https://${TS_HOSTNAME}.<your-tailnet>.ts.net once the node
+# comes up (see `docker compose logs tailscale`).
+name: reference-demo
+
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.98.9
+    hostname: ${TS_HOSTNAME:-reference-backend}
+    environment:
+      TS_HOSTNAME: ${TS_HOSTNAME:-reference-backend}
+      TS_AUTHKEY: ${TS_AUTHKEY}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_AUTH_ONCE: "true"
+      TS_EXTRA_ARGS: "--advertise-tags=tag:reference-demo"
+      # Serve+Funnel mapping (see tailscale/funnel.json). Tailscale substitutes
+      # ${TS_CERT_DOMAIN} with this node's own MagicDNS name at runtime.
+      TS_SERVE_CONFIG: /config/funnel.json
+    volumes:
+      - ./tailscale/funnel.json:/config/funnel.json:ro
+      - ts-state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status --json | grep -q '\"BackendState\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  reference-backend:
+    build:
+      context: ./reference-backend
+    image: ghcr.io/bdobb-dev/openbb-reference:v3
+    environment:
+      # The demo frontend origin(s) the backend allows, comma-separated.
+      EXTRA_CORS_ORIGINS: ${EXTRA_CORS_ORIGINS}
+    # Share the Tailscale container's network namespace: Funnel then reaches the
+    # backend at 127.0.0.1:5050 and the backend publishes no ports of its own.
+    network_mode: service:tailscale
+    depends_on:
+      tailscale:
+        condition: service_healthy
+        restart: true
+    restart: unless-stopped
+
+volumes:
+  ts-state:

@@ -1,0 +1,27 @@
+{
+  "scope": "unpublished corrected clean v3 baseline",
+  "originalTagObject": "4c110d4c33544dcf919c58113f08ea64cc35bdbb",
+  "originalCommit": "93bf263386c7de59c11c76303aceb6ab08c1bde1",
+  "storageDonor": "4ac9cd071857472220000602e3f37a335503fcee",
+  "unit": {
+    "passed": 2903,
+    "skippedOptInReference": 7
+  },
+  "browser": {
+    "passed": 91,
+    "skippedOptIn": 1
+  },
+  "referenceContractsPassed": 7,
+  "referenceWidgetsRendered": 71,
+  "openbqSmokeRendered": 9,
+  "referenceRunAndNumericRefresh": "passed",
+  "nativeFreshProfile": "passed; settings created with no startup warning",
+  "sourceChecks": [
+    "typecheck",
+    "lint",
+    "scrub",
+    "git diff --check"
+  ],
+  "publication": "local only; no push, remote, rename or final v4/v5 tag",
+  "harnessCorrection": "Saved-layout arrays normalized to durable string parameters; multi-file checkbox scoped to its rail; no product parameter change required"
+}

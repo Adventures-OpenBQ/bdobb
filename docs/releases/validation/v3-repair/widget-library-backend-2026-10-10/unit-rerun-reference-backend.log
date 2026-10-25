@@ -1,0 +1,13 @@
+10:11  up 2 days, 23:34, 2 users, load averages: 422.29 453.89 363.71
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/reference-backend.test.mjs (5 tests) 1140ms
+   ✓ reference-backend.sh refusals > names git when git is missing 308ms
+   ✓ reference-backend.sh checkout origin > re-clones a checkout whose origin is not REPO 305ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  10:11:04
+   Duration  4.77s (transform 193ms, setup 891ms, collect 54ms, tests 1.14s, environment 0ms, prepare 344ms)
+

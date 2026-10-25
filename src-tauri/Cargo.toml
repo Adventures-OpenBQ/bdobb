@@ -1,0 +1,31 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+[package]
+name = "bdobb"
+version = "3.0.0"
+description = "BDOBB"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[lib]
+name = "bdobb_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-http = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+
+# The Save panel's Format pop-up (src/save_panel.rs). Already in the lock
+# through tauri and rfd; listed for the AppKit classes the panel uses.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSURL", "NSGeometry"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSSavePanel", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSControl", "NSButton", "NSPopUpButton", "NSTextField", "NSMenu", "NSMenuItem"] }

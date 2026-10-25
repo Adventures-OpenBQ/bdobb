@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Every job only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      # eslint.config.js; pre-existing violations are baselined in
+      # eslint-suppressions.json, so only a NEW one fails here.
+      - run: pnpm lint
+      # test:run, never test — the latter is watch mode and hangs forever.
+      - run: pnpm test:run
+      # The web preview's server tests (node --test web/*.test.mjs): the
+      # session, policy and relay checks web/README.md describes.
+      - run: pnpm test:web
+      # The web preview's bundle (vite in browser mode + the esbuild server
+      # function). Nothing deploys; it proves the script still builds.
+      - run: pnpm build:web
+      - run: pnpm build
+      # The system libraries tauri's crates link against on Linux; without
+      # them the webkit2gtk/gtk build scripts fail before anything is checked.
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libayatana-appindicator3-dev
+      # After the build: tauri-build reads the frontend dist it produced.
+      # --locked: the Cargo.lock that is committed is the one that ships.
+      # Without this a broken src-tauri change passed every check here and
+      # surfaced only mid-release.
+      - run: cargo check --locked
+        working-directory: src-tauri
+      # video_wrapper.rs's unit tests ran nowhere else.
+      - run: cargo test --locked
+        working-directory: src-tauri
+      # The working tree must be clean: catches a generated file committed
+      # by mistake, or a build writing into a tracked path.
+      - run: git diff --exit-code
+
+  scrub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/scrub-check.sh
+
+  # 2,877 lines of Playwright specs previously ran only by hand. The browser
+  # is installed with --with-deps because ubuntu-latest lacks Chromium's
+  # shared libraries. The date-filter specs also launch WebKit explicitly.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      # The web preview's real-browser smoke (web/browser-smoke.mjs) serves
+      # dist/web, so it runs after build:web. It needs the Chromium installed
+      # just above, which the build job does not have.
+      - run: pnpm build:web
+      - run: pnpm test:web:browser
+      - run: pnpm e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # The conformance suite runs against OpenBB's reference backend (bdobb-dev's
+  # fork of the archived repo -- see scripts/reference-backend.sh), pinned so
+  # an upstream change arrives as a deliberate bump of REF_BACKEND_REF rather
+  # than as a red build on someone's unrelated push.
+  reference:
+    runs-on: ubuntu-latest
+    env:
+      REF_BACKEND_REF: 32615f789f9423ea14d3f95003da250f4ef5bcfc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pnpm install --frozen-lockfile
+      - name: Start the reference backend
+        run: bash scripts/reference-backend.sh > reference-backend.log 2>&1 &
+      - name: Wait for it to answer
+        run: |
+          for i in $(seq 1 120); do
+            curl -sf http://127.0.0.1:7779/widgets.json -o /dev/null && exit 0
+            sleep 1
+          done
+          echo "reference backend did not come up within 120s:"
+          cat reference-backend.log
+          exit 1
+      - run: pnpm test:reference
+      - if: failure()
+        run: cat reference-backend.log

@@ -1,0 +1,647 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { once } from "node:events";
+import { request } from "node:http";
+import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { encode } from "@auth/core/jwt";
+import { WebSocket } from "ws";
+import { readConfig, SESSION_COOKIE } from "./config.mjs";
+import { authConfig, identity } from "./auth.mjs";
+import { socketTicket, socketTicketValid, upstreamPath } from "./policy.mjs";
+import { bootstrap } from "./bootstrap.mjs";
+import { createPreviewServer } from "./server.mjs";
+
+const env = {
+  APP_ORIGIN: "https://preview.example.com",
+  AUTH_SECRET: "test-only-secret-never-use-in-production-123",
+  AUTH_GITHUB_ID: "test-client", AUTH_GITHUB_SECRET: "test-client-secret",
+  SESSION_EPOCH: "test-1", GITHUB_ALLOWED_USER_IDS: "42",
+  BACKEND_GATEWAY_ORIGIN: "https://gateway.example.com",
+  BACKEND_GATEWAY_TOKEN: "test-only-gateway-token-not-a-real-credential",
+};
+const configuration = () => readConfig(env);
+async function cookie(patch = {}, secret = env.AUTH_SECRET) {
+  return `${SESSION_COOKIE}=${await encode({
+    token: { githubId: "42", epoch: "test-1", deadline: Date.now() / 1000 + 3600, ...patch },
+    secret, salt: SESSION_COOKIE, maxAge: 3600,
+  })}`;
+}
+async function fixture(t, options = {}) {
+  const assets = await mkdtemp(join(tmpdir(), "bdobb-auth-"));
+  await mkdir(join(assets, "assets"));
+  await writeFile(join(assets, "index.html"), "<html>private dashboard</html>");
+  await writeFile(join(assets, "assets", "private.js"), "private bundle");
+  await writeFile(join(assets, "assets", "worker.mjs"), "private worker");
+  await writeFile(join(assets, "favicon.ico"), "icon bytes");
+  for (const name of ["favicon.svg", "favicon-16.png", "favicon-32.png", "favicon-48.png",
+    "apple-touch-icon.png", "safari-pinned-tab.svg", "icon-192.png", "icon-512.png",
+    "icon-maskable-192.png", "icon-maskable-512.png"]) {
+    await writeFile(join(assets, name), `branding ${name}`);
+  }
+  await writeFile(join(assets, "site.webmanifest"), '{"name":"BDOBB","icons":[]}');
+  const cfg = options.config ?? configuration();
+  const server = createPreviewServer({ config: cfg, assets, ...options });
+  server.listen(0, "127.0.0.1"); await once(server, "listening");
+  t.after(async () => {
+    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+    await rm(assets, { recursive: true, force: true });
+  });
+  const port = server.address().port;
+  function call(path, { headers = {}, method = "GET", body } = {}) {
+    return new Promise((resolve, reject) => {
+      const req = request({ hostname: "127.0.0.1", port, path, method,
+        headers: { host: "preview.example.com", ...headers } }, res => {
+        const chunks = [];
+        res.on("data", chunk => chunks.push(chunk));
+        res.on("end", () => resolve({ status: res.statusCode, headers: res.headers,
+          body: Buffer.concat(chunks).toString() }));
+      });
+      req.on("error", reject); req.end(body);
+    });
+  }
+  return { call, port, cfg };
+}
+
+test("configuration: empty allowlist grants nobody, malformed config fails closed", () => {
+  assert.equal(readConfig({ ...env, GITHUB_ALLOWED_USER_IDS: "" }).allowedIds.size, 0);
+  for (const patch of [
+    { AUTH_SECRET: "" }, { AUTH_GITHUB_ID: "" }, { SESSION_EPOCH: "" },
+    { GITHUB_ALLOWED_USER_IDS: "owner" }, { APP_ORIGIN: "http://preview.example.com" },
+    { APP_ORIGIN: "https://preview.example.com/path" },
+    { BACKEND_GATEWAY_ORIGIN: "https://gateway.example.com/path" },
+    { BACKEND_GATEWAY_TOKEN: "" },
+  ]) assert.throws(() => readConfig({ ...env, ...patch }));
+  // The rejection names the variable and never carries its value.
+  assert.throws(() => readConfig({ ...env, BACKEND_GATEWAY_TOKEN: "hunter2" }),
+    e => e.message.startsWith("BACKEND_GATEWAY_TOKEN") && !e.message.includes("hunter2"));
+});
+
+test("an unconfigured server answers 503 and logs which variable failed", async t => {
+  const logged = [];
+  const { error } = console;
+  console.error = (...args) => logged.push(args.join(" "));
+  t.after(() => { console.error = error; });
+  // fixture() always supplies a config; this server reads process.env. That
+  // env is NOT reliably unconfigured: a Vercel build of the v12.4 project
+  // carries the full preview configuration, readConfig then succeeds, and the
+  // request below is answered 421 (not the canonical host) instead of 503
+  // (2026-09-24, v12.4.13's release/v12.4 build). Blank one required variable
+  // for the duration so the read fails the same way everywhere.
+  const saved = process.env.AUTH_GITHUB_ID;
+  process.env.AUTH_GITHUB_ID = "";
+  t.after(() => { if (saved === undefined) delete process.env.AUTH_GITHUB_ID; else process.env.AUTH_GITHUB_ID = saved; });
+  const server = createPreviewServer({ config: null, assets: tmpdir() });
+  server.listen(0, "127.0.0.1"); await once(server, "listening");
+  t.after(() => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }));
+  const status = await new Promise((resolve, reject) => {
+    request({ hostname: "127.0.0.1", port: server.address().port, path: "/" }, res => resolve(res.statusCode))
+      .on("error", reject).end();
+  });
+  assert.equal(status, 503);
+  assert.match(logged.join("\n"), /^Private preview is not configured: [A-Z_]+/m);
+});
+
+test("GitHub callbacks bind admission to immutable provider ID and never expose tokens", async () => {
+  const auth = authConfig(configuration());
+  assert.equal(auth.callbacks.signIn({ account: { provider: "github", providerAccountId: "42" } }), true);
+  assert.equal(auth.callbacks.signIn({ account: { provider: "github", providerAccountId: "99" } }), false);
+  assert.equal(auth.callbacks.signIn({ account: { provider: "other", providerAccountId: "42" } }), false);
+  const token = auth.callbacks.jwt({ account: { providerAccountId: "42", access_token: "not-returned" } });
+  assert.equal(token.githubId, "42");
+  assert.ok(!JSON.stringify(token).includes("not-returned"));
+  assert.equal(auth.callbacks.jwt({ token }).deadline, token.deadline);
+  assert.deepEqual(auth.callbacks.session({ session: { expires: "tomorrow" }, token }),
+    { expires: "tomorrow", user: { id: "42" } });
+  assert.equal(auth.callbacks.redirect({ url: "https://evil.example.com" }), env.APP_ORIGIN + "/");
+  assert.deepEqual(auth.providers[0].options.checks, ["pkce", "state"]);
+});
+
+test("encrypted sessions require valid cookie, current ID, epoch and strict expiry", async () => {
+  const cfg = configuration();
+  assert.equal((await identity({ cookie: await cookie() }, cfg)).id, "42");
+  for (const patch of [{ githubId: "99" }, { epoch: "old" }, { deadline: 0 }, { deadline: "forever" }]) {
+    assert.equal(await identity({ cookie: await cookie(patch) }, cfg), null);
+  }
+  assert.equal(await identity({ cookie: await cookie({}, "a-different-encryption-secret-32-chars") }, cfg), null);
+  const valid = await cookie();
+  assert.equal(await identity({ authorization: "Bearer " + valid.split("=")[1] }, cfg), null);
+  assert.equal(await identity({ cookie: valid + "tampered" }, cfg), null);
+  cfg.allowedIds.clear();
+  assert.equal(await identity({ cookie: valid }, cfg), null);
+});
+
+test("path and parameter allowlist blocks writes, admin surfaces and URL injection", () => {
+  const cfg = configuration();
+  const allowed = "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd";
+  assert.equal(upstreamPath(new URL(allowed, cfg.origin), cfg), allowed);
+  // No /news route at this line -- the family arrives with od v8.0.3 -- so a
+  // news path is refused exactly like any other unmatched one, below.
+  for (const path of [
+    "/tick", "/mcp", "/keys", "/news/admin", "/news/api/news?feed_id=7&limit=50",
+    "/live/widgets.json", "/api/admin",
+    // A duplicated key is refused for every route, the generic rule included:
+    // the client sets each key once (searchParams.set), so a repeat is never its work.
+    "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd&symbol=MSFT",
+  ]) assert.equal(upstreamPath(new URL(path, cfg.origin), cfg), null, path);
+});
+
+test("the /api root documents are forwarded; nothing else at the /api root is", () => {
+  const cfg = configuration();
+  // dataClient.ts fetches exactly two root documents from a backend --
+  // fetchWidgetsJson and fetchAppsJson. openbb-api answers 404 for
+  // templates.json, and agents.json is Rita's document, not a backend's.
+  for (const allowed of ["/api/widgets.json", "/api/apps.json"]) {
+    assert.equal(upstreamPath(new URL(allowed, cfg.origin), cfg), allowed);
+  }
+  for (const path of [
+    "/api/widgets.json?x=1", "/api/apps.json?x=1",
+    // openbb-api's own interactive surfaces sit OUTSIDE /api/api/v1/ and stay
+    // refused by omission, exactly as when the /api side was curated.
+    "/api/docs", "/api/openapi.json", "/api/redoc",
+    "/api/templates.json", "/api/agents.json", "/api/", "/api/api/v2/equity/price/quote",
+  ]) assert.equal(upstreamPath(new URL(path, cfg.origin), cfg), null, path);
+});
+
+test("the generic api/v1 rule admits the whole catalogue inside structural bounds", () => {
+  const cfg = configuration();
+  // Sampled from the live v12.4 catalogue (331 widgets over 181 distinct
+  // endpoints): several provider variants of one route, a parameterised economy
+  // route, and an optionsEndpoint sitting behind a parameter dropdown.
+  for (const allowed of [
+    "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd",
+    "/api/api/v1/equity/price/quote?symbol=AAPL&provider=fmp",
+    "/api/api/v1/equity/price/quote?symbol=AAPL&exchange=US&provider=kdb",
+    "/api/api/v1/economy/fred_series?symbol=GDP&start_date=2020-01-01&provider=fred",
+    "/api/api/v1/federal_reserve/fomc_documents_choices",
+    "/api/api/v1/fixedincome/government/treasury_auctions?provider=government_us",
+  ]) assert.ok(upstreamPath(new URL(allowed, cfg.origin), cfg), allowed);
+  // The query that leaves is RE-SERIALISED from the parsed pairs, never the raw
+  // string the caller wrote: a lowercase %2c comes back canonically encoded.
+  assert.equal(
+    upstreamPath(new URL("/api/api/v1/equity/price/quote?symbol=AAPL%2cMSFT&provider=eodhd", cfg.origin), cfg),
+    "/api/api/v1/equity/price/quote?symbol=AAPL%2CMSFT&provider=eodhd");
+  const symbol = value => `/api/api/v1/equity/price/quote?symbol=${value}`;
+  for (const path of [
+    // Uppercase, a dot and a percent are all outside the path class. A literal
+    // ".." never reaches the rule (new URL folds it away), so the guard that
+    // does the work is the one on "%", which is how %2e%2e would arrive.
+    "/api/api/v1/Equity/price/quote", "/api/api/v1/equity/price/quote.json",
+    "/api/api/v1/equity/%2e%2e/%2e%2e/admin", "/api/api/v1/equity/price/quote%3Fx",
+    "/api/api/v1/" + "a".repeat(201),
+    // The bounds: 4096 characters forwarded, 40 pairs, 64-character names,
+    // 1024-character values, no control character, CR or LF in a value.
+    symbol("A".repeat(4100)), symbol("A".repeat(1025)),
+    "/api/api/v1/equity/price/quote?" + Array.from({ length: 41 }, (_, i) => `p${i}=1`).join("&"),
+    "/api/api/v1/equity/price/quote?1symbol=AAPL", "/api/api/v1/equity/price/quote?sym%20bol=AAPL",
+    "/api/api/v1/equity/price/quote?" + "s".repeat(65) + "=AAPL",
+    symbol("AAPL%0d%0aX-Injected:%201"), symbol("AAPL%00"),
+  ]) assert.equal(upstreamPath(new URL(path, cfg.origin), cfg), null, path);
+});
+
+test("bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend", () => {
+  const text = bootstrap(configuration());
+  for (const forbidden of [env.AUTH_SECRET, env.AUTH_GITHUB_SECRET, env.BACKEND_GATEWAY_TOKEN,
+    env.BACKEND_GATEWAY_ORIGIN]) assert.ok(!text.includes(forbidden));
+  assert.ok(text.includes("/api"));
+  assert.ok(text.includes("OpenBB API (preview)"));
+  // The seeded dashboard is the built-ins example: every card is a builtin
+  // widget id, needs no key and no backend -- true even with no gateway
+  // configured, which the second call below proves.
+  // The seed is JSON.stringify'd twice (the dashboard file's own text, then
+  // the outer window.__bdobbSeed literal), so a widgetId shows up escaped.
+  for (const id of ["note", "markdown", "clock", "website", "rss", "param_echo"]) {
+    assert.ok(text.includes(`\\"widgetId\\":\\"${id}\\"`), id);
+  }
+  const cfg = configuration(); cfg.backend = null; cfg.token = null;
+  const noBackend = bootstrap(cfg);
+  assert.ok(noBackend.includes("preview-api"));
+  assert.ok(noBackend.includes('\\"widgetId\\":\\"param_echo\\"'));
+});
+
+test("anonymous visitors see login, not UI, metadata, JavaScript or data", async t => {
+  const { call } = await fixture(t);
+  const root = await call("/");
+  assert.equal(root.status, 200); assert.match(root.body, /Continue with GitHub/);
+  assert.ok(!root.body.includes("private dashboard"));
+  for (const path of ["/index.html", "/assets/private.js", "/preview-bootstrap.js",
+    "/api/widgets.json", "/socket-ticket?for=%2Fnews%2Fws%2Fnews", "/tick"]) {
+    assert.equal((await call(path)).status, 401, path);
+  }
+});
+
+test("authorized files work; aliases, traversal, source maps, cross-origin and writes fail", async t => {
+  // widgets.json is a proxied route now, so this fixture needs an upstream: the
+  // header assertions below are about the response envelope, not the manifest.
+  const { call } = await fixture(t, { fetchUpstream: async () =>
+    new Response("{}", { headers: { "content-type": "application/json" } }) });
+  const headers = { cookie: await cookie() };
+  assert.equal((await call("/", { headers })).body, "<html>private dashboard</html>");
+  assert.equal((await call("/assets/private.js", { headers })).body, "private bundle");
+  assert.equal((await call("/assets/worker.mjs", { headers })).status, 200);
+  assert.equal((await call("/", { headers: { ...headers, host: "alias.vercel.app" } })).status, 421);
+  assert.equal((await call("/", { headers: { ...headers, "x-forwarded-host": "evil.example.com" } })).status, 200);
+  for (const path of ["/.env", "/assets/private.js.map", "/mcp", "/keys", "/tick", "/news/admin", "/live/widgets.json"]) {
+    assert.equal((await call(path, { headers })).status, 404, path);
+  }
+  for (const path of ["/assets/../index.html", "/assets/%2e%2e/index.html", "//evil.example.com"]) {
+    assert.equal((await call(path, { headers })).status, 421, path);
+  }
+  assert.equal((await call("/api/widgets.json", { headers, method: "POST" })).status, 405);
+  assert.equal((await call("/api/widgets.json", { headers: { ...headers, origin: "https://evil.example.com" } })).status, 403);
+  const response = await call("/api/widgets.json", { headers });
+  assert.equal(response.headers["cache-control"], "private, no-store");
+  assert.equal(response.headers["vercel-cdn-cache-control"], "no-store");
+  assert.equal(response.headers["referrer-policy"], "same-origin");
+  assert.match(response.headers["content-security-policy"], /connect-src 'self'/);
+  // The YouTube card frames https://www.youtube.com/embed/<id>: that one origin is
+  // admitted (and nothing else: not 'none', not a wildcard, not youtube-nocookie).
+  assert.deepEqual(
+    response.headers["content-security-policy"].split(";").map(value => value.trim().split(/\s+/))
+      .filter(([name]) => name === "frame-src"),
+    [["frame-src", "https://www.youtube.com"]]);
+  // The sign-in form POSTs to /auth/signin/github, which 302s to GitHub; Chromium
+  // and WebKit enforce form-action on that redirect, so the allowlist must name it.
+  assert.match(response.headers["content-security-policy"], /form-action 'self' https:\/\/github\.com$/);
+});
+
+test("a top-level cross-site navigation is the OAuth landing, not a forgeable request", async t => {
+  const { call } = await fixture(t);
+  const navHeaders = { "sec-fetch-site": "cross-site", "sec-fetch-mode": "navigate", "sec-fetch-dest": "document" };
+  // The GitHub redirect chain ends with Sec-Fetch-Site: cross-site even though it is a
+  // same-origin GET the browser is making of its own accord; a plain visitor link from
+  // another site (email, chat) looks identical. Neither should be turned away.
+  const anonymous = await call("/", { headers: navHeaders });
+  assert.equal(anonymous.status, 200); assert.match(anonymous.body, /Continue with GitHub/);
+  const authed = await call("/", { headers: { ...navHeaders, cookie: await cookie() } });
+  assert.equal(authed.status, 200); assert.equal(authed.body, "<html>private dashboard</html>");
+  // Everything that is not a genuine top-level document navigation stays refused.
+  assert.equal((await call("/", { headers: { ...navHeaders, "sec-fetch-mode": "cors" } })).status, 403);
+  assert.equal((await call("/", { headers: { ...navHeaders, "sec-fetch-dest": "iframe" } })).status, 403);
+  assert.equal((await call("/some/asset.js", { headers: { "sec-fetch-site": "cross-site", "sec-fetch-dest": "script" } })).status, 403);
+  assert.equal((await call("/api/widgets.json", { method: "POST",
+    headers: { "sec-fetch-site": "cross-site", "sec-fetch-mode": "navigate", "sec-fetch-dest": "document" } })).status, 403);
+});
+
+test("empty allowlist cannot start OAuth or accept even a correctly signed session", async t => {
+  const cfg = configuration(); cfg.allowedIds.clear();
+  const { call } = await fixture(t, { config: cfg });
+  assert.equal((await call("/auth/signin")).status, 403);
+  assert.equal((await call("/assets/private.js", { headers: { cookie: await cookie() } })).status, 401);
+});
+
+test("Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth", async t => {
+  const { call } = await fixture(t);
+  const csrf = await call("/auth/csrf");
+  assert.equal(csrf.status, 200);
+  assert.ok(JSON.parse(csrf.body).csrfToken);
+  assert.match(csrf.headers["set-cookie"].join(), /HttpOnly/);
+  assert.match(csrf.headers["set-cookie"].join(), /Secure/);
+  const denied = await call("/auth/signin/github", {
+    method: "POST", headers: { origin: env.APP_ORIGIN, "content-type": "application/x-www-form-urlencoded" },
+    body: "callbackUrl=https%3A%2F%2Fevil.example.com",
+  });
+  assert.ok(!denied.headers.location?.startsWith("https://github.com"));
+  assert.equal((await call("/auth/signin/github", { method: "POST",
+    headers: { origin: "https://evil.example.com" } })).status, 403);
+  const cookies = csrf.headers["set-cookie"].map(v => v.split(";")[0]).join("; ");
+  const good = await call("/auth/signin/github", {
+    method: "POST", headers: { origin: env.APP_ORIGIN, cookie: cookies, "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ csrfToken: JSON.parse(csrf.body).csrfToken }).toString(),
+  });
+  assert.equal(good.status, 302);
+  const location = new URL(good.headers.location);
+  assert.equal(location.origin, "https://github.com");
+  assert.equal(location.searchParams.get("redirect_uri"), env.APP_ORIGIN + "/auth/callback/github");
+  assert.equal(location.searchParams.get("scope"), "read:user");
+  assert.ok(location.searchParams.get("state"));
+  assert.ok(location.searchParams.get("code_challenge"));
+  // The redirect the sign-in form's POST actually takes must be inside the
+  // response's own form-action allowlist, or Chromium/WebKit block the hop.
+  const formAction = good.headers["content-security-policy"].match(/form-action ([^;]+)/)[1];
+  assert.ok(formAction.split(" ").includes(location.origin));
+});
+
+test("valid CSRF sign-out expires the browser session cookie", async t => {
+  const { call } = await fixture(t);
+  const csrf = await call("/auth/csrf");
+  const cookies = [await cookie(), ...csrf.headers["set-cookie"].map(v => v.split(";")[0])].join("; ");
+  const response = await call("/auth/signout", {
+    method: "POST", headers: { origin: env.APP_ORIGIN, cookie: cookies,
+      "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ csrfToken: JSON.parse(csrf.body).csrfToken }).toString(),
+  });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.location, env.APP_ORIGIN + "/");
+  assert.ok(response.headers["set-cookie"].some(c =>
+    c.startsWith(SESSION_COOKIE + "=;") && c.includes("Max-Age=0")));
+});
+
+test("proxy uses dedicated server token, bounded fetch, and never forwards browser credentials", async t => {
+  let observed;
+  const { call } = await fixture(t, { fetchUpstream: async (url, init) => {
+    observed = { url, init };
+    return new Response('{"results":[{"symbol":"AAPL","price":100}]}', {
+      headers: { "content-type": "application/json", "set-cookie": "private=value", "www-authenticate": "private" },
+    });
+  } });
+  const response = await call("/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd", {
+    headers: { cookie: await cookie(), authorization: "client-supplied", "x-api-key": "client-key" },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(observed.url, env.BACKEND_GATEWAY_ORIGIN + "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd");
+  assert.deepEqual(observed.init.headers, { Authorization: "Bearer " + env.BACKEND_GATEWAY_TOKEN, Accept: "application/json" });
+  assert.equal(observed.init.redirect, "error");
+  assert.ok(observed.init.signal instanceof AbortSignal);
+  assert.equal(response.headers["set-cookie"], undefined);
+  assert.equal(response.headers["www-authenticate"], undefined);
+});
+
+test("unconfigured upstream, error bodies and unexpected content fail closed", async t => {
+  const headers = { cookie: await cookie() };
+  const path = "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd";
+  const cfg = configuration(); cfg.backend = null; cfg.token = null;
+  const noBackend = await fixture(t, { config: cfg });
+  assert.equal((await noBackend.call(path, { headers })).status, 503);
+  for (const response of [
+    new Response("private backend error", { status: 401 }),
+    new Response("<script>bad</script>", { headers: { "content-type": "text/html" } }),
+    new Response("x".repeat(2 * 1024 * 1024 + 1), { headers: { "content-type": "application/json" } }),
+  ]) {
+    const f = await fixture(t, { fetchUpstream: async () => response });
+    const result = await f.call(path, { headers });
+    assert.equal(result.status, 502);
+    assert.ok(!result.body.includes("private backend error"));
+  }
+});
+
+async function rejectedWs(port, path, headers) {
+  const client = new WebSocket(`ws://127.0.0.1:${port}${path}`, { headers: { host: "preview.example.com", ...headers } });
+  client.on("error", () => {});
+  return new Promise((resolve, reject) => {
+    client.on("unexpected-response", (_req, res) => { res.resume(); resolve(res.statusCode); client.terminate(); });
+    client.on("open", () => { client.terminate(); reject(new Error("Unexpected upgrade")); });
+  });
+}
+test("every upgrade is refused -- no socket route exists at this line", async t => {
+  const { port } = await fixture(t);
+  const c = await cookie();
+  // The auth rail runs before any route is matched, exactly like the HTTP
+  // handler's: no cookie is 401, a wrong Origin is 403. Once past both, every
+  // path 404s -- socketTarget (policy.mjs) is unconditionally null until the
+  // news family gives this handler its first real route (od v8.0.3).
+  assert.equal(await rejectedWs(port, "/news/ws/news", { origin: env.APP_ORIGIN }), 401);
+  assert.equal(await rejectedWs(port, "/news/ws/news", { cookie: c, origin: "https://evil.example.com" }), 403);
+  for (const path of ["/news/ws/news", "/grid/live_grid_ws", "/grid/ta_series_ws", "/tick", "/"]) {
+    assert.equal(await rejectedWs(port, path, { cookie: c, origin: env.APP_ORIGIN }), 404, path);
+  }
+  // The upgrade path never inspects Sec-Fetch-Site (that exemption lives only in
+  // the HTTP handler): a mismatched Origin refuses it regardless of what else the
+  // handshake carries.
+  assert.equal(await rejectedWs(port, "/news/ws/news", { cookie: c, origin: "https://evil.example.com",
+    "sec-fetch-site": "cross-site", "sec-fetch-mode": "websocket", "sec-fetch-dest": "websocket" }), 403);
+});
+
+test("only the exact branding allowlist is public; nothing rides along with it", async t => {
+  // Browsers ask for /favicon.ico unprompted on the login page and on Auth.js's
+  // sign-in page, before any session exists. It is the desktop app's public
+  // icon, not app content. Touch/PWA icons also need cookie-free GETs.
+  const { call } = await fixture(t);
+  const icon = await call("/favicon.ico");
+  assert.equal(icon.status, 200); assert.equal(icon.headers["content-type"], "image/x-icon");
+  assert.equal(icon.body, "icon bytes");
+  assert.equal((await call("/favicon.ico?x=1")).status, 401);
+  assert.equal((await call("/favicon.ico", { method: "POST" })).status, 401);
+  assert.equal((await call("/assets/private.js")).status, 401);
+  // Still not a cross-site subresource: another site's <img> is refused like any other.
+  assert.equal((await call("/favicon.ico", { headers: { "sec-fetch-site": "cross-site",
+    "sec-fetch-mode": "no-cors", "sec-fetch-dest": "image" } })).status, 403);
+  for (const [name, type] of [
+    ["favicon.svg", "image/svg+xml"], ["safari-pinned-tab.svg", "image/svg+xml"],
+    ...["favicon-16.png", "favicon-32.png", "favicon-48.png", "apple-touch-icon.png",
+      "icon-192.png", "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png"]
+      .map(name => [name, "image/png"]),
+    ["site.webmanifest", "application/manifest+json"],
+  ]) {
+    const asset = await call(`/${name}`);
+    assert.equal(asset.status, 200, name);
+    assert.equal(asset.headers["content-type"], type, name);
+    assert.equal((await call(`/${name}?x=1`)).status, 401);
+    assert.equal((await call(`/${name}`, { method: "POST" })).status, 401);
+    assert.equal((await call(`/${name}`, { method: "HEAD" })).status, 401);
+    assert.equal((await call(`/${name}`, { headers: { "sec-fetch-site": "cross-site",
+      "sec-fetch-mode": "no-cors", "sec-fetch-dest": "image" } })).status, 403);
+  }
+  for (const name of ["/icon-secret.png", "/private.svg", "/manifest.json", "/index.html",
+    "/assets/private.js", "/src/assets/branding/bdobb-mark-green.svg"]) {
+    assert.equal((await call(name)).status, 401, name);
+  }
+  assert.equal((await call("/%66avicon.svg")).status, 421);
+  assert.equal((await call("/assets/../favicon.svg")).status, 421);
+});
+
+test("the login surface carries the axes mark and installation icon links", async t => {
+  const { call } = await fixture(t);
+  const page = await call("/");
+  assert.equal(page.status, 200);
+  assert.match(page.body, /M4 4h2v22h22v2H4z/);
+  assert.match(page.body, /fill="#22c99b"/);
+  for (const name of ["favicon.svg", "apple-touch-icon.png", "site.webmanifest"]) {
+    assert.ok(page.body.includes(`href="/${name}"`));
+  }
+});
+
+test("branding assets retain their MIME types for authenticated requests too", async t => {
+  const { call } = await fixture(t);
+  const manifest = await call("/site.webmanifest", { headers: { cookie: await cookie() } });
+  assert.equal(manifest.status, 200);
+  assert.equal(manifest.headers["content-type"], "application/manifest+json");
+  assert.equal(JSON.parse(manifest.body).name, "BDOBB");
+});
+
+test("the /api root documents come from openbb-api, not from this process", async t => {
+  // Both were answered locally while the /api side was curated: widgets.json
+  // from a one-widget manifest, apps.json from a hard-coded []. Since the
+  // catalogue was opened up they are the backend's own documents, so the app's
+  // Apps dialog lists the example dashboards openbb-api serves.
+  const seen = [];
+  const { call } = await fixture(t, { fetchUpstream: async url => {
+    seen.push(new URL(url).pathname);
+    return new Response(url.endsWith("/api/apps.json")
+      ? '[{"name":"Example FRED App","tabs":{}}]'
+      : '{"equity_price_quote_eodhd_obb":{"name":"Quote","endpoint":"/api/v1/equity/price/quote"}}',
+      { headers: { "content-type": "application/json" } });
+  } });
+  const headers = { cookie: await cookie() };
+  const widgets = await call("/api/widgets.json", { headers });
+  assert.equal(widgets.status, 200);
+  assert.ok(JSON.parse(widgets.body).equity_price_quote_eodhd_obb);
+  // src/lib/appsJson.ts isAppsJson takes an ARRAY ([] = no apps). An object here
+  // made the Apps dialog report "This connection's apps.json could not be read."
+  const apps = await call("/api/apps.json", { headers });
+  assert.equal(apps.status, 200);
+  assert.equal(JSON.parse(apps.body)[0].name, "Example FRED App");
+  assert.deepEqual(seen, ["/api/widgets.json", "/api/apps.json"]);
+});
+
+test("a full-catalogue widgets.json fits the body cap; one past it is an honest 502", async t => {
+  // Measured against the live v12.4 openbb-api on 2026-09-20: 331 widgets,
+  // 1,678,152 bytes of compact JSON. The 2 MiB cap both proxies already apply
+  // carries that with about 20% to spare -- and the failure mode when a future
+  // catalogue outgrows it is a 502, never a truncated manifest the app would
+  // parse as a smaller catalogue.
+  const manifest = size => JSON.stringify(Object.fromEntries(
+    Array.from({ length: 400 }, (_, i) => [`w${i}`, "x".repeat(Math.ceil(size / 400))])));
+  const headers = { cookie: await cookie() };
+  const big = await fixture(t, { fetchUpstream: async () =>
+    new Response(manifest(1_700_000), { headers: { "content-type": "application/json" } }) });
+  const ok = await big.call("/api/widgets.json", { headers });
+  assert.equal(ok.status, 200);
+  assert.ok(ok.body.length > 1_600_000, String(ok.body.length));
+  assert.equal(Object.keys(JSON.parse(ok.body)).length, 400);
+  const over = await fixture(t, { fetchUpstream: async () =>
+    new Response(manifest(2 * 1024 * 1024 + 1024), { headers: { "content-type": "application/json" } }) });
+  assert.equal((await over.call("/api/widgets.json", { headers })).status, 502);
+});
+
+// ---- Socket tickets: a socket held open through a Vercel Function bills function time
+// for as long as it is open, so the browser opens its sockets on the gateway itself and proves, with a short-lived signed ticket this
+// layer issues to a signed-in user, that it was let in here first.
+test("a socket ticket binds one target, expires, and needs the gateway token", () => {
+  const token = env.BACKEND_GATEWAY_TOKEN, now = 1_800_000_000_000;
+  const ticket = socketTicket(token, "/news/ws/news", now);
+  assert.match(ticket, /^\d+\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/);
+  assert.equal(socketTicketValid(token, "/news/ws/news", ticket, now + 29_000), true);
+  assert.equal(socketTicketValid(token, "/news/ws/news", ticket, now + 30_001), false);
+  assert.equal(socketTicketValid(token, "/grid/live_grid_ws", ticket, now), false);
+  assert.equal(socketTicketValid(token + "x", "/news/ws/news", ticket, now), false);
+  // A forged far-future expiry breaks the signature; junk never throws.
+  assert.equal(socketTicketValid(token, "/news/ws/news", ticket.replace(/^\d+/, "9999999999999"), now), false);
+  for (const junk of ["", "a.b.c", "1.2", ticket + ".x", null, undefined, 7]) {
+    assert.equal(socketTicketValid(token, "/news/ws/news", junk, now), false);
+  }
+  // The ticket never carries the token it is keyed with.
+  assert.equal(ticket.includes(token), false);
+});
+
+test("the ticket route always 404s -- socketTarget names no route at this line", async t => {
+  const { call } = await fixture(t);
+  const c = await cookie();
+  const ask = target => call("/socket-ticket?for=" + encodeURIComponent(target), { headers: { cookie: c } });
+  assert.equal((await call("/socket-ticket?for=%2Fnews%2Fws%2Fnews")).status, 401); // session gate runs first
+  for (const target of ["/news/ws/news", "/grid/live_grid_ws", "/grid/ta_series_ws?symbol=AAPL&interval=5m",
+    "/tick", "/news/ws/news?x=1", "https://evil.example.com/news/ws/news", "//evil.example.com/news/ws/news",
+    "/api/api/v1/equity/price/quote", ""]) {
+    assert.equal((await ask(target)).status, 404, target);
+  }
+  // Exactly one `for`, and nothing else on the query -- still enforced even
+  // though every individual target already 404s, so the rule is pinned
+  // independently of socketTarget ever admitting one.
+  assert.equal((await call("/socket-ticket?for=%2Fnews%2Fws%2Fnews&for=%2Ftick", { headers: { cookie: c } })).status, 404);
+  assert.equal((await call("/socket-ticket?for=%2Fnews%2Fws%2Fnews&x=1", { headers: { cookie: c } })).status, 404);
+  assert.equal((await call("/socket-ticket?for=%2Fnews%2Fws%2Fnews", { method: "POST", headers: { cookie: c } })).status, 405);
+});
+
+// ---- Per-user state (owner's ruling 2026-09-20: on the NAS, behind the gateway).
+function stateUpstream(files = {}) {
+  const seen = [];
+  const fetchUpstream = async (url, init = {}) => {
+    seen.push({ url, method: init.method ?? "GET", body: init.body?.toString(), headers: init.headers });
+    if ((init.method ?? "GET") === "GET") return new Response(JSON.stringify({ files }), { headers: { "content-type": "application/json" } });
+    return new Response(null, { status: 204 });
+  };
+  return { seen, fetchUpstream };
+}
+const sameOrigin = c => ({ cookie: c, origin: env.APP_ORIGIN, "content-type": "application/json", "sec-fetch-site": "same-origin" });
+
+test("a write goes to the signed-in user's own state, and only a write shaped like one", async t => {
+  const { seen, fetchUpstream } = stateUpstream();
+  const { call, cfg } = await fixture(t, { fetchUpstream });
+  const c = await cookie(), body = '{"theme":"dark"}';
+  const put = await call("/state/settings.json", { method: "PUT", headers: sameOrigin(c), body });
+  assert.equal(put.status, 204);
+  // The user in the path is the session's GitHub id -- never anything the browser sent.
+  assert.deepEqual(seen.map(r => [r.method, r.url, r.body]), [["PUT", "https://gateway.example.com/state/42/settings.json", body]]);
+  assert.equal(seen[0].headers.Authorization, `Bearer ${cfg.token}`);
+  assert.equal((await call("/state/dashboards/preview.json", { method: "DELETE", headers: sameOrigin(c) })).status, 204);
+  assert.deepEqual([seen[1].method, seen[1].url], ["DELETE", "https://gateway.example.com/state/42/dashboards/preview.json"]);
+
+  const refused = async (status, path, options) => assert.equal((await call(path, options)).status, status, JSON.stringify([path, options.method]));
+  await refused(401, "/state/settings.json", { method: "PUT", headers: { ...sameOrigin(c), cookie: "" }, body });
+  await refused(403, "/state/settings.json", { method: "PUT", headers: { ...sameOrigin(c), origin: "https://evil.example.com" }, body });
+  const noOrigin = sameOrigin(c); delete noOrigin.origin;
+  await refused(403, "/state/settings.json", { method: "PUT", headers: noOrigin, body });
+  await refused(403, "/state/settings.json", { method: "PUT", headers: { ...sameOrigin(c), "sec-fetch-site": "same-site" }, body });
+  await refused(403, "/state/settings.json", { method: "PUT", headers: { ...sameOrigin(c), "sec-fetch-site": "cross-site" }, body });
+  await refused(415, "/state/settings.json", { method: "PUT", headers: { ...sameOrigin(c), "content-type": "text/plain" }, body });
+  await refused(400, "/state/settings.json", { method: "PUT", headers: sameOrigin(c), body: "not json" });
+  await refused(413, "/state/settings.json", { method: "PUT", headers: sameOrigin(c), body: JSON.stringify("x".repeat(262145)) });
+  for (const path of ["/state/files/a.pdf", "/state/settings.json.tmp", "/state/43/settings.json", "/state/settings.json?x=1", "/state/"]) {
+    await refused(404, path, { method: "PUT", headers: sameOrigin(c), body });
+  }
+  await refused(405, "/state/settings.json", { method: "POST", headers: sameOrigin(c), body });
+  await refused(405, "/state/settings.json", { method: "GET", headers: sameOrigin(c) });
+  // Every other route is exactly as GET-only as it was.
+  await refused(405, "/api/widgets.json", { method: "PUT", headers: sameOrigin(c), body });
+  await refused(405, "/socket-ticket?for=%2Fnews%2Fws%2Fnews", { method: "PUT", headers: sameOrigin(c), body });
+  assert.equal(seen.length, 2);
+});
+
+test("a gateway refusal of a write is relayed as a size or a failure, never its body", async t => {
+  for (const [upstream, expected] of [[413, 413], [429, 502], [500, 502], [401, 502]]) {
+    const { call } = await fixture(t, { fetchUpstream: async () => new Response("secret detail", { status: upstream }) });
+    const res = await call("/state/settings.json", { method: "PUT", headers: sameOrigin(await cookie()), body: "{}" });
+    assert.equal(res.status, expected); assert.equal(res.body.includes("secret"), false);
+  }
+});
+
+test("the page is seeded from the user's saved state, and told it may save", async t => {
+  const saved = { "settings.json": '{"theme":"dark"}', "dashboards/mine.json": '{"id":"mine","name":"Mine </script>","tabs":[]}' };
+  const { seen, fetchUpstream } = stateUpstream(saved);
+  const { call } = await fixture(t, { fetchUpstream });
+  const js = (await call("/preview-bootstrap.js", { headers: { cookie: await cookie() } })).body;
+  assert.deepEqual([seen[0].method, seen[0].url], ["GET", "https://gateway.example.com/state/42"]);
+  assert.match(js, /window\.__bdobbPersist=true;/);
+  assert.match(js, /"dashboards\/mine\.json"/);
+  assert.doesNotMatch(js, /dashboards\/preview\.json/);      // saved state replaces the default seed, it is not merged into it
+  assert.doesNotMatch(js, /<\/script>/);                     // still escaped
+  assert.match(js, /Changes are saved to your account/);
+});
+
+test("nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not", async t => {
+  const empty = stateUpstream();
+  const first = await fixture(t, { fetchUpstream: empty.fetchUpstream });
+  const js = (await first.call("/preview-bootstrap.js", { headers: { cookie: await cookie() } })).body;
+  assert.match(js, /window\.__bdobbPersist=true;/); assert.match(js, /dashboards\/preview\.json/);
+
+  // Saving over a store we could not read would replace the user's dashboards with the defaults.
+  for (const fetchUpstream of [async () => new Response("x", { status: 502 }), async () => { throw new Error("down"); },
+    async () => new Response("not json", { headers: { "content-type": "application/json" } }),
+    async () => new Response('{"files":{"../evil":"{}","settings.json":7}}', { headers: { "content-type": "application/json" } })]) {
+    const broken = await fixture(t, { fetchUpstream });
+    const text = (await broken.call("/preview-bootstrap.js", { headers: { cookie: await cookie() } })).body;
+    assert.doesNotMatch(text, /__bdobbPersist/); assert.match(text, /dashboards\/preview\.json/);
+    assert.match(text, /Changes reset on reload/);
+  }
+});
+
+test("web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag", () => {
+  const text = readFileSync(new URL("./policy.mjs", import.meta.url), "utf8");
+  const pin = JSON.parse(readFileSync(new URL("./policy.vendored.json", import.meta.url), "utf8"));
+  const header = /^\/\/ vendored from openbb-docker (v\d+\.\d+\.\d+) funnel-gateway\/policy\.mjs sha256:([0-9a-f]{64})\n/.exec(text);
+  assert.ok(header, "first line names the tag and the hash");
+  assert.equal(header[1], pin.tag);
+  assert.equal(header[2], pin.sha256);
+  assert.equal(createHash("sha256").update(text.slice(header[0].length)).digest("hex"), pin.sha256);
+  // The at-or-below rule: an app line never vendors a contract newer than the stack it pairs with.
+  const paired = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).openbbDocker;
+  const num = v => v.replace(/^v/, "").split(".").map(Number);
+  assert.ok(num(pin.tag).every((n, i) => n <= num(paired)[i] || num(pin.tag).slice(0, i).some((m, j) => m < num(paired)[j])),
+    `${pin.tag} is above the paired stack tag ${paired}`);
+});

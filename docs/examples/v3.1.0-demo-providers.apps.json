@@ -1,0 +1,76 @@
+[
+  {
+    "name": "Demo providers",
+    "description": "One card per provider that works with a zero-sign-up demo key or no key at all, on the openbb-docker v3.0.1 stack: EIA, Congress.gov, BLS, CFTC, EconDB and Alpha Vantage (historical EPS, IBM only -- the point is that the call goes through and the table renders, not the symbol). Widget ids confirmed 2026-09-24 against a booted od v3.0.1 stack's own /widgets.json (Task 6 step 7). The Video Library card (v3.2.0) is openbb-api's own YouTube widget, the openbb-videos extension, and needs no key; its id comes from that extension's own widgets.json build on OpenBB 5.0.0, not from a booted stack. The BLS card uses bls_search (category=cpi, query=CUUR0000SA0), not bls_series: BLS's own HTTP API needs no key for either fetcher, but openbb-bls's BlsSeriesFetcher never overrides the base Fetcher class's require_credentials=True the way BlsSearchFetcher does, so bls_series 400s on this stack's blank BLS_API_KEY -- bls_search answers 200 with real data on first import, which is the point of this dashboard.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "demo-providers": {
+        "id": "demo-providers",
+        "name": "Demo providers",
+        "layout": [
+          {
+            "i": "commodity_short_term_energy_outlook_eia_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": { "params": {} }
+          },
+          {
+            "i": "uscongress_bills_congress_gov_obb",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "congress": "119" } }
+          },
+          {
+            "i": "economy_survey_bls_search_bls_obb",
+            "x": 0,
+            "y": 12,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "category": "cpi", "query": "CUUR0000SA0" } }
+          },
+          {
+            "i": "cftc_cot_cftc_obb",
+            "x": 20,
+            "y": 12,
+            "w": 20,
+            "h": 12,
+            "state": { "params": {} }
+          },
+          {
+            "i": "economy_indicators_econdb_obb",
+            "x": 0,
+            "y": 24,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "symbol": "RGDP" } }
+          },
+          {
+            "i": "equity_fundamental_historical_eps_alpha_vantage_obb",
+            "x": 20,
+            "y": 24,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "symbol": "IBM" } }
+          },
+          {
+            "i": "videos_video_custom_obb",
+            "x": 0,
+            "y": 36,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "video_name": "OpenBB Workspace Demo" } }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

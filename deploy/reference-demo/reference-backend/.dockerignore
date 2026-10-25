@@ -1,0 +1,9 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+# SPDX-License-Identifier: Apache-2.0
+
+# Nothing local is needed in the build context; the source is cloned in-image.
+*
+!Dockerfile
+!patch-cors.py
+!patch-omni-python.py
+!check-no-exec.py
