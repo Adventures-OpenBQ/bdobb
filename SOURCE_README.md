@@ -65,3 +65,5 @@ and authorization. No signing secrets or user data are in this source tree.
 The supplied source offer is version-specific. A modified downstream build
 must offer its OWN corresponding source rather than reusing this edition's
 link. Regenerate source identity/offer/archive after modifying covered source.
+
+Documentation copyright patch v3.0.0, based on published source commit 540cd0bcaa1a2821de4659460f707a6e038a7539. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.
