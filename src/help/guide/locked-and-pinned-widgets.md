@@ -64,3 +64,7 @@ Two routes do not carry the bands. A `bdobb-settings.json` holds your preference
 ---
 *Source: the in-app "Pinned cards" and "Locked widgets" topics; `src/components/DashboardGrid.tsx` (the pinned bands), `src/components/DockBand.tsx`, `src/lib/dockLayout.ts`, `src/lib/dashboardsFile.ts` (the hidden `docks` dashboard), `src/stores/dashboardStore.ts`, `src/components/dialogs/SettingsDialog.tsx`, `src/lib/appsExtensionsV8.ts`, `src/lib/docksImport.ts`, `src/lib/docksSync.ts` and `src/lib/agent/localTools.ts` (`pin_card`) at 8.0.0; openbq-docker `docs/v8/news-relay-and-hidden-dashboards.md`. Ported from the bdobb-v2 v8.1.2 guide page of the same name and checked against this line's code.*
 *See also: [[news-widget|The News Widget]] · [[settings-and-logs|Settings and Logs]] · [[widget-cards|Widget Cards]] · [[layout-and-navigation|Layout and Navigation]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

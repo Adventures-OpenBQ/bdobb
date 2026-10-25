@@ -84,3 +84,7 @@ file, `skills/<slug>/SKILL.md` in the app's data directory.
 
 **Rita rail opens after** is how long the pointer must rest on the collapsed tab
 before it expands: 500 ms by default, 0 to 2000. It applies only to hovering.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

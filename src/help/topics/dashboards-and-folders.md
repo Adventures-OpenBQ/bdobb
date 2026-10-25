@@ -112,3 +112,7 @@ window is pinned to the one dashboard it was opened for.
 you toggle, a layout you nudge — all of it shows on screen and none of it is
 written to disk or seen by the main window. Close the window and it is gone.
 Settings are the one exception: those are saved, and apply everywhere.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -61,3 +61,7 @@ A viewer window that refuses an edit writes one `INFO` line to the log; see [[se
 ---
 *Source: BDOBB v3.1.0 in-app manual, "Dashboards and folders" and "Keyboard shortcuts."*
 *See also: [[dashboard-tabs|Dashboard Tabs]] · [[layout-and-navigation|Layout and Navigation]] · [[importing-dashboards|Importing Dashboards]] · [[card-parameters|Card Parameters]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

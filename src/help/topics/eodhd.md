@@ -76,3 +76,7 @@ trading-calendar *format*, but they come from the backend's own
 `api/v1/calendar/trading` route (openbq-docker computes them itself) or from
 the NYSE calendar bundled with the app; neither needs an EODHD key. Live
 streaming quotes from EODHD are not part of this version.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -114,3 +114,7 @@ To keep a wire in view while the rest of a tab scrolls, pin it — see
 **Pinned cards**. To keep it along the bottom of every dashboard, lock it —
 see **Locked widgets**. For one feed on one tab with no server at all, the
 plain **RSS feed** built-in reads the feed directly; see **Built-in widgets**.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

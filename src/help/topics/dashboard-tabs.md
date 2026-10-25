@@ -60,3 +60,7 @@ expanded rail and any dialog.
 - `↻` refreshes every card on the tab you are looking at. `⌘R` does the same.
 - `+` opens the widget library. It is shown only while
   **Settings ▸ Layout ▸ Quick add toolbar** is on, which it is by default.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

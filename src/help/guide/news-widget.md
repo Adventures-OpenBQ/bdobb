@@ -92,3 +92,7 @@ There is also a plain **RSS feed** built-in that fetches one feed directly from 
 ---
 *Source: the in-app "News" topic; `src/components/renderers/NewsRenderer.tsx`, `src/components/dialogs/NewsFeedsDialog.tsx`, `src/components/WidgetCard.tsx` (the rail's menu), `src/hooks/useNewsWire.ts`, `src/lib/news.ts`, `src/lib/newsFile.ts` and `src/lib/builtins.ts` at 8.0.0; openbq-docker `docker-compose.yml`, `rss-ticker-config/config.yaml.example`, `funnel-gateway/README.md`, every `ts-config/serve*.json`, and `rss-ticker/src/rss_ticker/` (`store.py`, `broadcast.py`, `poller.py`, `fetch.py`, `favicon.py`, `main.py`) at v8.0.0. Ported from the bdobb-v2 v8.1.2 guide page "The News Widget" and checked against this line's code.*
 *See also: [[locked-and-pinned-widgets|Locked and Pinned Widgets]] · [[built-in-widgets|Built-in Widgets]] · [[import-and-export|Import and Export]] · [[web-preview|Web Preview]] · [[example-dashboards|Example Dashboards]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

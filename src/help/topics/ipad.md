@@ -24,3 +24,7 @@ iPadOS has no save dialog. When you export (a card's data, a dashboard's apps.js
 ## Try it
 
 `docs/examples/v7.0.0-touch.apps.json` is a one-tab dashboard built for the gestures above: a Note that lists them, a four-zone Clock and a long Markdown card to scroll and pinch. It uses built-in widgets only, so it works with no backend connected. Import it as any other apps.json (see **Import and Export**).
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

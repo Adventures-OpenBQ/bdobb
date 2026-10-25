@@ -159,3 +159,7 @@ Check its checkbox under that server's **Tools**, and the **Tools called through
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Troubleshooting"; the Gotchas section of `docs/specs/v3.0.0-features.md`; `BDOBB` `widgetTypes`, `widgetsJson`, `appsJson`, `bootstrap`, `jsonStore`, `dataClient`, `src/App.tsx`, `src/components/LeftRail.tsx` and `src/styles.css` at `v3.0.1`; `src/lib/widgetTypes.ts` at `v3.3.0`; `BDOBB` `src/components/renderers/MarkdownRenderer.tsx` at `v3.0.5`; `BDOBB` `src/hooks/useReconnectingSocket.ts` at `v3.2.2`; `BDOBB` `src/components/renderers/OmniRenderer.tsx` at `v3.3.2`; at 10.0.0, `src/components/renderers/LiveGridRenderer.tsx` and `src/lib/dataClient.ts` (`buildWidgetWsUrl`).*
 *See also: [[troubleshooting-infrastructure|Configuring the Infrastructure]] · [[app-data-and-settings|App Data and Settings]] · [[connecting-a-backend|Connecting a Backend]] · [[dashboards-and-folders|Dashboards and Folders]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

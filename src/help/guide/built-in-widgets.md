@@ -89,3 +89,7 @@ None of them fetches through a connection, so none but the **Linked table** has 
 
 ---
 *See also: [[widget-library|The Widget Library]] · [[widget-cards|Widget Cards]] · [[html-and-iframe-widgets|HTML and iframe Widgets]] · [[documents-pdf-and-files|Documents, PDFs and Files]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

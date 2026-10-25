@@ -57,3 +57,7 @@ The example *Example Dashboard - Version 8.0.0 - Pinned Cards*,
 `docs/examples/v8.0.0-pinned.apps.json`, pins a Note to the top and a Clock to
 the bottom over a long Markdown card you can scroll beneath them. It uses
 built-ins only and opens in BDOBB 8.0.0 or later.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

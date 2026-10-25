@@ -62,3 +62,7 @@ Neither `openbq-kdb` nor live-grid has a host port or a Tailscale Serve entry. B
 ---
 *Source: openbq-docker `docker-compose.yml`, `README.md`, `live-grid/app/main.py`, `live-grid/app/recorder.py`, `live-grid/app/feeds.py`, `live-grid/app/quotes.py`, `live-grid/app/series.py`, `live-grid/app/spool.py`, `live-grid/app/lake.py`, `live-grid/widgets.json`, `v10/kdb/source/openbq_kdb/session.py`, `v10/kdb/source/q/startup.q`, `v10/kdb/source/q/persist.q` and `docs/v10/live-grid-kdb-port.md` at `v10.0.0`; the development line's `kdb-tick-cache` page, checked against this line.*
 *See also: [[tables|Tables]] · [[charts|Charts]] · [[eodhd-data-provider|EODHD Data]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[web-preview|Web Preview]] · [[example-dashboards|Example Dashboards]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

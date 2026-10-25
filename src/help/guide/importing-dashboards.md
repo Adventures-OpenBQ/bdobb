@@ -62,3 +62,7 @@ Any widget type the app does not know how to draw falls through to a raw-JSON vi
 ---
 *Source: BDOBB v3.1.0 in-app manual, "Import and export" and "Card parameters"; `BDOBB` `src/lib/appsJson.ts` and `src/lib/dataClient.ts` at `v3.1.0`; `BDOBB` `src/lib/appsJson.ts` at `v3.0.5`.*
 *See also: [[dashboards-and-folders|Dashboards and Folders]] · [[widget-library|The Widget Library]] · [[import-and-export|Import and Export]] · [[card-parameters|Card Parameters]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

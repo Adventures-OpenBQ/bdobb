@@ -14,3 +14,7 @@ CSV, JSON and XLSX exports from Statement use the completed line-item projection
 
 
 V4 Statement templates also work in this view. Their worker-calculated fiscal columns, authored section and line labels, order, and cell formats are preserved. The view shows only the producer’s presented or selected lines; it does not fill hidden lines or recalculate totals. A calculation error displays `#ERROR` with its reason on hover and exports as `#ERROR: <reason>`, rather than a numeric value. Template section folds use stable identities, so renaming a section does not reopen it. A template whose fiscal binding names the fiscal year and quarter fields reads the relabelled values; `FY2027` and `2026`, `FQ2` and `Q2` are all accepted.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
