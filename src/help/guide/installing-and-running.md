@@ -54,3 +54,7 @@ BDOBB serves no data of its own. `pnpm reference-backend` runs OpenBB's keyless 
 ---
 *Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; `.github/workflows/windows-build.yml` at `v7.0.0`; BDOBB v3.0.1 in-app manual, "Getting started".*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[importing-dashboards|Importing Dashboards]] · [[app-data-and-settings|App Data and Settings]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -87,3 +87,7 @@ See [[ipad-interface-differences|iPad interface differences]] for how the interf
 ---
 *Source: `BDOBB` `scripts/ios.sh`, the `ios:*` scripts in `package.json`, `src-tauri/tauri.conf.json` (`identifier`, `iOS.minimumSystemVersion`), `.gitignore`, `src/lib/pdfLegacy.test.ts`, the README's iPadOS section and `docs/releases/validation/v7/`, all at `7.0.0`; Adventures in OpenBB, Ep. 7, "The iPadOS Adventure."*
 *See also: [[ipad-interface-differences|iPad interface differences]] · [[installing-and-running|Installing and Running BDOBB]] · [[app-data-and-settings|App Data and Settings]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

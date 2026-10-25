@@ -81,3 +81,7 @@ disk it is `logs/bdobb.log` inside the app's data directory, with up to five
 rotated generations beside it. It rotates at 10 MB.
 
 [shot-pending]: #23
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

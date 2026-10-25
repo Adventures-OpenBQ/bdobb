@@ -130,3 +130,7 @@ Removing the server connection returns storage to Local.
 A card's pin and a News card's feed list sync with its dashboard, in a record of their own that a BDOBB 7 install syncs past without reading. Your **locked widgets** sync as one hidden record per account beside your dashboards — on openbq-docker, `/pro/dash/sync/system/docks` — and the side edited last wins, with no question; a server without that route keeps them on this device. See [[locked-and-pinned-widgets|Locked and Pinned Widgets]].
 
 Backends, provider keys and dropped files are not synchronized. Live account sign-in remains unqualified in the reference rehearsal.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

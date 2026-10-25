@@ -40,3 +40,7 @@ A layout tweak, a parameter edit, a view toggle — anything the desktop app wou
 
 *Source: BDOBB v3.1.0 `web/server.mjs`, `web/bootstrap.mjs`, `web/policy.mjs` and `web/security.test.mjs` at `v3.1.0`; the `frame-src` directive in `web/server.mjs` at `v3.2.1`; at 8.0.0, `web/config.mjs`, `web/bootstrap.mjs`, `web/server.mjs`, `src/browser-shim/socket.ts` and `web/policy.mjs` (vendored from openbq-docker v8.0.0's `funnel-gateway/policy.mjs`), and `web/README.md`; the `/ref` family and its socket from v3.0.0.*
 *See also: [[news-widget|The News Widget]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[example-dashboards|Example Dashboards]] · [[backends-and-connections|Backends and Connections]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

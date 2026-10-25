@@ -114,3 +114,7 @@ Rita and MCP failures — a chat that errors on every message, a tool call that 
 ---
 *Source: BDOBB v6.0.0 `src/lib/agent/localTools.ts`, `src/lib/agent/tableModel/`, `src/lib/agent/limits.ts`, `src/lib/agent/query.ts`, `src/lib/agent/execute.ts`, `src/lib/settingsFile.ts` and `src/components/ai/AgentsTab.tsx`; the OpenBQ Rita and MCP services' pinned sources (`Adventures-OpenBQ/agent-rita-bdobb` `v6.0.0`: `sources.lock`, `patches/`, `scripts/build.sh`); `openbq-docker` `README.md`, `docker-compose.v6.yml`, `mcp/Dockerfile`, `mcp/requirements.lock`, `ts-config/serve-v6.json` and `rita.env.example` at `v8.0.0`.*
 *See also: [[rita-chat|Rita (AI Chat)]] · [[ai-library|The AI Library]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tables|Tables]] · [[tailscale-networking|Tailscale Networking]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

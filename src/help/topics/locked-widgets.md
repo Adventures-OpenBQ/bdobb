@@ -86,3 +86,7 @@ purpose.
 A `bdobb-settings.json` carries none of this. The Apps catalogue's **Open**
 does not either: a served app marked as locked widgets is left out and the
 rest of the app opens.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v8.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
