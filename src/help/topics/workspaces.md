@@ -99,3 +99,7 @@ select **Dashboards** or **Workspaces**; the rail's `⌥` badges follow.
 Workspace definitions and saved layouts persist locally, one file each. They are separate from dashboard apps.json exports, and nothing exports them. Optional User Settings storage on a server (Settings ▸ General ▸ User Settings) syncs display settings, and with a server that offers them your dashboards sync too (see Settings and Logs); workspaces, saved layouts and dropped files are not synchronized. A layout is an arrangement, not a copy of its panels' data.
 
 In a workspace the left rail can be pinned open with the lock beside the rail's first section label, or with **Window ▸ Keep Sidebar Open** in the desktop app. The pin is saved with the workspace, so each workspace remembers its own. Outside a workspace the menu item is greyed out.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

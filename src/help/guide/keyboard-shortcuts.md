@@ -75,3 +75,7 @@ One press does exactly one thing. In order:
 ---
 *Source: BDOBB v5 in-app manual, "Keyboard shortcuts", "The left rail", "Tables" and "Documents, PDFs and files"; workspace keys from clean v5 `src/hooks/useDashboardShortcuts.ts`, `src/components/WorkspaceArrangeBar.tsx` and `src/components/dialogs/WorkspaceDialog.tsx`.*
 *See also: [[layout-and-navigation|Layout and Navigation]] · [[widget-cards|Widget Cards]] · [[workspaces|Workspaces and Saved Layouts]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -55,3 +55,7 @@ In two pieces, which between them cover everything but your connections: dashboa
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Getting started ▸ Where your data lives" and "Troubleshooting"; `BDOBB` `src/lib/jsonStore.ts` at `v3.0.1`.*
 *See also: [[settings-and-logs|Settings and Logs]] · [[settings-export-and-import|Settings Export and Import]] · [[import-and-export|Import and Export]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

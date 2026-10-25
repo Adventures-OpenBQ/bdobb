@@ -34,3 +34,7 @@ Sign-in is GitHub only, and each session ends after an hour.
 ---
 *Source: BDOBB `web/server.mjs`, `web/config.mjs`, `web/bootstrap.mjs`, `src/browser-shim/socket.ts`, `web/policy.mjs`, `web/security.test.mjs` and `package.json` at `v5.0.0`; `openbq-docker` `funnel-gateway/`, `docker-compose.yml` and `ts-config/` at `v5.0.0`.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

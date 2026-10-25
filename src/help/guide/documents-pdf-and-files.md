@@ -54,3 +54,7 @@ Data files are capped at **50 MB**, checked before a byte is read: *name is 51.2
 ---
 *Source: BDOBB v3.1.0 in-app manual, "Documents, PDFs and files"; `BDOBB` `src/components/renderers/PdfView.tsx` and `src/lib/abortSignalAny.ts` at `v3.1.0`; `BDOBB` `src/lib/documents.ts`, `src/lib/dataClient.ts` and `src/components/renderers/DocumentView.tsx` at `v3.0.5`.*
 *See also: [[tables|Tables]] · [[importing-dashboards|Importing Dashboards]] · [[app-data-and-settings|App Data and Settings]] · [[keyboard-shortcuts|Keyboard Shortcuts]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

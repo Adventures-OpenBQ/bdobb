@@ -52,3 +52,7 @@ The [synthetic financial demo](../../examples/v5-financial-demo/README.md) inclu
 
 
 V4 Statement templates also work in this view. Their worker-calculated fiscal columns, authored section and line labels, order, and cell formats are preserved. The view shows only the producer’s presented or selected lines; it does not fill hidden lines or recalculate totals. A calculation error displays `#ERROR` with its reason on hover and exports as `#ERROR`, rather than a numeric value. Template section folds use stable identities, so renaming a section does not reopen it.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -61,3 +61,7 @@ This layout was not the first idea. It came out of a structured design pass that
 ---
 *Source: BDOBB v3.0.1 in-app manual, "The left rail", "Dashboard tabs", "Dashboards and folders"; `BDOBB` `src/components/LeftRail.tsx`, `src/components/dialogs/HelpDialog.tsx` and `src/App.tsx` at `v3.0.1`; Adventures in OpenBB, Ep. 3 — "I Asked for Electron and Got Talked Out of It."*
 *See also: [[dashboards-and-folders|Dashboards and Folders]] · [[widget-library|The Widget Library]] · [[keyboard-shortcuts|Keyboard Shortcuts]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

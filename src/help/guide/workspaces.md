@@ -74,3 +74,7 @@ Optional User Settings storage on a server (Settings ▸ General ▸ User Settin
 ---
 *Source: BDOBB clean v5 `src/components/dialogs/WorkspaceDialog.tsx`, `src/components/WorkspaceGrid.tsx`, `src/components/WorkspaceTile.tsx`, `src/components/WorkspaceArrangeBar.tsx`, `src/components/LeftRail.tsx`, `src/components/railMenu.ts`, `src/components/TabBar.tsx`, `src/hooks/useDashboardShortcuts.ts`, `src/stores/workspacesStore.ts`, `src/lib/workspacePresets.ts`, `src/lib/layoutsFile.ts` and `src/components/dialogs/SettingsDialog.tsx`.*
 *See also: [[dashboards-and-folders|Dashboards and Folders]] · [[dashboard-tabs|Dashboard Tabs]] · [[layout-and-navigation|Layout and Navigation]] · [[keyboard-shortcuts|Keyboard Shortcuts]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

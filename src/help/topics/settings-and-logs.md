@@ -146,3 +146,7 @@ with `OPENBB_API_AUTH=true`; its key is then the API's Basic auth.
 While connected, a saved dashboard uploads shortly after your edits settle. Deleting a synced dashboard from the rail asks *Delete "X" here and on <server>?* and deletes it on the server too; for a shared dashboard only the local copy goes. Offline or signed out, the local delete happens at once and is sent to the server the next time you connect. Links to server dashboards are kept in `workspaceSync.json` in the app's data folder.
 
 Backends, provider keys and dropped files are not synchronized. Live account sign-in has not been qualified in the reference rehearsal.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v5.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
