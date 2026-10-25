@@ -68,3 +68,7 @@ Any Docker Compose host runs the stack (the series uses a NAS), and the Mac runs
 ---
 *Source: the user's pairing rulings of 2026-10-14 (the combined examples file from v3 on, the `openbb-videos` and EconDB extensions, `credentials.demo.env`, the logo route); `openbq-docker` `README.md`, `Dockerfile` (stage `v3`), `docker-compose.yml`, `docker-compose.v3.yml`, `credentials.env.example`, `ts-config/serve.json`, `ts-config/serve-v3.json`, `v3/openbq_settings.py`, `v3/openbb.toml` and `v4/routes/` at `v6.0.0`; `BDOBB` `package.json` (`openbqDocker`) at `v6.0.0`; `docker-compose.v3.yml`, `ts-config/serve-v3-keys.json` and `key-maint/README.md` at `v6.0.0`; `README.md`, `docker-compose.v6.yml`, `ts-config/serve-v6.json` and `rita.env.example` at `v6.0.0`; Adventures in OpenBQ, Eps. 1–6.*
 *See also: [[backends-and-connections|Backends and Connections]] · [[tailscale-networking|Tailscale Networking]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v6.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

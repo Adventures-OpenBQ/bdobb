@@ -92,3 +92,7 @@ That is a starting point, not a promise — if nothing is serving that address
 it will simply sit there with a red dot until you edit it. The seed only
 happens when the file is absent, so deleting the entry does not bring it
 back.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v6.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -113,3 +113,7 @@ A local model paired with tool access is strongest on questions where precision 
 ---
 *Source: BDOBB v6.0.0 `src/components/rita/`, `src/stores/chatStore.ts`, `src/stores/agentEditsStore.ts`, `src/lib/agent/query.ts`, `src/lib/agent/request.ts`, `src/lib/agent/execute.ts`, `src/lib/agent/skills.ts`, `src/lib/agent/tableModel/undo.ts`, `src/lib/chatFile.ts` and `src/hooks/useDashboardShortcuts.ts`.*
 *See also: [[ai-library|The AI Library]] · [[rita-ai-agent-setup|Setting Up the Rita AI Agent]] · [[tables|Tables]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v6.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

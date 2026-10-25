@@ -124,3 +124,7 @@ Removing the server connection returns storage to Local.
 **Dashboards and apps.** A server that offers them also syncs your dashboards and apps, in both directions, each time you connect. Changes on one side only are taken over; new dashboards on either side are created on the other. A dashboard changed on both sides asks **Use <server>**, **Keep local** or **Keep both** (the default, which keeps the server's copy under a new name). A dashboard deleted on the server but changed here asks **Delete** or **Keep as local**. Shared dashboards arrive read-only and are never uploaded. While connected, saves upload once your edits settle. Deleting a synced dashboard from the rail asks *Delete "X" here and on <server>?*; offline, the local delete happens at once and reaches the server on the next connect. The links live in `workspaceSync.json`.
 
 Backends, provider keys and dropped files are not synchronized. Live account sign-in remains unqualified in the reference rehearsal.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v6.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

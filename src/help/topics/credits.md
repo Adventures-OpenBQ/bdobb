@@ -1,6 +1,6 @@
 # Credits
 
-BDOBB is Apache-2.0 and stands on other people's open source, most importantly
+BDOBB’s software is AGPL-3.0-only. Its help and reference materials have separate Documentation Terms, subject to existing licenses and prior permissions. BDOBB stands on other people’s open source, most importantly
 the work of the team at OpenBB. Without their efforts, there would be nothing
 to work from.
 
@@ -75,3 +75,7 @@ used only to identify OpenBB connections.
 
 *Source: BDOBB 6.0.0 `NOTICE`, `THIRD_PARTY_NOTICES.md`, `package.json`,
 `src-tauri/Cargo.toml` and `src/components/renderers/TradingViewRenderer.tsx`.*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v6.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
