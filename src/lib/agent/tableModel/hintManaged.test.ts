@@ -32,13 +32,13 @@ beforeAll(async () => {
 afterAll(() => tableExecutionStore.disposeDashboard("d"));
 
 type Preview = { status: string; preview: { rows: { values: Record<string, unknown> }[] }; warnings: { code?: string; message?: string }[] };
-const arrange = async (category: Record<string, unknown>, aggregation?: string) => {
+const arrange = async (category: Record<string, unknown>, aggregation?: string, intent = true) => {
   const description = await describeTable({ card_id: "m" }) as { revision: string; card: { source_kind: string }; fields: { id: string; hint?: unknown }[] };
   expect(description.card.source_kind).toBe("managed-native");
   expect(description.fields.find(f => f.id === "revenue")?.hint).toEqual(hint);
   return await arrangeTable({ card_id: "m", expected_revision: description.revision, mode: "preview", arrangement: { contract: "table-model/1", operations: [
     { op: "category.add", alias: "g", name: "G", ...category },
-    { op: "measure.add", alias: "r", source_field_id: "revenue", ...(aggregation ? { aggregation } : {}) },
+    { op: "measure.add", alias: "r", source_field_id: "revenue", ...(aggregation ? { aggregation, ...(intent ? { aggregation_intent: "user_override" } : {}) } : {}) },
     { op: "layout.set", rows: [{ alias: "g" }], columns: [], values: [{ alias: "r" }] },
     { op: "model.enable", enabled: true },
   ] } }) as Preview;
@@ -53,11 +53,20 @@ it("fills in the provider's operator on a managed table when the arrangement mee
   expect(values(out)).not.toContain(120);
 });
 
-it("leaves a managed table's omitted aggregation alone off the rule, and keeps a named one with the warning", async () => {
+it("leaves a managed table's omitted aggregation alone off the rule, and keeps an explicitly marked user operator with the warning", async () => {
   const off = await arrange({ source_field_id: "region", transform: "native" });
   expect(off.warnings.some(w => w.code === "provider-aggregation-applied")).toBe(false);
   const named = await arrange({ source_field_id: "date", transform: "Q" }, "sum");
   expect(named.warnings.some(w => w.code === "provider-aggregation-applied")).toBe(false);
   expect(named.warnings).toContainEqual(expect.objectContaining({ code: "provider-aggregation-hint" }));
   expect(values(named)).toContain(120);
+});
+
+
+it("refuses an unmarked override on the real managed-table boundary", async () => {
+  const before = JSON.stringify(useDashboardStore.getState().dashboards);
+  const out = await arrange({ source_field_id: "date", transform: "Q" }, "sum", false) as unknown as { status: string; errors?: { code: string }[] };
+  expect(out.status).toBe("refused");
+  expect(out.errors).toContainEqual(expect.objectContaining({ code: "provider-override-required" }));
+  expect(JSON.stringify(useDashboardStore.getState().dashboards)).toBe(before);
 });

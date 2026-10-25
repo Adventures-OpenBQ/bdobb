@@ -86,6 +86,8 @@ describe("the local tool declaration", () => {
     // V9-P2: the provider's aggregation hint is described and a contradiction is warned about.
     expect(describe.description).toMatch(/hint, suggested and suggestion_note/);
     expect(arrange.description).toContain("provider-aggregation-hint");
+    expect(arrange.description).toContain("aggregation_intent");
+    expect(arrange.description).toContain("user_override");
     // Task 12 minors + the roles a 35B model kept confusing live.
     for (const must of ["recalculating", "revision null", "busy", "timeout", "calculation-failed", "validation-failed", "linked", "ids", "category.add", "measure.add", "never field ids", "preview.rows", "grand total", "row count"]) expect(arrange.description, must).toContain(must);
     for (const must of ["how_to_arrange", "unavailable"]) expect(describe.description, must).toContain(must);

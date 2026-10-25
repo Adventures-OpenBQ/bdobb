@@ -275,3 +275,12 @@ describe("formulas, filters and Page", () => {
     expect(bad.errors[0]).toMatchObject({ code: "unknown-reference" });
   });
 });
+
+
+it("records a marked anonymous measure's exact operator only in transient candidate metadata", () => {
+  const result = buildCandidate({ table: {}, search: "" }, columns, arrange([
+    { op: "measure.add", source_field_id: "cost", aggregation: "sum", aggregation_intent: "user_override" },
+  ]), () => "anonymous-override");
+  expect(result.aggregationOverrides?.get("anonymous-override")).toBe("sum");
+  expect(JSON.stringify(result.definition)).not.toContain("aggregation_intent");
+});

@@ -7,7 +7,7 @@ import type { DashboardCard } from "../../types";
 import { tableExecutionStore } from "../../../stores/tableExecutionStore";
 import { capabilitiesFor } from "./capabilities";
 import { buildCandidate } from "./candidate";
-import { providerOperators } from "./hint";
+import { fieldHints, providerOperators } from "./hint";
 import { parseArrangement, type Arrangement, type ArrangeError } from "./contract";
 import { analyticalErrors, modelSummary, tableModelOf, type ModelSummary } from "./describe";
 import { openRuntime, resolveTableTarget, revisionWitness, type TableRuntime, type TableTarget } from "./target";
@@ -97,6 +97,37 @@ export async function arrangeWorkerTable(target: Extract<TableTarget, { kind: "w
   let hinted: unknown[] = [];
   if (checked.model) {
     hinted = providerOperators(checked.model, tableModelOf(previous), rt.columns, rt.view.ready!.inspection.inputPeriodicity);
+    const originalMeasures = new Map((tableModelOf(previous)?.measures ?? []).map(measure => [measure.id, measure]));
+    const hints = fieldHints(checked.model, rt.columns, rt.view.ready!.inspection.inputPeriodicity);
+    for (const measure of checked.model.measures) {
+      const hint = hints.get(measure.sourceFieldId);
+      const old = originalMeasures.get(measure.id);
+      // Legacy migrations are not fresh choices; unchanged operators remain compatible.
+      if (!candidate.aggregationChoices?.has(measure.id) || !measure.aggregation ||
+        hint?.hint.status !== "conditional" || !hint.hint.time || hint.suggested === measure.aggregation) continue;
+      const unchanged = old?.aggregation === measure.aggregation && old.sourceFieldId === measure.sourceFieldId;
+      const marked = candidate.aggregationOverrides?.get(measure.id) === measure.aggregation;
+      if (!unchanged && !marked) {
+        errors.push({ code: "provider-override-required", target_id: measure.id,
+          message: `${measure.sourceFieldId}: ${measure.aggregation} does not follow the provider's ${hint.hint.time} rule in this arrangement. ${hint.suggestion_note ?? "Follow the provider's suggested operator."} Nothing was changed. Add the required categories and omit aggregation to follow the provider. Only if the user explicitly requested this operator, put aggregation_intent: "user_override" on this measure operation. Do not mark an override just to bypass this refusal.` });
+      } else if (marked && !hint.suggested) {
+        hinted.push({ severity: "warning", code: "provider-aggregation-hint", target_id: measure.id,
+          message: `${measure.sourceFieldId}: ${measure.aggregation} explicitly requested, but the provider's ${hint.hint.time} rule is unavailable in this arrangement` });
+      }
+    }
+    // An omitted operator on a new hinted measure asks for the provider default.
+    // If its prerequisites are unmet, refuse an apply instead of saving blank values.
+    // Preview remains read-only; existing measures and explicit operators keep their semantics.
+    if (!previewOnly) {
+      const existing = new Set((tableModelOf(previous)?.measures ?? []).map(measure => measure.id));
+      for (const measure of checked.model.measures) {
+        const hint = hints.get(measure.sourceFieldId);
+        if (!measure.aggregation && !existing.has(measure.id) && hint?.hint.status === "conditional" && hint.hint.time) {
+          errors.push({ code: "validation", target_id: measure.id,
+            message: `${measure.sourceFieldId}: the provider's ${hint.hint.time} cannot be applied yet. ${hint.suggestion_note ?? "The provider rule is not available in this arrangement."} Nothing was changed. Add the required categories and leave aggregation out of measure.add when retrying, so the provider's ${hint.hint.time} applies. Do not substitute a different operator unless the user explicitly named an operator. A requested date category does not mean only that category: add the provider-required entity categories too and explain them. Ask before proceeding only if the user explicitly excludes those categories or asks to combine the entities.` });
+        }
+      }
+    }
     // checkAuthoringModel validates bindings, not operators: offer exactly the drawer's operators per field.
     const allowed = capabilitiesFor(checked.model, rt.columns, "authoring").aggregations_by_field;
     for (const m of checked.model.measures)

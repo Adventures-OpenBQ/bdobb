@@ -184,6 +184,19 @@ describe("the docks in the store", () => {
     expect(__read("dashboards/docks.json")).toBe(beforePin);
   });
 
+  it("shortening a band fits its cards inside the new rows and Cancel restores their geometry", async () => {
+    await store().load();
+    await store().addCardTo(DOCKS_ID, "bottom", widget({ gridData: { w: 40, h: 8 } }));
+    const original = structuredClone(store().docks);
+    store().beginDockEdit("bottom");
+    await store().setDockRows("bottom", 6);
+    expect(store().docks.tabs[1].cards[0].layout).toEqual({ x: 0, y: 0, w: 40, h: 6 });
+    expect(JSON.parse(__read("dashboards/docks.json")!).tabs[1].cards[0].layout.h).toBe(6);
+    await store().cancelDockEdit();
+    expect(store().docks.tabs[1].cards).toEqual(original.tabs[1].cards);
+    expect(store().docks.dockRows?.bottom).toBe(8);
+  });
+
   it("viewer window: beginDockEdit no-ops and a docks mutation writes nothing to disk", async () => {
     await store().load();
     useDashboardStore.setState({ viewer: true });

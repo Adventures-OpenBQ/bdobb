@@ -133,7 +133,8 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "do not call a linked table ready until its status says so. An applied authoring change " +
       "can be undone with Undo. A standard LIVE table is refused with server-execution-pending, and a table whose tab is not open asks you to " +
       "navigate there. In viewer mode only the existing viewer controls can change, for this session only; any authoring change is refused with viewer-scope. " +
-      "An aggregation that contradicts a field's provider suggestion still applies, with a provider-aggregation-hint warning to report.",
+      "An operator that conflicts with a conditional provider rule is refused with provider-override-required unless the measure operation explicitly marks aggregation_intent user_override for an operator requested by the user. A marked override applies with a provider-aggregation-hint warning to report; the intent is not saved and does not authorize other measures or later calls. " +
+      "An apply adding a hinted measure without an operator is refused if the provider rule cannot apply yet; nothing is saved. Read the refusal, add all required categories and leave aggregation out of measure.add when retrying. Do not substitute a different operator unless the user explicitly named an operator. A requested date category does not mean only that category: add the provider-required entity categories too and explain them. Ask before proceeding only if the user explicitly excludes those categories or asks to combine the entities.",
     input_schema: { type: "object", properties: {
       card_id: { type: "string", description: "The table card (its uuid in the widget context)" },
       expected_revision: { type: "string", description: "The revision returned by describe_table" },

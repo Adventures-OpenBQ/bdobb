@@ -44,7 +44,7 @@ it("describe_table reports each hinted field's hint and the suggestion under the
   // Nothing grouped: the rule was reviewed at quarter/annual, so no operator is offered yet.
   expect(f.find(x => x.id === "revenue")).toMatchObject({ hint: revenueHint, suggested: null, suggestion_note: expect.stringMatching(/reviewed at quarter, annual/) });
   // ...but the note names the operator and the date transforms that unlock it, so Rita can act on it in one call.
-  expect(f.find(x => x.id === "revenue")?.suggestion_note).toMatch(/Q, FQ, Y or FY date category and leave aggregation out of measure\.add.*applies sum/);
+  expect(f.find(x => x.id === "revenue")?.suggestion_note).toMatch(/Q, FQ, Y or FY date category.*group by region.*leave aggregation out of measure\.add.*applies sum/);
   expect(f.find(x => x.id === "cost")).toEqual({ id: "cost", label: "cost", type: "number" }); // no hint, no extra keys
   await commitDrawerModel("rita", "w", byQuarter);
   f = await fields();
@@ -58,7 +58,7 @@ it("arrange_table warns when a measure's aggregation contradicts the provider's 
   const run = async (aggregation: string) => {
     const revision = (await describeTable({ card_id: "w" }) as { revision: string }).revision;
     return await arrangeTable({ card_id: "w", expected_revision: revision, mode: "preview", arrangement: { contract: "table-model/1", operations: [
-      { op: "measure.add", alias: "rev", source_field_id: "revenue", aggregation },
+      { op: "measure.add", alias: "rev", source_field_id: "revenue", aggregation, aggregation_intent: "user_override" },
       { op: "layout.set", rows: [{ id: "r" }], columns: [{ id: "q" }], values: [{ alias: "rev" }] },
     ] } }) as { status: string; warnings: { code?: string; message?: string }[] };
   };
@@ -72,14 +72,14 @@ it("arrange_table warns when a measure's aggregation contradicts the provider's 
 // Live gate 2026-10-15: told the rule, a 35B model still chose the provider's operator about half the time, so
 // arrange_table fills it in when measure.add leaves aggregation out, judged on the arrangement in that same call.
 const costHint = { time: "last", frequencies: ["quarter", "annual"], entity: "require_selection", status: "conditional", ruleset: "eodhd-1" };
-type Applied = { status: string; after: { measures: { source_field_id: string; aggregation?: string }[] }; warnings: { severity?: string; code?: string; message?: string }[] };
+type Applied = { status: string; code?: string; errors?: { message: string }[]; after: { measures: { source_field_id: string; aggregation?: string }[] }; warnings: { severity?: string; code?: string; message?: string }[] };
 const quarter = { name: "Quarter", source_field_id: "date", transform: "Q" };
 const region = { name: "Region", source_field_id: "region", transform: "native" };
 const addCost = async (categories: Record<string, unknown>[], aggregation?: string) => {
   const revision = (await describeTable({ card_id: "w" }) as { revision: string }).revision;
   return await arrangeTable({ card_id: "w", expected_revision: revision, arrangement: { contract: "table-model/1", operations: [
     ...categories.map((c, i) => ({ op: "category.add", alias: `g${i}`, ...c })),
-    { op: "measure.add", alias: "c", source_field_id: "cost", ...(aggregation ? { aggregation } : {}) },
+    { op: "measure.add", alias: "c", source_field_id: "cost", ...(aggregation ? { aggregation, aggregation_intent: "user_override" } : {}) },
     { op: "layout.set", rows: categories.map((_, i) => ({ alias: `g${i}` })), values: [{ alias: "c" }] },
   ] } }) as Applied;
 };
@@ -93,18 +93,18 @@ it("arrange_table fills in the provider's operator when measure.add leaves aggre
   expect(out.warnings).toContainEqual(expect.objectContaining({ severity: "info", code: "provider-aggregation-applied", message: "cost: last applied, the provider's operator for this column" }));
 });
 
-it("arrange_table leaves an omitted aggregation alone when the arrangement does not meet the rule", async () => {
+it("arrange_table refuses an apply with an omitted provider operator when the arrangement does not meet the rule", async () => {
   await mountCsv();
   withHints({ cost: costHint });
   for (const categories of [[region], [quarter]]) { // no date grouping: no reviewed frequency; region left ungrouped: regions A and B in one cell
     const out = await addCost(categories);
-    expect(out.status).toBe("applied");
-    expect(out.after.measures.filter(m => m.source_field_id === "cost").every(m => m.aggregation === undefined)).toBe(true);
-    expect(out.warnings.some(w => w.code === "provider-aggregation-applied")).toBe(false);
+    expect(out.status).toBe("refused");
+    expect(out.code).toBe("validation-failed");
+    expect(out.errors?.some(error => /provider's last/.test(error.message))).toBe(true);
   }
 });
 
-it("arrange_table keeps an operator Rita named, and warns when it contradicts the provider", async () => {
+it("arrange_table keeps an explicitly marked user operator and warns when it contradicts the provider", async () => {
   await mountCsv();
   withHints({ cost: costHint });
   const out = await addCost([region, quarter], "sum");

@@ -15,7 +15,7 @@ import type { AggName, TableSort } from "../../types";
 import type { DatasetColumn } from "../../widgetData/types";
 
 /** `view` is the last view.set's view: card state, not part of the definition, checked against the card's views by arrange. */
-export type CandidateResult = { definition?: TableDefinition; ids: Record<string, string>; errors: ArrangeError[]; conflicts?: StatementUpdateConflict[]; view?: string };
+export type CandidateResult = { definition?: TableDefinition; ids: Record<string, string>; errors: ArrangeError[]; conflicts?: StatementUpdateConflict[]; view?: string; aggregationChoices?: ReadonlyMap<string, AggName>; aggregationOverrides?: ReadonlyMap<string, AggName> };
 
 type Pool = "category" | "measure" | "formula";
 export type Ctx = { ids?: Record<string, string>; fresh: (alias: unknown) => string; resolve: (ref: Ref, ...pools: Pool[]) => string; columns: readonly DatasetColumn[] };
@@ -208,6 +208,9 @@ export function buildCandidate(current: TableDefinition, columns: readonly Datas
   const definition: TableDefinition = structuredClone(current);
   const ids: Record<string, string> = {};
   const errors: ArrangeError[] = [];
+  // Request-only intent, bound to the exact measure/operator; never part of TableDefinition.
+  const aggregationChoices = new Map<string, AggName>();
+  const aggregationOverrides = new Map<string, AggName>();
   let model: TableModelV1 | undefined = tableModelOf(definition);
   // The drawer's draft seeds a Data measure per source field when the table has no pivot to migrate;
   // Rita arranges explicitly, so that default seeding is dropped and only a real legacy pivot carries over.
@@ -245,7 +248,19 @@ export function buildCandidate(current: TableDefinition, columns: readonly Datas
       if (op.op === "presentation.set") { applyPresentation(definition, op, columns); return; }
       if (op.op === "view.set") { view = op.view as string; return; }
       if (statementOps || isStatement(definition.analytical)) throw new OpError({ code: "validation", message: `${op.op} does not apply to a Statement; use statement.* operations` });
+      const beforeMeasures = op.op === "measure.add" || op.op === "measure.duplicate"
+        ? new Set(ensureModel().measures.map(measure => measure.id)) : undefined;
       model = applyModelOp(ensureModel(), op, { ids, fresh, resolve, columns });
+      const chosenIds = beforeMeasures
+        ? model.measures.filter(measure => !beforeMeasures.has(measure.id)).map(measure => measure.id)
+        : op.op === "measure.update" && op.aggregation !== undefined ? [resolve(op.target as Ref, "measure")] : [];
+      for (const id of chosenIds) {
+        const aggregation = model.measures.find(measure => measure.id === id)?.aggregation;
+        if (!aggregation) continue;
+        aggregationChoices.set(id, aggregation);
+        aggregationOverrides.delete(id);
+        if (op.aggregation_intent === "user_override") aggregationOverrides.set(id, aggregation);
+      }
     } catch (error) {
       if (!(error instanceof OpError)) throw error;
       errors.push(toArrangeError(error, index));
@@ -259,5 +274,6 @@ export function buildCandidate(current: TableDefinition, columns: readonly Datas
   }
   if (errors.length) return { ids, errors: errors.sort((a, b) => (a.operation_index ?? 0) - (b.operation_index ?? 0)), ...(conflicts?.length ? { conflicts } : {}) };
   if (model && !statementBatch.length) definition.analytical = model; // a Statement applied above must not be overwritten by the seeded/old table model
-  return { definition, ids, errors, ...(view !== undefined ? { view } : {}) };
+  return { definition, ids, errors, ...(view !== undefined ? { view } : {}),
+    ...(aggregationChoices.size ? { aggregationChoices } : {}), ...(aggregationOverrides.size ? { aggregationOverrides } : {}) };
 }

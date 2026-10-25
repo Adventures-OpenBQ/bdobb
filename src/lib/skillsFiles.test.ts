@@ -175,3 +175,15 @@ describe("saveSkill / deleteSkill", () => {
     await expect(deleteSkill("my-skill")).resolves.toBeUndefined();
   });
 });
+
+
+it("bundles provider-preserving recovery instead of inventing a fallback operator", () => {
+  const skill = bundledSkills().find(s => s.slug === "arrange-table")!;
+  expect(skill.content).not.toContain("choose by meaning instead");
+  expect(skill.content).toMatch(/do not substitute a different operator/i);
+  expect(skill.content).toMatch(/leave `aggregation` out/);
+  expect(skill.content).toMatch(/user explicitly named an operator/);
+  expect(skill.content).toContain('aggregation_intent: "user_override"');
+  expect(skill.content).toMatch(/date category does not mean.*only/i);
+  expect(skill.content).toMatch(/only if the user explicitly excludes/i);
+});

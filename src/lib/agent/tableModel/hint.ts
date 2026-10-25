@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import { BUCKET_TOKEN, suggestionFor, suggestionNote } from "../../pivotSuggestion";
+import { BUCKET_TOKEN, suggestionFor, suggestionNote, ungroupedEntityFields } from "../../pivotSuggestion";
 import { toAggregationHint } from "../../aggregationHint";
 import { capabilitiesFor } from "./capabilities";
 import type { Periodicity } from "../../periodicity";
@@ -47,14 +47,20 @@ export function fieldHints(model: TableModelV1 | undefined, columns: readonly Da
     if (s.kind === "suggested" && !(allowed[c.id] ?? []).includes(s.fn))
       return [c.id, { hint, suggested: null, suggestion_note: `The provider's ${s.fn} is not available for this field in this arrangement.` }];
     const note = suggestionNote(s, header);
+    if (s.kind === "entity" && s.ungrouped && hint.time) {
+      const entities = ungroupedEntityFields(tableColumns, kinds, [...rows, ...cols].map(category => category.sourceFieldId));
+      return [c.id, { hint, suggested: null, suggestion_note: `${note} Add ${entities.map(header).join(", ")} as entity categories and leave aggregation out of measure.add in the same call: it applies ${hint.time}. Do not substitute a different operator unless the user explicitly named an operator.` }];
+    }
     // The Pivot panel's note says why no operator is offered yet; Rita also needs what to do about it in one call:
     // first/last are listed only once a date category exists, so a describe before any grouping never offers them.
-    // Only when the date grouping is what is missing: an entity note already says what to group by, and adding
-    // "it applies last" there contradicts it while the entity stays ungrouped.
+    // The frequency guard runs before the ungrouped-entity guard. Include those entity
+    // prerequisites in the date recipe too, or the promised operator will stay unset.
     const transforms = s.kind === "frequency" && hint.time ? hint.frequencies.flatMap(f => TRANSFORMS[f] ?? []) : [];
     if (!transforms.length) return [c.id, { hint, suggested: s.kind === "suggested" ? s.fn : null, suggestion_note: note }];
     const list = transforms.length > 1 ? `${transforms.slice(0, -1).join(", ")} or ${transforms.at(-1)}` : transforms[0];
-    const howTo = `To follow the provider, group by a ${list} date category and leave aggregation out of measure.add in the same arrange_table call: it applies ${hint.time}.`;
+    const entities = ungroupedEntityFields(tableColumns, kinds, [...rows, ...cols].map(category => category.sourceFieldId));
+    const entityStep = entities.length ? ` and group by ${entities.map(header).join(", ")} as entity categories` : "";
+    const howTo = `To follow the provider, group by a ${list} date category${entityStep} and leave aggregation out of measure.add in the same arrange_table call: it applies ${hint.time}.`;
     return [c.id, { hint, suggested: null, suggestion_note: note ? `${note} ${howTo}` : howTo }];
   }));
 }
@@ -63,7 +69,7 @@ export function fieldHints(model: TableModelV1 | undefined, columns: readonly Da
  * One pass over the model's measures, after `fieldHints`.
  * A measure this call added without an aggregation takes the provider's operator when the call's own arrangement meets the rule:
  * the model chose it about half the time when only told the rule. Measures that already existed, and named operators, are left alone.
- * A measure whose operator contradicts its field's suggestion is still applied -- the choice is the user's or Rita's -- but named.
+ * A measure whose operator contradicts its field's suggestion is named here; arrange validates explicit user override intent before applying it.
  * Returns the applied notices, then the warnings.
  */
 export function providerOperators(model: TableModelV1, previous: TableModelV1 | undefined, columns: readonly DatasetColumn[], periodicity: Readonly<Record<string, Periodicity>>) {

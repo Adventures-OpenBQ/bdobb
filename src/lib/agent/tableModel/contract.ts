@@ -12,6 +12,7 @@ export const isAlias = (r: Ref): r is { alias: string } => "alias" in r;
 
 type Rule = "string" | "boolean" | "ref" | "refs" | "strings" | "stringsOrNull" | "scalar" | "object" | "array" | readonly string[];
 export const SCOPES = ["source", "aggregate"] as const;
+export const AGGREGATION_INTENTS = ["user_override"] as const;
 const KINDS = ["measure", "formula"] as const;
 export const TEMPLATES = ["income", "balance", "cashflow"] as const;
 export const PERIODS = ["FY", "FQ"] as const;
@@ -21,9 +22,9 @@ export const OPERATIONS = {
   "category.add": { required: { name: "string", source_field_id: "string", transform: CATEGORY_TRANSFORMS }, optional: { alias: "string", fiscal_binding: "object" }, creates: true },
   "category.update": { required: { target: "ref" }, optional: { name: "string", transform: CATEGORY_TRANSFORMS, fiscal_binding: "object" } },
   "category.remove": { required: { target: "ref" }, optional: {} },
-  "measure.add": { required: { source_field_id: "string" }, optional: { alias: "string", aggregation: AGG_NAMES, label: "string" }, creates: true },
-  "measure.duplicate": { required: { target: "ref" }, optional: { alias: "string" }, creates: true },
-  "measure.update": { required: { target: "ref" }, optional: { aggregation: AGG_NAMES, label: "string" } },
+  "measure.add": { required: { source_field_id: "string" }, optional: { alias: "string", aggregation: AGG_NAMES, aggregation_intent: AGGREGATION_INTENTS, label: "string" }, creates: true },
+  "measure.duplicate": { required: { target: "ref" }, optional: { alias: "string", aggregation_intent: AGGREGATION_INTENTS }, creates: true },
+  "measure.update": { required: { target: "ref" }, optional: { aggregation: AGG_NAMES, aggregation_intent: AGGREGATION_INTENTS, label: "string" } },
   "measure.remove": { required: { target: "ref" }, optional: {} },
   "formula.set": { required: { target: "ref", name: "string", scope: SCOPES, expression: "string", bindings: "object" }, optional: { members: "array", format: "string" } },
   "formula.remove": { required: { target: "ref" }, optional: {} },
@@ -52,7 +53,7 @@ export const OPERATIONS = {
 export type OperationName = keyof typeof OPERATIONS;
 export type Operation = { op: OperationName } & Record<string, unknown>;
 export type Arrangement = { contract: typeof TABLE_MODEL_CONTRACT; operations: Operation[] };
-export type ArrangeErrorCode = "invalid-envelope" | "unknown-operation" | "invalid-field" | "duplicate-alias" | "unknown-reference" | "id-collision" | "validation" | "viewer-scope" | "calculation";
+export type ArrangeErrorCode = "invalid-envelope" | "unknown-operation" | "invalid-field" | "duplicate-alias" | "unknown-reference" | "id-collision" | "validation" | "viewer-scope" | "calculation" | "provider-override-required";
 export type ArrangeError = { code: ArrangeErrorCode; operation_index?: number; target_id?: string; path?: string; message: string; alternatives?: string[]; affected_ids?: string[] };
 /** One operation's refusal; `conflicts` rides along for a Statement template update. */
 export class OpError extends Error { constructor(readonly detail: Omit<ArrangeError, "operation_index">, readonly conflicts?: StatementUpdateConflict[]) { super(detail.message); } }
@@ -116,6 +117,8 @@ export function parseArrangement(raw: unknown): { arrangement?: Arrangement; err
       if (!check(rule, op[key])) errors.push({ code: "invalid-field", operation_index: i, path: at(key), message: `invalid ${key}${rule === "ref" || rule === "refs" ? `: ${rule === "refs" ? "an array of " : ""}objects {"id":"..."} for an existing object or {"alias":"..."} for one created earlier in this request, not bare strings` : ""}`, ...(typeof rule !== "string" ? { alternatives: [...rule] } : {}) });
     }
     for (const key of Object.keys(spec.required)) if (!(key in op)) errors.push({ code: "invalid-field", operation_index: i, path: at(key), message: `${key} is required` });
+    if ((op.op === "measure.add" || op.op === "measure.update") && op.aggregation_intent !== undefined && op.aggregation === undefined)
+      errors.push({ code: "invalid-field", operation_index: i, path: at("aggregation_intent"), message: "user_override intent requires an explicit aggregation on this measure operation" });
     for (const { ref, path } of refsIn(op)) if (isAlias(ref) && !aliases.has(ref.alias) && !(op.op === "formula.set" && op.target === ref))
       errors.push({ code: "unknown-reference", operation_index: i, path: at(path), message: `alias ${ref.alias} is not declared by an earlier operation` });
     const declared = op.op === "formula.set" && okRef(op.target) && isAlias(op.target) ? op.target.alias : "creates" in spec && typeof op.alias === "string" ? op.alias : undefined;
