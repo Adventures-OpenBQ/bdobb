@@ -34,3 +34,7 @@ The Service has to be created in your tailnet's admin console and this node appr
 ---
 *Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `ts-config/serve-v3.json`, `ts-config/serve-v3-keys.json`, `key-maint/README.md` and `scripts/verify-isolation.sh` at `v4.0.0`; Adventures in OpenBQ, Eps. 1–3.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[backends-and-connections|Backends and Connections]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

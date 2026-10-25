@@ -99,3 +99,7 @@ There is no drop veil in a viewer window, and no drop is taken while a dialog or
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Troubleshooting"; the Gotchas section of `docs/specs/v3.0.0-features.md`; `BDOBB` `widgetTypes`, `widgetsJson`, `appsJson`, `bootstrap`, `jsonStore`, `dataClient`, `src/App.tsx`, `src/components/LeftRail.tsx` and `src/styles.css` at `v3.0.1`; `src/lib/widgetTypes.ts` at `v3.3.0`; `BDOBB` `src/components/renderers/MarkdownRenderer.tsx` at `v3.0.5`; `BDOBB` `src/hooks/useReconnectingSocket.ts` at `v3.2.2`; `BDOBB` `src/components/renderers/OmniRenderer.tsx` at `v3.3.2`.*
 *See also: [[troubleshooting-infrastructure|Configuring the Infrastructure]] · [[app-data-and-settings|App Data and Settings]] · [[connecting-a-backend|Connecting a Backend]] · [[dashboards-and-folders|Dashboards and Folders]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

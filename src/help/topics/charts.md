@@ -81,3 +81,7 @@ from a provider keeps the colours the provider chose.
 Candlestick charts deliberately have Plotly's range slider turned off: it would
 eat about 15% of the card and pin the y-axis, which would make the y-range
 unzoomable and therefore unresettable.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

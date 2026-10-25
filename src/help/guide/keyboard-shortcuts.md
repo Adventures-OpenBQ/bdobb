@@ -64,3 +64,7 @@ One press does exactly one thing. In order:
 
 ---
 *See also: [[layout-and-navigation|Layout and Navigation]] · [[widget-cards|Widget Cards]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

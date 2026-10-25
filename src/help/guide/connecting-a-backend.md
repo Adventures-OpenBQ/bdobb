@@ -67,3 +67,7 @@ Connections live in `backends.json` in the app's data directory, credentials inc
 ## Open a backend-served app
 
 After connecting, choose **Apps** in the left rail. Search the catalog and choose **Open** beside the app. Duplicate names use **Keep both**, **Replace**, **Skip**, or **Cancel import**. The imported dashboard is saved locally; it is not a live subscription to the backend's app definition. An Apps error does not disable otherwise working widgets.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

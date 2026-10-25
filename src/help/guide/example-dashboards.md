@@ -65,3 +65,7 @@ The v4 parameter features on their own tabs: **Groups** (one value propagated to
 ---
 *Source: BDOBB `docs/examples/v3.1.0-builtins.apps.json`, `docs/examples/v3.1.0-demo-providers.apps.json` and `docs/examples/v3.2.0-video-library.apps.json`, `docs/examples/v3.1.0-openbb-workspace.apps.json` (from bdobb-dev/bdobb-v2 `docs/examples/openbb-workspace/` on `main`), `scripts/apps-sync.mjs` and `package.json` (`openbqDocker`) at 4.0.0; the user's pairing rulings of 2026-10-14 (the combined file from v3 on, openbq-docker v3's `openbb-videos` and EconDB extensions, `credentials.demo.env`, the logo route); BDOBB `docs/examples/v4.0.0-builtins.apps.json` and `docs/examples/v4.0.0-parameters.apps.json` at `v4.0.0`; `BDOBB` `src/lib/appsJson.examples.test.ts`; `openbq-docker` `examples/bdobb/README.md`, `examples/bdobb/apps.json`, `Dockerfile` (stages `api` and `v3`).*
 *See also: [[importing-dashboards|Importing Dashboards]] · [[built-in-widgets|Built-in Widgets]] · [[card-parameters|Card Parameters]] · [[reference-validation|Reference Validation]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

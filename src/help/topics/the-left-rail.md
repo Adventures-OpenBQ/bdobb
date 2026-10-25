@@ -59,3 +59,7 @@ opening the dialog. Below a rule, **Report a Bug…** and **Request a
 Feature…** open the project's issue tracker and feature board in your
 browser. Both dialogs have a search box above their topic list:
 type a word and the list narrows to the topics that mention it.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

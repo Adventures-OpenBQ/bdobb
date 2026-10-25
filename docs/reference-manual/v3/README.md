@@ -72,3 +72,7 @@ On October 6, 2026 the fresh client passed a 71-widget curated reference renderi
 Browser rehearsal used real backend responses with a test-only CORS adapter. Cron, live account authentication, and packaged native restart remain outside this qualification. Full regression and native bundle status are recorded in the release receipt; these reference passes alone do not announce a tagged release.
 
 Copyright 2026 SecretoftheUniverse.com LLC. Licensed under Apache-2.0.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

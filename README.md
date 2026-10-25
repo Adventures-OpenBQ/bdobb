@@ -23,3 +23,7 @@ AGPL-3.0-only for the application and first-party source changes. Copyright 2026
 
 Managed server tables and registered standard SSRM providers are described in the
 in-app Tables help and [native deployment guide](deploy/table-service/README.md).
+
+## Documentation copyright and permitted use
+
+Copyright © 2026 SecretoftheUniverse.com LLC. The original reference and help materials identified in [DOCUMENTATION_TERMS.md](DOCUMENTATION_TERMS.md) are licensed separately from the software. Reading and personal or internal operational use are permitted; republication and use to reconstruct a product are restricted, subject to applicable law and existing license rights. The full terms are available offline in Quick Help’s Getting started and the Reference Manual’s home page. These terms do not change AGPL-3.0-only software rights, third-party licenses, or previously granted permissions.

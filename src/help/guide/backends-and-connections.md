@@ -36,3 +36,7 @@ Each connection is tracked independently. Discovery runs at launch and on demand
 ---
 *Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbq-docker` `README.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json` and `ts-config/serve-v3.json` and `key-maint/README.md` at `v4.0.0`.*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[provider-keys|Provider Keys]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

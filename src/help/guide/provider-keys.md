@@ -55,3 +55,7 @@ Two details worth knowing: Alpaca appears as two cards but is one provider, and 
 
 ---
 *See also: [[widget-library|The Widget Library]] · [[backends-and-connections|Backends and Connections]] · [[openbq-docker-stack|The openbq-docker Stack]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -48,3 +48,7 @@ When the live parameters differ from the ones last run, a small accent `•` app
 ---
 *Source: BDOBB v3.1.0 in-app manual, "Running and refreshing."; `BDOBB` `src/lib/widgetsJson.ts` at `v3.0.7`.*
 *See also: [[card-parameters|Card Parameters]] · [[dashboard-tabs|Dashboard Tabs]] · [[settings-and-logs|Settings and Logs]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

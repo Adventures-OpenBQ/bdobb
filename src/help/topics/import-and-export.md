@@ -138,3 +138,7 @@ logged.
 ## Clean v4 compatible persistence
 
 A **BDOBB Workspace** save uses a versioned v4 profile when analytical models, symbolic selections, linked cards, fiscal/calendar choices or docked controls need to travel. Ordinary v3 files remain readable. Unknown profiles and malformed settings are refused before writes. Local-file bytes and credentials are not bundled; local-file dependencies can be refused as MISSING_LOCAL_ASSET. A **Strict OpenBB Workspace** save omits these additions. Pinned Statement templates are preserved by the v4 analytical profile.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -11,3 +11,7 @@ The [v4 reference manual](reference-manual/v4/README.md) explains the new contro
 V4 is a local candidate under qualification. Reusable Statement templates are core v4 tools under Pivot → Saved → Statement template. Workspace layouts and generic Statement presentation arrive in v5; optional User Settings storage on a server syncs display settings with a Workspace connection or a backend serving the Workspace settings API, and does not synchronize dashboards.
 
 Copyright 2026 SecretoftheUniverse.com LLC. Licensed under Apache-2.0.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v4.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
