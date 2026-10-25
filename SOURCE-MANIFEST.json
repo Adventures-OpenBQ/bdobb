@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v8.0.0",
-  "baseCommit": "a1926bed19f81a53b35ee2d865cebbc686b0e9ed",
-  "sourceId": "88756cbd3ff952505ea8362ea488b42938df47722d16ea74600a4fcca6337498",
+  "baseCommit": "7572cf7126d6c7e25d5e10aa3156a45b93603c60",
+  "sourceId": "373ba9f36ff74b991d038f3703ccea70d858ae3e9f0a7d52aeeaf8d5197fd686",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20653,6 +20653,13 @@
       "sha256": "e591b35f382a86d44eceb79c44afb53c41f09abd703d85cd55215d51b424ea1c"
     },
     {
+      "path": "scripts/ios-scenes.test.py",
+      "type": "file",
+      "mode": 420,
+      "size": 1028,
+      "sha256": "7f5d1fd4ced89c54b49641418d117ce5070abe8fdd07107869d0662347089cce"
+    },
+    {
       "path": "scripts/ios.sh",
       "type": "file",
       "mode": 420,
@@ -20979,7 +20986,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "b2f9c7470f97445423131dcdb12e4700c987cf053555d63e145727cf61534f6b"
+      "sha256": "facfae348e507a5eeb990f81b5828cbed6fd37f78dc4d74a982e04d0301b5e64"
     },
     {
       "path": "source_bundle.py",
@@ -29259,15 +29266,22 @@
       "path": "src-tauri/Cargo.lock",
       "type": "file",
       "mode": 420,
-      "size": 135868,
-      "sha256": "f306dc1b8f8bd382a988e2a2b8e996021070e74136c359de28c9fe1436729972"
+      "size": 135725,
+      "sha256": "b4abd434d3eef706410674f2d02285aef5099f177824ed783e32bc13fd11eae2"
     },
     {
       "path": "src-tauri/Cargo.toml",
       "type": "file",
       "mode": 420,
-      "size": 2526,
-      "sha256": "07fbf6d0b7ba916990258178aa0e3139a17fd16df8f5c16bd304130fb6ca06e0"
+      "size": 2703,
+      "sha256": "670256e358ce5e4e2b710c6a2f3ad53a73e0fecfa194120c990c17aaf66c59fb"
+    },
+    {
+      "path": "src-tauri/Info.ios.plist",
+      "type": "file",
+      "mode": 420,
+      "size": 618,
+      "sha256": "1d35d4c504ef9f70eb0e02341c538c342153de229d637647ebb498e6d30fd4b0"
     },
     {
       "path": "src-tauri/build.rs",
@@ -29639,6 +29653,839 @@
       "mode": 420,
       "size": 4249,
       "sha256": "b3f09a0a44cce45e99dc7671f618190cf0b7792f37b31f793a7e77fde8650097"
+    },
+    {
+      "path": "src-tauri/vendor/tao/BDOBB-PATCH.md",
+      "type": "file",
+      "mode": 420,
+      "size": 392,
+      "sha256": "390e6a659005f2326546971982efbcdde149538fa8eb21952f15548e81fe19f1"
+    },
+    {
+      "path": "src-tauri/vendor/tao/Cargo.lock",
+      "type": "file",
+      "mode": 420,
+      "size": 84961,
+      "sha256": "52221bfc870a4ee696916dabd3ea87c5182180e491378ff672f046b4b8177275"
+    },
+    {
+      "path": "src-tauri/vendor/tao/Cargo.toml",
+      "type": "file",
+      "mode": 420,
+      "size": 8970,
+      "sha256": "ff71f61b705389d7f5e9c8cc7e19aa344e0ebd64ae3e0a60192cd5031cc7926c"
+    },
+    {
+      "path": "src-tauri/vendor/tao/Cargo.toml.orig",
+      "type": "file",
+      "mode": 420,
+      "size": 4336,
+      "sha256": "5aa251f3c13178a20cf805ecfca84d5e62b112adcc51d20f26796957399b3bda"
+    },
+    {
+      "path": "src-tauri/vendor/tao/LICENSE",
+      "type": "file",
+      "mode": 420,
+      "size": 11323,
+      "sha256": "6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/LICENSE.spdx",
+      "type": "file",
+      "mode": 420,
+      "size": 793,
+      "sha256": "02b6448337b757772d90e5f31caaa0f9e6afaad2221c01771d0a3deaa4d4196c"
+    },
+    {
+      "path": "src-tauri/vendor/tao/README.md",
+      "type": "file",
+      "mode": 420,
+      "size": 2814,
+      "sha256": "4e146f3b5b6997cb709a97b417f69516f43ff0c35cbb636c55158160ecfa5090"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/control_flow.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3528,
+      "sha256": "53c1cd3e063ffa386475097a3b8c0e14a3392250c896567987f896b9fbca5a79"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/cursor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2137,
+      "sha256": "71aa0256191d6d8a7b1cf8e8e9de4de4dfe4a3e19e6b300a51df4439f1703182"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/cursor_grab.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2134,
+      "sha256": "a42b58e7c02aeb4dd7f3d67ebd2c221fbeeaffc04495f140c2248088446297fc"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/custom_events.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1393,
+      "sha256": "f30b1245e8ef838280462cd90d76e7c0cedeffdf22cf9ad014aafa07b72e4acc"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/decorations.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1346,
+      "sha256": "1e1b55be6664797e1cd26093b5f5735d4329464b6e9b047c81aa3d0decca506b"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/drag_window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2275,
+      "sha256": "e0213c177e8412dd2945de23edc840516216b368cccd896805f6f974b7cef81f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/fullscreen.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3789,
+      "sha256": "301b43054faed677d1532618686a542ec486604ada059f43f60f56a83d77a5fb"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/handling_close.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3118,
+      "sha256": "1b28873ecc56136e807cac19f2d67c62e5b8df8235d2ffaa911127f833df334b"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/min_max_size.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2528,
+      "sha256": "f01bd4497688e168afc5857e191d06edbb7b32ddee2fa06df2ac191405b90228"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/minimize.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1280,
+      "sha256": "58a4ceae8a5dbefc8b3234df344a7731df269ddbfa3142e25e37c21cc6e33a51"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/monitor_list.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 444,
+      "sha256": "7491f21d3d033e0d1a7e87c64160a0f9c00c2b508c63aa2dd35ef703b7cafae9"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/mouse_wheel.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1686,
+      "sha256": "1920b96a74d2b995ff47109af154330a44e7e11974f2bc920e3c173115a21225"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/multithreaded.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 7198,
+      "sha256": "38124c3ec67bafc38c1e799c3f604b989888d5a449fedc8953bd646f710cfc07"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/multiwindow.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1370,
+      "sha256": "044d05dd2babb1bf8b4897ae9c34422cb5580b0e74bfb6ce10e350ce24a00ab4"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/overlay.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3459,
+      "sha256": "3fa3359e19868c67539cbbb1e64e1edb64a65cce38ff145f984fbd63c9df07c4"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/parentwindow.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2417,
+      "sha256": "8f09ef706b688c5aff7b0c02312470037bfb0a608fea9d6c11c13affaf47809a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/progress_bar.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2725,
+      "sha256": "d1b3b927b3394346c868e1d8d52456a02b1f183a2f223808da6d28505d8c3cac"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/reopen_event.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1079,
+      "sha256": "be071c4cfb5a1a1137c9c488fd490a7b0154323a91c3916a193e14b7c0fc6ace"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/request_redraw.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1048,
+      "sha256": "028f97f519150c8941d3a883e7c8e6f090bfd347cfb64393df61234cab40118e"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/request_redraw_threaded.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1064,
+      "sha256": "f850e57a8a9af9896dc8c51146721386e0e4fc9785d9837d5f4090fa55b7593d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/resizable.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1330,
+      "sha256": "ef07f975bf2472a7f37dbdb6b08c16f6873bc5089c13e1ae3310365522faadc4"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/set_ime_position.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1436,
+      "sha256": "573ebc222209cfc2b2298fcdef651e47c378652636cee98b111d780e648e4530"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/theme.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1460,
+      "sha256": "985f7890f4a745011412ac080fc321d210145206add3564f5c62de88afba562d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/timer.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1146,
+      "sha256": "a1f13e358a7283a7b8062e8840c23e1e8ace574712ea2d7f3099e2bd80577ec8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/transparent.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1635,
+      "sha256": "4089ac549dd7b7a9b86b0c523d098e0df49d5a63c08739bf6d289c63c3cfa552"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/video_modes.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 577,
+      "sha256": "4fcd9044f87a7cffad79c2164f5170150566fb8822739b7dbb8b8eb1a3676cc2"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1272,
+      "sha256": "0d96bb2f48b2bf65074e988c6cf8d43c5b95d88d651d7545a090bbb466ec3fb8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/window_debug.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5387,
+      "sha256": "7e3d6314ffd3e69967cc2b5a46e36aeb88e53aae02e55f42ccdc3dd9e6429201"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/window_icon.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2212,
+      "sha256": "19587bfe60a0589c09c30d694ffd439668fc1444c7370334b2788d6a4b731321"
+    },
+    {
+      "path": "src-tauri/vendor/tao/examples/window_run_return.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1464,
+      "sha256": "6c2590afafbabf64da2a2af31e3e91e54de53330b670a2421f738d7edf839493"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/error.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2208,
+      "sha256": "9b25813361acabf8db7244bb49a94c39c0cb8dd59162a82a3e490d4069bdedb5"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/event.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 33316,
+      "sha256": "21b4b8cd41b28cef6a9dd7de65bd899464ee69c14b077185d64959381da53be5"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/event_loop.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 14242,
+      "sha256": "746e750a63f25dbe283441d3cf4571d4d0b22cdeb27cfdf3e072683448d12e7a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/icon.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5365,
+      "sha256": "6f5295f2172fa8ff65907a6aa64da476848ca73d70c7737f6c45c4c0f9c54932"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/keyboard.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 57929,
+      "sha256": "46b12e1f666d46be2d5b0cb4d0f931f089adcd52de5f1e1bd2ab40dbc6181ad4"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/lib.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 8061,
+      "sha256": "f2a0b9d671520164a5b5d0f1f4473ec5d651cccd42ca6d9c2cd5d50ad8f9374f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/monitor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 4763,
+      "sha256": "fd1e62c8ad8b559836e585c9d1c715f79d645e3ad81960fa479c0579e2b1740f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/android.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2144,
+      "sha256": "5aefb7ab80d5a8e66c89aac44990fbb8ced82703146af0b2813e6f512e115454"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/ios.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 13662,
+      "sha256": "b71729db5e5414e9b48cb299b6b9e65b7704677b04ca3378468b8aa4b328c065"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/linux.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 185,
+      "sha256": "b9568e3b09217b00e1f5d2a01318e6f0b0da1a41d1c34aac94adba7ef1a61e95"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/macos.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 16080,
+      "sha256": "d1993f47ff4958ff98ba35a8560d7b0230e0ee527e8d01d54f28f3cb3b6c8c42"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 705,
+      "sha256": "95e29649dbd5cd6b78645380452e5521579c68b4bd51214dbfb0d09c754e617f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/run_return.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2021,
+      "sha256": "295b76e76b34211442248d1d610bdcadecc08b7837df4fd5927afaba97293d91"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/unix.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 10090,
+      "sha256": "cb1987776d2fd4766c449cede8c1b8b212d040f6380bd908a3a2a1a80762cfda"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform/windows.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 15427,
+      "sha256": "13447d0e84dfb76d472cba917975c8c31c8d2bf24f08e3ab98ac27e8906d5f03"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/android/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 46816,
+      "sha256": "c0512e8ce54421dd279b5fad063bfb3b922e88437edf485e002423f6ad60a81b"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/android/ndk_glue.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 22469,
+      "sha256": "3c3aab50f158b2af2f8824bc0269159761a94397d1056bf3b46f72badb041aea"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/app_state.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 34536,
+      "sha256": "a5924e36d51a3201b240240c0a18d50a5c706158edc90725ed0ec64848fb4be2"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/badge.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 430,
+      "sha256": "958253e8ddce825dd2ff8edb7a69176818997e60437e23ced8f1abb91b6095d3"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/event_loop.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 11625,
+      "sha256": "9982aa205ec0ceb338e13885a2bbecf3d6a41618be02ae469bd7bde0374051e1"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/ffi.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 12595,
+      "sha256": "487ccc0de6f0e0d24fd4e71b170fb4e9bbe54321eca24884fba5d70d20f78bd6"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/keycode.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 387,
+      "sha256": "ea44358c77ec7ce425fd29f0568f564bb9d142af75d562ebced08c6a67da19af"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3252,
+      "sha256": "73781426bba602687c8a6b9312c431e8424be87c021519f59073ca826563f3e3"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/monitor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 7921,
+      "sha256": "cb15ddca19b76861bf88627ffc24b44c05c19583bb84c8f297cf3c47be288092"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/scene.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5979,
+      "sha256": "c43c7d5631c5bfb9c7851ca1da25798015a51953243f6c4116516698f39c0606"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/view.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 26645,
+      "sha256": "d0e41b6fdaf832950315649bab0472c3630778cffc2d3ed5a00b9e14a6eddd4c"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/ios/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 26669,
+      "sha256": "6f5e70b1515a836eeafe089c380ae225b515e7e51336c68d2dc043e2ae5416e5"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/device.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2769,
+      "sha256": "28dcda6b173c92eb3673bd64b6a2aac38b78224c34cd7480a28a9258992a1097"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/event_loop.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 48687,
+      "sha256": "2143e1ddd7020697013a278f30dd0c5ca09ed2b84026d4fc75f9d7875dae68be"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/icon.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1181,
+      "sha256": "543205aae66b9321b2f375f4516c5f6996b5a1ab875549bbb667d24be8eda0c8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/keyboard.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 9507,
+      "sha256": "a4c734af0dd2b004b9fdf51a88ed723b9526c21388daefbfee31bfb7a25f78d0"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/keycode.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 11269,
+      "sha256": "4da52c38ac623aef850d55a321a5890a7b3ae3211abd22b4f15b6b5454653041"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2311,
+      "sha256": "d06df5bd43be7140374665808004667e36a2682906279ccf36f5d01468713468"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/monitor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2395,
+      "sha256": "e763bd0aa9e2168c2a3d93f2916fead57f2b6f4bddf965e10fd109037e1c4ce8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/portal.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2214,
+      "sha256": "06d04bf56d22327874a8b10bd93d5b18ffda1560f5605c153e542df96f7d14cc"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/taskbar.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 4727,
+      "sha256": "26ce8560338b6ee13020cd7a130ace367f7c3e1cf49cf27903c746012651c1a6"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/util.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2578,
+      "sha256": "3deb2f4f4883b4698415f553a3a90116d404739960d25c89dfcc56ae096164e8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/wayland/header.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 1058,
+      "sha256": "b339c12a7e205a5c48da9696b6331a038a9923b957b1ba62001fac58a2ffbc7d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/wayland/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 172,
+      "sha256": "4e3b9289b454eef4094b7bec01965888e4ba2097c8f6eff1ca27ccb2071a2152"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 32280,
+      "sha256": "49250445f2290c66364c1972e3fa516609872ecb71a2fbf8f5d9399f4dda9fba"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/x11/ffi.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 290,
+      "sha256": "629a5aaf4973a8b7295623582b8c2c21ee1b13b8b5454f4e3c7a7de1be115f76"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/x11/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 219,
+      "sha256": "8f576518fe12bb21c7ac3db0e75b969babc1035288bfd618cc85d354b362f964"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/linux/x11/xdisplay.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 4419,
+      "sha256": "fb64d39a851557b5f6a6e3e54c510473d62d13d3afd18c7be4d6f592824e9591"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/app.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 4123,
+      "sha256": "102c21b90c4d09a8c1831d47b8b4418b2844e1c758c159db11ae14d9921cfd43"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/app_delegate.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 7153,
+      "sha256": "a66447b76f880b559042133ca939305df8a3dd71b1e5a30f530a2d0cb8d16da4"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/app_state.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 15062,
+      "sha256": "493be209ef786af3e1d25d3631d18a3faaf96be210f83da2980a14dadfd60a7f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/badge.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 432,
+      "sha256": "41943ee395e667104594d1e8c79515689e938a0b1dd0abdb7c4a8fe0d2dfc9ce"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/dock.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2980,
+      "sha256": "fb1a30c5e891465ecced4e1f78856e4e6b3b6a283032a48d378525242a4f5bea"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/event.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 10853,
+      "sha256": "874e96604892fe63c1beda1627f2a12763573a3e5347fa6630c672b995fb56eb"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/event_loop.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 10617,
+      "sha256": "53a6a0b315527a233cf02160e2eda94f1158f95481c1119367b159cfddea05d6"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/ffi.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 9040,
+      "sha256": "6e85ece908839c2c9d58077ec32e2d7835f1cffad200969f871f05a0aacaae9c"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/icon.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 431,
+      "sha256": "8f5a7f00f96462683b4378702a61d78a30814d538a3111bad24ef4c556f35627"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/keycode.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 8352,
+      "sha256": "f4ba5a8948ab839eec2515586c48c41c9acc967f1a65d8ed7680ef231d0c1b63"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2471,
+      "sha256": "a60a9bcf84c7bd51f744450674702e6bb88b3e17fc744751b4c4a202544423f8"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/monitor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 9619,
+      "sha256": "3ef62d6dc6902798fe31b8d57e07bfdfc0a530cdf9a321460e84e4dc62427963"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/observer.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 9561,
+      "sha256": "4d801f48b3badc805770b9cfe63114d4b03b8803d3b1f35eaf1538564516e52a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/progress_bar.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5355,
+      "sha256": "baa49c76ca0b0914a5eadfab0b3b352f0f073d3daa6b1c933fa1d02a57470ed1"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/util/async.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 8922,
+      "sha256": "c0df3946b4daca0c2e3bdda7bfb8b6b38603d25a2c0ebfe6ce8f1ec93998fb57"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/util/cursor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 7442,
+      "sha256": "481fe6a34e1547449d8ee7b1a8a1cd93c304f15c2b62f6a6a71aba6d995b903d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/util/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3816,
+      "sha256": "e8df577333134debdc0731a5198f5876ffb41a70df75b10f1f732874daa8cc1a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/view.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 40421,
+      "sha256": "16f2970ee510b863eb7521b7ae6964efb902a99453399560b8e610fae15993db"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 59196,
+      "sha256": "d5535bc79de595630d043502625ac8246ae8c84a749c1c46622a09a529c8880a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/macos/window_delegate.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 23588,
+      "sha256": "3be35019eb247d253a59692a6c7061338cb4dbf12726d64a295a99784e140a57"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 983,
+      "sha256": "50486214dc0ed94d7b3e9e9b13016af8cdae8e2069f081081b2926602a99a81e"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/dark_mode.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 8291,
+      "sha256": "820f7708dd7c853036d20a6f7f9b6abeb85ea8eb9837cca88fc3025f02595527"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/dpi.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3786,
+      "sha256": "f2bf3f33f9a5c184374a17945ce8b6b6fb1894630294e5ee66fa5954aefc0aea"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/drop_handler.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5480,
+      "sha256": "b751798398859badaace1bda5820ae40b946d60f9c93c51c67cef525cb389395"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/event.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 16655,
+      "sha256": "5e658dbc39645a312c3939a2ecf649ed3abcd9e222ea5bad6bbbcad38826e664"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/event_loop/runner.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 14770,
+      "sha256": "03851663144985dd22b249ff3fcc58a6582ae19620dd665ac0b7325c979f8ffc"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/event_loop.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 91885,
+      "sha256": "33ecfbd4b54419a72befb914170873b1481ed60d9458d9914d6dd704569de04e"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/icon.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3830,
+      "sha256": "f93ec355b0307a65eb7eb0d08c7d9db68abb4173f1934a450d15eb4e0b53b30b"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/keyboard.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 27638,
+      "sha256": "086d3dddc33d003d9def0458ceaf46487399a3731b9ca281a7ce5ce14894f46a"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/keyboard_layout.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 38301,
+      "sha256": "cbdb07a28d4460f2fb8e8969b957657f06adb89f84bdeec7ae17f71479e96625"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/keycode.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 11547,
+      "sha256": "addf12a3ecc7f8075b18cadbf1f82823170d8567a4a71555ac9c6a5bc626c172"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/minimal_ime.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 2308,
+      "sha256": "c4c9a1e5c664c3c343bbd0ac830b58593ff8ea4c8e0e9cdfda49bde16b8d3c9f"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/mod.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3684,
+      "sha256": "b6eeae3953b2838136ccf98e73df9ac5419f3eb81fd29e13b63abf05522a1583"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/monitor.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 7147,
+      "sha256": "b96a3f8db1c2ac6397be535831c6c4ca9341505370176b4c90dc872930f65051"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/raw_input.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 5463,
+      "sha256": "3fbd6ac35b1f068d1da2a30759a797d30af10e61d1ba7d1236d7afc75840466d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/util.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 15622,
+      "sha256": "4b8279c836603a10837c4e106c78c695a1b4a295f285c95b40dd33ecd8b4040e"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 49403,
+      "sha256": "b9103d2c48e4b5e78cc0ebc9a68b9117ef03aca0d72bd04f6aeebaf03948629d"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/platform_impl/windows/window_state.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 14625,
+      "sha256": "05305914ccb3001db114467524728e01ca86e8fce339718cee825002932fe679"
+    },
+    {
+      "path": "src-tauri/vendor/tao/src/window.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 53043,
+      "sha256": "1c3d9ea5812f08c1c0fc70a0f15e539e8f224b6ce05063f1233da82b2e7c9eb4"
     },
     {
       "path": "tsconfig.json",
