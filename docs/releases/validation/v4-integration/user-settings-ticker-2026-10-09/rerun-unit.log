@@ -1,0 +1,54 @@
+
+ RUN  v2.1.9 <worktree>
+
+stderr | src/hooks/useFiscalYearEnd.test.tsx > useFiscalYearEnd > falls through to the sibling on an unreadable answer, on an error, and with no backend — and logs once
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/hooks/useFiscalYearEnd.test.tsx (17 tests) 1621ms
+   ✓ the built-in lookup (v5.4.0) > while a declared endpoint is in flight, shows the synchronous rungs past it — never the lookup, a hold or a reason 311ms
+   ✓ the built-in lookup (v5.4.0) > shares one lookup between two cards 307ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  09:23:29
+   Duration  2.48s (transform 217ms, setup 107ms, collect 290ms, tests 1.62s, environment 201ms, prepare 37ms)
+

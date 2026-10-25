@@ -1,0 +1,262 @@
+[
+  {
+    "name": "OpenBB Workspace - Analysis Dashboard",
+    "description": "OpenBB's Analysis Dashboard on openbq-docker's widget ids: eleven tabs for a trading desk, from analyst and fundamentals through bull and bear researchers, traders, risk and a backtest gate. Each holds EODHD price history (NVDA, AAPL, MSFT, QQQ) or AAPL's annual balance sheet and cash flow. EODHD needs the openbq-eodhd extension and a key. Opens in BDOBB 9.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "01-install-desk": {
+        "id": "01-install-desk",
+        "name": "01-install-desk",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "NVDA",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "02-market-analyst": {
+        "id": "02-market-analyst",
+        "name": "02-market-analyst",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {
+                "symbol": "NVDA",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "03-fundamentals": {
+        "id": "03-fundamentals",
+        "name": "03-fundamentals",
+        "layout": [
+          {
+            "i": "eodhd_equity_fundamental_balance_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 10,
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "limit": 5,
+                "period": "annual",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_fundamental_cash_eodhd_obb",
+            "x": 0,
+            "y": 12,
+            "w": 40,
+            "h": 10,
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "limit": 5,
+                "period": "annual",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "04-news-sentiment": {
+        "id": "04-news-sentiment",
+        "name": "04-news-sentiment",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "05-bull-researcher": {
+        "id": "05-bull-researcher",
+        "name": "05-bull-researcher",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "06-bear-researcher": {
+        "id": "06-bear-researcher",
+        "name": "06-bear-researcher",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "07-trader-sma": {
+        "id": "07-trader-sma",
+        "name": "07-trader-sma",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "NVDA",
+                "interval": "5m",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "07-trader-rsi": {
+        "id": "07-trader-rsi",
+        "name": "07-trader-rsi",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "07-trader-momentum": {
+        "id": "07-trader-momentum",
+        "name": "07-trader-momentum",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "08-risk-manager": {
+        "id": "08-risk-manager",
+        "name": "08-risk-manager",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      },
+      "09-backtest-gate": {
+        "id": "09-backtest-gate",
+        "name": "09-backtest-gate",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,NVDA,MSFT,QQQ",
+                "interval": "1d",
+                "exchange": "US",
+                "provider": "eodhd"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

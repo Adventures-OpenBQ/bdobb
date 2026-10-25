@@ -1,0 +1,11 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ✓ src/test/integration/reference-backend.test.ts (6 tests) 663ms
+   ✓ reference backend conformance > actually fetches every table, metric and chart widget 625ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  00:42:43
+   Duration  4.66s (transform 630ms, setup 634ms, collect 754ms, tests 663ms, environment 0ms, prepare 160ms)
+

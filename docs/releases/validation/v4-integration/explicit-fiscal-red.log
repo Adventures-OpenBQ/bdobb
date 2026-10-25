@@ -1,0 +1,33 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ❯ src/components/renderers/table-model/StatementPanel.test.tsx (12 tests | 1 failed | 11 skipped) 1400ms
+   × updates fiscal kind when explicit bounds were mapped without an initial kind 1400ms
+     → expected undefined to be 'FQ' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/renderers/table-model/StatementPanel.test.tsx > updates fiscal kind when explicit bounds were mapped without an initial kind
+AssertionError: expected undefined to be 'FQ' // Object.is equality
+
+- Expected: 
+"FQ"
+
++ Received: 
+undefined
+
+ ❯ src/components/renderers/table-model/StatementPanel.test.tsx:162:47
+    160|  fireEvent.click(screen.getByRole('button',{name:'Calculate preview'})…
+    161|  await waitFor(()=>expect(received).toBeDefined());
+    162|  expect(received?.bindings.fiscal.periodKind).toBe('FQ');
+       |                                               ^
+    163| });
+    164| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  00:44:10
+   Duration  9.23s (transform 2.53s, setup 389ms, collect 3.98s, tests 1.40s, environment 1.04s, prepare 262ms)
+

@@ -1,0 +1,149 @@
+{
+ "turn1": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.28,
+    "data": "{\"delta\":\"\\n\\nSTORE\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.29,
+    "data": "{\"delta\":\"D\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "\n\nSTORED",
+  "elapsed": 1.3,
+  "order": [
+   "copilotMessageChunk"
+  ]
+ },
+ "turn2": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.43,
+    "data": "{\"delta\":\"\\n\\nZEB\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.45,
+    "data": "{\"delta\":\"RA-41\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "\n\nZEBRA-41",
+  "elapsed": 1.49,
+  "order": [
+   "copilotMessageChunk"
+  ]
+ },
+ "cancel": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.14,
+    "data": "{\"delta\":\"\\n\\n#\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.14,
+    "data": "{\"delta\":\" The\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 1.17,
+    "data": "{\"delta\":\" Power of Index Fund\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "\n\n# The Power of Index Fund",
+  "cancelled_after_events": 3
+ },
+ "after_cancel": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotMessageChunk",
+    "t": 0.95,
+    "data": "{\"delta\":\"\\n\\nRECOVERED\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "\n\nRECOVERED",
+  "elapsed": 0.99,
+  "order": [
+   "copilotMessageChunk"
+  ]
+ },
+ "malformed_json": {
+  "status": 500,
+  "ctype": "text/plain; charset=UTF-8",
+  "events": [],
+  "keepalives": 0,
+  "text": "",
+  "body": "Internal Server Error"
+ },
+ "malformed_shape": {
+  "status": 400,
+  "ctype": "application/json",
+  "events": [],
+  "keepalives": 0,
+  "text": "",
+  "body": "{\"error\":\"Invalid request\",\"details\":[{\"expected\":\"array\",\"code\":\"invalid_type\",\"path\":[\"messages\"],\"message\":\"Invalid input: expected array, received null\"},{\"expected\":\"array\",\"code\":\"invalid_type\",\"path\":[\"tools\"],\"message\":\"Invalid input: expected array, received null\"}]}"
+ },
+ "unknown_model": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotStatusUpdate",
+    "t": 0.1,
+    "data": "{\"eventType\":\"ERROR\",\"message\":\"Model error: The model `no-such-model-xyz` does not exist.\",\"group\":\"reasoning\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 0.1,
+    "data": "{\"delta\":\"I couldn't finish the response because the model returned an error: The model `no-such-model-xyz` does not exist.\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "I couldn't finish the response because the model returned an error: The model `no-such-model-xyz` does not exist.",
+  "elapsed": 0.1,
+  "order": [
+   "copilotStatusUpdate",
+   "copilotMessageChunk"
+  ]
+ },
+ "unreachable_model": {
+  "status": 200,
+  "ctype": "text/event-stream",
+  "events": [
+   {
+    "event": "copilotStatusUpdate",
+    "t": 6.09,
+    "data": "{\"eventType\":\"ERROR\",\"message\":\"Model error: Failed after 3 attempts. Last error: Cannot connect to API: Unable to connect. Is the computer able to access the url?\",\"group\":\"reasoning\"}"
+   },
+   {
+    "event": "copilotMessageChunk",
+    "t": 6.09,
+    "data": "{\"delta\":\"I couldn't finish the response because the model returned an error: Failed after 3 attempts. Last error: Cannot connect to API: Unable to connect. Is the computer able to access the url?\"}"
+   }
+  ],
+  "keepalives": 0,
+  "text": "I couldn't finish the response because the model returned an error: Failed after 3 attempts. Last error: Cannot connect to API: Unable to connect. Is the computer able to access the url?",
+  "elapsed": 6.09,
+  "order": [
+   "copilotStatusUpdate",
+   "copilotMessageChunk"
+  ]
+ }
+}

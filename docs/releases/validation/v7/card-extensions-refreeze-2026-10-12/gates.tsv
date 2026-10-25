@@ -1,0 +1,14 @@
+typecheck|exit=0|dur=43s|load=1.43, 3.70, 5.83|cmd=pnpm typecheck
+lint|exit=0|dur=36s|load=2.70, 3.76, 5.75|cmd=pnpm lint
+unit|exit=0|dur=472s|load=3.11, 3.77, 5.68|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+revision-test|exit=0|dur=6s|load=3.15, 3.28, 4.64|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=50s|load=2.98, 3.24, 4.62|cmd=pnpm build
+e2e|exit=0|dur=2450s|load=2.23, 3.02, 4.47|cmd=env NODE_OPTIONS=--import=<scratch> BDOBB_BROWSER_PORT=4671 BDOBB_MOCK_PORT=4672 pnpm exec playwright test -c playwright.scratch.config.ts --reporter=list
+web|exit=0|dur=2s|load=4.36, 4.97, 4.95|cmd=pnpm test:web
+build-web|exit=0|dur=36s|load=4.36, 4.97, 4.95|cmd=pnpm build:web
+web-browser|exit=0|dur=6s|load=3.23, 4.62, 4.84|cmd=env NODE_OPTIONS=--import=<scratch> pnpm test:web:browser
+scrub|exit=0|dur=5s|load=2.88, 4.50, 4.79|cmd=pnpm scrub
+help|exit=0|dur=9s|load=2.65, 4.43, 4.77|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+notices-check|exit=1|dur=3s|load=2.62, 4.36, 4.74|cmd=pnpm notices:check
+diff-check|exit=0|dur=0s|load=2.62, 4.36, 4.74|cmd=git diff --check 427fd91 HEAD -- . :!docs/releases/validation/**/*.log
+DONE

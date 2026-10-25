@@ -1,0 +1,6 @@
+ NOTICE                           | 10 +++++
+ THIRD_PARTY_NOTICES.md           | 95 +++++++++++++++++++++++++++++++++++++++-
+ scripts/third-party-notices.mjs  |  9 +++-
+ src/components/RailIcon.test.tsx |  6 ++-
+ src/components/RailIcon.tsx      | 16 +++++--
+ 5 files changed, 129 insertions(+), 7 deletions(-)

@@ -1,0 +1,16 @@
+    Checking objc2-app-kit v0.3.2
+    Checking objc2-web-kit v0.3.2
+    Checking tao v0.35.3
+    Checking wry v0.55.1
+    Checking tauri-runtime v2.11.3
+    Checking window-vibrancy v0.6.0
+    Checking muda v0.19.3
+    Checking tauri-runtime-wry v2.11.4
+    Checking rfd v0.16.0
+    Checking tauri v2.11.5
+    Checking tauri-plugin-fs v2.5.1
+    Checking tauri-plugin-opener v2.5.4
+    Checking tauri-plugin-http v2.5.9
+    Checking tauri-plugin-dialog v2.7.2
+    Checking bdobb v4.0.0 (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-18/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.17s

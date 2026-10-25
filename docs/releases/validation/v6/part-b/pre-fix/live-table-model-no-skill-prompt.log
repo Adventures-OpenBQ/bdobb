@@ -1,0 +1,88 @@
+
+> bdobb@6.0.0 test:live <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> bash scripts/rita-live-check.sh src/test/integration/rita-table-model-live.test.ts
+
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+[tool] describe_table {"card_id":"w"} → {"status":"ok","contract":"table-model/1","card":{"id":"w","title":"Local file","source_kind":"csv-xls","view":"table","mode":"authoring","editable":true},"readiness":{"status":"ready","stale":false},"revision":"tm1-c9py4i","fields":[{"id":"Region","label":"Region","type":"text"},{"id":"Desk","label":"Desk","type":"text"},{"id":"Amount","label":"Amount","type":"number"}],"field_count":3,"fields_truncated":false,"model":{"kind":"none"},"presentation":{"sorting":[],"column_order":[],"hidden":[]},"
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+[tool] describe_table {"card_id":"w","section":"summary"} → {"status":"ok","contract":"table-model/1","card":{"id":"w","title":"Local file","source_kind":"csv-xls","view":"table","mode":"authoring","editable":true},"readiness":{"status":"ready","stale":false},"revision":"tm1-c9py4i","fields":[{"id":"Region","label":"Region","type":"text"},{"id":"Desk","label":"Desk","type":"text"},{"id":"Amount","label":"Amount","type":"number"}],"field_count":3,"fields_truncated":false,"model":{"kind":"none"},"presentation":{"sorting":[],"column_order":[],"hidden":[]},"
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+[tool] describe_table {"card_id":"w"} → {"status":"ok","contract":"table-model/1","card":{"id":"w","title":"Local file","source_kind":"csv-xls","view":"table","mode":"authoring","editable":true},"readiness":{"status":"ready","stale":false},"revision":"tm1-c9py4i","fields":[{"id":"Region","label":"Region","type":"text"},{"id":"Desk","label":"Desk","type":"text"},{"id":"Amount","label":"Amount","type":"number"}],"field_count":3,"fields_truncated":false,"model":{"kind":"none"},"presentation":{"sorting":[],"column_order":[],"hidden":[]},"
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+[reply] 
+
+Let me check the loaded table name and then query the totals by Region.
+
+
+
+Let me peek the table to see the data structure and then arrange it.
+
+
+
+The table data isn't loaded into SQL yet. Let me fetch the widget data first so I can query it.
+
+The widget data request returned no usable data: unknown widget w
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > is refused for a sum of a text column, says so, and leaves the model unchanged
+[reply] The widget data request returned no usable data: unknown widget w
+
+ ❯ src/test/integration/rita-table-model-live.test.ts (2 tests | 2 failed) 27648ms
+   × Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers 24461ms
+     → exactly one arrange_table call: expected [] to have a length of 1 but got +0
+   × Rita arranges a CSV table through table-model/1 > is refused for a sum of a text column, says so, and leaves the model unchanged 3186ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+AssertionError: exactly one arrange_table call: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/test/integration/rita-table-model-live.test.ts:119:56
+    117|     const { rounds, reply } = await turn(`${SKILL}Show total Amount by…
+    118|     const arranges = rounds.filter((r) => r.tool === "arrange_table");
+    119|     expect(arranges, "exactly one arrange_table call").toHaveLength(1);
+       |                                                        ^
+    120|     const out = arranges[0].result as { status: string; preview: { row…
+    121|     expect(out.status).toBe("applied");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > is refused for a sum of a text column, says so, and leaves the model unchanged
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/integration/rita-table-model-live.test.ts:138:66
+    136|     await mountCsv();
+    137|     const first = await turn(`${SKILL}Show total Amount by Region in t…
+    138|     expect(first.rounds.some((r) => r.tool === "arrange_table")).toBe(…
+       |                                                                  ^
+    139|     const before = structuredClone(tableCard().tableDefinition);
+    140|     const { rounds, reply } = await turn(`${SKILL}Sum the Region colum…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  10:41:32
+   Duration  36.76s (transform 2.26s, setup 265ms, collect 3.32s, tests 27.65s, environment 691ms, prepare 90ms)
+
+JSON report written to <scratch>
+live gate: 0/2 passed, 0 skipped, 2 failed
+ ELIFECYCLE  Command failed with exit code 1.

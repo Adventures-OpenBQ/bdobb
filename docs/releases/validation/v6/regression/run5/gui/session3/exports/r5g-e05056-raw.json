@@ -1,0 +1,74 @@
+[
+  {
+    "Date": "2025-01-02",
+    "Company": "AAPL",
+    "Desk": "Research",
+    "Amount": 100
+  },
+  {
+    "Date": "2025-01-03",
+    "Company": "MSFT",
+    "Desk": "Research",
+    "Amount": 200
+  },
+  {
+    "Date": "2025-01-06",
+    "Company": "AAPL",
+    "Desk": "Trading",
+    "Amount": 150
+  },
+  {
+    "Date": "2025-01-07",
+    "Company": "MSFT",
+    "Desk": "Trading",
+    "Amount": 0
+  },
+  {
+    "Date": "2025-02-03",
+    "Company": "AAPL",
+    "Desk": "Research",
+    "Amount": 300
+  },
+  {
+    "Date": "2025-02-04",
+    "Company": "MSFT",
+    "Desk": "Research",
+    "Amount": 400
+  },
+  {
+    "Date": "2025-02-05",
+    "Company": "AAPL",
+    "Desk": "Trading",
+    "Amount": null
+  },
+  {
+    "Date": "2025-02-06",
+    "Company": "MSFT",
+    "Desk": "Trading",
+    "Amount": 250
+  },
+  {
+    "Date": "2025-03-03",
+    "Company": "AAPL",
+    "Desk": "Research",
+    "Amount": 500
+  },
+  {
+    "Date": "2025-03-04",
+    "Company": "MSFT",
+    "Desk": "Research",
+    "Amount": 600
+  },
+  {
+    "Date": "2025-03-05",
+    "Company": "AAPL",
+    "Desk": "Trading",
+    "Amount": 350
+  },
+  {
+    "Date": "2025-03-06",
+    "Company": "MSFT",
+    "Desk": "Trading",
+    "Amount": 450
+  }
+]

@@ -1,0 +1,1 @@
+{"r5_income_wide":{"name":"R5 Income Wide","description":"QA fixture: the income-wide.csv row served as a backend table (revenue 100, cost_of_revenue 60).","type":"table","endpoint":"income.json","params":[]}}

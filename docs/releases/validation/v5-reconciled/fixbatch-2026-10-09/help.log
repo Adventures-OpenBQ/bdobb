@@ -1,0 +1,17 @@
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/help/search.test.ts (15 tests) 8ms
+ ✓ src/help/shots.test.ts (5 tests) 26ms
+ ✓ src/help/index.test.ts (8 tests) 6ms
+ ✓ src/help/guide.test.ts (9 tests) 20ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 396ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 394ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 5ms
+ ✓ src/help/windowMenu.test.ts (1 test) 1ms
+
+ Test Files  7 passed (7)
+      Tests  52 passed (52)
+   Start at  08:30:37
+   Duration  9.22s (transform 701ms, setup 1.85s, collect 2.56s, tests 462ms, environment 3.88s, prepare 618ms)
+

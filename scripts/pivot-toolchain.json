@@ -1,0 +1,8 @@
+{
+ "rust": "1.98.1",
+ "target": "wasm32-unknown-unknown",
+ "wasmBindgen": "0.2.128",
+ "wasmBindgenTarget": "web",
+ "protocolVersion": 1,
+ "sharedMemory": false
+}

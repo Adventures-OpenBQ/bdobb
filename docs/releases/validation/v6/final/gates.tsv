@@ -1,0 +1,10 @@
+typecheck|exit=0|dur=18s|load=52.65 49.17 63.79
+lint|exit=0|dur=19s|load=68.45 52.97 64.81
+unit|exit=0|dur=257s|load=112.48 63.42 68.33
+build|exit=0|dur=15s|load=67.86 119.11 98.21
+e2e|exit=0|dur=591s|load=57.93 114.40 96.89
+web|exit=0|dur=6s|load=167.28 107.61 97.63
+cargo|exit=0|dur=2s|load=174.22 110.04 98.55
+scrub|exit=0|dur=8s|load=180.77 112.46 99.47
+help|exit=0|dur=18s|load=185.34 115.68 100.76
+DONE

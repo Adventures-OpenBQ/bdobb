@@ -1,0 +1,7 @@
+head: 16ca0f8b9692c55489f7c18c8774d796f3942b19
+app: <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src-tauri/target/release/bundle/macos/BDOBB Clean v6.app
+identifier: com.artcashin.bdobb.clean.v6
+version: 6.0.0
+main binary sha256: 97c6bc282f775f1581b0e21bcdd08cd7b6f1ee2aba6b39ddc0ac8692a0f8be77
+bundle tree sha256: 4fd087aa82c3c3d0dede90d1af413cd9db4fa4aab64501624aa640768b7221a7
+Signature=adhoc

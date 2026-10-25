@@ -1,0 +1,19 @@
+[WebServer] [plugin vite:reporter] 
+[WebServer] (!) <worktree>/src/lib/tableExecution/rust/generated/pivot_wasm.js is dynamically imported by <worktree>/src/lib/tableExecution/rust/runtime.ts but also statically imported by <worktree>/e2e/fixtures/rust-pivot-harness.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [plugin vite:reporter] 
+[WebServer] (!) <worktree>/src/lib/tableExecution/rust/generated/pivot_wasm.js is dynamically imported by <worktree>/src/lib/tableExecution/rust/runtime.ts but also statically imported by <worktree>/e2e/fixtures/rust-pivot-harness.tsx, dynamic import will not move module into another chunk.
+[WebServer] 
+
+Running 8 tests using 1 worker
+
+  ✓  1 [pivot-chromium] › e2e/rust-pivot-resources.spec.ts:12:1 › actual Wasm worker enforces injected resource limits and preserves publication (1.3s)
+  ✓  2 [pivot-chromium] › e2e/rust-pivot-resources.spec.ts:17:1 › rapid cancelled edit replaces actual worker and restores committed source model and selection (412ms)
+  ✓  3 [pivot-chromium] › e2e/rust-pivot.spec.ts:50:1 › built worker contracts under packaged desktop CSP, local unshared Wasm and disposal (16.0s)
+  ✓  4 [pivot-chromium] › e2e/rust-pivot.spec.ts:51:1 › non-root built asset paths retain contracts (2.2s)
+  ✓  5 [pivot-chromium] › e2e/rust-pivot.spec.ts:52:1 › direct Vite dev serves Wasm with portable contracts (19.8s)
+  ✓  6 [pivot-chromium] › e2e/rust-pivot.spec.ts:53:1 › authenticated private web assets keep MIME, cache, routes and worker contracts (2.2s)
+  ✓  7 [pivot-chromium] › e2e/rust-pivot.spec.ts:61:1 › built Rust worker module graph excludes TypeScript calculation (2ms)
+  ✓  8 [pivot-chromium] › e2e/rust-pivot.spec.ts:71:1 › review regressions preserve structural tag maps, leaf metadata and old publication after coercion refusal (599ms)
+
+  8 passed (56.5s)

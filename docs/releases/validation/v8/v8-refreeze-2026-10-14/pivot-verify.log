@@ -1,0 +1,4 @@
+
+> bdobb@8.0.0 pivot:verify <worktree>
+> node scripts/build-pivot-wasm.mjs --verify
+

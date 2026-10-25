@@ -1,0 +1,9 @@
+{
+  "synthetic_cash_flow": {
+    "name": "Synthetic Cash Flow",
+    "description": "Synthetic values for Statement and fiscal-label verification. Not investment data.",
+    "type": "table",
+    "endpoint": "cash-flow.json",
+    "params": []
+  }
+}

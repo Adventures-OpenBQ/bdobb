@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Main",
+    "description": "",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "b614f0de-08c8-4cf9-845d-590fe04c0c6b": {
+        "id": "b614f0de-08c8-4cf9-845d-590fe04c0c6b",
+        "name": "Main",
+        "layout": []
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v3",
+        "tabOrder": [
+          "b614f0de-08c8-4cf9-845d-590fe04c0c6b"
+        ]
+      }
+    }
+  }
+]

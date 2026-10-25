@@ -1,0 +1,55 @@
+
+> bdobb@8.0.0 test:web <worktree>
+> node --test web/*.test.mjs
+
+✔ reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin (0.684708ms)
+✔ reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA (0.581541ms)
+✔ configuration: empty allowlist grants nobody, malformed config fails closed (1.8055ms)
+✔ an unconfigured server answers 503 and logs which variable failed (14.747833ms)
+✔ GitHub callbacks bind admission to immutable provider ID and never expose tokens (0.441125ms)
+✔ encrypted sessions require valid cookie, current ID, epoch and strict expiry (11.6205ms)
+✔ path and parameter allowlist blocks writes, admin surfaces and URL injection (0.70075ms)
+✔ the /api root documents are forwarded; nothing else at the /api root is (0.123208ms)
+✔ calendar/trading keeps its own narrow grammar, matched before the generic rule (0.170875ms)
+✔ the policy serves no /ai family: Rita is not a route of openbq-docker (R3a) (0.0715ms)
+✔ the generic api/v1 rule admits the whole catalogue inside structural bounds (0.283833ms)
+✔ News subscriptions strip renames and refuse arbitrary feeds or control frames (0.180167ms)
+✔ bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend (0.317417ms)
+✔ anonymous visitors see login, not UI, metadata, JavaScript or data (16.439125ms)
+✔ authorized files work; aliases, traversal, source maps, cross-origin and writes fail (19.191334ms)
+✔ a top-level cross-site navigation is the OAuth landing, not a forgeable request (8.212792ms)
+✔ empty allowlist cannot start OAuth or accept even a correctly signed session (6.36575ms)
+Preview authentication failed
+✔ Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth (13.056166ms)
+✔ valid CSRF sign-out expires the browser session cookie (7.233542ms)
+✔ proxy uses dedicated server token, bounded fetch, and never forwards browser credentials (5.970334ms)
+✔ unconfigured upstream, error bodies and unexpected content fail closed (22.738458ms)
+✔ News upgrade authenticates cookies, exact Origin, exact path, no query token (15.491459ms)
+✔ the News upgrade is 503 without a gateway or without approved feeds (12.123542ms)
+✔ the upgrade path never grants a navigation-shaped exemption; it only trusts Origin (4.799542ms)
+✔ News relays approved subscription and text, with no arbitrary client frame forwarding (9.259459ms)
+✔ a News client whose one frame is not a subscription is closed, and nothing is forwarded (18.08725ms)
+✔ only the exact branding allowlist is public; nothing rides along with it (26.521708ms)
+✔ the login surface carries the axes mark and installation icon links (5.584291ms)
+✔ branding assets retain their MIME types for authenticated requests too (5.047375ms)
+✔ the /api root documents come from openbb-api, not from this process (6.022792ms)
+✔ a full-catalogue widgets.json fits the body cap; one past it is an honest 502 (21.274417ms)
+✔ a socket ticket binds one target, expires, and needs the gateway token (0.603208ms)
+✔ the ticket route issues only to a session, and only for /news/ws/news (12.320708ms)
+✔ a news ticket is 503 without approved feeds or a gateway: the socket could only close (11.548334ms)
+✔ /preview-feeds.json publishes the approved feeds as News card rows, names and tabs empty (4.992333ms)
+✔ a write goes to the signed-in user's own state, and only a write shaped like one (16.513875ms)
+✔ a gateway refusal of a write is relayed as a size or a failure, never its body (21.489ms)
+✔ the page is seeded from the user's saved state, and told it may save (5.571834ms)
+✔ nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not (27.446167ms)
+✔ web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag (0.971166ms)
+✔ private Wasm assets have streaming MIME, no-store cache and strict routes (8.693458ms)
+✔ private web policy permits only Wasm compilation alongside self (5.96425ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 42
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 599.591333

@@ -1,0 +1,79 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ❯ src/lib/statementExecution.templates.test.ts (4 tests | 4 failed) 122ms
+   × projects a selected template Profit40 without restoring unselected lines or recalculating totals 56ms
+     → expected undefined to deeply equal [ Array(1) ]
+   × preserves a template mixed-currency error instead of displaying Profit40 34ms
+     → expected undefined to be defined
+   × preserves a template mixed-unit error instead of displaying Profit40 10ms
+     → expected undefined to be defined
+   × retains authored order, labels, raw ratios and per-cell formats through a linked worker transfer 19ms
+     → expected undefined to match object { …(3) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/statementExecution.templates.test.ts > projects a selected template Profit40 without restoring unselected lines or recalculating totals
+AssertionError: expected undefined to deeply equal [ Array(1) ]
+
+- Expected: 
+Array [
+  "statement/income/1.0.0/line/calculated_gross_profit",
+]
+
++ Received: 
+undefined
+
+ ❯ src/lib/statementExecution.templates.test.ts:44:98
+     42|     await executor.applyModel({ table: {}, search: '', analytical: f.s…
+     43|     const result = await loadStatementSnapshot(executor, selected, sig…
+     44|     expect(result.statement?.sections.flatMap(section => section.items…
+       |                                                                                                  ^
+     45|     expect(result.statement?.sections.flatMap(section => section.items…
+     46|     expect(result.statement?.headers).toEqual(['FY2025']);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/lib/statementExecution.templates.test.ts > preserves a template mixed-currency error instead of displaying Profit40
+ FAIL  src/lib/statementExecution.templates.test.ts > preserves a template mixed-unit error instead of displaying Profit40
+AssertionError: expected undefined to be defined
+ ❯ src/lib/statementExecution.templates.test.ts:67:20
+     65|     const result = await loadStatementSnapshot(executor, revision, sig…
+     66|     const profit = result.statement?.sections.flatMap(section => secti…
+     67|     expect(profit).toBeDefined();
+       |                    ^
+     68|     expect(profit?.values[0]).not.toBe(40);
+     69|     expect(profit).toHaveProperty('errors.0.message', expect.stringMat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/lib/statementExecution.templates.test.ts > retains authored order, labels, raw ratios and per-cell formats through a linked worker transfer
+AssertionError: expected undefined to match object { …(3) }
+
+- Expected: 
+Object {
+  "field": "statement/income/1.0.0/line/calculated_gross_profit",
+  "label": "Margin",
+  "values": Array [
+    0.4,
+  ],
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/statementExecution.templates.test.ts:92:29
+     90|     const result = await loadStatementSnapshot(linked, linkedRevision,…
+     91|     const group = result.statement?.sections.find(s => s.name === 'Ren…
+     92|     expect(group?.items[0]).toMatchObject({ field: profitId, label: 'M…
+       |                             ^
+     93|     expect(group?.items[0]).toHaveProperty('formats.0.formatterFn', 'n…
+     94|     expect(result.statement?.rows.find(row => row['Line item'] === 'Ma…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  01:20:44
+   Duration  2.44s (transform 667ms, setup 265ms, collect 888ms, tests 122ms, environment 630ms, prepare 94ms)
+

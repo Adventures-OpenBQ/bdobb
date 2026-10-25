@@ -1,0 +1,30 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/lib/appsJson.examples.test.ts (10 tests | 1 failed | 8 skipped) 10ms
+   × docs/examples > v5.0.0-treasury-calendar: two Treasury auction cards, each in the Calendar view 9ms
+     → expected 'paged' to be 'static' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/appsJson.examples.test.ts > docs/examples > v5.0.0-treasury-calendar: two Treasury auction cards, each in the Calendar view
+AssertionError: expected 'paged' to be 'static' // Object.is equality
+
+Expected: "static"
+Received: "paged"
+
+ ❯ src/lib/appsJson.examples.test.ts:86:37
+     84|     // and must stay so, so it is Static. Upcoming auctions has no ran…
+     85|     expect(cards[0].calendar?.mode).toBe("paged");
+     86|     expect(cards[1].calendar?.mode).toBe("static");
+       |                                     ^
+     87|   });
+     88| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 8 skipped (10)
+   Start at  14:25:35
+   Duration  1.61s (transform 166ms, setup 230ms, collect 182ms, tests 10ms, environment 569ms, prepare 139ms)
+

@@ -1,0 +1,14 @@
+[
+  {
+    "fiscal_year": 2026,
+    "fiscal_period": "Q3",
+    "net_cash_from_operating_activities": 12,
+    "capital_expenditure": -5
+  },
+  {
+    "fiscal_year": 2026,
+    "fiscal_period": "TTM",
+    "net_cash_from_operating_activities": 33,
+    "capital_expenditure": -18
+  }
+]

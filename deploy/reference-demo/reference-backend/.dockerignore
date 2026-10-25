@@ -1,0 +1,9 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+# Nothing local is needed in the build context; the source is cloned in-image.
+*
+!Dockerfile
+!patch-cors.py
+!patch-omni-python.py
+!check-no-exec.py

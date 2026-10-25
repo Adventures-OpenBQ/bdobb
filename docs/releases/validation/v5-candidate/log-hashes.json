@@ -1,0 +1,38 @@
+{
+  "/tmp/bdobb-clean-v5-final-unit.log": {
+    "sha256": "2f4578628c0622f06fcf5c3a3df0af186652b10e2893b462ea1e28f1c88f65ad",
+    "bytes": 80371
+  },
+  "/tmp/bdobb-clean-v5-script-final-retry.log": {
+    "sha256": "2fc158c521f81ed5dd5a91626d4394e5c674150c40f29adb7547582866a01d8f",
+    "bytes": 1532
+  },
+  "/tmp/bdobb-clean-v5-repaired-browser.log": {
+    "sha256": "130bdee603df7a7f573c8694b86796f49af51b29f4cd99ab2ff7904f25a65ff7",
+    "bytes": 10051
+  },
+  "/tmp/bdobb-clean-v5-post-audit-regression.log": {
+    "sha256": "3dc25e8923c47fed3a8d74da265b61ece1e5e7a87b0939f35dfd9248a7fb516f",
+    "bytes": 3870
+  },
+  "/tmp/bdobb-clean-v5-reference-render.log": {
+    "sha256": "9e272aebd99eabc643c4c6a8e9742d460f94d9b9dd17d119ec8d6c1183edc57f",
+    "bytes": 2549
+  },
+  "/tmp/bdobb-clean-v5-reference-controls-final.log": {
+    "sha256": "0ff1ff48e385c88b96bb91a08158b88971da503b351e99758de6d9b3f5cfd74f",
+    "bytes": 145
+  },
+  "/tmp/bdobb-clean-v5-openbq-smoke.log": {
+    "sha256": "6cb236ef19b409d2a90a3708add0c31313647ba843297836243034a7cc6e12db",
+    "bytes": 385
+  },
+  "/tmp/bdobb-clean-v5-web-tests.log": {
+    "sha256": "5844d27de8b4411207a186ce1b8412b3c533302f9e54d807f71d0cf3cd9f4cfd",
+    "bytes": 3213
+  },
+  "/tmp/bdobb-clean-v5-native-repaired.log": {
+    "sha256": "9a1b150950a2b6860ae0d9856ceeca343b55845ebe371db2f13dcb8c5dce6b49",
+    "bytes": 11566
+  }
+}

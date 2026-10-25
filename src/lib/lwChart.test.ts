@@ -1,0 +1,119 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// lightweight-charts draws to canvas, which jsdom lacks -- the same reason
+// ChartRenderer.test.tsx mocks plotly. What carries logic here is which
+// options and data this module hands the library, so that is what's asserted.
+const series = () => {
+  const scale = { applyOptions: vi.fn() };
+  return { setData: vi.fn(), priceScale: vi.fn(() => scale) };
+};
+const fitContent = vi.fn();
+const chart = {
+  addSeries: vi.fn((_def: unknown, _opts?: unknown) => series()),
+  applyOptions: vi.fn(),
+  remove: vi.fn(),
+  timeScale: () => ({ fitContent }),
+};
+const createChart = vi.fn((_el: HTMLElement, _opts: unknown) => chart);
+vi.mock("lightweight-charts", () => ({
+  ColorType: { Solid: "solid" },
+  CandlestickSeries: { type: "Candlestick" },
+  HistogramSeries: { type: "Histogram" },
+  createChart: (el: HTMLElement, opts: unknown) => createChart(el, opts),
+}));
+
+import { CARD_BG, GRID, TEXT } from "./chartShapes";
+import { mountCandleChart, TRADINGVIEW_CREDIT_LABEL, TRADINGVIEW_CREDIT_URL } from "./lwChart";
+
+const bars = [
+  { time: 10, open: 1, high: 3, low: 0.5, close: 2, volume: 100 },
+  { time: 20, open: 3, high: 4, low: 1.5, close: 2, volume: 200 },
+];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe("mountCandleChart", () => {
+  it("creates an auto-sized chart in the app's card colours with the on-canvas logo off and the wheel left to the card", async () => {
+    await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: true });
+    expect(createChart.mock.calls[0][1]).toEqual({
+      autoSize: true,
+      // User ruling 2026-10-04: the wheel scrolls the card, as on the Plotly
+      // cards; drag still pans.
+      handleScroll: { mouseWheel: false },
+      handleScale: { mouseWheel: false },
+      layout: {
+        attributionLogo: false,
+        background: { type: "solid", color: CARD_BG.dark },
+        textColor: TEXT.dark,
+      },
+      grid: { vertLines: { color: GRID.dark }, horzLines: { color: GRID.dark } },
+      rightPriceScale: { borderColor: GRID.dark },
+      timeScale: { borderColor: GRID.dark },
+    });
+  });
+
+  it("hands the candle colours to the candlestick series and keeps the volume ones back", async () => {
+    await mountCandleChart(document.createElement("div"), {
+      theme: "dark",
+      colors: { upColor: "#0a0", downColor: "#a00", volumeUpColor: "#0f0" },
+      showVolume: true,
+    });
+    expect(chart.addSeries.mock.calls[0]).toEqual([{ type: "Candlestick" }, { upColor: "#0a0", downColor: "#a00" }]);
+    expect(chart.addSeries.mock.calls[1][0]).toEqual({ type: "Histogram" });
+  });
+
+  it("adds no volume series when showVolume is off", async () => {
+    await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: false });
+    expect(chart.addSeries).toHaveBeenCalledTimes(1);
+  });
+
+  it("sets candles and up/down-coloured volume, fitting the view only on the first load", async () => {
+    const handle = await mountCandleChart(document.createElement("div"), {
+      theme: "dark",
+      colors: { volumeUpColor: "#0f0", volumeDownColor: "#f00" },
+      showVolume: true,
+    });
+    const candles = chart.addSeries.mock.results[0].value;
+    const volume = chart.addSeries.mock.results[1].value;
+    expect(chart.addSeries.mock.calls[1]).toEqual([
+      { type: "Histogram" },
+      { priceFormat: { type: "volume" }, priceScaleId: "" },
+    ]);
+    expect(volume.priceScale().applyOptions).toHaveBeenCalledWith({ scaleMargins: { top: 0.8, bottom: 0 } });
+    handle.setBars(bars);
+    expect(candles.setData).toHaveBeenCalledWith([
+      { time: 10, open: 1, high: 3, low: 0.5, close: 2 },
+      { time: 20, open: 3, high: 4, low: 1.5, close: 2 },
+    ]);
+    expect(volume.setData).toHaveBeenCalledWith([
+      { time: 10, value: 100, color: "#0f0" },
+      { time: 20, value: 200, color: "#f00" },
+    ]);
+    handle.setBars(bars);
+    // A refetch must not throw away the reader's zoom and pan.
+    expect(fitContent).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-themes in place and removes the chart on dispose", async () => {
+    const handle = await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: true });
+    handle.applyTheme("light");
+    expect(chart.applyOptions).toHaveBeenCalledWith({
+      layout: { background: { type: "solid", color: CARD_BG.light }, textColor: TEXT.light },
+      grid: { vertLines: { color: GRID.light }, horzLines: { color: GRID.light } },
+      rightPriceScale: { borderColor: GRID.light },
+      timeScale: { borderColor: GRID.light },
+    });
+    handle.dispose();
+    expect(chart.remove).toHaveBeenCalledTimes(1);
+  });
+});
+
+it("exports the credit the card shows", () => {
+  expect(TRADINGVIEW_CREDIT_URL).toBe("https://www.tradingview.com/lightweight-charts/");
+  expect(TRADINGVIEW_CREDIT_LABEL).toBe("Rendered by TradingView");
+});

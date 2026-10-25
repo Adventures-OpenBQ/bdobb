@@ -1,0 +1,145 @@
+
+> bdobb@9.0.0 test:pivot:packaging <worktree>
+> node --test scripts/pivot-packaging.test.mjs
+
+TAP version 13
+# error during build:
+# Error: Pivot Wasm artifact is missing; run pnpm pivot:build
+#     at verify (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945474-609691ad7d1aa.mjs:67:40)
+#     at async ensurePivotWasm (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945474-609691ad7d1aa.mjs:103:5)
+#     at async configResolved (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945474-609691ad7d1aa.mjs:137:60)
+#     at async Promise.all (index 1)
+#     at async resolveConfig (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49259:3)
+#     at async createBuilder (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:46866:18)
+#     at async CAC.<anonymous> (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/cli.js:862:23)
+# error when starting dev server:
+# Error: Pivot Wasm artifact is missing; run pnpm pivot:build
+#     at verify (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945776-cd684343e4dd8.mjs:67:40)
+#     at async ensurePivotWasm (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945776-cd684343e4dd8.mjs:103:5)
+#     at async configResolved (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008945776-cd684343e4dd8.mjs:137:60)
+#     at async Promise.all (index 1)
+#     at async resolveConfig (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49259:3)
+#     at async _createServer (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:38478:66)
+#     at async CAC.<anonymous> (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/cli.js:753:20)
+# file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:67
+#     if (error.code === "ENOENT") throw new Error("Pivot Wasm artifact is missing; run pnpm pivot:build", { cause: error });
+#                                        ^
+# Error: Pivot Wasm artifact is missing; run pnpm pivot:build
+#     at verify (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:67:40)
+#     at async ensurePivotWasm (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:103:5)
+#     ... 3 lines matching cause stack trace ...
+#     at async createBuilder (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:46866:18)
+#     at async build (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:46140:19)
+#     at async file://<scratch> {
+#   [cause]: Error: ENOENT: no such file or directory, open '<scratch>
+#       at async open (node:internal/fs/promises:636:25)
+#       at async readFile (node:internal/fs/promises:1235:14)
+#       at async digestFiles (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:26:19)
+#       at async fingerprints (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:59:82)
+#       at async verify (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:64:20)
+#       at async ensurePivotWasm (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:103:5)
+#       at async configResolved (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946123-66cdf360af648.mjs:137:60)
+#       at async Promise.all (index 1)
+#       at async resolveConfig (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49259:3)
+#       at async createBuilder (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:46866:18) {
+#     errno: -2,
+#     code: 'ENOENT',
+#     syscall: 'open',
+#     path: '<scratch>
+#   }
+# }
+# Node.js v22.22.0
+# error during build:
+# Error: Pivot Wasm artifact is stale; run pnpm pivot:build
+#     at verify (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946448-1d53b4db53d22.mjs:65:111)
+#     at async ensurePivotWasm (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946448-1d53b4db53d22.mjs:103:5)
+#     at async configResolved (file://<worktree>/node_modules/.vite-temp/vite.config.ts.timestamp-1792008946448-1d53b4db53d22.mjs:137:60)
+#     at async Promise.all (index 1)
+#     at async resolveConfig (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:49259:3)
+#     at async createBuilder (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:46866:18)
+#     at async CAC.<anonymous> (file://<worktree>/node_modules/.pnpm/vite@6.4.3_@types+node@26.2.0/node_modules/vite/dist/node/cli.js:862:23)
+# Subtest: the pinned artifact verifier refuses missing, stale source and altered generated bytes
+ok 1 - the pinned artifact verifier refuses missing, stale source and altered generated bytes
+  ---
+  duration_ms: 1501.695701
+  type: 'test'
+  ...
+# Subtest: packaged desktop policy permits only Wasm compilation alongside self
+ok 2 - packaged desktop policy permits only Wasm compilation alongside self
+  ---
+  duration_ms: 1.707213
+  type: 'test'
+  ...
+# rustc 1.98.1 (mock)
+# wasm-bindgen 0.2.128
+# TAP version 13
+# \# Subtest: emitted web Wasm initializes and negotiates protocol 1 without shared memory
+# ok 1 - emitted web Wasm initializes and negotiates protocol 1 without shared memory
+#   ---
+#   duration_ms: 77.58742
+#   type: 'test'
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 170.384955
+# rustc 1.98.1 (mock)
+# wasm-bindgen 0.2.128
+# TAP version 13
+# \# Subtest: emitted web Wasm initializes and negotiates protocol 1 without shared memory
+# ok 1 - emitted web Wasm initializes and negotiates protocol 1 without shared memory
+#   ---
+#   duration_ms: 66.375444
+#   type: 'test'
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 152.582294
+# rustc 1.98.1 (mock)
+# wasm-bindgen 0.2.128
+# rustc 1.98.1 (mock)
+# wasm-bindgen 0.2.128
+# TAP version 13
+# \# Subtest: emitted web Wasm initializes and negotiates protocol 1 without shared memory
+# ok 1 - emitted web Wasm initializes and negotiates protocol 1 without shared memory
+#   ---
+#   duration_ms: 80.257166
+#   type: 'test'
+#   ...
+# 1..1
+# \# tests 1
+# \# suites 0
+# \# pass 1
+# \# fail 0
+# \# cancelled 0
+# \# skipped 0
+# \# todo 0
+# \# duration_ms 166.835341
+# rustc 1.98.1 (mock)
+# wasm-bindgen 0.2.128
+# Subtest: concurrent missing/stale builds share one promise and a failed owner permits a clean retry
+ok 3 - concurrent missing/stale builds share one promise and a failed owner permits a clean retry
+  ---
+  duration_ms: 3131.537126
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4716.662643

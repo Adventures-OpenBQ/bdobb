@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Example Dashboard - Version 7.0.0",
+    "description": "The v7.0.0 iPad touch showcase: three built-in widgets, each with a touch gesture to try. The Note lists the gestures, including tapping the left rail to open it and tapping outside to close it. The Clock reflows; the long Markdown card scrolls with a one-finger drag and zooms with a two-finger pinch. Every widget is a built-in, so no backend is needed. Opens in BDOBB 7.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "touch": {
+        "id": "touch",
+        "name": "Touch",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 9,
+            "state": {
+              "params": {
+                "text": "## Try these gestures\n- **No mouse?** Tap the left rail to open it, and tap anywhere outside it to close. With a trackpad or Magic Keyboard it opens on hover, like on desktop.\n- **Two-finger pinch** anywhere to zoom.\n- **Drag** inside the Markdown card to scroll it.\n- **Tap** a card's ⋯ for its menu (with widget controls collapsed, tap the ⌄ first).\n- **Double-tap** a card header's empty background, or tap ⤢, to maximize, and again to restore. Double-tapping the title renames the card.\n- Tap into this note and type — the pane must not collapse while focused."
+              }
+            }
+          },
+          {
+            "i": "clock",
+            "x": 0,
+            "y": 9,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "zones": "America/New_York,Europe/London,Asia/Tokyo,Asia/Hong_Kong",
+                "layout": "horizontal",
+                "hourCycle": "24",
+                "face": "dots"
+              }
+            }
+          },
+          {
+            "i": "markdown",
+            "x": 0,
+            "y": 21,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {
+                "text": "# Scrollable content\n\nThis card holds enough text to overflow, so a one-finger drag scrolls it and a two-finger pinch zooms it.\n\n## Section 1\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n## Section 2\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n## Section 3\n1. First item that runs long enough to wrap on a narrow card and give the scroll something to do.\n2. Second item, likewise padded so the list has real height.\n3. Third item, ditto.\n4. Fourth item.\n5. Fifth item.\n\n## Section 4\nMore text so the card is taller than its box. Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.\n\n## Section 5\nUt enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur. Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.\n\n## Section 6\nAt vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.\n\n## End\nIf you can pinch-zoom this text and drag to scroll, the Episode 7 touch model is working."
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

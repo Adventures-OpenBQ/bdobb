@@ -1,0 +1,690 @@
+{
+  "market_metrics": {
+    "name": "Historical metrics",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "table",
+    "endpoint": "/market-kit/metrics.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "fictional_portfolio": {
+    "name": "Fictional portfolio \u2014 $10,000",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "table",
+    "endpoint": "/market-kit/portfolio.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_chart": {
+    "name": "AAPL / MSFT indexed close",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "chart",
+    "endpoint": "/market-kit/prices-chart.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "event_chart": {
+    "name": "AAPL before Jan 30 event",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "chart",
+    "endpoint": "/market-kit/event-chart.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "event_prices": {
+    "name": "Event simulation input rows",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "table",
+    "endpoint": "/market-kit/event-data.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_news": {
+    "name": "Apple historical release facts",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "table",
+    "endpoint": "/market-kit/news.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_prices": {
+    "name": "AAPL \u2014 frozen daily rows",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "table",
+    "endpoint": "/market-kit/aapl.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_01_prompt": {
+    "name": "01 Prompt \u2014 Set up your desk",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/01-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_01_rita": {
+    "name": "01 Set up your desk \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/01-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_01_direct": {
+    "name": "01 Set up your desk \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/01-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_02_prompt": {
+    "name": "02 Prompt \u2014 Read what the market is doing",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/02-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_02_rita": {
+    "name": "02 Read what the market is doing \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/02-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_02_direct": {
+    "name": "02 Read what the market is doing \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/02-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_03_prompt": {
+    "name": "03 Prompt \u2014 The buy, hold, or wait call",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/03-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_03_rita": {
+    "name": "03 The buy, hold, or wait call \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/03-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_03_direct": {
+    "name": "03 The buy, hold, or wait call \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/03-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_04_prompt": {
+    "name": "04 Prompt \u2014 The risk check",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/04-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_04_rita": {
+    "name": "04 The risk check \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/04-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_04_direct": {
+    "name": "04 The risk check \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/04-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_05_prompt": {
+    "name": "05 Prompt \u2014 Compare two ideas",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/05-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_05_rita": {
+    "name": "05 Compare two ideas \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/05-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_05_direct": {
+    "name": "05 Compare two ideas \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/05-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_06_prompt": {
+    "name": "06 Prompt \u2014 Portfolio gut check",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/06-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_06_rita": {
+    "name": "06 Portfolio gut check \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/06-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_06_direct": {
+    "name": "06 Portfolio gut check \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/06-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_07_prompt": {
+    "name": "07 Prompt \u2014 Make sense of the news",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/07-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_07_rita": {
+    "name": "07 Make sense of the news \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/07-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_07_direct": {
+    "name": "07 Make sense of the news \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/07-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_08_prompt": {
+    "name": "08 Prompt \u2014 Build a 5-minute daily routine",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/08-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_08_rita": {
+    "name": "08 Build a 5-minute daily routine \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/08-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_08_direct": {
+    "name": "08 Build a 5-minute daily routine \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/08-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_09_prompt": {
+    "name": "09 Prompt \u2014 Pre-trade checklist",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/09-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_09_rita": {
+    "name": "09 Pre-trade checklist \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/09-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_09_direct": {
+    "name": "09 Pre-trade checklist \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/09-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_10_prompt": {
+    "name": "10 Prompt \u2014 Explain it like I am 12",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/10-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_10_rita": {
+    "name": "10 Explain it like I am 12 \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/10-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_10_direct": {
+    "name": "10 Explain it like I am 12 \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/10-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_11_prompt": {
+    "name": "11 Prompt \u2014 Steelman the opposite",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/11-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_11_rita": {
+    "name": "11 Steelman the opposite \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/11-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_11_direct": {
+    "name": "11 Steelman the opposite \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/11-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_12_prompt": {
+    "name": "12 Prompt \u2014 Earnings or event prep",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/12-prompt.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_12_rita": {
+    "name": "12 Earnings or event prep \u2014 Rita + Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/12-rita.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  },
+  "market_12_direct": {
+    "name": "12 Earnings or event prep \u2014 Independent Qwen",
+    "description": "Frozen educational comparison; no automatic refresh or trading.",
+    "type": "markdown",
+    "endpoint": "/market-kit/12-direct.json",
+    "params": [],
+    "gridData": {
+      "w": 20,
+      "h": 24
+    },
+    "category": "Market Prompt Demo",
+    "source": [
+      "OpenBB / Yahoo Finance",
+      "Independent AI comparison"
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+[
+ {
+  "date": "2026-01-01",
+  "holiday": "New Year's Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-01-19",
+  "holiday": "Dr. Martin Luther King Jr. Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-02-16",
+  "holiday": "President's Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-04-03",
+  "holiday": "Good Friday",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-05-25",
+  "holiday": "Memorial Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-06-19",
+  "holiday": "Juneteenth National Independence Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-07-03",
+  "holiday": "July 4th",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-09-07",
+  "holiday": "Labor Day",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-11-26",
+  "holiday": "Thanksgiving",
+  "type": "Official",
+  "early_close": null
+ },
+ {
+  "date": "2026-11-27",
+  "holiday": "Black Friday",
+  "type": "EarlyClose",
+  "early_close": "13:00:00"
+ },
+ {
+  "date": "2026-12-24",
+  "holiday": "Christmas Eve",
+  "type": "EarlyClose",
+  "early_close": "13:00:00"
+ },
+ {
+  "date": "2026-12-25",
+  "holiday": "Christmas",
+  "type": "Official",
+  "early_close": null
+ }
+]

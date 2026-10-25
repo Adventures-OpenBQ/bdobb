@@ -1,0 +1,33 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ❯ src/lib/statementPresentation.test.ts (7 tests | 1 failed) 6ms
+   × does not infer a template from ordinary field names or silently discard incompatible row structure 4ms
+     → expected [Function] to throw an error
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/statementPresentation.test.ts > does not infer a template from ordinary field names or silently discard incompatible row structure
+AssertionError: expected [Function] to throw an error
+
+- Expected: 
+null
+
++ Received: 
+undefined
+
+ ❯ src/lib/statementPresentation.test.ts:21:62
+     19|   const dataset = { ...input, columns: [{ id: 'fy', label: 'FY2025', m…
+     20|     rows: [{ id: 'raw', values: { revenue: 40 } }] };
+     21|   expect(() => projectStatementDataset(dataset, descriptor)).toThrow(/…
+       |                                                              ^
+     22| });
+     23| it('keeps an empty producer selection empty instead of filling templat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  01:25:51
+   Duration  1.89s (transform 157ms, setup 238ms, collect 160ms, tests 6ms, environment 539ms, prepare 97ms)
+

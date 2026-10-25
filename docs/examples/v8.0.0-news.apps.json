@@ -1,0 +1,139 @@
+[
+  {
+    "name": "Example Dashboard - Version 8.0.0",
+    "description": "The v8.0.0 News widget on its own: one card subscribed through an rss-ticker server to fourteen feeds under Wires, Substack, Seeking Alpha and Satire tabs, with Fed headlines highlighted. Enter your rss-ticker URL in Parameters and the feeds start. The feeds travel in BDOBB's v8 extension, so this file opens in BDOBB 8.0.0 or later. It needs a reachable rss-ticker server, not an OpenBB backend.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "news": {
+        "id": "news",
+        "name": "RSS Aggregator",
+        "layout": [
+          {
+            "i": "news",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 40,
+            "state": {
+              "params": {
+                "url": "",
+                "layout": "vertical",
+                "autoScroll": "off"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v8",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "news"
+          ]
+        },
+        "cards": [
+          {
+            "tab": "news",
+            "index": 0,
+            "news": {
+              "feeds": [
+                {
+                  "url": "https://feeds.bloomberg.com/markets/news.rss",
+                  "name": "Bloomberg",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+                  "name": "WSJ Markets",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+                  "name": "NYT Business",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://www.ft.com/markets?format=rss",
+                  "name": "FT Markets",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
+                  "name": "CNBC",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://news.google.com/rss/search?q=site:reuters.com+when:1d&hl=en-US&gl=US&ceid=US:en",
+                  "name": "Reuters",
+                  "tab": "Wires"
+                },
+                {
+                  "url": "https://bobpisani.substack.com/feed",
+                  "name": "Bob Pisani",
+                  "tab": "Substack"
+                },
+                {
+                  "url": "https://dimartinobooth.substack.com/feed",
+                  "name": "Danielle DiMartino Booth",
+                  "tab": "Substack"
+                },
+                {
+                  "url": "https://peterboockvar.substack.com/feed",
+                  "name": "Peter Boockvar",
+                  "tab": "Substack"
+                },
+                {
+                  "url": "https://roninsana.substack.com/feed",
+                  "name": "Ron Insana",
+                  "tab": "Substack"
+                },
+                {
+                  "url": "https://didierrlopes.substack.com/feed",
+                  "name": "Didier Lopes",
+                  "tab": "Substack"
+                },
+                {
+                  "url": "https://seekingalpha.com/market_currents.xml",
+                  "name": "Seeking Alpha",
+                  "tab": "Seeking Alpha"
+                },
+                {
+                  "url": "https://seekingalpha.com/tag/wall-st-breakfast.xml",
+                  "name": "Wall Street Breakfast",
+                  "tab": "Seeking Alpha"
+                },
+                {
+                  "url": "https://theonion.com/feed/",
+                  "name": "The Onion",
+                  "tab": "Satire"
+                }
+              ],
+              "highlights": [
+                "Fed"
+              ],
+              "tabOrder": [
+                "Wires",
+                "Substack",
+                "Seeking Alpha"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+]

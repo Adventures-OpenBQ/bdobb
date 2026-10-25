@@ -1,0 +1,65 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/stores/chatStore.test.ts (67 tests | 2 failed | 65 skipped) 117ms
+   × chatStore.send > Stop while an MCP tool call is running aborts that call's request 61ms
+     → expected [ { eventType: 'ERROR', …(2) } ] to deeply equal []
+   × chatStore.send > external MCP tool confirmation (back-port of dev b1e6612) > Deny never reaches the server and tells Rita the user declined 55ms
+     → expected [] to deeply equal [ 'create_note — Denied' ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/stores/chatStore.test.ts > chatStore.send > Stop while an MCP tool call is running aborts that call's request
+AssertionError: expected [ { eventType: 'ERROR', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- Array []
++ Array [
++   Object {
++     "eventType": "ERROR",
++     "message": "quote failed — transport",
++     "tool_call": Object {
++       "server_id": "s1",
++       "tool_name": "quote",
++     },
++   },
++ ]
+
+ ❯ src/stores/chatStore.test.ts:368:58
+    366|     // bdobb#43: Stop reads "Stopped", not a red transport failure.
+    367|     const { trail, messages, error } = useChatStore.getState();
+    368|     expect(trail.filter((t) => t.eventType === "ERROR")).toEqual([]);
+       |                                                          ^
+    369|     expect(trail.map((t) => t.message)).toContain("quote — Stopped");
+    370|     expect(messages.some((m) => "content" in m && Array.isArray(m.cont…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/stores/chatStore.test.ts > chatStore.send > external MCP tool confirmation (back-port of dev b1e6612) > Deny never reaches the server and tells Rita the user declined
+AssertionError: expected [] to deeply equal [ 'create_note — Denied' ]
+
+- Expected
++ Received
+
+- Array [
+-   "create_note — Denied",
+- ]
++ Array []
+
+ ❯ src/stores/chatStore.test.ts:407:82
+    405|       // bdobb#43: the trail shows the call as Denied and counts it as…
+    406|       const { trail, calls } = useChatStore.getState();
+    407|       expect(trail.filter((t) => t.eventType === "ERROR").map((t) => t…
+       |                                                                                  ^
+    408|       expect(calls).toContainEqual(expect.objectContaining({ kind: "ag…
+    409|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 65 skipped (67)
+   Start at  15:39:35
+   Duration  1.69s (transform 565ms, setup 128ms, collect 750ms, tests 117ms, environment 288ms, prepare 46ms)
+

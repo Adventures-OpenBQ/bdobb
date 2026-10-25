@@ -1,0 +1,17 @@
+/* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/*
+ * Stub for maplibre-gl/dist/maplibre-gl.css.
+ *
+ * plotly.js/src/registry.js unconditionally `require()`s this stylesheet
+ * inside a branch guarded by `basePlotModule.name === 'map'`. Rollup hoists
+ * CSS imports out of dead branches regardless of the runtime guard, so the
+ * real 65 KB maplibre stylesheet was landing in the production CSS bundle
+ * even though src/lib/plotly.ts registers only `scatter` and `candlestick`
+ * and this app never registers a `map` trace. vite.config.ts aliases the
+ * specifier to this empty file to reclaim those bytes.
+ *
+ * If a `map`-family trace is ever registered, this stub must be removed (or
+ * the alias narrowed) so the real maplibre CSS ships again.
+ */

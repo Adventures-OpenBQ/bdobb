@@ -1,0 +1,103 @@
+{
+  "id": "3dc712c8-84e2-448c-883a-1f373e3d5cae",
+  "name": "R5G Eight",
+  "preset": "laptop",
+  "slots": [
+    {
+      "slot": "a",
+      "dashboardId": "9a5e0000-0000-4000-8000-000000000001"
+    },
+    {
+      "slot": "b",
+      "dashboardId": "22963ef1-a7a1-47f1-b5fb-3a68d9169a43"
+    },
+    {
+      "slot": "c",
+      "dashboardId": "d9b2e23a-2209-42c1-bf7b-d3d54bf4cbab"
+    },
+    {
+      "slot": "d",
+      "dashboardId": "86c32d4f-2fa1-4070-abb0-73618c1a4d3c"
+    },
+    {
+      "slot": "e",
+      "dashboardId": "8f1b2e73-0d3d-4b21-a726-43100738aedc"
+    },
+    {
+      "slot": "f",
+      "dashboardId": "3d5b76f4-3825-452f-8ff8-352465050e36"
+    },
+    {
+      "slot": "g",
+      "dashboardId": "642b7067-f48a-40e6-8e4a-623d97644b72"
+    },
+    {
+      "slot": "h",
+      "dashboardId": "79db2a44-a0d3-445d-b368-0f600a63e298"
+    }
+  ],
+  "layout": [
+    {
+      "slot": "a",
+      "x": 0,
+      "y": 0,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "b",
+      "x": 6,
+      "y": 0,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "c",
+      "x": 3,
+      "y": 0,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "d",
+      "x": 0,
+      "y": 6,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "e",
+      "x": 3,
+      "y": 6,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "f",
+      "x": 9,
+      "y": 0,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "g",
+      "x": 6,
+      "y": 6,
+      "w": 3,
+      "h": 6
+    },
+    {
+      "slot": "h",
+      "x": 9,
+      "y": 6,
+      "w": 3,
+      "h": 6
+    }
+  ],
+  "activeTabIds": {
+    "3d5b76f4-3825-452f-8ff8-352465050e36": "dd1b4a82-2538-4e43-8088-3d2cf16d0c32",
+    "8f1b2e73-0d3d-4b21-a726-43100738aedc": "31ade405-a6fc-4e3d-b2f0-d8c09703be3d",
+    "642b7067-f48a-40e6-8e4a-623d97644b72": "46bd1272-0ce1-40cc-a719-ae901268b42c",
+    "79db2a44-a0d3-445d-b368-0f600a63e298": "bbebd891-b956-429f-a061-4b1b5360fadf"
+  }
+}

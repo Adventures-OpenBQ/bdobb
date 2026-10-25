@@ -1,0 +1,25 @@
+== typecheck load: 47.00 26.41 34.86
+typecheck exit=0 dur=17s
+== lint load: 83.67 36.08 38.12
+lint exit=0 dur=14s
+== unit load: 88.98 38.78 39.06
+unit exit=0 dur=193s
+== build load: 21.52 39.30 40.13
+build exit=0 dur=14s
+== e2e load: 19.29 37.95 39.63
+e2e exit=0 dur=456s
+== web load: 40.91 39.23 39.86
+web exit=0 dur=2s
+== cargo load: 40.91 39.23 39.86
+cargo exit=0 dur=1s
+DONE
+== live load: 34.55 37.87 39.35
+live exit=1 dur=124s
+== typecheck-b load: 34.53 40.08 39.66
+typecheck-b exit=0 dur=9s
+== lint-b load: 34.17 39.81 39.57
+lint-b exit=0 dur=8s
+== live-extra load: 34.12 39.51 39.47
+live-extra exit=0 dur=113s
+== scrub load: 33.05 38.13 38.99
+scrub exit=0 dur=1s

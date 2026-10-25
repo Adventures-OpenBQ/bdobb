@@ -1,0 +1,13 @@
+{
+  "numericRefreshMs": 5000,
+  "initial": {
+    "markdown_widget_with_short_refetch_interval": 2,
+    "markdown_widget_with_run_button": 2
+  },
+  "after": {
+    "markdown_widget_with_short_refetch_interval": 3,
+    "markdown_widget_with_run_button": 3
+  },
+  "runDoesNotPoll": true,
+  "cron": "deferred"
+}

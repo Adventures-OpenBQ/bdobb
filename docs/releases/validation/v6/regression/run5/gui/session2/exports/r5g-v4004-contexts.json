@@ -1,0 +1,17 @@
+[
+  {
+    "Section": "Income",
+    "Line item": "revenue",
+    "FY2025": 100
+  },
+  {
+    "Section": "Expenses",
+    "Line item": "cost_of_revenue",
+    "FY2025": 60
+  },
+  {
+    "Section": "Profit",
+    "Line item": "Calculated gross profit",
+    "FY2025": "#ERROR"
+  }
+]

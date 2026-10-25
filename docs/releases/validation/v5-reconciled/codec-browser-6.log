@@ -1,0 +1,19 @@
+[WebServer] (node:9854) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10819) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:11796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:14563) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/apps.spec.ts:40:1 › the rail's Apps row opens a backend's app as a dashboard of its own (4.3s)
+  ✓  2 [chromium] › e2e/apps.spec.ts:103:1 › opening the same app again asks first: Skip leaves the Apps dialog open, Keep both opens Macro (2) (3.1s)
+  ✓  3 [chromium] › e2e/apps.spec.ts:136:1 › opening an app whose name is taken asks, and Replace swaps the app into yours (4.7s)
+  ✓  4 [chromium] › e2e/statement-template-v5.spec.ts:7:40 › v4 template becomes a v5 Statement with durable folds and authoritative exports in dark (5.3s)
+  ✓  5 [chromium] › e2e/statement-template-v5.spec.ts:7:40 › v4 template becomes a v5 Statement with durable folds and authoritative exports in light (2.7s)
+  ✓  6 [chromium] › e2e/statement-template-v5.spec.ts:45:1 › Statement presentation displays a monetary-context error instead of Profit40 (1.7s)
+
+  6 passed (1.1m)

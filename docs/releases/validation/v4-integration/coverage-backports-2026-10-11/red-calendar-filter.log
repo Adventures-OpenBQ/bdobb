@@ -1,0 +1,1042 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/components/renderers/CalendarRenderer.test.tsx (52 tests | 1 failed | 51 skipped) 236ms
+   × CalendarRenderer tree filter > lists the sources with counts, Other last, and expands to releases and statistics 236ms
+     → Unable to find an accessible element with the role "group" and name "Filter"
+
+Here are the accessible roles:
+
+  group:
+
+  Name "Mode":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Mode"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "Unit":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Unit"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "Cell mode":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Cell mode"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Static":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Vertical":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Horizontal":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Paged":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Day":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Week":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Month":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Previous"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Today":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Next"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "List":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Timeline":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Filter":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33mclass[39m=[32m"card-action"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand BLS":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand BLS"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand EIA":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand EIA"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand Other":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand Other"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Reset":
+  [36m<button[39m
+    [33mclass[39m=[32m"calendar-tree-reset"[39m
+    [33mdisabled[39m=[32m""[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Mon–Fri":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33mclass[39m=[32m"card-action"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tree:
+
+  Name "Filter":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Filter"[39m
+    [33mclass[39m=[32m"calendar-tree-list"[39m
+    [33mrole[39m=[32m"tree"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  treeitem:
+
+  Name "▸ BLS BLS 1":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  Name "▸ EIA EIA 3":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  Name "▸ Other Other 1":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  checkbox:
+
+  Name "BLS":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"BLS"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "EIA":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"EIA"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "Other":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"Other"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "Even rows":
+  [36m<input[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Mon Tue Wed Thu Fri":
+  [36m<div[39m
+    [33mclass[39m=[32m"calendar-dow"[39m
+    [33mrole[39m=[32m"row"[39m
+    [33mstyle[39m=[32m"grid-template-columns: repeat(5, minmax(0, 1fr));"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Mon":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Tue":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Wed":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Thu":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Fri":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  grid:
+
+  Name "Calendar dates":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Calendar dates"[39m
+    [33mclass[39m=[32m"calendar-grid calendar-unit-month"[39m
+    [33mdata-testid[39m=[32m"cal-grid"[39m
+    [33mrole[39m=[32m"grid"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "Mystery Index":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"Mystery Index"[39m
+  [36m/>[39m
+
+  Name "EIA Crude Oil Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Crude Oil Stocks Change"[39m
+  [36m/>[39m
+
+  Name "EIA Gasoline Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Gasoline Stocks Change"[39m
+  [36m/>[39m
+
+  Name "EIA Natural Gas Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Natural Gas Stocks Change"[39m
+  [36m/>[39m
+
+  Name "Core PPI":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"Core PPI"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"calendar"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"calendar-toolbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Mode"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mStatic[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mVertical[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mHorizontal[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mPaged[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Unit"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mDay[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mWeek[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mMonth[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"calendar-nav"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Previous"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m‹[0m
+          [36m</button>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"calendar-range"[39m
+          [36m>[39m
+            [0mSept 2026[0m
+          [36m</span>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mToday[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Next"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m›[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Cell mode"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mList[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mTimeline[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"calendar-tree"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-expanded[39m=[32m"true"[39m
+            [33mclass[39m=[32m"card-action"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mFilter[0m
+          [36m</button>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"calendar-tree-pop"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Filter"[39m
+              [33mclass[39m=[32m"calendar-tree-list"[39m
+              [33mrole[39m=[32m"tree"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-selected[39m=[32m"true"[39m
+                [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+                [33mrole[39m=[32m"treeitem"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"calendar-tree-row"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Expand BLS"[39m
+                    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0m▸[0m
+                  [36m</button>[39m
+                  [36m<label>[39m
+                    [36m<input[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33maria-label[39m=[32m"BLS"[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"calendar-tree-name"[39m
+                    [36m>[39m
+                      [0mBLS[0m
+                    [36m</span>[39m
+                  [36m</label>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"calendar-tree-count"[39m
+                  [36m>[39m
+                    [0m1[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-selected[39m=[32m"true"[39m
+                [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+                [33mrole[39m=[32m"treeitem"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"calendar-tree-row"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Expand EIA"[39m
+                    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0m▸[0m
+                  [36m</button>[39m
+                  [36m<label>[39m
+                    [36m<input[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33maria-label[39m=[32m"EIA"[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"calendar-tree-name"[39m
+                    [36m>...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/renderers/CalendarRenderer.test.tsx > CalendarRenderer tree filter > lists the sources with counts, Other last, and expands to releases and statistics
+TestingLibraryElementError: Unable to find an accessible element with the role "group" and name "Filter"
+
+Here are the accessible roles:
+
+  group:
+
+  Name "Mode":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Mode"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "Unit":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Unit"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  Name "Cell mode":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Cell mode"[39m
+    [33mclass[39m=[32m"calendar-seg"[39m
+    [33mrole[39m=[32m"group"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Static":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Vertical":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Horizontal":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Paged":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Day":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Week":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Month":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Previous":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Previous"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Today":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Next":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Next"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "List":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Timeline":
+  [36m<button[39m
+    [33maria-pressed[39m=[32m"false"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Filter":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33mclass[39m=[32m"card-action"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand BLS":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand BLS"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand EIA":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand EIA"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Expand Other":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Expand Other"[39m
+    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Reset":
+  [36m<button[39m
+    [33mclass[39m=[32m"calendar-tree-reset"[39m
+    [33mdisabled[39m=[32m""[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Mon–Fri":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33mclass[39m=[32m"card-action"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  tree:
+
+  Name "Filter":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Filter"[39m
+    [33mclass[39m=[32m"calendar-tree-list"[39m
+    [33mrole[39m=[32m"tree"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  treeitem:
+
+  Name "▸ BLS BLS 1":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  Name "▸ EIA EIA 3":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  Name "▸ Other Other 1":
+  [36m<div[39m
+    [33maria-expanded[39m=[32m"false"[39m
+    [33maria-selected[39m=[32m"true"[39m
+    [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+    [33mrole[39m=[32m"treeitem"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  checkbox:
+
+  Name "BLS":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"BLS"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "EIA":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"EIA"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "Other":
+  [36m<input[39m
+    [33maria-checked[39m=[32m"true"[39m
+    [33maria-label[39m=[32m"Other"[39m
+    [33mchecked[39m=[32m""[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  Name "Even rows":
+  [36m<input[39m
+    [33mtype[39m=[32m"checkbox"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Mon Tue Wed Thu Fri":
+  [36m<div[39m
+    [33mclass[39m=[32m"calendar-dow"[39m
+    [33mrole[39m=[32m"row"[39m
+    [33mstyle[39m=[32m"grid-template-columns: repeat(5, minmax(0, 1fr));"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Mon":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Tue":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Wed":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Thu":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  Name "Fri":
+  [36m<div[39m
+    [33mrole[39m=[32m"columnheader"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  grid:
+
+  Name "Calendar dates":
+  [36m<div[39m
+    [33maria-label[39m=[32m"Calendar dates"[39m
+    [33mclass[39m=[32m"calendar-grid calendar-unit-month"[39m
+    [33mdata-testid[39m=[32m"cal-grid"[39m
+    [33mrole[39m=[32m"grid"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<ul[39m
+    [33mclass[39m=[32m"calendar-list"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "Mystery Index":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"Mystery Index"[39m
+  [36m/>[39m
+
+  Name "EIA Crude Oil Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Crude Oil Stocks Change"[39m
+  [36m/>[39m
+
+  Name "EIA Gasoline Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Gasoline Stocks Change"[39m
+  [36m/>[39m
+
+  Name "EIA Natural Gas Stocks Change":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"EIA Natural Gas Stocks Change"[39m
+  [36m/>[39m
+
+  Name "Core PPI":
+  [36m<li[39m
+    [33mclass[39m=[32m"calendar-ev"[39m
+    [33mtitle[39m=[32m"Core PPI"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"calendar"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"calendar-toolbar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Mode"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mStatic[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mVertical[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mHorizontal[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mPaged[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Unit"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mDay[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mWeek[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mMonth[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"calendar-nav"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Previous"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m‹[0m
+          [36m</button>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"calendar-range"[39m
+          [36m>[39m
+            [0mSept 2026[0m
+          [36m</span>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mToday[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Next"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m›[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Cell mode"[39m
+          [33mclass[39m=[32m"calendar-seg"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"true"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mList[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-pressed[39m=[32m"false"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mTimeline[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"calendar-tree"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-expanded[39m=[32m"true"[39m
+            [33mclass[39m=[32m"card-action"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mFilter[0m
+          [36m</button>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"calendar-tree-pop"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-label[39m=[32m"Filter"[39m
+              [33mclass[39m=[32m"calendar-tree-list"[39m
+              [33mrole[39m=[32m"tree"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-selected[39m=[32m"true"[39m
+                [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+                [33mrole[39m=[32m"treeitem"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"calendar-tree-row"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Expand BLS"[39m
+                    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0m▸[0m
+                  [36m</button>[39m
+                  [36m<label>[39m
+                    [36m<input[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33maria-label[39m=[32m"BLS"[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"calendar-tree-name"[39m
+                    [36m>[39m
+                      [0mBLS[0m
+                    [36m</span>[39m
+                  [36m</label>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"calendar-tree-count"[39m
+                  [36m>[39m
+                    [0m1[0m
+                  [36m</span>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33maria-expanded[39m=[32m"false"[39m
+                [33maria-selected[39m=[32m"true"[39m
+                [33mclass[39m=[32m"calendar-tree-node calendar-tree-l1"[39m
+                [33mrole[39m=[32m"treeitem"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"calendar-tree-row"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"Expand EIA"[39m
+                    [33mclass[39m=[32m"calendar-tree-twisty"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [0m▸[0m
+                  [36m</button>[39m
+                  [36m<label>[39m
+                    [36m<input[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33maria-label[39m=[32m"EIA"[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"calendar-tree-name"[39m
+                    [36m>...
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/renderers/CalendarRenderer.test.tsx:813:25
+    811|     // Back-port of dev 9fc10c6: a labelled group of real checkboxes a…
+    812|     // Expand/Collapse buttons, not a tree (which promises arrow-key n…
+    813|     const tree = screen.getByRole("group", { name: "Filter" });
+       |                         ^
+    814|     expect(screen.queryByRole("tree")).toBeNull();
+    815|     expect(screen.queryAllByRole("treeitem")).toHaveLength(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 51 skipped (52)
+   Start at  12:38:11
+   Duration  1.17s (transform 207ms, setup 93ms, collect 294ms, tests 236ms, environment 188ms, prepare 47ms)
+

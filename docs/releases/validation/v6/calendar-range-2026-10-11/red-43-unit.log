@@ -1,0 +1,81 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/lib/agent/execute.test.ts (64 tests | 6 failed | 51 skipped) 13ms
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > user_declined counts as one failed call 5ms
+     → expected "spy" to be called 1 times, but got 0 times
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > unsupported counts as one failed call 0ms
+     → expected "spy" to be called 1 times, but got 0 times
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > fetch_failed counts as one failed call 0ms
+     → expected "spy" to be called 1 times, but got 0 times
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > status error counts as one failed call 0ms
+     → expected "spy" to be called 1 times, but got 0 times
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > agent-rita $rita_kind error counts as one failed call 0ms
+     → expected "spy" to be called 1 times, but got 0 times
+   × executeFunction > classifies every not-completed tool result (bdobb#43) > Stop mid-call is reported as stopped, not as a failure, and ends the turn 4ms
+     → promise resolved "{ role: 'tool', …(4) }" instead of rejecting
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > user_declined counts as one failed call
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > unsupported counts as one failed call
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > fetch_failed counts as one failed call
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > status error counts as one failed call
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > agent-rita $rita_kind error counts as one failed call
+AssertionError: expected "spy" to be called 1 times, but got 0 times
+ ❯ src/lib/agent/execute.test.ts:309:27
+    307|       const onToolError = vi.fn();
+    308|       await executeFunction(call, { fetchWidget, runAgentTool: async (…
+    309|       expect(onToolError).toHaveBeenCalledTimes(1);
+       |                           ^
+    310|       expect(onToolError).toHaveBeenCalledWith(expect.objectContaining…
+    311|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/lib/agent/execute.test.ts > executeFunction > classifies every not-completed tool result (bdobb#43) > Stop mid-call is reported as stopped, not as a failure, and ends the turn
+AssertionError: promise resolved "{ role: 'tool', …(4) }" instead of rejecting
+
+- Expected
++ Received
+
+- [Error: rejected promise]
++ Object {
++   "data": Array [
++     Object {
++       "items": Array [
++         Object {
++           "text": "{\"$rita_kind\":\"error\",\"error\":{\"code\":\"transport\",\"message\":\"AbortError: BodyStreamBuffer was aborted\"}}",
++           "type": "text",
++         },
++         Object {
++           "text": "{\"error_type\":\"tool_failed\",\"code\":\"transport\",\"server\":\"s1\",\"tool\":\"q\",\"message\":\"AbortError: BodyStreamBuffer was aborted\"}",
++           "type": "text",
++         },
++       ],
++     },
++   ],
++   "extra_state": undefined,
++   "function": "execute_agent_tool",
++   "input_arguments": Object {
++     "server_id": "s1",
++     "tool_name": "q",
++   },
++   "role": "tool",
++ }
+
+ ❯ src/lib/agent/execute.test.ts:341:23
+    339|       );
+    340|       stop.abort();
+    341|       await expect(run).rejects.toMatchObject({ name: "AbortError" });
+       |                       ^
+    342|       expect(onToolError).not.toHaveBeenCalled();
+    343|       expect(onToolStopped).toHaveBeenCalledWith(expect.objectContaini…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 7 passed | 51 skipped (64)
+   Start at  15:39:23
+   Duration  1.73s (transform 555ms, setup 181ms, collect 730ms, tests 13ms, environment 362ms, prepare 75ms)
+

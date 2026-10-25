@@ -1,0 +1,5 @@
+
+> bdobb@3.0.0 scrub <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-fixbatch
+> bash scripts/scrub-check.sh
+
+scrub-check: clean

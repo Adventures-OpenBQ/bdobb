@@ -1,0 +1,15 @@
+
+Running 8 tests using 1 worker
+
+(node:7108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker dark 1280 cramped=false coarse=false (6.0s)
+  ✓  2 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker light 1280 cramped=false coarse=false (7.7s)
+  ✓  3 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker dark 390 cramped=false coarse=false (8.5s)
+  ✓  4 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker light 390 cramped=false coarse=false (5.8s)
+  ✓  5 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker dark 1280 cramped=true coarse=false (5.6s)
+  ✓  6 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker light 1280 cramped=true coarse=false (6.4s)
+  ✓  7 [chromium] › e2e/pivot-viewer.spec.ts:14:238 › viewer header actual worker dark 390 cramped=false coarse=true (7.0s)
+  ✓  8 [chromium] › e2e/pivot-viewer.spec.ts:31:1 › registered WidgetDataset API seam uses visible viewer header and real worker exact subsets without reacquisition (5.0s)
+
+  8 passed (1.4m)

@@ -1,0 +1,263 @@
+{
+  "id": "206d6487-7652-4a98-a9ea-822d12dc6d3f",
+  "name": "BLS Consumer Price Index",
+  "tabs": [
+    {
+      "id": "30f79548-2202-4c42-928c-40a92b97cf6b",
+      "name": "Documents",
+      "cards": [
+        {
+          "id": "7fcf8d43-a102-4dfc-9dbd-d7c03df56c63",
+          "widgetId": "bls_cpi_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/cpi.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 27
+          }
+        }
+      ]
+    },
+    {
+      "id": "491cbf8d-74f0-46b9-be99-85ad756b5dd5",
+      "name": "News Release Tables",
+      "cards": [
+        {
+          "id": "397125cc-08a8-40c1-b435-f621629c8aa6",
+          "widgetId": "bls_cpi_t1_expenditure_category_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "a3453cf8-b0a6-43c0-b40b-f19a0e4c4ae9",
+          "widgetId": "bls_cpi_t2_detailed_expenditure_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 14,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "dc2f2db0-7bf5-4b31-9f3e-7d4093758c2b",
+          "widgetId": "bls_cpi_t3_special_aggregates_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "836e68b2-cd03-4091-9492-aad6c61569e8",
+          "widgetId": "bls_cpi_t4_selected_areas_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 38,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "2402e8b1-9564-46f4-bff2-f4b8d369f818",
+          "widgetId": "bls_cpi_t5_chained_vs_cpiu_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 50,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "59b3c696-3036-46d5-b191-ff3a81a08763",
+          "widgetId": "bls_cpi_t6_1m_analysis_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "0753eb66-4d66-45cc-a318-92b21fdf3c69",
+          "widgetId": "bls_cpi_t7_12m_analysis_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 74,
+            "w": 40,
+            "h": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "a36eaf31-125a-4268-ae3d-c01e6d4f9d80",
+      "name": "Reference Tables",
+      "cards": [
+        {
+          "id": "58c1e547-9749-4acc-b28b-b509c489c254",
+          "widgetId": "bls_cpi_seasonal_factors_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "a1788c18-5b35-42b8-b554-7e2a99f8abe3",
+          "widgetId": "bls_cpi_relative_importance_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "table": "1",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 14,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "736fefb2-8934-43b4-9092-2e4aba0a49fc",
+          "widgetId": "bls_cpi_supplemental_tables_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "table": "cpi-u-regional",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 40,
+            "h": 16
+          }
+        }
+      ]
+    },
+    {
+      "id": "d76a704c-aa23-41cb-8887-db9e3b942f70",
+      "name": "Charts",
+      "cards": [
+        {
+          "id": "019730f5-4f7e-41bb-a9a9-d9b441b4039b",
+          "widgetId": "bls_cpi_by_category_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 36
+          },
+          "view": "chart"
+        },
+        {
+          "id": "a504b070-0245-44c9-86fe-2507eebb694e",
+          "widgetId": "bls_cpi_by_category_line_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 38,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "4d7d7e85-077d-4b18-909e-275e02c8f4fc",
+          "widgetId": "bls_cpi_by_region_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 58,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "5ac4dc52-f213-4e5d-8206-be8d489a21c4",
+          "widgetId": "bls_cpi_by_metro_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 78,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "0ac65f0b-12e3-4dcc-a265-ad6b8f92d967",
+          "widgetId": "bls_cpi_average_prices_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 98,
+            "w": 40,
+            "h": 30
+          },
+          "view": "chart"
+        }
+      ]
+    }
+  ]
+}
