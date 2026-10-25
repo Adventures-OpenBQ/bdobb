@@ -1596,10 +1596,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
     },
 
     setDockRows: async (edge, rows) => {
-      await mutateDashboard(DOCKS_ID, (d) => ({
-        ...d,
-        dockRows: clampDockRows({ ...(d.dockRows ?? DEFAULT_DOCK_ROWS), [edge]: rows }),
-      }));
+      await mutateDashboard(DOCKS_ID, (d) => {
+        const dockRows = clampDockRows({ ...(d.dockRows ?? DEFAULT_DOCK_ROWS), [edge]: rows });
+        // maxRows constrains user drags, but RGL does not shrink existing
+        // items when the band's row count changes. Keep their controls visible.
+        return {
+          ...d,
+          dockRows,
+          tabs: d.tabs.map((tab) => tab.id !== edge ? tab : {
+            ...tab,
+            cards: tab.cards.map((card) => {
+              const h = Math.min(card.layout.h, dockRows[edge]);
+              return { ...card, layout: { ...card.layout, h, y: Math.min(card.layout.y, dockRows[edge] - h) } };
+            }),
+          }),
+        };
+      });
     },
 
     importDocks: async (incoming) => {
