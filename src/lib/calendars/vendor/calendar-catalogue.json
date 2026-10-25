@@ -1,0 +1,2163 @@
+{
+  "calendars": [
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:24/5",
+      "close": "00:00:00",
+      "mic": "24/5",
+      "name": "24/5 (around the clock, Monday to Friday)",
+      "open": "00:00:00",
+      "overnight": true,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "UTC",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:24/7",
+      "close": "00:00:00",
+      "mic": "24/7",
+      "name": "24/7 (every minute of every day)",
+      "open": "00:00:00",
+      "overnight": true,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "UTC",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "2017-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:AIXK",
+      "close": "17:00:00",
+      "mic": "AIXK",
+      "name": "Astana International Exchange",
+      "open": "11:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Asia/Almaty",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:ASEX",
+      "close": "17:20:00",
+      "mic": "ASEX",
+      "name": "Athens Stock Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "AT"
+        ],
+        "yahoo": [
+          "AT"
+        ]
+      },
+      "timezone": "Europe/Athens",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "BMF"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:BVMF",
+      "close": "18:00:00",
+      "mic": "BVMF",
+      "name": "B3 (Brasil Bolsa Balcão)",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "SA"
+        ],
+        "yahoo": [
+          "SA"
+        ]
+      },
+      "timezone": "America/Sao_Paulo",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "CBOT",
+        "CME",
+        "COMEX",
+        "NYMEX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:CMES",
+      "close": "17:00:00",
+      "mic": "CMES",
+      "name": "Chicago Mercantile Exchange",
+      "open": "17:00:00",
+      "overnight": true,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "CBT",
+          "CME",
+          "CMX",
+          "NYM"
+        ]
+      },
+      "timezone": "America/Chicago",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "ICE",
+        "ICEUS",
+        "NYFE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:IEPA",
+      "close": "18:00:00",
+      "mic": "IEPA",
+      "name": "ICE Futures US",
+      "open": "20:00:00",
+      "overnight": true,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "NYB"
+        ]
+      },
+      "timezone": "America/New_York",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XAMS",
+      "close": "17:30:00",
+      "mic": "XAMS",
+      "name": "Euronext Amsterdam",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "AS"
+        ],
+        "yahoo": [
+          "AS"
+        ]
+      },
+      "timezone": "Europe/Amsterdam",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "ASX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XASX",
+      "close": "16:00:00",
+      "mic": "XASX",
+      "name": "Australian Securities Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "AU"
+        ],
+        "yahoo": [
+          "AX"
+        ]
+      },
+      "timezone": "Australia/Sydney",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBDA",
+      "close": "16:30:00",
+      "mic": "XBDA",
+      "name": "Bermuda Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Atlantic/Bermuda",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBEL",
+      "close": "14:00:00",
+      "mic": "XBEL",
+      "name": "Belgrade Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Belgrade",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBKK",
+      "close": "16:30:00",
+      "mic": "XBKK",
+      "name": "Stock Exchange of Thailand",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "BK"
+        ],
+        "yahoo": [
+          "BK"
+        ]
+      },
+      "timezone": "Asia/Bangkok",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBOG",
+      "close": "16:00:00",
+      "mic": "XBOG",
+      "name": "Colombia Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "CL"
+        ]
+      },
+      "timezone": "America/New_York",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "BSE"
+      ],
+      "bounds": {
+        "end": "2026-12-31",
+        "start": "1997-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBOM",
+      "close": "15:30:00",
+      "mic": "XBOM",
+      "name": "BSE (Bombay Stock Exchange)",
+      "open": "09:15:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "BO"
+        ]
+      },
+      "timezone": "Asia/Kolkata",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBRA",
+      "close": "15:30:00",
+      "mic": "XBRA",
+      "name": "Bratislava Stock Exchange",
+      "open": "11:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Bratislava",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBRU",
+      "close": "17:30:00",
+      "mic": "XBRU",
+      "name": "Euronext Brussels",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "BR"
+        ],
+        "yahoo": [
+          "BR"
+        ]
+      },
+      "timezone": "Europe/Brussels",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "BVB"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBSE",
+      "close": "17:45:00",
+      "mic": "XBSE",
+      "name": "Bucharest Stock Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "RO"
+        ],
+        "yahoo": [
+          "RO"
+        ]
+      },
+      "timezone": "Europe/Bucharest",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBUD",
+      "close": "17:00:00",
+      "mic": "XBUD",
+      "name": "Budapest Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "BUD"
+        ],
+        "yahoo": [
+          "BD"
+        ]
+      },
+      "timezone": "Europe/Budapest",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XBUE",
+      "close": "17:00:00",
+      "mic": "XBUE",
+      "name": "Buenos Aires Stock Exchange",
+      "open": "11:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "BA"
+        ],
+        "yahoo": [
+          "BA"
+        ]
+      },
+      "timezone": "America/Argentina/Buenos_Aires",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "CFE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XCBF",
+      "close": "15:15:00",
+      "mic": "XCBF",
+      "name": "Cboe Futures Exchange",
+      "open": "08:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "America/Chicago",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XCSE",
+      "close": "17:00:00",
+      "mic": "XCSE",
+      "name": "Nasdaq Copenhagen",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "CO"
+        ],
+        "yahoo": [
+          "CO"
+        ]
+      },
+      "timezone": "Europe/Copenhagen",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XCYS",
+      "close": "17:00:00",
+      "mic": "XCYS",
+      "name": "Cyprus Stock Exchange",
+      "open": "10:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Asia/Nicosia",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XDUB",
+      "close": "16:28:00",
+      "mic": "XDUB",
+      "name": "Euronext Dublin",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "IR"
+        ],
+        "yahoo": [
+          "IR"
+        ]
+      },
+      "timezone": "Europe/Dublin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XDUS",
+      "close": "22:00:00",
+      "mic": "XDUS",
+      "name": "Börse Düsseldorf",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "DU"
+        ],
+        "yahoo": [
+          "DU"
+        ]
+      },
+      "timezone": "Europe/Brussels",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XEEE",
+      "close": "18:00:00",
+      "mic": "XEEE",
+      "name": "European Energy Exchange",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Berlin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XETR",
+      "close": "17:30:00",
+      "mic": "XETR",
+      "name": "Xetra",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "XETRA"
+        ],
+        "yahoo": [
+          "DE"
+        ]
+      },
+      "timezone": "Europe/Berlin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XEUR",
+      "close": "22:00:00",
+      "mic": "XEUR",
+      "name": "Eurex",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Berlin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "FWB"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XFRA",
+      "close": "17:30:00",
+      "mic": "XFRA",
+      "name": "Frankfurt Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "F"
+        ],
+        "yahoo": [
+          "F"
+        ]
+      },
+      "timezone": "Europe/Berlin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XHAM",
+      "close": "22:00:00",
+      "mic": "XHAM",
+      "name": "Börse Hamburg",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "HM"
+        ],
+        "yahoo": [
+          "HM"
+        ]
+      },
+      "timezone": "Europe/Brussels",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XHEL",
+      "close": "18:30:00",
+      "mic": "XHEL",
+      "name": "Nasdaq Helsinki",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "HE"
+        ],
+        "yahoo": [
+          "HE"
+        ]
+      },
+      "timezone": "Europe/Helsinki",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "HKEX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": {
+        "end": "13:00:00",
+        "start": "12:00:00"
+      },
+      "calendarId": "exchange:XHKG",
+      "close": "16:00:00",
+      "mic": "XHKG",
+      "name": "Hong Kong Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "HK"
+        ],
+        "yahoo": [
+          "HK"
+        ]
+      },
+      "timezone": "Asia/Hong_Kong",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XICE",
+      "close": "15:30:00",
+      "mic": "XICE",
+      "name": "Nasdaq Iceland",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "IC"
+        ]
+      },
+      "timezone": "Atlantic/Reykjavik",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "JKT"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XIDX",
+      "close": "15:50:00",
+      "mic": "XIDX",
+      "name": "Indonesia Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "JK"
+        ],
+        "yahoo": [
+          "JK"
+        ]
+      },
+      "timezone": "Asia/Jakarta",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XIST",
+      "close": "18:00:00",
+      "mic": "XIST",
+      "name": "Borsa Istanbul",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "IS"
+        ]
+      },
+      "timezone": "Europe/Istanbul",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XJSE",
+      "close": "17:00:00",
+      "mic": "XJSE",
+      "name": "Johannesburg Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "JO"
+        ]
+      },
+      "timezone": "Africa/Johannesburg",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XKAR",
+      "close": "15:30:00",
+      "mic": "XKAR",
+      "name": "Pakistan Stock Exchange",
+      "open": "09:32:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "KAR"
+        ],
+        "yahoo": []
+      },
+      "timezone": "Asia/Karachi",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XKLS",
+      "close": "17:00:00",
+      "mic": "XKLS",
+      "name": "Bursa Malaysia",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "KLSE"
+        ],
+        "yahoo": [
+          "KL"
+        ]
+      },
+      "timezone": "Asia/Kuala_Lumpur",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XKRX",
+      "close": "15:30:00",
+      "mic": "XKRX",
+      "name": "Korea Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "KO",
+          "KQ"
+        ],
+        "yahoo": [
+          "KQ",
+          "KS"
+        ]
+      },
+      "timezone": "Asia/Seoul",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLIM",
+      "close": "16:00:00",
+      "mic": "XLIM",
+      "name": "Lima Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "LIM"
+        ],
+        "yahoo": []
+      },
+      "timezone": "America/Lima",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLIS",
+      "close": "16:30:00",
+      "mic": "XLIS",
+      "name": "Euronext Lisbon",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "LS"
+        ],
+        "yahoo": [
+          "LS"
+        ]
+      },
+      "timezone": "Europe/Lisbon",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLIT",
+      "close": "16:00:00",
+      "mic": "XLIT",
+      "name": "Nasdaq Vilnius",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "VS"
+        ]
+      },
+      "timezone": "Europe/Vilnius",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLJU",
+      "close": "15:15:00",
+      "mic": "XLJU",
+      "name": "Ljubljana Stock Exchange",
+      "open": "09:15:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Ljubljana",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "LSE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLON",
+      "close": "16:30:00",
+      "mic": "XLON",
+      "name": "London Stock Exchange",
+      "open": "08:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "LSE"
+        ],
+        "yahoo": [
+          "IL",
+          "L"
+        ]
+      },
+      "timezone": "Europe/London",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "LUXSE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XLUX",
+      "close": "17:40:00",
+      "mic": "XLUX",
+      "name": "Luxembourg Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Luxembourg",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XMAD",
+      "close": "17:30:00",
+      "mic": "XMAD",
+      "name": "Madrid Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "MC"
+        ],
+        "yahoo": [
+          "MC"
+        ]
+      },
+      "timezone": "Europe/Madrid",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XMEX",
+      "close": "15:00:00",
+      "mic": "XMEX",
+      "name": "Mexican Stock Exchange",
+      "open": "08:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "MX"
+        ],
+        "yahoo": [
+          "MX"
+        ]
+      },
+      "timezone": "America/Mexico_City",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XMIL",
+      "close": "17:30:00",
+      "mic": "XMIL",
+      "name": "Borsa Italiana",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "MI"
+        ]
+      },
+      "timezone": "Europe/Rome",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XMOS",
+      "close": "18:45:00",
+      "mic": "XMOS",
+      "name": "Moscow Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "Europe/Moscow",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "ARCX",
+        "BATS",
+        "NASDAQ",
+        "NYSE",
+        "OOTC",
+        "XASE",
+        "XNAS"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XNYS",
+      "close": "16:00:00",
+      "mic": "XNYS",
+      "name": "New York Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "US"
+        ],
+        "yahoo": []
+      },
+      "timezone": "America/New_York",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XNZE",
+      "close": "16:45:00",
+      "mic": "XNZE",
+      "name": "New Zealand Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "NZ"
+        ]
+      },
+      "timezone": "Pacific/Auckland",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "OSE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XOSL",
+      "close": "16:20:00",
+      "mic": "XOSL",
+      "name": "Oslo Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "OL"
+        ],
+        "yahoo": [
+          "OL"
+        ]
+      },
+      "timezone": "Europe/Oslo",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XPAR",
+      "close": "17:30:00",
+      "mic": "XPAR",
+      "name": "Euronext Paris",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "PA"
+        ],
+        "yahoo": [
+          "PA"
+        ]
+      },
+      "timezone": "Europe/Paris",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XPHS",
+      "close": "15:30:00",
+      "mic": "XPHS",
+      "name": "Philippine Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "PSE"
+        ],
+        "yahoo": [
+          "PS"
+        ]
+      },
+      "timezone": "Asia/Manila",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XPRA",
+      "close": "16:20:00",
+      "mic": "XPRA",
+      "name": "Prague Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "PR"
+        ],
+        "yahoo": [
+          "PR"
+        ]
+      },
+      "timezone": "Europe/Prague",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XRIS",
+      "close": "16:00:00",
+      "mic": "XRIS",
+      "name": "Nasdaq Riga",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "RG"
+        ]
+      },
+      "timezone": "Europe/Riga",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2029-12-31",
+        "start": "2021-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSAU",
+      "close": "15:00:00",
+      "mic": "XSAU",
+      "name": "Saudi Exchange",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "SAU"
+        ]
+      },
+      "timezone": "Asia/Riyadh",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Sun"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2026-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSES",
+      "close": "17:00:00",
+      "mic": "XSES",
+      "name": "Singapore Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "SI"
+        ]
+      },
+      "timezone": "Asia/Singapore",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSGO",
+      "close": "17:00:00",
+      "mic": "XSGO",
+      "name": "Santiago Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "SN"
+        ],
+        "yahoo": [
+          "SN"
+        ]
+      },
+      "timezone": "America/Santiago",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "SSE"
+      ],
+      "bounds": {
+        "end": "2026-12-31",
+        "start": "1990-12-03"
+      },
+      "break": {
+        "end": "13:00:00",
+        "start": "11:30:00"
+      },
+      "calendarId": "exchange:XSHG",
+      "close": "15:00:00",
+      "mic": "XSHG",
+      "name": "Shanghai Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "SHG"
+        ],
+        "yahoo": [
+          "SS"
+        ]
+      },
+      "timezone": "Asia/Shanghai",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSTO",
+      "close": "17:30:00",
+      "mic": "XSTO",
+      "name": "Nasdaq Stockholm",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "ST"
+        ],
+        "yahoo": [
+          "ST"
+        ]
+      },
+      "timezone": "Europe/Stockholm",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSTU",
+      "close": "22:00:00",
+      "mic": "XSTU",
+      "name": "Börse Stuttgart",
+      "open": "07:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "STU"
+        ],
+        "yahoo": [
+          "SG"
+        ]
+      },
+      "timezone": "Europe/Berlin",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "SIX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XSWX",
+      "close": "17:30:00",
+      "mic": "XSWX",
+      "name": "SIX Swiss Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "SW"
+        ],
+        "yahoo": [
+          "SW"
+        ]
+      },
+      "timezone": "Europe/Zurich",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "TASE"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XTAE",
+      "close": "17:15:00",
+      "mic": "XTAE",
+      "name": "Tel Aviv Stock Exchange",
+      "open": "09:59:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "TA"
+        ],
+        "yahoo": [
+          "TA"
+        ]
+      },
+      "timezone": "Asia/Tel_Aviv",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "2019-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XTAI",
+      "close": "13:30:00",
+      "mic": "XTAI",
+      "name": "Taiwan Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "TW"
+        ],
+        "yahoo": [
+          "TW"
+        ]
+      },
+      "timezone": "Asia/Taipei",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XTAL",
+      "close": "16:00:00",
+      "mic": "XTAL",
+      "name": "Nasdaq Tallinn",
+      "open": "10:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": [
+          "TL"
+        ]
+      },
+      "timezone": "Europe/Tallinn",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "JPX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1997-01-01"
+      },
+      "break": {
+        "end": "12:30:00",
+        "start": "11:30:00"
+      },
+      "calendarId": "exchange:XTKS",
+      "close": "15:30:00",
+      "mic": "XTKS",
+      "name": "Tokyo Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "TSE"
+        ],
+        "yahoo": [
+          "T"
+        ]
+      },
+      "timezone": "Asia/Tokyo",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [
+        "TSX",
+        "XTSX"
+      ],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XTSE",
+      "close": "16:00:00",
+      "mic": "XTSE",
+      "name": "Toronto Stock Exchange",
+      "open": "09:30:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "TO",
+          "V"
+        ],
+        "yahoo": [
+          "TO",
+          "V"
+        ]
+      },
+      "timezone": "America/Toronto",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XWAR",
+      "close": "17:00:00",
+      "mic": "XWAR",
+      "name": "Warsaw Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "WAR"
+        ],
+        "yahoo": [
+          "WA"
+        ]
+      },
+      "timezone": "Europe/Warsaw",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XWBO",
+      "close": "17:30:00",
+      "mic": "XWBO",
+      "name": "Wiener Börse",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "VI"
+        ],
+        "yahoo": [
+          "VI"
+        ]
+      },
+      "timezone": "Europe/Vienna",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:XZAG",
+      "close": "16:00:00",
+      "mic": "XZAG",
+      "name": "Zagreb Stock Exchange",
+      "open": "09:00:00",
+      "overnight": false,
+      "suffixes": {
+        "eodhd": [
+          "ZSE"
+        ],
+        "yahoo": []
+      },
+      "timezone": "Europe/Zagreb",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    },
+    {
+      "aliases": [],
+      "bounds": {
+        "end": "2040-12-31",
+        "start": "1990-01-01"
+      },
+      "break": null,
+      "calendarId": "exchange:us_futures",
+      "close": "18:00:00",
+      "mic": "us_futures",
+      "name": "US futures (synthetic)",
+      "open": "18:00:00",
+      "overnight": true,
+      "suffixes": {
+        "eodhd": [],
+        "yahoo": []
+      },
+      "timezone": "America/New_York",
+      "workingDays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ]
+    }
+  ],
+  "schemaVersion": 1,
+  "source": {
+    "package": "exchange_calendars",
+    "version": "4.13.2"
+  },
+  "unmappedSuffixes": {
+    "AE": "Yahoo: Dubai Financial Market; no exchange_calendars calendar",
+    "AQ": "Yahoo: Aquis Exchange; no calendar",
+    "BE": "EODHD and Yahoo: Börse Berlin; no calendar",
+    "BM": "Yahoo: Börse Bremen; no calendar",
+    "BSE": "EODHD code for Bombay, not on EODHD's published list (2026-10-24), so unverified; Yahoo .BO maps XBOM",
+    "CA": "Yahoo: Egyptian Exchange; no calendar",
+    "CC": "EODHD: cryptocurrencies; no exchange calendar",
+    "CM": "EODHD: Colombo Stock Exchange; no calendar",
+    "CN": "Yahoo: Canadian Securities Exchange; no calendar",
+    "CR": "Yahoo: Caracas Stock Exchange; no calendar",
+    "DSE": "EODHD: Dar es Salaam Stock Exchange; no calendar",
+    "EGX": "EODHD: Egyptian Exchange; no calendar",
+    "EUFUND": "EODHD: virtual fund exchange; no calendar",
+    "FOREX": "EODHD: currencies; no exchange calendar",
+    "GBOND": "EODHD: government bonds; no exchange calendar",
+    "GSE": "EODHD: Ghana Stock Exchange; no calendar",
+    "HA": "EODHD and Yahoo: Börse Hannover; no calendar",
+    "JSE": "EODHD code for Johannesburg, not on EODHD's published list (2026-10-24), so unverified; Yahoo .JO maps XJSE",
+    "KW": "Yahoo: Boursa Kuwait; no calendar",
+    "LU": "EODHD code for Luxembourg, not on EODHD's published list (2026-10-24), so unverified",
+    "LUSE": "EODHD: Lusaka Stock Exchange; no calendar",
+    "MONEY": "EODHD: money-market virtual exchange; no calendar",
+    "MSE": "EODHD: Malawi Stock Exchange; no calendar",
+    "MU": "EODHD and Yahoo: Börse München; no calendar",
+    "NE": "Yahoo: Cboe Canada; no calendar",
+    "NEO": "EODHD: Cboe Canada; no calendar",
+    "NS": "Yahoo: National Stock Exchange of India; no calendar (XBOM is BSE's)",
+    "NSE": "EODHD: National Stock Exchange of India; no calendar (XBOM is BSE's)",
+    "NX": "Yahoo: Euronext as one venue; ambiguous across XAMS, XBRU, XDUB, XLIS and XPAR",
+    "QA": "Yahoo: Qatar Stock Exchange; no calendar",
+    "REGA": "Yahoo: collectable indices; no calendar",
+    "RSE": "EODHD: Rwanda Stock Exchange; no calendar",
+    "SEM": "EODHD: Stock Exchange of Mauritius; no calendar",
+    "SHE": "EODHD: Shenzhen Stock Exchange; no calendar (XSHG is Shanghai's)",
+    "SR": "EODHD code for Saudi, not on EODHD's published list (2026-10-24), so unverified; Yahoo .SAU maps XSAU",
+    "SZ": "Yahoo: Shenzhen Stock Exchange; no calendar (XSHG is Shanghai's)",
+    "TI": "Yahoo: EuroTLX; no calendar",
+    "TWO": "EODHD and Yahoo: Taipei Exchange (OTC); no calendar (XTAI is TWSE's)",
+    "USE": "EODHD: Uganda Securities Exchange; no calendar",
+    "VN": "EODHD and Yahoo: Ho Chi Minh City Stock Exchange; no calendar",
+    "XA": "Yahoo: Cboe Australia; not the ASX, no calendar",
+    "XBOT": "EODHD: Botswana Stock Exchange; no calendar",
+    "XC": "Yahoo: Cboe UK; no calendar",
+    "XD": "Yahoo: Cboe Europe; no calendar",
+    "XNSA": "EODHD: Nigerian Exchange; no calendar"
+  }
+}

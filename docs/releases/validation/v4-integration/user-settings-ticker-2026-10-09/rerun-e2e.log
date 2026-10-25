@@ -1,0 +1,13 @@
+
+Running 8 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector dark 1280 cramped=false coarse=false (2.7s)
+  ✓  2 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector light 1280 cramped=false coarse=false (2.4s)
+  ✓  3 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector dark 390 cramped=false coarse=false (2.2s)
+  ✓  4 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector light 390 cramped=false coarse=false (2.3s)
+  ✓  5 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector dark 1280 cramped=true coarse=false (2.2s)
+  ✓  6 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector light 1280 cramped=true coarse=false (2.3s)
+  ✓  7 [chromium] › e2e/pivot-page-runtime.spec.ts:10:238 › observed Page group inspector dark 390 cramped=false coarse=true (2.3s)
+  ✓  8 [chromium] › e2e/pivot-page-runtime.spec.ts:25:1 › native Page worker inspection preserves scalar collisions, comma identity, fiscal alignment, partial errors and bounded bytes (1.2s)
+
+  8 passed (50.0s)

@@ -1,0 +1,11 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/components/RailIcon.test.tsx (7 tests) 29ms
+ ✓ src/components/LeftRail.test.tsx (96 tests) 1532ms
+
+ Test Files  2 passed (2)
+      Tests  103 passed (103)
+   Start at  13:17:49
+   Duration  2.49s (transform 305ms, setup 208ms, collect 420ms, tests 1.56s, environment 427ms, prepare 85ms)
+

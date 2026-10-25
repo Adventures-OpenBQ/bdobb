@@ -1,0 +1,11 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import {expect,it} from 'vitest';
+import {resolveGroupTransport} from './groupResolution';
+const domain=new Map([['1',['number1','string1']],['true',['boolean','string']],['ACME, Inc',['literal']],['ACME',['a']],[' Inc',['b']]]);
+it('keeps all typed collisions and exact whitespace',()=>{expect(resolveGroupTransport('1,true',domain,true)).toMatchObject({keys:['number1','string1','boolean','string'],unmatched:[],status:'resolved'});expect(resolveGroupTransport(' absent',domain,true).unmatched).toEqual([' absent']);});
+it('refuses ambiguous literal/list interpretations and partial comma domains',()=>{expect(resolveGroupTransport('ACME, Inc',domain,true)).toMatchObject({status:'refused',reason:'ambiguous'});expect(resolveGroupTransport('1,true',domain,false)).toMatchObject({status:'refused',reason:'partial'});});
+it('accepts proven literal, explicit empty and unmatched list, and bounds work',()=>{expect(resolveGroupTransport('ACME, Inc',new Map([['ACME, Inc',['literal']]]),true).keys).toEqual(['literal']);expect(resolveGroupTransport('',domain,true).keys).toEqual([]);expect(resolveGroupTransport('1,missing',domain,true).unmatched).toEqual(['missing']);expect(resolveGroupTransport('1,true',domain,true,0)).toMatchObject({status:'refused',reason:'budget'});});
+it('empty transport is empty but an empty list token keeps its exact meaning',()=>{expect(resolveGroupTransport('1,',domain,true).unmatched).toEqual(['']);expect(resolveGroupTransport('1,',new Map([...domain,['',['blank']]]),true).keys).toEqual(['number1','string1','blank']);});
+it('unambiguous comma-bearing list preserves absent tokens without losing literal hits',()=>{expect(resolveGroupTransport('ACME, Inc,missing',new Map([['ACME, Inc',['literal']]]),true)).toMatchObject({status:'resolved',keys:['literal'],unmatched:['missing'],inputCount:2});});
+it('admits the full 1024-token simple legacy list without quadratic ambiguity work',()=>{const map=new Map(Array.from({length:1024},(_,i)=>['v'+i,['k'+i]]));expect(resolveGroupTransport([...map.keys()].join(','),map,true)).toMatchObject({status:'resolved',inputCount:1024});});

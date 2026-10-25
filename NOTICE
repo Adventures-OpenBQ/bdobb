@@ -1,0 +1,24 @@
+BDOBB
+Copyright 2026 SecretoftheUniverse.com LLC.
+
+The application and first-party source changes in this release are licensed
+under AGPL-3.0-only; see LICENSE and LICENSING.md. Existing Apache grants
+remain available for previously released material. Documentation, artwork,
+imported snapshots and third-party components retain the terms described
+in LICENSING.md and their individual notices.
+
+Third-party components keep their original copyrights and licenses, which are
+not replaced. The JavaScript packages and Rust crates shipped with BDOBB, with
+their licenses and copyright notices, are listed in THIRD_PARTY_NOTICES.md.
+
+Interface icons drawn from third-party artwork, credited in
+src/assets/icons/LICENSE.md and THIRD_PARTY_NOTICES.md:
+  - "Pivot" by Matt Garbarino, from the Noun Project (CC BY 3.0)
+  - "connection" by Muh Syafri, from the Noun Project (CC BY 3.0)
+
+OpenBB and the OpenBB "BB" mark are trademarks of OpenBB Inc.; the mark is used
+only to identify OpenBB connections.
+
+Charts drawn with TradingView Lightweight Charts(TM) carry the visible credit
+"Rendered by TradingView", linked to https://www.tradingview.com/lightweight-charts/,
+as that library's license asks.

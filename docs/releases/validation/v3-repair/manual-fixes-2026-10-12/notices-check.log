@@ -1,0 +1,5 @@
+
+> bdobb@3.0.0 notices:check ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+> node scripts/third-party-notices.mjs --check
+
+third-party-notices: up to date

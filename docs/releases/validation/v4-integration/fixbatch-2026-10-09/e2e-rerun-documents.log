@@ -1,0 +1,20 @@
+
+> bdobb@4.0.0 e2e <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+> playwright test e2e/documents.spec.ts
+
+
+Running 10 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/documents.spec.ts:26:1 › a pdf card renders its document through the bundled pdf.js worker (2.0s)
+  ✓   2 [chromium] › e2e/documents.spec.ts:47:1 › the multi-file card opens the files checked in its hover rail, in one POST (2.0s)
+  ✓   3 [chromium] › e2e/documents.spec.ts:94:1 › paging back and forth keeps rendering, one pdf.js worker per document (1.7s)
+  ✓   4 [chromium] › e2e/documents.spec.ts:159:1 › a maximized pdf card can still be scrolled back to the top of its document (2.0s)
+  ✓   5 [chromium] › e2e/documents.spec.ts:240:1 › the text layer carries the document's own words (1.3s)
+  ✓   6 [chromium] › e2e/documents.spec.ts:252:1 › the find bar finds a phrase on the second page, highlights it and follows it there (2.2s)
+  ✓   7 [chromium] › e2e/documents.spec.ts:268:1 › the page box goes where it is told, and clamps what it is given (1.9s)
+  ✓   8 [chromium] › e2e/documents.spec.ts:289:1 › a /GoTo link annotation jumps to the page it points at (2.1s)
+  ✓   9 [chromium] › e2e/documents.spec.ts:300:1 › Command-F opens the find bar over the card the pointer is on, and Escape closes it (1.9s)
+  ✓  10 [chromium] › e2e/documents.spec.ts:318:1 › Escape out of the find bar closes only the bar, leaving the card maximized (2.0s)
+
+  10 passed (26.5s)
+exit=0 dur=27s load=84.36 130.45 92.26

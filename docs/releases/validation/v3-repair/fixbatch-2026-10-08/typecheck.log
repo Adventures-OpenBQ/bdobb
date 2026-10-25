@@ -1,0 +1,4 @@
+
+> bdobb@3.0.0 typecheck <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-fixbatch
+> tsc --noEmit
+

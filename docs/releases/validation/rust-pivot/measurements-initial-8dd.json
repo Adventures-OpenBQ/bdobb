@@ -1,0 +1,1514 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-10-13T22:16:12.691Z",
+  "activation": {
+    "default": "typescript",
+    "regularIpadPhysicalEvidence": null,
+    "blocked": true
+  },
+  "platform": {
+    "os": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "cpu": "Apple M1 Max",
+    "logicalCpuCount": 10,
+    "physicalMemoryBytes": 68719476736,
+    "node": "v26.10.0"
+  },
+  "toolchain": {
+    "rust": "1.98.1",
+    "target": "wasm32-unknown-unknown",
+    "wasmBindgen": "0.2.128",
+    "wasmBindgenTarget": "web",
+    "protocolVersion": 1,
+    "sharedMemory": false
+  },
+  "artifact": {
+    "wasmSha256": "16e509bebc33455c3a5ff543b347ef3d5b11c90a85a0a0853957d56aa384efc2",
+    "baseRevision": "6a0c128ee0e11ceaa938f392106006ef8419100b",
+    "sourceWorkingTreeMayIncludeUncommittedTaskChanges": true,
+    "authoredImplementationRevision": "8dd1b9eeed6c5d825bbbaa14a5e151c7374a92ad",
+    "subsequentJsPrecloneAdmissionFixesRemeasured": false
+  },
+  "methods": {
+    "node": "Fresh child process and Wasm instance per workload. Timed encodeRequest (validation+clone+wire/JSON), actual Wasm dispatch (parse+calculation+publication+serialization), decodeResponse, registration, five successive edits per sample, and pulled export batches. TS calculation excludes transport; no comparable speedup claim.",
+    "memory": "Wasm linear-memory pages are a monotonic instance high-water including free capacity, sampled after every call. Node RSS/heap are stage-boundary samples including TS oracle and conversion; not exact process peak. Safari/worker process peak unavailable.",
+    "state": "resource_usage reports conservative recursive owned-field estimates, not actual allocator bytes or process memory.",
+    "browser": "Actual Web Workers: wall-clock registration (includes module initialization and source conversion), apply/edit round trips, and pulled export across structured-clone transport. Browser memory unavailable."
+  },
+  "node": [
+    {
+      "name": "small",
+      "inputRows": 100,
+      "inputColumns": 5,
+      "inputEncodedBytes": 21932,
+      "outputRows": 20,
+      "outputColumns": 5,
+      "samples": 3,
+      "initializationMs": 15.121,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.056,
+          "observations": [
+            0.827,
+            0.056,
+            0.009
+          ]
+        },
+        "inputConversion": {
+          "median": 0.951,
+          "observations": [
+            1.689,
+            0.951,
+            0.58
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 1.076,
+          "observations": [
+            5.724,
+            1.076,
+            1.062
+          ]
+        },
+        "applyConversion": {
+          "median": 0.067,
+          "observations": [
+            0.783,
+            0.067,
+            0.06
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 1.181,
+          "observations": [
+            8.669,
+            1.181,
+            0.959
+          ]
+        },
+        "responseConversion": {
+          "median": 0.121,
+          "observations": [
+            0.409,
+            0.38,
+            0.042,
+            0.121,
+            0.035,
+            0.11
+          ]
+        },
+        "baselineCalculation": {
+          "median": 1.273,
+          "observations": [
+            4.508,
+            1.273,
+            0.972
+          ]
+        },
+        "exportConversion": {
+          "median": 0.017,
+          "observations": [
+            0.017,
+            0.02,
+            0.011
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 0.35,
+          "observations": [
+            1.352,
+            0.35,
+            0.321
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 0.29,
+          "observations": [
+            0.464,
+            0.29,
+            0.234
+          ]
+        },
+        "repeatedEdits": {
+          "median": 3.384,
+          "observations": [
+            6.352,
+            2.575,
+            4.858,
+            3.129,
+            4.184,
+            4.054,
+            2.027,
+            4.406,
+            1.942,
+            3.384,
+            3.775,
+            1.729,
+            3.42,
+            1.663,
+            3.056
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 4446,
+        "recipe": 0,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 3116,
+      "exportEncodedBytesAllSamples": 25854,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 1877323,
+        "inputEncodedBytes": 22349,
+        "inputRows": 100,
+        "outputRows": 120,
+        "outputColumns": 5,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 1966080,
+        "nodeStageBoundaryRssMaxBytes": 62805992,
+        "nodeStageBoundaryHeapMaxBytes": 18405768,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "large",
+      "inputRows": 10000,
+      "inputColumns": 5,
+      "inputEncodedBytes": 2177032,
+      "outputRows": 20,
+      "outputColumns": 5,
+      "samples": 3,
+      "initializationMs": 12.271,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.099,
+          "observations": [
+            0.826,
+            0.099,
+            0.024
+          ]
+        },
+        "inputConversion": {
+          "median": 57.556,
+          "observations": [
+            57.556,
+            59.463,
+            53.922
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 66.281,
+          "observations": [
+            118.337,
+            66.281,
+            63.445
+          ]
+        },
+        "applyConversion": {
+          "median": 0.1,
+          "observations": [
+            0.686,
+            0.096,
+            0.1
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 936.02,
+          "observations": [
+            1200.054,
+            936.02,
+            924.671
+          ]
+        },
+        "responseConversion": {
+          "median": 0.224,
+          "observations": [
+            0.484,
+            0.55,
+            0.117,
+            0.194,
+            0.116,
+            0.224
+          ]
+        },
+        "baselineCalculation": {
+          "median": 75.668,
+          "observations": [
+            78.765,
+            73.96,
+            75.668
+          ]
+        },
+        "exportConversion": {
+          "median": 0.019,
+          "observations": [
+            0.022,
+            0.019,
+            0.016
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 3.39,
+          "observations": [
+            5.076,
+            3.315,
+            3.39
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 0.445,
+          "observations": [
+            0.675,
+            0.445,
+            0.333
+          ]
+        },
+        "repeatedEdits": {
+          "median": 1010.162,
+          "observations": [
+            1009.095,
+            987.849,
+            1010.162,
+            1018.22,
+            1053.466,
+            1008.266,
+            998.989,
+            1008.522,
+            1010.734,
+            1041.126,
+            996.111,
+            981.254,
+            1034.053,
+            1037.809,
+            1057.641
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 29826,
+        "recipe": 0,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 3116,
+      "exportEncodedBytesAllSamples": 26334,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 128792451,
+        "inputEncodedBytes": 2236849,
+        "inputRows": 10000,
+        "outputRows": 10020,
+        "outputColumns": 5,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 71761920,
+        "nodeStageBoundaryRssMaxBytes": 399776240,
+        "nodeStageBoundaryHeapMaxBytes": 219763112,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "largeRaw",
+      "inputRows": 10000,
+      "inputColumns": 5,
+      "inputEncodedBytes": 2177032,
+      "outputRows": 10000,
+      "outputColumns": 5,
+      "samples": 3,
+      "initializationMs": 13.904,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.098,
+          "observations": [
+            0.937,
+            0.098,
+            0.032
+          ]
+        },
+        "inputConversion": {
+          "median": 48.885,
+          "observations": [
+            57.218,
+            48.885,
+            46.257
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 64.617,
+          "observations": [
+            119.769,
+            64.617,
+            61.538
+          ]
+        },
+        "applyConversion": {
+          "median": 0.091,
+          "observations": [
+            0.665,
+            0.091,
+            0.074
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 33.101,
+          "observations": [
+            42.507,
+            33.101,
+            31.425
+          ]
+        },
+        "responseConversion": {
+          "median": 0.163,
+          "observations": [
+            0.49,
+            0.416,
+            0.102,
+            0.162,
+            0.093,
+            0.163
+          ]
+        },
+        "baselineCalculation": {
+          "median": 50.983,
+          "observations": [
+            71.467,
+            49.627,
+            50.983
+          ]
+        },
+        "exportConversion": {
+          "median": 0.028,
+          "observations": [
+            0.019,
+            0.029,
+            0.028,
+            0.064,
+            0.039,
+            0.039,
+            0.024,
+            0.031,
+            0.028,
+            0.025,
+            0.028,
+            0.021,
+            0.045,
+            0.027,
+            0.022,
+            0.037,
+            0.021,
+            0.04,
+            0.031,
+            0.019,
+            0.018,
+            0.025,
+            0.02,
+            0.046,
+            0.039,
+            0.054,
+            0.034,
+            0.033,
+            0.027,
+            0.029,
+            0.026,
+            0.033,
+            0.053,
+            0.022,
+            0.023,
+            0.018,
+            0.024,
+            0.028,
+            0.034,
+            0.019,
+            0.016,
+            0.03,
+            0.035,
+            0.037,
+            0.04,
+            0.028,
+            0.019,
+            0.047,
+            0.018,
+            0.031,
+            0.032,
+            0.023,
+            0.039,
+            0.018,
+            0.017,
+            0.018,
+            0.028,
+            0.019,
+            0.053,
+            0.027
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 4.799,
+          "observations": [
+            7.339,
+            4.581,
+            4.458,
+            4.576,
+            5.292,
+            5.034,
+            5.094,
+            4.665,
+            5.528,
+            4.422,
+            4.438,
+            5.163,
+            4.839,
+            4.505,
+            5.346,
+            4.623,
+            4.411,
+            5.253,
+            4.943,
+            5.275,
+            5.883,
+            4.489,
+            4.799,
+            4.87,
+            5.071,
+            5.448,
+            5.352,
+            5.395,
+            5.175,
+            4.925,
+            4.65,
+            5.191,
+            4.731,
+            4.704,
+            4.712,
+            4.49,
+            4.475,
+            4.779,
+            4.481,
+            5.131,
+            5.429,
+            4.968,
+            4.871,
+            4.863,
+            4.496,
+            4.385,
+            5.086,
+            4.881,
+            5.082,
+            4.772,
+            4.532,
+            4.65,
+            4.356,
+            4.637,
+            4.337,
+            4.302,
+            4.67,
+            4.397,
+            4.773,
+            4.949
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 2.922,
+          "observations": [
+            3.387,
+            3.123,
+            2.985,
+            2.871,
+            3.118,
+            2.911,
+            2.989,
+            3.475,
+            2.922,
+            2.861,
+            3.04,
+            3.175,
+            3.215,
+            2.932,
+            3.12,
+            2.977,
+            3.1,
+            3.072,
+            2.747,
+            3.088,
+            2.967,
+            2.855,
+            3.392,
+            2.957,
+            2.925,
+            2.849,
+            2.957,
+            2.79,
+            2.774,
+            2.892,
+            2.852,
+            2.766,
+            2.728,
+            2.806,
+            2.89,
+            2.895,
+            3.143,
+            2.88,
+            2.789,
+            2.823,
+            3.007,
+            2.944,
+            2.936,
+            2.868,
+            2.929,
+            2.74,
+            2.812,
+            2.753,
+            2.911,
+            2.922,
+            2.851,
+            3.305,
+            2.738,
+            2.725,
+            2.74,
+            3.024,
+            3.315,
+            2.73,
+            2.869,
+            2.875
+          ]
+        },
+        "repeatedEdits": {
+          "median": 230.952,
+          "observations": [
+            245.695,
+            233.577,
+            242.747,
+            240.543,
+            231.891,
+            230.952,
+            230.669,
+            232.678,
+            229.893,
+            232.338,
+            230.176,
+            229.894,
+            228.812,
+            230.769,
+            230.009
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 920679,
+        "recipe": 0,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 0,
+      "exportEncodedBytesAllSamples": 6727437,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 132964005,
+        "inputEncodedBytes": 2236849,
+        "inputRows": 10000,
+        "outputRows": 10000,
+        "outputColumns": 5,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 93454336,
+        "nodeStageBoundaryRssMaxBytes": 448814536,
+        "nodeStageBoundaryHeapMaxBytes": 241492936,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "wide",
+      "inputRows": 2000,
+      "inputColumns": 5,
+      "inputEncodedBytes": 435002,
+      "outputRows": 20,
+      "outputColumns": 301,
+      "samples": 3,
+      "initializationMs": 12.638,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.066,
+          "observations": [
+            0.829,
+            0.066,
+            0.013
+          ]
+        },
+        "inputConversion": {
+          "median": 14.271,
+          "observations": [
+            15.361,
+            10.935,
+            14.271
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 13.624,
+          "observations": [
+            27.542,
+            13.624,
+            12.634
+          ]
+        },
+        "applyConversion": {
+          "median": 0.119,
+          "observations": [
+            0.705,
+            0.119,
+            0.119
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 13.89,
+          "observations": [
+            28.089,
+            13.89,
+            13.567
+          ]
+        },
+        "responseConversion": {
+          "median": 4.199,
+          "observations": [
+            0.476,
+            5.606,
+            0.125,
+            4.219,
+            0.084,
+            4.199
+          ]
+        },
+        "baselineCalculation": {
+          "median": 24.204,
+          "observations": [
+            24.204,
+            24.387,
+            15.894
+          ]
+        },
+        "exportConversion": {
+          "median": 0.022,
+          "observations": [
+            0.022,
+            0.022,
+            0.016
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 2.585,
+          "observations": [
+            3.812,
+            2.585,
+            2.479
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 2.871,
+          "observations": [
+            3.244,
+            2.871,
+            2.581
+          ]
+        },
+        "repeatedEdits": {
+          "median": 19.165,
+          "observations": [
+            22.332,
+            20.57,
+            20.27,
+            19.165,
+            19.019,
+            19.453,
+            19.169,
+            19.206,
+            18.441,
+            18.745,
+            17.87,
+            18.404,
+            20.285,
+            18.486,
+            18.239
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 3594,
+        "recipe": 0,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 16396,
+      "exportEncodedBytesAllSamples": 332409,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 11627243,
+        "inputEncodedBytes": 446819,
+        "inputRows": 2000,
+        "outputRows": 20,
+        "outputColumns": 301,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 15400960,
+        "nodeStageBoundaryRssMaxBytes": 180752352,
+        "nodeStageBoundaryHeapMaxBytes": 72342192,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "mixed",
+      "inputRows": 1000,
+      "inputColumns": 2,
+      "inputEncodedBytes": 101650,
+      "outputRows": 1,
+      "outputColumns": 9,
+      "samples": 3,
+      "initializationMs": 14.303,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.059,
+          "observations": [
+            0.774,
+            0.059,
+            0.012
+          ]
+        },
+        "inputConversion": {
+          "median": 3.2,
+          "observations": [
+            5.07,
+            3.2,
+            3.106
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 4.278,
+          "observations": [
+            11.389,
+            4.278,
+            3.756
+          ]
+        },
+        "applyConversion": {
+          "median": 0.082,
+          "observations": [
+            0.697,
+            0.082,
+            0.079
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 2.922,
+          "observations": [
+            10.139,
+            2.922,
+            2.411
+          ]
+        },
+        "responseConversion": {
+          "median": 0.295,
+          "observations": [
+            0.457,
+            0.571,
+            0.084,
+            0.295,
+            0.052,
+            0.239
+          ]
+        },
+        "baselineCalculation": {
+          "median": 5.962,
+          "observations": [
+            11.195,
+            5.929,
+            5.962
+          ]
+        },
+        "exportConversion": {
+          "median": 0.016,
+          "observations": [
+            0.019,
+            0.016,
+            0.012
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 0.299,
+          "observations": [
+            1.183,
+            0.299,
+            0.282
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 0.136,
+          "observations": [
+            0.23,
+            0.136,
+            0.117
+          ]
+        },
+        "repeatedEdits": {
+          "median": 2.701,
+          "observations": [
+            4.084,
+            3.683,
+            3.194,
+            2.925,
+            3.661,
+            2.996,
+            2.64,
+            2.497,
+            2.521,
+            2.701,
+            2.52,
+            2.404,
+            2.774,
+            2.46,
+            2.538
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 0,
+        "recipe": 0,
+        "sort": 36
+      },
+      "hostCacheEstimatedBytes": 1352,
+      "exportEncodedBytesAllSamples": 10521,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 1715119,
+        "inputEncodedBytes": 103633,
+        "inputRows": 1000,
+        "outputRows": 1,
+        "outputColumns": 9,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 5177344,
+        "nodeStageBoundaryRssMaxBytes": 97856336,
+        "nodeStageBoundaryHeapMaxBytes": 34157048,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "fiscal",
+      "inputRows": 120,
+      "inputColumns": 6,
+      "inputEncodedBytes": 23370,
+      "outputRows": 2,
+      "outputColumns": 3,
+      "samples": 3,
+      "initializationMs": 15.579,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.068,
+          "observations": [
+            0.896,
+            0.068,
+            0.009
+          ]
+        },
+        "inputConversion": {
+          "median": 1.048,
+          "observations": [
+            1.778,
+            1.048,
+            0.536
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 1.011,
+          "observations": [
+            6.363,
+            1.011,
+            0.866
+          ]
+        },
+        "applyConversion": {
+          "median": 0.167,
+          "observations": [
+            1.077,
+            0.167,
+            0.124
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 6.837,
+          "observations": [
+            27.461,
+            6.837,
+            6.07
+          ]
+        },
+        "responseConversion": {
+          "median": 0.228,
+          "observations": [
+            0.44,
+            0.887,
+            0.046,
+            0.228,
+            0.023,
+            0.158
+          ]
+        },
+        "baselineCalculation": {
+          "median": 6.435,
+          "observations": [
+            18.593,
+            6.435,
+            5.479
+          ]
+        },
+        "exportConversion": {
+          "median": 0.016,
+          "observations": [
+            0.022,
+            0.016,
+            0.015
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 0.365,
+          "observations": [
+            1.736,
+            0.365,
+            0.312
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 0.139,
+          "observations": [
+            0.26,
+            0.139,
+            0.108
+          ]
+        },
+        "repeatedEdits": {
+          "median": 9.323,
+          "observations": [
+            14.782,
+            11.253,
+            10.425,
+            10.354,
+            10.096,
+            9.444,
+            9.289,
+            9.323,
+            9.581,
+            8.744,
+            8.707,
+            9.038,
+            8.463,
+            8.665,
+            9.099
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 5595,
+        "recipe": 18,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 332,
+      "exportEncodedBytesAllSamples": 9894,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 6263864,
+        "inputEncodedBytes": 23671,
+        "inputRows": 120,
+        "outputRows": 122,
+        "outputColumns": 3,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 4128768,
+        "nodeStageBoundaryRssMaxBytes": 71277312,
+        "nodeStageBoundaryHeapMaxBytes": 23586752,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    },
+    {
+      "name": "formula",
+      "inputRows": 500,
+      "inputColumns": 6,
+      "inputEncodedBytes": 62546,
+      "outputRows": 2,
+      "outputColumns": 21,
+      "samples": 3,
+      "initializationMs": 13.323,
+      "timingsMs": {
+        "openSession": {
+          "median": 0.093,
+          "observations": [
+            0.829,
+            0.093,
+            0.02
+          ]
+        },
+        "inputConversion": {
+          "median": 1.795,
+          "observations": [
+            3.426,
+            1.777,
+            1.795
+          ]
+        },
+        "inputRustDispatch": {
+          "median": 2.879,
+          "observations": [
+            8.876,
+            2.316,
+            2.879
+          ]
+        },
+        "applyConversion": {
+          "median": 2.027,
+          "observations": [
+            3.978,
+            1.894,
+            2.027
+          ]
+        },
+        "applyRustDispatch": {
+          "median": 2866.53,
+          "observations": [
+            2866.53,
+            2973.006,
+            2777.503
+          ]
+        },
+        "responseConversion": {
+          "median": 1.326,
+          "observations": [
+            0.428,
+            2.524,
+            0.058,
+            1.326,
+            0.103,
+            1.382
+          ]
+        },
+        "baselineCalculation": {
+          "median": 86.011,
+          "observations": [
+            112.724,
+            86.011,
+            75.673
+          ]
+        },
+        "exportConversion": {
+          "median": 0.017,
+          "observations": [
+            0.019,
+            0.017,
+            0.013
+          ]
+        },
+        "exportRustDispatch": {
+          "median": 2.841,
+          "observations": [
+            5.62,
+            2.825,
+            2.841
+          ]
+        },
+        "exportResponseConversion": {
+          "median": 0.327,
+          "observations": [
+            0.43,
+            0.327,
+            0.312
+          ]
+        },
+        "repeatedEdits": {
+          "median": 2805.055,
+          "observations": [
+            2847.14,
+            2819.23,
+            2789.11,
+            2829.658,
+            2805.055,
+            2791.108,
+            2814.642,
+            2980.373,
+            2778.984,
+            2799.468,
+            2773.252,
+            2829.12,
+            2829.084,
+            2787.569,
+            2777.181
+          ]
+        }
+      },
+      "collationCrossings": {
+        "scalar": 0,
+        "raw": 7503,
+        "recipe": 0,
+        "sort": 0
+      },
+      "hostCacheEstimatedBytes": 146,
+      "exportEncodedBytesAllSamples": 21288,
+      "resourceUsage": {
+        "retainedEstimatedBytes": 151381890,
+        "inputEncodedBytes": 64363,
+        "inputRows": 500,
+        "outputRows": 502,
+        "outputColumns": 21,
+        "activeTransfers": 0
+      },
+      "memory": {
+        "wasmLinearMemoryHighWaterBytes": 44236800,
+        "nodeStageBoundaryRssMaxBytes": 200084128,
+        "nodeStageBoundaryHeapMaxBytes": 74517528,
+        "processPeakBytes": null
+      },
+      "parity": "Projected chart rows and totals match TS; exact except documented 1e-12 relative/absolute mean/ratio tolerance."
+    }
+  ],
+  "browsers": {
+    "chromium": {
+      "browserVersion": "151.0.7922.34",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "cases": [
+        {
+          "name": "small",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 50.5,
+            "applyWorkerRoundTripMs": 11.100000008940697,
+            "exportWorkerRoundTripMs": 2.2000000029802322
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            7.799999997019768,
+            3,
+            4.700000002980232,
+            3.5,
+            3.7999999970197678
+          ],
+          "outputColumns": 5,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "large",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 273.70000000298023,
+            "applyWorkerRoundTripMs": 1208.2999999970198,
+            "exportWorkerRoundTripMs": 7.100000008940697
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            1006.2999999970198,
+            975.4000000059605,
+            998.0999999940395,
+            1003,
+            1030.5
+          ],
+          "outputColumns": 5,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "largeRaw",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 274.20000000298023,
+            "applyWorkerRoundTripMs": 43.099999994039536,
+            "exportWorkerRoundTripMs": 152.20000000298023
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            223.79999999701977,
+            210.40000000596046,
+            210.09999999403954,
+            211.20000000298023,
+            208.40000000596046
+          ],
+          "outputColumns": 5,
+          "exportRows": 10000,
+          "exportBatches": 20,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "wide",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 77.40000000596046,
+            "applyWorkerRoundTripMs": 35.099999994039536,
+            "exportWorkerRoundTripMs": 7.200000002980232
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            22.100000008940697,
+            21.099999994039536,
+            20.299999997019768,
+            19.900000005960464,
+            19.200000002980232
+          ],
+          "outputColumns": 301,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "mixed",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 41,
+            "applyWorkerRoundTripMs": 11.399999991059303,
+            "exportWorkerRoundTripMs": 1.5999999940395355
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            4.600000008940697,
+            3.5,
+            3.8999999910593033,
+            3.2000000029802322,
+            3
+          ],
+          "outputColumns": 9,
+          "exportRows": 1,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "fiscal",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 27,
+            "applyWorkerRoundTripMs": 28,
+            "exportWorkerRoundTripMs": 2.3999999910593033
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            13.5,
+            10.899999991059303,
+            9.799999997019768,
+            9.900000005960464,
+            9.200000002980232
+          ],
+          "outputColumns": 3,
+          "exportRows": 2,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "formula",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 37.29999999701977,
+            "applyWorkerRoundTripMs": 3028,
+            "exportWorkerRoundTripMs": 6
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            2804.9000000059605,
+            2804.5,
+            2787.5,
+            2776.4000000059605,
+            2811.7999999970198
+          ],
+          "outputColumns": 21,
+          "exportRows": 2,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        }
+      ]
+    },
+    "webkit": {
+      "browserVersion": "26.5",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "cases": [
+        {
+          "name": "small",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 59,
+            "applyWorkerRoundTripMs": 10,
+            "exportWorkerRoundTripMs": 3
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            9,
+            5,
+            5,
+            4,
+            4
+          ],
+          "outputColumns": 5,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "large",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 262,
+            "applyWorkerRoundTripMs": 879,
+            "exportWorkerRoundTripMs": 7
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            924,
+            904,
+            923,
+            931,
+            976
+          ],
+          "outputColumns": 5,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "largeRaw",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 262,
+            "applyWorkerRoundTripMs": 40,
+            "exportWorkerRoundTripMs": 160
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            205,
+            194,
+            180,
+            188,
+            181
+          ],
+          "outputColumns": 5,
+          "exportRows": 10000,
+          "exportBatches": 20,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "wide",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 88,
+            "applyWorkerRoundTripMs": 39,
+            "exportWorkerRoundTripMs": 9
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            24,
+            22,
+            21,
+            22,
+            21
+          ],
+          "outputColumns": 301,
+          "exportRows": 20,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "mixed",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 58,
+            "applyWorkerRoundTripMs": 14,
+            "exportWorkerRoundTripMs": 2
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            6,
+            5,
+            4,
+            6,
+            3
+          ],
+          "outputColumns": 9,
+          "exportRows": 1,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "fiscal",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 40,
+            "applyWorkerRoundTripMs": 27,
+            "exportWorkerRoundTripMs": 3
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            19,
+            13,
+            12,
+            15,
+            11
+          ],
+          "outputColumns": 3,
+          "exportRows": 2,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        },
+        {
+          "name": "formula",
+          "timings": {
+            "registrationIncludingWorkerInitMs": 49,
+            "applyWorkerRoundTripMs": 2842,
+            "exportWorkerRoundTripMs": 7
+          },
+          "repeatedEditWorkerRoundTripMs": [
+            2813,
+            2798,
+            2816,
+            2769,
+            2790
+          ],
+          "outputColumns": 21,
+          "exportRows": 2,
+          "exportBatches": 1,
+          "memory": {
+            "workerLinearMemoryBytes": null,
+            "processPeakBytes": null,
+            "method": "Worker memory is not exposed; no exact browser/Safari process peak is available."
+          }
+        }
+      ]
+    }
+  }
+}

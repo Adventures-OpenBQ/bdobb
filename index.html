@@ -1,0 +1,68 @@
+<!-- Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. -->
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#22c99b" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#12161d" />
+    <title>BDOBB</title>
+    <!--
+      The ground the window paints before src/styles.css exists. The colours
+      are the two --bg tokens spelled out, because a custom property cannot be
+      referenced by the stylesheet that has not loaded yet -- which is exactly
+      the interval this covers. src/lib/themeFlash.test.ts is what keeps these
+      two literals equal to the tokens.
+
+      Without it, WKWebView paints its own white page first, so a dark install
+      on a light Mac flashes white at every launch. With it, any remaining
+      flash is the app's own colour.
+
+      It has to follow the OS by itself. While the inline script existed it
+      stamped data-theme before this block was consulted, so `html` alone was
+      enough; with the script gone (see the note below) nothing stamps the
+      document pre-paint, and an unstamped System install on a light Mac would
+      take the dark literal for exactly the interval this block exists to
+      cover. So the media layer here mirrors styles.css's: unstamped follows
+      the OS, an explicit choice still wins by the attribute.
+    -->
+    <style>
+      html { background-color: #12161d; }
+      @media (prefers-color-scheme: light) {
+        html:not([data-theme="dark"]) { background-color: #eef1f5; }
+      }
+      html[data-theme="light"] { background-color: #eef1f5; }
+    </style>
+    <!--
+      There is no pre-paint script here, and there must not be one: the
+      packaged app's CSP sets `script-src 'self'` (src-tauri/tauri.conf.json,
+      pinned by src/lib/csp.test.ts), which refuses an inline script outright.
+      Hashing one would be worse than useless -- the hash would live in
+      tauri.conf.json while the script's post-Vite bytes live in
+      dist/index.html, with nothing keeping the two in step.
+
+      The stamp it used to do is now done by the cascade: src/styles.css
+      carries an @media (prefers-color-scheme: light) layer, so an unstamped
+      document already paints for the OS appearance before any JavaScript
+      runs. App's own effect stamps data-theme on the first render, which is
+      what makes an explicitly saved theme authoritative.
+
+      The <style> above stays. `style-src` keeps 'unsafe-inline' (Plotly needs
+      it), and that holds only because tauri.conf.json sets
+      `dangerousDisableAssetCspModification: ["style-src"]`: otherwise Tauri
+      stamps a nonce on this <style> and adds it to style-src, and a policy
+      that carries a nonce ignores 'unsafe-inline'. Those literals cover the
+      frames before styles.css exists at all.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

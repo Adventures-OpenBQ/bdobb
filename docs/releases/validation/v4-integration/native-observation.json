@@ -1,0 +1,15 @@
+{
+  "application": "BDOBB Clean v4 Integration",
+  "identifier": "com.artcashin.bdobb.clean.v4.integration",
+  "binarySha256": "b61e4e32a85930323968690931a28f23a29d5456d6adedb063ca807ccbe54781",
+  "startupSettingsWarning": false,
+  "freshProfileStartupVerified": true,
+  "disposableTabSurvivesQuitReopen": true,
+  "nativeReferenceManualCalendarNavigable": true,
+  "nativeReferenceManualStatementSearch": true,
+  "pendingDocumentationCorrections": [],
+  "qualification": "Final documentation bundle built successfully and inspected natively; tabs retained, no settings warning",
+  "nativeHelpProductName": "BDOBB",
+  "nativeReferenceManualCalendarImage": true,
+  "nativeEpisode4BoundaryVerified": true
+}

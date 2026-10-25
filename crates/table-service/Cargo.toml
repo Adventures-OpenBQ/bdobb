@@ -1,0 +1,29 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+[package]
+name = "table-service"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.98"
+license = "Apache-2.0"
+
+[dependencies]
+axum = { version = "=0.8.9", default-features = false, features = ["http1", "json", "tokio"] }
+tokio = { version = "=1.53.1", features = ["rt-multi-thread", "macros", "sync", "time", "net", "signal"] }
+pivot-native = { path = "../pivot-native" }
+pivot-native-worker = { path = "../pivot-native-worker" }
+base64 = "=0.22.1"
+pivot-core = { path = "../pivot-core" }
+pivot-wire = { path = "../pivot-wire" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+sha2 = "=0.10.9"
+getrandom = "=0.3.4"
+subtle = "=2.6.1"
+libc = "=0.2.189"
+errno = "=0.3.14"
+
+[dev-dependencies]
+futures-util = "=0.3.34"
+tower = { version = "=0.5.3", features = ["util"] }
+tempfile = "=3.27.0"
