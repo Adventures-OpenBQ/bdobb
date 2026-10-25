@@ -54,3 +54,7 @@ objc2 = "0.6"
 # named in [dependencies], so [patch.crates-io] is what makes the fix reach it.
 [patch.crates-io]
 swift-rs = { path = "vendor/swift-rs" }
+
+# SDK 27 scene configuration ownership fix: upstream tao PR #1245.
+# Remove this vendored 0.35.3 patch when Tauri supports the fixed Tao release.
+tao = { path = "vendor/tao" }
