@@ -63,3 +63,7 @@ A **dropped** file is checked differently, and the difference is worth knowing. 
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Import and export"; `BDOBB` `src/lib/settingsBundle.ts`, `src/lib/saveTextFile.ts`, `src/components/dialogs/SettingsDialog.tsx`, `src/components/DropZone.tsx` and `src/stores/foldersStore.ts`.*
 *See also: [[import-and-export|Import and Export]] · [[settings-and-logs|Settings and Logs]] · [[app-data-and-settings|App Data and Settings]] · [[dashboards-and-folders|Dashboards and Folders]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

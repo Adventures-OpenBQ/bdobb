@@ -61,3 +61,7 @@ This migration is prepared for review for the v3.0.0 source snapshot. The policy
 after reviewing ownership, source availability, packaging and compatibility.
 Do not reuse an existing Apache release tag or describe old Apache releases
 as AGPL-only. No AGPL release is designated by this document.
+
+## Separate documentation terms
+
+Original help and reference materials identified in DOCUMENTATION_TERMS.md carry those separate terms from this revision forward. The terms preserve prior licenses, third-party notices, executable examples, AGPL software rights, and any material required as Corresponding Source. They add no conditions to the software license.

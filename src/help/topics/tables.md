@@ -123,3 +123,7 @@ rather than an error.
 Sorting, filters, column order, hidden columns, widths and pins are all saved
 per card. None of it is included in an `apps.json` export, and none of it is
 saved from a viewer window.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

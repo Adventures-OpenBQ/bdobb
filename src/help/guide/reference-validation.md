@@ -53,3 +53,7 @@ The October 6, 2026 clean v3 rehearsal used the curated reference image: 71 widg
 5. Save the dashboard with **Save…**, Format **BDOBB Workspace**, and import it back with **Keep both**. Ordinary names and table state travel with that file. Choose **Strict OpenBB Workspace** when you need the plain OpenBB shape.
 
 The full curated reference rendering sweep passed 71/71, including interactive PDF viewers, SQL Omni, Live Grid, Highcharts and Vega-Lite. Seven reference contract/import/export tests passed. A separate OpenBQ Docker smoke passed nine selected live cases; that is not certification of its whole catalog. The browser rehearsal used a test-only CORS adapter with unchanged backend responses. Native packaged restart and live Workspace account authentication remain unqualified.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

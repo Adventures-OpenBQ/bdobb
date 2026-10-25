@@ -61,3 +61,7 @@ One press does exactly one thing. In order:
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Keyboard shortcuts", "Tables" and "Documents, PDFs and files."*
 *See also: [[layout-and-navigation|Layout and Navigation]] · [[widget-cards|Widget Cards]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

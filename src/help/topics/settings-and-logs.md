@@ -131,3 +131,7 @@ parse at all is quarantined; see **Troubleshooting**.
 Connections have their own dialog, and they are the one thing **Export…**
 does not carry: no file written here holds a backend URL or a credential. See
 **Connections**. Dashboards travel separately, as `apps.json`.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

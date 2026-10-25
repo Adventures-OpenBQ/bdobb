@@ -77,3 +77,7 @@ Three other things write a card's parameters through the same path as the header
 ---
 *Source: BDOBB v3.1.0 in-app manual, "Card parameters"; `BDOBB` `src/components/ParamControls.tsx`, `GroupLink.tsx`, `GroupMenu.tsx`, `TabBar.tsx` and `src/lib/paramGroups.ts`, carried onto `v3.1.0` from the `v5.1.0` titlebar-parameter-groups design; `docs/superpowers/specs/2026-09-14-v5.1.0-parameter-groups-design.md`.*
 *See also: [[widget-cards|Widget Cards]] · [[running-and-refreshing|Running and Refreshing]] · [[dashboard-tabs|Dashboard Tabs]] · [[importing-dashboards|Importing Dashboards]] · [[tables|Tables]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -38,3 +38,7 @@ In the desktop app the card frames a small page the app serves itself on `127.0.
 
 *Source: BDOBB v3.1.0 `docs/examples/v3.1.0-builtins.apps.json` and `docs/examples/v3.1.0-demo-providers.apps.json`; `BDOBB` `scripts/apps-sync.mjs` at `v3.1.0`; `docs/examples/v3.2.0-video-library.apps.json`, `src-tauri/src/video_wrapper.rs`, `src/lib/youtube.ts` and `web/server.mjs` at `v3.2.1`.*
 *See also: [[importing-dashboards|Importing Dashboards]] · [[built-in-widgets|Built-in Widgets]] · [[card-parameters|Card Parameters]] · [[reference-validation|Reference Validation]] · [[provider-keys|Provider Keys]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

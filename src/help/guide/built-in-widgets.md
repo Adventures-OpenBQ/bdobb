@@ -55,3 +55,7 @@ It exists to try parameter groups on. Its Ticker is labelled as a `symbol`, so i
 
 *Source: BDOBB v3.3.0 in-app manual, "Built-in widgets"; `BDOBB` `src/lib/builtins.ts`, `src/lib/dotFont.ts` and `src/components/renderers/DotMatrix.tsx`.*
 *See also: [[widget-library|The Widget Library]] · [[widget-cards|Widget Cards]] · [[html-and-iframe-widgets|HTML and iframe Widgets]] · [[documents-pdf-and-files|Documents, PDFs and Files]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

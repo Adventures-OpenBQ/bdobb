@@ -11,3 +11,7 @@ Open **Help ▸ Quick Help** for short topic instructions and **Help ▸ Referen
 Analytical Pivot arrives in v4. Multi-dashboard workspaces and Statement arrive in v5. Optional User Settings storage on a server syncs display settings with a Workspace connection or a backend serving the Workspace settings API; it does not synchronize dashboards.
 
 Copyright 2026 SecretoftheUniverse.com LLC. Licensed under Apache-2.0.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

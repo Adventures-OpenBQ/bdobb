@@ -118,3 +118,7 @@ Connections have their own dialog, and they are the one thing **Export…** does
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Settings and logs" and "Import and export."*
 *See also: [[settings-export-and-import|Settings Export and Import]] · [[app-data-and-settings|App Data and Settings]] · [[provider-keys|Provider Keys]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

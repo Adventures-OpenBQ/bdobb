@@ -64,3 +64,7 @@ Each top-level folder of the repository is a complete, self-contained snapshot o
 
 ---
 *Adapted for clean BDOBB v3.0.0 from the BDOBB v3.3.3 guide. Historical citations retain source provenance.*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

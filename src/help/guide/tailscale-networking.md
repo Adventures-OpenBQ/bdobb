@@ -36,3 +36,7 @@ Service hostnames in `serve.json` are literal — `${TS_CERT_DOMAIN}` expands to
 ---
 *Source: `openbb-docker` `README.md`, `docker-compose.yml`, `ts-config/serve.json`, `ts-config/serve-funnel.json`, `docs/funnel.md`, `scripts/verify-isolation.sh` and `key-maint/app/server.py` at `v3.0.0`; Adventures in OpenBB, Ep. 1 — "Your Own Bloomberg in a Cabinet" and Ep. 2 — "The Borrowed Terminal."*
 *See also: [[openbb-docker-stack|The openbb-docker Stack]] · [[backends-and-connections|Backends and Connections]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

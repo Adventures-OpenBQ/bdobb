@@ -32,3 +32,7 @@ A layout tweak, a parameter edit, a view toggle — anything the desktop app wou
 
 *Source: BDOBB v3.1.0 `web/server.mjs`, `web/bootstrap.mjs`, `web/policy.mjs` (vendored from `openbb-docker` v3.0.1's `funnel-gateway/policy.mjs`) and `web/security.test.mjs` at `v3.1.0`; the `frame-src` directive in `web/server.mjs` at `v3.2.1`.*
 *See also: [[openbb-docker-stack|The openbb-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[example-dashboards|Example Dashboards]] · [[backends-and-connections|Backends and Connections]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v3.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
