@@ -138,3 +138,7 @@ the Settings dialog instead. See **Settings and logs**.
 If nothing is listed at all: *No widgets discovered. Add a backend in
 Connections to populate the library.* If your search and filters match nothing:
 *Nothing matches your search or filters.*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

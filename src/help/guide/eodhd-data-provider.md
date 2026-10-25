@@ -53,3 +53,7 @@ The extension can attach a per-column aggregation hint to a statement or price-h
 ---
 *Source: BDOBB 9.0.0 `src/lib/aggregationHint.ts` (`toAggregationHint`, called from `src/lib/widgetsJson.ts`), `src/lib/calendarView.ts` (`filterSeries`, `eventPath`, `eodhdLogoUrl`), `src/components/renderers/CalendarRenderer.tsx`, `src/lib/statementTaxonomy.ts`, `src/lib/statementRows.ts`, `src/lib/calendar.ts`, `src/lib/dataClient.ts` and `web/server.mjs`; `openbb-eodhd/README.md`, `openbb_eodhd/eodhd_router.py`, `openbb_eodhd/aggregation.py`, `models/_fundamentals.py`, `models/fundamental.py` and `models/calendar.py` in openbq-eodhd 9.0.1 (ported from the openbb-docker v9.6 line); the development line's `eodhd-data-provider` page at bdobb-v2 v9.6.3, checked against this line.*
 *See also: [[calendar-view|Calendar View]] · [[statement-view|Statement View]] · [[provider-keys|Provider Keys]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[example-dashboards|Example Dashboards]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

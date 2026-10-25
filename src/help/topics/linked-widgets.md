@@ -74,3 +74,7 @@ cannot (*Grouping is disabled*, *Group is unavailable*, and so on), and the
 members the table has actually seen, a hundred at a time with **Previous
 group page** and **Next group page**. Escape or a click outside closes it.
 **Saved → Model** lists the same panel for every linked pivot group, up to 64.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

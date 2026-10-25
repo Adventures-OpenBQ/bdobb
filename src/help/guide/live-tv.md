@@ -44,3 +44,7 @@ The web preview's door relays only the News wire from rss-ticker (`/news`), not 
 ---
 *Source: `src/components/renderers/YouTubeRenderer.tsx`, `src/lib/youtube.ts` and `src-tauri/src/video_wrapper.rs` at 8.0.0; openbq-docker `rss-ticker/README.md` (rss-feedhandler v8.3.1), `rss-ticker-config/config.yaml.example` and `docker-compose.yml` at v8.0.0.*
 *See also: [[news-widget|The News Widget]] · [[connecting-a-backend|Connecting a Backend]] · [[widget-library|The Widget Library]] · [[tailscale-networking|Tailscale Networking]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

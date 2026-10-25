@@ -69,3 +69,7 @@ Everything else: connections, the libraries, every widget, Rita, and the keyboar
 ---
 *Source: `BDOBB` `src/hooks/usePointerKind.ts`, `src/hooks/useHoverPanel.ts`, `src/hooks/useLongPressContextMenu.ts` (`LONG_PRESS_MS` 500, `SLOP_PX` 10), `src/components/LeftRail.tsx`, `src/components/DashboardGrid.tsx` (`draggableHandle`), the iPadOS block of `src/styles.css`, `src/lib/saveTextFile.ts`, `src/lib/jsonStore.ts`, `src/lib/backendsFile.ts`, `src/lib/settingsFile.ts`, `src/lib/dashboardsFile.ts`, `src-tauri/tauri.conf.json` and `src/help/topics/ipad.md`, all at `7.0.0`; Adventures in OpenBB, Ep. 7, "The iPadOS Adventure."*
 *See also: [[installing-on-ipad|Installing on iPad]] · [[layout-and-navigation|Layout and Navigation]] · [[workspaces|Workspaces and Saved Layouts]] · [[app-data-and-settings|App Data and Settings]] · [[import-and-export|Import and Export]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

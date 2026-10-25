@@ -51,3 +51,7 @@ There are no chips on a dashboard without groups. The chips stay while **Disable
 
 *Source: BDOBB v3.1.0 in-app manual, "Dashboard tabs" and "Running and refreshing."*
 *See also: [[dashboards-and-folders|Dashboards and Folders]] · [[widget-library|The Widget Library]] · [[layout-and-navigation|Layout and Navigation]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v9.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
