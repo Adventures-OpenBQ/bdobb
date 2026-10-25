@@ -1,0 +1,8 @@
+typecheck|exit=0|cmd=pnpm typecheck
+lint|exit=0|cmd=pnpm lint
+rail-tests|exit=0|cmd=pnpm exec vitest run src/components/RailIcon.test.tsx src/components/LeftRail.test.tsx --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+check-tests|exit=0|cmd=pnpm exec vitest run scripts/header-check.test.mjs scripts/scrub-check.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+notices-check|exit=0|cmd=pnpm notices:check
+changed-files|exit=0|cmd=git diff --stat 628ed61 -- .
+diff-check|exit=0|cmd=git diff --check 628ed61
+scrub|exit=0|cmd=pnpm scrub

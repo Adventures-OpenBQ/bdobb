@@ -1,0 +1,42 @@
+{
+  "/tmp/bdobb-clean-v3-repair-unit.log": {
+    "sha256": "8a450d909a418b71c80cef1ad93f3d9f84db071de848ad6096e3115491bb6d0b",
+    "bytes": 21810
+  },
+  "/tmp/bdobb-clean-v3-repair-browser.log": {
+    "sha256": "9c77d8bff0433c2151fc86df306d51e58baf9107b8f4f550e8c9284a783d5ca4",
+    "bytes": 12633
+  },
+  "/tmp/bdobb-clean-v3-repair-reference-corrected.log": {
+    "sha256": "2c4dd3e8713d01d031961fa40bd8ffc853143873748b66e184a0ffec3dbafd40",
+    "bytes": 465
+  },
+  "/tmp/bdobb-clean-v3-repair-reference-controls.log": {
+    "sha256": "0ff1ff48e385c88b96bb91a08158b88971da503b351e99758de6d9b3f5cfd74f",
+    "bytes": 145
+  },
+  "/tmp/bdobb-clean-v3-repair-openbq-smoke.log": {
+    "sha256": "6cb236ef19b409d2a90a3708add0c31313647ba843297836243034a7cc6e12db",
+    "bytes": 385
+  },
+  "/tmp/bdobb-clean-v3-repair-native.log": {
+    "sha256": "31c1d2a25cfbe06a68f47f07ee9600b3a2802e9bd3691371652e858605a6ed58",
+    "bytes": 5446
+  },
+  "/tmp/bdobb-clean-v3-repair-typecheck-final.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "/tmp/bdobb-clean-v3-repair-lint-final.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "/tmp/bdobb-clean-v3-repair-scrub-final.log": {
+    "sha256": "8e46783cfd3815589119e05ca3ac36d6a54d19a376b70549142a31557a1a3183",
+    "bytes": 19
+  },
+  "/tmp/bdobb-clean-v3-repair-reference-normalized.log": {
+    "sha256": "9e272aebd99eabc643c4c6a8e9742d460f94d9b9dd17d119ec8d6c1183edc57f",
+    "bytes": 2549
+  }
+}

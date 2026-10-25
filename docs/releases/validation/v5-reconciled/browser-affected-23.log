@@ -1,0 +1,36 @@
+[WebServer] (node:31060) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:31625) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:33103) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 23 tests using 1 worker
+
+(node:36320) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › e2e/help.spec.ts:9:1 › Quick Help opens from the rail, searches, and shows a topic with its screenshot (9.3s)
+  ✓   2 [chromium] › e2e/help.spec.ts:50:1 › Reference Manual opens from the rail, filters its sections, and follows a wikilink (7.9s)
+  ✓   3 [chromium] › e2e/help.spec.ts:83:1 › Help menu items open exactly their destinations (2.8s)
+  ✓   4 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header dark 1280 cramped=false (7.8s)
+  ✓   5 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header light 1280 cramped=false (6.3s)
+  ✓   6 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header dark 390 cramped=false (6.2s)
+  ✓   7 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header light 390 cramped=false (6.6s)
+  ✓   8 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header dark 1280 cramped=true (5.6s)
+  ✓   9 [chromium] › e2e/pivot-params.spec.ts:14:201 › authored parameter worker/header light 1280 cramped=true (6.1s)
+  ✓  10 [chromium] › e2e/pivot-params.spec.ts:48:1 › viewer sees session-editable controls with honest session-only message (1.3s)
+  ✓  11 [chromium] › e2e/pivot-params.spec.ts:50:1 › real header puts an ordinary backend Symbol control between Page and promoted filter (5.8s)
+  ✓  12 [chromium] › e2e/rss.spec.ts:40:1 › an RSS card added from the library renders the feed and re-requests on Refresh (2.6s)
+  ✓  13 [chromium] › e2e/rss.spec.ts:85:1 › a card pointed at a body that is not a feed says so, and Retry re-requests (1.3s)
+  ✓  14 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in dark (2.3s)
+  ✓  15 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in light (1.5s)
+  ✓  16 [chromium] › e2e/statement-clean-v5.spec.ts:31:1 › backend Statement uses the complete response and exports folded line items (6.8s)
+  ✓  17 [chromium] › e2e/table-toolkit.spec.ts:27:1 › columnsDefs reach the browser: header names, a hidden column, formatting and colours (1.3s)
+  ✓  18 [chromium] › e2e/table-toolkit.spec.ts:60:1 › a pinned column stays put while the rest of the table scrolls sideways (1.5s)
+  ✓  19 [chromium] › e2e/table-toolkit.spec.ts:104:1 › the filter row narrows the rows and keeps the count honest (3.0s)
+  ✓  20 [chromium] › e2e/table-toolkit.spec.ts:168:1 › a sort and a filter survive a reload (3.8s)
+  ✓  21 [chromium] › e2e/table-toolkit.spec.ts:213:1 › Columns hides a column and Reset table puts everything back (3.5s)
+  ✓  22 [chromium] › e2e/table-toolkit.spec.ts:242:1 › a widget table's border-collapse and cell borders are unchanged by the switch (6.2s)
+  ✓  23 [chromium] › e2e/table-toolkit.spec.ts:295:1 › a column pinned from the header menu survives a reload, and Reset table unpins it (3.7s)
+
+  23 passed (2.5m)

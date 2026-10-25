@@ -1,0 +1,62 @@
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+[reply] The widget data request returned no usable data: unknown widget w
+
+stdout | src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > never sums the Region text column: the engine refuses it or Rita declines, and the model is unchanged
+[reply] The widget data request returned no usable data: unknown widget w
+
+ ❯ src/test/integration/rita-table-model-live.test.ts (2 tests | 2 failed) 15009ms
+   × Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers 10055ms
+     → exactly one arrange_table call: expected [] to have a length of 1 but got +0
+   × Rita arranges a CSV table through table-model/1 > never sums the Region text column: the engine refuses it or Rita declines, and the model is unchanged 4953ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > totals Amount by Region in one applied arrange_table, quoting only engine numbers
+AssertionError: exactly one arrange_table call: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/test/integration/rita-table-model-live.test.ts:119:56
+    117|     const { rounds, reply } = await turn(`${SKILL}Show total Amount by…
+    118|     const arranges = rounds.filter((r) => r.tool === "arrange_table");
+    119|     expect(arranges, "exactly one arrange_table call").toHaveLength(1);
+       |                                                        ^
+    120|     const out = arranges[0].result as { status: string; preview: { row…
+    121|     expect(out.status).toBe("applied");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/test/integration/rita-table-model-live.test.ts > Rita arranges a CSV table through table-model/1 > never sums the Region text column: the engine refuses it or Rita declines, and the model is unchanged
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/test/integration/rita-table-model-live.test.ts:141:66
+    139|     await mountCsv();
+    140|     const first = await turn(`${SKILL}Show total Amount by Region in t…
+    141|     expect(first.rounds.some((r) => r.tool === "arrange_table")).toBe(…
+       |                                                                  ^
+    142|     const before = structuredClone(tableCard().tableDefinition);
+    143|     const { rounds, reply } = await turn(`${SKILL}Sum the Region colum…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  10:56:44
+   Duration  16.67s (transform 721ms, setup 95ms, collect 1.12s, tests 15.01s, environment 192ms, prepare 39ms)
+
+JSON report written to <scratch>
+live gate: 0/2 passed, 0 skipped, 2 failed

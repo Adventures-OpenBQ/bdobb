@@ -1,0 +1,475 @@
+{
+  "id": "d8a0bf1f-6b61-4795-afbc-ac23918b2963",
+  "name": "BLS Productivity & Costs",
+  "tabs": [
+    {
+      "id": "a64fa53b-9f8c-4bab-8927-56c3ba5514b0",
+      "name": "Documents",
+      "cards": [
+        {
+          "id": "601d02a0-4cc6-4a1b-8c02-b7db82b27fef",
+          "widgetId": "bls_productivity_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/prod2.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 28
+          }
+        }
+      ]
+    },
+    {
+      "id": "62c0b013-d9ec-4f66-b77b-d670db6016cc",
+      "name": "Tables",
+      "cards": [
+        {
+          "id": "f01e11d9-bdbb-420c-9380-649742622d92",
+          "widgetId": "bls_productivity_tables_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "dataset": "major-sectors-quarterly",
+            "sector": "Nonfarm business sector",
+            "measure": "Labor productivity",
+            "units": "Index (2017=100)",
+            "provider": "bls",
+            "start_date": "2000-01-01"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 23
+          }
+        }
+      ]
+    },
+    {
+      "id": "221ee4a4-561c-4537-930f-714537005c54",
+      "name": "Labor Productivity & Costs",
+      "cards": [
+        {
+          "id": "17d7f13f-c360-417a-9665-613b400c51db",
+          "widgetId": "bls_productivity_by_sector_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 28
+          },
+          "view": "chart"
+        },
+        {
+          "id": "d6954730-aab2-4523-8be7-5d8249b5f9d2",
+          "widgetId": "bls_productivity_nonfarm_business_productivity_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "282e2889-56b9-4355-8fb4-448521344bb3",
+          "widgetId": "bls_productivity_manufacturing_productivity_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 50,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "373609c6-097b-473a-811c-6c315fe6d02e",
+          "widgetId": "bls_productivity_nonfarm_business_labor_costs_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 70,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "973dd982-f693-4721-8ef0-d8f3a2ae0b00",
+          "widgetId": "bls_productivity_manufacturing_labor_costs_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 90,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "83849daf-1d5e-4ca4-9078-fea8dd13b4e9",
+          "widgetId": "bls_productivity_nonfarm_business_indexes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 110,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "71643768-f0dc-4e8a-8a71-33c317f0b181",
+          "widgetId": "bls_productivity_manufacturing_indexes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 130,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "b1b88fc5-a647-42aa-a987-b5bd92e4bd0e",
+          "widgetId": "bls_productivity_nonfinancial_corporations_indexes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 150,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "8b5b7633-0e83-42da-8fd7-3e55a2e81669",
+      "name": "Total Factor Productivity",
+      "cards": [
+        {
+          "id": "f5764aa8-cabe-4b86-889c-1298d6ee7f5d",
+          "widgetId": "bls_productivity_tfp_combined_inputs_output_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 71
+          },
+          "view": "chart"
+        },
+        {
+          "id": "fc3d9975-61fc-4b33-bc02-2d167d4d744b",
+          "widgetId": "bls_productivity_tfp_percent_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 73,
+            "w": 40,
+            "h": 28
+          },
+          "view": "chart"
+        },
+        {
+          "id": "101eccdd-ba6c-429c-b08a-e8bfbde49dd2",
+          "widgetId": "bls_productivity_tfp_output_and_inputs_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 101,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "29446cd0-13f2-4d52-a441-0cecc89383cd",
+          "widgetId": "bls_productivity_tfp_contributions_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 121,
+            "w": 40,
+            "h": 34
+          },
+          "view": "chart"
+        },
+        {
+          "id": "4c791f82-e84a-4bff-9288-f7557624d23a",
+          "widgetId": "bls_productivity_tfp_ict_trends_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 155,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "fe0600f8-b2fd-4c61-b4ec-64fbecb2b704",
+          "widgetId": "bls_productivity_tfp_fire_trends_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 175,
+            "w": 40,
+            "h": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "c9ca555a-3b26-45f6-a2ac-edbda2a190ff",
+      "name": "Wholesale & Retail Trade",
+      "cards": [
+        {
+          "id": "e0d31bf6-4071-42f3-854f-dc7f0ba7e770",
+          "widgetId": "bls_productivity_wr_productivity_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 16,
+            "w": 18,
+            "h": 24
+          }
+        },
+        {
+          "id": "7259a18a-f114-4aff-b8e3-2df824b2d3cf",
+          "widgetId": "bls_productivity_wr_productivity_by_period_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 14
+          },
+          "view": "chart"
+        },
+        {
+          "id": "2a418883-e72c-4f1f-85a4-2a56908128dd",
+          "widgetId": "bls_productivity_wr_indexes_by_sector_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 40,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "8b6cbdac-a58e-4e45-a418-f8a8484ff032",
+          "widgetId": "bls_productivity_wr_lp_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 80,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "6f4c3c9e-d40d-4637-8bbe-e52ed9e5a4dc",
+          "widgetId": "bls_productivity_wr_1yr_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 18,
+            "y": 16,
+            "w": 22,
+            "h": 24
+          }
+        },
+        {
+          "id": "f0899386-57dd-4cf6-907f-914cebdf0b94",
+          "widgetId": "bls_productivity_wr_longterm_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 100,
+            "w": 40,
+            "h": 44
+          },
+          "view": "chart"
+        },
+        {
+          "id": "645cbe23-5d5c-4d41-a947-451850442413",
+          "widgetId": "bls_productivity_wr_labor_cost_by_sector_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 60,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "f3e08ed8-bba5-4c4c-9ebb-d9ce45638995",
+      "name": "Mining & Manufacturing",
+      "cards": [
+        {
+          "id": "a393cf23-8d41-4e7f-9c51-e733a60b5a39",
+          "widgetId": "bls_productivity_mm_productivity_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 72
+          },
+          "view": "chart"
+        },
+        {
+          "id": "3e4177ce-4aa6-4b1e-8f5d-470c84443dd7",
+          "widgetId": "bls_productivity_mm_productivity_by_period_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 94,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "493e25d5-090f-4431-aa23-9ad48190a3c0",
+          "widgetId": "bls_productivity_mm_indexes_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 114,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "cd4d68a8-75f4-4486-b660-d1de283ace08",
+          "widgetId": "bls_productivity_mm_1yr_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 19,
+            "y": 134,
+            "w": 21,
+            "h": 28
+          },
+          "view": "chart"
+        },
+        {
+          "id": "3262b91a-2472-4ff2-abbd-56f986c8bce2",
+          "widgetId": "bls_productivity_mm_longterm_change_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 134,
+            "w": 19,
+            "h": 28
+          },
+          "view": "chart"
+        },
+        {
+          "id": "7ad109b4-0878-4164-b56c-8d52abdb4074",
+          "widgetId": "bls_productivity_mm_labor_cost_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    }
+  ]
+}

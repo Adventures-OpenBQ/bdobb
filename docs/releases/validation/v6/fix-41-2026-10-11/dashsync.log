@@ -1,0 +1,15 @@
+
+> bdobb@6.0.0 test:dashsync <worktree>
+> DASHSYNC_TEST=1 playwright test e2e/dashboard-sync.spec.ts --reporter=line
+
+
+Running 7 tests using 1 worker
+
+[1/7] [chromium] › e2e/dashboard-sync.spec.ts:163:3 › Workspace dashboard sync against a real key-mode server › connects in key mode on startup with no sign-in dialog, and the sync runs
+[2/7] [chromium] › e2e/dashboard-sync.spec.ts:174:3 › Workspace dashboard sync against a real key-mode server › uploads a local dashboard to the server and records its link
+[3/7] [chromium] › e2e/dashboard-sync.spec.ts:182:3 › Workspace dashboard sync against a real key-mode server › renaming the dashboard in the rail reaches the server
+[4/7] [chromium] › e2e/dashboard-sync.spec.ts:198:3 › Workspace dashboard sync against a real key-mode server › a dashboard added on the server appears after relaunch
+[5/7] [chromium] › e2e/dashboard-sync.spec.ts:212:3 › Workspace dashboard sync against a real key-mode server › the rail delete confirm reads: Delete "X" here and on <server>?
+[6/7] [chromium] › e2e/dashboard-sync.spec.ts:229:3 › Workspace dashboard sync against a real key-mode server › an offline rail delete leaves a tombstone that the next sync consumes
+[7/7] [chromium] › e2e/dashboard-sync.spec.ts:267:3 › Workspace dashboard sync against a real key-mode server › removing a tab reaches the server
+  7 passed (16.6s)

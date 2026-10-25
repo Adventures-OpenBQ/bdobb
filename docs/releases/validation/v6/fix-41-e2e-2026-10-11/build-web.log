@@ -1,0 +1,114 @@
+
+> bdobb@6.0.0 build:web <worktree>
+> node scripts/build-web.mjs
+
+vite v6.4.3 building for browser...
+transforming...
+✓ 3545 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) <worktree>/src/lib/logger.ts is dynamically imported by <worktree>/src/lib/tableColumns.ts but also statically imported by <worktree>/src/App.tsx, <worktree>/src/components/DashboardGrid.tsx, <worktree>/src/components/DropZone.tsx, <worktree>/src/components/ErrorBoundary.tsx, <worktree>/src/components/GroupLink.tsx, <worktree>/src/components/LeftRail.tsx, <worktree>/src/components/TabBar.tsx, <worktree>/src/components/WidgetCard.tsx, <worktree>/src/components/WidgetLibrary.tsx, <worktree>/src/components/WorkspaceTile.tsx, <worktree>/src/components/ai/AILibrary.tsx, <worktree>/src/components/ai/McpServersTab.tsx, <worktree>/src/components/dialogs/ConnectionsDialog.tsx, <worktree>/src/components/dialogs/KeysPanel.tsx, <worktree>/src/components/dialogs/SettingsDialog.tsx, <worktree>/src/components/dialogs/settings/SettingsForm.tsx, <worktree>/src/components/renderers/ChartRenderer.tsx, <worktree>/src/components/renderers/MarkdownEditorRenderer.tsx, <worktree>/src/components/renderers/MultiFileRenderer.tsx, <worktree>/src/components/renderers/TradingViewRenderer.tsx, <worktree>/src/components/rita/AgentEditBar.tsx, <worktree>/src/components/rita/ArtifactView.tsx, <worktree>/src/components/rita/ChatPane.tsx, <worktree>/src/components/runAppsImport.ts, <worktree>/src/components/runDashboardSync.ts, <worktree>/src/components/runWorkspaceSync.ts, <worktree>/src/hooks/useFiscalYearEnd.ts, <worktree>/src/hooks/useTradingCalendar.ts, <worktree>/src/hooks/useWidgetData.ts, <worktree>/src/hooks/useWindowMenuPins.ts, <worktree>/src/lib/agent/agents-json.ts, <worktree>/src/lib/agent/events.ts, <worktree>/src/lib/agent/execute.ts, <worktree>/src/lib/agent/importedMcp.ts, <worktree>/src/lib/agent/query.ts, <worktree>/src/lib/agent/sse.ts, <worktree>/src/lib/bootstrap.ts, <worktree>/src/lib/calendar.ts, <worktree>/src/lib/dashboardSync.ts, <worktree>/src/lib/dateExpressions.ts, <worktree>/src/lib/discovery.ts, <worktree>/src/lib/jsonStore.ts, <worktree>/src/lib/logViewer.ts, <worktree>/src/lib/params.ts, <worktree>/src/lib/skillsFiles.ts, <worktree>/src/lib/widgetsJson.ts, <worktree>/src/lib/workspaceFocus.ts, <worktree>/src/stores/chatStore.ts, <worktree>/src/stores/dashboardStore.ts, <worktree>/src/stores/providerKeysStore.ts, <worktree>/src/stores/workspaceStore.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) <worktree>/src/stores/dashboardStore.ts is dynamically imported by <worktree>/src/stores/tableExecutionStore.ts but also statically imported by <worktree>/src/App.tsx, <worktree>/src/components/CardRemovalUndo.tsx, <worktree>/src/components/DashboardGrid.tsx, <worktree>/src/components/DropZone.tsx, <worktree>/src/components/GroupLink.tsx, <worktree>/src/components/LeftRail.tsx, <worktree>/src/components/LinkedGroupInspector.tsx, <worktree>/src/components/LinkedWidgetDialog.tsx, <worktree>/src/components/PivotGroupLink.tsx, <worktree>/src/components/PivotGroupUndo.tsx, <worktree>/src/components/PivotParamRow.tsx, <worktree>/src/components/TabBar.tsx, <worktree>/src/components/TableExecutionRuntime.tsx, <worktree>/src/components/WidgetCard.tsx, <worktree>/src/components/WidgetLibrary.tsx, <worktree>/src/components/WorkspaceArrangeBar.tsx, <worktree>/src/components/WorkspaceGrid.tsx, <worktree>/src/components/WorkspaceTile.tsx, <worktree>/src/components/ai/McpServersTab.tsx, <worktree>/src/components/dialogs/WorkspaceDialog.tsx, <worktree>/src/components/renderers/LocalTableRenderer.tsx, <worktree>/src/components/runAppsImport.ts, <worktree>/src/components/runDashboardSync.ts, <worktree>/src/hooks/useDashboardShortcuts.ts, <worktree>/src/hooks/useFormulaAuthoring.ts, <worktree>/src/hooks/useWidgetData.ts, <worktree>/src/lib/agent/localTools.ts, <worktree>/src/lib/agent/tableModel/arrange.ts, <worktree>/src/lib/agent/tableModel/target.ts, <worktree>/src/lib/bootstrap.ts, <worktree>/src/lib/workspaceFocus.ts, <worktree>/src/stores/chatStore.ts, <worktree>/src/stores/tableCommitCoordinator.ts, <worktree>/src/stores/tableExecutionStore.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/web/standard_fonts/LICENSE_FOXIT                           1.55 kB
+dist/web/index.html                                             3.50 kB │ gzip:   1.65 kB
+dist/web/standard_fonts/LICENSE_LIBERATION                      4.41 kB
+dist/web/assets/dashboard-tabs-light-IosMN9pV.png               5.33 kB
+dist/web/assets/dashboard-tabs-dark-BkQagQKL.png                5.39 kB
+dist/web/assets/cursor-editorTextHighlight-kG3uUOwL.svg         5.40 kB │ gzip:   2.20 kB
+dist/web/assets/running-and-refreshing-light-HZjkxIp5.png       9.20 kB
+dist/web/assets/running-and-refreshing-dark-oTUgV_mh.png        9.41 kB
+dist/web/assets/workspace-account-light-B-6OuwG1.png            9.64 kB
+dist/web/assets/workspace-account-dark-DGGhDrz1.png             9.79 kB
+dist/web/assets/statement-view-light-sZ2wiv0q.png              16.48 kB
+dist/web/assets/statement-view-dark-Dr4K-WFO.png               16.61 kB
+dist/web/standard_fonts/FoxitSymbol.pfb                        16.73 kB
+dist/web/standard_fonts/FoxitFixed.pfb                         17.60 kB
+dist/web/standard_fonts/FoxitFixedBold.pfb                     18.06 kB
+dist/web/assets/charts-light-Df99dE9p.png                      18.10 kB
+dist/web/assets/charts-dark-D42xJbeH.png                       18.24 kB
+dist/web/assets/date-expression-light-awR5hcA3.png             18.42 kB
+dist/web/assets/date-expression-dark-CJ6qeFKg.png              18.49 kB
+dist/web/standard_fonts/FoxitFixedItalic.pfb                   18.75 kB
+dist/web/standard_fonts/FoxitFixedBoldItalic.pfb               19.15 kB
+dist/web/standard_fonts/FoxitSerifBold.pfb                     19.40 kB
+dist/web/standard_fonts/FoxitSerif.pfb                         19.47 kB
+dist/web/assets/troubleshooting-light-B9Iujxmg.png             19.66 kB
+dist/web/assets/troubleshooting-dark-MCvAVacA.png              19.83 kB
+dist/web/assets/html-and-iframe-widgets-light-CE97PADm.png     20.05 kB
+dist/web/assets/html-and-iframe-widgets-dark-BX9UTns1.png      20.13 kB
+dist/web/standard_fonts/FoxitSerifBoldItalic.pfb               20.73 kB
+dist/web/standard_fonts/FoxitSerifItalic.pfb                   21.23 kB
+dist/web/assets/the-left-rail-light-DsnVeuYP.png               22.46 kB
+dist/web/assets/documents-pdf-and-files-light-BNq2zc3X.png     22.69 kB
+dist/web/assets/the-left-rail-dark-DH0X_xXc.png                22.90 kB
+dist/web/assets/documents-pdf-and-files-dark-bhDTL40f.png      22.96 kB
+dist/web/assets/widget-cards-light-CEDZ_QQn.png                23.06 kB
+dist/web/assets/widget-cards-dark-CMgulR-9.png                 23.32 kB
+dist/web/assets/fy-ends-light-BuKXL6Oz.png                     23.49 kB
+dist/web/assets/fy-ends-dark-CPHi-Bbm.png                      24.00 kB
+dist/web/assets/import-and-export-light-CztH3oHp.png           24.74 kB
+dist/web/assets/import-and-export-dark-BhLyAiBz.png            24.97 kB
+dist/web/assets/card-parameters-light-Tz43zPcM.png             25.60 kB
+dist/web/assets/card-parameters-dark-Q6zhtLKK.png              25.81 kB
+dist/web/assets/rita-light-ByZm2noT.png                        26.75 kB
+dist/web/assets/rita-dark-Cr3vskdo.png                         28.29 kB
+dist/web/standard_fonts/FoxitDingbats.pfb                      29.51 kB
+dist/web/assets/connections-light-B9noUYVT.png                 29.88 kB
+dist/web/assets/connections-dark-qhnjN2-3.png                  30.50 kB
+dist/web/assets/period-quarter-range-light-DvK8ZpwV.png        33.69 kB
+dist/web/assets/period-quarter-range-dark-DUY0biFU.png         34.29 kB
+dist/web/assets/workspaces-light-Cf53TSa_.png                  34.72 kB
+dist/web/assets/workspaces-dark-BzXNmhV0.png                   34.80 kB
+dist/web/assets/calendar-view-light-yO5Y93yY.png               40.12 kB
+dist/web/assets/calendar-view-dark-DeE_SFOg.png                40.81 kB
+dist/web/assets/dashboards-and-folders-light-BYUb4AEF.png      43.52 kB
+dist/web/assets/dashboards-and-folders-dark-B-rsMV83.png       44.29 kB
+dist/web/assets/period-quarter-light-DbpUHULK.png              47.69 kB
+dist/web/assets/period-quarter-dark-a08qeNXl.png               48.52 kB
+dist/web/assets/period-datetime-light-BZCIhfec.png             48.58 kB
+dist/web/assets/period-datetime-dark-C83NgDea.png              49.58 kB
+dist/web/assets/period-relative-light-AywiJtB0.png             54.42 kB
+dist/web/assets/period-relative-dark-BGZr6aiF.png              55.30 kB
+dist/web/assets/provider-keys-dark-tOIQOAb9.png                59.86 kB
+dist/web/assets/provider-keys-light-7n3wkBb6.png               60.00 kB
+dist/web/assets/settings-and-logs-light-BsZAn8Fi.png           76.49 kB
+dist/web/assets/settings-and-logs-dark-uXPFy8LH.png            77.21 kB
+dist/web/assets/ai-library-dark-Dv4dmjJX.png                   83.93 kB
+dist/web/assets/ai-library-light-kj-HC82J.png                  83.96 kB
+dist/web/assets/built-in-widgets-light-DN1Z3Yeq.png            94.24 kB
+dist/web/assets/built-in-widgets-dark-CDPe4NuK.png             95.12 kB
+dist/web/assets/widget-library-light-B3i37F9T.png             109.35 kB
+dist/web/assets/widget-library-dark-DeQf9XI2.png              110.11 kB
+dist/web/assets/tables-light-D9BlLCrI.png                     119.96 kB
+dist/web/assets/tables-dark-B3ttJnzE.png                      127.97 kB
+dist/web/assets/getting-started-light-CL0QRX2W.png            129.32 kB
+dist/web/standard_fonts/LiberationSans-BoldItalic.ttf         135.12 kB
+dist/web/assets/getting-started-dark-BUz5VOel.png             135.61 kB
+dist/web/standard_fonts/LiberationSans-Bold.ttf               137.05 kB
+dist/web/standard_fonts/LiberationSans-Regular.ttf            139.51 kB
+dist/web/standard_fonts/LiberationSans-Italic.ttf             162.04 kB
+dist/web/assets/table.worker-WWjZkj6G.js                      224.27 kB
+dist/web/assets/xlsx-DT5WGBCc.js                              499.87 kB
+dist/web/assets/pdf.worker.min-Dr1KORA9.mjs                 1,286.28 kB
+dist/web/assets/MarkdownEditorRenderer-C76-PK2L.css           239.90 kB │ gzip:  37.60 kB
+dist/web/assets/index-CEsT6xQl.css                            403.95 kB │ gzip:  66.18 kB
+dist/web/assets/module-RjUF93sV.js                             77.27 kB │ gzip:  27.58 kB
+dist/web/assets/lightweight-charts.production-ClhRhmPB.js     180.19 kB │ gzip:  57.01 kB
+dist/web/assets/pdf_viewer-D9A2Yh6Q.js                        223.18 kB │ gzip:  69.05 kB
+dist/web/assets/native-48B9X9Wg.js                            432.75 kB │ gzip:  83.17 kB
+dist/web/assets/HelpDialog-Doj9S0IB.js                        471.63 kB │ gzip: 166.24 kB
+dist/web/assets/pdf-lPevIYiG.js                               474.18 kB │ gzip: 143.45 kB
+dist/web/assets/xlsx-DBvuKzsv.js                              499.86 kB │ gzip: 161.67 kB
+dist/web/assets/MarkdownEditorRenderer-CACwY8lw.js            916.50 kB │ gzip: 275.48 kB
+dist/web/assets/index-CMjB34J3.js                           3,009.50 kB │ gzip: 975.33 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.04s
+Private web function built at <worktree>/.vercel/output/functions/preview.func. Nothing deployed.

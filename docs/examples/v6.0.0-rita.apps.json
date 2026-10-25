@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Example Dashboard - Version 6.0.0",
+    "description": "The v6.0.0 Rita stage: a small board Rita can see and rearrange for you. Set the Rita URL and turn on Context sharing in AI Library ▸ Agents so Rita can see these cards, then ask it to work the board — \"add a note summarising the day\", \"rename this dashboard to Markets\", \"move the clock to the top\", \"add a markdown widget\". Every widget is a built-in, so no backend is needed.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "rita": {
+        "id": "rita",
+        "name": "Rita",
+        "layout": [
+          {
+            "i": "markdown",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10,
+            "state": {
+              "params": {
+                "text": "# Rita can work this board\n\nWith **Context Sharing** on (AI Library ▸ Agents), Rita sees every card here and can author the dashboard for you. Try asking it to:\n\n- **Add a note** — \"add a note summarising today's session\" (Rita writes a markdown card).\n- **Rename** — \"rename this dashboard to Markets\", or \"call the clock card World Clock\".\n- **Rearrange** — \"move the clock to the top\", \"make this note full width\".\n- **Add a tab** — \"add a Rates tab\".\n- **Add a widget** — \"add a clock\" (Rita finds it with search_widgets, then adds it).\n\nRita only sees the board while Context Sharing is on, and never sees a Keys widget. Everything it does is one **Undo** away."
+              }
+            }
+          },
+          {
+            "i": "clock",
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "params": {
+                "zones": "America/New_York,Europe/London,Asia/Tokyo",
+                "layout": "vertical",
+                "hourCycle": "24",
+                "face": "dots"
+              }
+            }
+          },
+          {
+            "i": "note",
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "params": {
+                "text": "## Scratch\nA plain note for Rita to rename, move, or replace. Ask it: \"tidy this board.\""
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

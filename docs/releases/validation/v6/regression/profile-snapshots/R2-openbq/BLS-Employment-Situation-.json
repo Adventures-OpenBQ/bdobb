@@ -1,0 +1,497 @@
+{
+  "id": "ae65d5de-b0a1-449e-99a5-90f959cdaa41",
+  "name": "BLS Employment Situation",
+  "tabs": [
+    {
+      "id": "dafb5504-e5e3-4d18-929f-740e3d448e1e",
+      "name": "Documents",
+      "cards": [
+        {
+          "id": "80cd531b-8df0-4a02-b030-89bde6428f6e",
+          "widgetId": "bls_employment_situation_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/empsit.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 28
+          }
+        }
+      ]
+    },
+    {
+      "id": "f886c867-2b9d-496f-b958-ecdcc88c17e1",
+      "name": "Summary Tables",
+      "cards": [
+        {
+          "id": "7318b8d7-0fda-4f24-86dd-7ec049b6e07c",
+          "widgetId": "bls_employment_situation_summary_household_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 24
+          }
+        },
+        {
+          "id": "3e46d07e-bcaf-427a-b556-5c043e7e32e1",
+          "widgetId": "bls_employment_situation_summary_establishment_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 26,
+            "w": 40,
+            "h": 24
+          }
+        }
+      ]
+    },
+    {
+      "id": "9306ba8f-294d-405b-a84f-c22fb8de4ab1",
+      "name": "Unemployment",
+      "cards": [
+        {
+          "id": "46a158d4-436f-46a1-af25-d3b599bbce73",
+          "widgetId": "bls_employment_situation_civilian_unemployment_rate_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "74717de2-1290-4636-a368-077a420e81ad",
+          "widgetId": "bls_employment_situation_civilian_unemployment_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "4921c8cb-ad93-4426-926d-a1300419d34e",
+          "widgetId": "bls_employment_situation_unemployment_by_education_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 42,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "fc1c7ad5-f1a9-4ebb-9090-244ded31ed66",
+          "widgetId": "bls_employment_situation_unemployment_by_veteran_status_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "8b7e234e-d810-40b4-93dc-eb45d206a5e9",
+          "widgetId": "bls_employment_situation_reasons_for_unemployment_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 82,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "6402bd24-6227-4a7c-9adc-47948c8a3a34",
+          "widgetId": "bls_employment_situation_duration_of_unemployment_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 102,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "9a256194-e93f-470a-8826-c5a7957105d4",
+          "widgetId": "bls_employment_situation_long_term_unemployed_share_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 122,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "606e33c4-9e9a-4bea-90ff-cb906298692a",
+          "widgetId": "bls_employment_situation_labor_underutilization_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 142,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "61ad292d-0e24-499f-be8e-909b38e163a8",
+      "name": "Labor Force",
+      "cards": [
+        {
+          "id": "009507bf-f644-49a8-b6b6-99b20354d429",
+          "widgetId": "bls_employment_situation_labor_force_participation_rate_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "fcd4fc55-112e-466d-b6b4-75934f2ea7d3",
+          "widgetId": "bls_employment_situation_employment_population_ratio_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "2a22392e-a08c-431f-ae5a-b27d5680afe3",
+          "widgetId": "bls_employment_situation_civilian_employment_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 42,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "758f7de8-7667-43a1-9572-ea02f7d37a51",
+          "widgetId": "bls_employment_situation_not_in_labor_force_want_a_job_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "8bd979e7-6036-4ea7-b17d-3dcb791cbce9",
+          "widgetId": "bls_employment_situation_not_in_labor_force_indicators_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 82,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "e95cc2f4-ad6b-47d5-9b0c-032647fe269f",
+      "name": "Industry Employment",
+      "cards": [
+        {
+          "id": "354ec67c-84dc-474c-b969-4c8a2cc15eb9",
+          "widgetId": "bls_employment_situation_employment_levels_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 82,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "11c801fd-592b-43dc-b7b0-7777c44ff3ab",
+          "widgetId": "bls_employment_situation_average_weekly_hours_production_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "066fd28f-60bf-472f-b5c0-69a34d7b51d0",
+          "widgetId": "bls_employment_situation_employment_change_by_industry_ci_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "0ce1a398-4d5d-4074-aa89-27209731f448",
+          "widgetId": "bls_employment_situation_employment_by_industry_monthly_changes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 102,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "314837f7-9cb8-4520-83e6-7c2c2719423e",
+          "widgetId": "bls_employment_situation_employment_and_hourly_earnings_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "86d5d067-28c0-4659-a3b9-f29dc37d00bc",
+          "widgetId": "bls_employment_situation_employment_and_weekly_earnings_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 42,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "e8f3c079-c05f-4428-81a8-eadd5f51571e",
+      "name": "Analytical Tables",
+      "cards": [
+        {
+          "id": "f84bfc5f-3f04-4a6a-a039-f00a82add8e0",
+          "widgetId": "bls_employment_situation_t1_employment_changes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "0c45298c-2adf-44b9-98d6-68dea6521740",
+          "widgetId": "bls_employment_situation_t2_ranked_industries_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 14,
+            "w": 40,
+            "h": 11
+          }
+        },
+        {
+          "id": "bac34d5b-16a2-4a45-9560-18340c3bd96a",
+          "widgetId": "bls_employment_situation_t3a_employment_changes_sa_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 25,
+            "w": 40,
+            "h": 13
+          }
+        },
+        {
+          "id": "e6dbd240-d128-45cf-bd95-dcf56ee8ce9c",
+          "widgetId": "bls_employment_situation_t3b_changes_vs_averages_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 38,
+            "w": 40,
+            "h": 13
+          }
+        },
+        {
+          "id": "01e913d9-7d19-4cad-b312-91dae48e5c96",
+          "widgetId": "bls_employment_situation_t4_over_the_year_changes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 51,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "bd77503d-cf07-4b2f-8f4b-fa80903d0aa9",
+          "widgetId": "bls_employment_situation_t5_hours_earnings_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 61,
+            "w": 40,
+            "h": 12
+          }
+        },
+        {
+          "id": "869c5fbe-5ca5-423a-a44c-269e8576e434",
+          "widgetId": "bls_employment_situation_t6_aggregate_hours_payrolls_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 73,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "564aa802-7fc3-44f2-9780-2e1f2cd252a2",
+          "widgetId": "bls_employment_situation_t7_peak_trough_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 83,
+            "w": 40,
+            "h": 10
+          }
+        },
+        {
+          "id": "56d8c212-b8e1-4086-91e1-57f8240f0b38",
+          "widgetId": "bls_employment_situation_confidence_intervals_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls",
+            "ci_table": "A"
+          },
+          "layout": {
+            "x": 0,
+            "y": 93,
+            "w": 40,
+            "h": 12
+          }
+        }
+      ]
+    }
+  ]
+}

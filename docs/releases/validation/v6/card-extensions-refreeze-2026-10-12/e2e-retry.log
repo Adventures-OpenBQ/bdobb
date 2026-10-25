@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ✓  1 [chromium] › e2e/final-panels.spec.ts:12:530 › coarse-mobile-cramped › member pager and footer remain reachable at actual bottom without enlarging frame (11.3s)
+
+  1 passed (16.1s)

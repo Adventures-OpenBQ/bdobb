@@ -1,0 +1,748 @@
+/* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/* ===========================================================================
+   Pivot drawer (specs/pivot-drawer, slices 02-09).
+
+   One drawer replaces the report-authoring panels that used to stack above
+   the table. It lives inside .table-with-pivot (the column that already
+   hosts the table and its total footer), in this order:
+
+     .pivot-drawer        the drawer; split (Arrange) or fill (every other
+                          section, or any section once the card is cramped)
+     .pivot-splitter      only in split mode
+     .table-execution-layout   the table, unchanged; [hidden] in fill mode
+     .pivot-footer-strip  the arrangement summary, and "Show table" when the
+                          table is hidden
+
+   Geometry is decided in drawerLayout.ts and arrives as data attributes on
+   .pivot-drawer: data-mode="split|fill", data-orientation="vertical|
+   horizontal" (narrower than 560px), data-short (drawer under 300px tall).
+   This file never measures; it only draws what those attributes say.
+
+   Rules this file keeps with styles.css:
+   - every font-size is a --font-size-* token;
+   - only tokens for colour, so both themes work; amber is --bd-warning
+     (dialogs.css), the one warning token the app defines;
+   - nothing animates (see .widget-card[data-refreshing]);
+   - coarse pointers get 44px targets, as .table-model-authoring does.
+   =========================================================================== */
+
+/* --- Toolbar toggle ------------------------------------------------------
+   PivotToggle is a .card-action. aria-expanded (drawer open) already takes
+   the accent border from .card-action[aria-expanded="true"]. The icon's
+   colour is a separate fact -- is the pivot on? -- so it reads data-pivot,
+   not aria-pressed: an open drawer over a pivot that is off must stay grey. */
+.card-action.pivot-toggle { display: inline-flex; align-items: center; padding: 2px 4px; color: var(--text-muted); }
+.card-action.pivot-toggle[data-pivot="on"] { color: var(--accent); }
+.pivot-toggle svg { width: 14px; height: 14px; display: block; }
+
+/* --- Drawer frame -------------------------------------------------------- */
+.pivot-drawer {
+  /* Compact density (2026-10-06 cleanup): a narrower rail and tighter
+     chrome, so the drawer takes less of the card and the table more. */
+  --pivot-tab-width: 24px;
+  flex: none;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+}
+/* Split height is the splitter's; drawerLayout clamps it to 18-92%. */
+.pivot-drawer[data-mode="split"] { height: var(--pivot-split, 40%); }
+.pivot-drawer[data-mode="fill"] { flex: 1; border-bottom: 0; }
+.pivot-drawer[data-orientation="horizontal"] { flex-direction: column; }
+
+/* --- Wide cards: Arrange | open panel | rail ------------------------------
+   Tabs and panels are flat children of .pivot-drawer-wide and are placed by
+   CSS order, not DOM order: Arrange's tab is pinned at the far left, the
+   open panel takes all of the remaining width, and every other tab stands
+   in one rail on the right (Saved last). Opening a section never moves a
+   tab, so the rail reads the same whichever section is open. */
+.pivot-drawer-wide > .pivot-drawer-tab { order: 2; flex: 0 0 var(--pivot-tab-width); border-left: 1px solid var(--border); }
+.pivot-drawer-wide > .pivot-drawer-tab[data-section="arrange"] { order: 0; border-left: 0; border-right: 1px solid var(--border); }
+.pivot-drawer-wide > .pivot-drawer-panel { order: 1; }
+
+.pivot-drawer-tab {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1;
+  width: var(--pivot-tab-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+  user-select: none;
+}
+.pivot-drawer-tab:hover { color: var(--text); background: var(--bg-card); }
+.pivot-drawer-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pivot-drawer-tab[aria-selected="true"] { color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+.pivot-drawer-tab svg { width: 13px; height: 13px; flex: none; }
+/* The label reads bottom-to-top, like a book spine on a shelf. */
+.pivot-drawer-tab-label { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; letter-spacing: 0.02em; }
+
+/* The badge recipe (.type-badge) at tab scale; tone carries meaning only
+   together with its text, never on its own. */
+.pivot-drawer-badge {
+  min-width: 14px;
+  padding: 0 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: var(--font-size-10);
+  line-height: 14px;
+  text-align: center;
+  writing-mode: horizontal-tb;
+}
+.pivot-drawer-badge[data-tone="on"] { border-color: var(--accent); color: var(--accent); }
+.pivot-drawer-badge[data-tone="warn"] { border-color: var(--bd-warning); color: var(--bd-warning); }
+
+/* --- Horizontal tab strip (narrow cards) ----------------------------------
+   The visual review's top finding was a strip cut off at the card edge with
+   nothing to say it scrolls. Two cues, both driven by data-overflow-start /
+   data-overflow-end that PivotDrawer sets from the strip's scroll position:
+   an edge fade over the tabs, and an arrow button that pages the strip. */
+.pivot-drawer-strip { flex: none; position: relative; display: flex; align-items: stretch; border-bottom: 1px solid var(--border); }
+.pivot-drawer-strip-scroll {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.pivot-drawer-strip-scroll::-webkit-scrollbar { display: none; }
+.pivot-drawer-strip[data-overflow-end] .pivot-drawer-strip-scroll { mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.pivot-drawer-strip[data-overflow-start] .pivot-drawer-strip-scroll { mask-image: linear-gradient(to left, #000 calc(100% - 32px), transparent); }
+.pivot-drawer-strip[data-overflow-start][data-overflow-end] .pivot-drawer-strip-scroll {
+  mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+}
+
+.pivot-drawer-strip .pivot-drawer-tab {
+  flex: none;
+  width: auto;
+  flex-direction: row;
+  gap: 6px;
+  padding: 5px 9px;
+  font-size: var(--font-size-11);
+}
+.pivot-drawer-strip .pivot-drawer-tab-label { writing-mode: horizontal-tb; transform: none; }
+.pivot-drawer-strip .pivot-drawer-tab[aria-selected="true"] { box-shadow: inset 0 -2px 0 var(--accent); }
+
+.pivot-drawer-strip-arrow {
+  flex: none;
+  width: 28px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: var(--font-size-13);
+  cursor: pointer;
+}
+.pivot-drawer-strip-arrow[data-dir="start"] { order: -1; border-left: 0; border-right: 1px solid var(--border); }
+.pivot-drawer-strip-arrow[hidden] { display: none; }
+.pivot-drawer-strip-arrow:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* In the strip there is one section on screen: the open one. */
+.pivot-drawer[data-orientation="horizontal"] .pivot-drawer-panel:not([hidden]) { flex: 1; min-height: 0; }
+
+/* --- Panel: head, body, foot --------------------------------------------- */
+.pivot-drawer-panel { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; }
+
+.pivot-drawer-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  min-height: 26px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+/* One tab, several views (Saved: Model | Statement template): a segmented
+   switch in the head, the .seg recipe at head scale. */
+.pivot-drawer-switch { display: inline-flex; flex: none; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.pivot-drawer .pivot-drawer-head .pivot-drawer-switch button { border: 0; border-radius: 0; padding: 1px 8px; }
+.pivot-drawer .pivot-drawer-head .pivot-drawer-switch button + button { border-left: 1px solid var(--border); }
+.pivot-drawer .pivot-drawer-head .pivot-drawer-switch button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.pivot-drawer-title { font-size: var(--font-size-12); font-weight: 600; white-space: nowrap; }
+.pivot-drawer-hint {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* The body scrolls. The two background layers are the classic CSS-only
+   scroll shadow: the "local" layers ride with the content and cover the
+   "scroll" layers at the ends, so a shade shows at the bottom only while
+   there is more below (and at the top only once scrolled). This is the
+   below-the-fold cue for Arrange's stacked lists on a phone. */
+.pivot-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  background:
+    linear-gradient(var(--bg-panel) 30%, transparent) center top / 100% 24px no-repeat local,
+    linear-gradient(transparent, var(--bg-panel) 70%) center bottom / 100% 24px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, color-mix(in srgb, var(--text) 18%, transparent), transparent) center top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, color-mix(in srgb, var(--text) 18%, transparent), transparent) center bottom / 100% 10px no-repeat scroll;
+  background-color: var(--bg-panel);
+}
+
+.pivot-drawer-foot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: var(--font-size-11);
+}
+.pivot-drawer-foot-spacer { flex: 1; }
+.pivot-drawer-foot-note { color: var(--text-muted); }
+.pivot-drawer-foot-warn { color: var(--bd-warning); }
+
+/* The panel's own buttons: Done is the accent-filled primary (the
+   .card-run idiom), everything else the outlined secondary. */
+.pivot-drawer :is(.pivot-drawer-head, .pivot-drawer-foot) button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+}
+.pivot-drawer :is(.pivot-drawer-head, .pivot-drawer-foot) button:hover:not(:disabled) { color: var(--text); }
+.pivot-drawer .pivot-drawer-foot button.pivot-drawer-done { min-width: 64px; border-color: var(--accent); background: var(--accent); color: var(--bg); font-weight: 600; }
+.pivot-drawer :is(.pivot-drawer-head, .pivot-drawer-foot) button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-drawer :is(.pivot-drawer-head, .pivot-drawer-foot) button:disabled { opacity: 0.55; cursor: default; }
+
+/* --- Short drawer (a cramped card, filled) ---------------------------------
+   Under 300px the panel scrolls as ONE region, so nothing hides behind the
+   footer (the earlier review's cramped-card finding). Head and foot stick to
+   the panel's edges; the foot drops to one line and gives up its notes
+   first, keeping Done and the toggles. */
+.pivot-drawer[data-short] .pivot-drawer-panel { overflow: auto; }
+.pivot-drawer[data-short] .pivot-drawer-body { flex: none; overflow: visible; background: none; }
+.pivot-drawer[data-short] .pivot-drawer-head { position: sticky; top: 0; z-index: 1; }
+.pivot-drawer[data-short] .pivot-drawer-hint { display: none; }
+.pivot-drawer[data-short] .pivot-drawer-foot { position: sticky; bottom: 0; z-index: 1; flex-wrap: nowrap; padding: 3px 8px; overflow: hidden; }
+.pivot-drawer[data-short] .pivot-drawer-foot-note { display: none; }
+.pivot-drawer[data-short] .pivot-drawer-foot-warn { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pivot-drawer[data-short] .pivot-list { min-height: 64px; }
+
+/* --- Splitter ------------------------------------------------------------- */
+.pivot-splitter {
+  flex: none;
+  height: 6px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  cursor: row-resize;
+  touch-action: none;
+}
+.pivot-splitter::before {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 2px;
+  margin: 2px auto 0;
+  border-radius: 1px;
+  background: var(--border);
+}
+.pivot-splitter:hover::before,
+.pivot-splitter:focus-visible::before { background: var(--accent); }
+.pivot-splitter:focus-visible { outline: none; }
+
+/* --- Panels re-hosted in the drawer ----------------------------------------
+   ReportPivotPanel and the table-model editors keep their form styling (the
+   .table-model-authoring descendant rules in styles.css). Their old frame --
+   border, padding, max-height, own scroll -- was deleted from styles.css with
+   the stacked panels: the drawer body is their only frame now. */
+
+/* Arrange: four lists side by side, wrapping as the panel narrows. */
+.pivot-drawer .pivot-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: start; }
+/* Compact pills and lists: a 22px pill row instead of 26px, still a full
+   --font-size-12 name, so four lists fit a 40% split without scrolling. */
+.pivot-drawer .pivot-list { min-height: 40px; padding: 3px; }
+.pivot-drawer .pivot-pill { margin: 1px 0; padding: 2px 7px; gap: 5px; font-size: var(--font-size-12); line-height: 16px; }
+.pivot-drawer .pivot-column h3 { display: flex; align-items: baseline; gap: 6px; font-size: var(--font-size-12); }
+.pivot-column-count { color: var(--text-muted); font-weight: 400; font-size: var(--font-size-11); }
+/* Available is the long one; it scrolls on its own in split mode so the
+   three target lists stay in view while dragging out of it. */
+.pivot-drawer[data-mode="split"] .pivot-list[data-list="available"] { max-height: 140px; overflow: auto; }
+
+/* A phone: one column, every list at full width. The counts in each h3 tell
+   you what is further down; the body's scroll shadow tells you there is a
+   further down. */
+.pivot-drawer[data-orientation="horizontal"] .pivot-columns { grid-template-columns: 1fr; }
+.pivot-drawer[data-orientation="horizontal"] .pivot-list[data-list="available"] { max-height: none; }
+/* …and the drawer foot keeps one line: the note goes, the warning stays. */
+.pivot-drawer[data-orientation="horizontal"] .pivot-drawer-foot-note { display: none; }
+
+/* Pills. The name is what tells two fields apart, so when the pill is short
+   of room the type tag gives way first (flex-shrink 100 against 1), and the
+   name ellipsises only after the tag has gone. The full text is always the
+   pill's title and accessible name. */
+.pivot-pill { min-width: 0; }
+.pivot-pill-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pivot-pill-tag {
+  flex: 0 100 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+}
+/* Shrink weights alone still clip both (the review saw "Gross margi… f:"),
+   so a list column narrower than a long name plus its tag drops the tags. */
+.pivot-drawer .pivot-column { container-type: inline-size; }
+@container (max-width: 200px) { .pivot-pill-tag { display: none; } }
+/* An aggregate formula in Available or Data Columns: the script-f glyph in
+   a small accent disc, so a formula and a measure read differently at a
+   glance without a second pill style. */
+.pivot-pill-fx {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+.pivot-pill-fx svg { width: 10px; height: 10px; }
+.pivot-pill[data-kind="formula"] { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+
+/* Category filters: the Param tag sits before All/count (K5). */
+.pivot-param-tag {
+  padding: 0 5px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: var(--font-size-10);
+  font-weight: 600;
+}
+
+/* --- Footer strip --------------------------------------------------------
+   The arrangement summary under the table (K8). One button, so the whole
+   strip is the close target when the drawer is open (K9) and the way back
+   to the table when the card is cramped. */
+.pivot-footer-strip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: var(--font-size-12);
+  text-align: left;
+  cursor: pointer;
+}
+.pivot-footer-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pivot-footer-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+/* "Edit" when the drawer is closed, "Show table ▾" when it hides the table:
+   an outlined button-shaped label, the .card-action recipe. */
+.pivot-footer-action {
+  flex: none;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--font-size-11);
+}
+.pivot-footer-strip:hover .pivot-footer-action { border-color: var(--accent); color: var(--accent); }
+
+/* --- Table frame (slice 03) -----------------------------------------------
+   Pinning itself is styles.css's .pin-left. Two additions:
+   1. the LAST pinned row-group column gets a real edge, so the frozen
+      labels read as frozen while the values slide under them;
+   2. while columns are off to the right, the scroller says so --
+      data-overflow-right from TableRenderer -- with a visible scrollbar and
+      the "+N columns" chip pinned to the card's right edge. */
+.widget-table :is(td, th).pin-left-last { box-shadow: 1px 0 0 0 var(--border), 6px 0 6px -4px rgb(0 0 0 / 0.45); }
+:root[data-theme="light"] .widget-table :is(td, th).pin-left-last { box-shadow: 1px 0 0 0 var(--border), 6px 0 6px -4px rgb(29 42 59 / 0.18); }
+
+.table-execution-layout { position: relative; z-index: 0; } /* contains the cue's z-index, as .table-scroll does */
+.table-scroll[data-overflow-right] { scrollbar-width: auto; scrollbar-color: var(--text-muted) transparent; }
+.table-overflow-cue {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 40px;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg-card));
+}
+.table-overflow-chip {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  z-index: 5;
+  padding: 1px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--accent);
+  font-size: var(--font-size-11);
+  font-weight: 600;
+  cursor: pointer;
+}
+.table-overflow-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Error cells (body and totals). Red alone would fail for colour-blind
+   readers and in print, so the cell also carries ⚠ and the text; the tint
+   makes a column of errors read as a band rather than as more numbers. */
+.widget-table td.cell-error {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 12%, var(--bg-card));
+  font-weight: 600;
+  cursor: help;
+}
+.cell-error-icon { margin-right: 4px; font-size: var(--font-size-11); }
+
+/* No rows because a param or group value matches nothing (slices 05, 07):
+   the reason replaces "No rows.", and names the value. */
+.pivot-unmatched {
+  margin: 16px auto;
+  max-width: 46ch;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: var(--font-size-12);
+  text-align: center;
+}
+.pivot-unmatched strong { color: var(--text); }
+
+/* --- Parameters row (slice 05) ---------------------------------------------
+   Promoted pivot params ride .card-params / .param-field. Their marker says
+   where the control came from (page or filter). The prototype's dashed
+   micro-label read as disabled; this one is solid --text on a hairline. */
+.param-source {
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--font-size-10);
+  line-height: 14px;
+}
+.param-field[data-viewer-local] .param-source { border-style: dashed; }
+.param-field[data-viewer-local] .param-source::after { content: " · session"; color: var(--text-muted); }
+
+/* --- Linked-group values (slice 07) ----------------------------------------
+   One chip per value the group could hold, in four states. Each state has a
+   distinct border AND a distinct text treatment, so the states survive
+   greyscale; the legend is the chips' title text, not a printed key. */
+.pivot-group-values { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.pivot-group-value {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.pivot-group-value[data-state="selected"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.pivot-group-value[data-state="unmatched"] { border-color: var(--bd-warning); color: var(--bd-warning); text-decoration: line-through; }
+.pivot-group-value[data-state="field-only"] { border-style: dashed; }
+.pivot-group-summary { margin: 4px 0; font-size: var(--font-size-11); color: var(--text-muted); }
+.pivot-group-summary[data-tone="warn"] { color: var(--bd-warning); }
+
+/* --- Coarse pointers ------------------------------------------------------- */
+@media (pointer: coarse) {
+  .pivot-drawer-strip .pivot-drawer-tab,
+  .pivot-drawer-strip-arrow { min-height: 44px; }
+  .pivot-drawer-strip-arrow { width: 44px; }
+  .pivot-drawer :is(.pivot-drawer-head, .pivot-drawer-foot) button { min-height: 44px; }
+  .pivot-footer-strip { min-height: 44px; }
+  .pivot-splitter { height: 12px; }
+}
+/* Integration-only seams: preserve legacy frames outside the drawer. */
+.pivot-drawer[hidden], .pivot-drawer [hidden], .table-execution-layout[hidden] { display: none !important; }
+.pivot-drawer-wide { display: flex; flex: 1; min-width: 0; min-height: 0; }
+.pivot-drawer .table-model-authoring, .pivot-drawer .table-model-inspection { padding: 0; border: 0; border-radius: 0; max-height: none; overflow: visible; }
+.pivot-drawer .pivot-column h3 { margin: 0 0 4px; }
+
+.pivot-drawer[data-orientation="horizontal"] .pivot-drawer-wide { flex-direction: column; }
+.pivot-drawer .pivot-pill { width: 100%; background: transparent; color: var(--text); text-align: left; }
+
+/* Prototype secondary-form primitives are embedded in prototype HTML, not
+   the supplied frame sheet. Scope this adaptation to the Formula editor. */
+.pivot-drawer .pivot-formula-layout { display: grid; grid-template-columns: minmax(200px,280px) minmax(0,1fr); gap: 10px 14px; align-items: start; }
+.pivot-drawer .pivot-formula-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: 10px 14px; align-items: start; }
+.pivot-drawer .pivot-formula-panel fieldset { min-width: 0; margin: 0; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+.pivot-drawer .pivot-formula-panel legend { font-size: var(--font-size-11); color: var(--text-muted); padding: 0 4px; }
+.pivot-drawer .pivot-formula-panel label { display: flex; flex-direction: column; align-items: stretch; gap: 3px; margin: 0 0 8px; font-size: var(--font-size-11); color: var(--text-muted); }
+.pivot-drawer .pivot-formula-panel :is(input,select,textarea) { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: var(--font-size-12); color: var(--text); }
+.pivot-drawer .pivot-formula-panel textarea { min-height: 90px; resize: vertical; font-family: ui-monospace,monospace; }
+.pivot-drawer .pivot-formula-list ul { list-style: none; margin: 0; padding: 0; }
+.pivot-drawer .pivot-formula-list li { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-bottom: 1px solid var(--border); font-size: var(--font-size-12); }
+.pivot-drawer .pivot-formula-list li[data-selected] { background: color-mix(in srgb,var(--accent) 10%,transparent); }
+.pivot-drawer .pivot-formula-list li button { all: unset; cursor: pointer; flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
+.pivot-drawer .pivot-formula-list li span { color: var(--text-muted); white-space: nowrap; }
+.pivot-drawer .pivot-formula-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-drawer .pivot-formula-new { margin: 8px 0 0; min-height: 0; padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; background: transparent; color: var(--text-muted); font-size: var(--font-size-11); }
+.pivot-drawer .pivot-formula-note { font-size: var(--font-size-11); color: var(--text-muted); margin: 6px 0; overflow-wrap: anywhere; }
+.pivot-drawer .pivot-formula-chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 160px; overflow: auto; padding: 2px; }
+.pivot-drawer .pivot-formula-chip { margin: 0; min-height: 0; padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); font-size: var(--font-size-11); color: var(--text); max-width: 100%; overflow-wrap: anywhere; }
+.pivot-drawer .pivot-formula-chip:hover { border-color: var(--accent); }
+.pivot-drawer .pivot-formula-function { font-family: ui-monospace,monospace; color: var(--accent); }
+.pivot-drawer-editor-foot { display: contents; }
+.pivot-drawer .pivot-drawer-foot button.pivot-formula-save { border-color: var(--accent); background: var(--accent); color: var(--bg); }
+.pivot-drawer[data-orientation="horizontal"] .pivot-formula-layout,
+.pivot-drawer[data-orientation="horizontal"] .pivot-formula-grid { grid-template-columns: minmax(0,1fr); }
+@media (pointer: coarse) {
+ .pivot-drawer .pivot-formula-panel button,
+ .pivot-drawer .pivot-formula-list li button { min-height: 44px; }
+}
+
+/* Categories: scoped adaptation of prototype form-grid, fld and list primitives. */
+.pivot-drawer .pivot-category-layout { display: grid; grid-template-columns: minmax(200px,280px) minmax(0,1fr); gap: 10px 14px; align-items: start; }
+.pivot-drawer .pivot-category-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: 10px 14px; align-items: start; }
+.pivot-drawer .pivot-category-panel fieldset { min-width: 0; margin: 0; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+.pivot-drawer .pivot-category-panel legend { font-size: var(--font-size-11); color: var(--text-muted); padding: 0 4px; }
+.pivot-drawer .pivot-category-panel label { display: flex; flex-direction: column; align-items: stretch; gap: 3px; margin: 0 0 8px; font-size: var(--font-size-11); color: var(--text-muted); }
+.pivot-drawer .pivot-category-panel :is(input,select,textarea) { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: var(--font-size-12); color: var(--text); }
+.pivot-drawer .pivot-category-panel textarea { min-height: 90px; resize: vertical; font-family: ui-monospace,monospace; }
+.pivot-drawer .pivot-category-list ul { list-style: none; margin: 0; padding: 0; }
+.pivot-drawer .pivot-category-list li { display: flex; align-items: center; gap: 6px; padding: 5px 6px; border-bottom: 1px solid var(--border); font-size: var(--font-size-12); }
+.pivot-drawer .pivot-category-list li[data-selected] { background: color-mix(in srgb,var(--accent) 10%,transparent); }
+.pivot-drawer .pivot-category-list li button { all: unset; cursor: pointer; flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--text); }
+.pivot-drawer .pivot-category-list li span { color: var(--text-muted); white-space: nowrap; }
+.pivot-drawer .pivot-category-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-drawer .pivot-category-new { margin: 8px 0 0; min-height: 0; padding: 2px 6px; border: 1px solid var(--border); border-radius: 3px; background: transparent; color: var(--text-muted); font-size: var(--font-size-11); }
+
+.pivot-drawer .pivot-category-order-title { display: block; margin-top: 10px; color: var(--text-muted); font-size: var(--font-size-11); }
+.pivot-drawer .pivot-category-list ol { list-style: none; padding: 0; margin: 0; }
+.pivot-drawer .pivot-category-list ol button { flex: none; padding: 1px 6px; min-width: 24px; border: 1px solid var(--border); border-radius: 3px; }
+.pivot-drawer .pivot-category-list li .pivot-category-grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pivot-drawer .pivot-category-note { font-size: var(--font-size-11); color: var(--text-muted); margin: 6px 0; }
+.pivot-drawer .pivot-drawer-foot button.pivot-category-save { border-color: var(--accent); background: var(--accent); color: var(--bg); }
+.pivot-drawer[data-orientation="horizontal"] .pivot-category-layout,
+.pivot-drawer[data-orientation="horizontal"] .pivot-category-grid { grid-template-columns: minmax(0,1fr); }
+@media (pointer: coarse) {
+ .pivot-drawer .pivot-category-panel button,
+ .pivot-drawer .pivot-category-panel :is(input,select,textarea),
+ .pivot-drawer .pivot-category-list li button { min-height: 44px; }
+}
+
+/* Slice05: prototype parameter popup and Category filters placement primitives. */
+.param-multi { display:inline-flex; align-items:center; gap:4px; max-width:220px; padding:2px 6px; border:1px solid var(--border); border-radius:3px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-12); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.param-multi::after { content:"▾"; color:var(--text-muted); margin-left:2px; }
+.param-pop { position:fixed; z-index:110; width:240px; max-width:calc(100vw - 16px); max-height:min(320px,calc(100vh - 16px)); display:flex; flex-direction:column; padding:6px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; box-shadow:0 6px 20px #0007; font-size:var(--font-size-12); }
+.param-pop .opts { overflow:auto; flex:1; min-height:0; margin-top:4px; }
+.param-pop label { display:flex; gap:6px; align-items:center; padding:3px 2px; overflow-wrap:anywhere; }
+.param-pop .row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.param-readonly { color:var(--text-muted); font-size:var(--font-size-11); }
+.param-field[data-pivot-param] { max-width:100%; }
+.param-field[data-pivot-param] .param-label { overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+.pivot-drawer .pivot-filter-layout { display:grid; grid-template-columns:minmax(200px,280px) minmax(0,1fr); gap:10px 14px; align-items:start; }
+.pivot-drawer .pivot-filter-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:10px; font-size:var(--font-size-11); color:var(--text-muted); }
+.pivot-drawer .pivot-filter-placement { margin-top:10px; }
+.pivot-drawer .pivot-filter-tag { padding:0 4px; border:1px solid var(--border); border-radius:3px; color:var(--text); font-size:var(--font-size-10); }
+.pivot-drawer .seg { display:inline-flex; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+.pivot-drawer .seg button { border:0; background:transparent; padding:3px 10px; font-size:var(--font-size-11); color:var(--text-muted); }
+.pivot-drawer .seg button[aria-pressed="true"] { background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--accent); }
+.pivot-drawer .pivot-filter-layout [aria-label="Category checklist"] fieldset { display:flex; flex-direction:column; gap:4px; }
+.pivot-drawer .pivot-filter-layout [aria-label="Category checklist"] label:has(input[type="checkbox"]) { flex-direction:row; align-items:center; color:var(--text); }
+.pivot-drawer .pivot-filter-layout input[type="checkbox"] { width:auto; }
+.pivot-drawer[data-orientation="horizontal"] .pivot-filter-layout { grid-template-columns:minmax(0,1fr); }
+@media (pointer:coarse) { .param-pop :is(button,input),.param-field[data-pivot-param] :is(button,select) { min-height:44px; } }
+.pivot-drawer .pivot-filter-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.pivot-drawer .pivot-filter-layout button:not(.seg button):not(.pivot-category-list button) { border:1px solid var(--border); border-radius:4px; padding:3px 8px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+.pivot-drawer .pivot-filter-checks { max-height:210px; overflow:auto; }
+.pivot-drawer .pivot-filter-members :is(button,input):disabled { opacity:.5; }
+.param-pop button { border:1px solid var(--border); border-radius:4px; padding:3px 8px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+.pivot-drawer .pivot-drawer-foot .pivot-filter-apply { border-color:var(--accent); background:var(--accent); color:var(--bg); }
+.pivot-drawer .pivot-drawer-foot:has(.pivot-filter-actions) .pivot-drawer-done { margin-left:auto; }
+/* Slice05 review: one member-selection fieldset, with truthful explicit-Apply scope copy. */
+.pivot-drawer .pivot-filter-member-tools { display:flex; flex-wrap:wrap; align-items:end; gap:6px; }
+.pivot-drawer .pivot-filter-member-tools label { flex:1; min-width:160px; margin:0; }
+.pivot-drawer .pivot-filter-count-note { color:var(--text-muted); font-size:var(--font-size-11); align-self:center; }
+
+/* Slice06 viewer session recovery/reset uses the supplied parameter palette. */
+.param-field[data-pivot-param] .param-reset { border:1px solid var(--border); border-radius:4px; padding:3px 6px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+
+/* Slice07 observed-domain inspection keeps parameter and drawer tokens. */
+.card-params > .param-reset, .pivot-linked-group button { border:1px solid var(--border); border-radius:4px; padding:3px 6px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+.pivot-linked-group { padding:6px; border:1px solid var(--border); border-radius:4px; margin:6px 0; overflow-wrap:anywhere; }
+.pivot-group-paging { display:flex; gap:6px; flex-wrap:wrap; }
+@media (pointer:coarse) { .card-params > .param-reset, .pivot-linked-group button { min-height:44px; } }
+
+
+.table-model-inspection > button { border:1px solid var(--border); border-radius:4px; padding:3px 6px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+@media (pointer:coarse) { .table-model-inspection > button { min-height:44px; } }
+
+.param-session-actions { flex-wrap:wrap; }
+.param-session-actions button { border:1px solid var(--border); border-radius:4px; padding:3px 6px; background:var(--bg-card); color:var(--text); font-size:var(--font-size-11); }
+@media (pointer:coarse) { .param-pop button { min-width:44px; min-height:44px; } }
+
+/* Pages: supplied Page/Members form-grid and list, with explicit set confirmation. */
+.pivot-drawer .pivot-page-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px 14px; align-items:start; }
+.pivot-drawer .pivot-page-panel fieldset { min-width:0; margin:0; border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
+.pivot-drawer .pivot-page-panel legend { font-size:var(--font-size-11); color:var(--text-muted); padding:0 4px; }
+.pivot-drawer .pivot-page-panel label { display:flex; flex-direction:column; align-items:stretch; gap:3px; margin:0 0 8px; font-size:var(--font-size-11); color:var(--text-muted); }
+.pivot-drawer .pivot-page-panel :is(select,textarea,input:not([type="checkbox"])) { width:100%; min-width:0; max-width:100%; box-sizing:border-box; background:var(--bg-card); border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:var(--font-size-12); color:var(--text); }
+.pivot-drawer .pivot-page-panel textarea { min-height:90px; resize:vertical; }
+.pivot-drawer .pivot-page-panel summary { font-size:var(--font-size-12); overflow-wrap:anywhere; }
+.pivot-drawer .pivot-page-navigation { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.pivot-drawer .pivot-page-panel .pivot-page-promotion { flex-direction:row; flex-wrap:nowrap; align-items:center; margin-top:8px; }
+.pivot-drawer .pivot-page-members { list-style:none; padding:0; margin:0; }
+.pivot-drawer .pivot-page-members li { padding:5px 6px; border-bottom:1px solid var(--border); font-size:var(--font-size-12); }
+.pivot-drawer .pivot-page-members li[data-selected] { background:color-mix(in srgb,var(--accent) 10%,transparent); }
+.pivot-drawer .pivot-page-members li label { flex-direction:row; align-items:center; margin:0; color:var(--text); overflow-wrap:anywhere; }
+.pivot-drawer .pivot-page-note { font-size:var(--font-size-11); color:var(--text-muted); overflow-wrap:anywhere; }
+.pivot-drawer .pivot-drawer-foot button.pivot-page-save { border-color:var(--accent); background:var(--accent); color:var(--bg); }
+.pivot-drawer[data-orientation="horizontal"] .pivot-page-grid { grid-template-columns:minmax(0,1fr); }
+@media (pointer:coarse) {
+ .pivot-drawer .pivot-page-panel button,
+ .pivot-drawer .pivot-page-panel :is(select,textarea,input:not([type="checkbox"])),
+ .pivot-drawer .pivot-page-members li label,
+ .pivot-drawer .pivot-page-panel .pivot-page-promotion { min-height:44px; }
+}
+
+/* Keep linked resolution readable within the supplied compact control. */
+.param-multi.param-linked { gap: 4px; }
+.param-multi.param-linked::after { content: none; }
+.param-linked-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.param-linked-state, .param-linked-disclosure { flex: 0 0 auto; }
+.param-linked-disclosure { color: var(--text-muted); }
+
+/* Confirmed group actions: source04 compact modal, native top-layer focus. */
+.pivot-group-link{position:relative;display:inline-flex;align-items:center}
+.pivot-group-menu{position:absolute;top:100%;right:0;z-index:100;min-width:180px;padding:4px;border:1px solid var(--border);background:var(--bg-card);box-shadow:0 6px 20px #0004;border-radius:6px}
+.pivot-group-menu button{display:block;width:100%;text-align:left;padding:7px 10px;background:transparent;border:0;color:var(--text)}
+.pivot-group-menu button:hover{background:var(--bg-hover)}
+.pivot-group-dialog{box-sizing:border-box;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font-size:12px;overflow:hidden}
+.pivot-group-dialog[open]{display:flex;flex-direction:column}
+.pivot-group-dialog::backdrop{background:#0008}
+.pivot-group-dialog h2{font-size:13px;margin:0;padding:14px 16px;border-bottom:1px solid var(--border)}
+.pivot-group-dialog-body{padding:14px 16px;overflow:auto;min-height:0;overflow-wrap:anywhere}
+.pivot-group-dialog fieldset{border:1px solid var(--border);margin:10px 0;padding:8px}
+.pivot-group-dialog input:not([type=checkbox]):not([type=radio]){display:block;width:100%;box-sizing:border-box}
+.pivot-group-option,.pivot-group-dialog .pivot-group-values label{display:flex;gap:8px;align-items:center;padding:6px;border-radius:4px}
+.pivot-group-option:has(input:checked){background:color-mix(in srgb,var(--accent) 12%,transparent);outline:1px solid var(--accent)}
+.pivot-group-dialog .pivot-group-values{display:block;max-height:180px;overflow:auto}
+.pivot-group-dialog footer{display:flex;flex-shrink:0;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.pivot-group-dialog button{padding:6px 10px}
+.pivot-group-dialog code{font-size:11px}
+.pivot-group-undo{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:calc(100vw - 32px);padding:10px 14px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px #0004;font-size:12px}
+@media(pointer:coarse){.pivot-group-dialog button,.pivot-group-option,.pivot-group-dialog .pivot-group-values label,.pivot-group-menu button,.pivot-group-link>button,.pivot-group-undo button{min-height:44px;min-width:44px}}
+
+.pivot-group-dialog .pivot-group-confirm{border:1px solid var(--accent);background:var(--accent);color:var(--bg);font-weight:600}
+.pivot-group-dialog .pivot-group-confirm:disabled{opacity:.45}
+.pivot-group-link .param-group{border:1px solid var(--border);border-radius:4px;padding:3px 6px;background:var(--bg-card);color:var(--text-muted);font-size:var(--font-size-11)}
+.pivot-group-link .param-group[data-linked=true]{color:var(--accent)}
+
+/* Worker observed comparison members: bounded pages in the source editor. */
+.pivot-drawer .pivot-formula-member-pager{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pivot-drawer .pivot-formula-panel [aria-label="Observed comparison members"]{min-width:0}
+.pivot-drawer .pivot-formula-panel [aria-label="Observed comparison members"] [role="status"]{font-size:var(--font-size-11);color:var(--text-muted);overflow-wrap:anywhere}
+.pivot-drawer .pivot-formula-panel [role="alert"]{overflow-wrap:anywhere}
+@media(pointer:coarse){.pivot-drawer .pivot-formula-member-pager button{min-height:44px;min-width:44px}}
+
+/* Final secondary panels: supplied prototype forms, list and measure-card primitives. */
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel) fieldset {min-width:0;margin:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px}
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel) legend {font-size:var(--font-size-11);color:var(--text-muted);padding:0 4px}
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel) label:not(.pivot-measure-grand) {display:flex;flex-direction:column;gap:3px;margin:0 0 8px;font-size:var(--font-size-11);color:var(--text-muted)}
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel) :is(input:not([type=checkbox]),select,textarea) {box-sizing:border-box;min-width:0;max-width:100%;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:var(--font-size-12);color:var(--text)}
+.pivot-drawer .pivot-panel-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px 14px;align-items:start}
+.pivot-drawer .pivot-panel-grid.two {grid-template-columns:minmax(200px,280px) minmax(0,1fr)}
+.pivot-drawer .pivot-panel-row {display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pivot-drawer .pivot-measure-panel fieldset .pivot-panel-row {align-items:end}
+.pivot-drawer .pivot-measure-panel fieldset label {flex:1;min-width:180px;margin:0}
+.pivot-drawer .pivot-measure-list {margin-top:8px}
+.pivot-drawer .pivot-measure-card {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end;padding:8px 0;border-bottom:1px solid var(--border)}
+.pivot-drawer .pivot-measure-card label {margin:0}
+.pivot-drawer .pivot-measure-title {grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--font-size-12);overflow-wrap:anywhere}
+.pivot-drawer .pivot-measure-title span:not(.pivot-panel-warning) {color:var(--text-muted)}
+.pivot-drawer .pivot-panel-warning {font-size:var(--font-size-11);color:var(--bd-warning)}
+.pivot-drawer .pivot-panel-note {font-size:var(--font-size-11);color:var(--text-muted);overflow-wrap:anywhere}
+.pivot-drawer .pivot-panel-list {list-style:none;margin:0;padding:0}
+.pivot-drawer .pivot-panel-list li {display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:5px 6px;border-bottom:1px solid var(--border);font-size:var(--font-size-12);overflow-wrap:anywhere}
+.pivot-drawer .pivot-panel-grow {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel) button {border:1px solid var(--border);border-radius:4px;padding:3px 8px;background:var(--bg-card);color:var(--text);font-size:var(--font-size-11)}
+.pivot-drawer .pivot-inspector-panel button[aria-pressed=true] {background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);border-color:var(--accent)}
+.pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-drawer-foot) button.pivot-panel-primary {border-color:var(--accent);background:var(--accent);color:var(--bg)}
+.pivot-drawer .pivot-measure-grand {display:flex;align-items:center;gap:4px}
+.pivot-drawer .pivot-inspector-repair {margin-top:12px}
+.pivot-drawer .pivot-inspector-repair textarea {min-height:220px;resize:vertical;font-family:ui-monospace,monospace}
+.pivot-drawer[data-orientation=horizontal] :is(.pivot-panel-grid,.pivot-panel-grid.two,.pivot-measure-card) {grid-template-columns:minmax(0,1fr)}
+@media(pointer:coarse){
+ .pivot-drawer :is(.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel) :is(button,input:not([type=checkbox]),select),.pivot-drawer .pivot-measure-grand {min-height:44px}
+ /* A short touch card scrolls its header away so the44px body actions remain reachable. */
+ .pivot-drawer[data-short] .pivot-drawer-head {position:static}
+}
+
+@media(pointer:coarse){.pivot-drawer[data-short] .pivot-formula-member-pager{flex-wrap:nowrap}.pivot-drawer[data-short] .pivot-formula-member-pager button{flex:1;min-width:0;padding-inline:4px;font-size:11px}}
+
+/* Statement authoring uses the same panel and form tokens as report settings. */
+.pivot-drawer .statement-panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.pivot-drawer .statement-panel fieldset{min-width:0;margin:0;border:1px solid var(--border);border-radius:6px;padding:10px}
+.pivot-drawer .statement-panel legend{font-size:var(--font-size-11);color:var(--text-muted);padding:0 4px}
+.pivot-drawer .statement-panel label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:var(--font-size-11);color:var(--text-muted)}
+.pivot-drawer .statement-panel label:has(input[type=checkbox]){flex-direction:row;align-items:center}
+.pivot-drawer .statement-panel :is(input:not([type=checkbox]),select,textarea){box-sizing:border-box;min-width:0;width:100%;max-width:100%;padding:5px 7px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:var(--font-size-12)}
+.pivot-drawer .statement-panel button{padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);color:var(--text);font-size:var(--font-size-11)}
+.pivot-drawer .statement-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 12px}
+.pivot-drawer .statement-section{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+.pivot-drawer .statement-line{display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid var(--border);font-size:var(--font-size-11)}
+.pivot-drawer .statement-line>label:not(:has(input[type=checkbox])){flex:1;min-width:150px}
+.pivot-drawer .statement-line>details{flex-basis:100%;min-width:0}
+.pivot-drawer .statement-panel :is(code,p,[role=alert]){overflow-wrap:anywhere}
+.pivot-drawer .statement-panel textarea{min-height:180px;font-family:ui-monospace,monospace}
+.pivot-drawer[data-orientation=horizontal] .statement-fields{grid-template-columns:minmax(0,1fr)}
+@media(pointer:coarse){.pivot-drawer .statement-panel :is(button,select,input:not([type=checkbox])){min-height:44px}}
+.pivot-drawer .statement-update-changes{min-width:0;border-top:1px solid var(--border);margin-top:12px;padding-top:10px}
+.pivot-drawer .statement-update-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:8px 0 16px}
+.pivot-drawer .statement-update-comparison pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;font-size:11px}
+.pivot-drawer[data-orientation=horizontal] .statement-update-comparison{grid-template-columns:minmax(0,1fr)}
+
+/* --- Compact forms (2026-10-06 cleanup) -------------------------------------
+   One density for every secondary panel: tighter fieldsets, grid gaps and
+   control padding than the first pass, with labels left-aligned above their
+   control (the Statement grid had inherited centred labels). Coarse pointers
+   keep their 44px targets from the rules above. */
+.pivot-drawer :is(.pivot-formula-panel,.pivot-category-panel,.pivot-page-panel,.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel,.statement-panel) fieldset { padding: 6px 8px; }
+.pivot-drawer :is(.pivot-formula-panel,.pivot-category-panel,.pivot-page-panel,.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel,.statement-panel) label { text-align: start; margin-bottom: 6px; }
+.pivot-drawer :is(.pivot-formula-panel,.pivot-category-panel,.pivot-page-panel,.pivot-measure-panel,.pivot-result-panel,.pivot-inspector-panel,.statement-panel) :is(input:not([type=checkbox]):not([type=radio]),select) { padding: 3px 6px; }
+.pivot-drawer :is(.pivot-formula-layout,.pivot-formula-grid,.pivot-category-layout,.pivot-category-grid,.pivot-filter-layout,.pivot-page-grid,.pivot-panel-grid) { gap: 8px 12px; }
+.pivot-drawer .statement-panel { gap: 8px; }
+.pivot-drawer .statement-fields { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 10px; }
+.pivot-drawer .statement-line { padding: 6px 0; gap: 6px; }
+.pivot-drawer .statement-section { margin-top: 8px; padding-top: 8px; }
+.pivot-drawer :is(.pivot-formula-list,.pivot-category-list,.pivot-panel-list,.pivot-page-members) li { padding: 4px 6px; }
+.pivot-drawer .pivot-measure-card { padding: 6px 0; gap: 6px; }
+/* styles.css centres .table-model-authoring labels for its inline rows;
+   stacked drawer labels stretch so the caption sits flush left. */
+.pivot-drawer .table-model-authoring label:not(:has(input[type=checkbox],input[type=radio])) { align-items: stretch; }
+/* One text size for re-hosted panel copy, and 24px secondary buttons. */
+.pivot-drawer :is(.table-model-authoring,.table-model-inspection) { font-size: var(--font-size-12); }
+.pivot-drawer :is(.table-model-authoring,.table-model-inspection) :is(h3,h4,summary) { font-size: var(--font-size-12); }
+.pivot-drawer :is(.table-model-authoring,.table-model-inspection) button { min-height: 24px; margin: 2px; padding: 2px 8px; }
+@media (pointer: coarse) { .pivot-drawer :is(.table-model-authoring,.table-model-inspection) button { min-height: 44px; } }
+/* Body copy follows the panel scale; notes keep their smaller size. */
+.pivot-drawer-body :where(p) { font-size: var(--font-size-12); }

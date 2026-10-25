@@ -1,0 +1,7 @@
+Error: <worktree>/.superpowers/playwright.webkit.config.ts does not exist
+    at resolveConfigFile2 (<worktree>/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:1536:11)
+    at resolveConfigLocation (<worktree>/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:1517:30)
+    at Object.loadConfigFromFile (<worktree>/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/common/index.js:1546:27)
+    at runTests (<worktree>/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/cli/testActions.js:46:51)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async _Command.<anonymous> (<worktree>/node_modules/.pnpm/playwright@1.62.1/node_modules/playwright/lib/program.js:55:7)

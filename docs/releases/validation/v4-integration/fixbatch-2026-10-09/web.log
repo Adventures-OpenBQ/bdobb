@@ -1,0 +1,44 @@
+
+> bdobb@4.0.0 test:web <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+> node --test web/*.test.mjs
+
+✔ reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin (0.59175ms)
+✔ reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA (0.255708ms)
+✔ configuration: empty allowlist grants nobody, malformed config fails closed (1.234ms)
+✔ an unconfigured server answers 503 and logs which variable failed (14.566667ms)
+✔ GitHub callbacks bind admission to immutable provider ID and never expose tokens (0.822125ms)
+✔ encrypted sessions require valid cookie, current ID, epoch and strict expiry (9.735459ms)
+✔ path and parameter allowlist blocks writes, admin surfaces and URL injection (0.482792ms)
+✔ the /api root documents are forwarded; nothing else at the /api root is (0.198625ms)
+✔ the generic api/v1 rule admits the whole catalogue inside structural bounds (0.456667ms)
+✔ bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend (0.2725ms)
+✔ anonymous visitors see login, not UI, metadata, JavaScript or data (10.472ms)
+✔ authorized files work; aliases, traversal, source maps, cross-origin and writes fail (20.29875ms)
+✔ a top-level cross-site navigation is the OAuth landing, not a forgeable request (7.135708ms)
+✔ empty allowlist cannot start OAuth or accept even a correctly signed session (5.492459ms)
+Preview authentication failed
+✔ Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth (11.185625ms)
+✔ valid CSRF sign-out expires the browser session cookie (6.323125ms)
+✔ proxy uses dedicated server token, bounded fetch, and never forwards browser credentials (5.928458ms)
+✔ unconfigured upstream, error bodies and unexpected content fail closed (21.370417ms)
+✔ every upgrade is refused -- no socket route exists at this line (10.4335ms)
+✔ only the exact branding allowlist is public; nothing rides along with it (27.060125ms)
+✔ the login surface carries the axes mark and installation icon links (4.79375ms)
+✔ branding assets retain their MIME types for authenticated requests too (4.861958ms)
+✔ the /api root documents come from openbb-api, not from this process (6.008625ms)
+✔ a full-catalogue widgets.json fits the body cap; one past it is an honest 502 (21.560458ms)
+✔ a socket ticket binds one target, expires, and needs the gateway token (0.705667ms)
+✔ the ticket route always 404s -- socketTarget names no route at this line (11.01375ms)
+✔ a write goes to the signed-in user's own state, and only a write shaped like one (15.439ms)
+✔ a gateway refusal of a write is relayed as a size or a failure, never its body (18.892834ms)
+✔ the page is seeded from the user's saved state, and told it may save (5.600375ms)
+✔ nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not (25.608667ms)
+✔ web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag (1.04875ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 479.755666

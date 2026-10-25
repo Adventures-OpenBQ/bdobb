@@ -1,0 +1,13 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ✓ src/components/dialogs/HelpDialog.test.tsx (21 tests) 3838ms
+   ✓ HelpDialog: Quick Help > shows the empty state when nothing matches 339ms
+   ✓ HelpDialog: Quick Help > clears the query with the clear button and restores the full list 373ms
+   ✓ HelpDialog: Reference Manual > filters its own pages by the search term, and never lists a quick topic 336ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  01:47:00
+   Duration  16.45s (transform 1.80s, setup 1.41s, collect 3.80s, tests 3.84s, environment 2.58s, prepare 426ms)
+

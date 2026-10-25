@@ -1,0 +1,18 @@
+[WebServer] (node:24981) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:25425) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:25967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:29907) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in dark (5.5s)
+  ✓  2 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in light (1.6s)
+  ✓  3 [chromium] › e2e/statement-clean-v5.spec.ts:31:1 › backend Statement uses the complete response and exports folded line items (1.2s)
+  ✓  4 [chromium] › e2e/statement-template-v5.spec.ts:7:40 › v4 template becomes a v5 Statement with durable folds and authoritative exports in dark (1.7s)
+  ✓  5 [chromium] › e2e/statement-template-v5.spec.ts:7:40 › v4 template becomes a v5 Statement with durable folds and authoritative exports in light (2.0s)
+
+  5 passed (51.4s)

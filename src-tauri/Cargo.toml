@@ -1,0 +1,56 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+[package]
+name = "bdobb"
+version = "7.0.0"
+description = "BDOBB"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[lib]
+name = "bdobb_lib"
+# iOS links this crate as a static library, so "staticlib" must be present
+# alongside the "rlib" the desktop build already relies on.
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-http = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+
+# The Save panel's Format pop-up (src/save_panel.rs). Already in the lock
+# through tauri and rfd; listed for the AppKit classes the panel uses.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSURL", "NSGeometry"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSSavePanel", "NSPanel", "NSWindow", "NSResponder", "NSView", "NSControl", "NSButton", "NSPopUpButton", "NSTextField", "NSMenu", "NSMenuItem"] }
+
+# iOS only: the WKWebView scroll-view call in cover_screen_edges (lib.rs).
+# Already in the lock through wry; named here at the same version.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+
+# Xcode 27's SwiftPM internalizes the `@_cdecl` exports of a static Swift
+# product, so the Rust side of Tauri's iOS build fails to link. swift-rs 1.0.8
+# fixes most of that (it plans with `--triple`, clamps the iOS deployment
+# target, finds the moved products dir, and re-globalizes the internalized
+# symbols with llvm-objcopy -- hence `scripts/ios.sh check` requiring
+# llvm-tools). It re-globalizes only the archive member named after the
+# PACKAGE, though, so swift-rs's own `SwiftRs.o` stays local and
+# `retain_object` / `release_object` / `string_from_bytes` still fail.
+#
+# vendor/swift-rs is pristine 1.0.8 with that one condition widened; the change
+# and its reasoning are commented at the site, in src-rs/build.rs. Drop the
+# vendored copy and this patch when upstream covers SwiftRs.o.
+#
+# swift-rs is a transitive dependency (tauri -> tauri-utils -> swift-rs), never
+# named in [dependencies], so [patch.crates-io] is what makes the fix reach it.
+[patch.crates-io]
+swift-rs = { path = "vendor/swift-rs" }

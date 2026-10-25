@@ -1,0 +1,486 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ❯ src/components/renderers/table-model/StatementPanel.test.tsx (11 tests | 1 failed) 11415ms
+   ✓ applyRequiresBindingsAndShowsMissingNotZero 547ms
+   ✓ overrideLabelsOrderFormulaVisibility 1580ms
+   ✓ sourceFieldDisappearsWithoutRawFallback 375ms
+   ✓ explicitUpdateRequiresConflictResolution 1331ms
+   ✓ failedSaveAndCancelledPreviewRetainDraft 1470ms
+   ✓ resets the line owned formula and editor before preview and save 1260ms
+   ✓ company choices belong to their binding while same binding paging retains all selected keys 1494ms
+   ✓ previews nonconflicting default formula and policy changes before durable adoption 1048ms
+   ✓ edits section visibility and explains inherited hiding without clearing line overrides 900ms
+   × keeps metadata fiscal bindings when switching FQ and back to FY 1404ms
+     → expect(element).toBeEnabled()
+
+Received element is not enabled:
+  <button
+  disabled=""
+  type="button"
+/>
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"table-model-authoring statement-panel"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"pivot-panel-row"[39m
+        [36m>[39m
+          [36m<strong>[39m
+            [0mincome[0m
+            [0m · [0m
+            [0m1.0.0[0m
+          [36m</strong>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"pivot-filter-tag"[39m
+          [36m>[39m
+            [0mPinned snapshot[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mSaved Statement · local draft edits[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"pivot-panel-note"[39m
+        [36m>[39m
+          [0mMissing facts are never zero. Map optional monetary lines explicitly; labels and order do not change formula bindings.[0m
+        [36m</p>[39m
+        [36m<fieldset[39m
+          [33mclass[39m=[32m"statement-fields"[39m
+        [36m>[39m
+          [36m<legend>[39m
+            [0mSource bindings[0m
+          [36m</legend>[39m
+          [36m<label>[39m
+            [0mSource shape[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Source shape"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"wide"[39m
+              [36m>[39m
+                [0mWide · fields become line items[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"long"[39m
+              [36m>[39m
+                [0mLong · item and value fields[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFiscal period[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Fiscal period"[39m
+            [36m>[39m
+              [36m<option>[39m
+                [0mFY[0m
+              [36m</option>[39m
+              [36m<option>[39m
+                [0mFQ[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mCompany[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Company"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mChoose source field[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"symbol"[39m
+              [36m>[39m
+                [0msymbol[0m
+                [0m · [0m
+                [0msymbol[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"period"[39m
+              [36m>[39m
+                [0mperiod[0m
+                [0m · [0m
+                [0mperiod[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"date"[39m
+              [36m>[39m
+                [0mdate[0m
+                [0m · [0m
+                [0mdate[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"year"[39m
+              [36m>[39m
+                [0myear[0m
+                [0m · [0m
+                [0myear[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"start"[39m
+              [36m>[39m
+                [0mstart[0m
+                [0m · [0m
+                [0mstart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"end"[39m
+              [36m>[39m
+                [0mend[0m
+                [0m · [0m
+                [0mend[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"revenue"[39m
+              [36m>[39m
+                [0mrevenue[0m
+                [0m · [0m
+                [0mrevenue[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cost_of_revenue"[39m
+              [36m>[39m
+                [0mcost_of_revenue[0m
+                [0m · [0m
+                [0mcost_of_revenue[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFact period kind[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Fact period kind"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mChoose source field[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"symbol"[39m
+              [36m>[39m
+                [0msymbol[0m
+                [0m · [0m
+                [0msymbol[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"period"[39m
+              [36m>[39m
+                [0mperiod[0m
+                [0m · [0m
+                [0mperiod[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"date"[39m
+              [36m>[39m
+                [0mdate[0m
+                [0m · [0m
+                [0mdate[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"year"[39m
+              [36m>[39m
+                [0myear[0m
+                [0m · [0m
+                [0myear[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"start"[39m
+              [36m>[39m
+                [0mstart[0m
+                [0m · [0m
+                [0mstart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"end"[39m
+              [36m>[39m
+                [0mend[0m
+                [0m · [0m
+                [0mend[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"revenue"[39m
+              [36m>[39m
+                [0mrevenue[0m
+                [0m · [0m
+                [0mrevenue[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cost_of_revenue"[39m
+              [36m>[39m
+                [0mcost_of_revenue[0m
+                [0m · [0m
+                [0mcost_of_revenue[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<span>[39m
+            [36m<label>[39m
+              [0mReport date[0m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Report date"[39m
+         ...
+ ❯ src/lib/statementModel/rollups.test.ts (3 tests | 2 failed) 51ms
+   × rejects derived values with mixed currency dependencies 12ms
+     → expected undefined to be defined
+   × rejects derived values with mixed unit dependencies 3ms
+     → expected undefined to be defined
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/statementModel/rollups.test.ts > rejects derived values with mixed currency dependencies
+ FAIL  src/lib/statementModel/rollups.test.ts > rejects derived values with mixed unit dependencies
+AssertionError: expected undefined to be defined
+ ❯ src/lib/statementModel/rollups.test.ts:60:31
+     58|         return { value: row.values[col.id], error: row.cellErrors?.[co…
+     59|     };
+     60|     expect(calculate().error).toBeDefined();
+       |                               ^
+     61|     expect(calculate().value).not.toBe(40);
+     62|     f.source.rows[1].values[field] = f.source.rows[0].values[field];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/components/renderers/table-model/StatementPanel.test.tsx > keeps metadata fiscal bindings when switching FQ and back to FY
+Error: expect(element).toBeEnabled()
+
+Received element is not enabled:
+  <button
+  disabled=""
+  type="button"
+/>
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"table-model-authoring statement-panel"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"pivot-panel-row"[39m
+        [36m>[39m
+          [36m<strong>[39m
+            [0mincome[0m
+            [0m · [0m
+            [0m1.0.0[0m
+          [36m</strong>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"pivot-filter-tag"[39m
+          [36m>[39m
+            [0mPinned snapshot[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mSaved Statement · local draft edits[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"pivot-panel-note"[39m
+        [36m>[39m
+          [0mMissing facts are never zero. Map optional monetary lines explicitly; labels and order do not change formula bindings.[0m
+        [36m</p>[39m
+        [36m<fieldset[39m
+          [33mclass[39m=[32m"statement-fields"[39m
+        [36m>[39m
+          [36m<legend>[39m
+            [0mSource bindings[0m
+          [36m</legend>[39m
+          [36m<label>[39m
+            [0mSource shape[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Source shape"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"wide"[39m
+              [36m>[39m
+                [0mWide · fields become line items[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"long"[39m
+              [36m>[39m
+                [0mLong · item and value fields[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFiscal period[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Fiscal period"[39m
+            [36m>[39m
+              [36m<option>[39m
+                [0mFY[0m
+              [36m</option>[39m
+              [36m<option>[39m
+                [0mFQ[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mCompany[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Company"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mChoose source field[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"symbol"[39m
+              [36m>[39m
+                [0msymbol[0m
+                [0m · [0m
+                [0msymbol[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"period"[39m
+              [36m>[39m
+                [0mperiod[0m
+                [0m · [0m
+                [0mperiod[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"date"[39m
+              [36m>[39m
+                [0mdate[0m
+                [0m · [0m
+                [0mdate[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"year"[39m
+              [36m>[39m
+                [0myear[0m
+                [0m · [0m
+                [0myear[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"start"[39m
+              [36m>[39m
+                [0mstart[0m
+                [0m · [0m
+                [0mstart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"end"[39m
+              [36m>[39m
+                [0mend[0m
+                [0m · [0m
+                [0mend[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"revenue"[39m
+              [36m>[39m
+                [0mrevenue[0m
+                [0m · [0m
+                [0mrevenue[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cost_of_revenue"[39m
+              [36m>[39m
+                [0mcost_of_revenue[0m
+                [0m · [0m
+                [0mcost_of_revenue[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<label>[39m
+            [0mFact period kind[0m
+            [36m<select[39m
+              [33maria-label[39m=[32m"Fact period kind"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mChoose source field[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"symbol"[39m
+              [36m>[39m
+                [0msymbol[0m
+                [0m · [0m
+                [0msymbol[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"period"[39m
+              [36m>[39m
+                [0mperiod[0m
+                [0m · [0m
+                [0mperiod[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"date"[39m
+              [36m>[39m
+                [0mdate[0m
+                [0m · [0m
+                [0mdate[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"year"[39m
+              [36m>[39m
+                [0myear[0m
+                [0m · [0m
+                [0myear[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"start"[39m
+              [36m>[39m
+                [0mstart[0m
+                [0m · [0m
+                [0mstart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"end"[39m
+              [36m>[39m
+                [0mend[0m
+                [0m · [0m
+                [0mend[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"revenue"[39m
+              [36m>[39m
+                [0mrevenue[0m
+                [0m · [0m
+                [0mrevenue[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cost_of_revenue"[39m
+              [36m>[39m
+                [0mcost_of_revenue[0m
+                [0m · [0m
+                [0mcost_of_revenue[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</label>[39m
+          [36m<span>[39m
+            [36m<label>[39m
+              [0mReport date[0m
+              [36m<select[39m
+                [33maria-label[39m=[32m"Report date"[39m
+         ...
+ ❯ src/components/renderers/table-model/StatementPanel.test.tsx:145:87
+    143|   fireEvent.change(screen.getByLabelText('Fiscal period'),{target:{val…
+    144|   fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}…
+    145|   await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Stat…
+       |                                                                                       ^
+    146|   expect(received?.bindings.fiscal).toEqual(candidate.bindings.fiscal);
+    147|   expect(received?.periodKind).toBe(kind);
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 11 passed (14)
+   Start at  00:36:10
+   Duration  16.82s (transform 1.37s, setup 577ms, collect 2.26s, tests 11.47s, environment 1.19s, prepare 179ms)
+

@@ -1,0 +1,89 @@
+
+Running 4 tests using 1 worker
+
+[1/4] [chromium] › e2e/proxied-tools.spec.ts:36:1 › a proxied tool turned off in the AI Library is refused before anything is sent
+[2/4] [chromium] › e2e/proxied-tools.spec.ts:62:1 › the same call goes through when the name is not turned off, and the name is remembered
+[3/4] [chromium] › e2e/proxied-tools.spec.ts:82:1 › Deny sends nothing, and the trail shows the call as Denied, counted as the one error
+  1) [chromium] › e2e/proxied-tools.spec.ts:82:1 › Deny sends nothing, and the trail shows the call as Denied, counted as the one error 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.status-trail').locator('summary')
+    Expected substring: "· 1 error"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('.status-trail').locator('summary')
+
+
+      88 |   await expect(prompt).toHaveCount(0);
+      89 |   const trail = page.locator(".status-trail");
+    > 90 |   await expect(trail.locator("summary")).toContainText("· 1 error");
+         |                                          ^
+      91 |   await trail.locator("summary").click();
+      92 |   await expect(trail.locator("li.trail-error")).toContainText("Denied");
+      93 |   expect(toolCalls()).toBe(0);
+        at <worktree>/e2e/proxied-tools.spec.ts:90:42
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/proxied-tools-Deny-sends-n-a2e10-ed-counted-as-the-one-error-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/proxied-tools-Deny-sends-n-a2e10-ed-counted-as-the-one-error-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/proxied-tools-Deny-sends-n-a2e10-ed-counted-as-the-one-error-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/proxied-tools-Deny-sends-n-a2e10-ed-counted-as-the-one-error-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[4/4] [chromium] › e2e/proxied-tools.spec.ts:96:1 › Stop during a running MCP call shows the call as Stopped, not as an error
+  2) [chromium] › e2e/proxied-tools.spec.ts:96:1 › Stop during a running MCP call shows the call as Stopped, not as an error 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.status-trail').locator('summary')
+    Expected substring: "· 0 errors"
+    Received string:    "1 step · 1 error"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('.status-trail').locator('summary')
+        14 × locator resolved to <summary>…</summary>
+           - unexpected value "1 step · 1 error"
+
+
+      110 |   await page.getByRole("button", { name: "Stop" }).click();
+      111 |   const trail = page.locator(".status-trail");
+    > 112 |   await expect(trail.locator("summary")).toContainText("· 0 errors");
+          |                                          ^
+      113 |   await trail.locator("summary").click();
+      114 |   await expect(trail).toContainText("Stopped");
+      115 |   await expect(page.getByRole("alert").filter({ hasText: "Tool call failed" })).toHaveCount(0);
+        at <worktree>/e2e/proxied-tools.spec.ts:112:42
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    e2e-results/proxied-tools-Stop-during--9ea20--as-Stopped-not-as-an-error-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: e2e-results/proxied-tools-Stop-during--9ea20--as-Stopped-not-as-an-error-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    e2e-results/proxied-tools-Stop-during--9ea20--as-Stopped-not-as-an-error-chromium/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace e2e-results/proxied-tools-Stop-during--9ea20--as-Stopped-not-as-an-error-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  2 failed
+    [chromium] › e2e/proxied-tools.spec.ts:82:1 › Deny sends nothing, and the trail shows the call as Denied, counted as the one error 
+    [chromium] › e2e/proxied-tools.spec.ts:96:1 › Stop during a running MCP call shows the call as Stopped, not as an error 
+  2 passed (21.1s)

@@ -1,0 +1,3435 @@
+/* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+:root {
+  --bg: #12161d;
+  --bg-panel: #1a1f28;
+  --bg-card: #1e242e;
+  --border: #2b323d;
+  --text: #dfe4ec;
+  --text-muted: #8b94a3;
+  --accent: #22c99b;
+  --error: #d9695f;
+  /* A partial answer, not an error: the pivot's incomplete-period count, and
+     the pivot panel's "Choose"/⚠. The Workspace's stale orange. */
+  --warning: #c5804f;
+  --picker-hover: #2a3340;
+  --clock-green: #39ff14;
+  --rail-width: 48px;
+  --rail-width-expanded: 240px;
+  /* Fallback only. App's ResizeObserver publishes the real value (the tab
+     bar's bottom edge) on .dashboard-area itself, which wins by specificity
+     of the cascade origin -- an element style beats this. Declared here so a
+     maximized card is still laid out against the viewport top, rather than
+     against an invalid `inset` that drops the whole shorthand, in the frames
+     before that observer has measured (and under any environment that never
+     runs it). */
+  --dashboard-top: 0px;
+  /* The in-card file rail: the same idiom as the left rail, at a card's scale. */
+  --file-rail-width: 28px;
+  --file-rail-width-expanded: 260px;
+  --font-size-base: 14px;
+  /* Derived from --font-size-base, not hardcoded: recomputes automatically
+     under :root[data-font-size="large"] below, same as every site that used
+     to spell out calc(var(--font-size-base) * N / 14) by hand. */
+  /* Every font-size in this file MUST use one of these tokens (or --font-size-base). A bare px value silently opts that element out of the Font size setting. */
+  --font-size-10: calc(var(--font-size-base) * 10 / 14);
+  --font-size-11: calc(var(--font-size-base) * 11 / 14);
+  --font-size-12: calc(var(--font-size-base) * 12 / 14);
+  --font-size-13: calc(var(--font-size-base) * 13 / 14);
+  --font-size-16: calc(var(--font-size-base) * 16 / 14);
+  --font-size-28: calc(var(--font-size-base) * 28 / 14);
+  --font-size-32: calc(var(--font-size-base) * 32 / 14);
+}
+
+/* Specificity (0,2,0), not source order, is what beats pdf_viewer.css's bare
+   :root { color-scheme: light dark }. */
+:root:not([data-theme="light"]) {
+  color-scheme: dark;
+}
+
+/* What makes the app paint correctly BEFORE any JavaScript has run. The
+   palette above reads "dark unless explicitly light", so an unstamped
+   document painted dark whatever the OS said; index.html used to close that
+   gap with a blocking inline script, which `script-src 'self'` now refuses
+   (src-tauri/tauri.conf.json, pinned by src/lib/csp.test.ts). This layer does
+   the same job in the cascade instead, with nothing to execute.
+
+   It must come AFTER :root:not([data-theme="light"]) and its selector is the
+   mirror of it: both are specificity (0,2,0), so source order is what decides
+   an unstamped document on a light Mac. App's own effect still stamps
+   data-theme afterwards, which is what keeps an explicit choice
+   authoritative -- an explicit "dark" is excluded here by :not(), and an
+   explicit "light" is carried by the block below.
+
+   CSS cannot alias a declaration block across an @media boundary, so the
+   light tokens are spelled out twice. src/lib/themeFlash.test.ts asserts the
+   two blocks declare an identical set of property names, because nothing in
+   the language stops them drifting. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #eef1f5;
+    --bg-panel: #ffffff;
+    --bg-card: #ffffff;
+    --border: #d7dce3;
+    --text: #1a1f28;
+    --text-muted: #6b7280;
+    --accent: #16a67f;
+    --error: #c0392b;
+    /* --warning, darker so it reads on white; see the dark block. */
+    --warning: #a15c1f;
+    --picker-hover: #e5e9f0;
+    --clock-green: #1a9e4a;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #eef1f5;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --border: #d7dce3;
+  --text: #1a1f28;
+  --text-muted: #6b7280;
+  --accent: #16a67f;
+  --error: #c0392b;
+  /* --warning, darker so it reads on white; see the dark block. */
+  --warning: #a15c1f;
+  --picker-hover: #e5e9f0;
+  --clock-green: #1a9e4a;
+  color-scheme: light;
+}
+
+:root[data-font-size="large"] {
+  --font-size-base: 16px;
+}
+
+* { box-sizing: border-box; }
+
+/* The root element's own ground, not just the body's: the body is laid out
+   inside it, and the window paints whatever is behind that. index.html holds
+   the same two colours as literals for the frames before this file has
+   loaded (see the note there); this is the one that follows the token, so a
+   palette change cannot leave the root element on a stale colour. */
+html { background-color: var(--bg); }
+
+button, input, select, textarea { font: inherit; }
+/* iOS/iPadOS WebKit renders an UNRESET <button> with its native appearance:
+   the author `background` is suppressed and the label takes the system TINT
+   (iOS blue) whenever no explicit `color` is set. That one cause is why the
+   accent-filled toggles read blue and looked stuck untoggled on a real iPad
+   (user report, 2026-09-26): `.chart-segmented button[aria-pressed="true"]`
+   and the rail's pressed state paint with `background: var(--accent)`, which
+   native appearance drops, and `.chart-actions` buttons (ADJ, { }, Snapshot)
+   set a background but no colour, so their label took the tint. The reset
+   belongs here, on the base button, not per-component: this app ships ONE
+   stylesheet to macOS, iPadOS and the web, so a chart-scoped fix would leave
+   every other button (dialogs, the rail, settings, the cards) blue on the
+   device. `color: inherit` is deliberate -- the tint is applied in the
+   ABSENCE of an explicit colour and an appearance reset alone does not always
+   dislodge it, so the label is pinned to its context's text colour. This is a
+   visual no-op for the many buttons that already declare their own background
+   and colour; a button that leaned on native chrome for a fill or border
+   would have to state it, and a survey of the app's button surfaces found
+   none that did. `background` is left alone so each site keeps the fill it
+   already sets (transparent, a token, or the accent for a pressed toggle). */
+button { -webkit-appearance: none; appearance: none; color: inherit; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: var(--font-size-base);
+}
+
+/* Visually hidden, still readable by assistive tech -- same recipe as
+   .param-label-hidden further down, generalised for any element that needs
+   to restate something (a tooltip, a title attribute) for a screen reader. */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ===========================================================================
+   Shared component recipes.
+
+   Five shapes were hand-copied down this file -- the popup menu, the badge,
+   the outlined button, the filled toolbar button and the input field. Each is
+   declared ONCE here; every site below keeps only what it does differently
+   (its padding, its font-size, the colour or radius it varies).
+
+   Every `:is()` list holds selectors that ALREADY had the same specificity, so
+   no rule here beats -- or loses to -- anything it did not before. And because
+   this section comes first, a per-site rule of equal specificity still wins on
+   source order, exactly as the hand-copied version did.
+
+   Two selectors are deliberately NOT lifted into the outlined-button list:
+   `.card-action` and `.library-filter-reset`. That list is `:is(...) button`,
+   so it can only ever match a <button> -- it cannot reach ViewToggle's
+   <select> as it stands. The hazard is the merge itself: `:is()` takes the
+   specificity of its MOST specific argument, so folding either class into
+   that list would raise it from (0,1,0) to (0,1,1). ViewToggle renders
+   `class="card-action view-select"`, and at (0,1,1) this shared
+   `background: transparent` would outrank `.view-select`'s (0,1,0)
+   dropdown-arrow `background` at any source order -- the arrow would
+   disappear.
+   =========================================================================== */
+
+/* Popup menu: a panel floating over the app holding one column of full-width
+   rows. .row-context-menu -- every context menu in the app since the four
+   were folded into one primitive -- is `position: fixed` and portalled;
+   .card-export-menu, the card's ⋯ menu, rides the same panel (MenuPanel)
+   hung from its toggle. Position, z-index and min-width stay with each menu,
+   below. */
+:is(.card-export-menu, .row-context-menu, .group-menu) {
+  padding: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+:is(.card-export-menu, .row-context-menu, .group-menu) button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Both menus render disabled items (the table header's Pin/Unpin rows, the
+   card's export rows); .row-context-menu is the one that also lights its row
+   up on focus. */
+:is(.card-export-menu, .row-context-menu) button:hover:not(:disabled),
+.row-context-menu button:focus { background: var(--bg-card); }
+
+/* After the hover rule on purpose: the two selectors have equal specificity
+   (one class, one pseudo-class, one type), so source order decides. */
+:is(.card-export-menu, .row-context-menu) button:disabled { color: var(--text-muted); cursor: default; }
+
+/* Badge: an inert hairline-outlined pill in muted text. .tab-bar-tag drops to
+   --font-size-10, .source-badge ellipsises a long provider name, and
+   .dashboard-badge marks the active dashboard, all below. */
+:is(.type-badge, .source-badge, .backend-badge, .tab-bar-tag, .dashboard-badge) {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* Outlined button: the app's secondary control -- no fill, one hairline
+   border. .iframe-hint restates `color` in body text and .error-state (with
+   the boundary fallback .error-box, which shares its rules) in --error;
+   .error-state and .app-card-footer take the 4px radius, and
+   .app-card-footer restates `color` in body text. All of that is below, with
+   each component. */
+:is(.filter-actions, .widget-tabs, .iframe-hint, .error-state, .error-box, .app-card-footer) button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* The accent-outlined primary: the widget form panel's submit button, greyed
+   out when it has nothing to send. */
+.widget-form-actions button {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.widget-form-actions button:disabled {
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* Filled toolbar button: the four in-body toolbars take a card fill rather
+   than the outlined treatment, so they read as controls against the document
+   they sit above. Only .multi-file-nav and .file-rail-actions vary the
+   padding, below. */
+:is(.pdf-toolbar, .pdf-findbar, .multi-file-nav, .file-rail-actions) button {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Input field: card fill, hairline border, body text. Padding and radius stay
+   with each form, below; the two pdf inputs are class selectors rather than
+   descendants, so they keep their own (0,1,0) list. */
+:is(.backend-form, .param-field) :is(input, select) {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+:is(.pdf-page-input, .pdf-find-input) {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+}
+
+/* 100vh on iOS is the LARGE viewport -- taller than what is actually visible
+   -- so the shell ran past the bottom of the screen and took the rail's last
+   bottom-pinned row (Help) with it, off-screen. 100dvh is the visible height.
+   The 100vh line stays first as the fallback for anything without dvh support.
+   Confirmed on an iPad: before, Help was absent; after, it is there.
+
+   Net of the top inset, because body pads by it: with viewport-fit=cover
+   (index.html) the viewport runs under the status bar, so a shell sized to
+   the full 100dvh plus body's top padding would overflow by exactly that
+   inset and carry Help off-screen again. The bottom inset is the rail's and
+   the dashboard area's own (see --safe-bottom). On the desktop every inset
+   is 0 and the calc is 100dvh. */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  height: calc(100dvh - var(--safe-top));
+  position: relative;
+}
+
+/* Always out of flow, at rest as well as expanded. It used to sit in the flex
+   row at rest and go absolute only on expand, while .dashboard-area carried a
+   margin-left sized to the rail — so at rest the offset was applied twice and
+   a rail's width of dead space ran down the left of every dashboard. Taking it
+   out of flow permanently leaves that margin as the single offset, and keeps
+   the no-reflow guarantee: expanding changes only this element's width. */
+.left-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: var(--rail-width);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 120ms ease;
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Expands as an overlay above the dashboard, which never reflows.
+
+   Keyboard focus inside the rail expands it too, as .file-rail:focus-within
+   does: hover is mouse-only, and collapsed the rail hides its labels and the
+   import notice, so a keyboard user could never open it. :focus-visible
+   rather than :focus-within, so a mouse click that leaves focus on a row
+   (Chromium focuses a clicked button) does not hold the rail open after the
+   pointer leaves. Every collapsed-only rule below carries the same
+   exception. It is data-keyboard-focus (LeftRail), not :has(:focus-visible):
+   WebKit marks the focus a closing dialog hands back to a row as
+   :focus-visible even after a mouse click, which held the rail open (#26). */
+.left-rail[data-expanded="true"],
+.left-rail[data-keyboard-focus] {
+  width: var(--rail-width-expanded);
+}
+
+/* The dashboard list is the only part of the rail allowed to grow, so it is
+   the only part allowed to scroll. Without this the rail -- a fixed-height
+   `overflow: hidden` flex column -- simply runs off its own bottom edge once
+   the list is long enough, taking Connections, Settings and Help with it:
+   a column flex item's `min-height` is `auto`, so .rail-top will not shrink
+   below its content, and .rail-bottom is pushed past the rail's bottom and
+   clipped away. `min-height: 0` lets it shrink, `overflow-y: auto` gives the
+   rows it can no longer show somewhere to go. Expanded is where this bites
+   first -- collapsed, every label and section label leaves the layout, so the
+   same rail fits ~144px more rows -- but the collapsed rail overflows too,
+   just later, and this covers both. */
+.rail-top {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.rail-section-label {
+  padding: 8px 12px 4px;
+  font-size: var(--font-size-11);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.rail-item[draggable="true"] { cursor: grab; }
+
+/* A held press is the touch dialect's right-click (useLongPressContextMenu),
+   and iOS answers the same hold with its own callout and a text selection.
+   Rows and section labels are not text to select. The rename field sits in
+   a .rail-item wrapper, and is handed its selection back explicitly: older
+   iOS versions let an ancestor's `none` reach into an input. */
+.rail-item,
+.rail-section-label {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.rail-item input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.rail-item:hover { background: var(--bg-card); }
+.rail-item[aria-current="true"] { color: var(--accent); }
+
+.rail-item[data-drop-target="true"] {
+  background: var(--bg-card);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* .rail-item:has(.rail-shortcut) used to supply the flex row a dashboard row
+   needed for its label + kbd. .rail-item is that row now, for every kind of
+   row, so the :has rule would be a second rule doing one job. */
+.rail-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+.rail-icon { flex: 0 0 auto; }
+/* The plus, in the same green as the tab bar's quick-add button. The svg
+   paints with currentColor, so setting color here is the whole mechanism. */
+.rail-icon-accent { color: var(--accent); }
+
+/* The nesting indent for dashboard and folder rows, which carry their depth
+   as `--rail-depth` (LeftRail.tsx's rowIndent). Expanded only, and from the
+   stylesheet rather than inline, so the collapsed rule below is not outranked
+   by an inline style: 16px is one step because a folder row spends 10px on
+   its caret plus a 6px gap before its label, and a nested row has no caret of
+   its own, so anything smaller would print a child's label to the LEFT of the
+   folder it sits in. `padding-left` is the constant 12px `.rail-item` already
+   gives every row, and `width: auto` keeps the row filling what the margin
+   leaves rather than overflowing by it. */
+.left-rail[data-expanded="true"] .rail-item[style*="--rail-depth"],
+.left-rail[data-keyboard-focus] .rail-item[style*="--rail-depth"] {
+  margin-left: calc(var(--rail-depth) * 16px);
+  width: auto;
+}
+
+/* Collapsed, the icons and the kbd badges carry the rail: every text label
+   leaves the layout entirely (and, with display: none, the accessibility
+   tree -- which is why each fixed button also carries an aria-label). */
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-item {
+  padding: 8px 0;
+  justify-content: center;
+}
+
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-item-label { display: none; }
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-section-label { display: none; }
+
+/* A section label with a control beside it: the Workspaces header, its label
+   plus the + that opens the workspace dialog, and the Library header at the
+   top of the rail, its label plus the rail's lock. The label hides with the
+   others while the rail is collapsed, and each control with it. */
+.rail-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* The rail's lock, which pins it open: a small .card-action button beside the
+   first section label. Gone with the labels while the rail is collapsed -- a
+   pinned rail is never collapsed, so the way out is always on screen. */
+.rail-lock {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+  padding: 3px;
+}
+
+/* Collapsed, the lock is clipped off screen rather than display: none, so it
+   stays focusable: the rail expands only under the mouse (useHoverPanel), so a
+   keyboard user Tabbing through the rail would otherwise never reach it. It
+   cannot be revealed by the rail's :has(:focus-visible) rule alone -- Chromium
+   blurs the current control before focusing the next, and in that instant the
+   rule is false, a display: none lock is not focusable, and focus falls to the
+   body. Clipped, Tab lands on it; its own focus then satisfies the rail's rule,
+   which un-clips it with the rest. A mouse click that leaves focus on a row
+   does not count (no :focus-visible), so the lock does not sit in the
+   collapsed rail after the pointer leaves. */
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-lock {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Arrange mode makes the rail inert (LeftRail's `inert`, spec 2026-10-01 §3);
+   dimmed, so it reads as unavailable. */
+.left-rail[inert] { opacity: 0.6; }
+
+.rail-section-add {
+  margin-right: 8px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-16);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rail-section-add:hover { color: var(--text); }
+
+/* Collapsed, the "+" is clipped off screen rather than display: none, so it
+   stays focusable: the rail expands only under the mouse (useHoverPanel), so a
+   keyboard user Tabbing through the rail would otherwise never reach it. It
+   cannot be revealed by the rail's :has(:focus-visible) rule alone -- Chromium
+   blurs the current control before focusing the next, and in that instant the
+   rule is false, a display: none button is not focusable, and focus falls to
+   the body. Clipped, Tab lands on it; its own focus then satisfies the rail's
+   rule, which un-clips it with the rest (the same pattern as the rail lock).
+   A mouse click that leaves focus on a row does not count (no :focus-visible),
+   so the "+" does not sit in the collapsed rail after the pointer leaves. */
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-section-add {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rail-shortcut {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+}
+
+/* The initial a dashboard past the ninth shows where its ⌥N badge would be:
+   the badge's box and type, minus the border, so it does not read as a key. */
+.rail-initial { border-color: transparent; }
+
+/* `.rail-item` supplies the flex row now, so all this adds is the tighter gap
+   that keeps the caret next to the folder name rather than an icon's distance
+   from it. */
+.rail-folder-row { gap: 6px; }
+
+.rail-folder-caret {
+  flex: 0 0 auto;
+  width: 10px;
+  color: var(--text-muted);
+  font-size: var(--font-size-10);
+}
+
+.dashboard-area {
+  flex: 1 1 auto;
+  margin-left: var(--rail-width);
+  overflow: auto;
+  padding-bottom: var(--safe-bottom);
+}
+
+/* Pinned, the rail stops being an overlay and takes real layout space: the
+   dashboard area's left margin moves from the collapsed width to the
+   expanded one, so tiles REFLOW into what is left instead of sitting under
+   the rail. The inner grids re-measure themselves -- react-grid-layout's
+   WidthProvider observes its own element -- so nothing else has to react. */
+.app-shell[data-rail-pinned="true"] .dashboard-area {
+  margin-left: var(--rail-width-expanded);
+}
+
+/* The auto margin lives HERE, not on .quick-add-button, and there must be
+   exactly one of it in this row: CSS Flexbox 8.1 distributes free space
+   EQUALLY among all auto margins, so an auto margin on both would strand ↻
+   in the middle of the bar (measured: 531px short of the +). ↻ is always
+   rendered and always precedes the +, so it is the one that takes the space
+   and the + rides along at the right end behind it. */
+.tab-bar .refresh-all { margin-left: auto; }
+
+.tab-bar .quick-add-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--font-size-16);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Both modals are real <dialog>s opened with showModal(): the top layer puts
+   them over every card without a z-index, the rest of the app goes inert, and
+   focus is trapped inside. The element itself is only the shell -- the UA's
+   own box (border, padding, canvas colours, fit-content sizing) is cleared
+   here so the .modal inside it goes on owning the panel's look, and `margin:
+   auto` against the UA's `inset: 0` is what centres it. */
+.modal-backdrop {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* The UA sets `color: canvastext` on dialog, which in the dark theme is
+     black text on the panel. */
+  color: var(--text);
+  max-width: none;
+  max-height: none;
+}
+.modal-backdrop::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+.modal {
+  width: min(680px, 92vw);
+  max-height: 82vh;
+  overflow: auto;
+  padding: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Settings only. ConnectionsDialog also renders a bare .modal, but its
+   content is a variable-length form (no backends at all up to a full table
+   plus an add form) -- a fixed 60vh would either float it in empty space or
+   force it to scroll for no reason, so the fixed sizing is scoped to this
+   modifier rather than the shared .modal base. */
+.modal-settings {
+  width: 60vw;
+  height: 60vh;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Apps only, and for the same reason .modal-settings exists: the shared
+   .modal base sizes a form, while this is a card grid whose height is
+   whatever the backends happen to serve -- so it gets a fixed box with an
+   internally scrolling body rather than one that grows and shrinks as the
+   search narrows. */
+.modal-apps {
+  width: 60vw;
+  height: 60vh;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* .modal-header gives its h2 `flex: 1`, which is right when the header is
+   just a title and a Close button; here the search box is the element that
+   should take the slack.
+
+   Both classes, not just `.apps-header`: the header carries
+   `class="modal-header apps-header"`, and `.modal-header h2` is declared
+   BELOW this block at the same (0,1,1) specificity, so on source order alone
+   it would win and this override would never apply. Matching the element by
+   both of its classes puts it at (0,2,1) and settles it wherever it sits. */
+.apps-header.modal-header h2 { flex: 0 0 auto; }
+.apps-header input[type="search"] {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+/* min-height: 0 for the reason .bd-body (src/styles/dialogs.css) relies on
+   too: a flex item's default min-height: auto refuses to shrink below its
+   content, so without it the modal grows instead of this scrolling. */
+.apps-body { flex: 1 1 auto; min-height: 0; overflow: auto; margin-top: 8px; }
+
+.apps-group-name {
+  margin: 12px 0 8px;
+  font-size: var(--font-size-12);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.apps-group:first-child .apps-group-name { margin-top: 0; }
+
+/* One line, under the heading of a connection whose apps.json could not be
+   read. Muted and un-styled beyond that on purpose: it is an explanation for
+   an empty group, not an error the user is asked to act on here. */
+.apps-issue {
+  margin: 0 0 8px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+
+/* One line under the header, when an Open failed. Unlike .apps-issue above
+   it is an error the user is being told about, so it takes --error rather
+   than the muted colour. The modal's own 16px padding is the inset; only
+   the gap to the list below is set here, matching .apps-body's margin-top. */
+.apps-error {
+  margin: 8px 0 0;
+  font-size: var(--font-size-12);
+  color: var(--error);
+}
+
+/* The card itself takes .library-card's recipe verbatim; only the three
+   things a widget card has no equivalent of are added here. It is a <div>
+   wrapping its own Open button rather than being one, so `.library-card`'s
+   `cursor: pointer` is turned back off.
+
+   Both classes, for the same reason the header's h2 above takes both:
+   `.library-card` is declared BELOW this block at the same (0,1,0)
+   specificity and would otherwise win on source order. */
+.library-card.app-card { cursor: default; }
+.app-card-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  color: var(--text-muted);
+}
+/* An app's image is a screenshot of a dashboard, so it is cropped to the
+   band rather than letterboxed into it. */
+.app-card-image img { width: 100%; height: 100%; object-fit: cover; }
+
+.app-card-footer { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.app-card-tabs { color: var(--text-muted); font-size: var(--font-size-12); }
+/* Takes the shared outlined-button recipe up top; only the four things it
+   varies are here -- it sits at the card's right edge, is roomier than a
+   toolbar button, keeps the 4px radius the card and its image band use, and
+   reads in body text because it is the card's one action. */
+.app-card-footer button {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: var(--font-size-12);
+}
+
+/* Help only. The shared .modal base is width: min(680px, 92vw) with
+   max-height: 82vh, which is right for a form and wrong for a two-pane
+   reader -- so, exactly as .modal-settings does, the sizing is scoped to a
+   modifier rather than pushed onto the base.
+
+   min-height: 0 on both panes for the reason .bd-body (src/styles/dialogs.css)
+   relies on too: a flex item's default min-height: auto refuses to shrink
+   below its content, so without it the modal grows instead of the panes
+   scrolling. */
+.modal-help {
+  width: 76vw;
+  height: 76vh;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.help-body { display: flex; gap: 16px; flex: 1 1 auto; min-height: 0; margin-top: 12px; }
+/* The search row is a fixed header over the scrolling list, which is why the
+   column is this wrapper and the scroll is on .help-list inside it. */
+.help-nav { flex: 0 0 220px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.help-search { display: flex; gap: 4px; }
+.help-search input { flex: 1 1 auto; min-width: 0; }
+/* The dialog already carries its own X button; WebKit's native search-cancel
+   glyph would put a second, differently-drawn one inside the field. */
+.help-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.help-list { min-height: 0; overflow: auto; }
+.help-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+/* The guide's section headings over its unfiltered list. Not a button, so
+   not a topic to the keyboard or to a screen reader enumerating the
+   landmark. */
+.help-list h4 { margin: 8px 6px 2px; font-size: var(--font-size-12); font-weight: 600; }
+.help-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.help-list button:hover { background: var(--bg-card); }
+.help-list button[aria-current="true"] { background: var(--bg-card); font-weight: 600; }
+.help-hit-snippet {
+  display: block;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.help-content { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+.modal-header { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.modal-header h2 { flex: 1; margin: 0; font-size: var(--font-size-16); }
+
+/* The import conflict prompt: one dashboard per dialog, and four stacked,
+   touch-sized answers. Replace is the one that destroys something. */
+.modal-import-conflict { width: min(480px, 92vw); }
+.import-conflict-count { margin: 4px 0 0; color: var(--text-muted); font-size: var(--font-size-12); }
+.import-conflict-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.import-conflict-actions button { min-height: 44px; text-align: left; }
+.import-conflict-caption { display: block; color: var(--text-muted); font-size: var(--font-size-12); }
+.import-conflict-replace:not(:disabled) { color: var(--error); border-color: var(--error); }
+
+.empty-state { color: var(--text-muted); }
+
+/* flex/min-height/overflow only take effect inside .modal-settings' flex
+   column; harmless elsewhere since flex properties are no-ops outside a flex
+   container. This is what lets the active tabpanel fill whatever height the
+   header and tab bar leave behind, and scroll internally instead of growing
+   the modal. */
+.settings-section {
+  margin-top: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.settings-section h3 { margin: 0 0 8px; font-size: var(--font-size-base); }
+.settings-section fieldset { border: none; padding: 0; margin: 0 0 12px; }
+.settings-section > label,
+.settings-section > fieldset > label { display: block; margin: 4px 0; }
+/* Helper text under a radio (Theme > System). A sibling of the label rather
+   than a child, so it stays out of the radio's accessible name; the indent
+   lines it up with the label text past the radio button. */
+.settings-hint { margin: 0 0 4px 20px; font-size: var(--font-size-12); color: var(--text-muted); }
+/* The same helper text under a SLIDER, where there is no radio button to
+   clear -- so it keeps the size and colour and drops the indent. */
+.settings-range-hint { margin-left: 0; }
+
+.backend-url { color: var(--text-muted); font-family: ui-monospace, monospace; }
+
+.backend-form { display: grid; gap: 8px; margin-top: 12px; }
+.backend-form label { display: grid; gap: 4px; font-size: var(--font-size-12); color: var(--text-muted); }
+
+.backend-form input,
+.backend-form select { padding: 6px 8px; border-radius: 4px; }
+
+/* The rename field, used by both the tab strip and the rail's dashboard rows:
+   sized to sit in the box of the label it replaces rather than to look like a
+   form input. font: inherit keeps each host's own type. */
+.inline-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--text);
+  font: inherit;
+}
+
+/* Sticky, not static: the bar is the first child of .dashboard-area, which is
+   the scroll box (overflow: auto), so a static bar scrolls up and out of the
+   window on a dashboard taller than the area. A maximized card then covers
+   the grid content that took the bar's place instead of the bar itself,
+   because its `inset` top is --dashboard-top -- the area's own top plus the
+   bar's height, which App can only publish as a CONSTANT (App.tsx). Pinning
+   the bar to the scroll box's top edge is what makes that constant true in
+   every scroll state.
+
+   z-index 15 is above every card (react-grid-layout gives a resizing item 1, a
+   placeholder 2 and a dragged item 3, from its own stylesheet) and below the
+   maximized card's 20, the library overlay's 30, the expanded rail's 40, the
+   modal backdrop's 50 and the portalled menus' 60 -- so a maximized card,
+   which is meant to cover the bar, still does.
+
+   An OPAQUE background is required, not decoration: the grid now scrolls
+   underneath, and the bar's default transparency would show cards through it. */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Scoped to the dashboard's bar: SettingsDialog reuses .tab-bar for its
+   section strip inside a panel, where sticky is inert and --bg would band. */
+.dashboard-area > .tab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--bg);
+}
+
+/* The tablist inside the bar: the same row, so the tabs sit exactly where
+   they did as the bar's own children. */
+.tab-bar-tabs { display: flex; align-items: center; gap: 4px; }
+
+.tab-bar-tab { display: flex; align-items: center; }
+
+/* The same two affordances .rail-item already has one level up: a grab
+   cursor on a draggable tab, and the accept outline on the tab a drop would
+   land on. outline rather than border so the tab does not change size when
+   the highlight comes on, and outline-offset: -1px so it sits inside the
+   tab's own box rather than bleeding into the 4px gap. */
+/* The wrapper has no surface of its own -- its button covers it -- so the
+   button must carry the cursor too, or `.tab-bar button` wins with pointer. */
+.tab-bar-tab[draggable="true"],
+.tab-bar-tab[draggable="true"] button { cursor: grab; }
+
+.tab-bar-tab[data-drop-target="true"] {
+  background: var(--bg-card);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.tab-bar button {
+  padding: 3px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-13);
+}
+
+.tab-bar button[aria-selected="true"] {
+  color: var(--text);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Overlays the dashboard rather than reflowing it. Below the expanded
+   rail's z-index 40 — the rail collapses itself before opening this, or,
+   pinned, this inset follows it (below). */
+.library-overlay {
+  position: fixed;
+  /* Starts at the collapsed rail's right edge rather than at x=0, so the rail
+     stays visible and usable while the library is open. `position: fixed`
+     anchors to the viewport, so .dashboard-area's margin does not apply here
+     and the inset has to carry the offset itself. */
+  inset: 0 0 0 var(--rail-width);
+  z-index: 30;
+  padding: 16px;
+  /* Only the widget list scrolls; the header (search) and the filters stay
+     at the top, and the list's scroll area starts below them. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+.library-overlay > .library-header,
+.library-overlay > .library-filters,
+.library-overlay > .empty-state { flex: 0 0 auto; }
+/* A wrapper, not the grid itself: a fixed-height grid would shrink its auto
+   rows to fit instead of scrolling them. */
+.library-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+/* Pinned, the rail's real width is --rail-width-expanded, not the collapsed
+   --rail-width above -- without this the pinned rail (240px) floats over the
+   left ~192px of the library, which the collapsed inset left uncovered. */
+.app-shell[data-rail-pinned="true"] .library-overlay {
+  inset: 0 0 0 var(--rail-width-expanded);
+}
+
+.library-header { display: flex; align-items: center; gap: 8px; }
+.library-header h2 { flex: 0 0 auto; margin: 0; font-size: var(--font-size-16); }
+.library-header input[type="search"] { flex: 1; padding: 6px 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); }
+
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.library-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+
+/* Provider names come from the backend verbatim and one is a markdown link;
+   bound the control so a long label cannot stretch the row. */
+.library-filter select { max-width: 220px; }
+
+.library-filter-reset {
+  margin-left: auto;
+  align-self: center;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-12);
+}
+
+.library-filter-reset:disabled { opacity: 0.5; cursor: default; }
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.library-card {
+  display: grid;
+  /* Cards in a grid row stretch to the tallest neighbour; without this the
+     spare height is shared out between title, badges and description and the
+     badges float to the middle of the card instead of sitting under the title. */
+  align-content: start;
+  gap: 4px;
+  padding: 10px;
+  text-align: left;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Same base token as .library-card's own background -- var(--bg-panel) would
+   not visibly lighten anything since the card doesn't start from that token.
+   The plain --border fill (the muted-pill token)
+   is the fallback for browsers without color-mix() support; the color-mix
+   line below it overrides that fallback wherever it is supported. */
+.library-card-present { background: var(--border); background: color-mix(in srgb, var(--bg-card) 85%, var(--text)); }
+
+.library-card-title { font-weight: 600; }
+.library-card-description {
+  color: var(--text-muted);
+  font-size: var(--font-size-12);
+  /* Descriptions carry long URLs with no break opportunity; without this they
+     run out of the card. */
+  overflow-wrap: anywhere;
+}
+
+.library-card-badges { display: flex; gap: 4px; align-items: center; }
+
+/* The dashboards a widget is already on. Wraps rather than overflowing: a card
+   in the grid is narrow, and a hidden pill is a missing fact, not a tidier
+   row. */
+.library-card-dashboards { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+
+.dashboard-badge {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The dashboard this add would land on, in the same accent the rail gives the
+   current row -- so the pill and the card's own "already on this tab" outline
+   agree. */
+.dashboard-badge[data-active] { border-color: var(--accent); color: var(--accent); }
+
+/* Which backend served this widget. Same hairline recipe as .type-badge, and
+   the same ellipsis as .source-badge: a Connections name is free text and can
+   be far longer than a provider's. Deliberately toneless -- backend health is
+   the Connections row's job, and colouring every card for it would compete
+   with the provider tones sitting right beside it. */
+.backend-badge {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Neutral treatment by default, exactly as .type-badge (both take the shared
+   badge recipe up top); a provider whose probe SAID something carries a
+   green/amber/red [data-tone] and fills instead -- see the tone recipe
+   below. Grey is deliberately not in that list: "not
+   probed" is the state most of the library is in until the probes land, and
+   this outline already says it without painting every card. */
+.source-badge {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.source-badge:is([data-tone="green"], [data-tone="amber"], [data-tone="red"]) {
+  border-color: transparent;
+  color: #14171c;
+}
+
+/* border-collapse is `separate` with zero spacing, not `collapse`, and that is
+   load-bearing rather than cosmetic: under `collapse`, Chromium paints NO
+   box-shadow on a table cell and NEITHER Chromium nor WebKit paints a cell's
+   own side border, so a sticky pinned column has no visible edge at all
+   (measured by pixel-scanning locator screenshots in Chromium 1234 and WebKit
+   2336). Every row rule in this table is a `border-bottom` on the cells
+   themselves and no cell carries a top or side border, so nothing doubles and
+   nothing gains a gap: the same page measured row height 22 and table height
+   288 under BOTH values, in both engines. */
+.widget-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--font-size-12); }
+
+/* TableRenderer's data table is as wide as the sum of its columns (inline
+   width) and uses exactly those widths, so a resize moves one edge and the
+   other columns keep theirs (bdobb#10). The plain transposed grid stays
+   100% wide. Cells clip rather than spill into the next. */
+.widget-table.sized { table-layout: fixed; }
+.widget-table.sized th,
+.widget-table.sized td { overflow: hidden; text-overflow: ellipsis; }
+
+.widget-table th {
+  /* sticky rather than relative: sticky is still a positioned value, so it
+     remains the containing block for .column-resizer's absolute positioning
+     (verified in Chromium), and the header now stays put while the
+     virtualised rows scroll under it. The background is the card's own, so
+     rows never show through.
+
+     Deliberately NO z-index. A z-index here would put this header in the
+     same stacking level as .card-header (position: relative; z-index: 1)
+     and, being later in the document, paint it over the header's collapsed
+     controls dropdown -- making Remove/Refresh/Parameters unclickable on
+     table cards. Raising .card-header instead is not the fix either: the
+     nw/ne resize handles at z-index 2 sit above it by design. Auto z-index
+     is enough -- sticky still pins, and still hit-tests above the rows
+     scrolling under it (verified in Chromium). */
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  padding: 4px 6px;
+  text-align: left;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* The plain grid (the transposed view): nothing here sorts, so the header
+   must not offer a pointer cursor, and its text stays selectable. */
+.widget-table.plain th {
+  cursor: default;
+  user-select: text;
+}
+
+/* The pivot grid (the statement view). The label column sticks left so twelve
+   quarters scroll under a fixed line-item name -- the same sticky-plus-opaque
+   recipe as td.pin-left below, and the same z-index ladder: body cells 1,
+   the header's corner cell 3, all inside .table-scroll's stacking context.
+   Numbers sit right; the label is the one text cell. */
+.widget-table.pivot th:first-child,
+.widget-table.pivot td.pivot-label {
+  position: sticky;
+  left: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+.widget-table.pivot th:first-child { z-index: 3; }
+.widget-table.pivot td:not(.pivot-label) { text-align: right; }
+/* A section row is one full-width button: the whole row toggles. */
+.widget-table .pivot-section td { padding: 0; }
+.pivot-section button {
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.widget-table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+/* TableRenderer's scroll container, and the element the row virtualiser
+   measures. It fills .card-body exactly, so the card still has one
+   scrollbar, not two. */
+/* position/z-index make this a stacking context, which CONTAINS every z-index
+   inside the table. Without it, the pinned header cells' z-index below would
+   tie them with .card-header (position: relative; z-index: 1) and, being
+   later in the document, paint over the header's collapsed-controls
+   dropdown -- exactly the regression e2e/table.spec.ts guards. Verified in
+   Chromium and WebKit: with this stacking context, elementFromPoint on the
+   dropdown's button still returns the button. */
+.table-scroll { position: relative; z-index: 0; height: 100%; overflow: auto; }
+
+/* A pivot. The group row reads as a heading for the rows beneath it; the
+   label column is pinned left by the engine, so its cell also carries
+   .pin-left -- and `tr.pivot-group-row` is what lets this background beat
+   td.pin-left's opaque --bg-card, so the whole row reads as one band.
+   --bg-panel is the file's raised surface; in the light theme it is the same
+   white as a card and the weight alone sets the row apart. An incomplete
+   period's count takes --warning. */
+.widget-table tr.pivot-group-row td { font-weight: 600; background: var(--bg-panel); }
+.pivot-label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pivot-fold,
+.pivot-fold-spacer { width: 16px; flex: none; }
+.pivot-fold { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+.pivot-count { color: var(--text-muted); font-weight: 400; }
+.pivot-incomplete { color: var(--warning); }
+.widget-table th.pivot-group-header { text-align: center; cursor: default; }
+
+/* The table grows a header of its own (the Pivot panel, or the one-line strip
+   that stands in for it), so the pair becomes a column and .table-scroll --
+   which is `height: 100%` on its own -- takes what is left. */
+.table-with-pivot { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.table-with-pivot > .table-scroll { flex: 1; min-height: 0; height: auto; }
+
+.pivot-panel { flex: none; max-height: 40%; overflow: auto; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
+.pivot-columns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pivot-column { flex: 1 1 160px; min-width: 0; }
+.pivot-column h3 { margin: 0; font-size: var(--font-size-11); }
+.pivot-hint { margin: 0 0 4px; font-size: var(--font-size-11); opacity: 0.7; }
+.pivot-list { min-height: 48px; padding: 4px; border: 1px dashed var(--border); border-radius: 6px; }
+.pivot-list-over { border-color: var(--accent); }
+.pivot-empty { margin: 12px 0; text-align: center; font-size: var(--font-size-11); opacity: 0.6; }
+.pivot-pill { display: flex; align-items: center; gap: 6px; margin: 2px 0; padding: 3px 8px; border: 1px solid var(--border); border-radius: 999px; cursor: grab; user-select: none; }
+.pivot-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-pill-hidden { opacity: 0.55; }
+/* "· Choose" and ⚠, and the footer's count of columns still waiting. */
+.pivot-pill-warn { color: var(--warning); }
+.pivot-pill::before { content: "⠿"; opacity: 0.5; }
+.pivot-insert { height: 2px; margin: 1px 0; background: var(--accent); }
+.pivot-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; font-size: var(--font-size-11); }
+.pivot-strip { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 0 4px; font-size: var(--font-size-11); }
+
+/* The two spacers that stand in for the un-rendered rows. Their height is
+   set inline by TableRenderer; * { box-sizing: border-box } already keeps
+   .widget-table td's padding inside that height, but the inherited
+   border-bottom would still draw a rule across the empty space. */
+.table-spacer td { padding: 0; border: 0; }
+
+/* Pinned = sticky. The offsets are the only part TableRenderer computes
+   inline (from TanStack's getStart("left") / getAfter("right")); `position`,
+   the opaque background a pinned body cell needs so scrolling cells cannot
+   show through it, the edge shadow and the stacking all live here.
+   z-index: pinned body cells (1) above the scrolling cells, pinned header
+   cells (3) above those -- all of it inside .table-scroll's stacking context.
+   .widget-table th already carries `position: sticky; top: 0`, so a pinned
+   header cell sticks on both axes at once (verified in both engines). */
+.widget-table td.pin-left,
+.widget-table td.pin-right {
+  position: sticky;
+  background: var(--bg-card);
+  z-index: 1;
+}
+
+.widget-table th.pin-left,
+.widget-table th.pin-right { z-index: 3; }
+
+.widget-table td.pin-left,
+.widget-table th.pin-left { box-shadow: 1px 0 0 0 var(--border); }
+
+.widget-table td.pin-right,
+.widget-table th.pin-right { box-shadow: -1px 0 0 0 var(--border); }
+
+/* renderFn: greenRed. --accent and --error already carry green and red in
+   both themes, so this needs no new token. A colorRules colour arrives as an
+   inline style instead and therefore wins over these. */
+.widget-table td.cell-pos { color: var(--accent); }
+.widget-table td.cell-neg { color: var(--error); }
+
+/* renderFn: cellOnClick. A real <button> so the cell is keyboard reachable,
+   stripped back to the text it replaced: `color: inherit` is what carries the
+   td's greenRed class AND its colorRules inline colour through to the button,
+   which would otherwise take the UA sheet's buttontext. The underline is the
+   only affordance -- nothing else in this table moves on hover. */
+.cell-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cell-link:hover,
+.cell-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+}
+
+/* The filter row. Deliberately NOT sticky on the vertical axis: a second
+   `top: 0` row would sit on top of the header row, and there is no stable
+   pixel height to offset it by (--font-size-base changes with the Font size
+   setting). Pinned cells keep their horizontal stickiness, above the body's
+   pinned cells but below the header's. user-select is restored because
+   .widget-table th sets it to none, which would stop text being selected
+   inside these inputs. */
+.widget-table tr.filter-row th {
+  position: static;
+  cursor: default;
+  padding: 2px 6px;
+  font-weight: 400;
+  user-select: text;
+}
+
+.widget-table tr.filter-row th.pin-left,
+.widget-table tr.filter-row th.pin-right {
+  position: sticky;
+  /* Restoring `position: sticky` would otherwise inherit `top: 0` from
+     `.widget-table th` and pin this one cell under the header row while the
+     rest of the filter row scrolled away with the body. */
+  top: auto;
+  z-index: 2;
+}
+
+.filter-input {
+  width: 100%;
+  min-width: 40px;
+  padding: 1px 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--font-size-11);
+}
+
+.filter-range { display: flex; gap: 2px; }
+
+/* A date box fits YYYY-MM-DD (ten digits-and-dashes) in the filter's font.
+   While the filter row is open a date column is at least --date-range-width
+   wide (TableRenderer), so From and To fit side by side: two boxes, the 2px
+   gap and the th's 6px padding each side. */
+.filter-input.filter-date { width: calc(6.4 * var(--font-size-11) + 10px); flex: 0 0 auto; }
+.widget-table { --date-range-width: calc(12.8 * var(--font-size-11) + 34px); }
+.filter-input.filter-date[aria-invalid="true"] { border-color: var(--error); outline: 1px solid var(--error); }
+
+.filter-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; white-space: nowrap; }
+
+/* The column after the last one that holds Clear and the count while
+   filtering, wide enough for "Clear" and "100000 of 100000 rows" on one line.
+   table-layout: fixed takes its width from the header row's empty cell. */
+.widget-table .filter-actions-col { width: calc(17 * var(--font-size-11) + 30px); }
+
+.filter-actions button { padding: 1px 6px; font-size: var(--font-size-11); }
+
+.filter-count { color: var(--text-muted); font-size: var(--font-size-10); }
+
+/* The sort arrow, and the 1-based position shown once more than one column is
+   sorted. Both are wrapped in elements rather than left as bare text nodes so
+   they can be styled and queried at all. */
+.sort-marker { margin-left: 4px; color: var(--accent); }
+
+.sort-index {
+  margin-left: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-size-10);
+  vertical-align: super;
+}
+
+.raw-json {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-11);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+/* HelpDialog's chunk failed to load and there is no error boundary to catch
+   it (App.tsx) -- this renders in its place, inside a <dialog> opened with
+   showModal() like every other dialog here. It carries no position or
+   z-index of its own precisely BECAUSE of that: the UA's top layer puts it
+   above everything, including the showModal() dialogs a z-index could never
+   beat (Settings is the one a user is most likely to press Cmd-? over). */
+.help-load-failed {
+  padding: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  color: var(--error);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+.help-load-failed button {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-color: var(--error);
+  border-radius: 4px;
+  color: var(--error);
+}
+
+/* The startup banner: which loaders bootstrap could not read, above the grid
+   in the dashboard area. --error, like every other failure surface in the
+   app, and it carries both themes with it -- the token is redefined in the
+   dark block at the top of this file. */
+.startup-error-banner {
+  margin: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--error);
+  font-size: var(--font-size-12);
+}
+
+/* .error-box is ErrorBoundary's fallback and .error-state a renderer's failed
+   fetch. Two different failures, deliberately one look: both are "this region
+   could not draw itself, here is why, here is Retry", and a second style for
+   the rarer one would only make a crash look like a different kind of event
+   than it is. */
+:is(.error-state, .error-box) { color: var(--error); }
+:is(.error-state, .error-box) button {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-color: var(--error);
+  border-radius: 4px;
+  color: var(--error);
+}
+/* Dismiss, when the region has one, sits beside Retry -- JSX drops the
+   newline between them, so without this the two outlines would touch. */
+.error-box button + button { margin-left: 6px; }
+/* A thrown message is not written for a card: it can be one long unbroken
+   token (a URL, a stack-free assertion) and would otherwise widen its region. */
+.error-box-message { overflow-wrap: anywhere; }
+/* A crashed DIALOG's fallback is itself a showModal() <dialog>, so that it
+   cannot end up inert under another open modal (ErrorBoundary.tsx). The
+   .modal-backdrop shell is deliberately transparent -- the panel inside it
+   owns the look -- so the box needs the one .modal would have given it. Same
+   values as .help-load-failed, which is the same kind of surface. */
+.modal-backdrop > .error-box {
+  width: min(420px, 92vw);
+  padding: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dashboard-grid { position: relative; }
+
+/* react-grid-layout inserts this placeholder the moment a drag STARTS -- and a
+   drag starts on the mousedown, not on the mouseup. It is a sibling of the
+   dragged item, absolutely positioned over the item's own rect, at z-index 2
+   (its own stylesheet). So on a press anywhere in the drag handle
+   (.card-title, DashboardGrid's draggableHandle) the element under the pointer changes
+   between mousedown and mouseup, and the browser fires click/dblclick on the
+   nearest common ANCESTOR of the two targets -- the grid item, not the title.
+   The title's own onDoubleClick therefore never ran on a normal card, so
+   double-click-to-rename worked only while maximized (dragging off) and cards
+   with no ⋯ menu (iframe, keys, multi_file_viewer, pdf, builtins, unresolved)
+   could not be renamed at all.
+
+   The placeholder is decorative -- it has no handlers of its own and nothing
+   ever needs to hit it -- so taking it out of hit-testing costs nothing and
+   leaves both clicks on the title where they belong. */
+.react-grid-placeholder { pointer-events: none; }
+
+/* Maximize. The class is on the GRID ITEM, never on the card inside it: the
+   item is positioned with `transform: translate(...)`, and a fixed descendant
+   of a transformed element is laid out against that element instead of the
+   viewport.
+
+   Every !important here overrides an INLINE style react-grid-layout writes on
+   the item itself (transform, width, height and `position: absolute`, all from
+   setTransform in its utils) -- an inline declaration otherwise beats any
+   author rule. `inset` needs none: on the cssTransforms path (the default,
+   and what this grid uses) top/left are not inline at all.
+
+   z-index 20 is below the expanded rail's 40 and the portalled menus' 60, so
+   both stay reachable over a maximized card. --dashboard-top is the tab bar's
+   bottom edge, published by App; --rail-width is the rail setting, published
+   on :root by App. */
+.react-grid-item.card-maximized {
+  position: fixed !important;
+  /* .cssTransforms transitions transform, width and height over 200ms, which
+     would animate the jump to fixed. The card is changing what it IS, not
+     moving, and an animated jump would also leave its box mid-flight for a
+     fifth of a second. */
+  transition: none;
+  transform: none !important;
+  inset: var(--dashboard-top) 0 0 var(--rail-width);
+  width: auto !important;
+  height: auto !important;
+  z-index: 20;
+}
+
+/* The viewer window renders no rail (.dashboard-area-viewer { margin-left: 0 }
+   below, for the same reason), so the rail-width inset above would leave a
+   rail's width of dead space down the left of a maximized card. */
+.dashboard-area-viewer .react-grid-item.card-maximized { left: 0; }
+
+/* Pinned, same reflow as the library overlay above: the rail's real width is
+   the expanded one, not the collapsed --rail-width the un-pinned rule above
+   assumes. --dashboard-top carries over unchanged -- only the left inset
+   moves. */
+.app-shell[data-rail-pinned="true"] .react-grid-item.card-maximized {
+  left: var(--rail-width-expanded);
+}
+
+/* With corner handles on, the header's z-index:1 (which keeps its buttons
+   clickable above the se/sw handles) would also bury the nw/ne handles.
+   Raise only those two above the header, only in that mode, and inset the
+   header's contents so the title and buttons never sit inside a 20px corner
+   zone. se/sw stay below the header, as before. */
+.dashboard-grid-corner-handles .react-grid-item > .react-resizable-handle-nw,
+.dashboard-grid-corner-handles .react-grid-item > .react-resizable-handle-ne { z-index: 2; }
+.dashboard-grid-corner-handles .card-header { padding-inline: 22px; }
+
+.widget-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.widget-card[data-minimized="true"] { height: auto; overflow: visible; }
+
+/* A refetch no longer blanks the body (see WidgetCard's loading gate), so
+   the header is what says a request is in flight: the title dims and gains a
+   small accent dot. Deliberately static -- nothing else here animates. */
+.widget-card[data-refreshing="true"] .card-title { opacity: 0.55; }
+
+.widget-card[data-refreshing="true"] .card-title::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Parameters edited but not yet Run. Its own flex item between the title and
+   the controls: `.card-header button { flex: 0 0 auto }` does not reach a
+   span, and without this the marker would be the first thing squeezed away on
+   a narrow card. cursor: default so it does not invite a click -- the tooltip
+   is the whole of it, and Run is the control. */
+.card-stale {
+  flex: 0 0 auto;
+  color: var(--accent);
+  cursor: default;
+}
+
+.card-rita {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: 0.75em;
+  cursor: default;
+}
+
+/* One row, 38px when nothing wraps: 4px + 20px controls + 4px, plus the
+   hairline. The chips group has a minimum it will not shrink below; when the
+   title and the icons leave it less than that, it wraps to a second line as
+   a group (see .card-chips) and the header grows — the only time it is
+   taller than the Workspace's. */
+.card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+  font-size: var(--font-size-12);
+}
+
+/* The drag handle is the title, not the whole card. min-width: 0 lets the
+   title shrink below its natural content width (a flex item's default
+   min-width is auto, i.e. "never smaller than my content") so it ellipsises
+   instead of pushing the header's action buttons past the card's edge,
+   where .widget-card's overflow: hidden would clip them unreachably on a
+   narrow card. */
+.card-title {
+  flex: 0 1 auto;
+  max-width: 40%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: move;
+  font-weight: 600;
+}
+
+/* The parameter chips: the flexible middle of the row, between the fixed-size
+   title and the fixed-size controls. min-width: 0 lets it shrink; the 180px
+   basis is the point past which it wraps to its own line (see .card-header's
+   flex-wrap) instead of squeezing the chips unreadably thin. */
+.card-chips { flex: 1 1 180px; min-width: 0; }
+/* Collapsed controls (see .card-controls-collapsed below) hide the chips too
+   -- a card collapsed to just its icon cluster showing its parameters anyway
+   would defeat the whole point of collapsing. */
+.card-chips-hidden { display: none; }
+
+/* Belt and suspenders with the ellipsis above: if the card is narrow enough
+   that even a fully-shrunk title can't leave room for Parameters/Raw/
+   Refresh/✕, flex-wrap on .card-header sends the buttons to a second line
+   (each kept at its natural width by flex: 0 0 auto below) rather than
+   letting them be squeezed unreadably thin or clipped. */
+.card-header button { flex: 0 0 auto; }
+
+/* Let the action cluster wrap within a narrow card instead of clipping its
+   last buttons after Pivot adds another action. */
+.card-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; margin-left: auto; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
+.card-controls:not(.card-controls-collapsed) .card-controls-icons { display: contents; }
+
+.card-controls-icons > button,
+.card-timer,
+.card-params-chevron {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
+  line-height: 20px;
+  cursor: pointer;
+}
+.card-controls-icons > button:hover,
+.card-timer:hover {
+  background: var(--bg-card);
+  color: var(--text);
+}
+/* Fresh, stale, not yet: the Workspace's green/orange, on our tokens. */
+.card-timer[data-tone="fresh"] { color: #4caf7d; }
+.card-timer[data-tone="stale"] { color: var(--warning); }
+/* Un-run edits: the pulse the Workspace gives its play button. Two beats,
+   then still — nothing else in this stylesheet moves, and this is the one
+   exception, because the user has to notice that Run is owed. */
+.card-timer.card-stale {
+  color: var(--accent);
+  animation: card-stale-pulse 1.2s ease-in-out 2;
+}
+@keyframes card-stale-pulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+}
+.card-controls-collapsed { display: flex; align-items: center; position: relative; }
+.card-controls-collapsed .card-controls-icons {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px;
+  gap: 8px;
+}
+.card-controls-collapsed:hover .card-controls-icons,
+.card-controls-collapsed:focus-within .card-controls-icons,
+.card-controls-collapsed.card-controls-open .card-controls-icons {
+  display: flex;
+}
+
+.card-body { flex: 1; overflow: auto; padding: 8px; }
+
+/* A card whose widget declares tabs or a form renders them in the body, above
+   the renderer -- they are meant to be seen, not folded behind the parameter
+   panel toggle. Every renderer sizes against a parent with a definite height
+   (.table-scroll is `height: 100%`), so the body becomes a column and the
+   renderer gets a flex track of its own. A card with neither keeps
+   .card-body's plain block layout above, untouched. */
+.card-body-controls { display: flex; flex-direction: column; gap: 8px; }
+.card-render { flex: 1; min-height: 0; }
+
+/* The statement row correction could not run: say so, quietly. */
+.card-fiscal-note {
+  margin: 0;
+  padding: 2px 8px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+.widget-tabs { display: flex; flex: none; gap: 2px; flex-wrap: wrap; }
+
+.widget-tabs button { padding: 3px 10px; font-size: var(--font-size-11); }
+
+/* Accent-FILLED, like .tab-bar .quick-add-button: the accent-as-foreground
+   treatment is already spoken for by .card-action[aria-pressed="true"], and
+   the token pair inverts correctly under :root[data-theme="light"]. */
+.widget-tabs button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.widget-form { display: grid; flex: none; gap: 8px; }
+
+.widget-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.widget-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* The submit's own failure, on the form rather than over the renderer: the
+   card's data is still valid, only the POST was refused. */
+.widget-form-error { color: var(--error); font-size: var(--font-size-11); }
+
+/* The Move to flyout. Rendered in flow rather than positioned: the rail's
+   context menu is already `position: fixed` near the pointer, and a second
+   floating layer would need its own edge-collision handling for no gain. */
+.rail-submenu {
+  margin: 4px 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* The searchable Exchange flyout lists 71 calendars: it scrolls rather than run off the window. */
+.rail-submenu-search {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.rail-submenu-search input[type="search"] {
+  box-sizing: border-box;
+  width: calc(100% - 16px);
+  margin: 0 8px 4px;
+}
+
+/* The import/export result. Wraps rather than ellipsising: it can carry an
+   OS error message, and a truncated one is useless. Only readable while the
+   rail is expanded, which is where the action that produced it lives. */
+/* The import notice is a third child of the rail's space-between column; the
+   auto margin takes the spare space ABOVE the bottom controls, so controls and
+   notice stay together at the bottom instead of splitting the gap. Collapsed,
+   the rail is icon-wide and the notice would wrap one word per line. */
+.rail-bottom { margin-top: auto; flex-shrink: 0; }
+.left-rail:not([data-expanded="true"]):not([data-keyboard-focus]) .rail-notice { display: none; }
+
+.rail-notice {
+  margin: 0;
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
+  padding: 8px 12px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+/* The viewer window renders no rail, so the offset that makes room for one
+   would be a rail's width of dead space down the left of the dashboard. */
+.dashboard-area-viewer { margin-left: 0; }
+
+/* Shown only while a FILE drag is over the dashboard area. `fixed`, so it
+   covers the area whatever the dashboard is scrolled to -- .dashboard-area is
+   not transformed, so a fixed child is laid out against the viewport -- and
+   inset by the rail's own width so it never covers the rail. z-index 20 is
+   the maximized card's; 25 puts the veil over one, and still under the
+   expanded rail (40) and the portalled menus (60). pointer-events: none is
+   load-bearing: an element under the pointer mid-drag would fire dragleave
+   on the zone the moment the veil appeared. */
+.drop-veil {
+  position: fixed;
+  inset: 0 0 0 var(--rail-width);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 2px dashed var(--accent);
+  color: var(--text-muted);
+  font-size: var(--font-size-13);
+}
+
+.dashboard-area-viewer .drop-veil { inset: 0; }
+
+/* Pinned, same reflow as the library overlay and the maximized card above:
+   the rail's real width is the expanded one, not the collapsed --rail-width
+   the base rule above assumes. */
+.app-shell[data-rail-pinned="true"] .drop-veil {
+  inset: 0 0 0 var(--rail-width-expanded);
+}
+
+/* The one line a drop leaves behind, in the rail notice's voice but anchored
+   to the dashboard area it belongs to. */
+.drop-notice {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  z-index: 25;
+  max-width: 40ch;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-panel);
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* The badge recipe up top, one step smaller. */
+.tab-bar-tag { font-size: var(--font-size-10); }
+
+/* One chip per group, after the tabs. The number is the same badge a bound
+   control shows, so a glance ties a chip to its controls. */
+.tab-bar-groups { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; }
+.group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
+.group-chip-label { white-space: nowrap; }
+
+/* The chips row. Inside .card-chips on the title line; wraps within itself
+   before the group wraps under the title. */
+.card-params { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+
+/* Shared with WidgetFormPanel (the form card) and .card-params-panel (the
+   Parameters panel): plain, bordered, roomy — the pre-title-bar look. The
+   title row's tight chip chrome is layered on top of this, scoped to
+   .card-chips further below, so it never leaks into a form's own fields. */
+.param-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  min-width: 0;
+}
+.param-label { white-space: nowrap; }
+
+/* The link is a bare glyph; the badge is the group's number in the accent,
+   the same number the tab bar's chip shows. A real button either way: an edit
+   here moves several cards, and that has to reach a screen reader, not only a
+   sighted user. */
+.param-link {
+  padding: 0 4px;
+  min-width: 18px;
+  font-size: var(--font-size-10);
+  line-height: 16px;
+  border-radius: 8px;
+}
+.param-badge {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+}
+
+.param-field input,
+.param-field select { padding: 2px 6px; border-radius: 3px; max-width: 160px; }
+.param-field input[type="checkbox"] { max-width: none; }
+.param-field select[multiple] { max-height: 64px; }
+
+/* The v5.2.0 period controls, on react-aria-components' default class names.
+   RAC is headless: nothing below comes from a vendor stylesheet, and every
+   colour is one of the theme tokens above, so both palettes are covered by
+   the same rules. The popovers are portalled to <body> and positioned by
+   inline style, which tauri.conf.json's `style-src 'unsafe-inline'` allows. */
+.param-field .react-aria-DatePicker,
+.param-field .react-aria-TimeField { display: inline-flex; }
+.param-field .react-aria-Group,
+.param-field .react-aria-TimeField .react-aria-DateInput,
+.param-field .period-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--font-size-12);
+  line-height: 1.4;
+}
+.param-field .react-aria-Group .react-aria-DateInput { display: inline-flex; }
+.param-field .react-aria-Group .react-aria-Button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0 2px;
+  cursor: pointer;
+}
+.param-field .period-trigger { cursor: pointer; white-space: nowrap; }
+.param-field .period-trigger[data-pressed],
+.param-field .period-trigger[aria-expanded="true"] { border-color: var(--accent); }
+
+/* Chip chrome, scoped to the title-bar row only: borderless, transparent,
+   20px — the controls themselves carry no box, the chip does. Everywhere
+   else (the form panel, the Parameters panel) .param-field keeps the
+   bordered rules above -- this used to be unscoped and clobbered both. */
+/* min-height, not height: an expression date field (DayPicker) carries its
+   resolution on a second line, and a fixed 20px let that line spill over the
+   next wrapped control on a narrow card. */
+.card-chips .param-field {
+  min-height: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
+  color: var(--text);
+}
+.card-chips .param-field:hover, .card-chips .param-field:focus-within { background: var(--bg-card); }
+.card-chips .param-label { color: var(--text-muted); }
+/* Visually hidden, still the accessible name (screen readers and getByLabel). */
+.card-chips .param-label-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.card-chips .param-field input,
+.card-chips .param-field select { padding: 0 4px; height: 20px; border: 0; background: transparent; }
+.card-chips .param-field .react-aria-Group,
+.card-chips .param-field .react-aria-TimeField .react-aria-DateInput,
+.card-chips .param-field .period-trigger {
+  padding: 0 4px; height: 20px; border: 0; background: transparent; line-height: 20px;
+}
+.card-chips .param-field .period-trigger[data-pressed],
+.card-chips .param-field .period-trigger[aria-expanded="true"] { outline: 1px solid var(--accent); }
+/* On a narrow card the field shrinks (min-width: 0 above) but its control did
+   not: the .param-control wrapper was a block with min-width: auto, an input's
+   automatic minimum is its ~20-character intrinsic width, and a period pill is
+   a button, so .card-header button's flex: 0 0 auto pinned it at its full
+   nowrap label. All ran past the card edge and were clipped (#13). Let them
+   shrink with the field; the pill's label is cut short inside its own box. */
+.card-chips .param-control { display: flex; min-width: 0; }
+.card-chips .param-field input,
+.card-chips .param-field .period-trigger { min-width: 0; flex-shrink: 1; }
+.card-chips .param-field .period-trigger { overflow: hidden; }
+.react-aria-DateSegment {
+  padding: 0 1px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  outline: none;
+}
+.react-aria-DateSegment[data-placeholder] { color: var(--text-muted); }
+.react-aria-DateSegment[data-focused] { background: var(--accent); color: var(--bg); border-radius: 2px; }
+.react-aria-DateSegment[data-type="literal"] { padding: 0; }
+
+.react-aria-Popover {
+  z-index: 30;
+  padding: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: var(--font-size-12);
+}
+.react-aria-Dialog { outline: none; }
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.picker-header button,
+.picker-header .react-aria-Button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.picker-heading,
+.react-aria-Heading { margin: 0; font-size: var(--font-size-12); font-weight: 600; color: var(--text); }
+.react-aria-CalendarGrid { border-collapse: collapse; }
+.react-aria-CalendarHeaderCell { color: var(--text-muted); font-weight: 400; font-size: var(--font-size-10); }
+.react-aria-CalendarCell {
+  width: 26px;
+  height: 24px;
+  line-height: 24px;
+  text-align: center;
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+}
+.react-aria-CalendarCell[data-outside-month] { color: var(--text-muted); }
+.react-aria-CalendarCell[data-hovered] { background: var(--picker-hover); }
+.react-aria-CalendarCell[data-selected],
+.react-aria-CalendarCell.week-selected { background: var(--accent); color: var(--bg); }
+.react-aria-CalendarCell[data-focus-visible] { box-shadow: inset 0 0 0 1px var(--accent); }
+.react-aria-CalendarCell[data-disabled] { color: var(--text-muted); cursor: default; }
+.picker-grid { display: grid; gap: 4px; }
+.picker-grid-quarters { grid-template-columns: repeat(2, 1fr); }
+.picker-grid-years { grid-template-columns: repeat(4, 1fr); }
+.picker-grid button {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+}
+.picker-grid button:hover { background: var(--picker-hover); }
+.picker-grid button[data-selected] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.picker-grid button.picker-outside { color: var(--text-muted); }
+.picker-grid button:disabled { color: var(--text-muted); cursor: default; background: transparent; }
+.picker-range-quarters { display: flex; gap: 12px; }
+.picker-fields { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.picker-fields .react-aria-DateInput {
+  display: inline-flex;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* The v5.3.0 Absolute | Relative tabs and the Relative tab's builder. Every
+   colour is a theme token, so both palette blocks are covered by the same
+   rules; nothing here adds a token (themeFlash.test.ts pins the two light
+   blocks equal). The tab strip is React Aria's Tabs on its default class
+   names, headless like the calendars above. */
+.react-aria-TabList { display: flex; gap: 2px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+.react-aria-Tab {
+  padding: 2px 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  outline: none;
+}
+.react-aria-Tab[data-selected] { color: var(--text); border-bottom-color: var(--accent); }
+.react-aria-Tab[data-focus-visible] { box-shadow: inset 0 0 0 1px var(--accent); }
+.react-aria-TabPanel { outline: none; }
+.relative-tab { display: flex; flex-direction: column; gap: 6px; min-width: 260px; }
+.relative-atom { display: flex; flex-direction: column; gap: 4px; }
+.relative-offset { display: flex; align-items: center; gap: 4px; }
+.relative-tab select,
+.relative-tab input[type="number"],
+.relative-tab input[type="text"] {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--font-size-12);
+}
+.relative-tab input[type="number"] { width: 56px; }
+.relative-tab button {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+}
+.relative-tab button:hover { background: var(--picker-hover); }
+.relative-tab button:disabled { color: var(--text-muted); cursor: default; }
+.relative-add { align-self: flex-start; }
+.relative-presets { display: flex; flex-direction: column; gap: 4px; }
+.relative-preset-group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.relative-group-name { font-size: var(--font-size-10); color: var(--text-muted); min-width: 64px; }
+.preset-chip-wrap { display: inline-flex; align-items: center; }
+.relative-tab .preset-chip { border-radius: 10px; }
+.relative-tab .preset-delete { border: 0; background: transparent; color: var(--text-muted); padding: 0 2px; }
+.relative-preview { margin: 0; font-size: var(--font-size-12); color: var(--text-muted); }
+.relative-readonly { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+.relative-actions { display: flex; align-items: center; gap: 4px; }
+.relative-tab .relative-apply { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.relative-tab .relative-apply:disabled { background: var(--bg-card); border-color: var(--border); color: var(--text-muted); }
+
+/* The two row badges: ◷ beside a control holding an expression, ⚠ beside one
+   whose resolution used a fallback calendar. Each carries its tooltip in
+   `title`, as .card-stale does; cursor: default so neither invites a click. */
+/* The control and its badges as one unit: never wrapped apart (ParamControls). */
+.param-entry { display: inline-flex; flex-wrap: nowrap; align-items: flex-start; gap: 2px; min-width: 0; }
+.param-entry > :is(.param-badge-expr, .param-badge-warn) { align-self: flex-start; padding-top: 4px; flex: none; }
+.param-badge-expr,
+.param-badge-warn { cursor: default; font-size: var(--font-size-12); line-height: 1; }
+.param-badge-expr { color: var(--accent); }
+.param-badge-warn { color: var(--error); }
+.param-entry > .param-badge-provisional { align-self: flex-start; padding-top: 4px; flex: none; }
+.param-badge-provisional { cursor: default; font-size: var(--font-size-12); line-height: 1; color: var(--warning, var(--error)); }
+
+/* The form panel shares .param-field with the header row but is a form,
+   not a titlebar: its label stacks over its control and its inputs fill
+   their grid cell, as they did before the header row existed. */
+.widget-form-grid .param-field { display: grid; gap: 3px; }
+.widget-form-grid .param-field input,
+.widget-form-grid .param-field select { max-width: none; }
+/* The group link sits beside the label rather than above the control. */
+.param-label-row { display: inline-flex; align-items: center; gap: 4px; }
+
+.param-hint {
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-action {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+}
+
+.card-action[aria-pressed="true"],
+.card-action[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+
+/* An inline SVG defaults to display: inline, which leaves room under it for a
+   text descender it never draws -- the Pivot button's icon sits a couple of
+   pixels off the baseline of its ⌕ and Filter rows neighbours without this. */
+.card-action .pivot-icon { display: block; }
+
+/* Portalled to <body> and `fixed` from the ⋯ toggle's rect, so neither the
+   card's own clipping nor the next card can cover it; on the context menu's
+   layer, over a maximized card's 20. */
+.card-export-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 96px;
+  /* Copy to ▸ lists every tab of every dashboard inline (and Columns ▸ every
+     column), so the menu can outgrow the window; past this it scrolls rather
+     than running off the bottom. */
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* .widget-card clips its overflow, and the collapsed controls hang from the
+   header, so on a short card they were cut off by the card's own edge --
+   present but unreachable. (The ⋯ menu and the group menu are portalled and
+   need none of this.) While they are open the card stops clipping, and its
+   grid item rises over its neighbours so the next card does not cover the
+   overhang: 3 is a dragged item's level (react-grid-layout's own stylesheet),
+   still under the tab bar's 15. Not a maximized card, whose 20 must stand. */
+.widget-card:has(.card-controls-collapsed:is(:hover, :focus-within, .card-controls-open)) {
+  overflow: visible;
+}
+.react-grid-item:not(.card-maximized):has(.card-controls-collapsed:is(:hover, :focus-within, .card-controls-open)) {
+  z-index: 3;
+}
+
+.card-export-menu button { padding: 4px 10px; font-size: var(--font-size-11); }
+
+.param-link-wrap { display: inline-flex; }
+/* Portalled into <body> and placed by MenuPanel, like .row-context-menu. */
+.group-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 160px;
+  /* One row per group on the dashboard: bounded like the ⋯ menu. */
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.group-menu-title {
+  padding: 4px 8px;
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* An expanded ⋯ section. Indented in place rather than flown out to the side:
+   no positioning logic, and it stays inside the menu's own dismiss handling. */
+.card-submenu { padding-left: 10px; }
+
+/* The ⋯ menu's Parameters: the chips row again, labels showing, as a form. */
+/* v5.5.1: docked, not floating -- a line of its own under the bar (the
+   header wraps), so it pushes the body down instead of covering it. */
+.card-params-panel { flex: 1 0 100%; padding: 6px 0 2px; border-top: 1px solid var(--border); }
+.card-params-panel .card-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); align-items: start; gap: 6px 16px; }
+/* Author ruling 2026-10-16: a grid, not one long column -- a wide card uses its
+   width, a narrow one still falls back to a single column. Inside a cell the
+   link, the label and the control keep fixed tracks, so labels and boxes line
+   up down every column whether or not a param has a group link. */
+.card-params-panel .param-field { display: grid; grid-template-columns: 22px 88px minmax(0, 1fr); align-items: center; column-gap: 4px; }
+.card-params-panel .param-field > .param-link-wrap { grid-column: 1; }
+.card-params-panel .param-field > .param-label { grid-column: 2; white-space: normal; overflow-wrap: anywhere; }
+.card-params-panel .param-field > :not(.param-link-wrap, .param-label) { grid-column: 3; }
+/* Inside its cell the unit shrinks rather than spilling into the next one:
+   the date box gives up width, never the chip or the badge beside it. */
+.card-params-panel .param-entry { display: flex; width: 100%; }
+.card-params-panel :is(.param-control, .param-expr-field) { display: flex; flex: 1 1 0; min-width: 0; }
+.card-params-panel .param-expr-field { flex-direction: column; }
+.card-params-panel .param-expr-row { display: flex; min-width: 0; }
+.card-params-panel :is(.param-expr-input, .param-control > input:not([type="checkbox"]), .param-control > select) { flex: 1 1 0; width: 0; min-width: 0; }
+.card-params-titlebar { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: var(--font-size-12); color: var(--text-muted); }
+/* .param-field itself is no longer overridden here: with the chip chrome
+   scoped to .card-chips (above), the panel renders the pre-existing
+   bordered .param-field by default. Its labels still get param-label-hidden
+   from ParamControls (chip fields hide their name outside .card-chips too),
+   so this un-hides it and gives it room next to the control. */
+.card-params-panel .param-label-hidden { position: static; width: auto; height: auto; clip: auto; overflow: visible; }
+
+.card-notice {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+}
+
+.markdown-body { font-size: var(--font-size-13); line-height: 1.5; }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 { margin: 8px 0 4px; font-size: var(--font-size-base); }
+.markdown-body table { border-collapse: collapse; font-size: var(--font-size-12); }
+.markdown-body td,
+.markdown-body th { padding: 3px 6px; border-bottom: 1px solid var(--border); }
+.markdown-body pre { overflow-x: auto; }
+/* Help topics are the only markdown that carries images. The border matters:
+   a light-theme screenshot on the light-theme panel has no edge of its own,
+   so without it a shot bleeds into the paragraph above it. */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.metric { display: grid; gap: 2px; place-content: center; height: 100%; text-align: center; }
+.metric-label { font-size: var(--font-size-12); color: var(--text-muted); }
+.metric-value { font-size: var(--font-size-28); font-weight: 600; }
+.metric-delta { font-size: var(--font-size-12); color: var(--text-muted); }
+
+.widget-frame { width: 100%; height: 100%; border: 0; background: #fff; }
+.iframe-wrap { display: flex; flex-direction: column; height: 100%; }
+.iframe-wrap .widget-frame { flex: 1; }
+
+.iframe-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.iframe-hint span {
+  flex: 1;
+  /* Up to MAX_REASON_LEN (200) chars of server-controlled text (a CSP
+     token, a header value) can arrive with no whitespace at all; without
+     this it overflows the card instead of wrapping under the app's own
+     sentence. */
+  overflow-wrap: anywhere;
+}
+
+.iframe-hint button { padding: 2px 6px; color: var(--text); }
+
+.chart-plot { width: 100%; height: 100%; }
+/* The TradingView card: lightweight-charts' autoSize fills whatever the
+   credit line below it leaves, so the plot box must be the flexible one and
+   be allowed to shrink (min-height: 0) when the card does. */
+.tv-chart { display: flex; flex-direction: column; width: 100%; height: 100%; }
+.tv-chart-plot { flex: 1; min-height: 0; }
+.tv-credit { align-self: flex-end; padding: 2px 4px 0; font-size: var(--font-size-11); color: var(--text-muted); }
+
+/* Linked chart controls and notices share the card's bounded plot space. */
+.linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.linked-chart-card > button { align-self: flex-start; flex: 0 0 auto; }
+.linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.linked-chart-renderer .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
+.linked-chart-renderer .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
+.linked-chart-renderer .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; }
+.linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
+.linked-chart-status p { margin: 4px 0; }
+.linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
+
+/* The header's view dropdown. A native select inherits the platform's
+   chrome, so the same tokens .card-action uses are restated for the parts
+   WebKit lets through; the popup itself stays native. */
+.view-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 16px;
+  background: transparent
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6'><path d='M0 0h8L4 6z' fill='%23888'/></svg>")
+    no-repeat right 5px center;
+}
+.view-select:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+.note-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: text;
+  overflow: auto;
+}
+
+.note-edit {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-size-13);
+  resize: none;
+}
+
+/* The BlockNote editor fills the card body. Its own stylesheet is imported by
+   the renderer; these only size it and align its type with .markdown-body. */
+.markdown-editor {
+  height: 100%;
+  overflow: auto;
+  font-size: var(--font-size-13);
+}
+.markdown-editor .bn-editor { padding-inline: 8px; }
+.markdown-editor-fallback { height: 100%; overflow: auto; }
+
+/* The clock's digital time is drawn as a real dot-matrix panel (DotMatrix),
+   so there is no LED typeface to load. */
+.clock { height: 100%; overflow: auto; padding: 4px; }
+.clock-unknown { margin: 0 0 6px; font-size: var(--font-size-12); color: var(--error); }
+
+.clock-list { display: grid; gap: 4px; }
+
+.clock-row { display: flex; align-items: baseline; gap: 8px; }
+.clock-row-city { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Region and offset as one centred group between the city and the time.
+   flex:1 on both this and the city keeps the group centred in the row
+   rather than drifting with the city's length. */
+.clock-row-where {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+/* The matrix face needs roughly this much to read as dots on a non-HiDPI
+   display; the param description says so too. Colour is the phosphor LED
+   green those displays glow in, rather than this app's own UI text colour. */
+/* The digital time is a dot-matrix SVG (DotMatrix): height sizes it, the
+   viewBox aspect gives the width. currentColor is the phosphor green the lit
+   dots inherit; the dots face's off dots are that colour, dimmed. */
+.clock-row-time { display: block; height: 26px; width: auto; align-self: center; color: var(--clock-green); }
+.clock-row-time .dot--off { opacity: 0.16; }
+
+.clock-row-suffix { font-size: var(--font-size-16); color: var(--text-muted); }
+.clock-row-region { font-size: var(--font-size-12); color: var(--text-muted); }
+.clock-row-offset { font-size: var(--font-size-11); color: var(--text-muted); }
+
+/* The RSS built-in. The list owns the card body's scroll, so a long feed
+   scrolls inside the card rather than growing it. */
+.rss-list { margin: 0; padding: 0; list-style: none; height: 100%; overflow-y: auto; }
+
+/* A real <button> so a headline is keyboard reachable, styled flat so the
+   list reads as text rather than as a column of buttons -- the same
+   treatment .cell-link gets in the table. */
+.rss-item {
+  display: block;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rss-item:hover { background: var(--bg-panel); }
+/* An item the feed gave no usable link for: nothing to open, so nothing that
+   looks clickable. */
+.rss-item:disabled { cursor: default; background: transparent; }
+.rss-title { display: block; }
+.rss-meta { display: block; font-size: var(--font-size-11); color: var(--text-muted); }
+
+/* Extra zones scroll sideways rather than wrapping to a second row. */
+.clock-gallery { display: flex; gap: 12px; overflow-x: auto; height: 100%; align-items: flex-start; }
+
+.clock-tile { display: grid; justify-items: center; gap: 1px; flex: 0 0 auto; }
+.clock-tile .analog-face { width: 88px; height: 88px; }
+.clock-tile-city { font-size: var(--font-size-13); }
+.clock-tile-region { font-size: var(--font-size-11); color: var(--text-muted); }
+.clock-tile-offset { font-size: var(--font-size-10); color: var(--text-muted); }
+
+.param-echo { margin: 0; padding: 8px 12px; font-family: ui-monospace, monospace; font-size: var(--font-size-12); }
+.param-echo-row { display: grid; grid-template-columns: max-content 1fr; gap: 12px; padding: 2px 0; }
+.param-echo dt { color: var(--text-muted); }
+.param-echo dd { margin: 0; }
+
+/* The date scratchpad. It reuses .param-echo for the two resolutions -- they
+   are the same "name, value" shape -- and adds the notes underneath, which
+   are prose about the resolution rather than more of it. */
+.date-probe { display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; }
+.date-probe-note,
+.date-probe-warn { margin: 0; padding: 0 12px; font-size: var(--font-size-11); }
+.date-probe-note { color: var(--text-muted); }
+/* Only ever shown when the calendar really is degraded, so it is allowed to
+   carry the down colour rather than the muted one. That is --error, as on
+   the param ⚠ badge (.param-badge-warn) for the same degraded calendar;
+   no --down token exists. */
+.date-probe-warn { color: var(--error); }
+
+/* The muted candlestick pair, not the phosphor clock green — that one is
+   tuned to read as an LED and is wrong for a status chip. The Library's badge
+   shows "not probed" as its own neutral outline (see .source-badge above). */
+.source-badge[data-tone="green"] { background: #4caf7d; }
+.source-badge[data-tone="amber"] { background: #d9a75f; }
+.source-badge[data-tone="red"] { background: #d9695f; }
+
+/* Every context menu in the app: the rail's, the table header's, the Help
+   row's. Positioned at the pointer (or at its anchor) and
+   `fixed` on the rail's layer rather than an absolute one anchored inside a
+   card -- the table's is portalled to <body> out of a scroll container, and a
+   card's stacking context would trap the rest under a neighbouring card.
+   Panel, row chrome, hover/focus and the disabled row come from the shared
+   popup-menu recipe up top; only what this menu varies is here. */
+.row-context-menu { position: fixed; z-index: 60; min-width: 170px; }
+
+/* A table's hoverCard: portalled and fixed like the context menu above, so a
+   card body's overflow never clips it. Wide enough for a short paragraph. */
+.hover-card {
+  position: fixed;
+  z-index: 60;
+  max-width: 320px;
+  padding: 8px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: var(--font-size-12);
+  pointer-events: none;
+}
+.hover-card-title { margin-bottom: 4px; color: var(--text-muted); }
+.hover-card-anchor { text-decoration: underline dotted; cursor: help; }
+.row-context-menu button { padding: 6px 10px; }
+
+.row-context-menu [role="separator"] { margin: 4px 0; border-top: 1px solid var(--border); }
+
+.pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 2px 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.pdf-filename { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-page-count,
+.pdf-zoom { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.pdf-page-input {
+  flex: 0 0 auto;
+  width: 3.5em;
+  padding: 1px 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* pdf.js throws unless its container is absolutely positioned, and takes its
+   page host from that container's first element child -- so the scroll box
+   cannot be the flex child itself. .pdf-frame is; .pdf-body fills it. */
+.pdf-frame { position: relative; flex: 1; min-height: 0; }
+.pdf-body { position: absolute; inset: 0; overflow: auto; }
+/* Focusable only so a clicked card stays the Command-F target; it is never a
+   keyboard stop, so it must not paint a focus ring. Pages stay white in dark
+   mode too -- pdf_viewer.css paints .page itself, and nothing here overrides
+   its --page-bg-color. */
+.pdf-view:focus { outline: none; }
+
+.pdf-findbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 2px 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.pdf-find-input { flex: 1; min-width: 0; }
+.pdf-find-count { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+
+.multi-file { position: relative; height: 100%; min-height: 0; }
+.multi-file-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin-left: var(--file-rail-width);
+  overflow: auto;
+}
+.multi-file-viewer .pdf-view { flex: 1; min-height: 0; }
+.multi-file-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.multi-file-nav button { padding: 0 6px; }
+.multi-file-position { font-variant-numeric: tabular-nums; }
+
+/* Out of flow at rest as well as expanded, so expanding the rail never
+   reflows the pages behind it -- the same guarantee .left-rail makes. */
+.file-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: var(--file-rail-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 120ms ease;
+}
+.file-rail[data-expanded="true"],
+.file-rail:focus-within { width: var(--file-rail-width-expanded); }
+.file-rail-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.file-rail[data-expanded="true"] .file-rail-collapsed,
+.file-rail:focus-within .file-rail-collapsed { display: none; }
+/* The badge is "2/47" now, not a single digit, and .file-rail is
+   overflow: hidden -- so it has to wrap inside the 28px strip rather than be
+   clipped, which would turn a count into a different, wrong count. */
+.file-rail-count {
+  max-width: 100%;
+  font-size: var(--font-size-10);
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.file-rail-expanded { display: none; flex-direction: column; flex: 1; min-height: 0; padding: 4px; }
+/* :focus-within alongside the hover state, exactly as
+   .card-controls-collapsed does it -- without it the checkboxes and Open sit
+   behind display:none and no keyboard can ever reach them. */
+.file-rail[data-expanded="true"] .file-rail-expanded,
+.file-rail:focus-within .file-rail-expanded { display: flex; }
+.file-rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.file-rail-list label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  font-size: var(--font-size-12);
+  cursor: pointer;
+}
+.file-rail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-rail-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; padding-top: 4px; }
+.file-rail-actions button { padding: 2px 8px; }
+.file-rail-actions button[disabled] { color: var(--text-muted); cursor: default; }
+.file-rail-actions .file-rail-clear { border: 0; background: transparent; color: var(--text-muted); }
+
+/* ---- Rita pane -------------------------------------------------------- */
+:root {
+  --rita-width: 380px;
+  --rita-tab-width: 28px;
+}
+.rita-pane {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: var(--rita-tab-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 120ms ease;
+}
+.rita-pane[data-open="true"] {
+  width: var(--rita-width);
+}
+.rita-on .dashboard-area {
+  margin-right: var(--rita-tab-width);
+}
+/* Everything position: fixed has to carry the rail's offset itself, exactly as
+   .library-overlay already does for the LEFT rail -- a fixed box anchors to
+   the viewport, so .dashboard-area's margin never reaches it. Collapsed, the
+   rail is 28px of chrome the dashboard frame ends at; without these the
+   library overlay, a maximized card and the drop surfaces all run underneath
+   it and lose their right-hand edge.
+
+   These stay BEFORE the .rita-pinned block: pinning adds .rita-pinned while
+   .rita-on is still on the shell, and the two carry equal specificity, so
+   source order is what lets the pinned width win. */
+.rita-on .react-grid-item.card-maximized,
+.rita-on .library-overlay,
+.rita-on .drop-veil {
+  right: var(--rita-tab-width);
+}
+.rita-on .drop-notice {
+  right: calc(var(--rita-tab-width) + 16px);
+}
+.rita-pinned .dashboard-area {
+  margin-right: var(--rita-width);
+}
+.rita-pinned .react-grid-item.card-maximized,
+.rita-pinned .library-overlay,
+.rita-pinned .drop-veil {
+  right: var(--rita-width);
+}
+.rita-pinned .drop-notice {
+  right: calc(var(--rita-width) + 16px);
+}
+.rita-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: var(--font-size-12);
+}
+.rita-tab-label {
+  writing-mode: vertical-rl;
+}
+.rita-unread {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.chat-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: var(--rita-width);
+}
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.chat-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-13);
+}
+.chat-model {
+  margin-left: 6px;
+  font-weight: normal;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.chat-pin {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+}
+.chat-presence {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.chat-presence-online {
+  background: var(--accent);
+}
+.chat-presence-offline {
+  background: var(--error);
+}
+.chat-menu {
+  position: relative;
+}
+.chat-menu summary {
+  cursor: pointer;
+  list-style: none;
+}
+.chat-menu[open] > button {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+.chat-menu > button {
+  display: none;
+}
+.chat-notice,
+.chat-error {
+  margin: 0;
+  padding: 4px 12px;
+  font-size: var(--font-size-12);
+}
+.chat-error {
+  color: var(--error);
+}
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-bubble {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  font-size: var(--font-size-13);
+}
+.chat-human {
+  align-self: flex-end;
+  border: 1px solid var(--accent);
+}
+.chat-ai {
+  align-self: stretch;
+}
+.status-trail {
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.status-trail ol {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+.trail-error {
+  color: var(--error);
+}
+.chat-sources {
+  margin: 0;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.chat-sources button,
+.chat-suggestions button,
+.chat-confirm button {
+  margin-right: 6px;
+}
+.chat-confirm {
+  border: 1px solid var(--accent);
+}
+/* The arguments are what the prompt asks you to read: wrap them inside the
+   pane rather than scroll a long value out of sight. */
+.chat-confirm pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+.chat-footer textarea {
+  flex: 1 1 100%;
+  resize: vertical;
+}
+.agent-edit-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: var(--font-size-12);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+.agent-edit-bar > span:first-child {
+  flex: 1;
+}
+.agent-edit-count {
+  color: var(--text-muted);
+}
+/* D-013: an open but unpinned Rita pane (hover, or its message box focused)
+   overlays the dashboard's right-hand --rita-width without reflowing it, and
+   this bar ends its row with Undo and Dismiss, exactly where the overlay
+   lands. Pinned, the dashboard area already clears the pane. */
+.rita-on .agent-edit-bar {
+  padding-right: calc(var(--rita-width) - var(--rita-tab-width) + 12px);
+}
+.rita-pinned .agent-edit-bar {
+  padding-right: 12px;
+}
+.artifact {
+  font-size: var(--font-size-12);
+}
+.artifact h4 {
+  margin: 0 0 4px;
+}
+.artifact-table {
+  overflow-x: auto;
+}
+.artifact-note {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+}
+.artifact-chart {
+  height: 240px;
+}
+.artifact-html {
+  width: 100%;
+  height: 240px;
+  border: 1px solid var(--border);
+  background: white;
+}
+/* A failed MCP tool call. Amber: the file's existing amber, #d9a75f, the
+   [data-tone="amber"] colour of the key pills, dots and source badges. */
+.artifact-tool-error {
+  margin: 0;
+  padding: 4px 8px;
+  border-left: 3px solid #d9a75f;
+  color: inherit;
+}
+
+/* A workspace's column: the Arrange bar, while arranging, above the measured
+   area (WorkspaceGrid). This line's .dashboard-area is a plain scroll box, so
+   the view is the column, filling the area's height as .workspace-grid used
+   to.
+
+   The area becomes a column only while it holds the view, so the view takes
+   what the startup-error banner above it leaves rather than a full 100% that
+   overflows the area by the banner's height. An area that scrolled would
+   move the tiles without a resize, and WorkspaceTile publishes a maximized
+   card's insets in viewport coordinates and re-measures only on one -- the
+   card would drift off its tile. Single-dashboard mode keeps the plain
+   scroll box and its sticky tab bar. */
+.dashboard-area:has(> .workspace-view) {
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The workspace area. WorkspaceGrid measures it and lays the tiles out on a
+   12 × 12 react-grid-layout that fills it exactly, so an arrangement is
+   proportions of this box, not pixels (spec 2026-10-01 §5). It never
+   scrolls: only a pushed tile mid-gesture could reach past the edge, and the
+   gesture is refused and undone when it ends. */
+.workspace-grid {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* No animation, unlike react-grid-layout's default 200ms on left, top, width
+   and height: tiles reflow at once when the window or the rail changes their
+   size, as the CSS grid always did, and a moved tile is where it ends up by
+   the time WorkspaceTile measures it for a maximized card. */
+.workspace-grid > .react-grid-layout > .react-grid-item {
+  transition: none;
+}
+
+/* Uniform zoom (spec 2026-10-12 §4): WorkspaceGrid sets --ws-zoom, and the
+   laid-out width and height, only when the screen is smaller than the
+   workspace's minimum. CSS zoom, never a transform: a transform would become
+   the containing block of the maximized card's position: fixed. */
+.workspace-grid > .react-grid-layout {
+  zoom: var(--ws-zoom, 1);
+}
+
+/* While arranging: the faces (z-index 10, below) cover the dashboards, inside
+   which only a maximized card -- restored on entering Arrange mode -- reaches
+   higher; the corner handles and the drop placeholder sit above the faces;
+   and the tile being dragged or resized rises above them all --
+   react-grid-layout's own 3 and 1 would leave it under its neighbours' faces. */
+.workspace-grid > .react-grid-layout > .react-grid-item > .react-resizable-handle,
+.workspace-grid > .react-grid-layout > .react-grid-placeholder {
+  z-index: 11;
+}
+.workspace-grid > .react-grid-layout > .react-grid-item:is(.react-draggable-dragging, .resizing) {
+  z-index: 12;
+}
+
+/* The grid, drawn faintly behind the tiles while arranging: a line down the
+   middle of every gap, the padding's included. --ws-col and --ws-row are one
+   column's and one row's pitch, set by WorkspaceGrid. */
+.workspace-grid[data-arranging="true"] {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px);
+  background-size: var(--ws-col) var(--ws-row);
+  background-position: 4px 4px;
+}
+
+.workspace-tile {
+  /* The Arrange cover is placed over the tile; the tile fills its grid item. */
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+
+/* Focus follows the mouse and decides where ⌘K sends a widget, so it has to
+   be visible: an invisible target that silently receives new cards is the one
+   way this feature can mislead. */
+.workspace-tile[data-focused="true"] {
+  border-color: var(--accent);
+}
+
+/* A card maximized inside a tile fills that tile's dashboard, not the whole
+   area: the four insets are the tile's own, published in viewport coordinates
+   by WorkspaceTile (the card is still `position: fixed`). All four sides, so
+   this replaces every inset the single-dashboard rules set -- --dashboard-top,
+   the rail's width and the pinned rail's -- each of which the tile's own box
+   already accounts for. The selector carries four classes and comes after
+   those rules in this file, which is what puts it ahead of the pinned-rail one
+   (`.app-shell[data-rail-pinned="true"] ...`, also four). The fallbacks are
+   the single-dashboard insets, for the one frame between a tile mounting with
+   a card already maximized and its first measurement -- an unset variable
+   would otherwise make `inset` invalid and leave the card with no box at all. */
+.workspace-grid .workspace-tile .react-grid-item.card-maximized {
+  inset: var(--tile-top, var(--dashboard-top)) var(--tile-right, 0) var(--tile-bottom, 0) var(--tile-left, var(--rail-width));
+}
+
+.workspace-tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.workspace-tile-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-tile-empty {
+  margin: auto;
+}
+
+/* A dashboard taller than its tile scrolls inside it: the tile clips
+   (overflow: hidden above), so without this its lower cards could not be
+   reached at all. The grid is the scroll box, not the tile, so the header and
+   the tab bar stay put; and a maximized card is `position: fixed` at the
+   tile's measured insets, which a scroll inside the grid does not move. Not
+   `> .dashboard-grid`: the inert wrapper sits between them, `display:
+   contents`, which still leaves the grid a flex item of the tile. flex-basis
+   0 rather than auto, so react-grid-layout's inline height is not the size. */
+.workspace-tile .dashboard-grid {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Arrange mode's face over a tile (WorkspaceTile): opaque, so the dashboard
+   underneath -- still mounted, still refreshing -- is neither seen through
+   nor reachable. It is the drag handle. Entering Arrange mode restores a
+   maximized card (WorkspaceArrangeBar), so nothing at 20 is ever over it. */
+.workspace-arrange-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--bg-panel);
+  cursor: move;
+  user-select: none;
+}
+
+.workspace-arrange-letter {
+  font-size: var(--font-size-16);
+  font-weight: 650;
+}
+
+.workspace-arrange-name {
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* Inset past the ne resize handle (20px, z-index 11, above the face's 10),
+   which would otherwise sit over a ✕ at the corner and take its clicks. */
+.workspace-arrange-remove {
+  position: absolute;
+  top: 4px;
+  right: 24px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* Arrange mode's bar, above the tiles (WorkspaceArrangeBar). */
+.workspace-arrange-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--font-size-12);
+}
+.workspace-arrange-title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: var(--font-size-16);
+}
+.workspace-arrange-note {
+  color: var(--text-muted);
+}
+.workspace-arrange-error {
+  color: var(--error);
+}
+
+/* A workspace that hides its tiles' names (showTileNames: false) has no
+   header line, so a tile's clear ✕ rides at the end of the dashboard's own
+   tab bar instead (WorkspaceTile hands it to TabBar's `trailing`).
+   `visibility`, not `display`: its space stays reserved, so the bar does not
+   shift when the pointer enters the tile. Shown for keyboard focus inside the
+   tile as well as for the pointer. Touch has neither; a touch user clears a
+   tile through Edit… instead (spec 2026-09-30 "Tile names"). */
+.tab-bar .workspace-tile-clear {
+  visibility: hidden;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.workspace-tile:is(:hover, :focus-within) .tab-bar .workspace-tile-clear {
+  visibility: visible;
+}
+
+/* The picker popover's visible exit. Escape and click-outside always
+   dismissed it, but neither is discoverable, and Apply being the only button
+   on screen made the popover read as something you had to commit to. */
+.period-popover-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+/* The expression field (v5.4.x): a free-text box holding what is stored, a
+   picker chip beside it, and the resolution beneath. The field is a column
+   so the resolution sits UNDER the box rather than beside it, which is why
+   .param-field's inline row can no longer own the whole control. */
+.param-expr-field { display: inline-flex; flex-direction: column; gap: 1px; min-width: 0; }
+.param-expr-row { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+.param-expr-input { max-width: 160px; }
+/* The chip is a glyph, not a button-looking button: it sits inside the
+   field's own affordance the way the group link does on the other side. */
+.param-chip {
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-12);
+  line-height: 1;
+  color: var(--text-muted);
+}
+.param-chip:hover:not(:disabled) { color: var(--text); }
+.param-chip:disabled { opacity: 0.5; cursor: default; }
+/* Shown only for an expression, so it is information rather than furniture. */
+.param-resolved {
+  margin: 0;
+  padding-left: 2px;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* Newsfeed widget: a list of fetched articles, each an expandable headline
+   (the payload has no external link, so the body is the article). */
+.newsfeed { list-style: none; margin: 0; padding: 4px 0; overflow: auto; height: 100%; }
+.newsfeed-item { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.newsfeed-head {
+  display: flex; flex-direction: column; gap: 2px; width: 100%;
+  text-align: left; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit;
+}
+.newsfeed-head-static { cursor: default; }
+.newsfeed-title { font-size: var(--font-size-base); font-weight: 600; }
+.newsfeed-meta { font-size: var(--font-size-11); color: var(--text-muted); }
+.newsfeed-excerpt { margin: 4px 0 0; font-size: var(--font-size-12); color: var(--text-muted); }
+.newsfeed-body { margin-top: 8px; }
+
+/* live_grid showCellChange: a brief tint when a cell's value changes. */
+td[data-flash="up"] { animation: cell-flash-up 0.7s ease-out; }
+td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
+@keyframes cell-flash-up { from { background: color-mix(in srgb, var(--clock-green, #22c55e) 40%, transparent); } to { background: transparent; } }
+@keyframes cell-flash-down { from { background: color-mix(in srgb, var(--error, #ef4444) 40%, transparent); } to { background: transparent; } }
+/* A pivot. The group row reads as a heading for the rows beneath it; the
+   label column is pinned left by the engine, so its cell also carries
+   .pin-left -- and `tr.pivot-group-row` is what lets this background beat
+   td.pin-left's opaque --bg-card, so the whole row reads as one band.
+   --bg-panel is the file's raised surface; in the light theme it is the same
+   white as a card and the weight alone sets the row apart. An incomplete
+   period's count takes --warning. */
+.widget-table tr.pivot-group-row td { font-weight: 600; background: var(--bg-panel); }
+.pivot-label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pivot-fold,
+.pivot-fold-spacer { width: 16px; flex: none; }
+.pivot-fold { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+.pivot-count { color: var(--text-muted); font-weight: 400; }
+.pivot-incomplete { color: var(--warning, var(--error)); }
+.widget-table th.pivot-group-header { text-align: center; cursor: default; }
+
+/* The table grows a header of its own (the Pivot panel, or the one-line strip
+   that stands in for it), so the pair becomes a column and .table-scroll --
+   which is `height: 100%` on its own -- takes what is left. */
+.table-with-pivot { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.table-with-pivot > .table-scroll { flex: 1; min-height: 0; height: auto; }
+
+.pivot-panel { flex: none; max-height: 40%; overflow: auto; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
+.pivot-columns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pivot-column { flex: 1 1 160px; min-width: 0; }
+.pivot-column h3 { margin: 0; font-size: var(--font-size-11); }
+.pivot-hint { margin: 0 0 4px; font-size: var(--font-size-11); opacity: 0.7; }
+.pivot-list { min-height: 48px; padding: 4px; border: 1px dashed var(--border); border-radius: 6px; }
+.pivot-list-over { border-color: var(--accent); }
+.pivot-empty { margin: 12px 0; text-align: center; font-size: var(--font-size-11); opacity: 0.6; }
+.pivot-pill { display: flex; align-items: center; gap: 6px; margin: 2px 0; padding: 3px 8px; border: 1px solid var(--border); border-radius: 999px; cursor: grab; user-select: none; }
+.pivot-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-pill-hidden { opacity: 0.55; }
+/* "· Choose" and ⚠, and the footer's count of columns still waiting. */
+.pivot-pill-warn { color: var(--warning, var(--error)); }
+.pivot-pill::before { content: "⠿"; opacity: 0.5; }
+.pivot-insert { height: 2px; margin: 1px 0; background: var(--accent); }
+.pivot-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; font-size: var(--font-size-11); }
+.pivot-strip { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 0 4px; font-size: var(--font-size-11); }
+
+/* The maintained editor heading and its responsive height. */
+.pivot-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pivot-panel-heading strong { font-size: var(--font-size-12); }
+.pivot-panel-heading .pivot-hint { margin: 2px 0 0; }
+@media (max-width: 700px) {
+  .pivot-panel { max-height: 95%; }
+}
+
+
+.pivot-note { margin: 0 0 6px; color: var(--warning, var(--error)); font-size: var(--font-size-11); }
+
+.card-removal-undo {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  box-shadow: 0 2px 12px #0003;
+}
+
+/* Worker totals occupy their own footer; horizontal scroll follows the body. */
+.table-execution-layout { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
+.table-with-pivot > .table-execution-layout { flex: 1; height: auto; }
+.table-execution-layout > .table-scroll { flex: 1; min-height: 0; height: auto; }
+.table-total-footer { flex: none; border-top: 1px solid var(--border); background: var(--bg-card); }
+.table-total-context { padding: 2px 8px; font-size: 11px; }
+.table-total-scroll { overflow: hidden; width: 100%; }
+.table-total-scroll .widget-table { table-layout: fixed; }
+.table-total-scroll tfoot td { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Report authoring keeps controls scrollable without taking over the table body. */
+.table-model-authoring,
+.table-model-inspection,
+.table-source-filters {
+  flex: none;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  max-height: min(45%, 420px);
+  overflow: auto;
+}
+.table-with-pivot > [aria-label="Model inspection"] { flex: none; min-height: 0; max-height: 45%; overflow: auto; }
+.table-model-authoring fieldset,
+.table-model-inspection fieldset,
+.table-source-filters fieldset { min-width: 0; border: 1px solid var(--border); padding: 8px; }
+.table-model-authoring label,
+.table-model-inspection label,
+.table-source-filters label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.table-model-authoring :is(input, select, textarea),
+.table-model-inspection :is(input, select, textarea),
+.table-source-filters :is(input, select, textarea) { min-width: 0; max-width: 100%; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px; }
+.table-model-authoring textarea,
+.table-model-inspection textarea { width: 100%; min-height: 90px; resize: vertical; }
+.table-model-authoring button,
+.table-model-inspection button,
+.table-source-filters button { min-height: 28px; margin: 3px; }
+.table-model-authoring :focus-visible,
+.table-model-inspection :focus-visible,
+.table-source-filters :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.table-source-filters > fieldset { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-measure { padding: 6px 0; border-bottom: 1px solid var(--border); }
+@media (pointer: coarse) {
+  .table-model-authoring button,
+  .table-model-inspection button,
+  .table-source-filters button { min-height: 44px; }
+}
+
+/* ---- Calendar view ---------------------------------------------------- */
+/* Sizing rules, and why: a week row sizes to its busiest cell up to
+   --calendar-cell-cap, past which the cell scrolls inside itself. Even rows
+   (.calendar-even) gives the grid a fixed height and divides it equally, and
+   then every cell scrolls as needed. Neither state has a "+N more" link: the
+   count in the cell header says how many, and the scrollbar shows the rest.
+
+   Even rows needs BOTH lines below to divide anything. A grid item's default
+   min-height is auto, which is its content's height, so plain `1fr` tracks
+   cannot shrink a busy week below its list and the rows come out uneven —
+   exactly what the checkbox was meant to stop. `minmax(0, 1fr)` lifts that
+   floor off the track and `min-height: 0` lifts it off the row itself; the
+   cells then take their height from the track and scroll their own lists. */
+.calendar { display: flex; flex-direction: column; min-height: 0; height: 100%; --calendar-cell-cap: 220px; }
+.calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 4px 0 8px; }
+.calendar-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.calendar-seg button { border: 0; border-radius: 0; padding: 3px 9px; background: transparent; color: var(--text); font-size: var(--font-size-12); cursor: pointer; }
+.calendar-seg button + button { border-left: 1px solid var(--border); }
+.calendar-seg button[aria-pressed="true"] { background: var(--accent); color: var(--bg); font-weight: 600; }
+.calendar-nav { display: inline-flex; align-items: center; gap: 4px; }
+.calendar-nav button { padding: 2px 8px; }
+.calendar-range { font-family: ui-monospace, monospace; font-size: var(--font-size-12); min-width: 15ch; text-align: center; }
+/* Type and Series. The box is deliberately narrow — about four tickers wide —
+   because the toolbar wraps and a filter box that eats the row would push the
+   business-day button onto a line of its own on a half-width card. */
+.calendar-series { display: inline-flex; align-items: center; gap: 4px; }
+.calendar-series input { width: 14ch; font-family: ui-monospace, monospace; font-size: var(--font-size-12); }
+.calendar-series-count { font-family: ui-monospace, monospace; font-size: var(--font-size-11); color: var(--text-muted); white-space: nowrap; }
+.calendar-check { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-size-12); color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+.calendar-biz { position: relative; margin-left: auto; }
+.calendar-biz-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; display: grid; grid-template-columns: repeat(7, auto); gap: 6px 8px; padding: 8px 10px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.calendar-biz-pop > label { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: var(--font-size-11); font-family: ui-monospace, monospace; }
+.calendar-biz-hint, .calendar-biz-col { grid-column: 1 / -1; margin: 0; font-size: var(--font-size-11); color: var(--text-muted); }
+.calendar-biz-hint { border-top: 1px solid var(--border); padding-top: 6px; }
+.calendar-biz-col { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+
+/* The tree filter's popover: the business-day popover's panel, taller and one
+   column, with a scroll of its own because a full economic calendar is thirty
+   sources deep. */
+.calendar-tree { position: relative; }
+.calendar-tree-pop { position: absolute; left: 0; top: calc(100% + 6px); z-index: 5; width: 18rem; padding: 8px 10px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.calendar-tree-list { max-height: 20rem; overflow: auto; }
+.calendar-tree-row { display: flex; align-items: center; gap: 4px; font-size: var(--font-size-11); }
+.calendar-tree-row > label { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; cursor: pointer; }
+.calendar-tree-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-tree-count { font-family: ui-monospace, monospace; color: var(--text-muted); }
+.calendar-tree-twisty { display: inline-block; width: 14px; padding: 0; background: none; border: 0; color: var(--text-muted); cursor: pointer; }
+/* Indentation is the only thing that says which release a statistic is under. */
+.calendar-tree-kids { margin-left: 12px; }
+.calendar-tree-l1 > .calendar-tree-row .calendar-tree-name { font-weight: 500; }
+.calendar-tree-reset { width: 100%; margin-top: 6px; padding: 6px 0 0; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text-muted); font-size: var(--font-size-11); cursor: pointer; }
+.calendar-tree-reset:disabled { opacity: 0.5; cursor: default; }
+.calendar-dow { display: grid; gap: 4px; margin-bottom: 4px; }
+.calendar-dow div { font-size: var(--font-size-11); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); padding: 0 6px; }
+/* The sheet is the day-of-week header plus the grid: the wheel listener's
+   target, wide enough that a dense month still leaves somewhere to step from,
+   and not the toolbar, whose selects and popover scroll on their own terms. */
+.calendar-sheet { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.calendar-grid { display: grid; gap: 4px; align-content: start; outline: none; min-height: 0; }
+.calendar-grid:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The layout effect in CalendarRenderer already compensates for rows
+   prepended above the reader; Chromium's scroll anchoring would compensate
+   a second time and double the jump, WebKit has no anchoring; this switches
+   Chromium's off so both engines move by exactly the growth. */
+.calendar-unit-continuous { overflow-y: auto; overscroll-behavior: contain; overflow-anchor: none; flex: 1; }
+/* Vertical's agenda and Horizontal's ribbon are endless boxes too, so they
+   carry the same anchoring opt-out for the same reason: the layout effect
+   already compensates for what is prepended, and Chromium's own anchoring
+   would compensate a second time. The ribbon's is on the horizontal axis;
+   overflow-anchor governs both. */
+.calendar-unit-agenda { overflow-y: auto; overscroll-behavior: contain; overflow-anchor: none; flex: 1; }
+/* Static has no growth and no correction — its span is fixed by the widget's
+   params — but a year of weeks still has to fit inside the card. */
+.calendar-unit-static { overflow-y: auto; flex: 1; }
+.calendar-week { display: grid; gap: 4px; }
+/* One day per row, full width: the agenda is a single column, and the cell
+   inside it is the same .calendar-cell every other mode draws. Even rows
+   gives each day one line of cells rather than the 150 px a week gets. */
+.calendar-agenda-row { display: grid; grid-template-columns: 1fr; }
+.calendar-even .calendar-agenda-row { height: 120px; }
+.calendar-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 88px; max-height: var(--calendar-cell-cap); overflow: hidden; padding: 5px 6px 6px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; }
+.calendar-unit-week .calendar-cell, .calendar-unit-day .calendar-cell { min-height: 360px; max-height: none; }
+.calendar-timeline .calendar-cell { min-height: 210px; max-height: none; }
+/* The ribbon: day columns side by side, scrolled sideways. A column is a
+   full-height cell (a Week cell's height) regardless of Even rows, which is
+   why no .calendar-even rule follows it. */
+.calendar-ribbon { display: flex; overflow-x: auto; overflow-anchor: none; overscroll-behavior: contain; gap: 4px; flex: 1; min-height: 0; }
+/* No min-height: the ribbon (above) is a flex row with the default
+   align-items: stretch, and .calendar-sheet/.card-render give it a definite
+   height up the chain, so a column fills the ribbon on its own; a fixed floor
+   here only forced a second vertical scrollbar on a card shorter than it. */
+.calendar-col { flex: 0 0 240px; max-height: none; }
+.calendar-cell-out { color: var(--text-muted); background: var(--bg); }
+.calendar-cell-today { border-color: var(--accent); }
+.calendar-cell-today .calendar-day b { color: var(--accent); }
+.calendar-even { grid-auto-rows: minmax(0, 1fr); flex: 1; }
+.calendar-even .calendar-week { min-height: 0; }
+.calendar-even .calendar-cell { min-height: 0; max-height: none; height: 100%; }
+.calendar-unit-continuous.calendar-even .calendar-week { height: 150px; }
+.calendar-day { display: flex; justify-content: space-between; align-items: baseline; font-family: ui-monospace, monospace; font-size: var(--font-size-12); color: var(--text-muted); }
+.calendar-mon { font-size: var(--font-size-11); text-transform: uppercase; letter-spacing: 0.05em; }
+.calendar-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 0; padding: 0; list-style: none; }
+.calendar-empty { color: var(--text-muted); font-style: italic; font-size: var(--font-size-12); }
+.calendar-ev { display: grid; grid-template-columns: auto 1fr auto; gap: 0 6px; align-items: baseline; padding: 1px 2px; border-radius: 3px; font-size: var(--font-size-12); line-height: 1.25; min-width: 0; }
+.calendar-ev:hover { background: var(--bg); }
+.calendar-ev-est .calendar-n { font-weight: 500; }
+.calendar-t { font-family: ui-monospace, monospace; font-size: var(--font-size-11); color: var(--text-muted); white-space: nowrap; }
+.calendar-t-allday { color: var(--accent); font-weight: 600; letter-spacing: 0.04em; }
+.calendar-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.calendar-v { font-family: ui-monospace, monospace; font-size: var(--font-size-11); color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.calendar-tl-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.calendar-allday { display: flex; flex-wrap: wrap; gap: 3px; padding-bottom: 3px; }
+.calendar-chip { font-size: var(--font-size-11); padding: 1px 6px; border-radius: 3px; background: var(--bg); border: 1px solid var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.calendar-tl { position: relative; flex: 1; min-height: 300px; border-top: 1px solid var(--border); margin-top: 2px; }
+.calendar-tl-compact .calendar-tl { min-height: 150px; }
+.calendar-hour { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--border); padding-left: 2px; font-family: ui-monospace, monospace; font-size: 10px; line-height: 1; color: var(--text-muted); }
+.calendar-block { position: absolute; left: 30px; right: 2px; padding: 1px 5px; border-left: 3px solid var(--accent); border-radius: 2px; background: var(--bg); font-size: var(--font-size-11); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calendar-tl-compact .calendar-block { left: 20px; padding: 0 4px; font-size: 10.5px; }
+.calendar-now { position: absolute; left: 0; right: 0; border-top: 2px solid var(--error); z-index: 2; }
+.calendar-now::before { content: ""; position: absolute; left: -3px; top: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--error); }
+
+/* A stock logo inline before a calendar title (see Logo in CalendarRenderer):
+   sized to the row's line, rounded like the table's .cell-logo, and hidden
+   by its own onError rather than leaving a broken-image glyph. */
+.calendar-logo { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; border-radius: 2px; }
+
+/* Financial Statement presentation is separate from analytical Pivot. */
+.widget-table.statement th:first-child,
+.widget-table.statement td.statement-label {
+  position: sticky;
+  left: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+.widget-table.statement th:first-child { z-index: 3; }
+.widget-table.statement td:not(.statement-label) { text-align: right; }
+/* A section row is one full-width button: the whole row toggles. */
+.widget-table .statement-section td { padding: 0; }
+.statement-section button {
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ---- iPadOS ------------------------------------------------------------ */
+
+/* Draw chrome inside the safe area rather than under the notch or the home
+   indicator. Harmless everywhere else: env() resolves to 0 on a desktop.
+
+   The bottom inset is NOT on body: padding there left the rail's darker
+   background stopping 20pt short of the screen edge, which read as a stray
+   margin on the iPad (screenshot, 2026-09-02). Instead the rail and the
+   dashboard's scroll area each pad their own bottom, so their backgrounds
+   run to the edge and only their content stays above the indicator. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+body {
+  padding: var(--safe-top) var(--safe-right) 0 var(--safe-left);
+  /* The rubber-band effect fights the dashboard's own scrolling: dragging a
+     grid that has reached its end drags the whole page instead. */
+  overscroll-behavior: none;
+  /* iOS inflates text in some layouts, which resizes the UI out from under
+     its own geometry. The app sets its own sizes; keep them. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* The long-press callout (copy / look up / share) is right for data and wrong
+   for chrome: a long press on a toolbar should not offer to copy its label.
+   Four selectors, all chrome.
+
+   What is deliberately NOT here: dialogs, and card BODY content. A card's
+   header and action row are suppressed while the figures beneath them stay
+   selectable and copyable by touch, which is the whole point. MultiFileRenderer
+   is a hover panel that lives in a card body, so it is left alone too.
+
+   Pinch-to-zoom is left enabled everywhere, including inside dense tables:
+   zooming to read a table is legitimate use, not something to suppress. */
+:is(.left-rail, .tab-bar, .card-header, .card-action) {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* EVERY top-anchored `position: fixed` overlay belongs in this list.
+
+   body's safe-area padding lays out body's own box; a fixed box is laid out
+   against the viewport instead, so the padding never reaches one and the
+   overlay's header sits under the iPad status bar. This was fixed twice as
+   separate one-off rules -- the Rita pane, then the library overlay (both
+   screenshots, 2026-09-03) -- and the band editor then arrived with the same
+   defect (screenshot, 2026-09-04), because a one-off rule teaches the next
+   overlay nothing. One list, so adding a fixed overlay means adding it here.
+
+   A top offset, not padding -- the opposite of the bottom-edge rule above.
+   There the background running to the edge is what looks right; here it is
+   the defect. Offsetting starts the overlay where body's content starts,
+   which is what `top: 0` already means on macOS, where --safe-top is 0.
+
+   Not here, deliberately: .card-maximized, whose --dashboard-top is measured
+   with getBoundingClientRect and is therefore already a viewport coordinate
+   with the inset counted in (App.tsx), and the portalled menus, which are
+   placed at a pointer that cannot be under the status bar.
+
+   .rita-pane      -- collapsed rail's background ran up over the dialog close button
+   .library-overlay -- title, search box, Reset and close sat under the status bar
+                       (the AI Library too: it is .library-overlay + .ai-library)
+   .drop-veil      -- the veil's dashed top border tucked under the status bar */
+.rita-pane,
+.library-overlay,
+.drop-veil {
+  top: var(--safe-top);
+}

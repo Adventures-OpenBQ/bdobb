@@ -1,0 +1,247 @@
+{
+  "id": "0e5e36e0-a3b9-48d7-a56b-28588017af96",
+  "name": "BLS Producer Price Index",
+  "tabs": [
+    {
+      "id": "02541865-11a6-4ce4-af38-35548bd6b4bf",
+      "name": "Documents",
+      "cards": [
+        {
+          "id": "ceddc08c-073d-4534-bd8a-97d659da7af2",
+          "widgetId": "bls_ppi_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "detailed_report",
+            "provider": "bls",
+            "url": "https://www.bls.gov/ppi/detailed-report/ppi-detailed-report-april-2026.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 28
+          }
+        }
+      ]
+    },
+    {
+      "id": "fdf090df-cfad-4f81-b4a4-928034e3dff3",
+      "name": "Detailed Report",
+      "cards": [
+        {
+          "id": "8fbbd349-deb2-421c-b8c6-49f636922520",
+          "widgetId": "bls_ppi_detailed_report_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "table": "14",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 25
+          }
+        }
+      ]
+    },
+    {
+      "id": "f894add1-7311-4907-9d16-d178ab73159f",
+      "name": "Reference Tables",
+      "cards": [
+        {
+          "id": "1cc00a39-2df8-424f-9ffc-139da4bb1758",
+          "widgetId": "bls_ppi_relative_importance_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "final_demand",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 21
+          }
+        },
+        {
+          "id": "98c58439-7fc5-4827-98f3-d54bed5ffbe5",
+          "widgetId": "bls_ppi_seasonal_factors_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "forecast",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 23,
+            "w": 40,
+            "h": 21
+          }
+        }
+      ]
+    },
+    {
+      "id": "d39b8da0-e892-4d4a-b517-1eff42816081",
+      "name": "Final Demand",
+      "cards": [
+        {
+          "id": "7b1c7812-2999-4d30-a0c5-738eb6e18a7c",
+          "widgetId": "bls_ppi_final_demand_1m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "e599aab4-af04-4d9f-a198-a0c4becc8b99",
+          "widgetId": "bls_ppi_final_demand_12m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "997eeb76-2c19-4beb-bc33-1fa282e7afe4",
+          "widgetId": "bls_ppi_final_demand_components_1m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 42,
+            "w": 40,
+            "h": 41
+          },
+          "view": "chart"
+        },
+        {
+          "id": "786166f5-338a-4d3b-b01d-9dbc2e4e86cf",
+          "widgetId": "bls_ppi_final_demand_components_12m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 83,
+            "w": 40,
+            "h": 41
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "b2c206fa-47a8-4567-aaf1-1f80033f5eab",
+      "name": "Intermediate Demand",
+      "cards": [
+        {
+          "id": "a67bcc07-a543-4fe8-a074-2bfd05e5c4d7",
+          "widgetId": "bls_ppi_intermediate_unprocessed_1m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "4353980c-7aee-4d77-9500-26bd98e2acb0",
+          "widgetId": "bls_ppi_intermediate_unprocessed_12m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "ca46572b-a25c-43f4-a565-331ff63764fa",
+          "widgetId": "bls_ppi_intermediate_processed_1m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 42,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "6b96d5a7-7645-45f4-8f75-f57fc9877d9f",
+          "widgetId": "bls_ppi_intermediate_processed_12m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "557bcbca-4917-4655-bf55-36f0527d377b",
+          "widgetId": "bls_ppi_intermediate_services_1m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 82,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        },
+        {
+          "id": "fd04f033-d63a-4db1-ba12-d41a0a38eee9",
+          "widgetId": "bls_ppi_intermediate_services_12m_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 102,
+            "w": 40,
+            "h": 20
+          },
+          "view": "chart"
+        }
+      ]
+    }
+  ]
+}

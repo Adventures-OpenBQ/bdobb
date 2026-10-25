@@ -1,0 +1,22 @@
+[
+  {
+    "Company": "AAPL",
+    "Desk": "Research",
+    "Amount — Total": 900
+  },
+  {
+    "Company": "AAPL",
+    "Desk": "Trading",
+    "Amount — Total": 500
+  },
+  {
+    "Company": "MSFT",
+    "Desk": "Research",
+    "Amount — Total": 1200
+  },
+  {
+    "Company": "MSFT",
+    "Desk": "Trading",
+    "Amount — Total": 700
+  }
+]

@@ -1,0 +1,256 @@
+status	path	disposition	reason
+DIVERGED	package.json	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src-tauri/Cargo.lock	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src-tauri/Cargo.toml	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src-tauri/tauri.conf.json	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/App.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/App.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/browser-shim/shims.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/App.errorBoundaries.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/DropZone.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/LeftRail.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/LeftRail.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/components/LibraryFilters.test.tsx	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+SAME-BASE	src/components/LibraryFilters.tsx	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+DIVERGED	src/components/RailIcon.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/components/RailIcon.tsx	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+DIVERGED	src/components/WidgetCard.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/WidgetCard.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/WidgetLibrary.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/WidgetLibrary.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+A	src/components/ai/AILibrary.skills.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/AILibrary.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/AILibrary.tsx	ADD	donor blob verbatim
+A	src/components/ai/AgentsTab.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/AgentsTab.tsx	ADD	donor blob verbatim
+A	src/components/ai/AppearanceTab.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/AppearanceTab.tsx	ADD	donor blob verbatim
+A	src/components/ai/McpServersTab.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/McpServersTab.tsx	ADD	donor blob verbatim
+A	src/components/ai/ShareTargetsTab.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/ShareTargetsTab.tsx	ADD	donor blob verbatim
+A	src/components/ai/SkillEditorDialog.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/SkillEditorDialog.tsx	ADD	donor blob verbatim
+A	src/components/ai/SkillsTab.test.tsx	ADD	donor blob verbatim
+A	src/components/ai/SkillsTab.tsx	ADD	donor blob verbatim
+A	src/components/ai/skillsDraft.ts	ADD	donor blob verbatim
+DIVERGED	src/components/renderers/PivotPanel.tsx	CLEAN-WINS	legalAggregations already in clean; PivotPanel already uses it
+DIVERGED	src/components/renderers/TableRenderer.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/components/renderers/TableRenderer.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+A	src/components/rita/AgentEditBar.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/AgentEditBar.tsx	ADD	donor blob verbatim
+A	src/components/rita/ArtifactView.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/ArtifactView.tsx	ADD	donor blob verbatim
+A	src/components/rita/ChatMessages.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/ChatMessages.tsx	ADD	donor blob verbatim
+A	src/components/rita/ChatPane.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/ChatPane.tsx	ADD	donor blob verbatim
+A	src/components/rita/RitaPane.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/RitaPane.tsx	ADD	donor blob verbatim
+A	src/components/rita/Sources.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/Sources.tsx	ADD	donor blob verbatim
+A	src/components/rita/StatusTrail.test.tsx	ADD	donor blob verbatim
+A	src/components/rita/StatusTrail.tsx	ADD	donor blob verbatim
+SAME-BASE	src/components/runAppsImport.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+DIVERGED	src/help/guide.test.ts	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/VERSION	ADAPT	clean v6 candidate wording (Task 1)
+DIVERGED	src/help/guide/about-this-guide.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+A	src/help/guide/ai-library.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/app-data-and-settings.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/backends-and-connections.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/built-in-widgets.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/card-parameters.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/charts.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/connecting-a-backend.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/dashboard-tabs.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/dashboards-and-folders.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/date-expression.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/documents-pdf-and-files.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/example-dashboards.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/home.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/html-and-iframe-widgets.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/import-and-export.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/importing-dashboards.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/installing-and-running.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/keyboard-shortcuts.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/layout-and-navigation.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/openbb-docker-stack.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+MISSING-IN-CLEAN	src/help/guide/pivot.md	EXCLUDED	clean folded Pivot into tables.md; one cross-reference line instead
+DIVERGED	src/help/guide/provider-keys.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/reference-validation.md	CLEAN-WINS	donor change is branding/version churn only
+A	src/help/guide/rita-ai-agent-setup.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+A	src/help/guide/rita-chat.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/running-and-refreshing.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/settings-and-logs.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/settings-export-and-import.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/tables.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/tailscale-networking.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/troubleshooting-infrastructure.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/troubleshooting-using-bdobb.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/web-preview.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/widget-cards.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/guide/widget-library.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/guide/workspaces.md	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/index.test.ts	CLEAN-WINS	donor change is branding/version churn only
+DIVERGED	src/help/index.ts	CLEAN-WINS	donor change is branding/version churn only
+A	src/help/shots/ai-library-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+A	src/help/shots/ai-library-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/dashboards-and-folders-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/dashboards-and-folders-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/getting-started-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/getting-started-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-datetime-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-datetime-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-quarter-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-quarter-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/period-quarter-range-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/period-quarter-range-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-relative-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+SAME-BASE	src/help/shots/period-relative-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+A	src/help/shots/rita-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+A	src/help/shots/rita-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/the-left-rail-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/the-left-rail-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/widget-cards-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/widget-cards-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/widget-library-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/widget-library-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/workspaces-dark.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+DIVERGED	src/help/shots/workspaces-light.png	EXCLUDED	help screenshots are regenerated by pnpm help:shots (Part C)
+A	src/help/topics/ai-library.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/getting-started.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/keyboard-shortcuts.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+MISSING-IN-CLEAN	src/help/topics/pivot.md	EXCLUDED	clean folded Pivot into tables.md; one cross-reference line instead
+A	src/help/topics/rita.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/settings-and-logs.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/tables.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/the-left-rail.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/help/topics/widget-cards.md	ADAPT	Rita/AI hunks hand-ported with BDOBB naming (Part C)
+DIVERGED	src/hooks/useDashboardShortcuts.test.tsx	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/hooks/useDashboardShortcuts.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/hooks/useHoverPanel.test.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+SAME-BASE	src/hooks/useHoverPanel.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/lib/agent/agents-json.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/agents-json.ts	ADD	donor blob verbatim
+A	src/lib/agent/arrangeTable.test.ts	EXCLUDED	adaptation 1: no second calculator; table-model/1 adapter replaces it (Part B)
+A	src/lib/agent/arrangeTable.ts	EXCLUDED	adaptation 1: no second calculator; table-model/1 adapter replaces it (Part B)
+A	src/lib/agent/dashboardMcp.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/dashboardMcp.ts	ADD	donor blob verbatim
+A	src/lib/agent/events.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/events.ts	ADD	donor blob verbatim
+A	src/lib/agent/execute.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/execute.ts	ADD	donor blob verbatim
+A	src/lib/agent/importedMcp.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/importedMcp.ts	ADD	donor blob verbatim
+A	src/lib/agent/localTools.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/localTools.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcp.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcp.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcpAuth.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcpAuth.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcpError.ts	ADD	donor blob verbatim
+A	src/lib/agent/mcpPort.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/query.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/query.ts	ADD	donor blob verbatim
+A	src/lib/agent/request.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/request.ts	ADD	donor blob verbatim
+A	src/lib/agent/skills.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/skills.ts	ADD	donor blob verbatim
+A	src/lib/agent/sse.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/sse.ts	ADD	donor blob verbatim
+A	src/lib/agent/tableProfile.test.ts	EXCLUDED	adaptation 1: no second calculator; table-model/1 adapter replaces it (Part B)
+A	src/lib/agent/tableProfile.ts	EXCLUDED	adaptation 1: no second calculator; table-model/1 adapter replaces it (Part B)
+A	src/lib/agent/types.ts	ADD	donor blob verbatim
+A	src/lib/agent/workspaceOptions.test.ts	ADD	donor blob verbatim
+A	src/lib/agent/workspaceOptions.ts	ADD	donor blob verbatim
+A	src/lib/aiLibraryFile.test.ts	ADD	donor blob verbatim
+A	src/lib/aiLibraryFile.ts	ADD	donor blob verbatim
+DIVERGED	src/lib/appsJson.examples.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/appsJson.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/appsJson.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/bootstrap.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/lib/bootstrap.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/lib/cardViews.test.ts	ADAPT	adaptation 1 Views: extracted from clean WidgetCard modes (Task 12)
+A	src/lib/cardViews.ts	ADAPT	adaptation 1 Views: extracted from clean WidgetCard modes (Task 12)
+A	src/lib/chatExport.test.ts	ADD	donor blob verbatim
+A	src/lib/chatExport.ts	ADD	donor blob verbatim
+A	src/lib/chatExportFile.test.ts	ADD	donor blob verbatim
+A	src/lib/chatExportFile.ts	ADD	donor blob verbatim
+A	src/lib/chatFile.test.ts	ADD	donor blob verbatim
+A	src/lib/chatFile.ts	ADD	donor blob verbatim
+SAME-BASE	src/lib/dataClient.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/lib/mcpTokensFile.test.ts	ADD	donor blob verbatim
+A	src/lib/mcpTokensFile.ts	ADD	donor blob verbatim
+DIVERGED	src/lib/params.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/pivotConfig.test.ts	CLEAN-WINS	legalAggregations already in clean; PivotPanel already uses it
+DIVERGED	src/lib/pivotConfig.ts	CLEAN-WINS	legalAggregations already in clean; PivotPanel already uses it
+A	src/lib/privateHost.test.ts	ADD	donor blob verbatim
+A	src/lib/privateHost.ts	ADD	donor blob verbatim
+SAME-BASE	src/lib/providerKeys.test.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+SAME-BASE	src/lib/providerKeys.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/lib/rowTemplate.test.ts	ADD	donor blob verbatim
+A	src/lib/rowTemplate.ts	ADD	donor blob verbatim
+DIVERGED	src/lib/settingsBundle.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/lib/settingsBundle.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+SAME-BASE	src/lib/settingsFile.test.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+SAME-BASE	src/lib/settingsFile.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/lib/shareSend.ts	ADD	donor blob verbatim
+A	src/lib/shareTargets.test.ts	ADD	donor blob verbatim
+A	src/lib/shareTargets.ts	ADD	donor blob verbatim
+A	src/lib/skillsFiles.test.ts	ADD	donor blob verbatim
+A	src/lib/skillsFiles.ts	ADD	donor blob verbatim
+SAME-BASE	src/lib/tableColumns.test.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+DIVERGED	src/lib/tableColumns.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/types.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/widgetsJson.test.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/widgetsJson.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+DIVERGED	src/lib/workspacesFile.ts	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+A	src/skills/arrange-table/SKILL.md	ADAPT	rewritten for table-model/1 (Part B)
+A	src/skills/build-dashboard/SKILL.md	ADD	donor blob verbatim
+A	src/skills/openbb-html-chart/SKILL.md	ADD	donor blob verbatim
+A	src/skills/openbb-html-report/SKILL.md	ADD	donor blob verbatim
+A	src/skills/openbb-html-table/SKILL.md	ADD	donor blob verbatim
+A	src/stores/agentDiscoveryStore.test.ts	ADD	donor blob verbatim
+A	src/stores/agentDiscoveryStore.ts	ADD	donor blob verbatim
+A	src/stores/agentEditsStore.test.ts	ADD	donor blob verbatim
+A	src/stores/agentEditsStore.ts	ADD	donor blob verbatim
+A	src/stores/chatStore.test.ts	ADD	donor blob verbatim
+A	src/stores/chatStore.ts	ADD	donor blob verbatim
+A	src/stores/importMcpServers.ts	ADD	donor blob verbatim
+A	src/stores/mcpTokensStore.ts	ADD	donor blob verbatim
+SAME-BASE	src/stores/settingsStore.ts	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/stores/skillsStore.test.ts	ADD	donor blob verbatim
+A	src/stores/skillsStore.ts	ADD	donor blob verbatim
+DIVERGED	src/styles.css	MERGE	3-way merge, clean wins conflicts, v6 hunk re-applied
+SAME-BASE	src/styles/dialogs.css	CLEAN-APPLY	clean equals v5.7.2; donor delta applies verbatim
+A	src/test/fixtures/mcp-fixtures.test.ts	ADD	donor blob verbatim
+A	src/test/fixtures/mcp-fixtures.ts	ADD	donor blob verbatim
+A	src/test/fixtures/mcp/initialize.sse	ADD	donor blob verbatim
+A	src/test/fixtures/mcp/tools-list.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita-artifact-stream.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita-stream.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/agents.json	ADD	donor blob verbatim
+A	src/test/fixtures/rita/arrange-table.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/error-status.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/function-call.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/roundtrip-answer.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/simple-text.sse	ADD	donor blob verbatim
+A	src/test/fixtures/rita/tagged-request.json	ADD	donor blob verbatim
+A	src/test/integration/real-endpoints.test.ts	ADD	donor blob verbatim
+A	src/test/integration/rita-authoring-live.test.ts	ADD	donor blob verbatim
+A	src/test/integration/rita-live.test.ts	ADD	donor blob verbatim
+NON-SRC	scripts/generate-capabilities.mjs	ADD	share-folders capability generator
+NON-SRC	scripts/generate-capabilities.test.mjs	ADD	its test
+NON-SRC	e2e/rita.spec.ts	ADD	Rita browser spec
+NON-SRC	e2e/ai-library.spec.ts	ADD	AI Library spec (+a5229ea59 rounds case)
+NON-SRC	e2e/agent-options.spec.ts	ADD	agents.json options spec
+NON-SRC	e2e/rita-arrange.spec.ts	ADAPT	rewritten for table-model/1 on a CSV table (Part B)
+NON-SRC	docs/examples/v6.0.0-rita.apps.json	ADD	PR #179 sample (a616a7a87)
+NON-SRC	e2e/fixtures.ts	MERGE	openAILibrary helper
+NON-SRC	scripts/browser-fixtures.mjs	MERGE	agents.json + /v1/query routes
+NON-SRC	scripts/help-shots.mjs	MERGE	ai-library and rita shots (Part C)
+NON-SRC	scripts/scrub-check.sh	CLEAN-APPLY	.env* exclusion only
+NON-SRC	.gitignore	CLEAN-APPLY	generated share-folders capability
+NON-SRC	scripts/apps-sync.mjs	CLEAN-APPLY	donor 3-line OWNER entry v6.0.0-rita -> workspace_apps.json, carried in e938d64 (Part C ruling)
+NON-SRC	src/lib/agent/limits.ts	ADAPT	a5229ea59 mechanics, bounds 1-40 default 40
+NON-SRC	.env.example	ADD	placeholders only; read by mcpPort.test.ts

@@ -1,0 +1,9 @@
+typecheck|exit=0|dur=9s|load=59.78 46.83 43.62|cmd=pnpm typecheck
+lint|exit=0|dur=7s|load=56.75 46.60 43.58|cmd=pnpm lint
+unit|exit=0|dur=154s|load=54.59 46.47 43.57|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+e2e-column-resize|exit=0|dur=5s|load=67.97 53.07 46.51|cmd=env BDOBB_BROWSER_PORT=4451 BDOBB_MOCK_PORT=4452 pnpm exec playwright test e2e/column-resize.spec.ts --reporter=line
+workspace-login|exit=0|dur=2s|load=67.41 53.20 46.59|cmd=pnpm test:workspace
+notices-check|exit=0|dur=1s|load=68.58 53.68 46.80|cmd=pnpm notices:check
+diff-check|exit=0|dur=0s|load=68.58 53.68 46.80|cmd=git diff --check ab2e4eb
+scrub|exit=0|dur=3s|load=68.58 53.68 46.80|cmd=pnpm scrub
+DONE

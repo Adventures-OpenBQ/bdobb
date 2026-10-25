@@ -1,0 +1,15 @@
+-    "scrub": "bash scripts/scrub-check.sh",
++    "scrub": "bash scripts/scrub-check.sh && bash scripts/header-check.sh",
++    "notices": "node scripts/third-party-notices.mjs",
++    "notices:check": "node scripts/third-party-notices.mjs --check",
+new files:
+NOTICE
+THIRD_PARTY_NOTICES.md
+docs/releases/validation/v3-repair/copyright-notices-2026-10-10/check-tests.log
+docs/releases/validation/v3-repair/copyright-notices-2026-10-10/gates.tsv
+docs/releases/validation/v3-repair/copyright-notices-2026-10-10/lint.log
+docs/releases/validation/v3-repair/copyright-notices-2026-10-10/notices-check.log
+docs/releases/validation/v3-repair/copyright-notices-2026-10-10/typecheck.log
+scripts/header-check.sh
+scripts/header-check.test.mjs
+scripts/third-party-notices.mjs

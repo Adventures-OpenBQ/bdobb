@@ -1,0 +1,9 @@
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Loading \"Historical Prices\"","group":"reasoning","details":[{"backend":"reference","name":"Historical Prices","params":{"symbol":"AAPL"}}]}
+
+event: copilotFunctionCall
+data: {"function":"get_widget_data","input_arguments":{"data_sources":[{"widget_uuid":"11111111-2222-3333-4444-555555555555","origin":"reference","id":"historical_prices","input_args":{"symbol":"AAPL"}}]},"extra_state":{"copilot_function_call_arguments":{"widget_queries":[{"widget_uuid":"11111111-2222-3333-4444-555555555555"}]}}}
+

@@ -1,0 +1,114 @@
+
+> bdobb@6.0.0 build:web <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> node scripts/build-web.mjs
+
+vite v6.4.3 building for browser...
+transforming...
+✓ 3539 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/logger.ts is dynamically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/tableColumns.ts but also statically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/App.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/DashboardGrid.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/DropZone.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/ErrorBoundary.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/GroupLink.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/LeftRail.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/TabBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WidgetCard.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WidgetLibrary.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WorkspaceTile.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/ai/AILibrary.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/ai/McpServersTab.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/dialogs/ConnectionsDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/dialogs/KeysPanel.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/dialogs/SettingsDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/dialogs/settings/SettingsForm.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/renderers/ChartRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/renderers/MarkdownEditorRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/renderers/MultiFileRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/renderers/TradingViewRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/rita/AgentEditBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/rita/ArtifactView.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/rita/ChatPane.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/runAppsImport.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useFiscalYearEnd.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useTradingCalendar.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useWidgetData.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useWindowMenuPins.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/agents-json.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/events.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/execute.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/importedMcp.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/query.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/sse.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/bootstrap.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/calendar.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/dashboardSync.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/dateExpressions.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/discovery.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/jsonStore.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/logViewer.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/params.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/skillsFiles.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/widgetsJson.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/workspaceFocus.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/chatStore.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/dashboardStore.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/providerKeysStore.ts, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/dashboardStore.ts is dynamically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/tableExecutionStore.ts but also statically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/App.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/CardRemovalUndo.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/DashboardGrid.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/DropZone.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/GroupLink.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/LeftRail.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/LinkedGroupInspector.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/LinkedWidgetDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/PivotGroupLink.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/PivotGroupUndo.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/PivotParamRow.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/TabBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/TableExecutionRuntime.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WidgetCard.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WidgetLibrary.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WorkspaceArrangeBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WorkspaceGrid.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/WorkspaceTile.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/ai/McpServersTab.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/dialogs/WorkspaceDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/renderers/LocalTableRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/components/runAppsImport.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useDashboardShortcuts.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useFormulaAuthoring.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/hooks/useWidgetData.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/localTools.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/tableModel/arrange.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/agent/tableModel/target.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/bootstrap.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/lib/workspaceFocus.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/chatStore.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/tableCommitCoordinator.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/src/stores/tableExecutionStore.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/web/standard_fonts/LICENSE_FOXIT                           1.55 kB
+dist/web/index.html                                             3.50 kB │ gzip:   1.65 kB
+dist/web/standard_fonts/LICENSE_LIBERATION                      4.41 kB
+dist/web/assets/dashboard-tabs-light-IosMN9pV.png               5.33 kB
+dist/web/assets/dashboard-tabs-dark-BkQagQKL.png                5.39 kB
+dist/web/assets/cursor-editorTextHighlight-kG3uUOwL.svg         5.40 kB │ gzip:   2.20 kB
+dist/web/assets/running-and-refreshing-light-HZjkxIp5.png       9.20 kB
+dist/web/assets/running-and-refreshing-dark-oTUgV_mh.png        9.41 kB
+dist/web/assets/statement-view-light-sZ2wiv0q.png              16.48 kB
+dist/web/assets/statement-view-dark-Dr4K-WFO.png               16.61 kB
+dist/web/standard_fonts/FoxitSymbol.pfb                        16.73 kB
+dist/web/standard_fonts/FoxitFixed.pfb                         17.60 kB
+dist/web/standard_fonts/FoxitFixedBold.pfb                     18.06 kB
+dist/web/assets/charts-light-Df99dE9p.png                      18.10 kB
+dist/web/assets/charts-dark-D42xJbeH.png                       18.24 kB
+dist/web/assets/date-expression-light-awR5hcA3.png             18.42 kB
+dist/web/assets/date-expression-dark-CJ6qeFKg.png              18.49 kB
+dist/web/standard_fonts/FoxitFixedItalic.pfb                   18.75 kB
+dist/web/standard_fonts/FoxitFixedBoldItalic.pfb               19.15 kB
+dist/web/standard_fonts/FoxitSerifBold.pfb                     19.40 kB
+dist/web/standard_fonts/FoxitSerif.pfb                         19.47 kB
+dist/web/assets/troubleshooting-light-B9Iujxmg.png             19.66 kB
+dist/web/assets/troubleshooting-dark-MCvAVacA.png              19.83 kB
+dist/web/assets/html-and-iframe-widgets-light-CE97PADm.png     20.05 kB
+dist/web/assets/html-and-iframe-widgets-dark-BX9UTns1.png      20.13 kB
+dist/web/standard_fonts/FoxitSerifBoldItalic.pfb               20.73 kB
+dist/web/standard_fonts/FoxitSerifItalic.pfb                   21.23 kB
+dist/web/assets/the-left-rail-light-DsnVeuYP.png               22.46 kB
+dist/web/assets/documents-pdf-and-files-light-BNq2zc3X.png     22.69 kB
+dist/web/assets/the-left-rail-dark-DH0X_xXc.png                22.90 kB
+dist/web/assets/documents-pdf-and-files-dark-bhDTL40f.png      22.96 kB
+dist/web/assets/widget-cards-light-CEDZ_QQn.png                23.06 kB
+dist/web/assets/widget-cards-dark-CMgulR-9.png                 23.32 kB
+dist/web/assets/fy-ends-light-BuKXL6Oz.png                     23.49 kB
+dist/web/assets/fy-ends-dark-CPHi-Bbm.png                      24.00 kB
+dist/web/assets/import-and-export-light-CztH3oHp.png           24.74 kB
+dist/web/assets/import-and-export-dark-BhLyAiBz.png            24.97 kB
+dist/web/assets/card-parameters-light-Tz43zPcM.png             25.60 kB
+dist/web/assets/card-parameters-dark-Q6zhtLKK.png              25.81 kB
+dist/web/assets/rita-light-ByZm2noT.png                        26.75 kB
+dist/web/assets/rita-dark-Cr3vskdo.png                         28.29 kB
+dist/web/standard_fonts/FoxitDingbats.pfb                      29.51 kB
+dist/web/assets/period-quarter-range-light-DvK8ZpwV.png        33.69 kB
+dist/web/assets/period-quarter-range-dark-DUY0biFU.png         34.29 kB
+dist/web/assets/workspaces-light-Cf53TSa_.png                  34.72 kB
+dist/web/assets/workspaces-dark-BzXNmhV0.png                   34.80 kB
+dist/web/assets/workspace-account-light-BzqOUhNy.png           35.11 kB
+dist/web/assets/workspace-account-dark-C2z8we5e.png            36.55 kB
+dist/web/assets/calendar-view-light-yO5Y93yY.png               40.12 kB
+dist/web/assets/calendar-view-dark-DeE_SFOg.png                40.81 kB
+dist/web/assets/dashboards-and-folders-light-BYUb4AEF.png      43.52 kB
+dist/web/assets/dashboards-and-folders-dark-B-rsMV83.png       44.29 kB
+dist/web/assets/connections-light-gTH3oMW4.png                 46.48 kB
+dist/web/assets/connections-dark-epBpaLNg.png                  47.50 kB
+dist/web/assets/period-quarter-light-DbpUHULK.png              47.69 kB
+dist/web/assets/period-quarter-dark-a08qeNXl.png               48.52 kB
+dist/web/assets/period-datetime-light-BZCIhfec.png             48.58 kB
+dist/web/assets/period-datetime-dark-C83NgDea.png              49.58 kB
+dist/web/assets/period-relative-light-AywiJtB0.png             54.42 kB
+dist/web/assets/period-relative-dark-BGZr6aiF.png              55.30 kB
+dist/web/assets/provider-keys-dark-tOIQOAb9.png                59.86 kB
+dist/web/assets/provider-keys-light-7n3wkBb6.png               60.00 kB
+dist/web/assets/settings-and-logs-light-fMZkpEGa.png           79.94 kB
+dist/web/assets/settings-and-logs-dark-C4HDaEj3.png            80.60 kB
+dist/web/assets/ai-library-dark-Dv4dmjJX.png                   83.93 kB
+dist/web/assets/ai-library-light-kj-HC82J.png                  83.96 kB
+dist/web/assets/built-in-widgets-light-DN1Z3Yeq.png            94.24 kB
+dist/web/assets/built-in-widgets-dark-CDPe4NuK.png             95.12 kB
+dist/web/assets/widget-library-light-B3i37F9T.png             109.35 kB
+dist/web/assets/widget-library-dark-DeQf9XI2.png              110.11 kB
+dist/web/assets/tables-light-D9BlLCrI.png                     119.96 kB
+dist/web/assets/tables-dark-B3ttJnzE.png                      127.97 kB
+dist/web/assets/getting-started-light-CL0QRX2W.png            129.32 kB
+dist/web/standard_fonts/LiberationSans-BoldItalic.ttf         135.12 kB
+dist/web/assets/getting-started-dark-BUz5VOel.png             135.61 kB
+dist/web/standard_fonts/LiberationSans-Bold.ttf               137.05 kB
+dist/web/standard_fonts/LiberationSans-Regular.ttf            139.51 kB
+dist/web/standard_fonts/LiberationSans-Italic.ttf             162.04 kB
+dist/web/assets/table.worker-BdOSC7Pb.js                      223.03 kB
+dist/web/assets/xlsx-DT5WGBCc.js                              499.87 kB
+dist/web/assets/pdf.worker.min-Dr1KORA9.mjs                 1,286.28 kB
+dist/web/assets/MarkdownEditorRenderer-C76-PK2L.css           239.90 kB │ gzip:  37.60 kB
+dist/web/assets/index-VG9OfOAM.css                            403.47 kB │ gzip:  66.09 kB
+dist/web/assets/module-RjUF93sV.js                             77.27 kB │ gzip:  27.58 kB
+dist/web/assets/lightweight-charts.production-ClhRhmPB.js     180.19 kB │ gzip:  57.01 kB
+dist/web/assets/pdf_viewer-D9A2Yh6Q.js                        223.18 kB │ gzip:  69.05 kB
+dist/web/assets/native-48B9X9Wg.js                            432.75 kB │ gzip:  83.17 kB
+dist/web/assets/HelpDialog-GsMfCGAS.js                        463.05 kB │ gzip: 163.13 kB
+dist/web/assets/pdf-lPevIYiG.js                               474.18 kB │ gzip: 143.45 kB
+dist/web/assets/xlsx-DBvuKzsv.js                              499.86 kB │ gzip: 161.67 kB
+dist/web/assets/MarkdownEditorRenderer-D2fBp4bw.js            916.50 kB │ gzip: 275.48 kB
+dist/web/assets/index-Bwoixtwy.js                           2,952.60 kB │ gzip: 957.38 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.69s
+Private web function built at <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/.vercel/output/functions/preview.func. Nothing deployed.

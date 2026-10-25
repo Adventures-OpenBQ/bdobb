@@ -1,0 +1,17 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/help/index.test.ts (15 tests) 16ms
+ ✓ src/help/guide.test.ts (26 tests) 58ms
+ ✓ src/help/search.test.ts (15 tests) 14ms
+ ✓ src/help/shots.test.ts (5 tests) 31ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 394ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 387ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 11ms
+ ✓ src/help/windowMenu.test.ts (2 tests) 4ms
+
+ Test Files  7 passed (7)
+      Tests  77 passed (77)
+   Start at  08:04:11
+   Duration  7.57s (transform 733ms, setup 1.88s, collect 2.73s, tests 528ms, environment 4.38s, prepare 687ms)
+

@@ -1,0 +1,44 @@
+
+> bdobb@4.0.0 test:web <worktree>
+> node --test web/*.test.mjs
+
+✔ reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin (0.647791ms)
+✔ reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA (0.283625ms)
+✔ configuration: empty allowlist grants nobody, malformed config fails closed (1.158667ms)
+✔ an unconfigured server answers 503 and logs which variable failed (15.447ms)
+✔ GitHub callbacks bind admission to immutable provider ID and never expose tokens (0.75025ms)
+✔ encrypted sessions require valid cookie, current ID, epoch and strict expiry (10.890875ms)
+✔ path and parameter allowlist blocks writes, admin surfaces and URL injection (0.506833ms)
+✔ the /api root documents are forwarded; nothing else at the /api root is (0.196166ms)
+✔ the generic api/v1 rule admits the whole catalogue inside structural bounds (0.593875ms)
+✔ bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend (0.324333ms)
+✔ anonymous visitors see login, not UI, metadata, JavaScript or data (11.947875ms)
+✔ authorized files work; aliases, traversal, source maps, cross-origin and writes fail (22.389459ms)
+✔ a top-level cross-site navigation is the OAuth landing, not a forgeable request (7.546083ms)
+✔ empty allowlist cannot start OAuth or accept even a correctly signed session (5.526542ms)
+Preview authentication failed
+✔ Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth (13.51375ms)
+✔ valid CSRF sign-out expires the browser session cookie (6.129375ms)
+✔ proxy uses dedicated server token, bounded fetch, and never forwards browser credentials (6.061584ms)
+✔ unconfigured upstream, error bodies and unexpected content fail closed (25.385042ms)
+✔ every upgrade is refused -- no socket route exists at this line (13.364125ms)
+✔ only the exact branding allowlist is public; nothing rides along with it (28.62525ms)
+✔ the login surface carries the axes mark and installation icon links (4.311375ms)
+✔ branding assets retain their MIME types for authenticated requests too (5.200208ms)
+✔ the /api root documents come from openbb-api, not from this process (6.400666ms)
+✔ a full-catalogue widgets.json fits the body cap; one past it is an honest 502 (22.059667ms)
+✔ a socket ticket binds one target, expires, and needs the gateway token (0.845375ms)
+✔ the ticket route always 404s -- socketTarget names no route at this line (12.547083ms)
+✔ a write goes to the signed-in user's own state, and only a write shaped like one (21.404291ms)
+✔ a gateway refusal of a write is relayed as a size or a failure, never its body (26.637625ms)
+✔ the page is seeded from the user's saved state, and told it may save (5.47025ms)
+✔ nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not (30.257834ms)
+✔ web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag (1.062833ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 533.30825

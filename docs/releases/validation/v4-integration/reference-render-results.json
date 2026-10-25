@@ -1,0 +1,576 @@
+{
+  "pin": "a6293707576e16edda8305adda95b07b6a4b968b",
+  "inventory": 71,
+  "target": 71,
+  "layoutViews": true,
+  "results": [
+    {
+      "id": "metric_widget",
+      "type": "metric",
+      "status": "rendered",
+      "text": "Total Users\n1,234,567\n12.5",
+      "reason": "{\"text\":\"Total Users1,234,56712.5\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":152}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Markdown Widget",
+      "reason": "{\"text\":\"Markdown Widget\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":57}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_category_and_subcategory",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Markdown Widget with Category and Subcategory",
+      "reason": "{\"text\":\"Markdown Widget with Category and Subcategory\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":85}",
+      "errors": []
+    },
+    {
+      "id": "table_widget",
+      "type": "table",
+      "status": "rendered",
+      "text": "name\n\ttvl\n\tchange_1d\n\tchange_7d\n\nEthereum\t45B\t2.5\t5.2\nBitcoin\t35B\t1.2\t4.8\nSolana\t8B\t-0.5\t2.1",
+      "reason": "{\"text\":\"nametvlchange_1dchange_7dEthereum45B2.55.2Bitcoin35B1.24.8Solana8B-0.52.1\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":1212}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_from_api_endpoint",
+      "type": "table",
+      "status": "rendered",
+      "text": "gecko_id\n\tgasTokenGeckoId\n\ttvl\n\ttokenSymbol\n\tcmcId\n\tname\n\tchainId\n\nmoonbeam\tmoonbeam\t78.09K\tGLMR\t6836\tMoonbeam\t1.28K\ncorn-3\tbitcorn-3\t0\tCORN\t36164\tCorn\t21M\nharmony\tharmony\t9.4K\tONE\t3945\tHarmony\t1.67B\n—\t—\t547.23M\t—\t—\tArc\t5.04K\n—\ttezos\t15.93M\t—\t—\tEtherlink\t42.79K\nplasma\tplasma\t490.58M\tXPL\t—\tPlasma\t9.75K\nstable-2\tusdt0\t29.76M\tSTABLE\t—\tStable\t988\ntac\ttac\t365.4K\tTAC\t—\tTAC\t239\nmantle\tmantle\t107.8M\tMNT\t27075\tMantle\t5K\n—\tethereum\t31.82M\t-\t—\tUnichain\t130\n—\tethereum\t208.63M\t—\t—\tInk\t57.07K\n—\tethereum\t1.05B\t—\t—\tRobinhood Chain\t4.66K\nkava\tkava\t22.72M\tKAVA\t4846\tKava\t—\nokb\tokb\t170.62M\t—\t—\tX Layer\t—\nfantom\tfantom\t6.62M\tFTM\t3513\tFantom\t250\nsonic-3\tsonic-3\t18.1M\tS\t—\tSonic\t146\nplume\tplume\t2.8M\tPLUME\t35364\tPlume Mainnet\t98.87K\ntaiko\tethereum\t259.2K\tTAIKO\t31525\tTaiko\t167K\nmonad\tmonad\t1.02B\tMON\t30495\tMonad\t143\nhyperliquid\thyperliquid\t1.14B\tHYPE\t32196\tHyperliquid L1\t—\naurora-near\tethereum\t4.55M\tAURORA\t14803\tAurora\t1.31B\n—\tethereum\t6.37B\t—\t—\tBase\t8.45K\ncelo\tcelo\t18.02M\tCELO\t5567\tCelo\t42.22K\nbinancecoin\tbinanc",
+      "reason": "{\"text\":\"gecko_idgasTokenGeckoIdtvltokenSymbolcmcIdnamechainIdmoonbeammoonbeam78.09KGLMR6836Moonbeam1.28Kcorn-3bitcorn-30CORN36164Corn21Mharmonyharmony9.4KONE3945Harmony1.67B——547.23M——Arc5.04K—tezos15.93M——Etherlink42.79Kplasmaplasma490.58MXPL—Plasma9.75Kstable-2usdt029.76MSTABLE—Stable988tactac365.4KTAC—TAC239mantlemantle107.8MMNT27075Mantle5K—ethereum31.82M-—Unichain130—ethereum208.63M——Ink57.07K—ethereum1.05B——Robinhood Chain4.66Kkavakava22.72MKAVA4846Kava—okbokb170.62M——X Layer—fantomfantom6.62MFTM3513Fantom250sonic-3sonic-318.1MS—Sonic146plumeplume2.8MPLUME35364Plume Mainnet98.87Ktaikoethereum259.2KTAIKO31525Taiko167Kmonadmonad1.02BMON30495Monad143hyperliquidhyperliquid1.14BHYPE32196Hyperliquid L1—aurora-nearethereum4.55MAURORA14803Aurora1.31B—ethereum6.37B——Base8.45Kcelocelo18.02MCELO5567Celo42.22Kbinancecoinbinancecoin5.7BBNB1839BSC56avalanche-2avalanche-2636.59MAVAX5805Avalanche43.11Kfrax-sharefrax-share19.55MFRAX—Fraxtal252xdce-crowd-salexdce-crowd-sale2.22MXDC2634XDC—gnosisxdai98.18MGNO1659Gnosis100ethereumethereum53.22BETH1027Ethereum1arbitrumethereum1.41BARB11841Arbitrum42.16Koptimismethereum485.73MOP11840OP Mainnet10polygon-ecosystem-tokenpolygon-ecosystem-token718.9MPOL28321Polygon137moonrivermoonriver238.38KMOVR9285Moonriver1.29Khuobi-tokenhuobi-token97.57KHT2502Heco128—boba-network0——Boba_Bnb——ethereum289.61——Polygon zkEVM1.1Kthunder-tokenthunder-token25.52KTT3930ThunderCore108metis-tokenmetis-token2.63MMETIS9640Metis1.09Kzetachainzetachain432.2KZETA21259ZetaChain7Kfuse-network-tokenfuse-network-token400.73KFUSE5634Fuse122islamic-coinislamic-coin11.14ISLM26220HAQQ11235coredaoorgcoredaoorg4.64MCORE23254CORE—lineaethereum25.59MLINEA—Linea59.14Kscrollethereum8.63MSCR—Scroll534.35Ktelostelos3.03MTLOS4660Telos40hemiethereum1.32MHEMI38159Hemi43.11Krif-tokenrootstock81\",\"svg\":0,\"canvas\":0,\"rows\":54,\"iframe\":0,\"img\":0,\"html\":15674}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_error_handling",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "HTTP 500: Error that just occurred\n\nRetry",
+      "reason": "{\"text\":\"HTTP 500: Error that just occurredRetry\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":121}",
+      "errors": []
+    },
+    {
+      "id": "sample_newsfeed",
+      "type": "newsfeed",
+      "status": "rendered",
+      "text": "Global Markets Rally on Positive Economic Data\n2026-10-07 · Robert Williams\n\nStock markets across the globe surged today...\n\nAI Breakthrough: New Model Achieves Human-Level Reasoning\n2026-10-07 · Sarah Johnson\n\nResearchers at TechLab have unveiled a groundbreaking AI model...\n\nScientists Discover New Earth-like Exoplanet in Habitable Zone\n2026-10-07 · Dr. Emily Rogers\n\nAstronomers using the James Webb Space Telescope have identified...\n\nE-commerce Giant Announces Major Expansion into Southeast Asia\n2026-10-07 · Lisa Anderson\n\nMegaShop reveals plans to invest $2 billion...\n\nQuantum Computing Startup Raises $500M in Series C Funding\n2026-10-06 · Michael Chen\n\nQuantumLeap Technologies secures major funding round...",
+      "reason": "{\"text\":\"Global Markets Rally on Positive Economic Data2026-10-07 · Robert WilliamsStock markets across the globe surged today...AI Breakthrough: New Model Achieves Human-Level Reasoning2026-10-07 · Sarah JohnsonResearchers at TechLab have unveiled a groundbreaking AI model...Scientists Discover New Earth-like Exoplanet in Habitable Zone2026-10-07 · Dr. Emily RogersAstronomers using the James Webb Space Telescope have identified...E-commerce Giant Announces Major Expansion into Southeast Asia2026-10-07 · Lisa AndersonMegaShop reveals plans to invest $2 billion...Quantum Computing Startup Raises $500M in Series C Funding2026-10-06 · Michael ChenQuantumLeap Technologies secures major funding round...\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":1769}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_local_image",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "",
+      "reason": "{\"text\":\"\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":1,\"html\":500600}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_image_from_url",
+      "type": "markdown",
+      "status": "needs-review",
+      "text": "HTTP 500: Failed to fetch image: 403 Client Error: Forbidden for url: https://api.star-history.com/svg?repos=openbb-finance%2Fopenbb&type=Date&theme=dark\n\nRetry",
+      "reason": "{\"text\":\"HTTP 500: Failed to fetch image: 403 Client Error: Forbidden for url: https://api.star-history.com/svg?repos=openbb-finance%2Fopenbb&type=Date&theme=darkRetry\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":248}",
+      "errors": []
+    },
+    {
+      "id": "pdf_widget_base64",
+      "type": "pdf",
+      "status": "rendered",
+      "text": "sample.pdf\n/ 1\n161%\n−\n+\nFit\n🔍\nSample PDF\n\n\nThis is a simple PDF ﬁle. Fun fun fun.\n\n\nLorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.\n\n\nCurabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat eget\n\n\npharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.\n\n\nInteger\n \na\n \nerat.\n \nCras\n \nlaoreet\n \nligula\n \ncursus\n \nenim.\n \nAenean\n \nscelerisque\n \nvelit\n \net\n \ntellus.\n\n\nVestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nulla\n\n\nerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.\n\n\nVivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristique\n\n\naccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,\n\n\nhendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.\n\n\nSuspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis",
+      "reason": "{\"text\":\"sample.pdf/ 1161%−+Fit🔍Sample PDFThis is a simple PDF ﬁle. Fun fun fun.Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.Curabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat egetpharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.Integer a erat. Cras laoreet ligula cursus enim. Aenean scelerisque velit et tellus.Vestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nullaerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.Vivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristiqueaccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,hendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.Suspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis at, egestas a,pulvinar quis, nisl.Pellentesque sit amet lectus. Praesent pulvinar, nunc quis iaculis sagittis, justo quamlobortis tortor, sed vestibulum dui metus venenatis est. Nunc cursus ligula. Nulla facilisi.Phasellus ullamcorper consectetuer ante. Duis tincidunt, urna id condimentum luctus, nibhante vulputate sapien, id sagittis massa orci ut enim. Pellentesque vestibulum convallissem. Nulla consequat quam ut nisl. Nullam est. Curabitur tincidunt dapibus lorem. Proinvelit turpis, scelerisque sit amet, iaculis nec, rhoncus ac, ipsum. Phasellus lorem arcu,feugiat eu, gravida eu, consequat molestie, ipsum. Nullam vel est ut ipsum volutpatfeugiat. Aenean pellentesque.In mauris. Pellentesque dui nisi, iaculis eu, rhoncus in, venenatis ac, ante. Ut odio justo,scelerisque vel, facilisis non, commodo a, pede. Cras nec massa sit amet tortor volutpatvariu\",\"svg\":0,\"canvas\":1,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":14352}",
+      "errors": []
+    },
+    {
+      "id": "pdf_widget_url",
+      "type": "pdf",
+      "status": "rendered",
+      "text": "Sample.pdf\n/ 1\n161%\n−\n+\nFit\n🔍\nSample PDF\n\n\nThis is a simple PDF ﬁle. Fun fun fun.\n\n\nLorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.\n\n\nCurabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat eget\n\n\npharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.\n\n\nInteger\n \na\n \nerat.\n \nCras\n \nlaoreet\n \nligula\n \ncursus\n \nenim.\n \nAenean\n \nscelerisque\n \nvelit\n \net\n \ntellus.\n\n\nVestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nulla\n\n\nerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.\n\n\nVivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristique\n\n\naccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,\n\n\nhendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.\n\n\nSuspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis",
+      "reason": "{\"text\":\"Sample.pdf/ 1161%−+Fit🔍Sample PDFThis is a simple PDF ﬁle. Fun fun fun.Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.Curabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat egetpharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.Integer a erat. Cras laoreet ligula cursus enim. Aenean scelerisque velit et tellus.Vestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nullaerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.Vivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristiqueaccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,hendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.Suspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis at, egestas a,pulvinar quis, nisl.Pellentesque sit amet lectus. Praesent pulvinar, nunc quis iaculis sagittis, justo quamlobortis tortor, sed vestibulum dui metus venenatis est. Nunc cursus ligula. Nulla facilisi.Phasellus ullamcorper consectetuer ante. Duis tincidunt, urna id condimentum luctus, nibhante vulputate sapien, id sagittis massa orci ut enim. Pellentesque vestibulum convallissem. Nulla consequat quam ut nisl. Nullam est. Curabitur tincidunt dapibus lorem. Proinvelit turpis, scelerisque sit amet, iaculis nec, rhoncus ac, ipsum. Phasellus lorem arcu,feugiat eu, gravida eu, consequat molestie, ipsum. Nullam vel est ut ipsum volutpatfeugiat. Aenean pellentesque.In mauris. Pellentesque dui nisi, iaculis eu, rhoncus in, venenatis ac, ante. Ut odio justo,scelerisque vel, facilisis non, commodo a, pede. Cras nec massa sit amet tortor volutpatvariu\",\"svg\":0,\"canvas\":1,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":14352}",
+      "errors": []
+    },
+    {
+      "id": "/multi_pdf_base64",
+      "type": "multi_file_viewer",
+      "status": "rendered",
+      "text": "Sample\nBitcoin Whitepaper\nOpen\nClear\n‹\n1 / 1\n›\nSample.pdf\n/ 1\n158%\n−\n+\nFit\n🔍\nSample PDF\n\n\nThis is a simple PDF ﬁle. Fun fun fun.\n\n\nLorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.\n\n\nCurabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat eget\n\n\npharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.\n\n\nInteger\n \na\n \nerat.\n \nCras\n \nlaoreet\n \nligula\n \ncursus\n \nenim.\n \nAenean\n \nscelerisque\n \nvelit\n \net\n \ntellus.\n\n\nVestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nulla\n\n\nerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.\n\n\nVivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristique\n\n\naccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,\n\n\nhendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.\n\n\nSuspendisse quis nulla pretium an",
+      "reason": "{\"text\":\"▤1/2SampleBitcoin WhitepaperOpenClear‹1 / 1›Sample.pdf/ 1158%−+Fit🔍Sample PDFThis is a simple PDF ﬁle. Fun fun fun.Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.Curabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat egetpharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.Integer a erat. Cras laoreet ligula cursus enim. Aenean scelerisque velit et tellus.Vestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nullaerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.Vivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristiqueaccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,hendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.Suspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis at, egestas a,pulvinar quis, nisl.Pellentesque sit amet lectus. Praesent pulvinar, nunc quis iaculis sagittis, justo quamlobortis tortor, sed vestibulum dui metus venenatis est. Nunc cursus ligula. Nulla facilisi.Phasellus ullamcorper consectetuer ante. Duis tincidunt, urna id condimentum luctus, nibhante vulputate sapien, id sagittis massa orci ut enim. Pellentesque vestibulum convallissem. Nulla consequat quam ut nisl. Nullam est. Curabitur tincidunt dapibus lorem. Proinvelit turpis, scelerisque sit amet, iaculis nec, rhoncus ac, ipsum. Phasellus lorem arcu,feugiat eu, gravida eu, consequat molestie, ipsum. Nullam vel est ut ipsum volutpatfeugiat. Aenean pellentesque.In mauris. Pellentesque dui nisi, iaculis eu, rhoncus in, venenatis ac, ante. Ut odio justo,scelerisque vel, facilisis non, commodo a, pede. \",\"svg\":0,\"canvas\":1,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":15283}",
+      "errors": []
+    },
+    {
+      "id": "/multi_pdf_url",
+      "type": "multi_file_viewer",
+      "status": "rendered",
+      "text": "Sample\nBitcoin Whitepaper\nOpen\nClear\n‹\n1 / 1\n›\nSample.pdf\n/ 1\n158%\n−\n+\nFit\n🔍\nSample PDF\n\n\nThis is a simple PDF ﬁle. Fun fun fun.\n\n\nLorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.\n\n\nCurabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat eget\n\n\npharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.\n\n\nInteger\n \na\n \nerat.\n \nCras\n \nlaoreet\n \nligula\n \ncursus\n \nenim.\n \nAenean\n \nscelerisque\n \nvelit\n \net\n \ntellus.\n\n\nVestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nulla\n\n\nerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.\n\n\nVivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristique\n\n\naccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,\n\n\nhendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.\n\n\nSuspendisse quis nulla pretium an",
+      "reason": "{\"text\":\"▤1/2SampleBitcoin WhitepaperOpenClear‹1 / 1›Sample.pdf/ 1158%−+Fit🔍Sample PDFThis is a simple PDF ﬁle. Fun fun fun.Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus facilisis odio sed mi.Curabitur suscipit. Nullam vel nisi. Etiam semper ipsum ut lectus. Proin aliquam, erat egetpharetra commodo, eros mi condimentum quam, sed commodo justo quam ut velit.Integer a erat. Cras laoreet ligula cursus enim. Aenean scelerisque velit et tellus.Vestibulum dictum aliquet sem. Nulla facilisi. Vestibulum accumsan ante vitae elit. Nullaerat dolor, blandit in, rutrum quis, semper pulvinar, enim. Nullam varius congue risus.Vivamus sollicitudin, metus ut interdum eleifend, nisi tellus pellentesque elit, tristiqueaccumsan eros quam et risus. Suspendisse libero odio, mattis sit amet, aliquet eget,hendrerit vel, nulla. Sed vitae augue. Aliquam erat volutpat. Aliquam feugiat vulputate nisl.Suspendisse quis nulla pretium ante pretium mollis. Proin velit ligula, sagittis at, egestas a,pulvinar quis, nisl.Pellentesque sit amet lectus. Praesent pulvinar, nunc quis iaculis sagittis, justo quamlobortis tortor, sed vestibulum dui metus venenatis est. Nunc cursus ligula. Nulla facilisi.Phasellus ullamcorper consectetuer ante. Duis tincidunt, urna id condimentum luctus, nibhante vulputate sapien, id sagittis massa orci ut enim. Pellentesque vestibulum convallissem. Nulla consequat quam ut nisl. Nullam est. Curabitur tincidunt dapibus lorem. Proinvelit turpis, scelerisque sit amet, iaculis nec, rhoncus ac, ipsum. Phasellus lorem arcu,feugiat eu, gravida eu, consequat molestie, ipsum. Nullam vel est ut ipsum volutpatfeugiat. Aenean pellentesque.In mauris. Pellentesque dui nisi, iaculis eu, rhoncus in, venenatis ac, ante. Ut odio justo,scelerisque vel, facilisis non, commodo a, pede. \",\"svg\":0,\"canvas\":1,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":15283}",
+      "errors": []
+    },
+    {
+      "id": "html_widget",
+      "type": "html",
+      "status": "rendered",
+      "text": "",
+      "reason": "{\"text\":\"\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":1,\"img\":0,\"html\":6167}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_stale_time",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Stale 10s Time\n\n2026-10-07 04:46:17",
+      "reason": "{\"text\":\"Stale 10s Time\\n2026-10-07 04:46:17\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":83}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_short_refetch_interval",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Short 5s Refetch Interval\n\n2026-10-07 04:46:29",
+      "reason": "{\"text\":\"Short 5s Refetch Interval\\n2026-10-07 04:46:29\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":94}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_cron_refetch_only",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Cron Refetch Only\n\nData updated at: 2026-10-07 04:46:00\n\nBackend data schedule: Every minute\n\nThis timestamp is controlled by the backend data schedule, not request time.",
+      "reason": "{\"text\":\"Cron Refetch Only\\nData updated at: 2026-10-07 04:46:00\\nBackend data schedule: Every minute\\nThis timestamp is controlled by the backend data schedule, not request time.\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":230}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_cron_refetch_interval",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Cron Refetch Interval\n\nData updated at: 2026-10-07 04:46:00\n\nBackend data schedule: Every minute\n\nThis timestamp is controlled by the backend data schedule, not request time.",
+      "reason": "{\"text\":\"Cron Refetch Interval\\nData updated at: 2026-10-07 04:46:00\\nBackend data schedule: Every minute\\nThis timestamp is controlled by the backend data schedule, not request time.\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":234}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_data_update_display_only",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Data Update Display Only\n\nData updated at: 2026-10-06 10:00:00\n\nBackend data schedule: Every day at 10:00\n\nThis timestamp is controlled by the backend data schedule, not request time.",
+      "reason": "{\"text\":\"Data Update Display Only\\nData updated at: 2026-10-06 10:00:00\\nBackend data schedule: Every day at 10:00\\nThis timestamp is controlled by the backend data schedule, not request time.\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":243}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_refetch_interval_and_shorter_stale_time",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Refetch 10s Interval and Shorter 5s Stale Time\n\n2026-10-07 04:46:42",
+      "reason": "{\"text\":\"Refetch 10s Interval and Shorter 5s Stale Time\\n2026-10-07 04:46:42\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":115}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_run_button",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Run Button\n\n2026-10-07 04:46:45",
+      "reason": "{\"text\":\"Run Button\\n2026-10-07 04:46:45\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":79}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_short_refetch_interval_and_run_button",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Short 5s Refetch Interval and Run Button\n\n2026-10-07 04:46:48",
+      "reason": "{\"text\":\"Short 5s Refetch Interval and Run Button\\n2026-10-07 04:46:48\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":109}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_text_input",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Text: OpenBB",
+      "reason": "{\"text\":\"Text: OpenBB\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":69}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_number_input",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Number: 100",
+      "reason": "{\"text\":\"Number: 100\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":68}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_boolean",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Toggle: enabled",
+      "reason": "{\"text\":\"Toggle: enabled\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":72}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_date_picker",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Date: 2026-02-20",
+      "reason": "{\"text\":\"Date: 2026-02-20\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":73}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_dropdown",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Selection of Days: 1",
+      "reason": "{\"text\":\"Selection of Days: 1\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":77}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_multi_select_dropdown",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Selected tickers: AAPL,MSFT",
+      "reason": "{\"text\":\"Selected tickers: AAPL,MSFT\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":84}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_multi_text_input",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Vars: var1,var2,var3",
+      "reason": "{\"text\":\"Vars: var1,var2,var3\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":77}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_multi_select_advanced_dropdown",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Selected stocks: AAPL,MSFT",
+      "reason": "{\"text\":\"Selected stocks: AAPL,MSFT\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":83}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_str_and_int",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Text: Hello\nNumber: 42",
+      "reason": "{\"text\":\"Text: Hello\\nNumber: 42\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":84}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_with_str_filter_param",
+      "type": "table",
+      "status": "rendered",
+      "text": "name\n\tvalue\n\tcategory\n\nAlpha\t100\tA\nBeta\t200\tB\nCharlie\t150\tC\nDelta\t300\tA",
+      "reason": "{\"text\":\"namevaluecategoryAlpha100ABeta200BCharlie150CDelta300A\",\"svg\":0,\"canvas\":0,\"rows\":5,\"iframe\":0,\"img\":0,\"html\":1056}",
+      "errors": []
+    },
+    {
+      "id": "dropdown_dependent_widget",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Selected category: all\nSelected document: Investor Presentation",
+      "reason": "{\"text\":\"Selected category: all\\nSelected document: Investor Presentation\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":159}",
+      "errors": []
+    },
+    {
+      "id": "markdown_widget_with_organized_params",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Feature Enabled: Yes\n\nSelected Date: February 20, 2026\n\nAnalysis Type: Technical Analysis\n\nLookback Period: 32 days\n\nNotes: No additional notes provided",
+      "reason": "{\"text\":\"Feature Enabled: Yes\\n\\n\\nSelected Date: February 20, 2026\\n\\n\\nAnalysis Type: Technical Analysis\\n\\n\\nLookback Period: 32 days\\n\\n\\nNotes: No additional notes provided\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":376}",
+      "errors": []
+    },
+    {
+      "id": "company_details",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Toyota Motor Corporation (TM) - 2024 Models\n\nSector: Automotive Market Cap: $280B P/E Ratio: 9.5 Dividend Yield: 2.1%\n\nToyota Motor Corporation designs, manufactures, assembles, and sells passenger vehicles, minivans, commercial vehicles, and related parts and accessories worldwide.\n\n2024 Model Lineup\n\nCamry, Corolla, RAV4, Highlander",
+      "reason": "{\"text\":\"Toyota Motor Corporation (TM) - 2024 Models\\nSector: Automotive\\nMarket Cap: $280B\\nP/E Ratio: 9.5\\nDividend Yield: 2.1%\\nToyota Motor Corporation designs, manufactures, assembles, and sells passenger vehicles, minivans, commercial vehicles, and related parts and accessories worldwide.\\n2024 Model Lineup\\nCamry, Corolla, RAV4, Highlander\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":472}",
+      "errors": []
+    },
+    {
+      "id": "company_performance",
+      "type": "table",
+      "status": "rendered",
+      "text": "Metric\n\tValue\n\tChange\n\nGlobal Sales\t10.5M\t5.2 %\nEV Sales\t1.2M\t45.8 %\nOperating Margin\t8.5%\t1.2 %\nR&D Investment\t$12.5B\t15.3 %",
+      "reason": "{\"text\":\"MetricValueChangeGlobal Sales10.5M5.2 %EV Sales1.2M45.8 %Operating Margin8.5%1.2 %R&D Investment$12.5B15.3 %\",\"svg\":0,\"canvas\":0,\"rows\":5,\"iframe\":0,\"img\":0,\"html\":1182}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_with_grouping_by_cell_click",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tPrice\n\tChange\n\tVolume\n\nAAPL\t150.25\t2.5 %\t45M\nMSFT\t350.5\t1.8 %\t32M\nGOOGL\t140.75\t-0.5 %\t28M\nAMZN\t178.25\t3.2 %\t38M\nTSLA\t245.8\t-1.2 %\t52M",
+      "reason": "{\"text\":\"SymbolPriceChangeVolumeAAPL150.252.5 %45MMSFT350.51.8 %32MGOOGL140.75-0.5 %28MAMZN178.253.2 %38MTSLA245.8-1.2 %52M\",\"svg\":0,\"canvas\":0,\"rows\":6,\"iframe\":0,\"img\":0,\"html\":2061}",
+      "errors": []
+    },
+    {
+      "id": "widget_managed_by_parameter_from_cell_click_on_table_widget",
+      "type": "markdown",
+      "status": "rendered",
+      "text": "Apple Inc. (AAPL)\n\nSector: Technology Market Cap: $2.8T\n\nApple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.",
+      "reason": "{\"text\":\"Apple Inc. (AAPL)\\nSector: Technology\\nMarket Cap: $2.8T\\nApple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":270}",
+      "errors": []
+    },
+    {
+      "id": "company_list",
+      "type": "table",
+      "status": "rendered",
+      "text": "Company\n\tPrice\n\tcompanyId\n\nApple Inc.\t150.25\tAAPL\nMicrosoft Corporation\t350.5\tMSFT",
+      "reason": "{\"text\":\"CompanyPricecompanyIdApple Inc.150.25AAPLMicrosoft Corporation350.5MSFT\",\"svg\":0,\"canvas\":0,\"rows\":3,\"iframe\":0,\"img\":0,\"html\":975}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_with_column_definitions",
+      "type": "table",
+      "status": "rendered",
+      "text": "Stock\n\tPrice ($)\n\t24h Change\n\nAAPL\t150.25\t2.5\nGOOGL\t2.8K\t-1.2\nMSFT\t340.5\t0.8",
+      "reason": "{\"text\":\"StockPrice ($)24h ChangeAAPL150.252.5GOOGL2.8K-1.2MSFT340.50.8\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":950}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_with_render_functions",
+      "type": "table",
+      "status": "rendered",
+      "text": "Asset\n\tTVL (USD)\n\t24h Change\n\t7d Change\n\nEthereum\t45B\t2.5 %\t5.2 %\nBitcoin\t35B\t1.2 %\t4.8 %\nSolana\t8B\t-0.5 %\t2.1 %",
+      "reason": "{\"text\":\"AssetTVL (USD)24h Change7d ChangeEthereum45B2.5 %5.2 %Bitcoin35B1.2 %4.8 %Solana8B-0.5 %2.1 %\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":1578}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_with_hover_card",
+      "type": "table",
+      "status": "rendered",
+      "text": "Asset\n\tTVL (USD)\n\t24h Change\n\t7d Change\n\nEthereum\t45B\t2.5 %\t5.2 %\nBitcoin\t35B\t1.2 %\t4.8 %\nSolana\t8B\t-0.5 %\t2.1 %",
+      "reason": "{\"text\":\"AssetTVL (USD)24h Change7d ChangeEthereum45B2.5 %5.2 %Bitcoin35B1.2 %4.8 %Solana8B-0.5 %2.1 %\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":1653}",
+      "errors": []
+    },
+    {
+      "id": "table_to_chart_widget",
+      "type": "table",
+      "status": "rendered",
+      "text": "Q1\nQ2\nQ3\nQ4\n0\n50k\n100k\n150k\n200k\nvalue\ntarget",
+      "reason": "{\"text\":\"Q1Q2Q3Q4050k100k150k200kvaluetarget\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":12977}",
+      "errors": []
+    },
+    {
+      "id": "table_to_time_series_widget",
+      "type": "table",
+      "status": "rendered",
+      "text": "Jan 142024\nJan 28\nFeb 11\nFeb 25\nMar 10\nMar 24\nApr 7\nApr 21\nMay 5\nMay 19\n20k\n40k\n60k\n80k\n100k\n120k\n140k\n160k\nrevenue\nprofit",
+      "reason": "{\"text\":\"Jan 142024Jan 28Feb 11Feb 25Mar 10Mar 24Apr 7Apr 21May 5May 1920k40k60k80k100k120k140k160krevenueprofit\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":17621}",
+      "errors": []
+    },
+    {
+      "id": "plotly_chart",
+      "type": "chart",
+      "status": "rendered",
+      "text": "Jan 12023\nJan 3\nJan 5\nJan 7\nJan 9\n−2\n−1\n0\n1\n2\n3\n0\n500\n1000\n1500\n2000\nReturns\nTransactions\nDate\nReturns (%)\nTransactions",
+      "reason": "{\"text\":\"Jan 12023Jan 3Jan 5Jan 7Jan 9−2−101230500100015002000ReturnsTransactionsDateReturns (%)Transactions\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":20472}",
+      "errors": []
+    },
+    {
+      "id": "plotly_chart_with_theme",
+      "type": "chart",
+      "status": "rendered",
+      "text": "Jan 12023\nJan 3\nJan 5\nJan 7\nJan 9\n−2\n−1\n0\n1\n2\n3\n0\n500\n1000\n1500\n2000\nReturns\nTransactions\nDate\nReturns (%)\nTransactions",
+      "reason": "{\"text\":\"Jan 12023Jan 3Jan 5Jan 7Jan 9−2−101230500100015002000ReturnsTransactionsDateReturns (%)Transactions\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":21269}",
+      "errors": []
+    },
+    {
+      "id": "plotly_chart_with_theme_and_toolbar",
+      "type": "chart",
+      "status": "rendered",
+      "text": "Jan 12023\nJan 3\nJan 5\nJan 7\nJan 9\n−2\n−1\n0\n1\n2\n3\n0\n500\n1000\n1500\n2000\nReturns\nTransactions\nDate\nReturns (%)\nTransactions",
+      "reason": "{\"text\":\"Jan 12023Jan 3Jan 5Jan 7Jan 9−2−101230500100015002000ReturnsTransactionsDateReturns (%)Transactions\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":21269}",
+      "errors": []
+    },
+    {
+      "id": "plotly_chart_with_theme_and_toolbar_using_config_file",
+      "type": "chart",
+      "status": "rendered",
+      "text": "Jan 12023\nJan 3\nJan 5\nJan 7\nJan 9\n−2\n−1\n0\n1\n2\n3\n0\n500\n1000\n1500\n2000\nReturns\nTransactions\nTransactions",
+      "reason": "{\"text\":\"Jan 12023Jan 3Jan 5Jan 7Jan 9−2−101230500100015002000ReturnsTransactionsTransactions\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":20572}",
+      "errors": []
+    },
+    {
+      "id": "plotly_heatmap",
+      "type": "chart",
+      "status": "rendered",
+      "text": "1.00\n0.65\n0.45\n0.30\n0.20\n0.65\n1.00\n0.55\n0.40\n0.25\n0.45\n0.55\n1.00\n0.35\n0.15\n0.30\n0.40\n0.35\n1.00\n0.10\n0.20\n0.25\n0.15\n0.10\n1.00\nAAPL\nMSFT\nGOOGL\nAMZN\nTSLA\nAAPL\nMSFT\nGOOGL\nAMZN\nTSLA\n−1\n−0.5\n0\n0.5\n1\nCorrelation Matrix",
+      "reason": "{\"text\":\"1.000.650.450.300.200.651.000.550.400.250.450.551.000.350.150.300.400.351.000.100.200.250.150.101.00AAPLMSFTGOOGLAMZNTSLAAAPLMSFTGOOGLAMZNTSLA−1−0.500.51Correlation Matrix\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":23368}",
+      "errors": []
+    },
+    {
+      "id": "plotly_heatmap_with_raw_data",
+      "type": "chart",
+      "status": "rendered",
+      "text": "1.00\n0.65\n0.45\n0.30\n0.20\n0.65\n1.00\n0.55\n0.40\n0.25\n0.45\n0.55\n1.00\n0.35\n0.15\n0.30\n0.40\n0.35\n1.00\n0.10\n0.20\n0.25\n0.15\n0.10\n1.00\nAAPL\nMSFT\nGOOGL\nAMZN\nTSLA\nAAPL\nMSFT\nGOOGL\nAMZN\nTSLA\n−1\n−0.5\n0\n0.5\n1\nCorrelation Matrix",
+      "reason": "{\"text\":\"1.000.650.450.300.200.651.000.550.400.250.450.551.000.350.150.300.400.351.000.100.200.250.150.101.00AAPLMSFTGOOGLAMZNTSLAAAPLMSFTGOOGLAMZNTSLA−1−0.500.51Correlation Matrix\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":23347}",
+      "errors": []
+    },
+    {
+      "id": "plotly_chart_with_raw_data",
+      "type": "chart",
+      "status": "rendered",
+      "text": "Jan 12023\nJan 3\nJan 5\nJan 7\nJan 9\n−2\n−1\n0\n1\n2\n3\n0\n500\n1000\n1500\n2000\nReturns\nTransactions\nDate\nReturns (%)\nTransactions",
+      "reason": "{\"text\":\"Jan 12023Jan 3Jan 5Jan 7Jan 9−2−101230500100015002000ReturnsTransactionsDateReturns (%)Transactions\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":21269}",
+      "errors": []
+    },
+    {
+      "id": "all_forms",
+      "type": "table",
+      "status": "rendered",
+      "text": "⛓︎\nFirst Name\nClient's first name\n⛓︎\nLast Name\nClient's last name\n⛓︎\nInvestment Types\nSelected investment vehicles\n⛓︎\nRisk Profile\nClient risk tolerance assessment\nAdd Client\nUpdate Client\nclient_first_name\n\tclient_last_name\n\tinvestment_types\n\trisk_profile\n\n—\t—\t—\t—",
+      "reason": "{\"text\":\"⛓︎First NameClient's first name⛓︎Last NameClient's last name⛓︎Investment TypesSelected investment vehicles⛓︎Risk ProfileClient risk tolerance assessmentAdd ClientUpdate Clientclient_first_nameclient_last_nameinvestment_typesrisk_profile————\",\"svg\":0,\"canvas\":0,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":3006}",
+      "errors": []
+    },
+    {
+      "id": "/udf",
+      "type": "advanced_charting",
+      "status": "rendered",
+      "text": "\t\n\t\n\n\t\n\t\nRendered by TradingView",
+      "reason": "{\"text\":\"Rendered by TradingView\",\"svg\":0,\"canvas\":7,\"rows\":2,\"iframe\":0,\"img\":0,\"html\":1913}",
+      "errors": []
+    },
+    {
+      "id": "omni-widget",
+      "type": "omni",
+      "status": "rendered",
+      "text": "Submit\n1\n1.5\n2\n2.5\n3\n1\n1.5\n2\n2.5\n3\nReference rendering proof",
+      "reason": "{\"text\":\"Reference rendering proofSubmit11.522.5311.522.53Reference rendering proof\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":11074}",
+      "errors": []
+    },
+    {
+      "id": "omni-sql-widget",
+      "type": "omni",
+      "status": "rendered",
+      "text": "Submit\nid\n\tsymbol\n\tname\n\tprice\n\tvolume\n\tsector\n\n1\tAAPL\tApple Inc.\t150.25\t45M\tTechnology\n2\tMSFT\tMicrosoft Corporation\t350.5\t32M\tTechnology\n3\tGOOGL\tAlphabet Inc.\t140.75\t28M\tTechnology",
+      "reason": "{\"text\":\"SELECT * FROM stocks LIMIT 3Submitidsymbolnamepricevolumesector1AAPLApple Inc.150.2545MTechnology2MSFTMicrosoft Corporation350.532MTechnology3GOOGLAlphabet Inc.140.7528MTechnology\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":2167}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_basic_sparklines",
+      "type": "table",
+      "status": "rendered",
+      "text": "Stock\n\tPrice History\n\tVolume\n\nAAPL\t\n\t\n\nGOOGL\t\n\t\n\nMSFT\t\n\t",
+      "reason": "{\"text\":\"StockPrice HistoryVolumeAAPLGOOGLMSFT\",\"svg\":6,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":6861}",
+      "errors": []
+    },
+    {
+      "id": "sparkline",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tCompany Name\n\tLast Price\n\tMarket Cap\n\tVolume\n\tSector\n\tRate of Change Trend\n\nAAPL\tApple Inc.\t173.50\t2.68T\t57.81M\tTechnology\t\n\nGOOGL\tAlphabet Inc. Class A\t2891.70\t1.83T\t28.97M\tTechnology\t\n\nMSFT\tMicrosoft Corporation\t414.67\t3.09T\t32.15M\tTechnology\t\n\nAMZN\tAmazon.com Inc.\t3307.04\t1.7T\t45.68M\tConsumer Services\t\n\nTSLA\tTesla Inc.\t248.42\t788.96B\t89.12M\tConsumer Durables\t\n\nMETA\tMeta Platforms Inc.\t485.34\t1.25T\t34.57M\tTechnology\t\n\nNFLX\tNetflix Inc.\t421.73\t187.45B\t23.46M\tConsumer Services\t\n\nNVDA\tNVIDIA Corporation\t875.28\t2.16T\t67.89M\tTechnology\t",
+      "reason": "{\"text\":\"SymbolCompany NameLast PriceMarket CapVolumeSectorRate of Change TrendAAPLApple Inc.173.502.68T57.81MTechnologyGOOGLAlphabet Inc. Class A2891.701.83T28.97MTechnologyMSFTMicrosoft Corporation414.673.09T32.15MTechnologyAMZNAmazon.com Inc.3307.041.7T45.68MConsumer ServicesTSLATesla Inc.248.42788.96B89.12MConsumer DurablesMETAMeta Platforms Inc.485.341.25T34.57MTechnologyNFLXNetflix Inc.421.73187.45B23.46MConsumer ServicesNVDANVIDIA Corporation875.282.16T67.89MTechnology\",\"svg\":8,\"canvas\":0,\"rows\":9,\"iframe\":0,\"img\":0,\"html\":13681}",
+      "errors": []
+    },
+    {
+      "id": "sparkline-line",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tCompany Name\n\tCurrent Price\n\t90-Day Price Trend\n\tChange %\n\nAAPL\tApple Inc.\t173.5\t\n\t5.04\nGOOGL\tAlphabet Inc. Class A\t2.89K\t\n\t5.14\nMSFT\tMicrosoft Corporation\t414.67\t\n\t4.13\nAMZN\tAmazon.com Inc.\t3.31K\t\n\t3.98\nTSLA\tTesla Inc.\t248.42\t\n\t12.86\nMETA\tMeta Platforms Inc.\t485.34\t\n\t5.24\nNFLX\tNetflix Inc.\t421.73\t\n\t6.54\nNVDA\tNVIDIA Corporation\t875.28\t\n\t10.86",
+      "reason": "{\"text\":\"SymbolCompany NameCurrent Price90-Day Price TrendChange %AAPLApple Inc.173.55.04GOOGLAlphabet Inc. Class A2.89K5.14MSFTMicrosoft Corporation414.674.13AMZNAmazon.com Inc.3.31K3.98TSLATesla Inc.248.4212.86METAMeta Platforms Inc.485.345.24NFLXNetflix Inc.421.736.54NVDANVIDIA Corporation875.2810.86\",\"svg\":8,\"canvas\":0,\"rows\":9,\"iframe\":0,\"img\":0,\"html\":11091}",
+      "errors": []
+    },
+    {
+      "id": "sparkline-area",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tCompany Name\n\tAvg Volume (M)\n\t30-Day Volume Trend\n\tVolume Change %\n\nAAPL\tApple Inc.\t50.2\t\n\t3.45\nGOOGL\tAlphabet Inc. Class A\t29\t\n\t4.21\nMSFT\tMicrosoft Corporation\t32.1\t\n\t2.98\nAMZN\tAmazon.com Inc.\t45.7\t\n\t3.15\nTSLA\tTesla Inc.\t89.1\t\n\t4.32",
+      "reason": "{\"text\":\"SymbolCompany NameAvg Volume (M)30-Day Volume TrendVolume Change %AAPLApple Inc.50.23.45GOOGLAlphabet Inc. Class A294.21MSFTMicrosoft Corporation32.12.98AMZNAmazon.com Inc.45.73.15TSLATesla Inc.89.14.32\",\"svg\":5,\"canvas\":0,\"rows\":6,\"iframe\":0,\"img\":0,\"html\":9912}",
+      "errors": []
+    },
+    {
+      "id": "sparkline-column",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tCompany Name\n\tMarket Cap\n\t8-Quarter EPS\n\tEPS Growth %\n\nAAPL\tApple Inc.\t2.68T\t\n\t6.85\nGOOGL\tAlphabet Inc. Class A\t1.83T\t\n\t8.57\nMSFT\tMicrosoft Corporation\t3.09T\t\n\t6.9\nAMZN\tAmazon.com Inc.\t1.7T\t\n\t25\nTSLA\tTesla Inc.\t788.96B\t\n\t24.66\nMETA\tMeta Platforms Inc.\t1.25T\t\n\t9.27\nNFLX\tNetflix Inc.\t187.45B\t\n\t17.5\nNVDA\tNVIDIA Corporation\t2.16T\t\n\t324.75",
+      "reason": "{\"text\":\"SymbolCompany NameMarket Cap8-Quarter EPSEPS Growth %AAPLApple Inc.2.68T6.85GOOGLAlphabet Inc. Class A1.83T8.57MSFTMicrosoft Corporation3.09T6.9AMZNAmazon.com Inc.1.7T25TSLATesla Inc.788.96B24.66METAMeta Platforms Inc.1.25T9.27NFLXNetflix Inc.187.45B17.5NVDANVIDIA Corporation2.16T324.75\",\"svg\":8,\"canvas\":0,\"rows\":9,\"iframe\":0,\"img\":0,\"html\":10193}",
+      "errors": []
+    },
+    {
+      "id": "sparkline-bar",
+      "type": "table",
+      "status": "rendered",
+      "text": "Symbol\n\tCompany Name\n\tYTD Return %\n\tMonthly Returns\n\tBest Month %\n\nAAPL\tApple Inc.\t15.23\t\n\t3.5\nGOOGL\tAlphabet Inc. Class A\t18.67\t\n\t4.1\nMSFT\tMicrosoft Corporation\t12.45\t\n\t2.7\nTSLA\tTesla Inc.\t45.67\t\n\t9.2\nNVDA\tNVIDIA Corporation\t87.23\t\n\t13.7",
+      "reason": "{\"text\":\"SymbolCompany NameYTD Return %Monthly ReturnsBest Month %AAPLApple Inc.15.233.5GOOGLAlphabet Inc. Class A18.674.1MSFTMicrosoft Corporation12.452.7TSLATesla Inc.45.679.2NVDANVIDIA Corporation87.2313.7\",\"svg\":5,\"canvas\":0,\"rows\":6,\"iframe\":0,\"img\":0,\"html\":9503}",
+      "errors": []
+    },
+    {
+      "id": "table_widget_custom_formatter",
+      "type": "table",
+      "status": "rendered",
+      "text": "Company\n\tP&L Trend\n\tRevenue Growth\n\nTechCorp\t\n\t\n\nDataSoft\t\n\t\n\nCloudInc\t\n\t",
+      "reason": "{\"text\":\"CompanyP&L TrendRevenue GrowthTechCorpDataSoftCloudInc\",\"svg\":6,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":7072}",
+      "errors": []
+    },
+    {
+      "id": "/get_video",
+      "type": "youtube",
+      "status": "rendered",
+      "text": "",
+      "reason": "{\"text\":\"\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":1,\"img\":0,\"html\":266}",
+      "errors": []
+    },
+    {
+      "id": "/get_video_with_transcript",
+      "type": "youtube",
+      "status": "rendered",
+      "text": "",
+      "reason": "{\"text\":\"\",\"svg\":0,\"canvas\":0,\"rows\":0,\"iframe\":1,\"img\":0,\"html\":266}",
+      "errors": []
+    },
+    {
+      "id": "chains_highchart",
+      "type": "chart-highcharts",
+      "status": "rendered",
+      "text": "Ethereum\nSolana\nBase\nBSC\nTron\nBitcoin\nArbitrum\nHyperliquid L1\nRobinhood Chain\nMonad\nPolygon\nAvalanche\nBittensor\nArc\nSui\nPlasma\nOP Mainnet\nAnubis\nStellar\nNear\nInk\nX Layer\nStarknet\nCronos\nProvenance\nFlare\nMantle\nGnosis\nStacks\nRootstock\n0\n10\n20\n30\n40\n50\nTop 30 Chains by TVL",
+      "reason": "{\"text\":\"EthereumSolanaBaseBSCTronBitcoinArbitrumHyperliquid L1Robinhood ChainMonadPolygonAvalancheBittensorArcSuiPlasmaOP MainnetAnubisStellarNearInkX LayerStarknetCronosProvenanceFlareMantleGnosisStacksRootstock01020304050Top 30 Chains by TVL\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":25699}",
+      "errors": []
+    },
+    {
+      "id": "live_grid_data",
+      "type": "live_grid",
+      "status": "rendered",
+      "text": "Symbol\n\tPrice\n\tChange %\n\tVolume\n\tdate\n\tchange\n\tmarket_cap\n\nTSLA\t282.71\t0.18\t1.51M\t2026-10-07\t42.71\t1.76B\nMSFT\t337.74\t-0.02\t1.21M\t2026-10-07\t-7.26\t1.88B\nAMZN\t156.98\t-0.11\t906.26K\t2026-10-07\t-18.52\t1.39B",
+      "reason": "{\"text\":\"SymbolPriceChange %Volumedatechangemarket_capTSLA282.710.181.51M2026-10-0742.711.76BMSFT337.74-0.021.21M2026-10-07-7.261.88BAMZN156.98-0.11906.26K2026-10-07-18.521.39B\",\"svg\":0,\"canvas\":0,\"rows\":4,\"iframe\":0,\"img\":0,\"html\":2172}",
+      "errors": []
+    },
+    {
+      "id": "vega_bar",
+      "type": "chart-vegalite",
+      "status": "rendered",
+      "text": "Ethereum\nTron\nSolana\nBSC\nBase\nArbitrum\nPolygon\nAvalanche\n0\n10\n20\n30\n40\n50\n60\n70\nTop chains by TVL (mock)",
+      "reason": "{\"text\":\"EthereumTronSolanaBSCBaseArbitrumPolygonAvalanche010203040506070Top chains by TVL (mock)\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":13907}",
+      "errors": []
+    },
+    {
+      "id": "vega_line",
+      "type": "chart-vegalite",
+      "status": "rendered",
+      "text": "Jan 142024\nJan 28\nFeb 11\nFeb 25\nMar 10\nMar 24\nApr 7\nApr 21\n95\n100\n105\n110\n115\n120\n125\nSynthetic price series",
+      "reason": "{\"text\":\"Jan 142024Jan 28Feb 11Feb 25Mar 10Mar 24Apr 7Apr 2195100105110115120125Synthetic price series\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":15213}",
+      "errors": []
+    },
+    {
+      "id": "vega_scatter",
+      "type": "chart-vegalite",
+      "status": "rendered",
+      "text": "−3\n−2\n−1\n0\n1\n2\n3\n−3\n−2\n−1\n0\n1\n2\nB\nA\nCorrelated noise",
+      "reason": "{\"text\":\"−3−2−10123−3−2−1012BACorrelated noise\",\"svg\":3,\"canvas\":0,\"rows\":0,\"iframe\":0,\"img\":0,\"html\":51495}",
+      "errors": []
+    },
+    {
+      "id": "openbq_demo_prices",
+      "type": "table",
+      "status": "rendered",
+      "text": "date\n\tasset\n\topen\n\thigh\n\tlow\n\tclose\n\tvolume\n\n2025-01-02\tAAA\t10\t13\t9\t12\t100\n2025-01-03\tAAA\t12\t15\t11\t14\t200\n2025-02-03\tAAA\t14\t17\t13\t16\t300\n2025-01-02\tBBB\t20\t23\t19\t22\t50\n2025-02-03\tBBB\t22\t25\t21\t24\t—",
+      "reason": "{\"text\":\"dateassetopenhighlowclosevolume2025-01-02AAA10139121002025-01-03AAA121511142002025-02-03AAA141713163002025-01-02BBB20231922502025-02-03BBB22252124—\",\"svg\":0,\"canvas\":0,\"rows\":6,\"iframe\":0,\"img\":0,\"html\":2387}",
+      "errors": []
+    },
+    {
+      "id": "openbq_demo_nulls",
+      "type": "table",
+      "status": "rendered",
+      "text": "asset\n\tvalue\n\nAAA\t—\nAAA\t—\nBBB\t10\nBBB\t—\nBBB\t20",
+      "reason": "{\"text\":\"assetvalueAAA—AAA—BBB10BBB—BBB20\",\"svg\":0,\"canvas\":0,\"rows\":6,\"iframe\":0,\"img\":0,\"html\":841}",
+      "errors": []
+    }
+  ]
+}

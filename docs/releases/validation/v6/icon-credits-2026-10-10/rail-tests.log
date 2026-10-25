@@ -1,0 +1,23 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/components/RailIcon.test.tsx (10 tests) 32ms
+stderr | src/components/LeftRail.test.tsx > LeftRail > collapses the rail before the workspace row menu opens its dialog
+An update to LeftRail inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/LeftRail.test.tsx (101 tests) 1783ms
+
+ Test Files  2 passed (2)
+      Tests  111 passed (111)
+   Start at  13:24:58
+   Duration  3.22s (transform 553ms, setup 278ms, collect 747ms, tests 1.82s, environment 658ms, prepare 104ms)
+

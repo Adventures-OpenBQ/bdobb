@@ -1,0 +1,11 @@
+{
+  "product": "BDOBB Clean v5 Candidate",
+  "bundleIdentifier": "com.artcashin.bdobb.clean.v5.candidate",
+  "version": "5.0.0",
+  "binarySha256": "bcc294ba543300775019b958acf54b41b1382ab225e5c7dff98edcf3bb5a5523",
+  "nativeChecks": [
+    "Fresh app-data root: settings.json created; no settings startup warning",
+    "File \u2192 New Workspace\u2026 opens dialog",
+    "Created Native v5 smoke; workspace remains after quit/relaunch"
+  ]
+}

@@ -1,0 +1,201 @@
+
+> bdobb@7.0.0 test:web <worktree>
+> node --test web/*.test.mjs
+
+TAP version 13
+# Subtest: reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin
+ok 1 - reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin
+  ---
+  duration_ms: 1.304277
+  type: 'test'
+  ...
+# Subtest: reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA
+ok 2 - reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA
+  ---
+  duration_ms: 0.547066
+  type: 'test'
+  ...
+# Subtest: configuration: empty allowlist grants nobody, malformed config fails closed
+ok 3 - configuration: empty allowlist grants nobody, malformed config fails closed
+  ---
+  duration_ms: 3.087429
+  type: 'test'
+  ...
+# Subtest: an unconfigured server answers 503 and logs which variable failed
+ok 4 - an unconfigured server answers 503 and logs which variable failed
+  ---
+  duration_ms: 36.321182
+  type: 'test'
+  ...
+# Subtest: GitHub callbacks bind admission to immutable provider ID and never expose tokens
+ok 5 - GitHub callbacks bind admission to immutable provider ID and never expose tokens
+  ---
+  duration_ms: 2.6032
+  type: 'test'
+  ...
+# Subtest: encrypted sessions require valid cookie, current ID, epoch and strict expiry
+ok 6 - encrypted sessions require valid cookie, current ID, epoch and strict expiry
+  ---
+  duration_ms: 49.363787
+  type: 'test'
+  ...
+# Subtest: path and parameter allowlist blocks writes, admin surfaces and URL injection
+ok 7 - path and parameter allowlist blocks writes, admin surfaces and URL injection
+  ---
+  duration_ms: 1.499865
+  type: 'test'
+  ...
+# Subtest: the /api root documents are forwarded; nothing else at the /api root is
+ok 8 - the /api root documents are forwarded; nothing else at the /api root is
+  ---
+  duration_ms: 0.792
+  type: 'test'
+  ...
+# Subtest: the generic api/v1 rule admits the whole catalogue inside structural bounds
+ok 9 - the generic api/v1 rule admits the whole catalogue inside structural bounds
+  ---
+  duration_ms: 1.59104
+  type: 'test'
+  ...
+# Subtest: bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend
+ok 10 - bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend
+  ---
+  duration_ms: 0.748119
+  type: 'test'
+  ...
+# Subtest: anonymous visitors see login, not UI, metadata, JavaScript or data
+ok 11 - anonymous visitors see login, not UI, metadata, JavaScript or data
+  ---
+  duration_ms: 33.595858
+  type: 'test'
+  ...
+# Subtest: authorized files work; aliases, traversal, source maps, cross-origin and writes fail
+ok 12 - authorized files work; aliases, traversal, source maps, cross-origin and writes fail
+  ---
+  duration_ms: 87.798477
+  type: 'test'
+  ...
+# Subtest: a top-level cross-site navigation is the OAuth landing, not a forgeable request
+ok 13 - a top-level cross-site navigation is the OAuth landing, not a forgeable request
+  ---
+  duration_ms: 48.155184
+  type: 'test'
+  ...
+# Subtest: empty allowlist cannot start OAuth or accept even a correctly signed session
+ok 14 - empty allowlist cannot start OAuth or accept even a correctly signed session
+  ---
+  duration_ms: 35.811779
+  type: 'test'
+  ...
+# Preview authentication failed
+# Subtest: Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth
+ok 15 - Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth
+  ---
+  duration_ms: 44.442269
+  type: 'test'
+  ...
+# Subtest: valid CSRF sign-out expires the browser session cookie
+ok 16 - valid CSRF sign-out expires the browser session cookie
+  ---
+  duration_ms: 24.745477
+  type: 'test'
+  ...
+# Subtest: proxy uses dedicated server token, bounded fetch, and never forwards browser credentials
+ok 17 - proxy uses dedicated server token, bounded fetch, and never forwards browser credentials
+  ---
+  duration_ms: 19.771465
+  type: 'test'
+  ...
+# Subtest: unconfigured upstream, error bodies and unexpected content fail closed
+ok 18 - unconfigured upstream, error bodies and unexpected content fail closed
+  ---
+  duration_ms: 98.852916
+  type: 'test'
+  ...
+# Subtest: every upgrade is refused -- no socket route exists at this line
+ok 19 - every upgrade is refused -- no socket route exists at this line
+  ---
+  duration_ms: 37.732136
+  type: 'test'
+  ...
+# Subtest: only the exact branding allowlist is public; nothing rides along with it
+ok 20 - only the exact branding allowlist is public; nothing rides along with it
+  ---
+  duration_ms: 125.456871
+  type: 'test'
+  ...
+# Subtest: the login surface carries the axes mark and installation icon links
+ok 21 - the login surface carries the axes mark and installation icon links
+  ---
+  duration_ms: 18.652037
+  type: 'test'
+  ...
+# Subtest: branding assets retain their MIME types for authenticated requests too
+ok 22 - branding assets retain their MIME types for authenticated requests too
+  ---
+  duration_ms: 14.804659
+  type: 'test'
+  ...
+# Subtest: the /api root documents come from openbb-api, not from this process
+ok 23 - the /api root documents come from openbb-api, not from this process
+  ---
+  duration_ms: 20.878398
+  type: 'test'
+  ...
+# Subtest: a full-catalogue widgets.json fits the body cap; one past it is an honest 502
+ok 24 - a full-catalogue widgets.json fits the body cap; one past it is an honest 502
+  ---
+  duration_ms: 106.854729
+  type: 'test'
+  ...
+# Subtest: a socket ticket binds one target, expires, and needs the gateway token
+ok 25 - a socket ticket binds one target, expires, and needs the gateway token
+  ---
+  duration_ms: 1.534363
+  type: 'test'
+  ...
+# Subtest: the ticket route always 404s -- socketTarget names no route at this line
+ok 26 - the ticket route always 404s -- socketTarget names no route at this line
+  ---
+  duration_ms: 50.398912
+  type: 'test'
+  ...
+# Subtest: a write goes to the signed-in user's own state, and only a write shaped like one
+ok 27 - a write goes to the signed-in user's own state, and only a write shaped like one
+  ---
+  duration_ms: 88.90699
+  type: 'test'
+  ...
+# Subtest: a gateway refusal of a write is relayed as a size or a failure, never its body
+ok 28 - a gateway refusal of a write is relayed as a size or a failure, never its body
+  ---
+  duration_ms: 58.385082
+  type: 'test'
+  ...
+# Subtest: the page is seeded from the user's saved state, and told it may save
+ok 29 - the page is seeded from the user's saved state, and told it may save
+  ---
+  duration_ms: 20.934193
+  type: 'test'
+  ...
+# Subtest: nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not
+ok 30 - nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not
+  ---
+  duration_ms: 91.254425
+  type: 'test'
+  ...
+# Subtest: web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag
+ok 31 - web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag
+  ---
+  duration_ms: 2.189728
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1469.953289

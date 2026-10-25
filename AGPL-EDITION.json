@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "baseRepository": "Adventures-OpenBQ/bdobb",
+  "originalRelease": "v7.0.0",
+  "scope": "v7",
+  "baseCommit": "0af828cbdbb6984ffb947ad9db8bc4916185b882",
+  "preparedDate": "2026-10-24",
+  "status": "local-review-edition-not-published",
+  "oldApacheGrantsPreserved": true,
+  "calendarClientPr": 69,
+  "calendarClientPrHead": "53c9c33924cecdd8b5673641770cacd51ef1e26a",
+  "calendarProviderPr": 16,
+  "calendarProviderPrHead": "f9e3908155601108df957cf55e61b8c5b4e4f501",
+  "pairedProviderCommit": "a00f2026d8bc9284eb7379a14e4412e29ee5751f"
+}

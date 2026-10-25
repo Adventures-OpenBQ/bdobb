@@ -1,0 +1,6 @@
+src-tauri/vendor/swift-rs/LICENSE-APACHE:189: trailing whitespace.
++   Copyright 2023 The swift-rs developers 
+src-tauri/vendor/swift-rs/README.md:75: trailing whitespace.
++to `10.15` or higher in your `tauri.config.json`. 
+src-tauri/vendor/swift-rs/README.md:193: trailing whitespace.
++    output: Int 

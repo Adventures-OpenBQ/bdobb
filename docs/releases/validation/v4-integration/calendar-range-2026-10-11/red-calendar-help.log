@@ -1,0 +1,47 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/help/guide.test.ts (12 tests | 2 failed | 10 skipped) 11ms
+   × the Calendar view pages say when it changes a card's date range > explains Static versus the paging modes 8ms
+     → expected '# Calendar View\n\nA table with a dat…' not to contain 'it does not acquire additional history'
+   × the Calendar view pages say when it changes a card's date range > explains Static versus the paging modes 2ms
+     → expected '# Calendar View\n\nA table with a dat…' not to contain 'it does not acquire additional history'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/help/guide.test.ts > the Calendar view pages say when it changes a card's date range > explains Static versus the paging modes
+ FAIL  src/help/guide.test.ts > the Calendar view pages say when it changes a card's date range > explains Static versus the paging modes
+AssertionError: expected '# Calendar View\n\nA table with a dat…' not to contain 'it does not acquire additional history'
+
+- Expected
++ Received
+
+- it does not acquire additional history
++ # Calendar View
++
++ A table with a date column can offer **Calendar** in the card's **View** control. It arranges the rows already available to that card by date; it does not acquire additional history or change the provider's data.
++
++ Use the toolbar to choose static, vertical, horizontal or paged navigation, the day/week/month unit and list or timeline cells. Date and title field choices correct a guessed column. Business weekdays narrow the displayed days; series and Source → Release → Statistic filters narrow visible events. A cursor is a civil date, so changing the computer's timezone does not move it to another day.
++
++ Navigation and filters save with the card. A BDOBB-compatible v4 export preserves those choices. Plain OpenBB export does not preserve the Calendar presentation. Empty dates can reflect missing provider rows; verify the table and request range before treating a blank day as proof that no event occurred.
++
++ Trading-session calculations belong to date expressions and exchange calendars. Calendar presentation and exchange-session resolution are separate controls; selecting a Calendar view does not make an endpoint return only trading days.
++
++ ![Calendar navigation and dated events](./shots/calendar-view.png)
++
+
+ ❯ src/help/guide.test.ts:102:24
+    100|   ]) {
+    101|     it("explains Static versus the paging modes", () => {
+    102|       expect(body).not.toContain("it does not acquire additional histo…
+       |                        ^
+    103|       expect(body).toContain("`start_date` and `end_date`");
+    104|       expect(body).toMatch(/\*\*Static\*\* draws the widget's own rang…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 skipped (12)
+   Start at  14:30:46
+   Duration  1.07s (transform 153ms, setup 113ms, collect 237ms, tests 11ms, environment 232ms, prepare 54ms)
+

@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/iOS-schema.json",
+  "identifier": "ios",
+  "description": "iOS only: the save dialog there is a 'move this file' picker, so an export is written to the app's Documents first (see src/lib/saveTextFile.ts) and removed after. Scoped to the files in Documents, not Documents itself.",
+  "platforms": ["iOS"],
+  "windows": ["main", "dash-*"],
+  "permissions": [
+    "fs:allow-remove",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$DOCUMENT/*" }]
+    }
+  ]
+}

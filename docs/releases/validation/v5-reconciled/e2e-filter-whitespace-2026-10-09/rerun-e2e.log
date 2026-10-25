@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in dark (2.9s)
+  ✓  2 [chromium] › e2e/statement-clean-v5.spec.ts:6:40 › Statement local-file worker, folds and table return in light (1.4s)
+  ✓  3 [chromium] › e2e/statement-clean-v5.spec.ts:31:1 › backend Statement uses the complete response and exports folded line items (1.2s)
+
+  3 passed (10.8s)

@@ -1,0 +1,6 @@
+event: copilotFunctionCall
+data: {"function":"execute_agent_tool","input_arguments":{"server_id":"bdobb-local","tool_name":"__TOOL__","input":__ARGS__}}
+
+event: copilotMessageChunk
+data: {"delta":"Arranged the table."}
+

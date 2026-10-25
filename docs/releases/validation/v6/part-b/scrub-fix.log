@@ -1,0 +1,7 @@
+11:11  up 1 day, 35 mins, 2 users, load averages: 15.55 35.43 46.67
+
+> bdobb@6.0.0 scrub <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> bash scripts/scrub-check.sh
+
+scrub-check: clean
+scrub exit 0 1s

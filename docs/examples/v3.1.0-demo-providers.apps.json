@@ -1,0 +1,76 @@
+[
+  {
+    "name": "Demo providers",
+    "description": "One card per data provider that answers on the openbq-docker v3 stack without a sign-up of your own. BLS, CFTC, EconDB and Nasdaq need no key; EIA and Congress.gov use the providers' public demo keys from credentials.demo.env, and a key of your own in credentials.env takes their place. Demo keys are rate-limited, so answers can vary between runs.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "demo-providers": {
+        "id": "demo-providers",
+        "name": "Demo providers",
+        "layout": [
+          {
+            "i": "eia_short_term_energy_outlook_eia_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": { "params": {} }
+          },
+          {
+            "i": "uscongress_bills_congress_gov_obb",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "congress": "119" } }
+          },
+          {
+            "i": "bls_search_bls_obb",
+            "x": 0,
+            "y": 12,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "category": "cpi", "query": "CUUR0000SA0" } }
+          },
+          {
+            "i": "cftc_cot_cftc_obb",
+            "x": 20,
+            "y": 12,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "code": "067651", "start_date": "2025-01-01" } }
+          },
+          {
+            "i": "econdb_economy_indicators_econdb_obb",
+            "x": 0,
+            "y": 24,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "symbol": "RGDP", "country": "US" } }
+          },
+          {
+            "i": "nasdaq_equity_fundamental_historical_eps_nasdaq_obb",
+            "x": 20,
+            "y": 24,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "symbol": "IBM" } }
+          },
+          {
+            "i": "videos_video_custom_obb",
+            "x": 0,
+            "y": 36,
+            "w": 20,
+            "h": 12,
+            "state": { "params": { "video_name": "OpenBB Workspace Demo" } }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

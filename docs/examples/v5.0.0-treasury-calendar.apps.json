@@ -1,0 +1,113 @@
+[
+  {
+    "name": "Example Dashboard - Version 5.0.0 - Treasury Auctions",
+    "description": "Episode 5 uses the Calendar view (from v4): U.S. Treasury auctions on a month grid, one event per auction, titled by term and coloured by security type (Bill, Note, Bond). Upcoming auctions on the left; on the right, results from six weeks ago to today, a relative start date that moves with every render. Both cards are openbb-api's own U.S. Treasury widgets and need no API key.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "auctions": {
+        "id": "auctions",
+        "name": "Treasury auctions",
+        "layout": [
+          {
+            "i": "ustreasury_upcoming_auctions_us_treasury_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 14,
+            "state": {
+              "params": {
+                "provider": "us_treasury"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Upcoming Treasury auctions"
+                }
+              }
+            }
+          },
+          {
+            "i": "ustreasury_auction_results_us_treasury_obb",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 14,
+            "state": {
+              "params": {
+                "start_date": "T-6w",
+                "end_date": "T",
+                "provider": "us_treasury"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Treasury auction results, last six weeks"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "auctions"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "auctions",
+            "index": 0,
+            "extras": {
+              "calendar": {
+                "mode": "paged",
+                "unit": "month",
+                "dateField": "auction_date",
+                "titleField": "security_term",
+                "seriesField": "security_type"
+              },
+              "view": "calendar"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "auctions",
+            "index": 1,
+            "extras": {
+              "calendar": {
+                "mode": "static",
+                "unit": "month",
+                "dateField": "auction_date",
+                "titleField": "security_term",
+                "seriesField": "security_type"
+              },
+              "view": "calendar"
+            }
+          }
+        ]
+      }
+    }
+  }
+]

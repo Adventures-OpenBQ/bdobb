@@ -1,0 +1,384 @@
+{
+ "dispositions": {
+  "OPENBQ_API | default | BACKEND_DEFAULT_TOO_BROAD": 23,
+  "OPENBQ_API | default | BACKEND_DEFECT": 8,
+  "OPENBQ_API | default | BACKEND_SERVICE_STALL": 1,
+  "OPENBQ_API | default | DESCRIPTOR_INPUT_REQUIRED": 192,
+  "OPENBQ_API | default | HARNESS_INPUT_INVALID": 5,
+  "OPENBQ_API | default | UPSTREAM": 30,
+  "OPENBQ_API | nondefault | BACKEND_DEFAULT_TOO_BROAD": 9,
+  "OPENBQ_API | nondefault | BACKEND_DEFECT": 11,
+  "OPENBQ_API | nondefault | BACKEND_SERVICE_STALL": 5,
+  "OPENBQ_API | nondefault | DESCRIPTOR_INPUT_REQUIRED": 89,
+  "OPENBQ_API | nondefault | HARNESS_INPUT_INVALID": 10,
+  "OPENBQ_API | nondefault | UPSTREAM": 44,
+  "REFERENCE_BASELINE | default | INTENTIONAL_ERROR": 1,
+  "REFERENCE_CURATED | default | INTENTIONAL_ERROR": 1,
+  "REFERENCE_CURATED | default | NO_EXEC_EXCLUSION": 1
+ },
+ "seeded": {
+  "app_card_state:200": 36,
+  "symbol=AAPL:422": 2,
+  "unseeded:None": 25,
+  "app_card_state:400": 2,
+  "symbol=AAPL:204": 30,
+  "symbol=AAPL:200": 53,
+  "symbol=AAPL:400": 13,
+  "app_card_state:204": 1,
+  "viewer_first_option:200": 26
+ },
+ "services": {
+  "REFERENCE_BASELINE": {
+   "catalog": 70,
+   "swept": 70,
+   "missing": [],
+   "default": {
+    "ok": 68,
+    "intentional_error": 1,
+    "ok_udf_config": 1
+   },
+   "nondefault": {
+    "not_applicable": 52,
+    "ok": 18
+   }
+  },
+  "REFERENCE_CURATED": {
+   "catalog": 72,
+   "swept": 72,
+   "missing": [],
+   "default": {
+    "ok": 69,
+    "intentional_error": 1,
+    "ok_udf_config": 1,
+    "exec_excluded": 1
+   },
+   "nondefault": {
+    "not_applicable": 54,
+    "ok": 18
+   }
+  },
+  "EXAMPLE_DATA": {
+   "catalog": 43,
+   "swept": 43,
+   "missing": [],
+   "default": {
+    "ok": 43
+   },
+   "nondefault": {
+    "not_applicable": 43
+   }
+  },
+  "OPENBQ_API": {
+   "catalog": 995,
+   "swept": 995,
+   "missing": [],
+   "default": {
+    "ok": 721,
+    "ok_empty": 10,
+    "server_error": 118,
+    "param_rejected": 139,
+    "transport": 1,
+    "ok_udf_config": 5,
+    "auth": 1
+   },
+   "nondefault": {
+    "ok": 719,
+    "not_applicable": 90,
+    "ok_empty": 13,
+    "param_rejected": 105,
+    "server_error": 58,
+    "transport": 5,
+    "ok_udf_config": 5
+   }
+  }
+ },
+ "smoke": [
+  {
+   "check": "CBOE quote",
+   "seeded_default": "",
+   "widget_id": "cboe_equity_quote_cboe_obb",
+   "status": "PASS",
+   "default": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 1278,
+    "ctype": "application/json",
+    "ms": 4406,
+    "shape": "dict",
+    "rows": 1
+   },
+   "nondefault_params": {
+    "symbol": "SVIX"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 1267,
+    "ctype": "application/json",
+    "ms": 1551,
+    "shape": "dict",
+    "rows": 1
+   }
+  },
+  {
+   "check": "Yahoo historical",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_equity_historical_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 422,
+    "bytes": 92,
+    "ctype": "application/json",
+    "ms": 116,
+    "shape": "dict",
+    "detail": "[{'type': 'missing', 'loc': ['query', 'symbol'], 'msg': 'Field required', 'input': None}]"
+   },
+   "nondefault_params": {
+    "interval": "1m"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 422,
+    "bytes": 92,
+    "ctype": "application/json",
+    "ms": 119,
+    "shape": "dict",
+    "detail": "[{'type': 'missing', 'loc': ['query', 'symbol'], 'msg': 'Field required', 'input': None}]"
+   }
+  },
+  {
+   "check": "Yahoo quote",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_equity_quote_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 422,
+    "bytes": 92,
+    "ctype": "application/json",
+    "ms": 92,
+    "shape": "dict",
+    "detail": "[{'type': 'missing', 'loc': ['query', 'symbol'], 'msg': 'Field required', 'input': None}]"
+   },
+   "nondefault_params": {
+    "symbol": "MSFT"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 601,
+    "ctype": "application/json",
+    "ms": 3209,
+    "shape": "dict",
+    "rows": 1
+   }
+  },
+  {
+   "check": "Yahoo profile",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_equity_profile_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 253,
+    "ctype": "application/json",
+    "ms": 126,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for YfinanceProfileQueryParams\nsymbol\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   },
+   "nondefault_params": {
+    "symbol": "MSFT"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 395,
+    "ctype": "application/json",
+    "ms": 4309,
+    "shape": "dict",
+    "rows": 1
+   }
+  },
+  {
+   "check": "Yahoo fast info",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_equity_fast_info_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 254,
+    "ctype": "application/json",
+    "ms": 91,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for YfinanceFastInfoQueryParams\nsymbol\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   },
+   "nondefault_params": {
+    "symbol": "MSFT"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 963,
+    "ctype": "application/json",
+    "ms": 3262,
+    "shape": "dict",
+    "rows": 1
+   }
+  },
+  {
+   "check": "Yahoo income",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_fundamental_income_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 241,
+    "ctype": "application/json",
+    "ms": 96,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for StatementQuery\nsymbol\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   },
+   "nondefault_params": {
+    "period": "quarter"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 260,
+    "ctype": "application/json",
+    "ms": 97,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for StatementQuery\nsymbol\n  Field required [type=missing, input_value={'period': 'quarter'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   }
+  },
+  {
+   "check": "Yahoo balance",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_fundamental_balance_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 239,
+    "ctype": "application/json",
+    "ms": 87,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for BalanceQuery\nsymbol\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   },
+   "nondefault_params": {
+    "period": "quarter"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 500,
+    "bytes": 258,
+    "ctype": "application/json",
+    "ms": 97,
+    "shape": "dict",
+    "detail": "Unexpected Error -> ValidationError -> 1 validation error for BalanceQuery\nsymbol\n  Field required [type=missing, input_value={'period': 'quarter'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+   }
+  },
+  {
+   "check": "SEC search",
+   "seeded_default": "",
+   "widget_id": "sec_equity_search_sec_obb",
+   "status": "PASS",
+   "default": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 695351,
+    "ctype": "application/json",
+    "ms": 775,
+    "shape": "dict",
+    "rows": 10435
+   },
+   "nondefault_params": {
+    "is_symbol": true
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 200,
+    "bytes": 695367,
+    "ctype": "application/json",
+    "ms": 613,
+    "shape": "dict",
+    "rows": 10435
+   }
+  },
+  {
+   "check": "Historical chart (yfinance historical, chart view)",
+   "seeded_default": "symbol=AAPL:200",
+   "widget_id": "yfinance_equity_historical_yfinance_obb",
+   "status": "PASS_WITH_INPUT (descriptor default has no symbol; seeded symbol=AAPL:200)",
+   "default": {
+    "method": "GET",
+    "code": 422,
+    "bytes": 92,
+    "ctype": "application/json",
+    "ms": 116,
+    "shape": "dict",
+    "detail": "[{'type': 'missing', 'loc': ['query', 'symbol'], 'msg': 'Field required', 'input': None}]"
+   },
+   "nondefault_params": {
+    "interval": "1m"
+   },
+   "nondefault": {
+    "method": "GET",
+    "code": 422,
+    "bytes": 92,
+    "ctype": "application/json",
+    "ms": 119,
+    "shape": "dict",
+    "detail": "[{'type': 'missing', 'loc': ['query', 'symbol'], 'msg': 'Field required', 'input': None}]"
+   }
+  }
+ ],
+ "provider_examples": {
+  "commodity_short_term_energy_outlook_eia_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": false,
+   "default": null,
+   "nondefault": null
+  },
+  "uscongress_bills_congress_gov_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": true,
+   "default": "ok",
+   "nondefault": "ok"
+  },
+  "economy_survey_bls_search_bls_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": false,
+   "default": null,
+   "nondefault": null
+  },
+  "cftc_cot_cftc_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": true,
+   "default": "server_error",
+   "nondefault": "ok"
+  },
+  "economy_indicators_econdb_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": false,
+   "default": null,
+   "nondefault": null
+  },
+  "equity_fundamental_historical_eps_alpha_vantage_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": false,
+   "default": null,
+   "nondefault": null
+  },
+  "videos_video_custom_obb": {
+   "fixture": "openbq-relaunch/bdobb-clean-v5-reconciled/docs/examples/v3.1.0-demo-providers.apps.json",
+   "served": false,
+   "default": null,
+   "nondefault": null
+  }
+ }
+}

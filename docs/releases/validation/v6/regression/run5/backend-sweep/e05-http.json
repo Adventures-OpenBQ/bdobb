@@ -1,0 +1,174 @@
+[
+ {
+  "case_id": "E05-012",
+  "label": "filter_text=Bravo -> no rows",
+  "path": "table_widget_with_str_filter_param",
+  "params": {
+   "filter_text": "Bravo"
+  },
+  "code": 200,
+  "body_excerpt": "[]",
+  "pass": true
+ },
+ {
+  "case_id": "E05-012",
+  "label": "filter_text=A -> matching rows",
+  "path": "table_widget_with_str_filter_param",
+  "params": {
+   "filter_text": "A"
+  },
+  "code": 200,
+  "body_excerpt": "[{\"name\":\"Alpha\",\"value\":100,\"category\":\"A\"},{\"name\":\"Delta\",\"value\":300,\"category\":\"A\"}]",
+  "pass": true
+ },
+ {
+  "case_id": "E05-017",
+  "label": "boolean false",
+  "path": "markdown_widget_with_boolean",
+  "params": {
+   "condition": "false"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Toggle:** disabled\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-017",
+  "label": "number 250",
+  "path": "markdown_widget_with_number_input",
+  "params": {
+   "value": 250
+  },
+  "code": 200,
+  "body_excerpt": "\"**Number:** 250\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-017",
+  "label": "text Rehearsal",
+  "path": "markdown_widget_with_text_input",
+  "params": {
+   "name": "Rehearsal"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Text:** Rehearsal\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-018",
+  "label": "date literal 2026-10-02",
+  "path": "markdown_widget_with_date_picker",
+  "params": {
+   "date": "2026-10-02"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Date:** 2026-10-02\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-019",
+  "label": "static dropdown 7",
+  "path": "markdown_widget_with_dropdown",
+  "params": {
+   "days_picker": "7"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Selection of Days:** 7\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-020",
+  "label": "static multi AAPL,MSFT,AMZN",
+  "path": "markdown_widget_with_multi_select_dropdown",
+  "params": {
+   "stock_picker": "AAPL,MSFT,AMZN"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Selected tickers:** AAPL,MSFT,AMZN\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-021",
+  "label": "endpoint options offer GOOGL",
+  "path": "advanced_dropdown_options",
+  "params": {},
+  "code": 200,
+  "body_excerpt": "[{\"label\":\"Apple Inc.\",\"value\":\"AAPL\",\"extraInfo\":{\"description\":\"Technology Company\",\"rightOfDescription\":\"NASDAQ\"}},{\"label\":\"Microsoft Corporation\",\"value\":\"MSFT\",\"extraInfo\":{\"description\":\"Software Company\",\"rightOfDescription\":\"NASDAQ\"}},{\"label\":\"Google\",\"value\":\"GOOGL\",\"extraInfo\":{\"description\":\"Search Engine\",\"rightOfDescription\":\"NASDAQ\"}}]",
+  "pass": true
+ },
+ {
+  "case_id": "E05-021",
+  "label": "endpoint multi AAPL,MSFT,GOOGL",
+  "path": "markdown_widget_with_multi_select_advanced_dropdown",
+  "params": {
+   "stock_picker": "AAPL,MSFT,GOOGL"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Selected stocks:** AAPL,MSFT,GOOGL\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-022",
+  "label": "multi text alpha,beta",
+  "path": "markdown_widget_with_multi_text_input",
+  "params": {
+   "text_box": "alpha,beta"
+  },
+  "code": 200,
+  "body_excerpt": "\"**Vars:** alpha,beta\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-022",
+  "label": "combined test + 7",
+  "path": "markdown_widget_with_str_and_int",
+  "params": {
+   "text_param": "test",
+   "number_param": 7
+  },
+  "code": 200,
+  "body_excerpt": "\"- Text: test\\n- Number: 7\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-023",
+  "label": "reports options are Q1/Q2 Report",
+  "path": "document_options",
+  "params": {
+   "category": "reports"
+  },
+  "code": 200,
+  "body_excerpt": "[{\"label\":\"Q1 Report\",\"value\":\"Q1 Report\"},{\"label\":\"Q2 Report\",\"value\":\"Q2 Report\"}]",
+  "pass": true
+ },
+ {
+  "case_id": "E05-023",
+  "label": "echo Q1 Report",
+  "path": "dropdown_dependent_widget",
+  "params": {
+   "category": "reports",
+   "document_type": "Q1 Report"
+  },
+  "code": 200,
+  "body_excerpt": "\"\\n- Selected category: **reports**\\n- Selected document: **Q1 Report**\\n\"",
+  "pass": true
+ },
+ {
+  "case_id": "E05-067",
+  "label": "intentional HTTP 500 with message",
+  "path": "markdown_widget_with_error_handling",
+  "params": {},
+  "code": 500,
+  "body_excerpt": "{\"detail\":\"Error that just occurred\"}",
+  "pass": true
+ },
+ {
+  "case_id": "E05-067",
+  "label": "neighbour markdown still 200",
+  "path": "markdown_widget",
+  "params": {},
+  "code": 200,
+  "body_excerpt": "\"# Markdown Widget\"",
+  "pass": true
+ }
+]

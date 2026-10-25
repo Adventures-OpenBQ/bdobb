@@ -1,0 +1,13 @@
+{
+  "application": "BDOBB Clean v5 Reconciled",
+  "identifier": "com.artcashin.bdobb.clean.v5.reconciled",
+  "binarySha256": "4b6fce084f172e869cb3b7f47c44af1f548c337570b7e83b86ca2c41f60b2da3",
+  "startupSettingsWarning": false,
+  "persistedWorkspaceTwoPanels": true,
+  "persistedIndependentTabs": true,
+  "nativeReferenceManualBrand": "BDOBB",
+  "manualVersion": "5.0.0",
+  "statementImageAndErrorGuidance": true,
+  "appQuitAfterInspection": true,
+  "freshProfileProof": "native-observation.json records original fresh-profile startup; this observation used the preserved test profile after the codec-only rebuild."
+}

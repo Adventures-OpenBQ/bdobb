@@ -1,0 +1,16 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/help/search.test.ts (15 tests) 4ms
+ ✓ src/help/guide.test.ts (20 tests) 15ms
+ ✓ src/help/shots.test.ts (5 tests) 11ms
+ ✓ src/help/index.test.ts (9 tests) 4ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 130ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 3ms
+ ✓ src/help/windowMenu.test.ts (2 tests) 1ms
+
+ Test Files  7 passed (7)
+      Tests  65 passed (65)
+   Start at  04:32:00
+   Duration  3.04s (transform 196ms, setup 676ms, collect 916ms, tests 169ms, environment 1.63s, prepare 258ms)
+

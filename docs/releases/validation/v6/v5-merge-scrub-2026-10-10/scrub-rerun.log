@@ -1,0 +1,6 @@
+11:18  up 3 days, 41 mins, 2 users, load averages: 415.14 444.43 471.15
+
+> bdobb@6.0.0 scrub <worktree>
+> bash scripts/scrub-check.sh
+
+scrub-check: clean

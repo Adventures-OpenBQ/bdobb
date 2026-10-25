@@ -1,0 +1,30 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+# Only inputs needed by the native service and ingestion bundle enter this context.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!LICENSE
+!NOTICE
+!THIRD_PARTY_NOTICES.md
+!.table-source.json
+!crates/
+!crates/**
+crates/**/target
+!server/
+!server/table-ingest/
+!server/table-ingest/**
+server/table-ingest/dist
+server/table-ingest/*.local.json
+!src/
+!src/**
+src/**/generated
+!scripts/
+!scripts/build-table-ingest.mjs
+!scripts/build-table-notices.mjs
+!scripts/cargo-closure.mjs
+!deploy/
+!deploy/table-service/
+!deploy/table-service/Dockerfile
+!deploy/table-service/healthcheck.mjs

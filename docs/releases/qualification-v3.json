@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-06",
+  "release": "3.0.0",
+  "status": "qualified locally",
+  "reference": {
+    "source": "a6293707576e16edda8305adda95b07b6a4b968b",
+    "image": "sha256:70f9290e99bfa3a32b10f3c47eeb57c53f325b5f38484adc97ecf6d4128c516f",
+    "widgets": 71,
+    "rendered": 71,
+    "conformanceTests": 7,
+    "onboardingTabs": 14,
+    "groupedToyotaToTesla": "passed",
+    "unsupportedAnalyticalApp": "refused without write",
+    "cron": "deferred",
+    "numericRefreshAndRun": "passed",
+    "controlRequests": {
+      "numericRefreshMs": 5000,
+      "initial": {
+        "markdown_widget_with_short_refetch_interval": 2,
+        "markdown_widget_with_run_button": 2
+      },
+      "after": {
+        "markdown_widget_with_short_refetch_interval": 3,
+        "markdown_widget_with_run_button": 3
+      },
+      "runDoesNotPoll": true,
+      "cron": "deferred"
+    },
+    "savedChartViews": {
+      "passed": 2,
+      "target": 2
+    }
+  },
+  "openbqDocker": {
+    "image": "sha256:f88fe41f131878ebb08508084dc34afb359cdac9443b99f0dd28f10aefd852c8",
+    "widgets": 995,
+    "smokeCases": 9,
+    "passed": 9
+  },
+  "transport": "browser shim and test-only CORS adapter; real backend responses unchanged",
+  "limits": [
+    "No cron scheduling claim",
+    "No live Workspace account authentication claim",
+    "No native packaged restart qualification",
+    "Smoke checks cover nine OpenBQ cases, not all 995 widgets"
+  ],
+  "reference-render-results.jsonSha256": "66a0e909ae43be16430c7889e78de5b2ac54d130d72f225eff3c4ae5d890f83a",
+  "openbq-smoke-results.jsonSha256": "3b7dec5163decf39567477c5bd3b357573245c91cd60333cc5efdcbc14c3a842",
+  "reference-layout-results.jsonSha256": "1a28d7fb199cdc2178b7443ab920ed777dafc9e39965e08340201e09d9594049",
+  "native": {
+    "cargoCheck": "passed",
+    "appBuild": "passed",
+    "version": "3.0.0",
+    "packagedRestart": "not qualified"
+  },
+  "regression": {
+    "unitPassed": 2903,
+    "optInSkipped": 7,
+    "execution": "full serial run 2900 passed; all six release assertions passed in final isolated launcher-fix rerun",
+    "chromiumPassed": 91,
+    "chromiumOptInSkipped": 1,
+    "userDocumentationChecksPassed": 46,
+    "typecheck": "passed",
+    "lint": "passed",
+    "productionBuild": "passed",
+    "scrub": "passed"
+  }
+}

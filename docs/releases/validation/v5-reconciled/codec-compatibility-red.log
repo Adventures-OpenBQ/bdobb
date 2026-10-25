@@ -1,0 +1,114 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ❯ src/lib/statementModel/persistence.test.ts (20 tests | 15 failed) 79ms
+   × never evaluates optional ownerId counting accessors 17ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional ownerId throwing accessors 4ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableDefinition counting accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableDefinition throwing accessors 1ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableSelection counting accessors 1ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableSelection throwing accessors 1ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedSource counting accessors 2ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedSource throwing accessors 5ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedChart counting accessors 2ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedChart throwing accessors 1ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates nested link kind counting accessors 2ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link kind throwing accessors 1ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link sourceWidgetId counting accessors 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link sourceWidgetId throwing accessors 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × refuses cyclic and excessively deep optional envelopes without losing the ordinary card 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.tableDefinition.analytical: Invalid v5 JSON value.
+ ✓ src/lib/appsJson.cleanV5.test.ts (6 tests) 239ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional ownerId counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional ownerId throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableDefinition counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableDefinition throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableSelection counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableSelection throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedSource counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedSource throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedChart counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedChart throwing accessors
+AssertionError: expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+
+- Expected: 
+undefined
+
++ Received: 
+"Error: INVALID_EXTENSION at $[0].tabs.one.layout.0: Invalid v5 accessor."
+
+ ❯ src/lib/statementModel/persistence.test.ts:57:79
+     55|   let calls=0;const item={i:'raw'};
+     56|   Object.defineProperty(item,key,{enumerable:true,get(){calls++;if(thr…
+     57|   expect(()=>importApps([{name:'Unsafe',tabs:{one:{layout:[item]}}}],[…
+       |                                                                               ^
+     58|  });
+     59| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link kind counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link kind throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link sourceWidgetId counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link sourceWidgetId throwing accessors
+Error: INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+ ❯ Module.extensionError src/lib/appsExtensionsV3.ts:23:9
+     21| }
+     22| export function extensionError(path: string, message: string, code: Ex…
+     23|   throw new AppExtensionError({ code, path, message });
+       |         ^
+     24| }
+     25| const unsafe = new Set(["__proto__", "prototype", "constructor"]);
+ ❯ json src/lib/appsExtensionsV5.ts:28:43
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ src/lib/appsExtensionsV5.ts:59:5
+ ❯ Module.prepareV5 src/lib/appsExtensionsV5.ts:58:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > refuses cyclic and excessively deep optional envelopes without losing the ordinary card
+Error: INVALID_EXTENSION at $[0].tabs.one.layout.0.tableDefinition.analytical: Invalid v5 JSON value.
+ ❯ Module.extensionError src/lib/appsExtensionsV3.ts:23:9
+     21| }
+     22| export function extensionError(path: string, message: string, code: Ex…
+     23|   throw new AppExtensionError({ code, path, message });
+       |         ^
+     24| }
+     25| const unsafe = new Set(["__proto__", "prototype", "constructor"]);
+ ❯ json src/lib/appsExtensionsV5.ts:24:67
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ src/lib/appsExtensionsV5.ts:59:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  15 failed | 11 passed (26)
+   Start at  01:56:08
+   Duration  9.47s (transform 1.66s, setup 925ms, collect 2.27s, tests 318ms, environment 1.72s, prepare 272ms)
+

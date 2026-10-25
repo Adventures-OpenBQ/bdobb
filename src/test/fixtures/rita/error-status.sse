@@ -1,0 +1,6 @@
+event: copilotStatusUpdate
+data: {"eventType":"ERROR","message":"Model timed out after 240s. Try a narrower request.","group":"reasoning"}
+
+event: copilotMessageChunk
+data: {"delta":"I couldn't finish the response because the model timed out. Try a narrower request."}
+

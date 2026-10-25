@@ -1,0 +1,10 @@
+browser: starting http://localhost:4327/ (mock http://127.0.0.1:4328)
+
+  VITE v6.4.3   browser   ready in 215 ms
+
+  ➜  Local:   http://localhost:4327/
+  ➜  Network: use --host to expose
+browser: listening on http://localhost:4327/
+  workspaces-light.png  34716 bytes
+  workspaces-dark.png  34801 bytes
+1:32:23 AM [vite] (client) page reload e2e-results/.playwright-artifacts-0/traces/resources/d65b1c5dd342b201dd72df4a88999eceeb7962ff.html
