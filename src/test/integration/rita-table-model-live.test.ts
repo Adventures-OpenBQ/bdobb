@@ -197,4 +197,35 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(model?.measures.find((m) => m.sourceFieldId === "Units")?.aggregation, "Units uses the provider's last").toBe("last");
     expect(applied[0].warnings?.some((w) => w.code === "provider-aggregation-hint"), "no contradiction warning").toBe(false);
   }, 300_000);
+
+  it("honors an explicitly requested sum override through scoped intent and reports its warning", async () => {
+    csv = UNITS_CSV;
+    await mountCsv();
+    const hints: Record<string, unknown> = {
+      Units: { time: "last", frequencies: ["quarter", "annual"], entity: "require_selection", status: "conditional", ruleset: "live-gate" },
+      Account: { time: null, frequencies: [], entity: "require_selection", status: "dimension", ruleset: "live-gate" },
+    };
+    const real = tableExecutionStore.readView.bind(tableExecutionStore);
+    const seen = new WeakMap<object, ReturnType<typeof real>>();
+    vi.spyOn(tableExecutionStore, "readView").mockImplementation((d, id) => {
+      const view = real(d, id);
+      if (!view.ready) return view;
+      if (!seen.has(view)) seen.set(view, { ...view, ready: { ...view.ready, inspection: { ...view.ready.inspection, inputColumns: view.ready.inspection.inputColumns.map(c => hints[c.id] ? { ...c, metadata: { aggregationHint: hints[c.id] } } : c) as never } } });
+      return seen.get(view)!;
+    });
+    const { rounds } = await turn(`${SKILL}Change the table: group by calendar year of Quarter end and Account. Explicitly sum Units, overriding the provider's last rule because I want the sum of observations.`);
+    const applied = rounds.filter(round => round.tool === "arrange_table" && (round.result as { status?: string }).status === "applied");
+    expect(applied).toHaveLength(1);
+    const operations = (applied[0].args.arrangement as { operations: Record<string, unknown>[] }).operations;
+    expect(operations.some(op => op.aggregation === "sum" && op.aggregation_intent === "user_override")).toBe(true);
+    const result = applied[0].result as { warnings?: { code?: string }[]; preview?: { rows: { values: Record<string, unknown> }[] } };
+    expect(result.warnings?.some(warning => warning.code === "provider-aggregation-hint")).toBe(true);
+    const model = tableCard().tableDefinition?.analytical as TableModelV1 | undefined;
+    expect(model?.measures.find(measure => measure.sourceFieldId === "Units")?.aggregation).toBe("sum");
+    expect(JSON.stringify(tableCard().tableDefinition)).not.toContain("aggregation_intent");
+    const values = result.preview?.rows.flatMap(row => Object.values(row.values)) ?? [];
+    expect(values).toContain(440);
+    expect(values).toContain(660);
+  }, 300_000);
+
 });

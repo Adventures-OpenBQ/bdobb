@@ -8,11 +8,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // options and data this module hands the library, so that is what's asserted.
 const series = () => {
   const scale = { applyOptions: vi.fn() };
-  return { setData: vi.fn(), priceScale: vi.fn(() => scale) };
+  return { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => scale) };
 };
 const fitContent = vi.fn();
+const panes = [{ setStretchFactor: vi.fn() }, { setStretchFactor: vi.fn() }];
 const chart = {
-  addSeries: vi.fn((_def: unknown, _opts?: unknown) => series()),
+  addSeries: vi.fn((_def: unknown, _opts?: unknown, _pane?: number) => series()),
+  panes: () => panes,
   applyOptions: vi.fn(),
   remove: vi.fn(),
   timeScale: () => ({ fitContent }),
@@ -97,6 +99,8 @@ describe("mountCandleChart", () => {
   it("adds no volume series when showVolume is off", async () => {
     await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: false });
     expect(chart.addSeries).toHaveBeenCalledTimes(1);
+    expect(panes[0].setStretchFactor).not.toHaveBeenCalled();
+    expect(panes[1].setStretchFactor).not.toHaveBeenCalled();
   });
 
   it("sets candles and up/down-coloured volume, fitting the view only on the first load", async () => {
@@ -109,9 +113,13 @@ describe("mountCandleChart", () => {
     const volume = chart.addSeries.mock.results[1].value;
     expect(chart.addSeries.mock.calls[1]).toEqual([
       { type: "Histogram" },
-      { priceFormat: { type: "volume" }, priceScaleId: "" },
+      { priceFormat: { type: "volume" }, priceScaleId: "right", title: "Volume" },
+      1,
     ]);
-    expect(volume.priceScale().applyOptions).toHaveBeenCalledWith({ scaleMargins: { top: 0.8, bottom: 0 } });
+    expect(volume.priceScale().applyOptions).toHaveBeenCalledWith({ visible: true, scaleMargins: { top: 0.1, bottom: 0 } });
+    expect(candles.priceScale().applyOptions).toHaveBeenCalledWith({ scaleMargins: { top: 0.1, bottom: 0.05 } });
+    expect(panes[0].setStretchFactor).toHaveBeenCalledWith(4);
+    expect(panes[1].setStretchFactor).toHaveBeenCalledWith(1);
     handle.setBars(bars);
     expect(candles.setData).toHaveBeenCalledWith([
       { time: 10, open: 1, high: 3, low: 0.5, close: 2 },
@@ -123,6 +131,10 @@ describe("mountCandleChart", () => {
     ]);
     handle.setBars(bars);
     // A refetch must not throw away the reader's zoom and pan.
+    expect(fitContent).toHaveBeenCalledTimes(1);
+    handle.updateBar({ ...bars[1], close: 3, volume: 250 });
+    expect(candles.update).toHaveBeenCalledWith({ time: 20, open: 3, high: 4, low: 1.5, close: 3 });
+    expect(volume.update).toHaveBeenCalledWith({ time: 20, value: 250, color: "#0f0" });
     expect(fitContent).toHaveBeenCalledTimes(1);
   });
 

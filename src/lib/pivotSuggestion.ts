@@ -66,6 +66,11 @@ function isDimension(c: TableColumn | undefined): boolean {
   return c !== undefined && (c.hint ? c.hint.status === "dimension" : ENTITY_KEYS.has(c.field));
 }
 
+/** Entity dimensions that must remain separate before a provider operator is eligible. */
+export function ungroupedEntityFields(columns: TableColumn[], kinds: ReadonlyMap<string, FieldKind>, grouped: readonly string[]): string[] {
+  return columns.filter(c => isDimension(c) && kinds.get(c.field) !== "date" && !PERIOD_KEYS.has(c.field) && !grouped.includes(c.field)).map(c => c.field);
+}
+
 /**
  * The provider's suggestion for `field`, or the reason there is none.
  *
@@ -123,10 +128,8 @@ export function suggestionFor(input: {
       return { kind: "frequency", reviewed: hint.frequencies };
     }
   }
-  const ungrouped = columns.find(
-    (c) => isDimension(c) && kinds.get(c.field) !== "date" && !PERIOD_KEYS.has(c.field) && !grouped.includes(c.field),
-  );
-  if (ungrouped) return { kind: "entity", field: ungrouped.field, ungrouped: true };
+  const [ungrouped] = ungroupedEntityFields(columns, kinds, grouped);
+  if (ungrouped !== undefined) return { kind: "entity", field: ungrouped, ungrouped: true };
   return { kind: "suggested", fn: hint.time };
 }
 

@@ -43,9 +43,8 @@ export type CandleChartHandle = {
 };
 
 /**
- * A candlestick chart in `el`, with volume as a histogram on its own price
- * scale in the bottom fifth -- the layout the Plotly candlestick uses
- * (chartShapes). Sizing is the library's `autoSize` (its own ResizeObserver),
+ * A candlestick chart in `el`, with volume in a lower pane and its own
+ * visible right-hand scale. Both panes share the time axis. Sizing is the library's `autoSize` (its own ResizeObserver),
  * so a card resized by the grid redraws without anything here watching it.
  * Background, text, grid and scale borders come from the same CARD_BG/TEXT/GRID
  * tokens themedLayout uses, so the two chart libraries look alike in both themes.
@@ -116,11 +115,13 @@ export async function mountCandleChart(
   const { volumeUpColor = UP, volumeDownColor = DOWN, ...candleColors } = colors;
   const candles = chart.addSeries(lw.CandlestickSeries, candleColors);
   const volume = showVolume
-    ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "" })
+    ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "right", title: "Volume" }, 1)
     : null;
   if (volume) {
-    volume.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
-    candles.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.25 } });
+    volume.priceScale().applyOptions({ visible: true, scaleMargins: { top: 0.1, bottom: 0 } });
+    candles.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.05 } });
+    chart.panes()[0].setStretchFactor(4);
+    chart.panes()[1].setStretchFactor(1);
   }
 
   let fitted = false;

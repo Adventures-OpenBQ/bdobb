@@ -103,10 +103,20 @@ instructions.
   the user named an operator: `arrange_table` applies the provider's operator
   when the arrangement in that same call meets the provider's rule, and
   reports it as a `provider-aggregation-applied` note. Tell the user you used
-  the provider's suggestion. When `suggestion_note` says the rule needs a
-  grouping you are not making, choose by meaning instead. When the user named
-  an operator, set it; `arrange_table` returns a `provider-aggregation-hint`
-  warning if it contradicts the suggestion: keep it and report the warning.
+  the provider's suggestion. When `suggestion_note` or a refusal says the rule
+  needs additional categories, add the required categories and leave `aggregation` out
+  when retrying. Do not substitute a different operator to bypass the rule or a
+  refusal. A requested date category does not mean only that category.
+  Add the provider-required entity categories alongside the requested date
+  categories and explain why they are needed. Ask before proceeding only if the user explicitly excludes
+  those entity categories or asks to combine the entities. A request to add a field as a
+  measure does not explicitly name an aggregation. Only when the user explicitly named an operator,
+  set it and put `aggregation_intent: "user_override"` on that `measure.add`,
+  `measure.update` or `measure.duplicate` operation. A conflicting operator without
+  that intent is refused with `provider-override-required`, even in preview mode.
+  Do not set the intent merely to bypass a refusal: it records an explicit user
+  request, applies only to that measure and operator in this call, and is not saved.
+  An accepted override returns a `provider-aggregation-hint` warning: report it.
   With no hint, choose by meaning, as below.
 - Sum period flows (volume, revenue, profit). Use `first`/`last` for balances
   and closing values. Count identifiers (`count`, `uniqueCount`).

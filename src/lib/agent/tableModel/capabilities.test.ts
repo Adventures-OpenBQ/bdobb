@@ -51,3 +51,11 @@ it("tells the model how first/last become available: date categories on one fiel
   expect(text).toMatch(/\(Y\/Q\/M\/FY\/FQ\) all sit on exactly one field/);
   expect(text).toMatch(/same call/);
 });
+
+
+it("advertises the exact override intent on every measure operation that can choose an operator", () => {
+  const caps = capabilitiesFor(undefined, columns, "authoring");
+  for (const op of ["measure.add", "measure.update", "measure.duplicate"]) expect(caps.operation_fields[op].optional).toContain("aggregation_intent");
+  expect(caps.how_to_arrange?.join(" ")).toContain("aggregation_intent");
+  expect(caps.how_to_arrange?.join(" ")).toContain("user_override");
+});

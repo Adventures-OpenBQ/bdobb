@@ -83,3 +83,21 @@ describe("parseArrangement", () => {
     expect(parseArrangement(env([{ op: "page.set", category: "c", member_keys: ["a"] }])).errors[0].message).toContain('{"id":"..."}');
   });
 });
+
+
+it("accepts explicit user override intent on measure creation, updates and copies", () => {
+  expect(parseArrangement(env([
+    { op: "measure.add", alias: "m", source_field_id: "Units", aggregation: "sum", aggregation_intent: "user_override" },
+    { op: "measure.update", target: { alias: "m" }, aggregation: "mean", aggregation_intent: "user_override" },
+    { op: "measure.duplicate", target: { alias: "m" }, alias: "copy", aggregation_intent: "user_override" },
+  ])).errors).toEqual([]);
+});
+
+it("requires an explicit operator with override intent except when copying a measure", () => {
+  for (const op of [{ op: "measure.add", source_field_id: "Units" }, { op: "measure.update", target: { id: "u" } }]) {
+    expect(parseArrangement(env([{ ...op, aggregation_intent: "user_override" }])).errors)
+      .toContainEqual(expect.objectContaining({ code: "invalid-field", path: "operations[0].aggregation_intent" }));
+  }
+  expect(parseArrangement(env([{ op: "measure.add", source_field_id: "Units", aggregation: "sum", aggregation_intent: "automatic" }])).errors)
+    .toContainEqual(expect.objectContaining({ code: "invalid-field", path: "operations[0].aggregation_intent", alternatives: ["user_override"] }));
+});

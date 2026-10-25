@@ -6,7 +6,7 @@ import { FORMULA_BINARY_OPERATORS } from "../../tableModel/formulaSyntax";
 import { INSTALLED_STATEMENT_TEMPLATES } from "../../statementModel/catalog";
 import { paramRow } from "../../tableModel/pivotParams";
 import { measureEligibility } from "../../../components/renderers/table-model/measureEligibility";
-import { OPERATIONS, PERIODS, SCOPES } from "./contract";
+import { AGGREGATION_INTENTS, OPERATIONS, PERIODS, SCOPES } from "./contract";
 import type { TableModelV1 } from "../../tableModel/types";
 import type { DatasetColumn } from "../../widgetData/types";
 
@@ -20,6 +20,7 @@ const HOW_TO_ARRANGE = [
   "A field (fields[].id) is a source column. It is never placed directly: make a category or a measure from it first.",
   `category.add {${req("category.add")}, alias} makes a category (a grouping) from the field source_field_id; transform comes from category_transforms ("${NATIVE}" groups by the field's own values).`,
   `measure.add {${req("measure.add")}, aggregation, alias} makes a measure (one number per group) from the field source_field_id; aggregation must be listed in aggregations_by_field for that field; on a field with a provider hint, leave it out and arrange_table applies the provider's operator when the arrangement meets its rule. A field with no "sum" there cannot be summed: say so instead of arranging.`,
+  `A conflicting conditional provider operator is refused with provider-override-required unless this measure.add, measure.update or measure.duplicate has aggregation_intent: "${AGGREGATION_INTENTS[0]}". Set that intent only for an operator explicitly requested by the user, never just to bypass a refusal; otherwise add the required categories and omit aggregation. Intent applies only to that measure/operator in this request and is not saved.`,
   "first/last become available when the arrangement's date categories (Y/Q/M/FY/FQ) all sit on exactly one field, with at most one fiscal company; add that category in the same call.",
   "layout.set places objects: rows and columns take categories, values take measures or formulas. Each entry is {\"alias\":\"...\"} for an object created earlier in the same request or {\"id\":\"...\"} for an existing one listed in the model summary (its categories, measures and formulas), never a field id.",
   "Send every operation in one arrange_table call. Quote only numbers that are values in the result's preview.rows. The grand total and the row count are not there: never work them out; state the source table's row count only as describe_table's exact completeness.totalRowCount. For a read-only ask pass mode \"preview\": nothing is committed.",
