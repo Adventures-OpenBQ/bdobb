@@ -124,7 +124,9 @@ async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Roun
       // then): the first set_widget_params goes out with its params beside
       // card_id instead of nested under params.
       if (firstSaveFlat && tool === "set_widget_params" && !rounds.some((r) => r.flat)) {
-        const flatArgs = { card_id: args.card_id, ...(args.params as Record<string, unknown>) };
+        // Keep a flat payload even when the model's first proposed params are empty.
+        // Empty text is a fixture sentinel, never a successful saved answer.
+        const flatArgs = { card_id: args.card_id, text: "", ...(args.params as Record<string, unknown>) };
         const result = await runAgentTool(serverId, "set_widget_params", flatArgs, [], [], localCall);
         rounds.push({ tool: "set_widget_params", args: flatArgs, result, flat: true });
         console.log("[tool:flat]", JSON.stringify(flatArgs).slice(0, 200), "→", JSON.stringify(result).slice(0, 300));
@@ -145,8 +147,9 @@ async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Roun
     // As chatStore.send: every round re-reads the board, so a card Rita just
     // wrote reaches her with its new text (#326).
     refresh: () => ({ primary: buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set()) }),
-    // The flat-slip replay offers what v6.2.0 offered: no set_markdown_content.
-    tools: firstSaveFlat ? LOCAL_TOOLS.filter((t) => t.name !== "set_markdown_content") : LOCAL_TOOLS,
+    // This targeted recovery case must update the existing note, not create a
+    // replacement with add_note or bypass the injected operation through another tool.
+    tools: firstSaveFlat ? LOCAL_TOOLS.filter((t) => ["describe_widget", "set_widget_params"].includes(t.name)) : LOCAL_TOOLS,
     executeFunction: (payload, signal) => {
       console.log("[call]", JSON.stringify(payload).slice(0, 400));
       return executeFunction(payload, deps, signal);
@@ -216,13 +219,13 @@ live("Rita authors a dashboard", () => {
     expect(activeCards().some((c) => c.title === "World Clock")).toBe(false);
   }, 200_000);
 
-  it("discovers, adds AND configures a widget in one turn (search → add → set)", async () => {
+  it("discovers, adds and configures a widget in one turn", async () => {
     await reset(); // Equity Chart is in the registry but not on the board
     const { rounds } = await turn("Add an Equity Chart to my dashboard for NVDA with 30-minute bars.");
     const tools = rounds.map((r) => r.tool);
     expect(tools).toContain("search_widgets");
     expect(tools).toContain("add_widget");
-    expect(tools).toContain("set_widget_params");
+    // add_widget can apply these parameters atomically; a separate set call is optional.
     const chart = chartCards()[0];
     expect(chart, "a chart card was added").toBeDefined();
     expect(String(chart.params.symbol).toUpperCase()).toBe("NVDA");
@@ -297,7 +300,8 @@ live("Rita authors a dashboard", () => {
     const refused = rounds.find((r) => r.flat);
     expect(refused?.result, "the first save was refused").toMatchObject({ error: { code: "PARAMS_NOT_NESTED" } });
     const after = rounds.slice(rounds.indexOf(refused!) + 1);
-    expect(after.some((r) => (r.result as Record<string, unknown>)?.updated === true), "a retry saved").toBe(true);
+    expect(after.some((r) => r.tool === "set_widget_params" && r.args.card_id === id &&
+      (r.result as Record<string, unknown>)?.updated === true), "a retry saved the original note").toBe(true);
     expect(String(activeCards().find((c) => c.id === id)!.params.text ?? "").toLowerCase()).toContain("inflation");
   }, 240_000);
 
