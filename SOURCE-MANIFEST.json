@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v9.0.0",
-  "baseCommit": "4b86a4b705da0f57639c164cf5ba78a3d2b61a34",
-  "sourceId": "a048f257eab0be55cad35329530b24f05ee79f93c60ede89025daa5762153fd0",
+  "baseCommit": "1b77b0fd43a1cb498ae13f7e2839d0b63e107560",
+  "sourceId": "b4eadacca9f34f8efcfd4ac6158dc2389dce3326f573b3070b772d7aae1e7569",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20471,6 +20471,13 @@
       "sha256": "f3c5963a197806cbbca23442a4354aa1524b953728e30bdfabc6a0210a3db99f"
     },
     {
+      "path": "e2e/ipad-editing.spec.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 2700,
+      "sha256": "42657d7bdf4e40a108fcac4466fca35825eb26602067e7d365afbf924cf2370a"
+    },
+    {
       "path": "e2e/keys.spec.ts",
       "type": "file",
       "mode": 420,
@@ -20882,6 +20889,13 @@
       "mode": 420,
       "size": 1520,
       "sha256": "07e0d9c7c273b5f48215622dfb7c0fbba7784a6f293595aaee314e18f9fd34cd"
+    },
+    {
+      "path": "playwright.ipad.config.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 748,
+      "sha256": "01bc09d6b36cbd8ae7b564e716bdb43a484fe17e47a23113a8cd51e87b8cd2f3"
     },
     {
       "path": "playwright.pivot.config.ts",
@@ -21483,7 +21497,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "96fcda8cb43402d93a366e782a5ebebf69c58f56a7459702e104ec9f6230675e"
+      "sha256": "550281673cdf10b64656405deb7b8e79ab31ebd6c182d874888f72a122ec71cf"
     },
     {
       "path": "source_bundle.py",
@@ -29175,8 +29189,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 158461,
-      "sha256": "351c7d7b1a06c37575eb2e3043419e2bbcd6b9bc3cab722a5bf880b3016036b3"
+      "size": 158557,
+      "sha256": "4a42441b85ed997210202af34f0847df419e966dcd0cd99ce86850598b905a37"
     },
     {
       "path": "src/test/fakeSocket.ts",
