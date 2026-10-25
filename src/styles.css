@@ -3679,9 +3679,11 @@ body {
    .rita-pane      -- collapsed rail's background ran up over the dialog close button
    .library-overlay -- title, search box, Reset and close sat under the status bar
                        (the AI Library too: it is .library-overlay + .ai-library)
+   .dock-editor    -- band title, resize and commit controls sat under the status bar
    .drop-veil      -- the veil's dashed top border tucked under the status bar */
 .rita-pane,
 .library-overlay,
+.dock-editor,
 .drop-veil {
   top: var(--safe-top);
 }
