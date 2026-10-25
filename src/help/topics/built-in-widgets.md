@@ -146,3 +146,7 @@ the echo underneath shows what a widget would receive: the range as two
 parameters, the quarter and fiscal year labelled under whatever **FY ends**
 says. Add two of them, set different year ends, and put both Quarter controls
 in one group to watch one stored quarter read two ways.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

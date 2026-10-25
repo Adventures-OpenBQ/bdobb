@@ -11,3 +11,7 @@ Navigation and filters save with the card. A **BDOBB Workspace** save preserves 
 Trading-session calculations belong to date expressions and exchange calendars. Calendar presentation and exchange-session resolution are separate controls; selecting a Calendar view does not make an endpoint return only trading days.
 
 ![Calendar navigation and dated events](./shots/calendar-view.png)
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

@@ -91,3 +91,7 @@ the value you just submitted.
 Two details worth knowing: Alpaca appears as two cards but is one provider, and
 counts as keyed only when both are set; and there is deliberately no raw-JSON
 view for this panel, because a card can carry a plaintext credential.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

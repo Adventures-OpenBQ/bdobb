@@ -61,3 +61,7 @@ A **BDOBB Workspace** save uses a versioned v4 profile when analytical models, s
 
 
 V5 selects a compatible v5 profile when generic Statement state is present, retaining v4 models, pinned templates and links. Statement CSV, JSON and Excel exports use completed line-item rows, including folded sections. Workspace arrangements and saved layouts persist separately; apps.json does not bundle them.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

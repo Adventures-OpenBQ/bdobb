@@ -95,3 +95,7 @@ New settings keys default to off or empty through `withDefaults`: Rita URL empty
 ## Verification boundaries
 
 The Part A and Part B gate receipts, including the live Rita and MCP runs against a tailnet node, are under `docs/releases/validation/v6/`. The live gate drives a language model and is not repeatable on demand; the receipts record each run. The final gates and the file-level migration and rollback receipts exist; native GUI verification and the native live Rita session do not, and the live gate passed only on an extra run after a failure. Donor test results do not qualify this candidate.
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.

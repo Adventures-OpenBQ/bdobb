@@ -125,3 +125,7 @@ Because they live in `settings.json`, most of these fields travel in a `bdobb-se
 ---
 *Source: BDOBB v6.0.0 `src/components/ai/` (`AILibrary.tsx`, `AgentsTab.tsx`, `McpServersTab.tsx`, `SkillsTab.tsx`, `SkillEditorDialog.tsx`, `ShareTargetsTab.tsx`, `AppearanceTab.tsx`), `src/lib/agent/proxiedTools.ts`, `src/lib/agent/execute.ts`, `src/lib/agent/mcp.ts`, `src/lib/agent/mcpAuth.ts`, `src/lib/agent/importedMcp.ts`, `src/lib/aiLibraryFile.ts`, `src/lib/settingsBundle.ts`, `src/lib/skillsFiles.ts` and `src/lib/settingsFile.ts`; `openbq-docker` `docker-compose.v6.yml` and `ts-config/serve-v6.json` at `v7.0.0`.*
 *See also: [[rita-chat|Rita (AI Chat)]] · [[rita-ai-agent-setup|Setting Up the Rita AI Agent]] · [[settings-and-logs|Settings and Logs]] · [[app-data-and-settings|App Data and Settings]]*
+
+---
+
+Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v7.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
