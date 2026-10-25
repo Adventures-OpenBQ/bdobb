@@ -3,13 +3,15 @@
   "baseRepository": "Adventures-OpenBQ/bdobb",
   "originalRelease": "v4.0.0",
   "scope": "v4",
-  "baseCommit": "c8e31b92ee354549637a62fb8146d9d51326de3c",
+  "baseCommit": "f9ca4a0e8ad7668c43aac21a74b79cdc963f91db",
   "preparedDate": "2026-10-24",
-  "status": "local-review-edition-not-published",
+  "status": "prepared-documentation-copyright-patch",
   "oldApacheGrantsPreserved": true,
   "calendarClientPr": 69,
   "calendarClientPrHead": "53c9c33924cecdd8b5673641770cacd51ef1e26a",
   "calendarProviderPr": 16,
   "calendarProviderPrHead": "f9e3908155601108df957cf55e61b8c5b4e4f501",
-  "pairedProviderCommit": "480f469b1e8e611d31c89be87d8c6f99f4f30894"
+  "pairedProviderCommit": "480f469b1e8e611d31c89be87d8c6f99f4f30894",
+  "patchRelease": "v4.0.0",
+  "sourceRevisionReason": "Visible help/reference copyright and separately scoped documentation terms; original software and third-party permissions preserved"
 }
