@@ -1,0 +1,10 @@
+typecheck|exit=0|dur=8s|load=182.29 203.69 189.43|cmd=pnpm typecheck
+lint|exit=0|dur=13s|load=175.88 201.60 188.86|cmd=pnpm lint
+unit|exit=1|dur=502s|load=170.17 199.51 188.26|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+web|exit=0|dur=8s|load=601.61 410.81 284.14|cmd=pnpm test:web
+build-web|exit=0|dur=49s|load=599.00 413.43 285.81|cmd=pnpm build:web
+web-browser|exit=0|dur=39s|load=564.34 432.48 300.14|cmd=pnpm test:web:browser
+scrub|exit=0|dur=14s|load=524.86 440.46 309.89|cmd=pnpm scrub
+help|exit=0|dur=20s|load=517.42 441.64 311.83|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+diff-check|exit=0|dur=1s|load=535.05 450.62 318.07|cmd=git diff --check 1c764d8 HEAD
+DONE

@@ -1,0 +1,70 @@
+
+> bdobb@3.0.0 build ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+> vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 1978 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                            0.94 kB │ gzip:   0.51 kB
+dist/standard_fonts/LICENSE_FOXIT                          1.55 kB
+dist/standard_fonts/LICENSE_LIBERATION                     4.41 kB
+dist/assets/dashboard-tabs-light-IosMN9pV.png              5.33 kB
+dist/assets/dashboard-tabs-dark-BkQagQKL.png               5.39 kB
+dist/assets/cursor-editorTextHighlight-kG3uUOwL.svg        5.40 kB │ gzip:   2.20 kB
+dist/assets/workspace-account-light-B-6OuwG1.png           9.64 kB
+dist/assets/workspace-account-dark-DGGhDrz1.png            9.79 kB
+dist/standard_fonts/FoxitSymbol.pfb                       16.73 kB
+dist/standard_fonts/FoxitFixed.pfb                        17.60 kB
+dist/standard_fonts/FoxitFixedBold.pfb                    18.06 kB
+dist/standard_fonts/FoxitFixedItalic.pfb                  18.75 kB
+dist/standard_fonts/FoxitFixedBoldItalic.pfb              19.15 kB
+dist/standard_fonts/FoxitSerifBold.pfb                    19.40 kB
+dist/standard_fonts/FoxitSerif.pfb                        19.47 kB
+dist/assets/charts-light-Bm4FtzIQ.png                     19.76 kB
+dist/assets/charts-dark-B8WqMCJW.png                      19.76 kB
+dist/assets/the-left-rail-light-7vr8XLui.png              19.88 kB
+dist/assets/the-left-rail-dark-Dk5ayrPI.png               20.18 kB
+dist/standard_fonts/FoxitSerifBoldItalic.pfb              20.73 kB
+dist/standard_fonts/FoxitSerifItalic.pfb                  21.23 kB
+dist/assets/widget-cards-dark-AMVuMeAA.png                23.13 kB
+dist/assets/widget-cards-light-Drg6uFnW.png               23.19 kB
+dist/assets/import-and-export-light-D0iJuPSA.png          24.17 kB
+dist/assets/import-and-export-dark-CC__K66D.png           24.26 kB
+dist/standard_fonts/FoxitDingbats.pfb                     29.51 kB
+dist/assets/connections-light-B9noUYVT.png                29.88 kB
+dist/assets/connections-dark-qhnjN2-3.png                 30.50 kB
+dist/assets/dashboards-and-folders-light-Cow068Hm.png     32.25 kB
+dist/assets/dashboards-and-folders-dark-DJEyGZpP.png      32.65 kB
+dist/assets/provider-keys-dark-DLH5VJGC.png               61.96 kB
+dist/assets/provider-keys-light-DjWHzuA6.png              62.05 kB
+dist/assets/settings-and-logs-light-BXJj3dq5.png          76.44 kB
+dist/assets/settings-and-logs-dark-ClHZ1qAi.png           77.10 kB
+dist/assets/widget-library-light-NMfMLxT_.png             80.92 kB
+dist/assets/widget-library-dark-CBKA8uvM.png              81.17 kB
+dist/assets/getting-started-light-PFQrobSG.png           128.40 kB
+dist/assets/getting-started-dark-80pUK3Ox.png            134.08 kB
+dist/standard_fonts/LiberationSans-BoldItalic.ttf        135.12 kB
+dist/standard_fonts/LiberationSans-Bold.ttf              137.05 kB
+dist/standard_fonts/LiberationSans-Regular.ttf           139.51 kB
+dist/standard_fonts/LiberationSans-Italic.ttf            162.04 kB
+dist/assets/tables-light-C63FkLjh.png                    182.59 kB
+dist/assets/tables-dark-BKRT6Tvd.png                     194.24 kB
+dist/assets/pdf.worker.min-Dr1KORA9.mjs                1,286.28 kB
+dist/assets/MarkdownEditorRenderer-C76-PK2L.css          239.90 kB │ gzip:  37.60 kB
+dist/assets/index-De3YqnTr.css                           329.75 kB │ gzip:  55.46 kB
+dist/assets/module-RjUF93sV.js                            77.31 kB │ gzip:  27.62 kB │ map:   240.30 kB
+dist/assets/lightweight-charts.production-ClhRhmPB.js    180.25 kB │ gzip:  57.06 kB │ map:   455.12 kB
+dist/assets/pdf_viewer-D9A2Yh6Q.js                       223.23 kB │ gzip:  69.09 kB │ map:   780.61 kB
+dist/assets/native-48B9X9Wg.js                           432.80 kB │ gzip:  83.21 kB │ map:     0.10 kB
+dist/assets/pdf-lPevIYiG.js                              474.22 kB │ gzip: 143.49 kB │ map: 1,733.49 kB
+dist/assets/xlsx-DBvuKzsv.js                             499.91 kB │ gzip: 161.71 kB │ map: 1,916.04 kB
+dist/assets/MarkdownEditorRenderer-BI4sWjJz.js           918.04 kB │ gzip: 275.91 kB │ map: 3,699.32 kB
+dist/assets/index-CgNvwgqj.js                          2,301.29 kB │ gzip: 763.10 kB │ map: 9,557.76 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 7.53s

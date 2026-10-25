@@ -1,0 +1,9 @@
+typecheck rc=0 dur=9s load_start=37.80 37.66 72.75 load_end=36.93 37.48 72.48
+lint rc=0 dur=7s load_start=36.93 37.48 72.48 load_end=36.28 37.32 72.01
+unit rc=0 dur=165s load_start=36.28 37.32 72.01 load_end=91.23 52.83 71.68
+build rc=0 dur=13s load_start=91.23 52.83 71.68 load_end=97.06 55.34 72.35
+e2e rc=1 dur=446s load_start=97.06 55.34 72.35 load_end=72.97 82.53 81.42
+web rc=0 dur=0s load_start=72.97 82.53 81.42 load_end=70.73 81.91 81.21
+cargo rc=0 dur=1s load_start=70.73 81.91 81.21 load_end=70.73 81.91 81.21
+scrub rc=0 dur=2s load_start=70.73 81.91 81.21 load_end=70.73 81.91 81.21
+e2e-rerun table-toolkit.spec.ts (whole file) rc=0 dur=11s load_end=68.07 80.54 80.73

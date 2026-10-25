@@ -1,0 +1,51 @@
+{
+  "status": "validated local candidate; final tags held",
+  "branch": "codex/clean-v5-reconciled",
+  "integrationParent": "325e1d47dd2f8f34b82122104b8e4676fcf72d9a",
+  "correctedV3": "277c9a549b129b1f02f6e93f3c540c161806fe2f",
+  "v4": "d3337532d7938193f258fd945425d6f633bab1c5",
+  "unit": {
+    "passed": 5743,
+    "skipped": 6,
+    "passingFiles": 322,
+    "skippedFiles": 1,
+    "exitCode": 0,
+    "skipReason": "Opt-in reference backend disabled; Docker stopped at user request",
+    "receipt": "unit-codec-final-5743.log"
+  },
+  "browser": {
+    "qualification": "composite",
+    "fullDiagnostic": {
+      "passed": 242,
+      "failed": 5,
+      "notRun": 1
+    },
+    "correctedAffectedPassed": 23,
+    "postCodecAppsTemplatesPassed": 6,
+    "referenceRouteCleanupRerun": "deferred while reference backend is stopped"
+  },
+  "codecRegressionPassed": 34,
+  "webPassed": 31,
+  "typecheck": "passed",
+  "lint": "passed; final narrow changes checked after prior full-source lint",
+  "scrub": "clean",
+  "native": {
+    "buildExitCode": 0,
+    "observation": "native-observation-codec-final.json",
+    "originalFreshProfileEvidence": "native-observation.json"
+  },
+  "earlierBackendRehearsals": {
+    "referenceRendered": 70,
+    "referenceTotal": 71,
+    "referenceException": "Upstream StarHistory403 produces image-endpoint HTTP500",
+    "openbqRendered": 9,
+    "openbqTotal": 9,
+    "runRefreshControlsPassed": 3,
+    "afterFinalCodecCorrection": false
+  },
+  "containers": "BDOBB v3/v4 stopped; do not restart without user request",
+  "finalV4V5Tags": false,
+  "pushed": false,
+  "remoteRename": false,
+  "sourceHashes": "qualified-source-hashes.json"
+}

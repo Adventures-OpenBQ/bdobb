@@ -1,0 +1,5 @@
+
+> bdobb@4.0.0 scrub <worktree>
+> bash scripts/scrub-check.sh
+
+scrub-check: clean

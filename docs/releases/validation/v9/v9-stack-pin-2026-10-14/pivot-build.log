@@ -1,0 +1,38 @@
+
+> bdobb@9.0.0 pivot:build <worktree>
+> node scripts/build-pivot-wasm.mjs
+
+rustc 1.98.1 (48a229cea 2026-09-01)
+wasm-bindgen 0.2.128
+   Compiling unicode-ident v1.0.26
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling wasm-bindgen-shared v0.2.128
+   Compiling rustversion v1.0.23
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling bumpalo v3.20.3
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling cfg-if v1.0.5
+   Compiling once_cell v1.21.4
+   Compiling ryu-js v1.0.3
+   Compiling wasm-bindgen v0.2.128
+   Compiling syn v3.0.6
+   Compiling wasm-bindgen-macro-support v0.2.128
+   Compiling serde_derive v1.0.229
+   Compiling wasm-bindgen-macro v0.2.128
+   Compiling pivot-core v0.1.0 (<worktree>/crates/pivot-core)
+   Compiling pivot-wasm v0.1.0 (<worktree>/crates/pivot-wasm)
+    Finished `release` profile [optimized] target(s) in 29.61s
+✔ emitted web Wasm initializes and negotiates protocol 1 without shared memory (22.038292ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 150.468875

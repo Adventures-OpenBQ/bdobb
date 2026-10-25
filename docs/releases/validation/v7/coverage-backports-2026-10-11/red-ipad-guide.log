@@ -1,0 +1,80 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/help/index.test.ts (13 tests) 5ms
+ ✓ src/help/search.test.ts (15 tests) 5ms
+ ✓ src/help/shots.test.ts (5 tests) 10ms
+ ✓ src/help/windowMenu.test.ts (2 tests) 1ms
+ ❯ src/help/guide.test.ts (25 tests | 3 failed) 24ms
+   × the help guide > starts at home and lists every page in exactly one section 6ms
+     → expected [ { slug: 'guide/home', …(2) }, …(37) ] to have a length of 40 but got 38
+   × v7 iPad guide pages > lists both pages under the guide's iPad section 1ms
+     → expected undefined to be 'Installing on iPad' // Object.is equality
+   × v7 iPad guide pages > covers the gates, the free tier and the device push with clean's names 0ms
+     → expected '' to contain 'Developer Mode'
+ ✓ src/help/shots.unit.test.tsx (5 tests) 353ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 351ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/help/guide.test.ts > the help guide > starts at home and lists every page in exactly one section
+AssertionError: expected [ { slug: 'guide/home', …(2) }, …(37) ] to have a length of 40 but got 38
+
+- Expected
++ Received
+
+- 40
++ 38
+
+ ❯ src/help/guide.test.ts:18:25
+     16|     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
+     17|     // Added v4 Calendar and v5 Workspace/Statement pages, v6's three …
+     18|     expect(GUIDE_PAGES).toHaveLength(40);
+       |                         ^
+     19|   });
+     20| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/help/guide.test.ts > v7 iPad guide pages > lists both pages under the guide's iPad section
+AssertionError: expected undefined to be 'Installing on iPad' // Object.is equality
+
+- Expected: 
+"Installing on iPad"
+
++ Received: 
+undefined
+
+ ❯ src/help/guide.test.ts:177:47
+    175|   const page = (slug: string) => GUIDE_PAGES.find((p) => p.slug === `$…
+    176|   it("lists both pages under the guide's iPad section", () => {
+    177|     expect(page("installing-on-ipad")?.title).toBe("Installing on iPad…
+       |                                               ^
+    178|     expect(page("ipad-interface-differences")?.title).toBe("iPad inter…
+    179|     const ipad = GUIDE_SECTIONS.find((s) => s.title === "iPad");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/help/guide.test.ts > v7 iPad guide pages > covers the gates, the free tier and the device push with clean's names
+AssertionError: expected '' to contain 'Developer Mode'
+
+- Expected
++ Received
+
+- Developer Mode
+
+ ❯ src/help/guide.test.ts:185:21
+    183|     const install = page("installing-on-ipad")?.body ?? "";
+    184|     const ui = page("ipad-interface-differences")?.body ?? "";
+    185|     expect(install).toContain("Developer Mode");
+       |                     ^
+    186|     expect(install).toMatch(/free Apple ID/i);
+    187|     expect(install).toMatch(/7 days/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  3 failed | 62 passed (65)
+   Start at  12:46:10
+   Duration  1.91s (transform 340ms, setup 1.34s, collect 1.09s, tests 399ms, environment 3.45s, prepare 449ms)
+

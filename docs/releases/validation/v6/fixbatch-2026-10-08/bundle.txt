@@ -1,0 +1,7 @@
+src-tauri/target/release/bundle/macos/BDOBB Clean v6.app
+com.artcashin.bdobb.clean.v6
+6.0.0
+347b6881dd97deab55b5e4aab8a3cd488777b2ce6af1372f1af1603cdd0f4bce  src-tauri/target/release/bundle/macos/BDOBB Clean v6.app/Contents/MacOS/bdobb2
+Identifier=bdobb2-bbbe1291534b8f03
+Signature=adhoc
+TeamIdentifier=not set

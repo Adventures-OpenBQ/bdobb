@@ -1,0 +1,587 @@
+{
+ "app": "BLS Employment Situation",
+ "served_tabs": 6,
+ "saved_tabs": 6,
+ "tabs": [
+  {
+   "served_name": "Documents",
+   "saved_name": "Documents",
+   "served_cards": 1,
+   "saved_cards": 1,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_documents_bls_obb",
+      0,
+      2,
+      40,
+      28
+     ],
+     "saved": [
+      "bls_employment_situation_documents_bls_obb",
+      0,
+      0,
+      40,
+      28
+     ],
+     "ok": false
+    }
+   ]
+  },
+  {
+   "served_name": "Summary Tables",
+   "saved_name": "Summary Tables",
+   "served_cards": 2,
+   "saved_cards": 2,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_summary_household_bls_obb",
+      0,
+      2,
+      40,
+      24
+     ],
+     "saved": [
+      "bls_employment_situation_summary_household_bls_obb",
+      0,
+      2,
+      40,
+      24
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_summary_establishment_bls_obb",
+      0,
+      26,
+      40,
+      24
+     ],
+     "saved": [
+      "bls_employment_situation_summary_establishment_bls_obb",
+      0,
+      26,
+      40,
+      24
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Unemployment",
+   "saved_name": "Unemployment",
+   "served_cards": 8,
+   "saved_cards": 8,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_civilian_unemployment_rate_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_civilian_unemployment_rate_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_civilian_unemployment_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_civilian_unemployment_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_unemployment_by_education_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_unemployment_by_education_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_unemployment_by_veteran_status_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_unemployment_by_veteran_status_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_reasons_for_unemployment_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_reasons_for_unemployment_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_duration_of_unemployment_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_duration_of_unemployment_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_long_term_unemployed_share_bls_obb",
+      0,
+      122,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_long_term_unemployed_share_bls_obb",
+      0,
+      122,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_labor_underutilization_bls_obb",
+      0,
+      142,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_labor_underutilization_bls_obb",
+      0,
+      142,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Labor Force",
+   "saved_name": "Labor Force",
+   "served_cards": 5,
+   "saved_cards": 5,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_labor_force_participation_rate_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_labor_force_participation_rate_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_employment_population_ratio_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_population_ratio_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_civilian_employment_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_civilian_employment_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_not_in_labor_force_want_a_job_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_not_in_labor_force_want_a_job_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_not_in_labor_force_indicators_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_not_in_labor_force_indicators_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Industry Employment",
+   "saved_name": "Industry Employment",
+   "served_cards": 6,
+   "saved_cards": 6,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_employment_levels_by_industry_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_levels_by_industry_bls_obb",
+      0,
+      82,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_average_weekly_hours_production_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_average_weekly_hours_production_bls_obb",
+      0,
+      62,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_employment_change_by_industry_ci_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_change_by_industry_ci_bls_obb",
+      0,
+      2,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_employment_by_industry_monthly_changes_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_by_industry_monthly_changes_bls_obb",
+      0,
+      102,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_employment_and_hourly_earnings_by_industry_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_and_hourly_earnings_by_industry_bls_obb",
+      0,
+      22,
+      40,
+      20
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_employment_and_weekly_earnings_by_industry_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "saved": [
+      "bls_employment_situation_employment_and_weekly_earnings_by_industry_bls_obb",
+      0,
+      42,
+      40,
+      20
+     ],
+     "ok": true
+    }
+   ]
+  },
+  {
+   "served_name": "Analytical Tables",
+   "saved_name": "Analytical Tables",
+   "served_cards": 9,
+   "saved_cards": 9,
+   "cards": [
+    {
+     "served": [
+      "bls_employment_situation_t1_employment_changes_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_employment_situation_t1_employment_changes_bls_obb",
+      0,
+      2,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t2_ranked_industries_bls_obb",
+      0,
+      14,
+      40,
+      11
+     ],
+     "saved": [
+      "bls_employment_situation_t2_ranked_industries_bls_obb",
+      0,
+      14,
+      40,
+      11
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t3a_employment_changes_sa_bls_obb",
+      0,
+      25,
+      40,
+      13
+     ],
+     "saved": [
+      "bls_employment_situation_t3a_employment_changes_sa_bls_obb",
+      0,
+      25,
+      40,
+      13
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t3b_changes_vs_averages_bls_obb",
+      0,
+      38,
+      40,
+      13
+     ],
+     "saved": [
+      "bls_employment_situation_t3b_changes_vs_averages_bls_obb",
+      0,
+      38,
+      40,
+      13
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t4_over_the_year_changes_bls_obb",
+      0,
+      51,
+      40,
+      10
+     ],
+     "saved": [
+      "bls_employment_situation_t4_over_the_year_changes_bls_obb",
+      0,
+      51,
+      40,
+      10
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t5_hours_earnings_bls_obb",
+      0,
+      61,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_employment_situation_t5_hours_earnings_bls_obb",
+      0,
+      61,
+      40,
+      12
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t6_aggregate_hours_payrolls_bls_obb",
+      0,
+      73,
+      40,
+      10
+     ],
+     "saved": [
+      "bls_employment_situation_t6_aggregate_hours_payrolls_bls_obb",
+      0,
+      73,
+      40,
+      10
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_t7_peak_trough_bls_obb",
+      0,
+      83,
+      40,
+      10
+     ],
+     "saved": [
+      "bls_employment_situation_t7_peak_trough_bls_obb",
+      0,
+      83,
+      40,
+      10
+     ],
+     "ok": true
+    },
+    {
+     "served": [
+      "bls_employment_situation_confidence_intervals_bls_obb",
+      0,
+      93,
+      40,
+      12
+     ],
+     "saved": [
+      "bls_employment_situation_confidence_intervals_bls_obb",
+      0,
+      93,
+      40,
+      12
+     ],
+     "ok": true
+    }
+   ]
+  }
+ ],
+ "mismatches": 1,
+ "served_cards_total": 31,
+ "saved_cards_total": 31,
+ "served_groups": 0,
+ "saved_groups": 0
+}

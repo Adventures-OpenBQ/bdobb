@@ -1,0 +1,36 @@
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Using cached \"Historical Prices\" data.","group":"reasoning","artifacts":[{"type":"table","uuid":"a662bf16-e605-4f02-90d7-baf9a6ac9dc1","name":"Historical Prices","description":"Rows loaded from Historical Prices","content":[{"date":"2026-08-26","open":231.1,"high":233.4,"low":230.05,"close":232.8,"volume":41235600},{"date":"2026-08-27","open":232.9,"high":235.2,"low":232.1,"close":234.65,"volume":39872100},{"date":"2026-08-28","open":234.5,"high":236,"low":233.2,"close":235.1,"volume":37650400},{"date":"2026-08-31","open":235,"high":237.85,"low":234.6,"close":237.4,"volume":44120900},{"date":"2026-09-01","open":237.2,"high":238.9,"low":236.3,"close":238.15,"volume":40318700}]}]}
+
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Computing day-over-day price changes for AAPL","group":"reasoning","details":["```sql\nSELECT\n  date,\n  close,\n  close - LAG(close) OVER (ORDER BY date) AS change_dollars\nFROM historical_prices\nORDER BY date\n```"],"tool_call":{"tool_name":"execute_sql","input":{"display_summary":"Computing day-over-day price changes for AAPL","sql":"SELECT\n  date,\n  close,\n  close - LAG(close) OVER (ORDER BY date) AS change_dollars\nFROM historical_prices\nORDER BY date"}}}
+
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Rounding values for the table artifact","group":"reasoning","details":["```sql\nSELECT\n  date,\n  ROUND(close, 2) AS close,\n  ROUND(change_dollars, 2) AS change_dollars\nFROM (\n  SELECT\n    date,\n    close,\n    close - LAG(close) OVER (ORDER BY date) AS change_dollars\n  FROM historical_prices\n)\nORDER BY date\n```"],"tool_call":{"tool_name":"execute_sql","input":{"display_summary":"Rounding values for the table artifact","sql":"SELECT\n  date,\n  ROUND(close, 2) AS close,\n  ROUND(change_dollars, 2) AS change_dollars\nFROM (\n  SELECT\n    date,\n    close,\n    close - LAG(close) OVER (ORDER BY date) AS change_dollars\n  FROM historical_prices\n)\nORDER BY date"}}}
+
+event: copilotMessageChunk
+data: {"delta":"\n\n"}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Rendering table artifact \"AAPL Daily Close and Change\"","group":"reasoning","details":["```sql\nSELECT\n  date,\n  ROUND(close, 2) AS close,\n  ROUND(change_dollars, 2) AS change_dollars\nFROM (\n  SELECT\n    date,\n    close,\n    close - LAG(close) OVER (ORDER BY date) AS change_dollars\n  FROM historical_prices\n)\nORDER BY date\n```"],"tool_call":{"tool_name":"create_artifact","input":{"sql":"SELECT\n  date,\n  ROUND(close, 2) AS close,\n  ROUND(change_dollars, 2) AS change_dollars\nFROM (\n  SELECT\n    date,\n    close,\n    close - LAG(close) OVER (ORDER BY date) AS change_dollars\n  FROM historical_prices\n)\nORDER BY date","artifact":{"type":"table","name":"AAPL Daily Close and Change","description":"Daily closing prices and day-over-day dollar changes for AAPL"}}}}
+
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Rendered table artifact \"AAPL Daily Close and Change\" from 5 rows.","group":"reasoning","artifacts":[{"type":"table","uuid":"bf6eb9f1-0f02-48c0-88d1-8205b67e36bc","name":"AAPL Daily Close and Change","description":"Daily closing prices and day-over-day dollar changes for AAPL","content":[{"date":"2026-08-26","close":232.8,"change_dollars":null},{"date":"2026-08-27","close":234.65,"change_dollars":1.85},{"date":"2026-08-28","close":235.1,"change_dollars":0.45},{"date":"2026-08-31","close":237.4,"change_dollars":2.3},{"date":"2026-09-01","close":238.15,"change_dollars":0.75}]}]}
+
+event: copilotMessageArtifact
+data: {"type":"table","uuid":"bf6eb9f1-0f02-48c0-88d1-8205b67e36bc","name":"AAPL Daily Close and Change","description":"Daily closing prices and day-over-day dollar changes for AAPL","content":[{"date":"2026-08-26","close":232.8,"change_dollars":null},{"date":"2026-08-27","close":234.65,"change_dollars":1.85},{"date":"2026-08-28","close":235.1,"change_dollars":0.45},{"date":"2026-08-31","close":237.4,"change_dollars":2.3},{"date":"2026-09-01","close":238.15,"change_dollars":0.75}]}
+
+event: copilotMessageChunk
+data: {"delta":"\n\nHere is the table showing AAPL's daily closing price and dollar change from the Historical Prices widget:\n\n| Date | Close | Change ($) |\n|---|---|---|\n| 2026-08-26 | 232.80 | — |\n| 2026-08-27 | 234.65 | +1.85 |\n| 2026-08-28 | 235.10 | +0.45 |\n| 2026-08-31 | 237.40 | +2.30 |\n| 2026-09-01 | 238.15 | +0.75 |\n\n**Key takeaways:**\n- AAPL has posted **five consecutive days of gains**, rising from $232.80 to $238.15.\n- The largest single-day jump was on August 31 (+$2.30), accounting for nearly half of the total 5-day gain.\n- The stock is up **+$5.35 (+2.30%)** over this five-day stretch."}
+
+event: copilotCitationCollection
+data: {"citations":[{"id":"4745c5ad-de57-5475-b64f-67fb34974aee","source_info":{"type":"widget","uuid":"4745c5ad-de57-5475-b64f-67fb34974aee","origin":"reference","widget_id":"historical_prices","name":"Historical Prices","description":"Daily historical OHLCV prices for a ticker.","metadata":{"input_args":{"symbol":"AAPL"},"widget_uuid":"11111111-2222-3333-4444-555555555555"},"citable":true},"details":[{"Source type":"widget","Origin":"reference","Data source":"Historical Prices","symbol":"AAPL"}],"signature":""}]}
+

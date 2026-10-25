@@ -1,0 +1,4 @@
+
+> bdobb@7.0.0 typecheck <worktree>
+> tsc --noEmit
+

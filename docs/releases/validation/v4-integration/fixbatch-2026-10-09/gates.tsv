@@ -1,0 +1,12 @@
+typecheck|exit=0|dur=12s|load=44.48 60.83 36.74|cmd=pnpm typecheck
+lint|exit=0|dur=10s|load=47.51 60.93 37.05|cmd=pnpm lint
+unit|exit=0|dur=199s|load=48.61 60.72 37.26|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=13s|load=72.33 67.47 45.15|cmd=pnpm build
+e2e|exit=1|dur=419s|load=65.41 66.16 45.07|cmd=env BDOBB_BROWSER_PORT=4393 BDOBB_MOCK_PORT=4394 pnpm e2e
+web|exit=0|dur=1s|load=129.93 147.17 94.67|cmd=pnpm test:web
+build-web|exit=0|dur=9s|load=124.97 145.85 94.52|cmd=pnpm build:web
+web-browser|exit=0|dur=6s|load=119.53 144.38 94.30|cmd=pnpm test:web:browser
+cargo|exit=0|dur=2s|load=112.68 142.08 94.07|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=0|dur=2s|load=112.68 142.08 94.07|cmd=pnpm scrub
+help|exit=0|dur=3s|load=112.68 142.08 94.07|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+DONE

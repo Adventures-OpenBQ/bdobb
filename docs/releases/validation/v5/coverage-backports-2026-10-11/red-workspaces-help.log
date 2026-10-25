@@ -1,0 +1,356 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/help/search.test.ts (15 tests) 5ms
+ ❯ src/help/index.test.ts (14 tests | 3 failed) 13ms
+   × Quick Help covers workspaces in full > names tile names, Put in panel and the Option-number setting 6ms
+     → expected '# Workspaces and Saved Layouts\n\nA w…' to contain '**Show dashboard names**'
+   × Quick Help covers workspaces in full > gives ⌥N an entry, Arrange mode a section, and names the workspace dialogs in Escape's rule 1ms
+     → expected '# Keyboard shortcuts\n\nEvery global …' to match /^- `⌥N` —/m
+   × Quick Help covers workspaces in full > gives the left rail a Workspaces section 2ms
+     → expected '# The left rail\n\nThe rail is the st…' to contain '## Workspaces'
+ ✓ src/help/shots.test.ts (5 tests) 12ms
+ ✓ src/help/windowMenu.test.ts (1 test) 1ms
+ ❯ src/help/guide.test.ts (12 tests | 2 failed) 19ms
+   × guide covers workspaces in full > names the dialog's ways in, tile names, arranging, Put in panel and the Option-number setting 5ms
+     → expected '# Workspaces and Saved Layouts\n\nA w…' to contain '**File ▸ New Workspace…**'
+   × guide covers workspaces in full > gives ⌥N a row, Arrange mode a section, and names the workspace dialogs in Escape's rule 1ms
+     → expected '# Keyboard Shortcuts\n\nEvery global …' to match /^\| `⌥N` \|/m
+ ✓ src/help/shots.unit.test.tsx (5 tests) 230ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/help/guide.test.ts > guide covers workspaces in full > names the dialog's ways in, tile names, arranging, Put in panel and the Option-number setting
+AssertionError: expected '# Workspaces and Saved Layouts\n\nA w…' to contain '**File ▸ New Workspace…**'
+
+- Expected
++ Received
+
+- **File ▸ New Workspace…**
++ # Workspaces and Saved Layouts
++
++ A workspace puts several existing dashboards on screen together. Each panel keeps its own tabs, cards and parameter controls. Focusing one panel does not transfer its card edits to another dashboard.
++
++ ![Two dashboards in a Laptop workspace](./shots/workspaces.png)
++
++ Choose **New workspace** in the left rail, or **File → New Workspace…** in the desktop app, name it and choose **Full Screen** or **Laptop**. Assign dashboards to its slots. Select the workspace in the rail to open it; use its menu to edit or delete it. Removing a workspace does not delete its dashboards. A dashboard can also be opened on its own.
++
++ Use **Arrange** to resize and position panels or add a tile when room is available. **Done** commits the draft; **Cancel** or Escape discards it. **Save layout as…** stores reusable panel geometry, not dashboard data. Saving a layout is a separate action: Cancel after saving it still leaves that saved layout available. Applying a saved layout assigns geometry to a workspace; inspect which dashboards fill the resulting slots.
++
++ Workspace definitions and saved layouts persist locally. They are separate from dashboard apps.json exports. Optional User Settings storage on a server (Settings ▸ General ▸ User Settings) syncs display settings, and with a server that offers them your dashboards sync too (see Settings and Logs); workspaces, saved layouts and dropped files are not synchronized. A layout is an arrangement, not a copy of its panels' data.
++
++ In a workspace the left rail can be pinned open with the lock beside the rail's first section label, or with **Window ▸ Keep Sidebar Open** in the desktop app. The pin is saved with the workspace, so each workspace remembers its own. Outside a workspace the menu item is greyed out.
++
+
+ ❯ src/help/guide.test.ts:105:21
+    103|       "Settings ▸ Layout ▸ Option-number shortcuts",
+    104|       "A workspace stays on this machine",
+    105|     ]) expect(body).toContain(s);
+       |                     ^
+    106|     expect(body).not.toMatch(/Before v5\.\d/);
+    107|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/help/guide.test.ts > guide covers workspaces in full > gives ⌥N a row, Arrange mode a section, and names the workspace dialogs in Escape's rule
+AssertionError: expected '# Keyboard Shortcuts\n\nEvery global …' to match /^\| `⌥N` \|/m
+
+- Expected: 
+/^\| `⌥N` \|/m
+
++ Received: 
+"# Keyboard Shortcuts
+
+Every global shortcut below is ignored while you are typing — in a text field, a text area, a dropdown or anything editable — and while a dialog is open. On Windows and Linux builds, read `⌘` as Ctrl.
+
+## Global
+
+| Keys | Does |
+|---|---|
+| `⌘K` | Open the widget library. Needs Command on its own: `⌘⇧K` is deliberately left to the browser in development builds. |
+| `⌘R` | Refresh every card on the tab you are looking at. Same as the `↻` button. Works in a viewer window. |
+| `⌥1` … `⌥9` | Jump to the first to ninth dashboard in your saved order — one flat list, so with folders in the rail it need not match the rows top to bottom. Reordering reassigns them. There is no shortcut for a tenth. Inert in a viewer window. |
+| `⌥0` | Go back to the dashboard you were on before. Inert in a viewer window. |
+| `⌘?` | Open **Quick Help**, the in-app manual. It only opens; close it with Escape or its `✕`. The **Reference Manual** — this guide, carried inside the app — has no shortcut; it is the second item on the rail's Help menu. |
+
+## In the widget library
+
+Opening the library moves the keyboard into it: the **Search widgets** box takes focus, so `⌘K` and then typing goes straight to the search rather than to the dashboard behind. Closing it hands focus back to whatever opened it.
+
+- `⌥0` — Go back to the dashboard and tab the library was opened from, and close it.
+- `Escape` — Close the library. Anything you clicked is already added.
+
+## In a menu
+
+The right-click menus — a table header's menu, the rail's row and section menus, the rail's Help menu and the Provider-keys row menu — are all one component, so they all behave alike:
+
+- The **first enabled item is focused** when the menu opens, so the keyboard works without a further click.
+- `↑` and `↓` move between items, skipping disabled ones.
+- `Enter` or `Space` chooses the focused item.
+- `Escape` closes the menu. Escape, choosing an item, and a click on empty space all put focus back on whatever you opened the menu from.
+
+A card's `⋯` menu is its own thing and has none of that: it opens under the `⋯` button, and Escape or a click outside closes it.
+
+## In a table header
+
+`Enter`, `Space`, the Context-Menu key or `Shift+F10` on a focused header opens that column's menu rather than sorting — and **sorting is the first thing in that menu**: **Sort ascending**, **Sort descending** and, once the column is sorted, **Clear sort**, above the pinning items. So a sort is reachable without a pointer, and it follows the same single-and-multi-sort rule a click does. A click on the header still sorts directly. Every sortable header also announces its state to a screen reader, including \"not sorted\". See [Tables](#guide/tables).
+
+The **Provider** header in **Settings ▸ Provider keys** is in the Tab order too, and `Enter` or `Space` cycles it the same way a click does. See [Provider Keys](#guide/provider-keys).
+
+## In a PDF card
+
+- `⌘F` — Open the find bar. Not global: it works only while the pointer is over a PDF card or that card holds focus.
+- `Enter` — Next match. `Shift+Enter` — Previous match.
+- `Escape` — Close the find bar. Inside a PDF card this closes *only* the find bar; it will not also un-maximize the card.
+
+## In a text field
+
+- `Enter` — Commit a rename. Clicking away does the same.
+- `Escape` — Cancel a rename and put the old text back.
+
+## In the desktop app's Window menu
+
+- **Window ▸ Keep Sidebar Open** — Pin the left rail open for the workspace you are in, the same as the rail's **Pin the rail open** button. The checkmark follows the pin however you change it. Greyed out when no workspace is open, because the pin belongs to a workspace. No shortcut.
+
+## What Escape does when more than one thing is open
+
+One press does exactly one thing. In order:
+
+1. **A rename in progress cancels.** Nothing else sees the press.
+2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu, a column menu, the rail's right-click menu, the Provider-keys row menu, the rail's Help menu. A maximized card underneath stays maximized and restores on the next press.
+3. **An open dialog closes** — Settings, Connections, Apps, Quick Help or the Reference Manual. With one dialog over another (Quick Help opened with `⌘?` over Settings), only the one on top closes; the one underneath stays open with its changes. A menu nested *inside* one of them still wins, by rule 2. Escape on Settings is **Cancel**: its unsaved changes, an uncommitted **Default widget ticker** included, are discarded.
+4. **A maximized card restores.**
+5. Otherwise, nothing.
+
+---
+*Source: BDOBB v5.5.3 in-app manual, \"Keyboard shortcuts\", \"The left rail\", \"Tables\" and \"Documents, PDFs and files.\"*
+*See also: [Layout and Navigation](#guide/layout-and-navigation) · [Widget Cards](#guide/widget-cards)*
+"
+
+ ❯ src/help/guide.test.ts:110:18
+    108|   it("gives ⌥N a row, Arrange mode a section, and names the workspace …
+    109|     const body = page("keyboard-shortcuts");
+    110|     expect(body).toMatch(/^\| `⌥N` \|/m);
+       |                  ^
+    111|     expect(body).toContain("## While arranging a workspace");
+    112|     expect(body).toMatch(/An open dialog closes\*\* —[^\n]*\*\*New wor…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/help/index.test.ts > Quick Help covers workspaces in full > names tile names, Put in panel and the Option-number setting
+AssertionError: expected '# Workspaces and Saved Layouts\n\nA w…' to contain '**Show dashboard names**'
+
+- Expected
++ Received
+
+- **Show dashboard names**
++ # Workspaces and Saved Layouts
++
++ A workspace puts several existing dashboards on screen together. Each panel keeps its own tabs, cards and parameter controls. Focusing one panel does not transfer its card edits to another dashboard.
++
++ ![Two dashboards in a Laptop workspace](./shots/workspaces.png)
++
++ Choose **New workspace** in the left rail, or **File → New Workspace…** in the desktop app, name it and choose **Full Screen** or **Laptop**. Assign dashboards to its slots. Select the workspace in the rail to open it; use its menu to edit or delete it. Removing a workspace does not delete its dashboards. A dashboard can also be opened on its own.
++
++ Use **Arrange** to resize and position panels or add a tile when room is available. **Done** commits the draft; **Cancel** or Escape discards it. **Save layout as…** stores reusable panel geometry, not dashboard data. Saving a layout is a separate action: Cancel after saving it still leaves that saved layout available. Applying a saved layout assigns geometry to a workspace; inspect which dashboards fill the resulting slots.
++
++ Workspace definitions and saved layouts persist locally. They are separate from dashboard apps.json exports. Optional User Settings storage on a server (Settings ▸ General ▸ User Settings) syncs display settings, and with a server that offers them your dashboards sync too (see Settings and Logs); workspaces, saved layouts and dropped files are not synchronized. A layout is an arrangement, not a copy of its panels' data.
++
++ In a workspace the left rail can be pinned open with the lock beside the rail's first section label, or with **Window ▸ Keep Sidebar Open** in the desktop app. The pin is saved with the workspace, so each workspace remembers its own. Outside a workspace the menu item is greyed out.
++
+
+ ❯ src/help/index.test.ts:115:20
+    113|     const body = topic("workspaces");
+    114|     for (const s of ["**Show dashboard names**", "**Put in panel**", "…
+    115|       expect(body).toContain(s);
+       |                    ^
+    116|     }
+    117|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/help/index.test.ts > Quick Help covers workspaces in full > gives ⌥N an entry, Arrange mode a section, and names the workspace dialogs in Escape's rule
+AssertionError: expected '# Keyboard shortcuts\n\nEvery global …' to match /^- `⌥N` —/m
+
+- Expected: 
+/^- `⌥N` —/m
+
++ Received: 
+"# Keyboard shortcuts
+
+Every global shortcut below is ignored while you are typing — in a text field,
+a text area, a dropdown or anything editable — and while a dialog is open.
+
+## Global
+
+- `⌘K` — Open the widget library. Needs Command on its own: `⌘⇧K` is
+  deliberately left to the browser in development builds.
+- `⌘R` — Refresh every card on the tab you are looking at. Same as the `↻`
+  button in the tab strip. Works in a viewer window. `⌘⇧R` is deliberately left
+  alone.
+- `⌥1` to `⌥9` — Jump to the first to ninth dashboard in your saved dashboard
+  order, which is one flat list: with folders in the rail, that need not be the
+  order the rows read from top to bottom. Reordering dashboards reassigns
+  these. There is no shortcut for a tenth. Inert in a viewer window, which is
+  pinned to one dashboard.
+- `⌥0` — Go back to the dashboard you were on before. Inert in a viewer window.
+- `⌘?` — Open Quick Help. It only opens; close it with Escape or its `✕`.
+  The Reference Manual has no shortcut; it is the second item on the rail's
+  Help menu.
+
+## In the widget library
+
+- `⌥0` — Go back to the dashboard and tab the library was opened from, and
+  close it.
+- `Escape` — Close the library. Anything you clicked is already added.
+
+## In a menu
+
+The right-click menus — a table header's menu, the rail's row and section
+menus, the rail's Help menu and the Provider-keys row menu — are all one
+component, so they all behave alike.
+
+- The **first enabled item is focused** when the menu opens, so the keyboard
+  works without a further click.
+- `↑` and `↓` move between items, skipping disabled ones.
+- `Enter` or `Space` chooses the focused item.
+- `Escape` closes the menu. Escape, choosing an item, and a click on empty
+  space all put focus back on whatever you opened the menu from; a click that
+  lands on another control leaves focus there instead.
+
+A card's `⋯` menu is its own thing and has none of that: it opens under the
+`⋯` button, and Escape or a click outside closes it.
+
+## In a PDF card
+
+- `⌘F` (or `Ctrl+F`) — Open the find bar. This one is not global: it works only
+  while the pointer is over a PDF card or that card holds focus.
+- `Enter` — Next match. `Shift+Enter` — Previous match.
+- `Escape` — Close the find bar. Inside a PDF card this closes *only* the find
+  bar; it will not also un-maximize the card.
+
+## In a text field
+
+- `Enter` — Commit a rename. Clicking away does the same.
+- `Escape` — Cancel a rename and put the old text back.
+
+## In the desktop app's Window menu
+
+- **Window ▸ Keep Sidebar Open** — Pin the left rail open for the workspace
+  you are in, the same as the rail's **Pin the rail open** button. The
+  checkmark follows the pin however you change it. Greyed out when no
+  workspace is open, because the pin belongs to a workspace. No shortcut.
+
+## What Escape does when more than one thing is open
+
+One press does exactly one thing. In order:
+
+1. **A rename in progress cancels.** Nothing else sees the press.
+2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu,
+   a column menu, the rail's right-click menu, the Provider-keys row menu, the
+   rail's Help menu. A maximized card underneath stays maximized and restores
+   on the next press.
+3. **An open dialog closes** — Settings, Connections, Quick Help or the
+   Reference Manual. With one dialog over another (Quick Help opened with
+   `⌘?` over Settings), only the one on top closes; the one underneath stays
+   open with its changes. A menu
+   nested *inside* one of them still wins, by rule 2. Escape on Settings is
+   **Cancel**: its unsaved changes, an uncommitted **Default widget ticker**
+   included, are discarded.
+4. **A maximized card restores.**
+5. Otherwise, nothing.
+"
+
+ ❯ src/help/index.test.ts:120:18
+    118|   it("gives ⌥N an entry, Arrange mode a section, and names the workspa…
+    119|     const body = topic("keyboard-shortcuts");
+    120|     expect(body).toMatch(/^- `⌥N` —/m);
+       |                  ^
+    121|     expect(body).toContain("## While arranging a workspace");
+    122|     expect(body).toMatch(/An open dialog closes\*\* —[\s\S]*?\*\*New w…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/help/index.test.ts > Quick Help covers workspaces in full > gives the left rail a Workspaces section
+AssertionError: expected '# The left rail\n\nThe rail is the st…' to contain '## Workspaces'
+
+- Expected
++ Received
+
+- ## Workspaces
++ # The left rail
++
++ The rail is the strip down the left edge. It is 48 pixels wide at rest and
++ expands to 240 when you point at it; it floats over the dashboard rather than
++ pushing it aside, so nothing reflows. It collapses again about a third of a
++ second after the pointer leaves — unless you are part-way through renaming
++ something, in which case it stays open until you finish.
++
++ Dragging a widget or a dashboard over the rail expands it too, so you are never
++ asked to drop onto a 48-pixel sliver.
++
++ ![The left rail expanded, showing its fixed rows and dashboard list](./shots/the-left-rail.png)
++
++ ## The rows, top to bottom
++
++ - **Add widget (⌘K)** — opens the widget library. Its `+` is the one accented
++   icon in the rail.
++ - **Apps** — discovers backend-served apps and opens them as dashboards. Duplicate names use the import conflict dialog.
++ - *LIBRARY*
++ - **Widget Library** — the same overlay as **Add widget**.
++ - *MY DASHBOARDS*
++ - Your folders and dashboards.
++
++ Pinned to the bottom, always reachable no matter how many dashboards you have:
++ **Connections**, **Settings**, **Help**.
++
++ Only the dashboard list scrolls. The three bottom rows never move.
++
++ ## Dashboard rows
++
++ The first nine dashboards carry an `⌥1` to `⌥9` badge, in the flat order the
++ rail lists them — which is the order those shortcuts follow, so reordering
++ dashboards reassigns them. The badge sits where the fixed rows' icons sit, so
++ it is still visible when the rail is collapsed.
++
++ Dashboards past the ninth, and folder rows, show nothing at all while the rail
++ is collapsed. They are still clickable, and pointing at the rail expands it.
++
++ Folders show `▸` when closed and `▾` when open. Clicking a folder row opens or
++ closes it; it does not select anything.
++
++ ## Collapsed width
++
++ **Settings ▸ Layout ▸ Collapsed rail width** is a slider from 24 to 120 pixels,
++ default 48. The readout updates as you drag but the value is saved when you let
++ go, so one adjustment is one write. It applies to every window, including
++ viewer windows. The expanded width is fixed at 240 and is not a setting.
++
++ ## What collapses the rail
++
++ **Add widget**, **Widget Library**, **Connections** and **Settings** all
++ collapse the rail before they open, because the expanded rail would otherwise
++ paint over them. **Help** does not: it opens a small popover anchored to the
++ row, which the rail is welcome to sit beside. That menu carries two ways in:
++ **Quick Help (⌘?)**, which opens this manual — one short topic per surface —
++ and **Reference Manual**, the longer user guide, organised by task and
++ grouped by section. Choosing either does collapse the rail, on the way to
++ opening the dialog. Both dialogs have a search box above their topic list:
++ type a word and the list narrows to the topics that mention it.
++
+
+ ❯ src/help/index.test.ts:125:36
+    123|   });
+    124|   it("gives the left rail a Workspaces section", () => {
+    125|     expect(topic("the-left-rail")).toContain("## Workspaces");
+       |                                    ^
+    126|   });
+    127| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+ Test Files  2 failed | 4 passed (6)
+      Tests  5 failed | 47 passed (52)
+   Start at  12:46:39
+   Duration  1.71s (transform 322ms, setup 1.43s, collect 969ms, tests 279ms, environment 2.87s, prepare 502ms)
+

@@ -1,0 +1,20 @@
+pivot-build|exit=0|dur=30s|load=31.50 14.74 11.19|cmd=pnpm pivot:build
+typecheck|exit=0|dur=12s|load=36.60 17.58 12.34|cmd=pnpm typecheck
+lint|exit=0|dur=10s|load=37.14 18.32 12.66|cmd=pnpm lint
+unit|exit=0|dur=202s|load=37.89 19.11 13.01|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+revision-test|exit=0|dur=2s|load=10.23 15.19 12.71|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=13s|load=10.23 15.19 12.71|cmd=pnpm build
+smoke|exit=0|dur=4s|load=10.66 15.04 12.69|cmd=pnpm smoke
+e2e|exit=0|dur=504s|load=10.66 15.04 12.69|cmd=env BDOBB_BROWSER_PORT=4651 BDOBB_MOCK_PORT=4652 pnpm exec playwright test --reporter=list
+web|exit=0|dur=1s|load=13.99 11.26 11.41|cmd=pnpm test:web
+build-web|exit=0|dur=10s|load=13.99 11.26 11.41|cmd=pnpm build:web
+web-browser|exit=0|dur=3s|load=14.03 11.37 11.44|cmd=pnpm test:web:browser
+pivot-test|exit=0|dur=55s|load=15.86 11.79 11.59|cmd=pnpm pivot:test
+pivot-packaging|exit=0|dur=6s|load=15.60 12.65 11.94|cmd=pnpm test:pivot:packaging
+cargo|exit=0|dur=69s|load=18.19 13.23 12.15|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked -j 2
+scrub|exit=0|dur=20s|load=19.52 15.25 13.03|cmd=pnpm scrub
+help|exit=0|dur=4s|load=15.74 14.65 12.86|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+cargo-test|exit=0|dur=66s|load=14.88 14.49 12.82|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked -j 2
+notices-check|exit=0|dur=2s|load=15.72 14.71 13.02|cmd=pnpm notices:check
+diff-check|exit=0|dur=0s|load=15.72 14.71 13.02|cmd=git diff --check d92a863 HEAD -- . :!docs/releases/validation/**/*.log
+DONE

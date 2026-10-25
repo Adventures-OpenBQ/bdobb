@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": ". \"${CARGO_HOME:-$HOME/.cargo}/env\" 2>/dev/null; pnpm pivot:build && pnpm typecheck && pnpm test:run && pnpm test:web && pnpm build:web",
+  "installCommand": "bash scripts/vercel-install.sh",
+  "outputDirectory": ".vercel/output"
+}

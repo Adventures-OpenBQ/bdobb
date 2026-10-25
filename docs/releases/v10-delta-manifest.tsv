@@ -1,0 +1,100 @@
+status	path	feature	disposition	reason
+DIVERGED	README.md	version	EXCLUDE	donor's release-tag example (v10.0.2); clean's README gains its own 10.0.0 section (release step); DONE 0f50dc5 (clean's own v10 section)
+NEW	docs/examples/v10.0.0-live-grid.apps.json	examples	ADD	carried into clean's envelope with 1621cee1's two chart cards (live_chart, kdb_cache_chart); description names BDOBB 10.0.0 as the minimum; donor e69f4155, 1621cee1; DONE e990841
+NEW	docs/superpowers/plans/2026-09-03-live-grid-backend.md	design-doc	PROVENANCE	donor design/plan doc; cited in v10-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-03-live-grid-client.md	design-doc	PROVENANCE	donor design/plan doc; cited in v10-assembly, not copied (clean writes its own plans)
+ABSENT	docs/superpowers/plans/2026-09-03-v9-0-0-eodhd-nas-closeout.md	design-doc	PROVENANCE	donor v9 close-out plan (9ab488a9); cited, not copied; absent in clean
+NEW	docs/superpowers/specs/2026-09-03-live-grid-design.md	design-doc	PROVENANCE	donor design doc (9fcbfb70, 21394d14, 44c5e0bd, 69b23cb7); cited in v10-assembly, not copied
+DIVERGED	eslint-suppressions.json	lint	EXCLUDE	donor baselines useWidgetSocket's deliberate dependency list; useWidgetSocket is not carried (clean's shared useReconnectingSocket stays) and clean lints clean without it
+DIVERGED	package.json	version	MERGE	clean wins (BDOBB, own deps); only the 10.0.0 bump; the donor's openbbDocker v10.0.3 is not taken: clean pins openbq-docker and its re-vendor is pending (V9-P3, V10-P3); DONE e791de5
+DIVERGED	src-tauri/Cargo.lock	version	MERGE	clean wins; only the bdobb entry's 10.0.0 (edited by hand: cargo cannot build here); DONE e791de5
+DIVERGED	src-tauri/Cargo.toml	version	MERGE	clean wins; only the 10.0.0 bump; DONE e791de5
+DIVERGED	src-tauri/tauri.conf.json	version	MERGE	clean wins (productName BDOBB, identifier, CSP already ws:/wss: since v3); only the 10.0.0 bump; DONE e791de5
+DIVERGED	src/browser-shim/socket.ts	web-grid	MERGE	comments only (c183f880): the grid's /grid/live_grid_ws is a second ticketed target once the vendored policy names it; clean's one construction site stays useReconnectingSocket (useWidgetSocket not carried); DONE 28596b4
+DIVERGED	src/components/WidgetCard.test.tsx	live-grid	MERGE	the live-grid card cases rewritten for clean's renderer-owned seed (811b7905, b3d7ac4c): effective group-bound params, table state, Refresh; the donor's card-fetched seed cases are not taken; DONE 8111599
+DIVERGED	src/components/WidgetCard.tsx	live-grid	MERGE	the live grid gets the table card's state, filter row, autosize, cell clicks and Refresh (811b7905, b3d7ac4c); clean keeps the renderer's own snapshot fetch with its error and Retry (v3), so the donor's card-fetched seed is not taken; calendar export hunk already in clean (KEEP); run-button comment (c779b185) describes the donor's control, not clean's; DONE 8111599
+DIVERGED	src/components/renderers/LiveGridRenderer.test.tsx	live-grid	MERGE	rewritten for the merged renderer: v3 reference (one row per frame, no auth) kept and extended; row arrays, stale-symbol drop, symbol_meta, drop notice; DONE 8111599, c42f267, dab2192, 1025a6c (and e2e/live-grid.spec.ts)
+DIVERGED	src/components/renderers/LiveGridRenderer.tsx	live-grid	MERGE	MERGE onto the v3 reference-compatibility renderer, never KEEP: a frame is one row (reference, live-grid v10.1.7) or an array of rows (donor); drop stale symbols (fa96f72c); symbol_meta logos and 52-week (8b51a240, 8dd46d36) only for the fields the columns read; a snapshot keeps rows streamed while it was in flight; drop notice without the credential (65f9b782); clean's hook kept for the socket; DONE 8111599, c42f267, dab2192, 1025a6c
+NEW	src/components/renderers/RangeBar.test.tsx	symbol-meta	ADD	donor's CSS range-bar cases (8dd46d36), on clean's RangeBar; DONE c42f267
+NEW	src/components/renderers/RangeBar.tsx	symbol-meta	ADD	CSS range bar (8dd46d36; the Plotly bar of 74cafc6f and its redraw gate ecdad3b2 are superseded inside the donor range); DONE c42f267
+DIVERGED	src/components/renderers/TableRenderer.test.tsx	table-cells	MERGE	logo, rangeBar, percentKey and align cell cases ported; the donor's cell-flash and fixed-layout cases are not taken (clean keeps its v3 flash and its always-fixed table); DONE c42f267
+DIVERGED	src/components/renderers/TableRenderer.tsx	table-cells	MERGE	logo and rangeBar cells, align class on cell and header, percentKey companion (74cafc6f, 8dd46d36, 8ae5a24d, 1c8084ff); fixed layout already in clean, always on for the virtual table (`.sized`), so 24f16e3d's conditional form is KEEP; TableCell already module-scope (ecdad3b2 KEEP); the donor's remount flash (5b444781) not taken: clean's row-keyed data-flash already honours colorValueKey and enableCellChangeWs; DONE c42f267
+DIVERGED	src/help/guide.test.ts	help	MERGE	clean's own v10 assertions (version, example, Live grids) rather than the donor's 47-page snapshot count; DONE cde0d9b, e791de5
+DIVERGED	src/help/guide/VERSION	version	MERGE	10.0.0 (clean's own guide version); DONE e791de5
+DIVERGED	src/help/guide/about-this-guide.md	help	MERGE	clean's own v10 entry; the donor's snapshot paragraph is not taken; DONE e791de5
+DIVERGED	src/help/guide/backends-and-connections.md	help	MERGE	the websocket credential exception written for clean (V10-P1): a browser socket carries no header, a query-placed credential rides the URL; DONE cde0d9b
+DIVERGED	src/help/guide/calendar-view.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; pairing tag only
+DIVERGED	src/help/guide/charts.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; the Cached Price Chart is a plain chart widget, covered by the example page
+DIVERGED	src/help/guide/eodhd-data-provider.md	help	MERGE	the streaming-quotes line now points at the live grid (clean's own sentence; the 'not part of 9.0.0' fact kept); the donor's snapshot hunks not taken; DONE cde0d9b
+DIVERGED	src/help/guide/example-dashboards.md	help	MERGE	clean's own v10 section for v10.0.0-live-grid; DONE cde0d9b
+DIVERGED	src/help/guide/home.md	version	MERGE	10.0.0 only; DONE e791de5 (and cde0d9b's sources)
+NEW	src/help/guide/kdb-tick-cache.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; a server page (kdb+, od v10.0.3); the openbq-docker v10 port is in parallel and its facts are not this client's to state yet
+NEW	src/help/guide/live-quotes.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; folded into clean's Tables page (Live grids) as 7876c86a did for Quick Help
+DIVERGED	src/help/guide/openbb-docker-stack.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; the openbq-docker v10 stack page waits for the server port and the re-vendor
+ABSENT	src/help/guide/pivot.md	help	EXCLUDE	absent in clean (Pivot is part of Tables); donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/guide/rita-chat.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+ABSENT	src/help/guide/rss-feed-sources.md	help	EXCLUDE	absent in clean (v8 did not carry it); donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/guide/running-and-refreshing.md	help	MERGE	a live grid's Refresh re-fetches its snapshot; the socket carries on; DONE cde0d9b
+DIVERGED	src/help/guide/settings-and-logs.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; the two INFO lines are described on the Tables page
+DIVERGED	src/help/guide/settings-export-and-import.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+ABSENT	src/help/guide/statement-pivot-view.md	help	EXCLUDE	absent in clean; donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/guide/tables.md	help	MERGE	7876c86a's Live grids and column-declaration text, rewritten for clean's true behaviour; DONE cde0d9b
+DIVERGED	src/help/guide/tailscale-networking.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/guide/troubleshooting-infrastructure.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code; kdb+ entries are server-side
+DIVERGED	src/help/guide/troubleshooting-using-bdobb.md	help	MERGE	a live grid that never ticks, written for clean (V10-P1); DONE cde0d9b
+DIVERGED	src/help/guide/web-preview.md	help	MERGE	the /grid relay as this line builds it (c183f880), pending the re-vendor; DONE cde0d9b
+DIVERGED	src/help/guide/widget-library.md	help	EXCLUDE	donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/shots/card-parameters-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/card-parameters-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/charts-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/fy-ends-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/fy-ends-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/getting-started-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/getting-started-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/import-and-export-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/locked-widgets-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/locked-widgets-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/period-quarter-range-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/period-quarter-range-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+ABSENT	src/help/shots/pivot-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+ABSENT	src/help/shots/pivot-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/running-and-refreshing-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/running-and-refreshing-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/tables-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/tables-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/widget-cards-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/widget-cards-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/workspaces-dark.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+DIVERGED	src/help/shots/workspaces-light.png	help	EXCLUDE	donor shot regeneration (1257dbd6, 923218d7); clean re-takes its own shots when its UI changes
+ABSENT	src/help/topics/pivot.md	help	EXCLUDE	absent in clean (Pivot is part of Tables); donor's v10.0 help vault snapshot (143562cc, 38f3bb23, 8d9c54ce, d99bc2d8, 84768190, bcfb2bae, 9051b4cb, b0925e78, 30a1ff81, 21773674); clean authors its own Reference Manual and checks every claim against this line's code
+DIVERGED	src/help/topics/tables.md	help	MERGE	7876c86a rewritten for clean: Live grids; logo, rangeBar and showCellChange; align; DONE cde0d9b
+DIVERGED	src/help/topics/troubleshooting.md	help	MERGE	a live grid that never ticks, written for clean's true behaviour (single-row frames ARE read here); DONE cde0d9b
+DIVERGED	src/hooks/useReconnectingSocket.test.tsx	live-grid	EXCLUDE	donor deletes it; clean keeps its shared hook (News runs on its reconnect mode since v8)
+DIVERGED	src/hooks/useReconnectingSocket.ts	live-grid	EXCLUDE	donor deletes it; clean keeps it: resubscribe over the open socket (3cf2d837), late-close ownership (ac1068e5) and the stale-connection guard are already there (KEEP)
+NEW	src/hooks/useWidgetSocket.test.ts	live-grid	EXCLUDE	not carried; its cases are covered on clean's hook and the merged renderer
+NEW	src/hooks/useWidgetSocket.ts	live-grid	EXCLUDE	not carried; its drop notice (65f9b782) is merged into LiveGridRenderer through the hook's onDrop; array-only frames are not taken (v3 reference and live-grid v10.1.7 send one row per frame)
+DIVERGED	src/lib/appsJson.examples.test.ts	examples	MERGE	the v10 case (five card ids, 1621cee1) and the known-list entry; DONE e990841
+DIVERGED	src/lib/builtins.test.ts	live-grid	EXCLUDE	clean keeps fetchesData false for live_grid: the renderer owns its snapshot (v3)
+DIVERGED	src/lib/builtins.ts	live-grid	EXCLUDE	clean keeps fetchesData false for live_grid: the renderer owns its snapshot (v3)
+DIVERGED	src/lib/columnRender.ts	table-cells	MERGE	comment only: showCellChange is acted on (clean since v3), not parsed-and-ignored; DONE c42f267
+DIVERGED	src/lib/csp.test.ts	live-grid	EXCLUDE	ws:/wss: assertions already in clean (e345ff91 equivalent; KEEP)
+DIVERGED	src/lib/dataClient.test.ts	live-grid	MERGE	fetchWidgetPath cases; the header-into-query cases (1171fe15) are not taken (V10-P1); DONE 8111599, c42f267
+DIVERGED	src/lib/dataClient.ts	live-grid	MERGE	fetchWidgetPath (sibling GET for symbol_meta) and stripQuery exported; 1171fe15 (a header credential forced into the socket's query) NOT carried: neither live-grid (Basic, header only) nor the gateway (Bearer header or ticket; a query token is refused) reads it (V10-P1); DONE 8111599, c42f267
+DIVERGED	src/lib/format.test.ts	table-cells	EXCLUDE	abbreviate:false already in clean (KEEP)
+DIVERGED	src/lib/format.ts	table-cells	EXCLUDE	abbreviate:false already in clean (KEEP)
+DIVERGED	src/lib/pivotTable.ts	table-cells	EXCLUDE	the label column's isLogo/flash already in clean (KEEP)
+DIVERGED	src/lib/tableColumns.test.ts	table-cells	MERGE	isLogoOf, rangeBarOf, percentKeyOf, align, presentation-only rangeBar column; DONE c42f267
+DIVERGED	src/lib/tableColumns.ts	table-cells	MERGE	isLogo, rangeBar, percentKey, align resolved per column (e580d195, 8dd46d36, 8ae5a24d, 1c8084ff); a rangeBar column is kept without a field of its own; valueKey defaults to price when absent (V10-P2); clean's cellChange stays (the donor's flash field is not taken); DONE c42f267
+DIVERGED	src/lib/types.ts	table-cells	MERGE	ColumnSpec.align; abbreviate already in clean; wsRowIdColumn stays on WidgetDef (the donor moved it to TableSpec; not taken); DONE c42f267
+DIVERGED	src/lib/widgetsJson.test.ts	table-cells	MERGE	align parse cases; DONE c42f267
+DIVERGED	src/lib/widgetsJson.ts	table-cells	MERGE	align parsed (8ae5a24d); abbreviate KEEP; wsRowIdColumn stays on WidgetDef; DONE c42f267
+DIVERGED	src/styles.css	table-cells	MERGE	tabular digits in table cells (24f16e3d), align, logo, range bar (8ae5a24d, 8dd46d36), on clean's tokens; fixed layout already in clean (`.widget-table.sized`, KEEP); the donor's cell-flash keyframes not taken (clean keeps data-flash up/down); DONE c42f267
+DIVERGED	src/test/fakeSocket.ts	live-grid	MERGE	comment: LiveGridRenderer.test drives a socket through it too; DONE 8111599
+NEW	src/test/virtualTableLayout.ts	table-cells	EXCLUDE	clean has its own jsdom virtualizer stub (src/test/virtualizer.ts, installVirtualizerDom)
+DIVERGED	web/README.md	web-grid	MERGE	the /grid relay as this line builds it (c183f880, 51dc0d9d, 0684f282), pending the re-vendor; DONE 28596b4
+DIVERGED	web/bootstrap.mjs	web-grid	MERGE	Live quotes tab and preview-grid backend (c183f880), only with a gateway AND a vendored policy that serves the grid socket; DONE 28596b4
+DIVERGED	web/browser-smoke.mjs	web-grid	MERGE	the smoke names the /grid family's state at this pin (c183f880); DONE 28596b4
+DIVERGED	web/policy.mjs	web-pin	EXCLUDE	the donor vendors openbb-docker v10.0.3; clean vendors openbq-docker (R3b), and the v10 re-vendor is pending the server port (V10-P3)
+DIVERGED	web/policy.vendored.json	web-pin	EXCLUDE	as web/policy.mjs: re-vendor pending (V10-P3)
+DIVERGED	web/security.test.mjs	web-grid	MERGE	the relay's grid branch tested against the v10.1.7 funnel-gateway contract (injected policy) and fail-closed under the vendored v8 policy (c183f880); DONE 28596b4
+DIVERGED	web/server.mjs	web-grid	MERGE	the upgrade branch for /grid/live_grid_ws, repeating frames through liveGridSubscription (c183f880); OPTIONAL_DOCS 404s passed through; reads the policy as a namespace so it is inert until the re-vendor; DONE 28596b4

@@ -1,0 +1,84 @@
+event: copilotMessageChunk
+data: {"delta":"A stock ticker"}
+
+event: copilotMessageChunk
+data: {"delta":" symbol is a short"}
+
+event: copilotMessageChunk
+data: {"delta":", unique alph"}
+
+event: copilotMessageChunk
+data: {"delta":"abetic"}
+
+event: copilotMessageChunk
+data: {"delta":" code ("}
+
+event: copilotMessageChunk
+data: {"delta":"usually"}
+
+event: copilotMessageChunk
+data: {"delta":" one to"}
+
+event: copilotMessageChunk
+data: {"delta":" five letters) that"}
+
+event: copilotMessageChunk
+data: {"delta":" identifie"}
+
+event: copilotMessageChunk
+data: {"delta":"s a publicly"}
+
+event: copilotMessageChunk
+data: {"delta":" traded company on a"}
+
+event: copilotMessageChunk
+data: {"delta":" specific"}
+
+event: copilotMessageChunk
+data: {"delta":" exchange"}
+
+event: copilotMessageChunk
+data: {"delta":". It"}
+
+event: copilotMessageChunk
+data: {"delta":" let"}
+
+event: copilotMessageChunk
+data: {"delta":"s investor"}
+
+event: copilotMessageChunk
+data: {"delta":"s quickly"}
+
+event: copilotMessageChunk
+data: {"delta":" reference and trade"}
+
+event: copilotMessageChunk
+data: {"delta":" share"}
+
+event: copilotMessageChunk
+data: {"delta":"s by"}
+
+event: copilotMessageChunk
+data: {"delta":" name"}
+
+event: copilotMessageChunk
+data: {"delta":", such"}
+
+event: copilotMessageChunk
+data: {"delta":" as “"}
+
+event: copilotMessageChunk
+data: {"delta":"AAPL"}
+
+event: copilotMessageChunk
+data: {"delta":"” for Apple Inc"}
+
+event: copilotMessageChunk
+data: {"delta":". on the"}
+
+event: copilotMessageChunk
+data: {"delta":" NASDAQ"}
+
+event: copilotMessageChunk
+data: {"delta":"."}
+

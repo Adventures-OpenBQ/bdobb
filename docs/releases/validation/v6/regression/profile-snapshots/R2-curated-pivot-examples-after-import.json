@@ -1,0 +1,392 @@
+{
+  "id": "1a3885cd-36db-48cc-bef9-c3ea47e66091",
+  "name": "Episode 3 — Pivot examples",
+  "tabs": [
+    {
+      "id": "009efeaf-835d-4dec-874b-93594ed71bfb",
+      "name": "Monthly OHLC",
+      "cards": [
+        {
+          "id": "0659e9ef-6d68-416f-b974-7b858308733a",
+          "widgetId": "openbq_demo_prices",
+          "backendId": "ae0ac7a9-0d82-4731-acaa-15a68f41961b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 20
+          },
+          "tableDefinition": {
+            "table": {},
+            "search": "",
+            "analytical": {
+              "schemaVersion": 1,
+              "params": {
+                "promotePage": true,
+                "filters": []
+              },
+              "enabled": true,
+              "categories": [
+                {
+                  "id": "category:[\"asset\",\"native\"]",
+                  "name": "asset",
+                  "sourceFieldId": "asset",
+                  "transform": "native"
+                },
+                {
+                  "id": "category:[\"date\",\"month\"]",
+                  "name": "date",
+                  "sourceFieldId": "date",
+                  "transform": "native",
+                  "legacyBucket": "month"
+                }
+              ],
+              "measures": [
+                {
+                  "id": "open",
+                  "sourceFieldId": "open",
+                  "aggregation": "first"
+                },
+                {
+                  "id": "high",
+                  "sourceFieldId": "high",
+                  "aggregation": "max"
+                },
+                {
+                  "id": "low",
+                  "sourceFieldId": "low",
+                  "aggregation": "min"
+                },
+                {
+                  "id": "close",
+                  "sourceFieldId": "close",
+                  "aggregation": "last"
+                },
+                {
+                  "id": "volume",
+                  "sourceFieldId": "volume",
+                  "aggregation": "sum"
+                }
+              ],
+              "formulas": [],
+              "layout": {
+                "values": [
+                  "open",
+                  "high",
+                  "low",
+                  "close",
+                  "volume"
+                ],
+                "rows": [
+                  "category:[\"asset\",\"native\"]",
+                  "category:[\"date\",\"month\"]"
+                ],
+                "columns": []
+              },
+              "checklists": [],
+              "resultFilters": [],
+              "subtotals": {
+                "grandTotal": true,
+                "groups": false
+              },
+              "legacyPivot": {
+                "enabled": true,
+                "grouping": [
+                  "asset",
+                  "date"
+                ],
+                "split": [],
+                "buckets": {
+                  "date": "month"
+                },
+                "aggregationFns": {
+                  "open": "first",
+                  "high": "max",
+                  "low": "min",
+                  "close": "last",
+                  "volume": "sum"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "99c315bd-eb45-4c58-9710-68d68c025e2b",
+      "name": "Asset cross-tab",
+      "cards": [
+        {
+          "id": "4830ce39-c9ba-4310-8d2d-39f084e9085d",
+          "widgetId": "openbq_demo_prices",
+          "backendId": "ae0ac7a9-0d82-4731-acaa-15a68f41961b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 20
+          },
+          "tableDefinition": {
+            "table": {},
+            "search": "",
+            "analytical": {
+              "schemaVersion": 1,
+              "params": {
+                "promotePage": true,
+                "filters": []
+              },
+              "enabled": true,
+              "categories": [
+                {
+                  "id": "category:[\"date\",\"month\"]",
+                  "name": "date",
+                  "sourceFieldId": "date",
+                  "transform": "native",
+                  "legacyBucket": "month"
+                },
+                {
+                  "id": "category:[\"asset\",\"native\"]",
+                  "name": "asset",
+                  "sourceFieldId": "asset",
+                  "transform": "native"
+                }
+              ],
+              "measures": [
+                {
+                  "id": "volume",
+                  "sourceFieldId": "volume",
+                  "aggregation": "sum"
+                },
+                {
+                  "id": "close",
+                  "sourceFieldId": "close",
+                  "aggregation": "mean"
+                }
+              ],
+              "formulas": [],
+              "layout": {
+                "values": [
+                  "volume",
+                  "close"
+                ],
+                "rows": [
+                  "category:[\"date\",\"month\"]"
+                ],
+                "columns": [
+                  "category:[\"asset\",\"native\"]"
+                ]
+              },
+              "checklists": [],
+              "resultFilters": [],
+              "subtotals": {
+                "grandTotal": true,
+                "groups": false
+              },
+              "legacyPivot": {
+                "enabled": true,
+                "grouping": [
+                  "date"
+                ],
+                "split": [
+                  "asset"
+                ],
+                "buckets": {
+                  "date": "month"
+                },
+                "aggregationFns": {
+                  "volume": "sum",
+                  "close": "mean"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "49d187b2-6cde-4582-a2ea-45f4425cb960",
+      "name": "Mean and Count",
+      "cards": [
+        {
+          "id": "d30b5354-e4c0-433f-865f-644b4a6961e2",
+          "widgetId": "openbq_demo_prices",
+          "backendId": "ae0ac7a9-0d82-4731-acaa-15a68f41961b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 20
+          },
+          "tableDefinition": {
+            "table": {},
+            "search": "",
+            "analytical": {
+              "schemaVersion": 1,
+              "params": {
+                "promotePage": true,
+                "filters": []
+              },
+              "enabled": true,
+              "categories": [
+                {
+                  "id": "category:[\"asset\",\"native\"]",
+                  "name": "asset",
+                  "sourceFieldId": "asset",
+                  "transform": "native"
+                }
+              ],
+              "measures": [
+                {
+                  "id": "mean",
+                  "sourceFieldId": "volume",
+                  "aggregation": "mean"
+                },
+                {
+                  "id": "count",
+                  "sourceFieldId": "volume",
+                  "aggregation": "count"
+                }
+              ],
+              "formulas": [],
+              "layout": {
+                "values": [
+                  "mean",
+                  "count"
+                ],
+                "rows": [
+                  "category:[\"asset\",\"native\"]"
+                ],
+                "columns": []
+              },
+              "checklists": [],
+              "resultFilters": [],
+              "subtotals": {
+                "grandTotal": true,
+                "groups": false
+              },
+              "legacyPivot": {
+                "enabled": true,
+                "grouping": [
+                  "asset"
+                ],
+                "split": [],
+                "measures": [
+                  {
+                    "id": "mean",
+                    "sourceFieldId": "volume",
+                    "aggregation": "mean"
+                  },
+                  {
+                    "id": "count",
+                    "sourceFieldId": "volume",
+                    "aggregation": "count"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "f3e53356-8deb-44a1-a685-d4b939df357f",
+      "name": "Null handling",
+      "cards": [
+        {
+          "id": "853e41f8-6401-4050-9416-4949512bdc0b",
+          "widgetId": "openbq_demo_nulls",
+          "backendId": "ae0ac7a9-0d82-4731-acaa-15a68f41961b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 20
+          },
+          "tableDefinition": {
+            "table": {},
+            "search": "",
+            "analytical": {
+              "schemaVersion": 1,
+              "params": {
+                "promotePage": true,
+                "filters": []
+              },
+              "enabled": true,
+              "categories": [
+                {
+                  "id": "category:[\"asset\",\"native\"]",
+                  "name": "asset",
+                  "sourceFieldId": "asset",
+                  "transform": "native"
+                }
+              ],
+              "measures": [
+                {
+                  "id": "mean",
+                  "sourceFieldId": "value",
+                  "aggregation": "mean"
+                },
+                {
+                  "id": "count",
+                  "sourceFieldId": "value",
+                  "aggregation": "count"
+                },
+                {
+                  "id": "sum",
+                  "sourceFieldId": "value",
+                  "aggregation": "sum"
+                }
+              ],
+              "formulas": [],
+              "layout": {
+                "values": [
+                  "mean",
+                  "count",
+                  "sum"
+                ],
+                "rows": [
+                  "category:[\"asset\",\"native\"]"
+                ],
+                "columns": []
+              },
+              "checklists": [],
+              "resultFilters": [],
+              "subtotals": {
+                "grandTotal": true,
+                "groups": false
+              },
+              "legacyPivot": {
+                "enabled": true,
+                "grouping": [
+                  "asset"
+                ],
+                "split": [],
+                "measures": [
+                  {
+                    "id": "mean",
+                    "sourceFieldId": "value",
+                    "aggregation": "mean"
+                  },
+                  {
+                    "id": "count",
+                    "sourceFieldId": "value",
+                    "aggregation": "count"
+                  },
+                  {
+                    "id": "sum",
+                    "sourceFieldId": "value",
+                    "aggregation": "sum"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

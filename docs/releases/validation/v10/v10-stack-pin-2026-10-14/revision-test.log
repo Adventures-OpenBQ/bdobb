@@ -1,0 +1,10 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/stores/dashboardRevision.test.ts (54 tests) 143ms
+
+ Test Files  1 passed (1)
+      Tests  54 passed (54)
+   Start at  21:58:24
+   Duration  2.57s (transform 1.04s, setup 156ms, collect 1.40s, tests 143ms, environment 507ms, prepare 61ms)
+

@@ -1,0 +1,6 @@
+
+> bdobb@6.0.0 scrub <worktree>
+> bash scripts/scrub-check.sh && bash scripts/header-check.sh
+
+scrub-check: clean
+header-check: clean

@@ -1,0 +1,33 @@
+{
+  "id": "bdf7454b-b92d-4d0b-a27e-d38d77ff4661",
+  "name": "Main",
+  "tabs": [
+    {
+      "id": "fd564b86-c19a-49bd-893f-8a1a6bec169e",
+      "name": "Main",
+      "cards": [
+        {
+          "id": "cd00f370-6535-401c-b280-7e2423956b15",
+          "widgetId": "yfinance_equity_historical_yfinance_obb",
+          "backendId": "36c69265-88a6-4174-9df4-580386242236",
+          "params": {
+            "interval": "1d",
+            "period": "1y",
+            "auto_adjust": "false",
+            "prepost": "false",
+            "repair": "false",
+            "timeout": "30",
+            "provider": "yfinance"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 15
+          },
+          "title": "AAPL — Yahoo Finance"
+        }
+      ]
+    }
+  ]
+}

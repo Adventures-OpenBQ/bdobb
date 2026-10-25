@@ -1,0 +1,386 @@
+{
+  "id": "17509610-5d7a-4563-81fd-917c0c1295ea",
+  "name": "U.S. Bureau of Labor Statistics",
+  "tabs": [
+    {
+      "id": "743241ec-748a-4e14-bd55-c096788c18bd",
+      "name": "Release Calendar",
+      "cards": [
+        {
+          "id": "7854c9a3-1c63-4a72-9988-349e552511e4",
+          "widgetId": "bls_calendar_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 23
+          }
+        }
+      ]
+    },
+    {
+      "id": "3fcb1161-c011-42d7-9443-c27aff93f96f",
+      "name": "Real Earnings",
+      "cards": [
+        {
+          "id": "d949bb93-4b11-4f13-898a-8da31c570b09",
+          "widgetId": "bls_real_earnings_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/realer.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 28
+          }
+        }
+      ]
+    },
+    {
+      "id": "6d899bfa-246b-44c3-bfcc-c2ba9f695dfc",
+      "name": "JOLTS",
+      "cards": [
+        {
+          "id": "f797f931-dc27-4464-bcde-6a8424a2283b",
+          "widgetId": "bls_jolts_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/jolts.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 27
+          }
+        },
+        {
+          "id": "8524e754-87aa-4b9b-bcba-d5f1ecacd610",
+          "widgetId": "bls_jolts_revisions_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "seasonally_adjusted": "true",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 29,
+            "w": 40,
+            "h": 24
+          }
+        },
+        {
+          "id": "10d19e2b-4b48-4161-b0e4-854b10194008",
+          "widgetId": "bls_jolts_change_analysis_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "scope": "national",
+            "table_number": "9",
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 53,
+            "w": 40,
+            "h": 23
+          }
+        },
+        {
+          "id": "a24ad950-7245-40b8-8f82-92aaf473df63",
+          "widgetId": "bls_jolts_unemp_per_opening_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 76,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "2d2d56ee-2baa-4e7f-ace7-22a8c5c89b78",
+          "widgetId": "bls_jolts_openings_hires_seps_levels_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 96,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "28db62e5-e49a-4e30-9c1e-9808337f286c",
+          "widgetId": "bls_jolts_openings_hires_seps_rates_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 116,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "d56266bc-a47e-49b9-8dea-094ed012cde8",
+          "widgetId": "bls_jolts_hires_seps_rates_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 136,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "d528c007-1c4e-4b4c-9f8f-915010276929",
+          "widgetId": "bls_jolts_openings_by_industry_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 156,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "372b0a9b-ea19-4af6-825a-215ceb176e87",
+          "widgetId": "bls_jolts_openings_hires_seps_by_region_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 176,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "33c6572e-4a9b-4505-b012-b083479bb89a",
+          "widgetId": "bls_jolts_beveridge_curve_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 196,
+            "w": 40,
+            "h": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "dfbeeda8-6fbb-4f67-bad3-9f661ba455a9",
+      "name": "U.S. Import & Export Price Indexes",
+      "cards": [
+        {
+          "id": "5d88afe6-a6ff-436e-9c73-6e2aa1dda46d",
+          "widgetId": "bls_import_export_documents_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "all",
+            "provider": "bls",
+            "url": "https://www.bls.gov/news.release/pdf/ximpim.pdf"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 29
+          }
+        },
+        {
+          "id": "93282c49-1755-4548-b728-4d140fc0ffd5",
+          "widgetId": "bls_import_export_price_indexes_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 31,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "63cef928-3227-4514-bf67-156fe15ee66c",
+          "widgetId": "bls_import_export_imports_by_category_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 51,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "632b0075-f28d-4d83-b954-0596bcd091ad",
+          "widgetId": "bls_import_export_exports_by_category_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 71,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "e89a702a-c7ea-4800-9cf1-d40f3beebd95",
+          "widgetId": "bls_import_export_imports_by_origin_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 91,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "536ff3b6-2e42-410d-b39c-3056ddd94723",
+          "widgetId": "bls_import_export_exports_by_grains_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 111,
+            "w": 40,
+            "h": 20
+          }
+        },
+        {
+          "id": "2a7116dd-420f-49ab-b4f4-5cd0e8d55929",
+          "widgetId": "bls_import_export_air_passenger_fares_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "provider": "bls"
+          },
+          "layout": {
+            "x": 0,
+            "y": 131,
+            "w": 40,
+            "h": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "8e587d14-f195-4437-81f8-381fa962e079",
+      "name": "Search & Series",
+      "cards": [
+        {
+          "id": "2d8fa032-07f2-4b2a-baaf-91aff1085f04",
+          "widgetId": "bls_search_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "include_extras": "true",
+            "include_code_map": "false",
+            "provider": "bls",
+            "query": "diffusion index",
+            "category": "nfp",
+            "symbol": ""
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 18
+          },
+          "bindings": [
+            {
+              "groupId": "db6c8f7a-5df9-4ef1-8d36-a79863982470",
+              "paramName": "category"
+            },
+            {
+              "groupId": "ac068528-7a91-4f63-9fa8-60a6cfc708a0",
+              "paramName": "symbol"
+            }
+          ]
+        },
+        {
+          "id": "b741b9d2-1928-4f72-809b-2fb332bbbd00",
+          "widgetId": "bls_series_bls_obb",
+          "backendId": "9a859de3-a6a8-4d84-a397-4b6a562522fb",
+          "params": {
+            "category": "nfp",
+            "calculations": "true",
+            "annual_average": "false",
+            "aspects": "false",
+            "provider": "bls",
+            "symbol": "CES0500000023"
+          },
+          "layout": {
+            "x": 0,
+            "y": 20,
+            "w": 40,
+            "h": 22
+          },
+          "view": "chart",
+          "bindings": [
+            {
+              "groupId": "db6c8f7a-5df9-4ef1-8d36-a79863982470",
+              "paramName": "category"
+            },
+            {
+              "groupId": "ac068528-7a91-4f63-9fa8-60a6cfc708a0",
+              "paramName": "symbol"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "db6c8f7a-5df9-4ef1-8d36-a79863982470",
+      "name": "BLS Survey Category",
+      "paramName": "category",
+      "groupType": "category",
+      "value": "nfp"
+    },
+    {
+      "id": "ac068528-7a91-4f63-9fa8-60a6cfc708a0",
+      "name": "Group 3",
+      "paramName": "symbol",
+      "groupType": "symbol",
+      "value": ""
+    }
+  ]
+}

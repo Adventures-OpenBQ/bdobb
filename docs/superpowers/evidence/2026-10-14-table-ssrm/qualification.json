@@ -1,0 +1,782 @@
+{
+  "plan_date": "2026-10-14",
+  "qualified_at_local_date": "2026-10-15",
+  "status": "runtime browser and bounded control admission regressions passed; independent control fix review passed; assembled image unqualified",
+  "source": {
+    "repository": "https://github.com/Adventures-OpenBQ/bdobb",
+    "revision": "1382c316d3838355a4366a163e63f280500d7284",
+    "tree": "d7c9a9a11122ea90b72925ca33363563c0dd81d4",
+    "dockerfileSha256": "41c59cdcc8a4576e028d46fd5eba00508201cb69a5f88b05d0658b07a1dd70b8",
+    "rust": "1.98.1",
+    "node": "26.10.0",
+    "icu": "78.3",
+    "xlsx": "0.20.3",
+    "sourceArchiveSha256": "b03dc334387d53b907cb9f3a83358747b5414f7c927135ee6a6ec9a17a1c2770"
+  },
+  "paired_docker_commit": "41641c684af4db1c6390ea682e5663daff331bfd",
+  "vendored_policy": {
+    "tag": "v10.0.0",
+    "commit": "41641c684af4db1c6390ea682e5663daff331bfd",
+    "repository": "https://github.com/Adventures-OpenBQ/openbq-docker",
+    "path": "funnel-gateway/policy.mjs",
+    "sha256": "c4d1a2bd75523d75b53a0cb579116ecf4e627210e6c8bd2196eb3deba672fc7a"
+  },
+  "environment": {
+    "host": "macOS arm64",
+    "native": "Linux arm64 debug binaries, Rust1.98.1, ICU78.3, Node26.10.0",
+    "web_deployment_test_node": "22.16.0",
+    "browser": "Playwright1.62.1 bundled Chromium and WebKit",
+    "test_identity": "fresh encrypted signed synthetic GitHub42/43 sessions; ephemeral private tokens; no user accounts"
+  },
+  "profile": {
+    "limits": {
+      "max_upload_bytes": 2097152,
+      "max_parse_bytes": 8388608,
+      "max_cache_bytes": 67108864,
+      "max_input_rows": 20000,
+      "max_input_columns": 64,
+      "max_output_columns": 256,
+      "max_row_block_rows": 100,
+      "max_export_batch_bytes": 1048576,
+      "max_sessions_per_principal": 6,
+      "max_concurrent_jobs_per_principal": 4
+    },
+    "runtime": {
+      "compute_workers": 2,
+      "max_admitted_jobs": 4,
+      "max_sessions": 8,
+      "max_retained_slots": 18,
+      "max_retained_slots_per_principal": 16,
+      "max_exports_per_principal": 3,
+      "max_http_requests": 4,
+      "total_memory_budget_bytes": 7516192768,
+      "principal_memory_budget_bytes": 6442450944
+    },
+    "worker": {
+      "executable": "/target/debug/pivot-native-worker",
+      "memory_budget_bytes": 536870912,
+      "max_frame_bytes": 8392704,
+      "max_starting_workers": 2
+    },
+    "containerBytes": 8589934592
+  },
+  "datasets": [
+    {
+      "scenario": "resources",
+      "rows": 2005,
+      "columns": 8,
+      "pages_requested": 21,
+      "cache_blocks": 12,
+      "cache_rows_after_eviction": 1105,
+      "max_requested_rows": 100,
+      "pivot": "three teams, child offset600, global mean1003"
+    },
+    {
+      "scenario": "consumers",
+      "rows": 1205,
+      "columns": 4,
+      "selected": 1204,
+      "chart_points": 1204,
+      "eligible_export_rows": 1205,
+      "linked_chain_rows": 1204
+    },
+    {
+      "scenario": "standard",
+      "rows": 1200,
+      "columns": 2,
+      "source": "synthetic HTTP provider through registered real relay/gateway",
+      "page_size": 100
+    }
+  ],
+  "runs": [
+    {
+      "browser": "chromium",
+      "scenario": "resources",
+      "sample_count": 7,
+      "process_peak_hwm_bytes": {
+        "table-service": 46686208,
+        "pivot-native-wo": 46919680
+      },
+      "container_peak_bytes": 185348096,
+      "host_node_peak_rss_bytes": 392070216,
+      "host_node_process_maxrss_kib": 440032,
+      "ingest_peak_maxrss_kib": 98716,
+      "timings_ms": {
+        "/table/widgets.json": {
+          "count": 2,
+          "median": 4.49,
+          "max": 6.44
+        },
+        "/table/sources/backends": {
+          "count": 2,
+          "median": 2.52,
+          "max": 2.84
+        },
+        "/table/sources/uploads": {
+          "count": 2,
+          "median": 18.48,
+          "max": 22.98
+        },
+        "/table/sessions": {
+          "count": 1,
+          "median": 767.75,
+          "max": 767.75
+        },
+        "applyModel": {
+          "count": 2,
+          "median": 332.64,
+          "max": 341.06
+        },
+        "totals": {
+          "count": 5,
+          "median": 27.25,
+          "max": 29.01
+        },
+        "rows": {
+          "count": 27,
+          "median": 46.12,
+          "max": 56.59
+        },
+        "/api/api/v1/qualification/table": {
+          "count": 13,
+          "median": 1.24,
+          "max": 2.83
+        },
+        "/table/sessions/:id": {
+          "count": 1,
+          "median": 8.94,
+          "max": 8.94
+        }
+      },
+      "http_status_counts": {
+        "200": 54,
+        "413": 1
+      },
+      "requested_rows_max": 100,
+      "sample_source": "ssrm-native-54cb48e13e.json"
+    },
+    {
+      "browser": "chromium",
+      "scenario": "consumers",
+      "sample_count": 11,
+      "process_peak_hwm_bytes": {
+        "table-service": 37609472,
+        "pivot-native-wo": 26017792
+      },
+      "container_peak_bytes": 186900480,
+      "host_node_peak_rss_bytes": 437030432,
+      "host_node_process_maxrss_kib": 494768,
+      "ingest_peak_maxrss_kib": 80632,
+      "timings_ms": {
+        "/table/widgets.json": {
+          "count": 4,
+          "median": 3.69,
+          "max": 4.13
+        },
+        "/table/sources/backends": {
+          "count": 2,
+          "median": 2.21,
+          "max": 2.59
+        },
+        "/table/sources/uploads": {
+          "count": 1,
+          "median": 18.03,
+          "max": 18.03
+        },
+        "/table/sessions": {
+          "count": 4,
+          "median": 414.2,
+          "max": 446.91
+        },
+        "applyModel": {
+          "count": 8,
+          "median": 148.41,
+          "max": 255.05
+        },
+        "totals": {
+          "count": 8,
+          "median": 11.99,
+          "max": 18.47
+        },
+        "rows": {
+          "count": 8,
+          "median": 27.74,
+          "max": 36.11
+        },
+        "presented": {
+          "count": 3,
+          "median": 27.92,
+          "max": 39.22
+        },
+        "/table/exports/:id/batches": {
+          "count": 36,
+          "median": 22.94,
+          "max": 43.08
+        },
+        "/table/exports/:id": {
+          "count": 3,
+          "median": 1.93,
+          "max": 2.19
+        },
+        "chartData": {
+          "count": 3,
+          "median": 119.47,
+          "max": 133.3
+        },
+        "/table/sessions/:id": {
+          "count": 1,
+          "median": 3.31,
+          "max": 3.31
+        },
+        "/table/sessions/:id/derive": {
+          "count": 4,
+          "median": 335.71,
+          "max": 447.05
+        },
+        "/table/sessions/:id/cancel": {
+          "count": 2,
+          "median": 11.48,
+          "max": 14.49
+        }
+      },
+      "http_status_counts": {
+        "200": 86,
+        "404": 1
+      },
+      "requested_rows_max": 100,
+      "sample_source": "ssrm-native-5467184e7d.json"
+    },
+    {
+      "browser": "webkit",
+      "scenario": "resources",
+      "sample_count": 8,
+      "process_peak_hwm_bytes": {
+        "table-service": 46874624,
+        "pivot-native-wo": 47194112
+      },
+      "container_peak_bytes": 188260352,
+      "host_node_peak_rss_bytes": 412139968,
+      "host_node_process_maxrss_kib": 437824,
+      "ingest_peak_maxrss_kib": 98804,
+      "timings_ms": {
+        "/table/widgets.json": {
+          "count": 2,
+          "median": 8.01,
+          "max": 8.17
+        },
+        "/table/sources/backends": {
+          "count": 2,
+          "median": 4.07,
+          "max": 4.32
+        },
+        "/table/sources/uploads": {
+          "count": 2,
+          "median": 41.11,
+          "max": 53.65
+        },
+        "/table/sessions": {
+          "count": 1,
+          "median": 923.0,
+          "max": 923.0
+        },
+        "applyModel": {
+          "count": 2,
+          "median": 419.13,
+          "max": 463.08
+        },
+        "totals": {
+          "count": 5,
+          "median": 13.3,
+          "max": 271.15
+        },
+        "rows": {
+          "count": 27,
+          "median": 46.99,
+          "max": 272.03
+        },
+        "/api/api/v1/qualification/table": {
+          "count": 13,
+          "median": 2.44,
+          "max": 4.13
+        },
+        "/table/sessions/:id": {
+          "count": 1,
+          "median": 10.14,
+          "max": 10.14
+        }
+      },
+      "http_status_counts": {
+        "200": 54,
+        "413": 1
+      },
+      "requested_rows_max": 100,
+      "sample_source": "ssrm-native-2bbe354670.json"
+    },
+    {
+      "browser": "webkit",
+      "scenario": "consumers",
+      "sample_count": 12,
+      "process_peak_hwm_bytes": {
+        "table-service": 37048320,
+        "pivot-native-wo": 26906624
+      },
+      "container_peak_bytes": 185589760,
+      "host_node_peak_rss_bytes": 536911256,
+      "host_node_process_maxrss_kib": 505184,
+      "ingest_peak_maxrss_kib": 80236,
+      "timings_ms": {
+        "/table/widgets.json": {
+          "count": 4,
+          "median": 9.72,
+          "max": 14.94
+        },
+        "/table/sources/backends": {
+          "count": 2,
+          "median": 5.22,
+          "max": 5.86
+        },
+        "/table/sources/uploads": {
+          "count": 1,
+          "median": 21.17,
+          "max": 21.17
+        },
+        "/table/sessions": {
+          "count": 4,
+          "median": 461.71,
+          "max": 500.71
+        },
+        "applyModel": {
+          "count": 8,
+          "median": 159.26,
+          "max": 249.82
+        },
+        "totals": {
+          "count": 8,
+          "median": 16.87,
+          "max": 21.63
+        },
+        "rows": {
+          "count": 9,
+          "median": 29.13,
+          "max": 42.51
+        },
+        "presented": {
+          "count": 3,
+          "median": 29.94,
+          "max": 45.61
+        },
+        "/table/exports/:id/batches": {
+          "count": 36,
+          "median": 24.96,
+          "max": 37.16
+        },
+        "/table/exports/:id": {
+          "count": 3,
+          "median": 2.7,
+          "max": 3.62
+        },
+        "chartData": {
+          "count": 3,
+          "median": 109.25,
+          "max": 149.28
+        },
+        "/table/sessions/:id": {
+          "count": 1,
+          "median": 4.82,
+          "max": 4.82
+        },
+        "/table/sessions/:id/derive": {
+          "count": 4,
+          "median": 344.63,
+          "max": 419.67
+        },
+        "/table/sessions/:id/cancel": {
+          "count": 2,
+          "median": 3.22,
+          "max": 3.46
+        }
+      },
+      "http_status_counts": {
+        "200": 87,
+        "404": 1
+      },
+      "requested_rows_max": 100,
+      "sample_source": "ssrm-native-91758bf2ca.json"
+    }
+  ],
+  "checks": [
+    {
+      "name": "pivot-core",
+      "command": "MACOSX_DEPLOYMENT_TARGET=26.0 cargo +1.98.1 test --locked --manifest-path crates/pivot-core/Cargo.toml",
+      "result": "PASS (163 tests)",
+      "log": "/private/tmp/task11-core.log"
+    },
+    {
+      "name": "pivot-wire",
+      "command": "MACOSX_DEPLOYMENT_TARGET=26.0 cargo +1.98.1 test --locked --manifest-path crates/pivot-wire/Cargo.toml",
+      "result": "PASS (6 tests)",
+      "log": "/private/tmp/task11-wire.log"
+    },
+    {
+      "name": "pivot-wasm",
+      "command": "MACOSX_DEPLOYMENT_TARGET=26.0 cargo +1.98.1 test --locked --manifest-path crates/pivot-wasm/Cargo.toml",
+      "result": "PASS (0 tests; wasm host crate has no host tests; actual Wasm browser suite below)",
+      "log": "/private/tmp/task11-wasm.log"
+    },
+    {
+      "name": "pivot-native",
+      "command": "MACOSX_DEPLOYMENT_TARGET=26.0 cargo +1.98.1 test --locked --manifest-path crates/pivot-native/Cargo.toml",
+      "result": "PASS (8 tests)",
+      "log": "/private/tmp/task11-native.log"
+    },
+    {
+      "name": "worker",
+      "command": "/private/tmp/run-native-worker-linux.sh env TABLE_INGEST_NODE=/root/node-v26.10.0-linux-arm64/bin/node cargo test --offline --locked --manifest-path crates/pivot-native-worker/Cargo.toml --features test-fixture",
+      "result": "PASS (26)",
+      "log": "/private/tmp/task11-ssrm-worker.log"
+    },
+    {
+      "name": "service",
+      "command": "/private/tmp/run-native-worker-linux.sh env TABLE_INGEST_NODE=/root/node-v26.10.0-linux-arm64/bin/node TABLE_NATIVE_WORKER=/target/debug/pivot-native-worker cargo test --offline --locked --manifest-path crates/table-service/Cargo.toml",
+      "result": "PASS (68)",
+      "log": "/private/tmp/task11-ssrm-service-final.log"
+    },
+    {
+      "name": "strict clippy",
+      "command": "/private/tmp/run-native-worker-linux.sh cargo clippy --offline --locked --manifest-path crates/table-service/Cargo.toml --all-targets -- -D warnings",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-service-clippy-final.log"
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm typecheck",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-typecheck-verified.log"
+    },
+    {
+      "name": "lint",
+      "command": "pnpm lint",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-lint-green.log"
+    },
+    {
+      "name": "JavaScript",
+      "command": "pnpm test:run",
+      "result": "PASS (8170 passed,29 skipped;450 files passed,6 skipped;87.65 seconds)",
+      "log": "/private/tmp/task11-ssrm-js-final-authorized.log"
+    },
+    {
+      "name": "desktop bundle",
+      "command": "pnpm build",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-build-final.log"
+    },
+    {
+      "name": "web bundle",
+      "command": "pnpm build:web",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-build-web-final.log"
+    },
+    {
+      "name": "Wasm fingerprint",
+      "command": "pnpm pivot:verify",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-pivot-verify.log"
+    },
+    {
+      "name": "Wasm packaging",
+      "command": "pnpm test:pivot:packaging",
+      "result": "PASS (3)",
+      "log": "/private/tmp/task11-ssrm-packaging.log"
+    },
+    {
+      "name": "Wasm browsers",
+      "command": "pnpm test:pivot:browser",
+      "result": "PASS (16; Chromium and WebKit)",
+      "log": "/private/tmp/task11-ssrm-pivot-browser.log"
+    },
+    {
+      "name": "native SSRM browsers",
+      "command": "TABLE_QUAL_LINUX_ROOT=/private/tmp/bdobb-worker-linux-root TABLE_QUAL_LINUX_TARGET=/private/tmp/bdobb-worker-linux-target TABLE_QUAL_GATEWAY=/private/tmp/openbq-docker-table-ssrm-discovery/funnel-gateway/server.mjs TABLE_QUAL_EVIDENCE_DIR=/private/tmp/task11-ssrm-final-pass-evidence pnpm test:ssrm:browser",
+      "result": "PASS (4; 46.6 seconds)",
+      "log": "/private/tmp/task11-ssrm-browser-pass.log"
+    },
+    {
+      "name": "Node22 web",
+      "command": "/private/tmp/node-v22.16.0-darwin-arm64/bin/node --test web/*.test.mjs",
+      "result": "PASS (54)",
+      "log": "/private/tmp/task11-ssrm-web-node22-final.log"
+    },
+    {
+      "name": "Node22 web browser",
+      "command": "/private/tmp/node-v22.16.0-darwin-arm64/bin/node web/browser-smoke.mjs",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-web-browser.log"
+    },
+    {
+      "name": "notices",
+      "command": "npm_config_store_dir=~/Library/pnpm/store pnpm notices:check",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-notices.log"
+    },
+    {
+      "name": "headers",
+      "command": "bash scripts/header-check.sh",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-headers-final.log"
+    },
+    {
+      "name": "Compose",
+      "command": "docker compose --env-file /private/tmp/task11-ssrm-source-final.env --profile web --profile table config --no-env-resolution --quiet",
+      "result": "PASS",
+      "log": "/private/tmp/task11-ssrm-compose-final.log"
+    },
+    {
+      "name": "canonical gateway Node26",
+      "command": "node --test funnel-gateway/*.test.mjs",
+      "result": "PASS (93; Node26.10.0)",
+      "log": "/private/tmp/task11-gateway-node26.log"
+    },
+    {
+      "name": "native restart smoke",
+      "command": "/private/tmp/run-native-worker-linux.sh env TABLE_SMOKE_GATEWAY=/tmp/task10-integration/gateway/server.mjs TABLE_SMOKE_SERVICE=/target/debug/table-service TABLE_SMOKE_WORKER=/target/debug/pivot-native-worker TABLE_SMOKE_INGEST=/work/server/table-ingest/dist/child.mjs /root/node-v26.10.0-linux-arm64/bin/node /work/deploy/table-service/runtime-smoke.mjs",
+      "result": "PASS (2 contained workers; owner/spoof refusal; derive5; export2; restart reopen)",
+      "log": "/private/tmp/task11-ssrm-runtime-smoke.log"
+    }
+  ],
+  "limitations": [
+    "Assembled pinned Docker image build failed apt ENOSPC before runtime qualification. Not retried; no unrelated pruning.",
+    "Host-backed non-root UID501/read-only/private catalog/health script tested; image UID10001, named-volume initialization, release binaries and final image packaging unqualified.",
+    "Physical iPad/iOS, Windows/Linux desktop and Tauri native dialogs not tested; WebKit here is desktop macOS.",
+    "Only 1205x4 and 2005x8 representative native datasets measured; 20000 admission ceiling is not a capacity claim.",
+    "Nested high-cardinality team+region pivot on2005x8 refuses the64MiB retained-state budget; ordinary3-team pivot passes.",
+    "Process HWM sampled once/second may miss exited workers; cgroup memory.peak includes container allocations. Host Node includes Vite/testdriver/web/gateway and is outside native container.",
+    "No production deployment or live stack changes. Independent whole-branch review belongs to controller."
+  ],
+  "intermediate_failures": [
+    "Initial full JS:8166 pass/29 skip/2 fail; managed lookup error boundary and clearManagedSource mutation classification corrected.",
+    "Next full JS:8169 pass/29 skip/1 stale help regex failure; fixed and25 focused tests pass.",
+    "An accidental Vitest watch run was stopped; a later unprivileged finite run hit loopback listen EPERM, stopped and rerun with permission.",
+    "Initial sample2-owner-jobs refused automatic UI concurrency; final4 passes. Intermediate12GiB profile superseded by8GiB after Input accounting correction.",
+    "Core100x8 rows refused when1MiB wire cap was reused for heap; regression RED then GREEN with64MiB bounded heap.",
+    "16MiB result cache refused2005x8;64MiB supports raw pages and3-team grouping but refuses nested high-cardinality team/region pivot.",
+    "Harness negotiated-row refusal assertion expected word limit but actual typed error says Invalid bounded renderer row request; assertion corrected.",
+    "Final lint found unnecessary string quote escapes in Node measurement wrapper; removed without changing emitted shell bytes."
+  ],
+  "task11_measurements_source": {
+    "repository": "https://github.com/Adventures-OpenBQ/bdobb",
+    "revision": "cd6258ed8bce958d660538ac02bafa7ac2468273",
+    "tree": "17e3a3488c32f50155a739be8f421b42b1467f3c",
+    "dockerfileSha256": "41c59cdcc8a4576e028d46fd5eba00508201cb69a5f88b05d0658b07a1dd70b8",
+    "rust": "1.98.1",
+    "node": "26.10.0",
+    "icu": "78.3",
+    "xlsx": "0.20.3",
+    "sourceArchiveSha256": "a9e25f35d49f750bcb2875b27c980ddb1daa4deecc65c63bd85374457db68fb8"
+  },
+  "final_review_fix_wave": {
+    "source_revision": "c390d3b1e5b5dff61bc371027e098b73aec6035b",
+    "status": "All four findings addressed; controller scoped final review pending",
+    "scope": "HTTP filename decoding, harness lifecycle/readability, exact revenue aggregate assertion, outstanding native derivation cancellation proof; budgets/auth/core/worker/Wasm/policy unchanged",
+    "prior_measurements": "Existing measurement arrays and original check entries describe task11_measurements_source; final acceptance rerun evidence and logs below.",
+    "checks": [
+      {
+        "name": "Linux service",
+        "command": "/private/tmp/run-native-worker-linux.sh env TABLE_INGEST_NODE=/root/node-v26.10.0-linux-arm64/bin/node TABLE_NATIVE_WORKER=/target/debug/pivot-native-worker cargo test --offline --locked --manifest-path crates/table-service/Cargo.toml",
+        "result": "PASS (70; includes outstanding RPC cancellation and Unicode/malformed filename regression)",
+        "log": "/private/tmp/final-fix-service.log"
+      },
+      {
+        "name": "cleanup fault injection",
+        "command": "TABLE_QUAL_LINUX_ROOT=/private/tmp/bdobb-worker-linux-root TABLE_QUAL_LINUX_TARGET=/private/tmp/bdobb-worker-linux-target TABLE_QUAL_GATEWAY=/private/tmp/openbq-docker-table-ssrm-discovery/funnel-gateway/server.mjs node --test scripts/ssrm-native-harness.node-test.mjs",
+        "result": "PASS (3; real Docker containers; process exits naturally)",
+        "log": "/private/tmp/final-fix-harness-green.log"
+      },
+      {
+        "name": "full JavaScript",
+        "command": "pnpm exec vitest run",
+        "result": "PASS (8171 passed,29 skipped;450 files passed,6 skipped;88.47s)",
+        "log": "/private/tmp/final-fix-js.log"
+      },
+      {
+        "name": "native browsers",
+        "command": "TABLE_QUAL_LINUX_ROOT=/private/tmp/bdobb-worker-linux-root TABLE_QUAL_LINUX_TARGET=/private/tmp/bdobb-worker-linux-target TABLE_QUAL_GATEWAY=/private/tmp/openbq-docker-table-ssrm-discovery/funnel-gateway/server.mjs TABLE_QUAL_EVIDENCE_DIR=/private/tmp/final-fix-browser-evidence pnpm test:ssrm:browser",
+        "result": "PASS (4; Chromium/WebKit; exact numeric revenue mean1003; 1.2m)",
+        "log": "/private/tmp/final-fix-browser.log"
+      },
+      {
+        "name": "strict clippy",
+        "command": "/private/tmp/run-native-worker-linux.sh cargo clippy --offline --locked --manifest-path crates/table-service/Cargo.toml --all-targets -- -D warnings",
+        "result": "PASS",
+        "log": "/private/tmp/final-fix-clippy.log"
+      },
+      {
+        "name": "types",
+        "command": "pnpm exec tsc --noEmit",
+        "result": "PASS",
+        "log": "/private/tmp/final-fix-types.log"
+      },
+      {
+        "name": "amended JS lint",
+        "command": "pnpm exec eslint scripts/ssrm-native-harness.mjs scripts/ssrm-native-harness.node-test.mjs src/lib/tableExecution/remote/sourceClient.ts src/lib/tableExecution/remote/sourceClient.test.ts e2e/ssrm-resources.spec.ts",
+        "result": "PASS",
+        "log": "/private/tmp/final-fix-lint.log"
+      },
+      {
+        "name": "paired web security",
+        "command": "node --test web/security.test.mjs",
+        "result": "PASS (52; authorized loopback retry)",
+        "log": "/private/tmp/final-fix-pairing.log"
+      },
+      {
+        "name": "source export",
+        "command": "node table-service/prepare-source.mjs /private/tmp/bdobb-table-ssrm-discovery /private/tmp/final-fix-source",
+        "result": "PASS; exact committed revision/tree/archive recorded in source",
+        "log": "/private/tmp/final-fix-source-export.log"
+      },
+      {
+        "name": "Compose",
+        "command": "docker compose --env-file /private/tmp/final-fix-source.env --profile web --profile table config --no-env-resolution --quiet",
+        "result": "PASS",
+        "log": "/private/tmp/final-fix-compose.log"
+      },
+      {
+        "name": "headers",
+        "command": "bash scripts/header-check.sh",
+        "result": "PASS (header-check: clean)",
+        "log": "/private/tmp/final-fix-headers.log"
+      }
+    ],
+    "red_evidence": [
+      {
+        "name": "encoded Unicode refusal",
+        "result": "expected200/actual400 invalid upload metadata",
+        "log": "/private/tmp/final-fix-filename-red.log"
+      },
+      {
+        "name": "evidence cleanup faults",
+        "result": "3 fail: containers survive mkdir/write failure; cleanup EEXIST replaces startup ERR_MODULE_NOT_FOUND",
+        "log": "/private/tmp/final-fix-harness-red.log"
+      }
+    ],
+    "intermediate_corrections": [
+      "Cancellation test first asserted totals for an unaggregated model; corrected to actual parent row value. Production cancellation unchanged.",
+      "First full JS sweep8171pass/29skip plus one suite failure: Node fixture renamed after Vitest cached old path. Stable filename rerun passes; /private/tmp/final-fix-js-renamed-fixture.log preserved.",
+      "Initial unprivileged web/security test hit loopback listen EPERM; authorized retry passes52. /private/tmp/final-fix-pairing-unprivileged.log preserved."
+    ],
+    "source": {
+      "repository": "https://github.com/Adventures-OpenBQ/bdobb",
+      "revision": "c390d3b1e5b5dff61bc371027e098b73aec6035b",
+      "tree": "35ae6ef658782e2ee6794852c10e362c4d739acf",
+      "dockerfileSha256": "41c59cdcc8a4576e028d46fd5eba00508201cb69a5f88b05d0658b07a1dd70b8",
+      "rust": "1.98.1",
+      "node": "26.10.0",
+      "icu": "78.3",
+      "xlsx": "0.20.3",
+      "sourceArchiveSha256": "ad38f44e6c286a99c4acf669ce1d8eb95382ab363bec95be7168e2571730256e"
+    },
+    "paired_docker_commit": "448339c97ffddc522876ab7a73f60725c38215f0"
+  },
+  "control_admission_fix_wave": {
+    "source_revision": "1382c316d3838355a4366a163e63f280500d7284",
+    "canonical_gateway_commit": "e1a602911018ad5a82eed3c5d5f706934b90081f",
+    "status": "Independent scoped review PASS; all findings addressed, no new breakage",
+    "report": "control-admission-fix.md",
+    "control_admission": {
+      "concurrent_per_layer": 2,
+      "web_per_user_per_minute": 240,
+      "gateway_per_process_per_minute": "requestsPerMinute",
+      "service_limit_status": 413,
+      "relay_limit_status": 429,
+      "ordinary_limits": "unchanged"
+    },
+    "checks": [
+      {
+        "name": "web Node22 full",
+        "command": "/private/tmp/node-v22.16.0-darwin-arm64/bin/node --test web/*.test.mjs",
+        "result": "PASS 57/57",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/web-full.log"
+      },
+      {
+        "name": "canonical gateway Node26 full",
+        "command": "/opt/homebrew/bin/node --test *.test.mjs (funnel-gateway cwd)",
+        "result": "PASS 96/96",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/gateway-full.log"
+      },
+      {
+        "name": "Linux service full",
+        "command": "/private/tmp/run-native-worker-linux.sh env TABLE_INGEST_NODE=/root/node-v26.10.0-linux-arm64/bin/node TABLE_NATIVE_WORKER=/target/debug/pivot-native-worker cargo test --offline --locked --manifest-path crates/table-service/Cargo.toml",
+        "result": "PASS 72/72",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/service-full.log"
+      },
+      {
+        "name": "full JavaScript first sweep",
+        "command": "pnpm exec vitest run",
+        "result": "8170 passed /29 skipped /1 failed; unchanged viewer Page popup test could not find None",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/js-full.log"
+      },
+      {
+        "name": "isolated viewer rerun",
+        "command": "pnpm exec vitest run src/components/PivotParamRow.viewer.test.tsx",
+        "result": "PASS 16/16",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/js-focused-viewer.log"
+      },
+      {
+        "name": "full JavaScript final controller-authorized sweep",
+        "command": "pnpm exec vitest run",
+        "result": "PASS 8171 passed /29 skipped;450 files passed /6 skipped;80.31s; no concurrent native/browser jobs",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/js-full-final.log"
+      },
+      {
+        "name": "native browsers",
+        "command": "TABLE_QUAL_LINUX_ROOT=/private/tmp/bdobb-worker-linux-root TABLE_QUAL_LINUX_TARGET=/private/tmp/bdobb-worker-linux-target TABLE_QUAL_GATEWAY=/private/tmp/openbq-docker-table-ssrm-discovery/funnel-gateway/server.mjs TABLE_QUAL_EVIDENCE_DIR=/private/tmp/ssrm-control-fix-2026-10-15/browser-evidence pnpm test:ssrm:browser",
+        "result": "PASS 4/4 Chromium/WebKit;42.8s",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/browser.log"
+      },
+      {
+        "name": "strict Clippy",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/clippy.log"
+      },
+      {
+        "name": "types",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/types.log"
+      },
+      {
+        "name": "amended ESLint",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/eslint-green.log"
+      },
+      {
+        "name": "header check",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/headers.log"
+      },
+      {
+        "name": "final canonical hash/package pairing",
+        "result": "PASS 1/1",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/pairing-hash-final.log"
+      },
+      {
+        "name": "exact committed source export",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/source-export.log"
+      },
+      {
+        "name": "Compose config",
+        "result": "PASS",
+        "log": "/private/tmp/ssrm-control-fix-2026-10-15/compose.log"
+      }
+    ],
+    "red_logs": [
+      "/private/tmp/ssrm-control-fix-2026-10-15/web-red.log",
+      "/private/tmp/ssrm-control-fix-2026-10-15/gateway-red.log",
+      "/private/tmp/ssrm-control-fix-2026-10-15/native-fence-red.log",
+      "/private/tmp/ssrm-control-fix-2026-10-15/native-http-red.log"
+    ],
+    "prior_measurements": "Task11 measured arrays and original checks remain historical. Fresh browser observations are under the task browser-evidence directory; no new capacity claim.",
+    "image_status": "UNQUALIFIED: prior apt ENOSPC, no image build retry or pruning",
+    "review": "control-admission-review.md"
+  }
+}

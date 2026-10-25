@@ -1,0 +1,15 @@
+# Third-party code that keeps its own license and notice (not BDOBB-authored).
+# swift-rs 1.0.8, vendored for the iOS build ([patch.crates-io] in src-tauri/Cargo.toml); MIT OR Apache-2.0.
+src-tauri/vendor/
+
+
+# Byte-identical imported Apache policy contracts; preserve their pinned hashes.
+web/policy.mjs
+web/temporal-policy.mjs
+# Historical validation receipts keep the license they originally recorded.
+docs/releases/validation/
+# Historical design mockups are evidence, not application source.
+docs/superpowers/specs/
+
+# Upstream license evidence and audit records retain their own notices.
+LICENSES/dependency-evidence/

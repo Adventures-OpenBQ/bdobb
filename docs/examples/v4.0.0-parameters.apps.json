@@ -1,0 +1,197 @@
+[
+  {
+    "name": "Parameters",
+    "description": "The v4 parameter features on their own tabs: groups that propagate one value to many cards, the period-aware pickers (day, week, month, quarter, fiscal year, date-time and time) and the relative-date grammar. Every card is a built-in that echoes what it would send, so nothing needs a backend, a key or a sign-up. Opens in BDOBB 4.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "groups": {
+        "id": "groups",
+        "name": "Groups",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 8,
+            "state": {
+              "params": {
+                "text": "The two Parameter echo cards below share two groups: Symbol (on each card's Ticker) and Year. The chain-link beside a control opens the Groups menu, the numbered badge shows which group a control is in, and editing either card's Ticker -- or its Year -- moves both. Groups are per dashboard; a group here never touches another dashboard."
+              }
+            }
+          },
+          {
+            "i": "param_echo",
+            "x": 0,
+            "y": 8,
+            "w": 14,
+            "h": 6,
+            "groups": ["Symbol", "Year"],
+            "state": {
+              "params": {
+                "date": "T"
+              }
+            }
+          },
+          {
+            "i": "param_echo",
+            "x": 14,
+            "y": 8,
+            "w": 14,
+            "h": 6,
+            "groups": ["Symbol", "Year"],
+            "state": {
+              "params": {
+                "date": "T-1bd"
+              }
+            }
+          }
+        ]
+      },
+      "period-pickers": {
+        "id": "period-pickers",
+        "name": "Period pickers",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 8,
+            "state": {
+              "params": {
+                "text": "Each Period echo card carries one control of every kind -- day, week, month, quarter, fiscal year, date-time (to the second) and time -- so a fiscal-quarter parameter picks a quarter, not a day on a calendar. The two cards share a Quarter group but end their fiscal years in different months: the same stored quarter shows two different labels, which is exactly what the fiscal-quarter alignment fixes."
+              }
+            }
+          },
+          {
+            "i": "period_echo",
+            "x": 0,
+            "y": 8,
+            "w": 20,
+            "h": 8,
+            "groups": ["Quarter"],
+            "state": {
+              "params": {
+                "fy_end": "December"
+              }
+            }
+          },
+          {
+            "i": "period_echo",
+            "x": 20,
+            "y": 8,
+            "w": 20,
+            "h": 8,
+            "groups": ["Quarter"],
+            "state": {
+              "params": {
+                "fy_end": "September"
+              }
+            }
+          }
+        ]
+      },
+      "expressions": {
+        "id": "expressions",
+        "name": "Dynamic expressions",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 42,
+            "h": 8,
+            "state": {
+              "params": {
+                "text": "A date parameter can store an expression instead of a frozen date, and every render resolves it fresh -- so a dashboard set up on \"26 weeks ago\" keeps meaning 26 weeks ago, not the day it was built. Each Date expression card below types one expression and shows what it resolves to today, as a date and as a datetime. Edit the Expression control to try your own; the fiscal cards read their year end from the FY end control."
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 0,
+            "y": 8,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "T"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 14,
+            "y": 8,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "T-1bd"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 28,
+            "y": 8,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "T-26w"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 0,
+            "y": 15,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "Q-1"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 14,
+            "y": 15,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "FQ-4",
+                "fy_end": "9"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 28,
+            "y": 15,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "session_open"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [
+      { "name": "Symbol", "type": "param", "paramName": "ticker", "defaultValue": "AAPL", "groupType": "symbol" },
+      { "name": "Year", "type": "param", "paramName": "year", "defaultValue": "2024" },
+      { "name": "Quarter", "type": "param", "paramName": "quarter", "defaultValue": "T" }
+    ],
+    "prompts": []
+  }
+]

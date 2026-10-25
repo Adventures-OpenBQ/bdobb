@@ -1,0 +1,16 @@
+
+> bdobb@8.0.0 pivot:build <worktree>
+> node scripts/build-pivot-wasm.mjs
+
+rustc 1.98.1 (48a229cea 2026-09-01)
+wasm-bindgen 0.2.128
+    Finished `release` profile [optimized] target(s) in 0.08s
+✔ emitted web Wasm initializes and negotiates protocol 1 without shared memory (22.928791ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.405625

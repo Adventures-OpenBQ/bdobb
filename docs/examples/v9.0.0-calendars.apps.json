@@ -1,0 +1,283 @@
+[
+  {
+    "name": "Example Dashboard - Version 9.0.0 - Calendars",
+    "description": "Episode 9 brings EODHD to the stack. Markets: EODHD price histories as a table and a chart sharing Symbol and Interval groups, and twelve quarters of EODHD income statement. Calendars: the EODHD economic and earnings calendars and U.S. Treasury auction results, each a Calendar view over the backend's table. EODHD cards need the openbq-eodhd extension and a key. Opens in BDOBB 9.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "markets": {
+        "id": "markets",
+        "name": "Markets",
+        "layout": [
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "groups": [
+              "Symbol",
+              "Interval"
+            ],
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "interval": "1d",
+                "provider": "eodhd"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 12,
+            "groups": [
+              "Symbol",
+              "Interval"
+            ],
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "interval": "1d",
+                "provider": "eodhd"
+              },
+              "chartView": {
+                "enabled": true,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "view": "chart"
+                }
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_fundamental_income_eodhd_obb",
+            "x": 0,
+            "y": 12,
+            "w": 40,
+            "h": 12,
+            "groups": [
+              "Symbol"
+            ],
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "period": "quarter",
+                "limit": "12",
+                "provider": "eodhd"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          }
+        ]
+      },
+      "calendars": {
+        "id": "calendars",
+        "name": "Calendars",
+        "layout": [
+          {
+            "i": "eodhd_economy_calendar_eodhd_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 24,
+            "state": {
+              "params": {
+                "country": "US",
+                "start_date": "T-1mo",
+                "end_date": "T+2mo",
+                "provider": "eodhd"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "U.S. economic calendar"
+                }
+              }
+            }
+          },
+          {
+            "i": "ustreasury_auction_results_us_treasury_obb",
+            "x": 0,
+            "y": 24,
+            "w": 20,
+            "h": 18,
+            "state": {
+              "params": {
+                "provider": "us_treasury"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Treasury auction results"
+                }
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_calendar_earnings_eodhd_obb",
+            "x": 20,
+            "y": 24,
+            "w": 20,
+            "h": 18,
+            "state": {
+              "params": {
+                "start_date": "T-MON",
+                "end_date": "T+1m",
+                "provider": "eodhd"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Earnings, seven names"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "name": "Symbol",
+        "type": "param",
+        "paramName": "symbol",
+        "defaultValue": "AAPL",
+        "groupType": "symbol"
+      },
+      {
+        "name": "Interval",
+        "type": "param",
+        "paramName": "interval",
+        "defaultValue": "1d",
+        "groupType": "interval"
+      }
+    ],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v5",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v4",
+          "base": {
+            "schemaVersion": 1,
+            "profile": "v3",
+            "tabOrder": [
+              "markets",
+              "calendars"
+            ]
+          },
+          "cards": [
+            {
+              "ref": "c0",
+              "tab": "markets",
+              "index": 0,
+              "extras": {}
+            },
+            {
+              "ref": "c1",
+              "tab": "markets",
+              "index": 1,
+              "extras": {}
+            },
+            {
+              "ref": "c2",
+              "tab": "markets",
+              "index": 2,
+              "extras": {}
+            },
+            {
+              "ref": "c3",
+              "tab": "calendars",
+              "index": 0,
+              "extras": {
+                "calendar": {
+                  "mode": "paged",
+                  "unit": "month",
+                  "evenRows": true
+                },
+                "view": "calendar"
+              }
+            },
+            {
+              "ref": "c4",
+              "tab": "calendars",
+              "index": 1,
+              "extras": {
+                "calendar": {
+                  "mode": "vertical",
+                  "rowUnit": "week",
+                  "dateField": "auction_date",
+                  "titleField": "security_term",
+                  "seriesField": "security_type"
+                },
+                "view": "calendar"
+              }
+            },
+            {
+              "ref": "c5",
+              "tab": "calendars",
+              "index": 2,
+              "extras": {
+                "calendar": {
+                  "mode": "horizontal",
+                  "cellMode": "list",
+                  "seriesField": "symbol",
+                  "series": [
+                    "AAPL.US",
+                    "MSFT.US",
+                    "NVDA.US",
+                    "AMZN.US",
+                    "GOOGL.US",
+                    "META.US",
+                    "TSLA.US"
+                  ]
+                },
+                "view": "calendar"
+              }
+            }
+          ]
+        },
+        "cards": [
+          {
+            "tab": "markets",
+            "index": 2,
+            "view": "statement"
+          }
+        ]
+      }
+    }
+  }
+]

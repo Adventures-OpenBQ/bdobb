@@ -1,0 +1,20 @@
+pivot-build|exit=0|dur=12s|load=1.48, 1.54, 1.11|cmd=pnpm pivot:build
+typecheck|exit=0|dur=36s|load=1.56, 1.56, 1.12|cmd=pnpm typecheck
+lint|exit=0|dur=30s|load=2.28, 1.74, 1.20|cmd=pnpm lint
+unit|exit=0|dur=429s|load=3.16, 1.99, 1.30|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+revision-test|exit=0|dur=4s|load=4.70, 3.98, 2.51|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=52s|load=4.56, 3.97, 2.51|cmd=env NODE_OPTIONS=--max-old-space-size=6144 pnpm build
+smoke|exit=0|dur=10s|load=4.07, 3.94, 2.58|cmd=env NODE_OPTIONS=--require <scratch> pnpm smoke
+e2e|exit=0|dur=1907s|load=4.31, 3.99, 2.61|cmd=env NODE_OPTIONS=--require <scratch> BDOBB_BROWSER_PORT=4651 BDOBB_MOCK_PORT=4652 pnpm exec playwright test -c playwright.scratch.config.ts --reporter=list
+web|exit=0|dur=2s|load=4.28, 4.21, 4.46|cmd=pnpm test:web
+build-web|exit=0|dur=28s|load=4.28, 4.21, 4.46|cmd=pnpm build:web
+web-browser|exit=0|dur=5s|load=3.32, 3.98, 4.37|cmd=env NODE_OPTIONS=--require <scratch> pnpm test:web:browser
+scrub|exit=0|dur=4s|load=3.37, 3.98, 4.37|cmd=pnpm scrub
+help|exit=0|dur=6s|load=3.37, 3.98, 4.37|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=120000
+notices-check|exit=0|dur=13s|load=3.15, 3.92, 4.34|cmd=pnpm notices:check
+pivot-test|exit=0|dur=34s|load=2.82, 3.82, 4.31|cmd=pnpm pivot:test
+pivot-verify|exit=0|dur=1s|load=2.01, 3.51, 4.18|cmd=pnpm pivot:verify
+pivot-packaging|exit=0|dur=5s|load=2.01, 3.51, 4.18|cmd=pnpm test:pivot:packaging
+pivot-browser|exit=0|dur=59s|load=2.01, 3.48, 4.17|cmd=env NODE_OPTIONS=--require <scratch> pnpm exec playwright test -c playwright.pivot.scratch.config.ts
+diff-check|exit=0|dur=0s|load=2.33, 3.30, 4.06|cmd=git diff --check c0fb324 HEAD -- . :!docs/releases/validation/**/*.log
+DONE

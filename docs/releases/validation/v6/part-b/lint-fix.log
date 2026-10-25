@@ -1,0 +1,6 @@
+11:12  up 1 day, 35 mins, 2 users, load averages: 17.90 34.41 45.97
+
+> bdobb@6.0.0 lint <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> eslint .
+
+lint exit 0 9s

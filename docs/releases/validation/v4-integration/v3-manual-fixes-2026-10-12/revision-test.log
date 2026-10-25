@@ -1,0 +1,10 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-18
+
+ ✓ src/stores/dashboardRevision.test.ts (34 tests) 64ms
+
+ Test Files  1 passed (1)
+      Tests  34 passed (34)
+   Start at  15:30:46
+   Duration  1.22s (transform 385ms, setup 92ms, collect 512ms, tests 64ms, environment 207ms, prepare 51ms)
+

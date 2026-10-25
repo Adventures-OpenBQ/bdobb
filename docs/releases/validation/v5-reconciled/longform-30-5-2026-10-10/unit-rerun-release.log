@@ -1,0 +1,16 @@
+10:40  up 3 days, 4 mins, 2 users, load averages: 459.61 453.36 485.17
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ scripts/release.test.mjs (6 tests) 3314ms
+   ✓ release.sh > refuses to publish when origin's tag points at another commit 545ms
+   ✓ release.sh > stops before publishing when the tag push fails 631ms
+   ✓ release.sh > pushes an absent tag, then creates the release against that tag only 788ms
+   ✓ release.sh > publishes this version's dmg even when an older build left another in the bundle dir 635ms
+   ✓ release.sh > replaces an existing release's files in place, never deleting the release first 555ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  10:40:49
+   Duration  4.40s (transform 42ms, setup 201ms, collect 11ms, tests 3.31s, environment 0ms, prepare 94ms)
+

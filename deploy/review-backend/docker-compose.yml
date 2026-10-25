@@ -1,0 +1,104 @@
+# Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+# SPDX-License-Identifier: AGPL-3.0-only
+
+# The App Review backend: OpenBB's own reference backend, published to the
+# public internet through Tailscale Funnel, behind Basic auth.
+#
+# WHAT THIS IS FOR. BDOBB is a client for self-hosted OpenBB stacks, so an
+# Apple reviewer has nothing to connect to. This gives them one URL and one
+# credential, and exposes none of the operator's data:
+#
+#   - the backend is OpenBB's PUBLIC reference implementation
+#     (bdobb-dev/backends-for-openbb, a fork of the archived
+#     OpenBB-finance/backends-for-openbb), pinned to the same commit the
+#     conformance suite pins. ~70 widgets of synthetic sample data.
+#   - it reads no credentials.env, no provider key, no MinIO, no kdb.
+#   - it has no volumes but the tailscale node identity.
+#   - the tailscale node MUST live on its own throwaway tailnet (see
+#     ts.env.example). It has no peers, so there is nothing for it to reach.
+#   - the published containers sit on an `internal: true` bridge with NO route
+#     off it -- not to the internet, not to this host's LAN. A tailnet the NAS
+#     is not on does not by itself stop a bridged container reaching the NAS by
+#     LAN IP; this does.
+#
+# Nothing here talks to openbb-docker, the NAS, or the Spark. It is a separate
+# compose project on a separate bridge -- keep it that way.
+#
+# Before first start:
+#   cp ts.env.example ts.env       && chmod 600 ts.env
+#   cp auth.env.example auth.env   && chmod 600 auth.env
+#
+# See README.md for the tailnet policy edit Funnel needs, and the verification
+# steps that prove the door is open and the lock is on.
+services:
+  # Serve terminates TLS with a real Let's Encrypt cert and funnels :443.
+  # Kernel networking (not the image's userspace default) for the same reason
+  # openbb-docker uses it: in userspace mode tailscaled forwards inbound
+  # tailnet connections to 127.0.0.1 itself, which would matter if anything
+  # here bound loopback. Nothing does, but the mode that fails safe is free.
+  tailscale:
+    image: tailscale/tailscale:v1.98.9
+    container_name: review-ts
+    hostname: bdobb-demo
+    restart: unless-stopped
+    env_file:
+      - ./ts.env
+    environment:
+      - TS_HOSTNAME=bdobb-demo
+      - TS_USERSPACE=false
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+    volumes:
+      - ./ts-state:/var/lib/tailscale
+      - ./ts-config:/config
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # The only service on review-edge: tailscaled needs to reach DERP and the
+    # coordination server. Everything it proxies to is on the internal bridge,
+    # which has no route anywhere else.
+    networks:
+      - review-edge
+      - review-internal
+
+  # The lock, in front of everything. The reference backend has no auth of its
+  # own, and Funnel is the public internet -- so the credential check cannot
+  # live in the thing being published.
+  caddy:
+    image: caddy:2-alpine
+    container_name: review-caddy
+    restart: unless-stopped
+    networks:
+      - review-internal
+    depends_on:
+      - reference-backend
+    env_file:
+      - ./auth.env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
+  # The published surface. No ports block: unreachable from the LAN, from the
+  # host, and from anything not on this bridge.
+  reference-backend:
+    # Context is deploy/ so the Dockerfile can reuse reference-demo's exec patch.
+    build:
+      context: ..
+      dockerfile: review-backend/Dockerfile
+    image: bdobb-reference-backend:a629370
+    container_name: review-reference-backend
+    restart: unless-stopped
+    networks:
+      - review-internal
+
+networks:
+  review-edge:
+    driver: bridge
+  # internal: true removes the gateway, so caddy and the reference backend can
+  # talk to each other and to Serve, and to nothing else. They cannot reach the
+  # internet and -- the point -- cannot reach this host's LAN, so the NAS is
+  # unreachable by IP even though it shares the physical network.
+  review-internal:
+    driver: bridge
+    internal: true

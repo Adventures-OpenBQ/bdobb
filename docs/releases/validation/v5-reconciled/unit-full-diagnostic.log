@@ -1,0 +1,3077 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/stores/dashboardStore.legacyV4.test.ts (156 tests) 378ms
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > resizes immediately but saves once, 300ms after the last move
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > collapses a burst of moves into a single save
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > does not save again at unmount once the debounced save has landed
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer column menu > closes the menu when a refresh drops the column it was opened on
+[Table] Column with id 'close' does not exist.
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > autosizes visible columns from header and cell text when autosizeKey changes
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > does not re-apply autosize on a remount with the same autosizeKey (Reset columns, a view switch)
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+ ✓ src/components/renderers/TableRenderer.test.tsx (135 tests) 7426ms
+   ✓ TableRenderer row virtualisation > keeps a 10,000-row table down to a window of rows in the DOM 458ms
+   ✓ TableRenderer row virtualisation > sorts across the whole set, not the window, and returns to the top 410ms
+   ✓ TableRenderer filter row > narrows 10,000 rows by a contains filter and updates the count 1686ms
+   ✓ TableRenderer filter row > narrows by a number range across the whole set, not the rendered window 849ms
+stderr | src/components/WidgetCard.test.tsx > advanced_charting > hands the widget's UDF spec and the Refresh key to the TradingView renderer
+An update to WidgetCard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WidgetCard.test.tsx (216 tests) 9971ms
+   ✓ WidgetCard markdown editor > dispatches to the editor with the stored text even though its data is null 326ms
+ ✓ src/stores/dashboardStore.test.ts (142 tests) 540ms
+ ✓ src/components/LeftRail.test.tsx (97 tests) 5702ms
+ ✓ src/components/ParamControls.test.tsx (59 tests) 7078ms
+   ✓ ParamControls with optionsEndpoint params > keeps a downstream value the new list still offers 342ms
+   ✓ ParamControls with optionsEndpoint params > never clears a stored value on the first result after the row opens, even one the list does not offer 316ms
+   ✓ ParamControls with optionsEndpoint params > does not clear a downstream value when an unrelated edit leaves its key alone 375ms
+   ✓ ParamControls with optionsEndpoint params > clears a downstream value when the upstream changes while its first list is still in flight 418ms
+   ✓ ParamControls with optionsEndpoint params > keeps a stored value when a backend appears while the row is open 327ms
+   ✓ ParamControls with optionsEndpoint params > fetches nothing for a hidden param 338ms
+   ✓ ParamControls multi-select params > uses the static list, and issues no request, for a multi param with no endpoint 304ms
+ ✓ src/hooks/useWidgetData.legacyV4.test.tsx (82 tests) 27241ms
+   ✓ useWidgetData > does not refetch when params is a new object with the same values 367ms
+   ✓ useWidgetData auto-refresh > never has two requests in flight, even when the endpoint is far slower than the interval 763ms
+   ✓ useWidgetData stale data across a loading pass > drops the old payload the moment the params change, so the previous symbol's rows cannot sit under the new one 509ms
+   ✓ useWidgetData with a run button > arms on the render where the widget resolves, not on mount before it does 366ms
+   ✓ useWidgetData with a run button > fetches nothing when the parameters change, and reports the card stale 362ms
+   ✓ useWidgetData with a run button > arms the fiscal map with the params: a map change alone sends nothing, and Run sends the params under the map computed for them 1461ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > holds the first arm while the lookup is pending, then sends it once under the landed year end 840ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > holds a Run pressed while the lookup is pending, then sends it once under the landed year end 876ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > sends nothing when the lookup lands after an un-run edit made while holding, and goes stale 464ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > stays unsent on ⌘R after a dropped hold, and only Run sends it, under the landed year end 840ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > leaves loading when a trigger held after a dropped hold is released onto a moved wire 1545ms
+   ✓ useWidgetData with expressions and calendars > a run-button card goes stale, not fetched, when T crosses midnight before a refresh; Run sends the new date 572ms
+   ✓ useWidgetData with expressions and calendars > a card without a run button refetches when its calendars land, and holds its request while they are pending 380ms
+   ✓ useWidgetData with expressions and calendars > drops the old payload when a param change lands while a year its resolution needs is still pending 527ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a literal-date card sends exactly one request on first load, even after the up-front years land 617ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a T-1bd card sends exactly one request when 2025 lands after the 2026 it consulted 904ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when a year it did not consult lands 886ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > refetches exactly once when a backend answer replaces the bundled calendar a consulted year resolved on 901ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from T-1bd to T moves its calendar key 786ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from T to T-1bd moves its calendar key 855ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from 2026-01-02 to T-1bd moves its calendar key 853ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card neither loads nor sends on an un-run edit that needs an unloaded year, nor when that year lands 1354ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > Run on an edit whose consulted year is pending holds the send, and sends it exactly once when the year lands 1341ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > Run on an edit whose consulted year is pending holds the send, and sends it exactly once when the year fails 1400ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > ⌘R and ↻ on a stale run-button card each re-send the armed request exactly once 1555ms
+stderr | src/components/dialogs/SettingsDialog.test.tsx > SettingsDialog > shows a conflict notice, then replaces on the second Done
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/SettingsDialog.test.tsx > reviews conflicts again when a Workspace download changes the pending patch
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/SettingsDialog.test.tsx (64 tests) 7676ms
+   ✓ Export… and Import… > Import… review shows the folder line; Apply stages the tree; Done replaces it in useFoldersStore 313ms
+   ✓ stages downloaded Workspace preferences and persists them 657ms
+   ✓ stages downloaded Workspace preferences and discards them 535ms
+   ✓ reviews conflicts again when a Workspace download changes the pending patch 308ms
+ ✓ src/components/renderers/LocalTableRenderer.execution.test.tsx (39 tests) 23563ms
+   ✓ file pivot edits keep source schema and bounded expanded children use stable paths 789ms
+   ✓ zero matching file rows retain filter controls and Clear restores the worker result 440ms
+   ✓ duplicate edits save one durable definition before worker publication and preserve source acquisition 533ms
+   ✓ does not publish a Duplicate whose durable save completes after the renderer unmounts 495ms
+   ✓ acknowledges durable Move to Available before fast-worker invalid-group selection reconciliation 423ms
+   ✓ acknowledges durable Move to Column Groups before fast-worker invalid-group selection reconciliation 342ms
+   ✓ read-only analytical inspection requests bound operators and footer errors without authoring 326ms
+   ✓ simultaneous page facets and inspection settlement enable inspector pagination 393ms
+   ✓ activates only on explicit request and migrates existing measure instances and temporal recipes into canonical authority 462ms
+   ✓ calculated header Show formula opens the bound definition and restores panel focus on Escape 358ms
+   ✓ migration preserves configured Last and warns about required report date binding 423ms
+   ✓ source formula filters use bounded stable-ID metadata and preserve prior result on failed durable change 577ms
+   ✓ all-error source formulas require an explicit filter type and retain incomplete empty results 440ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":99} 457ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":1,"params":{"promotePage":true,"filters":[]},"enabled":true,"categories":[],"measures":[],"formulas":[],"layout":null,"checklists":{},"resultFilters":[],"subtotals":{"grandTotal":true,"groups":false}} 558ms
+   ✓ a linked missing field remains repairable against current parent schema even with a stale ready result 346ms
+   ✓ reactively toggles the actual dismiss checkbox twice and applies table dismissal without panel rerenders 753ms
+   ✓ keyboard Show formula transfers focus to visible Formulas and Escape returns to Arrange 487ms
+   ✓ functional Arrange reorder and Pivot on toggle compose in the live renderer and persist source mode 529ms
+   ✓ Arrange footer explains a displayed missing aggregation only while Pivot is enabled 305ms
+   ✓ Statement held preview is inert after source changes and retains draft 1711ms
+   ✓ Statement held preview is inert after refresh changes and retains draft 1963ms
+   ✓ Statement held preview is inert after viewer changes and retains draft 1753ms
+   ✓ Statement held preview is inert after cancel changes and retains draft 2529ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:false) 1049ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:false) 816ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:true) 1328ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:true) 1261ms
+ ✓ src/lib/dataClient.test.ts (110 tests) 621ms
+ ✓ src/stores/tableExecutionStore.test.ts (40 tests) 1154ms
+ ✓ src/lib/dateExpressions.test.ts (91 tests) 146ms
+ ✓ src/lib/appsJson.legacyV4.test.ts (90 tests) 394ms
+ ✓ src/components/dialogs/SettingsDialog.legacyV4.test.tsx (55 tests) 6762ms
+   ✓ staging -- nothing writes until Done > stages every control across every tab without ever calling save or touching disk 455ms
+   ✓ Done / Cancel / Close / Escape > Done is disabled while the commit is pending, and re-enables after it settles 324ms
+ ✓ src/components/renderers/CalendarRenderer.test.tsx (52 tests) 6532ms
+   ✓ CalendarRenderer > month: draws the weeks of September over Mon–Fri with today marked 321ms
+   ✓ CalendarRenderer > toolbar writes each facet through onPatch 814ms
+   ✓ CalendarRenderer modes > the toolbar leads with the mode and then shows that mode's own controls 592ms
+   ✓ CalendarRenderer series filter > commits the Series box on Enter and on blur, and clearing it drops the filter 431ms
+   ✓ CalendarRenderer series filter > keeps focus in the Series box after Enter, so the next commit is not dropped 635ms
+   ✓ CalendarRenderer tree filter > lists the sources with counts, Other last, and expands to releases and statistics 350ms
+   ✓ CalendarRenderer tree filter > unticking a source excludes it and hides its rows 338ms
+ ✓ src/hooks/useWidgetData.test.tsx (58 tests) 7655ms
+   ✓ useWidgetData > does not refetch when params is a new object with the same values 377ms
+   ✓ useWidgetData auto-refresh > never has two requests in flight, even when the endpoint is far slower than the interval 771ms
+   ✓ useWidgetData auto-refresh > a manual Refresh re-arms the timer from that moment, rather than leaving the old one running 309ms
+   ✓ useWidgetData stale data across a loading pass > drops the old payload the moment the params change, so the previous symbol's rows cannot sit under the new one 459ms
+   ✓ useWidgetData stale data across a loading pass > re-renders with an equal-valued params object without dropping anything, since the key is unchanged 320ms
+   ✓ useWidgetData with a run button > arms on the render where the widget resolves, not on mount before it does 367ms
+   ✓ useWidgetData with a run button > fetches nothing when the parameters change, and reports the card stale 389ms
+ ✓ src/components/dialogs/WorkspaceDialog.test.tsx (67 tests) 7454ms
+   ✓ WorkspaceDialog > disables Create while the name is blank or only spaces 353ms
+   ✓ WorkspaceDialog > Escape, Cancel and ✕ do nothing while Done's write is in flight; Done closes when it lands 392ms
+   ✓ ＋ New dashboard > keeps a dropped placeholder dropped when Create is retried after a failed write 401ms
+   ✓ ＋ New dashboard > Cancel, Escape and ✕ do nothing while Create makes its dashboards; an unmounted Create stops 653ms
+ ✓ src/components/WidgetLibrary.test.tsx (61 tests) 2928ms
+   ✓ WidgetLibrary > dblclick with the active dashboard switched to B returns to origin A/a1 and closes 321ms
+ ✓ src/lib/widgetsJson.test.ts (92 tests) 80ms
+ ✓ src/stores/workspacesStore.test.ts (74 tests) 247ms
+ ✓ src/components/renderers/PdfView.test.tsx (38 tests) 2878ms
+   ✓ PdfView > re-fits on a resize only while the zoom mode is fit, and drops the pending timer on unmount 475ms
+ ✓ src/lib/appsJson.test.ts (70 tests) 88ms
+ ✓ src/stores/tableCommitCoordinator.test.ts (32 tests) 1516ms
+   ✓ a header choice queued behind Page category replacement cannot write an old-category member 324ms
+ ✓ src/lib/params.test.ts (70 tests) 342ms
+stderr | src/App.test.tsx > App > re-applies --rail-width when the setting is saved
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/renderers/MultiFileRenderer.test.tsx (28 tests) 2461ms
+   ✓ MultiFileRenderer > lists the selector's choices and issues no POST until Open 431ms
+   ✓ MultiFileRenderer > refreshing before anything was opened requests nothing 311ms
+   ✓ MultiFileRenderer > treats a 204 as an empty answer, not a malformed one 354ms
+stderr | src/App.test.tsx > restores the first workspace dashboard tab before focusing its panel
+An update to LeftRail inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to LeftRail inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/App.test.tsx (34 tests) 3237ms
+   ✓ App > does not load the help bundle at startup, only once the dialog is opened 569ms
+   ✓ App > shows a fallback notice instead of unmounting when the help chunk fails to load, and Close dismisses it 582ms
+ ✓ src/components/dialogs/ConnectionsDialog.test.tsx (35 tests) 2747ms
+   ✓ ConnectionsDialog > disables Add until both name and base URL are non-blank 382ms
+   ✓ ConnectionsDialog > adds a backend with a name, base URL, and optional auth header pair 455ms
+   ✓ ConnectionsDialog > submits once while a save is still in flight 340ms
+ ✓ src/lib/tableExecution/workerClient.test.ts (28 tests) 472ms
+stderr | src/components/WorkspaceGrid.test.tsx > WorkspaceGrid > the ✕ ignores the second click of a double click, and answers a single one
+An update to WorkspaceTile inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to WorkspaceTile inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WorkspaceGrid.test.tsx (41 tests) 659ms
+ ✓ src/lib/tableModel/formulaEvaluation.test.ts (32 tests) 52ms
+stderr | src/components/TabBar.test.tsx > TabBar in viewer mode > shows a grouping-off tag only while the dashboard has grouping disabled
+An update to TabBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/TabBar.test.tsx (37 tests) 3679ms
+   ✓ TabBar > renders one tab per tab on the active dashboard and marks the active one 665ms
+   ✓ TabBar > renames a tab through the inline field opened by double-click 446ms
+   ✓ TabBar > cancels the rename on Escape, restoring the tab's label 311ms
+   ✓ group chips > renames on double-click and Enter 373ms
+ ✓ src/components/renderers/table-model/FormulaPanel.test.tsx (29 tests) 7319ms
+   ✓ keeps the last valid formula on a cycle and requires an explicit sibling measure choice 1447ms
+   ✓ function autocomplete inserts valid syntax with the reference inside the arguments 325ms
+   ✓ retains inserted selectors across facets for a new formula saved once 630ms
+   ✓ retains inserted selectors across facets for an existing formula saved once 312ms
+   ✓ binds observed members independently of the displayed page and refuses an unobserved edited member 309ms
+   ✓ resets inserted member proof when switching formula drafts 417ms
+   ✓ offers canonical duplicate-measure calls while still accepting existing display aliases 389ms
+   ✓ keeps insertion probes bounded and distinct from a user reference with the probe spelling 523ms
+   ✓ retains drafts on failed deletion and guards pending footer actions 421ms
+ ✓ src/components/dialogs/KeysPanel.test.tsx (23 tests) 3338ms
+   ✓ KeysPanel > submits a new value through Details then re-probes, and never logs the value 574ms
+   ✓ KeysPanel > a re-probe that fails after a successful submit keeps the last-good rows and the restart notice, not an error screen 395ms
+   ✓ KeysPanel > keeps the chosen filter while hidden and shown again (the tab round trip) 463ms
+   ✓ KeysPanel > does not fetch beyond the mount load on filter, sort, or Details-open; Check all fetches exactly once more 312ms
+ ✓ src/components/renderers/PivotPanel.test.tsx (35 tests) 2547ms
+   ✓ the three lists > returns keyboard focus to a moved pill after it enters another list 489ms
+ ✓ src/stores/tableCommitCoordinator.groups.test.ts (43 tests) 2382ms
+ ✓ src/lib/tableColumns.test.ts (67 tests) 19ms
+ ✓ src/stores/tableExecutionStore.runtime.test.ts (16 tests) 2031ms
+   ✓ persisted group bytes growth cannot overflow the combined validated viewer envelope 363ms
+   ✓ viewer masking frees near-capacity group candidates before the single aggregate admission 517ms
+   ✓ viewer masking frees near-capacity group candidates before the single aggregate admission 449ms
+ ✓ src/components/WidgetCard.paramFlow.test.tsx (10 tests) 7934ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > issues exactly one request on mount, one more on a committed edit, and none for an unrelated dashboard edit 1543ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > sends a range as two params and a quarter under its sibling's year end, and the row labels the quarter the same way 704ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > holds a single-ticker card until the fiscal lookup answers, sends it under that year end, and the FY ends control overrides it (v5.4.0) 1293ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > sends a grouped literal quarter's first arm once, under the landed year end, and is not stale 654ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > sends a Run pressed while the lookup is pending once, under the landed year end 939ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > goes stale, sends nothing and stops loading when the FY ends override changes without Run during the hold 1929ms
+   ✓ iframe widgets issue no request (Finding 1, real store + real DashboardGrid/WidgetCard) > renders the frame and issues zero requests to the backend 483ms
+   ✓ built-in widgets issue no request (Finding 2, real store + real DashboardGrid/WidgetCard) > renders the note and issues zero requests to the backend 322ms
+ ✓ src/components/dialogs/AppsDialog.test.tsx (37 tests) 4122ms
+   ✓ AppsDialog > opens as a real modal dialog, and refuses the native close request 996ms
+   ✓ AppsDialog > search > matches on the description 342ms
+   ✓ AppsDialog > search > survives a description that is not a string 671ms
+   ✓ AppsDialog > search > keeps a card's state when the search narrows around it 338ms
+   ✓ AppsDialog > an apps.json that could not be read > keeps the line out of a search, which is about apps 344ms
+ ✓ src/lib/calendarView.test.ts (58 tests) 180ms
+ ✓ src/lib/tableModel/calculate.test.ts (24 tests) 796ms
+   ✓ qualifies once at Year and Quarter then recomputes underlying record totals 316ms
+ ✓ src/components/renderers/KeysRenderer.test.tsx (44 tests) 5877ms
+   ✓ KeysRenderer pills > shows Own key for a set, non-demo key 598ms
+   ✓ sorting by provider > leaves key-maint's own order alone until the header is clicked 714ms
+   ✓ sorting by provider > cycles ascending, descending, then back to the payload's order 412ms
+   ✓ sorting by provider > drops a row without a string provider or env_var instead of crashing the sort 405ms
+   ✓ probe cadence > tests a single service from the row context menu 420ms
+   ✓ tier-3 editing > submits the typed value for that row 473ms
+   ✓ a failed submit > does not leak an unhandled promise rejection 318ms
+   ✓ a failed submit > never puts the typed value in the failure message 607ms
+ ✓ src/lib/pivotTable.test.ts (32 tests) 173ms
+ ✓ src/lib/tableExecution/runtimeParams.test.ts (22 tests) 595ms
+   ✓ enforces exact UTF-8, cardinality and serialized overlay budgets without narrowing declared capacity 392ms
+ ✓ src/stores/dashboardStore.lifecycle.test.ts (25 tests) 197ms
+ ✓ src/stores/providerKeysStore.test.ts (28 tests) 90ms
+ ✓ src/lib/discovery.test.ts (26 tests) 3013ms
+   ✓ discoverBackend > returns normalized widgets and online status 341ms
+   ✓ discoverBackend apps.json > refuses an apps.json that is over the byte limit on the wire 321ms
+   ✓ discoverBackend fetches both documents concurrently > takes about one delay, not two 355ms
+ ✓ src/lib/calendar.test.ts (28 tests) 80ms
+ ✓ src/components/App.errorBoundaries.test.tsx (19 tests) 7077ms
+   ✓ 'the widget library' > degrades to its own fallback, leaves the shell working, and comes back clean 898ms
+   ✓ 'the apps dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 445ms
+   ✓ 'the apps dialog' > can be dismissed while it is still crashing, and reopens clean 328ms
+   ✓ 'the connections dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 502ms
+   ✓ 'the settings dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 410ms
+   ✓ 'the settings dialog' > can be dismissed while it is still crashing, and reopens clean 305ms
+   ✓ 'the help dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 1057ms
+   ✓ the lazy help chunk > keeps the shell when the import rejects, through HelpLoadFailed rather than the boundary 1303ms
+   ✓ the lazy help chunk > catches a module that loads without the export, which the `.catch` cannot 442ms
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > follows a later change to widgetGap
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > pins containerPadding at today's 10px, so the gap slider moves only the gap
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > adds the corner-handles class when cornerDragHandles is on, and omits it when off
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/DashboardGrid.test.tsx (23 tests) 495ms
+ ✓ src/components/renderers/IframeRenderer.test.tsx (26 tests) 400ms
+stderr | src/hooks/useFiscalYearEnd.test.tsx > useFiscalYearEnd > falls through to the sibling on an unreadable answer, on an error, and with no backend — and logs once
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/hooks/useFiscalYearEnd.test.tsx > useFiscalYearEnd > falls through to the sibling on an unreadable answer, on an error, and with no backend — and logs once
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/hooks/useFiscalYearEnd.test.tsx > useFiscalYearEnd > falls through to the sibling on an unreadable answer, on an error, and with no backend — and logs once
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/stores/backendsStore.test.ts (20 tests) 999ms
+   ✓ updateBackend > does not let a slow probe of the old URL mark the fixed backend offline 328ms
+ ✓ src/hooks/useFiscalYearEnd.test.tsx (17 tests) 1922ms
+   ✓ the built-in lookup (v5.4.0) > while a declared endpoint is in flight, shows the synchronous rungs past it — never the lookup, a hold or a reason 350ms
+   ✓ the built-in lookup (v5.4.0) > shares one lookup between two cards 402ms
+ ✓ src/components/DropZone.test.tsx (23 tests) 484ms
+ ✓ src/components/PivotParamRow.viewer.test.tsx (16 tests) 572ms
+ ✓ src/lib/tableExecution/formulaAuthoring.test.ts (20 tests) 218ms
+ ✓ src/components/dialogs/BackendEditForm.test.tsx (27 tests) 1307ms
+ ✓ src/hooks/useDashboardShortcuts.test.tsx (28 tests) 107ms
+ ✓ src/hooks/useParamOptions.test.tsx (12 tests) 2124ms
+   ✓ useParamOptions > serves a second hook with the same key from the module cache, synchronously and with no second request 370ms
+   ✓ useParamOptions > does not refetch when values is a new object with the same content, or an unrelated param changes 361ms
+   ✓ useParamOptions > drops a response whose key the param has already moved past 420ms
+   ✓ useParamOptions > issues nothing at all for a widget with no endpoint params 302ms
+ ✓ src/App.apps.test.tsx (11 tests) 2470ms
+   ✓ opening an app > asks again when the same app is opened a second time 418ms
+ ✓ src/components/renderers/LinkedChartRenderer.test.tsx (10 tests) 3738ms
+   ✓ consumes all eligible worker rows and changes only presentation settings through durable callback 319ms
+   ✓ retains the coherent completed figure while newer delivery is pending or fails, then fences stale mapping response 541ms
+   ✓ refresh requests root once and never on initial mount; persistence failure remains actionable 356ms
+   ✓ replacement and unmount abort pending reads and late old-source data cannot overwrite completed data 331ms
+   ✓ failed chart transport retains its completed figure and exposes the delivery diagnostic 644ms
+   ✓ binds both duplicate instances and blocks a deleted binding even after another instance is added 360ms
+   ✓ keeps a settings save failure visible after a successful source recalculation until a settings retry succeeds 554ms
+ ✓ src/browser-shim/shims.test.ts (23 tests) 439ms
+ ✓ src/components/renderers/table-model/StatementPanel.test.tsx (12 tests) 38752ms
+   ✓ applyRequiresBindingsAndShowsMissingNotZero 1280ms
+   ✓ overrideLabelsOrderFormulaVisibility 5999ms
+   ✓ sourceFieldDisappearsWithoutRawFallback 975ms
+   ✓ explicitUpdateRequiresConflictResolution 3962ms
+   ✓ failedSaveAndCancelledPreviewRetainDraft 4395ms
+   ✓ resets the line owned formula and editor before preview and save 5294ms
+   ✓ company choices belong to their binding while same binding paging retains all selected keys 4397ms
+   ✓ previews nonconflicting default formula and policy changes before durable adoption 4500ms
+   ✓ edits section visibility and explains inherited hiding without clearing line overrides 2160ms
+   ✓ keeps metadata fiscal bindings when switching FQ and back to FY 4054ms
+   ✓ updates fiscal kind when explicit bounds were mapped without an initial kind 1723ms
+stderr | src/components/WorkspaceArrangeBar.test.tsx > WorkspaceArrangeBar > says Could not save and lets Done be pressed again when the commit rejects
+An update to WorkspaceArrangeBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WorkspaceArrangeBar.test.tsx (24 tests) 1444ms
+ ✓ src/lib/tableExecution/validation.test.ts (18 tests) 91ms
+ ✓ src/lib/statementModel/compile.test.ts (19 tests) 236ms
+ ✓ src/hooks/useTradingCalendar.test.tsx (13 tests) 3082ms
+   ✓ useTradingCalendar > remembers a 404 for the session: a second card asks nothing more 306ms
+   ✓ useTradingCalendar > never waits on the up-front years for a card whose values consult no calendar (a literal date) 336ms
+   ✓ useTradingCalendar > waits on the year a T-1bd resolution consulted, not on the up-front previous year 765ms
+   ✓ useTradingCalendar > stops waiting when the consulted year's fetch fails 685ms
+ ✓ src/components/pickers/RelativeTab.test.tsx (17 tests) 6264ms
+   ✓ RelativeTab > offers the type's anchors and units, previews live, and applies the canonical expression 544ms
+   ✓ RelativeTab > saves the current expression under a typed name, on Enter or Save, and never an empty one 567ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after Save, and Escape still closes it 913ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after Enter, and Escape still closes it 436ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after Cancel by pointer, and Escape still closes it 526ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after Cancel by keyboard, and Escape still closes it 767ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after a preset's ×, and Escape still closes it 454ms
+   ✓ RelativeTab focus inside the popover > keeps focus in the dialog after an offset row's ×, and Escape still closes it 427ms
+   ✓ RelativeTab focus inside the popover > focuses the name field when naming starts from the keyboard; Escape there cancels the name, a second closes the popover 534ms
+ ✓ src/lib/bootstrap.test.ts (16 tests) 796ms
+ ✓ src/lib/tableExecution/engine.test.ts (17 tests) 337ms
+ ✓ src/lib/paramGroups.legacyV4.test.ts (33 tests) 175ms
+ ✓ src/components/renderers/ChartRenderer.test.tsx (19 tests) 748ms
+ ✓ src/components/railMenu.test.tsx (22 tests) 6284ms
+   ✓ the section menu > offers New dashboard and New folder, at the top level 935ms
+   ✓ a dashboard row's menu > indents a nested folder in the Move to list 649ms
+   ✓ a dashboard row's menu > reports a move to a folder and a move back to the top level 878ms
+   ✓ a dashboard row's menu > offers the dashboard's exchange — Default (XNYS) and the six MICs, the current one checked (v5.4.0) 401ms
+   ✓ a dashboard row's menu > clears the exchange from Default (XNYS) (v5.4.0) 490ms
+   ✓ a folder row's menu > creates inside itself, not at the top level 317ms
+   ✓ the three file/window items > reports each of the three 854ms
+ ✓ src/lib/tableExecution/resultStore.test.ts (14 tests) 458ms
+ ✓ src/components/renderers/table-model/PageSelector.sets.test.tsx (15 tests) 7176ms
+   ✓ drafts a complete set and promotion, saves atomically without a first-member collapse 894ms
+   ✓ requires explicit empty confirmation after category change and deletes only on explicit action 682ms
+   ✓ selects all eligible members independently of search and retains unavailable intent on failed save 447ms
+   ✓ owns source Page/Members fieldsets and footer actions 329ms
+   ✓ retains but refuses a dirty draft after a same-ID recipe or source context change 860ms
+   ✓ cannot discard a newer draft when an older save finishes  1011ms
+   ✓ preserves dirty sets across label renames and fences captured edits against recipe replacement 447ms
+   ✓ full details retain ninth and typed delimiter keys without preview truncation 531ms
+   ✓ accepts its own committed Page publication before the save promise settles 442ms
+   ✓ source and owner-viewer transitions retain a draft and invalidate captured functional saves 526ms
+   ✓ ignores independent source formulas but fences a referenced derivation change 348ms
+ ✓ src/components/renderers/table-model/AuthoringControls.test.tsx (14 tests) 4182ms
+   ✓ searches full engine members and selects all independently of search, then clears 583ms
+   ✓ Pages navigation excludes its own checklist-disallowed members despite self-excluded facet counts 346ms
+   ✓ owner Page value edits compose functionally with independent latest placement 417ms
+   ✓ groups member search and choices in the same fieldset and explains the count scope in its footer 861ms
+   ✓ shows every retained Page member and empty set without choosing a first member 409ms
+   ✓ category draft does not reinterpret Page keys and queued stale choices cannot replace a newer category 509ms
+ ✓ src/components/LibraryFilters.test.tsx (44 tests) 4552ms
+   ✓ LibraryFilters > renders the Category select with its All option first 579ms
+   ✓ LibraryFilters > orders the selects Category, Subcategory, Provider, Type, On dashboard 1612ms
+   ✓ LibraryFilters > reports a selection through onChange rather than holding state 373ms
+   ✓ LibraryFilters > offers a dashboard no visible widget sits on: options come from the dashboards 332ms
+ ✓ src/lib/format.test.ts (38 tests) 44ms
+ ✓ src/lib/chartShapes.test.ts (41 tests) 443ms
+ ✓ src/components/PivotGroupDialog.test.tsx (13 tests) 11069ms
+   ✓ Unlink group opens complete review and Cancel/Escape never writes 1418ms
+   ✓ Edit shared value opens complete review and Cancel/Escape never writes 480ms
+   ✓ Push values to group opens complete review and Cancel/Escape never writes 389ms
+   ✓ create and default pull preserve zero mutations before confirmation and save only reviewed intent 1001ms
+   ✓ a changed underlying group refuses the reviewed confirmation with zero writes and requires refreshed review 357ms
+   ✓ failed initial save and failed Undo retain honest failure without success publication 952ms
+   ✓ tab hides presentation without resetting original eight-second deadline 582ms
+   ✓ a failed in-flight Undo remains visible after its admission deadline expires 1280ms
+   ✓ editing a draft while old worker evidence is held aborts old review and permits a new explicit review 900ms
+   ✓ visible Undo subscribes to the recreated same-card coordinator after actual owner release 1447ms
+   ✓ a new success at the same clock millisecond replaces completed Undo presentation 1593ms
+   ✓ a source replacement between durable success and UI delivery does not attach old Undo to the new source 628ms
+ ✓ src/lib/tableModel/categories.test.ts (17 tests) 15ms
+ ✓ src/components/RowContextMenu.test.tsx (22 tests) 4374ms
+   ✓ RowContextMenu > renders its items as a menu 869ms
+   ✓ RowContextMenu > focuses the first item so the keyboard works immediately 333ms
+   ✓ RowContextMenu > moves with the arrow keys and wraps 555ms
+   ✓ RowContextMenu > steps over a disabled item with the arrow keys 616ms
+   ✓ RowContextMenu > renders a disabled item as disabled, and does not report it 342ms
+ ✓ src/lib/settingsFile.test.ts (49 tests) 473ms
+ ✓ src/components/keys/ProviderDetailsDialog.test.tsx (11 tests) 5568ms
+   ✓ ProviderDetailsDialog > shows status, credential and explanation in a live status region 886ms
+   ✓ ProviderDetailsDialog > labels the action Test with no result and Retest with one; onTest fires once with the env var 421ms
+   ✓ ProviderDetailsDialog > Manage key shows only at tier 3, clears the field before awaiting, and shows the restart notice 1523ms
+   ✓ ProviderDetailsDialog > shows the fixed failure line and never the rejection text 1167ms
+   ✓ ProviderDetailsDialog > closes the Manage-key form and drops its draft when the tier drops below 3 558ms
+   ✓ ProviderDetailsDialog > lists each check on its own line when checks are present 304ms
+ ✓ src/lib/jsonStore.test.ts (23 tests) 195ms
+ ✓ src/lib/appsExtensionsV3.test.ts (32 tests) 123ms
+ ✓ src/components/WidgetCard.linked.test.tsx (12 tests) 7285ms
+   ✓ source menu creates a linked chart with the automatic source 2086ms
+   ✓ source menu creates a linked table with the automatic source 369ms
+   ✓ retains completed linked rows and controls after missing field, then retries through card Refresh 809ms
+   ✓ retains completed linked rows and controls after execution failure, then retries through card Refresh 830ms
+   ✓ retains completed linked rows and controls after parent missing field, then retries through card Refresh 1192ms
+   ✓ masks completed rows for a deleted source and keeps Choose source actionable 579ms
+   ✓ masks completed rows for a foreign source and keeps Choose source actionable 479ms
+   ✓ keeps the chart presentation branch and completed metadata during recoverable parent blocking 349ms
+ ✓ src/components/PivotParamRow.test.tsx (11 tests) 851ms
+   ✓ shows saved multi values in single mode and edits only after explicit owner selection 348ms
+ ❯ src/components/dialogs/HelpDialog.test.tsx (21 tests | 1 failed) 7449ms
+   ✓ HelpDialog: Quick Help > opens on the first topic and lists every topic in reading order 1148ms
+   ✓ HelpDialog: Quick Help > narrows the list as you type but leaves the content pane alone 324ms
+   ✓ HelpDialog: Quick Help > shows the empty state when nothing matches 581ms
+   ✓ HelpDialog: Quick Help > clears the query with the clear button and restores the full list 519ms
+   ✓ HelpDialog: Quick Help > never lists a guide page 310ms
+   ✓ HelpDialog: Quick Help > closes on Escape, even with a query typed 311ms
+   ✓ HelpDialog: Quick Help > shows a snippet under each hit, and no snippet in the unfiltered list 829ms
+   ✓ HelpDialog: Reference Manual > opens on the guide's home page and lists every page in section order 323ms
+   ✓ HelpDialog: Reference Manual > filters its own pages by the search term, and never lists a quick topic 789ms
+   × HelpDialog: Reference Manual > follows a page's internal link inside the dialog 722ms
+     → Unable to find an accessible element with the role "link" and name "Installing and Running BDOBB2"
+
+Here are the accessible roles:
+
+  dialog:
+
+  Name "Reference Manual":
+  [36m<dialog[39m
+    [33maria-label[39m=[32m"Reference Manual"[39m
+    [33mclass[39m=[32m"modal-backdrop"[39m
+    [33mopen[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  [36m<header[39m
+    [33mclass[39m=[32m"modal-header"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Reference Manual":
+  [36m<h2 />[39m
+
+  Name "Getting Started":
+  [36m<h4 />[39m
+
+  Name "Interface":
+  [36m<h4 />[39m
+
+  Name "Widgets":
+  [36m<h4 />[39m
+
+  Name "Configuration":
+  [36m<h4 />[39m
+
+  Name "Integrations":
+  [36m<h4 />[39m
+
+  Name "Troubleshooting":
+  [36m<h4 />[39m
+
+  Name "About":
+  [36m<h4 />[39m
+
+  Name "BDOBB Help":
+  [36m<h1 />[39m
+
+  Name "Getting Started":
+  [36m<h2 />[39m
+
+  Name "Interface":
+  [36m<h2 />[39m
+
+  Name "Widgets":
+  [36m<h2 />[39m
+
+  Name "Configuration":
+  [36m<h2 />[39m
+
+  Name "Integrations":
+  [36m<h2 />[39m
+
+  Name "Troubleshooting":
+  [36m<h2 />[39m
+
+  Name "About":
+  [36m<h2 />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Close":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "BDOBB Help":
+  [36m<button[39m
+    [33maria-current[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Installing and Running BDOBB":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Connecting a Backend":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Importing Dashboards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Reference Validation":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Example Dashboards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Layout and Navigation":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Dashboards and Folders":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Workspaces and Saved Layouts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Dashboard Tabs":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The Widget Library":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Widget Cards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Card Parameters":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The Date Expression Card":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Running and Refreshing":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Keyboard Shortcuts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Statement View":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Tables":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Charts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Calendar View":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Built-in Widgets":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Documents, PDFs and Files":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "HTML and iframe Widgets":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Settings and Logs":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Provider Keys":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "App Data and Settings":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Import and Export":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Settings Export and Import":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Backends and Connections":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The openbb-docker Stack":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Tailscale Networking":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Web Preview":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Troubleshooting: Using BDOBB":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Troubleshooting: Configuring the Infrastructure":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "About This Guide":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  searchbox:
+
+  Name "Search help":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Search help"[39m
+    [33mplaceholder[39m=[32m"Search help"[39m
+    [33mtype[39m=[32m"search"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  navigation:
+
+  Name "Help topics":
+  [36m<nav[39m
+    [33maria-label[39m=[32m"Help topics"[39m
+    [33mclass[39m=[32m"help-list"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  --------------------------------------------------
+  article:
+
+  Name "":
+  [36m<article[39m
+    [33mclass[39m=[32m"help-content"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  [36m<strong />[39m
+
+  Name "":
+  [36m<strong />[39m
+
+  --------------------------------------------------
+  link:
+
+  Name "Installing and Running BDOBB":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/installing-and-running"[39m
+  [36m/>[39m
+
+  Name "Connecting a Backend":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/connecting-a-backend"[39m
+  [36m/>[39m
+
+  Name "Importing Dashboards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/importing-dashboards"[39m
+  [36m/>[39m
+
+  Name "Reference Validation":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/reference-validation"[39m
+  [36m/>[39m
+
+  Name "Example Dashboards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/example-dashboards"[39m
+  [36m/>[39m
+
+  Name "Layout and Navigation":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/layout-and-navigation"[39m
+  [36m/>[39m
+
+  Name "Dashboards and Folders":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/dashboards-and-folders"[39m
+  [36m/>[39m
+
+  Name "Workspaces and Saved Layouts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/workspaces"[39m
+  [36m/>[39m
+
+  Name "Dashboard Tabs":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/dashboard-tabs"[39m
+  [36m/>[39m
+
+  Name "The Widget Library":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/widget-library"[39m
+  [36m/>[39m
+
+  Name "Widget Cards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/widget-cards"[39m
+  [36m/>[39m
+
+  Name "Card Parameters":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/card-parameters"[39m
+  [36m/>[39m
+
+  Name "Date Expressions":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/date-expression"[39m
+  [36m/>[39m
+
+  Name "Running and Refreshing":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/running-and-refreshing"[39m
+  [36m/>[39m
+
+  Name "Keyboard Shortcuts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/keyboard-shortcuts"[39m
+  [36m/>[39m
+
+  Name "Statement View":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/statement-view"[39m
+  [36m/>[39m
+
+  Name "Tables":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/tables"[39m
+  [36m/>[39m
+
+  Name "Charts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/charts"[39m
+  [36m/>[39m
+
+  Name "Calendar View":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/calendar-view"[39m
+  [36m/>[39m
+
+  Name "Built-in Widgets":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/built-in-widgets"[39m
+  [36m/>[39m
+
+  Name "Documents, PDFs and Files":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/documents-pdf-and-files"[39m
+  [36m/>[39m
+
+  Name "HTML and iframe Widgets":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/html-and-iframe-widgets"[39m
+  [36m/>[39m
+
+  Name "Settings and Logs":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/settings-and-logs"[39m
+  [36m/>[39m
+
+  Name "Provider Keys":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/provider-keys"[39m
+  [36m/>[39m
+
+  Name "App Data and Settings":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/app-data-and-settings"[39m
+  [36m/>[39m
+
+  Name "Import and Export":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/import-and-export"[39m
+  [36m/>[39m
+
+  Name "Settings Export and Import":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/settings-export-and-import"[39m
+  [36m/>[39m
+
+  Name "Backends and Connections":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/backends-and-connections"[39m
+  [36m/>[39m
+
+  Name "The openbb-docker Stack":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/openbb-docker-stack"[39m
+  [36m/>[39m
+
+  Name "Tailscale Networking":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/tailscale-networking"[39m
+  [36m/>[39m
+
+  Name "Web Preview":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/web-preview"[39m
+  [36m/>[39m
+
+  Name "Using BDOBB":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/troubleshooting-using-bdobb"[39m
+  [36m/>[39m
+
+  Name "Configuring the Infrastructure":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/troubleshooting-infrastructure"[39m
+  [36m/>[39m
+
+  Name "About This Guide":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/about-this-guide"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  code:
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<dialog[39m
+      [33maria-label[39m=[32m"Reference Manual"[39m
+      [33mclass[39m=[32m"modal-backdrop"[39m
+      [33mopen[39m=[32m""[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"modal modal-help"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"modal-header"[39m
+        [36m>[39m
+          [36m<h2>[39m
+            [0mReference Manual[0m
+          [36m</h2>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m✕[0m
+          [36m</button>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"help-body"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"help-nav"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"help-search"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Search help"[39m
+                [33mplaceholder[39m=[32m"Search help"[39m
+                [33mtype[39m=[32m"search"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<nav[39m
+              [33maria-label[39m=[32m"Help topics"[39m
+              [33mclass[39m=[32m"help-list"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33maria-current[39m=[32m"true"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mBDOBB Help[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mGetting Started[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mInstalling and Running BDOBB[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mConnecting a Backend[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mImporting Dashboards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mReference Validation[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mExample Dashboards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mInterface[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mLayout and Navigation[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mDashboards and Folders[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mWorkspaces and Saved Layouts[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mDashboard Tabs[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mThe Widget Library[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mWidget Cards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mCard Parameters[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mThe Date Expression Card[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mRunning and Refreshing[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mKeyboard Shortcuts[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mWidgets[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mStatement ...
+ ✓ src/lib/providerAvailability.test.ts (21 tests) 26ms
+ ✓ src/lib/widgetData/tableOutput.test.ts (12 tests) 39ms
+ ✓ src/lib/tableModel/formulaBinding.test.ts (20 tests) 44ms
+ ✓ src/lib/tableModel/fiscalContext.test.ts (18 tests) 16ms
+ ✓ src/lib/tableModel/validation.test.ts (15 tests) 192ms
+ ✓ src/lib/tableModel/unpivot.test.ts (22 tests) 77ms
+ ✓ src/components/renderers/RssRenderer.test.tsx (17 tests) 1216ms
+ ✓ src/components/dialogs/settings/SettingsForm.test.tsx (12 tests) 1761ms
+   ✓ SettingsForm > draws every field type from GET {endpoint}, locks read-only fields with their reason, and shows an unknown type read-only 426ms
+ ✓ src/components/ErrorBoundary.test.tsx (12 tests) 448ms
+ ✓ src/components/renderers/MarkdownEditorRenderer.test.tsx (15 tests) 290ms
+ ✓ src/lib/export.test.ts (37 tests) 158ms
+ ✓ src/lib/tableExecution/analytical.test.ts (8 tests) 237ms
+ ✓ src/stores/settingsStore.test.ts (20 tests) 15ms
+ ✓ src/components/DashboardGrid.realmount.test.tsx (4 tests) 259ms
+ ✓ src/components/renderers/table-model/FormulaPanel.worker.test.tsx (10 tests) 1439ms
+   ✓ saves the worker AST without a facet and refuses an unavailable worker 393ms
+ ✓ src/lib/backendsFile.test.ts (27 tests) 32ms
+ ✓ src/lib/tableModel/pageSets.test.ts (9 tests) 212ms
+ ✓ src/lib/paramGroups.test.ts (26 tests) 31ms
+ ✓ src/lib/columnRender.test.ts (26 tests) 17ms
+ ✓ src/lib/periods.test.ts (34 tests) 87ms
+ ✓ src/lib/zones.test.ts (25 tests) 137ms
+ ✓ src/components/renderers/pivot-drawer/PivotDrawer.test.tsx (10 tests) 3553ms
+   ✓ drawer shell > exposes one selected roving tab and keyboard axis navigation 631ms
+   ✓ drawer shell > focuses the selected tab when opened from the toolbar 315ms
+   ✓ drawer shell > returns to Arrange on Escape, then restores toolbar focus 371ms
+   ✓ provides Done and Close in every section and preserves drafts when switching orientation 819ms
+   ✓ keeps Formula actions in its own footer with retained drafts and caret focus 631ms
+ ✓ src/lib/presets.test.ts (10 tests) 29ms
+ ✓ src/lib/tableExecution/pivotGroupProof.test.ts (28 tests) 1512ms
+ ✓ src/lib/builtins.test.ts (32 tests) 20ms
+ ✓ src/lib/pivotGroupChange.test.ts (12 tests) 407ms
+ ✓ src/lib/workspacePresets.test.ts (26 tests) 19ms
+stderr | src/components/renderers/table-model/CategoryEditor.test.tsx > retains edits after save failure and emits stable order moves
+An update to CategoryEditor inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/renderers/table-model/CategoryEditor.test.tsx (12 tests) 747ms
+ ✓ src/components/GroupLink.test.tsx (12 tests) 682ms
+ ✓ src/lib/dashboardsFile.test.ts (22 tests) 18ms
+ ✓ src/stores/widgetRegistryStore.test.ts (19 tests) 80ms
+ ✓ src/stores/dashboardStore.linked.test.ts (10 tests) 24ms
+ ✓ src/lib/pivotConfig.test.ts (21 tests) 5ms
+ ✓ src/components/renderers/TradingViewRenderer.test.tsx (15 tests) 1016ms
+ ✓ src/lib/tableExecution/inspection.test.ts (8 tests) 134ms
+ ✓ src/lib/tableExecution/groupDomain.test.ts (10 tests) 471ms
+ ✓ src/stores/dashboardStore.tableModel.test.ts (7 tests) 69ms
+ ✓ src/components/DashboardGrid.persist.test.tsx (5 tests) 229ms
+ ✓ src/lib/tableExecution/pageRuntime.test.ts (6 tests) 722ms
+   ✓ full private Page group matches exceed preview and collision-expanded viewer cardinality without clipping 491ms
+ ✓ src/stores/foldersStore.test.ts (16 tests) 7ms
+ ✓ src/lib/providerKeys.test.ts (26 tests) 16ms
+ ✓ src/components/renderers/OmniRenderer.test.tsx (14 tests) 574ms
+ ✓ src/test/memfs.test.ts (24 tests) 130ms
+ ✓ src/lib/settingsBundle.test.ts (17 tests) 9ms
+ ✓ src/lib/themeFlash.test.ts (10 tests) 17ms
+ ✓ src/lib/fiscalChain.test.ts (13 tests) 10ms
+ ✓ src/components/renderers/TableFilterRow.test.tsx (15 tests) 431ms
+ ✓ src/components/runAppsImport.test.ts (12 tests) 25ms
+ ✓ src/lib/tableExecution/persistence.test.ts (12 tests) 152ms
+ ✓ src/lib/tableModel/scopes.test.ts (9 tests) 32ms
+ ✓ src/components/pickers/relativeTabs.test.tsx (18 tests) 2998ms
+   ✓ 'DatetimePicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 608ms
+   ✓ 'RangePicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 355ms
+   ✓ 'QuarterPicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 314ms
+   ✓ DayPicker with a relative context > shows the tabs in its calendar popover and commits an expression through onExpression, closing 353ms
+ ✓ src/lib/csp.test.ts (9 tests) 3ms
+ ✓ src/lib/tableModel/formulaGraph.test.ts (11 tests) 183ms
+ ✓ src/lib/tableModel/facets.test.ts (13 tests) 132ms
+ ✓ src/components/renderers/LocalTableRenderer.linkedBaseline.test.tsx (4 tests) 397ms
+   ✓ local file linked baseline > imports csv numeric cells and renders explicit Sum date/sector groups 325ms
+ ✓ src/stores/dashboardStore.workspaceOwnership.test.ts (18 tests) 19ms
+ ✓ src/lib/workspaceAccount.test.ts (24 tests) 146ms
+ ✓ src/lib/tableModel/formulaSyntax.test.ts (39 tests) 33ms
+ ✓ src/lib/tableExecution/linkedAnalytical.test.ts (6 tests) 112ms
+ ✓ src/components/renderers/LocalTableRenderer.test.tsx (14 tests) 1430ms
+   ✓ execution identity uses runtime status without legacy file parsing 795ms
+ ✓ src/lib/folderTree.test.ts (16 tests) 139ms
+ ✓ src/lib/statementModel/updates.test.ts (5 tests) 39ms
+ ✓ src/hooks/useTableResult.test.tsx (6 tests) 2134ms
+   ✓ cache evicts old blocks and caps each read without materializing the full result 1458ms
+ ✓ src/components/renderers/ClockRenderer.test.tsx (17 tests) 2212ms
+   ✓ ClockRenderer > renders one digital row per zone by default 350ms
+   ✓ ClockRenderer > treats an empty zones string as absent and uses the default list 409ms
+   ✓ ClockRenderer > treats whitespace-only zones as absent and uses the default list 437ms
+ ✓ src/hooks/useTableMetadata.test.tsx (7 tests) 307ms
+ ✓ src/components/pickers/QuarterRangePicker.test.tsx (7 tests) 2393ms
+   ✓ QuarterRangePicker > shows both ends with FY and names the two grids apart 828ms
+   ✓ QuarterRangePicker > commits start then end as one range and closes; an end before the start cannot be picked 309ms
+   ✓ QuarterRangePicker > lands on Relative for a stored expression and applies a quarter-range preset 452ms
+ ✓ src/components/renderers/PdfRenderer.test.tsx (10 tests) 204ms
+ ✓ src/lib/statementModel/validation.test.ts (13 tests) 166ms
+ ✓ src/components/renderers/TableRenderer.execution.test.tsx (6 tests) 639ms
+   ✓ workerResultsAreNotReaggregatedByTanStack and unloaded slots are scroll loading 326ms
+ ✓ src/components/renderers/pivot-drawer/ArrangePanel.test.tsx (7 tests) 440ms
+ ✓ src/components/renderers/table-model/FinalPanels.test.tsx (6 tests) 425ms
+stderr | src/components/renderers/MarkdownRenderer.test.tsx > MarkdownRenderer images > still blanks a data: src that is not an image
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+
+ ✓ src/components/renderers/MarkdownRenderer.test.tsx (15 tests) 290ms
+ ✓ src/components/pickers/DayPicker.test.tsx (10 tests) 1302ms
+   ✓ DayPicker > opens a calendar from its button; a pick reports the date and closes it, which counts as leaving 434ms
+   ✓ DayPicker as an expression field > a pick REPLACES the expression; leaving without picking keeps it 336ms
+ ✓ src/lib/appsJson.cleanV4.test.ts (8 tests) 89ms
+ ✓ src/lib/widgetData/chartFigure.test.ts (9 tests) 10ms
+ ❯ src/lib/statementModel/persistence.test.ts (20 tests | 15 failed) 52ms
+   × never evaluates optional ownerId counting accessors 5ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional ownerId throwing accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableDefinition counting accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableDefinition throwing accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableSelection counting accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional tableSelection throwing accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedSource counting accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedSource throwing accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedChart counting accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates optional linkedChart throwing accessors 0ms
+     → expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+   × never evaluates nested link kind counting accessors 1ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link kind throwing accessors 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link sourceWidgetId counting accessors 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × never evaluates nested link sourceWidgetId throwing accessors 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+   × refuses cyclic and excessively deep optional envelopes without losing the ordinary card 0ms
+     → INVALID_EXTENSION at $[0].tabs.one.layout.0.tableDefinition.analytical: Invalid v5 JSON value.
+ ✓ src/lib/iframeProtocol.test.ts (33 tests) 16ms
+ ✓ src/lib/feed.test.ts (17 tests) 217ms
+ ✓ src/components/LinkedGroupInspector.test.tsx (3 tests) 695ms
+   ✓ a masked pivot:filter:cat baseline replacement aborts held proof and only latest evidence can show completeness 485ms
+ ✓ src/components/renderers/DateProbeRenderer.test.tsx (11 tests) 151ms
+ ✓ src/lib/workspacesFile.test.ts (21 tests) 14ms
+ ✓ src/lib/statementExecution.templates.test.ts (4 tests) 211ms
+ ✓ src/lib/settingsSections.test.ts (13 tests) 132ms
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > asks once per conflict, in order, and hands each hint the answers so far
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns cancelled, and leaves no dialog behind, when the second answer is Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after an answer
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/ImportConflictDialog.test.tsx (14 tests) 1024ms
+ ✓ src/components/pickers/QuarterPicker.test.tsx (8 tests) 1370ms
+   ✓ QuarterPicker > shows the stored quarter with FY, and a grid named with calendar months under the year end 495ms
+ ✓ src/lib/sparkline.test.ts (17 tests) 112ms
+ ✓ src/lib/workspaceFocus.test.ts (5 tests) 243ms
+ ✓ src/components/keys/ProviderDashboard.test.tsx (8 tests) 893ms
+ ✓ src/lib/appIcons.test.ts (6 tests) 231ms
+ ✓ src/lib/pivotSuggestion.test.ts (7 tests) 6ms
+ ✓ src/components/renderers/TableRenderer.frame.test.tsx (5 tests) 728ms
+ ✓ src/lib/statementRows.test.ts (11 tests) 8ms
+ ✓ src/components/renderers/NoteRenderer.test.tsx (12 tests) 879ms
+ ✓ src/components/LinkedWidgetDialog.test.tsx (6 tests) 737ms
+ ✓ src/lib/documents.test.ts (13 tests) 6ms
+ ✓ src/hooks/useModalDialog.test.tsx (6 tests) 229ms
+ ✓ src/components/pickers/DatetimePicker.test.tsx (7 tests) 3056ms
+   ✓ DatetimePicker > is a trigger named by its label, showing the local date, time and zone, with a dialog behind it 743ms
+   ✓ DatetimePicker > commits a calendar pick at once, keeping the time, and closes 476ms
+   ✓ DatetimePicker > commits a field edit on Enter and shows a zone segment 503ms
+   ✓ DatetimePicker > Enter in the field commits once and closes the popover 436ms
+   ✓ DatetimePicker > closes on Escape without writing 445ms
+ ✓ src/lib/statementTaxonomy.test.ts (8 tests) 19ms
+ ✓ src/components/TableExecutionRuntime.test.tsx (2 tests) 927ms
+   ✓ native file parsing serves two off-tab dependents once and refresh retains completed output until replacement 797ms
+ ✓ src/components/CardRemovalUndo.test.tsx (5 tests) 1514ms
+   ✓ Undo restores the same source and recovers its worker-backed dependent cascade 1126ms
+ ✓ src/test/mockServer.test.ts (9 tests) 265ms
+ ✓ src/lib/lwChart.test.ts (6 tests) 7ms
+ ✓ src/lib/tableExecution/contractFixtures.test.ts (2 tests) 1349ms
+   ✓ preserves hand-checked ordinary and Statement contracts across shuffled block sizes 441ms
+   ✓ matches pure fixtures through structured-clone protocol handler transport (not a real worker) 906ms
+ ✓ src/lib/periodicity.test.ts (14 tests) 11ms
+ ✓ src/lib/tableModel/persistence.test.ts (6 tests) 21ms
+ ✓ src/lib/statementExecution.test.ts (4 tests) 131ms
+ ✓ src/lib/tableExecution/finalReview.test.ts (5 tests) 93ms
+ ✓ src/lib/serialize.test.ts (8 tests) 22ms
+ ✓ src/help/search.test.ts (15 tests) 24ms
+ ✓ src/components/renderers/StatementRenderer.test.tsx (5 tests) 623ms
+   ✓ StatementRenderer > renders authoritative cell errors and per-period formats without displaying a false numeric result 356ms
+ ✓ src/lib/transpose.test.ts (12 tests) 10ms
+ ✓ src/lib/appsJson.cleanV5.test.ts (5 tests) 244ms
+ ✓ src/lib/libraryPresence.test.ts (9 tests) 24ms
+ ✓ src/components/renderers/table-model/MeasuresPanel.test.tsx (8 tests) 1403ms
+   ✓ requires worker source type metadata rather than guessing numeric operators for source formulas 464ms
+ ✓ src/lib/statementModel/periodSelectors.test.ts (12 tests) 440ms
+ ✓ src/lib/appsJson.examples.test.ts (8 tests) 41ms
+ ✓ src/components/PivotParamRow.facets.test.tsx (1 test) 291ms
+ ✓ src/lib/tableModel/pivotParams.test.ts (4 tests) 10ms
+ ✓ src/hooks/useFormulaAuthoring.test.tsx (2 tests) 40ms
+stderr | src/hooks/useResolvedTheme.test.ts > useResolvedTheme > passes an explicit theme through untouched
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/hooks/useResolvedTheme.test.ts (9 tests) 107ms
+ ✓ src/lib/statementModel/linePolicy.test.ts (5 tests) 35ms
+ ✓ src/components/InlineRename.test.tsx (9 tests) 1053ms
+ ✓ src/components/pickers/WeekPicker.test.tsx (5 tests) 2938ms
+   ✓ WeekPicker > shows the week and its span, and highlights all seven days in the calendar 964ms
+   ✓ WeekPicker > commits and closes on a re-pick of the stored week's own Monday 497ms
+   ✓ WeekPicker > moves by a week with Up/Down and by a day with Left/Right, selecting the whole week on Enter 650ms
+   ✓ WeekPicker > closes on Escape without writing 407ms
+ ✓ src/components/renderers/table-model/ModelInspector.test.tsx (5 tests) 508ms
+   ✓ retains invalid raw definitions and rejects future-version repairs with accessible diagnostics 323ms
+ ✓ src/hooks/useReconnectingSocket.test.tsx (4 tests) 180ms
+ ✓ src/lib/statementModel/formats.test.ts (3 tests) 567ms
+ ✓ src/lib/optionSymbol.test.ts (12 tests) 24ms
+ ✓ src/lib/localFiles.test.ts (18 tests) 32ms
+ ✓ src/lib/tableModel/linkedBindings.test.ts (4 tests) 40ms
+ ✓ src/lib/saveTextFile.test.ts (7 tests) 12ms
+ ✓ src/help/shots.test.ts (5 tests) 126ms
+ ✓ src/lib/plotly.test.ts (6 tests) 5ms
+ ✓ src/components/renderers/table-model/measureEligibility.test.ts (7 tests) 22ms
+ ✓ src/components/renderers/TableRenderer.selection.test.tsx (3 tests) 781ms
+   ✓ header selects the complete view with one loaded row; unchecking adds exclusion and Clear restores default 733ms
+ ✓ src/components/pickers/RangePicker.test.tsx (5 tests) 4448ms
+   ✓ RangePicker > is a trigger named by its label showing both ends 802ms
+   ✓ RangePicker > commits a completed calendar range at once and closes 2360ms
+   ✓ RangePicker > commits an edited end field on Enter, and refuses an end before the start 833ms
+   ✓ RangePicker > Enter in a field commits once and closes the popover 436ms
+ ✓ src/lib/vegaLite.test.ts (6 tests) 12ms
+ ✓ src/lib/statementModel/nestedFormulas.test.ts (8 tests) 349ms
+ ✓ src/lib/statementModel/rollups.test.ts (3 tests) 507ms
+ ✓ src/components/renderers/YouTubeRenderer.test.tsx (8 tests) 999ms
+ ✓ src/components/renderers/table-model/FilterPlacement.test.tsx (3 tests) 534ms
+   ✓ promotes and edits placement functionally, preserving latest values and independent metadata 370ms
+ ✓ src/components/renderers/HtmlRenderer.test.tsx (6 tests) 569ms
+ ✓ src/hooks/useHoverPanel.test.ts (8 tests) 59ms
+ ✓ src/lib/logger.test.ts (8 tests) 22ms
+ ✓ src/components/renderers/SparklineCell.test.tsx (7 tests) 150ms
+ ✓ src/stores/pivotDrawerStore.test.ts (4 tests) 4ms
+ ✓ src/help/guide.test.ts (9 tests) 15ms
+ ✓ src/lib/udf.test.ts (10 tests) 11ms
+ ✓ src/lib/statementModel/coverage.test.ts (10 tests) 312ms
+ ✓ src/components/pickers/FiscalYearPicker.test.tsx (4 tests) 703ms
+   ✓ FiscalYearPicker > shows FY and a decade grid whose cells name their calendar span 308ms
+ ✓ src/lib/tableModel/migration.test.ts (4 tests) 7ms
+ ✓ src/lib/widgetData/identity.test.ts (7 tests) 4ms
+ ✓ src/help/index.test.ts (8 tests) 9ms
+ ✓ src/lib/tableModel/totals.test.ts (2 tests) 84ms
+ ✓ src/components/DashboardGrid.workspaceRuntime.test.tsx (1 test) 265ms
+ ✓ src/lib/settingsForm.test.ts (4 tests) 28ms
+ ✓ src/lib/paramOptions.test.ts (11 tests) 51ms
+ ✓ src/lib/foldersFile.test.ts (13 tests) 25ms
+ ✓ src/components/ViewToggle.test.tsx (7 tests) 477ms
+ ✓ src/components/pickers/labels.test.ts (7 tests) 22ms
+ ✓ src/lib/youtube.test.ts (11 tests) 35ms
+ ✓ src/lib/tableModel/formulaTokens.test.ts (19 tests) 11ms
+ ✓ src/components/dialogs/DialogShell.test.tsx (3 tests) 443ms
+   ✓ DialogShell > renders the header, body and footer with aria wiring 307ms
+ ✓ src/components/renderers/pivot-drawer/drawerState.test.ts (26 tests) 20ms
+ ✓ src/lib/tableExecution/selection.test.ts (6 tests) 33ms
+ ✓ src/lib/widgetData/persistence.test.ts (4 tests) 20ms
+ ✓ src/lib/markdownNote.test.ts (7 tests) 13ms
+ ✓ src/components/dialogs/DialogTabs.test.tsx (5 tests) 653ms
+   ✓ DialogTabs > renders one tab per item with roving tabindex and aria wiring 380ms
+ ✓ src/lib/tableModel/measures.test.ts (4 tests) 5ms
+ ✓ src/components/renderers/LiveGridRenderer.test.tsx (2 tests) 626ms
+   ✓ LiveGridRenderer > renders the snapshot, updates a row by id, and appends an unknown one 393ms
+ ✓ src/components/renderers/pivot-drawer/drawerLayout.test.ts (6 tests) 19ms
+ ✓ src/lib/tableModel/measureMigration.test.ts (4 tests) 6ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 604ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 599ms
+ ✓ src/lib/highcharts.test.ts (5 tests) 3ms
+ ✓ src/lib/tableExecution/statementPreview.test.ts (2 tests) 62ms
+ ✓ src/components/renderers/table-model/TotalRows.test.tsx (4 tests) 427ms
+   ✓ renders independent nonselectable totals with readable errors and scope labels 333ms
+ ✓ src/lib/jsonStore.unreadable.test.ts (3 tests) 3ms
+ ✓ src/components/renderers/StatementWorkerView.test.tsx (1 test) 132ms
+ ✓ src/lib/logViewer.test.ts (7 tests) 3ms
+ ✓ src/hooks/useChildDialog.test.tsx (2 tests) 246ms
+ ✓ src/components/renderers/pivot-drawer/useDrawerGeometry.test.tsx (4 tests) 410ms
+ ✓ src/lib/layoutsFile.test.ts (7 tests) 5ms
+ ✓ src/lib/tableModel/groupResolution.test.ts (6 tests) 10ms
+ ✓ src/lib/dataClient.calendar.test.ts (3 tests) 218ms
+ ✓ src/lib/pivotParamGroups.test.ts (2 tests) 10ms
+ ✓ src/lib/omni.test.ts (4 tests) 14ms
+ ✓ src/lib/dashboardSync.test.ts (3 tests) 55ms
+ ✓ src/components/renderers/ParamEchoRenderer.test.tsx (3 tests) 208ms
+ ✓ src/hooks/useMinuteTick.test.ts (5 tests) 131ms
+ ✓ src/components/renderers/AnalogFace.test.tsx (6 tests) 153ms
+ ✓ src/components/renderers/NewsfeedRenderer.test.tsx (4 tests) 215ms
+ ✓ src/lib/statementPresentation.test.ts (7 tests) 8ms
+ ✓ src/components/services/ServiceCard.test.tsx (2 tests) 192ms
+ ✓ src/components/RailIcon.test.tsx (7 tests) 100ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 4ms
+ ✓ src/components/renderers/OmniCitations.test.tsx (4 tests) 130ms
+ ✓ src/lib/tableExecution/subsetTransfer.test.ts (2 tests) 22ms
+ ✓ src/hooks/useMediaQuery.test.ts (5 tests) 38ms
+ ✓ src/lib/importLimits.test.ts (8 tests) 3ms
+ ✓ src/lib/tableModel/resultFilters.test.ts (2 tests) 4ms
+ ✓ src/lib/widgetTypes.test.ts (3 tests) 2ms
+ ✓ src/components/services/PreferencePill.test.tsx (2 tests) 365ms
+   ✓ PreferencePill > is a switch showing On/Off and toggles on click 319ms
+ ✓ src/lib/pivotKeys.test.ts (3 tests) 11ms
+ ✓ src/components/renderers/pivot-drawer/PivotSplitter.test.tsx (2 tests) 143ms
+ ✓ src/lib/windowTheme.test.ts (2 tests) 7ms
+ ✓ src/lib/tableModel/layoutValues.test.ts (1 test) 4ms
+ ✓ src/lib/statementModel/catalog.test.ts (2 tests) 15ms
+ ✓ src/components/services/ServiceStatus.test.tsx (2 tests) 165ms
+ ✓ src/stores/cleanV4Boundary.test.ts (1 test) 5ms
+ ✓ src/components/renderers/DotMatrix.test.tsx (3 tests) 79ms
+ ✓ src/lib/dataBounds.test.ts (2 tests) 3ms
+ ✓ src/lib/theme.test.ts (3 tests) 5ms
+ ✓ src/components/pickers/TimePicker.test.tsx (2 tests) 301ms
+ ✓ src/components/renderers/pivot-drawer/PivotFooterStrip.test.tsx (1 test) 91ms
+ ✓ src/components/renderers/MetricRenderer.test.tsx (4 tests) 46ms
+ ✓ src/lib/safeUrl.test.ts (8 tests) 5ms
+ ✓ src/lib/relativeTime.test.ts (16 tests) 9ms
+ ✓ src/lib/dotFont.test.ts (4 tests) 11ms
+ ✓ deploy/reference-demo/vercel/demo-seed.test.mjs (2 tests) 7ms
+ ✓ src/lib/widgetData/persistence.cleanV5.test.ts (1 test) 8ms
+ ✓ src/lib/naming.test.ts (5 tests) 2ms
+ ✓ src/lib/localTableData.test.ts (2 tests) 6ms
+ ✓ src/lib/widgetData/persistence.cleanV4.test.ts (1 test) 3ms
+ ✓ src/lib/dragDrop.test.ts (4 tests) 2ms
+ ✓ src/lib/widgetData/graph.test.ts (2 tests) 7ms
+ ✓ src/hooks/modalStack.test.ts (1 test) 1ms
+ ✓ src/components/renderers/table-model/ErrorCell.test.tsx (1 test) 153ms
+ ✓ src/lib/collections.test.ts (1 test) 2ms
+ ✓ scripts/reference-backend.test.mjs (5 tests) 10161ms
+   ✓ reference-backend.sh refusals > names git when git is missing 3665ms
+   ✓ reference-backend.sh refusals > refuses a python older than 3.10, naming the floor 1607ms
+   ✓ reference-backend.sh refusals > refuses a port already in use, naming the port and the override 818ms
+   ✓ reference-backend.sh checkout origin > re-clones a checkout whose origin is not REPO 3938ms
+ ❯ src/test/integration/reference-backend.test.ts (6 tests | 6 skipped) 101ms
+ ✓ scripts/scrub-check.test.mjs (5 tests) 33243ms
+   ✓ scrub-check > passes a clean tree 10375ms
+   ✓ scrub-check > scans the design and plan documents under docs/superpowers 7022ms
+   ✓ scrub-check > still skips the verbatim rebuild documents in docs/specs 8838ms
+   ✓ scrub-check > flags a GitHub token 2790ms
+   ✓ scrub-check > flags a PEM private key 4215ms
+ ✓ src/lib/version.test.ts (3 tests) 6ms
+ ✓ src/lib/pdfLegacy.test.ts (3 tests) 14ms
+ ✓ scripts/release.test.mjs (6 tests) 147749ms
+   ✓ release.sh > refuses to build without every signing value 13801ms
+   ✓ release.sh > refuses to publish when origin's tag points at another commit 29806ms
+   ✓ release.sh > stops before publishing when the tag push fails 23655ms
+   ✓ release.sh > pushes an absent tag, then creates the release against that tag only 5730ms
+   ✓ release.sh > publishes this version's dmg even when an older build left another in the bundle dir 20014ms
+   ✓ release.sh > replaces an existing release's files in place, never deleting the release first 54741ms
+ ✓ src/lib/abortSignalAny.test.ts (3 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/integration/reference-backend.test.ts > reference backend conformance
+Error: could not reach http://127.0.0.1:7780/widgets.json — start it with `pnpm reference-backend`, or point OPENBB_REFERENCE_URL at one that is running
+ ❯ src/test/integration/reference-backend.test.ts:47:13
+     45|     // ECONNREFUSED with no mention of what was supposed to be listeni…
+     46|     const res = await fetch(`${BASE}/widgets.json`).catch((cause: unkn…
+     47|       throw new Error(
+       |             ^
+     48|         `could not reach ${BASE}/widgets.json — start it with \`pnpm r…
+     49|           `or point OPENBB_REFERENCE_URL at one that is running`,
+ ❯ src/test/integration/reference-backend.test.ts:46:17
+
+Caused by: TypeError: fetch failed
+Caused by: Error: connect ECONNREFUSED 127.0.0.1:7780
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errno: -61, code: 'ECONNREFUSED', syscall: 'connect', address: '127.0.0.1', port: 7780 }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/dialogs/HelpDialog.test.tsx > HelpDialog: Reference Manual > follows a page's internal link inside the dialog
+TestingLibraryElementError: Unable to find an accessible element with the role "link" and name "Installing and Running BDOBB2"
+
+Here are the accessible roles:
+
+  dialog:
+
+  Name "Reference Manual":
+  [36m<dialog[39m
+    [33maria-label[39m=[32m"Reference Manual"[39m
+    [33mclass[39m=[32m"modal-backdrop"[39m
+    [33mopen[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  banner:
+
+  Name "":
+  [36m<header[39m
+    [33mclass[39m=[32m"modal-header"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  heading:
+
+  Name "Reference Manual":
+  [36m<h2 />[39m
+
+  Name "Getting Started":
+  [36m<h4 />[39m
+
+  Name "Interface":
+  [36m<h4 />[39m
+
+  Name "Widgets":
+  [36m<h4 />[39m
+
+  Name "Configuration":
+  [36m<h4 />[39m
+
+  Name "Integrations":
+  [36m<h4 />[39m
+
+  Name "Troubleshooting":
+  [36m<h4 />[39m
+
+  Name "About":
+  [36m<h4 />[39m
+
+  Name "BDOBB Help":
+  [36m<h1 />[39m
+
+  Name "Getting Started":
+  [36m<h2 />[39m
+
+  Name "Interface":
+  [36m<h2 />[39m
+
+  Name "Widgets":
+  [36m<h2 />[39m
+
+  Name "Configuration":
+  [36m<h2 />[39m
+
+  Name "Integrations":
+  [36m<h2 />[39m
+
+  Name "Troubleshooting":
+  [36m<h2 />[39m
+
+  Name "About":
+  [36m<h2 />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Close":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "BDOBB Help":
+  [36m<button[39m
+    [33maria-current[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Installing and Running BDOBB":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Connecting a Backend":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Importing Dashboards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Reference Validation":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Example Dashboards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Layout and Navigation":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Dashboards and Folders":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Workspaces and Saved Layouts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Dashboard Tabs":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The Widget Library":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Widget Cards":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Card Parameters":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The Date Expression Card":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Running and Refreshing":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Keyboard Shortcuts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Statement View":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Tables":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Charts":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Calendar View":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Built-in Widgets":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Documents, PDFs and Files":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "HTML and iframe Widgets":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Settings and Logs":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Provider Keys":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "App Data and Settings":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Import and Export":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Settings Export and Import":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Backends and Connections":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "The openbb-docker Stack":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Tailscale Networking":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Web Preview":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Troubleshooting: Using BDOBB":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Troubleshooting: Configuring the Infrastructure":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "About This Guide":
+  [36m<button[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  searchbox:
+
+  Name "Search help":
+  [36m<input[39m
+    [33maria-label[39m=[32m"Search help"[39m
+    [33mplaceholder[39m=[32m"Search help"[39m
+    [33mtype[39m=[32m"search"[39m
+    [33mvalue[39m=[32m""[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  navigation:
+
+  Name "Help topics":
+  [36m<nav[39m
+    [33maria-label[39m=[32m"Help topics"[39m
+    [33mclass[39m=[32m"help-list"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  list:
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  Name "":
+  [36m<ul />[39m
+
+  --------------------------------------------------
+  listitem:
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  Name "":
+  [36m<li />[39m
+
+  --------------------------------------------------
+  article:
+
+  Name "":
+  [36m<article[39m
+    [33mclass[39m=[32m"help-content"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  Name "":
+  [36m<p />[39m
+
+  --------------------------------------------------
+  strong:
+
+  Name "":
+  [36m<strong />[39m
+
+  Name "":
+  [36m<strong />[39m
+
+  --------------------------------------------------
+  link:
+
+  Name "Installing and Running BDOBB":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/installing-and-running"[39m
+  [36m/>[39m
+
+  Name "Connecting a Backend":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/connecting-a-backend"[39m
+  [36m/>[39m
+
+  Name "Importing Dashboards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/importing-dashboards"[39m
+  [36m/>[39m
+
+  Name "Reference Validation":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/reference-validation"[39m
+  [36m/>[39m
+
+  Name "Example Dashboards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/example-dashboards"[39m
+  [36m/>[39m
+
+  Name "Layout and Navigation":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/layout-and-navigation"[39m
+  [36m/>[39m
+
+  Name "Dashboards and Folders":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/dashboards-and-folders"[39m
+  [36m/>[39m
+
+  Name "Workspaces and Saved Layouts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/workspaces"[39m
+  [36m/>[39m
+
+  Name "Dashboard Tabs":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/dashboard-tabs"[39m
+  [36m/>[39m
+
+  Name "The Widget Library":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/widget-library"[39m
+  [36m/>[39m
+
+  Name "Widget Cards":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/widget-cards"[39m
+  [36m/>[39m
+
+  Name "Card Parameters":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/card-parameters"[39m
+  [36m/>[39m
+
+  Name "Date Expressions":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/date-expression"[39m
+  [36m/>[39m
+
+  Name "Running and Refreshing":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/running-and-refreshing"[39m
+  [36m/>[39m
+
+  Name "Keyboard Shortcuts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/keyboard-shortcuts"[39m
+  [36m/>[39m
+
+  Name "Statement View":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/statement-view"[39m
+  [36m/>[39m
+
+  Name "Tables":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/tables"[39m
+  [36m/>[39m
+
+  Name "Charts":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/charts"[39m
+  [36m/>[39m
+
+  Name "Calendar View":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/calendar-view"[39m
+  [36m/>[39m
+
+  Name "Built-in Widgets":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/built-in-widgets"[39m
+  [36m/>[39m
+
+  Name "Documents, PDFs and Files":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/documents-pdf-and-files"[39m
+  [36m/>[39m
+
+  Name "HTML and iframe Widgets":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/html-and-iframe-widgets"[39m
+  [36m/>[39m
+
+  Name "Settings and Logs":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/settings-and-logs"[39m
+  [36m/>[39m
+
+  Name "Provider Keys":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/provider-keys"[39m
+  [36m/>[39m
+
+  Name "App Data and Settings":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/app-data-and-settings"[39m
+  [36m/>[39m
+
+  Name "Import and Export":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/import-and-export"[39m
+  [36m/>[39m
+
+  Name "Settings Export and Import":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/settings-export-and-import"[39m
+  [36m/>[39m
+
+  Name "Backends and Connections":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/backends-and-connections"[39m
+  [36m/>[39m
+
+  Name "The openbb-docker Stack":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/openbb-docker-stack"[39m
+  [36m/>[39m
+
+  Name "Tailscale Networking":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/tailscale-networking"[39m
+  [36m/>[39m
+
+  Name "Web Preview":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/web-preview"[39m
+  [36m/>[39m
+
+  Name "Using BDOBB":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/troubleshooting-using-bdobb"[39m
+  [36m/>[39m
+
+  Name "Configuring the Infrastructure":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/troubleshooting-infrastructure"[39m
+  [36m/>[39m
+
+  Name "About This Guide":
+  [36m<a[39m
+    [33mhref[39m=[32m"#guide/about-this-guide"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  code:
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  Name "":
+  [36m<code />[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<dialog[39m
+      [33maria-label[39m=[32m"Reference Manual"[39m
+      [33mclass[39m=[32m"modal-backdrop"[39m
+      [33mopen[39m=[32m""[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"modal modal-help"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"modal-header"[39m
+        [36m>[39m
+          [36m<h2>[39m
+            [0mReference Manual[0m
+          [36m</h2>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m✕[0m
+          [36m</button>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"help-body"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"help-nav"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"help-search"[39m
+            [36m>[39m
+              [36m<input[39m
+                [33maria-label[39m=[32m"Search help"[39m
+                [33mplaceholder[39m=[32m"Search help"[39m
+                [33mtype[39m=[32m"search"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<nav[39m
+              [33maria-label[39m=[32m"Help topics"[39m
+              [33mclass[39m=[32m"help-list"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33maria-current[39m=[32m"true"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mBDOBB Help[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mGetting Started[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mInstalling and Running BDOBB[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mConnecting a Backend[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mImporting Dashboards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mReference Validation[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mExample Dashboards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mInterface[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mLayout and Navigation[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mDashboards and Folders[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mWorkspaces and Saved Layouts[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mDashboard Tabs[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mThe Widget Library[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mWidget Cards[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mCard Parameters[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mThe Date Expression Card[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mRunning and Refreshing[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mKeyboard Shortcuts[0m
+                    [36m</button>[39m
+                  [36m</li>[39m
+                [36m</ul>[39m
+              [36m</div>[39m
+              [36m<div>[39m
+                [36m<h4>[39m
+                  [0mWidgets[0m
+                [36m</h4>[39m
+                [36m<ul>[39m
+                  [36m<li>[39m
+                    [36m<button[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [0mStatement ...
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ src/components/dialogs/HelpDialog.test.tsx:242:25
+    240|     render(<HelpDialog set="manual" onClose={vi.fn()} />);
+    241|     // home.md's index links every page; the first bullet is the insta…
+    242|     const link = screen.getAllByRole("link", { name: "Installing and R…
+       |                         ^
+    243| 
+    244|     await userEvent.click(link);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional ownerId counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional ownerId throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableDefinition counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableDefinition throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableSelection counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional tableSelection throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedSource counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedSource throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedChart counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates optional linkedChart throwing accessors
+AssertionError: expected [Function] to not throw an error but 'Error: INVALID_EXTENSION at $[0].tabs…' was thrown
+
+- Expected: 
+undefined
+
++ Received: 
+"Error: INVALID_EXTENSION at $[0].tabs.one.layout.0: Invalid v5 accessor."
+
+ ❯ src/lib/statementModel/persistence.test.ts:57:79
+     55|   let calls=0;const item={i:'raw'};
+     56|   Object.defineProperty(item,key,{enumerable:true,get(){calls++;if(thr…
+     57|   expect(()=>importApps([{name:'Unsafe',tabs:{one:{layout:[item]}}}],[…
+       |                                                                               ^
+     58|  });
+     59| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link kind counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link kind throwing accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link sourceWidgetId counting accessors
+ FAIL  src/lib/statementModel/persistence.test.ts > never evaluates nested link sourceWidgetId throwing accessors
+Error: INVALID_EXTENSION at $[0].tabs.one.layout.0.linkedSource: Invalid v5 accessor.
+ ❯ Module.extensionError src/lib/appsExtensionsV3.ts:23:9
+     21| }
+     22| export function extensionError(path: string, message: string, code: Ex…
+     23|   throw new AppExtensionError({ code, path, message });
+       |         ^
+     24| }
+     25| const unsafe = new Set(["__proto__", "prototype", "constructor"]);
+ ❯ json src/lib/appsExtensionsV5.ts:28:43
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ src/lib/appsExtensionsV5.ts:59:5
+ ❯ Module.prepareV5 src/lib/appsExtensionsV5.ts:58:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/lib/statementModel/persistence.test.ts > refuses cyclic and excessively deep optional envelopes without losing the ordinary card
+Error: INVALID_EXTENSION at $[0].tabs.one.layout.0.tableDefinition.analytical: Invalid v5 JSON value.
+ ❯ Module.extensionError src/lib/appsExtensionsV3.ts:23:9
+     21| }
+     22| export function extensionError(path: string, message: string, code: Ex…
+     23|   throw new AppExtensionError({ code, path, message });
+       |         ^
+     24| }
+     25| const unsafe = new Set(["__proto__", "prototype", "constructor"]);
+ ❯ json src/lib/appsExtensionsV5.ts:24:67
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ json src/lib/appsExtensionsV5.ts:31:5
+ ❯ src/lib/appsExtensionsV5.ts:59:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ Test Files  3 failed | 320 passed (323)
+      Tests  16 failed | 5726 passed | 6 skipped (5748)
+   Start at  01:33:15
+   Duration  1851.89s (transform 28.79s, setup 228.68s, collect 292.76s, tests 583.95s, environment 489.34s, prepare 76.27s)
+

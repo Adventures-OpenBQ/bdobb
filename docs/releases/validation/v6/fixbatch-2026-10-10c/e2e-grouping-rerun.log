@@ -1,0 +1,12 @@
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/grouping.spec.ts:48:1 › clicking a cellOnClick cell moves the group, and the sibling card refetches with it (3.6s)
+  ✓  2 [chromium] › e2e/grouping.spec.ts:67:1 › the moved group value is written to the dashboard file (1.9s)
+  ✓  3 [chromium] › e2e/grouping.spec.ts:87:1 › forceUpdate refetches the source table even when its own params did not move (1.8s)
+  ✓  4 [chromium] › e2e/grouping.spec.ts:122:1 › a group created from one card's control, joined from another, moves both on an edit (2.5s)
+  ✓  5 [chromium] › e2e/grouping.spec.ts:144:1 › leaving a group keeps the value the control was showing, and the file records it (2.0s)
+  ✓  6 [chromium] › e2e/grouping.spec.ts:158:1 › a chip renames inline and deletes after the confirmation (1.7s)
+  ✓  7 [chromium] › e2e/grouping.spec.ts:174:1 › a dashboard file written with groupIds still groups (1.8s)
+
+  7 passed (37.3s)

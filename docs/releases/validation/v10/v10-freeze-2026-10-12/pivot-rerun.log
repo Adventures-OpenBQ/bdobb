@@ -1,0 +1,10 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/components/PivotParamRow.viewer.test.tsx (16 tests) 536ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  13:54:54
+   Duration  2.89s (transform 1.02s, setup 207ms, collect 1.36s, tests 536ms, environment 430ms, prepare 67ms)
+

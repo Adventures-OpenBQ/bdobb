@@ -1,0 +1,8 @@
+<worktree>/src-tauri/target/release/bundle/macos/BDOBB Clean v6.app
+com.artcashin.bdobb.clean.v6
+6.0.0
+7b752cfa01790859f7c580a3314c64d1d3d46a2c28a5c29846693818939e1b67  src-tauri/target/release/bundle/macos/BDOBB Clean v6.app/Contents/MacOS/bdobb2
+table-model/1 in dist/assets:        1
+Identifier=bdobb2-bbbe1291534b8f03
+Signature=adhoc
+TeamIdentifier=not set

@@ -1,0 +1,1249 @@
+
+ RUN  v2.1.9 <worktree>
+
+stderr | src/components/WidgetCard.test.tsx > a Static calendar draws a range given as date expressions
+RangeError: Invalid time value
+    at Date.toISOString (<anonymous>)
+    at fromUtc (<worktree>/src/lib/calendarView.ts:358:13)
+    at addDays (<worktree>/src/lib/calendarView.ts:364:10)
+    at mondayOf (<worktree>/src/lib/calendarView.ts:384:10)
+    at Module.staticWeeks (<worktree>/src/lib/calendarView.ts:477:21)
+    at CalendarRenderer (<worktree>/src/components/renderers/CalendarRenderer.tsx:380:37)
+    at Object.react_stack_bottom_frame (<worktree>/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+    at renderWithHooks (<worktree>/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+    at updateFunctionComponent (<worktree>/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+    at beginWork (<worktree>/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:11778:18) {
+  [stack]: [Getter/Setter],
+  [message]: 'Invalid time value'
+}
+
+The above error occurred in the <CalendarRenderer> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, Boundary.
+
+
+ ❯ src/components/WidgetCard.test.tsx (218 tests | 1 failed | 217 skipped) 1054ms
+   × a Static calendar draws a range given as date expressions 1053ms
+     → Unable to find an element by: [data-testid="cal-grid"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"widget-card"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-describedby[39m=[32m"c1-timer-desc"[39m
+          [33maria-label[39m=[32m"Refresh"[39m
+          [33mclass[39m=[32m"card-timer"[39m
+          [33mdata-tone[39m=[32m"fresh"[39m
+          [33mtitle[39m=[32m"Last refresh Invalid Date · Invalid Date"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m◷[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"sr-only"[39m
+          [33mid[39m=[32m"c1-timer-desc"[39m
+        [36m>[39m
+          [0mLast refresh Invalid Date · Invalid Date[0m
+        [36m</span>[39m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"Show parameters"[39m
+          [33mclass[39m=[32m"card-params-chevron"[39m
+          [33mtitle[39m=[32m"Show parameters"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m▸[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"card-title"[39m
+        [36m>[39m
+          [0mPrice History[0m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-chips"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-params"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group Start"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group Start"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mStart[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"Start"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"Start"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T-6w"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_a_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-08-30[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group End"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group End"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mEnd[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"End"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"End"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_e_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-10-11[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-controls"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-controls-icons"[39m
+          [36m>[39m
+            [36m<select[39m
+              [33maria-label[39m=[32m"View"[39m
+              [33mclass[39m=[32m"card-action view-select"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mTable[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"chart"[39m
+              [36m>[39m
+                [0mChart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"calendar"[39m
+              [36m>[39m
+                [0mCalendar[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"raw"[39m
+              [36m>[39m
+                [0mRaw[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"transposed"[39m
+              [36m>[39m
+                [0mTransposed[0m
+              [36m</option>[39m
+            [36m</select>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Filter rows"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⌕[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33maria-haspopup[39m=[32m"menu"[39m
+              [33maria-label[39m=[32m"Card menu"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⋯[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Maximize"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⤢[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Remove card"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m✕[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card-body"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"error-box"[39m
+          [33mrole[39m=[32m"alert"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mSomething went wrong in [0m
+            [0mPrice History[0m
+            [0m.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"error-box-message"[39m
+          [36m>[39m
+            [0mInvalid time value[0m
+          [36m</p>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mRetry[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"widget-card"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-describedby[39m=[32m"c1-timer-desc"[39m
+          [33maria-label[39m=[32m"Refresh"[39m
+          [33mclass[39m=[32m"card-timer"[39m
+          [33mdata-tone[39m=[32m"fresh"[39m
+          [33mtitle[39m=[32m"Last refresh Invalid Date · Invalid Date"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m◷[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"sr-only"[39m
+          [33mid[39m=[32m"c1-timer-desc"[39m
+        [36m>[39m
+          [0mLast refresh Invalid Date · Invalid Date[0m
+        [36m</span>[39m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"Show parameters"[39m
+          [33mclass[39m=[32m"card-params-chevron"[39m
+          [33mtitle[39m=[32m"Show parameters"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m▸[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"card-title"[39m
+        [36m>[39m
+          [0mPrice History[0m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-chips"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-params"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group Start"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group Start"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mStart[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"Start"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"Start"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T-6w"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_a_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-08-30[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group End"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group End"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mEnd[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"End"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"End"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_e_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-10-11[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-controls"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-controls-icons"[39m
+          [36m>[39m
+            [36m<select[39m
+              [33maria-label[39m=[32m"View"[39m
+              [33mclass[39m=[32m"card-action view-select"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mTable[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"chart"[39m
+              [36m>[39m
+                [0mChart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"calendar"[39m
+              [36m>[39m
+                [0mCalendar[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"raw"[39m
+              [36m>[39m
+                [0mRaw[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"transposed"[39m
+              [36m>[39m
+                [0mTransposed[0m
+              [36m</option>[39m
+            [36m</select>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Filter rows"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⌕[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33maria-haspopup[39m=[32m"menu"[39m
+              [33maria-label[39m=[32m"Card menu"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⋯[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Maximize"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⤢[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Remove card"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m✕[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card-body"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"error-box"[39m
+          [33mrole[39m=[32m"alert"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mSomething went wrong in [0m
+            [0mPrice History[0m
+            [0m.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"error-box-message"[39m
+          [36m>[39m
+            [0mInvalid time value[0m
+          [36m</p>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mRetry[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/WidgetCard.test.tsx > a Static calendar draws a range given as date expressions
+TestingLibraryElementError: Unable to find an element by: [data-testid="cal-grid"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"widget-card"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-describedby[39m=[32m"c1-timer-desc"[39m
+          [33maria-label[39m=[32m"Refresh"[39m
+          [33mclass[39m=[32m"card-timer"[39m
+          [33mdata-tone[39m=[32m"fresh"[39m
+          [33mtitle[39m=[32m"Last refresh Invalid Date · Invalid Date"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m◷[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"sr-only"[39m
+          [33mid[39m=[32m"c1-timer-desc"[39m
+        [36m>[39m
+          [0mLast refresh Invalid Date · Invalid Date[0m
+        [36m</span>[39m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"Show parameters"[39m
+          [33mclass[39m=[32m"card-params-chevron"[39m
+          [33mtitle[39m=[32m"Show parameters"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m▸[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"card-title"[39m
+        [36m>[39m
+          [0mPrice History[0m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-chips"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-params"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group Start"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group Start"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mStart[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"Start"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"Start"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T-6w"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_a_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-08-30[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group End"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group End"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mEnd[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"End"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"End"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_e_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-10-11[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-controls"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-controls-icons"[39m
+          [36m>[39m
+            [36m<select[39m
+              [33maria-label[39m=[32m"View"[39m
+              [33mclass[39m=[32m"card-action view-select"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mTable[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"chart"[39m
+              [36m>[39m
+                [0mChart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"calendar"[39m
+              [36m>[39m
+                [0mCalendar[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"raw"[39m
+              [36m>[39m
+                [0mRaw[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"transposed"[39m
+              [36m>[39m
+                [0mTransposed[0m
+              [36m</option>[39m
+            [36m</select>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Filter rows"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⌕[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33maria-haspopup[39m=[32m"menu"[39m
+              [33maria-label[39m=[32m"Card menu"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⋯[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Maximize"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⤢[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Remove card"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m✕[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card-body"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"error-box"[39m
+          [33mrole[39m=[32m"alert"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mSomething went wrong in [0m
+            [0mPrice History[0m
+            [0m.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"error-box-message"[39m
+          [36m>[39m
+            [0mInvalid time value[0m
+          [36m</p>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mRetry[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"widget-card"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"card-header"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-describedby[39m=[32m"c1-timer-desc"[39m
+          [33maria-label[39m=[32m"Refresh"[39m
+          [33mclass[39m=[32m"card-timer"[39m
+          [33mdata-tone[39m=[32m"fresh"[39m
+          [33mtitle[39m=[32m"Last refresh Invalid Date · Invalid Date"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m◷[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"sr-only"[39m
+          [33mid[39m=[32m"c1-timer-desc"[39m
+        [36m>[39m
+          [0mLast refresh Invalid Date · Invalid Date[0m
+        [36m</span>[39m
+        [36m<button[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33maria-label[39m=[32m"Show parameters"[39m
+          [33mclass[39m=[32m"card-params-chevron"[39m
+          [33mtitle[39m=[32m"Show parameters"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0m▸[0m
+        [36m</button>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"card-title"[39m
+        [36m>[39m
+          [0mPrice History[0m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-chips"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-params"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group Start"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group Start"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mStart[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"Start"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"Start"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T-6w"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_a_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-08-30[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T-6w, resolves now to 2026-08-30, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"param-field"[39m
+              [33mdata-chip[39m=[32m""[39m
+              [33mdata-kind[39m=[32m"date"[39m
+              [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-link-wrap"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-expanded[39m=[32m"false"[39m
+                  [33maria-haspopup[39m=[32m"menu"[39m
+                  [33maria-label[39m=[32m"Group End"[39m
+                  [33mclass[39m=[32m"param-link"[39m
+                  [33mtitle[39m=[32m"Group End"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0m⛓︎[0m
+                [36m</button>[39m
+              [36m</span>[39m
+              [36m<label[39m
+                [33mclass[39m=[32m"param-label param-label-hidden"[39m
+              [36m>[39m
+                [0mEnd[0m
+              [36m</label>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"param-control"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"param-expr-field"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"End"[39m
+                    [33mclass[39m=[32m"param-expr-row"[39m
+                    [33mrole[39m=[32m"group"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33maria-label[39m=[32m"End"[39m
+                      [33mclass[39m=[32m"param-expr-input"[39m
+                      [33mspellcheck[39m=[32m"false"[39m
+                      [33mtype[39m=[32m"text"[39m
+                      [33mvalue[39m=[32m"T"[39m
+                    [36m/>[39m
+                    [36m<button[39m
+                      [33maria-expanded[39m=[32m"false"[39m
+                      [33maria-label[39m=[32m"Calendar"[39m
+                      [33mclass[39m=[32m"param-chip"[39m
+                      [33mdata-rac[39m=[32m""[39m
+                      [33mdata-react-aria-pressable[39m=[32m"true"[39m
+                      [33mdata-testid[39m=[32m"param-picker-chip"[39m
+                      [33mid[39m=[32m"react-aria-_r_e_"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                      [33mtype[39m=[32m"button"[39m
+                    [36m>[39m
+                      [36m<span[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                      [36m>[39m
+                        [0m🗓[0m
+                      [36m</span>[39m
+                    [36m</button>[39m
+                  [36m</div>[39m
+                  [36m<p[39m
+                    [33mclass[39m=[32m"param-resolved"[39m
+                    [33mdata-testid[39m=[32m"param-resolved"[39m
+                  [36m>[39m
+                    [0m2026-10-11[0m
+                  [36m</p>[39m
+                [36m</div>[39m
+              [36m</span>[39m
+              [36m<span[39m
+                [33maria-label[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+                [33mclass[39m=[32m"param-badge-expr"[39m
+                [33mrole[39m=[32m"img"[39m
+                [33mtitle[39m=[32m"Expression T, resolves now to 2026-10-11, updates when the card refreshes"[39m
+              [36m>[39m
+                [0m◷[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"card-controls"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"card-controls-icons"[39m
+          [36m>[39m
+            [36m<select[39m
+              [33maria-label[39m=[32m"View"[39m
+              [33mclass[39m=[32m"card-action view-select"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m""[39m
+              [36m>[39m
+                [0mTable[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"chart"[39m
+              [36m>[39m
+                [0mChart[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"calendar"[39m
+              [36m>[39m
+                [0mCalendar[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"raw"[39m
+              [36m>[39m
+                [0mRaw[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"transposed"[39m
+              [36m>[39m
+                [0mTransposed[0m
+              [36m</option>[39m
+            [36m</select>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Filter rows"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⌕[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33maria-haspopup[39m=[32m"menu"[39m
+              [33maria-label[39m=[32m"Card menu"[39m
+              [33mclass[39m=[32m"card-action"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⋯[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Maximize"[39m
+              [33maria-pressed[39m=[32m"false"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m⤢[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Remove card"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0m✕[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"card-body"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"error-box"[39m
+          [33mrole[39m=[32m"alert"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mSomething went wrong in [0m
+            [0mPrice History[0m
+            [0m.[0m
+          [36m</p>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"error-box-message"[39m
+          [36m>[39m
+            [0mInvalid time value[0m
+          [36m</p>[39m
+          [36m<button[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0mRetry[0m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ waitForWrapper node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/components/WidgetCard.test.tsx:219:23
+    217|   });
+    218|   render(<WidgetCard card={calendarCard} onRemove={vi.fn()} />);
+    219|   expect(await screen.findByTestId("cal-grid")).toBeInTheDocument();
+       |                       ^
+    220|   expect(screen.queryByText(/Invalid time value|Something went wrong/)…
+    221|   expect(screen.getAllByText(/13-Week/).length).toBeGreaterThan(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 217 skipped (218)
+   Start at  14:30:16
+   Duration  4.22s (transform 1.02s, setup 150ms, collect 2.14s, tests 1.05s, environment 442ms, prepare 82ms)
+

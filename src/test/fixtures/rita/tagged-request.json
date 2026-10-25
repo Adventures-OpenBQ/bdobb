@@ -1,0 +1,92 @@
+{
+  "messages": [
+    {
+      "role": "human",
+      "content": "Which widgets are added to context, and which are on the dashboard? List each by name under those two headings."
+    }
+  ],
+  "widgets": {
+    "primary": [
+      {
+        "uuid": "aaaaaaaa-0000-4000-8000-000000000001",
+        "origin": "reference",
+        "widget_id": "table_widget",
+        "name": "Table Widget",
+        "description": "A table widget",
+        "metadata": {
+          "backend_name": "Reference"
+        },
+        "params": []
+      }
+    ],
+    "secondary": [
+      {
+        "uuid": "bbbbbbbb-0000-4000-8000-000000000002",
+        "origin": "reference",
+        "widget_id": "metric_widget",
+        "name": "Metric Widget",
+        "description": "A metric widget",
+        "metadata": {
+          "backend_name": "Reference"
+        },
+        "params": []
+      }
+    ],
+    "extra": []
+  },
+  "context": null,
+  "urls": [],
+  "timezone": "America/New_York",
+  "workspace_options": {},
+  "tools": [
+    {
+      "server_id": "bdobb-local",
+      "name": "create_dashboard",
+      "url": "",
+      "endpoint": "",
+      "description": "Create a new dashboard, optionally with an ordered list of widgets.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Dashboard name"
+          },
+          "widget_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Widget ids, in the order they should appear"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    {
+      "server_id": "bdobb-local",
+      "name": "add_widget",
+      "url": "",
+      "endpoint": "",
+      "description": "Add a widget to a dashboard, defaulting to the current one.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "widget_id": {
+            "type": "string",
+            "description": "Widget id"
+          },
+          "dashboard_name": {
+            "type": "string",
+            "description": "Target dashboard; omit for the current one"
+          }
+        },
+        "required": [
+          "widget_id"
+        ]
+      }
+    }
+  ]
+}

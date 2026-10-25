@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1/2] [chromium] › e2e/column-resize.spec.ts:35:1 › a 60 px drag grows that column by 60 px; the others keep their widths; spare space stays on the right
+[2/2] [chromium] › e2e/column-resize.spec.ts:59:1 › columns wider than the card scroll sideways instead of squeezing
+  2 passed (4.1s)

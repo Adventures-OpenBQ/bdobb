@@ -1,0 +1,106 @@
+status	path	feature	disposition	reason
+DIVERGED	README.md	version	EXCLUDE	donor's release-tag example (v9.6.3); clean's README gains its own 9.0.0 section (release step); DONE ee21164 (clean's own v9 section)
+NEW	docs/examples/v9.6.2-calendars.apps.json	examples	ADD	carried as docs/examples/v9.0.0-calendars.apps.json, rewritten by exportCompatibleApp into clean's v4 envelope (calendar state, pivot view), Platform 5 widget ids (eodhd_* mirror ids; Treasury card is clean's ustreasury_auction_results); donor 4121eb9e, a145640a; DONE a0ddc85
+ABSENT	docs/specs/v9.0.0-features.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans); absent in clean
+NEW	docs/superpowers/plans/2026-09-03-v9-0-0-eodhd-nas-closeout.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-06-calendar-view.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-07-calendar-modes.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-08-calendar-tree-filter.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/specs/2026-09-06-calendar-widget-design.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/specs/2026-09-08-calendar-filter-taxonomy.md	design-doc	PROVENANCE	donor design/plan doc; cited in v9-assembly, not copied (clean writes its own plans)
+DIVERGED	eslint-suppressions.json	lint	EXCLUDE	donor baselines a third deliberate WidgetCard memo for its calendar wiring (e4c48c47, fd8daafc); clean's WidgetCard has its own calendar wiring and lint is clean without it
+DIVERGED	package.json	version	MERGE	clean wins (BDOBB, own deps, openbbDocker pins openbq-docker); only the 9.0.0 bump; the donor's 9.6.3 numbering (it follows openbb-eodhd) and openbbDocker v9.6.4 are not taken; DONE 1378c53
+DIVERGED	scripts/apps-sync.mjs	examples	MERGE	EPISODE ceiling and per-backend OWNER routing already in clean (fb4517e7, 4121eb9e; KEEP); only the v9 example's OWNER row (v9.0.0-calendars -> workspace_apps.json, openbb-api serves openbb-eodhd and the Treasury widgets); donor v10.0.0-live-grid / v12.0.0-advanced-chart rows are v10+ and not taken; DONE a0ddc85
+DIVERGED	src-tauri/Cargo.lock	version	MERGE	clean wins; only the bdobb entry's 9.0.0 (edited by hand: cargo cannot build here); DONE 1378c53
+DIVERGED	src-tauri/Cargo.toml	version	MERGE	clean wins; only the 9.0.0 bump; DONE 1378c53
+DIVERGED	src-tauri/tauri.conf.json	version	MERGE	clean wins (productName BDOBB, identifier); only the 9.0.0 bump; DONE 1378c53
+DIVERGED	src/components/ParamControls.test.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/components/ParamControls.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/components/WidgetCard.test.tsx	calendar	MERGE	the donor's three calendar cases (renders and persists, pushes the visible range, leaves a rangeless widget alone) ported onto clean's card; clean's own Static-range case kept; DONE 70adcb8
+DIVERGED	src/components/WidgetCard.tsx	calendar	EXCLUDE	KEEP: clean wires the Calendar view since v4 (saveCalendar, declaresRange, onCalendarRange, Static range); donor c8ad6a77 is the same feature backported onto the 9.x line
+DIVERGED	src/components/WidgetFormPanel.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/components/railMenu.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+NEW	src/components/renderers/CalendarRenderer.test.tsx	calendar	EXCLUDE	KEEP: clean's suite covers the donor's (renamed import, the labelled filter group of 1588a8e, the amount-only abbreviation, the logo key)
+NEW	src/components/renderers/CalendarRenderer.tsx	calendar	EXCLUDE	KEEP, clean better: only an amount abbreviates and the tooltip shows it in full, the grid surfaces are role=grid "Calendar dates", overrides read every row's keys, a logo is keyed by URL; filter group a11y (8276661f) already back-ported in 1588a8e
+DIVERGED	src/components/renderers/DateProbeRenderer.test.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/components/renderers/DateProbeRenderer.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+SAME-BASE	src/components/renderers/ParamEchoRenderer.tsx	trading-calendar	EXCLUDE	clean equals v8.1.2; donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/components/renderers/PivotPanel.test.tsx	pivot-hint	EXCLUDE	KEEP: clean's "provider suggestions" block is the donor's (a385fdef)
+DIVERGED	src/components/renderers/PivotPanel.tsx	pivot-hint	EXCLUDE	KEEP: the suggestion pill, one-click Use suggested and the submenu mark are in clean (provenance: approved into v4); Pivot is clean's
+DIVERGED	src/help/guide.test.ts	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/VERSION	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/about-this-guide.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/backends-and-connections.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+NEW	src/help/guide/calendar-view.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/charts.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+NEW	src/help/guide/eodhd-data-provider.md	help	EXCLUDE	donor help snapshot; clean writes its own EODHD guide page and topic for openbq-docker v9 (v9-assembly Help), facts checked against this line's code; DONE 2ebad48 (clean's own page)
+DIVERGED	src/help/guide/example-dashboards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/home.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/import-and-export.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/openbb-docker-stack.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+ABSENT	src/help/guide/pivot.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help); absent in clean (clean folds Pivot into tables, has no rss-feed-sources page)
+DIVERGED	src/help/guide/provider-keys.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/rita-chat.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+ABSENT	src/help/guide/rss-feed-sources.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help); absent in clean (clean folds Pivot into tables, has no rss-feed-sources page)
+DIVERGED	src/help/guide/settings-export-and-import.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+ABSENT	src/help/guide/statement-pivot-view.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help); absent in clean (clean folds Pivot into tables, has no rss-feed-sources page)
+DIVERGED	src/help/guide/tables.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/tailscale-networking.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/troubleshooting-infrastructure.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/troubleshooting-using-bdobb.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/web-preview.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/guide/widget-cards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+DIVERGED	src/help/shots/charts-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/charts-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/getting-started-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/getting-started-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/import-and-export-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/import-and-export-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/locked-widgets-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/locked-widgets-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/widget-cards-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/widget-cards-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/workspaces-dark.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/shots/workspaces-light.png	help	EXCLUDE	donor regenerated shot; clean re-shoots only what its own help changes (as v8)
+DIVERGED	src/help/topics/charts.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+ABSENT	src/help/topics/pivot.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help); absent in clean (clean folds Pivot into tables, has no rss-feed-sources page)
+DIVERGED	src/help/topics/widget-cards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault, v9.0/v9.5/v9.6 syncs); clean writes its own help; v9 pages authored separately (v9-assembly Help)
+SAME-BASE	src/hooks/useTradingCalendar.ts	trading-calendar	EXCLUDE	clean equals v8.1.2; donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/hooks/useWidgetData.test.tsx	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+ABSENT	src/lib/agent/arrangeTable.test.ts	rita-table	EXCLUDE	absent in clean: the donor's arrangeTable/tableProfile calculator is replaced by clean's table-model tools (v6 ruling, adaptation 1); its suggestion fields are not carried (PROVISIONAL, OPEN-QUESTIONS)
+ABSENT	src/lib/agent/arrangeTable.ts	rita-table	EXCLUDE	absent in clean (v6 adaptation 1); see arrangeTable.test.ts
+ABSENT	src/lib/agent/tableProfile.test.ts	rita-table	EXCLUDE	absent in clean (v6 adaptation 1); see arrangeTable.test.ts
+ABSENT	src/lib/agent/tableProfile.ts	rita-table	EXCLUDE	absent in clean (v6 adaptation 1); see arrangeTable.test.ts
+DIVERGED	src/lib/appsJson.examples.test.ts	examples	MERGE	the donor's calendars case rewritten for clean's envelope and ids; the known-examples list gains the v9 file; DONE a0ddc85
+DIVERGED	src/lib/appsJson.test.ts	calendar	EXCLUDE	the donor's plain state.calendarView / pivotView fields are not carried: clean carries calendar state in the v4 extensions.bdobb envelope (appsExtensionsV4, appsJson.cleanV4.test), as v8 R1 kept bdobb state out of the plain fields
+DIVERGED	src/lib/appsJson.ts	calendar	EXCLUDE	as appsJson.test.ts: toCalendarState's checks live in clean's v4 envelope decoder; tradingCalendar import is the rename
+DIVERGED	src/lib/calendar.test.ts	calendar	EXCLUDE	KEEP: the donor's view tests are clean's src/lib/calendarView.test.ts (differs only in the import path); clean's calendar.test.ts is the trading calendar's
+DIVERGED	src/lib/calendar.ts	calendar	EXCLUDE	KEEP: the donor's Calendar-view library is byte-identical to clean's src/lib/calendarView.ts; clean's calendar.ts stays the trading calendar
+DIVERGED	src/lib/cardViews.test.ts	calendar	EXCLUDE	KEEP: clean offers Calendar off the data since v4 and lists it among possibleViews (#40)
+DIVERGED	src/lib/cardViews.ts	calendar	EXCLUDE	KEEP: as cardViews.test.ts
+DIVERGED	src/lib/dashboardsFile.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/dateExpressions.test.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/dateExpressions.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/optionSymbol.test.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/optionSymbol.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/params.test.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+DIVERGED	src/lib/params.ts	trading-calendar	EXCLUDE	donor import rename lib/calendar -> lib/tradingCalendar (c8ad6a77); clean keeps the trading calendar in src/lib/calendar.ts and the view in src/lib/calendarView.ts, so the rename is not taken
+NEW	src/lib/pivotSuggestion.test.ts	pivot-hint	EXCLUDE	KEEP: byte-identical in clean
+NEW	src/lib/pivotSuggestion.ts	pivot-hint	EXCLUDE	KEEP: byte-identical in clean
+DIVERGED	src/lib/tableColumns.ts	pivot-hint	EXCLUDE	KEEP: clean's TableColumn already carries hint: column.aggregation
+NEW	src/lib/tradingCalendar.test.ts	trading-calendar	EXCLUDE	the donor's renamed trading-calendar tests; clean's src/lib/calendar.test.ts covers the same module
+NEW	src/lib/tradingCalendar.ts	trading-calendar	EXCLUDE	the donor's renamed trading calendar; clean's src/lib/calendar.ts is the same module plus a parseTime guard on session times (better)
+DIVERGED	src/lib/types.ts	calendar	EXCLUDE	KEEP: CardView calendar, CalendarCardState (modes, series, tree filter), AggregationHint and HINT_STATUSES are all in clean
+DIVERGED	src/lib/widgetsJson.test.ts	pivot-hint	MERGE	the donor's three columnsDefs aggregation-hint cases (a385fdef, 16d3ead3); DONE 686891a
+DIVERGED	src/lib/widgetsJson.ts	pivot-hint	MERGE	toAggregationHint: clean dropped a column's provider aggregation hint at the widgets.json boundary, so TableColumn.hint was never set; carried with the absent-time-is-null rule (a385fdef, 16d3ead3); DONE 686891a
+DIVERGED	src/skills/arrange-table/SKILL.md	rita-table	EXCLUDE	clean's arrange-table skill was rewritten for the table-model tools (v6); describe_table reports no provider suggestion, so the donor's paragraph would be false here (PROVISIONAL)
+DIVERGED	src/stores/dashboardStore.test.ts	calendar	MERGE	the donor's recovered patchCardField calendar case (3284a765): per-facet merge and the null clear; DONE 70adcb8
+DIVERGED	src/stores/dashboardStore.ts	calendar	EXCLUDE	KEEP: clean merges the calendar facet in patchCardField since v4
+DIVERGED	src/styles.css	calendar	EXCLUDE	KEEP: clean carries the calendar styles since v4
+DIVERGED	web/README.md	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/bootstrap.mjs	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/browser-smoke.mjs	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/policy.mjs	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/policy.vendored.json	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/security.test.mjs	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)
+DIVERGED	web/server.mjs	web-pin	EXCLUDE	donor re-pairs its comments and vendored tag with openbb-docker v9.6.4; clean vendors openbq-docker's gateway policy (v8 R3b) and openbq-docker v9 changes no gateway route, so the pin stays at cab61a9 (PROVISIONAL, OPEN-QUESTIONS)

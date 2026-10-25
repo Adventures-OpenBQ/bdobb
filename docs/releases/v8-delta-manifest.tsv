@@ -1,0 +1,162 @@
+status	path	feature	disposition	reason
+NEW	docs/specs/v8.0.0-features.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-03-v8.0.0-news-widget.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-03-v8.0.0-pinned-cards.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans); pinned plan/spec read for Part A (v8-assembly)
+NEW	docs/superpowers/plans/2026-09-03-v8.1.0-locked-widgets.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/plans/2026-09-26-pinned-locked-export.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/specs/2026-09-03-v8.0.0-news-widget-design.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/specs/2026-09-03-v8.0.0-pinned-cards-design.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans); pinned plan/spec read for Part A (v8-assembly)
+NEW	docs/superpowers/specs/2026-09-03-v8.1.0-locked-widgets-design.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+NEW	docs/superpowers/specs/2026-09-26-pinned-locked-export-design.md	design-doc	PROVENANCE	donor design/plan doc; cited in v8-assembly, not copied (clean writes its own plans)
+DIVERGED	src/help/guide.test.ts	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/VERSION	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/about-this-guide.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/app-data-and-settings.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/backends-and-connections.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/built-in-widgets.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/dashboard-tabs.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/dashboards-and-folders.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/example-dashboards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/home.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/import-and-export.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/importing-dashboards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/installing-and-running.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/keyboard-shortcuts.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/layout-and-navigation.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/rita-chat.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/running-and-refreshing.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/settings-and-logs.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/settings-export-and-import.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/tailscale-networking.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/troubleshooting-infrastructure.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/troubleshooting-using-bdobb.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/web-preview.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/widget-cards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/guide/widget-library.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/index.test.ts	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/index.ts	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/dashboards-and-folders-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/dashboards-and-folders-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/getting-started-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/getting-started-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/import-and-export-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/import-and-export-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-datetime-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-datetime-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-quarter-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-quarter-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-quarter-range-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-quarter-range-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-relative-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/period-relative-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/provider-keys-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+SAME-BASE	src/help/shots/provider-keys-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/running-and-refreshing-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/running-and-refreshing-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/settings-and-logs-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/settings-and-logs-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/the-left-rail-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/the-left-rail-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/widget-cards-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/widget-cards-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/widget-library-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/widget-library-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/workspaces-dark.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/shots/workspaces-light.png	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+SAME-BASE	src/help/topics/built-in-widgets.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/dashboards-and-folders.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/getting-started.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/import-and-export.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/keyboard-shortcuts.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/rita.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/settings-and-logs.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/the-left-rail.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/troubleshooting.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/widget-cards.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+DIVERGED	src/help/topics/widget-library.md	help	EXCLUDE	donor help snapshot (bdobb-v2-help vault); clean keeps its own authored help, v8 pages authored separately
+NEW	e2e/locked.spec.ts	locked	ADD	new in v8 donor, absent in clean; DONE Part C cb3f625e, on clean chrome (portalled menu, Parameters item, Settings Cancel); plus the 55fe838f Export all round trip
+NEW	src/components/DockBand.test.tsx	locked	ADD	new in v8 donor, absent in clean; DONE Part C 883f630f, verbatim but for a named mock grid (rules-of-hooks gate)
+NEW	src/components/DockBand.tsx	locked	ADD	new in v8 donor, absent in clean; DONE Part C 883f630f (compactType null, per-card ErrorBoundary, selectEffective widgetGap)
+NEW	src/help/guide/locked-and-pinned-widgets.md	locked	ADD	new in v8 donor, absent in clean; help step (Part C carried the feature, not its help); DONE release 719415a3 (ported, checked against clean)
+DIVERGED	src/help/guide/openbb-docker-stack.md	locked	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 25 changed lines); help step; DONE release 6a9941d9 (rewritten for openbq-docker v8, R3a/R3b); v7 rebuild merge 0ff3b8bd: page deleted on v7 (relaunch 12ec4514); its v8 sections (web profile, docks route, vendored policy) moved into v7's src/help/guide/openbq-docker-stack.md, links follow
+NEW	src/help/shots/locked-widgets-dark.png	locked	ADD	new in v8 donor, absent in clean; help step; DONE release 719415a3 (re-taken from clean, own seed)
+NEW	src/help/shots/locked-widgets-light.png	locked	ADD	new in v8 donor, absent in clean; help step; DONE release 719415a3 (re-taken from clean, own seed)
+NEW	src/help/topics/locked-widgets.md	locked	ADD	new in v8 donor, absent in clean; help step; DONE release 719415a3 (authored for clean from the donor topic)
+NEW	src/lib/dockLayout.test.ts	locked	ADD	new in v8 donor, absent in clean; DONE Part C d751f573, verbatim
+NEW	src/lib/dockLayout.ts	locked	ADD	new in v8 donor, absent in clean; DONE Part C d751f573, verbatim
+NEW	src/lib/docksImport.test.ts	locked	ADD	new in v8 donor, absent in clean; DONE Part C 231db3ce, verbatim but its last case (pinned in runAppsImport.test.ts)
+NEW	src/lib/docksImport.ts	locked	ADD	new in v8 donor, absent in clean; DONE Part C 8da4487c; its only caller is clean runAppsImport
+NEW	docs/examples/v8.0.0-news.apps.json	news	ADD	new in v8 donor, absent in clean; DONE Part B fce32ce5, rewritten in the v8 envelope by exportCompatibleApp
+NEW	e2e/news.spec.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B d99aa3b8 (portalled menu; clean Parameters item)
+SAME-BASE	src/browser-shim/http.ts	news	CLEAN-APPLY	clean equals v7.0.2; donor delta applies verbatim; DONE web relay 912018c0 (import "./socket" and its comment, as a7772b2b)
+DIVERGED	src/browser-shim/registry.ts	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 12 changed lines); DONE web relay 912018c0 (__bdobbSocketTickets, __bdobbNewsServer; the "no socket route" note goes)
+DIVERGED	src/browser-shim/shims.test.ts	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 84 changed lines); DONE web relay 912018c0 (the donor's five socket-shim cases plus three)
+NEW	src/browser-shim/socket.ts	news	ADD	new in v8 donor, absent in clean; DONE web relay 912018c0 (comment names clean's one construction site, useReconnectingSocket)
+NEW	src/components/dialogs/NewsFeedsDialog.test.tsx	news	ADD	new in v8 donor, absent in clean; DONE Part B fce32ce5, verbatim
+NEW	src/components/dialogs/NewsFeedsDialog.tsx	news	ADD	new in v8 donor, absent in clean; DONE Part B fce32ce5 on clean useModalDialog
+NEW	src/components/renderers/NewsRenderer.test.tsx	news	ADD	new in v8 donor, absent in clean; DONE Part B fce32ce5, verbatim
+NEW	src/components/renderers/NewsRenderer.tsx	news	ADD	new in v8 donor, absent in clean; DONE Part B fce32ce5, verbatim
+NEW	src/help/guide/news-ticker.md	news	ADD	new in v8 donor, absent in clean; DONE release 719415a3 as src/help/guide/news-widget.md (ported, checked against clean)
+NEW	src/help/guide/rss-feed-sources.md	news	ADD	new in v8 donor, absent in clean; NOT CARRIED as a page: its facts (rss-ticker on the web profile, tailnet 8088) sit in news-widget.md and openbb-docker-stack.md; v7 rebuild merge 0ff3b8bd: the stack facts now sit in openbq-docker-stack.md
+NEW	src/hooks/useNewsWire.test.tsx	news	ADD	new in v8 donor, absent in clean; DONE Part B 04b84f55, verbatim
+NEW	src/hooks/useNewsWire.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B 04b84f55, verbatim plus why it is not useReconnectingSocket (one subscribe frame per connection); Part C 2d9b01b2: now on useReconnectingSocket reconnect mode (ruling)
+NEW	src/lib/news.test.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B 9a8b2983; defaultNewsBase cases DONE web relay 1a378dc3
+NEW	src/lib/news.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B 9a8b2983; defaultNewsBase DONE web relay 1a378dc3
+NEW	src/lib/newsFile.test.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B 9a8b2983, verbatim
+NEW	src/lib/newsFile.ts	news	ADD	new in v8 donor, absent in clean; DONE Part B 9a8b2983, verbatim
+NEW	src/test/fakeSocket.ts	news	ADD	new in v8 donor, absent in clean; came with a7772b2b; DONE web relay 912018c0 (also used by useNewsWire.tickets.test.tsx, 1a378dc3)
+DIVERGED	web/README.md	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 17 changed lines); DONE web relay 665610d5 (rewritten for openbq-docker v8.0.0: /api, /news, /state; no /ai, no /grid)
+SAME-BASE	web/bootstrap.mjs	news	CLEAN-APPLY	clean equals v7.0.2; donor delta applies verbatim; DONE web relay 87aec291 (News tab, ticket and news-server flags; stack named openbq-docker)
+DIVERGED	web/browser-smoke.mjs	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 79 changed lines); DONE web relay 665610d5 (clean's grouping flow kept; News over a ticketed gateway socket added; no Rita)
+SAME-BASE	web/config.mjs	news	CLEAN-APPLY	clean equals v7.0.2; donor delta applies verbatim; DONE web relay 87aec291 (SOCKET_SECONDS, NEWS_APPROVED_FEEDS_JSON; comment says the gateway's feeds)
+DIVERGED	web/policy.mjs	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 74 changed lines); DONE web relay 2575de92 -- NOT the donor's copy: re-vendored from openbq-docker cab61a9 (v8.0.0) funnel-gateway/policy.mjs, sha256 dfa61ddf…bfd0, the donor's minus /ai (R3a, R3b)
+DIVERGED	web/policy.vendored.json	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 4 changed lines); DONE web relay 2575de92 ({tag v8.0.0, commit cab61a9…, sha256 dfa61ddf…})
+DIVERGED	web/security.test.mjs	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 135 changed lines); DONE web relay 2575de92, 87aec291 (header regex names openbq-docker, R3b; commit-pin rule; news, ticket, relay cases; no Rita case)
+DIVERGED	web/server.mjs	news	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 84 changed lines); DONE web relay 87aec291 (clean wins: jsonBody, gatewayHeaders, branding, YouTube frame-src kept; no /ai)
+NEW	e2e/pin.spec.ts	pinned	ADD	DONE Part A e0677cd5: ported from 3187f854 as reshaped by 2e456bf8 (scroll region) and v8.1.2 (Rita Lock); plus clean cases for maximize, locked Rita and a workspace tile with the rail pinned
+DIVERGED	README.md	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 4 changed lines)
+ABSENT	docs/protocol-gaps.md	shared	EXCLUDE	donor-only doc clean never carried
+DIVERGED	e2e/dashboards.spec.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 86 changed lines)
+SAME-BASE	e2e/documents.spec.ts	shared	CLEAN-APPLY	clean equals v7.0.2; donor delta applies verbatim; DONE Part A 58d9efa8 (the .dashboard-scroll hunk, verbatim)
+DIVERGED	e2e/fixtures.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 2 changed lines); openSettingsTab "Locked Widgets" DONE Part C cb3f625e
+DIVERGED	e2e/layout.spec.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 20 changed lines); rail row hunk DONE Part C 573ccc78 (REVIEW)
+SAME-BASE	e2e/settings-addins.spec.ts	shared	CLEAN-APPLY	clean equals v7.0.2; donor delta applies verbatim
+DIVERGED	eslint-suppressions.json	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 10 changed lines)
+DIVERGED	scripts/apps-sync.mjs	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 3 changed lines); v8.0.0-news OWNER DONE Part B fce32ce5; v8.0.0-pinned OWNER DONE release 5c4fb1b1; v7 rebuild merge 0ff3b8bd: v7 rewrote OWNER as SERVED targeting openbq-docker examples/bdobb/apps.json; v8.0.0-news and v8.0.0-pinned SERVED true
+DIVERGED	scripts/help-shots.mjs	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 26 changed lines); DONE release 719415a3 (clean entries news, pinned-cards, locked-widgets; the donor locked-widgets entry reshaped)
+DIVERGED	src/App.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 148 changed lines); pin hunk (--tab-bar-height) superseded on the donor, not carried; other hunks pending; locked cases DONE Part C bf2de27b
+DIVERGED	src/App.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 115 changed lines); pin hunk (--tab-bar-height, 0fc33060) superseded by 2e456bf8 on the donor, not carried; comment updated a5bfff5b; other hunks pending; locked hunks DONE Part C bf2de27b (bands, editor, dock-editing, ⌘K target, --dashboard-top bar bottom, Settings initialTab, viewer docks)
+DIVERGED	src/components/DashboardGrid.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 139 changed lines); pinned/scroll/resize cases DONE Part A a5bfff5b; rest pending
+DIVERGED	src/components/DashboardGrid.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 123 changed lines); pinned bands, grip, .dashboard-scroll DONE Part A a5bfff5b; dock-band hunks pending; dock bands mount in App, not here (Part C bf2de27b); the donor comment hunk is not carried
+DIVERGED	src/components/DropZone.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 15 changed lines); donor docks import tail not carried: DropZone already ends in runAppsImport, which runs the docks guard (Part C 8da4487c)
+DIVERGED	src/components/LeftRail.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 53 changed lines); Export all case Part C 8da4487c; rail row cases Part C 573ccc78 (REVIEW); v7 rebuild merge 0ff3b8bd: both sides kept (v7 Save… cases, v8 Export all); new interaction cases Save… v8 envelope and File menu import docks guard
+DIVERGED	src/components/LeftRail.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 60 changed lines); Export all DONE Part C 8da4487c; Add widget row removed Part C 573ccc78 (R5); donor docks import tail replaced by runAppsImport; v7 rebuild merge 0ff3b8bd: v7 Save… (saveDashboard) replaces exportDashboard; exportAllDashboards kept; only exportAll imported
+DIVERGED	src/components/WidgetCard.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 484 changed lines); pin submenu cases DONE Part A ad8edf6f (exact menu list gains Pin widget, REVIEW); News pending; News and rail cases DONE Part B fce32ce5 (clean menu order); locked cases DONE Part C 883f630f
+DIVERGED	src/components/WidgetCard.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 826 changed lines); Pin widget submenu DONE Part A ad8edf6f; News rail hunks pending; News rail chrome, dispatch and menu DONE Part B fce32ce5; locked prop and own-dashboard selector DONE Part C 883f630f; News base fallback (`url || defaultNewsBase()`) DONE web relay 1a378dc3; v7 rebuild merge 0ff3b8bd: v7 backend-table Pivot button gated !locked, onPivotOpen undefined when locked
+DIVERGED	src/components/dialogs/SettingsDialog.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 188 changed lines); Locked Widgets cases DONE Part C bf2de27b, 8da4487c (REVIEW: five tabs)
+DIVERGED	src/components/dialogs/SettingsDialog.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 214 changed lines); Locked Widgets section DONE Part C bf2de27b, file pair 8da4487c via runAppsImport (REVIEW: draft comment)
+DIVERGED	src/components/railMenu.test.tsx	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 8 changed lines); Export all cases DONE Part C 8da4487c; v7 rebuild merge 0ff3b8bd: section menu has Export all dashboards… and no Save…
+DIVERGED	src/components/railMenu.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 3 changed lines); Export all dashboards… DONE Part C 8da4487c; v7 rebuild merge 0ff3b8bd: v7 Save… (format flyout) beside v8 Export all dashboards…
+DIVERGED	src/lib/agent/localTools.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 23 changed lines); pin_card DONE Part C 9f708d67 (REVIEW: list and all-18 gain pin_card)
+DIVERGED	src/lib/agent/localTools.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 55 changed lines); pin_card DONE Part C 9f708d67 (18th tool; a locked card is a no-op)
+DIVERGED	src/lib/appsJson.examples.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 18 changed lines); v8.0.0-news case and builtins gate DONE Part B fce32ce5 (REVIEW)
+DIVERGED	src/lib/appsJson.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 178 changed lines); pinned round-trip cases DONE Part A 924fbfc1 in appsJson.cleanV8.test.ts (envelope shape); rest pending; News round trip DONE Part B b315af27 in appsJson.cleanV8.test.ts; docks and degrade cases DONE Part C in appsJson.cleanV8.test.ts (9307251e, 8da4487c)
+DIVERGED	src/lib/appsJson.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 172 changed lines); pinned hunk DONE Part A 924fbfc1 as the v8 envelope (R1), not the donor plain layout field; docks/News hunks pending; News state DONE Part B b315af27 as v8 envelope cards[].news (R1), not state.news; docks DONE Part C 8da4487c in the v8 envelope (R1), exportAll; v8 degrade 9307251e
+DIVERGED	src/lib/builtins.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 11 changed lines); news built-in case DONE Part B fce32ce5
+DIVERGED	src/lib/builtins.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 45 changed lines); news built-in DONE Part B fce32ce5
+DIVERGED	src/lib/csp.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 10 changed lines); ws:/wss: hunk (4d196adf) already in clean for Live Grid: KEEP
+DIVERGED	src/lib/dashboardsFile.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 36 changed lines); docks cases DONE Part C d751f573
+DIVERGED	src/lib/dashboardsFile.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 61 changed lines); pinned part: DOCK_EDGES not carried (PIN_EDGES in types.ts, Part A 924fbfc1); persistence via persistedCard (1973076b); docks hunks pending; docks DONE Part C d751f573 (+ storedDashboard/readStoredDashboard ffd835a8)
+DIVERGED	src/lib/plotly.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 72 changed lines)
+DIVERGED	src/lib/settingsBundle.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 31 changed lines); docks top-level member case DONE Part C 8da4487c
+DIVERGED	src/lib/types.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 39 changed lines); pinned hunk DONE Part A 924fbfc1 (PinEdge, PIN_EDGES, DashboardCard.pinned); News/docks hunks pending; NewsFeed, NewsCardState, card.news DONE Part B 9a8b2983; hidden, dockRows DONE Part C d751f573
+DIVERGED	src/lib/widgetTypes.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 1 changed lines); news type DONE Part B fce32ce5
+DIVERGED	src/lib/widgetTypes.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: APPLIES-CLEAN, 1 changed lines); news type DONE Part B fce32ce5
+DIVERGED	src/skills/build-dashboard/SKILL.md	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 2 changed lines); pin_card line DONE Part C 9f708d67
+DIVERGED	src/stores/dashboardStore.test.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 285 changed lines); pinCard cases DONE Part A 1973076b (+ copy/duplicate never pinned, non-active dashboard); News/docks pending; patchCardField news cases DONE Part B fce32ce5; docks cases DONE Part C in dashboardStore.docks.test.ts (3cf562a9, ffd835a8, 8da4487c)
+DIVERGED	src/stores/dashboardStore.ts	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 191 changed lines); pinCard DONE Part A 1973076b (mutateOwnerOfCard, revision bump; copies never pinned); News/docks hunks pending; patchCardField news DONE Part B fce32ce5; docks DONE Part C 3cf562a9 (+ applySyncedDocks ffd835a8, importDocks 8da4487c)
+DIVERGED	src/styles.css	shared	MERGE	3-way port, clean wins conflicts, v8 hunk re-applied (patch check: 3WAY-OK, 232 changed lines); card-dock, grips, .dashboard-scroll and maximize insets DONE Part A a5bfff5b; News/dock-band rules pending; News rail, strip, feed manager and .card-rail rules DONE Part B fce32ce5; dock band, editor, dock-editing DONE Part C 883f630f
+DIVERGED	package.json	version	MERGE	clean wins (BDOBB / com.artcashin.bdobb, own deps); only the 8.0.0 bump and any v8 dependency hunk; openbbDocker v3.0.1 -> openbq-docker branch commit cab61a982b6a892c598f19d829331f1331ca23d6 DONE web relay 2575de92 (donor's v8.0.3 is the other stack; R3); version bump still pending; 8.0.0 DONE release 9c92eefa; v7 rebuild merge 0ff3b8bd: v7 openbqDocker key kept, set to the same cab61a9 commit (provisional); v7 pivot scripts kept
+DIVERGED	src-tauri/Cargo.lock	version	MERGE	clean wins (BDOBB / com.artcashin.bdobb, own deps); only the 8.0.0 bump and any v8 dependency hunk; DONE release 9c92eefa (cargo metadata --offline)
+DIVERGED	src-tauri/Cargo.toml	version	MERGE	clean wins (BDOBB / com.artcashin.bdobb, own deps); only the 8.0.0 bump and any v8 dependency hunk; DONE release 9c92eefa
+DIVERGED	src-tauri/tauri.conf.json	version	MERGE	clean wins (BDOBB / com.artcashin.bdobb, own deps); only the 8.0.0 bump and any v8 dependency hunk; DONE release 9c92eefa

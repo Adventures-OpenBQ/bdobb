@@ -1,0 +1,48 @@
+[
+ {
+  "name": "R5G Valid Demo",
+  "description": "Synthetic Q3 and TTM cash flow; no provider key required.",
+  "allowCustomization": true,
+  "tabs": {
+   "cash": {
+    "id": "cash",
+    "name": "Cash flow",
+    "layout": [
+     {
+      "i": "synthetic_cash_flow",
+      "x": 0,
+      "y": 0,
+      "w": 40,
+      "h": 22,
+      "state": {
+       "params": {}
+      }
+     }
+    ]
+   }
+  },
+  "extensions": {
+   "bdobb": {
+    "schemaVersion": 1,
+    "profile": "v5",
+    "base": {
+     "schemaVersion": 1,
+     "profile": "v3",
+     "tabOrder": [
+      "cash"
+     ]
+    },
+    "cards": [
+     {
+      "tab": "cash",
+      "index": 0,
+      "view": "statement",
+      "statement": {
+       "collapsed": []
+      }
+     }
+    ]
+   }
+  }
+ }
+]

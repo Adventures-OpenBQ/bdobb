@@ -1,0 +1,1224 @@
+{
+ "initialize": {
+  "status": 200,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "text/event-stream",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+     "protocolVersion": "2025-06-18",
+     "capabilities": {
+      "logging": {},
+      "prompts": {
+       "listChanged": true
+      },
+      "resources": {
+       "subscribe": false,
+       "listChanged": true
+      },
+      "tools": {
+       "listChanged": true
+      }
+     },
+     "serverInfo": {
+      "name": "OpenBB MCP",
+      "version": "4.0.11"
+     }
+    }
+   }
+  ]
+ },
+ "initialized_notification": {
+  "status": 202,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "application/json",
+  "messages": []
+ },
+ "tools_list": {
+  "status": 200,
+  "count": 10,
+  "names": [
+   "available_categories",
+   "available_tools",
+   "run_pipeline",
+   "install_skill",
+   "search_tools",
+   "call_tool",
+   "list_prompts",
+   "get_prompt",
+   "list_resources",
+   "read_resource"
+  ],
+  "schemas_ok": true
+ },
+ "tools_full": [
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": [
+      "admin"
+     ]
+    }
+   },
+   "description": "List available tool categories and subcategories with tool counts.",
+   "inputSchema": {
+    "properties": {},
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "available_categories",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "items": {
+       "description": "Metadata for a category of tools.",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "subcategories": {
+         "items": {
+          "description": "Metadata for a tool subcategory.",
+          "properties": {
+           "name": {
+            "type": "string"
+           },
+           "tool_count": {
+            "type": "integer"
+           }
+          },
+          "required": [
+           "name",
+           "tool_count"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "total_tools": {
+         "type": "integer"
+        }
+       },
+       "required": [
+        "name",
+        "subcategories",
+        "total_tools"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "Available Categories"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": [
+      "admin"
+     ]
+    }
+   },
+   "description": "List the tools in a category; get their parameters with search_tools and run them with call_tool.",
+   "inputSchema": {
+    "properties": {
+     "category": {
+      "description": "The category of tools to list",
+      "type": "string"
+     },
+     "subcategory": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Optional subcategory to filter by. Use 'general' for tools directly under the category."
+     }
+    },
+    "required": [
+     "category"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "available_tools",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "items": {
+       "description": "Information about a single tool.",
+       "properties": {
+        "name": {
+         "type": "string"
+        },
+        "description": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "name",
+        "description"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "Available Tools"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": [
+      "admin"
+     ]
+    }
+   },
+   "description": "Run tools in sequence on the server, feeding the `results` of earlier steps (their whole output when they have none) into the arguments of later ones, so data such as a price history never passes through the conversation. Use it to chain a data tool into a data-processing tool (technical, quantitative, econometrics), which takes its input rows as `data`. Each step names a `tool`, its `arguments`, an optional `id`, and `inputs` mapping argument names to earlier step ids. Returns the output of the last step, or of the steps listed in `outputs`, keyed by step id (or position). Example: steps=[{\"id\": \"prices\", \"tool\": \"equity_price_historical\", \"arguments\": {\"symbol\": \"AAPL\", \"provider\": \"yfinance\"}}, {\"tool\": \"technical_rsi\", \"arguments\": {\"length\": 14}, \"inputs\": {\"data\": \"prices\"}}].",
+   "inputSchema": {
+    "properties": {
+     "steps": {
+      "description": "The tool calls to run, in order.",
+      "items": {
+       "description": "One tool call in a ``run_pipeline`` request.",
+       "properties": {
+        "id": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "default": null,
+         "description": "Name later steps use in ``inputs`` to refer to this step."
+        },
+        "tool": {
+         "description": "Name of the tool to call.",
+         "type": "string"
+        },
+        "arguments": {
+         "additionalProperties": true,
+         "description": "Arguments passed to the tool.",
+         "type": "object"
+        },
+        "inputs": {
+         "additionalProperties": {
+          "type": "string"
+         },
+         "description": "Maps an argument name to the ``id`` of an earlier step whose ``results`` fill it, e.g. ``{\"data\": \"prices\"}``.",
+         "type": "object"
+        }
+       },
+       "required": [
+        "tool"
+       ],
+       "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+     },
+     "outputs": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Ids (or positions) of the steps whose outputs are returned. Defaults to the last step."
+     }
+    },
+    "required": [
+     "steps"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "run_pipeline",
+   "outputSchema": {
+    "type": "object",
+    "additionalProperties": true
+   },
+   "title": "Run Pipeline"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": [
+      "admin",
+      "resource"
+     ]
+    }
+   },
+   "description": "Install a skill (SKILL.md plus supporting files) and make it readable via list_resources and read_resource.",
+   "inputSchema": {
+    "properties": {
+     "skill_name": {
+      "description": "Name of the skill (used as the directory name): lowercase letters, digits, underscores, and hyphens.",
+      "type": "string"
+     },
+     "files": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "description": "Dictionary of filename -> content for the skill directory. Filenames are relative paths inside the skill directory. Must include 'SKILL.md' as the main file. May include supporting files such as templates, examples, or configuration snippets (e.g. 'pyproject.toml.template', 'example.py').",
+      "type": "object"
+     },
+     "target": {
+      "default": "bundled",
+      "description": "Target skills provider to install into. Use 'bundled' for the server's built-in skills directory, or a vendor name: 'claude', 'cursor', 'vscode', 'copilot', 'codex', 'gemini', 'goose', 'opencode'.",
+      "type": "string"
+     }
+    },
+    "required": [
+     "skill_name",
+     "files"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "install_skill",
+   "outputSchema": {
+    "type": "object",
+    "additionalProperties": true
+   },
+   "title": "Install Skill"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "description": "Search for tools using natural language.\n\nReturns matching tool definitions ranked by relevance,\nin the same format as list_tools.",
+   "inputSchema": {
+    "properties": {
+     "query": {
+      "description": "Natural language query to search for tools",
+      "type": "string"
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "search_tools",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        "type": "array"
+       }
+      ]
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "Search Tools"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "description": "Call a tool by name with the given arguments.\n\nUse this to execute tools discovered via search_tools.",
+   "inputSchema": {
+    "properties": {
+     "name": {
+      "description": "The name of the tool to call",
+      "type": "string"
+     },
+     "arguments": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Arguments to pass to the tool"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "call_tool",
+   "title": "Call Tool"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "description": "List all available prompts.\n\nReturns JSON with prompt metadata including name, description,\nand optional arguments.",
+   "inputSchema": {
+    "properties": {},
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "list_prompts",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "List Prompts"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "description": "Get a prompt by name with optional arguments.\n\nReturns the rendered prompt as JSON with a messages array.\nArguments should be provided as a dict mapping argument names\nto values.",
+   "inputSchema": {
+    "properties": {
+     "name": {
+      "description": "The name of the prompt to get",
+      "type": "string"
+     },
+     "arguments": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Optional arguments for the prompt"
+     }
+    },
+    "required": [
+     "name"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "get_prompt",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "Get Prompt"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "description": "List all available resources and resource templates.\n\nReturns JSON with resource metadata. Static resources have a\n'uri' field, while templates have a 'uri_template' field with\nplaceholders like {name}.",
+   "inputSchema": {
+    "properties": {},
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "list_resources",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "List Resources"
+  },
+  {
+   "_meta": {
+    "fastmcp": {
+     "tags": []
+    }
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "description": "Read a resource by its URI.\n\nFor static resources, provide the exact URI. For templated\nresources, provide the URI with template parameters filled in.\n\nReturns the resource content as a string. Binary content is\nbase64-encoded.",
+   "inputSchema": {
+    "properties": {
+     "uri": {
+      "description": "The URI of the resource to read",
+      "type": "string"
+     }
+    },
+    "required": [
+     "uri"
+    ],
+    "type": "object",
+    "additionalProperties": false
+   },
+   "name": "read_resource",
+   "outputSchema": {
+    "properties": {
+     "result": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "result"
+    ],
+    "type": "object",
+    "x-fastmcp-wrap-result": true
+   },
+   "title": "Read Resource"
+  }
+ ],
+ "session_reuse_second_list": {
+  "status": 200,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "text/event-stream"
+ },
+ "stale_session": {
+  "status": 404,
+  "session": null,
+  "ctype": "application/json",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+     "code": -32600,
+     "message": "Session not found"
+    }
+   }
+  ]
+ },
+ "no_session": {
+  "status": 400,
+  "session": "5c36e9d7ac9a479c9ac5cd075708ef6d",
+  "ctype": "application/json",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+     "code": -32600,
+     "message": "Bad Request: Missing session ID"
+    }
+   }
+  ]
+ },
+ "category_tool": "available_categories",
+ "categories_call": {
+  "status": 200,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "text/event-stream",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": 10,
+    "result": {
+     "_meta": {
+      "fastmcp": {
+       "wrap_result": true
+      }
+     },
+     "content": [
+      {
+       "text": "[{\"name\":\"bls\",\"subcategories\":[{\"name\":\"cpi\",\"tool_count\":16},{\"name\":\"employment_situation\",\"tool_count\":31},{\"name\":\"general\",\"tool_count\":3},{\"name\":\"import_export\",\"tool_count\":7},{\"name\":\"jolts\",\"tool_count\":10},{\"name\":\"ppi\",\"tool_count\":14},{\"name\":\"productivity\",\"tool_count\":29},{\"name\":\"real_earnings\",\"tool_count\":1}],\"total_tools\":111},{\"name\":\"calendar\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":2}],\"total_tools\":2},{\"name\":\"cboe\",\"subcategories\":[{\"name\":\"equity\",\"tool_count\":4},{\"name\":\"futures\",\"tool_count\":3},{\"name\":\"index\",\"tool_count\":10},{\"name\":\"options\",\"tool_count\":11}],\"total_tools\":28},{\"name\":\"cftc\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":19}],\"total_tools\":19},{\"name\":\"deribit\",\"subcategories\":[{\"name\":\"futures\",\"tool_count\":6},{\"name\":\"index\",\"tool_count\":3},{\"name\":\"market\",\"tool_count\":7},{\"name\":\"options\",\"tool_count\":14},{\"name\":\"rates\",\"tool_count\":4},{\"name\":\"reference\",\"tool_count\":12},{\"name\":\"volatility\",\"tool_count\":2}],\"total_tools\":48},{\"name\":\"ecb\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":22}],\"total_tools\":22},{\"name\":\"econometrics\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":21}],\"total_tools\":21},{\"name\":\"eia\",\"subcategories\":[{\"name\":\"coal\",\"tool_count\":13},{\"name\":\"densified_biomass\",\"tool_count\":8},{\"name\":\"electricity\",\"tool_count\":4},{\"name\":\"electricity_grid\",\"tool_count\":4},{\"name\":\"general\",\"tool_count\":22},{\"name\":\"natural_gas\",\"tool_count\":53},{\"name\":\"nuclear_outages\",\"tool_count\":3},{\"name\":\"petroleum\",\"tool_count\":105},{\"name\":\"state_electricity_profiles\",\"tool_count\":7}],\"total_tools\":219},{\"name\":\"famafrench\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":6}],\"total_tools\":6},{\"name\":\"federal_reserve\",\"subcategories\":[{\"name\":\"atlanta\",\"tool_count\":11},{\"name\":\"boston\",\"tool_count\":3},{\"name\":\"chicago\",\"tool_count\":12},{\"name\":\"cleveland\",\"tool_count\":7},{\"name\":\"dallas\",\"tool_count\":17},{\"name\":\"ffiec\",\"tool_count\":18},{\"name\":\"general\",\"tool_count\":11},{\"name\":\"kc\",\"tool_count\":13},{\"name\":\"minneapolis\",\"tool_count\":11},{\"name\":\"ny\",\"tool_count\":22},{\"name\":\"philadelphia\",\"tool_count\":12},{\"name\":\"richmond\",\"tool_count\":8},{\"name\":\"sf\",\"tool_count\":9},{\"name\":\"stl\",\"tool_count\":5}],\"total_tools\":159},{\"name\":\"finra\",\"subcategories\":[{\"name\":\"equity\",\"tool_count\":5},{\"name\":\"fixedincome\",\"tool_count\":3}],\"total_tools\":8},{\"name\":\"fred\",\"subcategories\":[{\"name\":\"commodity\",\"tool_count\":1},{\"name\":\"economy\",\"tool_count\":16},{\"name\":\"fixedincome\",\"tool_count\":20}],\"total_tools\":37},{\"name\":\"imf\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":18},{\"name\":\"portwatch\",\"tool_count\":11}],\"total_tools\":29},{\"name\":\"jodi\",\"subcategories\":[{\"name\":\"gas\",\"tool_count\":6},{\"name\":\"oil\",\"tool_count\":7}],\"total_tools\":13},{\"name\":\"nasdaq\",\"subcategories\":[{\"name\":\"crypto\",\"tool_count\":1},{\"name\":\"economy\",\"tool_count\":1},{\"name\":\"equity\",\"tool_count\":25},{\"name\":\"etf\",\"tool_count\":6},{\"name\":\"index\",\"tool_count\":4},{\"name\":\"markets\",\"tool_count\":4},{\"name\":\"nordic\",\"tool_count\":16},{\"name\":\"options\",\"tool_count\":1}],\"total_tools\":58},{\"name\":\"news\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":4}],\"total_tools\":4},{\"name\":\"oecd\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":23}],\"total_tools\":23},{\"name\":\"quantitative\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":7},{\"name\":\"performance\",\"tool_count\":3},{\"name\":\"rolling\",\"tool_count\":7},{\"name\":\"stats\",\"tool_count\":6}],\"total_tools\":23},{\"name\":\"sec\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":40}],\"total_tools\":40},{\"name\":\"technical\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":53},{\"name\":\"signals\",\"tool_count\":6}],\"total_tools\":59},{\"name\":\"tmx\",\"subcategories\":[{\"name\":\"currency\",\"tool_count\":1},{\"name\":\"derivatives\",\"tool_count\":8},{\"name\":\"equity\",\"tool_count\":25},{\"name\":\"etf\",\"tool_count\":7},{\"name\":\"fixedincome\",\"tool_count\":3},{\"name\":\"index\",\"tool_count\":8},{\"name\":\"markets\",\"tool_count\":3},{\"name\":\"news\",\"tool_count\":4}],\"total_tools\":59},{\"name\":\"uscongress\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":29}],\"total_tools\":29},{\"name\":\"usda\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":109}],\"total_tools\":109},{\"name\":\"ustreasury\",\"subcategories\":[{\"name\":\"general\",\"tool_count\":21}],\"total_tools\":21},{\"name\":\"yfinance\",\"subcategories\":[{\"name\":\"calendar\",\"tool_count\":2},{\"name\":\"corporate_actions\",\"tool_count\":4},{\"name\":\"crypto\",\"tool_count\":1},{\"name\":\"currency\",\"tool_count\":1},{\"name\":\"equity\",\"tool_count\":9},{\"name\":\"estimates\",\"tool_count\":10},{\"name\":\"etf\",\"tool_count\":1},{\"name\":\"fundamental\",\"tool_count\":4},{\"name\":\"funds\",\"tool_count\":9},{\"name\":\"futures\",\"tool_count\":1},{\"name\":\"index\",\"tool_count\":1},{\"name\":\"industry\",\"tool_count\":5},{\"name\":\"market\",\"tool_count\":2},{\"name\":\"news\",\"tool_count\":1},{\"name\":\"options\",\"tool_count\":2},{\"name\":\"ownership\",\"tool_count\":6},{\"name\":\"screening\",\"tool_count\":1},{\"name\":\"search\",\"tool_count\":2},{\"name\":\"sector\",\"tool_count\":6}],\"total_tools\":68}]",
+       "type": "text"
+      }
+     ],
+     "isError": false,
+     "structuredContent": {
+      "result": [
+       {
+        "name": "bls",
+        "subcategories": [
+         {
+          "name": "cpi",
+          "tool_count": 16
+         },
+         {
+          "name": "employment_situation",
+          "tool_count": 31
+         },
+         {
+          "name": "general",
+          "tool_count": 3
+         },
+         {
+          "name": "import_export",
+          "tool_count": 7
+         },
+         {
+          "name": "jolts",
+          "tool_count": 10
+         },
+         {
+          "name": "ppi",
+          "tool_count": 14
+         },
+         {
+          "name": "productivity",
+          "tool_count": 29
+         },
+         {
+          "name": "real_earnings",
+          "tool_count": 1
+         }
+        ],
+        "total_tools": 111
+       },
+       {
+        "name": "calendar",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 2
+         }
+        ],
+        "total_tools": 2
+       },
+       {
+        "name": "cboe",
+        "subcategories": [
+         {
+          "name": "equity",
+          "tool_count": 4
+         },
+         {
+          "name": "futures",
+          "tool_count": 3
+         },
+         {
+          "name": "index",
+          "tool_count": 10
+         },
+         {
+          "name": "options",
+          "tool_count": 11
+         }
+        ],
+        "total_tools": 28
+       },
+       {
+        "name": "cftc",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 19
+         }
+        ],
+        "total_tools": 19
+       },
+       {
+        "name": "deribit",
+        "subcategories": [
+         {
+          "name": "futures",
+          "tool_count": 6
+         },
+         {
+          "name": "index",
+          "tool_count": 3
+         },
+         {
+          "name": "market",
+          "tool_count": 7
+         },
+         {
+          "name": "options",
+          "tool_count": 14
+         },
+         {
+          "name": "rates",
+          "tool_count": 4
+         },
+         {
+          "name": "reference",
+          "tool_count": 12
+         },
+         {
+          "name": "volatility",
+          "tool_count": 2
+         }
+        ],
+        "total_tools": 48
+       },
+       {
+        "name": "ecb",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 22
+         }
+        ],
+        "total_tools": 22
+       },
+       {
+        "name": "econometrics",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 21
+         }
+        ],
+        "total_tools": 21
+       },
+       {
+        "name": "eia",
+        "subcategories": [
+         {
+          "name": "coal",
+          "tool_count": 13
+         },
+         {
+          "name": "densified_biomass",
+          "tool_count": 8
+         },
+         {
+          "name": "electricity",
+          "tool_count": 4
+         },
+         {
+          "name": "electricity_grid",
+          "tool_count": 4
+         },
+         {
+          "name": "general",
+          "tool_count": 22
+         },
+         {
+          "name": "natural_gas",
+          "tool_count": 53
+         },
+         {
+          "name": "nuclear_outages",
+          "tool_count": 3
+         },
+         {
+          "name": "petroleum",
+          "tool_count": 105
+         },
+         {
+          "name": "state_electricity_profiles",
+          "tool_count": 7
+         }
+        ],
+        "total_tools": 219
+       },
+       {
+        "name": "famafrench",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 6
+         }
+        ],
+        "total_tools": 6
+       },
+       {
+        "name": "federal_reserve",
+        "subcategories": [
+         {
+          "name": "atlanta",
+          "tool_count": 11
+         },
+         {
+          "name": "boston",
+          "tool_count": 3
+         },
+         {
+          "name": "chicago",
+          "tool_count": 12
+         },
+         {
+          "name": "cleveland",
+          "tool_count": 7
+         },
+         {
+          "name": "dallas",
+          "tool_count": 17
+         },
+         {
+          "name": "ffiec",
+          "tool_count": 18
+         },
+         {
+          "name": "general",
+          "tool_count": 11
+         },
+         {
+          "name": "kc",
+          "tool_count": 13
+         },
+         {
+          "name": "minneapolis",
+          "tool_count": 11
+         },
+         {
+          "name": "ny",
+          "tool_count": 22
+         },
+         {
+          "name": "philadelphia",
+          "tool_count": 12
+         },
+         {
+          "name": "richmond",
+          "tool_count": 8
+         },
+         {
+          "name": "sf",
+          "tool_count": 9
+         },
+         {
+          "name": "stl",
+          "tool_count": 5
+         }
+        ],
+        "total_tools": 159
+       },
+       {
+        "name": "finra",
+        "subcategories": [
+         {
+          "name": "equity",
+          "tool_count": 5
+         },
+         {
+          "name": "fixedincome",
+          "tool_count": 3
+         }
+        ],
+        "total_tools": 8
+       },
+       {
+        "name": "fred",
+        "subcategories": [
+         {
+          "name": "commodity",
+          "tool_count": 1
+         },
+         {
+          "name": "economy",
+          "tool_count": 16
+         },
+         {
+          "name": "fixedincome",
+          "tool_count": 20
+         }
+        ],
+        "total_tools": 37
+       },
+       {
+        "name": "imf",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 18
+         },
+         {
+          "name": "portwatch",
+          "tool_count": 11
+         }
+        ],
+        "total_tools": 29
+       },
+       {
+        "name": "jodi",
+        "subcategories": [
+         {
+          "name": "gas",
+          "tool_count": 6
+         },
+         {
+          "name": "oil",
+          "tool_count": 7
+         }
+        ],
+        "total_tools": 13
+       },
+       {
+        "name": "nasdaq",
+        "subcategories": [
+         {
+          "name": "crypto",
+          "tool_count": 1
+         },
+         {
+          "name": "economy",
+          "tool_count": 1
+         },
+         {
+          "name": "equity",
+          "tool_count": 25
+         },
+         {
+          "name": "etf",
+          "tool_count": 6
+         },
+         {
+          "name": "index",
+          "tool_count": 4
+         },
+         {
+          "name": "markets",
+          "tool_count": 4
+         },
+         {
+          "name": "nordic",
+          "tool_count": 16
+         },
+         {
+          "name": "options",
+          "tool_count": 1
+         }
+        ],
+        "total_tools": 58
+       },
+       {
+        "name": "news",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 4
+         }
+        ],
+        "total_tools": 4
+       },
+       {
+        "name": "oecd",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 23
+         }
+        ],
+        "total_tools": 23
+       },
+       {
+        "name": "quantitative",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 7
+         },
+         {
+          "name": "performance",
+          "tool_count": 3
+         },
+         {
+          "name": "rolling",
+          "tool_count": 7
+         },
+         {
+          "name": "stats",
+          "tool_count": 6
+         }
+        ],
+        "total_tools": 23
+       },
+       {
+        "name": "sec",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 40
+         }
+        ],
+        "total_tools": 40
+       },
+       {
+        "name": "technical",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 53
+         },
+         {
+          "name": "signals",
+          "tool_count": 6
+         }
+        ],
+        "total_tools": 59
+       },
+       {
+        "name": "tmx",
+        "subcategories": [
+         {
+          "name": "currency",
+          "tool_count": 1
+         },
+         {
+          "name": "derivatives",
+          "tool_count": 8
+         },
+         {
+          "name": "equity",
+          "tool_count": 25
+         },
+         {
+          "name": "etf",
+          "tool_count": 7
+         },
+         {
+          "name": "fixedincome",
+          "tool_count": 3
+         },
+         {
+          "name": "index",
+          "tool_count": 8
+         },
+         {
+          "name": "markets",
+          "tool_count": 3
+         },
+         {
+          "name": "news",
+          "tool_count": 4
+         }
+        ],
+        "total_tools": 59
+       },
+       {
+        "name": "uscongress",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 29
+         }
+        ],
+        "total_tools": 29
+       },
+       {
+        "name": "usda",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 109
+         }
+        ],
+        "total_tools": 109
+       },
+       {
+        "name": "ustreasury",
+        "subcategories": [
+         {
+          "name": "general",
+          "tool_count": 21
+         }
+        ],
+        "total_tools": 21
+       },
+       {
+        "name": "yfinance",
+        "subcategories": [
+         {
+          "name": "calendar",
+          "tool_count": 2
+         },
+         {
+          "name": "corporate_actions",
+          "tool_count": 4
+         },
+         {
+          "name": "crypto",
+          "tool_count": 1
+         },
+         {
+          "name": "currency",
+          "tool_count": 1
+         },
+         {
+          "name": "equity",
+          "tool_count": 9
+         },
+         {
+          "name": "estimates",
+          "tool_count": 10
+         },
+         {
+          "name": "etf",
+          "tool_count": 1
+         },
+         {
+          "name": "fundamental",
+          "tool_count": 4
+         },
+         {
+          "name": "funds",
+          "tool_count": 9
+         },
+         {
+          "name": "futures",
+          "tool_count": 1
+         },
+         {
+          "name": "index",
+          "tool_count": 1
+         },
+         {
+          "name": "industry",
+          "tool_count": 5
+         },
+         {
+          "name": "market",
+          "tool_count": 2
+         },
+         {
+          "name": "news",
+          "tool_count": 1
+         },
+         {
+          "name": "options",
+          "tool_count": 2
+         },
+         {
+          "name": "ownership",
+          "tool_count": 6
+         },
+         {
+          "name": "screening",
+          "tool_count": 1
+         },
+         {
+          "name": "search",
+          "tool_count": 2
+         },
+         {
+          "name": "sector",
+          "tool_count": 6
+         }
+        ],
+        "total_tools": 68
+       }
+      ]
+     }
+    }
+   }
+  ]
+ },
+ "calendar_tools": [],
+ "unknown_tool": {
+  "status": 200,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "text/event-stream",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": 11,
+    "result": {
+     "content": [
+      {
+       "text": "Unknown tool: 'no_such_tool_xyz'",
+       "type": "text"
+      }
+     ],
+     "isError": true
+    }
+   }
+  ]
+ },
+ "bad_arguments": {
+  "tool": "available_tools",
+  "result": {
+   "status": 200,
+   "session": "59321801db174d5790c90947f50f2b32",
+   "ctype": "text/event-stream",
+   "messages": [
+    {
+     "jsonrpc": "2.0",
+     "id": 12,
+     "result": {
+      "content": [
+       {
+        "text": "2 validation errors for call[available_tools]\ncategory\n  Missing required argument [type=missing_argument, input_value={'__bogus__': 1}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing_argument\n__bogus__\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value=1, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.13/v/unexpected_keyword_argument",
+        "type": "text"
+       }
+      ],
+      "isError": true
+     }
+    }
+   ]
+  }
+ },
+ "malformed_jsonrpc": {
+  "status": 400,
+  "session": "59321801db174d5790c90947f50f2b32",
+  "ctype": "application/json",
+  "messages": [
+   {
+    "jsonrpc": "2.0",
+    "id": null,
+    "error": {
+     "code": -32700,
+     "message": "Parse error: key must be a string at line 1 column 2"
+    }
+   }
+  ]
+ }
+}

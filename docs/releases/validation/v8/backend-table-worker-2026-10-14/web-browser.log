@@ -1,0 +1,5 @@
+
+> bdobb@8.0.0 test:web:browser <worktree>
+> node web/browser-smoke.mjs
+
+PASS: HTTPS login form, private assets, forwarded /api catalogue, seeded built-ins dashboard, per-user state saved + reseeded on reload, the News card's wire over a ticketed gateway socket plus its /news/api/news seed, the ticket route refusing every other target, lapsed session goes to sign-in, CSRF logout, mobile login; no external requests.

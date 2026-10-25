@@ -1,0 +1,122 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/lib/agent/execute.test.ts (45 tests | 1 failed | 44 skipped) 7ms
+   × makeWidgetDataFetcher > drops input_args keys the widget does not declare 7ms
+     → expected "spy" to be called with arguments: [ { id: 'reference', …(4) }, …(4) ]
+
+Received: 
+
+  1st spy call:
+
+  Array [
+    Object {
+      "authLocation": "header",
+      "baseUrl": "http://x/",
+      "id": "reference",
+      "name": "Reference",
+      "validateWidgets": false,
+    },
+    Object {
+      "backendId": "reference",
+      "category": "Equity",
+      "description": "Daily OHLC",
+      "endpoint": "/historical",
+      "gridData": Object {
+        "h": 9,
+        "w": 20,
+      },
+      "id": "historical_prices",
+      "name": "Historical Prices",
+      "params": Array [
+        Object {
+          "description": "Ticker",
+          "label": "Symbol",
+          "paramName": "symbol",
+          "value": "SPY",
+        },
+      ],
+      "source": Array [],
+      "subCategory": "",
+      "type": "table",
+    },
+    Object {
++     "api_key": "x",
++     "callback": "https://evil",
+      "symbol": "MSFT",
+    },
+    undefined,
+    AbortSignal {},
+  ]
+
+
+Number of calls: 1
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/agent/execute.test.ts > makeWidgetDataFetcher > drops input_args keys the widget does not declare
+AssertionError: expected "spy" to be called with arguments: [ { id: 'reference', …(4) }, …(4) ]
+
+Received: 
+
+  1st spy call:
+
+  Array [
+    Object {
+      "authLocation": "header",
+      "baseUrl": "http://x/",
+      "id": "reference",
+      "name": "Reference",
+      "validateWidgets": false,
+    },
+    Object {
+      "backendId": "reference",
+      "category": "Equity",
+      "description": "Daily OHLC",
+      "endpoint": "/historical",
+      "gridData": Object {
+        "h": 9,
+        "w": 20,
+      },
+      "id": "historical_prices",
+      "name": "Historical Prices",
+      "params": Array [
+        Object {
+          "description": "Ticker",
+          "label": "Symbol",
+          "paramName": "symbol",
+          "value": "SPY",
+        },
+      ],
+      "source": Array [],
+      "subCategory": "",
+      "type": "table",
+    },
+    Object {
++     "api_key": "x",
++     "callback": "https://evil",
+      "symbol": "MSFT",
+    },
+    undefined,
+    AbortSignal {},
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/lib/agent/execute.test.ts:131:23
+    129|     const fetcher = makeWidgetDataFetcher({ cards, backends, findWidge…
+    130|     const result = await fetcher({ ...source, input_args: { symbol: "M…
+    131|     expect(fetchData).toHaveBeenCalledWith(backends[0], prices, { symb…
+       |                       ^
+    132|     expect(result.url).toBe("http://x/historical?symbol=MSFT");
+    133|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 44 skipped (45)
+   Start at  12:44:26
+   Duration  1.89s (transform 590ms, setup 237ms, collect 797ms, tests 7ms, environment 402ms, prepare 56ms)
+

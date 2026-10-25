@@ -1,0 +1,15 @@
+
+> bdobb@6.0.0 test:workspace <worktree>
+> WORKSPACE_TEST=1 vitest run src/test/integration/workspace-login.test.ts
+
+
+ RUN  v2.1.9 <worktree>
+
+ ✓ src/test/integration/workspace-login.test.ts (1 test) 563ms
+   ✓ Workspace sign-in against a self-hosted server (bdobb#9) > signs in from POST /pro/login alone, stages the account's settings, and stores no secret 562ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  15:20:23
+   Duration  1.44s (transform 195ms, setup 92ms, collect 254ms, tests 563ms, environment 192ms, prepare 55ms)
+

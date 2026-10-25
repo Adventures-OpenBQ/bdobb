@@ -1,0 +1,327 @@
+
+> bdobb@10.0.0 test:web <worktree>
+> node --test web/*.test.mjs
+
+TAP version 13
+# Subtest: reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin
+ok 1 - reference-demo Dockerfile defaults REF_BACKEND_REF to ci.yml's 40-hex pin
+  ---
+  duration_ms: 1.142295
+  type: 'test'
+  ...
+# Subtest: reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA
+ok 2 - reference-demo Dockerfile fetches the ref, because git clone --branch rejects a SHA
+  ---
+  duration_ms: 0.328913
+  type: 'test'
+  ...
+# Subtest: configuration: empty allowlist grants nobody, malformed config fails closed
+ok 3 - configuration: empty allowlist grants nobody, malformed config fails closed
+  ---
+  duration_ms: 4.501569
+  type: 'test'
+  ...
+# Subtest: an unconfigured server answers 503 and logs which variable failed
+ok 4 - an unconfigured server answers 503 and logs which variable failed
+  ---
+  duration_ms: 26.732701
+  type: 'test'
+  ...
+# Subtest: GitHub callbacks bind admission to immutable provider ID and never expose tokens
+ok 5 - GitHub callbacks bind admission to immutable provider ID and never expose tokens
+  ---
+  duration_ms: 0.764788
+  type: 'test'
+  ...
+# Subtest: encrypted sessions require valid cookie, current ID, epoch and strict expiry
+ok 6 - encrypted sessions require valid cookie, current ID, epoch and strict expiry
+  ---
+  duration_ms: 56.336753
+  type: 'test'
+  ...
+# Subtest: path and parameter allowlist blocks writes, admin surfaces and URL injection
+ok 7 - path and parameter allowlist blocks writes, admin surfaces and URL injection
+  ---
+  duration_ms: 2.779956
+  type: 'test'
+  ...
+# Subtest: the /api root documents are forwarded; nothing else at the /api root is
+ok 8 - the /api root documents are forwarded; nothing else at the /api root is
+  ---
+  duration_ms: 0.81473
+  type: 'test'
+  ...
+# Subtest: calendar/trading keeps its own narrow grammar, matched before the generic rule
+ok 9 - calendar/trading keeps its own narrow grammar, matched before the generic rule
+  ---
+  duration_ms: 1.05978
+  type: 'test'
+  ...
+# Subtest: the policy serves no /ai family: Rita is not a route of openbq-docker (R3a)
+ok 10 - the policy serves no /ai family: Rita is not a route of openbq-docker (R3a)
+  ---
+  duration_ms: 0.486235
+  type: 'test'
+  ...
+# Subtest: the generic api/v1 rule admits the whole catalogue inside structural bounds
+ok 11 - the generic api/v1 rule admits the whole catalogue inside structural bounds
+  ---
+  duration_ms: 1.676855
+  type: 'test'
+  ...
+# Subtest: News subscriptions strip renames and refuse arbitrary feeds or control frames
+ok 12 - News subscriptions strip renames and refuse arbitrary feeds or control frames
+  ---
+  duration_ms: 0.994756
+  type: 'test'
+  ...
+# Subtest: bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend
+ok 13 - bootstrap contains only same-origin routes, never server configuration or credentials, and needs no backend
+  ---
+  duration_ms: 1.032537
+  type: 'test'
+  ...
+# Subtest: anonymous visitors see login, not UI, metadata, JavaScript or data
+ok 14 - anonymous visitors see login, not UI, metadata, JavaScript or data
+  ---
+  duration_ms: 34.698038
+  type: 'test'
+  ...
+# Subtest: authorized files work; aliases, traversal, source maps, cross-origin and writes fail
+ok 15 - authorized files work; aliases, traversal, source maps, cross-origin and writes fail
+  ---
+  duration_ms: 46.580696
+  type: 'test'
+  ...
+# Subtest: a top-level cross-site navigation is the OAuth landing, not a forgeable request
+ok 16 - a top-level cross-site navigation is the OAuth landing, not a forgeable request
+  ---
+  duration_ms: 31.033214
+  type: 'test'
+  ...
+# Subtest: empty allowlist cannot start OAuth or accept even a correctly signed session
+ok 17 - empty allowlist cannot start OAuth or accept even a correctly signed session
+  ---
+  duration_ms: 15.109713
+  type: 'test'
+  ...
+# Preview authentication failed
+# Subtest: Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth
+ok 18 - Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAuth
+  ---
+  duration_ms: 21.108314
+  type: 'test'
+  ...
+# Subtest: valid CSRF sign-out expires the browser session cookie
+ok 19 - valid CSRF sign-out expires the browser session cookie
+  ---
+  duration_ms: 15.463819
+  type: 'test'
+  ...
+# Subtest: proxy uses dedicated server token, bounded fetch, and never forwards browser credentials
+ok 20 - proxy uses dedicated server token, bounded fetch, and never forwards browser credentials
+  ---
+  duration_ms: 14.515352
+  type: 'test'
+  ...
+# Subtest: unconfigured upstream, error bodies and unexpected content fail closed
+ok 21 - unconfigured upstream, error bodies and unexpected content fail closed
+  ---
+  duration_ms: 45.997635
+  type: 'test'
+  ...
+# Subtest: News upgrade authenticates cookies, exact Origin, exact path, no query token
+ok 22 - News upgrade authenticates cookies, exact Origin, exact path, no query token
+  ---
+  duration_ms: 44.658404
+  type: 'test'
+  ...
+# Subtest: the News upgrade is 503 without a gateway or without approved feeds
+ok 23 - the News upgrade is 503 without a gateway or without approved feeds
+  ---
+  duration_ms: 18.6233
+  type: 'test'
+  ...
+# Subtest: the upgrade path never grants a navigation-shaped exemption; it only trusts Origin
+ok 24 - the upgrade path never grants a navigation-shaped exemption; it only trusts Origin
+  ---
+  duration_ms: 7.085647
+  type: 'test'
+  ...
+# Subtest: News relays approved subscription and text, with no arbitrary client frame forwarding
+ok 25 - News relays approved subscription and text, with no arbitrary client frame forwarding
+  ---
+  duration_ms: 15.609319
+  type: 'test'
+  ...
+# Subtest: a News client whose one frame is not a subscription is closed, and nothing is forwarded
+ok 26 - a News client whose one frame is not a subscription is closed, and nothing is forwarded
+  ---
+  duration_ms: 41.29108
+  type: 'test'
+  ...
+# Subtest: only the exact branding allowlist is public; nothing rides along with it
+ok 27 - only the exact branding allowlist is public; nothing rides along with it
+  ---
+  duration_ms: 56.63093
+  type: 'test'
+  ...
+# Subtest: the login surface carries the axes mark and installation icon links
+ok 28 - the login surface carries the axes mark and installation icon links
+  ---
+  duration_ms: 6.484809
+  type: 'test'
+  ...
+# Subtest: branding assets retain their MIME types for authenticated requests too
+ok 29 - branding assets retain their MIME types for authenticated requests too
+  ---
+  duration_ms: 7.585448
+  type: 'test'
+  ...
+# Subtest: the /api root documents come from openbb-api, not from this process
+ok 30 - the /api root documents come from openbb-api, not from this process
+  ---
+  duration_ms: 11.451478
+  type: 'test'
+  ...
+# Subtest: a full-catalogue widgets.json fits the body cap; one past it is an honest 502
+ok 31 - a full-catalogue widgets.json fits the body cap; one past it is an honest 502
+  ---
+  duration_ms: 53.121082
+  type: 'test'
+  ...
+# Subtest: a socket ticket binds one target, expires, and needs the gateway token
+ok 32 - a socket ticket binds one target, expires, and needs the gateway token
+  ---
+  duration_ms: 1.043405
+  type: 'test'
+  ...
+# Subtest: the ticket route issues only to a session, and only for the vendored policy's socket targets
+ok 33 - the ticket route issues only to a session, and only for the vendored policy's socket targets
+  ---
+  duration_ms: 47.447969
+  type: 'test'
+  ...
+# Subtest: a news ticket is 503 without approved feeds or a gateway: the socket could only close
+ok 34 - a news ticket is 503 without approved feeds or a gateway: the socket could only close
+  ---
+  duration_ms: 21.574506
+  type: 'test'
+  ...
+# Subtest: /preview-feeds.json publishes the approved feeds as News card rows, names and tabs empty
+ok 35 - /preview-feeds.json publishes the approved feeds as News card rows, names and tabs empty
+  ---
+  duration_ms: 8.894636
+  type: 'test'
+  ...
+# Subtest: a write goes to the signed-in user's own state, and only a write shaped like one
+ok 36 - a write goes to the signed-in user's own state, and only a write shaped like one
+  ---
+  duration_ms: 44.849771
+  type: 'test'
+  ...
+# Subtest: a gateway refusal of a write is relayed as a size or a failure, never its body
+ok 37 - a gateway refusal of a write is relayed as a size or a failure, never its body
+  ---
+  duration_ms: 36.985052
+  type: 'test'
+  ...
+# Subtest: the page is seeded from the user's saved state, and told it may save
+ok 38 - the page is seeded from the user's saved state, and told it may save
+  ---
+  duration_ms: 11.358732
+  type: 'test'
+  ...
+# Subtest: nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not
+ok 39 - nothing saved yet seeds the default dashboard and still saves; a store that cannot be read does not
+  ---
+  duration_ms: 51.68265
+  type: 'test'
+  ...
+# Subtest: web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag
+ok 40 - web/policy.mjs is the stack's contract, verbatim, at or below the paired stack tag
+  ---
+  duration_ms: 1.112801
+  type: 'test'
+  ...
+# Subtest: private Wasm assets have streaming MIME, no-store cache and strict routes
+ok 41 - private Wasm assets have streaming MIME, no-store cache and strict routes
+  ---
+  duration_ms: 23.681037
+  type: 'test'
+  ...
+# Subtest: private web policy permits only Wasm compilation alongside self
+ok 42 - private web policy permits only Wasm compilation alongside self
+  ---
+  duration_ms: 10.599749
+  type: 'test'
+  ...
+# Subtest: the vendored v10.0.0 policy serves the /grid family; a policy without the grid rules refuses all of it
+ok 43 - the vendored v10.0.0 policy serves the /grid family; a policy without the grid rules refuses all of it
+  ---
+  duration_ms: 39.913128
+  type: 'test'
+  ...
+# Subtest: the example's /grid routes are relayed under their grammars, and nothing outside them is
+ok 44 - the example's /grid routes are relayed under their grammars, and nothing outside them is
+  ---
+  duration_ms: 56.485051
+  type: 'test'
+  ...
+# Subtest: the grid relay forwards a REPEATING subscription, rebuilt, and stays open
+ok 45 - the grid relay forwards a REPEATING subscription, rebuilt, and stays open
+  ---
+  duration_ms: 27.259299
+  type: 'test'
+  ...
+# Subtest: a grid frame the contract refuses closes the socket, and nothing of it is forwarded
+ok 46 - a grid frame the contract refuses closes the socket, and nothing of it is forwarded
+  ---
+  duration_ms: 63.659459
+  type: 'test'
+  ...
+# Subtest: a grid ticket without feeds, 503 without a gateway, no query on the socket
+ok 47 - a grid ticket without feeds, 503 without a gateway, no query on the socket
+  ---
+  duration_ms: 20.956489
+  type: 'test'
+  ...
+# Subtest: the gateway's bare 404 for an optional /grid document is relayed as a 404; any other failure is a 502
+ok 48 - the gateway's bare 404 for an optional /grid document is relayed as a 404; any other failure is a 502
+  ---
+  duration_ms: 15.941417
+  type: 'test'
+  ...
+# Subtest: the grid socket refuses a token or ticket in its query, a foreign or missing Origin, and no session
+ok 49 - the grid socket refuses a token or ticket in its query, a foreign or missing Origin, and no session
+  ---
+  duration_ms: 34.86078
+  type: 'test'
+  ...
+# Subtest: a grid ticket lasts thirty seconds, names one target, and is single-use at the gateway
+ok 50 - a grid ticket lasts thirty seconds, names one target, and is single-use at the gateway
+  ---
+  duration_ms: 17.942913
+  type: 'test'
+  ...
+# Subtest: the gateway's 60-frame cap closes the browser's socket, and nothing past it is answered
+ok 51 - the gateway's 60-frame cap closes the browser's socket, and nothing past it is answered
+  ---
+  duration_ms: 28.23364
+  type: 'test'
+  ...
+# Subtest: bootstrap seeds the Live quotes tab only with a gateway AND a policy that serves the grid socket
+ok 52 - bootstrap seeds the Live quotes tab only with a gateway AND a policy that serves the grid socket
+  ---
+  duration_ms: 0.79647
+  type: 'test'
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1413.713109

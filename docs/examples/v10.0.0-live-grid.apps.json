@@ -1,0 +1,113 @@
+[
+  {
+    "name": "Example Dashboard - Version 10.0.0 - Live Grid",
+    "description": "Episode 10 brings the live grid. Live quotes streams: a snapshot over HTTP, then each quote ticks in place over live-grid's websocket, with logos and 52-week ranges. Beside it, the subscription list, one symbol's kdb+ tick history, the Live Chart, the Cached Price Chart and an S&P 500 sector map. Add the stack's live-grid backend (its live profile) as a connection. Opens in BDOBB 10.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "live": {
+        "id": "live",
+        "name": "Live",
+        "layout": [
+          {
+            "i": "live_grid",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,MSFT,NVDA,TSLA,BTC-USD,ETH-USD,EURUSD"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "subscriptions",
+            "x": 0,
+            "y": 12,
+            "w": 20,
+            "h": 14
+          },
+          {
+            "i": "kdb_ticks",
+            "x": 20,
+            "y": 12,
+            "w": 20,
+            "h": 14,
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "limit": "200"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "live_chart",
+            "x": 0,
+            "y": 26,
+            "w": 40,
+            "h": 16,
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "interval": "1m"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "kdb_cache_chart",
+            "x": 0,
+            "y": 42,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "interval": "1d"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "sector_map",
+            "x": 20,
+            "y": 42,
+            "w": 20,
+            "h": 12,
+            "state": {
+              "params": {}
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v3",
+        "tabOrder": [
+          "live"
+        ]
+      }
+    }
+  }
+]

@@ -1,0 +1,13 @@
+typecheck|exit=0|dur=10s|load=17.90 22.52 54.87|cmd=pnpm typecheck
+lint|exit=0|dur=7s|load=18.21 22.42 54.46|cmd=pnpm lint
+unit|exit=0|dur=176s|load=18.00 22.24 54.02|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=12s|load=23.48 23.64 48.72|cmd=pnpm build
+e2e|exit=1|dur=410s|load=22.54 23.43 48.35|cmd=env BDOBB_BROWSER_PORT=4383 BDOBB_MOCK_PORT=4384 pnpm e2e
+web|exit=0|dur=1s|load=27.64 31.52 43.83|cmd=pnpm test:web
+build-web|exit=0|dur=8s|load=27.64 31.52 43.83|cmd=pnpm build:web
+web-browser|exit=0|dur=3s|load=28.63 31.61 43.72|cmd=pnpm test:web:browser
+cargo|exit=0|dur=1s|load=30.51 31.95 43.77|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=0|dur=3s|load=30.51 31.95 43.77|cmd=pnpm scrub
+help|exit=0|dur=3s|load=30.51 31.95 43.77|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+DONE
+e2e|rerun-1|exit=0|file=e2e/table.spec.ts|COMPOSITE EVIDENCE: original e2e failed only table.spec.ts:19 (2000ms poll under load ~22-30); rerun 5 passed, see e2e-rerun-1.log

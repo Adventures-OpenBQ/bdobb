@@ -1,0 +1,8 @@
+# Gate receipts are verbatim tool output; whitespace in them is evidence,
+# not style, so git diff --check skips them (#25).
+docs/releases/validation/** -whitespace
+# SSE fixtures are wire captures: CRLF and blank event terminators are the
+# protocol, not trailing whitespace.
+*.sse -whitespace
+# Vendored third-party source is kept byte-for-byte as upstream ships it.
+src-tauri/vendor/** -whitespace

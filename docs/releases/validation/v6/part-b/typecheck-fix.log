@@ -1,0 +1,6 @@
+11:11  up 1 day, 35 mins, 2 users, load averages: 16.32 34.93 46.36
+
+> bdobb@6.0.0 typecheck <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> tsc --noEmit
+
+typecheck exit 0 11s

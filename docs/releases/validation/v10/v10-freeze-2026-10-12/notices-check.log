@@ -1,0 +1,52 @@
+
+> bdobb@10.0.0 notices:check <worktree>
+> node scripts/third-party-notices.mjs --check
+
+error: no matching package named `tauri` found
+location searched: crates.io index
+required by package `bdobb v10.0.0 (<worktree>/src-tauri)`
+note: offline mode (via `--offline`) can sometimes cause surprising resolution failures
+help: if this error is too confusing you may wish to retry without `--offline`
+node:internal/errors:983
+  const err = new Error(message);
+              ^
+
+Error: Command failed: cargo metadata --format-version 1 --offline --locked --manifest-path <worktree>/src-tauri/Cargo.toml
+error: no matching package named `tauri` found
+location searched: crates.io index
+required by package `bdobb v10.0.0 (<worktree>/src-tauri)`
+note: offline mode (via `--offline`) can sometimes cause surprising resolution failures
+help: if this error is too confusing you may wish to retry without `--offline`
+
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:916:11)
+    at execFileSync (node:child_process:952:15)
+    at crates (file://<worktree>/scripts/third-party-notices.mjs:58:5)
+    at render (file://<worktree>/scripts/third-party-notices.mjs:95:21)
+    at file://<worktree>/scripts/third-party-notices.mjs:146:14
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  status: 101,
+  signal: null,
+  output: [
+    null,
+    '',
+    'error: no matching package named `tauri` found\n' +
+      'location searched: crates.io index\n' +
+      'required by package `bdobb v10.0.0 (<worktree>/src-tauri)`\n' +
+      'note: offline mode (via `--offline`) can sometimes cause surprising resolution failures\n' +
+      'help: if this error is too confusing you may wish to retry without `--offline`\n'
+  ],
+  pid: 7092,
+  stdout: '',
+  stderr: 'error: no matching package named `tauri` found\n' +
+    'location searched: crates.io index\n' +
+    'required by package `bdobb v10.0.0 (<worktree>/src-tauri)`\n' +
+    'note: offline mode (via `--offline`) can sometimes cause surprising resolution failures\n' +
+    'help: if this error is too confusing you may wish to retry without `--offline`\n'
+}
+
+Node.js v22.22.0
+ ELIFECYCLE  Command failed with exit code 1.

@@ -1,0 +1,21 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ✓ src/components/renderers/table-model/StatementPanel.test.tsx (11 tests) 15574ms
+   ✓ applyRequiresBindingsAndShowsMissingNotZero 897ms
+   ✓ overrideLabelsOrderFormulaVisibility 2698ms
+   ✓ sourceFieldDisappearsWithoutRawFallback 537ms
+   ✓ explicitUpdateRequiresConflictResolution 1706ms
+   ✓ failedSaveAndCancelledPreviewRetainDraft 1879ms
+   ✓ resets the line owned formula and editor before preview and save 1617ms
+   ✓ company choices belong to their binding while same binding paging retains all selected keys 1877ms
+   ✓ previews nonconflicting default formula and policy changes before durable adoption 1151ms
+   ✓ edits section visibility and explains inherited hiding without clearing line overrides 830ms
+   ✓ keeps metadata fiscal bindings when switching FQ and back to FY 2375ms
+ ✓ src/lib/statementModel/rollups.test.ts (3 tests) 132ms
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  00:37:54
+   Duration  24.84s (transform 1.82s, setup 711ms, collect 4.25s, tests 15.71s, environment 1.80s, prepare 415ms)
+

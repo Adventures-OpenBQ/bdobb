@@ -1,0 +1,5 @@
+
+> bdobb@3.0.0 smoke ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+> node scripts/smoke.mjs
+
+smoke: clean — React mounted (5831 bytes under #root), no console errors

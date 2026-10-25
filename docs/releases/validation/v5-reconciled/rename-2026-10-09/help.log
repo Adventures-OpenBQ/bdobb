@@ -1,0 +1,16 @@
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/help/search.test.ts (15 tests) 5ms
+ ✓ src/help/shots.test.ts (5 tests) 13ms
+ ✓ src/help/index.test.ts (8 tests) 6ms
+ ✓ src/help/guide.test.ts (9 tests) 11ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 245ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 3ms
+ ✓ src/help/windowMenu.test.ts (1 test) 1ms
+
+ Test Files  7 passed (7)
+      Tests  52 passed (52)
+   Start at  10:14:50
+   Duration  4.45s (transform 344ms, setup 1.07s, collect 1.45s, tests 284ms, environment 2.41s, prepare 391ms)
+

@@ -1,0 +1,64 @@
+
+Running 23 tests using 1 worker
+
+  ✓   1 [webkit] › e2e/drop.spec.ts:39:1 › dropping a CSV on the dashboard adds a table card of its rows (2.5s)
+  ✓   2 [webkit] › e2e/drop.spec.ts:58:1 › a card whose file was stored in an earlier session reads it back at boot (1.1s)
+  ✓   3 [webkit] › e2e/drop.spec.ts:83:1 › a dropped dashboard named like one of yours asks first, and Replace keeps its place (1.4s)
+  ✓   4 [webkit] › e2e/layout.spec.ts:38:5 › corner drag handles › the se handle is hit-testable (1.1s)
+  ✓   5 [webkit] › e2e/layout.spec.ts:38:5 › corner drag handles › the sw handle is hit-testable (1.1s)
+  ✓   6 [webkit] › e2e/layout.spec.ts:45:3 › corner drag handles › the nw handle is hit-testable (1.1s)
+  ✓   7 [webkit] › e2e/layout.spec.ts:51:3 › corner drag handles › the ne handle is hit-testable (1.6s)
+  ✓   8 [webkit] › e2e/layout.spec.ts:59:3 › quick add button › does not cover a bottom-right card's se resize handle (1.3s)
+  ✓   9 [webkit] › e2e/layout.spec.ts:100:3 › provider details dialog inside the Settings modal › has height and lays out the New value field with no stray margin (1.8s)
+  ✓  10 [webkit] › e2e/layout.spec.ts:145:3 › quick add toolbar setting › turning the toggle off removes the Add widget button and leaves Add tab in place (2.1s)
+  ✓  11 [webkit] › e2e/layout.spec.ts:179:3 › collapsed rail width and icons › a seeded railWidth sizes the collapsed rail, which shows icons and badges but no labels (1.3s)
+  ✓  12 [webkit] › e2e/rail.spec.ts:12:1 › dragging a dashboard row onto another reorders the rail and persists the order (1.6s)
+  ✓  13 [webkit] › e2e/rail.spec.ts:48:1 › the bottom group stays visible when the dashboard list outgrows the expanded rail (1.1s)
+  ✓  14 [webkit] › e2e/rail.spec.ts:86:1 › import feedback sits directly under the bottom controls and hides when the rail collapses (2.6s)
+  ✘  15 [webkit] › e2e/rail.spec.ts:109:1 › keyboard focus inside the rail expands it (6.7s)
+  ✓  16 [webkit] › e2e/rita-arrange.spec.ts:8:1 › Rita arranges a CSV table through the real runtime; one Undo restores it (3.0s)
+  ✓  17 [webkit] › e2e/rita-edit-bar.spec.ts:40:3 › D-013: with the Rita pane open and not pinned, Undo and Dismiss are on top at 5120x2160 (3.0s)
+  ✓  18 [webkit] › e2e/rita-edit-bar.spec.ts:40:3 › D-013: with the Rita pane open and pinned, Undo and Dismiss are on top at 5120x2160 (3.1s)
+  ✓  19 [webkit] › e2e/rita-no-url.spec.ts:7:1 › D-009: with no Rita URL, Keep Rita Open reserves no strip (929ms)
+  ✓  20 [webkit] › e2e/rita.spec.ts:12:3 › Rita pane › no tab without a Rita URL (2.3s)
+  ✓  21 [webkit] › e2e/rita.spec.ts:17:3 › Rita pane › hover opens, the lock holds, a turn round-trips and persists (4.0s)
+  ✓  22 [webkit] › e2e/rita.spec.ts:44:3 › Rita pane › ⌘⇧A toggles the lock (1.4s)
+  ✓  23 [webkit] › e2e/smoke.spec.ts:7:1 › boots against the mock backend, discovers widgets, and renders the seeded dashboard (1.2s)
+
+
+  1) [webkit] › e2e/rail.spec.ts:109:1 › keyboard focus inside the rail expands it ─────────────────
+
+    Error: expect(received).toBeGreaterThan(expected)
+
+    Expected: > 48
+    Received:   48
+
+    Call Log:
+    - Timeout 5000ms exceeded while waiting on the predicate
+
+      120 |   await expect
+      121 |     .poll(async () => (await page.locator("nav.left-rail").boundingBox())?.width ?? 0)
+    > 122 |     .toBeGreaterThan(restWidth);
+          |      ^
+      123 |   await expect(page.locator("nav.left-rail [data-testid='rail-dashboards'] .rail-item-label")).toHaveText(["Main"]);
+      124 | });
+      125 |
+        at <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6/e2e/rail.spec.ts:122:6
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    .superpowers/e2e-results-webkit/rail-keyboard-focus-inside-the-rail-expands-it-webkit/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: .superpowers/e2e-results-webkit/rail-keyboard-focus-inside-the-rail-expands-it-webkit/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    .superpowers/e2e-results-webkit/rail-keyboard-focus-inside-the-rail-expands-it-webkit/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace .superpowers/e2e-results-webkit/rail-keyboard-focus-inside-the-rail-expands-it-webkit/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [webkit] › e2e/rail.spec.ts:109:1 › keyboard focus inside the rail expands it ──────────────────
+  22 passed (51.1s)
