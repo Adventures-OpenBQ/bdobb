@@ -1,0 +1,107 @@
+
+> bdobb@5.0.0 build:web <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+> node scripts/build-web.mjs
+
+vite v6.4.3 building for browser...
+transforming...
+✓ 3469 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/stores/dashboardStore.ts is dynamically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/stores/tableExecutionStore.ts but also statically imported by <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/App.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/CardRemovalUndo.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/DashboardGrid.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/DropZone.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/GroupLink.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/LeftRail.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/LinkedGroupInspector.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/LinkedWidgetDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/PivotGroupLink.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/PivotGroupUndo.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/PivotParamRow.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/TabBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/TableExecutionRuntime.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/WidgetCard.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/WidgetLibrary.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/WorkspaceArrangeBar.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/WorkspaceGrid.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/WorkspaceTile.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/dialogs/WorkspaceDialog.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/renderers/LocalTableRenderer.tsx, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/components/runAppsImport.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/hooks/useDashboardShortcuts.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/hooks/useFormulaAuthoring.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/hooks/useWidgetData.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/lib/bootstrap.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/lib/workspaceFocus.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/stores/tableCommitCoordinator.ts, <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/src/stores/tableExecutionStore.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/web/standard_fonts/LICENSE_FOXIT                           1.55 kB
+dist/web/index.html                                             3.50 kB │ gzip:   1.66 kB
+dist/web/standard_fonts/LICENSE_LIBERATION                      4.41 kB
+dist/web/assets/dashboard-tabs-light-IosMN9pV.png               5.33 kB
+dist/web/assets/dashboard-tabs-dark-BkQagQKL.png                5.39 kB
+dist/web/assets/cursor-editorTextHighlight-kG3uUOwL.svg         5.40 kB │ gzip:   2.20 kB
+dist/web/assets/running-and-refreshing-light-HZjkxIp5.png       9.20 kB
+dist/web/assets/running-and-refreshing-dark-oTUgV_mh.png        9.41 kB
+dist/web/assets/workspace-account-light-B-6OuwG1.png            9.64 kB
+dist/web/assets/workspace-account-dark-DGGhDrz1.png             9.79 kB
+dist/web/assets/statement-view-light-sZ2wiv0q.png              16.48 kB
+dist/web/assets/statement-view-dark-Dr4K-WFO.png               16.61 kB
+dist/web/standard_fonts/FoxitSymbol.pfb                        16.73 kB
+dist/web/standard_fonts/FoxitFixed.pfb                         17.60 kB
+dist/web/standard_fonts/FoxitFixedBold.pfb                     18.06 kB
+dist/web/assets/charts-light-Df99dE9p.png                      18.10 kB
+dist/web/assets/charts-dark-Bbzt_6nA.png                       18.22 kB
+dist/web/standard_fonts/FoxitFixedItalic.pfb                   18.75 kB
+dist/web/standard_fonts/FoxitFixedBoldItalic.pfb               19.15 kB
+dist/web/assets/troubleshooting-light-CpT_b4oE.png             19.38 kB
+dist/web/standard_fonts/FoxitSerifBold.pfb                     19.40 kB
+dist/web/standard_fonts/FoxitSerif.pfb                         19.47 kB
+dist/web/assets/troubleshooting-dark-BI4Hp5Xz.png              19.53 kB
+dist/web/assets/the-left-rail-light-7vr8XLui.png               19.88 kB
+dist/web/assets/html-and-iframe-widgets-light-CE97PADm.png     20.05 kB
+dist/web/assets/html-and-iframe-widgets-dark-BX9UTns1.png      20.13 kB
+dist/web/assets/the-left-rail-dark-Dk5ayrPI.png                20.18 kB
+dist/web/standard_fonts/FoxitSerifBoldItalic.pfb               20.73 kB
+dist/web/assets/date-expression-light-Bklf7zwr.png             20.89 kB
+dist/web/assets/date-expression-dark-DzIcxPfK.png              21.00 kB
+dist/web/standard_fonts/FoxitSerifItalic.pfb                   21.23 kB
+dist/web/assets/documents-pdf-and-files-light-BNq2zc3X.png     22.69 kB
+dist/web/assets/documents-pdf-and-files-dark-bhDTL40f.png      22.96 kB
+dist/web/assets/widget-cards-light-CUZJW4HU.png                23.07 kB
+dist/web/assets/widget-cards-dark-CMgulR-9.png                 23.32 kB
+dist/web/assets/fy-ends-light-BuKXL6Oz.png                     23.49 kB
+dist/web/assets/fy-ends-dark-Cgs3kJ7z.png                      24.00 kB
+dist/web/assets/import-and-export-light-CztH3oHp.png           24.74 kB
+dist/web/assets/import-and-export-dark-BhLyAiBz.png            24.97 kB
+dist/web/assets/card-parameters-light-Tz43zPcM.png             25.60 kB
+dist/web/assets/card-parameters-dark-Q6zhtLKK.png              25.81 kB
+dist/web/standard_fonts/FoxitDingbats.pfb                      29.51 kB
+dist/web/assets/connections-light-B9noUYVT.png                 29.88 kB
+dist/web/assets/connections-dark-qhnjN2-3.png                  30.50 kB
+dist/web/assets/period-quarter-range-light-CURHmXu7.png        33.23 kB
+dist/web/assets/period-quarter-range-dark-UNgb2Bme.png         33.93 kB
+dist/web/assets/workspaces-light-B7OhUg9R.png                  34.72 kB
+dist/web/assets/workspaces-dark-BzXNmhV0.png                   34.80 kB
+dist/web/assets/dashboards-and-folders-light-rJL508tt.png      39.66 kB
+dist/web/assets/calendar-view-light-yO5Y93yY.png               40.12 kB
+dist/web/assets/dashboards-and-folders-dark-B5-AsuD2.png       40.33 kB
+dist/web/assets/calendar-view-dark-DeE_SFOg.png                40.81 kB
+dist/web/assets/period-quarter-light-B5QE9vzX.png              47.23 kB
+dist/web/assets/period-quarter-dark-Bxn1ck6e.png               48.08 kB
+dist/web/assets/period-datetime-light-Cr85aTKc.png             48.25 kB
+dist/web/assets/period-datetime-dark-6oe_Zimx.png              49.07 kB
+dist/web/assets/period-relative-light-CWUuhZE5.png             54.03 kB
+dist/web/assets/period-relative-dark-Jm1Z2-sH.png              54.74 kB
+dist/web/assets/provider-keys-dark-tOIQOAb9.png                59.86 kB
+dist/web/assets/provider-keys-light-7n3wkBb6.png               60.00 kB
+dist/web/assets/settings-and-logs-light-BsZAn8Fi.png           76.49 kB
+dist/web/assets/settings-and-logs-dark-uXPFy8LH.png            77.21 kB
+dist/web/assets/widget-library-light-Cu9zW_AZ.png              82.76 kB
+dist/web/assets/widget-library-dark-CPu-GWx3.png               83.11 kB
+dist/web/assets/built-in-widgets-light-DEb77Ond.png            93.77 kB
+dist/web/assets/built-in-widgets-dark-Dj13WjGE.png             94.60 kB
+dist/web/assets/tables-light-D9BlLCrI.png                     119.96 kB
+dist/web/assets/tables-dark-B3ttJnzE.png                      127.97 kB
+dist/web/assets/getting-started-light-Cw1Xpkan.png            128.76 kB
+dist/web/standard_fonts/LiberationSans-BoldItalic.ttf         135.12 kB
+dist/web/assets/getting-started-dark-D6QMDq4P.png             135.17 kB
+dist/web/standard_fonts/LiberationSans-Bold.ttf               137.05 kB
+dist/web/standard_fonts/LiberationSans-Regular.ttf            139.51 kB
+dist/web/standard_fonts/LiberationSans-Italic.ttf             162.04 kB
+dist/web/assets/table.worker-DD0FJLV9.js                      223.19 kB
+dist/web/assets/xlsx-DT5WGBCc.js                              499.87 kB
+dist/web/assets/pdf.worker.min-Dr1KORA9.mjs                 1,286.28 kB
+dist/web/assets/MarkdownEditorRenderer-C76-PK2L.css           239.90 kB │ gzip:  37.60 kB
+dist/web/assets/index-Cm1uAS2D.css                            396.77 kB │ gzip:  64.90 kB
+dist/web/assets/module-RjUF93sV.js                             77.27 kB │ gzip:  27.58 kB
+dist/web/assets/lightweight-charts.production-ClhRhmPB.js     180.19 kB │ gzip:  57.01 kB
+dist/web/assets/pdf_viewer-D9A2Yh6Q.js                        223.18 kB │ gzip:  69.05 kB
+dist/web/assets/HelpDialog-CY72f4SE.js                        385.76 kB │ gzip: 136.68 kB
+dist/web/assets/native-48B9X9Wg.js                            432.75 kB │ gzip:  83.17 kB
+dist/web/assets/pdf-lPevIYiG.js                               474.18 kB │ gzip: 143.45 kB
+dist/web/assets/xlsx-DBvuKzsv.js                              499.86 kB │ gzip: 161.67 kB
+dist/web/assets/MarkdownEditorRenderer-DIrxyLCv.js            916.50 kB │ gzip: 275.48 kB
+dist/web/assets/index-D8jN6XFf.js                           2,778.52 kB │ gzip: 901.83 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 18.28s
+Private web function built at <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled/.vercel/output/functions/preview.func. Nothing deployed.

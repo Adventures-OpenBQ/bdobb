@@ -1,0 +1,14 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/lib/statementRows.test.ts (11 tests) 6ms
+ ✓ src/lib/statementExecution.templates.test.ts (4 tests) 219ms
+ ✓ src/lib/statementExecution.test.ts (4 tests) 26ms
+ ✓ src/lib/statementPresentation.test.ts (7 tests) 8ms
+ ✓ src/components/renderers/StatementRenderer.test.tsx (5 tests) 304ms
+
+ Test Files  5 passed (5)
+      Tests  31 passed (31)
+   Start at  01:26:24
+   Duration  7.50s (transform 2.17s, setup 1.81s, collect 3.99s, tests 563ms, environment 4.32s, prepare 566ms)
+

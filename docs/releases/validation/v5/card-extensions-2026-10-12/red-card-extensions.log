@@ -1,0 +1,111 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/lib/widgetData/persistence.test.ts (5 tests | 1 failed) 18ms
+   × keeps server extensions, unknown keys included, as owned plain data through saving and dashboard copies 11ms
+     → expected undefined to deeply equal { workspace: { …(3) }, …(1) }
+ ❯ src/lib/dashboardsFile.test.ts (25 tests | 2 failed) 60ms
+   × sync fields > keeps a synced card's extensions byte-for-byte through a save and load, so the next upload is the server's own record 26ms
+     → expected '[[null,null],[null]]' to be '[[{"workspace":{"widget":{"id":"bbbbb…' // Object.is equality
+   × sync fields > never writes a function or an accessor that sits in a card's extensions 5ms
+     → expected undefined to deeply equal { workspace: { …(3) }, …(1) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/dashboardsFile.test.ts > sync fields > keeps a synced card's extensions byte-for-byte through a save and load, so the next upload is the server's own record
+AssertionError: expected '[[null,null],[null]]' to be '[[{"workspace":{"widget":{"id":"bbbbb…' // Object.is equality
+
+Expected: "[[{"workspace":{"widget":{"id":"bbbbbbbb-0000-4000-8000-000000000001","widgetId":"famafrench_factors_famafrench_obb","type":"table","name":"Factors","showTitle":true,"description":"Factors.","groupId":null,"innerTab":"factors","storage":{"chartView":{"enabled":false,"chartType":"line","chartSettingsOpen":false},"params":{"region":"america","factor":"3_factors","frequency":"monthly","start_date":null,"end_date":null,"provider":"famafrench"},"default":{"line":{"cellRange":{}}},"enableAdvanced":true,"chartType":"line","isPivotMode":false,"openToolPanel":null,"paginationPageSize":100},"external":true,"params":[{"paramName":"region","label":"Region","value":"america","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"america","value":"america"},{"label":"north_america","value":"north_america"}],"multiSelect":false},{"paramName":"factor","label":"Factor","value":"3_factors","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"5_factors","value":"5_factors"},{"label":"3_factors","value":"3_factors"}],"multiSelect":false},{"paramName":"frequency","label":"Frequency","value":"monthly","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"daily","value":"daily"},{"label":"weekly","value":"weekly"}],"multiSelect":false},{"paramName":"start_date","label":"Start Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"end_date","label":"End Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"provider","label":"provider","value":"famafrench","multiple":false,"row":0,"type":"text","show":false,"hidden":false,"options":[],"multiSelect":false}],"staleTime":300000,"refetchInterval":900000,"runButton":false,"exportable":true,"category":"Famafrench","subCategory":"Factors","connectionType":"advanced-backend","endpoint":{"url":"https://backend.example/api/v1/famafrench/factors","method":"GET","headers":{},"query":{}},"data":{"table":{"showAll":true}},"source":["Famafrench"],"sourceId":"cccccccc-0000-4000-8000-000000000001","sourceName":"Example backend","isMinimized":false,"originalH":15,"paramGroups":{}},"layout":{"w":40,"h":18,"x":0,"y":2,"i":"bbbbbbbb-0000-4000-8000-000000000001","minW":8,"minH":4,"moved":false,"static":false},"params":{"region":"america","factor":"3_factors","frequency":"monthly","provider":"famafrench"}},"later":{"note":"kept","list":[1,null,{"deep":true}]}},{"workspace":{"widget":{"id":"bbbbbbbb-0000-4000-8000-000000000002","widgetId":"famafrench_breakpoints_famafrench_obb","type":"table","name":"Breakpoints","showTitle":true,"description":"Breakpoints.","groupId":null,"innerTab":"factors","storage":{"chartView":{"enabled":false,"chartType":"line","chartSettingsOpen":false},"params":{"breakpoint_type":"me","start_date":null,"end_date":null,"provider":"famafrench"},"default":{"line":{"cellRange":{}}},"enableAdvanced":true,"chartType":"line","isPivotMode":false,"openToolPanel":null,"paginationPageSize":100},"external":true,"params":[{"paramName":"breakpoint_type","label":"Breakpoint Type","value":"me","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"me","value":"me"},{"label":"be-me","value":"be-me"}],"multiSelect":false},{"paramName":"start_date","label":"Start Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"end_date","label":"End Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"provider","label":"provider","value":"famafrench","multiple":false,"row":0,"type":"text","show":false,"hidden":false,"options":[],"multiSelect":false}],"staleTime":300000,"refetchInterval":900000,"runButton":false,"exportable":true,"category":"Famafrench","subCategory":"Breakpoints","connectionType":"advanced-backend","endpoint":{"url":"https://backend.example/api/v1/famafrench/breakpoints","method":"GET","headers":{},"query":{}},"data":{"table":{"showAll":true}},"source":["Famafrench"],"sourceId":"cccccccc-0000-4000-8000-000000000001","sourceName":"Example backend","isMinimized":false,"originalH":15,"paramGroups":{}},"layout":{"w":40,"h":15,"x":0,"y":20,"i":"bbbbbbbb-0000-4000-8000-000000000002","minW":8,"minH":4,"moved":false,"static":false},"params":{"breakpoint_type":"me","provider":"famafrench"}}}],[{"workspace":{"widget":{"id":"bbbbbbbb-0000-4000-8000-000000000003","widgetId":"famafrench_us_portfolio_returns_famafrench_obb","type":"table","name":"Fama-French US Portfolio Returns","showTitle":true,"description":"Fama-French US Portfolio Returns.","groupId":"","innerTab":"portfolios","storage":{"chartView":{"enabled":false,"chartType":"line","chartSettingsOpen":false},"params":{"portfolio":"portfolios_formed_on_me","measure":"value","frequency":"monthly","start_date":null,"end_date":null,"provider":"famafrench"},"default":{},"enableAdvanced":true},"external":true,"params":[{"paramName":"portfolio","label":"Portfolio","value":"portfolios_formed_on_me","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"measure","label":"Measure","value":"value","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"value","value":"value"},{"label":"equal","value":"equal"}],"multiSelect":false},{"paramName":"frequency","label":"Frequency","value":"monthly","multiple":false,"row":0,"type":"text","show":true,"hidden":false,"options":[{"label":"monthly","value":"monthly"},{"label":"annual","value":"annual"}],"multiSelect":false},{"paramName":"start_date","label":"Start Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"end_date","label":"End Date","value":null,"multiple":false,"row":0,"type":"date","show":true,"hidden":false,"options":[],"multiSelect":false},{"paramName":"provider","label":"provider","value":"famafrench","multiple":false,"row":0,"type":"text","show":false,"hidden":false,"options":[],"multiSelect":false}],"staleTime":300000,"refetchInterval":900000,"runButton":false,"exportable":true,"category":"Famafrench","subCategory":"US Portfolio Returns","connectionType":"advanced-backend","endpoint":{"url":"https://backend.example/api/v1/famafrench/us_portfolio_returns","method":"GET","headers":{},"query":{}},"data":{"table":{"showAll":true}},"source":["Famafrench"],"sourceId":"cccccccc-0000-4000-8000-000000000001","sourceName":"Example backend","isMinimized":false,"originalH":15,"isNew":true},"layout":{"w":20,"h":16,"x":0,"y":0,"i":"bbbbbbbb-0000-4000-8000-000000000003","minH":4,"minW":8},"params":{"portfolio":"portfolios_formed_on_me","measure":"value","frequency":"monthly","provider":"famafrench"}}}]]"
+Received: "[[null,null],[null]]"
+
+ ❯ src/lib/dashboardsFile.test.ts:255:88
+    253|     const [reloaded] = await loadDashboards();
+    254| 
+    255|     expect(JSON.stringify(reloaded.tabs.map((t) => t.cards.map((c) => …
+       |                                                                                        ^
+    256|     const card = reloaded.tabs[0].cards[0];
+    257|     expect((card.extensions as Record<string, unknown>).later).toEqual…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/lib/dashboardsFile.test.ts > sync fields > never writes a function or an accessor that sits in a card's extensions
+AssertionError: expected undefined to deeply equal { workspace: { …(3) }, …(1) }
+
+- Expected: 
+Object {
+  "kept": Array [
+    1,
+    "a",
+  ],
+  "workspace": Object {
+    "layout": Object {
+      "i": "w1",
+    },
+    "params": Object {},
+    "widget": Object {
+      "id": "w1",
+      "storage": Object {
+        "params": Object {},
+      },
+    },
+  },
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/dashboardsFile.test.ts:274:57
+    272|     const raw = __read("dashboards/d1.json") ?? "";
+    273|     expect(raw).not.toContain("secret");
+    274|     expect(JSON.parse(raw).tabs[0].cards[0].extensions).toEqual(extens…
+       |                                                         ^
+    275|   });
+    276| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/lib/widgetData/persistence.test.ts > keeps server extensions, unknown keys included, as owned plain data through saving and dashboard copies
+AssertionError: expected undefined to deeply equal { workspace: { …(3) }, …(1) }
+
+- Expected: 
+Object {
+  "later": Array [
+    1,
+    Object {
+      "x": "y",
+    },
+  ],
+  "workspace": Object {
+    "layout": Object {
+      "i": "server-1",
+    },
+    "params": Object {},
+    "widget": Object {
+      "id": "server-1",
+      "storage": Object {
+        "params": Object {
+          "a": null,
+        },
+      },
+    },
+  },
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/widgetData/persistence.test.ts:29:44
+     27|   const extensions = { workspace: { widget: { id: 'server-1', storage:…
+     28|   const synced = { ...source, extensions: { ...structuredClone(extensi…
+     29|   expect(persistedCard(synced).extensions).toEqual(extensions);
+       |                                            ^
+     30|   const copy = remapWidgetReferences(synced, new Map([['source', 'copy…
+     31|   expect(copy.extensions).toEqual(extensions);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 27 passed (30)
+   Start at  02:20:06
+   Duration  2.41s (transform 762ms, setup 644ms, collect 918ms, tests 79ms, environment 1.28s, prepare 190ms)
+

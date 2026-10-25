@@ -1,0 +1,1054 @@
+{
+  "id": "488deb4e-3c6d-4f54-b359-5a02364b81b6",
+  "name": "Onboarding App for Devs",
+  "tabs": [
+    {
+      "id": "7fbe0f1d-974d-47f4-a4aa-8e757db8caff",
+      "name": "Types",
+      "cards": [
+        {
+          "id": "3593bb48-d799-4051-b07f-911af5b5cf8e",
+          "widgetId": "metric_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 5
+          }
+        },
+        {
+          "id": "48df3a8d-4950-4aa3-aa71-57b84b398558",
+          "widgetId": "markdown_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 4
+          }
+        },
+        {
+          "id": "06d6e534-9f1b-4bdd-b011-92bea40e4e6d",
+          "widgetId": "markdown_widget_with_error_handling",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 13,
+            "w": 16,
+            "h": 8
+          }
+        },
+        {
+          "id": "e1fbd0a6-c72c-44d1-b78b-1815c058a0ef",
+          "widgetId": "pdf_widget_base64",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 37,
+            "w": 20,
+            "h": 15
+          }
+        },
+        {
+          "id": "d040cd75-a41f-43eb-8fd3-42288af2c13b",
+          "widgetId": "pdf_widget_url",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 37,
+            "w": 20,
+            "h": 15
+          }
+        },
+        {
+          "id": "04e0689b-64bf-48ed-80c8-bf5f54c1b18f",
+          "widgetId": "table_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 12,
+            "y": 5,
+            "w": 13,
+            "h": 8
+          }
+        },
+        {
+          "id": "94edf3d7-bcc3-475e-9df8-b68fba5be9d3",
+          "widgetId": "table_widget_from_api_endpoint",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 25,
+            "y": 5,
+            "w": 15,
+            "h": 8
+          }
+        },
+        {
+          "id": "e8ccbdbb-34a3-4d7f-b999-9de82424a314",
+          "widgetId": "markdown_widget_with_local_image",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 21,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "ec83f75c-f3e6-4a7a-8344-ed06173dbaf4",
+          "widgetId": "markdown_widget_with_image_from_url",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 21,
+            "w": 20,
+            "h": 16
+          }
+        },
+        {
+          "id": "3f25cc82-35bd-4ffb-a233-ef6ff8b30cce",
+          "widgetId": "/multi_pdf_base64",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "pdf_name": "Sample"
+          },
+          "layout": {
+            "x": 0,
+            "y": 52,
+            "w": 20,
+            "h": 15
+          }
+        },
+        {
+          "id": "a24b748f-600e-4ba9-affc-4b4c9890c3a6",
+          "widgetId": "/multi_pdf_url",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "pdf_name": "Sample"
+          },
+          "layout": {
+            "x": 20,
+            "y": 52,
+            "w": 20,
+            "h": 15
+          }
+        },
+        {
+          "id": "3817d60b-4bd8-46bb-8768-edcfbbf76616",
+          "widgetId": "sample_newsfeed",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "category": "all",
+            "limit": "5"
+          },
+          "layout": {
+            "x": 16,
+            "y": 13,
+            "w": 24,
+            "h": 8
+          }
+        },
+        {
+          "id": "bcee616d-d381-4eb2-92f1-349d9d30f371",
+          "widgetId": "html_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 67,
+            "w": 40,
+            "h": 22
+          }
+        },
+        {
+          "id": "6cb45ab0-93f6-4aa9-a06f-0ab22c377b0b",
+          "widgetId": "markdown_widget_with_category_and_subcategory",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 9,
+            "w": 12,
+            "h": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "4b569806-1a65-4790-a331-15f77ecb69a5",
+      "name": "Settings",
+      "cards": [
+        {
+          "id": "422b7c8f-77af-4746-a0eb-f5de4dbf5020",
+          "widgetId": "markdown_widget_with_run_button",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 12,
+            "w": 20,
+            "h": 5
+          }
+        },
+        {
+          "id": "910c99c1-7fb2-445d-8b98-8a3b2b9ecd8b",
+          "widgetId": "markdown_widget_with_refetch_interval_and_shorter_stale_time",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 7,
+            "w": 40,
+            "h": 5
+          }
+        },
+        {
+          "id": "e2ed0aa9-9459-4efb-be35-395e5c4c88d8",
+          "widgetId": "markdown_widget_with_cron_refetch_only",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 17,
+            "w": 40,
+            "h": 7
+          }
+        },
+        {
+          "id": "f4e5ebb4-7908-47a7-9740-a243843f3daa",
+          "widgetId": "markdown_widget_with_cron_refetch_interval",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 24,
+            "w": 20,
+            "h": 7
+          }
+        },
+        {
+          "id": "0e1e8209-9938-4531-8db0-a1879d5e14b4",
+          "widgetId": "markdown_widget_with_data_update_display_only",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 24,
+            "w": 20,
+            "h": 7
+          }
+        },
+        {
+          "id": "b6e1fa09-8f3f-4d4a-a7a2-96219f1717aa",
+          "widgetId": "markdown_widget_with_short_refetch_interval",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 2,
+            "w": 20,
+            "h": 5
+          }
+        },
+        {
+          "id": "2303070b-d667-40fe-accb-2636c01e6d24",
+          "widgetId": "markdown_widget_with_short_refetch_interval_and_run_button",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 12,
+            "w": 20,
+            "h": 5
+          }
+        },
+        {
+          "id": "cb8379b2-06e0-41e2-a240-76904e5793dd",
+          "widgetId": "markdown_widget_with_stale_time",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 20,
+            "h": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "a953046b-ac7e-49fd-a2ef-d74225d8b54b",
+      "name": "Input Params",
+      "cards": [
+        {
+          "id": "a1c06aa7-afaf-4d1d-a524-53fa2d04e511",
+          "widgetId": "markdown_widget_with_boolean",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "condition": "true"
+          },
+          "layout": {
+            "x": 0,
+            "y": 6,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "5560fc1d-461e-4cf7-af36-462e54a31ac7",
+          "widgetId": "markdown_widget_with_date_picker",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "date": "2026-02-20"
+          },
+          "layout": {
+            "x": 20,
+            "y": 6,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "f1460c7d-ce83-44a2-854a-759783db3bea",
+          "widgetId": "markdown_widget_with_number_input",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "value": "100"
+          },
+          "layout": {
+            "x": 20,
+            "y": 2,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "f2f5b1c2-090a-472d-8ae0-1e4de5a64fdd",
+          "widgetId": "markdown_widget_with_text_input",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "name": "OpenBB"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "0c4d1538-4f3b-4f53-867d-2d3acd22bc3a",
+          "widgetId": "dropdown_dependent_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "category": "all",
+            "document_type": "Investor Presentation"
+          },
+          "layout": {
+            "x": 0,
+            "y": 23,
+            "w": 20,
+            "h": 5
+          }
+        },
+        {
+          "id": "24c4de77-8fa6-4fbf-b67b-84f5217d5af8",
+          "widgetId": "markdown_widget_with_organized_params",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "enable_feature": "true",
+            "selected_date": "2026-02-20",
+            "analysis_type": "technical",
+            "lookback_period": "32"
+          },
+          "layout": {
+            "x": 0,
+            "y": 28,
+            "w": 40,
+            "h": 9
+          }
+        },
+        {
+          "id": "fc86ceac-c997-4c83-981e-4d179055cbe2",
+          "widgetId": "markdown_widget_with_dropdown",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "days_picker": "1"
+          },
+          "layout": {
+            "x": 0,
+            "y": 10,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "805e1341-b37d-4176-bb5b-dec8c24503f1",
+          "widgetId": "markdown_widget_with_multi_select_dropdown",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "stock_picker": "AAPL,MSFT"
+          },
+          "layout": {
+            "x": 20,
+            "y": 10,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "a156112c-1433-4cc7-af60-adfb28364812",
+          "widgetId": "markdown_widget_with_multi_select_advanced_dropdown",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "stock_picker": "AAPL,MSFT"
+          },
+          "layout": {
+            "x": 20,
+            "y": 14,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "521ed8a4-3d76-43ce-b6eb-ad6ea8637118",
+          "widgetId": "markdown_widget_with_multi_text_input",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "text_box": "var1,var2,var3"
+          },
+          "layout": {
+            "x": 0,
+            "y": 14,
+            "w": 20,
+            "h": 4
+          }
+        },
+        {
+          "id": "f39f2843-0ff2-4fe2-a841-30f027155019",
+          "widgetId": "markdown_widget_with_str_and_int",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "text_param": "Hello",
+            "number_param": "42"
+          },
+          "layout": {
+            "x": 0,
+            "y": 18,
+            "w": 20,
+            "h": 5
+          }
+        },
+        {
+          "id": "e6102cb0-1936-4722-886a-567703333a19",
+          "widgetId": "table_widget_with_str_filter_param",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 18,
+            "w": 20,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "0b6ba31d-5773-4b88-ad2c-1cc6b5fd265d",
+      "name": "Grouping",
+      "cards": [
+        {
+          "id": "61640990-45f8-4c11-8f99-ef37abe76820",
+          "widgetId": "company_details",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "company": "TM",
+            "year": "2024"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 19,
+            "h": 9
+          },
+          "bindings": [
+            {
+              "groupId": "7b4d66de-3f73-46cc-ba54-1b7f06eef6c0",
+              "paramName": "company"
+            },
+            {
+              "groupId": "e950785c-84b0-4411-8742-b5c59d3a7b9c",
+              "paramName": "year"
+            }
+          ]
+        },
+        {
+          "id": "fb01d454-9cd6-4438-8f45-3bc32bca2ccb",
+          "widgetId": "company_performance",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "company": "TM",
+            "year": "2024"
+          },
+          "layout": {
+            "x": 19,
+            "y": 2,
+            "w": 21,
+            "h": 9
+          },
+          "bindings": [
+            {
+              "groupId": "7b4d66de-3f73-46cc-ba54-1b7f06eef6c0",
+              "paramName": "company"
+            },
+            {
+              "groupId": "e950785c-84b0-4411-8742-b5c59d3a7b9c",
+              "paramName": "year"
+            }
+          ]
+        },
+        {
+          "id": "9f1c2b96-0284-4026-a730-78b8d1faae45",
+          "widgetId": "widget_managed_by_parameter_from_cell_click_on_table_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "symbol": "AAPL"
+          },
+          "layout": {
+            "x": 19,
+            "y": 11,
+            "w": 21,
+            "h": 9
+          },
+          "bindings": [
+            {
+              "groupId": "66fe3a11-9063-436f-beb9-2d3f2ee88996",
+              "paramName": "symbol"
+            }
+          ]
+        },
+        {
+          "id": "2bac2480-00da-4a92-96c8-412e1a573e20",
+          "widgetId": "table_widget_with_grouping_by_cell_click",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "symbol": "AAPL"
+          },
+          "layout": {
+            "x": 0,
+            "y": 11,
+            "w": 19,
+            "h": 9
+          },
+          "bindings": [
+            {
+              "groupId": "66fe3a11-9063-436f-beb9-2d3f2ee88996",
+              "paramName": "symbol"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bc976b5f-a8c8-4b9b-8f46-220e65c7011c",
+      "name": "AgGrid",
+      "cards": [
+        {
+          "id": "9bd90b27-d5f9-4707-9259-12bfb105025b",
+          "widgetId": "table_widget_with_hover_card",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 27,
+            "y": 2,
+            "w": 13,
+            "h": 7
+          }
+        },
+        {
+          "id": "8519cf37-135d-49b4-a69e-e7e717b3ff7c",
+          "widgetId": "table_widget_with_render_functions",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 12,
+            "y": 2,
+            "w": 15,
+            "h": 7
+          }
+        },
+        {
+          "id": "b9d31f39-2227-4b9b-b035-820be2645d51",
+          "widgetId": "table_widget_with_column_definitions",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 12,
+            "h": 7
+          }
+        },
+        {
+          "id": "7c98b2b3-07d1-45db-979f-1afbfa65bb2a",
+          "widgetId": "table_to_chart_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 9,
+            "w": 20,
+            "h": 12
+          },
+          "view": "chart"
+        },
+        {
+          "id": "82cfdf32-6234-472a-ba94-dbb7607443b8",
+          "widgetId": "table_to_time_series_widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 9,
+            "w": 20,
+            "h": 12
+          },
+          "view": "chart"
+        }
+      ]
+    },
+    {
+      "id": "b7e6ea17-a8f0-4616-a45d-eac06ef4ee86",
+      "name": "Plotly",
+      "cards": [
+        {
+          "id": "09849d84-2557-4881-9197-a6ab53ab5224",
+          "widgetId": "plotly_chart",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 15
+          }
+        },
+        {
+          "id": "90db726f-edca-4473-92ab-81c7a66557a2",
+          "widgetId": "plotly_chart_with_theme",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 17,
+            "w": 40,
+            "h": 15
+          }
+        },
+        {
+          "id": "b22f1d5f-1a26-4a81-a157-c951637e6934",
+          "widgetId": "plotly_chart_with_theme_and_toolbar",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 32,
+            "w": 40,
+            "h": 15
+          }
+        },
+        {
+          "id": "783c39bb-d5de-42ee-9b43-d09ef63c893a",
+          "widgetId": "plotly_chart_with_theme_and_toolbar_using_config_file",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 47,
+            "w": 40,
+            "h": 15
+          }
+        },
+        {
+          "id": "c77de257-dd96-4fab-913f-2def77c8e484",
+          "widgetId": "plotly_heatmap",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "color_scale": "RdBu_r"
+          },
+          "layout": {
+            "x": 0,
+            "y": 62,
+            "w": 40,
+            "h": 15
+          }
+        },
+        {
+          "id": "81a842ec-d1e0-42c8-9e3e-3cababde981d",
+          "widgetId": "plotly_heatmap_with_raw_data",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "color_scale": "Plasma"
+          },
+          "layout": {
+            "x": 0,
+            "y": 77,
+            "w": 40,
+            "h": 15
+          }
+        }
+      ]
+    },
+    {
+      "id": "9a0bfd1f-37be-4dd1-9d85-5c3be4acbe65",
+      "name": "Highcharts",
+      "cards": [
+        {
+          "id": "45f9a855-e07b-49fa-81c6-af8a0cd9f361",
+          "widgetId": "chains_highchart",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 14
+          }
+        }
+      ]
+    },
+    {
+      "id": "e42cccf0-14a8-4878-8de3-8b523d489aa0",
+      "name": "Vega-Lite",
+      "cards": [
+        {
+          "id": "fb448605-36e9-4874-ac12-6a1a091a7f64",
+          "widgetId": "vega_bar",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 20,
+            "h": 12
+          }
+        },
+        {
+          "id": "7457c9a4-b470-4eed-beb8-5a6b3bf697f1",
+          "widgetId": "vega_line",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 20,
+            "y": 2,
+            "w": 20,
+            "h": 12
+          }
+        },
+        {
+          "id": "675cd9cf-2053-44d7-ac7e-797d51d08b55",
+          "widgetId": "vega_scatter",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 10,
+            "y": 14,
+            "w": 20,
+            "h": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "3e10d306-c1d7-4aa7-9498-ca3951b8478c",
+      "name": "Input Form",
+      "cards": [
+        {
+          "id": "62113e6e-ac2a-482d-a5d8-9f1a02a43462",
+          "widgetId": "all_forms",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "5e9a1ca6-2ce2-4358-8f91-2ac563dd225a",
+      "name": "TradingView",
+      "cards": [
+        {
+          "id": "f846090d-5c89-412f-8abb-c6ca1b6a7e3c",
+          "widgetId": "/udf",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 21
+          }
+        }
+      ]
+    },
+    {
+      "id": "3ad5051c-7691-43be-a0a1-55bca8cb947a",
+      "name": "Omni SQL Python",
+      "cards": [
+        {
+          "id": "16dc5d81-4d74-4d32-8402-45027c747170",
+          "widgetId": "omni-widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "prompt": "Hello",
+            "type": "markdown"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 13,
+            "h": 13
+          }
+        },
+        {
+          "id": "0538f62a-a427-4d44-b1ac-d7716f3a61e1",
+          "widgetId": "omni-sql-widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "prompt": "SELECT \n    *\nFROM\n    DATA\nLIMIT\n    3"
+          },
+          "layout": {
+            "x": 0,
+            "y": 15,
+            "w": 20,
+            "h": 18
+          }
+        },
+        {
+          "id": "18bbf9c3-d088-4123-8c4f-4bb49d3b4bc8",
+          "widgetId": "omni-python-widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "prompt": "# Create a simple bar chart\nfig = go.Figure()\n\nfig.add_trace(go.Bar(\n    x=[\"Q1\", \"Q2\", \"Q3\", \"Q4\"],\n    y=[100, 150, 130, 180],\n    name=\"Revenue\",\n    marker_color=\"#26a69a\"\n))\n\nfig.add_trace(go.Bar(\n    x=[\"Q1\", \"Q2\", \"Q3\", \"Q4\"],\n    y=[80, 120, 110, 150],\n    name=\"Profit\",\n    marker_color=\"#ef5350\"\n))\n\nfig.update_layout(\n    title=\"Quarterly Performance\",\n    barmode=\"group\",\n    xaxis_title=\"Quarter\",\n    yaxis_title=\"Amount ($M)\"\n)"
+          },
+          "layout": {
+            "x": 20,
+            "y": 15,
+            "w": 20,
+            "h": 18
+          }
+        },
+        {
+          "id": "2704c5b0-1efa-488f-bab4-5f3f87487a12",
+          "widgetId": "omni-widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "prompt": "Hello World",
+            "type": "table"
+          },
+          "layout": {
+            "x": 13,
+            "y": 2,
+            "w": 14,
+            "h": 13
+          }
+        },
+        {
+          "id": "ac89987a-cb20-4a82-abcf-0ce141578f5f",
+          "widgetId": "omni-widget",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "prompt": "Hello World",
+            "type": "chart"
+          },
+          "layout": {
+            "x": 27,
+            "y": 2,
+            "w": 13,
+            "h": 13
+          }
+        }
+      ]
+    },
+    {
+      "id": "9d042df3-06b4-41b1-b4ca-d09db399928d",
+      "name": "Sparkline",
+      "cards": [
+        {
+          "id": "a01fece5-089d-4480-9051-22e3d9160810",
+          "widgetId": "sparkline",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 9,
+            "w": 40,
+            "h": 7
+          }
+        },
+        {
+          "id": "dba4d229-20eb-48bd-b9dc-eeccfe3ec9f4",
+          "widgetId": "sparkline-bar",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 36,
+            "w": 40,
+            "h": 8
+          }
+        },
+        {
+          "id": "a3c3695e-6046-4106-8bea-897660ec7867",
+          "widgetId": "sparkline-line",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 16,
+            "w": 40,
+            "h": 6
+          }
+        },
+        {
+          "id": "f1afec3e-c85e-4a2d-a6ff-31cfbc3314bb",
+          "widgetId": "sparkline-column",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 29,
+            "w": 40,
+            "h": 7
+          }
+        },
+        {
+          "id": "71f9f76f-4afe-4992-bbd7-2af41f3c3b89",
+          "widgetId": "sparkline-area",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 7
+          }
+        },
+        {
+          "id": "0060e994-b773-4ba7-85a0-500655592229",
+          "widgetId": "table_widget_basic_sparklines",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 7
+          }
+        },
+        {
+          "id": "3ea9d894-b45d-454d-9141-968227e8259a",
+          "widgetId": "table_widget_custom_formatter",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {},
+          "layout": {
+            "x": 0,
+            "y": 44,
+            "w": 40,
+            "h": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "4ec53b00-38c4-4003-86a2-5c752e96083a",
+      "name": "Live Grid",
+      "cards": [
+        {
+          "id": "bdf39ec7-36d0-4b56-8177-527c3613c27a",
+          "widgetId": "live_grid_data",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "symbol": "TSLA,MSFT,AMZN"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "cb61cdf7-f9d3-4056-9ab6-1d7cf396841e",
+      "name": "YouTube",
+      "cards": [
+        {
+          "id": "c497fccc-299f-4bb8-8fd5-13880304bdcd",
+          "widgetId": "/get_video",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "video_name": "OpenBB Workspace Demo"
+          },
+          "layout": {
+            "x": 0,
+            "y": 2,
+            "w": 20,
+            "h": 14
+          }
+        },
+        {
+          "id": "b1a146a0-b7d8-44dc-8f77-ec4a75b87b39",
+          "widgetId": "/get_video_with_transcript",
+          "backendId": "0ec8b3fc-bb5f-4b21-b6c7-1210f43c9e1b",
+          "params": {
+            "video_name": "Open Data Platform Demo"
+          },
+          "layout": {
+            "x": 20,
+            "y": 2,
+            "w": 20,
+            "h": 14
+          }
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "7b4d66de-3f73-46cc-ba54-1b7f06eef6c0",
+      "name": "Group 1",
+      "paramName": "company",
+      "groupType": "company",
+      "value": "TM"
+    },
+    {
+      "id": "e950785c-84b0-4411-8742-b5c59d3a7b9c",
+      "name": "Group 2",
+      "paramName": "year",
+      "groupType": "year",
+      "value": "2024"
+    },
+    {
+      "id": "66fe3a11-9063-436f-beb9-2d3f2ee88996",
+      "name": "Group 3",
+      "paramName": "symbol",
+      "groupType": "symbol",
+      "value": "AAPL"
+    }
+  ]
+}

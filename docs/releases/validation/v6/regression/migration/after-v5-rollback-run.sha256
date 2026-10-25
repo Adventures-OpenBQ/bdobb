@@ -1,0 +1,11 @@
+ce7fd15f8ab4a31805b91460f546c4d90250d3b71c50b7596f560610dea79f72  ./backends.json
+c1aefd95a8787935eb029c64c375f5c920d688e29f620ca780633db39368ac96  ./dashboards/12554f43-b1bd-4573-a3a2-bb02d8a344ba.json
+a147d880cc407865d704462974fd320f44e87dcd8130649fb46bd1b4d5a0d517  ./dashboards/22b41845-0d66-48a8-a090-9f08518cfa9c.json
+c0610eb156c618b348375ce9484e2ad13aba7ef2efe6dc0ce308c1b004452557  ./logs/bdobb.log
+fb3ab4afd7186435767f8028d3ee1eef23e44d6bad9ed0521b91a6d9812ca1da  ./settings.json
+998f716a5ef4e24cf489fa9a64895211b18bf7ace7cc680c0f8c5d176d317e28  ./skills/arrange-table/SKILL.md
+84f23e9639ac7ef14cd359053ff83a778af2c01d44b1ca4377eea06c421ead19  ./skills/build-dashboard/SKILL.md
+7a955a84b38bdf059f6d71cbf56f439e82f4151f5df5ba35a879b6895e2a77c9  ./skills/openbb-html-chart/SKILL.md
+9d5eb00a9b1622ca72f3e04c11a3d1ca6121ae32e8b1657da884dfe6017d6de5  ./skills/openbb-html-report/SKILL.md
+7644b446700f964112378d81b87ef2fb28afed1f3d4c24e3e1c72a02fdf58d6b  ./skills/openbb-html-table/SKILL.md
+38b23280bf9c20390ab6b0db1aadec1e3f1cdd81ff6f961b354755b71ea91911  ./workspaces/999c028f-34c1-42aa-a75a-57d09b4c6be1.json

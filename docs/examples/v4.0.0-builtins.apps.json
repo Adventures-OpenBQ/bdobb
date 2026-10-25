@@ -1,0 +1,299 @@
+[
+  {
+    "name": "V4 core tools",
+    "description": "Built-ins, grouping, date expressions and fiscal period controls. No credentials required.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "note": {
+        "id": "note",
+        "name": "Note",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 10,
+            "state": {
+              "params": {
+                "text": "This is a Note card. Its text is a hidden parameter, so it does not clutter the header's controls row and it travels with the dashboard on export. Click anywhere in the body to edit; Escape throws a draft away."
+              }
+            }
+          }
+        ]
+      },
+      "markdown": {
+        "id": "markdown",
+        "name": "Markdown",
+        "layout": [
+          {
+            "i": "markdown",
+            "x": 0,
+            "y": 0,
+            "w": 26,
+            "h": 16,
+            "state": {
+              "params": {
+                "text": "# Markdown card\n\nA rich-text note with a formatting toolbar. Edits save on their own about half a second after you stop typing.\n\n## What it can show\n\n- Headings, like the two above\n- A bulleted list, like this one\n- **Bold**, *italic*, and a [link to the Workspace docs](https://docs.openbb.co/workspace)\n\n```\nconst example = \"a fenced code block\";\n```\n"
+              }
+            }
+          }
+        ]
+      },
+      "clock": {
+        "id": "clock",
+        "name": "Clock",
+        "layout": [
+          {
+            "i": "clock",
+            "x": 0,
+            "y": 0,
+            "w": 18,
+            "h": 16,
+            "state": {
+              "params": {
+                "zones": "America/New_York,Europe/London,Asia/Tokyo",
+                "layout": "vertical",
+                "hourCycle": "24",
+                "face": "dots"
+              }
+            }
+          },
+          {
+            "i": "clock",
+            "x": 18,
+            "y": 0,
+            "w": 22,
+            "h": 8,
+            "state": {
+              "params": {
+                "zones": "America/New_York,Europe/London,Asia/Tokyo",
+                "layout": "horizontal",
+                "hourCycle": "24",
+                "face": "dots"
+              }
+            }
+          }
+        ]
+      },
+      "website": {
+        "id": "website",
+        "name": "Website",
+        "layout": [
+          {
+            "i": "website",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 24,
+            "state": {
+              "params": {
+                "url": "https://docs.openbb.co/workspace"
+              }
+            }
+          }
+        ]
+      },
+      "rss": {
+        "id": "rss",
+        "name": "RSS",
+        "layout": [
+          {
+            "i": "rss",
+            "x": 0,
+            "y": 0,
+            "w": 22,
+            "h": 20,
+            "state": {
+              "params": {
+                "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+                "limit": "20"
+              }
+            }
+          }
+        ]
+      },
+      "grouping": {
+        "id": "grouping",
+        "name": "Grouping",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 8,
+            "state": {
+              "params": {
+                "text": "The two Parameter echo cards below share a Ticker group: the chain-link beside each card's Ticker control opens the Groups menu, the numbered badge shows which group a control is in, and editing either card's Ticker moves both."
+              }
+            }
+          },
+          {
+            "i": "param_echo",
+            "x": 0,
+            "y": 8,
+            "w": 14,
+            "h": 6,
+            "groups": [
+              "Ticker"
+            ],
+            "state": {
+              "params": {
+                "date": "$currentDate"
+              }
+            }
+          },
+          {
+            "i": "param_echo",
+            "x": 14,
+            "y": 8,
+            "w": 14,
+            "h": 6,
+            "groups": [
+              "Ticker"
+            ],
+            "state": {
+              "params": {
+                "date": "$currentDate"
+              }
+            }
+          }
+        ]
+      },
+      "date_probe": {
+        "id": "date_probe",
+        "name": "Date expression",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 5,
+            "state": {
+              "params": {
+                "text": "Each card below resolves one date expression against today and the XNYS exchange calendar, so its dates move with the calendar. Top row: T (today), T-5bd (five business days back), T-1m (one calendar month back). Bottom row: M-1 (start of last month), FQ-4 (start of the fiscal quarter four back), Y-1 (start of last year)."
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 0,
+            "y": 5,
+            "w": 13,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "T",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 13,
+            "y": 5,
+            "w": 14,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "T-5bd",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 27,
+            "y": 5,
+            "w": 13,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "T-1m",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 0,
+            "y": 15,
+            "w": 13,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "M-1",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 13,
+            "y": 15,
+            "w": 14,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "FQ-4",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 27,
+            "y": 15,
+            "w": 13,
+            "h": 10,
+            "state": {
+              "params": {
+                "expr": "Y-1",
+                "as_of": "T",
+                "exchange": "XNYS"
+              }
+            }
+          }
+        ]
+      },
+      "period_echo": {
+        "id": "period_echo",
+        "name": "Period controls",
+        "layout": [
+          {
+            "i": "period_echo",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 15,
+            "state": {
+              "params": {
+                "asof": "T",
+                "start_date": "2026-01-01/T"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "name": "Ticker",
+        "type": "param",
+        "paramName": "ticker",
+        "defaultValue": "AAPL"
+      }
+    ],
+    "prompts": []
+  }
+]

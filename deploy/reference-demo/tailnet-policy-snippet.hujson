@@ -1,0 +1,20 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// Add these to your tailnet policy (admin console → Access controls) so the
+// demo node can advertise tag:reference-demo and turn on Funnel. Merge into
+// the existing "tagOwners" and "nodeAttrs" blocks rather than duplicating them.
+
+{
+  "tagOwners": {
+    // Replace with your own user/owner, same as tag:bdobb-gateway.
+    "tag:reference-demo": ["autogroup:admin"],
+  },
+
+  "nodeAttrs": [
+    {
+      "target": ["tag:reference-demo"],
+      "attr":   ["funnel"],
+    },
+  ],
+}

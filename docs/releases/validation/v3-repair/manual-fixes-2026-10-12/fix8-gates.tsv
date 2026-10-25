@@ -1,0 +1,5 @@
+typecheck|exit=0|dur=5s|cmd=pnpm typecheck
+lint|exit=0|dur=5s|cmd=pnpm lint
+unit|exit=0|dur=69s|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=9s|cmd=pnpm build
+diff-check|exit=0|dur=0s|cmd=git diff --check 2bb097a HEAD

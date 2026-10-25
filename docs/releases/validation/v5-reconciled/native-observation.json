@@ -1,0 +1,16 @@
+{
+  "application": "BDOBB Clean v5 Reconciled",
+  "identifier": "com.artcashin.bdobb.clean.v5.reconciled",
+  "binarySha256": "c6ba6d7117c225a243b6a474ffc0e2577b571eafbc6f1715cd93388498e39392",
+  "profileAbsentBeforeFirstLaunch": true,
+  "startupSettingsWarning": false,
+  "nativeFileNewWorkspaceMenu": true,
+  "createdLaptopWorkspaceWithTwoDashboards": true,
+  "independentPanelTabs": true,
+  "workspaceAndTabsPersistAfterQuitReopen": true,
+  "nativeQuickHelpName": "BDOBB",
+  "nativeReferenceManualVersion": "5.0.0",
+  "nativeStatementImageAndErrorGuidance": true,
+  "nativeWorkspaceImageAndInstructions": true,
+  "appQuitAfterInspection": true
+}

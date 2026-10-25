@@ -1,0 +1,21 @@
+
+> bdobb@5.0.0 test:web:browser <worktree>
+> node web/browser-smoke.mjs
+
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.fill: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('.widget-card').filter({ has: getByRole('textbox', { name: 'Ticker' }) }).first().getByRole('textbox', { name: 'Ticker' })[22m
+
+    at <worktree>/web/browser-smoke.mjs:105:59 {
+  log: [
+    "  - waiting for locator('.widget-card').filter({ has: getByRole('textbox', { name: 'Ticker' }) }).first().getByRole('textbox', { name: 'Ticker' })"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.0
+ ELIFECYCLE  Command failed with exit code 1.

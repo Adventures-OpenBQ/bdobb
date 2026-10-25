@@ -1,0 +1,379 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ❯ src/components/renderers/StatementRenderer.test.tsx (5 tests | 2 failed) 282ms
+   × StatementRenderer > renders authoritative cell errors and per-period formats without displaying a false numeric result 192ms
+     → Unable to find an accessible element with the role "cell" and name "40 %"
+
+Here are the accessible roles:
+
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"widget-table plain statement"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody />[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Line item FY2026 FY2025 FY2024":
+  [36m<tr />[39m
+
+  Name "Results":
+  [36m<tr[39m
+    [33mclass[39m=[32m"statement-section"[39m
+  [36m/>[39m
+
+  Name "Margin 0.4 0.4 40":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Line item":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2026":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2025":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2024":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "Results":
+  [36m<td[39m
+    [33mcolspan[39m=[32m"4"[39m
+  [36m/>[39m
+
+  Name "Margin":
+  [36m<td[39m
+    [33mclass[39m=[32m"statement-label"[39m
+  [36m/>[39m
+
+  Name "0.4":
+  [36m<td />[39m
+
+  Name "0.4":
+  [36m<td />[39m
+
+  Name "40":
+  [36m<td />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Results":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"table-scroll"[39m
+    [36m>[39m
+      [36m<table[39m
+        [33mclass[39m=[32m"widget-table plain statement"[39m
+      [36m>[39m
+        [36m<thead>[39m
+          [36m<tr>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mLine item[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2026[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2025[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2024[0m
+            [36m</th>[39m
+          [36m</tr>[39m
+        [36m</thead>[39m
+        [36m<tbody>[39m
+          [36m<tr[39m
+            [33mclass[39m=[32m"statement-section"[39m
+          [36m>[39m
+            [36m<td[39m
+              [33mcolspan[39m=[32m"4"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-expanded[39m=[32m"true"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                [36m>[39m
+                  [0m▾[0m
+                [36m</span>[39m
+                [0m [0m
+                [0mResults[0m
+              [36m</button>[39m
+            [36m</td>[39m
+          [36m</tr>[39m
+          [36m<tr>[39m
+            [36m<td[39m
+              [33mclass[39m=[32m"statement-label"[39m
+            [36m>[39m
+              [0mMargin[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m0.4[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m0.4[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m40[0m
+            [36m</td>[39m
+          [36m</tr>[39m
+        [36m</tbody>[39m
+      [36m</table>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × StatementRenderer > keeps a template section folded across label changes using its stable ID 20ms
+     → expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <td
+  class="statement-label"
+>
+  Revenue
+</td> instead
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/renderers/StatementRenderer.test.tsx > StatementRenderer > renders authoritative cell errors and per-period formats without displaying a false numeric result
+TestingLibraryElementError: Unable to find an accessible element with the role "cell" and name "40 %"
+
+Here are the accessible roles:
+
+  table:
+
+  Name "":
+  [36m<table[39m
+    [33mclass[39m=[32m"widget-table plain statement"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  rowgroup:
+
+  Name "":
+  [36m<thead />[39m
+
+  Name "":
+  [36m<tbody />[39m
+
+  --------------------------------------------------
+  row:
+
+  Name "Line item FY2026 FY2025 FY2024":
+  [36m<tr />[39m
+
+  Name "Results":
+  [36m<tr[39m
+    [33mclass[39m=[32m"statement-section"[39m
+  [36m/>[39m
+
+  Name "Margin 0.4 0.4 40":
+  [36m<tr />[39m
+
+  --------------------------------------------------
+  columnheader:
+
+  Name "Line item":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2026":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2025":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  Name "FY2024":
+  [36m<th[39m
+    [33mscope[39m=[32m"col"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  cell:
+
+  Name "Results":
+  [36m<td[39m
+    [33mcolspan[39m=[32m"4"[39m
+  [36m/>[39m
+
+  Name "Margin":
+  [36m<td[39m
+    [33mclass[39m=[32m"statement-label"[39m
+  [36m/>[39m
+
+  Name "0.4":
+  [36m<td />[39m
+
+  Name "0.4":
+  [36m<td />[39m
+
+  Name "40":
+  [36m<td />[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Results":
+  [36m<button[39m
+    [33maria-expanded[39m=[32m"true"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"table-scroll"[39m
+    [36m>[39m
+      [36m<table[39m
+        [33mclass[39m=[32m"widget-table plain statement"[39m
+      [36m>[39m
+        [36m<thead>[39m
+          [36m<tr>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mLine item[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2026[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2025[0m
+            [36m</th>[39m
+            [36m<th[39m
+              [33mscope[39m=[32m"col"[39m
+            [36m>[39m
+              [0mFY2024[0m
+            [36m</th>[39m
+          [36m</tr>[39m
+        [36m</thead>[39m
+        [36m<tbody>[39m
+          [36m<tr[39m
+            [33mclass[39m=[32m"statement-section"[39m
+          [36m>[39m
+            [36m<td[39m
+              [33mcolspan[39m=[32m"4"[39m
+            [36m>[39m
+              [36m<button[39m
+                [33maria-expanded[39m=[32m"true"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                [36m>[39m
+                  [0m▾[0m
+                [36m</span>[39m
+                [0m [0m
+                [0mResults[0m
+              [36m</button>[39m
+            [36m</td>[39m
+          [36m</tr>[39m
+          [36m<tr>[39m
+            [36m<td[39m
+              [33mclass[39m=[32m"statement-label"[39m
+            [36m>[39m
+              [0mMargin[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m0.4[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m0.4[0m
+            [36m</td>[39m
+            [36m<td>[39m
+              [0m40[0m
+            [36m</td>[39m
+          [36m</tr>[39m
+        [36m</tbody>[39m
+      [36m</table>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/renderers/StatementRenderer.test.tsx:36:19
+     34|     }] }] };
+     35|     render(<StatementRenderer statement={presented} collapsed={new Set…
+     36|     expect(screen.getByRole('cell', { name: formatCell(0.4, 'margin', …
+       |                   ^
+     37|     expect(screen.getByRole('cell', { name: formatCell(0.4, 'margin', …
+     38|     expect(screen.getByText('#ERROR')).toHaveAttribute('title', 'Incom…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/renderers/StatementRenderer.test.tsx > StatementRenderer > keeps a template section folded across label changes using its stable ID
+Error: expect(element).not.toBeInTheDocument()
+
+expected document not to contain element, found <td
+  class="statement-label"
+>
+  Revenue
+</td> instead
+ ❯ src/components/renderers/StatementRenderer.test.tsx:45:65
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  01:22:34
+   Duration  2.59s (transform 363ms, setup 322ms, collect 488ms, tests 282ms, environment 683ms, prepare 106ms)
+

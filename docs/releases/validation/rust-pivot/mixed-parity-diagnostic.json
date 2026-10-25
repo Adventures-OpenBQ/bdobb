@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-10-13T23:55:39.487Z",
+  "samples": 20,
+  "warmups": 3,
+  "parityOnly": true,
+  "observationDeadlineMs": 120000,
+  "platform": {
+    "os": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "cpu": "Apple M1 Max",
+    "logicalCpuCount": 10,
+    "physicalMemoryBytes": 68719476736,
+    "node": "v26.10.0"
+  },
+  "toolchain": {
+    "rust": "1.98.1",
+    "target": "wasm32-unknown-unknown",
+    "wasmBindgen": "0.2.128",
+    "wasmBindgenTarget": "web",
+    "protocolVersion": 1,
+    "sharedMemory": false
+  },
+  "source": {
+    "revision": "74ea1a8f2f0fd1b386fdac7acd0494df87880df3",
+    "workingTreeChanges": true,
+    "scriptSha256": "fe0353a78d062edfacd2fa77af74515ac12963cccdbb524313a855d194205179",
+    "harnessSha256": "ee466e098267836e89261ee7f4e242a3b4776717470f77b2ad66c25286e7a1a8",
+    "workloadsSha256": "1f16614526761e043b2cf3e94ef589160d78314e3fb22ba09287872829a1afcb",
+    "utilsSha256": "29108341a963e2564c8b88edb4561dd9314e650f114332b0627b987c91e3968d",
+    "driverUtilsSha256": "2664ac338d0761d9fb4ad438cc1700ea79530cc1611f2fdd32926451cf1ad2aa"
+  },
+  "artifact": {
+    "wasmSha256": "ca5a13b7d96d06f7840d241b3c8a4c715a2a766a31219b980b29aee2c67acd75",
+    "protocolVersion": 1
+  },
+  "method": {
+    "paths": "Production Vite builds; real createTableProvider TypeScript and Rust Web Workers. Common client validation, clone, worker transport, Rust wire conversions, Wasm startup and response publication included.",
+    "cache": "Fresh worker each observation; browser HTTP cache warmed by parity and 3 warmups. Not cold network.",
+    "order": "Sequential alternating engine order per paired iteration; no concurrent executor workloads. Driver transfers the exact tagged wire as one JSON string, parsed before the timed harness begins; pre-transfer JSON roundtrip is independently checked. This avoids driver serialization overhead, not executor work.",
+    "boundaries": "Factory, acquire including startup, initial apply, sequential first 100-row block then totals, total cold-load-ready; restore initial definition outside each warm pivot or sort/filter edit; edit apply and block/totals-ready; full pulled export from restored initial definition.",
+    "parity": "Before any timing: each action and full export against independent calculateView baseline and cross-engine view/block/export metadata. Only requestId and transferId transport identifiers excluded. Exact structural keys, row IDs/order, values/errors/formats, columns, totals and export metadata; 1e-12 relative/absolute numeric tolerance for explicit output column IDs whose published aggregation is mean or whose aggregate formula AST is division, at row/totals values locations only; source fields, metadata, errors, formats and signed zero remain exact.",
+    "statistics": "Median (average central pair), nearest-rank p95; individual observations in chronological engine order. Warmups discarded.",
+    "uiPaint": "Not measured: no shared renderer harness. Separate future UI/device acceptance gate.",
+    "memory": "Not measured: browser worker allocator/process peaks unavailable; 20k representative desktop workload is not an iPad limit.",
+    "activation": "TypeScript remains default; desktop evidence only; regular iPad/device acceptance outstanding."
+  },
+  "browsers": {
+    "chromium": {
+      "browserVersion": "151.0.7922.34",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "locale": "en-US",
+      "cases": [
+        {
+          "name": "mixedOriginal",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "4ca85fd4f319a38d4f74d30fb598d6765ba11977f778ccfadd3d61cdc2c0c88f",
+          "inputRows": 12,
+          "inputColumns": 2,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "mixed",
+          "inputRows": 1000,
+          "inputColumns": 2,
+          "workloadSha256": "932bd07a165d65236cb0dc718b3ac0f1eb72c006b2f44c45086547d8df1d4daa",
+          "stage": "parity",
+          "status": "failed",
+          "parity": "failed",
+          "timingsExcluded": true,
+          "error": "chromium mixed rust: page.evaluate: Error: Parity baseline.columns.1.id: [\"number\",\"-Infinity\"]\u001fsum != [\"number\",0]\u001fsum\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97599)\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97549)\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97549)\n    at l (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:99453)\n    at async Object.oa [as run] (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:99854)\n    at async <anonymous>:337:30"
+        }
+      ]
+    },
+    "webkit": {
+      "browserVersion": "26.5",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "locale": "en-US",
+      "cases": [
+        {
+          "name": "mixedOriginal",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "4ca85fd4f319a38d4f74d30fb598d6765ba11977f778ccfadd3d61cdc2c0c88f",
+          "inputRows": 12,
+          "inputColumns": 2,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "mixed",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "932bd07a165d65236cb0dc718b3ac0f1eb72c006b2f44c45086547d8df1d4daa",
+          "inputRows": 1000,
+          "inputColumns": 2,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "failedCases": [
+    {
+      "browser": "chromium",
+      "name": "mixed",
+      "stage": "parity",
+      "error": "chromium mixed rust: page.evaluate: Error: Parity baseline.columns.1.id: [\"number\",\"-Infinity\"]\u001fsum != [\"number\",0]\u001fsum\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97599)\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97549)\n    at hn (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:97549)\n    at l (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:99453)\n    at async Object.oa [as run] (http://127.0.0.1:4175/assets/rust-pivot-1K0sZuZX.js:13:99854)\n    at async <anonymous>:337:30"
+    }
+  ],
+  "status": "partial",
+  "completedAt": "2026-10-13T23:55:41.602Z",
+  "durationMs": 2115
+}

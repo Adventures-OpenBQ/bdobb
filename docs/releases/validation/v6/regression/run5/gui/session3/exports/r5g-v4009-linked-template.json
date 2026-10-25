@@ -1,0 +1,17 @@
+[
+  {
+    "Section": "statement/income/1.0.0/section/Expenses",
+    "Line item": "statement/income/1.0.0/line/cost_of_revenue",
+    "FY2025 · Value": 60
+  },
+  {
+    "Section": "statement/income/1.0.0/section/Income",
+    "Line item": "statement/income/1.0.0/line/revenue",
+    "FY2025 · Value": 100
+  },
+  {
+    "Section": "statement/income/1.0.0/section/Profit",
+    "Line item": "statement/income/1.0.0/line/calculated_gross_profit",
+    "FY2025 · Value": 40
+  }
+]

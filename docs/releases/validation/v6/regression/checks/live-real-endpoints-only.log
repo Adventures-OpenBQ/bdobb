@@ -1,0 +1,18 @@
+
+> bdobb@6.0.0 test:live <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+> bash scripts/rita-live-check.sh src/test/integration/real-endpoints.test.ts
+
+
+ RUN  v2.1.9 <home>/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v6
+
+ ✓ src/test/integration/real-endpoints.test.ts (5 tests) 6939ms
+   ✓ live endpoints > the NAS serves a well-formed widgets.json 6304ms
+   ✓ live endpoints > each MCP server yields well-formed tools 302ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  15:48:54
+   Duration  7.57s (transform 81ms, setup 201ms, collect 85ms, tests 6.94s, environment 0ms, prepare 50ms)
+
+JSON report written to <scratch>
+live gate: 5/5 passed, 0 skipped, 0 failed

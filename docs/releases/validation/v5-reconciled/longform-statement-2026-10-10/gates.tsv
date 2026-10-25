@@ -1,0 +1,14 @@
+typecheck|exit=0|dur=36s|load=118.06 117.78 95.83|cmd=pnpm typecheck
+lint|exit=0|dur=24s|load=123.07 118.85 97.09|cmd=pnpm lint
+unit|exit=0|dur=338s|load=120.22 118.55 97.62|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=24s|load=137.57 125.68 107.39|cmd=pnpm build
+e2e|exit=0|dur=585s|load=138.65 126.93 108.37|cmd=env BDOBB_BROWSER_PORT=4893 BDOBB_MOCK_PORT=4894 pnpm e2e
+web|exit=0|dur=1s|load=106.02 126.68 119.03|cmd=pnpm test:web
+build-web|exit=0|dur=18s|load=106.02 126.68 119.03|cmd=pnpm build:web
+web-browser|exit=0|dur=34s|load=116.72 128.06 119.66|cmd=pnpm test:web:browser
+cargo|exit=0|dur=3s|load=118.00 127.70 119.90|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=0|dur=3s|load=116.16 127.16 119.75|cmd=pnpm scrub
+help|exit=0|dur=12s|load=116.16 127.16 119.75|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+cargo-test|exit=0|dur=6s|load=113.79 126.10 119.51|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --offline -j 2
+diff-check|exit=0|dur=1s|load=128.78 129.00 120.57|cmd=git diff --check 21ebe45 HEAD
+DONE

@@ -1,0 +1,17 @@
+typecheck|exit=0|dur=9s|load=39.04 42.41 49.35|cmd=pnpm typecheck
+lint|exit=0|dur=8s|load=38.96 42.28 49.22|cmd=pnpm lint
+unit|exit=0|dur=153s|load=39.20 42.28 49.18|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+revision-test|exit=0|dur=2s|load=52.38 47.37 50.14|cmd=pnpm exec vitest run src/stores/dashboardRevision.test.ts
+build|exit=0|dur=12s|load=52.38 47.37 50.14|cmd=pnpm build
+e2e|exit=0|dur=360s|load=53.21 47.73 50.24|cmd=env BDOBB_BROWSER_PORT=4383 BDOBB_MOCK_PORT=4384 pnpm e2e
+web|exit=0|dur=1s|load=49.83 50.28 50.70|cmd=pnpm test:web
+build-web|exit=0|dur=9s|load=49.20 50.14 50.65|cmd=pnpm build:web
+web-browser|exit=0|dur=4s|load=50.63 50.42 50.74|cmd=pnpm test:web:browser
+cargo|exit=0|dur=1s|load=50.74 50.45 50.75|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=1|dur=2s|load=50.74 50.45 50.75|cmd=pnpm scrub
+help|exit=0|dur=3s|load=50.04 50.31 50.70|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+cargo-test|exit=0|dur=3s|load=50.04 50.31 50.70|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --offline -j 2
+notices-check|exit=0|dur=1s|load=49.71 50.24 50.67|cmd=pnpm notices:check
+dashsync|exit=0|dur=16s|load=49.71 50.24 50.67|cmd=env BDOBB_BROWSER_PORT=4491 BDOBB_MOCK_PORT=4492 pnpm test:dashsync --reporter=line
+diff-check|exit=0|dur=0s|load=48.91 50.02 50.58|cmd=git diff --check f7158b9 HEAD -- . :!docs/releases/validation/**/*.log
+DONE

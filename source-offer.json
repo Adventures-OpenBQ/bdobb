@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "release": "v6.0.0",
+  "baseCommit": "30df41cae3e9bb232e21251e5858d4e77219b13e",
+  "sourceId": "414a010d965c38da0bf2c991fce2ebbe5e92bb35f7a69842e0b6115819d194df",
+  "archiveFilename": "bdobb-v6.0.0-agpl-414a010d965c-source.tar.gz",
+  "archiveUrl": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v6.0.0-414a010d965c/bdobb-v6.0.0-agpl-414a010d965c-source.tar.gz",
+  "license": "AGPL-3.0-only",
+  "status": "prepared"
+}

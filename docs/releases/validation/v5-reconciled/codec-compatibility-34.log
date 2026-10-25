@@ -1,0 +1,12 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ✓ src/lib/appsJson.cleanV4.test.ts (8 tests) 26ms
+ ✓ src/lib/statementModel/persistence.test.ts (20 tests) 39ms
+ ✓ src/lib/appsJson.cleanV5.test.ts (6 tests) 277ms
+
+ Test Files  3 passed (3)
+      Tests  34 passed (34)
+   Start at  02:00:45
+   Duration  12.31s (transform 1.65s, setup 1.57s, collect 2.70s, tests 343ms, environment 3.26s, prepare 567ms)
+

@@ -1,0 +1,22 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+     Running unittests src/lib.rs (src-tauri/target/debug/deps/bdobb_lib-4064df4749172665)
+
+running 15 tests
+test video_wrapper::tests::every_response_carries_the_spec_headers ... ok
+test video_wrapper::tests::bad_or_missing_id_is_400 ... ok
+test video_wrapper::tests::any_host_but_exactly_loopback_and_port_is_421 ... ok
+test video_wrapper::tests::malformed_request_line_is_400 ... ok
+test video_wrapper::tests::other_method_is_405_and_names_get ... ok
+test video_wrapper::tests::other_path_is_404 ... ok
+test video_wrapper::tests::valid_id_gets_the_page_embedding_exactly_that_id ... ok
+test migrate::tests::does_nothing_without_a_source ... ok
+test video_wrapper::tests::the_port_is_stable_while_alive_and_rebinds_after_the_loop_ends ... ok
+test video_wrapper::tests::binds_loopback_only_and_serves_over_a_real_socket ... ok
+test video_wrapper::tests::an_oversized_head_is_dropped_and_the_next_client_is_served ... ok
+test migrate::tests::runs_once ... ok
+test migrate::tests::never_overwrites_an_earlier_backup ... ok
+test migrate::tests::copies_the_source_and_moves_the_original_aside ... ok
+test video_wrapper::tests::a_silent_client_is_cut_off_at_the_deadline ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+

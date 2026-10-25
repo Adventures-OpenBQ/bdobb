@@ -1,0 +1,45 @@
+
+Running 39 tests using 1 worker
+
+  -   1 [chromium] › e2e/dashboard-sync.spec.ts:163:3 › Workspace dashboard sync against a real key-mode server › connects in key mode on startup with no sign-in dialog, and the sync runs
+  -   2 [chromium] › e2e/dashboard-sync.spec.ts:174:3 › Workspace dashboard sync against a real key-mode server › uploads a local dashboard to the server and records its link
+  -   3 [chromium] › e2e/dashboard-sync.spec.ts:182:3 › Workspace dashboard sync against a real key-mode server › renaming the dashboard in the rail reaches the server
+  -   4 [chromium] › e2e/dashboard-sync.spec.ts:198:3 › Workspace dashboard sync against a real key-mode server › a dashboard added on the server appears after relaunch
+  -   5 [chromium] › e2e/dashboard-sync.spec.ts:212:3 › Workspace dashboard sync against a real key-mode server › the rail delete confirm reads: Delete "X" here and on <server>?
+  -   6 [chromium] › e2e/dashboard-sync.spec.ts:229:3 › Workspace dashboard sync against a real key-mode server › an offline rail delete leaves a tombstone that the next sync consumes
+  -   7 [chromium] › e2e/dashboard-sync.spec.ts:267:3 › Workspace dashboard sync against a real key-mode server › removing a tab reaches the server
+  ✓   8 [chromium] › e2e/dashboards.spec.ts:52:1 › a folder takes a dragged dashboard, and the tree survives a reload (19.5s)
+  ✓   9 [chromium] › e2e/dashboards.spec.ts:95:1 › Duplicate adds a copy directly after the original and persists the flat order (4.5s)
+  ✓  10 [chromium] › e2e/dashboards.spec.ts:116:1 › importing an apps.json creates its cards, one of them unresolved (4.1s)
+  ✓  11 [chromium] › e2e/dashboards.spec.ts:136:1 › Export apps.json writes the documented shape (4.1s)
+  ✓  12 [chromium] › e2e/dashboards.spec.ts:172:1 › ?viewer=<id> shows one dashboard, read-only (4.3s)
+  ✓  13 [chromium] › e2e/workspaces.spec.ts:55:1 › the rail lock is reachable by keyboard, and a mouse click does not keep it on screen (6.4s)
+  ✓  14 [chromium] › e2e/workspaces.spec.ts:97:1 › the Workspaces + is reachable by keyboard, and a mouse click does not keep it on screen (5.6s)
+  ✓  15 [chromium] › e2e/workspaces.spec.ts:135:1 › a Laptop workspace tiles two dashboards, each showing its own tab bar (4.8s)
+  ✓  16 [chromium] › e2e/workspaces.spec.ts:154:1 › hovering a tile focuses it and un-focuses the other (4.4s)
+  ✓  17 [chromium] › e2e/workspaces.spec.ts:176:1 › ⌘K adds a widget to the hovered tile, not the other one (5.3s)
+  ✓  18 [chromium] › e2e/workspaces.spec.ts:202:1 › a card maximized in a tile fills that tile's dashboard, not the whole workspace (4.8s)
+  ✓  19 [chromium] › e2e/workspaces.spec.ts:248:1 › a dashboard taller than its tile scrolls inside it, under its own tab bar (5.0s)
+  ✓  20 [chromium] › e2e/workspaces.spec.ts:277:1 › clicking the active workspace row returns to single-dashboard mode (5.3s)
+  ✓  21 [chromium] › e2e/workspaces.spec.ts:299:1 › the dialog creates a Laptop workspace with two dashboards and switches into it (5.5s)
+  ✓  22 [chromium] › e2e/workspaces.spec.ts:325:1 › Edit… reopens the workspace, previews the swap on the grid behind, and Done keeps it (6.2s)
+  ✓  23 [chromium] › e2e/workspaces.spec.ts:350:1 › ⌥N opens the New workspace dialog, and Escape closes it having created nothing (3.9s)
+  ✓  24 [chromium] › e2e/workspaces.spec.ts:380:1 › a click on a dashboard in neither tile opens it alone, and the workspace comes back as it was (5.7s)
+  ✓  25 [chromium] › e2e/workspaces.spec.ts:401:1 › dragging a rail row onto tile B changes only B (5.1s)
+  ✓  26 [chromium] › e2e/workspaces.spec.ts:419:1 › Put in panel ▸ A on a row's menu puts the dashboard in tile A (4.7s)
+  ✓  27 [chromium] › e2e/workspaces.spec.ts:441:1 › Put in panel brings a dashboard back on the tab it was on (#23) (5.7s)
+  ✓  28 [chromium] › e2e/workspaces.spec.ts:511:1 › a tile resized in Arrange mode keeps its size after Done, and in a fresh load of the file Done wrote (8.8s)
+  ✓  29 [chromium] › e2e/workspaces.spec.ts:534:1 › Cancel puts the arrangement back and writes nothing (7.2s)
+  ✓  30 [chromium] › e2e/workspaces.spec.ts:545:1 › a push off the bottom is refused and nothing moves (7.0s)
+  ✓  31 [chromium] › e2e/workspaces.spec.ts:562:1 › resizing the window keeps each tile's share (7.1s)
+  ✓  32 [chromium] › e2e/workspaces.spec.ts:578:1 › on Laptop, dragging the left tile onto the right swaps them (5.7s)
+  ✓  33 [chromium] › e2e/workspaces.spec.ts:603:1 › Add tile fills the free space (6.6s)
+  ✓  34 [chromium] › e2e/workspaces.spec.ts:618:1 › a card maximized after its tile has moved fills the tile where it now is (7.7s)
+  ✓  35 [chromium] › e2e/workspaces.spec.ts:642:1 › the dashboard in a resized tile lays its cards out to the tile's new width (6.2s)
+  ✓  36 [chromium] › e2e/workspaces.spec.ts:673:1 › Done double-clicked writes once, flashes no error and clears no dashboard (7.1s)
+  ✓  37 [chromium] › e2e/workspaces.spec.ts:708:1 › a layout saved from one workspace can be applied to another (7.7s)
+  ✓  38 [chromium] › e2e/workspaces.spec.ts:749:1 › a mouse click on a face's ✕ removes the tile, and Cancel puts it back (5.5s)
+  ✓  39 [chromium] › e2e/workspaces.spec.ts:766:1 › the ne handle still resizes a tile beside its ✕ (5.8s)
+
+  7 skipped
+  32 passed (3.4m)

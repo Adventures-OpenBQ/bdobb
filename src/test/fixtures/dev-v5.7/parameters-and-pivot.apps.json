@@ -1,0 +1,174 @@
+[
+  {
+    "name": "Parameters & Pivot",
+    "description": "The v5 line on one dashboard, every tab keyless. Date Parameters shows the period-aware pickers (quarter, fiscal year, week, a date-time to the second, a date range and a time of day) and the relative-date expression grammar, with two Period echo cards sharing a Quarter group so the chain-link, the numbered badge and fiscal relabelling are all visible at once. Statements opens three yfinance statement widgets already in the Statement pivot view -- income, balance and cash-flow for AAPL -- each turning the backend's wide one-row-per-period table into line items down the side, one column per period; Pivot Table opens two ordinary tables, SEC insider trades and yfinance daily prices for AAPL, so the Pivot button in each card's header can group and aggregate them into a pivot of your own. Nothing here needs a key or a sign-up: the parameter cards are built-ins, and yfinance and the SEC answer keyless on the stack.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "date-parameters": {
+        "id": "date-parameters",
+        "name": "Date Parameters",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 28,
+            "h": 6,
+            "state": {
+              "params": {
+                "text": "A date parameter can pick the right unit -- a quarter picker for a fiscal quarter, not a day on a calendar -- and can store an expression (T, T-1bd, T-26w, Q-1, FQ-4, session_open) that resolves fresh on every render instead of freezing to the day it was set. The two Period echo cards below share a Quarter group: editing either card's quarter moves both, and because they end their fiscal years in different months the same stored quarter shows two labels. The Date expression cards resolve one expression each, as a date and a datetime."
+              }
+            }
+          },
+          {
+            "i": "period_echo",
+            "x": 0,
+            "y": 6,
+            "w": 20,
+            "h": 8,
+            "groups": ["Quarter"],
+            "state": {
+              "params": {
+                "fy_end": "December"
+              }
+            }
+          },
+          {
+            "i": "period_echo",
+            "x": 20,
+            "y": 6,
+            "w": 20,
+            "h": 8,
+            "groups": ["Quarter"],
+            "state": {
+              "params": {
+                "fy_end": "September"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 0,
+            "y": 14,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "T"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 14,
+            "y": 14,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "T-26w"
+              }
+            }
+          },
+          {
+            "i": "date_probe",
+            "x": 28,
+            "y": 14,
+            "w": 14,
+            "h": 7,
+            "state": {
+              "params": {
+                "expr": "FQ-4",
+                "fy_end": "9"
+              }
+            }
+          }
+        ]
+      },
+      "statements": {
+        "id": "statements",
+        "name": "Statements",
+        "layout": [
+          {
+            "i": "equity_fundamental_income_yfinance_obb",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 16,
+            "state": {
+              "params": { "symbol": "AAPL", "provider": "yfinance", "period": "annual" },
+              "pivotView": { "enabled": true }
+            }
+          },
+          {
+            "i": "equity_fundamental_balance_yfinance_obb",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 16,
+            "state": {
+              "params": { "symbol": "AAPL", "provider": "yfinance", "period": "annual" },
+              "pivotView": { "enabled": true }
+            }
+          },
+          {
+            "i": "equity_fundamental_cash_yfinance_obb",
+            "x": 0,
+            "y": 16,
+            "w": 20,
+            "h": 16,
+            "state": {
+              "params": { "symbol": "AAPL", "provider": "yfinance", "period": "annual" },
+              "pivotView": { "enabled": true }
+            }
+          }
+        ]
+      },
+      "pivot-table": {
+        "id": "pivot-table",
+        "name": "Pivot Table",
+        "layout": [
+          {
+            "i": "note",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 7,
+            "state": {
+              "params": {
+                "text": "## Pivot Table\n\nBoth cards open as ordinary tables. Click the **Pivot** icon in a card's header to open the pivot panel, then drag fields into **Row Groups** or **Column Groups**.\n\n- **Insider trades:** drag *transaction_type* (or *owner_name*) into Row Groups.\n- **Daily prices:** drag *date* into Row Groups and bucket it by month, then set *close* to Mean.\n\nThe **Statements** tab is the other pivot: the statement view that turns a financial statement on its side."
+              }
+            }
+          },
+          {
+            "i": "equity_ownership_insider_trading_sec_obb",
+            "x": 0,
+            "y": 7,
+            "w": 20,
+            "h": 18,
+            "state": {
+              "params": { "symbol": "AAPL", "provider": "sec" }
+            }
+          },
+          {
+            "i": "equity_price_historical_yfinance_obb",
+            "x": 20,
+            "y": 7,
+            "w": 20,
+            "h": 18,
+            "state": {
+              "params": { "symbol": "AAPL", "provider": "yfinance" }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [
+      { "name": "Quarter", "type": "param", "paramName": "quarter", "defaultValue": "T" }
+    ],
+    "prompts": []
+  }
+]

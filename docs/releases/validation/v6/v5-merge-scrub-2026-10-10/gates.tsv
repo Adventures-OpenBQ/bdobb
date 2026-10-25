@@ -1,0 +1,15 @@
+typecheck|exit=0|dur=19s|load=364.36 425.99 464.41|cmd=pnpm typecheck
+lint|exit=0|dur=14s|load=365.16 422.13 462.13|cmd=pnpm lint
+unit|exit=0|dur=650s|load=367.11 419.76 460.58|cmd=pnpm exec vitest run --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+build|exit=0|dur=43s|load=490.53 468.32 464.03|cmd=pnpm build
+e2e|exit=1|dur=853s|load=492.09 472.28 465.73|cmd=env BDOBB_BROWSER_PORT=4397 BDOBB_MOCK_PORT=4398 pnpm e2e
+web|exit=0|dur=3s|load=386.31 454.33 478.80|cmd=pnpm test:web
+build-web|exit=0|dur=18s|load=382.44 452.40 477.97|cmd=pnpm build:web
+web-browser|exit=0|dur=5s|load=381.23 447.43 475.58|cmd=pnpm test:web:browser
+cargo|exit=0|dur=1s|load=384.34 446.97 475.26|cmd=cargo check --manifest-path src-tauri/Cargo.toml --locked --offline -j 2
+scrub|exit=1|dur=13s|load=384.34 446.97 475.26|cmd=pnpm scrub
+help|exit=0|dur=10s|load=402.13 447.72 475.02|cmd=pnpm exec vitest run src/help scripts/help-shots.test.mjs --maxWorkers=2 --minWorkers=1 --testTimeout=60000
+cargo-test|exit=0|dur=3s|load=408.21 448.23 475.04|cmd=cargo test --manifest-path src-tauri/Cargo.toml --lib --locked --offline -j 2
+e2e-webkit|exit=1|dur=67s|load=411.88 448.32 474.92|cmd=env BDOBB_BROWSER_PORT=4797 BDOBB_MOCK_PORT=4798 pnpm exec playwright test -c .superpowers/playwright.webkit.config.ts e2e/drop.spec.ts e2e/layout.spec.ts e2e/rail.spec.ts e2e/rita-arrange.spec.ts e2e/rita-edit-bar.spec.ts e2e/rita-no-url.spec.ts e2e/rita.spec.ts e2e/smoke.spec.ts e2e/rail-after-dialog.webkit.spec.ts
+diff-check|exit=0|dur=0s|load=437.40 450.39 473.83|cmd=git diff --check ef51000 HEAD -- . :!docs/releases/validation/**/*.log
+DONE

@@ -1,0 +1,588 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/components/dialogs/SettingsDialog.test.tsx (84 tests | 1 failed | 83 skipped) 99ms
+   × SettingsDialog > lets Layout point Option-number shortcuts at workspaces 99ms
+     → Unable to find an element with the text: Option-number shortcuts. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<dialog[39m
+      [33maria-label[39m=[32m"Settings"[39m
+      [33mclass[39m=[32m"bd-dialog-backdrop"[39m
+      [33mopen[39m=[32m""[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bd-dialog"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bd-header"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-heading"[39m
+          [36m>[39m
+            [36m<h2[39m
+              [33mclass[39m=[32m"bd-title"[39m
+            [36m>[39m
+              [0mSettings[0m
+            [36m</h2>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-actions"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--ghost"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mImport…[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--ghost"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mExport…[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close"[39m
+            [33mclass[39m=[32m"bd-button bd-button--icon"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m✕[0m
+          [36m</button>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bd-content"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"Settings sections"[39m
+            [33maria-orientation[39m=[32m"vertical"[39m
+            [33mclass[39m=[32m"bd-nav"[39m
+            [33mrole[39m=[32m"tablist"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"bd-nav-label"[39m
+            [36m>[39m
+              [0mSettings sections[0m
+            [36m</span>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-general"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mGeneral[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-widget"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mWidget[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mid[39m=[32m"settings-tab-layout"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLayout[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-logs"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLogs[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m"settings-tab-layout"[39m
+            [33mclass[39m=[32m"bd-body"[39m
+            [33mid[39m=[32m"settings-panel"[39m
+            [33mrole[39m=[32m"tabpanel"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-section-heading"[39m
+            [36m>[39m
+              [36m<h3>[39m
+                [0mLayout[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"bd-muted"[39m
+              [36m>[39m
+                [0mAdjust the space around your dashboard.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"bd-row-title"[39m
+                [36m>[39m
+                  [0mCorner drag handles[0m
+                [36m</div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mResize widgets from their corners.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33maria-checked[39m=[32m"false"[39m
+                [33maria-label[39m=[32m"Corner drag handles"[39m
+                [33mclass[39m=[32m"bd-switch"[39m
+                [33mrole[39m=[32m"switch"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"bd-row-title"[39m
+                [36m>[39m
+                  [0mQuick add toolbar[0m
+                [36m</div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mKeep the quick add action visible.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33maria-checked[39m=[32m"true"[39m
+                [33maria-label[39m=[32m"Quick add toolbar"[39m
+                [33mclass[39m=[32m"bd-switch"[39m
+                [33mrole[39m=[32m"switch"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"range-collapsed-rail-width"[39m
+                [36m>[39m
+                  [0mCollapsed rail width[0m
+                [36m</label>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mWidth of the collapsed navigation rail.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-field"[39m
+              [36m>[39m
+                [36m<output[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                  [33mfor[39m=[32m"range-collapsed-rail-width"[39m
+                [36m>[39m
+                  [0m48[0m
+                  [0m [0m
+                  [0mpx[0m
+                [36m</output>[39m
+                [36m<input[39m
+                  [33maria-label[39m=[32m"Collapsed rail width"[39m
+                  [33mid[39m=[32m"range-collapsed-rail-width"[39m
+                  [33mmax[39m=[32m"120"[39m
+                  [33mmin[39m=[32m"24"[39m
+                  [33mstep[39m=[32m"1"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"48"[39m
+                [36m/>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"range-dashboard-widget-spacing"[39m
+                [36m>[39m
+                  [0mDashboard widget spacing[0m
+                [36m</label>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mSpace between cards.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-field"[39m
+              [36m>[39m
+                [36m<output[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                  [33mfor[39m=[32m"range-dashboard-widget-spacing"[39m
+                [36m>[39m
+                  [0m10[0m
+                  [0m [0m
+                  [0mpx[0m
+                [36m</output>[39m
+                [36m<input[39m
+                  [33maria-label[39m=[32m"Dashboard widget spacing"[39m
+                  [33mid[39m=[32m"range-dashboard-widget-spacing"[39m
+                  [33mmax[39m=[32m"25"[39m
+                  [33mmin[39m=[32m"1"[39m
+                  [33mstep[39m=[32m"1"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+        [36m</div>[39m
+        [36m<footer[39m
+          [33mclass[39m=[32m"bd-footer"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mImport and Export include preferences only, never provider keys. Done applies pending preferences; Cancel discards them.[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-actions"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mCancel[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--primary"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mDone[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</footer>[39m
+      [36m</div>[39m
+    [36m</dialog>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/dialogs/SettingsDialog.test.tsx > SettingsDialog > lets Layout point Option-number shortcuts at workspaces
+TestingLibraryElementError: Unable to find an element with the text: Option-number shortcuts. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<dialog[39m
+      [33maria-label[39m=[32m"Settings"[39m
+      [33mclass[39m=[32m"bd-dialog-backdrop"[39m
+      [33mopen[39m=[32m""[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"bd-dialog"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"bd-header"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-heading"[39m
+          [36m>[39m
+            [36m<h2[39m
+              [33mclass[39m=[32m"bd-title"[39m
+            [36m>[39m
+              [0mSettings[0m
+            [36m</h2>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-actions"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--ghost"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mImport…[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--ghost"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mExport…[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close"[39m
+            [33mclass[39m=[32m"bd-button bd-button--icon"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [0m✕[0m
+          [36m</button>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bd-content"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-label[39m=[32m"Settings sections"[39m
+            [33maria-orientation[39m=[32m"vertical"[39m
+            [33mclass[39m=[32m"bd-nav"[39m
+            [33mrole[39m=[32m"tablist"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"bd-nav-label"[39m
+            [36m>[39m
+              [0mSettings sections[0m
+            [36m</span>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-general"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mGeneral[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-widget"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mWidget[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"true"[39m
+              [33mid[39m=[32m"settings-tab-layout"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLayout[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"settings-panel"[39m
+              [33maria-selected[39m=[32m"false"[39m
+              [33mid[39m=[32m"settings-tab-logs"[39m
+              [33mrole[39m=[32m"tab"[39m
+              [33mtabindex[39m=[32m"-1"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLogs[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m"settings-tab-layout"[39m
+            [33mclass[39m=[32m"bd-body"[39m
+            [33mid[39m=[32m"settings-panel"[39m
+            [33mrole[39m=[32m"tabpanel"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-section-heading"[39m
+            [36m>[39m
+              [36m<h3>[39m
+                [0mLayout[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"bd-muted"[39m
+              [36m>[39m
+                [0mAdjust the space around your dashboard.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"bd-row-title"[39m
+                [36m>[39m
+                  [0mCorner drag handles[0m
+                [36m</div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mResize widgets from their corners.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33maria-checked[39m=[32m"false"[39m
+                [33maria-label[39m=[32m"Corner drag handles"[39m
+                [33mclass[39m=[32m"bd-switch"[39m
+                [33mrole[39m=[32m"switch"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"bd-row-title"[39m
+                [36m>[39m
+                  [0mQuick add toolbar[0m
+                [36m</div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mKeep the quick add action visible.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<button[39m
+                [33maria-checked[39m=[32m"true"[39m
+                [33maria-label[39m=[32m"Quick add toolbar"[39m
+                [33mclass[39m=[32m"bd-switch"[39m
+                [33mrole[39m=[32m"switch"[39m
+                [33mtype[39m=[32m"button"[39m
+              [36m/>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"range-collapsed-rail-width"[39m
+                [36m>[39m
+                  [0mCollapsed rail width[0m
+                [36m</label>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mWidth of the collapsed navigation rail.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-field"[39m
+              [36m>[39m
+                [36m<output[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                  [33mfor[39m=[32m"range-collapsed-rail-width"[39m
+                [36m>[39m
+                  [0m48[0m
+                  [0m [0m
+                  [0mpx[0m
+                [36m</output>[39m
+                [36m<input[39m
+                  [33maria-label[39m=[32m"Collapsed rail width"[39m
+                  [33mid[39m=[32m"range-collapsed-rail-width"[39m
+                  [33mmax[39m=[32m"120"[39m
+                  [33mmin[39m=[32m"24"[39m
+                  [33mstep[39m=[32m"1"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"48"[39m
+                [36m/>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"bd-row"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-row-copy"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mfor[39m=[32m"range-dashboard-widget-spacing"[39m
+                [36m>[39m
+                  [0mDashboard widget spacing[0m
+                [36m</label>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                [36m>[39m
+                  [0mSpace between cards.[0m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"bd-field"[39m
+              [36m>[39m
+                [36m<output[39m
+                  [33mclass[39m=[32m"bd-muted"[39m
+                  [33mfor[39m=[32m"range-dashboard-widget-spacing"[39m
+                [36m>[39m
+                  [0m10[0m
+                  [0m [0m
+                  [0mpx[0m
+                [36m</output>[39m
+                [36m<input[39m
+                  [33maria-label[39m=[32m"Dashboard widget spacing"[39m
+                  [33mid[39m=[32m"range-dashboard-widget-spacing"[39m
+                  [33mmax[39m=[32m"25"[39m
+                  [33mmin[39m=[32m"1"[39m
+                  [33mstep[39m=[32m"1"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"10"[39m
+                [36m/>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</section>[39m
+        [36m</div>[39m
+        [36m<footer[39m
+          [33mclass[39m=[32m"bd-footer"[39m
+        [36m>[39m
+          [36m<p>[39m
+            [0mImport and Export include preferences only, never provider keys. Done applies pending preferences; Cancel discards them.[0m
+          [36m</p>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"bd-actions"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mCancel[0m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"bd-button bd-button--primary"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mDone[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</footer>[39m
+      [36m</div>[39m
+    [36m</dialog>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/components/dialogs/SettingsDialog.test.tsx:226:19
+    224|     await waitFor(() => expect(screen.getAllByRole("tab")).toHaveLengt…
+    225|     await openTab("Layout");
+    226|     expect(screen.getByText("Option-number shortcuts")).toBeInTheDocum…
+       |                   ^
+    227|     expect(screen.getByRole("radio", { name: "Dashboards" })).toBeChec…
+    228|     await userEvent.click(screen.getByRole("radio", { name: "Workspace…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 83 skipped (84)
+   Start at  12:40:16
+   Duration  1.87s (transform 494ms, setup 135ms, collect 872ms, tests 99ms, environment 310ms, prepare 59ms)
+
