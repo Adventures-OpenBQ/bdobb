@@ -73,3 +73,5 @@ Provider PR #16: f9e3908155601108df957cf55e61b8c5b4e4f501
 Exact paired provider commit: d81131133fbdf850db8f854ae5c08d1c496d0dd7
 
 The catalogue contains all 71 calendars. Coverage/disagreement limits in docs/calendars/release-v4-evidence.md remain applicable. These sources supersede earlier archive offers for this changed edition; original Apache tags stay intact.
+
+Documentation copyright patch v9.0.0, based on published source commit 6dbb02cceac4a22168fc0516a194da3c0b6edcc0. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.
