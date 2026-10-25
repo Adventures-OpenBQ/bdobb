@@ -1,0 +1,33 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v5-reconciled
+
+ ❯ src/lib/statementExecution.test.ts (4 tests | 1 failed) 22ms
+   × retains generic linked financial-cell formats and errors from the worker transfer 5ms
+     → expected { field: 'revenue', …(3) } to have property "formats.0.formatterFn" with value 'normalizedPercent'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/statementExecution.test.ts > retains generic linked financial-cell formats and errors from the worker transfer
+AssertionError: expected { field: 'revenue', …(3) } to have property "formats.0.formatterFn" with value 'normalizedPercent'
+
+- Expected: 
+"normalizedPercent"
+
++ Received: 
+undefined
+
+ ❯ src/lib/statementExecution.test.ts:73:59
+     71|     const snapshot = await loadStatementSnapshot(executor, revision, s…
+     72|     const items = snapshot.statement?.sections.flatMap(section => sect…
+     73|     expect(items?.find(item => item.field === 'revenue')).toHaveProper…
+       |                                                           ^
+     74|     expect(items?.find(item => item.field === 'net_income')).toHavePro…
+     75|     expect(snapshot.statement?.rows.find(row => row['Line item'] === '…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  01:24:17
+   Duration  2.89s (transform 993ms, setup 228ms, collect 1.42s, tests 22ms, environment 526ms, prepare 85ms)
+

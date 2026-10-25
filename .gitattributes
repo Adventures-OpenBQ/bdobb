@@ -1,0 +1,3 @@
+# Gate receipts are verbatim tool output; whitespace in them is evidence,
+# not style, so git diff --check skips them (#25).
+docs/releases/validation/** -whitespace

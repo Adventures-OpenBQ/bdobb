@@ -1,0 +1,9 @@
+{
+  "product": "BDOBB Clean v3 Repair",
+  "bundleIdentifier": "com.artcashin.bdobb.clean.v3.repair",
+  "version": "3.0.0",
+  "binarySha256": "e9e7a4e1da5ec236098964f372d2a5884dc100583996e1e4356975c4044aa58e",
+  "nativeChecks": [
+    "Fresh app-data root: settings.json created; no settings startup warning"
+  ]
+}

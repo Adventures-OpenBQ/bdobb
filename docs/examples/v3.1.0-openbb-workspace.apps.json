@@ -1,0 +1,224 @@
+[
+  {
+    "name": "OpenBB Workspace - CFTC Commitment of Traders",
+    "description": "OpenBB's CFTC Commitment of Traders dashboard, rebuilt on openbq-docker's widget ids. The search card lists stock-index futures; the report card shows 52 weeks of changes in legacy futures positions. CFTC needs no key.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "tab0": {
+        "id": "tab0",
+        "name": "Main",
+        "layout": [
+          {
+            "i": "cftc_cot_cftc_obb",
+            "x": 0,
+            "y": 15,
+            "w": 40,
+            "h": 22,
+            "state": {
+              "params": {
+                "code": "CFTC_13874+",
+                "report_type": "legacy",
+                "measure": "changes",
+                "futures_only": "true",
+                "limit": "52",
+                "provider": "cftc"
+              }
+            }
+          },
+          {
+            "i": "cftc_cot_search_cftc_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 15,
+            "state": {
+              "params": {
+                "report_type": "legacy",
+                "subcategory": "stock_indices",
+                "provider": "cftc"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  },
+  {
+    "name": "OpenBB Workspace - BLS",
+    "description": "OpenBB's example BLS app, rebuilt on openbq-docker's widget ids: a search over the nonfarm-payrolls survey beside one series (total nonfarm employment) since 2016. BLS needs no key.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "Search": {
+        "id": "Search",
+        "name": "Search",
+        "layout": [
+          {
+            "i": "bls_search_bls_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 8,
+            "state": {
+              "params": {
+                "category": "nfp",
+                "include_extras": true,
+                "provider": "bls"
+              }
+            }
+          },
+          {
+            "i": "bls_series_bls_obb",
+            "x": 0,
+            "y": 8,
+            "w": 40,
+            "h": 10,
+            "state": {
+              "params": {
+                "symbol": "CES0000000001",
+                "start_date": "2016-01-01",
+                "calculations": true,
+                "provider": "bls"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  },
+  {
+    "name": "OpenBB Workspace - IMF Explorer",
+    "description": "OpenBB's IMF Explorer, rebuilt on openbq-docker's widget ids: available indicators and indicator data, direction of trade, and PortWatch chokepoint and port volumes. Its dataflow and presentation-table tabs used OpenBB-hosted widgets that openbq-docker does not serve, so they are left out. IMF needs no key.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "indicators": {
+        "id": "indicators",
+        "name": "indicators",
+        "layout": [
+          {
+            "i": "imf_available_indicators_imf_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 15,
+            "state": {
+              "params": {
+                "dataflows": "CTOT",
+                "symbol": "CTOT::CEPI_CTOTX_GDP",
+                "provider": "imf"
+              }
+            }
+          },
+          {
+            "i": "imf_indicators_imf_obb",
+            "x": 0,
+            "y": 17,
+            "w": 40,
+            "h": 21,
+            "state": {
+              "params": {
+                "symbol": "CTOT::CEPI_CTOTX_GDP",
+                "country": [
+                  "",
+                  "AUS"
+                ],
+                "frequency": "M",
+                "limit": "1",
+                "pivot": "false",
+                "provider": "imf"
+              }
+            }
+          }
+        ]
+      },
+      "direction-of-trade": {
+        "id": "direction-of-trade",
+        "name": "direction-of-trade",
+        "layout": [
+          {
+            "i": "imf_direction_of_trade_imf_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 27,
+            "state": {
+              "params": {
+                "country": "united_states",
+                "counterpart": "world",
+                "direction": "balance",
+                "start_date": "2010-01-01",
+                "frequency": "quarter",
+                "provider": "imf"
+              }
+            }
+          }
+        ]
+      },
+      "port-watch": {
+        "id": "port-watch",
+        "name": "port-watch",
+        "layout": [
+          {
+            "i": "imf_chokepoint_volume_imf_obb",
+            "x": 0,
+            "y": 2,
+            "w": 40,
+            "h": 16,
+            "state": {
+              "params": {
+                "start_date": "2024-01-01",
+                "chokepoint": [
+                  "chokepoint2"
+                ],
+                "provider": "imf"
+              }
+            }
+          },
+          {
+            "i": "imf_port_info_imf_obb",
+            "x": 0,
+            "y": 18,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {
+                "country": "USA",
+                "port_code": "port664",
+                "provider": "imf"
+              }
+            }
+          },
+          {
+            "i": "imf_port_volume_imf_obb",
+            "x": 0,
+            "y": 32,
+            "w": 40,
+            "h": 15,
+            "state": {
+              "params": {
+                "start_date": "2024-01-01",
+                "port_code": "port664",
+                "country": "DEU",
+                "provider": "imf"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": []
+  }
+]

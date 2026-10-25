@@ -1,0 +1,6 @@
+
+> bdobb@4.0.0 notices:check <worktree>
+> node scripts/third-party-notices.mjs --check
+
+third-party-notices: FAILED — THIRD_PARTY_NOTICES.md is out of date; run node scripts/third-party-notices.mjs
+ ELIFECYCLE  Command failed with exit code 1.

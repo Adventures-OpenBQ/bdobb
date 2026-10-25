@@ -1,0 +1,6 @@
+
+> bdobb@3.0.0 scrub ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v3-repair
+> bash scripts/scrub-check.sh && bash scripts/header-check.sh
+
+scrub-check: clean
+header-check: clean

@@ -1,0 +1,6 @@
+# git evidence for the merge commit (recorded after the fact; original merge stdout was not captured)
+commit 2c915175abab717c82e8bcf64b7046cdcc520e6f
+parents 89889791bad5b44c857f3efe4b528231dd299560 1a97fcf7b3f92f9bd640035e0fa2fef0c09fc669
+subject Merge branch 'codex/clean-v4-integration' into codex/clean-v5-reconciled
+conflict markers in merge diff vs first parent:
+0

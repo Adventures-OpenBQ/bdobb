@@ -1,0 +1,548 @@
+[
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "tax_effect_of_unusual_items",
+  "value": 0.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "tax_rate_for_calcs",
+  "value": 0.156
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "normalized_ebitda",
+  "value": 144748000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income_from_continuing_operation_net_minority_interest",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "reconciled_depreciation",
+  "value": 11698000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "reconciled_cost_of_revenue",
+  "value": 220960000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "ebitda",
+  "value": 144748000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "ebit",
+  "value": 133050000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_interest_income",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "interest_expense",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "interest_income",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "normalized_income",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income_from_continuing_and_discontinued_operation",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "total_expenses",
+  "value": 283111000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "total_operating_income_as_reported",
+  "value": 133050000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "diluted_average_shares",
+  "value": 15004697000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "basic_average_shares",
+  "value": 14948500000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "diluted_eps",
+  "value": 7.46
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "basic_eps",
+  "value": 7.49
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "diluted_ni_availto_com_stockholders",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income_common_stockholders",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income_including_noncontrolling_interests",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_income_continuous_operations",
+  "value": 112010000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "tax_provision",
+  "value": 20719000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "pretax_income",
+  "value": 132729000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "other_income_expense",
+  "value": -321000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "other_non_operating_income_expenses",
+  "value": -321000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "net_non_operating_interest_income_expense",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "interest_expense_non_operating",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "interest_income_non_operating",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "operating_income",
+  "value": 133050000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "operating_expense",
+  "value": 62151000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "research_and_development",
+  "value": 34550000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "selling_general_and_administration",
+  "value": 27601000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "gross_profit",
+  "value": 195201000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "cost_of_revenue",
+  "value": 220960000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "total_revenue",
+  "value": 416161000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2025-09-30",
+  "period": "annual",
+  "line_item": "operating_revenue",
+  "value": 416161000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "tax_effect_of_unusual_items",
+  "value": 0.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "tax_rate_for_calcs",
+  "value": 0.241
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "normalized_ebitda",
+  "value": 134661000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income_from_continuing_operation_net_minority_interest",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "reconciled_depreciation",
+  "value": 11445000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "reconciled_cost_of_revenue",
+  "value": 210352000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "ebitda",
+  "value": 134661000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "ebit",
+  "value": 123216000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_interest_income",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "interest_expense",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "interest_income",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "normalized_income",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income_from_continuing_and_discontinued_operation",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "total_expenses",
+  "value": 267819000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "total_operating_income_as_reported",
+  "value": 123216000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "diluted_average_shares",
+  "value": 15408095000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "basic_average_shares",
+  "value": 15343783000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "diluted_eps",
+  "value": 6.08
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "basic_eps",
+  "value": 6.11
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "diluted_ni_availto_com_stockholders",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income_common_stockholders",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income_including_noncontrolling_interests",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_income_continuous_operations",
+  "value": 93736000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "tax_provision",
+  "value": 29749000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "pretax_income",
+  "value": 123485000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "other_income_expense",
+  "value": 269000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "other_non_operating_income_expenses",
+  "value": 269000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "net_non_operating_interest_income_expense",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "interest_expense_non_operating",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "interest_income_non_operating",
+  "value": null
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "operating_income",
+  "value": 123216000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "operating_expense",
+  "value": 57467000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "research_and_development",
+  "value": 31370000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "selling_general_and_administration",
+  "value": 26097000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "gross_profit",
+  "value": 180683000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "cost_of_revenue",
+  "value": 210352000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "total_revenue",
+  "value": 391035000000.0
+ },
+ {
+  "symbol": "AAPL",
+  "date": "2024-09-30",
+  "period": "annual",
+  "line_item": "operating_revenue",
+  "value": 391035000000.0
+ }
+]

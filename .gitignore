@@ -1,0 +1,47 @@
+.DS_Store
+
+# Superpowers working state (briefs, reports, review diffs). Regenerated
+# per run; not part of the project's source of truth.
+.superpowers/
+
+# Claude Code local state and worktrees.
+.claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
+.worktrees/
+
+# Local machine / deployment configuration. Never commit real endpoints,
+# hostnames, tailnet names or credentials.
+.env
+.env.local
+.env.*.local
+
+# Build output
+# No trailing slash: a symlinked node_modules (worktrees) is not a directory to git.
+node_modules
+dist/
+.vercel/
+src-tauri/target/
+src-tauri/gen/
+
+# Machine-specific scrub patterns
+scripts/scrub-private-patterns.txt
+
+# Playwright output (pnpm e2e)
+e2e-results/
+playwright-report/
+
+# OpenBB reference backend checkout (pnpm reference-backend)
+.reference-backend/
+
+# Portable Pivot Rust/Wasm build outputs and local pinned tooling.
+crates/*/target/
+.pivot-tools/
+src/lib/tableExecution/rust/generated/
+
+# Private Node ingestion build and operator source configuration.
+server/table-ingest/dist/
+server/table-ingest/*.local.json
+
+# Exact-source deployment build manifest (generated in an exported context).
+.table-source.json

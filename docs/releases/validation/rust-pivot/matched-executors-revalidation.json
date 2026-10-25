@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "measuredAt": "2026-10-14T00:18:27.718Z",
+  "samples": 20,
+  "warmups": 3,
+  "parityOnly": true,
+  "observationDeadlineMs": 120000,
+  "platform": {
+    "os": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "cpu": "Apple M1 Max",
+    "logicalCpuCount": 10,
+    "physicalMemoryBytes": 68719476736,
+    "node": "v26.10.0"
+  },
+  "toolchain": {
+    "rust": "1.98.1",
+    "target": "wasm32-unknown-unknown",
+    "wasmBindgen": "0.2.128",
+    "wasmBindgenTarget": "web",
+    "protocolVersion": 1,
+    "sharedMemory": false
+  },
+  "source": {
+    "revision": "60841faad2e308c9ec2dfac0d460372ca3ae4a2d",
+    "workingTreeChanges": true,
+    "scriptSha256": "408d397c125676ab6fa2e092cd581d5cc9763d6197d9c06b6e31bf457eea075c",
+    "harnessSha256": "ee2549ac95ebd0ed32174f457b848bdcef2a929399f180ea64a39dfe8af176ef",
+    "workloadsSha256": "1f16614526761e043b2cf3e94ef589160d78314e3fb22ba09287872829a1afcb",
+    "utilsSha256": "0078f57ccb868193d957c7448fdad7ceb09492fc7fb4c7055428494010e240f7",
+    "driverUtilsSha256": "98ca62e80723b8f019270baa4208ff318c014aed8e49024d8aa45e8ebf6c31b1",
+    "browserServerSha256": "9822ef79c2fb6b6d45a2f50f065d943fba615bf4475b7244c49fe22d78fb82c3"
+  },
+  "artifact": {
+    "wasmSha256": "ca5a13b7d96d06f7840d241b3c8a4c715a2a766a31219b980b29aee2c67acd75",
+    "protocolVersion": 1
+  },
+  "method": {
+    "paths": "Production Vite builds; real createTableProvider TypeScript and Rust Web Workers. Common client validation, clone, worker transport, Rust wire conversions, Wasm startup and response publication included.",
+    "cache": "Fresh worker each observation; browser HTTP cache warmed by parity and 3 warmups. Not cold network.",
+    "order": "Sequential alternating engine order per paired iteration; no concurrent executor workloads. Driver transfers the exact tagged wire as one JSON string, parsed before the timed harness begins; pre-transfer JSON roundtrip is independently checked. This avoids driver serialization overhead, not executor work.",
+    "boundaries": "Factory, acquire including startup, initial apply, sequential first 100-row block then totals, total cold-load-ready; restore initial definition outside each warm pivot or sort/filter edit; edit apply and block/totals-ready; full pulled export from restored initial definition.",
+    "parity": "Preflight only, outside observations (not parity for every timed trial): each action and full export against independent calculateView baseline and cross-engine view/block/export metadata. Only requestId and transferId transport identifiers excluded. Exact structural keys, row IDs/order, values/errors/formats, columns, totals and export metadata; 1e-12 relative/absolute numeric tolerance for explicit output column IDs whose published aggregation is mean or whose aggregate formula AST is division, at row/totals values locations only; Anchored baseline and action-specific snapshot row/totals value roots only; source fields, nested user objects, metadata, errors, formats and signed zero remain exact.",
+    "statistics": "Median (average central pair), nearest-rank p95; individual observations in chronological engine order. Warmups discarded.",
+    "uiPaint": "Not measured: no shared renderer harness. Separate future UI/device acceptance gate.",
+    "memory": "Not measured: browser worker allocator/process peaks unavailable; 20k representative desktop workload is not an iPad limit.",
+    "activation": "TypeScript remains default; desktop evidence only; regular iPad/device acceptance outstanding.",
+    "serverOwnership": "Random token health header must match the spawned live child; child liveness checked before page and each observation. Fatal deadlines close the browser context and stop all remaining cases in that browser.",
+    "knownMixedInstability": "Both mixedOriginal12 and scaled mixed1000 are blocked from comparative timings, even if current preflight passes. Diagnostic evidence: mixed-parity-diagnostic.json."
+  },
+  "browsers": {
+    "chromium": {
+      "browserVersion": "151.0.7922.34",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "locale": "en-US",
+      "cases": [
+        {
+          "name": "small",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "5bb584e762990f11c92290749f4a1fe30ea30e7e78c6e0cb1eac27bcacc811ee",
+          "inputRows": 100,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "large",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "a5f118c4411757e12f5d7dc257c498120f2e91f19e76a6eec767a6cce6e1f59b",
+          "inputRows": 10000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "representative",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "18fd0697d195552da23f0ec14e7ede64e9f4cff32e86134c62b69c2a13b9668c",
+          "inputRows": 20000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "largeRaw",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "7d026c1bac65ee293920330400ed9c1a4fbf567e8fec8e87ac779eaaf6ad9723",
+          "inputRows": 10000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "wide",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "9dfc329bc6c83e17a06f2ad26214e65bd8e1f07bfbddce65f67089079cd336b2",
+          "inputRows": 2000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "fiscal",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "539ba51be1993817208ac718b99c5bdd58489e117900787d2cbd534d09293cb1",
+          "inputRows": 120,
+          "inputColumns": 6,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "formula",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "5e23410be09ae231b5f9bcc71b61210b35e4fa50bce4fe0e966937de4f4350c7",
+          "inputRows": 500,
+          "inputColumns": 6,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        }
+      ]
+    },
+    "webkit": {
+      "browserVersion": "26.5",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "locale": "en-US",
+      "cases": [
+        {
+          "name": "small",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "5bb584e762990f11c92290749f4a1fe30ea30e7e78c6e0cb1eac27bcacc811ee",
+          "inputRows": 100,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "large",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "a5f118c4411757e12f5d7dc257c498120f2e91f19e76a6eec767a6cce6e1f59b",
+          "inputRows": 10000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "representative",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "18fd0697d195552da23f0ec14e7ede64e9f4cff32e86134c62b69c2a13b9668c",
+          "inputRows": 20000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "largeRaw",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "7d026c1bac65ee293920330400ed9c1a4fbf567e8fec8e87ac779eaaf6ad9723",
+          "inputRows": 10000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "wide",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "9dfc329bc6c83e17a06f2ad26214e65bd8e1f07bfbddce65f67089079cd336b2",
+          "inputRows": 2000,
+          "inputColumns": 5,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "fiscal",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "539ba51be1993817208ac718b99c5bdd58489e117900787d2cbd534d09293cb1",
+          "inputRows": 120,
+          "inputColumns": 6,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        },
+        {
+          "name": "formula",
+          "driverWireRoundTrip": "exact tagged wire after JSON string transfer and parse before harness timer",
+          "workloadSha256": "5e23410be09ae231b5f9bcc71b61210b35e4fa50bce4fe0e966937de4f4350c7",
+          "inputRows": 500,
+          "inputColumns": 6,
+          "parity": "passed before timing",
+          "engines": {
+            "typescript": {
+              "observations": [],
+              "timingsMs": {}
+            },
+            "rust": {
+              "observations": [],
+              "timingsMs": {}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "failedCases": [],
+  "status": "passed",
+  "completedAt": "2026-10-14T00:19:27.411Z",
+  "durationMs": 59693,
+  "postRunClarification": {
+    "independentPreflights": 14,
+    "timingObservationsCollected": 0,
+    "effectiveWarmups": 0,
+    "configurationFields": "samples=20 and warmups=3 describe requested timing configuration only; parityOnly=true collected no timing trials or warmups.",
+    "sourceArchive": "matched-executors-measured-driver-source.json revalidationSources retains exact driver/helper source."
+  }
+}

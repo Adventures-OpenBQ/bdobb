@@ -1,0 +1,820 @@
+
+ RUN  v2.1.9 ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration
+
+ ✓ src/stores/dashboardStore.legacyV4.test.ts (156 tests) 508ms
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > resizes immediately but saves once, 300ms after the last move
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > collapses a burst of moves into a single save
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer width debounce > does not save again at unmount once the debounced save has landed
+An update to VirtualTable inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/WidgetCard.test.tsx > advanced_charting > hands the widget's UDF spec and the Refresh key to the TradingView renderer
+An update to WidgetCard inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/WidgetCard.test.tsx (216 tests) 12437ms
+   ✓ WidgetCard export menu > writes xlsx BYTES for the Excel item, through writeFile rather than writeTextFile 346ms
+   ✓ WidgetCard export menu > closes the menu once an item has been chosen 358ms
+   ✓ WidgetCard maximize > restores a maximized card when it is minimized 344ms
+   ✓ WidgetCard markdown editor > dispatches to the editor with the stored text even though its data is null 336ms
+stderr | src/components/renderers/TableRenderer.test.tsx > TableRenderer column menu > closes the menu when a refresh drops the column it was opened on
+[Table] Column with id 'close' does not exist.
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > autosizes visible columns from header and cell text when autosizeKey changes
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+stderr | src/components/renderers/TableRenderer.test.tsx > Quick actions ▸ Autosize columns > does not re-apply autosize on a remount with the same autosizeKey (Reset columns, a view switch)
+Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
+    at module.exports (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at HTMLCanvasElementImpl.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
+    at HTMLCanvasElement.getContext (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/jsdom@25.0.1/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
+    at ~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/src/components/renderers/TableRenderer.tsx:1088:50
+    at Object.react_stack_bottom_frame (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+    at runWithFiberInDEV (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+    at commitHookEffectListMount (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+    at commitHookPassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+    at commitPassiveMountOnFiber (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+    at recursivelyTraversePassiveMountEffects (~/Developer/adventures-in-openbb-articles/openbq-relaunch/bdobb-clean-v4-integration/node_modules/.pnpm/react-dom@19.2.8_react@19.2.8/node_modules/react-dom/cjs/react-dom-client.development.js:15439:11) undefined
+
+ ✓ src/components/renderers/TableRenderer.test.tsx (135 tests) 9540ms
+   ✓ TableRenderer row virtualisation > keeps a 10,000-row table down to a window of rows in the DOM 448ms
+   ✓ TableRenderer row virtualisation > brings rows from the middle of the set into the DOM when scrolled 371ms
+   ✓ TableRenderer row virtualisation > sorts across the whole set, not the window, and returns to the top 437ms
+   ✓ TableRenderer filter row > narrows 10,000 rows by a contains filter and updates the count 1630ms
+   ✓ TableRenderer filter row > narrows by a number range across the whole set, not the rendered window 1405ms
+   ✓ TableRenderer filter row > Clear drops every filter and restores the count 408ms
+ ✓ src/stores/dashboardStore.test.ts (142 tests) 302ms
+ ✓ src/components/LeftRail.test.tsx (97 tests) 4508ms
+ ✓ src/components/ParamControls.test.tsx (59 tests) 7425ms
+   ✓ ParamControls > commits a typed field on blur, through the split edit, and only when it changed 530ms
+   ✓ ParamControls > does not burn a $currentDate token when today's date is re-picked 322ms
+   ✓ ParamControls > shows a stored T in a datetime param resolved, and a popover pick commits it at once 400ms
+   ✓ ParamControls > expressions (v5.3.0) > applies an expression from a popover's Relative tab through the split edit, and lands on Relative for a stored one 356ms
+   ✓ ParamControls > expressions (v5.3.0) > drops a half-typed date when the day picker's calendar applies an expression: one write, the expression 384ms
+   ✓ ParamControls > expressions (v5.3.0) > hands the dashboard's presets to the tab, filtered per type, and routes save and delete to the callbacks 368ms
+   ✓ ParamControls with optionsEndpoint params > keeps a downstream value the new list still offers 362ms
+   ✓ ParamControls with optionsEndpoint params > never clears a stored value on the first result after the row opens, even one the list does not offer 324ms
+   ✓ ParamControls with optionsEndpoint params > does not clear a downstream value when an unrelated edit leaves its key alone 356ms
+   ✓ ParamControls with optionsEndpoint params > clears a downstream value when the upstream changes while its first list is still in flight 347ms
+   ✓ ParamControls with optionsEndpoint params > keeps a stored value when a backend appears while the row is open 322ms
+   ✓ ParamControls with optionsEndpoint params > fetches nothing for a hidden param 320ms
+   ✓ ParamControls multi-select params > uses the static list, and issues no request, for a multi param with no endpoint 307ms
+   ✓ ParamControls multiple and popupWidth (v5.4.0) > keeps a multiple field's typed value through a cascade that clears a sibling select (ruling 17) 360ms
+ ✓ src/hooks/useWidgetData.legacyV4.test.tsx (82 tests) 27411ms
+   ✓ useWidgetData > does not refetch when params is a new object with the same values 388ms
+   ✓ useWidgetData > a param change defers again, without first sending the OLD data's bounds 302ms
+   ✓ useWidgetData auto-refresh > never has two requests in flight, even when the endpoint is far slower than the interval 763ms
+   ✓ useWidgetData stale data across a loading pass > drops the old payload the moment the params change, so the previous symbol's rows cannot sit under the new one 514ms
+   ✓ useWidgetData with a run button > arms on the render where the widget resolves, not on mount before it does 371ms
+   ✓ useWidgetData with a run button > fetches nothing when the parameters change, and reports the card stale 366ms
+   ✓ useWidgetData with a run button > arms the fiscal map with the params: a map change alone sends nothing, and Run sends the params under the map computed for them 1325ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > holds the first arm while the lookup is pending, then sends it once under the landed year end 820ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > holds a Run pressed while the lookup is pending, then sends it once under the landed year end 852ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > sends nothing when the lookup lands after an un-run edit made while holding, and goes stale 442ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > stays unsent on ⌘R after a dropped hold, and only Run sends it, under the landed year end 808ms
+   ✓ useWidgetData with a run button > a fiscal lookup pending on a run-button card > leaves loading when a trigger held after a dropped hold is released onto a moved wire 1481ms
+   ✓ useWidgetData with expressions and calendars > a run-button card goes stale, not fetched, when T crosses midnight before a refresh; Run sends the new date 533ms
+   ✓ useWidgetData with expressions and calendars > a card without a run button refetches when its calendars land, and holds its request while they are pending 366ms
+   ✓ useWidgetData with expressions and calendars > drops the old payload when a param change lands while a year its resolution needs is still pending 524ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a literal-date card sends exactly one request on first load, even after the up-front years land 574ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a T-1bd card sends exactly one request when 2025 lands after the 2026 it consulted 894ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when a year it did not consult lands 909ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > refetches exactly once when a backend answer replaces the bundled calendar a consulted year resolved on 927ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from T-1bd to T moves its calendar key 834ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from T to T-1bd moves its calendar key 807ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card sends nothing when an un-run edit from 2026-01-02 to T-1bd moves its calendar key 805ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > a run-button card neither loads nor sends on an un-run edit that needs an unloaded year, nor when that year lands 1390ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > Run on an edit whose consulted year is pending holds the send, and sends it exactly once when the year lands 1382ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > Run on an edit whose consulted year is pending holds the send, and sends it exactly once when the year fails 1459ms
+   ✓ useWidgetData with useTradingCalendar against a calendar-serving backend > ⌘R and ↻ on a stale run-button card each re-send the armed request exactly once 1563ms
+stderr | src/components/dialogs/SettingsDialog.test.tsx > SettingsDialog > shows a conflict notice, then replaces on the second Done
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/renderers/LocalTableRenderer.execution.test.tsx (39 tests) 26295ms
+   ✓ file pivot edits keep source schema and bounded expanded children use stable paths 1340ms
+   ✓ zero matching file rows retain filter controls and Clear restores the worker result 709ms
+   ✓ selection does not change group folds 319ms
+   ✓ duplicate edits save one durable definition before worker publication and preserve source acquisition 991ms
+   ✓ failed durable Duplicate keeps the last valid definition and result 536ms
+   ✓ does not publish a Duplicate whose durable save completes after the renderer unmounts 384ms
+   ✓ acknowledges durable Move to Available before fast-worker invalid-group selection reconciliation 692ms
+   ✓ acknowledges durable Move to Column Groups before fast-worker invalid-group selection reconciliation 500ms
+   ✓ read-only analytical inspection requests bound operators and footer errors without authoring 504ms
+   ✓ simultaneous page facets and inspection settlement enable inspector pagination 550ms
+   ✓ activates only on explicit request and migrates existing measure instances and temporal recipes into canonical authority 420ms
+   ✓ failed report activation keeps canonical definition and old rows/totals 355ms
+   ✓ calculated header Show formula opens the bound definition and restores panel focus on Escape 332ms
+   ✓ migration preserves configured Last and warns about required report date binding 346ms
+   ✓ source formula filters use bounded stable-ID metadata and preserve prior result on failed durable change 676ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":99} 528ms
+   ✓ cold malformed model stays inert while runtime inspection supports durable validated repair: {"schemaVersion":1,"params":{"promotePage":true,"filters":[]},"enabled":true,"categories":[],"measures":[],"formulas":[],"layout":null,"checklists":{},"resultFilters":[],"subtotals":{"grandTotal":true,"groups":false}} 711ms
+   ✓ a linked missing field remains repairable against current parent schema even with a stale ready result 381ms
+   ✓ reactively toggles the actual dismiss checkbox twice and applies table dismissal without panel rerenders 466ms
+   ✓ keyboard Show formula transfers focus to visible Formulas and Escape returns to Arrange 400ms
+   ✓ functional Arrange reorder and Pivot on toggle compose in the live renderer and persist source mode 428ms
+   ✓ Statement held preview is inert after source changes and retains draft 1765ms
+   ✓ Statement held preview is inert after refresh changes and retains draft 1922ms
+   ✓ Statement held preview is inert after viewer changes and retains draft 1633ms
+   ✓ Statement held preview is inert after cancel changes and retains draft 2374ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:false) 1295ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:false) 1290ms
+   ✓ Statement refuses new 'preview' after retarget before runtime synchronization (linked:true) 1523ms
+   ✓ Statement refuses new 'members' after retarget before runtime synchronization (linked:true) 1019ms
+stderr | src/components/dialogs/SettingsDialog.test.tsx > reviews conflicts again when a Workspace download changes the pending patch
+An update to SettingsDialog inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/SettingsDialog.test.tsx (64 tests) 6679ms
+   ✓ SettingsDialog > shows a conflict notice, then replaces on the second Done 487ms
+   ✓ stages downloaded Workspace preferences and persists them 327ms
+   ✓ stages downloaded Workspace preferences and discards them 473ms
+ ✓ src/lib/dataClient.test.ts (110 tests) 427ms
+ ✓ src/lib/dateExpressions.test.ts (91 tests) 136ms
+ ✓ src/stores/tableExecutionStore.test.ts (40 tests) 1570ms
+   ✓ over-budget identity paths retain ambiguous selections with an explicit diagnostic 692ms
+ ✓ src/lib/appsJson.legacyV4.test.ts (90 tests) 342ms
+ ✓ src/components/dialogs/SettingsDialog.legacyV4.test.tsx (55 tests) 7864ms
+   ✓ shell and tabs > opens as a real modal dialog with the four app tabs, General selected by default 476ms
+   ✓ staging -- nothing writes until Done > stages every control across every tab without ever calling save or touching disk 492ms
+   ✓ Logs > Export logs writes the displayed lines, one per line plus a trailing newline, as bdobb-logs-<stamp>.txt 353ms
+   ✓ Logs > a failed Refresh after a good load keeps the last lines and shows the stale message 331ms
+ ✓ src/components/renderers/CalendarRenderer.test.tsx (52 tests) 6401ms
+   ✓ CalendarRenderer > toolbar writes each facet through onPatch 652ms
+   ✓ CalendarRenderer modes > the toolbar leads with the mode and then shows that mode's own controls 456ms
+   ✓ CalendarRenderer series filter > commits the Series box on Enter and on blur, and clearing it drops the filter 394ms
+   ✓ CalendarRenderer series filter > keeps focus in the Series box after Enter, so the next commit is not dropped 719ms
+   ✓ CalendarRenderer tree filter > Reset clears both lists, and Escape closes the popover 474ms
+ ✓ src/hooks/useWidgetData.test.tsx (58 tests) 7356ms
+   ✓ useWidgetData > does not refetch when params is a new object with the same values 374ms
+   ✓ useWidgetData auto-refresh > refetches on the setting's interval and never overlaps two requests 327ms
+   ✓ useWidgetData auto-refresh > never has two requests in flight, even when the endpoint is far slower than the interval 761ms
+   ✓ useWidgetData stale data across a loading pass > drops the old payload the moment the params change, so the previous symbol's rows cannot sit under the new one 439ms
+   ✓ useWidgetData with a run button > arms on the render where the widget resolves, not on mount before it does 375ms
+   ✓ useWidgetData with a run button > fetches nothing when the parameters change, and reports the card stale 370ms
+ ✓ src/lib/widgetsJson.test.ts (92 tests) 129ms
+ ✓ src/components/WidgetLibrary.test.tsx (61 tests) 3373ms
+   ✓ WidgetLibrary > composes all four filters with search 497ms
+ ✓ src/lib/appsJson.test.ts (70 tests) 284ms
+ ✓ src/components/renderers/PdfView.test.tsx (38 tests) 4139ms
+   ✓ PdfView > re-fits on a resize only while the zoom mode is fit, and drops the pending timer on unmount 583ms
+   ✓ PdfView find bar > opens from the toolbar button with the input focused and any existing query selected 405ms
+   ✓ PdfView find bar > dispatches a fresh search on every keystroke, with highlightAll and no type 334ms
+   ✓ PdfView find bar > walks the matches with Enter, Shift+Enter and the two arrows 447ms
+stderr | src/App.test.tsx > App > re-applies --rail-width when the setting is saved
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to App inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/App.test.tsx (33 tests) 4175ms
+   ✓ App > does not load the help bundle at startup, only once the dialog is opened 835ms
+   ✓ App > shows a fallback notice instead of unmounting when the help chunk fails to load, and Close dismisses it 771ms
+   ✓ App > leaves the first --dashboard-top measurement to the ResizeObserver 342ms
+   ✓ App > opening an app > opens a second copy when the same app is opened again 425ms
+ ✓ src/stores/tableCommitCoordinator.test.ts (32 tests) 1658ms
+ ✓ src/lib/params.test.ts (70 tests) 358ms
+ ✓ src/components/renderers/MultiFileRenderer.test.tsx (28 tests) 2823ms
+   ✓ MultiFileRenderer > lists the selector's choices and issues no POST until Open 484ms
+   ✓ MultiFileRenderer > refreshing before anything was opened requests nothing 328ms
+   ✓ MultiFileRenderer > treats a 204 as an empty answer, not a malformed one 349ms
+ ✓ src/components/dialogs/ConnectionsDialog.test.tsx (35 tests) 3701ms
+   ✓ ConnectionsDialog > disables Add until both name and base URL are non-blank 747ms
+   ✓ ConnectionsDialog > adds a backend with a name, base URL, and optional auth header pair 507ms
+   ✓ ConnectionsDialog > submits once while a save is still in flight 442ms
+ ✓ src/lib/tableExecution/workerClient.test.ts (28 tests) 386ms
+ ✓ src/lib/tableModel/formulaEvaluation.test.ts (32 tests) 43ms
+stderr | src/components/TabBar.test.tsx > TabBar in viewer mode > shows a grouping-off tag only while the dashboard has grouping disabled
+An update to TabBar inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/TabBar.test.tsx (37 tests) 1230ms
+ ✓ src/components/renderers/table-model/FormulaPanel.test.tsx (29 tests) 2066ms
+   ✓ keeps the last valid formula on a cycle and requires an explicit sibling measure choice 545ms
+ ✓ src/components/dialogs/KeysPanel.test.tsx (23 tests) 2230ms
+   ✓ KeysPanel > submits a new value through Details then re-probes, and never logs the value 451ms
+ ✓ src/components/renderers/PivotPanel.test.tsx (35 tests) 2160ms
+   ✓ duplicates a Data instance once and edits reorders and removes only that instance 406ms
+ ✓ src/lib/tableColumns.test.ts (67 tests) 33ms
+ ✓ src/stores/tableCommitCoordinator.groups.test.ts (43 tests) 2621ms
+ ✓ src/stores/tableExecutionStore.runtime.test.ts (16 tests) 3709ms
+   ✓ viewer masking frees near-capacity group candidates before the single aggregate admission 772ms
+   ✓ viewer masking frees near-capacity group candidates before the single aggregate admission 2236ms
+ ✓ src/components/WidgetCard.paramFlow.test.tsx (10 tests) 7709ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > issues exactly one request on mount, one more on a committed edit, and none for an unrelated dashboard edit 1625ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > sends a range as two params and a quarter under its sibling's year end, and the row labels the quarter the same way 502ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > holds a single-ticker card until the fiscal lookup answers, sends it under that year end, and the FY ends control overrides it (v5.4.0) 880ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > sends a grouped literal quarter's first arm once, under the landed year end, and is not stale 616ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > sends a Run pressed while the lookup is pending once, under the landed year end 1498ms
+   ✓ param-apply flow (integration, real store + real DashboardGrid/WidgetCard/ParamControls) > a Run-button card held on the fiscal lookup (v5.4.0 fix round 2) > goes stale, sends nothing and stops loading when the FY ends override changes without Run during the hold 1860ms
+   ✓ iframe widgets issue no request (Finding 1, real store + real DashboardGrid/WidgetCard) > renders the frame and issues zero requests to the backend 327ms
+   ✓ built-in widgets issue no request (Finding 2, real store + real DashboardGrid/WidgetCard) > renders the note and issues zero requests to the backend 317ms
+ ✓ src/lib/calendarView.test.ts (58 tests) 26ms
+ ✓ src/components/dialogs/AppsDialog.test.tsx (37 tests) 780ms
+ ✓ src/lib/tableModel/calculate.test.ts (24 tests) 305ms
+ ✓ src/components/renderers/KeysRenderer.test.tsx (44 tests) 2743ms
+   ✓ tier-3 editing > never puts the typed value in the DOM once submitted 495ms
+   ✓ a failed submit > does not leak an unhandled promise rejection 322ms
+ ✓ src/lib/pivotTable.test.ts (32 tests) 32ms
+ ✓ src/lib/tableExecution/runtimeParams.test.ts (22 tests) 214ms
+ ✓ src/stores/dashboardStore.lifecycle.test.ts (25 tests) 230ms
+ ✓ src/stores/providerKeysStore.test.ts (28 tests) 19ms
+ ✓ src/lib/discovery.test.ts (26 tests) 2629ms
+   ✓ discoverBackend apps.json > refuses an apps.json that is over the byte limit on the wire 309ms
+   ✓ discoverBackend fetches both documents concurrently > takes about one delay, not two 334ms
+ ✓ src/components/App.errorBoundaries.test.tsx (19 tests) 4775ms
+   ✓ 'the widget library' > can be dismissed while it is still crashing, and reopens clean 306ms
+   ✓ 'the connections dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 517ms
+   ✓ 'the help dialog' > degrades to its own fallback, leaves the shell working, and comes back clean 998ms
+   ✓ the lazy help chunk > keeps the shell when the import rejects, through HelpLoadFailed rather than the boundary 726ms
+   ✓ the lazy help chunk > catches a module that loads without the export, which the `.catch` cannot 366ms
+ ✓ src/lib/calendar.test.ts (28 tests) 119ms
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > follows a later change to widgetGap
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > pins containerPadding at today's 10px, so the gap slider moves only the gap
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/DashboardGrid.test.tsx > DashboardGrid > adds the corner-handles class when cornerDragHandles is on, and omits it when off
+An update to DashboardGrid inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/DashboardGrid.test.tsx (23 tests) 398ms
+ ✓ src/components/renderers/IframeRenderer.test.tsx (26 tests) 1073ms
+   ✓ IframeRenderer URL transitions > opens the CURRENT url externally after a transition 307ms
+stderr | src/hooks/useFiscalYearEnd.test.tsx > useFiscalYearEnd > falls through to the sibling on an unreadable answer, on an error, and with no backend — and logs once
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/hooks/useFiscalYearEnd.test.tsx (17 tests) 1798ms
+   ✓ the built-in lookup (v5.4.0) > while a declared endpoint is in flight, shows the synchronous rungs past it — never the lookup, a hold or a reason 315ms
+   ✓ the built-in lookup (v5.4.0) > shares one lookup between two cards 366ms
+ ✓ src/stores/backendsStore.test.ts (20 tests) 1080ms
+   ✓ updateBackend > does not let a slow probe of the old URL mark the fixed backend offline 409ms
+ ✓ src/components/DropZone.test.tsx (23 tests) 868ms
+ ✓ src/components/PivotParamRow.viewer.test.tsx (16 tests) 674ms
+   ✓ viewer displays session empty and All, resets to authored baseline, and never submits durable edits 318ms
+ ✓ src/lib/tableExecution/formulaAuthoring.test.ts (20 tests) 273ms
+ ✓ src/components/dialogs/BackendEditForm.test.tsx (27 tests) 1039ms
+   ✓ BackendEditForm > is its own dialog, titled Connect backend with an Add button when adding 530ms
+ ✓ src/hooks/useDashboardShortcuts.test.tsx (28 tests) 146ms
+ ✓ src/hooks/useParamOptions.test.tsx (12 tests) 2114ms
+   ✓ useParamOptions > serves a second hook with the same key from the module cache, synchronously and with no second request 364ms
+   ✓ useParamOptions > does not refetch when values is a new object with the same content, or an unrelated param changes 421ms
+   ✓ useParamOptions > drops a response whose key the param has already moved past 418ms
+   ✓ useParamOptions > issues nothing at all for a widget with no endpoint params 304ms
+ ✓ src/App.apps.test.tsx (11 tests) 2519ms
+   ✓ opening an app > keeps the unresolved sentinel on a card no connected backend serves 367ms
+   ✓ opening an app > ignores a second Open while the first is still creating the dashboard 329ms
+ ✓ src/components/renderers/LinkedChartRenderer.test.tsx (10 tests) 1206ms
+ ✓ src/components/renderers/table-model/StatementPanel.test.tsx (12 tests) 14380ms
+   ✓ applyRequiresBindingsAndShowsMissingNotZero 871ms
+   ✓ overrideLabelsOrderFormulaVisibility 2282ms
+   ✓ sourceFieldDisappearsWithoutRawFallback 692ms
+   ✓ explicitUpdateRequiresConflictResolution 1494ms
+   ✓ failedSaveAndCancelledPreviewRetainDraft 2051ms
+   ✓ resets the line owned formula and editor before preview and save 2027ms
+   ✓ company choices belong to their binding while same binding paging retains all selected keys 1434ms
+   ✓ previews nonconflicting default formula and policy changes before durable adoption 987ms
+   ✓ edits section visibility and explains inherited hiding without clearing line overrides 834ms
+   ✓ keeps metadata fiscal bindings when switching FQ and back to FY 1258ms
+   ✓ updates fiscal kind when explicit bounds were mapped without an initial kind 424ms
+ ✓ src/lib/tableExecution/validation.test.ts (18 tests) 27ms
+ ✓ src/browser-shim/shims.test.ts (23 tests) 381ms
+ ✓ src/lib/statementModel/compile.test.ts (19 tests) 296ms
+ ✓ src/hooks/useTradingCalendar.test.tsx (13 tests) 2442ms
+   ✓ useTradingCalendar > never waits on the up-front years for a card whose values consult no calendar (a literal date) 395ms
+   ✓ useTradingCalendar > waits on the year a T-1bd resolution consulted, not on the up-front previous year 678ms
+   ✓ useTradingCalendar > stops waiting when the consulted year's fetch fails 637ms
+ ✓ src/components/pickers/RelativeTab.test.tsx (17 tests) 2147ms
+ ✓ src/lib/bootstrap.test.ts (16 tests) 99ms
+ ✓ src/lib/tableExecution/engine.test.ts (17 tests) 43ms
+ ✓ src/lib/paramGroups.legacyV4.test.ts (33 tests) 13ms
+ ✓ src/components/renderers/ChartRenderer.test.tsx (19 tests) 186ms
+ ✓ src/components/renderers/table-model/PageSelector.sets.test.tsx (15 tests) 652ms
+ ✓ src/lib/tableExecution/resultStore.test.ts (14 tests) 81ms
+ ✓ src/components/railMenu.test.tsx (22 tests) 876ms
+ ✓ src/components/renderers/table-model/AuthoringControls.test.tsx (14 tests) 673ms
+ ✓ src/components/LibraryFilters.test.tsx (44 tests) 549ms
+ ✓ src/lib/format.test.ts (38 tests) 36ms
+ ✓ src/components/PivotGroupDialog.test.tsx (13 tests) 2511ms
+   ✓ Unlink group opens complete review and Cancel/Escape never writes 357ms
+   ✓ create and default pull preserve zero mutations before confirmation and save only reviewed intent 354ms
+   ✓ tab hides presentation without resetting original eight-second deadline 332ms
+ ✓ src/lib/chartShapes.test.ts (41 tests) 12ms
+ ✓ src/lib/tableModel/categories.test.ts (17 tests) 30ms
+ ✓ src/components/RowContextMenu.test.tsx (22 tests) 471ms
+ ✓ src/lib/settingsFile.test.ts (49 tests) 16ms
+ ✓ src/components/keys/ProviderDetailsDialog.test.tsx (11 tests) 609ms
+ ✓ src/components/WidgetCard.linked.test.tsx (12 tests) 1251ms
+ ✓ src/lib/jsonStore.test.ts (23 tests) 15ms
+ ✓ src/lib/appsExtensionsV3.test.ts (32 tests) 22ms
+ ✓ src/components/PivotParamRow.test.tsx (11 tests) 472ms
+ ✓ src/components/dialogs/HelpDialog.test.tsx (21 tests) 2863ms
+   ✓ HelpDialog: Quick Help > opens on the first topic and lists every topic in reading order 356ms
+ ✓ src/lib/providerAvailability.test.ts (21 tests) 22ms
+ ✓ src/lib/widgetData/tableOutput.test.ts (12 tests) 67ms
+ ✓ src/lib/tableModel/formulaBinding.test.ts (20 tests) 9ms
+ ✓ src/lib/tableModel/fiscalContext.test.ts (18 tests) 20ms
+ ✓ src/lib/tableModel/validation.test.ts (15 tests) 36ms
+ ✓ src/lib/tableModel/unpivot.test.ts (22 tests) 18ms
+ ✓ src/components/dialogs/settings/SettingsForm.test.tsx (12 tests) 547ms
+ ✓ src/components/renderers/RssRenderer.test.tsx (17 tests) 447ms
+ ✓ src/components/ErrorBoundary.test.tsx (12 tests) 266ms
+ ✓ src/components/renderers/MarkdownEditorRenderer.test.tsx (15 tests) 247ms
+ ✓ src/lib/export.test.ts (37 tests) 29ms
+ ✓ src/stores/settingsStore.test.ts (20 tests) 97ms
+ ✓ src/lib/tableExecution/analytical.test.ts (8 tests) 166ms
+ ✓ src/components/renderers/table-model/FormulaPanel.worker.test.tsx (10 tests) 1422ms
+   ✓ saves the worker AST without a facet and refuses an unavailable worker 398ms
+ ✓ src/components/DashboardGrid.realmount.test.tsx (4 tests) 395ms
+ ✓ src/lib/backendsFile.test.ts (27 tests) 16ms
+ ✓ src/lib/paramGroups.test.ts (26 tests) 24ms
+ ✓ src/lib/tableModel/pageSets.test.ts (9 tests) 209ms
+ ✓ src/lib/columnRender.test.ts (26 tests) 16ms
+ ✓ src/lib/periods.test.ts (34 tests) 40ms
+ ✓ src/lib/zones.test.ts (25 tests) 99ms
+ ✓ src/lib/presets.test.ts (10 tests) 15ms
+ ✓ src/components/renderers/pivot-drawer/PivotDrawer.test.tsx (10 tests) 3851ms
+   ✓ drawer shell > exposes one selected roving tab and keyboard axis navigation 671ms
+   ✓ drawer shell > returns to Arrange on Escape, then restores toolbar focus 383ms
+   ✓ provides Done and Close in every section and preserves drafts when switching orientation 1006ms
+   ✓ keeps Formula actions in its own footer with retained drafts and caret focus 666ms
+ ✓ src/lib/builtins.test.ts (32 tests) 340ms
+ ✓ src/lib/tableExecution/pivotGroupProof.test.ts (28 tests) 3099ms
+   ✓ refuses over admission bounds without normalizing existing large authored Page intent 1418ms
+   ✓ accepts the complete 1024-key boundary with full proof rather than runtime preview 415ms
+stderr | src/components/renderers/table-model/CategoryEditor.test.tsx > retains edits after save failure and emits stable order moves
+An update to CategoryEditor inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/lib/pivotGroupChange.test.ts (12 tests) 640ms
+   ✓ refuses a new link whose target group would fall outside the combined runtime admission budget 428ms
+ ✓ src/components/renderers/table-model/CategoryEditor.test.tsx (12 tests) 1102ms
+ ✓ src/lib/dashboardsFile.test.ts (22 tests) 29ms
+ ✓ src/components/GroupLink.test.tsx (12 tests) 1156ms
+   ✓ GroupLink > seeds a quarter group with the control's value relabelled to December 301ms
+ ✓ src/stores/widgetRegistryStore.test.ts (19 tests) 28ms
+ ✓ src/stores/dashboardStore.linked.test.ts (10 tests) 25ms
+ ✓ src/components/renderers/TradingViewRenderer.test.tsx (15 tests) 650ms
+ ✓ src/lib/pivotConfig.test.ts (21 tests) 16ms
+ ✓ src/lib/tableExecution/inspection.test.ts (8 tests) 159ms
+ ✓ src/lib/tableExecution/groupDomain.test.ts (10 tests) 315ms
+ ✓ src/stores/dashboardStore.tableModel.test.ts (7 tests) 526ms
+ ✓ src/lib/tableExecution/pageRuntime.test.ts (6 tests) 362ms
+ ✓ src/components/DashboardGrid.persist.test.tsx (5 tests) 188ms
+ ✓ src/stores/foldersStore.test.ts (16 tests) 9ms
+ ✓ src/lib/providerKeys.test.ts (26 tests) 11ms
+ ✓ src/components/renderers/OmniRenderer.test.tsx (14 tests) 350ms
+ ✓ src/test/memfs.test.ts (24 tests) 65ms
+ ✓ src/lib/settingsBundle.test.ts (17 tests) 26ms
+ ✓ src/lib/themeFlash.test.ts (10 tests) 4ms
+ ✓ src/lib/fiscalChain.test.ts (13 tests) 13ms
+ ✓ src/components/renderers/TableFilterRow.test.tsx (15 tests) 259ms
+ ✓ src/components/runAppsImport.test.ts (12 tests) 28ms
+ ✓ src/lib/tableExecution/persistence.test.ts (12 tests) 103ms
+ ✓ src/lib/tableModel/scopes.test.ts (9 tests) 39ms
+ ✓ src/lib/csp.test.ts (9 tests) 4ms
+ ✓ src/components/pickers/relativeTabs.test.tsx (18 tests) 4106ms
+   ✓ 'DatetimePicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 640ms
+   ✓ 'RangePicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 662ms
+   ✓ 'QuarterPicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 362ms
+   ✓ 'WeekPicker' with a relative context > shows the tabs, lands on Absolute for a literal, and a chip + Apply commits the expression and closes 475ms
+   ✓ DayPicker with a relative context > shows the tabs in its calendar popover and commits an expression through onExpression, closing 381ms
+ ✓ src/lib/tableModel/facets.test.ts (13 tests) 35ms
+ ✓ src/lib/tableModel/formulaGraph.test.ts (11 tests) 280ms
+ ✓ src/lib/workspaceAccount.test.ts (24 tests) 302ms
+ ✓ src/components/renderers/LocalTableRenderer.linkedBaseline.test.tsx (4 tests) 637ms
+   ✓ local file linked baseline > imports csv numeric cells and renders explicit Sum date/sector groups 431ms
+ ✓ src/lib/tableModel/formulaSyntax.test.ts (39 tests) 46ms
+ ✓ src/lib/tableExecution/linkedAnalytical.test.ts (6 tests) 65ms
+ ✓ src/components/renderers/LocalTableRenderer.test.tsx (14 tests) 844ms
+   ✓ execution identity uses runtime status without legacy file parsing 468ms
+ ✓ src/lib/folderTree.test.ts (16 tests) 33ms
+ ✓ src/lib/statementModel/updates.test.ts (5 tests) 24ms
+ ✓ src/hooks/useTableResult.test.tsx (6 tests) 1523ms
+   ✓ cache evicts old blocks and caps each read without materializing the full result 1011ms
+ ✓ src/components/renderers/ClockRenderer.test.tsx (17 tests) 1181ms
+ ✓ src/hooks/useTableMetadata.test.tsx (7 tests) 236ms
+ ✓ src/components/renderers/PdfRenderer.test.tsx (10 tests) 227ms
+ ✓ src/components/pickers/QuarterRangePicker.test.tsx (7 tests) 1006ms
+ ✓ src/lib/statementModel/validation.test.ts (13 tests) 34ms
+ ✓ src/components/renderers/TableRenderer.execution.test.tsx (6 tests) 189ms
+ ✓ src/components/renderers/pivot-drawer/ArrangePanel.test.tsx (7 tests) 391ms
+ ✓ src/components/renderers/table-model/FinalPanels.test.tsx (6 tests) 303ms
+stderr | src/components/renderers/MarkdownRenderer.test.tsx > MarkdownRenderer images > still blanks a data: src that is not an image
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+
+ ✓ src/components/renderers/MarkdownRenderer.test.tsx (15 tests) 208ms
+ ✓ src/lib/appsJson.cleanV4.test.ts (8 tests) 14ms
+ ✓ src/components/pickers/DayPicker.test.tsx (10 tests) 757ms
+ ✓ src/lib/widgetData/chartFigure.test.ts (9 tests) 14ms
+ ✓ src/lib/statementModel/persistence.test.ts (20 tests) 34ms
+ ✓ src/lib/iframeProtocol.test.ts (33 tests) 20ms
+ ✓ src/components/LinkedGroupInspector.test.tsx (3 tests) 323ms
+ ✓ src/lib/feed.test.ts (17 tests) 62ms
+ ✓ src/components/renderers/DateProbeRenderer.test.tsx (11 tests) 170ms
+ ✓ src/lib/settingsSections.test.ts (13 tests) 27ms
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > asks once per conflict, in order, and hands each hint the answers so far
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns cancelled, and leaves no dialog behind, when the second answer is Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after an answer
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+stderr | src/components/dialogs/ImportConflictDialog.test.tsx > decideImportConflicts > returns focus to the element that had it before, after Cancel import
+An update to Root inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/components/dialogs/ImportConflictDialog.test.tsx (14 tests) 494ms
+ ✓ src/components/pickers/QuarterPicker.test.tsx (8 tests) 859ms
+ ✓ src/lib/sparkline.test.ts (17 tests) 7ms
+ ✓ src/lib/appIcons.test.ts (6 tests) 317ms
+ ✓ src/components/keys/ProviderDashboard.test.tsx (8 tests) 1143ms
+   ✓ ProviderDashboard > renders a card per provider with status, credential and a Details button, and never probes on render 357ms
+ ✓ src/lib/pivotSuggestion.test.ts (7 tests) 18ms
+ ✓ src/components/renderers/TableRenderer.frame.test.tsx (5 tests) 587ms
+   ✓ pins only the combined two-category label by identity, with measured selection gutter shared by body and totals 306ms
+ ✓ src/components/renderers/NoteRenderer.test.tsx (12 tests) 541ms
+ ✓ src/components/LinkedWidgetDialog.test.tsx (6 tests) 644ms
+   ✓ picker labels eligible table titles and tabs and creates into its captured tab 311ms
+ ✓ src/lib/documents.test.ts (13 tests) 10ms
+ ✓ src/hooks/useModalDialog.test.tsx (6 tests) 213ms
+ ✓ src/components/TableExecutionRuntime.test.tsx (2 tests) 546ms
+   ✓ native file parsing serves two off-tab dependents once and refresh retains completed output until replacement 456ms
+ ✓ src/components/pickers/DatetimePicker.test.tsx (7 tests) 2345ms
+   ✓ DatetimePicker > is a trigger named by its label, showing the local date, time and zone, with a dialog behind it 678ms
+   ✓ DatetimePicker > Enter in the field commits once and closes the popover 362ms
+   ✓ DatetimePicker > closes on Escape without writing 486ms
+ ✓ src/components/CardRemovalUndo.test.tsx (5 tests) 954ms
+   ✓ Undo restores the same source and recovers its worker-backed dependent cascade 600ms
+ ✓ src/test/mockServer.test.ts (9 tests) 180ms
+ ✓ src/lib/lwChart.test.ts (6 tests) 19ms
+ ✓ src/lib/periodicity.test.ts (14 tests) 11ms
+ ✓ src/lib/tableExecution/contractFixtures.test.ts (2 tests) 1091ms
+   ✓ preserves hand-checked ordinary and Statement contracts across shuffled block sizes 427ms
+   ✓ matches pure fixtures through structured-clone protocol handler transport (not a real worker) 629ms
+ ✓ src/lib/tableModel/persistence.test.ts (6 tests) 11ms
+ ✓ src/lib/tableExecution/finalReview.test.ts (5 tests) 76ms
+ ✓ src/lib/serialize.test.ts (8 tests) 17ms
+ ✓ src/help/search.test.ts (15 tests) 17ms
+ ✓ src/lib/transpose.test.ts (12 tests) 31ms
+ ✓ src/lib/libraryPresence.test.ts (9 tests) 17ms
+ ✓ src/components/renderers/table-model/MeasuresPanel.test.tsx (8 tests) 766ms
+ ✓ src/lib/statementModel/periodSelectors.test.ts (12 tests) 199ms
+ ✓ src/lib/appsJson.examples.test.ts (8 tests) 32ms
+ ✓ src/components/PivotParamRow.facets.test.tsx (1 test) 397ms
+   ✓ independent header facets settle out of order and refreshed metadata preserves a touched draft 396ms
+ ✓ src/lib/tableModel/pivotParams.test.ts (4 tests) 7ms
+ ✓ src/hooks/useFormulaAuthoring.test.tsx (2 tests) 78ms
+stderr | src/hooks/useResolvedTheme.test.ts > useResolvedTheme > passes an explicit theme through untouched
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ ✓ src/hooks/useResolvedTheme.test.ts (9 tests) 65ms
+ ✓ src/lib/statementModel/linePolicy.test.ts (5 tests) 47ms
+ ✓ src/components/InlineRename.test.tsx (9 tests) 621ms
+ ✓ src/components/pickers/WeekPicker.test.tsx (5 tests) 1684ms
+   ✓ WeekPicker > shows the week and its span, and highlights all seven days in the calendar 398ms
+   ✓ WeekPicker > moves by a week with Up/Down and by a day with Left/Right, selecting the whole week on Enter 448ms
+   ✓ WeekPicker > closes on Escape without writing 444ms
+ ✓ src/components/renderers/table-model/ModelInspector.test.tsx (5 tests) 382ms
+ ✓ src/hooks/useReconnectingSocket.test.tsx (4 tests) 37ms
+ ✓ src/lib/optionSymbol.test.ts (12 tests) 12ms
+ ✓ src/lib/statementModel/formats.test.ts (3 tests) 232ms
+ ✓ src/lib/localFiles.test.ts (18 tests) 24ms
+ ✓ src/lib/tableModel/linkedBindings.test.ts (4 tests) 18ms
+ ✓ src/lib/saveTextFile.test.ts (7 tests) 5ms
+ ✓ src/help/shots.test.ts (5 tests) 47ms
+ ✓ src/lib/plotly.test.ts (6 tests) 11ms
+ ✓ src/components/renderers/table-model/measureEligibility.test.ts (7 tests) 3ms
+ ✓ src/components/renderers/TableRenderer.selection.test.tsx (3 tests) 253ms
+ ✓ src/lib/statementModel/nestedFormulas.test.ts (8 tests) 175ms
+ ✓ src/components/pickers/RangePicker.test.tsx (5 tests) 1738ms
+   ✓ RangePicker > is a trigger named by its label showing both ends 564ms
+   ✓ RangePicker > commits a completed calendar range at once and closes 462ms
+   ✓ RangePicker > commits an edited end field on Enter, and refuses an end before the start 474ms
+ ✓ src/lib/vegaLite.test.ts (6 tests) 7ms
+ ✓ src/components/renderers/YouTubeRenderer.test.tsx (8 tests) 256ms
+ ✓ src/lib/statementModel/rollups.test.ts (3 tests) 97ms
+ ✓ src/components/renderers/table-model/FilterPlacement.test.tsx (3 tests) 197ms
+ ✓ src/components/renderers/HtmlRenderer.test.tsx (6 tests) 102ms
+ ✓ src/hooks/useHoverPanel.test.ts (8 tests) 27ms
+ ✓ src/lib/logger.test.ts (8 tests) 6ms
+ ✓ src/help/guide.test.ts (9 tests) 47ms
+ ✓ src/stores/pivotDrawerStore.test.ts (4 tests) 3ms
+ ✓ src/components/renderers/SparklineCell.test.tsx (7 tests) 86ms
+ ✓ src/lib/udf.test.ts (10 tests) 4ms
+ ✓ src/lib/statementModel/coverage.test.ts (10 tests) 133ms
+ ✓ src/lib/tableModel/migration.test.ts (4 tests) 7ms
+ ✓ src/lib/widgetData/identity.test.ts (7 tests) 3ms
+ ✓ src/components/pickers/FiscalYearPicker.test.tsx (4 tests) 1051ms
+   ✓ FiscalYearPicker > shows FY and a decade grid whose cells name their calendar span 508ms
+ ✓ src/help/index.test.ts (8 tests) 34ms
+ ✓ src/lib/tableModel/totals.test.ts (2 tests) 22ms
+ ✓ src/lib/settingsForm.test.ts (4 tests) 3ms
+ ✓ src/lib/paramOptions.test.ts (11 tests) 13ms
+ ✓ src/lib/foldersFile.test.ts (13 tests) 9ms
+ ✓ src/components/pickers/labels.test.ts (7 tests) 7ms
+ ✓ src/components/ViewToggle.test.tsx (7 tests) 251ms
+ ✓ src/lib/youtube.test.ts (11 tests) 11ms
+ ✓ src/lib/tableModel/formulaTokens.test.ts (19 tests) 12ms
+ ✓ src/components/renderers/pivot-drawer/drawerState.test.ts (26 tests) 6ms
+ ✓ src/components/dialogs/DialogShell.test.tsx (3 tests) 176ms
+ ✓ src/lib/tableExecution/selection.test.ts (6 tests) 18ms
+ ✓ src/lib/widgetData/persistence.test.ts (4 tests) 3ms
+ ✓ src/lib/markdownNote.test.ts (7 tests) 10ms
+ ✓ src/components/dialogs/DialogTabs.test.tsx (5 tests) 273ms
+ ✓ src/lib/tableModel/measures.test.ts (4 tests) 5ms
+ ✓ src/components/renderers/LiveGridRenderer.test.tsx (2 tests) 312ms
+ ✓ src/components/renderers/pivot-drawer/drawerLayout.test.ts (6 tests) 14ms
+ ✓ src/lib/tableModel/measureMigration.test.ts (4 tests) 3ms
+ ✓ src/help/shots.unit.test.tsx (5 tests) 544ms
+   ✓ the pending marker is invisible in the rendered topic > renders nothing, unlike an HTML comment 542ms
+ ✓ src/lib/highcharts.test.ts (5 tests) 12ms
+ ✓ src/lib/tableExecution/statementPreview.test.ts (2 tests) 51ms
+ ✓ src/components/renderers/table-model/TotalRows.test.tsx (4 tests) 168ms
+ ✓ src/lib/jsonStore.unreadable.test.ts (3 tests) 11ms
+ ✓ src/lib/logViewer.test.ts (7 tests) 6ms
+ ✓ src/hooks/useChildDialog.test.tsx (2 tests) 298ms
+ ✓ src/components/renderers/pivot-drawer/useDrawerGeometry.test.tsx (4 tests) 238ms
+ ✓ src/lib/tableModel/groupResolution.test.ts (6 tests) 6ms
+ ✓ src/lib/dataClient.calendar.test.ts (3 tests) 107ms
+ ✓ src/lib/pivotParamGroups.test.ts (2 tests) 6ms
+ ✓ src/lib/omni.test.ts (4 tests) 6ms
+ ✓ src/lib/dashboardSync.test.ts (3 tests) 15ms
+ ✓ src/components/renderers/ParamEchoRenderer.test.tsx (3 tests) 241ms
+ ✓ src/hooks/useMinuteTick.test.ts (5 tests) 36ms
+ ✓ src/components/renderers/AnalogFace.test.tsx (6 tests) 76ms
+ ✓ src/components/services/ServiceCard.test.tsx (2 tests) 371ms
+   ✓ ServiceCard > renders mark, name, kind, status, actions, endpoint and detail 356ms
+ ✓ src/components/renderers/NewsfeedRenderer.test.tsx (4 tests) 214ms
+ ✓ src/components/RailIcon.test.tsx (7 tests) 164ms
+ ✓ src/components/renderers/OmniCitations.test.tsx (4 tests) 92ms
+ ✓ scripts/help-shots.test.mjs (9 tests) 9ms
+ ✓ src/lib/tableExecution/subsetTransfer.test.ts (2 tests) 20ms
+ ✓ src/hooks/useMediaQuery.test.ts (5 tests) 53ms
+ ✓ src/lib/importLimits.test.ts (8 tests) 4ms
+ ✓ src/lib/tableModel/resultFilters.test.ts (2 tests) 9ms
+ ✓ src/lib/widgetTypes.test.ts (3 tests) 14ms
+ ✓ src/components/services/PreferencePill.test.tsx (2 tests) 229ms
+ ✓ src/lib/pivotKeys.test.ts (3 tests) 6ms
+ ✓ src/components/renderers/pivot-drawer/PivotSplitter.test.tsx (2 tests) 81ms
+ ✓ src/lib/windowTheme.test.ts (2 tests) 4ms
+ ✓ src/lib/tableModel/layoutValues.test.ts (1 test) 3ms
+ ✓ src/lib/statementModel/catalog.test.ts (2 tests) 13ms
+ ✓ src/stores/cleanV4Boundary.test.ts (1 test) 5ms
+ ✓ src/components/services/ServiceStatus.test.tsx (2 tests) 66ms
+ ✓ src/components/renderers/DotMatrix.test.tsx (3 tests) 65ms
+ ✓ src/lib/dataBounds.test.ts (2 tests) 4ms
+ ✓ src/lib/theme.test.ts (3 tests) 2ms
+ ✓ src/components/pickers/TimePicker.test.tsx (2 tests) 212ms
+ ✓ src/components/renderers/pivot-drawer/PivotFooterStrip.test.tsx (1 test) 194ms
+ ✓ src/components/renderers/MetricRenderer.test.tsx (4 tests) 30ms
+ ✓ src/lib/safeUrl.test.ts (8 tests) 8ms
+ ✓ src/lib/relativeTime.test.ts (16 tests) 6ms
+ ✓ src/lib/dotFont.test.ts (4 tests) 7ms
+ ✓ deploy/reference-demo/vercel/demo-seed.test.mjs (2 tests) 2ms
+ ✓ src/lib/naming.test.ts (5 tests) 2ms
+ ✓ src/lib/localTableData.test.ts (2 tests) 4ms
+ ✓ src/lib/widgetData/persistence.cleanV4.test.ts (1 test) 6ms
+ ✓ src/lib/dragDrop.test.ts (4 tests) 2ms
+ ✓ src/lib/widgetData/graph.test.ts (2 tests) 4ms
+ ✓ src/hooks/modalStack.test.ts (1 test) 4ms
+ ✓ src/components/renderers/table-model/ErrorCell.test.tsx (1 test) 63ms
+ ✓ src/lib/collections.test.ts (1 test) 3ms
+ ✓ scripts/reference-backend.test.mjs (5 tests) 6743ms
+   ✓ reference-backend.sh refusals > names git when git is missing 506ms
+   ✓ reference-backend.sh refusals > names python when python3 is missing 766ms
+   ✓ reference-backend.sh refusals > refuses a python older than 3.10, naming the floor 791ms
+   ✓ reference-backend.sh refusals > refuses a port already in use, naming the port and the override 462ms
+   ✓ reference-backend.sh checkout origin > re-clones a checkout whose origin is not REPO 4216ms
+ ✓ src/test/integration/reference-backend.test.ts (6 tests) 491ms
+   ✓ reference backend conformance > actually fetches every table, metric and chart widget 418ms
+ ✓ scripts/scrub-check.test.mjs (5 tests) 16027ms
+   ✓ scrub-check > passes a clean tree 4386ms
+   ✓ scrub-check > scans the design and plan documents under docs/superpowers 1638ms
+   ✓ scrub-check > still skips the verbatim rebuild documents in docs/specs 5317ms
+   ✓ scrub-check > flags a GitHub token 2451ms
+   ✓ scrub-check > flags a PEM private key 2234ms
+ ✓ src/lib/version.test.ts (3 tests) 3ms
+ ✓ src/lib/pdfLegacy.test.ts (3 tests) 4ms
+ ✓ scripts/release.test.mjs (6 tests) 35159ms
+   ✓ release.sh > refuses to build without every signing value 1462ms
+   ✓ release.sh > refuses to publish when origin's tag points at another commit 5399ms
+   ✓ release.sh > stops before publishing when the tag push fails 7533ms
+   ✓ release.sh > pushes an absent tag, then creates the release against that tag only 14660ms
+   ✓ release.sh > publishes this version's dmg even when an older build left another in the bundle dir 4459ms
+   ✓ release.sh > replaces an existing release's files in place, never deleting the release first 1646ms
+ ✓ src/lib/abortSignalAny.test.ts (3 tests) 2ms
+
+ Test Files  304 passed (304)
+      Tests  5417 passed (5417)
+   Start at  00:52:05
+   Duration  859.91s (transform 20.21s, setup 101.10s, collect 179.95s, tests 331.34s, environment 242.60s, prepare 41.47s)
+

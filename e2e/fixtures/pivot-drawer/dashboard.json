@@ -1,0 +1,204 @@
+{
+  "id": "d1",
+  "name": "Main",
+  "tabs": [
+    {
+      "id": "t1",
+      "name": "Main",
+      "cards": [
+        {
+          "id": "drawer",
+          "widgetId": "local_table",
+          "backendId": "builtin",
+          "title": "Quarterly fundamentals",
+          "params": {
+            "file": "00000000-0000-0000-0000-000000000001.csv"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "w": 48,
+            "h": 22
+          },
+          "tableDefinition": {
+            "table": {},
+            "search": "",
+            "analytical": {
+              "schemaVersion": 1,
+              "params": {
+                "promotePage": false,
+                "filters": []
+              },
+              "categories": [
+                {
+                  "id": "c_sector",
+                  "name": "Sector",
+                  "sourceFieldId": "sector",
+                  "transform": "native"
+                },
+                {
+                  "id": "c_company",
+                  "name": "Ticker",
+                  "sourceFieldId": "company",
+                  "transform": "native"
+                },
+                {
+                  "id": "c_year",
+                  "name": "Report year",
+                  "sourceFieldId": "reportDate",
+                  "transform": "Y"
+                },
+                {
+                  "id": "c_scen",
+                  "name": "Scenario",
+                  "sourceFieldId": "scenario",
+                  "transform": "native"
+                },
+                {
+                  "id": "c_fq",
+                  "name": "Fiscal quarter",
+                  "sourceFieldId": "reportDate",
+                  "transform": "FQ",
+                  "fiscalBinding": {
+                    "companyFieldId": "company",
+                    "fiscalYearFieldId": "fiscalYear",
+                    "fiscalQuarterFieldId": "fiscalQuarter",
+                    "periodStartFieldId": "periodStart",
+                    "periodEndFieldId": "periodEnd",
+                    "periodKind": "FQ"
+                  }
+                }
+              ],
+              "measures": [
+                {
+                  "id": "m_rev",
+                  "sourceFieldId": "revenue",
+                  "aggregation": "sum"
+                },
+                {
+                  "id": "m_ni",
+                  "sourceFieldId": "netIncome",
+                  "aggregation": "sum"
+                },
+                {
+                  "id": "m_eps",
+                  "sourceFieldId": "eps"
+                }
+              ],
+              "formulas": [
+                {
+                  "id": "f_margin",
+                  "name": "Net margin",
+                  "scope": "aggregate",
+                  "expression": "[m_ni] / [m_rev]",
+                  "format": "0.0%",
+                  "ast": {
+                    "kind": "binary",
+                    "operator": "/",
+                    "left": {
+                      "kind": "reference",
+                      "target": "measure",
+                      "id": "m_ni"
+                    },
+                    "right": {
+                      "kind": "reference",
+                      "target": "measure",
+                      "id": "m_rev"
+                    }
+                  }
+                },
+                {
+                  "id": "f_ni_m",
+                  "name": "Net income ($M)",
+                  "scope": "source",
+                  "expression": "[netIncome] / 1000",
+                  "ast": {
+                    "kind": "binary",
+                    "operator": "/",
+                    "left": {
+                      "kind": "reference",
+                      "target": "field",
+                      "id": "netIncome"
+                    },
+                    "right": {
+                      "kind": "literal",
+                      "value": 1000
+                    }
+                  }
+                },
+                {
+                  "id": "f_var",
+                  "name": "Revenue vs budget",
+                  "scope": "aggregate",
+                  "expression": "[m_rev][Scenario=Actual] - [m_rev][Scenario=Budget]",
+                  "format": "#,##0",
+                  "ast": {
+                    "kind": "binary",
+                    "operator": "-",
+                    "left": {
+                      "kind": "member",
+                      "value": {
+                        "kind": "reference",
+                        "target": "measure",
+                        "id": "m_rev"
+                      },
+                      "selectors": [
+                        {
+                          "categoryId": "c_scen",
+                          "memberKey": "[\"string\",\"Actual\"]"
+                        }
+                      ]
+                    },
+                    "right": {
+                      "kind": "member",
+                      "value": {
+                        "kind": "reference",
+                        "target": "measure",
+                        "id": "m_rev"
+                      },
+                      "selectors": [
+                        {
+                          "categoryId": "c_scen",
+                          "memberKey": "[\"string\",\"Budget\"]"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "layout": {
+                "rows": [
+                  "c_sector",
+                  "c_company"
+                ],
+                "columns": [
+                  "c_year"
+                ],
+                "page": {
+                  "categoryId": "c_scen",
+                  "memberKeys": [
+                    "[\"string\",\"Actual\"]"
+                  ]
+                },
+                "values": [
+                  "m_rev",
+                  "m_ni",
+                  "m_eps",
+                  "f_margin",
+                  "f_var"
+                ]
+              },
+              "checklists": [],
+              "resultFilters": [],
+              "subtotals": {
+                "grandTotal": true,
+                "groups": false
+              },
+              "enabled": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

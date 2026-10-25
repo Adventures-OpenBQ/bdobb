@@ -1,0 +1,186 @@
+
+ RUN  v2.1.9 <worktree>
+
+ ❯ src/lib/widgetsJson.test.ts (98 tests | 5 failed | 92 skipped) 9ms
+   × data.table.pivot > accepts the documented block 6ms
+     → expected undefined to deeply equal { enabled: true, …(4) }
+   × data.table.pivot > does not depend on columnsDefs 1ms
+     → expected undefined to deeply equal { enabled: true, …(2) }
+   × data.table.pivot > drops each malformed part, keeps the rest, and reports it on its own list, not in issues 0ms
+     → expected undefined to deeply equal { enabled: true, …(4) }
+   × data.table.pivot > keeps a field's first placement when a preset lists it twice 0ms
+     → expected undefined to deeply equal { enabled: true, …(2) }
+   × data.table.pivot > stores payload-named keys as own properties 1ms
+     → expected false to be true // Object.is equality
+ ❯ src/components/WidgetCard.test.tsx (219 tests | 1 failed | 218 skipped) 40ms
+   × hands a table widget's manifest Pivot preset to the table 39ms
+     → expected null to deeply equal { enabled: true, …(2) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/WidgetCard.test.tsx > hands a table widget's manifest Pivot preset to the table
+AssertionError: expected null to deeply equal { enabled: true, …(2) }
+
+- Expected: 
+Object {
+  "enabled": true,
+  "grouping": Array [
+    "symbol",
+  ],
+  "split": Array [],
+}
+
++ Received: 
+null
+
+ ❯ src/components/WidgetCard.test.tsx:230:77
+    228|   });
+    229|   render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    230|   expect(JSON.parse(screen.getByTestId("table-pivot-preset").textConte…
+       |                                                                             ^
+    231| });
+    232| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/lib/widgetsJson.test.ts > data.table.pivot > accepts the documented block
+AssertionError: expected undefined to deeply equal { enabled: true, …(4) }
+
+- Expected: 
+Object {
+  "aggregationFns": Object {
+    "revenue": "sum",
+  },
+  "buckets": Object {
+    "date": "quarter",
+  },
+  "enabled": true,
+  "grouping": Array [
+    "sector",
+    "symbol",
+  ],
+  "split": Array [
+    "date",
+  ],
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/widgetsJson.test.ts:1185:30
+    1183|     });
+    1184|     expect(issues).toEqual([]);
+    1185|     expect(widgets[0].pivot).toEqual({
+       |                              ^
+    1186|       enabled: true,
+    1187|       grouping: ["sector", "symbol"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/lib/widgetsJson.test.ts > data.table.pivot > does not depend on columnsDefs
+AssertionError: expected undefined to deeply equal { enabled: true, …(2) }
+
+- Expected: 
+Object {
+  "enabled": true,
+  "grouping": Array [
+    "sector",
+  ],
+  "split": Array [],
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/widgetsJson.test.ts:1197:30
+    1195|     const { widgets } = parse({ grouping: ["sector"] });
+    1196|     expect(widgets[0].table).toBeUndefined();
+    1197|     expect(widgets[0].pivot).toEqual({ enabled: true, grouping: ["sect…
+       |                              ^
+    1198|   });
+    1199| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/lib/widgetsJson.test.ts > data.table.pivot > drops each malformed part, keeps the rest, and reports it on its own list, not in issues
+AssertionError: expected undefined to deeply equal { enabled: true, …(4) }
+
+- Expected: 
+Object {
+  "aggregationFns": Object {
+    "volume": "sum",
+  },
+  "buckets": Object {
+    "when": "year",
+  },
+  "enabled": true,
+  "grouping": Array [
+    "sector",
+  ],
+  "split": Array [],
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/widgetsJson.test.ts:1208:30
+    1206|       enabled: "yes",
+    1207|     });
+    1208|     expect(widgets[0].pivot).toEqual({
+       |                              ^
+    1209|       enabled: true,
+    1210|       grouping: ["sector"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/lib/widgetsJson.test.ts > data.table.pivot > keeps a field's first placement when a preset lists it twice
+AssertionError: expected undefined to deeply equal { enabled: true, …(2) }
+
+- Expected: 
+Object {
+  "enabled": true,
+  "grouping": Array [
+    "sector",
+  ],
+  "split": Array [
+    "date",
+  ],
+}
+
++ Received: 
+undefined
+
+ ❯ src/lib/widgetsJson.test.ts:1226:30
+    1224|   it("keeps a field's first placement when a preset lists it twice", (…
+    1225|     const { widgets } = parse({ grouping: ["sector"], split: ["sector"…
+    1226|     expect(widgets[0].pivot).toEqual({ enabled: true, grouping: ["sect…
+       |                              ^
+    1227|   });
+    1228| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/lib/widgetsJson.test.ts > data.table.pivot > stores payload-named keys as own properties
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/lib/widgetsJson.test.ts:1243:45
+    1241|     });
+    1242|     const fns = widgets[0].pivot?.aggregationFns ?? {};
+    1243|     expect(Object.hasOwn(fns, "__proto__")).toBe(true);
+       |                                             ^
+    1244|   });
+    1245| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+ Test Files  2 failed (2)
+      Tests  6 failed | 1 passed | 310 skipped (317)
+   Start at  12:42:04
+   Duration  2.70s (transform 910ms, setup 268ms, collect 1.92s, tests 49ms, environment 762ms, prepare 122ms)
+

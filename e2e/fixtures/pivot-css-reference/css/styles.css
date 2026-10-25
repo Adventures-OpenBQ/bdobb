@@ -1,0 +1,1814 @@
+/* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+:root {
+  --bg: #12161d;
+  --bg-panel: #1a1f28;
+  --bg-card: #1e242e;
+  --border: #2b323d;
+  --text: #dfe4ec;
+  --text-muted: #8b94a3;
+  --accent: #22c99b;
+  --error: #d9695f;
+  --clock-green: #39ff14;
+  --rail-width: 48px;
+  --rail-width-expanded: 240px;
+  /* Fallback only. App's ResizeObserver publishes the real value (the tab
+     bar's bottom edge) on .dashboard-area itself, which wins by specificity
+     of the cascade origin -- an element style beats this. Declared here so a
+     maximized card is still laid out against the viewport top, rather than
+     against an invalid `inset` that drops the whole shorthand, in the frames
+     before that observer has measured (and under any environment that never
+     runs it). */
+  --dashboard-top: 0px;
+  /* The in-card file rail: the same idiom as the left rail, at a card's scale. */
+  --file-rail-width: 28px;
+  --file-rail-width-expanded: 260px;
+  --font-size-base: 14px;
+  /* Derived from --font-size-base, not hardcoded: recomputes automatically
+     under :root[data-font-size="large"] below, same as every site that used
+     to spell out calc(var(--font-size-base) * N / 14) by hand. */
+  /* Every font-size in this file MUST use one of these tokens (or --font-size-base). A bare px value silently opts that element out of the Font size setting. */
+  --font-size-10: calc(var(--font-size-base) * 10 / 14);
+  --font-size-11: calc(var(--font-size-base) * 11 / 14);
+  --font-size-12: calc(var(--font-size-base) * 12 / 14);
+  --font-size-13: calc(var(--font-size-base) * 13 / 14);
+  --font-size-16: calc(var(--font-size-base) * 16 / 14);
+  --font-size-28: calc(var(--font-size-base) * 28 / 14);
+  --font-size-32: calc(var(--font-size-base) * 32 / 14);
+}
+
+/* Specificity (0,2,0), not source order, is what beats pdf_viewer.css's bare
+   :root { color-scheme: light dark }. */
+:root:not([data-theme="light"]) {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #eef1f5;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --border: #d7dce3;
+  --text: #1a1f28;
+  --text-muted: #6b7280;
+  --accent: #16a67f;
+  --error: #c0392b;
+  --clock-green: #1a9e4a;
+  color-scheme: light;
+}
+
+:root[data-font-size="large"] {
+  --font-size-base: 16px;
+}
+
+* { box-sizing: border-box; }
+
+button, input, select, textarea { font: inherit; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: var(--font-size-base);
+}
+
+/* ===========================================================================
+   Shared component recipes.
+
+   Five shapes were hand-copied down this file -- the popup menu, the badge,
+   the outlined button, the filled toolbar button and the input field. Each is
+   declared ONCE here; every site below keeps only what it does differently
+   (its padding, its font-size, the colour or radius it varies).
+
+   Every `:is()` list holds selectors that ALREADY had the same specificity, so
+   no rule here beats -- or loses to -- anything it did not before. And because
+   this section comes first, a per-site rule of equal specificity still wins on
+   source order, exactly as the hand-copied version did.
+
+   Two selectors are deliberately NOT lifted into the outlined-button list:
+   `.card-action` and `.library-filter-reset`. That list is `:is(...) button`,
+   so it can only ever match a <button> -- it cannot reach ViewToggle's
+   <select> as it stands. The hazard is the merge itself: `:is()` takes the
+   specificity of its MOST specific argument, so folding either class into
+   that list would raise it from (0,1,0) to (0,1,1). ViewToggle renders
+   `class="card-action view-select"`, and at (0,1,1) this shared
+   `background: transparent` would outrank `.view-select`'s (0,1,0)
+   dropdown-arrow `background` at any source order -- the arrow would
+   disappear.
+   =========================================================================== */
+
+/* Popup menu: a panel floating over the app holding one column of full-width
+   rows. .row-context-menu -- every context menu in the app since the four
+   were folded into one primitive -- is `position: fixed` and portalled;
+   .card-export-menu, the card's ⋯ menu, rides the same panel (MenuPanel)
+   hung from its toggle. Position, z-index and min-width stay with each menu,
+   below. */
+:is(.card-export-menu, .row-context-menu, .group-menu) {
+  padding: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+:is(.card-export-menu, .row-context-menu, .group-menu) button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Both menus render disabled items (the table header's Pin/Unpin rows, the
+   card's export rows); .row-context-menu is the one that also lights its row
+   up on focus. */
+:is(.card-export-menu, .row-context-menu) button:hover:not(:disabled),
+.row-context-menu button:focus { background: var(--bg-card); }
+
+/* After the hover rule on purpose: the two selectors have equal specificity
+   (one class, one pseudo-class, one type), so source order decides. */
+:is(.card-export-menu, .row-context-menu) button:disabled { color: var(--text-muted); cursor: default; }
+
+/* Badge: an inert hairline-outlined pill in muted text. .tab-bar-tag drops to
+   --font-size-10 and .source-badge ellipsises a long provider name, below. */
+:is(.type-badge, .source-badge, .tab-bar-tag) {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* Outlined button: the app's secondary control -- no fill, one hairline
+   border. .iframe-hint restates `color` in body text and .error-state in
+   --error; .error-state takes the 4px radius. All of that is below, with each
+   component. */
+:is(.filter-actions, .widget-tabs, .keys-actions, .iframe-hint, .error-state) button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+/* The accent-outlined primary: the widget form panel's submit button, greyed
+   out when it has nothing to send. */
+.widget-form-actions button {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.widget-form-actions button:disabled {
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+/* Filled toolbar button: the four in-body toolbars take a card fill rather
+   than the outlined treatment, so they read as controls against the document
+   they sit above. Only .multi-file-nav and .file-rail-actions vary the
+   padding, below. */
+:is(.pdf-toolbar, .pdf-findbar, .multi-file-nav, .file-rail-actions) button {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Input field: card fill, hairline border, body text. Padding and radius stay
+   with each form, below; the two pdf inputs are class selectors rather than
+   descendants, so they keep their own (0,1,0) list. */
+:is(.param-field, .keys-edit) :is(input, select) {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+:is(.pdf-page-input, .pdf-find-input) {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+}
+
+.app-shell { display: flex; height: 100vh; position: relative; }
+
+/* Always out of flow, at rest as well as expanded. It used to sit in the flex
+   row at rest and go absolute only on expand, while .dashboard-area carried a
+   margin-left sized to the rail — so at rest the offset was applied twice and
+   a rail's width of dead space ran down the left of every dashboard. Taking it
+   out of flow permanently leaves that margin as the single offset, and keeps
+   the no-reflow guarantee: expanding changes only this element's width. */
+.left-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: var(--rail-width);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 120ms ease;
+}
+
+/* Expands as an overlay above the dashboard, which never reflows.
+
+   Keyboard focus inside the rail expands it too, as .file-rail:focus-within
+   does: hover is mouse-only, and collapsed the rail hides its labels and the
+   import notice, so a keyboard user could never open it. :focus-visible
+   rather than :focus-within, so a mouse click that leaves focus on a row
+   (Chromium focuses a clicked button) does not hold the rail open after the
+   pointer leaves. Every collapsed-only rule below carries the same
+   exception. */
+.left-rail[data-expanded="true"],
+.left-rail:has(:focus-visible) {
+  width: var(--rail-width-expanded);
+}
+
+/* The dashboard list is the only part of the rail allowed to grow, so it is
+   the only part allowed to scroll. Without this the rail -- a fixed-height
+   `overflow: hidden` flex column -- simply runs off its own bottom edge once
+   the list is long enough, taking Connections, Settings and Help with it:
+   a column flex item's `min-height` is `auto`, so .rail-top will not shrink
+   below its content, and .rail-bottom is pushed past the rail's bottom and
+   clipped away. `min-height: 0` lets it shrink, `overflow-y: auto` gives the
+   rows it can no longer show somewhere to go. Expanded is where this bites
+   first -- collapsed, every label and section label leaves the layout, so the
+   same rail fits ~144px more rows -- but the collapsed rail overflows too,
+   just later, and this covers both. */
+.rail-top {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.rail-section-label {
+  padding: 8px 12px 4px;
+  font-size: var(--font-size-11);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.rail-item[draggable="true"] { cursor: grab; }
+
+.rail-item:hover { background: var(--bg-card); }
+.rail-item[aria-current="true"] { color: var(--accent); }
+
+.rail-item[data-drop-target="true"] {
+  background: var(--bg-card);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* .rail-item:has(.rail-shortcut) used to supply the flex row a dashboard row
+   needed for its label + kbd. .rail-item is that row now, for every kind of
+   row, so the :has rule would be a second rule doing one job. */
+.rail-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+
+.rail-icon { flex: 0 0 auto; }
+/* The plus, in the same green as the tab bar's quick-add button. The svg
+   paints with currentColor, so setting color here is the whole mechanism. */
+.rail-icon-accent { color: var(--accent); }
+
+/* The nesting indent for dashboard and folder rows, which carry their depth
+   as `--rail-depth` (LeftRail.tsx's rowIndent). Expanded only, and from the
+   stylesheet rather than inline, so the collapsed rule below is not outranked
+   by an inline style: 16px is one step because a folder row spends 10px on
+   its caret plus a 6px gap before its label, and a nested row has no caret of
+   its own, so anything smaller would print a child's label to the LEFT of the
+   folder it sits in. `padding-left` is the constant 12px `.rail-item` already
+   gives every row, and `width: auto` keeps the row filling what the margin
+   leaves rather than overflowing by it. */
+.left-rail[data-expanded="true"] .rail-item[style*="--rail-depth"],
+.left-rail:has(:focus-visible) .rail-item[style*="--rail-depth"] {
+  margin-left: calc(var(--rail-depth) * 16px);
+  width: auto;
+}
+
+/* Collapsed, the icons and the kbd badges carry the rail: every text label
+   leaves the layout entirely (and, with display: none, the accessibility
+   tree -- which is why each fixed button also carries an aria-label). */
+.left-rail:not([data-expanded="true"]):not(:has(:focus-visible)) .rail-item {
+  padding: 8px 0;
+  justify-content: center;
+}
+
+.left-rail:not([data-expanded="true"]):not(:has(:focus-visible)) .rail-item-label { display: none; }
+.left-rail:not([data-expanded="true"]):not(:has(:focus-visible)) .rail-section-label { display: none; }
+
+.rail-shortcut {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+}
+
+/* The initial a dashboard past the ninth shows where its ⌥N badge would be:
+   the badge's box and type, minus the border, so it does not read as a key. */
+.rail-initial { border-color: transparent; }
+
+/* `.rail-item` supplies the flex row now, so all this adds is the tighter gap
+   that keeps the caret next to the folder name rather than an icon's distance
+   from it. */
+.rail-folder-row { gap: 6px; }
+
+.rail-folder-caret {
+  flex: 0 0 auto;
+  width: 10px;
+  color: var(--text-muted);
+  font-size: var(--font-size-10);
+}
+
+.dashboard-area {
+  flex: 1 1 auto;
+  margin-left: var(--rail-width);
+  overflow: auto;
+}
+
+/* The auto margin lives HERE, not on .quick-add-button, and there must be
+   exactly one of it in this row: CSS Flexbox 8.1 distributes free space
+   EQUALLY among all auto margins, so an auto margin on both would strand ↻
+   in the middle of the bar (measured: 531px short of the +). ↻ is always
+   rendered and always precedes the +, so it is the one that takes the space
+   and the + rides along at the right end behind it. */
+.tab-bar .refresh-all { margin-left: auto; }
+
+.tab-bar .quick-add-button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: var(--font-size-16);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Both modals are real <dialog>s opened with showModal(): the top layer puts
+   them over every card without a z-index, the rest of the app goes inert, and
+   focus is trapped inside. The element itself is only the shell -- the UA's
+   own box (border, padding, canvas colours, fit-content sizing) is cleared
+   here so the .modal inside it goes on owning the panel's look, and `margin:
+   auto` against the UA's `inset: 0` is what centres it. */
+.modal-backdrop {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  /* The UA sets `color: canvastext` on dialog, which in the dark theme is
+     black text on the panel. */
+  color: var(--text);
+  max-width: none;
+  max-height: none;
+}
+.modal-backdrop::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+.modal {
+  width: min(680px, 92vw);
+  max-height: 82vh;
+  overflow: auto;
+  padding: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Help only. The shared .modal base is width: min(680px, 92vw) with
+   max-height: 82vh, which is right for a form and wrong for a two-pane
+   reader -- so the sizing is scoped to this modifier rather than pushed
+   onto the base.
+
+   min-height: 0 on both panes because a flex item's default min-height:
+   auto refuses to shrink below its content, so without it the modal grows
+   instead of the panes scrolling. */
+.modal-help {
+  width: 76vw;
+  height: 76vh;
+  max-height: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.help-body { display: flex; gap: 16px; flex: 1 1 auto; min-height: 0; margin-top: 12px; }
+/* The search row is a fixed header over the scrolling list, which is why the
+   column is this wrapper and the scroll is on .help-list inside it. */
+.help-nav { flex: 0 0 220px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.help-search { display: flex; gap: 4px; }
+.help-search input { flex: 1 1 auto; min-width: 0; }
+/* The dialog already carries its own X button; WebKit's native search-cancel
+   glyph would put a second, differently-drawn one inside the field. */
+.help-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.help-list { min-height: 0; overflow: auto; }
+.help-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+/* The guide's section headings over its unfiltered list. Not a button, so
+   not a topic to the keyboard or to a screen reader enumerating the
+   landmark. */
+.help-list h4 { margin: 8px 6px 2px; font-size: var(--font-size-12); font-weight: 600; }
+.help-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.help-list button:hover { background: var(--bg-card); }
+.help-list button[aria-current="true"] { background: var(--bg-card); font-weight: 600; }
+.help-hit-snippet {
+  display: block;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.help-content { flex: 1 1 auto; min-height: 0; overflow: auto; }
+
+.modal-header { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.modal-header h2 { flex: 1; margin: 0; font-size: var(--font-size-16); }
+
+.empty-state { color: var(--text-muted); }
+
+/* The rename field, used by both the tab strip and the rail's dashboard rows:
+   sized to sit in the box of the label it replaces rather than to look like a
+   form input. font: inherit keeps each host's own type. */
+.inline-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--text);
+  font: inherit;
+}
+
+/* Sticky, not static: the bar is the first child of .dashboard-area, which is
+   the scroll box (overflow: auto), so a static bar scrolls up and out of the
+   window on a dashboard taller than the area. A maximized card then covers
+   the grid content that took the bar's place instead of the bar itself,
+   because its `inset` top is --dashboard-top -- the area's own top plus the
+   bar's height, which App can only publish as a CONSTANT (App.tsx). Pinning
+   the bar to the scroll box's top edge is what makes that constant true in
+   every scroll state.
+
+   z-index 15 is above every card (react-grid-layout gives a resizing item 1, a
+   placeholder 2 and a dragged item 3, from its own stylesheet) and below the
+   maximized card's 20, the library overlay's 30, the expanded rail's 40, the
+   modal backdrop's 50 and the portalled menus' 60 -- so a maximized card,
+   which is meant to cover the bar, still does.
+
+   An OPAQUE background is required, not decoration: the grid now scrolls
+   underneath, and the bar's default transparency would show cards through it. */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Scoped to the dashboard's bar: SettingsDialog reuses .tab-bar for its
+   section strip inside a panel, where sticky is inert and --bg would band. */
+.dashboard-area > .tab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--bg);
+}
+
+/* The tablist inside the bar: the same row, so the tabs sit exactly where
+   they did as the bar's own children. */
+.tab-bar-tabs { display: flex; align-items: center; gap: 4px; }
+
+.tab-bar-tab { display: flex; align-items: center; }
+
+/* The same two affordances .rail-item already has one level up: a grab
+   cursor on a draggable tab, and the accept outline on the tab a drop would
+   land on. outline rather than border so the tab does not change size when
+   the highlight comes on, and outline-offset: -1px so it sits inside the
+   tab's own box rather than bleeding into the 4px gap. */
+/* The wrapper has no surface of its own -- its button covers it -- so the
+   button must carry the cursor too, or `.tab-bar button` wins with pointer. */
+.tab-bar-tab[draggable="true"],
+.tab-bar-tab[draggable="true"] button { cursor: grab; }
+
+.tab-bar-tab[data-drop-target="true"] {
+  background: var(--bg-card);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.tab-bar button {
+  padding: 3px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-13);
+}
+
+.tab-bar button[aria-selected="true"] {
+  color: var(--text);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Overlays the dashboard rather than reflowing it. Below the expanded
+   rail's z-index 40 — the rail collapses itself before opening this. */
+.library-overlay {
+  position: fixed;
+  /* Starts at the collapsed rail's right edge rather than at x=0, so the rail
+     stays visible and usable while the library is open. `position: fixed`
+     anchors to the viewport, so .dashboard-area's margin does not apply here
+     and the inset has to carry the offset itself. */
+  inset: 0 0 0 var(--rail-width);
+  z-index: 30;
+  padding: 16px;
+  overflow: auto;
+  background: var(--bg);
+}
+
+.library-header { display: flex; align-items: center; gap: 8px; }
+.library-header h2 { flex: 0 0 auto; margin: 0; font-size: var(--font-size-16); }
+.library-header input[type="search"] { flex: 1; padding: 6px 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); }
+
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.library-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+
+/* Provider names come from the backend verbatim and one is a markdown link;
+   bound the control so a long label cannot stretch the row. */
+.library-filter select { max-width: 220px; }
+
+.library-filter-reset {
+  margin-left: auto;
+  align-self: center;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-12);
+}
+
+.library-filter-reset:disabled { opacity: 0.5; cursor: default; }
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.library-card {
+  display: grid;
+  /* Cards in a grid row stretch to the tallest neighbour; without this the
+     spare height is shared out between title, badges and description and the
+     badges float to the middle of the card instead of sitting under the title. */
+  align-content: start;
+  gap: 4px;
+  padding: 10px;
+  text-align: left;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Same base token as .library-card's own background -- var(--bg-panel) would
+   not visibly lighten anything since the card doesn't start from that token.
+   The plain --border fill (same muted-pill token used by .key-pill[data-tone="grey"])
+   is the fallback for browsers without color-mix() support; the color-mix
+   line below it overrides that fallback wherever it is supported. */
+.library-card-present { background: var(--border); background: color-mix(in srgb, var(--bg-card) 85%, var(--text)); }
+
+.library-card-title { font-weight: 600; }
+.library-card-description {
+  color: var(--text-muted);
+  font-size: var(--font-size-12);
+  /* Descriptions carry long URLs with no break opportunity; without this they
+     run out of the card. */
+  overflow-wrap: anywhere;
+}
+
+.library-card-badges { display: flex; gap: 4px; align-items: center; }
+
+/* Same neutral treatment as .type-badge (both take the shared badge recipe up
+   top). Colouring by key status is SP5. */
+.source-badge {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* border-collapse is `separate` with zero spacing, not `collapse`, and that is
+   load-bearing rather than cosmetic: under `collapse`, Chromium paints NO
+   box-shadow on a table cell and NEITHER Chromium nor WebKit paints a cell's
+   own side border, so a sticky pinned column has no visible edge at all
+   (measured by pixel-scanning locator screenshots in Chromium 1234 and WebKit
+   2336). Every row rule in this table is a `border-bottom` on the cells
+   themselves and no cell carries a top or side border, so nothing doubles and
+   nothing gains a gap: the same page measured row height 22 and table height
+   288 under BOTH values, in both engines. KeysRenderer shares this class and
+   is therefore unchanged. */
+.widget-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--font-size-12); }
+
+.widget-table th {
+  /* sticky rather than relative: sticky is still a positioned value, so it
+     remains the containing block for .column-resizer's absolute positioning
+     (verified in Chromium), and the header now stays put while the
+     virtualised rows scroll under it. The background is the card's own, so
+     rows never show through. KeysRenderer shares .widget-table; a sticky
+     header is harmless in its short, modal-hosted table.
+
+     Deliberately NO z-index. A z-index here would put this header in the
+     same stacking level as .card-header (position: relative; z-index: 1)
+     and, being later in the document, paint it over the header's collapsed
+     controls dropdown -- making Remove/Refresh/Parameters unclickable on
+     table cards. Raising .card-header instead is not the fix either: the
+     nw/ne resize handles at z-index 2 sit above it by design. Auto z-index
+     is enough -- sticky still pins, and still hit-tests above the rows
+     scrolling under it (verified in Chromium). */
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  padding: 4px 6px;
+  text-align: left;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* The plain grid (the transposed view): nothing here sorts, so the header
+   must not offer a pointer cursor, and its text stays selectable. */
+.widget-table.plain th {
+  cursor: default;
+  user-select: text;
+}
+
+.widget-table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+/* TableRenderer's scroll container, and the element the row virtualiser
+   measures. It fills .card-body exactly, so the card still has one
+   scrollbar, not two. */
+/* position/z-index make this a stacking context, which CONTAINS every z-index
+   inside the table. Without it, the pinned header cells' z-index below would
+   tie them with .card-header (position: relative; z-index: 1) and, being
+   later in the document, paint over the header's collapsed-controls
+   dropdown -- exactly the regression e2e/table.spec.ts guards. Verified in
+   Chromium and WebKit: with this stacking context, elementFromPoint on the
+   dropdown's button still returns the button. */
+.table-scroll { position: relative; z-index: 0; height: 100%; overflow: auto; }
+
+/* The two spacers that stand in for the un-rendered rows. Their height is
+   set inline by TableRenderer; * { box-sizing: border-box } already keeps
+   .widget-table td's padding inside that height, but the inherited
+   border-bottom would still draw a rule across the empty space. */
+.table-spacer td { padding: 0; border: 0; }
+
+/* Pinned = sticky. The offsets are the only part TableRenderer computes
+   inline (from TanStack's getStart("left") / getAfter("right")); `position`,
+   the opaque background a pinned body cell needs so scrolling cells cannot
+   show through it, the edge shadow and the stacking all live here.
+   z-index: pinned body cells (1) above the scrolling cells, pinned header
+   cells (3) above those -- all of it inside .table-scroll's stacking context.
+   .widget-table th already carries `position: sticky; top: 0`, so a pinned
+   header cell sticks on both axes at once (verified in both engines). */
+.widget-table td.pin-left,
+.widget-table td.pin-right {
+  position: sticky;
+  background: var(--bg-card);
+  z-index: 1;
+}
+
+.widget-table th.pin-left,
+.widget-table th.pin-right { z-index: 3; }
+
+.widget-table td.pin-left,
+.widget-table th.pin-left { box-shadow: 1px 0 0 0 var(--border); }
+
+.widget-table td.pin-right,
+.widget-table th.pin-right { box-shadow: -1px 0 0 0 var(--border); }
+
+/* renderFn: greenRed. --accent and --error already carry green and red in
+   both themes, so this needs no new token. A colorRules colour arrives as an
+   inline style instead and therefore wins over these. */
+.widget-table td.cell-pos { color: var(--accent); }
+.widget-table td.cell-neg { color: var(--error); }
+
+/* renderFn: cellOnClick. A real <button> so the cell is keyboard reachable,
+   stripped back to the text it replaced: `color: inherit` is what carries the
+   td's greenRed class AND its colorRules inline colour through to the button,
+   which would otherwise take the UA sheet's buttontext. The underline is the
+   only affordance -- nothing else in this table moves on hover. */
+.cell-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cell-link:hover,
+.cell-link:focus-visible {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+}
+
+/* The filter row. Deliberately NOT sticky on the vertical axis: a second
+   `top: 0` row would sit on top of the header row, and there is no stable
+   pixel height to offset it by (--font-size-base changes with the Font size
+   setting). Pinned cells keep their horizontal stickiness, above the body's
+   pinned cells but below the header's. user-select is restored because
+   .widget-table th sets it to none, which would stop text being selected
+   inside these inputs. */
+.widget-table tr.filter-row th {
+  position: static;
+  cursor: default;
+  padding: 2px 6px;
+  font-weight: 400;
+  user-select: text;
+}
+
+.widget-table tr.filter-row th.pin-left,
+.widget-table tr.filter-row th.pin-right {
+  position: sticky;
+  /* Restoring `position: sticky` would otherwise inherit `top: 0` from
+     `.widget-table th` and pin this one cell under the header row while the
+     rest of the filter row scrolled away with the body. */
+  top: auto;
+  z-index: 2;
+}
+
+.filter-input {
+  width: 100%;
+  min-width: 40px;
+  padding: 1px 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: var(--font-size-11);
+}
+
+.filter-range { display: flex; gap: 2px; }
+
+.filter-actions { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+.filter-actions button { padding: 1px 6px; font-size: var(--font-size-11); }
+
+.filter-count { color: var(--text-muted); font-size: var(--font-size-10); }
+
+/* The sort arrow, and the 1-based position shown once more than one column is
+   sorted. Both are wrapped in elements rather than left as bare text nodes so
+   they can be styled and queried at all. */
+.sort-marker { margin-left: 4px; color: var(--accent); }
+
+.sort-index {
+  margin-left: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-size-10);
+  vertical-align: super;
+}
+
+.raw-json {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-11);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+}
+
+.error-state { color: var(--error); }
+.error-state button {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-color: var(--error);
+  border-radius: 4px;
+  color: var(--error);
+}
+
+.dashboard-grid { position: relative; }
+
+/* react-grid-layout inserts this placeholder the moment a drag STARTS -- and a
+   drag starts on the mousedown, not on the mouseup. It is a sibling of the
+   dragged item, absolutely positioned over the item's own rect, at z-index 2
+   (its own stylesheet). So on a press anywhere in the drag handle
+   (.card-title, DashboardGrid's draggableHandle) the element under the pointer changes
+   between mousedown and mouseup, and the browser fires click/dblclick on the
+   nearest common ANCESTOR of the two targets -- the grid item, not the title.
+   The title's own onDoubleClick therefore never ran on a normal card, so
+   double-click-to-rename worked only while maximized (dragging off) and cards
+   with no ⋯ menu (iframe, keys, multi_file_viewer, pdf, builtins, unresolved)
+   could not be renamed at all.
+
+   The placeholder is decorative -- it has no handlers of its own and nothing
+   ever needs to hit it -- so taking it out of hit-testing costs nothing and
+   leaves both clicks on the title where they belong. */
+.react-grid-placeholder { pointer-events: none; }
+
+/* Maximize. The class is on the GRID ITEM, never on the card inside it: the
+   item is positioned with `transform: translate(...)`, and a fixed descendant
+   of a transformed element is laid out against that element instead of the
+   viewport.
+
+   Every !important here overrides an INLINE style react-grid-layout writes on
+   the item itself (transform, width, height and `position: absolute`, all from
+   setTransform in its utils) -- an inline declaration otherwise beats any
+   author rule. `inset` needs none: on the cssTransforms path (the default,
+   and what this grid uses) top/left are not inline at all.
+
+   z-index 20 is below the expanded rail's 40 and the portalled menus' 60, so
+   both stay reachable over a maximized card. --dashboard-top is the tab bar's
+   bottom edge, published by App; --rail-width is the rail setting, published
+   on :root by App. */
+.react-grid-item.card-maximized {
+  position: fixed !important;
+  /* .cssTransforms transitions transform, width and height over 200ms, which
+     would animate the jump to fixed. The card is changing what it IS, not
+     moving, and an animated jump would also leave its box mid-flight for a
+     fifth of a second. */
+  transition: none;
+  transform: none !important;
+  inset: var(--dashboard-top) 0 0 var(--rail-width);
+  width: auto !important;
+  height: auto !important;
+  z-index: 20;
+}
+
+/* The viewer window renders no rail (.dashboard-area-viewer { margin-left: 0 }
+   below, for the same reason), so the rail-width inset above would leave a
+   rail's width of dead space down the left of a maximized card. */
+.dashboard-area-viewer .react-grid-item.card-maximized { left: 0; }
+
+/* With corner handles on, the header's z-index:1 (which keeps its buttons
+   clickable above the se/sw handles) would also bury the nw/ne handles.
+   Raise only those two above the header, only in that mode, and inset the
+   header's contents so the title and buttons never sit inside a 20px corner
+   zone. se/sw stay below the header, as before. */
+.dashboard-grid-corner-handles .react-grid-item > .react-resizable-handle-nw,
+.dashboard-grid-corner-handles .react-grid-item > .react-resizable-handle-ne { z-index: 2; }
+.dashboard-grid-corner-handles .card-header { padding-inline: 22px; }
+
+.widget-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.widget-card[data-minimized="true"] { height: auto; overflow: visible; }
+
+/* A refetch no longer blanks the body (see WidgetCard's loading gate), so
+   the header is what says a request is in flight: the title dims and gains a
+   small accent dot. Deliberately static -- nothing else here animates. */
+.widget-card[data-refreshing="true"] .card-title { opacity: 0.55; }
+
+.widget-card[data-refreshing="true"] .card-title::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Parameters edited but not yet Run. Its own flex item between the title and
+   the controls: `.card-header button { flex: 0 0 auto }` does not reach a
+   span, and without this the marker would be the first thing squeezed away on
+   a narrow card. cursor: default so it does not invite a click -- the tooltip
+   is the whole of it, and Run is the control. */
+.card-stale {
+  flex: 0 0 auto;
+  color: var(--accent);
+  cursor: default;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+/* The drag handle is the title, not the whole card. min-width: 0 lets the
+   title shrink below its natural content width (a flex item's default
+   min-width is auto, i.e. "never smaller than my content") so it ellipsises
+   instead of pushing the header's action buttons past the card's edge,
+   where .widget-card's overflow: hidden would clip them unreachably on a
+   narrow card. */
+.card-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: move;
+  font-weight: 600;
+}
+
+/* Belt and suspenders with the ellipsis above: if the card is narrow enough
+   that even a fully-shrunk title can't leave room for Parameters/Raw/
+   Refresh/✕, flex-wrap on .card-header sends the buttons to a second line
+   (each kept at its natural width by flex: 0 0 auto below) rather than
+   letting them be squeezed unreadably thin or clipped. */
+.card-header button { flex: 0 0 auto; }
+
+.card-controls { display: contents; }
+.card-controls:not(.card-controls-collapsed) .card-controls-icons { display: contents; }
+.card-controls-collapsed { display: flex; align-items: center; position: relative; }
+.card-controls-collapsed .card-controls-icons {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px;
+  gap: 8px;
+}
+.card-controls-collapsed:hover .card-controls-icons,
+.card-controls-collapsed:focus-within .card-controls-icons,
+.card-controls-collapsed.card-controls-open .card-controls-icons {
+  display: flex;
+}
+
+.card-body { flex: 1; overflow: auto; padding: 8px; }
+
+/* A card whose widget declares tabs or a form renders them in the body, above
+   the renderer -- they are meant to be seen, not folded behind the parameter
+   panel toggle. Every renderer sizes against a parent with a definite height
+   (.table-scroll is `height: 100%`), so the body becomes a column and the
+   renderer gets a flex track of its own. A card with neither keeps
+   .card-body's plain block layout above, untouched. */
+.card-body-controls { display: flex; flex-direction: column; gap: 8px; }
+.card-render { flex: 1; min-height: 0; }
+
+.widget-tabs { display: flex; flex: none; gap: 2px; flex-wrap: wrap; }
+
+.widget-tabs button { padding: 3px 10px; font-size: var(--font-size-11); }
+
+/* Accent-FILLED, like .tab-bar .quick-add-button: the accent-as-foreground
+   treatment is already spoken for by .card-action[aria-pressed="true"], and
+   the token pair inverts correctly under :root[data-theme="light"]. */
+.widget-tabs button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.widget-form { display: grid; flex: none; gap: 8px; }
+
+.widget-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.widget-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* The submit's own failure, on the form rather than over the renderer: the
+   card's data is still valid, only the POST was refused. */
+.widget-form-error { color: var(--error); font-size: var(--font-size-11); }
+
+/* The Move to flyout. Rendered in flow rather than positioned: the rail's
+   context menu is already `position: fixed` near the pointer, and a second
+   floating layer would need its own edge-collision handling for no gain. */
+.rail-submenu {
+  margin: 4px 0;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* The import/export result. Wraps rather than ellipsising: it can carry an
+   OS error message, and a truncated one is useless. Only readable while the
+   rail is expanded, which is where the action that produced it lives. */
+/* The import notice is a third child of the rail's space-between column; the
+   auto margin takes the spare space ABOVE the bottom controls, so controls and
+   notice stay together at the bottom instead of splitting the gap. Collapsed,
+   the rail is icon-wide and the notice would wrap one word per line. */
+.rail-bottom { margin-top: auto; flex-shrink: 0; }
+.left-rail:not([data-expanded="true"]):not(:has(:focus-visible)) .rail-notice { display: none; }
+
+.rail-notice {
+  margin: 0;
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
+  padding: 8px 12px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+/* The viewer window renders no rail, so the offset that makes room for one
+   would be a rail's width of dead space down the left of the dashboard. */
+.dashboard-area-viewer { margin-left: 0; }
+
+/* Shown only while a FILE drag is over the dashboard area. `fixed`, so it
+   covers the area whatever the dashboard is scrolled to -- .dashboard-area is
+   not transformed, so a fixed child is laid out against the viewport -- and
+   inset by the rail's own width so it never covers the rail. z-index 20 is
+   the maximized card's; 25 puts the veil over one, and still under the
+   expanded rail (40) and the portalled menus (60). pointer-events: none is
+   load-bearing: an element under the pointer mid-drag would fire dragleave
+   on the zone the moment the veil appeared. */
+.drop-veil {
+  position: fixed;
+  inset: 0 0 0 var(--rail-width);
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 2px dashed var(--accent);
+  color: var(--text-muted);
+  font-size: var(--font-size-13);
+}
+
+.dashboard-area-viewer .drop-veil { inset: 0; }
+
+/* The one line a drop leaves behind, in the rail notice's voice but anchored
+   to the dashboard area it belongs to. */
+.drop-notice {
+  position: fixed;
+  right: 16px;
+  bottom: 12px;
+  z-index: 25;
+  max-width: 40ch;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-panel);
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+
+/* The badge recipe up top, one step smaller. */
+.tab-bar-tag { font-size: var(--font-size-10); }
+
+/* One chip per group, after the tabs. The number is the same badge a bound
+   control shows, so a glance ties a chip to its controls. */
+.tab-bar-groups { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; }
+.group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
+.group-chip-label { white-space: nowrap; }
+
+/* The controls row lives INSIDE .card-header, under the title row. A full
+   flex-basis makes it its own line; wrapping keeps a card with many params
+   readable at any width instead of clipping the row (.widget-card hides
+   overflow). Compact by design: this is a titlebar, not a form. */
+.card-params {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding-top: 2px;
+}
+
+.param-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+  min-width: 0;
+}
+.param-label { white-space: nowrap; }
+
+/* The link is a bare glyph; the badge is the group's number in the accent,
+   the same number the tab bar's chip shows. A real button either way: an edit
+   here moves several cards, and that has to reach a screen reader, not only a
+   sighted user. */
+.param-link {
+  padding: 0 4px;
+  min-width: 18px;
+  font-size: var(--font-size-10);
+  line-height: 16px;
+  border-radius: 8px;
+}
+.param-badge {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+}
+
+.param-field input,
+.param-field select { padding: 2px 6px; border-radius: 3px; max-width: 160px; }
+.param-field input[type="checkbox"] { max-width: none; }
+.param-field select[multiple] { max-height: 64px; }
+
+/* The form panel shares .param-field with the header row but is a form,
+   not a titlebar: its label stacks over its control and its inputs fill
+   their grid cell, as they did before the header row existed. */
+.widget-form-grid .param-field { display: grid; gap: 3px; }
+.widget-form-grid .param-field input,
+.widget-form-grid .param-field select { max-width: none; }
+/* The group link sits beside the label rather than above the control. */
+.param-label-row { display: inline-flex; align-items: center; gap: 4px; }
+
+.param-hint {
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-action {
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+  cursor: pointer;
+}
+
+.card-action[aria-pressed="true"],
+.card-action[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+
+/* Run is the one header control that asks to be pressed rather than merely
+   offered -- a runButton card shows nothing new until it is -- so it is the
+   only FILLED one in the row. Same idiom as .tab-bar .quick-add-button, the
+   stylesheet's other primary action: accent behind, --bg in front, which
+   inverts correctly under :root[data-theme="light"] because both are
+   tokens. */
+.card-action.card-run {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+/* Portalled to <body> and `fixed` from the ⋯ toggle's rect, so neither the
+   card's own clipping nor the next card can cover it; on the context menu's
+   layer, over a maximized card's 20. */
+.card-export-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 96px;
+  /* Columns ▸ lists every column inline, so the menu can outgrow the
+     window; past this it scrolls rather than running off the bottom. */
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* .widget-card clips its overflow, and the collapsed controls hang from the
+   header, so on a short card they were cut off by the card's own edge --
+   present but unreachable. (The ⋯ menu and the group menu are portalled and
+   need none of this.) While they are open the card stops clipping, and its
+   grid item rises over its neighbours so the next card does not cover the
+   overhang: 3 is a dragged item's level (react-grid-layout's own stylesheet),
+   still under the tab bar's 15. Not a maximized card, whose 20 must stand. */
+.widget-card:has(.card-controls-collapsed:is(:hover, :focus-within, .card-controls-open)) {
+  overflow: visible;
+}
+.react-grid-item:not(.card-maximized):has(.card-controls-collapsed:is(:hover, :focus-within, .card-controls-open)) {
+  z-index: 3;
+}
+
+.card-export-menu button { padding: 4px 10px; font-size: var(--font-size-11); }
+
+.param-link-wrap { display: inline-flex; }
+/* Portalled into <body> and placed by MenuPanel, like .row-context-menu. */
+.group-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 160px;
+}
+.group-menu-title {
+  padding: 4px 8px;
+  font-size: var(--font-size-10);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* An expanded ⋯ section. Indented in place rather than flown out to the side:
+   no positioning logic, and it stays inside the menu's own dismiss handling. */
+.card-submenu { padding-left: 10px; }
+
+.card-notice {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--font-size-11);
+}
+
+.markdown-body { font-size: var(--font-size-13); line-height: 1.5; }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 { margin: 8px 0 4px; font-size: var(--font-size-base); }
+.markdown-body table { border-collapse: collapse; font-size: var(--font-size-12); }
+.markdown-body td,
+.markdown-body th { padding: 3px 6px; border-bottom: 1px solid var(--border); }
+.markdown-body pre { overflow-x: auto; }
+/* Help topics are the only markdown that carries images. The border matters:
+   a light-theme screenshot on the light-theme panel has no edge of its own,
+   so without it a shot bleeds into the paragraph above it. */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.metric { display: grid; gap: 2px; place-content: center; height: 100%; text-align: center; }
+.metric-label { font-size: var(--font-size-12); color: var(--text-muted); }
+.metric-value { font-size: var(--font-size-28); font-weight: 600; }
+.metric-delta { font-size: var(--font-size-12); color: var(--text-muted); }
+
+.widget-frame { width: 100%; height: 100%; border: 0; background: #fff; }
+.iframe-wrap { display: flex; flex-direction: column; height: 100%; }
+.iframe-wrap .widget-frame { flex: 1; }
+
+.iframe-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.iframe-hint span {
+  flex: 1;
+  /* Up to MAX_REASON_LEN (200) chars of server-controlled text (a CSP
+     token, a header value) can arrive with no whitespace at all; without
+     this it overflows the card instead of wrapping under the app's own
+     sentence. */
+  overflow-wrap: anywhere;
+}
+
+.iframe-hint button { padding: 2px 6px; color: var(--text); }
+
+.chart-plot { width: 100%; height: 100%; }
+
+/* Linked chart controls and notices share the card's bounded plot space. */
+.linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.linked-chart-card > button { align-self: flex-start; flex: 0 0 auto; }
+.linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.linked-chart-renderer .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
+.linked-chart-renderer .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
+.linked-chart-renderer .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; }
+.linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
+.linked-chart-status p { margin: 4px 0; }
+.linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
+
+/* The header's view dropdown. A native select inherits the platform's
+   chrome, so the same tokens .card-action uses are restated for the parts
+   WebKit lets through; the popup itself stays native. */
+.view-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 16px;
+  background: transparent
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6'><path d='M0 0h8L4 6z' fill='%23888'/></svg>")
+    no-repeat right 5px center;
+}
+.view-select:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+.note-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: text;
+  overflow: auto;
+}
+
+.note-edit {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--font-size-13);
+  resize: none;
+}
+
+/* The BlockNote editor fills the card body. Its own stylesheet is imported by
+   the renderer; these only size it and align its type with .markdown-body. */
+.markdown-editor {
+  height: 100%;
+  overflow: auto;
+  font-size: var(--font-size-13);
+}
+.markdown-editor .bn-editor { padding-inline: 8px; }
+.markdown-editor-fallback { height: 100%; overflow: auto; }
+
+/* Erbos Draco NBP by Nate Halley, CC BY-SA 3.0. Licence and attribution are
+   bundled alongside the files in src/assets/fonts/. Two faces: the solid one
+   and the open (dot matrix) one, chosen by the clock's `face` param. */
+@font-face {
+  font-family: "ErbosDracoNBP";
+  src: url("./assets/fonts/ErbosDracoNBP-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ErbosDracoOpenNBP";
+  src: url("./assets/fonts/ErbosDracoOpenNBP-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+.clock { height: 100%; overflow: auto; padding: 4px; }
+.clock-unknown { margin: 0 0 6px; font-size: var(--font-size-12); color: var(--error); }
+
+.clock-list { display: grid; gap: 4px; }
+.clock-list[data-face="dots"] .clock-row-time,
+.clock-list[data-face="dots"] .clock-row-suffix { font-family: "ErbosDracoOpenNBP", ui-monospace, monospace; }
+.clock-list[data-face="solid"] .clock-row-time,
+.clock-list[data-face="solid"] .clock-row-suffix { font-family: "ErbosDracoNBP", ui-monospace, monospace; }
+
+/* Solid face only: a green panel with the digits cut out in the app's own
+   background colour, rather than green digits on it — the inverse of every
+   other face. One background behind the whole time (digits + colon
+   together), not a separate box per character. */
+.clock-list[data-face="solid"] .clock-row-time {
+  background: var(--clock-green);
+  color: var(--bg);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.clock-row { display: flex; align-items: baseline; gap: 8px; }
+.clock-row-city { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Region and offset as one centred group between the city and the time.
+   flex:1 on both this and the city keeps the group centred in the row
+   rather than drifting with the city's length. */
+.clock-row-where {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+}
+/* The matrix face needs roughly this much to read as dots on a non-HiDPI
+   display; the param description says so too. Colour is the phosphor LED
+   green those displays glow in, rather than this app's own UI text colour. */
+.clock-row-time { font-size: var(--font-size-32); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: var(--clock-green); }
+
+/* Equal space either side of the colon. The LED faces' colon glyph is
+   narrower than a digit and not symmetrically bearinged, so "17:30" reads
+   off-centre without this. Margin, not letter-spacing: letter-spacing adds
+   only trailing space, which would shift the whole time rightwards instead
+   of balancing around the colon. Kept small and equal on both sides. */
+.clock-row-colon { margin: 0 0.05em; }
+/* The dot-matrix face's colon glyph advances 0.882em for 0.226em of ink,
+   nearly all of it trailing bearing (measured from the TTF), so equal
+   margins still leave a wide gap on its right. Give it a box just wider
+   than its ink and a right margin equal to a digit's own trailing bearing
+   (0.27em): the gap on each side then matches the gap between two digits. */
+.clock-list[data-face="dots"] .clock-row-colon { display: inline-block; width: 0.24em; margin: 0 0.27em 0 0; }
+.clock-row-suffix { font-size: var(--font-size-16); color: var(--text-muted); }
+.clock-row-region { font-size: var(--font-size-12); color: var(--text-muted); }
+.clock-row-offset { font-size: var(--font-size-11); color: var(--text-muted); }
+
+/* The RSS built-in. The list owns the card body's scroll, so a long feed
+   scrolls inside the card rather than growing it. */
+.rss-list { margin: 0; padding: 0; list-style: none; height: 100%; overflow-y: auto; }
+
+/* A real <button> so a headline is keyboard reachable, styled flat so the
+   list reads as text rather than as a column of buttons -- the same
+   treatment .cell-link gets in the table. */
+.rss-item {
+  display: block;
+  width: 100%;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rss-item:hover { background: var(--bg-panel); }
+/* An item the feed gave no usable link for: nothing to open, so nothing that
+   looks clickable. */
+.rss-item:disabled { cursor: default; background: transparent; }
+.rss-title { display: block; }
+.rss-meta { display: block; font-size: var(--font-size-11); color: var(--text-muted); }
+
+/* Extra zones scroll sideways rather than wrapping to a second row. */
+.clock-gallery { display: flex; gap: 12px; overflow-x: auto; height: 100%; align-items: flex-start; }
+
+.clock-tile { display: grid; justify-items: center; gap: 1px; flex: 0 0 auto; }
+.clock-tile .analog-face { width: 88px; height: 88px; }
+.clock-tile-city { font-size: var(--font-size-13); }
+.clock-tile-region { font-size: var(--font-size-11); color: var(--text-muted); }
+.clock-tile-offset { font-size: var(--font-size-10); color: var(--text-muted); }
+
+.param-echo { margin: 0; padding: 8px 12px; font-family: ui-monospace, monospace; font-size: var(--font-size-12); }
+.param-echo-row { display: grid; grid-template-columns: max-content 1fr; gap: 12px; padding: 2px 0; }
+.param-echo dt { color: var(--text-muted); }
+.param-echo dd { margin: 0; }
+
+/* The muted candlestick pair, not the phosphor clock green — that one is
+   tuned to read as an LED and is wrong for a status chip. */
+.key-pill {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: var(--font-size-11);
+  color: #14171c;
+}
+.key-pill[data-tone="green"] { background: #4caf7d; }
+.key-pill[data-tone="amber"] { background: #d9a75f; }
+.key-pill[data-tone="red"] { background: #d9695f; }
+.key-pill[data-tone="grey"] { background: var(--border); color: var(--text-muted); }
+
+.key-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.key-dot[data-tone="green"] { background: #4caf7d; }
+.key-dot[data-tone="amber"] { background: #d9a75f; }
+.key-dot[data-tone="red"] { background: #d9695f; }
+.key-dot[data-tone="grey"] { background: var(--text-muted); }
+
+.keys-wrap { display: flex; flex-direction: column; height: 100%; }
+.keys-actions { display: flex; justify-content: flex-end; padding: 2px 0 6px; }
+.keys-actions button { padding: 2px 8px; }
+
+/* Every context menu in the app: the rail's, the table header's, the Help
+   row's, the keys table's. Positioned at the pointer (or at its anchor) and
+   `fixed` on the rail's layer rather than an absolute one anchored inside a
+   card -- the table's is portalled to <body> out of a scroll container, and a
+   card's stacking context would trap the rest under a neighbouring card.
+   Panel, row chrome, hover/focus and the disabled row come from the shared
+   popup-menu recipe up top; only what this menu varies is here. */
+.row-context-menu { position: fixed; z-index: 60; min-width: 170px; }
+
+/* A table's hoverCard: portalled and fixed like the context menu above, so a
+   card body's overflow never clips it. Wide enough for a short paragraph. */
+.hover-card {
+  position: fixed;
+  z-index: 60;
+  max-width: 320px;
+  padding: 8px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: var(--font-size-12);
+  pointer-events: none;
+}
+.hover-card-title { margin-bottom: 4px; color: var(--text-muted); }
+.hover-card-anchor { text-decoration: underline dotted; cursor: help; }
+.row-context-menu button { padding: 6px 10px; }
+
+.row-context-menu [role="separator"] { margin: 4px 0; border-top: 1px solid var(--border); }
+
+.keys-edit { display: flex; align-items: center; gap: 6px; padding: 6px 0; font-size: var(--font-size-12); }
+.keys-edit input { flex: 1; padding: 4px 6px; border-radius: 3px; }
+.keys-restart { margin: 4px 0 0; font-size: var(--font-size-12); color: var(--text-muted); }
+.keys-submit-error { margin: 4px 0 0; font-size: var(--font-size-12); color: var(--error); }
+.keys-refresh-error { margin: 0 0 6px; font-size: var(--font-size-12); color: var(--text-muted); }
+
+.pdf-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 2px 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.pdf-filename { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-page-count,
+.pdf-zoom { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.pdf-page-input {
+  flex: 0 0 auto;
+  width: 3.5em;
+  padding: 1px 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* pdf.js throws unless its container is absolutely positioned, and takes its
+   page host from that container's first element child -- so the scroll box
+   cannot be the flex child itself. .pdf-frame is; .pdf-body fills it. */
+.pdf-frame { position: relative; flex: 1; min-height: 0; }
+.pdf-body { position: absolute; inset: 0; overflow: auto; }
+/* Focusable only so a clicked card stays the Command-F target; it is never a
+   keyboard stop, so it must not paint a focus ring. Pages stay white in dark
+   mode too -- pdf_viewer.css paints .page itself, and nothing here overrides
+   its --page-bg-color. */
+.pdf-view:focus { outline: none; }
+
+.pdf-findbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 0 2px 6px;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.pdf-find-input { flex: 1; min-width: 0; }
+.pdf-find-count { flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+
+.multi-file { position: relative; height: 100%; min-height: 0; }
+.multi-file-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin-left: var(--file-rail-width);
+  overflow: auto;
+}
+.multi-file-viewer .pdf-view { flex: 1; min-height: 0; }
+.multi-file-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: var(--font-size-12);
+  color: var(--text-muted);
+}
+.multi-file-nav button { padding: 0 6px; }
+.multi-file-position { font-variant-numeric: tabular-nums; }
+
+/* Out of flow at rest as well as expanded, so expanding the rail never
+   reflows the pages behind it -- the same guarantee .left-rail makes. */
+.file-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  width: var(--file-rail-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 120ms ease;
+}
+.file-rail[data-expanded="true"],
+.file-rail:focus-within { width: var(--file-rail-width-expanded); }
+.file-rail-collapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0;
+  font-size: var(--font-size-11);
+  color: var(--text-muted);
+}
+.file-rail[data-expanded="true"] .file-rail-collapsed,
+.file-rail:focus-within .file-rail-collapsed { display: none; }
+/* The badge is "2/47" now, not a single digit, and .file-rail is
+   overflow: hidden -- so it has to wrap inside the 28px strip rather than be
+   clipped, which would turn a count into a different, wrong count. */
+.file-rail-count {
+  max-width: 100%;
+  font-size: var(--font-size-10);
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.file-rail-expanded { display: none; flex-direction: column; flex: 1; min-height: 0; padding: 4px; }
+/* :focus-within alongside the hover state, exactly as
+   .card-controls-collapsed does it -- without it the checkboxes and Open sit
+   behind display:none and no keyboard can ever reach them. */
+.file-rail[data-expanded="true"] .file-rail-expanded,
+.file-rail:focus-within .file-rail-expanded { display: flex; }
+.file-rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.file-rail-list label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  font-size: var(--font-size-12);
+  cursor: pointer;
+}
+.file-rail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-rail-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; padding-top: 4px; }
+.file-rail-actions button { padding: 2px 8px; }
+.file-rail-actions button[disabled] { color: var(--text-muted); cursor: default; }
+.file-rail-actions .file-rail-clear { border: 0; background: transparent; color: var(--text-muted); }
+
+/* A pivot. The group row reads as a heading for the rows beneath it; the
+   label column is pinned left by the engine, so its cell also carries
+   .pin-left -- and `tr.pivot-group-row` is what lets this background beat
+   td.pin-left's opaque --bg-card, so the whole row reads as one band.
+   --bg-panel is the file's raised surface; in the light theme it is the same
+   white as a card and the weight alone sets the row apart. An incomplete
+   period's count takes --warning. */
+.widget-table tr.pivot-group-row td { font-weight: 600; background: var(--bg-panel); }
+.pivot-label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pivot-fold,
+.pivot-fold-spacer { width: 16px; flex: none; }
+.pivot-fold { padding: 0; border: 0; background: none; color: inherit; cursor: pointer; font: inherit; }
+.pivot-count { color: var(--text-muted); font-weight: 400; }
+.pivot-incomplete { color: var(--warning, var(--error)); }
+.widget-table th.pivot-group-header { text-align: center; cursor: default; }
+
+/* The table grows a header of its own (the Pivot panel, or the one-line strip
+   that stands in for it), so the pair becomes a column and .table-scroll --
+   which is `height: 100%` on its own -- takes what is left. */
+.table-with-pivot { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.table-with-pivot > .table-scroll { flex: 1; min-height: 0; height: auto; }
+
+.pivot-panel { flex: none; max-height: 40%; overflow: auto; padding: 0 0 8px; border-bottom: 1px solid var(--border); }
+.pivot-columns { display: flex; flex-wrap: wrap; gap: 8px; }
+.pivot-column { flex: 1 1 160px; min-width: 0; }
+.pivot-column h3 { margin: 0; font-size: var(--font-size-11); }
+.pivot-hint { margin: 0 0 4px; font-size: var(--font-size-11); opacity: 0.7; }
+.pivot-list { min-height: 48px; padding: 4px; border: 1px dashed var(--border); border-radius: 6px; }
+.pivot-list-over { border-color: var(--accent); }
+.pivot-empty { margin: 12px 0; text-align: center; font-size: var(--font-size-11); opacity: 0.6; }
+.pivot-pill { display: flex; align-items: center; gap: 6px; margin: 2px 0; padding: 3px 8px; border: 1px solid var(--border); border-radius: 999px; cursor: grab; user-select: none; }
+.pivot-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pivot-pill-hidden { opacity: 0.55; }
+/* "· Choose" and ⚠, and the footer's count of columns still waiting. */
+.pivot-pill-warn { color: var(--warning, var(--error)); }
+.pivot-pill::before { content: "⠿"; opacity: 0.5; }
+.pivot-insert { height: 2px; margin: 1px 0; background: var(--accent); }
+.pivot-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 6px; font-size: var(--font-size-11); }
+.pivot-strip { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 0 4px; font-size: var(--font-size-11); }
+
+/* The maintained editor heading and its responsive height. */
+.pivot-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pivot-panel-heading strong { font-size: var(--font-size-12); }
+.pivot-panel-heading .pivot-hint { margin: 2px 0 0; }
+@media (max-width: 700px) {
+  .pivot-panel { max-height: 95%; }
+}
+
+
+.pivot-note { margin: 0 0 6px; color: var(--warning, var(--error)); font-size: var(--font-size-11); }
+
+.card-removal-undo {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-card);
+  box-shadow: 0 2px 12px #0003;
+}
+
+/* Worker totals occupy their own footer; horizontal scroll follows the body. */
+.table-execution-layout { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
+.table-with-pivot > .table-execution-layout { flex: 1; height: auto; }
+.table-execution-layout > .table-scroll { flex: 1; min-height: 0; height: auto; }
+.table-total-footer { flex: none; border-top: 1px solid var(--border); background: var(--bg-card); }
+.table-total-context { padding: 2px 8px; font-size: 11px; }
+.table-total-scroll { overflow: hidden; width: 100%; }
+.table-total-scroll .widget-table { table-layout: fixed; }
+.table-total-scroll tfoot td { font-weight: 600; }
+
+/* Report authoring forms. Their frame is the pivot drawer (styles/pivot-drawer.css); the input-filter row keeps its own. */
+.table-source-filters {
+  flex: none;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  max-height: min(45%, 420px);
+  overflow: auto;
+}
+.table-model-authoring fieldset,
+.table-model-inspection fieldset,
+.table-source-filters fieldset { min-width: 0; border: 1px solid var(--border); padding: 8px; }
+.table-model-authoring label,
+.table-model-inspection label,
+.table-source-filters label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.table-model-authoring :is(input, select, textarea),
+.table-model-inspection :is(input, select, textarea),
+.table-source-filters :is(input, select, textarea) { min-width: 0; max-width: 100%; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 4px; }
+.table-model-authoring textarea,
+.table-model-inspection textarea { width: 100%; min-height: 90px; resize: vertical; }
+.table-model-authoring button,
+.table-model-inspection button,
+.table-source-filters button { min-height: 28px; margin: 3px; }
+.table-model-authoring :focus-visible,
+.table-model-inspection :focus-visible,
+.table-source-filters :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.table-source-filters > fieldset { display: flex; flex-wrap: wrap; gap: 8px; }
+.report-measure { padding: 6px 0; border-bottom: 1px solid var(--border); }
+@media (pointer: coarse) {
+  .table-model-authoring button,
+  .table-model-inspection button,
+  .table-source-filters button { min-height: 44px; }
+}
