@@ -216,3 +216,20 @@ test("Export all dashboards… carries the locked widgets, and Import apps.json�
   await expect(page.locator(".dock-band-top .widget-card")).toHaveCount(1);
   await expect(page.locator(".dock-band-top .card-title")).toHaveText("Pinned note");
 });
+
+test("the locked-widget editor keeps its resize controls below the iPad safe area", async ({ page }) => {
+  await seedApp(page, twoDashboards());
+  // Desktop Chromium does not expose an iPad status-bar inset; exercise the
+  // same safe-area variable that the native WebView obtains from env().
+  await page.evaluate(() => document.documentElement.style.setProperty("--safe-top", "32px"));
+  await openSettingsTab(page, "Locked Widgets");
+  await page.getByRole("button", { name: "Locked at Bottom…" }).click();
+  const editor = page.getByRole("dialog", { name: "Editing Locked at Bottom" });
+  await expect(editor).toBeVisible();
+  expect((await editor.boundingBox())!.y).toBeGreaterThanOrEqual(32);
+  expect((await editor.getByRole("button", { name: "Shorter" }).boundingBox())!.y).toBeGreaterThanOrEqual(32);
+  await editor.getByRole("button", { name: "Shorter" }).click();
+  await expect(editor.getByText("7 rows", { exact: true })).toBeVisible();
+  await editor.getByRole("button", { name: "OK", exact: true }).click();
+  await expect(editor).toHaveCount(0);
+});
