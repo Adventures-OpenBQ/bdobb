@@ -63,6 +63,8 @@ export function fromWorkspace(content: unknown, store: SyncStore, registry: Widg
   const name = typeof body.name === "string" ? body.name : fail("Dashboard has no name.");
   const widgets = (Array.isArray(body.widgets) ? body.widgets : fail("Dashboard has no widget list.")).map((w) => rec(w, "widget"));
   const grid = rec(body.gridLayout ?? {}, "grid layout");
+  const native = isRecord(body.extensions) && isRecord(body.extensions.bdobb) ? body.extensions.bdobb : undefined;
+  const tabNames = isRecord(native?.tabNames) ? native.tabNames : {};
   const nav = widgets.find((w) => w.widgetId === NAV);
   const navTabs = nav && isRecord(nav.storage) && Array.isArray(nav.storage.tabs) ? nav.storage.tabs.filter(isRecord) : [];
   // The tab strip's order first, then any grid key it does not list.
@@ -91,7 +93,8 @@ export function fromWorkspace(content: unknown, store: SyncStore, registry: Widg
       layout.push({ i: widget.widgetId, x: item.x, y: item.y, w: item.w, h: item.h, state: { params: toParams(storage.params), chartView: storage.chartView } });
       tabStates.push({ widget, layout: item });
     }
-    const label = navTabs.find((n) => n.id === key)?.name;
+    const navigationName = navTabs.find((n) => n.id === key)?.name;
+    const label = typeof navigationName === "string" ? navigationName : tabNames[key];
     // Keyed t0, t1, ...: non-numeric keys keep insertion order, so importApps keeps this one.
     tabs[`t${t}`] = { name: typeof label === "string" ? label : key, layout };
     states.push(tabStates);
@@ -122,7 +125,6 @@ export function fromWorkspace(content: unknown, store: SyncStore, registry: Widg
       card.linkedSource = {kind:'widget',sourceWidgetId};
     }
   }));
-  const native = isRecord(body.extensions) && isRecord(body.extensions.bdobb) ? body.extensions.bdobb : undefined;
   if (native?.groups !== undefined) dashboard.groups = parseGroups(native.groups);
   if (typeof native?.groupsDisabled === "boolean") dashboard.groupsDisabled = native.groupsDisabled;
   const rest: Rec = { ...body };
@@ -268,6 +270,9 @@ export function toWorkspace(dashboard: Dashboard, store: SyncStore, item?: NewIt
   const body: Rec = { ...base, name: dashboard.name, widgets: [...widgets, ...(ws?.orphans ?? [])], gridLayout };
   if (!shell || (typeof base.currentTab === "string" && !keys.includes(base.currentTab))) body.currentTab = keys[0];
   const native: Rec = {};
+  // Preserve labels even without a Workspace navigation widget (a single tab).
+  const tabNames = Object.fromEntries(dashboard.tabs.filter((tab) => tab.name !== keyOf(tab.id)).map((tab) => [keyOf(tab.id), tab.name]));
+  if (keys.length === 1 && !ws?.nav && Object.keys(tabNames).length) native.tabNames = tabNames;
   if (dashboard.groups?.length) native.groups = dashboard.groups.map(({ id, name, paramName, groupType, value }) => ({ id, name, paramName, groupType, value }));
   if (dashboard.groupsDisabled !== undefined) native.groupsDisabled = dashboard.groupsDisabled;
   withNative(body, Object.keys(native).length > 0 ? native : undefined);
