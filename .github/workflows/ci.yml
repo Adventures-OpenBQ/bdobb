@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 70
     strategy:
       fail-fast: false
-      matrix: {"include": [{"line": "v7", "commit": "af195645bd9025b4747c2243be7a59dc4dd83cf6", "sourceId": "96ecc4716f1f6b26555713b09d56390d1f82ef5e1eeb89b616eb130baec42297"}, {"line": "v8", "commit": "0afb755f262cd4e21247d040bb1cc166e73a269d", "sourceId": "cb3032160389fcbeccc9425ef6bb12a6ab5721b809d93c7972a95039e96a8e30"}, {"line": "v9", "commit": "6dbb02cceac4a22168fc0516a194da3c0b6edcc0", "sourceId": "f92ae1ea473a1438416477394b8de39646f31732188b5fc2bfbb7a4bf6c9ff9f"}, {"line": "v10", "commit": "e0692e2ddfbbc52eec40ab9dfed1d292a60b7c55", "sourceId": "ffef22efb43d7ef4f2b02996c8ad39b7188290a28c488c4e9337327a718274c3"}]}
+      matrix: {"include": [{"line": "v7", "commit": "b1798474e1b8233fea96173c9ea2de4485e87cf3", "sourceId": "de93c6507c36538c5b9b5d6eb1c192f304515cce6f779ae43a838fc765a59237"}, {"line": "v8", "commit": "fd3721ead8c5376d1aede6e2f13f1f2d81a92f47", "sourceId": "56293a23414b9d98395d1a2be2fbc9092aecebf15c924a69d8a6418586704233"}, {"line": "v9", "commit": "3a6cbea7d6cdce542411b46731b3ba484cb6c48d", "sourceId": "d9e3a81a10680b8d494836800d58af54b16bddca6bfd350d417b2feb602bbec3"}, {"line": "v10", "commit": "fb10975218511244195b138399b4dfc6b33ae1d7", "sourceId": "dbd2fa52216100e228ac7a619da44133cfe40786a18568c0be80f82b211b8365"}]}
     env:
       NODE_OPTIONS: --max-old-space-size=6144
     steps:
@@ -57,12 +57,36 @@ jobs:
           if ($installers.Count -ne 1) { throw 'Expected exactly one installer' }
           $installer = $installers[0]
           $installDir = Join-Path $env:RUNNER_TEMP 'bdobb-installed-qualification'
-          $ip = Start-Process -FilePath $installer.FullName -ArgumentList @('/S',"/D=$installDir") -Wait -PassThru
+          $ip = Start-Process -FilePath $installer.FullName -ArgumentList @('/S',"/D=$installDir") -PassThru
+          if (-not $ip.WaitForExit(300000)) { Stop-Process -Id $ip.Id; throw 'Installer exceeded five-minute qualification limit' }
           if ($ip.ExitCode -ne 0) { throw "Installer failed: $($ip.ExitCode)" }
           $installed = @(Get-ChildItem $installDir -Recurse -Filter bdobb.exe)
           if ($installed.Count -ne 1) { throw 'Installed application missing or ambiguous' }
           $builtHash = (Get-FileHash src-tauri/target/release/bdobb.exe -Algorithm SHA256).Hash.ToLower()
-          if ((Get-FileHash $installed[0].FullName -Algorithm SHA256).Hash.ToLower() -ne $builtHash) { throw 'Installed executable differs from qualified build' }
+          @'
+          // Copyright 2026 SecretoftheUniverse.com LLC. SPDX-License-Identifier: AGPL-3.0-only
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const [builtPath, installedPath] = process.argv.slice(2);
+          const built = fs.readFileSync(builtPath);
+          const installed = fs.readFileSync(installedPath);
+          const from = Buffer.from('__TAURI_BUNDLE_TYPE_VAR_UNK');
+          const to = Buffer.from('__TAURI_BUNDLE_TYPE_VAR_NSS');
+          const at = built.indexOf(from);
+          if (at < 0 || from.length !== to.length) throw Error('Expected Tauri bundle marker missing');
+          const expected = Buffer.from(built);
+          to.copy(expected, at);
+          if (!installed.equals(expected)) throw Error('Installed executable differs beyond the exact NSIS bundle marker');
+          const hash = b => crypto.createHash('sha256').update(b).digest('hex');
+          console.log(JSON.stringify({builtExecutableSha256: hash(built), installedExecutableSha256: hash(installed), expectedNsisExecutableSha256: hash(expected), exactNsisBundleMarkerDelta: true, installedExecutableMatchesExpectedNsisBuild: true}));
+          '@ | Set-Content -Encoding utf8 $env:RUNNER_TEMP/verify-nsis.cjs
+          $packaging = & node $env:RUNNER_TEMP/verify-nsis.cjs src-tauri/target/release/bdobb.exe $installed[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw 'Installed executable packaging proof failed' }
+          $packaging | Set-Content -Encoding utf8 qualification-output/packaged-executable-verification.json
+          $packagingProof = $packaging | ConvertFrom-Json
+          $installedEmbedded = & node $env:RUNNER_TEMP/verify-embedded.cjs src-tauri/target/release/build $installed[0].FullName $offer.archiveUrl $offer.sourceId
+          if ($LASTEXITCODE -ne 0) { throw 'Installed source identity check failed' }
+          $installedEmbedded | Set-Content -Encoding utf8 qualification-output/installed-source-verification.json
           $env:APPDATA = Join-Path $env:RUNNER_TEMP 'bdobb-windows-release-profile'
           $env:LOCALAPPDATA = Join-Path $env:RUNNER_TEMP 'bdobb-windows-release-local-profile'
           New-Item -ItemType Directory -Force $env:APPDATA,$env:LOCALAPPDATA | Out-Null
@@ -70,11 +94,12 @@ jobs:
           try { Start-Sleep 30; if ($app.HasExited) { throw "Installed app exited early: $($app.ExitCode)" } } finally { if (-not $app.HasExited) { Stop-Process -Id $app.Id } }
           Copy-Item $installer.FullName qualification-output/
           $hashes = @(@{name=$installer.Name;sha256=(Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower();bytes=$installer.Length})
-          $receipt = @{commit=$actual;sourceId=$offer.sourceId;archiveUrl=$offer.archiveUrl;platform='windows-x64';signature='unsigned';installerExitCode=$ip.ExitCode;installedExecutableMatches=$true;installedExecutableSha256=$builtHash;processSmokeSeconds=30;embeddedSourceVerified=$true;lockedNativeTests=$true;artifacts=$hashes} | ConvertTo-Json -Depth 8
+          $receipt = @{commit=$actual;sourceId=$offer.sourceId;archiveUrl=$offer.archiveUrl;platform='windows-x64';signature='unsigned';installerExitCode=$ip.ExitCode;installedExecutableMatchesExpectedNsisBuild=$true;exactNsisBundleMarkerDelta=$true;installedExecutableSha256=$packagingProof.installedExecutableSha256;builtExecutableSha256=$builtHash;processSmokeSeconds=30;embeddedSourceVerified=$true;lockedNativeTests=$true;artifacts=$hashes} | ConvertTo-Json -Depth 8
           $receipt | Set-Content -Encoding utf8 qualification-output/windows-qualification.json
           Write-Output $receipt
       - run: git diff --exit-code
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: bdobb-windows-${{ matrix.line }}-${{ matrix.commit }}
           path: qualification-output/
