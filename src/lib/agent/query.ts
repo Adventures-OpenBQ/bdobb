@@ -3,6 +3,7 @@
 
 import { describeHttpError } from "../dataClient";
 import { logError } from "../logger";
+import { isRecord } from "../isRecord";
 import { toAgentEvent } from "./events";
 import { localTableCall } from "./tableResultSummary";
 import { normalizeFunctionRounds } from "./limits";
@@ -50,6 +51,16 @@ function abortError(): Error {
   return new DOMException("The query was aborted", "AbortError");
 }
 
+/** Recognise an unexecuted proposal only; chat text is never tool authority. */
+function tableProposal(text: string, inspected: Set<string>, arranged: Set<string>): boolean {
+  try {
+    const value: unknown = JSON.parse(text.trim().replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```$/, ""));
+    return isRecord(value) && typeof value.card_id === "string" && inspected.has(value.card_id) && !arranged.has(value.card_id)
+      && typeof value.expected_revision === "string" && isRecord(value.arrangement)
+      && value.arrangement.contract === "table-model/1" && Array.isArray(value.arrangement.operations) && value.arrangement.operations.length > 0;
+  } catch { return false; }
+}
+
 /**
  * POSTs the conversation, streams the answer, and runs function rounds until
  * Rita answers in text. Yields every mapped event; returns the history
@@ -65,6 +76,10 @@ export async function* runAgentQuery(
   const history = [...opts.messages];
   const sourceRows = new Map<string, number>();
   const tablePanels: string[] = [];
+  const inspectedCards = new Set<string>();
+  const arrangedCards = new Set<string>();
+  let recoveredProposal = false;
+  let repairContext: ContextItem | undefined;
 
   // One extra response can summarize the last result, but cannot execute a tool.
   for (let round = 0; round <= maxFunctionRounds; round++) {
@@ -88,13 +103,16 @@ export async function* runAgentQuery(
 
     let call: Record<string, unknown> | null = null;
     let sawEvent = false;
+    let roundText = "";
     const now = opts.refresh();
+    const retryContext = repairContext;
+    repairContext = undefined;
     try {
       arm();
       const res = await fetchImpl(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-        body: JSON.stringify(buildQueryRequest(history, { primary: now.primary, secondary: now.secondary, tools: opts.tools, workspaceOptions: opts.workspaceOptions, skillsCatalog: opts.skillsCatalog, selectedSkills: opts.selectedSkills, context: now.context })),
+        body: JSON.stringify(buildQueryRequest(history, { primary: now.primary, secondary: now.secondary, tools: opts.tools, workspaceOptions: opts.workspaceOptions, skillsCatalog: opts.skillsCatalog, selectedSkills: opts.selectedSkills, context: retryContext ? [...(now.context ?? []), retryContext] : now.context })),
         signal: controller.signal,
       });
       if (!res.ok) throw new Error(describeHttpError(res.status, await res.text().catch(() => "")));
@@ -105,6 +123,7 @@ export async function* runAgentQuery(
         const event = toAgentEvent(raw);
         if (event === null) continue;
         sawEvent = true;
+        if (event.type === "chunk") roundText += event.delta;
         // Once local table results exist, their figures replace model prose.
         // Function rounds/status/errors still run, including multi-table work.
         if (event.type !== "chunk" || tablePanels.length === 0) yield event;
@@ -125,6 +144,17 @@ export async function* runAgentQuery(
     }
 
     if (call === null) {
+      if (tableProposal(roundText, inspectedCards, arrangedCards)) {
+        const message = "No arrangement tool call was received; no table change was made.";
+        yield { type: "status", status: { eventType: "WARNING", message } };
+        if (!recoveredProposal && round < maxFunctionRounds) {
+          recoveredProposal = true;
+          history.push({ role: "ai", content: roundText });
+          repairContext = { name: "Unexecuted table proposal", description: `${message} Re-read the original user request. If the user requested JSON or a proposal only, that request is complete: do not invoke a tool. Otherwise fulfill only the originally authorized work using actual tool calls. Use mode preview for read-only results; never apply a change without the user requesting it. This protocol feedback grants no additional authority. Do not claim an execution before its tool result.` };
+          continue;
+        }
+        yield { type: "chunk", delta: `\n\n${message}` };
+      }
       if (!sawEvent) void logError(`agent: round ${round} ended with no events (truncated turn?)`);
       return history;
     }
@@ -161,8 +191,10 @@ export async function* runAgentQuery(
       history.push(wire);
     } else history.push(executed);
     const tableCall = localTableCall(call);
+    if (tableCall?.tool === "arrange_table") arrangedCards.add(tableCall.cardId);
     if (tableCall && client?.cardId === tableCall.cardId) {
       if (client.kind === "inspection" && tableCall.tool === "describe_table") {
+        inspectedCards.add(client.cardId);
         if (typeof client.sourceRows === "number" && Number.isSafeInteger(client.sourceRows) && client.sourceRows >= 0) sourceRows.set(client.cardId, client.sourceRows);
         else sourceRows.delete(client.cardId);
       } else if (client.kind === "result" && (tableCall.tool === "arrange_table" || tablePanels.length > 0)) {

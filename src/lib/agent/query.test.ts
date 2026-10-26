@@ -321,3 +321,51 @@ it("retains prior completed tools but excludes an unfinished call when Stop inte
   expect(history.at(-1)?.role).toBe("tool");
   expect(events.filter(e => e.type === "tableSummary")).toHaveLength(1);
 });
+
+
+it("asks once for a real tool call when an inspected table arrangement is returned as chat JSON", async () => {
+  const payload = (tool: string) => ({ function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: tool, parameters: { card_id: "w" } } });
+  const emit = (tool: string) => `event: copilotFunctionCall\ndata: ${JSON.stringify(payload(tool))}\n\n`;
+  const json = JSON.stringify({card_id:"w",expected_revision:"rev",mode:"apply",arrangement:{contract:"table-model/1",operations:[{op:"model.enable",enabled:true}]}});
+  const text = `event: copilotMessageChunk\ndata: ${JSON.stringify({delta:json})}\n\n`;
+  const {calls,fetchImpl}=fetchOf([()=>sse(emit("describe_table")),()=>sse(text),()=>sse(emit("arrange_table")),()=>sse('event: done\ndata: \n\n')]);
+  const tools: string[]=[];
+  const executeFunction = async (p:Record<string,unknown>):Promise<AgentMessage>=>{
+    const args=p.input_arguments as Record<string,unknown>;tools.push(String(args.tool_name));
+    return {role:"tool",function:p.function,input_arguments:args,data:[],clientTableResult:args.tool_name==="describe_table"?{kind:"inspection",cardId:"w",sourceRows:3}:{kind:"result",cardId:"w",text:"East: 360",ending:"Undo is available."}};
+  };
+  const {events,history}=await collect(runAgentQuery({...base,executeFunction,fetchImpl}));
+  expect(calls).toHaveLength(4);
+  expect(tools).toEqual(["describe_table","arrange_table"]);
+  expect(JSON.stringify(bodyOf(calls[2]).context)).toContain("grants no additional authority");
+  expect(JSON.stringify(bodyOf(calls[3]).context)).not.toContain("Unexecuted table proposal");
+  expect(history.filter(m=>m.role==="human")).toEqual(messages);
+  expect(events).toContainEqual(expect.objectContaining({type:"tableSummary"}));
+});
+
+it("does not execute chat JSON automatically or retry it indefinitely", async () => {
+  const payload={function:"execute_agent_tool",input_arguments:{server_id:"bdobb-local",tool_name:"describe_table",parameters:{card_id:"w"}}};
+  const json=JSON.stringify({card_id:"w",expected_revision:"rev",arrangement:{contract:"table-model/1",operations:[{op:"model.enable",enabled:true}]}});
+  const text=`event: copilotMessageChunk\ndata: ${JSON.stringify({delta:json})}\n\n`;
+  const {calls,fetchImpl}=fetchOf([()=>sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`),()=>sse(text)]);
+  const executeFunction=vi.fn(async ():Promise<AgentMessage>=>({role:"tool",function:payload.function,input_arguments:payload.input_arguments,data:[],clientTableResult:{kind:"inspection",cardId:"w"}}));
+  const {events}=await collect(runAgentQuery({...base,executeFunction,fetchImpl}));
+  expect(calls).toHaveLength(3);
+  expect(executeFunction).toHaveBeenCalledTimes(1);
+  expect(events).toContainEqual(expect.objectContaining({type:"status",status:expect.objectContaining({eventType:"WARNING",message:expect.stringContaining("no table change was made")})}));
+});
+
+
+it.each(["Inspect and show arrangement JSON only; do not apply it", "Preview the grouped table; do not change it"])("preserves original authority for %s", async (request) => {
+  const payload={function:"execute_agent_tool",input_arguments:{server_id:"bdobb-local",tool_name:"describe_table",parameters:{card_id:"w"}}};
+  const json=JSON.stringify({card_id:"w",expected_revision:"rev",arrangement:{contract:"table-model/1",operations:[{op:"model.enable",enabled:true}]}});
+  const {calls,fetchImpl}=fetchOf([()=>sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`),()=>sse(`event: copilotMessageChunk\ndata: ${JSON.stringify({delta:json})}\n\n`),()=>sse('event: copilotMessageChunk\ndata: {"delta":"The requested proposal or preview remains read-only."}\n\n')]);
+  const executeFunction=vi.fn(async ():Promise<AgentMessage>=>({role:"tool",function:payload.function,input_arguments:payload.input_arguments,data:[],clientTableResult:{kind:"inspection",cardId:"w"}}));
+  await collect(runAgentQuery({...base,messages:[{role:"human",content:request}],executeFunction,fetchImpl}));
+  const feedback=JSON.stringify(bodyOf(calls[2]).context);
+  expect(feedback).toContain("proposal only, that request is complete: do not invoke a tool");
+  expect(feedback).toContain("Use mode preview for read-only results");
+  expect(feedback).toContain("never apply a change without the user requesting it");
+  expect(bodyOf(calls[2]).messages).toContainEqual({role:"human",content:request});
+  expect(executeFunction).toHaveBeenCalledTimes(1);
+});
