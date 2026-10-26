@@ -142,6 +142,11 @@ instructions.
 
 ## 3. Arrange once
 
+For an unambiguous request to change the table, send the complete arrangement
+directly with `"mode": "apply"`. The apply transaction already validates and
+calculates a preview before committing; do not precede it with a separate
+preview call.
+
 One `arrange_table` call with every edit; it is all-or-nothing. (For a
 read-only ask, the same call with `"mode": "preview"`; see section 0.)
 

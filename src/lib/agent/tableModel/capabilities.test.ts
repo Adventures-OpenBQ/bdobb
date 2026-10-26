@@ -74,3 +74,9 @@ it("makes inspection-only status and the required execution step explicit in the
   expect(rules).toContain("contains no grouped totals");
   expect(rules).toContain("call arrange_table");
 });
+
+it("requires direct apply for changes because apply already validates and previews atomically", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain("do not precede it with a separate preview call");
+  expect(rules).toContain("apply transaction already validates");
+});
