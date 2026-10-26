@@ -630,7 +630,9 @@ export async function postForm(
  * answers would hold every other backend's widgets out of the registry --
  * every card on every backend "unresolved".
  */
-export const WIDGETS_TIMEOUT_MS = 10_000;
+// Large OpenBB catalogs can take more than ten seconds over a private gateway.
+// Keep a finite body deadline without classifying a healthy slow catalog offline.
+export const WIDGETS_TIMEOUT_MS = 30_000;
 
 export async function fetchWidgetsJson(backend: BackendConfig): Promise<unknown> {
   return request("GET", endpointUrl(backend, "widgets.json"), authHeaders(backend), undefined, {

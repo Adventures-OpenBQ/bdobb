@@ -499,3 +499,11 @@ describe("discoverBackend service probe", () => {
     expect(result.service).toBeUndefined();
   });
 });
+
+// A large catalog over the private gateway can legitimately exceed ten seconds.
+it("discovers a catalog that arrives after the old ten-second deadline", async () => {
+  const b = await serve({ "/widgets.json": { __delayMs: 11_000, __status: 200, __body: { slow: { endpoint: "e" } } } }, "slow-catalog");
+  const result = await discoverBackend(b);
+  expect(result.status).toBe("online");
+  expect(result.widgets.map(w => w.id)).toEqual(["slow"]);
+}, 35_000);

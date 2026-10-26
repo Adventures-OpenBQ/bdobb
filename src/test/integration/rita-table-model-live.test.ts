@@ -229,6 +229,7 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(model?.measures.find(measure => measure.sourceFieldId === "Units")?.aggregation).toBe("sum");
     expect(JSON.stringify(tableCard().tableDefinition)).not.toContain("aggregation_intent");
     const values = result.preview?.rows.flatMap(row => Object.values(row.values)) ?? [];
+    expect(model?.categories.find(category => category.sourceFieldId === "Quarter end")?.transform).toBe("Y");
     expect(values).toContain(440);
     expect(values).toContain(660);
   }, 300_000);

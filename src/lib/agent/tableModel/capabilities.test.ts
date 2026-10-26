@@ -59,3 +59,11 @@ it("advertises the exact override intent on every measure operation that can cho
   expect(caps.how_to_arrange?.join(" ")).toContain("aggregation_intent");
   expect(caps.how_to_arrange?.join(" ")).toContain("user_override");
 });
+
+it("maps calendar units explicitly so a quarter-named field does not change a requested year grouping", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain('calendar year: "Y"');
+  expect(rules).toContain('calendar quarter: "Q"');
+  expect(rules).toContain('calendar month: "M"');
+  expect(rules).toContain("requested grouping");
+});
