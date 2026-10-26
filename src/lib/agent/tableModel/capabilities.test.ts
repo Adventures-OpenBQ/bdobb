@@ -67,3 +67,10 @@ it("maps calendar units explicitly so a quarter-named field does not change a re
   expect(rules).toContain('calendar month: "M"');
   expect(rules).toContain("requested grouping");
 });
+
+it("makes inspection-only status and the required execution step explicit in the returned guidance", () => {
+  const rules = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!.join(" ");
+  expect(rules).toContain("describe_table has not changed the table");
+  expect(rules).toContain("contains no grouped totals");
+  expect(rules).toContain("call arrange_table");
+});
