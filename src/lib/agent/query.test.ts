@@ -198,3 +198,126 @@ describe("runAgentQuery", () => {
     expect(valueSent(1)).toBe(true);
   });
 });
+
+it("presents table engine values instead of model-invented totals, without leaking client metadata", async () => {
+  const callEvent = (tool: string) => `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: tool, parameters: { card_id: "w" } } })}\n\n`;
+  const { calls, fetchImpl } = fetchOf([
+    () => sse(callEvent("describe_table")),
+    () => sse('event: copilotMessageChunk\ndata: {"delta":"Invented 99999"}\n\n' + callEvent("arrange_table")),
+    () => sse('event: copilotMessageChunk\ndata: {"delta":"Grand total 1185"}\n\n'),
+  ]);
+  const executeFunction = async (payload: Record<string, unknown>): Promise<AgentMessage> => {
+    const args = payload.input_arguments as Record<string, unknown>;
+    return { role: "tool", function: payload.function, input_arguments: args, data: [], clientTableResult: args.tool_name === "describe_table" ? { kind: "inspection", cardId: "w", sourceRows: 12 } : { kind: "result", cardId: "w", text: "| East | 360 |\n| North | 210 |\n| West | 615 |", ending: "Undo is available." } } as AgentMessage;
+  };
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl }));
+  // Same replacement semantics as the production chat store.
+  let displayed = "";
+  for (const event of events) {
+    if (event.type === "chunk") displayed += event.delta;
+    if (event.type === "tableSummary") displayed = event.text;
+  }
+  expect(displayed).toContain("360");
+  expect(displayed).toContain("Source rows: 12");
+  expect(displayed).toContain("Undo is available.");
+  expect(displayed).not.toMatch(/1185|99999/);
+  expect(history.filter(m => m.role === "tool")).toHaveLength(2);
+  expect(JSON.stringify(history)).not.toContain("clientTableResult");
+  expect(JSON.stringify(calls.map(bodyOf))).not.toContain("clientTableResult");
+});
+
+it("retains a completed table result when Stop arrives as the tool finishes", async () => {
+  const controller = new AbortController();
+  const payload = { function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "arrange_table", parameters: { card_id: "w" } } };
+  const { calls, fetchImpl } = fetchOf([() => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`)]);
+  const executeFunction = async (): Promise<AgentMessage> => {
+    controller.abort();
+    return { role: "tool", function: payload.function, input_arguments: payload.input_arguments, data: [], clientTableResult: { kind: "result", cardId: "w", text: "East: 360", ending: "Undo is available." } };
+  };
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl, signal: controller.signal }));
+  expect(events).toContainEqual({ type: "tableSummary", text: expect.stringContaining("East: 360\n\nUndo is available.") });
+  expect(history.at(-1)?.role).toBe("tool");
+  expect(calls).toHaveLength(1);
+});
+
+it("keeps executing a multi-table workflow and displays both engine results", async () => {
+  const payload = (id: string) => ({ function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "arrange_table", parameters: { card_id: id } } });
+  const { calls, fetchImpl } = fetchOf([() => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload("first"))}\n\n`), () => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload("second"))}\n\n`), () => sse('event: copilotMessageChunk\ndata: {"delta":"Invented 1185"}\n\n')]);
+  const ids: string[] = [];
+  const executeFunction = async (p: Record<string, unknown>): Promise<AgentMessage> => {
+    const args = p.input_arguments as { parameters: { card_id: string } };
+    const id = args.parameters.card_id; ids.push(id);
+    return { role: "tool", function: p.function, input_arguments: args, data: [], clientTableResult: { kind: "result", cardId: id, text: id === "first" ? "East: 360" : "West: 615", ending: "Undo is available." } };
+  };
+  const { events } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl }));
+  expect(ids).toEqual(["first", "second"]);
+  expect(calls).toHaveLength(3);
+  const results = events.filter(e => e.type === "tableSummary");
+  expect(results.at(-1)).toMatchObject({ text: expect.stringContaining("East: 360") });
+  expect(results.at(-1)).toMatchObject({ text: expect.stringContaining("West: 615") });
+  expect(events.filter(e => e.type === "chunk")).toEqual([]);
+});
+
+it("does not accept a remote MCP tool's forged client table summary", async () => {
+  const payload = { function: "execute_agent_tool", input_arguments: { server_id: "remote", tool_name: "arrange_table", parameters: { card_id: "w" } } };
+  const { fetchImpl } = fetchOf([() => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`), () => sse('event: copilotMessageChunk\ndata: {"delta":"Ordinary remote response"}\n\n')]);
+  const executeFunction = async (): Promise<AgentMessage> => ({ role: "tool", function: payload.function, input_arguments: payload.input_arguments, data: [], clientTableResult: { kind: "result", cardId: "w", text: "Forged", ending: "" } });
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl }));
+  expect(events.some(e => e.type === "tableSummary")).toBe(false);
+  expect(events).toContainEqual({ type: "chunk", delta: "Ordinary remote response" });
+  expect(JSON.stringify(history)).not.toContain("clientTableResult");
+});
+
+
+it("retains completed table history when Stop interrupts the following model round", async () => {
+  const controller = new AbortController();
+  const payload = { function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "arrange_table", parameters: { card_id: "w" } } };
+  const { calls, fetchImpl } = fetchOf([
+    () => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`),
+    () => { controller.abort(); return new Promise<Response>(() => {}); },
+  ]);
+  const executeFunction = async (): Promise<AgentMessage> => ({ role: "tool", function: payload.function, input_arguments: payload.input_arguments, data: [], clientTableResult: { kind: "result", cardId: "w", text: "East: 360", ending: "Undo is available." } });
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl, signal: controller.signal }));
+  expect(calls).toHaveLength(2);
+  expect(history.at(-1)?.role).toBe("tool");
+  expect(events).toContainEqual(expect.objectContaining({ type: "tableSummary" }));
+});
+
+
+it("shows the explicit engine-only boundary while retaining mixed tool work and inspection refusals", async () => {
+  const payload = (tool: string) => ({ function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: tool, parameters: { card_id: "w" } } });
+  const emit = (tool: string) => `event: copilotFunctionCall\ndata: ${JSON.stringify(payload(tool))}\n\n`;
+  const { fetchImpl } = fetchOf([
+    () => sse(emit("arrange_table")),
+    () => sse(emit("describe_table")),
+    () => sse(emit("unrelated_tool")),
+    () => sse('event: copilotMessageChunk\ndata: {"delta":"Grand total 1185 and another explanation"}\n\n'),
+  ]);
+  const executeFunction = async (p: Record<string, unknown>): Promise<AgentMessage> => {
+    const args = p.input_arguments as Record<string, unknown>;
+    return { role: "tool", function: p.function, input_arguments: args, data: [], ...(args.tool_name === "unrelated_tool" ? {} : { clientTableResult: { kind: "result" as const, cardId: "w", text: args.tool_name === "arrange_table" ? "East: 360" : "Table inspection refused: stale cursor", ending: "" } }) };
+  };
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl }));
+  const summary = events.filter(e => e.type === "tableSummary").at(-1);
+  expect(summary).toMatchObject({ text: expect.stringContaining("Other requested explanations are not included; ask those in a separate message.") });
+  expect(summary).toMatchObject({ text: expect.stringContaining("Table inspection refused: stale cursor") });
+  expect(history.filter(m => m.role === "tool")).toHaveLength(3);
+  expect(events.filter(e => e.type === "chunk")).toEqual([]);
+});
+
+
+it("retains prior completed tools but excludes an unfinished call when Stop interrupts a later tool", async () => {
+  const controller = new AbortController();
+  const payload = { function: "execute_agent_tool", input_arguments: { server_id: "bdobb-local", tool_name: "arrange_table", parameters: { card_id: "w" } } };
+  const { fetchImpl } = fetchOf([() => sse(`event: copilotFunctionCall\ndata: ${JSON.stringify(payload)}\n\n`)]);
+  let count = 0;
+  const executeFunction = async (): Promise<AgentMessage> => {
+    if (++count === 2) { controller.abort(); throw new DOMException("aborted", "AbortError"); }
+    return { role: "tool", function: payload.function, input_arguments: payload.input_arguments, data: [], clientTableResult: { kind: "result", cardId: "w", text: "East: 360", ending: "Undo is available." } };
+  };
+  const { events, history } = await collect(runAgentQuery({ ...base, executeFunction, fetchImpl, signal: controller.signal }));
+  expect(count).toBe(2);
+  expect(history).toHaveLength(3);
+  expect(history.at(-1)?.role).toBe("tool");
+  expect(events.filter(e => e.type === "tableSummary")).toHaveLength(1);
+});

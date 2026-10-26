@@ -11,12 +11,13 @@ import { effectiveParams } from "../paramGroups";
 import type { WireContext } from "../params";
 import type { BackendConfig, DashboardCard, ParamGroup, WidgetDef } from "../types";
 import { LOCAL_TOOL_SERVER_ID, executeLocalTool } from "./localTools";
+import { clientTableResult, localTableCall } from "./tableResultSummary";
 import { normalizeMcpUrl } from "./mcp";
 import { hostnameOf } from "./mcpAuth";
 import { McpError, toolErrorOf } from "./mcpError";
 import { PROXY_TOOLS, disabledEffective, effectiveToolNames } from "./proxiedTools";
 import type { WidgetRef } from "./request";
-import type { AgentCall, AgentMessage, McpServerConfig } from "./types";
+import type { AgentCall, AgentMessage, ClientTableResult, McpServerConfig } from "./types";
 
 /** Describes dashboard cards the way Rita's `widgets.primary` expects. */
 export function buildWidgetRefs(
@@ -288,6 +289,7 @@ export async function executeFunction(
   const fn = payload.function;
   const args = isRecord(payload.input_arguments) ? payload.input_arguments : {};
   let data: unknown = { error_type: "unsupported" };
+  let tableResult: ClientTableResult | undefined;
   if (fn === "get_widget_data") {
     data = await widgetDataResults(args.data_sources, deps, signal);
   } else if (fn === "execute_agent_tool") {
@@ -330,6 +332,8 @@ export async function executeFunction(
       failure = refused;
       deps.onToolError?.({ server: serverId, tool, ...refused, ...proxyInput });
     }
+    const tableCall = localTableCall(payload);
+    if (tableCall) tableResult = clientTableResult(tableCall, result);
     data = toolResultData(result, failure);
   } else if (fn === "get_skill_content") {
     // agent-rita's extractSkillContent reads data[0].status, then
@@ -350,6 +354,7 @@ export async function executeFunction(
     input_arguments: payload.input_arguments,
     data,
     extra_state: payload.extra_state,
+    ...(tableResult ? { clientTableResult: tableResult } : {}),
   };
 }
 

@@ -9,7 +9,8 @@ import { normalizeAgentsJson } from "../lib/agent/agents-json";
 import { LOCAL_TOOLS } from "../lib/agent/localTools";
 import { assembleTools, callMcpTool } from "../lib/agent/mcp";
 import { McpError } from "../lib/agent/mcpError";
-import type { AgentTool } from "../lib/agent/types";
+import type { AgentTool, AgentEvent, AgentMessage } from "../lib/agent/types";
+import * as agentQuery from "../lib/agent/query";
 import { __resetJsonStoreForTests } from "../lib/jsonStore";
 import { __resetLoggerForTests } from "../lib/logger";
 import { DEFAULT_SETTINGS } from "../lib/settingsFile";
@@ -1237,4 +1238,22 @@ describe("chatStore suggestions gating on agentPromptSuggestions", () => {
     useSettingsStore.setState((s) => ({ settings: { ...s.settings, agentPromptSuggestions: true } }));
     expect(useChatStore.getState().suggestions).toEqual([]); // no resurrection
   });
+});
+
+it("replaces only current-turn model prose with the engine summary and persists it", async () => {
+  useChatStore.setState({ messages: [{ role: "human", content: "Earlier question" }, { role: "ai", content: "Earlier answer 42" }] });
+  const spy = vi.spyOn(agentQuery, "runAgentQuery").mockImplementation(async function* (opts): AsyncGenerator<AgentEvent, AgentMessage[]> {
+    yield { type: "chunk", delta: "Invented total 1185" };
+    yield { type: "tableSummary", text: "East: 360. Undo is available." };
+    return opts.messages;
+  });
+  try {
+    await useChatStore.getState().send("Group the table");
+    const shown = useChatStore.getState().messages;
+    expect(shown).toContainEqual({ role: "ai", content: "Earlier answer 42" });
+    expect(shown.at(-1)).toEqual({ role: "ai", content: "East: 360. Undo is available." });
+    expect(JSON.stringify(shown)).not.toContain("1185");
+    const saved = JSON.parse(__read("chat.json") ?? "{}");
+    expect(saved.messages).toEqual(shown);
+  } finally { spy.mockRestore(); }
 });

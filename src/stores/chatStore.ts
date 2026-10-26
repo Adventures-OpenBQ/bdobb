@@ -425,7 +425,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
           break;
         }
         const event = next.value;
-        if (event.type === "chunk") {
+        if (event.type === "tableSummary") {
+          // Preserve artifacts and prior conversation; replace only this turn's prose.
+          for (let i = turn.length - 1; i >= 0; i--) {
+            const message = turn[i];
+            if (message.role === "ai" && typeof message.content === "string") turn.splice(i, 1);
+          }
+          turn.push({ role: "ai", content: event.text });
+          show();
+          noticed();
+        } else if (event.type === "chunk") {
           const last = turn[turn.length - 1];
           if (last && last.role === "ai" && typeof last.content === "string") {
             last.content += event.delta;

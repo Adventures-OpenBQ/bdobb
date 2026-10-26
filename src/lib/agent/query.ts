@@ -4,6 +4,7 @@
 import { describeHttpError } from "../dataClient";
 import { logError } from "../logger";
 import { toAgentEvent } from "./events";
+import { localTableCall } from "./tableResultSummary";
 import { normalizeFunctionRounds } from "./limits";
 import { buildQueryRequest, queryUrl, type ContextItem, type WidgetRef } from "./request";
 import { sseEvents } from "./sse";
@@ -62,10 +63,15 @@ export async function* runAgentQuery(
   const maxFunctionRounds = normalizeFunctionRounds(opts.maxFunctionRounds);
   const url = queryUrl(opts.ritaUrl);
   const history = [...opts.messages];
+  const sourceRows = new Map<string, number>();
+  const tablePanels: string[] = [];
 
   // One extra response can summarize the last result, but cannot execute a tool.
   for (let round = 0; round <= maxFunctionRounds; round++) {
-    if (opts.signal?.aborted) throw abortError();
+    if (opts.signal?.aborted) {
+      if (history.length > opts.messages.length) return history;
+      throw abortError();
+    }
     const controller = new AbortController();
     const onAbort = () => controller.abort();
     opts.signal?.addEventListener("abort", onAbort);
@@ -99,14 +105,19 @@ export async function* runAgentQuery(
         const event = toAgentEvent(raw);
         if (event === null) continue;
         sawEvent = true;
-        yield event;
+        // Once local table results exist, their figures replace model prose.
+        // Function rounds/status/errors still run, including multi-table work.
+        if (event.type !== "chunk" || tablePanels.length === 0) yield event;
         if (event.type === "error") throw new Error(event.message);
         if (event.type === "functionCall") call = event.payload;
         if (event.type === "done") break;
       }
     } catch (err) {
       if (timedOut) throw new Error(`timed out after ${timeoutMs}ms waiting on ${url}`);
-      if (opts.signal?.aborted) throw abortError();
+      if (opts.signal?.aborted) {
+        if (history.length > opts.messages.length) return history;
+        throw abortError();
+      }
       throw err;
     } finally {
       clearTimeout(timer);
@@ -117,7 +128,10 @@ export async function* runAgentQuery(
       if (!sawEvent) void logError(`agent: round ${round} ended with no events (truncated turn?)`);
       return history;
     }
-    if (opts.signal?.aborted) throw abortError();
+    if (opts.signal?.aborted) {
+      if (history.length > opts.messages.length) return history;
+      throw abortError();
+    }
     if (round === maxFunctionRounds) {
       // Return rather than throw: chatStore persists returned tool history.
       // Dropping it would lose chart IDs and encourage duplicate mutations on
@@ -131,7 +145,35 @@ export async function* runAgentQuery(
       return history;
     }
     history.push({ role: "ai", content: { function: call.function, input_arguments: call.input_arguments } });
-    history.push(await opts.executeFunction(call, opts.signal ?? new AbortController().signal));
+    let executed: AgentMessage;
+    try {
+      executed = await opts.executeFunction(call, opts.signal ?? new AbortController().signal);
+    } catch (err) {
+      // An interrupted call has no completed result. Keep earlier tool pairs,
+      // excluding this unmatched call so the next turn cannot treat it as done.
+      history.pop();
+      if (opts.signal?.aborted && history.length > opts.messages.length) return history;
+      throw err;
+    }
+    const client = executed.role === "tool" ? executed.clientTableResult : undefined;
+    if (executed.role === "tool") {
+      const { clientTableResult: _private, ...wire } = executed;
+      history.push(wire);
+    } else history.push(executed);
+    const tableCall = localTableCall(call);
+    if (tableCall && client?.cardId === tableCall.cardId) {
+      if (client.kind === "inspection" && tableCall.tool === "describe_table") {
+        if (typeof client.sourceRows === "number" && Number.isSafeInteger(client.sourceRows) && client.sourceRows >= 0) sourceRows.set(client.cardId, client.sourceRows);
+        else sourceRows.delete(client.cardId);
+      } else if (client.kind === "result" && (tableCall.tool === "arrange_table" || tablePanels.length > 0)) {
+        const count = sourceRows.get(client.cardId);
+        tablePanels.push([client.text, ...(count === undefined ? [] : [`Source rows: ${count}.`]), client.ending].filter(Boolean).join("\n\n"));
+        yield { type: "tableSummary", text: `${tablePanels.join("\n\n---\n\n")}\n\nThis response shows engine table results. Other requested explanations are not included; ask those in a separate message.` };
+      }
+    }
+    // A completed call may have committed just as Stop arrived. Retain its
+    // result and presentation, but never start another model/tool round.
+    if (opts.signal?.aborted) return history;
   }
   return history;
 }

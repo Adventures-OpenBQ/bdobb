@@ -100,8 +100,9 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   for (;;) {
     const next = await (gen as AsyncGenerator<unknown, AgentMessage[]>).next();
     if (next.done) break;
-    const e = next.value as { type: string; delta?: string };
+    const e = next.value as { type: string; delta?: string; text?: string };
     if (e.type === "chunk") reply += e.delta ?? "";
+    if (e.type === "tableSummary") reply = e.text ?? "";
   }
   console.log("[reply]", reply);
   return { rounds, reply };

@@ -29,7 +29,8 @@ import { BUILTIN_WIDGETS, LOCAL_TABLE_ID } from "../builtins";
 /** Words a model uses for a source the catalog names otherwise (D-010). */
 const SEARCH_SYNONYMS = new Map([["yahoo", "yfinance"]]);
 
-export const LOCAL_TOOL_SERVER_ID = "bdobb-local";
+import { LOCAL_TOOL_SERVER_ID } from "./localToolServer";
+export { LOCAL_TOOL_SERVER_ID } from "./localToolServer";
 
 /** The `view` argument of add_widget and set_widget_params. */
 const VIEW_PROP = {
