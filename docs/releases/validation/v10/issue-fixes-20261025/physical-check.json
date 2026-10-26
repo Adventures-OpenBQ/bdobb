@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "source_commit": "534a73ab1da0dd81b167ee7f5572fd9db4dbd26a",
+  "date": "2026-10-26",
+  "installation": "signed app installed over USB with existing data retained",
+  "launch": "devicectl exit0 and DeviceHub screenshot observed after iPad unlocked",
+  "manual_observations": [
+    "Operator confirmed Qualification Server connected after API fixture recovery.",
+    "Operator confirmed AAPL-40 and MSFT120 appear during the recorded price cycle.",
+    "Operator explicitly confirmed the values continue ticking up and down."
+  ],
+  "interpretation": "Expected recorded feed varies around AAPL-40 and MSFT120; no static-price requirement.",
+  "automation_limitation": "DeviceHub pointer broker could not operate mirror controls; final observations were supplied by the human operator.",
+  "v11": "paused",
+  "additional_visual_evidence": "DeviceHub screenshot shows final V10 Live Grid Audit with AAPL-40.25 and MSFT119.75, volume and range bars, Live/Charts/Pinned/Tables tabs and retained RSS dock."
+}

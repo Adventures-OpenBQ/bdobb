@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "server": "V10 Qualification Server",
+  "checks": [
+    {
+      "path": "/widgets.json",
+      "status": 200,
+      "seconds": 5.32,
+      "bytes": 5213008,
+      "entries": 1053
+    },
+    {
+      "path": "/apps.json",
+      "status": 200,
+      "seconds": 1.19,
+      "bytes": 298545,
+      "entries": 55
+    },
+    {
+      "path": "/pro/user",
+      "status": 200,
+      "seconds": 0.15,
+      "bytes": 496,
+      "entries": null
+    }
+  ]
+}

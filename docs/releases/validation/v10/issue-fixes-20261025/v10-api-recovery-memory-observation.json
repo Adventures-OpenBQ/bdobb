@@ -1,0 +1,28 @@
+{
+  "scope": "bounded sequential catalog reads on owned fixture",
+  "limit_bytes": 8589934592,
+  "before_bytes": 2726629376,
+  "samples": [
+    {
+      "read": 1,
+      "status": 200,
+      "widgets": 1053,
+      "seconds": 6.56,
+      "memory_bytes": 2727010304
+    },
+    {
+      "read": 2,
+      "status": 200,
+      "widgets": 1053,
+      "seconds": 6.32,
+      "memory_bytes": 2726539264
+    },
+    {
+      "read": 3,
+      "status": 200,
+      "widgets": 1053,
+      "seconds": 6.22,
+      "memory_bytes": 2726871040
+    }
+  ]
+}

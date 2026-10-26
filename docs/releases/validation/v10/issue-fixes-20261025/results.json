@@ -1,0 +1,46 @@
+{
+  "qualified_runtime_source": "534a73ab1da0dd81b167ee7f5572fd9db4dbd26a",
+  "backend_source": "c3b0ce0d2955ffaa9a2adc1cefa4561626fb08d4",
+  "status": "qualified",
+  "native_tests": {
+    "passed": 8756,
+    "skipped": 31,
+    "failed": 0
+  },
+  "qwen": {
+    "model": "openai:qwen3.6-35b",
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0,
+    "cycle": "v10-qwen-engine-summary2"
+  },
+  "earlier_summary_cycle": {
+    "passed": 18,
+    "failed": 1,
+    "cause": "Model returned a proposal as chat JSON instead of invoking the arrangement tool."
+  },
+  "new_paid_inference_calls": 0,
+  "deepseek": "One availability probe was billing blocked; no qualification cycle claimed.",
+  "luna": "Skipped per user instruction.",
+  "claude": "No new V10 call or qualification claimed.",
+  "mac_native": [
+    "Engine preview rows, exact source count, Undo and separate-explanation notice rendered.",
+    "Undo restored raw rows.",
+    "Cold discovery found all four backends without refresh.",
+    "Recorded AAPL negative price and MSFT positive price retained."
+  ],
+  "artifact_source_verification": {
+    "tracked_files_each": 4429,
+    "mismatches": 0,
+    "audit_config_only": [
+      "identifier",
+      "productName"
+    ]
+  },
+  "physical_ipad": "Final signed10.0.0 installed, launched and visually verified; operator confirmed recovered server connection and cycling recorded prices including AAPL-40/MSFT120. See physical-check.json.",
+  "release_push_authorized": true,
+  "version_tags": "Existing tags preserved.",
+  "v11": "Paused.",
+  "fixture_memory_incident": "Audit API was Docker OOM-killed. Restart restored catalog, apps and settings API; three sequential catalog reads stayed near2.73GB. This bounded observation does not establish the cause of the earlier OOM or prove long-duration memory stability.",
+  "release_push_target": "release/v10 in both native and backend repositories; existing version tags preserved"
+}
