@@ -35,14 +35,15 @@ export type ContextItem = { name: string; description: string };
  * "Current dashboard" prompt line comes only with generative UI on, which also
  * switches on bridge tools this app does not run, so this rides in context.
  */
-export function dashboardContext(current: { id: string; name: string } | undefined, all: { id: string; name: string }[]): ContextItem {
+export function dashboardContext(current: { id: string; name: string } | undefined, all: { id: string; name: string }[], sharedCardIds?: string[]): ContextItem {
   if (!current) return { name: "Dashboards", description: "The user has no dashboard open." };
   const others = all.filter((d) => d.id !== current.id).map((d) => JSON.stringify(d.name));
   return {
     name: "Dashboards",
     description:
       `The user is on the dashboard ${JSON.stringify(current.name)}; tools act on it by default, so omit dashboard_name to target it. ` +
-      (others.length > 0 ? `Their other dashboards: ${others.join(", ")}.` : "They have no other dashboards."),
+      (others.length > 0 ? `Their other dashboards: ${others.join(", ")}.` : "They have no other dashboards.") +
+      (sharedCardIds === undefined ? "" : ` These shared card_ids are placed on this dashboard (including selected cards labelled 'added to context'): ${JSON.stringify(sharedCardIds)}. Use these card_ids for dashboard editing tools.`),
   };
 }
 

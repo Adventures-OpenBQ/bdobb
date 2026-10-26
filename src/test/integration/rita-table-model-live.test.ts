@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool } from "../../lib/agent/execute";
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
+import { dashboardContext } from "../../lib/agent/request";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
 import { mountCsv } from "../../lib/agent/tableModel/testHarness";
@@ -84,7 +85,11 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   const gen = runAgentQuery({
     ritaUrl,
     messages: [{ role: "human", content: text }],
-    refresh: () => ({ primary: buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set()) }),
+    refresh: () => {
+      const state = useDashboardStore.getState();
+      const refs = buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set());
+      return { primary: refs, context: [dashboardContext(state.activeDashboard(), state.dashboards, refs.map(ref => String(ref.uuid)))] };
+    },
     tools: LOCAL_TOOLS,
     executeFunction: (payload, signal) => executeFunction(payload, deps, signal),
     skillsCatalog: skillsCatalog(skills),
