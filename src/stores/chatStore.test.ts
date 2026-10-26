@@ -823,11 +823,26 @@ describe("chatStore widget tiers", () => {
     expect(uuids(tiers().secondary)).toEqual([A]);
   });
 
+  it("identifies tagged shared cards as actual dashboard cards even when secondary is empty", async () => {
+    seed(true);
+    useChatStore.getState().toggleShared(A);
+    useChatStore.getState().toggleShared(B);
+    await useChatStore.getState().send("Remove the first card from this dashboard");
+    expect(uuids(tiers().primary)).toEqual([A, B]);
+    expect(uuids(tiers().secondary)).toEqual([]);
+    const context = JSON.stringify(bodies[0].context);
+    expect(context).toContain(A);
+    expect(context).toContain(B);
+    expect(context).toContain("placed on this dashboard");
+  });
+
   it("sends no widgets with Context Sharing off, tagged or not", async () => {
     seed(false);
     useChatStore.getState().toggleShared(A);
     await useChatStore.getState().send("hi");
     expect(bodies[0].widgets).toEqual({ primary: [], secondary: [], extra: [] });
+    expect(JSON.stringify(bodies[0].context)).not.toContain(A);
+    expect(JSON.stringify(bodies[0].context)).not.toContain(B);
   });
 
   it("toggleShared untags a tagged card", () => {

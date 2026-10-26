@@ -123,6 +123,17 @@ describe("dashboardContext", () => {
     expect(item).not.toHaveProperty("data");
   });
 
+  it("identifies shared card ids as placed on the dashboard, including selected context", () => {
+    const description = dashboardContext({ id: "a", name: "Main" }, [], ["clock-id"]).description;
+    expect(description).toContain("placed on this dashboard");
+    expect(description).toContain('"clock-id"');
+    expect(description).toContain("added to context");
+  });
+
+  it("omits the shared-card inventory when sharing was not provided", () => {
+    expect(dashboardContext({ id: "a", name: "Main" }, []).description).not.toContain("shared card_ids");
+  });
+
   it("says so when there is no current dashboard", () => {
     expect(dashboardContext(undefined, []).description).toMatch(/no dashboard/i);
   });

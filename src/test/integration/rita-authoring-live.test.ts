@@ -20,6 +20,7 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 }));
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
+import { dashboardContext } from "../../lib/agent/request";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage, AgentStatus } from "../../lib/agent/types";
 import { BUILTIN_WIDGETS } from "../../lib/builtins";
@@ -146,7 +147,11 @@ async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Roun
     messages: [{ role: "human", content: text }],
     // As chatStore.send: every round re-reads the board, so a card Rita just
     // wrote reaches her with its new text (#326).
-    refresh: () => ({ primary: buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set()) }),
+    refresh: () => {
+      const state = useDashboardStore.getState();
+      const refs = buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set());
+      return { primary: refs, context: [dashboardContext(state.activeDashboard(), state.dashboards, refs.map(ref => String(ref.uuid)))] };
+    },
     // This targeted recovery case must update the existing note, not create a
     // replacement with add_note or bypass the injected operation through another tool.
     tools: firstSaveFlat ? LOCAL_TOOLS.filter((t) => ["describe_widget", "set_widget_params"].includes(t.name)) : LOCAL_TOOLS,

@@ -386,7 +386,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           return {
             primary: now.filter((r) => tagged.has(String(r.uuid))),
             secondary: now.filter((r) => !tagged.has(String(r.uuid))),
-            context: [dashboardContext(dash, useDashboardStore.getState().dashboards)],
+            // Only identities already shared in widget refs; Context Sharing off
+            // must not disclose card inventory through this text context.
+            context: [dashboardContext(dash, useDashboardStore.getState().dashboards, settings.contextSharing ? now.map((ref) => String(ref.uuid)) : undefined)],
           };
         },
         tools,
