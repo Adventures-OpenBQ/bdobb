@@ -1,5 +1,5 @@
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 // The base button reset (appearance: none; color: inherit) out-ranks the
 // browser's own greyed :disabled text, so a disabled button must be muted by
 // the stylesheet itself or it reads as clickable.
