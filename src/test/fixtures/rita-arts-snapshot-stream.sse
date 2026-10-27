@@ -1,0 +1,9 @@
+event: copilotStatusUpdate
+data: {"eventType":"INFO","message":"Output from arts-charts - snapshot_chart","group":"reasoning","artifacts":[{"type":"arts_chart_snapshot","uuid":"b1ba2278-bb2b-4595-9cee-eaf6152bc039","name":"AAPL · 1d","description":"Art's Charts snapshot, revision 1","content":{"schema":"arts-chart-snapshot/1","chart_id":"c09014fb-6016-4786-ac83-64bb9af9ecfc","snapshot_id":"b1ba2278-bb2b-4595-9cee-eaf6152bc039","revision":1,"width":1200,"height":675,"created_at":"2026-10-27T19:19:02.222954+00:00","title":"Apple daily","symbol":"AAPL","interval":"1d"}}]}
+
+event: copilotMessageArtifact
+data: {"type":"arts_chart_snapshot","uuid":"b1ba2278-bb2b-4595-9cee-eaf6152bc039","name":"AAPL · 1d","description":"Art's Charts snapshot, revision 1","content":{"schema":"arts-chart-snapshot/1","chart_id":"c09014fb-6016-4786-ac83-64bb9af9ecfc","snapshot_id":"b1ba2278-bb2b-4595-9cee-eaf6152bc039","revision":1,"width":1200,"height":675,"created_at":"2026-10-27T19:19:02.222954+00:00","title":"Apple daily","symbol":"AAPL","interval":"1d"}}
+
+event: copilotMessageChunk
+data: {"delta":"Here is the AAPL daily chart; the numbers are from the same revision."}
+

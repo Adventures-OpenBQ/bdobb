@@ -271,6 +271,30 @@ describe("chatStore.send", () => {
     expect(citations).toHaveLength(1);
   });
 
+  it("keeps an Art's Charts snapshot as the pinned Rita relays it: ids only, no URL, no credential (v12 part 3)", async () => {
+    replies(fixture("rita-arts-snapshot-stream.sse"));
+    await useChatStore.getState().send("Snapshot my AAPL chart.");
+    const { messages } = useChatStore.getState();
+    const artifacts = messages.flatMap((m) =>
+      "content" in m && Array.isArray(m.content) ? (m.content as Array<Record<string, unknown>>) : [],
+    );
+    expect(artifacts).toHaveLength(1);
+    const [shot] = artifacts;
+    const content = shot.content as Record<string, unknown>;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    expect(shot.type).toBe("arts_chart_snapshot");
+    expect(shot.name).toBe("AAPL · 1d");
+    expect(Object.keys(content).sort()).toEqual(
+      ["chart_id", "created_at", "height", "interval", "revision", "schema", "snapshot_id", "symbol", "title", "width"],
+    );
+    expect(content).toMatchObject({ schema: "arts-chart-snapshot/1", symbol: "AAPL", interval: "1d", title: "Apple daily" });
+    expect(content.chart_id).toMatch(uuid);
+    expect(content.snapshot_id).toMatch(uuid);
+    expect(shot.uuid).toBe(content.snapshot_id);
+    const saved = JSON.stringify(messages);
+    expect(saved).not.toMatch(/authorization|bearer|basic |[?&]t=|password|token/i);
+  });
+
   it("executes a get_widget_data round trip against the dashboard", async () => {
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
     useBackendsStore.setState({ backends: [backend({ id: "reference", name: "Reference", baseUrl: "http://x" })] });
