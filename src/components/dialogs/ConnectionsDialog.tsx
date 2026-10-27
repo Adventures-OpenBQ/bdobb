@@ -47,6 +47,7 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
   const statuses = useBackendsStore((s) => s.statuses);
   const issues = useBackendsStore((s) => s.issues);
   const services = useBackendsStore((s) => s.services);
+  const errors = useBackendsStore((s) => s.errors);
   const addBackend = useBackendsStore((s) => s.addBackend);
   const updateBackend = useBackendsStore((s) => s.updateBackend);
   const removeBackend = useBackendsStore((s) => s.removeBackend);
@@ -509,6 +510,8 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
                         {b.door === "tailnet" ? <p className="bd-muted">{TAILNET_NOTE}</p> : null}
                         {artsChartsConnections(backends).ignored.includes(b) ? (
                           <p className="bd-muted">Ignored: only the first Art's Charts server is used.</p>
+                        ) : statuses[b.id] === "offline" && errors[b.id] ? (
+                          <p className="bd-muted" role="note">{errors[b.id]}</p>
                         ) : null}
                       </>
                     ) : (

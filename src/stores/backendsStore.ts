@@ -15,6 +15,8 @@ type BackendsState = {
   backends: BackendConfig[];
   statuses: Record<string, BackendStatus>;
   issues: Record<string, WidgetIssue[]>;
+  /** Backend id → why its last Art's Charts discovery failed (a 401 reads as a refusal, a 404 as not a server). */
+  errors: Record<string, string | undefined>;
   /** Backend id → its `GET /` service name from the last discovery; see fetchServiceName. */
   services: Record<string, string | undefined>;
   /** Ids whose in-memory headerValue must never be written; see persistable. */
@@ -59,6 +61,7 @@ export const useBackendsStore = create<BackendsState>((set, get) => {
     statuses: {},
     issues: {},
     services: {},
+    errors: {},
     runtimeCredentials: [],
 
     /**
@@ -125,6 +128,7 @@ export const useBackendsStore = create<BackendsState>((set, get) => {
         statuses: merge(state.statuses, (r) => r.status),
         issues: merge(state.issues, (r) => r.issues),
         services: merge(state.services, (r) => r.service),
+        errors: merge(state.errors, (r) => r.error),
       }));
     },
 
@@ -197,11 +201,15 @@ export const useBackendsStore = create<BackendsState>((set, get) => {
       enqueue(async () => {
         const backends = get().backends.filter((b) => b.id !== id);
         const without = <T,>(record: Record<string, T>) => Object.fromEntries(Object.entries(record).filter(([k]) => k !== id));
-        const { statuses, issues, services } = get();
+        const { statuses, issues, services, errors } = get();
+        const wasActive = artsChartsConnections(get().backends).active?.id === id;
         await saveBackends(persistable(backends, get().runtimeCredentials));
-        set({ backends, statuses: without(statuses), issues: without(issues), services: without(services), runtimeCredentials: get().runtimeCredentials.filter((x) => x !== id) });
+        set({ backends, statuses: without(statuses), issues: without(issues), services: without(services), errors: without(errors), runtimeCredentials: get().runtimeCredentials.filter((x) => x !== id) });
         useWidgetRegistryStore.getState().dropBackend(id);
         clearCalendarBundles();
+        // The next Art's Charts connection was ignored (offline, no widget) while this one was active; promote it.
+        const next = artsChartsConnections(backends).active;
+        if (wasActive && next !== null) void get().refresh([next.id]).catch(() => {});
       }),
 
     // A startup step's Continue. The value is stored only with Remember me;

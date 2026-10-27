@@ -7,6 +7,7 @@ import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { useArtsChartsStore } from "../../stores/artsChartsStore";
 import { useBackendsStore } from "../../stores/backendsStore";
 import { useDashboardStore } from "../../stores/dashboardStore";
+import { logError } from "../logger";
 import { openChartCard, reconfigure } from "../artsChartsHost";
 import { artsChartsConnections } from "./connection";
 import { installChartsSocketShim } from "./desktopSocket";
@@ -43,7 +44,7 @@ export function startArtsCharts(options: { viewer: boolean }): () => void {
   let last = manage ? activeConnection() : null;
   // One chain, so two quick backends changes cannot interleave their settings writes.
   let queue: Promise<unknown> = Promise.resolve();
-  const enqueue = (job: () => Promise<unknown>) => { queue = queue.then(job).catch(() => {}); };
+  const enqueue = (job: () => Promise<unknown>) => { queue = queue.then(job).catch((e) => { void logError(`Art's Charts settings sync failed: ${e instanceof Error ? e.message : String(e)}`); }); };
   if (last !== null) { const c = last; enqueue(() => syncArtsChartsMcp(c, c)); }
   const unsubscribe = useBackendsStore.subscribe((s, prev) => {
     if (s.backends === prev.backends) return;

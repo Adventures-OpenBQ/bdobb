@@ -483,3 +483,28 @@ describe("a second Art's Charts server", () => {
     expect(useWidgetRegistryStore.getState().widgets.filter((w) => w.id === "arts_chart").map((w) => w.backendId)).toEqual(["c1"]);
   });
 });
+
+describe("Art's Charts discovery errors and removal", () => {
+  const mk = (id: string, baseUrl: string) => ({ id, name: id, baseUrl, authLocation: "header" as const, validateWidgets: false, kind: "arts-charts" as const, door: "gateway" as const });
+
+  it("keeps the refusal wording for a 401 and the not-a-server wording for a 404", async () => {
+    const refused = await serve({ "/ta_registry": { __status: 401 } });
+    const missing = await serve({ "/ta_registry": { __status: 404 } });
+    useBackendsStore.setState({ backends: [mk("c1", refused)] });
+    await useBackendsStore.getState().refresh();
+    expect(useBackendsStore.getState().errors.c1).toMatch(/refused the credential \(401\)/);
+    useBackendsStore.setState({ backends: [mk("c1", missing)] });
+    await useBackendsStore.getState().refresh();
+    expect(useBackendsStore.getState().errors.c1).toBe("Not an Art's Charts server");
+  });
+
+  it("discovers the second connection when the active one is removed", async () => {
+    const [u1, u2] = [await serve({ "/ta_registry": { studies: [] } }), await serve({ "/ta_registry": { studies: [] } })];
+    useBackendsStore.setState({ backends: [mk("c1", u1), mk("c2", u2)] });
+    await useBackendsStore.getState().refresh();
+    expect(useBackendsStore.getState().statuses.c2).toBe("offline");
+    await useBackendsStore.getState().removeBackend("c1");
+    await vi.waitFor(() => expect(useBackendsStore.getState().statuses.c2).toBe("online"));
+    expect(useWidgetRegistryStore.getState().widgets.filter((w) => w.id === "arts_chart").map((w) => w.backendId)).toEqual(["c2"]);
+  });
+});

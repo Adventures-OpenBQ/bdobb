@@ -35,3 +35,9 @@ it("says the tailnet door has no studies, and names ignored extra servers", () =
   expect(within(row).getByText(/Studies need the gateway door/)).toBeInTheDocument();
   expect(within(screen.getByRole("article", { name: "Charts 2" })).getByText(/Ignored: only the first Art's Charts server is used/)).toBeInTheDocument();
 });
+
+it("shows why an Art's Charts server is offline in its row", () => {
+  useBackendsStore.setState({ backends: [charts], statuses: { c1: "offline" }, errors: { c1: "The server refused the credential (401)" } });
+  render(<ConnectionsDialog onClose={() => {}} />);
+  expect(within(screen.getByRole("article", { name: "Charts" })).getByText(/refused the credential \(401\)/)).toBeInTheDocument();
+});
