@@ -324,6 +324,8 @@ type CardFieldPatch = {
   paramsOpen: boolean;
   statement: { collapsed?: string[] };
   calendar: Partial<import("../lib/types").CalendarCardState>;
+  /** v12: an Art's Charts card's chart state, merged like `calendar`; `null` deletes it. */
+  chart: Partial<NonNullable<import("../lib/types").DashboardCard["chart"]>>;
   /** v8: the News card's feeds, highlights and tab order, replaced whole (not merged); `null` deletes it. */
   news: import("../lib/types").NewsCardState;
 };
@@ -1595,6 +1597,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             if (field === "table" && next.tableDefinition) next.tableDefinition = { ...next.tableDefinition, table: {} };
           } else if (field === "table") next.table = { ...c.table, ...(value as Partial<TableCardState>) };
           else if (field === "calendar") next.calendar = { ...c.calendar, ...(value as Partial<import("../lib/types").CalendarCardState>) };
+          else if (field === "chart") next.chart = { ...c.chart, ...(value as Partial<NonNullable<DashboardCard["chart"]>>) };
           else Object.assign(next, { [field]: value });
           return next;
         }),

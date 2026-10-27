@@ -154,12 +154,22 @@ const NOTHING_TO_TRANSPOSE_TITLE = "Nothing to transpose";
 
 /** The only two card types the transposed view is offered on, and reachable on. */
 const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
+/** v12 Art's Charts (spec §1). null under VITE_ARTS_CHARTS=0, so the package never enters the bundle (B2). */
+const ArtsChartsCard = __ARTS_CHARTS__ ? lazy(() => import("../lib/artsCharts/card")) : null;
+
 /**
  * Types whose renderer takes `refreshKey` and reloads itself on a Refresh,
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid", "live_chart"]);
+const SELF_REFRESHING_TYPES = new Set([
+  "rss",
+  "local_table",
+  "multi_file_viewer",
+  "live_grid",
+  "live_chart",
+  ...(__ARTS_CHARTS__ ? ["arts_chart"] : []),
+]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -1297,6 +1307,18 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           spec={widget.udfChart}
           refreshKey={attempt + refreshEpoch}
         />
+      );
+    }
+
+    if (__ARTS_CHARTS__ && ArtsChartsCard && widget?.type === "arts_chart" && backend) {
+      return (
+        <Suspense fallback={<p className="empty-state">Loading chart…</p>}>
+          <ArtsChartsCard
+            backend={backend} widget={widget} card={card} params={query} exchange={exchange}
+            groups={groups} groupsDisabled={groupsDisabled} refreshKey={attempt + refreshEpoch}
+            onParam={(patch) => void apply(splitParamEdit(patch, card, groups, widget, groupsDisabled, fiscalYearEnd))}
+          />
+        </Suspense>
       );
     }
 

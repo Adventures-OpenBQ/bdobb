@@ -26,6 +26,10 @@ export type BackendConfig = {
    * otherwise lives in memory for the run (backendsStore.runtimeCredentials).
    */
   askOnStartup?: boolean;
+  /** v12: "arts-charts" for the Art's Charts server connection (spec B3); absent for a data backend. */
+  kind?: "arts-charts";
+  /** v12: an Art's Charts connection's door (spec §1, B4). Absent on the web preview's seeded connection. */
+  door?: import("./artsCharts/connection").ChartsDoor;
 };
 
 export type BackendStatus = "online" | "offline" | "unknown";
@@ -692,6 +696,8 @@ export type DashboardCard = {
    */
   paramsOpen?: boolean;
   calendar?: CalendarCardState;
+  /** v12: an Art's Charts card's own chart state (drawings, levels, interval, …); the package's type. */
+  chart?: import("@adventures-openbq/arts-charts").ChartCardState;
   statement?: { collapsed?: string[] };
   /**
    * v8: docked to an edge of the dashboard area, outside the grid, staying in

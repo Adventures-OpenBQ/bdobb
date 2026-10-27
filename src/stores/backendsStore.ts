@@ -4,6 +4,7 @@
 import { create } from "zustand";
 import { loadBackends, saveBackends } from "../lib/backendsFile";
 import { clearCalendarBundles } from "../lib/calendars/bundles";
+import { artsChartsConnections } from "../lib/artsCharts/connection";
 import { discoverBackend } from "../lib/discovery";
 import { serialize } from "../lib/serialize";
 import type { BackendConfig, BackendStatus } from "../lib/types";
@@ -92,7 +93,8 @@ export const useBackendsStore = create<BackendsState>((set, get) => {
       const probed = only ? get().backends.filter((b) => only.includes(b.id)) : get().backends.filter((b) => !waiting(b));
       // discoverBackend contains its own failure and cannot reject, so one
       // unreachable backend can never empty the library.
-      const results = await Promise.all(probed.map(discoverBackend));
+      const ignored = new Set(artsChartsConnections(get().backends).ignored.map((b) => b.id));
+      const results = await Promise.all(probed.map((b) => discoverBackend(b, ignored)));
       // addBackend/updateBackend fire this without awaiting it, so a backend
       // can be removed while its discovery is still in flight. Apply only
       // results for backends that still exist when discovery resolves —

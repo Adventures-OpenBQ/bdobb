@@ -471,3 +471,15 @@ describe("Ask for credentials on startup", () => {
     expect(useBackendsStore.getState().runtimeCredentials).toEqual([]);
   });
 });
+
+describe("a second Art's Charts server", () => {
+  it("is offline and adds no Library widget", async () => {
+    const [u1, u2] = [await serve({ "/ta_registry": { studies: [] } }), await serve({ "/ta_registry": { studies: [] } })];
+    const mk = (id: string, baseUrl: string) => ({ id, name: id, baseUrl, authLocation: "header" as const, validateWidgets: false, kind: "arts-charts" as const, door: "gateway" as const });
+    useBackendsStore.setState({ backends: [mk("c1", u1), mk("c2", u2)] });
+    await useBackendsStore.getState().refresh();
+    const st = useBackendsStore.getState();
+    expect(st.statuses).toMatchObject({ c1: "online", c2: "offline" });
+    expect(useWidgetRegistryStore.getState().widgets.filter((w) => w.id === "arts_chart").map((w) => w.backendId)).toEqual(["c1"]);
+  });
+});

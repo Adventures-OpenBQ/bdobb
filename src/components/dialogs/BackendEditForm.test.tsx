@@ -33,6 +33,7 @@ const draft = {
   authLocation: "header" as const,
   validateWidgets: false,
   askOnStartup: false,
+  door: "gateway" as const,
 };
 
 describe("BackendEditForm", () => {

@@ -2321,6 +2321,20 @@ describe("patchCardField: calendar", () => {
   });
 });
 
+describe("patchCardField: chart", () => {
+  it("merges into card.chart and null deletes it", async () => {
+    await useDashboardStore.getState().load();
+    const cardId = (await useDashboardStore.getState().addCard(widget())) as string;
+    const card = () =>
+      useDashboardStore.getState().dashboards[0].tabs[0].cards.find((c) => c.id === cardId)!;
+    await useDashboardStore.getState().patchCardField(cardId, "chart", { interval: "1h" });
+    await useDashboardStore.getState().patchCardField(cardId, "chart", { adjusted: true });
+    expect(card().chart).toEqual({ interval: "1h", adjusted: true });
+    await useDashboardStore.getState().patchCardField(cardId, "chart", null);
+    expect("chart" in card()).toBe(false);
+  });
+});
+
 it('saves and reopens only the managed source reference, excluding extraneous bytes and credentials',async()=>{
  await useDashboardStore.getState().load();
  const id=(await useDashboardStore.getState().addCard(widget()))!;

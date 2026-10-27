@@ -14,7 +14,7 @@ import { WIDGETS_TIMEOUT_MS } from "./dataClient";
 import { discoverBackend } from "./discovery";
 
 // The same Promise.all backendsStore.refresh runs.
-const discoverAll = (backends: BackendConfig[]) => Promise.all(backends.map(discoverBackend));
+const discoverAll = (backends: BackendConfig[]) => Promise.all(backends.map((b) => discoverBackend(b)));
 import { APPS_TIMEOUT_MS, OPENBB_PLATFORM_SERVICE } from "./dataClient";
 import { IMPORT_MAX_BYTES } from "./importLimits";
 
@@ -507,3 +507,24 @@ it("discovers a catalog that arrives after the old ten-second deadline", async (
   expect(result.status).toBe("online");
   expect(result.widgets.map(w => w.id)).toEqual(["slow"]);
 }, 35_000);
+
+describe("Art's Charts connection", () => {
+  it("routes to /ta_registry and never asks for widgets.json", async () => {
+    const s = await startMockServer({ "/ta_registry": { studies: [] } });
+    servers.push(s);
+    const charts = backend({ id: "c1", baseUrl: s.url, kind: "arts-charts", door: "gateway" });
+    const r = await discoverBackend(charts);
+    expect(r.status).toBe("online");
+    expect(r.widgets.map((w) => w.id)).toEqual(["arts_chart"]);
+    expect(s.requests.map((q) => q.path)).not.toContain("/widgets.json");
+  });
+
+  it("reports an ignored extra server offline without probing it", async () => {
+    const s = await startMockServer({ "/ta_registry": { studies: [] } });
+    servers.push(s);
+    const charts = backend({ id: "c2", baseUrl: s.url, kind: "arts-charts", door: "gateway" });
+    const r = await discoverBackend(charts, new Set(["c2"]));
+    expect(r).toMatchObject({ status: "offline", widgets: [], error: "Ignored: only the first Art's Charts server is used" });
+    expect(s.requests).toEqual([]);
+  });
+});

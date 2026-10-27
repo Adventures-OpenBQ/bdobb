@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useChildDialog } from "../../hooks/useChildDialog";
 import { discoverBackend } from "../../lib/discovery";
 import { DialogShell } from "./DialogShell";
+import type { ChartsDoor } from "../../lib/artsCharts/connection";
 import type { AuthLocation, BackendConfig } from "../../lib/types";
 
 export type Draft = {
@@ -16,6 +17,8 @@ export type Draft = {
   validateWidgets: boolean;
   /** Key stays stored; the value is asked for at launch (Value is hidden). */
   askOnStartup: boolean;
+  kind?: "arts-charts";
+  door: ChartsDoor;
 };
 
 export const EMPTY_DRAFT: Draft = {
@@ -26,7 +29,19 @@ export const EMPTY_DRAFT: Draft = {
   authLocation: "header",
   validateWidgets: true,
   askOnStartup: false,
+  door: "gateway",
 };
+
+export const ARTS_CHARTS_DRAFT: Draft = {
+  ...EMPTY_DRAFT,
+  kind: "arts-charts",
+  door: "gateway",
+  headerName: "Authorization",
+  validateWidgets: false,
+};
+
+export const TAILNET_NOTE =
+  "The tailnet door serves charts, the feed and Rita, but not studies: a webview cannot authenticate its study socket. Studies need the gateway door.";
 
 export function toInput(draft: Draft): Omit<BackendConfig, "id"> {
   // authLocation/validateWidgets come from the draft, which ConnectionsDialog
@@ -42,6 +57,7 @@ export function toInput(draft: Draft): Omit<BackendConfig, "id"> {
     validateWidgets: draft.validateWidgets,
     // Explicit undefined, so unticking clears the flag through `{ ...b, ...patch }`.
     askOnStartup: draft.askOnStartup ? true : undefined,
+    ...(draft.kind === "arts-charts" ? { kind: draft.kind, door: draft.door } : {}),
   };
   if (draft.askOnStartup) {
     // The key stays stored; the value is asked for at every launch. Explicit
@@ -198,7 +214,32 @@ export function BackendEditForm({
             onChange={(e) => onChange({ ...draft, baseUrl: e.target.value })}
           />
         </div>
+        {draft.kind === "arts-charts" ? (
+          <fieldset className="bd-field">
+            <legend>Door</legend>
+            <label className="bd-inline">
+              <input
+                type="radio"
+                name="backend-door"
+                checked={draft.door === "gateway"}
+                onChange={() => onChange({ ...draft, door: "gateway" })}
+              />
+              Gateway (recommended)
+            </label>
+            <label className="bd-inline">
+              <input
+                type="radio"
+                name="backend-door"
+                checked={draft.door === "tailnet"}
+                onChange={() => onChange({ ...draft, door: "tailnet" })}
+              />
+              Tailnet
+            </label>
+            <p className="bd-muted">{TAILNET_NOTE}</p>
+          </fieldset>
+        ) : null}
         <div className="bd-form-grid">
+          {draft.kind === "arts-charts" ? null : (
           <div className="bd-field">
             <label htmlFor="backend-validate">Validate widgets</label>
             <select
@@ -211,6 +252,7 @@ export function BackendEditForm({
               <option value="yes">Yes</option>
             </select>
           </div>
+          )}
           <div className="bd-field">
             <label htmlFor="backend-location">Location</label>
             <select

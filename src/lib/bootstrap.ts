@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { loadArtsCharts } from "./artsCharts/load";
 import { logError, logInfo } from "./logger";
 import { findKeyMaintWidget } from "./providerKeys";
 import { pickLaunchWorkspace, readLaunchScreen } from "./screenFit";
@@ -98,6 +99,7 @@ async function attempt(label: string, load: () => Promise<void>): Promise<string
 
 /** Stops the key-maint watch the previous bootstrap installed, if any. */
 let stopKeyMaintWatch: (() => void) | null = null;
+let stopArtsCharts: (() => void) | null = null;
 
 /**
  * Refreshes provider keys again when a key-maint backend shows up in the
@@ -222,6 +224,11 @@ export async function bootstrap(): Promise<string[]> {
     // user, and a Cancel or failure just leaves settings local for the run.
     if (viewerId === null) startDashboardAutoUpload();
     if (viewerId === null) void runStartupPrompt().catch((err: unknown) => logError(`startup prompt failed: ${err}`));
+    // v12 Art's Charts: configured before any card or chat renders (spec §2; part 3 needs chartsFetch).
+    stopArtsCharts?.();
+    stopArtsCharts = null;
+    const artsCharts = await loadArtsCharts();
+    if (artsCharts !== null) stopArtsCharts = artsCharts.startArtsCharts({ viewer: viewerId !== null });
   } catch (err) {
     // An unwritable/unreadable data directory would otherwise reject
     // silently here (this function does not reject) and render an empty shell

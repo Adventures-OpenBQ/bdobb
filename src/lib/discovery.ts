@@ -5,6 +5,8 @@ import { APPS_ISSUE_ID, type App, parseAppsJson } from "./appsJson";
 import { fetchAppsJson, fetchServiceName, fetchWidgetsJson } from "./dataClient";
 import { logError } from "./logger";
 import { clampLogName } from "./logNames";
+import { isArtsCharts } from "./artsCharts/connection";
+import { loadArtsCharts } from "./artsCharts/load";
 import type { BackendConfig, BackendStatus, WidgetDef } from "./types";
 import { normalizeWidgets, type WidgetIssue } from "./widgetsJson";
 
@@ -52,7 +54,17 @@ async function discoverApps(
 }
 
 /** One backend's failure is contained here and never rethrown. */
-export async function discoverBackend(backend: BackendConfig): Promise<DiscoveryResult> {
+export async function discoverBackend(backend: BackendConfig, ignoredIds?: ReadonlySet<string>): Promise<DiscoveryResult> {
+  if (isArtsCharts(backend)) {
+    if (ignoredIds?.has(backend.id)) {
+      return { backendId: backend.id, widgets: [], apps: [], status: "offline", issues: [], error: "Ignored: only the first Art's Charts server is used" };
+    }
+    const runtime = await loadArtsCharts();
+    if (runtime === null) {
+      return { backendId: backend.id, widgets: [], apps: [], status: "offline", issues: [], error: "This build does not include Art's Charts" };
+    }
+    return runtime.discoverArtsCharts(backend);
+  }
   // Started BEFORE widgets.json is awaited, so the two run concurrently. They
   // share no state, and awaiting one before asking for the other made their
   // latencies additive on every backend — inside discoverAll's Promise.all,

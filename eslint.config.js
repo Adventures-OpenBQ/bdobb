@@ -31,6 +31,7 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "dist-no-charts/**",
       "vendor/**",
       "server/table-ingest/dist/**",
       // Vercel build output: prebuilt function bundle, not source.

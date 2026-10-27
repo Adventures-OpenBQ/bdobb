@@ -23,7 +23,8 @@ import { DialogShell } from "./DialogShell";
 import { ServiceCard } from "../services/ServiceCard";
 import { ServiceStatus, type ServiceState } from "../services/ServiceStatus";
 import { WorkspaceConnectionForm, type WorkspaceFormValues } from "./WorkspaceDialogs";
-import { BackendEditForm, EMPTY_DRAFT, toInput, type Draft } from "./BackendEditForm";
+import { BackendEditForm, ARTS_CHARTS_DRAFT, EMPTY_DRAFT, TAILNET_NOTE, toInput, type Draft } from "./BackendEditForm";
+import { artsChartsConnections, isArtsCharts } from "../../lib/artsCharts/connection";
 
 
 /** The OpenBB "BB" glyph, cut from the wordmark on openbb.co; marks the OpenBB Platform API, the OpenBB reference backend and every Workspace connection. */
@@ -217,6 +218,12 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
     setDraft({ ...EMPTY_DRAFT });
   }
 
+  function startAddArtsCharts() {
+    setEditingId(null);
+    setSaveError(null);
+    setDraft({ ...ARTS_CHARTS_DRAFT });
+  }
+
   function startEdit(backend: BackendConfig) {
     setEditingId(backend.id);
     setSaveError(null);
@@ -228,6 +235,8 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
       authLocation: backend.authLocation,
       validateWidgets: backend.validateWidgets,
       askOnStartup: backend.askOnStartup === true,
+      ...(backend.kind === "arts-charts" ? { kind: backend.kind } : {}),
+      door: backend.door ?? "gateway",
     });
   }
 
@@ -368,9 +377,21 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
       // in the AI Library's words for its own export.
       note="Exports may include stored credentials in plain text."
       footerActions={
-        <button type="button" className="bd-button bd-button--primary" onClick={startAdd}>
-          Connect backend
-        </button>
+        <>
+          {__ARTS_CHARTS__ ? (
+          <button
+            type="button"
+            className="bd-button"
+            disabled={artsChartsConnections(backends).active !== null}
+            onClick={startAddArtsCharts}
+          >
+            Connect Art's Charts server
+          </button>
+          ) : null}
+          <button type="button" className="bd-button bd-button--primary" onClick={startAdd}>
+            Connect backend
+          </button>
+        </>
       }
       onClose={onClose}
     >
@@ -474,11 +495,26 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
                   key={b.id}
                   mark={markFor(b)}
                   name={b.name}
-                  kind={`Data backend · ${widgetCell(b)} · ${appCell(b)}`}
+                  kind={
+                    isArtsCharts(b)
+                      ? `Art's Charts server · ${b.door === "tailnet" ? "tailnet door" : "gateway door"}`
+                      : `Data backend · ${widgetCell(b)} · ${appCell(b)}`
+                  }
                   ariaLabel={b.name}
                   status={<ServiceStatus state={statusFor(b)} />}
                   endpoint={{ label: "Endpoint", value: <code>{b.baseUrl}</code> }}
-                  detail={<>{appNote(b)}{settingsApiFor(b)}</>}
+                  detail={
+                    isArtsCharts(b) ? (
+                      <>
+                        {b.door === "tailnet" ? <p className="bd-muted">{TAILNET_NOTE}</p> : null}
+                        {artsChartsConnections(backends).ignored.includes(b) ? (
+                          <p className="bd-muted">Ignored: only the first Art's Charts server is used.</p>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>{appNote(b)}{settingsApiFor(b)}</>
+                    )
+                  }
                   actions={
                     <>
                       <button type="button" className="bd-button bd-button--ghost" aria-label={`Edit ${b.name}`} onClick={() => startEdit(b)}>

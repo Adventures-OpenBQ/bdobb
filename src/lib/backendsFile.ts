@@ -42,6 +42,8 @@ function isStoredBackend(value: unknown): value is StoredBackend {
   if ("authLocation" in value && typeof value.authLocation !== "string") return false;
   if ("validateWidgets" in value && typeof value.validateWidgets !== "boolean") return false;
   if ("askOnStartup" in value && typeof value.askOnStartup !== "boolean") return false;
+  if ("kind" in value && typeof value.kind !== "string") return false;
+  if ("door" in value && typeof value.door !== "string") return false;
   return true;
 }
 

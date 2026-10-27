@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { __read, __reset, __seed, __writes } from "../test/memfs";
 import { __resetLoggerForTests } from "./logger";
 import { __resetJsonStoreForTests } from "./jsonStore";
-import { loadBackends, makeDefaultBackend, saveBackends } from "./backendsFile";
+import { isStoredBackendArray, loadBackends, makeDefaultBackend, saveBackends, withDefaults } from "./backendsFile";
 
 beforeEach(() => {
   __reset();
@@ -219,4 +219,12 @@ describe("makeDefaultBackend", () => {
     expect(b.baseUrl).toBe("https://YOUR-TAILNET.ts.net");
     expect("headerValue" in b).toBe(false);
   });
+});
+
+it("keeps an Art's Charts connection's kind and door, and rejects a non-string kind", () => {
+  const ok = { id: "c", name: "Charts", baseUrl: "https://door.example.com", kind: "arts-charts", door: "gateway" };
+  expect(isStoredBackendArray([ok])).toBe(true);
+  expect(withDefaults(ok as never)).toMatchObject({ kind: "arts-charts", door: "gateway" });
+  expect(isStoredBackendArray([{ ...ok, kind: 7 }])).toBe(false);
+  expect(isStoredBackendArray([{ ...ok, door: 7 }])).toBe(false);
 });

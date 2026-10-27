@@ -339,6 +339,8 @@ const NO_FETCH_TYPES = new Set([
   "advanced_charting",
   // live_chart's renderer asks `/series` for its first symbol only.
   "live_chart",
+  // Art's Charts (v12): the card asks the chart server itself, through the host's chartsFetch.
+  ...(__ARTS_CHARTS__ ? ["arts_chart"] : []),
   ...SSRM_TYPES,
 ]);
 
