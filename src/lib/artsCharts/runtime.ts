@@ -5,9 +5,12 @@ export { discoverArtsCharts } from "./widget";
 
 import { useBackendsStore } from "../../stores/backendsStore";
 import { reconfigure } from "../artsChartsHost";
+import { installChartsSocketShim } from "./desktopSocket";
 
 /** Configure once at startup and again on every backends change (spec §2). Returns the unsubscribe. */
 export function startArtsCharts(options: { viewer: boolean }): () => void {
+  const uninstall = import.meta.env.MODE === "browser" ? () => {} : installChartsSocketShim();
   reconfigure(options);
-  return useBackendsStore.subscribe((s, prev) => { if (s.backends !== prev.backends) reconfigure(options); });
+  const unsubscribe = useBackendsStore.subscribe((s, prev) => { if (s.backends !== prev.backends) reconfigure(options); });
+  return () => { unsubscribe(); uninstall(); };
 }

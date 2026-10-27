@@ -1,0 +1,7 @@
+{
+  "interfaceVersion": 12,
+  "repository": "openbq-docker",
+  "commit": "e5ceb5d47b18e850bdd91d87a2c2cae7cd253f34",
+  "path": "funnel-gateway/charts-policy.mjs",
+  "sha256": "df43ca0fdea127b5ba6dd9e7b83a635c1b310b373b63ca49c34125e13047b760"
+}

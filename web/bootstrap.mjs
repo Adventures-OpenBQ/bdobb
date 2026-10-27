@@ -30,8 +30,10 @@
  * is off or could not be read -- in which case the page must NOT save, because its
  * first save would replace whatever is really in the store with these defaults.
  */
-export function bootstrap(config, saved, { grid = false } = {}) {
+export function bootstrap(config, saved, { grid = false, charts = false } = {}) {
   const liveGrid = Boolean(grid && config.backend);
+  // Art's Charts: PREVIEW_CHARTS and a vendored policy that serves the /charts family.
+  const artsCharts = Boolean(charts && config.charts && config.backend);
   // The AI Library's defaults: Rita on the door's /ai (PREVIEW_RITA) and the stack's MCP server
   // on its /mcp (PREVIEW_MCP), at this origin.
   const services = aiDefaults(config);
@@ -53,6 +55,10 @@ export function bootstrap(config, saved, { grid = false } = {}) {
       }] : []),
       ...(config.temporalDB && config.backend ? [{
         id: "preview-temporal", name: "TemporalDB", baseUrl: config.origin + "/temporal",
+        authLocation: "header", validateWidgets: false,
+      }] : []),
+      ...(artsCharts ? [{
+        id: "preview-arts", name: "Art's Charts", baseUrl: config.origin + "/arts", kind: "arts-charts",
         authLocation: "header", validateWidgets: false,
       }] : []),
       ...(liveGrid ? [{
@@ -127,6 +133,16 @@ export function bootstrap(config, saved, { grid = false } = {}) {
                   params: { symbol: "AAPL,MSFT,NVDA,BTC-USD,EURUSD" },
                   layout: { x: 0, y: 0, w: 40, h: 14 },
                 },
+              ],
+            }]
+          : []),
+        ...(artsCharts
+          ? [{
+              id: "charts", name: "Art's Charts", cards: [
+                // No chart_id: the renderer creates the document on first use (spec section 8).
+                { id: "preview-arts-chart", widgetId: "arts_chart", backendId: "preview-arts",
+                  params: { symbol: "AAPL", interval: "1d", provider: "yfinance" },
+                  layout: { x: 0, y: 0, w: 40, h: 20 } },
               ],
             }]
           : []),

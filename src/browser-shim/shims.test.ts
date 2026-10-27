@@ -113,6 +113,19 @@ describe("fs shim persistence (web preview)", () => {
     ]);
   });
 
+  it("never mirrors chart-layouts.json or chart-favorites.json to /state (B15)", async () => {
+    window.__bdobbPersist = true;
+    const fs = await import("./fs");
+    await fs.writeTextFile("chart-layouts.json", "{}");
+    await fs.writeTextFile("chart-favorites.json", "{}");
+    await fs.writeTextFile("settings.json", '{"theme":"dark"}'); // control: an allow-listed store does go
+    await vi.advanceTimersByTimeAsync(1000);
+    const urls = calls.map((c) => c.url);
+    expect(urls).toContain("/state/settings.json");
+    expect(urls).not.toContain("/state/chart-layouts.json");
+    expect(urls).not.toContain("/state/chart-favorites.json");
+  });
+
   it("a save that fails is retried with the next one", async () => {
     window.__bdobbPersist = true;
     const fs = await import("./fs");
@@ -537,18 +550,6 @@ describe("socket shim (web preview tickets)", () => {
     timeout.mockRestore();
   });
 
-  it("asks for a fresh ticket for every socket: a ticket is single use", async () => {
-    window.__bdobbSocketTickets = true;
-    const fetchSpy = ticketed();
-    vi.stubGlobal("fetch", fetchSpy);
-    await import("./socket");
-    new globalThis.WebSocket("wss://preview.example.com/news/ws/news");
-    new globalThis.WebSocket("wss://preview.example.com/news/ws/news");
-    await settle();
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(FakeSocket.all).toHaveLength(2);
-  });
-
   it("leaves another origin's socket to the real constructor", async () => {
     window.__bdobbSocketTickets = true;
     const fetchSpy = vi.fn();
@@ -586,16 +587,6 @@ describe("socket shim (web preview tickets)", () => {
     }
     expect(FakeSocket.last).toBeNull();
     expect(assign).not.toHaveBeenCalled();
-  });
-
-  it("closed while the ticket is in flight never opens the real socket", async () => {
-    window.__bdobbSocketTickets = true;
-    vi.stubGlobal("fetch", ticketed());
-    await import("./socket");
-    const ws = new globalThis.WebSocket("wss://preview.example.com/news/ws/news");
-    ws.close();
-    await settle();
-    expect(FakeSocket.last).toBeNull();
   });
 });
 

@@ -75,8 +75,12 @@ export function readConfig(env = process.env) {
   if (env.PREVIEW_MCP !== undefined && !["true", "false"].includes(env.PREVIEW_MCP)) throw new Error("PREVIEW_MCP: true or false");
   const mcp = env.PREVIEW_MCP === "true";
   if (mcp && !backend) throw new Error("PREVIEW_MCP requires BACKEND_GATEWAY_ORIGIN");
+  // Art's Charts through the door (part 1's /charts family; spec B14). Only with a gateway that has "charts": true.
+  if (env.PREVIEW_CHARTS !== undefined && !["true", "false"].includes(env.PREVIEW_CHARTS)) throw new Error("PREVIEW_CHARTS: true or false");
+  const charts = env.PREVIEW_CHARTS === "true";
+  if (charts && !backend) throw new Error("PREVIEW_CHARTS requires BACKEND_GATEWAY_ORIGIN");
   return {
-    temporalDB, rita, mcp, tableRelayToken, ssrmRoutes, tableTimeoutMs, ssrmTimeoutMs,
+    temporalDB, rita, mcp, charts, tableRelayToken, ssrmRoutes, tableTimeoutMs, ssrmTimeoutMs,
     origin: origin(env.APP_ORIGIN, "APP_ORIGIN"), allowedIds: new Set(ids), feeds, backend, token,
     secret: env.AUTH_SECRET, githubId: env.AUTH_GITHUB_ID, githubSecret: env.AUTH_GITHUB_SECRET,
     epoch: env.SESSION_EPOCH,

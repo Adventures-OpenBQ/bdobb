@@ -3,6 +3,7 @@
 
 import { fetch } from "./http";
 import "./registry";
+import { makeTicketSocket } from "../lib/ticketSocket";
 
 /**
  * Web preview only. A socket relayed through a Vercel Function bills function
@@ -32,70 +33,15 @@ import "./registry";
  * The ticket fetch goes through the http shim, so a lapsed session (a same-origin
  * 401) lands on the sign-in page exactly as every other request does.
  */
-const Native = globalThis.WebSocket;
-
-type Handler<E> = ((event: E) => void) | null;
-
 const TICKET_TIMEOUT_MS = 10_000;
-
-class TicketSocket {
-  static readonly CONNECTING = 0;
-  static readonly OPEN = 1;
-  static readonly CLOSING = 2;
-  static readonly CLOSED = 3;
-  onopen: Handler<Event> = null;
-  onmessage: Handler<MessageEvent> = null;
-  onerror: Handler<Event> = null;
-  onclose: Handler<CloseEvent> = null;
-  private real: WebSocket | null = null;
-  private done = false;
-
-  constructor(url: string | URL, protocols?: string | string[]) {
-    const target = new URL(url, window.location.href);
-    // Anything that is not this origin's own socket is none of the preview's business.
-    if (target.host !== window.location.host) return new Native(url, protocols) as unknown as TicketSocket;
-    // A deadline of its own: a preview that accepts the request and never answers
-    // would otherwise leave the caller CONNECTING for good, with no close to retry on.
-    fetch("/socket-ticket?for=" + encodeURIComponent(target.pathname + target.search), {
-      cache: "no-store",
-      signal: AbortSignal.timeout(TICKET_TIMEOUT_MS),
-    })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(String(response.status)))))
-      .then((ticket: { url: string }) => {
-        if (this.done) return;
-        const real = new Native(ticket.url);
-        this.real = real;
-        real.onopen = (event) => this.onopen?.(event);
-        real.onmessage = (event) => this.onmessage?.(event);
-        real.onerror = (event) => this.onerror?.(event);
-        real.onclose = (event) => {
-          this.done = true;
-          this.onclose?.(event);
-        };
-      })
-      .catch(() => {
-        // A drop, as far as the caller can tell: useReconnectingSocket retries it
-        // (the News wire after its fixed RECONNECT_MS, the live grid up its backoff
-        // ladder), with a fresh ticket.
-        if (this.done) return;
-        this.done = true;
-        this.onclose?.(new Event("close") as CloseEvent);
-      });
-  }
-
-  get readyState(): number {
-    return this.real ? this.real.readyState : this.done ? TicketSocket.CLOSED : TicketSocket.CONNECTING;
-  }
-
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
-    this.real?.send(data);
-  }
-
-  close(): void {
-    if (this.real) return this.real.close();
-    // Still waiting on the ticket: never open the real socket at all.
-    this.done = true;
-  }
+if (window.__bdobbSocketTickets) {
+  globalThis.WebSocket = makeTicketSocket({
+    native: globalThis.WebSocket,
+    matches: (u) => u.host === window.location.host,
+    resolve: async (u) => {
+      const r = await fetch("/socket-ticket?for=" + encodeURIComponent(u.pathname + u.search), { cache: "no-store", signal: AbortSignal.timeout(TICKET_TIMEOUT_MS) });
+      if (!r.ok) throw new Error(String(r.status));
+      return ((await r.json()) as { url: string }).url;
+    },
+  });
 }
-
-if (window.__bdobbSocketTickets) globalThis.WebSocket = TicketSocket as unknown as typeof WebSocket;

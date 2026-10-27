@@ -21,6 +21,7 @@ import { handleAuth, identity } from "./auth.mjs";
 // refused.
 import * as vendoredPolicy from "./policy.mjs";
 import { temporalRoute, temporalStatus } from "./temporal-policy.mjs";
+import { chartsRoute, chartsSocketTarget, chartsStatus } from "./charts-policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 
 const MIME = {
@@ -118,7 +119,7 @@ export function gridSocketServed(policy, origin) {
 /** Dependency injection is test-only code composition, never an environment auth bypass. */
 export function createPreviewServer({ config: supplied, assets = resolve("dist/web"),
   fetchUpstream = fetch, connectUpstream = (url, options) => new WebSocket(url, options),
-  policy = vendoredPolicy } = {}) {
+  policy = vendoredPolicy, sseDeadlineMs = 290000 } = {}) {
   const { newsSubscription, socketTarget, socketTicket, stateFile, upstreamPath } = policy;
   const config = () => supplied ?? readConfig();
   let tableInflight = 0, tableControlInflight = 0;
@@ -199,6 +200,65 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff", "X-Accel-Buffering": "no" });
       await pipeline(Readable.fromWeb(response.body), res);
+    } finally { clearTimeout(timer); res.off("close", disconnect); }
+  }
+  /**
+   * Art's Charts through the door (spec B14): /arts/<path> -> <gateway>/<path>, only what the
+   * vendored charts-policy admits. The query is re-serialised by the policy; the gateway token is
+   * added here; the browser's Cookie and Authorization never go upstream. JSON bodies capped at
+   * 2 MiB; the snapshot PNGs are the only other body; /charts/events streams within sseDeadlineMs (290 s, under the function's 300 s maxDuration, so the clean end is ours)
+   * and then ends, so the client reconnects and refetches (S6). Token-only routes and the study
+   * socket are never relayed (W3; the socket opens on the gateway on a ticket).
+   */
+  async function relayCharts(req, res, url, cfg) {
+    if (!cfg.charts) return reply(res, 404);
+    // Concatenated onto the origin, never resolved against it: "/arts//charts" must stay a
+    // path ("//charts"), not become the host "charts" of a protocol-relative reference.
+    const inner = new URL(cfg.origin + url.pathname.slice("/arts".length) + url.search);
+    const route = inner.pathname === "/" ? null : chartsRoute(inner, req.method);
+    // /charts/mcp (kind "mcp") is relayMcp's, routed before this; never here.
+    if (!route || route.kind === "mcp") return reply(res, 404);
+    const stream = route.kind === "sse", binary = route.kind === "png";
+    if (req.method !== "GET" && foreign(req, cfg)) return reply(res, 403);
+    if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res, 403);
+    let body;
+    if (route.body) {
+      body = await jsonBody(req, 2 * 1024 * 1024);
+      if (typeof body === "number") return reply(res, body);
+    } else if (req.headers["transfer-encoding"] || Number(req.headers["content-length"] ?? 0) !== 0) return reply(res, 405);
+    // Nothing of the browser's goes upstream but the body: no X-Updated-By (part 1: every door write is "user").
+    const headers = { ...gatewayHeaders(cfg), ...(stream ? { Accept: "text/event-stream" } : {}),
+      ...(binary ? { Accept: "image/png" } : {}), ...(body !== undefined ? { "Content-Type": "application/json" } : {}) };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), stream ? sseDeadlineMs : 12000);
+    const disconnect = () => { if (!res.writableEnded) controller.abort(); };
+    res.once("close", disconnect);
+    try {
+      const response = await fetchUpstream(cfg.backend + route.path, { method: req.method, headers, body, redirect: "error", signal: controller.signal });
+      const type = response.headers.get("content-type") ?? "";
+      if (stream) {
+        if (!response.ok || !response.body || !/^text\/event-stream(?:\s*;|$)/i.test(type)) { await response.body?.cancel(); return reply(res, 502); }
+        res.writeHead(200, { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Accel-Buffering": "no" });
+        // pipe, not pipeline: pipeline destroys the response when the source is cut, which the
+        // client sees as a broken stream. At the deadline (or an upstream error) the source is
+        // destroyed and the response is ended cleanly, so the client reconnects.
+        const source = Readable.fromWeb(response.body);
+        source.on("error", () => {});
+        controller.signal.addEventListener("abort", () => source.destroy(), { once: true });
+        source.pipe(res);
+        await new Promise(done => { source.once("close", done); res.once("close", done); });
+        if (!res.writableEnded) res.end();
+        return;
+      }
+      // The door's own status rule (chartsStatus), applied again here: a 409's JSON body is the
+      // current document, which the client needs; anything else, or a wrong type, is a 502.
+      // A 401 never passes: the page's http shim reads any same-origin 401 as signed-out and bounces to
+      // sign-in, which loops on a rotated gateway token. It is a 502 here (cf. temporalStatus).
+      const status = response.status === 401 ? 502 : chartsStatus(response.status);
+      if (status === 204) { await response.body?.cancel(); return reply(res, 204); }
+      const want = binary && status === 200 ? /^image\/png$/i : /^application\/json(?:\s*;|$)/i;
+      if (status === 502 || !want.test(type)) { await response.body?.cancel(); return reply(res, 502); }
+      return reply(res, status, await boundedBody(response.body, 2 * 1024 * 1024), want.source.includes("png") ? MIME[".png"] : MIME[".json"]);
     } finally { clearTimeout(timer); res.off("close", disconnect); }
   }
   /**
@@ -401,13 +461,14 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         }
         return reply(res, status, await boundedBody(response.body, 2 * 1024 * 1024), MIME[".json"]);
       }
+      if (url.pathname === "/arts" || url.pathname.startsWith("/arts/")) return await relayCharts(req, res, url, cfg);
       // No /ai/v1/query, and no /ai family at all: openbq-docker's gateway serves
       // /api, /news and /state only (ruling R3a), so Rita is not on the preview. A POST
       // there falls through to the 405 below.
       if (req.method !== "GET") return reply(res, 405);
       if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res, 403);
       if (url.pathname === "/preview-bootstrap.js") {
-        return reply(res, 200, bootstrap(cfg, await savedState(cfg, who), { grid: gridSocketServed(policy, cfg.origin) }), MIME[".js"]);
+        return reply(res, 200, bootstrap(cfg, await savedState(cfg, who), { grid: gridSocketServed(policy, cfg.origin), charts: chartsRoute(new URL("/ta_registry", cfg.origin), "GET") !== null }), MIME[".js"]);
       }
       // A ticket is what a signed-in browser shows the gateway instead of the machine
       // token it must never hold (policy.mjs socketTicket). It names one validated socket
@@ -418,6 +479,12 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       // here. A grid or reference ticket needs only the gateway; a news ticket needs feeds too.
       if (url.pathname === "/socket-ticket") {
         const asked = url.searchParams.getAll("for");
+        if (cfg.charts && asked.length === 1 && asked[0].startsWith("/arts/")) {
+          const target = chartsSocketTarget(asked[0].slice("/arts".length), cfg.origin);
+          if (!target || [...url.searchParams.keys()].length !== 1) return reply(res, 404);
+          const ticket = socketTicket(cfg.token, target);
+          return reply(res, 200, JSON.stringify({ url: cfg.backend.replace("https:", "wss:") + target + (target.includes("?") ? "&" : "?") + "ticket=" + ticket }), MIME[".json"]);
+        }
         const target = asked.length === 1 && [...url.searchParams.keys()].length === 1
           ? socketTarget(asked[0], cfg.origin) : null;
         if (!target) return reply(res, 404);
