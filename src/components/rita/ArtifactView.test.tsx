@@ -17,6 +17,14 @@ vi.mock("../../lib/plotly", () => ({
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 
+const snapshotProps: unknown[] = [];
+vi.mock("@adventures-openbq/arts-charts", () => ({
+  ArtsChartsSnapshot: (props: { content: { title: string } }) => {
+    snapshotProps.push(props);
+    return <div data-testid="arts-snapshot">{props.content.title}</div>;
+  },
+}));
+
 const logError = vi.fn((_message: string) => Promise.resolve());
 vi.mock("../../lib/logger", () => ({ logError: (message: string) => logError(message) }));
 
@@ -124,5 +132,20 @@ describe("ArtifactView", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Tool call failed: mcp.example · equity_price_historical (via call_tool) — TOOL_DISABLED: equity_price_historical is turned off; it was not sent.",
     );
+  });
+});
+
+describe("an Art's Charts snapshot artifact (v12 part 3)", () => {
+  it("renders through the package's ArtsChartsSnapshot with the artifact's content, and nothing else", async () => {
+    const content = {
+      schema: "arts-chart-snapshot/1", chart_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      snapshot_id: "11111111-2222-4333-8444-555555555555", revision: 12, width: 1200, height: 700,
+      created_at: "2026-10-26T14:30:00Z", title: "Apple daily", symbol: "AAPL", interval: "1d",
+    };
+    render(<ArtifactView artifact={{ type: "arts_chart_snapshot", uuid: content.snapshot_id, name: "AAPL · 1d", content }} />);
+    expect(await screen.findByTestId("arts-snapshot")).toHaveTextContent("Apple daily");
+    expect(snapshotProps.at(-1)).toEqual({ content });
+    expect(screen.getByRole("heading", { name: "AAPL · 1d" })).toBeInTheDocument();
+    expect(document.querySelector("pre")).toBeNull();
   });
 });

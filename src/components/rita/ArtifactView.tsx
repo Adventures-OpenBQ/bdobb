@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import type { ClientArtifact } from "../../lib/agent/types";
 import { isPlotlyFigure, type PlotlyFigure } from "../../lib/chartShapes";
 import { isRecord } from "../../lib/isRecord";
@@ -11,6 +11,17 @@ import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 import { DATA_IMAGE, LOCAL_IMAGE, MarkdownRenderer } from "../renderers/MarkdownRenderer";
 
 export const MAX_ARTIFACT_ROWS = 50;
+
+/**
+ * v12 part 3: a chart snapshot Rita took. The package fetches the PNG through
+ * the host's chartsFetch by the artifact's two ids and shows a data: URL, so
+ * ARTIFACT_CSP and the inert-image rules stay as they are. null under
+ * VITE_ARTS_CHARTS=0, so the package never enters that bundle and the
+ * artifact falls to the JSON view (B2, R12).
+ */
+const ArtsChartsSnapshot = __ARTS_CHARTS__
+  ? lazy(() => import("@adventures-openbq/arts-charts").then((m) => ({ default: m.ArtsChartsSnapshot })))
+  : null;
 const numberFormat = new Intl.NumberFormat();
 
 function cell(v: unknown): string {
@@ -156,6 +167,13 @@ function Body({ artifact }: { artifact: ClientArtifact }) {
   }
   if (type === "html" && typeof content === "string") {
     return <ArtifactHtml name={name} content={content} />;
+  }
+  if (__ARTS_CHARTS__ && ArtsChartsSnapshot && type === "arts_chart_snapshot") {
+    return (
+      <Suspense fallback={<p className="artifact-note">Loading the snapshot…</p>}>
+        <ArtsChartsSnapshot content={content} />
+      </Suspense>
+    );
   }
   return <pre>{JSON.stringify(content, null, 2)}</pre>;
 }
