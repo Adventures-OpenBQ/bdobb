@@ -96,10 +96,15 @@ const SEEDS = import.meta.glob("../skills/*/SKILL.md", {
   eager: true,
 }) as Record<string, string>;
 
+/** v12: the Art's Charts skill, from the vendored package, only in builds that include it (B11). */
+const ARTS_SEEDS = (__ARTS_CHARTS__
+  ? import.meta.glob("../../vendor/arts-charts/skills/*/SKILL.md", { query: "?raw", import: "default", eager: true })
+  : {}) as Record<string, string>;
+
 export function bundledSkills(): Skill[] {
-  return Object.entries(SEEDS)
+  return [...Object.entries(SEEDS), ...Object.entries(ARTS_SEEDS)]
     .flatMap(([path, text]) => {
-      const slug = path.slice("../skills/".length, -"/SKILL.md".length);
+      const slug = path.split("/").at(-2) as string;
       const skill = parseSkillFile(slug, text);
       return skill ? [skill] : [];
     })

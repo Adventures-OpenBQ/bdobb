@@ -238,3 +238,22 @@ test("the vendored charts policy matches its receipt and the paired commit", () 
   assert.equal(source.split("\n")[0], `// vendored from openbq-docker ${receipt.commit} ${receipt.path} sha256:${receipt.sha256}`);
   assert.equal(createHash("sha256").update(source.slice(source.indexOf("\n") + 1)).digest("hex"), receipt.sha256);
 });
+
+test("POST /arts/charts/mcp relays one JSON-RPC message with the session headers and the principal", async (t) => {
+  const calls = [];
+  const { call } = await fixture(t, { config: readConfig({ ...charts, PREVIEW_RITA: "true" }), fetchUpstream: async (url, o) => { calls.push({ url, o });
+    return new Response('{"jsonrpc":"2.0","id":1,"result":{}}', { headers: { "Content-Type": "application/json", "Mcp-Session-Id": "s-1" } }); } });
+  const res = await call("/arts/charts/mcp", { method: "POST", body: '{"jsonrpc":"2.0","id":1,"method":"tools/list"}',
+    headers: { Cookie: await cookie(), Origin: env.APP_ORIGIN, "Content-Type": "application/json", "Mcp-Session-Id": "s-1", "MCP-Protocol-Version": "2025-06-18" } });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers["mcp-session-id"], "s-1");
+  assert.equal(calls[0].url, env.BACKEND_GATEWAY_ORIGIN + "/charts/mcp");
+  assert.equal(calls[0].o.headers["X-Preview-Principal"], "github:42");
+  assert.equal(calls[0].o.headers.Authorization, "Bearer " + env.BACKEND_GATEWAY_TOKEN);
+});
+
+test("the seed registers Art's Charts MCP only with PREVIEW_CHARTS and PREVIEW_RITA both on", () => {
+  const both = bootstrap(readConfig({ ...charts, PREVIEW_RITA: "true" }), null, { charts: true });
+  assert.match(both, /preview\.example\.com\/arts\/charts\/mcp/);
+  assert.doesNotMatch(bootstrap(readConfig(charts), null, { charts: true }), /\/arts\/charts\/mcp/);
+});

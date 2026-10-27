@@ -85,10 +85,11 @@ describe("parseSkillFile / formatSkillFile", () => {
 });
 
 describe("bundledSkills", () => {
-  it("ships this project's own skills (no copyright line) and the three openbb-html skills (OpenBB's, with one), sorted", () => {
+  it("ships this project's own skills, the three openbb-html skills (OpenBB's copyright) and, with Art's Charts, its skill (its own copyright), sorted", () => {
     const seeds = bundledSkills();
     expect(seeds.map((s) => s.slug)).toEqual([
       "arrange-table",
+      ...(__ARTS_CHARTS__ ? ["arts-charts"] : []),
       "build-dashboard",
       "openbb-html-chart",
       "openbb-html-report",
@@ -99,6 +100,7 @@ describe("bundledSkills", () => {
       expect(s.content.length).toBeGreaterThan(100);
       // The vendored OpenBB skills carry a copyright line; this project's own do not.
       if (s.slug.startsWith("openbb-html-")) expect(s.extra.copyright).toMatch(/OpenBB/);
+      else if (s.slug === "arts-charts") expect(s.extra.copyright).toMatch(/SecretoftheUniverse/);
       else expect(s.extra.copyright).toBeUndefined();
     }
   });
@@ -109,6 +111,7 @@ describe("loadSkills", () => {
     const loaded = await loadSkills();
     expect(loaded.map((s) => s.slug)).toEqual([
       "arrange-table",
+      ...(__ARTS_CHARTS__ ? ["arts-charts"] : []),
       "build-dashboard",
       "openbb-html-chart",
       "openbb-html-report",
@@ -186,4 +189,8 @@ it("bundles provider-preserving recovery instead of inventing a fallback operato
   expect(skill.content).toContain('aggregation_intent: "user_override"');
   expect(skill.content).toMatch(/date category does not mean.*only/i);
   expect(skill.content).toMatch(/only if the user explicitly excludes/i);
+});
+
+it.runIf(__ARTS_CHARTS__)("bundles the arts-charts skill from the vendored package in builds that include Art's Charts", () => {
+  expect(bundledSkills().map((s) => s.slug)).toContain("arts-charts");
 });

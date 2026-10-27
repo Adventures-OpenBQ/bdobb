@@ -267,7 +267,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
    * this layer adds the session's GitHub id, carries MCP's own two headers each way and nothing
    * else of the browser's, and asks of the POST what /state's writes ask.
    */
-  async function relayMcp(req, res, url, cfg, who) {
+  async function relayMcp(req, res, url, cfg, who, upstream = "/mcp") {
     if (url.pathname !== "/mcp" || url.search) return reply(res, 404);
     if (req.method !== "POST") return reply(res, 405);
     if (foreign(req, cfg)) return reply(res, 403);
@@ -281,7 +281,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
     const disconnect = () => { if (!res.writableEnded) controller.abort(); };
     res.once("close", disconnect);
     try {
-      const response = await fetchUpstream(`${cfg.backend}/mcp`, { method: "POST", body, redirect: "error", signal: controller.signal,
+      const response = await fetchUpstream(`${cfg.backend}${upstream}`, { method: "POST", body, redirect: "error", signal: controller.signal,
         headers: { ...gatewayHeaders(cfg), Accept: "application/json, text/event-stream", "Content-Type": "application/json",
           "X-Preview-Principal": `github:${who.id}`, ...(session ? { "Mcp-Session-Id": session } : {}), ...(version ? { "MCP-Protocol-Version": version } : {}) } });
       if (response.status === 202) { await response.body?.cancel(); return reply(res, 202); }
@@ -461,6 +461,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         }
         return reply(res, status, await boundedBody(response.body, 2 * 1024 * 1024), MIME[".json"]);
       }
+      if (cfg.charts && url.pathname === "/arts/charts/mcp") return await relayMcp(req, res, new URL("/mcp" + url.search, cfg.origin), cfg, who, "/charts/mcp");
       if (url.pathname === "/arts" || url.pathname.startsWith("/arts/")) return await relayCharts(req, res, url, cfg);
       // No /ai/v1/query, and no /ai family at all: openbq-docker's gateway serves
       // /api, /news and /state only (ruling R3a), so Rita is not on the preview. A POST

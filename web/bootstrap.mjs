@@ -36,7 +36,7 @@ export function bootstrap(config, saved, { grid = false, charts = false } = {}) 
   const artsCharts = Boolean(charts && config.charts && config.backend);
   // The AI Library's defaults: Rita on the door's /ai (PREVIEW_RITA) and the stack's MCP server
   // on its /mcp (PREVIEW_MCP), at this origin.
-  const services = aiDefaults(config);
+  const services = aiDefaults(config, { charts });
   const seed = {
     "settings.json": JSON.stringify(services),
     "backends.json": JSON.stringify([
@@ -189,13 +189,18 @@ document.addEventListener("DOMContentLoaded",()=>{
  * What the AI Library starts with on the preview: the door's Rita and its MCP server -- what
  * VITE_DEFAULT_RITA_URL / VITE_DEFAULT_MCP_URL give a desktop build, MCP's writing tools off.
  */
-function aiDefaults(config) {
+function aiDefaults(config, { charts = false } = {}) {
   const out = {};
   if (config.rita && config.backend) out.ritaUrl = config.origin + "/ai";
   if (config.mcp && config.backend) {
     const url = config.origin + "/mcp";
     out.mcpServers = [{ id: "openbq-mcp", name: "OpenBQ MCP", url, enabled: true }];
     out.mcpDisabledTools = { [url]: ["install_skill", "run_pipeline"] };
+  }
+  // Q8 default: seeded only where the saved MCP list is empty (withServices); a saved list is the user's own.
+  if (charts && config.charts && config.rita && config.backend) {
+    out.mcpServers = [...(out.mcpServers ?? []), { id: "arts-charts", name: "Art's Charts", url: config.origin + "/arts/charts/mcp", enabled: true,
+      authType: "token", source: { kind: "backend", backendId: "preview-arts" } }];
   }
   return out;
 }
