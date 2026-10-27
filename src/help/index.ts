@@ -26,11 +26,17 @@ export type HelpSet = "quick" | "manual";
  * dynamic import's ceremony. Vite serves both under vitest too -- verified by
  * running it -- so there is no test-only stub.
  */
-const RAW = import.meta.glob("./topics/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const RAW = {
+  ...import.meta.glob(["./topics/*.md", "!./topics/arts-charts.md"], {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }),
+  // v12: gated on the build flag (spec §7); part 4 writes the content.
+  ...(__ARTS_CHARTS__
+    ? import.meta.glob("./topics/arts-charts.md", { query: "?raw", import: "default", eager: true })
+    : {}),
+} as Record<string, string>;
 
 const PREFIX = "./topics/";
 const SUFFIX = ".md";
@@ -47,7 +53,7 @@ export const GLOBBED_SLUGS: string[] = Object.keys(RAW)
  * The reading order, which is not the glob's alphabetical one. This array is
  * the truth; the test fails if it and the directory disagree either way.
  */
-export const TOPIC_ORDER = [
+export const TOPIC_ORDER: readonly string[] = [
   "getting-started",
   "the-left-rail",
   "dashboards-and-folders",
@@ -62,6 +68,7 @@ export const TOPIC_ORDER = [
   "tables",
   "statement-view",
   "charts",
+  ...(__ARTS_CHARTS__ ? ["arts-charts"] : []),
   "calendar-view",
   "linked-widgets",
   "documents-pdf-and-files",
@@ -79,7 +86,7 @@ export const TOPIC_ORDER = [
   "keyboard-shortcuts",
   "ipad",
   "credits",
-] as const satisfies readonly string[];
+];
 
 /**
  * The first ATX H1. A file without one is a bug in the file, so it throws at

@@ -92,6 +92,10 @@ export async function openChartCard(chartId: string): Promise<void> {
     const card = t.cards.find((c) => c.widgetId === "arts_chart" && c.params.chart_id === chartId);
     if (card) { setActive(d.id); setActiveTab(d.id, t.id); useArtsChartsStore.getState().revealCard(card.id); return; }
   }
+  // B12: a link can name a chart that is not there. Ask first, so the add path never makes a card for a 404.
+  try {
+    if ((await chartsFetch(`/charts/${chartId}`)).status === 404) { useArtsChartsStore.getState().setNotice("That chart is not on the Art's Charts server."); return; }
+  } catch { /* unreachable: add it, and the card reports its own error */ }
   await addChartToDashboard(chartId);
 }
 

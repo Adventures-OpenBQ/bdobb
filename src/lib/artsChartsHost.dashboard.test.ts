@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@adventures-openbq/arts-charts", () => ({ configureArtsCharts: vi.fn() }));
+const httpFetch = vi.hoisted(() => vi.fn());
+vi.mock("@tauri-apps/plugin-http", () => ({ fetch: httpFetch }));
 const { __reset } = await import("../test/memfs");
 const { __resetJsonStoreForTests } = await import("./jsonStore");
 const { useBackendsStore } = await import("../stores/backendsStore");
@@ -20,7 +22,9 @@ function resetDashboards(): void {
     dashboards: [], activeId: null, previousId: null, activeTabId: null, activeTabIds: {},
     maximizedCardId: null, viewer: false, pendingCardRemoval: null,
   });
-  useArtsChartsStore.setState({ reveal: null });
+  useArtsChartsStore.setState({ reveal: null, notice: null });
+  httpFetch.mockReset();
+  httpFetch.mockResolvedValue(new Response("{}", { status: 200 }));
 }
 const allCards = () => useDashboardStore.getState().dashboards.flatMap((d) => d.tabs.flatMap((t) => t.cards));
 
@@ -52,6 +56,19 @@ describe("B8", () => {
   it("openChart adds a card when none shows that chart", async () => {
     await openChartCard(ID);
     expect(allCards().filter((c) => c.params.chart_id === ID)).toHaveLength(1);
+  });
+  it("openChart asks the server first, and a 404 adds nothing and says so", async () => {
+    httpFetch.mockResolvedValue(new Response("{}", { status: 404 }));
+    await openChartCard(ID);
+    expect(String(httpFetch.mock.calls[0][0])).toBe(`https://door.example.com/charts/${ID}`);
+    expect(allCards()).toHaveLength(0);
+    expect(useDashboardStore.getState().dashboards).toHaveLength(0);
+    expect(useArtsChartsStore.getState().notice).toBe("That chart is not on the Art's Charts server.");
+  });
+  it("openChart on a chart already on a card does not ask the server", async () => {
+    await addChartToDashboard(ID);
+    await openChartCard(ID);
+    expect(httpFetch).not.toHaveBeenCalled();
   });
   it("the main window's host with a connection offers both", () => {
     expect(typeof buildHost({ viewer: false }).addToDashboard).toBe("function");

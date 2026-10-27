@@ -13,6 +13,7 @@
     "core:window:allow-set-theme",
     "opener:default",
     "dialog:default",
+    "deep-link:default",
     "fs:default",
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",

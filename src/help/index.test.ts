@@ -73,6 +73,7 @@ describe("the help topic index", () => {
       "tables",
       "statement-view",
       "charts",
+      ...(__ARTS_CHARTS__ ? ["arts-charts"] : []),
       "calendar-view",
       "linked-widgets",
       "documents-pdf-and-files",
@@ -91,6 +92,10 @@ describe("the help topic index", () => {
       "ipad",
       "credits",
     ]);
+  });
+
+  it.skipIf(!__ARTS_CHARTS__)("lists Art's Charts after charts, in builds that include it", () => {
+    expect(TOPIC_ORDER.indexOf("arts-charts")).toBe(TOPIC_ORDER.indexOf("charts") + 1);
   });
 
   it("orders the v6 Rita topics after settings and keeps the tables cross-reference honest", () => {

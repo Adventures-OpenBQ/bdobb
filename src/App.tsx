@@ -33,6 +33,7 @@ import { logError, logInfo } from "./lib/logger";
 import { servedTemporalApp } from "./lib/temporal/portable";
 import { firstDashboardInReadingOrder, focusDashboardInWorkspace } from "./lib/workspaceFocus";
 import { useAgentDiscovery } from "./stores/agentDiscoveryStore";
+import { useArtsChartsStore } from "./stores/artsChartsStore";
 import { useChatStore } from "./stores/chatStore";
 import { heldTab, useDashboardStore } from "./stores/dashboardStore";
 import { saveImportedMcpServers } from "./stores/importMcpServers";
@@ -130,6 +131,17 @@ function StartupErrorBanner({ labels }: { labels: string[] }) {
       {`Failed to load on startup: ${labels.join(", ")}. The app is still usable, but some data may be missing until this is fixed and the app restarted.`}
     </p>
   );
+}
+
+/** B12: the one line a link leaves when it cannot open. Transient, and never blocks. */
+function ArtsLinkNotice() {
+  const notice = useArtsChartsStore((s) => s.notice);
+  useEffect(() => {
+    if (notice === null) return undefined;
+    const t = setTimeout(() => useArtsChartsStore.getState().setNotice(null), 8000);
+    return () => clearTimeout(t);
+  }, [notice]);
+  return notice === null ? null : <p className="startup-error-banner" role="status">{notice}</p>;
 }
 
 export default function App() {
@@ -675,6 +687,7 @@ export default function App() {
                 is what a user reads past to reach them. */}
             <AgentEditBar />
             <StartupErrorBanner labels={startupErrors} />
+            <ArtsLinkNotice />
             {/* v8 locked widgets: siblings of the grid in .dashboard-area's
                 column, mounted once for the window's whole life, so a locked
                 card keeps its data and scroll across every dashboard, tab and

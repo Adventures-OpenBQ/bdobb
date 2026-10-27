@@ -106,6 +106,7 @@ function pdfStandardFonts(): Plugin {
  * production bundle by construction. See scripts/browser.mjs.
  */
 const browserShims = {
+  "@tauri-apps/plugin-deep-link": here("./src/browser-shim/deepLink.ts"),
   "@tauri-apps/plugin-dialog": here("./src/browser-shim/dialog.ts"),
   "@tauri-apps/plugin-fs": here("./src/browser-shim/fs.ts"),
   "@tauri-apps/plugin-http": here("./src/browser-shim/http.ts"),

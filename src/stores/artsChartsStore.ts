@@ -8,7 +8,8 @@
  * `focusNonce` counts the asks, so the rail can remount the inbox for a repeat of the same id
  * (the package opens an item once per mount), and a bump drops the link: it named the old
  * connection's inbox. `reveal` is openChart's scroll-and-flash request (B8); the card that
- * handles it clears it, so a later remount does not replay it.
+ * handles it clears it, so a later remount does not replay it. `notice` is the one line a link
+ * leaves when it cannot open (B12); App shows it briefly.
  */
 import { create } from "zustand";
 
@@ -17,6 +18,8 @@ type State = {
   focusItem: string | null;
   focusNonce: number;
   reveal: { cardId: string; nonce: number } | null;
+  notice: string | null;
+  setNotice: (notice: string | null) => void;
   bump: () => void;
   focusInbox: (id: string | null) => void;
   revealCard: (cardId: string) => void;
@@ -29,6 +32,8 @@ export const useArtsChartsStore = create<State>((set) => ({
   focusItem: null,
   focusNonce: 0,
   reveal: null,
+  notice: null,
+  setNotice: (notice) => set({ notice }),
   bump: () => set((s) => ({ epoch: s.epoch + 1, focusItem: null })),
   focusInbox: (focusItem) => set((s) => ({ focusItem, focusNonce: focusItem === null ? s.focusNonce : s.focusNonce + 1 })),
   revealCard: (cardId) => set({ reveal: { cardId, nonce: ++nonce } }),

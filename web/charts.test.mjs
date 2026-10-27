@@ -16,6 +16,7 @@ import { readConfig, SESSION_COOKIE } from "./config.mjs";
 import { chartsRoute } from "./charts-policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 import { createPreviewServer } from "./server.mjs";
+import { authConfig } from "./auth.mjs";
 
 const env = {
   APP_ORIGIN: "https://preview.example.com",
@@ -252,8 +253,45 @@ test("POST /arts/charts/mcp relays one JSON-RPC message with the session headers
   assert.equal(calls[0].o.headers.Authorization, "Bearer " + env.BACKEND_GATEWAY_TOKEN);
 });
 
+test("the preview CSP keeps img-src data: blob: and gains only the gateway's wss: origin in connect-src", async (t) => {
+  const { call } = await fixture(t);
+  const response = await call("/", { headers: { cookie: await cookie() } });
+  const csp = response.headers["content-security-policy"];
+  assert.match(csp, /img-src 'self' data: blob:;/);
+  assert.match(csp, /connect-src 'self' wss:\/\/preview\.example\.com wss:\/\/gateway\.example\.com https:\/\/rss\.nytimes\.com;/);
+});
+
 test("the seed registers Art's Charts MCP only with PREVIEW_CHARTS and PREVIEW_RITA both on", () => {
   const both = bootstrap(readConfig({ ...charts, PREVIEW_RITA: "true" }), null, { charts: true });
   assert.match(both, /preview\.example\.com\/arts\/charts\/mcp/);
   assert.doesNotMatch(bootstrap(readConfig(charts), null, { charts: true }), /\/arts\/charts\/mcp/);
+});
+
+test("the page is served at /?inbox=<uuid> and /?chart=<uuid>, and no other query", async (t) => {
+  const { call } = await fixture(t, { config: readConfig(charts) });
+  const headers = { Cookie: await cookie() };
+  assert.equal((await call(`/?inbox=${ID}`, { headers })).status, 200);
+  assert.equal((await call(`/?chart=${ID}`, { headers })).status, 200);
+  for (const q of [`/?inbox=${ID}&x=1`, "/?inbox=nope", `/?viewer=${ID}`]) assert.equal((await call(q, { headers })).status, 404, q);
+});
+
+test("the link survives GitHub sign-in: the login page carries it, and the redirect returns only that exact form", async (t) => {
+  const { call } = await fixture(t, { config: readConfig(charts) });
+  const page = await call(`/?inbox=${ID}`);
+  assert.match(page.body, new RegExp(`/auth/signin\\?callbackUrl=${encodeURIComponent(env.APP_ORIGIN + "/?inbox=" + ID).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  const redirect = authConfig(readConfig(charts)).callbacks.redirect;
+  assert.equal(redirect({ url: `${env.APP_ORIGIN}/?inbox=${ID}`, baseUrl: env.APP_ORIGIN }), `${env.APP_ORIGIN}/?inbox=${ID}`);
+  for (const u of [`https://evil.example.com/?inbox=${ID}`, `${env.APP_ORIGIN}/?inbox=${ID}&x=1`, `${env.APP_ORIGIN}/state`,
+    `${env.APP_ORIGIN}/?inbox=${ID.toUpperCase()}`, `${env.APP_ORIGIN}/?inbox=${ID}&`]) {
+    assert.equal(redirect({ url: u, baseUrl: env.APP_ORIGIN }), env.APP_ORIGIN + "/");
+  }
+  // A fragment or userinfo on an otherwise exact link is dropped, not carried through.
+  assert.equal(redirect({ url: `${env.APP_ORIGIN}/?inbox=${ID}#x`, baseUrl: env.APP_ORIGIN }), `${env.APP_ORIGIN}/?inbox=${ID}`);
+  assert.equal(redirect({ url: `https://user:pw@preview.example.com/?inbox=${ID}`, baseUrl: env.APP_ORIGIN }), `${env.APP_ORIGIN}/?inbox=${ID}`);
+});
+
+test("only the canonical link query is admitted: upper case, a trailing &, or a percent-encoded value get the usual 404", async (t) => {
+  const { call } = await fixture(t, { config: readConfig(charts) });
+  const headers = { Cookie: await cookie() };
+  for (const q of [`/?inbox=${ID.toUpperCase()}`, `/?inbox=${ID}&`, `/?inbox=%30${ID.slice(1)}`]) assert.equal((await call(q, { headers })).status, 404, q);
 });

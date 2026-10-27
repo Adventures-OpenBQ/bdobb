@@ -5,6 +5,7 @@ import { Auth } from "@auth/core";
 import GitHub from "@auth/core/providers/github";
 import { getToken } from "@auth/core/jwt";
 import { SESSION_COOKIE, SESSION_SECONDS } from "./config.mjs";
+import { linkQuery } from "./links.mjs";
 
 export function authConfig(config) {
   return {
@@ -53,7 +54,11 @@ export function authConfig(config) {
           user: { id: token.githubId },
         };
       },
-      redirect: () => config.origin + "/",
+      // Only the two link forms survive sign-in (spec §5); everything else lands on "/".
+      redirect: ({ url }) => {
+        try { const u = new URL(url); if (u.origin === config.origin && u.pathname === "/" && linkQuery(u.search) === u.search) return config.origin + "/" + u.search; } catch { /* fall through */ }
+        return config.origin + "/";
+      },
     },
     // Never log OAuth codes, cookies, provider tokens or request bodies.
     logger: {

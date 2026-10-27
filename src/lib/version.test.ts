@@ -37,9 +37,9 @@ describe("the version is one number, in three files", () => {
   });
 
   // Review B9: the Help snapshot names a release, as v3.0.0's did, not a candidate.
-  it("is the clean v11 release version", () => {
-    expect(pkg).toBe("11.0.0");
+  it("is the v12.0.0 version; the Help guide snapshot stays at v11 until part 4 re-snapshots it", () => {
+    expect(pkg).toBe("12.0.0");
     expect(at("src/help/guide/VERSION").trim()).toBe("v11.0.0 clean-release");
-    expect(at("src-tauri/Cargo.lock")).toMatch(/name = "bdobb"\nversion = "11\.0\.0"/);
+    expect(at("src-tauri/Cargo.lock")).toMatch(/name = "bdobb"\nversion = "12\.0\.0"/);
   });
 });

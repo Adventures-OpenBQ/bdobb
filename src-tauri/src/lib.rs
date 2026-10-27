@@ -155,6 +155,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_deep_link::init())
         .invoke_handler(tauri::generate_handler![video_wrapper::video_wrapper_port, set_window_pin, save_panel::save_workspace_panel])
         .setup(|app| {
             // Restore the baseline storage fix from 4ac9cd071 (issue #316).

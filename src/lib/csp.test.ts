@@ -69,6 +69,12 @@ describe("the packaged app's CSP", () => {
     expect(conf.app?.security?.csp).toEqual(packagedCsp);
   });
 
+  it("v12 Art's Charts adds no origin: snapshots are data:, sockets wss:, fetches https: (spec §7)", () => {
+    const csp = conf.app?.security?.csp as Record<string, string>;
+    expect(csp["img-src"]).toContain("data:");
+    expect(csp["connect-src"]).toEqual("'self' ipc: http://ipc.localhost https: http: wss: ws:");
+  });
+
   // Named individually so a failure says WHICH half of the pairing moved.
   it("locks down script-src and object-src", () => {
     const csp = conf.app?.security?.csp as Record<string, string>;

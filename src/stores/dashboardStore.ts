@@ -158,6 +158,8 @@ type DashboardState = {
    * is the main window's at that moment and does not follow a later change.
    */
   viewer: boolean;
+  /** True once load() has put the dashboards in memory; a link that arrives earlier waits for it (B12). */
+  loaded: boolean;
   load: (order?: string[]) => Promise<void>;
   /**
    * Re-read one dashboard from disk, keeping the current selection. The
@@ -732,6 +734,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
     maximizedCardId: null,
     pendingCardRemoval: null,
     viewer: false,
+    loaded: false,
 
     load: async (order) => {
       const loaded = await loadDashboards();
@@ -750,6 +753,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         : dashboards;
       const first = sorted[0];
       set({
+        loaded: true,
         dashboards: sorted,
         docks: asDocks(docks),
         dockEdit: null,

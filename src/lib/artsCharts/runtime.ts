@@ -3,13 +3,33 @@
 /** Gated: loaded only through ./load (spec B2). */
 export { discoverArtsCharts } from "./widget";
 
+import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { useArtsChartsStore } from "../../stores/artsChartsStore";
 import { useBackendsStore } from "../../stores/backendsStore";
-import { reconfigure } from "../artsChartsHost";
+import { useDashboardStore } from "../../stores/dashboardStore";
+import { openChartCard, reconfigure } from "../artsChartsHost";
 import { artsChartsConnections } from "./connection";
 import { installChartsSocketShim } from "./desktopSocket";
+import { type ArtsLink, parseDeepLink, parseWebLink } from "./links";
 import { ensureArtsChartsSkill, syncArtsChartsMcp } from "./mcp";
 
 const activeConnection = () => artsChartsConnections(useBackendsStore.getState().backends).active;
+
+/**
+ * B12: a link only opens. It focuses the inbox item or the chart and does nothing else (no add, delete or
+ * mark beyond the read mark the inbox sets on an item it opens). Held until the dashboards have loaded, since
+ * openChart looks through them.
+ */
+export async function handleArtsLink(link: ArtsLink): Promise<void> {
+  if (!useDashboardStore.getState().loaded) {
+    await new Promise<void>((resolve) => {
+      const stop = useDashboardStore.subscribe((s) => { if (s.loaded) { stop(); resolve(); } });
+    });
+  }
+  if (activeConnection() === null) { useArtsChartsStore.getState().setNotice("This link needs an Art's Charts connection."); return; }
+  if (link.kind === "inbox") useArtsChartsStore.getState().focusInbox(link.id);
+  else await openChartCard(link.id);
+}
 
 /** Configure once at startup and again on every backends change (spec §2). Returns the unsubscribe. */
 export function startArtsCharts(options: { viewer: boolean }): () => void {
@@ -36,5 +56,18 @@ export function startArtsCharts(options: { viewer: boolean }): () => void {
       if (before === null && next !== null) await ensureArtsChartsSkill();
     });
   });
-  return () => { unsubscribe(); uninstall(); };
+  // B12: links. Main window only; a viewer window never opens one.
+  let stopLinks = () => {};
+  let stopped = false;
+  if (!options.viewer) {
+    const opened = (urls: string[]) => urls.forEach((u) => { const l = parseDeepLink(u); if (l) void handleArtsLink(l); });
+    if (import.meta.env.MODE === "browser") {
+      const l = parseWebLink(window.location.search);
+      if (l) { void handleArtsLink(l); history.replaceState(null, "", "/"); }
+    } else {
+      void getCurrent().then((urls) => { if (urls) opened(urls); }).catch(() => {});
+      void onOpenUrl(opened).then((off) => { if (stopped) off(); else stopLinks = off; }).catch(() => {});
+    }
+  }
+  return () => { stopped = true; stopLinks(); unsubscribe(); uninstall(); };
 }

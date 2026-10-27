@@ -14,6 +14,7 @@ import { resolve, extname } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import { readConfig } from "./config.mjs";
 import { handleAuth, identity } from "./auth.mjs";
+import { linkQuery } from "./links.mjs";
 // A namespace, not named imports: the policy is taken by injection (tests prove the
 // relay with and without the grid rules), and a policy without liveGridSubscription
 // must still load. The vendored copy is openbq-docker v10.0.0's (the bytes policy.vendored.json records), which
@@ -61,7 +62,7 @@ a{display:inline-block;background:#82b5f5;color:#12161d;padding:12px 20px;border
 small{display:block;margin-top:28px;color:#aeb9c8}
 </style><main><svg width="40" height="40" viewBox="0 0 32 32" role="img" aria-label="BDOBB" fill="#22c99b"><path d="M4 4h2v22h22v2H4z"/><path d="M10 16h3v6h-3zM16 10h3v12h-3zM22 4h3v18h-3z"/></svg>
 <h1>Private preview</h1><p>Sign in with an approved GitHub account to open BDOBB.
-Signing in does not automatically grant access.</p><a href="/auth/signin">Continue with GitHub</a>
+Signing in does not automatically grant access.</p><a href="@SIGNIN@">Continue with GitHub</a>
 <small>Preview dashboards are temporary and reset on reload.</small></main></html>`;
 
 function reply(res, status, body = "", type = "text/plain; charset=utf-8") {
@@ -384,7 +385,12 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       }
       const who = await identity(req.headers, cfg);
       if (!who) {
-        if (url.pathname === "/" && req.method === "GET") return reply(res, 200, LOGIN, MIME[".html"]);
+        if (url.pathname === "/" && req.method === "GET") {
+          // B12: a link survives sign-in; only the exact link forms are carried (see auth.mjs redirect).
+          const q = linkQuery(url.search);
+          const signin = q ? `/auth/signin?callbackUrl=${encodeURIComponent(cfg.origin + "/" + q)}` : "/auth/signin";
+          return reply(res, 200, LOGIN.replace("@SIGNIN@", signin), MIME[".html"]);
+        }
         return reply(res, 401, "Sign in with an approved GitHub account.");
       }
       if (url.pathname.startsWith("/state/")) return await saveState(req, res, url, cfg, who);
@@ -552,7 +558,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       }
       // No SPA fallback for arbitrary paths. No source maps, dotfiles, or filesystem traversal.
       const name = url.pathname === "/" ? "/index.html" : url.pathname;
-      if (url.search || (name !== "/index.html" && !/^\/(?:assets|standard_fonts)\/[A-Za-z0-9_./-]+$/.test(name)) ||
+      if ((url.search && !(name === "/index.html" && url.pathname === "/" && linkQuery(url.search) === url.search)) || (name !== "/index.html" && !/^\/(?:assets|standard_fonts)\/[A-Za-z0-9_./-]+$/.test(name)) ||
           name.split("/").some(s => s.startsWith(".")) || !MIME[extname(name)]) return reply(res, 404);
       const filename = resolve(assets, "." + name);
       if (!filename.startsWith(resolve(assets) + "/")) return reply(res, 404);
