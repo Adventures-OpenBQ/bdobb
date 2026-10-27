@@ -132,7 +132,12 @@ export default defineConfig(({ mode }) => ({
    * `global` exists, so 640 unit tests passed against an app that could not
    * boot. `pnpm smoke` is the gate that does catch it.
    */
-  define: { global: "globalThis" },
+  define: {
+    global: "globalThis",
+    // Spec B2: the default build includes Art's Charts; VITE_ARTS_CHARTS=0 is the all-Apache bundle.
+    // A literal, so `__ARTS_CHARTS__ ? import(...) : null` folds and the package never enters the graph.
+    __ARTS_CHARTS__: JSON.stringify(process.env.VITE_ARTS_CHARTS !== "0"),
+  },
 
   plugins: [portablePivotWasm(), react(), pdfStandardFonts()],
   clearScreen: false,
@@ -193,6 +198,6 @@ export default defineConfig(({ mode }) => ({
     // transitive dependency in site-packages would be collected and IMPORTED
     // by a plain `pnpm test:run`. Measured -- a canary there did run.
     // web/**: Node's test runner owns the server/auth tests (pnpm test:web).
-    exclude: [...configDefaults.exclude, "e2e/**", ".reference-backend/**", ".superpowers/**", ".worktrees/**", ".codegraph/**", "web/**", "scripts/vendor-calendar-contract.test.mjs", "scripts/pivot-packaging.test.mjs", "scripts/matched-executors.test.mjs", "scripts/matched-executors-driver-utils.test.mjs"],
+    exclude: [...configDefaults.exclude, "e2e/**", ".reference-backend/**", ".superpowers/**", ".worktrees/**", ".codegraph/**", "web/**", "vendor/**", "scripts/vendor-calendar-contract.test.mjs", "scripts/pivot-packaging.test.mjs", "scripts/matched-executors.test.mjs", "scripts/matched-executors-driver-utils.test.mjs", "scripts/charts-vendor.test.mjs", "scripts/third-party-notices.test.mjs"],
   },
 }));

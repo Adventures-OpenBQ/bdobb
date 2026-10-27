@@ -47,3 +47,6 @@ server/table-ingest/*.local.json
 
 # Exact-source deployment build manifest (generated in an exported context).
 .table-source.json
+
+# VITE_ARTS_CHARTS=0 build output (pnpm charts:build-check)
+dist-no-charts/

@@ -15,3 +15,6 @@ interface ImportMetaEnv {
   /** Build-time seed for a fresh install's MCP server. */
   readonly VITE_DEFAULT_MCP_URL?: string;
 }
+
+/** Build-time: false only under VITE_ARTS_CHARTS=0 (spec B2). Every Art's Charts import sits behind it. */
+declare const __ARTS_CHARTS__: boolean;

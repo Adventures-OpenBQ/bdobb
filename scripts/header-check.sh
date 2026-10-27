@@ -13,6 +13,7 @@ cd "$(dirname "$0")/.."
 
 OWNER='Copyright 2026 SecretoftheUniverse.com LLC'
 SPDX='SPDX-License-Identifier: AGPL-3.0-only'
+BUSL_SPDX='SPDX-License-Identifier: BUSL-1.1'
 EXEMPT_FILE="scripts/header-exempt.txt"
 
 exempt=()
@@ -28,7 +29,9 @@ while IFS= read -r -d '' file; do
     [[ "$file" == "$prefix"* ]] && continue 2
   done
   head=$(head -n 5 -- "$file")
-  if [[ "$head" != *"$OWNER"* || "$head" != *"$SPDX"* ]]; then
+  spdx="$SPDX"
+  [[ "$file" == vendor/arts-charts/* ]] && spdx="$BUSL_SPDX"
+  if [[ "$head" != *"$OWNER"* || "$head" != *"$spdx"* ]]; then
     missing+=("$file")
   fi
 done < <(git ls-files -z -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' '*.rs' '*.css' '*.sh' '*.py' '*.html')

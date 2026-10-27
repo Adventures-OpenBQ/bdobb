@@ -31,6 +31,7 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "vendor/**",
       "server/table-ingest/dist/**",
       // Vercel build output: prebuilt function bundle, not source.
       ".vercel/**",

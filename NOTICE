@@ -7,6 +7,8 @@ remain available for previously released material. Documentation, artwork,
 imported snapshots and third-party components retain the terms described
 in LICENSING.md and their individual notices.
 
+Builds that include Art's Charts (the default from 12.0.0; `VITE_ARTS_CHARTS=0` leaves it out) also carry the Art's Charts client under its own licence, the Business Source License 1.1, in `vendor/arts-charts/`.
+
 Third-party components keep their original copyrights and licenses, which are
 not replaced. The JavaScript packages and Rust crates shipped with BDOBB, with
 their licenses and copyright notices, are listed in THIRD_PARTY_NOTICES.md.

@@ -1,0 +1,175 @@
+{
+  "data": {
+    "Name": "New York Stock Exchange",
+    "Code": "US",
+    "OperatingMIC": "XNYS",
+    "Country": "USA",
+    "Currency": "USD",
+    "Timezone": "America/New_York",
+    "TradingHours": {
+      "Open": "09:30:00",
+      "Close": "16:00:00",
+      "WorkingDays": "Mon, Tue, Wed, Thu, Fri",
+      "PreMarketOpen": "04:00:00",
+      "PreMarketClose": "09:30:00",
+      "AfterHoursOpen": "16:00:00",
+      "AfterHoursClose": "20:00:00"
+    },
+    "ExchangeHolidays": {
+      "2026-01-01": {
+        "Holiday": "New Year's Day",
+        "Type": "Official"
+      },
+      "2026-01-19": {
+        "Holiday": "Martin Luther King, Jr. Day",
+        "Type": "Official"
+      },
+      "2026-02-16": {
+        "Holiday": "Washington's Birthday",
+        "Type": "Official"
+      },
+      "2026-04-03": {
+        "Holiday": "Good Friday",
+        "Type": "Official"
+      },
+      "2026-05-25": {
+        "Holiday": "Memorial Day",
+        "Type": "Official"
+      },
+      "2026-06-19": {
+        "Holiday": "Juneteenth National Independence Day",
+        "Type": "Official"
+      },
+      "2026-07-03": {
+        "Holiday": "Independence Day observed",
+        "Type": "Official"
+      },
+      "2026-09-07": {
+        "Holiday": "Labor Day",
+        "Type": "Official"
+      },
+      "2026-11-26": {
+        "Holiday": "Thanksgiving Day",
+        "Type": "Official"
+      },
+      "2026-11-27": {
+        "Holiday": "Day after Thanksgiving",
+        "Type": "EarlyClose",
+        "EarlyClose": "13:00:00"
+      },
+      "2026-12-24": {
+        "Holiday": "Christmas Eve",
+        "Type": "EarlyClose",
+        "EarlyClose": "13:00:00"
+      },
+      "2026-12-25": {
+        "Holiday": "Christmas Day",
+        "Type": "Official"
+      },
+      "2027-01-01": {
+        "Holiday": "New Year's Day",
+        "Type": "Official"
+      },
+      "2027-01-18": {
+        "Holiday": "Martin Luther King, Jr. Day",
+        "Type": "Official"
+      },
+      "2027-02-15": {
+        "Holiday": "Washington's Birthday",
+        "Type": "Official"
+      },
+      "2027-03-26": {
+        "Holiday": "Good Friday",
+        "Type": "Official"
+      },
+      "2027-05-31": {
+        "Holiday": "Memorial Day",
+        "Type": "Official"
+      },
+      "2027-06-18": {
+        "Holiday": "Juneteenth National Independence Day observed",
+        "Type": "Official"
+      },
+      "2027-07-05": {
+        "Holiday": "Independence Day observed",
+        "Type": "Official"
+      },
+      "2027-09-06": {
+        "Holiday": "Labor Day",
+        "Type": "Official"
+      },
+      "2027-11-25": {
+        "Holiday": "Thanksgiving Day",
+        "Type": "Official"
+      },
+      "2027-11-26": {
+        "Holiday": "Day after Thanksgiving",
+        "Type": "EarlyClose",
+        "EarlyClose": "13:00:00"
+      },
+      "2027-12-24": {
+        "Holiday": "Christmas Day observed",
+        "Type": "Official"
+      },
+      "2028-01-17": {
+        "Holiday": "Martin Luther King, Jr. Day",
+        "Type": "Official"
+      },
+      "2028-02-21": {
+        "Holiday": "Washington's Birthday",
+        "Type": "Official"
+      },
+      "2028-04-14": {
+        "Holiday": "Good Friday",
+        "Type": "Official"
+      },
+      "2028-05-29": {
+        "Holiday": "Memorial Day",
+        "Type": "Official"
+      },
+      "2028-06-19": {
+        "Holiday": "Juneteenth National Independence Day",
+        "Type": "Official"
+      },
+      "2028-07-03": {
+        "Holiday": "Independence Day early-close date",
+        "Type": "EarlyClose",
+        "EarlyClose": "13:00:00"
+      },
+      "2028-07-04": {
+        "Holiday": "Independence Day",
+        "Type": "Official"
+      },
+      "2028-09-04": {
+        "Holiday": "Labor Day",
+        "Type": "Official"
+      },
+      "2028-11-23": {
+        "Holiday": "Thanksgiving Day",
+        "Type": "Official"
+      },
+      "2028-11-24": {
+        "Holiday": "Day after Thanksgiving",
+        "Type": "EarlyClose",
+        "EarlyClose": "13:00:00"
+      },
+      "2028-12-25": {
+        "Holiday": "Christmas Day",
+        "Type": "Official"
+      }
+    }
+  },
+  "_meta": {
+    "SchemaVersion": "eodhd_v2",
+    "Source": "https://www.nyse.com/markets/hours-calendars",
+    "SourceFetchedAt": "2026-09-14T13:11:43Z",
+    "GeneratedBy": "manual transcription of NYSE Holidays & Trading Hours page",
+    "CoverageYears": [2026, 2027, 2028],
+    "Notes": [
+      "2028-01-01 New Year's Day falls on Saturday and is not observed per NYSE.",
+      "EarlyClose times are Eastern Time regular-session closes at 13:00; NYSE also publishes a 13:15 close for eligible options that is not captured here.",
+      "This file mirrors the EODHD v2 exchange-details schema so it can be substituted for the API response in tests, dev, and CI.",
+      "2026-07-03 corrected on 2026-09-14 from EarlyClose 13:00 to a full closure. NYSE's Holidays & Trading Hours page lists the 2026 row as \"Friday, July 3 (Independence Day observed)\" with no early-close marker — the early-close footnotes on that page attach to 2028-07-03 and 2026-12-24 — and pandas-market-calendars 5.4.0 (XNYS) closes the day in full. The file now holds 29 full closures and 5 early closes."
+    ]
+  }
+}

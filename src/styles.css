@@ -9,6 +9,10 @@
   --text: #dfe4ec;
   --text-muted: #8b94a3;
   --accent: #22c99b;
+  /* Art's Charts (v12): candle direction, the same in both themes; a hairline for grids. */
+  --up: #0e9f6e;
+  --down: #e0393e;
+  --line-soft: #232a35;
   --error: #d9695f;
   /* A partial answer, not an error: the pivot's incomplete-period count, and
      the pivot panel's "Choose"/⚠. The Workspace's stale orange. */
@@ -38,6 +42,7 @@
   --font-size-12: calc(var(--font-size-base) * 12 / 14);
   --font-size-13: calc(var(--font-size-base) * 13 / 14);
   --font-size-16: calc(var(--font-size-base) * 16 / 14);
+  --font-size-20: calc(var(--font-size-base) * 20 / 14);
   --font-size-28: calc(var(--font-size-base) * 28 / 14);
   --font-size-32: calc(var(--font-size-base) * 32 / 14);
 }
@@ -80,6 +85,9 @@
     --warning: #a15c1f;
     --picker-hover: #e5e9f0;
     --clock-green: #1a9e4a;
+    --up: #0e9f6e;
+    --down: #e0393e;
+    --line-soft: #e5e9f0;
     color-scheme: light;
   }
 }
@@ -97,6 +105,9 @@
   --warning: #a15c1f;
   --picker-hover: #e5e9f0;
   --clock-green: #1a9e4a;
+  --up: #0e9f6e;
+  --down: #e0393e;
+  --line-soft: #e5e9f0;
   color-scheme: light;
 }
 

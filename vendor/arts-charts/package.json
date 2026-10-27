@@ -1,0 +1,42 @@
+{
+  "name": "@adventures-openbq/arts-charts",
+  "version": "0.1.0",
+  "license": "BUSL-1.1",
+  "type": "module",
+  "packageManager": "pnpm@10.34.4",
+  "engines": { "node": ">=24" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./arts-charts.css": "./src/arts-charts.css"
+  },
+  "files": ["src", "!src/test", "!src/**/*.test.ts", "!src/**/*.test.tsx", "ARTS_CHARTS_TERMS.md", "THIRD_PARTY_NOTICES.md"],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "lightweight-charts": "5.0.8",
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@internationalized/date": "^3.12.4",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "lightweight-charts": "5.0.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}

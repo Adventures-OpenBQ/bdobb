@@ -30,6 +30,18 @@ const LICENSE_FILE = /^(licen[cs]e|copying|notice)([-._].*)?$/i;
 // boilerplate that merely mentions copyright ("the above copyright notice ...").
 const COPYRIGHT_LINE = /^\s*(copyright\b(?!\s+(notice|notices|owner|holders?|license|and|statement|law|protection)\b)|\(c\)\s+(?!you\b)|©)/i;
 
+const BUSL_OWNER = /^\s*The Licensed Work is (\(c\) .+?)\.?\s*$/m;
+/** A package's copyright owners as printed in the table. */
+export function owners(p) {
+  if (p.license === "BUSL-1.1") {
+    const m = p.texts.map((t) => BUSL_OWNER.exec(t)).find(Boolean);
+    if (m) return [m[1].replace(/\.$/, "")];
+  }
+  const found = new Set();
+  for (const text of p.texts) for (const line of text.split("\n")) if (COPYRIGHT_LINE.test(line)) found.add(line.trim());
+  return [...found];
+}
+
 function licenseTexts(dir) {
   if (!dir || !existsSync(dir)) return [];
   return readdirSync(dir)
@@ -52,9 +64,11 @@ function npmPackages() {
       // is whichever one this machine installed, so listing it would make the
       // file differ between a Mac and the Linux CI runner. None of them ships.
       if (PLATFORM_BINARY.test(p.name)) continue;
-      p.versions.forEach((version, i) =>
-        out.push({ name: p.name, version, license: ({"@plotly/mapbox-gl@1.13.4": "BSD-3-Clause", "mapbox-gl@1.13.3": "BSD-3-Clause", "stack-trace@0.0.9": "MIT"})[`${p.name}@${version}`] ?? p.license, texts: licenseTexts(p.paths[i] ?? p.paths[0]) }),
-      );
+      p.versions.forEach((listed, i) => {
+        // pnpm prints no version for a file: dependency (the vendored Art's Charts); read it from its package.json.
+        const version = listed ?? JSON.parse(readFileSync(join(p.paths[i] ?? p.paths[0], "package.json"), "utf8")).version;
+        out.push({ name: p.name, version, license: ({"@plotly/mapbox-gl@1.13.4": "BSD-3-Clause", "mapbox-gl@1.13.3": "BSD-3-Clause", "stack-trace@0.0.9": "MIT"})[`${p.name}@${version}`] ?? p.license, texts: licenseTexts(p.paths[i] ?? p.paths[0]) });
+      });
     }
   }
   return out;
@@ -119,15 +133,14 @@ function render() {
   for (const [title, pkgs] of sections) {
     lines.push(`## ${title} (${pkgs.length})`, "", "| Package | Version | License | Copyright |", "|---|---|---|---|");
     for (const p of pkgs) {
-      const owners = new Set();
+      const found = owners(p);
       for (const text of p.texts) {
-        const body = text.split("\n").filter((l) => !COPYRIGHT_LINE.test(l)).join("\n").replace(/[ \t]+/g, " ").trim();
-        text.split("\n").filter((l) => COPYRIGHT_LINE.test(l)).forEach((l) => owners.add(l.trim()));
+        const body = text.split("\n").filter((l) => !found.includes(l.trim())).join("\n").replace(/[ \t]+/g, " ").trim();
         const key = createHash("sha256").update(body.replace(/\s+/g, " ")).digest("hex");
         if (!texts.has(key)) texts.set(key, { body, license: p.license, users: [] });
         texts.get(key).users.push(`${p.name}@${p.version}`);
       }
-      const copyright = owners.size ? [...owners].join("; ") : p.texts.length ? "(none stated in its license file)" : "(no license file shipped)";
+      const copyright = found.length ? found.join("; ") : p.texts.length ? "(none stated in its license file)" : "(no license file shipped)";
       lines.push(`| ${cell(p.name)} | ${cell(p.version)} | ${cell(p.license)} | ${cell(copyright)} |`);
     }
     lines.push("");
@@ -138,18 +151,25 @@ function render() {
     n += 1;
     lines.push(`### Text ${n} (${license})`, "", `Used by: ${[...new Set(users)].join(", ")}`, "", "````text", body, "````", "");
   }
+  const carried = join(ROOT, "vendor/arts-charts/THIRD_PARTY_NOTICES.md");
+  if (existsSync(carried)) {
+    const body = readFileSync(carried, "utf8").replace(/^<!--[\s\S]*?-->\n/gm, "").trim();
+    lines.push("## Notices carried by @adventures-openbq/arts-charts", "", body, "");
+  }
   return lines.join("\n");
 }
 
-const next = render();
-if (process.argv.includes("--check")) {
-  const current = existsSync(OUT) ? readFileSync(OUT, "utf8") : "";
-  if (current !== next) {
-    console.error("third-party-notices: FAILED — THIRD_PARTY_NOTICES.md is out of date; run node scripts/third-party-notices.mjs");
-    process.exit(1);
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const next = render();
+  if (process.argv.includes("--check")) {
+    const current = existsSync(OUT) ? readFileSync(OUT, "utf8") : "";
+    if (current !== next) {
+      console.error("third-party-notices: FAILED — THIRD_PARTY_NOTICES.md is out of date; run node scripts/third-party-notices.mjs");
+      process.exit(1);
+    }
+    console.log("third-party-notices: up to date");
+  } else {
+    writeFileSync(OUT, next);
+    console.log(`third-party-notices: wrote ${OUT.slice(ROOT.length + 1)}`);
   }
-  console.log("third-party-notices: up to date");
-} else {
-  writeFileSync(OUT, next);
-  console.log(`third-party-notices: wrote ${OUT.slice(ROOT.length + 1)}`);
 }

@@ -22,6 +22,8 @@ declare global {
      * (socket.ts). /ref/live_grid_ws and /news/ws/news are the sockets at this line.
      */
     __bdobbSocketTickets?: boolean;
+    /** Typing only for the vendored package; nothing sets it (B7). */
+    __bdobbChartTicks?: boolean;
     /**
      * Set by the web preview's bootstrap only when it READ the user's saved
      * state: fs.ts then mirrors the app's JSON stores to /state.

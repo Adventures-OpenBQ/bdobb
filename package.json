@@ -37,8 +37,10 @@
     "apps:sync": "node scripts/apps-sync.mjs",
     "e2e:headed": "playwright test --headed",
     "gateway:vendor": "node scripts/gateway-vendor.mjs",
+    "charts:vendor": "node scripts/charts-vendor.mjs",
+    "charts:build-check": "VITE_ARTS_CHARTS=0 vite build --outDir dist-no-charts && node scripts/arts-charts-build-check.mjs dist-no-charts --absent",
     "build:web": "node scripts/build-web.mjs",
-    "test:web": "node --test web/*.test.mjs",
+    "test:web": "node --test web/*.test.mjs scripts/charts-vendor.test.mjs scripts/third-party-notices.test.mjs",
     "web:serve": "node web/local.mjs",
     "test:web:browser": "node web/browser-smoke.mjs",
     "test:live": "bash scripts/rita-live-check.sh",
@@ -54,6 +56,7 @@
     "test:ssrm:browser": "node scripts/run-ssrm-browser.mjs"
   },
   "dependencies": {
+    "@adventures-openbq/arts-charts": "file:vendor/arts-charts",
     "@auth/core": "0.41.3",
     "@blocknote/core": "0.54.0",
     "@blocknote/mantine": "0.54.0",

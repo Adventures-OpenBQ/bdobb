@@ -74,4 +74,11 @@ describe("header-check", () => {
     );
     expect(r.code, r.out).toBe(0);
   });
+  it("accepts a BUSL-1.1 header under vendor/arts-charts/ and fails it anywhere else", async () => {
+    const busl = `// Copyright 2026 ${OWNER}. Licensed under the Business Source License 1.1.\n// SPDX-License-Identifier: BUSL-1.1\n`;
+    const r = await run(repo({ "vendor/arts-charts/src/x.ts": busl, "src/y.ts": busl }));
+    expect(r.code).toBe(1);
+    expect(r.out).toMatch(/^src\/y\.ts$/m);
+    expect(r.out).not.toContain("vendor/arts-charts");
+  });
 });

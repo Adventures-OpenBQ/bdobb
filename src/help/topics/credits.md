@@ -74,6 +74,16 @@ Each under its own licence, and each reproduced in the notices file:
 OpenBB and the OpenBB "BB" mark are trademarks of OpenBB Inc.; the mark is
 used only to identify OpenBB connections.
 
+## Art's Charts
+
+Builds that include Art's Charts (the default from 12.0.0) carry the Art's Charts
+client, Copyright (c) 2026 SecretoftheUniverse.com LLC, under the Business Source
+License 1.1 rather than Apache-2.0. Its licence and supplemental terms ship beside it
+in `vendor/arts-charts/`. The Art's Charts mark shown on every chart card and
+snapshot stays visible. Art's Charts draws with Lightweight Charts™ by TradingView,
+credited above, and every Art's Charts card carries the same *Rendered by
+TradingView* credit.
+
 *Source: BDOBB 6.0.0 `NOTICE`, `THIRD_PARTY_NOTICES.md`, `package.json`,
 `src-tauri/Cargo.toml` and `src/components/renderers/TradingViewRenderer.tsx`.*
 
