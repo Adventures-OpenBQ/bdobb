@@ -3783,3 +3783,7 @@ body {
 .drop-veil {
   top: var(--safe-top);
 }
+
+/* v12: openChart's flash (B8). An outline, so the card's layout does not move. */
+.card-reveal { outline: 2px solid var(--accent); outline-offset: -2px; animation: card-reveal-fade 1.2s ease-out forwards; }
+@keyframes card-reveal-fade { from { outline-color: var(--accent); } to { outline-color: transparent; } }

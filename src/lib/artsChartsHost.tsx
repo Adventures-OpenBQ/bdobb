@@ -24,6 +24,7 @@ import { useArtsChartsStore } from "../stores/artsChartsStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { artsChartsConnections } from "./artsCharts/connection";
+import { artsChartWidget } from "./artsCharts/widget";
 import { applyAuthQuery, authHeaders, buildWidgetWsUrl as bdobbWsUrl, fetchWidgetPath, joinUrl } from "./dataClient";
 import { logError, logInfo } from "./logger";
 import { wireParams } from "./params";
@@ -71,6 +72,29 @@ const Link = (p: GroupLinkProps) => <GroupLink {...p} card={p.card as DashboardC
 const fsOpts = { baseDir: BaseDirectory.AppData } as const;
 const rel = (p: string) => (p.startsWith("/") ? {} : fsOpts);
 
+/** B8: the dashboard in view in the main window; none open -> a new one called "Art's Charts". */
+export async function addChartToDashboard(chartId: string, options: { live?: boolean } = {}): Promise<void> {
+  const b = active();
+  if (b === null) return;
+  const store = useDashboardStore.getState();
+  if (store.activeDashboard() === undefined) {
+    const id = await store.addDashboard("Art's Charts");
+    if (id === null) return;
+    store.setActive(id);
+  }
+  await useDashboardStore.getState().addCard(artsChartWidget(b), options.live ? { chart_id: chartId, live: "true" } : { chart_id: chartId });
+}
+
+/** B8: focus a card with this chart_id in any dashboard (switch dashboard and tab, reveal), else add one. */
+export async function openChartCard(chartId: string): Promise<void> {
+  const { dashboards, setActive, setActiveTab } = useDashboardStore.getState();
+  for (const d of dashboards) for (const t of d.tabs) {
+    const card = t.cards.find((c) => c.widgetId === "arts_chart" && c.params.chart_id === chartId);
+    if (card) { setActive(d.id); setActiveTab(d.id, t.id); useArtsChartsStore.getState().revealCard(card.id); return; }
+  }
+  await addChartToDashboard(chartId);
+}
+
 export function buildHost({ viewer }: { viewer: boolean }): ArtsChartsHost {
   const b = active();
   const store = useDashboardStore.getState();
@@ -100,7 +124,7 @@ export function buildHost({ viewer }: { viewer: boolean }): ArtsChartsHost {
     components: { DatetimePicker, RelativeTab, AnchorChips: () => null, GroupLink: Link },
     ...(b === null ? {} : { chartsFetch }),
     ...(b === null || b.door === "tailnet" ? {} : { chartsSocketUrl }),
-    ...(viewer ? {} : {}), // Task 7 adds addToDashboard and openChart here, main window only (B8).
+    ...(viewer || b === null ? {} : { addToDashboard: (id: string, o?: { live?: boolean }) => void addChartToDashboard(id, o), openChart: (id: string) => void openChartCard(id) }),
   };
 }
 

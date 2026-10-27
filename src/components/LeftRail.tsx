@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { SOURCE_CODE_LINK } from "../lib/sourceOffer";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { HelpSet } from "../help/index";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -40,6 +40,8 @@ import { RowContextMenu } from "./RowContextMenu";
 import { runAppsImport } from "./runAppsImport";
 import { deleteSyncedDashboard, deleteTargets } from "./runDashboardSync";
 import { WIDGET_DRAG_TYPE } from "./WidgetLibrary";
+
+const ArtsChartsRailItem = __ARTS_CHARTS__ ? lazy(() => import("../lib/artsCharts/rail")) : null;
 
 /** How long an export or import notice stays on the rail. */
 const NOTICE_MS = 10_000;
@@ -1102,6 +1104,7 @@ export function LeftRail({
       <div className="rail-group rail-bottom">
         {railButton("connections", "Connections", onOpenConnections)}
         {railButton("settings", "Settings", onOpenSettings)}
+        {ArtsChartsRailItem ? <Suspense fallback={null}><ArtsChartsRailItem /></Suspense> : null}
         <button
           type="button"
           className="rail-item"

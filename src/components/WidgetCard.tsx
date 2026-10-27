@@ -47,6 +47,7 @@ import { hiddenFields, orderFields, tableColumns, tableRows } from "../lib/table
 import { NOTHING_TO_TRANSPOSE, transposeRows } from "../lib/transpose";
 import type { DashboardCard, NewsCardState, PinEdge, WidgetDef } from "../lib/types";
 import { DOCKS_ID } from "../lib/dashboardsFile";
+import { useArtsChartsStore } from "../stores/artsChartsStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useChatStore } from "../stores/chatStore";
 import { ownerOfCard, useDashboardStore } from "../stores/dashboardStore";
@@ -182,6 +183,23 @@ function autoScrollOf(v: string | undefined): NewsAutoScroll {
 export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, viewer = false, locked = false }: Props) {
   // Everything the viewer window hides, a locked card hides too.
   const readOnly = viewer || locked;
+  // B8: openChart's scroll-and-flash request for this card.
+  const reveal = useArtsChartsStore((s) => (s.reveal?.cardId === card.id ? s.reveal.nonce : 0));
+  const rootRef = useRef<HTMLElement | null>(null);
+  const [flash, setFlash] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One-shot: handled once, then cleared in the store, so a remount does not replay it. It still
+  // fires on mount (openChart switches dashboards before the card exists). The timer is not this
+  // effect's cleanup: clearing the store changes `reveal` and would cut the flash short.
+  useEffect(() => {
+    if (reveal === 0) return;
+    rootRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    setFlash(true);
+    if (flashTimer.current !== null) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlash(false), 1200);
+    useArtsChartsStore.getState().clearReveal(reveal);
+  }, [reveal]);
+  useEffect(() => () => { if (flashTimer.current !== null) clearTimeout(flashTimer.current); }, []);
   const widget = useWidgetRegistryStore((s) => s.find(card.backendId, card.widgetId));
   // ParamControls fetches this card's optionsEndpoint param options, so it
   // needs the BackendConfig the card is bound to. useWidgetData resolves the
@@ -1899,8 +1917,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 
   return (
     <article
-      className={railChrome ? "widget-card card-rail" : "widget-card"}
+      ref={rootRef}
       data-card-id={card.id}
+      className={(railChrome ? "widget-card card-rail" : "widget-card") + (flash ? " card-reveal" : "")}
       data-minimized={minimized || undefined}
       // The only feedback a manual Refresh gives once the body stops
       // blanking. Styled as a dimmed title plus a dot, not an animation:

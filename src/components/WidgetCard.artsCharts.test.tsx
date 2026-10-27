@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
 const seen = vi.hoisted(() => [] as unknown[]);
@@ -15,6 +15,7 @@ vi.mock("../hooks/useWidgetData", () => ({
 
 import { artsChartWidget } from "../lib/artsCharts/widget";
 import { backend as makeBackend, card as makeCard } from "../test/fixtures";
+import { useArtsChartsStore } from "../stores/artsChartsStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
@@ -34,10 +35,10 @@ function renderCard(card = makeCard({
     dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [card] }] }],
     activeId: "d1", activeTabId: "t1",
   });
-  render(<WidgetCard card={card} onRemove={vi.fn()} />);
+  return render(<WidgetCard card={card} onRemove={vi.fn()} />);
 }
 
-beforeEach(() => { seen.length = 0; });
+beforeEach(() => { seen.length = 0; useArtsChartsStore.setState({ reveal: null }); });
 
 it("dispatches arts_chart to the Art's Charts card with WidgetCard's own writers", async () => {
   renderCard();
@@ -51,4 +52,32 @@ it("draws the refresh control on a chart card", async () => {
   renderCard();
   await screen.findByTestId("arts-card");
   expect(screen.getByRole("button", { name: /refresh/i })).toBeInTheDocument();
+});
+
+it("a reveal for this card scrolls it into view and flashes it", async () => {
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  renderCard(makeCard({ id: "k1", widgetId: "arts_chart", backendId: "c1", params: {}, layout }));
+  await screen.findByTestId("arts-card");
+  act(() => useArtsChartsStore.getState().revealCard("k1"));
+  expect(scroll).toHaveBeenCalled();
+  expect(document.querySelector('[data-card-id="k1"]')).toHaveClass("card-reveal");
+});
+
+it("a reveal is one-shot: unmount and remount does not scroll again, a mount with a pending reveal does", async () => {
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  const card = makeCard({ id: "k1", widgetId: "arts_chart", backendId: "c1", params: {}, layout });
+  // openChart reveals before the card exists: the card handles it on mount.
+  useArtsChartsStore.getState().revealCard("k1");
+  const first = renderCard(card);
+  await screen.findByTestId("arts-card");
+  expect(scroll).toHaveBeenCalledTimes(1);
+  expect(useArtsChartsStore.getState().reveal).toBeNull();
+  expect(document.querySelector('[data-card-id="k1"]')).toHaveClass("card-reveal");
+  first.unmount();
+  renderCard(card);
+  await screen.findByTestId("arts-card");
+  expect(scroll).toHaveBeenCalledTimes(1);
+  expect(document.querySelector('[data-card-id="k1"]')).not.toHaveClass("card-reveal");
 });
