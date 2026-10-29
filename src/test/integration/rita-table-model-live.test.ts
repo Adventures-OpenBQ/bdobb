@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool } from "../../lib/agent/execute";
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
+import { liveWorkspaceOptions } from "./liveModel";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
 import { mountCsv } from "../../lib/agent/tableModel/testHarness";
@@ -77,6 +78,7 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   };
   const gen = runAgentQuery({
     ritaUrl,
+    workspaceOptions: liveWorkspaceOptions,
     messages: [{ role: "human", content: text }],
     refresh: () => ({ primary: buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set()) }),
     tools: LOCAL_TOOLS,
@@ -148,7 +150,8 @@ live("Rita arranges a CSV table through table-model/1", () => {
     const first = await turn(`${SKILL}Show total Amount by Region in the table.`);
     expect(first.rounds.some((r) => r.tool === "arrange_table")).toBe(true);
     const before = structuredClone(tableCard().tableDefinition);
-    const { rounds, reply } = await turn(`${SKILL}Sum the Region column.`);
+    // Names the text column as the thing to sum: "Sum the Region column" was read as "sum Amount by Region".
+    const { rounds, reply } = await turn(`${SKILL}Add up the Region column's own values (the region names, not Amount).`);
     const results = rounds.filter((r) => r.tool === "arrange_table").map((r) => r.result as { status: string; code?: string });
     expect(results.some((r) => r.status === "applied"), "no arrange applied").toBe(false);
     expect(tableCard().tableDefinition).toEqual(before);
@@ -157,7 +160,8 @@ live("Rita arranges a CSV table through table-model/1", () => {
       expect(text).toMatch(/refus|cannot|can't|can not|unable|not (?:possible|valid|supported)|text/);
     } else {
       // Declined without the tool refusing: the reply must say a text column cannot be summed.
-      expect(text, "reply says it cannot sum").toMatch(/cannot|can't|can not|unable|not (?:possible|supported|available|numeric)|isn't (?:possible|supported|numeric)|(?:do|does)(?: not|n't) support/);
+      // Claude words it as "a text field ... can only be counted or min/maxed, not summed".
+      expect(text, "reply says it cannot sum").toMatch(/cannot|can't|can not|unable|not (?:possible|supported|available|numeric|summ)|isn't (?:possible|supported|numeric)|(?:do|does)(?: not|n't) support|can only be/);
       expect(text, "reply says why: the column is text").toMatch(/text|non-numeric|not numeric|isn't numeric|categorical|string/);
       expect(text, "reply is about summing").toMatch(/sum/);
     }

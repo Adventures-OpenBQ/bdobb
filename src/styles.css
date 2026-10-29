@@ -2394,6 +2394,8 @@ body {
    cannot be the flex child itself. .pdf-frame is; .pdf-body fills it. */
 .pdf-frame { position: relative; flex: 1; min-height: 0; }
 .pdf-body { position: absolute; inset: 0; overflow: auto; }
+/* A cited quote (Rita's quote_bounding_boxes), drawn inside pdf.js's page div. */
+.pdf-highlight { position: absolute; background: rgba(255, 213, 0, 0.35); pointer-events: none; z-index: 5; }
 /* Focusable only so a clicked card stays the Command-F target; it is never a
    keyboard stop, so it must not paint a focus ring. Pages stay white in dark
    mode too -- pdf_viewer.css paints .page itself, and nothing here overrides
@@ -2680,6 +2682,10 @@ body {
 .chat-confirm button {
   margin-right: 6px;
 }
+.chat-feedback { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px; font-size: var(--font-size-12); color: var(--text-muted); }
+.chat-feedback button { background: none; border: 0; cursor: pointer; padding: 0 2px; }
+.chat-feedback button[aria-pressed="true"] { outline: 1px solid var(--accent); border-radius: 4px; }
+.chat-feedback-details { display: flex; flex-direction: column; gap: 4px; width: 100%; border: 0; padding: 0; margin: 0; }
 .chat-confirm {
   border: 1px solid var(--accent);
 }

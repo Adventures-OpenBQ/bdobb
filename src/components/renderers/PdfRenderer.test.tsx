@@ -16,10 +16,12 @@ import { describe, expect, it, vi } from "vitest";
  * otherwise hit them in the temporal dead zone.
  */
 const receivedBytes = vi.hoisted((): Uint8Array[] => []);
+const receivedHighlights = vi.hoisted((): unknown[] => []);
 
 vi.mock("./PdfView", () => ({
-  PdfView: ({ bytes, filename }: { bytes: Uint8Array; filename: string }) => {
+  PdfView: ({ bytes, filename, highlight }: { bytes: Uint8Array; filename: string; highlight?: unknown }) => {
     receivedBytes.push(bytes);
+    receivedHighlights.push(highlight);
     return <div data-testid="pdf-view">{`${filename} (${bytes.length} bytes)`}</div>;
   },
 }));
@@ -159,5 +161,11 @@ describe("PdfRenderer", () => {
     const newData = { content: HI, data_format: { data_type: "pdf", filename: "report.pdf" } };
     rerender(<PdfRenderer data={newData} onRetry={vi.fn()} />);
     expect(receivedBytes.at(-1)).not.toBe(first);
+  });
+
+  it("hands a highlight through to the viewer", () => {
+    const highlight = { page: 1, boxes: [{ text: "q", page: 1, x0: 1, top: 2, x1: 3, bottom: 4 }] };
+    render(<PdfRenderer data={{ content: HI, data_format: { data_type: "pdf", filename: "report.pdf" } }} onRetry={vi.fn()} highlight={highlight} />);
+    expect(receivedHighlights.at(-1)).toEqual(highlight);
   });
 });
