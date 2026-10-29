@@ -62,6 +62,7 @@ const vw = vi.hoisted(() => {
   const state = {
     scaleValue: "",
     pageNumber: 1,
+    pageScale: 2,
     viewerOptions: {} as Record<string, unknown>,
     linkOptions: {} as Record<string, unknown>,
     findOptions: {} as Record<string, unknown>,
@@ -113,6 +114,16 @@ const vw = vi.hoisted(() => {
     setDocument(doc: unknown): void {
       log.push(doc ? "viewer:setDocument" : "viewer:clear");
     }
+    getPageView(index: number) {
+      const container = state.viewerOptions.container as HTMLElement;
+      let div = container.querySelector<HTMLDivElement>(`[data-page="${index + 1}"]`);
+      if (!div) {
+        div = document.createElement("div");
+        div.dataset.page = String(index + 1);
+        container.append(div);
+      }
+      return { div, viewport: { scale: state.pageScale } };
+    }
     get currentScaleValue(): string {
       return state.scaleValue;
     }
@@ -139,6 +150,7 @@ const vw = vi.hoisted(() => {
     listeners.clear();
     state.scaleValue = "";
     state.pageNumber = 1;
+    state.pageScale = 2;
   };
 
   return { log, sent, state, emit, reset, EventBus, PDFLinkService, PDFFindController, PDFViewer };
@@ -200,7 +212,7 @@ class ResizeObserverStub {
 }
 vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 
-import { PdfView } from "./PdfView";
+import { PdfView, boxRect } from "./PdfView";
 
 const bytes = new Uint8Array([1, 2, 3]);
 
@@ -884,5 +896,36 @@ describe("PdfView find bar", () => {
     } finally {
       window.removeEventListener("keydown", claim, { capture: true });
     }
+  });
+});
+
+describe("PdfView highlights", () => {
+  const box = { text: "q", page: 2, x0: 10, top: 20, x1: 30, bottom: 25 };
+  const rect = () => {
+    const el = document.querySelector<HTMLElement>(".pdf-highlight");
+    return el && [el.style.left, el.style.top, el.style.width, el.style.height];
+  };
+
+  it("scales PDF points by the page view's scale", () => {
+    expect(boxRect({ text: "", page: 1, x0: 72, top: 92, x1: 255, bottom: 104 }, 1.5)).toEqual({ left: 108, top: 138, width: 274.5, height: 18 });
+  });
+
+  it("opens the cited page and draws its boxes there", async () => {
+    render(<PdfView bytes={bytes} filename="report.pdf" highlight={{ page: 2, boxes: [box] }} />);
+    await screen.findByText("/ 3");
+    expect(vw.state.pageNumber).toBe(2);
+    expect(rect()).toEqual(["20px", "40px", "40px", "10px"]);
+  });
+
+  it("redraws after pdf.js re-renders the page at a new scale, and clears when the highlight goes", async () => {
+    const { rerender } = render(<PdfView bytes={bytes} filename="report.pdf" highlight={{ page: 2, boxes: [box] }} />);
+    await screen.findByText("/ 3");
+    // What pdf.js's PDFPageView.reset does to a page on zoom: it empties the div.
+    document.querySelectorAll(".pdf-highlight").forEach((n) => n.remove());
+    vw.state.pageScale = 3;
+    emit("pagerendered", { pageNumber: 2 });
+    expect(rect()).toEqual(["30px", "60px", "60px", "15px"]);
+    rerender(<PdfView bytes={bytes} filename="report.pdf" highlight={null} />);
+    expect(document.querySelector(".pdf-highlight")).toBeNull();
   });
 });

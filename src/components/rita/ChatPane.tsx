@@ -10,6 +10,7 @@ import { sendToTarget } from "../../lib/shareSend";
 import type { ShareTarget } from "../../lib/shareTargets";
 import { useAgentDiscovery } from "../../stores/agentDiscoveryStore";
 import { useChatStore } from "../../stores/chatStore";
+import { useDashboardStore } from "../../stores/dashboardStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { LockGlyph } from "../LockGlyph";
 import { ChatMessages } from "./ChatMessages";
@@ -37,6 +38,8 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
   const shareTargets = useSettingsStore((s) => s.settings.shareTargets);
   const promptSuggestions = useSettingsStore((s) => s.settings.agentPromptSuggestions);
   const { messages, calls, trail, citations, suggestions, running, error, pinned, pendingTool, pendingMessage } = useChatStore();
+  // The dashboard object, not a fresh array: a selector returning a new array re-renders forever under zustand 5.
+  const dashboard = useDashboardStore((s) => s.activeDashboard());
   const { send, abort, clear, setPaneOpen, togglePinned, resolveTool } = useChatStore.getState();
   const [draft, setDraft] = useState("");
   const discovery = useAgentDiscovery(ritaUrl);
@@ -155,7 +158,7 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
             </button>
           </div>
         ) : null}
-        <Sources citations={citations} />
+        <Sources citations={citations} cards={dashboard?.tabs.flatMap((t) => t.cards) ?? []} />
         {promptSuggestions && suggestions.length > 0 ? (
           <div className="chat-suggestions">
             {suggestions.map((s) => (
