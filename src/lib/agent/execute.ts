@@ -223,7 +223,7 @@ async function widgetDataResults(sources: unknown, deps: ExecuteDeps, signal: Ab
         durationMs: Date.now() - started,
         rows: 0,
       });
-      out.push({ error_type: "fetch_failed", message });
+      out.push({ error_type: "fetch_failed", message, content: message });
     }
   }
   return out;
@@ -283,17 +283,23 @@ function ritaTypedError(result: Record<string, unknown>): { code: string; messag
 function toolResultData(result: unknown, failure?: { code: string; message: string } | null): unknown[] {
   const raw = isRecord(result) && Array.isArray(result.content) ? result.content : [{ type: "text", text: JSON.stringify(result ?? null) }];
   // Each item within MAX_RESULT_CHARS; a non-text item is capped as its JSON.
-  const items = raw.map((item: unknown) =>
-    isRecord(item) && typeof item.text === "string"
-      ? item.text.length > MAX_RESULT_CHARS ? { ...item, text: capContent(item.text) } : item
-      : JSON.stringify(item ?? null).length > MAX_RESULT_CHARS ? { type: "text", text: capContent(item) } : item,
-  );
+  const items = raw.map((item: unknown) => {
+    if (isRecord(item) && typeof item.text === "string") {
+      const text = item.text.length > MAX_RESULT_CHARS ? capContent(item.text) : item.text;
+      // openbb-ai's SingleDataContent reads `content`; Rita reads `text` or `content` (conformance Q2).
+      return { ...item, text, content: text };
+    }
+    if (JSON.stringify(item ?? null).length <= MAX_RESULT_CHARS) return item;
+    const capped = capContent(item);
+    return { type: "text", text: capped, content: capped };
+  });
   // A failed call leads with agent-rita's typed error item, so Rita's own
   // status reads "<tool> returned an error" (WARNING) instead of "completed"
   // beside our ERROR step. Rita passes that item's code and message only, so
   // the result itself (retry_with and the rest) still follows.
   if (!failure) return [{ items }];
-  const typed = { type: "text", text: JSON.stringify({ $rita_kind: "error", error: failure }) };
+  const typedText = JSON.stringify({ $rita_kind: "error", error: failure });
+  const typed = { type: "text", text: typedText, content: typedText };
   return [{ items: [typed, ...items] }];
 }
 

@@ -297,7 +297,7 @@ describe("executeFunction", () => {
       throw new Error("unknown widget " + UUID);
     };
     const msg = await executeFunction(payload, { fetchWidget, runAgentTool: async () => null, onCall: (c) => calls.push(c) }, signal);
-    expect((msg as { data: unknown[] }).data).toEqual([{ error_type: "fetch_failed", message: `unknown widget ${UUID}` }]);
+    expect((msg as { data: unknown[] }).data).toEqual([{ error_type: "fetch_failed", message: `unknown widget ${UUID}`, content: `unknown widget ${UUID}` }]);
     expect(calls[0]).toMatchObject({ kind: "widget_data", ok: false, error: `unknown widget ${UUID}`, rows: 0 });
   });
 
@@ -312,7 +312,17 @@ describe("executeFunction", () => {
     expect(runTool).toHaveBeenCalledWith("s1", "search", { q: "x" }, signal);
     // One entry, whose items are the result's content[] — the list Rita's
     // processMcpResult iterates (for entry of data; for item of entry.items).
-    expect((msg as { data: unknown }).data).toEqual([{ items: [{ type: "text", text: "a" }, { type: "text", text: "b" }] }]);
+    expect((msg as { data: unknown }).data).toEqual([{ items: [{ type: "text", text: "a", content: "a" }, { type: "text", text: "b", content: "b" }] }]);
+  });
+
+  it("gives an MCP text item its content as well as its text, which openbb-ai's SingleDataContent reads", async () => {
+    const fetchWidget: WidgetFetcher = async () => ({ data: null, url: "", params: {} });
+    const msg = await executeFunction(
+      { function: "execute_agent_tool", input_arguments: { server_id: "s1", tool_name: "t", parameters: {} } },
+      { fetchWidget, runAgentTool: async () => ({ content: [{ type: "text", text: "a" }] }) },
+      signal,
+    );
+    expect((msg as { data: unknown }).data).toEqual([{ items: [{ type: "text", text: "a", content: "a" }] }]);
   });
 
   it("wraps a local tool's object, array and null results as one JSON text item (#322)", async () => {
@@ -323,7 +333,7 @@ describe("executeFunction", () => {
         { fetchWidget, runAgentTool: async () => result },
         signal,
       );
-      expect((msg as { data: unknown }).data).toEqual([{ items: [{ type: "text", text: JSON.stringify(result) }] }]);
+      expect((msg as { data: unknown }).data).toEqual([{ items: [{ type: "text", text: JSON.stringify(result), content: JSON.stringify(result) }] }]);
     }
   });
 
@@ -344,8 +354,8 @@ describe("executeFunction", () => {
     expect((a as { data: unknown }).data).toEqual([
       {
         items: [
-          { type: "text", text: JSON.stringify({ $rita_kind: "error", error: { code: "unsupported", message: "unsupported" } }) },
-          { type: "text", text: JSON.stringify({ error_type: "unsupported" }) },
+          { type: "text", text: JSON.stringify({ $rita_kind: "error", error: { code: "unsupported", message: "unsupported" } }), content: JSON.stringify({ $rita_kind: "error", error: { code: "unsupported", message: "unsupported" } }) },
+          { type: "text", text: JSON.stringify({ error_type: "unsupported" }), content: JSON.stringify({ error_type: "unsupported" }) },
         ],
       },
     ]);
@@ -907,7 +917,7 @@ describe("PDF cards in get_widget_data", () => {
       { fetchWidget: async () => ({ data, url: "", params: {}, pdf: true, name: "Annual Report" }), runAgentTool: async () => null },
       signal,
     );
-  const items = async (data: unknown) => ((await run(data)) as { data: Array<{ items?: unknown[]; message?: string }> }).data[0];
+  const items = async (data: unknown) => ((await run(data)) as { data: Array<{ items?: unknown[]; message?: string; content?: string }> }).data[0];
 
   it("sends a base64 PDF as a pdf file item, not as a table", async () => {
     expect((await items({ content: "JVBERi0=", data_format: { data_type: "pdf", filename: "ar.pdf" } })).items).toEqual([
@@ -932,6 +942,7 @@ describe("PDF cards in get_widget_data", () => {
     expect(result.items).toBeUndefined();
     expect(result.message).toContain("Annual Report");
     expect(result.message).toContain(String(MAX_RESULT_CHARS));
+    expect(result.content).toBe(result.message);
   });
 
   it("marks a pdf widget's fetch as a PDF named after the card", async () => {
