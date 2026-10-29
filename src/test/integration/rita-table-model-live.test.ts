@@ -150,7 +150,8 @@ live("Rita arranges a CSV table through table-model/1", () => {
     const first = await turn(`${SKILL}Show total Amount by Region in the table.`);
     expect(first.rounds.some((r) => r.tool === "arrange_table")).toBe(true);
     const before = structuredClone(tableCard().tableDefinition);
-    const { rounds, reply } = await turn(`${SKILL}Sum the Region column.`);
+    // Names the text column as the thing to sum: "Sum the Region column" was read as "sum Amount by Region".
+    const { rounds, reply } = await turn(`${SKILL}Add up the Region column's own values (the region names, not Amount).`);
     const results = rounds.filter((r) => r.tool === "arrange_table").map((r) => r.result as { status: string; code?: string });
     expect(results.some((r) => r.status === "applied"), "no arrange applied").toBe(false);
     expect(tableCard().tableDefinition).toEqual(before);
