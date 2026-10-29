@@ -51,4 +51,11 @@ describe("feedback buttons", () => {
     rerender(<ChatMessages messages={msgs} />);
     expect(screen.queryByRole("button", { name: "Good response" })).toBeNull();
   });
+  it("appear on no message while a turn runs, and on each finished AI message after", () => {
+    const two = [{ role: "human" as const, content: "hi" }, { role: "ai" as const, content: "first" }, { role: "ai" as const, content: "second" }];
+    const { rerender } = render(<ChatMessages messages={two} feedbackUrl="https://rita.example" running />);
+    expect(screen.queryAllByRole("button", { name: "Good response" })).toHaveLength(0);
+    rerender(<ChatMessages messages={two} feedbackUrl="https://rita.example" />);
+    expect(screen.getAllByRole("button", { name: "Good response" })).toHaveLength(2);
+  });
 });

@@ -24,6 +24,34 @@ describe("sendFeedback", () => {
   });
 });
 
+describe("sendFeedback body cap", () => {
+  const sent = async (p: FeedbackPayload) => {
+    const fetchImpl = vi.fn(async (_u: string, _i: RequestInit) => new Response(null, { status: 204 }));
+    await sendFeedback("https://rita.example", p, fetchImpl as unknown as typeof fetch);
+    const body = fetchImpl.mock.calls[0][1].body as string;
+    return { body, parsed: JSON.parse(body) as FeedbackPayload };
+  };
+  const big = (ai: string): FeedbackPayload => ({ ...payload, tags: ["Other"], vote: "thumbs_down", ai_response: ai, user_prompt: ai, user_comment: ai });
+
+  it("keeps a 200 KB ASCII reply under 64 KiB", async () => {
+    const { body, parsed } = await sent(big("a".repeat(200_000)));
+    expect(new TextEncoder().encode(body).length).toBeLessThan(65536);
+    expect(parsed.trace_id).toBe("t-1");
+    expect(parsed.vote).toBe("thumbs_down");
+    expect(parsed.tags).toEqual(["Other"]);
+  });
+  it("keeps 100K multi-byte characters (emoji, CJK) under 64 KiB without splitting a pair", async () => {
+    for (const ch of ["\u{1F600}", "\u6F22"]) {
+      const { body, parsed } = await sent(big(ch.repeat(100_000)));
+      expect(new TextEncoder().encode(body).length).toBeLessThan(65536);
+      expect(parsed.ai_response).toBe(ch.repeat(parsed.ai_response.length / ch.length));
+    }
+  });
+  it("leaves short fields untouched", async () => {
+    expect((await sent(payload)).parsed).toEqual(payload);
+  });
+});
+
 describe("advertisesFeedback", () => {
   const agent = (features: AgentDescriptor["features"]): AgentDescriptor => ({ id: "a", name: "A", description: "", queryPath: "/v1/query", features });
   it("is true only for a boolean feedback feature set to true", () => {

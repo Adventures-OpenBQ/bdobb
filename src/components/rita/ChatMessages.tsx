@@ -29,8 +29,9 @@ export function ChatMessages({ messages, feedbackUrl = null, running = false }: 
           return m.content.map((a) => <ArtifactView key={a.uuid} artifact={a} />);
         }
         if (m.role === "ai" && typeof m.content === "string") {
-          // A reply still streaming is not finished, so it is not rated yet.
-          const rateable = feedbackUrl !== null && !(running && i === messages.length - 1);
+          // Rate only once the turn has ended: the store reorders a turn's
+          // messages when it finishes, which would remount the bar and re-send.
+          const rateable = feedbackUrl !== null && !running;
           return (
             <div key={i} className="chat-bubble chat-ai">
               <MarkdownRenderer data={m.content} />

@@ -24,6 +24,7 @@ describe("FeedbackBar", () => {
       vote: "thumbs_up", tags: [], user_comment: "", ai_response: "hello", user_prompt: "hi", trace_id: expect.any(String),
     });
     expect(await screen.findByRole("status")).toHaveTextContent("Thanks for the feedback.");
+    expect(sendFeedback).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "Good response" })).toBeNull();
   });
 
