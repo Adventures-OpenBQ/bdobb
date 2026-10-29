@@ -1392,11 +1392,9 @@ Ruled 2026-10-29 (Q1 = D, Q2 = A, Q3 = A, Q4 = B). Apply these diffs:
   });
   ```
 
-  and `const typedText = JSON.stringify({ $rita_kind: "error", error: failure }); const typed = { type: "text", text: typedText, content: typedText };`. Add to `execute.test.ts`: an `execute_agent_tool` whose `runAgentTool` returns `{ content: [{ type: "text", text: "a" }] }` yields `data` `[{ items: [{ type: "text", text: "a", content: "a" }] }]`. Existing `toEqual`s on these items gain `content` (additions only; keep every existing assertion). **Q2 = B:** row 38 becomes `await expect(turn(38, …)).rejects.toThrow(/422/)`, keeping the `ran` assertion.
+  and `const typedText = JSON.stringify({ $rita_kind: "error", error: failure }); const typed = { type: "text", text: typedText, content: typedText };`. Add to `execute.test.ts`: an `execute_agent_tool` whose `runAgentTool` returns `{ content: [{ type: "text", text: "a" }] }` yields `data` `[{ items: [{ type: "text", text: "a", content: "a" }] }]`. Existing `toEqual`s on these items gain `content` (additions only; keep every existing assertion).
 - **Q3 = A:** in `widgetDataResults`' catch, push `{ error_type: "fetch_failed", message, content: message }`; extend the A1 over-limit test to expect `content` equal to `message`.
 - **Q4 = B:** no change; row 40 keeps its two calls.
-
-The Q2 = B alternative (row 38 asserts the 422) is not taken.
 
 - [ ] **Step 1:** Apply the ruled diffs; run `pnpm exec vitest run src/lib/agent && pnpm typecheck`. Expected: PASS.
 - [ ] **Step 2:** Run `pnpm test:conformance`. Expected: `conformance: 13/13 passed, 0 skipped, 0 failed`.
