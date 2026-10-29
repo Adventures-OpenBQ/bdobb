@@ -2,7 +2,9 @@
 
 Status: draft for review, 2026-10-28. Home: BDOBB v6.0.0 (`release/v6`) and
 `adventures-openbq/agent-rita-bdobb`. Carried to v7 through v10 after v6 is
-verified. Nothing is pushed until the user authorizes delivery.
+verified. Also touches Adventures-OpenBQ/openbq-docker v10 (the door's
+gateway policy) and the NAS `openbq-stack`. No git push happens until the
+user authorizes delivery.
 
 ## Intent
 
@@ -27,6 +29,8 @@ User rulings, 2026-10-28:
 - Use local Qwen on the Spark.
 - Replace the Spark's production `rita` with the recipe build.
 - The work's home is Adventures-OpenBQ/bdobb `release/v6`.
+- Redeploying the NAS `openbq-rita` and `openbq-rita-door` is in scope.
+- The public door relays feedback (it does not hide it).
 
 ## Findings that shape the design
 
@@ -144,6 +148,8 @@ README table, and a `build.sh --check-only` pass.
   - `POST /v1/feedback` validates the payload with zod and appends one JSON
     line to `FEEDBACK_PATH` (default `/data/feedback.jsonl`). It returns 204,
     or 400 for a bad body (as 0010 does).
+  - Each line also records a receive timestamp and, when present, the
+    `X-Rita-Principal` header the door sets (`github:<id>`).
   - `agents.json` advertises `feedback: true`.
   - A unit test runs under `scripts/test-aperture.sh`'s `bun test`.
 - **0016 PDF quote boxes.**
@@ -173,14 +179,61 @@ README table, and a `build.sh --check-only` pass.
 - Pass means `pnpm test:live` reports 0 skipped and 0 failed, with
   `OPENBB_RITA_URL` set to the Spark svc name.
 
+## 7. NAS redeploy and the public door
+
+The NAS deploys by image pin; nothing is built there.
+
+**Rita image:**
+
+- Run `build.sh --check-only` to produce the patched tree.
+- Run `docker buildx build --platform linux/amd64 --push` from the Mac. The
+  image goes to the private `ghcr.io/adventures-openbq/openbq-rita`, tagged
+  `sha-<recipe short sha>` with the recipe's OCI labels.
+- The package stays private.
+
+**Gateway change (Adventures-OpenBQ/openbq-docker, home v10, carried to
+v11):**
+
+- `funnel-gateway/rita-policy.mjs` relays `POST /ai/v1/feedback` to the door
+  upstream with the caller's `X-Rita-Principal`, the same way it relays
+  queries.
+- Feedback requests count against the principal's `ritaPerHour` budget. They
+  do not take a concurrent-turn slot.
+- The body is capped at 64 KB, and any other `/ai/v1/*` path stays refused.
+- `agents.json` passes through unchanged, so `feedback: true` reaches web
+  users.
+- Tests go in the gateway's existing policy tests. The fix re-cuts
+  `openbq-funnel-gateway:10.0.0` and od v10.0.0, following the vN.0.0 rule.
+
+**Deploy on the NAS `openbq-stack`:**
+
+1. Back up the compose file and the Rita env files with a timestamp suffix,
+   as earlier Rita swaps did.
+2. Repin `openbq-rita`, `openbq-rita-door` and the gateway.
+3. Add a `FEEDBACK_PATH` volume to each Rita service, with separate files for
+   the private Rita and the door.
+4. Run `compose pull`, then `up -d` on those services only. Pulls use
+   `DOCKER_CONFIG=<nas-compose-dir>/.docker`.
+
+**Verify:**
+
+- Through :10443: `/status`, `agents.json` (`feedback: true`), a Qwen turn
+  and a Claude turn.
+- Through the door: a query, a feedback POST that returns 204 and lands with
+  the principal, a refused unknown path, and the rate limit applied.
+- Then `check-upstreams` and `verify` pass.
+
+**Rollback:** the backed-up compose file and the prior digests
+(`openbq-rita@sha256:14a18321…`, gateway `sha256:aea29572…`).
+
 ## Out of scope
 
 - Examples 20 and 99: these are not protocol features.
-- Redeploying the NAS `openbq-rita`, which also lags the recipe. That is a
-  separate decision.
 - Carrying the work to v7–v10. That follows v6 verification, as its own
   plan.
-- Pushing anything.
+- Pushing git branches or tags to GitHub before the user authorizes it.
+  Private GHCR image pushes for §7 happen at the deploy step, which is its
+  own approval checkpoint.
 
 ## Testing
 
@@ -188,4 +241,5 @@ README table, and a `build.sh --check-only` pass.
   `sendFeedback`, and feedback-button visibility.
 - **Conformance:** `scripts/agent-conformance.sh`, 13 examples, no skips.
 - **Live:** `pnpm test:live` against the redeployed Spark Rita.
+- **NAS:** the §7 verify list, plus the gateway's policy tests.
 - **Gates:** the v6 repo's existing typecheck, unit, build and e2e gates.
