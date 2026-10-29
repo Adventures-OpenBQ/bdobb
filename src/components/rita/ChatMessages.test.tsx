@@ -2,7 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+const sendFeedback = vi.fn();
+vi.mock("../../lib/agent/feedback", async (orig) => ({
+  ...(await orig<typeof import("../../lib/agent/feedback")>()),
+  sendFeedback: (...a: unknown[]) => sendFeedback(...a),
+}));
 import { ChatMessages } from "./ChatMessages";
 
 vi.mock("../../lib/plotly", () => ({
@@ -57,5 +63,27 @@ describe("feedback buttons", () => {
     expect(screen.queryAllByRole("button", { name: "Good response" })).toHaveLength(0);
     rerender(<ChatMessages messages={two} feedbackUrl="https://rita.example" />);
     expect(screen.getAllByRole("button", { name: "Good response" })).toHaveLength(2);
+  });
+  it("while a new turn runs, earlier replies keep their bar and only the in-progress turn hides it", () => {
+    const h = (content: string) => ({ role: "human" as const, content });
+    const a = (content: string) => ({ role: "ai" as const, content });
+    render(<ChatMessages messages={[h("q1"), a("old"), h("q2"), a("new before tool"), a("new after tool")]} feedbackUrl="https://rita.example" running />);
+    expect(screen.getAllByRole("button", { name: "Good response" })).toHaveLength(1);
+  });
+
+  it("keeps an already-rated reply rated across a following turn", async () => {
+    sendFeedback.mockReset().mockResolvedValue(undefined);
+    const h = (content: string) => ({ role: "human" as const, content });
+    const a = (content: string) => ({ role: "ai" as const, content });
+    const url = "https://rita.example";
+    const turn1 = [h("q1"), a("r1")];
+    const { rerender } = render(<ChatMessages messages={turn1} feedbackUrl={url} />);
+    await userEvent.click(screen.getByRole("button", { name: "Good response" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Thanks for the feedback.");
+    rerender(<ChatMessages messages={[...turn1, h("q2")]} feedbackUrl={url} running />);
+    rerender(<ChatMessages messages={[...turn1, h("q2"), a("r2")]} feedbackUrl={url} />);
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Good response" })).toHaveLength(1);
+    expect(sendFeedback).toHaveBeenCalledTimes(1);
   });
 });

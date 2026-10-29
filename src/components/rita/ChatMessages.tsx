@@ -14,6 +14,9 @@ export function ChatMessages({ messages, feedbackUrl = null, running = false }: 
     if (typeof end.current?.scrollIntoView === "function") end.current.scrollIntoView({ block: "end" });
   }, [messages]);
   let prompt = "";
+  // While a turn runs, only its own messages (after the last human one) are unrated;
+  // earlier replies keep their mounted bar so a sent vote is not forgotten.
+  const lastHuman = messages.map((m) => m.role).lastIndexOf("human");
   return (
     <div className="chat-messages">
       {messages.map((m, i) => {
@@ -29,9 +32,9 @@ export function ChatMessages({ messages, feedbackUrl = null, running = false }: 
           return m.content.map((a) => <ArtifactView key={a.uuid} artifact={a} />);
         }
         if (m.role === "ai" && typeof m.content === "string") {
-          // Rate only once the turn has ended: the store reorders a turn's
-          // messages when it finishes, which would remount the bar and re-send.
-          const rateable = feedbackUrl !== null && !running;
+          // The store reorders a turn's messages when it finishes, which would
+          // remount a bar rated mid-turn and send a second vote.
+          const rateable = feedbackUrl !== null && !(running && i > lastHuman);
           return (
             <div key={i} className="chat-bubble chat-ai">
               <MarkdownRenderer data={m.content} />
