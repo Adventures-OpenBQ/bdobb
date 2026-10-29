@@ -5,17 +5,20 @@ import { useEffect, useRef } from "react";
 import { isArtifactMessage, type ChatMessage } from "../../stores/chatStore";
 import { MarkdownRenderer } from "../renderers/MarkdownRenderer";
 import { ArtifactView } from "./ArtifactView";
+import { FeedbackBar } from "./FeedbackBar";
 
-export function ChatMessages({ messages }: { messages: ChatMessage[] }) {
+export function ChatMessages({ messages, feedbackUrl = null, running = false }: { messages: ChatMessage[]; feedbackUrl?: string | null; running?: boolean }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // jsdom has no scrollIntoView.
     if (typeof end.current?.scrollIntoView === "function") end.current.scrollIntoView({ block: "end" });
   }, [messages]);
+  let prompt = "";
   return (
     <div className="chat-messages">
       {messages.map((m, i) => {
         if (m.role === "human") {
+          prompt = String(m.content);
           return (
             <div key={i} className="chat-bubble chat-human">
               {String(m.content)}
@@ -26,9 +29,12 @@ export function ChatMessages({ messages }: { messages: ChatMessage[] }) {
           return m.content.map((a) => <ArtifactView key={a.uuid} artifact={a} />);
         }
         if (m.role === "ai" && typeof m.content === "string") {
+          // A reply still streaming is not finished, so it is not rated yet.
+          const rateable = feedbackUrl !== null && !(running && i === messages.length - 1);
           return (
             <div key={i} className="chat-bubble chat-ai">
               <MarkdownRenderer data={m.content} />
+              {rateable && feedbackUrl !== null ? <FeedbackBar agentUrl={feedbackUrl} prompt={prompt} response={m.content} /> : null}
             </div>
           );
         }

@@ -38,3 +38,17 @@ describe("ChatMessages", () => {
     expect(screen.queryByText(/get_widget_data/)).toBeNull();
   });
 });
+
+describe("feedback buttons", () => {
+  const msgs = [{ role: "human" as const, content: "hi" }, { role: "ai" as const, content: "hello" }];
+  it("are on a finished reply when a feedback url is given", () => {
+    render(<ChatMessages messages={msgs} feedbackUrl="https://rita.example" />);
+    expect(screen.getByRole("button", { name: "Good response" })).toBeInTheDocument();
+  });
+  it("are not on the reply still streaming, nor without a feedback url", () => {
+    const { rerender } = render(<ChatMessages messages={msgs} feedbackUrl="https://rita.example" running />);
+    expect(screen.queryByRole("button", { name: "Good response" })).toBeNull();
+    rerender(<ChatMessages messages={msgs} />);
+    expect(screen.queryByRole("button", { name: "Good response" })).toBeNull();
+  });
+});

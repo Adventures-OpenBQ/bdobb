@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useEffect, useState } from "react";
+import { advertisesFeedback } from "../../lib/agent/feedback";
+import { pickAgent } from "../../lib/agent/workspaceOptions";
 import type { AgentsJson } from "../../lib/agent/types";
 import { chatFilename, chatTitle, chatToMarkdown } from "../../lib/chatExport";
 import { exportChat } from "../../lib/chatExportFile";
@@ -45,6 +47,8 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
   const discovery = useAgentDiscovery(ritaUrl);
   const presence: Presence = discovery.state === "online" ? "online" : discovery.state === "offline" ? "offline" : "unknown";
   const model = discovery.state === "online" ? defaultModel(discovery.agents) : "";
+  // Context Sharing does not gate this: only the rated prompt and reply go, on a click.
+  const feedbackUrl = discovery.state === "online" && advertisesFeedback(pickAgent(discovery.agents, ritaUrl)) ? ritaUrl : null;
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -142,7 +146,7 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
         </p>
       ) : null}
       <div className="chat-body">
-        <ChatMessages messages={messages} />
+        <ChatMessages messages={messages} feedbackUrl={feedbackUrl} running={running} />
         <StatusTrail trail={trail} running={running} />
         {pendingTool !== null ? (
           <div className="chat-bubble chat-confirm" role="group" aria-label="Confirm tool call">

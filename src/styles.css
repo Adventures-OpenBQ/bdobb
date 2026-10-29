@@ -2682,6 +2682,10 @@ body {
 .chat-confirm button {
   margin-right: 6px;
 }
+.chat-feedback { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px; font-size: var(--font-size-12); color: var(--text-muted); }
+.chat-feedback button { background: none; border: 0; cursor: pointer; padding: 0 2px; }
+.chat-feedback button[aria-pressed="true"] { outline: 1px solid var(--accent); border-radius: 4px; }
+.chat-feedback-details { display: flex; flex-direction: column; gap: 4px; width: 100%; border: 0; padding: 0; margin: 0; }
 .chat-confirm {
   border: 1px solid var(--accent);
 }
