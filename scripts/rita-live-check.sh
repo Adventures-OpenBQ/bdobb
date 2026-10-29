@@ -21,7 +21,8 @@ IFS=, read -ra mcps <<< "$OPENBB_MCP_URLS"; for u in "${mcps[@]}"; do probe "$(s
 probe "${OPENBB_BACKEND_URL%/}/widgets.json" "${OPENBB_NAS_AUTH:+$hdr}"
 # RITA_LIVE_MODEL picks the model for every live turn; RITA_LIVE_RETRY_MODEL reruns only the failed tests on that model,
 # at RITA_LIVE_RETRY_URL (default OPENBB_RITA_URL; the Spark Rita offers no Claude models). The gate passes only if every
-# failure passes on the retry, and it names each one.
+# failure passes on the retry, and it names each one. Retry on the cheapest paid model that answers: the NAS private Rita's
+# anthropic:claude-haiku-4-5-20251001 (direct key). Aperture's subscription routes need the caller's own login.
 retry_url="${RITA_LIVE_RETRY_URL:-$OPENBB_RITA_URL}"
 [ -z "${RITA_LIVE_RETRY_MODEL:-}" ] || probe "${retry_url%/}/agents.json"
 [ "${1:-}" = "--self-check" ] && exit 0
