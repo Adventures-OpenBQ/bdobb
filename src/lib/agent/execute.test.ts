@@ -897,3 +897,48 @@ describe("tool results are capped (review A6)", () => {
     expect(JSON.parse(text)).toMatchObject({ truncated: true, total_rows: 5000 });
   });
 });
+
+describe("PDF cards in get_widget_data", () => {
+  const PDF_CARD = card({ id: "7d3e9f10-2b4c-4e5a-8f60-1a2b3c4d5e6f", widgetId: "report", backendId: "reference", title: "Annual Report" });
+  const report = widget({ id: "report", backendId: "reference", name: "Report", type: "pdf", params: [] });
+  const run = (data: unknown) =>
+    executeFunction(
+      { function: "get_widget_data", input_arguments: { data_sources: [{ widget_uuid: PDF_CARD.id, origin: "reference" }] } },
+      { fetchWidget: async () => ({ data, url: "", params: {}, pdf: true, name: "Annual Report" }), runAgentTool: async () => null },
+      signal,
+    );
+  const items = async (data: unknown) => ((await run(data)) as { data: Array<{ items?: unknown[]; message?: string }> }).data[0];
+
+  it("sends a base64 PDF as a pdf file item, not as a table", async () => {
+    expect((await items({ content: "JVBERi0=", data_format: { data_type: "pdf", filename: "ar.pdf" } })).items).toEqual([
+      { content: "JVBERi0=", data_format: { data_type: "pdf", filename: "ar.pdf" }, citable: true },
+    ]);
+  });
+
+  it("keeps a backend's PDF link as a url item", async () => {
+    expect((await items({ url: "https://example.com/ar.pdf", data_format: { data_type: "pdf", filename: "ar.pdf" } })).items).toEqual([
+      { url: "https://example.com/ar.pdf", data_format: { data_type: "pdf", filename: "ar.pdf" }, citable: true },
+    ]);
+  });
+
+  it("names the file after the card when the backend gave no filename", async () => {
+    expect((await items({ content: "JVBERi0=", data_format: { data_type: "pdf" } })).items).toEqual([
+      { content: "JVBERi0=", data_format: { data_type: "pdf", filename: "Annual Report.pdf" }, citable: true },
+    ]);
+  });
+
+  it("is an error naming the card and the limit when the base64 is over the cap, never a truncated PDF", async () => {
+    const result = await items({ content: "A".repeat(MAX_RESULT_CHARS + 1), data_format: { data_type: "pdf", filename: "big.pdf" } });
+    expect(result.items).toBeUndefined();
+    expect(result.message).toContain("Annual Report");
+    expect(result.message).toContain(String(MAX_RESULT_CHARS));
+  });
+
+  it("marks a pdf widget's fetch as a PDF named after the card", async () => {
+    const fetcher = makeWidgetDataFetcher(
+      { cards: [PDF_CARD], backends, findWidget: () => report, keyMaintBackends: new Set(), ...NO_GROUPS },
+      vi.fn(async () => ({ content: "JVBERi0=", data_format: { data_type: "pdf" } })) as never,
+    );
+    expect(await fetcher({ widget_uuid: PDF_CARD.id, origin: "reference" }, signal)).toMatchObject({ pdf: true, name: "Annual Report" });
+  });
+});

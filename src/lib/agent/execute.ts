@@ -4,6 +4,7 @@
 import { correctStatementData } from "../../hooks/useStatementYearEnds";
 import { fetchWidgetData, joinUrl } from "../dataClient";
 import { isRecord } from "../isRecord";
+import { safeUrl } from "../safeUrl";
 import { isCardAgentOffLimits } from "../providerKeys";
 import { logError } from "../logger";
 import type { Skill } from "../skillsFiles";
@@ -52,7 +53,8 @@ export function buildWidgetRefs(
   return refs;
 }
 
-export type WidgetFetch = { data: unknown; url: string; params: Record<string, string> };
+/** `pdf` and `name` only for a pdf widget: its document goes to the agent as a file, named after the card. */
+export type WidgetFetch = { data: unknown; url: string; params: Record<string, string>; pdf?: boolean; name?: string };
 export type WidgetFetcher = (source: Record<string, unknown>, signal: AbortSignal) => Promise<WidgetFetch>;
 
 type FetcherDeps = {
@@ -109,7 +111,8 @@ export function makeWidgetDataFetcher(deps: FetcherDeps, fetchData = fetchWidget
     const url = joinUrl(backend.baseUrl, widget.endpoint) + (query === "" ? "" : `?${query}`);
     // Rita reads the statement rows the card shows, fiscal labels corrected (dev 191610b01).
     const data = await correctStatementData(backend, widget, params, await fetchData(backend, widget, params, sent.ctx, signal));
-    return { data, url, params };
+    // The same test WidgetCard uses to choose PdfRenderer.
+    return widget.type === "pdf" ? { data, url, params, pdf: true, name: card.title ?? widget.name } : { data, url, params };
   };
 }
 
@@ -174,6 +177,25 @@ export function capContent(data: unknown): string {
   return text.slice(0, MAX_RESULT_CHARS - marker.length) + marker;
 }
 
+/**
+ * A pdf card's document as the protocol's file item. A backend's link stays a
+ * link (openbb-ai's SingleFileReference; Rita fetches `url`); bytes go as base64
+ * within MAX_RESULT_CHARS, and past it the call fails rather than send half a PDF.
+ */
+export function pdfItem(data: unknown, name: string): Record<string, unknown> {
+  const doc = isRecord(data) ? data : {};
+  const format = isRecord(doc.data_format) ? doc.data_format : {};
+  const filename = typeof format.filename === "string" && format.filename.trim() !== "" ? format.filename : `${name}.pdf`;
+  const data_format = { data_type: "pdf", filename };
+  const link = typeof doc.content !== "string" && typeof doc.url === "string" ? safeUrl(doc.url) : null;
+  if (link !== null) return { url: link, data_format, citable: true };
+  if (typeof doc.content !== "string") throw new Error(`${name}: not a document payload`);
+  if (doc.content.length > MAX_RESULT_CHARS) {
+    throw new Error(`${name}: the PDF is ${doc.content.length} base64 characters, over the ${MAX_RESULT_CHARS}-character limit for one tool result`);
+  }
+  return { content: doc.content, data_format, citable: true };
+}
+
 function rowCount(data: unknown): number {
   return rowsOf(data)?.length ?? 0;
 }
@@ -184,11 +206,12 @@ async function widgetDataResults(sources: unknown, deps: ExecuteDeps, signal: Ab
   for (const source of list) {
     const started = Date.now();
     try {
-      const { data, url, params } = await deps.fetchWidget(source, signal);
+      const { data, url, params, pdf, name } = await deps.fetchWidget(source, signal);
+      const item = pdf
+        ? pdfItem(data, name ?? String(source.widget_uuid ?? ""))
+        : { content: capContent(data), data_format: { data_type: "object", parse_as: "table" }, citable: true };
       deps.onCall?.({ kind: "widget_data", url, params, ok: true, durationMs: Date.now() - started, rows: rowCount(data) });
-      out.push({
-        items: [{ content: capContent(data), data_format: { data_type: "object", parse_as: "table" }, citable: true }],
-      });
+      out.push({ items: [item] });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       deps.onCall?.({
