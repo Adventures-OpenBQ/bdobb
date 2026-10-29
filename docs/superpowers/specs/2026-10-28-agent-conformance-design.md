@@ -189,7 +189,7 @@ The NAS deploys by image pin; nothing is built there.
 - Run `docker buildx build --platform linux/amd64 --push` from the Mac. The
   image goes to the private `ghcr.io/adventures-openbq/openbq-rita`, tagged
   `sha-<recipe short sha>` with the recipe's OCI labels.
-- The package stays private.
+- The package is the user's private deployment store, not a release.
 
 **Gateway change (Adventures-OpenBQ/openbq-docker, home v10, carried to
 v11):**
@@ -232,8 +232,8 @@ v11):**
 - Carrying the work to v7–v10. That follows v6 verification, as its own
   plan.
 - Pushing git branches or tags to GitHub before the user authorizes it.
-  Private GHCR image pushes for §7 happen at the deploy step, which is its
-  own approval checkpoint.
+  GHCR images are the user's private deployment artifacts, not a
+  publication, so pushing them is part of §7.
 
 ## Testing
 
