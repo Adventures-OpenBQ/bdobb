@@ -213,7 +213,8 @@ v11):**
 3. Add a `FEEDBACK_PATH` volume to each Rita service, with separate files for
    the private Rita and the door.
 4. Run `compose pull`, then `up -d` on those services only. Pulls use
-   `DOCKER_CONFIG=<nas-compose-dir>/.docker`.
+   `DOCKER_CONFIG=$GHCR_CONFIG` (the stack's GHCR login, from private
+   notes).
 
 **Verify:**
 
