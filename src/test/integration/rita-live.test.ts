@@ -10,6 +10,9 @@ import { runAgentQuery } from "../../lib/agent/query";
 import type { AgentMessage } from "../../lib/agent/types";
 import type { BackendConfig, DashboardCard, WidgetDef } from "../../lib/types";
 import { cardRequestSync } from "../../hooks/useCardRequest";
+import { sendFeedback } from "../../lib/agent/feedback";
+import { pdfBase64 } from "../pdfFixture";
+import { widget as widgetOf } from "../fixtures";
 
 const ritaUrl = process.env.OPENBB_RITA_URL ?? "";
 const backendUrl = process.env.OPENBB_BACKEND_URL ?? "http://127.0.0.1:7779";
@@ -112,4 +115,49 @@ live("Rita live", () => {
     expect(history[history.length - 1].role).toBe("tool");
     expect(text.trim().length, "Rita answered after the tool round").toBeGreaterThan(0);
   }, 300_000);
+
+  const PDF_CARD: DashboardCard = { id: "7d3e9f10-2b4c-4e5a-8f60-1a2b3c4d5e6f", widgetId: "conformance_report", backendId: backend.id, params: {}, layout: { x: 0, y: 0, w: 4, h: 4 } };
+  const PDF_WIDGET = widgetOf({ id: "conformance_report", backendId: backend.id, name: "Quarterly Report", description: "A one-page PDF report.", type: "pdf", endpoint: "/conformance_report", params: [] });
+  const PDF = pdfBase64(["Quarterly report for the conformance run.", "Revenue grew 12 percent in 2025."]);
+
+  /** One turn over a dashboard holding only the PDF card, its document served from memory. */
+  async function pdfTurn(question: string) {
+    const fetchWidget = makeWidgetDataFetcher(
+      { cards: [PDF_CARD], backends: [backend], findWidget: () => PDF_WIDGET, keyMaintBackends: new Set(), request: (c, w, b) => cardRequestSync(c, w, b, undefined) },
+      (async () => ({ content: PDF, data_format: { data_type: "pdf", filename: "report.pdf" } })) as never,
+    );
+    const primary = buildWidgetRefs([PDF_CARD], () => PDF_WIDGET, () => backend.name, new Set());
+    const gen = runAgentQuery({
+      ritaUrl,
+      messages: [{ role: "human", content: `${question} The PDF is on widget ${PDF_CARD.id}; load it with get_widget_data.` }],
+      refresh: () => ({ primary }),
+      tools: [],
+      executeFunction: (payload, signal) => executeFunction(payload, { fetchWidget, runAgentTool: async () => null }, signal),
+      timeoutMs: 120_000,
+    });
+    let text = "";
+    const citations: Record<string, unknown>[] = [];
+    for (;;) {
+      const next = await gen.next();
+      if (next.done) break;
+      const e = next.value;
+      if (e.type === "chunk") text += e.delta;
+      if (e.type === "citations" && Array.isArray(e.payload.citations)) citations.push(...(e.payload.citations as Record<string, unknown>[]));
+    }
+    return { text, citations };
+  }
+
+  it("answers from a PDF card's content", async () => {
+    const { text } = await pdfTurn("By what percent did revenue grow in 2025, according to the PDF?");
+    expect(text).toMatch(/12\s*(%|percent)/i);
+  }, 300_000);
+
+  it("cites a PDF quote with at least one highlight box", async () => {
+    const { citations } = await pdfTurn("Quote the sentence about revenue verbatim and cite it with cite_quote.");
+    expect(citations.some((c) => Array.isArray(c.quote_bounding_boxes) && c.quote_bounding_boxes.length > 0)).toBe(true);
+  }, 300_000);
+
+  it("accepts a feedback vote", async () => {
+    await expect(sendFeedback(ritaUrl, { vote: "thumbs_up", tags: [], user_comment: "", ai_response: "pong", user_prompt: "ping", trace_id: crypto.randomUUID() })).resolves.toBeUndefined();
+  });
 });
