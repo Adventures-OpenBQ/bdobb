@@ -25,9 +25,14 @@
 - Rita recipe base: `Adventures-OpenBQ/agent-rita-bdobb` `origin/main` `0cfbe8b` (patches 0001–0014; tag `v6.0.0` = `bc00fd3` has only 0001–0012). Upstream pin `f673c1fbeeeedfdbf4a253031d85eb8e96538924`.
 - Production facts verified 2026-10-28: Spark `rita` = `agent-rita:a2aaa91` from `~/rita/agent-rita/compose.yaml` (host network, `.env`); vLLM `qwen3.6-35b` at `127.0.0.1:8000`. NAS `openbq-stack` at `$STACK`: `openbq-rita` and `openbq-rita-door` = `ghcr.io/adventures-openbq/openbq-rita:sha-94a5d0e@sha256:14a18321e59abdd31c80a9636966c7029a2bef688a1a24492996b45127d4eb79`; `funnel-gateway` = `ghcr.io/adventures-openbq/openbq-funnel-gateway:11.0.0-temporal@sha256:0a25c57fadaed56cb0876c679a34bd44c60a3f0d03151faed2df1772fc1b4f96` (revision `b480f0c`, release/v11; the brief's `aea29572…` is stale). Rita containers run as `USER bun`.
 
-## Decision gate (user rulings needed before Phase B can run green)
+## Rulings (user, 2026-10-29)
 
-These were found by validating BDOBB-shaped requests against `openbb-ai` 2.2.0 and by running examples 36/38/40/41/42 against the stub on 2026-10-28. Each is "BDOBB defect or example quirk" — the user decides; the plan carries the default (BDOBB unchanged) code and the exact alternative.
+These were found by validating BDOBB-shaped requests against `openbb-ai` 2.2.0 and by running examples 36/38/40/41/42 against the stub on 2026-10-28. The user accepted the recommendation on all eight on 2026-10-29:
+
+- **Q1 = D (BDOBB defect):** keep the dashboard context item and give it a fixed `uuid` and `data: {items: [{content: <description>, data_format: {data_type: "object", parse_as: "text"}, citable: false}]}`. Verified 2026-10-29: `openbb-ai` `RawContext` accepts it, and Rita's `splitContext` yields the identical text block with or without `data`. Diff in Task B3.
+- **Q2 = A**, **Q3 = A** (BDOBB defects), **Q4 = B** (example quirk, two calls), **Q5 = A** (patch 0017, Task C4 is required), **Q6** = the two known tags, **Q7** = push `10.0.0` from v10 and re-cut `11.0.0-temporal` from v11 for the NAS; the local `v10.0.0` tag may move (not pushed). **Q8** = the web relay belongs to the v7–v10 carry plan.
+
+The findings as originally recorded:
 
 - **Q1 — `context` 422s every example.** `chatStore.send` always sends `context: [dashboardContext(...)]` = `{name, description}`. `openbb-ai` types `context` as `list[RawContext]` requiring `uuid` and `data`, so every real BDOBB turn to a stock openbb-ai agent answers 422 (verified). Options: (A) BDOBB defect: move the dashboard note to the protocol's `workspace_state.current_dashboard_info` (also fixes Q4) — needs its own design, because Rita reads that only with generative UI on; (B) BDOBB defect, narrow: omit `context` for non-Rita agents (needs a rule for "is Rita"); (C) example quirk: the conformance test sends no `context` (one-line change below) and BDOBB stays as is.
 - **Q2 — MCP results lack `content`.** `execute_agent_tool` results go back as `[{items:[{type:"text", text}]}]`; `openbb-ai` needs `content` on each item (422, verified), and example 38 reads `item.content`. (A) BDOBB defect: add `content` beside `text` (diff in Task B3); Rita reads `text` or `content`. (B) quirk: row 38 asserts the 422.
@@ -1161,7 +1166,7 @@ const fetchWidget = makeWidgetDataFetcher(
   { cards: [PRICES, REPORT, NOTES], backends: [backend], findWidget, keyMaintBackends: new Set(), request: (c, w, b) => cardRequestSync(c, w, b, undefined) },
   fetchData,
 );
-// What chatStore.send's refresh sends beside the cards. Q1 decides whether this stays.
+// What chatStore.send's refresh sends beside the cards; it validates as a RawContext since the Q1 ruling.
 const CONTEXT = [dashboardContext({ id: "conformance", name: "Conformance" }, [])];
 
 type Options = {
@@ -1338,9 +1343,40 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task B3: Apply the Q1–Q4 rulings and run green
 
-Stop here until the user has ruled on Q1–Q4. Apply only the rulings' diffs:
+Ruled 2026-10-29 (Q1 = D, Q2 = A, Q3 = A, Q4 = B). Apply these diffs:
 
-- **Q1 = C (quirk):** in the test, change `const CONTEXT = [...]` to `const CONTEXT: never[] = [];` with the comment `// Q1 ruling 2026-10-xx: stock openbb-ai agents refuse BDOBB's name/description context item; chatStore keeps sending it to Rita.` **Q1 = A or B:** stop and brainstorm that change as its own design; it changes what Rita receives.
+- **Q1 = D (defect):** in `src/lib/agent/request.ts`, replace `ContextItem` and `dashboardContext` with
+
+  ```ts
+  export type ContextItem = {
+    uuid: string;
+    name: string;
+    description: string;
+    data: { items: { content: string; data_format: { data_type: "object"; parse_as: "text" }; citable: boolean }[] };
+  };
+
+  // openbb-ai's RawContext requires a uuid and data; Rita reads the same text block either way (conformance Q1).
+  const DASHBOARDS_CONTEXT_UUID = "6f1d5b2e-3c4a-4e8b-9a7d-0b5c2e1f4a90";
+
+  export function dashboardContext(current: { id: string; name: string } | undefined, all: { id: string; name: string }[]): ContextItem {
+    const others = current ? all.filter((d) => d.id !== current.id).map((d) => JSON.stringify(d.name)) : [];
+    const description = !current
+      ? "The user has no dashboard open."
+      : `The user is on the dashboard ${JSON.stringify(current.name)}; tools act on it by default, so omit dashboard_name to target it. ` +
+        (others.length > 0 ? `Their other dashboards: ${others.join(", ")}.` : "They have no other dashboards.");
+    return {
+      uuid: DASHBOARDS_CONTEXT_UUID,
+      name: "Dashboards",
+      description,
+      data: { items: [{ content: description, data_format: { data_type: "object", parse_as: "text" }, citable: false }] },
+    };
+  }
+  ```
+
+  Keep the doc comment above `dashboardContext`. In `request.test.ts`, the first `dashboardContext` test's `expect(item).not.toHaveProperty("data");` is replaced by the ruling (the only assertion this plan removes; say so in the commit message) with
+  `expect(item.uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);` and
+  `expect(item.data.items).toEqual([{ content: item.description, data_format: { data_type: "object", parse_as: "text" }, citable: false }]);`,
+  and the test is renamed to "names the current dashboard and the others, as a RawContext item whose text Rita reads". The conformance test's `CONTEXT` stays as is.
 - **Q2 = A (defect):** in `execute.ts` `toolResultData`, replace the `items` map and the `typed` item with
 
   ```ts
@@ -1358,11 +1394,13 @@ Stop here until the user has ruled on Q1–Q4. Apply only the rulings' diffs:
 
   and `const typedText = JSON.stringify({ $rita_kind: "error", error: failure }); const typed = { type: "text", text: typedText, content: typedText };`. Add to `execute.test.ts`: an `execute_agent_tool` whose `runAgentTool` returns `{ content: [{ type: "text", text: "a" }] }` yields `data` `[{ items: [{ type: "text", text: "a", content: "a" }] }]`. Existing `toEqual`s on these items gain `content` (additions only; keep every existing assertion). **Q2 = B:** row 38 becomes `await expect(turn(38, …)).rejects.toThrow(/422/)`, keeping the `ran` assertion.
 - **Q3 = A:** in `widgetDataResults`' catch, push `{ error_type: "fetch_failed", message, content: message }`; extend the A1 over-limit test to expect `content` equal to `message`.
-- **Q4 = B (default):** no change. **Q4 = A:** same as Q1 A.
+- **Q4 = B:** no change; row 40 keeps its two calls.
+
+The Q2 = B alternative (row 38 asserts the 422) is not taken.
 
 - [ ] **Step 1:** Apply the ruled diffs; run `pnpm exec vitest run src/lib/agent && pnpm typecheck`. Expected: PASS.
 - [ ] **Step 2:** Run `pnpm test:conformance`. Expected: `conformance: 13/13 passed, 0 skipped, 0 failed`.
-- [ ] **Step 3:** Commit with a message naming the rulings, e.g. `fix(agent): give MCP result items a content field (conformance Q2 ruling)` plus the trailer.
+- [ ] **Step 3:** Commit with a message naming the rulings, e.g. `fix(agent): send openbb-ai-valid context, tool-result and error items (conformance Q1–Q3 rulings)` plus the trailer.
 
 ---
 
@@ -1778,7 +1816,7 @@ git -C build/rita commit -qm "feat(agent): cite_quote finds a PDF quote with unp
 git -C build/rita format-patch -1 HEAD --start-number 16 -o "$PWD/patches"
 ```
 
-### Task C4 (only if Q5 = A): Patch 0017 — PDF text for model servers without file parts
+### Task C4: Patch 0017 (Q5 = A) — PDF text for model servers without file parts
 
 **Files (in `build/rita`):** Modify `src/widgets/parse.ts` (the two `kind === "pdf"` branches, ~lines 180 and 205); Test `tests/unit/src/widgets/parse.test.ts`.
 
@@ -1822,12 +1860,12 @@ In the inline branch replace the `mediaParts.push({ type: "file", … })` with `
 | 0016 | `cite_quote`: find a verbatim PDF quote with `unpdf` and attach one box per line to that widget's citation as `quote_bounding_boxes` |
 ```
 
-and, only with C4, `| 0017 | Send a PDF's extracted text, not a file part, so OpenAI-compatible model servers (vLLM) can read it |`.
-- [ ] **Step 2:** `scripts/build.sh --check-only && scripts/test-aperture.sh` from a clean `build/` (it re-clones and applies 0001–0016/0017). Expected: every patch applies; tests + tsc PASS.
+and `| 0017 | Send a PDF's extracted text, not a file part, so OpenAI-compatible model servers (vLLM) can read it |`.
+- [ ] **Step 2:** `scripts/build.sh --check-only && scripts/test-aperture.sh` from a clean `build/` (it re-clones and applies 0001–0017). Expected: every patch applies; tests + tsc PASS.
 - [ ] **Step 3: Commit** (recipe repo; not pushed)
 
 ```bash
-git add patches/0015-*.patch patches/0016-*.patch README.md   # plus patches/0017-*.patch with C4
+git add patches/0015-*.patch patches/0016-*.patch patches/0017-*.patch README.md
 git commit -m "patches: 0015 feedback route, 0016 cite_quote quote boxes
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
@@ -2023,10 +2061,10 @@ git add funnel-gateway/rita-policy.mjs funnel-gateway/rita-policy.test.mjs funne
 git commit -m "feat(funnel-gateway): relay Rita feedback votes through the door
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
-git tag -f v10.0.0   # only with the Q7 ruling; not pushed
+git tag -f v10.0.0   # Q7 ruling: the local tag moves; not pushed
 ```
 
-- [ ] **Step 7: Build and push the v10 image** (Q7 confirms the tag)
+- [ ] **Step 7: Build and push the v10 image** (Q7: tag `10.0.0`)
 
 ```bash
 docker buildx build --platform linux/amd64 --build-context lanes=./lanes \
@@ -2042,7 +2080,7 @@ Record the digest.
 
 - [ ] **Step 1:** `git -C ~/Developer/openbq-docker-v10-rita worktree add ~/Developer/openbq-docker-v11-feedback -b claude/v11-rita-feedback origin/release/v11` (expect `b480f0c`), then `git cherry-pick <D1 commit>`. `rita-policy.mjs` and its tests are identical on both lines; resolve any `server.mjs` conflict by hand so `handleRita` matches D1.
 - [ ] **Step 2:** `cd funnel-gateway && npm ci && npm test` → PASS.
-- [ ] **Step 3:** Build and push the NAS image under the Q7 tag (default `11.0.0-temporal`), same command as D1 Step 7 with that tag. Record the digest.
+- [ ] **Step 3:** Build and push the NAS image under `11.0.0-temporal` (Q7), same command as D1 Step 7 with that tag. Record the digest.
 
 ---
 
@@ -2078,7 +2116,7 @@ Expected: every patch applied; `built openbq-rita:6.0.0 (sha-<recipe>, upstream 
 ssh <spark-host> 'set -e; mkdir -p ~/rita/feedback
   docker run --rm --user 0 --entrypoint chown -v "$HOME/rita/feedback:/d" openbq-rita:6.0.0 1000:1000 /d
   cat > ~/rita/recipe-compose.yaml <<EOF
-# Rita from the agent-rita-bdobb recipe (patches 0001-0016), replacing the bdobb-dev build.
+# Rita from the agent-rita-bdobb recipe (patches 0001-0017), replacing the bdobb-dev build.
 # Rollback: ~/rita/rollback-20261028 (see the plan).
 services:
   rita:
@@ -2163,7 +2201,7 @@ curl -fsS https://openbb-rita.<your-tailnet>.ts.net/agents.json | jq '.openbb_ag
 - [ ] **Step 3: Run the gate** with the env of the last green live run (`OPENBB_BACKEND_URL`, `OPENBB_MCP_URLS`, `OPENBB_NAS_AUTH`; ask the user if not to hand) plus `OPENBB_RITA_URL=https://openbb-rita.<your-tailnet>.ts.net`:
 
 Run: `pnpm test:live`
-Expected: `live gate: N/N passed, 0 skipped, 0 failed`. Without C4 (Q5 ≠ A) the two PDF cases fail on Qwen by design: stop and report, do not weaken them.
+Expected: `live gate: N/N passed, 0 skipped, 0 failed`. The two PDF cases depend on C4's patch 0017; if they fail, stop and report, do not weaken them. The existing dashboard-name live cases must still pass with the Q1 context item.
 
 - [ ] **Step 4: Commit**
 

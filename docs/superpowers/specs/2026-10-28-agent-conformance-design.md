@@ -26,6 +26,10 @@ User rulings, 2026-10-28:
 - Do both checks.
 - Build the missing features rather than record them as gaps.
 - Patch Rita for feedback and highlight boxes (new patches 0015 and 0016).
+- 2026-10-29, the plan's Q1–Q8: BDOBB's context, MCP-result and error items
+  are fixed to validate against `openbb-ai`; Rita gains patch 0017 (PDF text
+  for vLLM); the gateway ships as `10.0.0` and `11.0.0-temporal`; the web
+  relay of feedback goes to the v7–v10 carry.
 - Use local Qwen on the Spark.
 - Replace the Spark's production `rita` with the recipe build.
 - The work's home is Adventures-OpenBQ/bdobb `release/v6`.
@@ -163,12 +167,15 @@ README table, and a `build.sh --check-only` pass.
   - The prompt tells the model to call `cite_quote` with a verbatim quote
     when it relies on a PDF.
   - Unit tests use a fixture PDF generated in the test.
+- **0017 PDF text for vLLM.** The Spark's vLLM refuses `file` content parts
+  (verified 2026-10-28), so Rita sends a PDF's `unpdf`-extracted text to the
+  model instead. Ruled 2026-10-29 (plan Q5).
 
 ## 6. Spark redeploy and live suite
 
 - On the Spark, tag the running image `agent-rita:rollback-20261028` and
   record the compose state.
-- Build the recipe (0001–0016) with `scripts/build.sh` as `openbq-rita:6.0.0`.
+- Build the recipe (0001–0017) with `scripts/build.sh` as `openbq-rita:6.0.0`.
   Run it as `rita` with the existing `.env`, plus a `FEEDBACK_PATH` volume.
 - Verify `/status` and `/agents.json` (`feedback: true`) through the svc name.
 - Rollback is the tagged image plus the recorded compose file.
@@ -225,7 +232,7 @@ v11):**
 - Then `check-upstreams` and `verify` pass.
 
 **Rollback:** the backed-up compose file and the prior digests
-(`openbq-rita@sha256:14a18321…`, gateway `sha256:aea29572…`).
+(`openbq-rita@sha256:14a18321…`, gateway `openbq-funnel-gateway:11.0.0-temporal@sha256:0a25c57f…`).
 
 ## Out of scope
 
