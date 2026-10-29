@@ -20,6 +20,7 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 }));
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
+import { liveWorkspaceOptions } from "./liveModel";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage, AgentStatus } from "../../lib/agent/types";
 import { BUILTIN_WIDGETS } from "../../lib/builtins";
@@ -143,6 +144,7 @@ async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Roun
   };
   const gen = runAgentQuery({
     ritaUrl,
+    workspaceOptions: liveWorkspaceOptions,
     messages: [{ role: "human", content: text }],
     // As chatStore.send: every round re-reads the board, so a card Rita just
     // wrote reaches her with its new text (#326).

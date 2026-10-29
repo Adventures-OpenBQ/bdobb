@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { fetchAgentsJson } from "../../lib/agent/agents-json";
 import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher } from "../../lib/agent/execute";
 import { runAgentQuery } from "../../lib/agent/query";
+import { liveWorkspaceOptions } from "./liveModel";
 import type { AgentMessage } from "../../lib/agent/types";
 import type { BackendConfig, DashboardCard, WidgetDef } from "../../lib/types";
 import { cardRequestSync } from "../../hooks/useCardRequest";
@@ -45,6 +46,7 @@ live("Rita live", () => {
     // this test used to) can never see the answer.
     const gen = runAgentQuery({
       ritaUrl,
+      workspaceOptions: liveWorkspaceOptions,
       messages: [{ role: "human", content: "Reply with the single word pong." }],
       refresh: () => ({ primary: [] }),
       tools: [],
@@ -89,6 +91,7 @@ live("Rita live", () => {
     // donor asserted the last role was "ai", which this line's contract cannot produce after a tool round.
     const gen = runAgentQuery({
       ritaUrl,
+      workspaceOptions: liveWorkspaceOptions,
       messages: [{ role: "human", content: `Use get_widget_data on widget ${card.id} and tell me how many rows came back.` }],
       refresh: () => ({ primary }),
       tools: [],
@@ -129,6 +132,7 @@ live("Rita live", () => {
     const primary = buildWidgetRefs([PDF_CARD], () => PDF_WIDGET, () => backend.name, new Set());
     const gen = runAgentQuery({
       ritaUrl,
+      workspaceOptions: liveWorkspaceOptions,
       messages: [{ role: "human", content: `${question} The PDF is on widget ${PDF_CARD.id}; load it with get_widget_data.` }],
       refresh: () => ({ primary }),
       tools: [],

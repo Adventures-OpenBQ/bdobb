@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool } from "../../lib/agent/execute";
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
+import { liveWorkspaceOptions } from "./liveModel";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
 import { mountCsv } from "../../lib/agent/tableModel/testHarness";
@@ -77,6 +78,7 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   };
   const gen = runAgentQuery({
     ritaUrl,
+    workspaceOptions: liveWorkspaceOptions,
     messages: [{ role: "human", content: text }],
     refresh: () => ({ primary: buildWidgetRefs(activeCards(), findWidget, () => "builtin", new Set()) }),
     tools: LOCAL_TOOLS,
