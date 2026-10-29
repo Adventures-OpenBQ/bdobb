@@ -1,5 +1,5 @@
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 // B12: the two link query forms. A local copy of src/lib/artsCharts/links.ts parseWebLink,
 // because web/ cannot import src/. Returns the canonical (lower-cased) query, or null.

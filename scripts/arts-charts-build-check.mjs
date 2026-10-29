@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 /**
  * Spec B2 / §8 "Build": greps a built dist/ for Art's Charts. --absent (VITE_ARTS_CHARTS=0)

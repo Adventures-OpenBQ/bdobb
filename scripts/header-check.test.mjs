@@ -81,4 +81,12 @@ describe("header-check", () => {
     expect(r.out).toMatch(/^src\/y\.ts$/m);
     expect(r.out).not.toContain("vendor/arts-charts");
   });
+
+  it("fails an Apache-2.0 header, in src/ and under vendor/arts-charts/ alike", async () => {
+    const apache = `// Copyright 2026 ${OWNER}. Licensed under the Apache License, Version 2.0.\n// SPDX-License-Identifier: Apache-2.0\n`;
+    const r = await run(repo({ "src/a.ts": apache, "vendor/arts-charts/src/b.ts": apache }));
+    expect(r.code).toBe(1);
+    expect(r.out).toMatch(/^src\/a\.ts$/m);
+    expect(r.out).toMatch(/^vendor\/arts-charts\/src\/b\.ts$/m);
+  });
 });

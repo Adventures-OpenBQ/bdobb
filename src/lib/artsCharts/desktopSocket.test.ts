@@ -1,5 +1,5 @@
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 import { afterEach, expect, it, vi } from "vitest";
 const request = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify({ ticket: "tk" }), { headers: { "Content-Type": "application/json" } }));
 vi.mock("@tauri-apps/plugin-http", () => ({ fetch: request }));

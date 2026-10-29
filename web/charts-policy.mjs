@@ -1,6 +1,6 @@
 // vendored from openbq-docker e5ceb5d47b18e850bdd91d87a2c2cae7cd253f34 funnel-gateway/charts-policy.mjs sha256:df43ca0fdea127b5ba6dd9e7b83a635c1b310b373b63ca49c34125e13047b760
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 /**
  * The /charts family on the door (openbq-docker v12 part 1): Art's Charts, the opt-in
