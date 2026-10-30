@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isRecord } from "./isRecord";
+import { safeUrl } from "./safeUrl";
 import type {
   CandleColors,
   ColumnFormatterFn,
@@ -448,6 +449,8 @@ export function normalizeWidgets(
       table: toTable(data),
       udfChart: w.type === "advanced_charting" ? toUdfChart(data) : undefined,
       source: toStringArray(w.source),
+      // safeUrl is the app's http/https boundary; anything else is dropped.
+      imgUrl: typeof w.imgUrl === "string" ? (safeUrl(w.imgUrl) ?? undefined) : undefined,
       // A literal `true` and nothing else. Anything truthy would opt a widget
       // out of automatic execution that never asked to be — the opposite of
       // this file's rule everywhere else, which is to drop what the reference

@@ -976,3 +976,19 @@ describe("exportable", () => {
     expect(widgets.map((w) => w.exportable)).toEqual([false, undefined, undefined, undefined, undefined]);
   });
 });
+
+describe("imgUrl", () => {
+  it("keeps an http(s) URL and drops every other scheme or type", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { imgUrl: "https://img.example/p.png" },
+        b: { imgUrl: "javascript:alert(1)" },
+        c: { imgUrl: "data:image/png;base64,AAAA" },
+        d: { imgUrl: 42 },
+        e: { imgUrl: "relative/p.png" },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.imgUrl)).toEqual(["https://img.example/p.png", undefined, undefined, undefined, undefined]);
+  });
+});

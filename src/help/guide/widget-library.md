@@ -27,6 +27,8 @@ Under each widget's name: the backend it came from (its Connections name, **Buil
 
 Below the badges is the widget's own description.
 
+When a widget declares an `imgUrl` (an `http` or `https` address), hovering its card or moving keyboard focus to it shows that image under the description. An image that fails to load shows nothing.
+
 At this version a badge row wider than its card — a long provider name beside a long type — does not wrap. It widens the card's layout past the card's edge, the description is laid out at that wider width, and the overhang is clipped, so the badges run off the card and the description looks as if it does not wrap.
 
 ## Adding: click, double-click, drag

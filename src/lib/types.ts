@@ -244,6 +244,8 @@ export type WidgetDef = {
   udfChart?: UdfChartSpec;
   /** Provider name(s). Consumed by the library badges in SP5. */
   source: string[];
+  /** An http(s) image the Widget Library previews on hover or focus. Any other scheme is dropped. */
+  imgUrl?: string;
   /**
    * "Do not execute automatically when parameters change; the user clicks
    * Run." The card fetches once on load with its stored params and then only

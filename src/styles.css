@@ -666,6 +666,13 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Inline, not an overlay: .library-card clips its overflow. */
+.library-card-preview {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
 .library-card-badges { display: flex; gap: 4px; align-items: center; }
 
 /* Same neutral treatment as .type-badge (both take the shared badge recipe up
