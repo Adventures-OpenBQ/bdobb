@@ -170,6 +170,11 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const stampTitle = () => {
     if (widget?.dataUpdateDisplay) setTitleAt(new Date());
   };
+  // dataUpdateText scans minute by minute, so it runs once per stamp, not per render.
+  const dataUpdateLine = useMemo(
+    () => (widget?.dataUpdateDisplay ? dataUpdateText(widget.dataUpdateDisplay, titleAt) : undefined),
+    [widget?.dataUpdateDisplay, titleAt],
+  );
   /**
    * Is the title an InlineRename field right now? Transient by design: an
    * interrupted rename is not state worth persisting, and closing the field
@@ -1087,7 +1092,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     [
       base,
       dataStale ? "Data is older than its stale time" : undefined,
-      widget?.dataUpdateDisplay ? dataUpdateText(widget.dataUpdateDisplay, titleAt) : undefined,
+      dataUpdateLine,
     ]
       .filter((line): line is string => line !== undefined)
       .join("\n") || undefined;
