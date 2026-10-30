@@ -7,7 +7,7 @@ import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin
 import { useWidgetData } from "../hooks/useWidgetData";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
-import { detectChartAxis, rowsOf } from "../lib/chartShapes";
+import { rowChartAxes, rowsOf } from "../lib/chartShapes";
 import { authHeaders } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
@@ -321,7 +321,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
     if (type !== "chart") {
       const rows = rowsOf(data);
-      if (rows && detectChartAxis(rows) !== null) list.push({ value: "chart", label: "Chart" });
+      if (rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
     }
     // Raw shows the payload useWidgetData fetched. iframe/note/clock/keys
     // never fetch — they report data: null unconditionally and WidgetCard's
@@ -348,7 +348,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       }
     }
     return list;
-  }, [widget?.type, data]);
+  }, [widget?.type, widget?.table, data]);
 
   // No export surface at all for the built-in and document cards: fetchesData
   // is already the "this card has a fetched payload" predicate (it is false
@@ -988,7 +988,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     // Raw is returned BEFORE type dispatch, which is why a widget type that
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
-    if (view === "chart") return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+    if (view === "chart") return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
     // Before the type dispatch, like raw and chart: the transposed grid is a
     // view of the payload, not of the widget's declared columns. local_table
     // is not here -- its rows never reach `data`, so its own renderer turns
@@ -1016,7 +1021,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
           />
         );
       case "chart":
-        return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+        return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
       case "markdown":
         return <MarkdownRenderer data={data} />;
       case "html":

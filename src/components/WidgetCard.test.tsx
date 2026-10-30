@@ -973,6 +973,32 @@ describe("WidgetCard renderer dispatch", () => {
     expect(screen.queryByRole("option", { name: "Chart" })).not.toBeInTheDocument();
   });
 
+  it("offers a Chart mode from declared chartDataType columns where detection finds none", () => {
+    setUp(
+      {
+        type: "table",
+        table: {
+          columns: [
+            { field: "symbol", chartDataType: "category" },
+            { field: "name", chartDataType: "series" },
+          ],
+        },
+      },
+      [{ symbol: "AAPL", name: "Apple" }],
+    );
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("option", { name: "Chart" })).toBeInTheDocument();
+  });
+
+  it("offers no Chart mode when the declared columns name no series", () => {
+    setUp(
+      { type: "table", table: { columns: [{ field: "symbol", chartDataType: "category" }, { field: "value" }] } },
+      [{ symbol: "AAPL", value: 1 }],
+    );
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByRole("option", { name: "Chart" })).not.toBeInTheDocument();
+  });
+
   it("labels the default mode by the widget's own type", () => {
     setUp({ type: "markdown" }, "## Hello");
     render(<WidgetCard card={card} onRemove={vi.fn()} />);

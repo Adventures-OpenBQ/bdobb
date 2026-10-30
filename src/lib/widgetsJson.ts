@@ -220,6 +220,8 @@ function toFormatterFn(value: unknown): ColumnFormatterFn | undefined {
     : undefined;
 }
 
+const CHART_DATA_TYPES = new Set(["category", "series", "time", "excluded"]);
+
 /**
  * One columnsDefs entry, with exactly toParam's discipline: an entry with no
  * string `field` names no column and is dropped; every other property is kept
@@ -233,6 +235,9 @@ function toColumnSpec(c: Record<string, unknown>): ColumnSpec | null {
   if (typeof c.headerTooltip === "string") column.headerTooltip = c.headerTooltip;
   if (typeof c.cellDataType === "string" && CELL_DATA_TYPES.has(c.cellDataType)) {
     column.cellDataType = c.cellDataType as ColumnSpec["cellDataType"];
+  }
+  if (typeof c.chartDataType === "string" && CHART_DATA_TYPES.has(c.chartDataType)) {
+    column.chartDataType = c.chartDataType as ColumnSpec["chartDataType"];
   }
   const formatterFn = toFormatterFn(c.formatterFn);
   if (formatterFn) column.formatterFn = formatterFn;
@@ -288,6 +293,20 @@ function toTable(data: Record<string, unknown> | null): TableSpec | undefined {
   const formatterFn = toFormatterFn(table.formatterFn);
   if (formatterFn) spec.formatterFn = formatterFn;
   return spec;
+}
+
+/**
+ * `data.table.chartView`, read on its own because a widget may declare it
+ * with no columnsDefs (and so no TableSpec). Only a literal `true` and a
+ * non-empty string survive.
+ */
+function toChartView(data: Record<string, unknown> | null): WidgetDef["chartView"] {
+  const cv = asRecord(asRecord(data?.table)?.chartView);
+  if (!cv) return undefined;
+  const view: NonNullable<WidgetDef["chartView"]> = {};
+  if (cv.enabled === true) view.enabled = true;
+  if (typeof cv.chartType === "string" && cv.chartType !== "") view.chartType = cv.chartType;
+  return Object.keys(view).length > 0 ? view : undefined;
 }
 
 function toGridData(value: unknown): { w: number; h: number } {
@@ -447,6 +466,7 @@ export function normalizeWidgets(
       params,
       dataKey: data && typeof data.dataKey === "string" ? data.dataKey : undefined,
       table: toTable(data),
+      chartView: toChartView(data),
       udfChart: w.type === "advanced_charting" ? toUdfChart(data) : undefined,
       source: toStringArray(w.source),
       // safeUrl is the app's http/https boundary; anything else is dropped.

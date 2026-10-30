@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isRecord } from "./isRecord";
+import type { ColumnSpec } from "./types";
 
 export type PlotlyFigure = { data: unknown[]; layout: Record<string, unknown> };
 
@@ -137,6 +138,8 @@ const VOLUME_KEY = "volume";
  * an empty figure when there is nothing to plot, so the caller can fall back
  * to the table instead of rendering a chart with bare axes.
  */
+const MARGIN = { l: 48, r: 12, t: 12, b: 32 };
+
 export function buildFigure(
   rows: Array<Record<string, unknown>>,
   axisKey: string,
@@ -145,7 +148,7 @@ export function buildFigure(
   if (rows.length === 0) return null;
   const x = rows.map((r) => r[axisKey]);
   const layout: Record<string, unknown> = {
-    margin: { l: 48, r: 12, t: 12, b: 32 },
+    margin: MARGIN,
     xaxis: { type: "date" },
     showlegend: true,
     ...themedLayout(theme),
@@ -227,5 +230,81 @@ export function buildFigure(
       y: rows.map((r) => r[k]),
     })),
     layout,
+  };
+}
+
+/** What a chart built from rows plots: its x column, its y columns, and whether x is time. */
+export type RowChartAxes = { x: string; series: string[]; time: boolean };
+
+/**
+ * columnsDefs' `chartDataType`, when any column declares one: x is the first
+ * `time` column, else the first `category` one; y is every `series` column;
+ * `excluded` and undeclared columns are never plotted. With no declaration
+ * at all, this is detectChartAxis exactly -- non-null whenever it is -- so a
+ * widget that declares nothing is offered a chart exactly as before.
+ */
+export function rowChartAxes(
+  rows: Array<Record<string, unknown>>,
+  columns: ColumnSpec[] = [],
+): RowChartAxes | null {
+  const typed = columns.filter((c) => c.chartDataType !== undefined);
+  if (typed.length === 0) {
+    const x = detectChartAxis(rows);
+    return x === null ? null : { x, series: numericKeys(rows, x), time: detectTimeColumn(rows) === x };
+  }
+  const axis =
+    typed.find((c) => c.chartDataType === "time") ?? typed.find((c) => c.chartDataType === "category");
+  const series = typed.filter((c) => c.chartDataType === "series").map((c) => c.field);
+  if (axis === undefined || series.length === 0 || rows.length === 0) return null;
+  return { x: axis.field, series, time: axis.chartDataType === "time" };
+}
+
+/** chartView's `chartType` as a Plotly trace. Anything not listed draws as `line`. */
+function seriesTrace(chartType: string, name: string, x: unknown[], y: unknown[]): Record<string, unknown> {
+  switch (chartType) {
+    case "area":
+      return { type: "scatter", mode: "lines", fill: "tozeroy", name, x, y };
+    case "column":
+      return { type: "bar", name, x, y };
+    case "bar":
+      // Horizontal bars: the axis column runs up the y-axis.
+      return { type: "bar", orientation: "h", name, x: y, y: x };
+    case "scatter":
+      return { type: "scatter", mode: "markers", name, x, y };
+    default:
+      return { type: "scatter", mode: "lines", name, x, y };
+  }
+}
+
+/**
+ * The figure for a row payload. A widget that declares neither chartDataType
+ * nor chartView.chartType gets buildFigure, unchanged (candlestick included).
+ * Otherwise x and y come from rowChartAxes and the trace from `chartType`,
+ * defaulting to a line on a time axis and columns on a category one.
+ */
+export function rowFigure(
+  rows: Array<Record<string, unknown>>,
+  columns: ColumnSpec[] | undefined,
+  chartType: string | undefined,
+  theme: "dark" | "light" = "dark",
+): PlotlyFigure | null {
+  const declared = columns?.some((c) => c.chartDataType !== undefined) ?? false;
+  if (!declared && chartType === undefined) {
+    const axisKey = detectChartAxis(rows);
+    return axisKey === null ? null : buildFigure(rows, axisKey, theme);
+  }
+  const axes = rowChartAxes(rows, columns);
+  if (axes === null || axes.series.length === 0) return null;
+  const type = chartType ?? (axes.time ? "line" : "column");
+  const x = rows.map((r) => r[axes.x]);
+  const axis = { type: axes.time ? "date" : "category" };
+  return {
+    data: axes.series.map((k) => seriesTrace(type, k, x, rows.map((r) => r[k]))),
+    layout: {
+      margin: MARGIN,
+      showlegend: true,
+      ...themedLayout(theme),
+      ...(type === "bar" ? { yaxis: axis } : { xaxis: axis }),
+    },
   };
 }

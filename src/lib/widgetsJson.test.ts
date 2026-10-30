@@ -992,3 +992,39 @@ describe("imgUrl", () => {
     expect(widgets.map((w) => w.imgUrl)).toEqual(["https://img.example/p.png", undefined, undefined, undefined, undefined]);
   });
 });
+
+describe("chartDataType and chartView", () => {
+  it("keeps only the four documented chartDataType values", () => {
+    const { widgets: [w] } = normalizeWidgets(
+      {
+        a: {
+          data: {
+            table: {
+              columnsDefs: [
+                { field: "n", chartDataType: "category" },
+                { field: "t", chartDataType: "time" },
+                { field: "s", chartDataType: "series" },
+                { field: "x", chartDataType: "excluded" },
+                { field: "bad", chartDataType: "pie" },
+              ],
+            },
+          },
+        },
+      },
+      "b1",
+    );
+    expect(w.table?.columns.map((c) => c.chartDataType)).toEqual(["category", "time", "series", "excluded", undefined]);
+  });
+
+  it("reads data.table.chartView: enabled only as literal true, chartType only as a non-empty string", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { data: { table: { chartView: { enabled: true, chartType: "column" } } } },
+        b: { data: { table: { chartView: { enabled: "true", chartType: "" } } } },
+        c: { data: { table: {} } },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.chartView)).toEqual([{ enabled: true, chartType: "column" }, undefined, undefined]);
+  });
+});

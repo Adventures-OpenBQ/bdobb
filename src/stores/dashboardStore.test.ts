@@ -257,6 +257,16 @@ describe("addCard", () => {
     expect(card.params).toEqual({ symbol: "AAPL", provider: "yfinance" });
   });
 
+  it("opens a new card in chart view when the widget's chartView is enabled", async () => {
+    await useDashboardStore.getState().load();
+    await useDashboardStore.getState().addCard(widget({ chartView: { enabled: true } }));
+    await useDashboardStore.getState().addCard(widget({ id: "plain" }));
+
+    const [charted, plain] = useDashboardStore.getState().activeDashboard()!.tabs[0].cards;
+    expect(charted.view).toBe("chart");
+    expect(plain.view).toBeUndefined();
+  });
+
   it("takes its size from gridData and stacks below existing cards on the same tab", async () => {
     await useDashboardStore.getState().load();
     await useDashboardStore.getState().addCard(widget());

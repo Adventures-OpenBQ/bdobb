@@ -171,6 +171,12 @@ export type ColumnSpec = {
    * is built; kept opaque here like renderFnParams.
    */
   sparkline?: Record<string, unknown>;
+  /**
+   * How a chart built from the rows treats this column: x is the first `time`
+   * column, else the first `category` one; y is every `series` column;
+   * `excluded` is never plotted. See rowChartAxes in src/lib/chartShapes.ts.
+   */
+  chartDataType?: "category" | "series" | "time" | "excluded";
 };
 
 /**
@@ -236,6 +242,12 @@ export type WidgetDef = {
    * field existed.
    */
   table?: TableSpec;
+  /**
+   * `data.table.chartView`. `enabled: true` opens a NEW card in chart view
+   * (addCardTo); `chartType` picks the trace of a chart built from rows (see
+   * rowFigure in src/lib/chartShapes.ts). Absent when it declares neither.
+   */
+  chartView?: { enabled?: true; chartType?: string };
   /**
    * Only on a `type: "advanced_charting"` widget: what its TradingView card
    * charts and how. Its renderer issues its own UDF request (see
