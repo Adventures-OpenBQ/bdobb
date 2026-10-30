@@ -453,6 +453,7 @@ export function normalizeWidgets(
       // this file's rule everywhere else, which is to drop what the reference
       // does not document rather than guess at it.
       runButton: w.runButton === true ? true : undefined,
+      exportable: w.exportable === false ? false : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,
     });

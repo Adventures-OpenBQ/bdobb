@@ -254,6 +254,11 @@ export type WidgetDef = {
    */
   runButton?: boolean;
   /**
+   * `exportable: false` hides the card's Export ▸ (CSV, JSON, Excel). Only
+   * ever `false` or absent: any other value keeps export available.
+   */
+  exportable?: false;
+  /**
    * Milliseconds between automatic refreshes. A positive number wins over the
    * `autoRefreshMinutes` setting; anything else (0, a negative number, or the
    * `false` the manifest sometimes sends, which means "never auto-refresh

@@ -355,12 +355,15 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // for iframe, keys, multi_file_viewer and every builtin, i.e. note and
   // clock), and `pdf` is excluded on top of it because its payload IS one
   // base64 document, not data.
-  const canExport = widget !== undefined && fetchesData(widget) && widget.type !== "pdf";
+  const hasPayload = widget !== undefined && fetchesData(widget) && widget.type !== "pdf";
+  // The manifest's `exportable: false` takes Export ▸ away and nothing else:
+  // Rename, Maximize and Columns stay, so the menu's gate is hasPayload.
+  const canExport = hasPayload && widget.exportable !== false;
   // The markdown note has a ⋯ menu without an Export section: its two items
-  // move a .md file in or out of the note. canExport keeps its exact meaning
+  // move a .md file in or out of the note. hasPayload keeps its exact meaning
   // ("this card has a fetched payload"); this is the menu's gate, not export's.
   const isMarkdownNote = widget?.type === "markdown_editor";
-  const hasMenu = canExport || isMarkdownNote;
+  const hasMenu = hasPayload || isMarkdownNote;
   /**
    * The transposed view's rows and their column order, computed once for the
    * body and the Export menu. null when the payload has nothing to turn on

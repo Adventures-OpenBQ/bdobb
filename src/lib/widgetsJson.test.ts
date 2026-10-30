@@ -966,3 +966,13 @@ describe("advanced_charting's chart spec", () => {
     expect(normalizeWidgets({ t: { type: "table", data: { defaultSymbol: "X" } } }, "b").widgets[0].udfChart).toBeUndefined();
   });
 });
+
+describe("exportable", () => {
+  it("keeps only a literal false", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { exportable: false }, b: { exportable: "false" }, c: { exportable: 0 }, d: { exportable: true }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.exportable)).toEqual([false, undefined, undefined, undefined, undefined]);
+  });
+});

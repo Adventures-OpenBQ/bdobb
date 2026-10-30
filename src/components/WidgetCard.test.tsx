@@ -1410,6 +1410,17 @@ describe("WidgetCard export menu", () => {
     },
   );
 
+  it("drops Export from the card menu when the widget declares exportable: false, and keeps the rest", async () => {
+    register({ exportable: false });
+    useWidgetData.mockReturnValue({ status: "ready", data: [{ a: 1 }], retry: vi.fn() });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
+
+    expect(screen.queryByRole("menuitem", { name: "Export ▸" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Rename…" })).toBeInTheDocument();
+  });
+
   it.each([
     ["iframe", { type: "iframe", endpoint: "https://example.com/p" }],
     ["note", { type: "note", backendId: "builtin" }],
