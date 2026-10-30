@@ -1287,6 +1287,8 @@ body {
   border-color: var(--accent);
   color: var(--bg);
 }
+/* The filled Run keeps its accent fill; the stale state shows on its border. */
+.card-action.card-run[data-stale="true"] { border-color: var(--stale); }
 
 /* Portalled to <body> and `fixed` from the ⋯ toggle's rect, so neither the
    card's own clipping nor the next card can cover it; on the context menu's
