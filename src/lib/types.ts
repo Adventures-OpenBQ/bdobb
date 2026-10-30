@@ -145,7 +145,7 @@ export type ColumnFormatterFn =
  * string. `renderFnParams` is kept opaque: `colorRules` is acted on (see
  * src/lib/columnRender.ts) and so is `cellOnClick`'s groupBy block (see
  * cellClickOf in src/lib/tableColumns.ts), and so is `hoverCard` (see
- * hoverCardOf there); `columnColor` is parsed and deliberately ignored.
+ * hoverCardOf there); `colorValueKey` points colorRules at another field of the row (see cellVisual).
  */
 export type ColumnSpec = {
   field: string;
