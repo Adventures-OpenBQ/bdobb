@@ -48,6 +48,7 @@ import { RssRenderer } from "./renderers/RssRenderer";
 import { TradingViewRenderer } from "./renderers/TradingViewRenderer";
 import { PdfRenderer } from "./renderers/PdfRenderer";
 import { RawJsonView } from "./renderers/RawJsonView";
+import { RawRequestView } from "./renderers/RawRequestView";
 import {
   TableRenderer,
   type CellClickEvent,
@@ -984,6 +985,20 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     // keys card above: a card persisted with `view: "raw"` must not dump
     // hundreds of kilobytes of base64 into the DOM.
     if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} />;
+
+    // html and youtube render markup or a video, not data: with `raw: true`
+    // their Raw view re-asks the endpoint with raw=true instead of dumping
+    // the payload already fetched (see RawRequestView).
+    if (
+      view === "raw" &&
+      widget?.raw &&
+      backend &&
+      (widget.type === "html" || widget.type === "youtube")
+    ) {
+      return (
+        <RawRequestView backend={backend} widget={widget} params={query} refreshKey={attempt + refreshEpoch} />
+      );
+    }
 
     // Raw is returned BEFORE type dispatch, which is why a widget type that
     // must suppress the raw view has to do so explicitly (SP5's keys widget).

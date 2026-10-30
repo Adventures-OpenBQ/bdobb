@@ -99,6 +99,13 @@ vi.mock("./renderers/RssRenderer", () => ({
   ),
 }));
 
+// REPLACED: the real one issues its own request. What is under test is what the CARD hands it.
+vi.mock("./renderers/RawRequestView", () => ({
+  RawRequestView: (props: { params: unknown; refreshKey: unknown }) => (
+    <span data-testid="raw-request">{JSON.stringify({ params: props.params, refreshKey: props.refreshKey })}</span>
+  ),
+}));
+
 // REPLACED, for the same reason as RssRenderer: the real one issues its own
 // UDF request and draws on canvas. What is under test is what the CARD hands it.
 vi.mock("./renderers/TradingViewRenderer", () => ({
@@ -1030,6 +1037,23 @@ describe("WidgetCard renderer dispatch", () => {
     setUp({ type: "html" }, "<p>hi</p>");
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.getByTitle("Widget content")).toBeInTheDocument();
+  });
+
+  it("routes a raw: true html card's Raw view to the raw re-request, with the card's own params", () => {
+    setUp({ type: "html", raw: true }, "<p>hi</p>");
+    useBackendsStore.setState({ backends: [backend()] });
+    useDashboardStore.setState({ refreshEpoch: 2 });
+    useWidgetData.mockReturnValue({ status: "ready", data: "<p>hi</p>", retry: vi.fn(), attempt: 1 });
+    render(<WidgetCard card={{ ...card, view: "raw", params: { symbol: "AAPL" } }} onRemove={vi.fn()} />);
+    expect(JSON.parse(screen.getByTestId("raw-request").textContent!)).toEqual({ params: { symbol: "AAPL" }, refreshKey: 3 });
+  });
+
+  it("keeps the fetched-payload Raw view for an html card without raw: true", () => {
+    setUp({ type: "html" }, "<p>hi</p>");
+    useBackendsStore.setState({ backends: [backend()] });
+    render(<WidgetCard card={{ ...card, view: "raw" }} onRemove={vi.fn()} />);
+    expect(screen.queryByTestId("raw-request")).toBeNull();
+    expect(screen.getByTestId("raw-json")).toHaveTextContent('"<p>hi</p>"');
   });
 
   it("dispatches iframe to the iframe renderer", () => {

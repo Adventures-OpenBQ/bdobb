@@ -477,6 +477,7 @@ export function normalizeWidgets(
       // does not document rather than guess at it.
       runButton: w.runButton === true ? true : undefined,
       exportable: w.exportable === false ? false : undefined,
+      raw: w.raw === true ? true : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,
     });

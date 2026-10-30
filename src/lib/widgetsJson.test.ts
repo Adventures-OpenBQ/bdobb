@@ -1028,3 +1028,10 @@ describe("chartDataType and chartView", () => {
     expect(widgets.map((w) => w.chartView)).toEqual([{ enabled: true, chartType: "column" }, undefined, undefined]);
   });
 });
+
+describe("raw", () => {
+  it("keeps only a literal true", () => {
+    const { widgets } = normalizeWidgets({ a: { raw: true }, b: { raw: "true" }, c: {} }, "b1");
+    expect(widgets.map((w) => w.raw)).toEqual([true, undefined, undefined]);
+  });
+});

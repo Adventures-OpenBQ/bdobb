@@ -273,6 +273,12 @@ export type WidgetDef = {
    */
   exportable?: false;
   /**
+   * `raw: true` on an html or youtube widget: its Raw view re-asks the
+   * endpoint with `raw=true` for the data behind the rendering (see
+   * RawRequestView). Only ever `true` or absent.
+   */
+  raw?: true;
+  /**
    * Milliseconds between automatic refreshes. A positive number wins over the
    * `autoRefreshMinutes` setting; anything else (0, a negative number, or the
    * `false` the manifest sometimes sends, which means "never auto-refresh
