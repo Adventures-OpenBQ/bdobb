@@ -100,6 +100,11 @@ export function useWidgetData(
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
+  /** Date.now() of the last successful fetch; null until there is one. */
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
+  /** The widget's staleTime has passed since fetchedAt. Always false without one. */
+  const [dataStale, setDataStale] = useState(false);
+  const staleTime = widget?.staleTime;
   /**
    * runButton only: the params the fetch is keyed on. `null` means "nothing
    * armed yet", and the line below arms it on the first render where the
@@ -328,6 +333,7 @@ export function useWidgetData(
         if (cancelled) return;
         setWarnings(received);
         setData(result);
+        setFetchedAt(Date.now());
         setError(undefined);
         setStatus("ready");
         armAfterCompletion();
@@ -373,6 +379,15 @@ export function useWidgetData(
     refreshEpoch,
   ]);
 
+  // The stale tint (stale-time.md): set once staleTime has passed since the
+  // last successful fetch, cleared by the next one.
+  useEffect(() => {
+    setDataStale(false);
+    if (staleTime === undefined || fetchedAt === null) return;
+    const timer = setTimeout(() => setDataStale(true), Math.min(staleTime, MAX_TIMEOUT_MS));
+    return () => clearTimeout(timer);
+  }, [staleTime, fetchedAt]);
+
   // `attempt` is returned, not just used, so a renderer that fetches its own
   // data can be told a Refresh happened. A multi_file_viewer has no request
   // here to repeat (fetchesData is false), so without this its Refresh button
@@ -385,5 +400,5 @@ export function useWidgetData(
   // same reason: an rss card polls its own feed, and it must poll on exactly
   // the interval every other card uses. Returning the value already computed
   // above is what makes a second, drifting call site impossible.
-  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs };
+  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs, dataStale };
 }

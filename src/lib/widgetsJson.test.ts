@@ -1056,3 +1056,22 @@ describe("cron refetchInterval", () => {
     expect(widgets.map((w) => [w.refetchInterval, w.refetchCron])).toEqual([[60_000, undefined], [false, undefined]]);
   });
 });
+
+describe("staleTime and dataUpdateDisplay", () => {
+  it("keeps a finite positive staleTime and nothing else", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { staleTime: 5000 }, b: { staleTime: 0 }, c: { staleTime: "5000" }, d: { staleTime: Infinity }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.staleTime)).toEqual([5000, undefined, undefined, undefined, undefined]);
+  });
+
+  it("keeps only a valid cron dataUpdateDisplay", () => {
+    const { widgets, issues } = normalizeWidgets(
+      { a: { dataUpdateDisplay: "0 10 * * *" }, b: { dataUpdateDisplay: "daily" }, c: { dataUpdateDisplay: 10 } },
+      "b1",
+    );
+    expect(widgets.map((w) => w.dataUpdateDisplay)).toEqual(["0 10 * * *", undefined, undefined]);
+    expect(issues).toEqual([]);
+  });
+});

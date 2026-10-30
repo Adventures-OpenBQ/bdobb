@@ -293,6 +293,16 @@ export type WidgetDef = {
    */
   refetchCron?: string;
   /**
+   * Milliseconds after a successful fetch at which the data counts as stale:
+   * the refresh button takes the stale tint. Applied only when declared.
+   */
+  staleTime?: number;
+  /**
+   * A cron expression shown in the refresh button's tooltip with its
+   * previous and next scheduled times. Display only: it never fetches.
+   */
+  dataUpdateDisplay?: string;
+  /**
    * Only on a `type: "settings"` widget: which of the contract's UI modes
    * its section uses. Such a widget is a section of the Settings dialog, not
    * a card -- see serviceSettingsEntries in src/lib/settingsSections.ts.

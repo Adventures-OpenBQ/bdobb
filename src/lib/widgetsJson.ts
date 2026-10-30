@@ -489,6 +489,12 @@ export function normalizeWidgets(
       raw: w.raw === true ? true : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
       refetchCron,
+      staleTime:
+        typeof w.staleTime === "number" && Number.isFinite(w.staleTime) && w.staleTime > 0 ? w.staleTime : undefined,
+      dataUpdateDisplay:
+        typeof w.dataUpdateDisplay === "string" && parseCron(w.dataUpdateDisplay) !== null
+          ? w.dataUpdateDisplay
+          : undefined,
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,
     });
   }

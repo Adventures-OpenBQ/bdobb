@@ -8,6 +8,7 @@ import { useWidgetData } from "../hooks/useWidgetData";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
 import { rowChartAxes, rowsOf } from "../lib/chartShapes";
+import { dataUpdateText } from "../lib/cron";
 import { authHeaders } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
@@ -161,6 +162,15 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
 
   const [controlsOpen, setControlsOpen] = useState(false);
   /**
+   * When the refresh tooltip was last stamped. The pointer or focus reaching
+   * the button restamps it, so "last" and "next" are as of the hover, not of
+   * the card's last render. Only a dataUpdateDisplay widget needs it.
+   */
+  const [titleAt, setTitleAt] = useState(() => new Date());
+  const stampTitle = () => {
+    if (widget?.dataUpdateDisplay) setTitleAt(new Date());
+  };
+  /**
    * Is the title an InlineRename field right now? Transient by design: an
    * interrupted rename is not state worth persisting, and closing the field
    * is the only thing Escape has to do.
@@ -290,7 +300,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data, error, warnings, retry, attempt, run, stale, intervalMs } = useWidgetData(
+  const { status, data, error, warnings, retry, attempt, run, stale, intervalMs, dataStale } = useWidgetData(
     card,
     query,
     widget?.runButton,
@@ -1072,6 +1082,16 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     }
   }
 
+  /** The refresh/Run tooltip: the button's own words, then staleness, then the data update schedule. */
+  const refreshTitle = (base?: string) =>
+    [
+      base,
+      dataStale ? "Data is older than its stale time" : undefined,
+      widget?.dataUpdateDisplay ? dataUpdateText(widget.dataUpdateDisplay, titleAt) : undefined,
+    ]
+      .filter((line): line is string => line !== undefined)
+      .join("\n") || undefined;
+
   return (
     <article
       className="widget-card"
@@ -1186,13 +1206,24 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                 type="button"
                 className="card-action card-run"
                 aria-label="Run"
-                title="Run (⌘-click: hard refresh)"
+                title={refreshTitle("Run (⌘-click: hard refresh)")}
+                data-stale={dataStale || undefined}
+                onPointerEnter={stampTitle}
+                onFocus={stampTitle}
                 onClick={(e) => (e.metaKey || e.ctrlKey ? retry() : run())}
               >
                 Run
               </button>
             ) : (
-              <button type="button" className="card-action" onClick={retry}>
+              <button
+                type="button"
+                className="card-action"
+                title={refreshTitle()}
+                data-stale={dataStale || undefined}
+                onPointerEnter={stampTitle}
+                onFocus={stampTitle}
+                onClick={retry}
+              >
                 Refresh
               </button>
             )}

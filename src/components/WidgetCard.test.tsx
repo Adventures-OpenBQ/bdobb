@@ -562,6 +562,51 @@ describe("WidgetCard", () => {
     expect(chevron).toHaveAttribute("aria-expanded", "false");
     expect(container.querySelector(".card-controls-open")).not.toBeInTheDocument();
   });
+
+  it("tints Refresh when the hook reports the data stale, and says so in its tooltip", () => {
+    register();
+    useWidgetData.mockReturnValue({ status: "ready", data: [], retry: vi.fn(), dataStale: true });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    const refresh = screen.getByRole("button", { name: "Refresh" });
+    expect(refresh).toHaveAttribute("data-stale", "true");
+    expect(refresh).toHaveAttribute("title", "Data is older than its stale time");
+  });
+
+  it("leaves Refresh untinted and untitled without staleness or a dataUpdateDisplay", () => {
+    register();
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    const refresh = screen.getByRole("button", { name: "Refresh" });
+    expect(refresh).not.toHaveAttribute("data-stale");
+    expect(refresh).not.toHaveAttribute("title");
+  });
+
+  it("adds the dataUpdateDisplay schedule to the refresh tooltip, as of the hover", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date(2026, 9, 29, 12, 0));
+      register({ dataUpdateDisplay: "0 10 * * *" });
+      render(<WidgetCard card={card} onRemove={vi.fn()} />);
+      const refresh = screen.getByRole("button", { name: "Refresh" });
+
+      vi.setSystemTime(new Date(2026, 9, 30, 11, 0));
+      fireEvent.pointerEnter(refresh);
+
+      expect(refresh).toHaveAttribute(
+        "title",
+        `Data update: 0 10 * * * · last ${new Date(2026, 9, 30, 10, 0).toLocaleString()} · next ${new Date(2026, 9, 31, 10, 0).toLocaleString()}`,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps Run's own tooltip and adds the schedule beneath it", () => {
+    register({ runButton: true, dataUpdateDisplay: "0 10 * * *" });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Run" }).getAttribute("title")).toMatch(
+      /^Run \(⌘-click: hard refresh\)\nData update: 0 10 \* \* \* · last /,
+    );
+  });
 });
 
 describe("WidgetCard header controls", () => {

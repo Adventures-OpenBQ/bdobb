@@ -806,6 +806,38 @@ describe("useWidgetData auto-refresh", () => {
     });
     expect(priceRequests(s)).toBe(1);
   });
+
+  it("reports data stale once it is older than staleTime, and fresh again after a refetch", async () => {
+    await serve({ "/equity/price": { results: [] } });
+    registerWidget();
+    useWidgetRegistryStore.setState((st) => ({ widgets: st.widgets.map((w) => ({ ...w, staleTime: 120_000 })) }));
+    useFakeClock();
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.dataStale).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+    expect(result.current.dataStale).toBe(true);
+
+    act(() => result.current.retry());
+    await waitFor(() => expect(result.current.dataStale).toBe(false));
+  });
+
+  it("never reports stale for a widget that declares no staleTime", async () => {
+    await serve({ "/equity/price": { results: [] } });
+    registerWidget();
+    useFakeClock();
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_600_000);
+    });
+    expect(result.current.dataStale).toBe(false);
+  });
 });
 
 /**
