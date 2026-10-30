@@ -287,6 +287,12 @@ export type WidgetDef = {
    */
   refetchInterval?: number | false;
   /**
+   * A cron `refetchInterval`, already validated: the card refetches on each
+   * minute boundary it matches, and the app-wide interval does not apply. An
+   * invalid string never gets here (normalizeWidgets reports and drops it).
+   */
+  refetchCron?: string;
+  /**
    * Only on a `type: "settings"` widget: which of the contract's UI modes
    * its section uses. Such a widget is a section of the Settings dialog, not
    * a card -- see serviceSettingsEntries in src/lib/settingsSections.ts.

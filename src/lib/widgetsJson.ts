@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { parseCron } from "./cron";
 import { isRecord } from "./isRecord";
 import { safeUrl } from "./safeUrl";
 import type {
@@ -411,7 +412,7 @@ function toUdfChart(data: Record<string, unknown> | null): UdfChartSpec {
  *
  * `issues` covers loss at the level of a whole entry or a whole field
  * (a non-object entry, a params array whose entries don't survive, a
- * params value that isn't an array at all). It does NOT cover field-level
+ * params value that isn't an array at all, and a string `refetchInterval` that is not a valid cron expression). It does NOT cover field-level
  * coercion within a widget that is otherwise kept — e.g. a non-string
  * `endpoint` silently becomes `""`, a non-number `refetchInterval` becomes
  * `undefined` and a positive one under a second is raised to a second —
@@ -451,6 +452,14 @@ export function normalizeWidgets(
     if (wrongShape) issues.push({ id, reason: "params is not an array; all params dropped" });
     else if (dropped > 0) issues.push({ id, reason: `${dropped} malformed params dropped` });
 
+    // A string refetchInterval is a cron expression (refetch-interval.md).
+    // One that does not parse is treated as absent, and reported.
+    const cronText = typeof w.refetchInterval === "string" ? w.refetchInterval : undefined;
+    const refetchCron = cronText !== undefined && parseCron(cronText) !== null ? cronText : undefined;
+    if (cronText !== undefined && refetchCron === undefined) {
+      issues.push({ id, reason: `refetchInterval "${cronText}" is not a valid cron expression; ignored` });
+    }
+
     widgets.push({
       id,
       backendId,
@@ -479,6 +488,7 @@ export function normalizeWidgets(
       exportable: w.exportable === false ? false : undefined,
       raw: w.raw === true ? true : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
+      refetchCron,
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,
     });
   }

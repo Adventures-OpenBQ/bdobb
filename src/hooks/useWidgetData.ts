@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchesData } from "../lib/builtins";
 import { fetchWidgetData } from "../lib/dataClient";
+import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
 import { paramsKey } from "../lib/params";
 import type { DashboardCard, WidgetDef } from "../lib/types";
@@ -11,6 +12,7 @@ import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
+import { msToNextMinute } from "./useMinuteTick";
 
 type Status = "loading" | "ready" | "error" | "unresolved" | "incomplete";
 
@@ -49,6 +51,9 @@ export function refreshIntervalMs(
   widget: WidgetDef,
   autoRefreshMinutes: number | undefined,
 ): number | undefined {
+  // A cron schedule replaces the interval outright: neither the manifest's
+  // number nor the user's setting applies (see the cron timer below).
+  if (widget.refetchCron !== undefined) return undefined;
   if (typeof widget.refetchInterval === "number" && widget.refetchInterval > 0) {
     return Math.min(widget.refetchInterval, MAX_TIMEOUT_MS);
   }
@@ -222,6 +227,8 @@ export function useWidgetData(
     let timer: ReturnType<typeof setTimeout> | null = null;
     /** Date.now() of the last COMPLETED request; 0 while the first is in flight. */
     let completedAt = 0;
+    /** The widget's cron refetchInterval; null for every other widget. */
+    const cron = widget.refetchCron === undefined ? null : parseCron(widget.refetchCron);
 
     function clearTimer() {
       if (timer === null) return;
@@ -239,6 +246,19 @@ export function useWidgetData(
       }, delay);
     }
 
+    // useMinuteTick's scheduling: wake on every minute boundary and refetch
+    // on the ones the expression matches. Waking each minute rather than
+    // sleeping until the next match keeps every delay far below setTimeout's
+    // ceiling, however rare the schedule (a monthly one is ~31 days).
+    function armCron(schedule: Cron) {
+      clearTimer();
+      timer = setTimeout(() => {
+        timer = null;
+        if (cronMatches(schedule, new Date())) setAttempt((n) => n + 1);
+        else armCron(schedule);
+      }, msToNextMinute());
+    }
+
     // Armed only once a request has FINISHED — success or failure — so the
     // TIMER path can never have two requests for one card in flight: the next
     // one is not scheduled until the last has landed.
@@ -251,18 +271,28 @@ export function useWidgetData(
     // the newer answer.
     function armAfterCompletion() {
       completedAt = Date.now();
-      if (intervalMs === undefined || document.hidden) return;
-      arm(intervalMs);
+      if (document.hidden) return;
+      if (cron) armCron(cron);
+      else if (intervalMs !== undefined) arm(intervalMs);
     }
 
     function onVisibilityChange() {
-      if (cancelled || intervalMs === undefined) return;
+      if (cancelled || (intervalMs === undefined && cron === null)) return;
       if (document.hidden) {
         clearTimer();
         return;
       }
       // Still waiting on the first answer: armAfterCompletion will arm it.
       if (completedAt === 0) return;
+      if (cron) {
+        // A boundary that matched while hidden is caught up once, as an
+        // elapsed interval is below.
+        const due = cronNext(cron, new Date(completedAt));
+        if (due !== null && due.getTime() <= Date.now()) setAttempt((n) => n + 1);
+        else armCron(cron);
+        return;
+      }
+      if (intervalMs === undefined) return;
       const elapsed = Date.now() - completedAt;
       if (elapsed >= intervalMs) setAttempt((n) => n + 1);
       else arm(intervalMs - elapsed);

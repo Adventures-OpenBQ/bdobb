@@ -1035,3 +1035,24 @@ describe("raw", () => {
     expect(widgets.map((w) => w.raw)).toEqual([true, undefined, undefined]);
   });
 });
+
+describe("cron refetchInterval", () => {
+  it("keeps a valid cron string as refetchCron, leaving the numeric field unset", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "*/1 * * * *" } }, "b1");
+    expect(w.refetchCron).toBe("*/1 * * * *");
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([]);
+  });
+
+  it("treats an invalid cron string as absent and reports it", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "every minute" } }, "b1");
+    expect(w.refetchCron).toBeUndefined();
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([{ id: "a", reason: 'refetchInterval "every minute" is not a valid cron expression; ignored' }]);
+  });
+
+  it("leaves numbers and false exactly as before", () => {
+    const { widgets } = normalizeWidgets({ a: { refetchInterval: 60_000 }, b: { refetchInterval: false } }, "b1");
+    expect(widgets.map((w) => [w.refetchInterval, w.refetchCron])).toEqual([[60_000, undefined], [false, undefined]]);
+  });
+});

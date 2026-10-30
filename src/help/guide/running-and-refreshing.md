@@ -21,7 +21,7 @@ Cards on tabs you are not looking at are not mounted, and are not refreshed.
 
 ## Automatic refresh
 
-Cron-style refresh schedules are not supported in v3. Use a numeric interval, the app-wide refresh setting, or manual Refresh/Run.
+A widget's `refetchInterval` may also be a five-field cron expression, such as `*/5 * * * *` or `0 8 * * 1-5`, in local time. Such a card refetches on each minute boundary the expression matches, for as long as it is on screen, and your app-wide setting does not apply to it. An expression the app cannot read is ignored and noted in the log. Supported: `*`, numbers, lists, ranges and steps; day-of-week 0–7 with both 0 and 7 meaning Sunday.
 
 
 **Settings ▸ General ▸ Auto-refresh every** offers **Off**, **1 minute**, **5 minutes**, **15 minutes**, **30 minutes** and **60 minutes**. It is **Off** by default.
