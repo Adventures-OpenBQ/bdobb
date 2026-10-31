@@ -9,6 +9,8 @@ Two kinds of widget put a web page inside a card.
 
 An **HTML widget** fetches markup from its backend and renders it in a sandboxed frame. A non-string payload reads *This payload is not HTML.*
 
+An HTML widget that declares `raw: true` — and a YouTube widget that does — gets a **Raw** view that asks its endpoint again with `raw=true` added to the card's parameters. A list of records, or an object whose `results` is one, is shown as a table; anything else as JSON. The normal view never sends `raw`, and **Refresh** while Raw is showing repeats the raw request. Without `raw: true`, Raw shows the payload already fetched, as on every other card.
+
 An **iframe widget** — including the **Website** built-in — points at a real address and fetches nothing. The address *is* the widget. An address that is not `http` or `https` reads *This address is not a valid http or https URL.*
 
 ## Why some sites refuse to be framed

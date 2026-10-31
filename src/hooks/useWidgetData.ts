@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchesData } from "../lib/builtins";
 import { fetchWidgetData } from "../lib/dataClient";
+import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
 import { logError } from "../lib/logger";
 import { paramsKey } from "../lib/params";
 import type { DashboardCard, WidgetDef } from "../lib/types";
@@ -11,6 +12,7 @@ import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
+import { msToNextMinute } from "./useMinuteTick";
 
 type Status = "loading" | "ready" | "error" | "unresolved" | "incomplete";
 
@@ -49,6 +51,9 @@ export function refreshIntervalMs(
   widget: WidgetDef,
   autoRefreshMinutes: number | undefined,
 ): number | undefined {
+  // A cron schedule replaces the interval outright: neither the manifest's
+  // number nor the user's setting applies (see the cron timer below).
+  if (widget.refetchCron !== undefined) return undefined;
   if (typeof widget.refetchInterval === "number" && widget.refetchInterval > 0) {
     return Math.min(widget.refetchInterval, MAX_TIMEOUT_MS);
   }
@@ -95,6 +100,11 @@ export function useWidgetData(
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState<string | undefined>(undefined);
   const [attempt, setAttempt] = useState(0);
+  /** Date.now() of the last successful fetch; null until there is one. */
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
+  /** The widget's staleTime has passed since fetchedAt. Always false without one. */
+  const [dataStale, setDataStale] = useState(false);
+  const staleTime = widget?.staleTime;
   /**
    * runButton only: the params the fetch is keyed on. `null` means "nothing
    * armed yet", and the line below arms it on the first render where the
@@ -222,6 +232,8 @@ export function useWidgetData(
     let timer: ReturnType<typeof setTimeout> | null = null;
     /** Date.now() of the last COMPLETED request; 0 while the first is in flight. */
     let completedAt = 0;
+    /** The widget's cron refetchInterval; null for every other widget. */
+    const cron = widget.refetchCron === undefined ? null : parseCron(widget.refetchCron);
 
     function clearTimer() {
       if (timer === null) return;
@@ -239,6 +251,19 @@ export function useWidgetData(
       }, delay);
     }
 
+    // useMinuteTick's scheduling: wake on every minute boundary and refetch
+    // on the ones the expression matches. Waking each minute rather than
+    // sleeping until the next match keeps every delay far below setTimeout's
+    // ceiling, however rare the schedule (a monthly one is ~31 days).
+    function armCron(schedule: Cron) {
+      clearTimer();
+      timer = setTimeout(() => {
+        timer = null;
+        if (cronMatches(schedule, new Date())) setAttempt((n) => n + 1);
+        else armCron(schedule);
+      }, msToNextMinute());
+    }
+
     // Armed only once a request has FINISHED — success or failure — so the
     // TIMER path can never have two requests for one card in flight: the next
     // one is not scheduled until the last has landed.
@@ -251,18 +276,28 @@ export function useWidgetData(
     // the newer answer.
     function armAfterCompletion() {
       completedAt = Date.now();
-      if (intervalMs === undefined || document.hidden) return;
-      arm(intervalMs);
+      if (document.hidden) return;
+      if (cron) armCron(cron);
+      else if (intervalMs !== undefined) arm(intervalMs);
     }
 
     function onVisibilityChange() {
-      if (cancelled || intervalMs === undefined) return;
+      if (cancelled || (intervalMs === undefined && cron === null)) return;
       if (document.hidden) {
         clearTimer();
         return;
       }
       // Still waiting on the first answer: armAfterCompletion will arm it.
       if (completedAt === 0) return;
+      if (cron) {
+        // A boundary that matched while hidden is caught up once, as an
+        // elapsed interval is below.
+        const due = cronNext(cron, new Date(completedAt));
+        if (due !== null && due.getTime() <= Date.now()) setAttempt((n) => n + 1);
+        else armCron(cron);
+        return;
+      }
+      if (intervalMs === undefined) return;
       const elapsed = Date.now() - completedAt;
       if (elapsed >= intervalMs) setAttempt((n) => n + 1);
       else arm(intervalMs - elapsed);
@@ -298,6 +333,7 @@ export function useWidgetData(
         if (cancelled) return;
         setWarnings(received);
         setData(result);
+        setFetchedAt(Date.now());
         setError(undefined);
         setStatus("ready");
         armAfterCompletion();
@@ -343,6 +379,15 @@ export function useWidgetData(
     refreshEpoch,
   ]);
 
+  // The stale tint (stale-time.md): set once staleTime has passed since the
+  // last successful fetch, cleared by the next one.
+  useEffect(() => {
+    setDataStale(false);
+    if (staleTime === undefined || fetchedAt === null) return;
+    const timer = setTimeout(() => setDataStale(true), Math.min(staleTime, MAX_TIMEOUT_MS));
+    return () => clearTimeout(timer);
+  }, [staleTime, fetchedAt]);
+
   // `attempt` is returned, not just used, so a renderer that fetches its own
   // data can be told a Refresh happened. A multi_file_viewer has no request
   // here to repeat (fetchesData is false), so without this its Refresh button
@@ -355,5 +400,5 @@ export function useWidgetData(
   // same reason: an rss card polls its own feed, and it must poll on exactly
   // the interval every other card uses. Returning the value already computed
   // above is what makes a second, drifting call site impossible.
-  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs };
+  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs, dataStale };
 }

@@ -984,7 +984,7 @@ function VirtualTable({
                 {row.getVisibleCells().map((cell) => {
                   const column = byField.get(cell.column.id);
                   const side = cell.column.getIsPinned();
-                  const visual: CellVisual = column ? cellVisual(column, cell.getValue()) : {};
+                  const visual: CellVisual = column ? cellVisual(column, cell.getValue(), original) : {};
                   const cellFlash = column?.cellChange?.enabled
                     ? flash.get(`${rowKey}|${cell.column.id}`)
                     : undefined;

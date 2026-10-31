@@ -10,6 +10,7 @@
   --text-muted: #8b94a3;
   --accent: #22c99b;
   --error: #d9695f;
+  --stale: #e0a040;
   --clock-green: #39ff14;
   --rail-width: 48px;
   --rail-width-expanded: 240px;
@@ -53,6 +54,7 @@
   --text-muted: #6b7280;
   --accent: #16a67f;
   --error: #c0392b;
+  --stale: #b7791f;
   --clock-green: #1a9e4a;
   color-scheme: light;
 }
@@ -666,6 +668,13 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Inline, not an overlay: .library-card clips its overflow. */
+.library-card-preview {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
 .library-card-badges { display: flex; gap: 4px; align-items: center; }
 
 /* Same neutral treatment as .type-badge (both take the shared badge recipe up
@@ -1263,6 +1272,9 @@ body {
 
 .card-action[aria-pressed="true"],
 .card-action[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
+/* staleTime has passed since the last fetch: the reference's orange refresh
+   button. Comes after the accent states so a stale button reads as stale. */
+.card-action[data-stale="true"] { color: var(--stale); border-color: var(--stale); }
 
 /* Run is the one header control that asks to be pressed rather than merely
    offered -- a runButton card shows nothing new until it is -- so it is the
@@ -1275,6 +1287,8 @@ body {
   border-color: var(--accent);
   color: var(--bg);
 }
+/* The filled Run keeps its accent fill; the stale state shows on its border. */
+.card-action.card-run[data-stale="true"] { border-color: var(--stale); }
 
 /* Portalled to <body> and `fixed` from the ⋯ toggle's rect, so neither the
    card's own clipping nor the next card can cover it; on the context menu's

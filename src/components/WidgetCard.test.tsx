@@ -99,6 +99,13 @@ vi.mock("./renderers/RssRenderer", () => ({
   ),
 }));
 
+// REPLACED: the real one issues its own request. What is under test is what the CARD hands it.
+vi.mock("./renderers/RawRequestView", () => ({
+  RawRequestView: (props: { params: unknown; refreshKey: unknown }) => (
+    <span data-testid="raw-request">{JSON.stringify({ params: props.params, refreshKey: props.refreshKey })}</span>
+  ),
+}));
+
 // REPLACED, for the same reason as RssRenderer: the real one issues its own
 // UDF request and draws on canvas. What is under test is what the CARD hands it.
 vi.mock("./renderers/TradingViewRenderer", () => ({
@@ -555,6 +562,51 @@ describe("WidgetCard", () => {
     expect(chevron).toHaveAttribute("aria-expanded", "false");
     expect(container.querySelector(".card-controls-open")).not.toBeInTheDocument();
   });
+
+  it("tints Refresh when the hook reports the data stale, and says so in its tooltip", () => {
+    register();
+    useWidgetData.mockReturnValue({ status: "ready", data: [], retry: vi.fn(), dataStale: true });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    const refresh = screen.getByRole("button", { name: "Refresh" });
+    expect(refresh).toHaveAttribute("data-stale", "true");
+    expect(refresh).toHaveAttribute("title", "Data is older than its stale time");
+  });
+
+  it("leaves Refresh untinted and untitled without staleness or a dataUpdateDisplay", () => {
+    register();
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    const refresh = screen.getByRole("button", { name: "Refresh" });
+    expect(refresh).not.toHaveAttribute("data-stale");
+    expect(refresh).not.toHaveAttribute("title");
+  });
+
+  it("adds the dataUpdateDisplay schedule to the refresh tooltip, as of the hover", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date(2026, 9, 29, 12, 0));
+      register({ dataUpdateDisplay: "0 10 * * *" });
+      render(<WidgetCard card={card} onRemove={vi.fn()} />);
+      const refresh = screen.getByRole("button", { name: "Refresh" });
+
+      vi.setSystemTime(new Date(2026, 9, 30, 11, 0));
+      fireEvent.pointerEnter(refresh);
+
+      expect(refresh).toHaveAttribute(
+        "title",
+        `Data update: 0 10 * * * · last ${new Date(2026, 9, 30, 10, 0).toLocaleString()} · next ${new Date(2026, 9, 31, 10, 0).toLocaleString()}`,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps Run's own tooltip and adds the schedule beneath it", () => {
+    register({ runButton: true, dataUpdateDisplay: "0 10 * * *" });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Run" }).getAttribute("title")).toMatch(
+      /^Run \(⌘-click: hard refresh\)\nData update: 0 10 \* \* \* · last /,
+    );
+  });
 });
 
 describe("WidgetCard header controls", () => {
@@ -973,6 +1025,32 @@ describe("WidgetCard renderer dispatch", () => {
     expect(screen.queryByRole("option", { name: "Chart" })).not.toBeInTheDocument();
   });
 
+  it("offers a Chart mode from declared chartDataType columns where detection finds none", () => {
+    setUp(
+      {
+        type: "table",
+        table: {
+          columns: [
+            { field: "symbol", chartDataType: "category" },
+            { field: "name", chartDataType: "series" },
+          ],
+        },
+      },
+      [{ symbol: "AAPL", name: "Apple" }],
+    );
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("option", { name: "Chart" })).toBeInTheDocument();
+  });
+
+  it("offers no Chart mode when the declared columns name no series", () => {
+    setUp(
+      { type: "table", table: { columns: [{ field: "symbol", chartDataType: "category" }, { field: "value" }] } },
+      [{ symbol: "AAPL", value: 1 }],
+    );
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByRole("option", { name: "Chart" })).not.toBeInTheDocument();
+  });
+
   it("labels the default mode by the widget's own type", () => {
     setUp({ type: "markdown" }, "## Hello");
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
@@ -1004,6 +1082,23 @@ describe("WidgetCard renderer dispatch", () => {
     setUp({ type: "html" }, "<p>hi</p>");
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.getByTitle("Widget content")).toBeInTheDocument();
+  });
+
+  it("routes a raw: true html card's Raw view to the raw re-request, with the card's own params", () => {
+    setUp({ type: "html", raw: true }, "<p>hi</p>");
+    useBackendsStore.setState({ backends: [backend()] });
+    useDashboardStore.setState({ refreshEpoch: 2 });
+    useWidgetData.mockReturnValue({ status: "ready", data: "<p>hi</p>", retry: vi.fn(), attempt: 1 });
+    render(<WidgetCard card={{ ...card, view: "raw", params: { symbol: "AAPL" } }} onRemove={vi.fn()} />);
+    expect(JSON.parse(screen.getByTestId("raw-request").textContent!)).toEqual({ params: { symbol: "AAPL" }, refreshKey: 3 });
+  });
+
+  it("keeps the fetched-payload Raw view for an html card without raw: true", () => {
+    setUp({ type: "html" }, "<p>hi</p>");
+    useBackendsStore.setState({ backends: [backend()] });
+    render(<WidgetCard card={{ ...card, view: "raw" }} onRemove={vi.fn()} />);
+    expect(screen.queryByTestId("raw-request")).toBeNull();
+    expect(screen.getByTestId("raw-json")).toHaveTextContent('"<p>hi</p>"');
   });
 
   it("dispatches iframe to the iframe renderer", () => {
@@ -1409,6 +1504,17 @@ describe("WidgetCard export menu", () => {
       expect(screen.getByRole("button", { name: "Card menu" })).toBeInTheDocument();
     },
   );
+
+  it("drops Export from the card menu when the widget declares exportable: false, and keeps the rest", async () => {
+    register({ exportable: false });
+    useWidgetData.mockReturnValue({ status: "ready", data: [{ a: 1 }], retry: vi.fn() });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
+
+    expect(screen.queryByRole("menuitem", { name: "Export ▸" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Rename…" })).toBeInTheDocument();
+  });
 
   it.each([
     ["iframe", { type: "iframe", endpoint: "https://example.com/p" }],
