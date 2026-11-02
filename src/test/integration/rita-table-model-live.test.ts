@@ -164,8 +164,9 @@ live("Rita arranges a CSV table through table-model/1", () => {
     const first = await turn(`${SKILL}Show total Amount by Region in the table.`);
     expect(first.rounds.some((r) => r.tool === "arrange_table")).toBe(true);
     const before = structuredClone(tableCard().tableDefinition);
-    // Names the text column as the thing to sum: "Sum the Region column" was read as "sum Amount by Region".
-    const { rounds, reply } = await turn(`${SKILL}Add up the Region column's own values (the region names, not Amount).`);
+    // v10 keeps its own wording: the rewording v6 needed ("Add up the Region column's own values") makes Qwen
+    // preview a region count here, and v10's engine-rendered reply then carries no refusal text.
+    const { rounds, reply } = await turn(`${SKILL}Sum the Region column.`);
     const results = rounds.filter((r) => r.tool === "arrange_table").map((r) => r.result as { status: string; code?: string });
     expect(results.some((r) => r.status === "applied"), "no arrange applied").toBe(false);
     expect(tableCard().tableDefinition).toEqual(before);
