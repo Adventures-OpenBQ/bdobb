@@ -1594,7 +1594,7 @@ function VirtualTable({
                   const side = cell.column.getIsPinned();
                   const errors = execution?.rowErrors?.get(row.id);
                   const error = errors && Object.hasOwn(errors, cell.column.id) ? errors[cell.column.id] : undefined;
-                  const visual: CellVisual = column ? cellVisual(column, cell.getValue()) : {};
+                  const visual: CellVisual = column ? cellVisual(column, cell.getValue(), original) : {};
                   const cellFlash = column?.cellChange?.enabled
                     ? flash.get(`${rowKey}|${cell.column.id}`)
                     : undefined;
