@@ -4,20 +4,24 @@
 
 **Goal:** A widget whose `widgets.json` declares `mcp_tool: { mcp_server, tool_id }` is cited in Rita's Sources when the latest answer's recorded MCP calls include that server name and tool, and clicking the citation adds the widget to the open dashboard or brings its existing card into view.
 
-**Architecture:** `widgetsJson.ts` parses `mcp_tool` into `WidgetDef.mcpTool`. `chatStore` keeps the latest turn's calls (`turnCalls`) beside the chat-wide ledger. A pure `citedWidgets()` in `Sources.tsx` matches those calls (server id → Settings `name`) against the widget registry, and `Sources` renders the matches as buttons wired to `openCitedWidget()`. `ChatPane` connects the stores.
+**Architecture:** `widgetsJson.ts` parses `mcp_tool` into `WidgetDef.mcpTool`. `chatStore` ledgers every client-routed `execute_agent_tool` call once, from its `executeFunction` wrapper, with the effective tool names of a proxied call in `effectiveTools`. It also keeps the latest turn's calls (`turnCalls`) beside the chat-wide ledger. A pure `citedWidgets()` in `Sources.tsx` matches those calls (server id → Settings `name`, effective tool → `tool_id`) against the widget registry, and `Sources` renders the matches as buttons wired to `openCitedWidget()`. `ChatPane` connects the stores.
 
 **Tech Stack:** React 18, TypeScript, zustand, vitest + Testing Library. No new dependencies.
 
-**Spec:** `docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md`. This plan covers item G only, plus the spec's "Shared rules" and "Success criteria" as they apply to G. OpenBB's interface reference for the field: bdobb-v2 `docs/openbb-reference/widget-configuration/matching-widget-to-mcp-tool.md` and `json-specs/widgets-json-reference.md` (`mcp_tool`).
+**Spec:** `docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md` (on this branch; item G's "Call ledger (ruled 2026-11-02)" paragraph was added in 870ba0f0). This plan covers item G only, plus the spec's "Shared rules" and "Success criteria" as they apply to G. OpenBB's interface reference for the field: bdobb-v2 `docs/openbb-reference/widget-configuration/matching-widget-to-mcp-tool.md` and `json-specs/widgets-json-reference.md` (`mcp_tool`).
 
-## Open questions (found in v6.0.0; the plan builds the spec as written, these need a ruling)
+## Open questions
 
-1. **Successful direct calls from live Rita are not recorded.** A successful `execute_agent_tool` call reaches `calls` only through a status event whose `tool_call` carries `server_id` (`src/stores/chatStore.ts:444-453`), or through `labelProxiedStep`, which handles only `call_tool` and `run_pipeline` (`chatStore.ts:75-85`, `396-410`). Live agent-rita 0011 sends the status step without `server_id` (`chatStore.test.ts`, the "#37" tests). So a successful call to a plain tool such as `get_company_revenue_data` is never in `calls`, and its widget is never cited against live Rita. Only failures (`ok: false`) and status steps that carry `server_id` are recorded. To fix it, record every `execute_agent_tool` call in the `executeFunction` wrapper. That changes the ledger and the chat export, so it needs a ruling.
-2. **Proxied calls record the proxy, not the tool.** A call through `call_tool` is recorded as `tool: "call_tool"`. The tool it really ran survives only inside the display string `display` ("OpenBQ MCP · equity_price_historical (via call_tool)"). The OpenBQ MCP runs almost all its tools this way (`src/help/guide/ai-library.md`). If `tool` must equal `tool_id` exactly, as the spec says, no OpenBQ provider tool can ever match. To fix it, store the effective names (`effectiveToolNames`) on the `AgentCall` and match on them too. That is beyond the spec, so it needs a ruling.
+Questions 1 and 2 were ruled on 2026-11-02 (spec G, "Call ledger"). Task 2 builds the ruling. Questions 3–6 keep the defaults below. Questions 7 and 8 are readings the plan had to choose while building the ruling; each needs a confirmation.
+
+1. **Ruled: record every client-routed call.** In v6.0.0 a successful `execute_agent_tool` call reached `calls` only through a status step carrying `server_id` (`src/stores/chatStore.ts`, the `event.type === "status"` branch), or through `labelProxiedStep` (proxies only). Live agent-rita 0011 sends the step without `server_id`, so a plain tool's successful call was never ledgered. Task 2 records every `execute_agent_tool` call in the `executeFunction` wrapper from `input_arguments` (`server_id`, `tool_name`), and removes the status-branch push, so each call is recorded once. A failed, denied or stopped call stays recorded by `onToolError` / `onToolStopped` only, as today. Consequences, both direct readings of the ruling and neither covered by an existing test: a status step that names a `server_id` but is never followed by a function call is now trail-only; and successful local-tool calls (`bdobb-local`) now appear in the ledger and the chat export.
+2. **Ruled: record the effective tool for a proxy.** For a `PROXY_TOOLS` call, Task 2 keeps `tool` as the proxy's own name (`call_tool`), so the trail, the chat export (which reads `display`) and the AI Library (which reads `mcpSeenProxiedTools`, not the ledger) read as today. It adds `effectiveTools: string[]`, the names `effectiveToolNames` returns, which are the names `displayToolName` shows. `citedWidgets` matches `effectiveTools` when present, else `tool`. **One existing expectation changes:** `chatStore.test.ts`, "logs a successful call once, with its effective name" (the `toEqual` at ~line 623), asserts the exact ledger entry. The spec now requires the effective name to be recorded, so that exact shape is wrong under the spec, and Task 2 adds `effectiveTools: ["cboe_equity_historical"]` to it. No other existing expectation changes.
 3. **Only some servers have a name.** `McpServerConfig.name` exists for apps.json imports and for the build default `"OpenBQ MCP"` (`src/lib/settingsFile.ts:190`). A server added by URL, or a dashboard server from `storage.mcpUrl`, has no name, and the AI Library cannot give it one. The plan matches on `name` only. An unnamed server never matches, and the plan does **not** fall back to the host that `mcpServerLabel` displays.
 4. **Failed, denied or stopped calls.** The spec says "include a call". The plan skips calls with `ok === false`, because a call that returned no data should not be cited as a source. Confirm.
 5. **What the OpenBB doc has that spec G leaves out.** The doc also shows a "Matching widget found" toast and a trailing `*` on the citation, and it adds the widget "to the same parameters as the ones that were utilized by the copilot". `AgentCall` stores no call arguments, so those parameters cannot be recovered. The plan follows spec G: no toast, no `*`, and the widget is added with its own defaults.
 6. **"That answer" means the latest answer.** In v6, Sources renders once, for the latest turn. `citations` is reset on every send and is not persisted. The plan ties widget citations to the latest turn's calls (`turnCalls`). Like Rita's own citations, they are not persisted, so they are gone after a restart or Clear.
+7. **`run_pipeline` records every step's tool.** The ruling says "the effective tool name", singular. A `run_pipeline` call runs several tools, and `displayToolName` shows them all ("pipeline: a → b"). The plan records all of them in `effectiveTools`, so a widget is cited when any step ran its `tool_id`. Confirm.
+8. **Narration for a call with no status step.** `narrated` was the status step's message. Task 2 takes the message of the latest non-error trail step naming the same `tool_name`, and records `""` when Rita sent no such step. The chat export then prints `- s1/quote: ` for that call. Confirm, or name the text to use.
 
 ## Global Constraints
 
@@ -27,7 +31,7 @@
 - New source files carry the AGPL-3.0-only two-line header (`scripts/header-check.sh`). Never an Apache header. (This plan creates no new source files.)
 - Update in-app help (`src/help/guide/`) where the field's behaviour shows: `rita-chat.md`, the Sources bullet.
 - No new dependencies. Match the surrounding idiom.
-- Gates, all passing on the branch: `pnpm typecheck`, `pnpm lint`, `pnpm test:run`, `bash scripts/header-check.sh`. Existing tests pass unchanged; only additive edits to fixtures/beforeEach.
+- Gates, all passing on the branch: `pnpm typecheck`, `pnpm lint`, `pnpm test:run`, `bash scripts/header-check.sh`. Existing tests pass unchanged; only additive edits to fixtures/beforeEach. The one exception is the expectation named in Open question 2, which the spec makes wrong.
 - Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
 ## Review Focus
@@ -36,25 +40,11 @@
 2. Two widgets on different backends declare the same `mcp_tool`. Both are cited, one button each. Test in Task 4.
 3. The widget's card is on **another tab** of the open dashboard. That tab becomes active and no duplicate card is added. Test in Task 4.
 4. There is no open dashboard (`activeDashboard()` is undefined). The click does nothing and does not throw. Test in Task 4.
-5. The same tool is called twice in one turn. The widget is cited once. Test in Task 4.
+5. A proxied call (`call_tool` through the OpenBQ MCP) is cited for the tool it ran. A widget whose `tool_id` is the proxy's own name (`call_tool`) is not cited for it. Tests in Task 2 (ledger) and Task 4 (match).
 
 ---
 
-### Task 1: Spec copy on this branch
-
-The spec lives in the sibling v3 worktree. A copy at the same relative path makes this plan's Spec link resolve on this branch. **This step was done in the commit that added this plan.** Verify only.
-
-**Files:**
-- Create: `docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md` (verbatim copy of `/Users/artcashin/Developer/openbq-bdobb-v3-field-gaps/docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md`)
-
-- [ ] **Step 1: Verify the copy is present and identical**
-
-Run: `cmp /Users/artcashin/Developer/openbq-bdobb-v6-mcp-tool/docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md /Users/artcashin/Developer/openbq-bdobb-v3-field-gaps/docs/superpowers/specs/2026-10-29-workspace-field-gaps-design.md && echo same`
-Expected: `same`. (If the v3 copy has changed since then, stop and ask; do not re-copy silently.)
-
----
-
-### Task 2: Parse `mcp_tool` from widgets.json
+### Task 1: Parse `mcp_tool` from widgets.json
 
 **Files:**
 - Modify: `src/lib/types.ts` (WidgetDef, next to `mcpUrl?: string;` ~line 335)
@@ -155,6 +145,287 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
+### Task 2: Ledger every client-routed call once, with its effective tool
+
+Spec G, "Call ledger (ruled 2026-11-02)". The `executeFunction` wrapper in `send` sees every client-routed `execute_agent_tool` call, so the ledger records the call there. The status branch stops pushing, so a call is never recorded twice. A failure, denial or stop is already recorded by `onToolError` / `onToolStopped`, and the wrapper skips it, as the v6 wrapper already does for its proxied entry.
+
+**Files:**
+- Modify: `src/lib/agent/types.ts` (`AgentCall`, the `agent_tool` member, ~line 166)
+- Modify: `src/lib/agent/execute.ts` (`executeFunction`, the `const input = ...` line ~299: lift it into an exported helper)
+- Modify: `src/stores/chatStore.ts` (imports ~lines 6 and 10; a `narrationFor` helper beside `labelProxiedStep` ~line 85; the `executeFunction:` wrapper ~lines 393-412; the status branch ~lines 437-454)
+- Test: `src/stores/chatStore.test.ts` (inside `describe("call log for the live two-event shape (#37)", ...)`, ~line 608)
+
+**Interfaces:**
+- Produces:
+  - `AgentCall` (`kind: "agent_tool"`) gains `effectiveTools?: string[]`. It is present only for a `PROXY_TOOLS` call whose input names its tools, and holds `effectiveToolNames(tool, input).names`. `tool` stays the name Rita called (`call_tool` for a proxy).
+  - `agentToolInput(args: Record<string, unknown>): Record<string, unknown>`, exported from `src/lib/agent/execute.ts`.
+  - Ledger rule: one `agent_tool` entry per `execute_agent_tool` call, in call order. A successful call has no `ok` field; a failed, denied or stopped one has `ok: false` (unchanged).
+
+- [ ] **Step 1: Write the failing tests, and update the one expectation the spec makes wrong**
+
+In `src/stores/chatStore.test.ts`, inside `describe("call log for the live two-event shape (#37)", ...)`:
+
+Replace the expectation in "logs a successful call once, with its effective name":
+
+```ts
+        expect(useChatStore.getState().calls).toEqual([
+          { kind: "agent_tool", server_id: "m1", tool: "call_tool", narrated: "Calling call_tool", display: "OpenBQ MCP · cboe_equity_historical (via call_tool)" },
+        ]);
+```
+
+with (the spec requires the effective name to be recorded; see Open question 2):
+
+```ts
+        expect(useChatStore.getState().calls).toEqual([
+          {
+            kind: "agent_tool",
+            server_id: "m1",
+            tool: "call_tool",
+            narrated: "Calling call_tool",
+            display: "OpenBQ MCP · cboe_equity_historical (via call_tool)",
+            effectiveTools: ["cboe_equity_historical"],
+          },
+        ]);
+```
+
+Then add, after "logs a failed call once, as the failure":
+
+```ts
+      const fnCall = (tool: string, parameters: Record<string, unknown> = {}) =>
+        `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "m1", tool_name: tool, parameters } })}\n\n`;
+      const statusStep = (tool: string, extra: Record<string, unknown> = {}) =>
+        `event: copilotStatusUpdate\ndata: ${JSON.stringify({ eventType: "INFO", message: `Calling ${tool}`, tool_call: { tool_name: tool, ...extra } })}\n\n`;
+
+      it("logs a successful plain call whose status step has no server_id, once", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        replies(statusStep("get_company_revenue_data") + fnCall("get_company_revenue_data"), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("revenue");
+        expect(useChatStore.getState().calls).toEqual([
+          { kind: "agent_tool", server_id: "m1", tool: "get_company_revenue_data", narrated: "Calling get_company_revenue_data" },
+        ]);
+      });
+
+      it("logs a successful call that had no status step at all, once, with empty narration", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        replies(fnCall("get_company_revenue_data"), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("revenue");
+        expect(useChatStore.getState().calls).toEqual([{ kind: "agent_tool", server_id: "m1", tool: "get_company_revenue_data", narrated: "" }]);
+      });
+
+      it("logs a call once when its status step does carry server_id, with every pipeline step as an effective tool", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        const steps = { steps: [{ tool: "equity_quote" }, { tool: "equity_price_historical" }] };
+        replies(statusStep("run_pipeline", { server_id: "m1", input: steps }) + fnCall("run_pipeline", steps), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("pipeline");
+        expect(useChatStore.getState().calls).toEqual([
+          {
+            kind: "agent_tool",
+            server_id: "m1",
+            tool: "run_pipeline",
+            narrated: "Calling run_pipeline",
+            display: "OpenBQ MCP · pipeline: equity_quote → equity_price_historical (via run_pipeline)",
+            effectiveTools: ["equity_quote", "equity_price_historical"],
+          },
+        ]);
+      });
+```
+
+- [ ] **Step 2: Run the tests to verify they fail**
+
+Run: `pnpm vitest run src/stores/chatStore.test.ts -t "#37"`
+Expected: FAIL, four tests. "with its effective name" and "pipeline step" lack `effectiveTools`. "no server_id" and "no status step" find `calls` empty. "logs a failed call once" still passes.
+
+- [ ] **Step 3: Add the field**
+
+In `src/lib/agent/types.ts`, replace the `agent_tool` member of `AgentCall`:
+
+```ts
+  | { kind: "agent_tool"; server_id: string; tool: string; narrated: string; ok?: boolean; error?: string; display?: string };
+```
+
+with:
+
+```ts
+  | {
+      kind: "agent_tool";
+      server_id: string;
+      /** The tool Rita called: the proxy's own name (`call_tool`, `run_pipeline`) for a proxied call. */
+      tool: string;
+      narrated: string;
+      ok?: boolean;
+      error?: string;
+      display?: string;
+      /** A proxied call's effective tools (effectiveToolNames): what mcp_tool matches instead of `tool`. */
+      effectiveTools?: string[];
+    };
+```
+
+- [ ] **Step 4: Lift the input reader in `execute.ts`**
+
+In `src/lib/agent/execute.ts`, directly above `export async function executeFunction(`:
+
+```ts
+/**
+ * An execute_agent_tool call's input. agent-rita's executeAgentTool event
+ * carries it as `parameters` (src/protocol/events.ts); `input` / `args` are
+ * kept for the older shapes. With only the old keys every local tool ran with `{}`.
+ */
+export function agentToolInput(args: Record<string, unknown>): Record<string, unknown> {
+  return isRecord(args.parameters) ? args.parameters : isRecord(args.input) ? args.input : isRecord(args.args) ? args.args : {};
+}
+```
+
+In `executeFunction`, replace the comment and line:
+
+```ts
+    // agent-rita's executeAgentTool event carries the tool's input as
+    // `parameters` (src/protocol/events.ts); `input` / `args` are kept for
+    // the older shapes. With only the old keys every local tool ran with `{}`.
+    const input = isRecord(args.parameters) ? args.parameters : isRecord(args.input) ? args.input : isRecord(args.args) ? args.args : {};
+```
+
+with:
+
+```ts
+    const input = agentToolInput(args);
+```
+
+- [ ] **Step 5: Record from the wrapper in `chatStore.ts`**
+
+Imports: add `agentToolInput` to the `../lib/agent/execute` import, and `effectiveToolNames` to the `../lib/agent/proxiedTools` import:
+
+```ts
+import { agentToolInput, buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool, type ToolRequest } from "../lib/agent/execute";
+```
+
+```ts
+import { PROXY_TOOLS, displayToolName, effectiveToolNames, mergeSeenTools } from "../lib/agent/proxiedTools";
+```
+
+Directly after `labelProxiedStep` (after its closing `}`):
+
+```ts
+/** The narration of the latest status step naming `tool` (not an error line), for the call ledger; "" when Rita sent none. */
+function narrationFor(trail: AgentStatus[], tool: string): string {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const step = trail[i].tool_call;
+    if (trail[i].eventType !== "ERROR" && isRecord(step) && step.tool_name === tool) return trail[i].message;
+  }
+  return "";
+}
+```
+
+Replace the whole `executeFunction:` wrapper in `send`:
+
+```ts
+        executeFunction: async (payload, signal) => {
+          const labelled = labelProxiedStep(trail, payload, settings.mcpServers);
+          show();
+          const before = calls.length;
+          const result = await executeFunction(payload, deps, signal);
+          // A step labelled here had no server_id, so the status branch never
+          // logged it; a failure was already logged by onToolError (#37).
+          // Calls run one at a time, so entries since `before` are this call's.
+          const step = labelled?.tool_call;
+          if (labelled && isRecord(step) && !calls.slice(before).some((c) => c.kind === "agent_tool" && c.ok === false)) {
+            calls.push({
+              kind: "agent_tool",
+              server_id: String(step.server_id),
+              tool: String(step.tool_name),
+              narrated: labelled.message,
+              ...(typeof step.display === "string" ? { display: step.display } : {}),
+            });
+          }
+          return result;
+        },
+```
+
+with:
+
+```ts
+        executeFunction: async (payload, signal) => {
+          labelProxiedStep(trail, payload, settings.mcpServers);
+          show();
+          const before = calls.length;
+          const result = await executeFunction(payload, deps, signal);
+          // Every client-routed execute_agent_tool call is ledgered here, once,
+          // whether or not its status step named a server (spec G, ruled
+          // 2026-11-02). A failure, denial or stop was already ledgered by
+          // onToolError / onToolStopped. Calls run one at a time, so entries
+          // since `before` are this call's.
+          const args = payload.input_arguments;
+          if (payload.function === "execute_agent_tool" && isRecord(args) && !calls.slice(before).some((c) => c.kind === "agent_tool" && c.ok === false)) {
+            const serverId = String(args.server_id ?? "");
+            const tool = String(args.tool_name ?? args.tool ?? "");
+            const input = agentToolInput(args);
+            const effective = effectiveToolNames(tool, input);
+            calls.push({
+              kind: "agent_tool",
+              server_id: serverId,
+              tool,
+              narrated: narrationFor(trail, tool),
+              // A proxied call is matched and shown by what it ran.
+              ...(effective.ok && effective.via !== undefined
+                ? { display: displayToolName(mcpServerLabel(serverId, settings.mcpServers), tool, input), effectiveTools: effective.names }
+                : {}),
+            });
+          }
+          return result;
+        },
+```
+
+In the status branch, replace:
+
+```ts
+          const shownStatus = withDisplay(event.status, settings.mcpServers);
+          trail.push(shownStatus);
+          // Only a tool_call naming a real server_id is a client-routed
+          // execute_agent_tool call for the ledger; Rita's own internal
+          // narration (e.g. execute_sql against its own data) carries a
+          // tool_call with no server_id and stays trail-only.
+          const step = isRecord(event.status.tool_call) ? event.status.tool_call : null;
+          if (step && typeof step.server_id === "string") {
+            calls.push({
+              kind: "agent_tool",
+              server_id: step.server_id,
+              tool: typeof step.tool_name === "string" ? step.tool_name : String(step.name ?? ""),
+              narrated: event.status.message,
+              ...(isRecord(shownStatus.tool_call) && typeof shownStatus.tool_call.display === "string" ? { display: shownStatus.tool_call.display } : {}),
+            });
+          }
+          show();
+```
+
+with:
+
+```ts
+          // Trail only: the executeFunction wrapper ledgers each client-routed
+          // call once, so a step that names its server_id is not ledgered here.
+          trail.push(withDisplay(event.status, settings.mcpServers));
+          show();
+```
+
+- [ ] **Step 6: Run the tests to verify they pass**
+
+Run: `pnpm vitest run src/stores/chatStore.test.ts src/lib/agent/execute.test.ts src/lib/chatExport.test.ts`
+Expected: PASS. All three files pass; apart from the one expectation updated in Step 1, no existing test changed.
+
+- [ ] **Step 7: Typecheck**
+
+Run: `pnpm typecheck`
+Expected: no errors.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/lib/agent/types.ts src/lib/agent/execute.ts src/stores/chatStore.ts src/stores/chatStore.test.ts
+git commit -m "feat(rita): ledger every client-routed tool call once, with its effective tool
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+```
+
+---
+
 ### Task 3: Keep the latest turn's calls in chatStore
 
 `calls` is the chat-wide ledger. It is merged at the end of every turn and saved with the transcript. Sources describes only the latest answer, so the latest turn's calls are kept apart as `turnCalls`. Like `citations`, they are reset when a turn starts and emptied by Clear, and they are not persisted.
@@ -164,6 +435,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Test: `src/stores/chatStore.test.ts`
 
 **Interfaces:**
+- Consumes: the ledger rule from Task 2 (every `execute_agent_tool` call is in `calls` once).
 - Produces: `ChatState.turnCalls: AgentCall[]` (the latest finished turn's calls, in order; `[]` while a turn runs, after Clear and after load).
 
 - [ ] **Step 1: Write the failing test**
@@ -175,14 +447,15 @@ Add to `src/stores/chatStore.test.ts`, inside `describe("chatStore.send", ...)` 
     useSettingsStore.setState({
       settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", mcpServers: [{ id: "s1", name: "Financial Data", url: "https://mcp.example/mcp", enabled: true }] },
     });
-    // A status step that names its server is recorded as an agent_tool call.
-    const step = (tool: string) =>
-      `event: copilotStatusUpdate\ndata: ${JSON.stringify({ eventType: "INFO", message: `Calling ${tool}`, tool_call: { server_id: "s1", tool_name: tool } })}\n\n`;
-    replies(step("quote") + fixture("rita/simple-text.sse"));
+    vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+    // Each client-routed call is ledgered from executeFunction (Task 2).
+    const fnCall = (tool: string) =>
+      `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "s1", tool_name: tool, parameters: {} } })}\n\n`;
+    replies(fnCall("quote"), fixture("rita/simple-text.sse"));
     await useChatStore.getState().send("one");
-    expect(useChatStore.getState().turnCalls).toEqual([{ kind: "agent_tool", server_id: "s1", tool: "quote", narrated: "Calling quote" }]);
+    expect(useChatStore.getState().turnCalls).toEqual([{ kind: "agent_tool", server_id: "s1", tool: "quote", narrated: "" }]);
 
-    replies(step("news") + fixture("rita/simple-text.sse"));
+    replies(fnCall("news"), fixture("rita/simple-text.sse"));
     await useChatStore.getState().send("two");
     expect(useChatStore.getState().turnCalls.map((c) => (c.kind === "agent_tool" ? c.tool : c.kind))).toEqual(["news"]);
     expect(useChatStore.getState().calls).toHaveLength(2);
@@ -269,9 +542,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Test: `src/components/DashboardGrid.test.tsx` ("renders one card per dashboard card")
 
 **Interfaces:**
-- Consumes: `WidgetDef.mcpTool` (Task 2); `AgentCall`, `McpServerConfig` from `src/lib/agent/types.ts`; `useDashboardStore` (`activeDashboard()`, `setActiveTab(dashboardId, tabId)`, `addCard(widget)`).
+- Consumes: `WidgetDef.mcpTool` (Task 1); `AgentCall` with `effectiveTools?: string[]` (Task 2), `McpServerConfig` from `src/lib/agent/types.ts`; `useDashboardStore` (`activeDashboard()`, `setActiveTab(dashboardId, tabId)`, `addCard(widget)`).
 - Produces:
-  - `citedWidgets(calls: AgentCall[], servers: McpServerConfig[], widgets: WidgetDef[]): WidgetDef[]`. Returns the registry widgets, in registry order, whose `mcpTool` matches a call with `kind === "agent_tool"` and `ok !== false`, where the call's `server_id` resolves to a Settings entry whose `name === mcpTool.mcpServer` and the call's `tool === mcpTool.toolId`.
+  - `citedWidgets(calls: AgentCall[], servers: McpServerConfig[], widgets: WidgetDef[]): WidgetDef[]`. Returns the registry widgets, in registry order, whose `mcpTool` matches a call with `kind === "agent_tool"` and `ok !== false`, where the call's `server_id` resolves to a Settings entry whose `name === mcpTool.mcpServer`, and `mcpTool.toolId` is one of the call's `effectiveTools` or, when it has none, equals the call's `tool`.
   - `openCitedWidget(widget: WidgetDef): Promise<void>`. If the open dashboard has a card with the same `widgetId` and `backendId` on any tab, it makes that tab active and scrolls the card into view. Otherwise it calls `addCard(widget)`. With no open dashboard it does nothing.
   - `Sources({ citations, widgets = [] }: { citations: Record<string, unknown>[]; widgets?: WidgetDef[] })`
   - DOM: every grid item carries `data-card-id={card.id}`.
@@ -312,6 +585,14 @@ describe("citedWidgets", () => {
   it("cites every widget declaring the matched tool, on any backend", () => {
     const twin = widget({ ...revenue, backendId: "b2" });
     expect(citedWidgets([call("get_company_revenue_data")], servers, [revenue, twin])).toEqual([revenue, twin]);
+  });
+
+  it("cites a proxied call by the tool it ran, never by the proxy's own name", () => {
+    const viaProxy = call("call_tool", { effectiveTools: ["get_company_revenue_data"] });
+    const proxyNamed = widget({ id: "proxy", name: "Proxy", mcpTool: { mcpServer: "Financial Data", toolId: "call_tool" } });
+    expect(citedWidgets([viaProxy], servers, [revenue, proxyNamed])).toEqual([revenue]);
+    const pipeline = call("run_pipeline", { effectiveTools: ["equity_quote", "get_company_revenue_data"] });
+    expect(citedWidgets([pipeline], servers, [revenue])).toEqual([revenue]);
   });
 
   it("cites nothing for another tool, a near-miss name, a failed call, a widget_data call, or an unnamed or missing server", () => {
@@ -440,14 +721,15 @@ export function citationLink(c: unknown): { name: string; url: string | null } |
 
 /**
  * The widgets whose `mcp_tool` matches a completed MCP call: the call's server,
- * by its Settings `name`, and its tool, both exactly. An unnamed server and a
+ * by its Settings `name`, and the tool it ran (a proxied call's
+ * `effectiveTools`, else its `tool`), both exactly. An unnamed server and a
  * failed call (`ok: false`) match nothing.
  */
 export function citedWidgets(calls: AgentCall[], servers: McpServerConfig[], widgets: WidgetDef[]): WidgetDef[] {
   const used = calls.flatMap((c) => {
     if (c.kind !== "agent_tool" || c.ok === false) return [];
     const name = servers.find((s) => s.id === c.server_id)?.name;
-    return name === undefined ? [] : [{ name, tool: c.tool }];
+    return name === undefined ? [] : (c.effectiveTools ?? [c.tool]).map((tool) => ({ name, tool }));
   });
   return widgets.filter((w) => {
     const t = w.mcpTool;
@@ -644,7 +926,7 @@ Expected: PASS.
 
 - [ ] **Step 6: Run every gate**
 
-Run, each from `/Users/artcashin/Developer/openbq-bdobb-v6-mcp-tool`:
+Run, each from the worktree root:
 
 ```bash
 pnpm typecheck
@@ -668,6 +950,6 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ## Success check (spec "Success criteria", item G)
 
-- OpenBB's example (`mcp_server: "Financial Data"`, `tool_id: "get_company_revenue_data"`) is cited when a recorded, successful call to that tool on the server named "Financial Data" is in the latest turn. Pinned by the Task 4 and Task 5 tests. Against live Rita this also depends on Open questions 1 and 2.
+- OpenBB's example (`mcp_server: "Financial Data"`, `tool_id: "get_company_revenue_data"`) is cited when a recorded, successful call to that tool on the server named "Financial Data" is in the latest turn. Pinned by the Task 4 and Task 5 tests. The live-Rita shapes that reach that ledger (a status step without `server_id`, and a call through `call_tool`) are pinned by the Task 2 tests.
 - A manifest without `mcp_tool` behaves exactly as before. With no `mcp_tool` there is nothing to match, and `Sources` renders exactly as before when `widgets` is empty (the existing tests pass unchanged).
 - All four gates pass (Task 5, Step 6).
