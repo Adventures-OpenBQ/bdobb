@@ -275,12 +275,6 @@ function toolResultData(result: unknown, failure?: { code: string; message: stri
 }
 
 /**
- * Executes a copilotFunctionCall payload and builds the tool message Rita
- * expects back. The fields sit at the top level of the message, beside
- * `role`, because that is what agent-rita's `ToolMessage` type declares and
- * what its round-trip reads; a `content` wrapper is silently ignored.
- */
-/**
  * An execute_agent_tool call's input. agent-rita's executeAgentTool event
  * carries it as `parameters` (src/protocol/events.ts); `input` / `args` are
  * kept for the older shapes. With only the old keys every local tool ran with `{}`.
@@ -289,6 +283,12 @@ export function agentToolInput(args: Record<string, unknown>): Record<string, un
   return isRecord(args.parameters) ? args.parameters : isRecord(args.input) ? args.input : isRecord(args.args) ? args.args : {};
 }
 
+/**
+ * Executes a copilotFunctionCall payload and builds the tool message Rita
+ * expects back. The fields sit at the top level of the message, beside
+ * `role`, because that is what agent-rita's `ToolMessage` type declares and
+ * what its round-trip reads; a `content` wrapper is silently ignored.
+ */
 export async function executeFunction(
   payload: Record<string, unknown>,
   deps: ExecuteDeps,

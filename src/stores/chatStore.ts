@@ -70,9 +70,9 @@ function withDisplay(status: AgentStatus, servers: McpServerConfig[]): AgentStat
 /**
  * Live agent-rita (0011) sends a step's tool_call without its server_id; the
  * copilotFunctionCall right after it names the server. That call labels the
- * latest unlabelled step for the same proxy tool (#37), and returns it.
+ * latest unlabelled step for the same proxy tool (#37).
  */
-function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>, servers: McpServerConfig[]): AgentStatus | undefined {
+function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>, servers: McpServerConfig[]): void {
   const args = payload.input_arguments;
   if (payload.function !== "execute_agent_tool" || !isRecord(args) || typeof args.server_id !== "string") return;
   if (!(PROXY_TOOLS as readonly string[]).includes(String(args.tool_name))) return;
@@ -80,7 +80,7 @@ function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>
     const step = trail[i].tool_call;
     if (!isRecord(step) || step.tool_name !== args.tool_name || step.server_id !== undefined || step.display !== undefined) continue;
     trail[i] = withDisplay({ ...trail[i], tool_call: { ...step, server_id: args.server_id } }, servers);
-    return trail[i];
+    return;
   }
 }
 

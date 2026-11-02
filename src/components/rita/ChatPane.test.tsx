@@ -53,8 +53,10 @@ beforeEach(() => {
       ...DEFAULT_SETTINGS,
       ritaUrl: "https://rita.example",
       shareTargets: [{ id: "n", name: "Notes", kind: "file", url: "/vault", template: "{}" }],
+      mcpServers: [],
     },
   });
+  useWidgetRegistryStore.setState({ widgets: [] });
   useChatStore.setState({
     messages: [{ role: "human", content: "hi" }, { role: "ai", content: "hello" }],
     calls: [],
@@ -123,6 +125,10 @@ describe("ChatPane", () => {
   });
 
   it("cites nothing when the latest turn made no matching call", () => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, mcpServers: [{ id: "s1", name: "Financial Data", url: "https://mcp.example/mcp", enabled: true }] },
+    });
+    useChatStore.setState({ turnCalls: [{ kind: "agent_tool", server_id: "s1", tool: "get_other_data", narrated: "Calling" }] });
     useWidgetRegistryStore.setState({
       widgets: [widget({ id: "rev", name: "Revenue", mcpTool: { mcpServer: "Financial Data", toolId: "get_company_revenue_data" } })],
     });

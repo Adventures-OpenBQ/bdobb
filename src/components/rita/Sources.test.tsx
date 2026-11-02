@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentCall, McpServerConfig } from "../../lib/agent/types";
 import { useDashboardStore } from "../../stores/dashboardStore";
 import { card, widget } from "../../test/fixtures";
+import * as logger from "../../lib/logger";
 import { Sources, citationLink, citedWidgets, openCitedWidget } from "./Sources";
 
 const openUrl = vi.fn();
@@ -136,6 +137,15 @@ describe("openCitedWidget", () => {
     });
     await openCitedWidget(revenue);
     expect(addCard).toHaveBeenCalledWith(revenue);
+  });
+
+  it("resolves and logs when addCard rejects", async () => {
+    useDashboardStore.setState({ dashboards: [{ id: "d1", name: "Main", tabs: [{ id: "t1", name: "Main", cards: [] }] }], activeId: "d1", activeTabId: "t1" });
+    addCard.mockRejectedValueOnce(new Error("disk full"));
+    const log = vi.spyOn(logger, "logError").mockResolvedValue(undefined);
+    await expect(openCitedWidget(revenue)).resolves.toBeUndefined();
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("failed to add widget rev"));
+    log.mockRestore();
   });
 
   it("does nothing without an open dashboard", async () => {

@@ -4,6 +4,7 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AgentCall, McpServerConfig } from "../../lib/agent/types";
 import { isRecord } from "../../lib/isRecord";
+import { logError } from "../../lib/logger";
 import { safeUrl } from "../../lib/safeUrl";
 import type { WidgetDef } from "../../lib/types";
 import { useDashboardStore } from "../../stores/dashboardStore";
@@ -53,7 +54,11 @@ export async function openCitedWidget(widget: WidgetDef): Promise<void> {
     }, 0);
     return;
   }
-  await store.addCard(widget);
+  try {
+    await store.addCard(widget);
+  } catch (err) {
+    await logError(`failed to add widget ${widget.id}: ${err}`);
+  }
 }
 
 export function Sources({ citations, widgets = [] }: { citations: Record<string, unknown>[]; widgets?: WidgetDef[] }) {
