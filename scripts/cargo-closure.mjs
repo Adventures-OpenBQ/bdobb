@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { execFileSync } from "node:child_process";
 
-/** Registry packages in a crate's normal-dependency closure (build- and
- * dev-dependencies do not ship), as `cargo metadata` describes them. */
+/** Registry and vendored (`vendor/`) packages in a crate's normal-dependency
+ * closure (build- and dev-dependencies do not ship), as `cargo metadata`
+ * describes them. */
 export function shippedCrates(manifestPath, cargoArgs = []) {
   const meta = JSON.parse(execFileSync("cargo", ["metadata", "--format-version", "1", "--locked", ...cargoArgs,
     "--manifest-path", manifestPath], { encoding: "utf8", maxBuffer: 1 << 28 }));
@@ -19,5 +20,5 @@ export function shippedCrates(manifestPath, cargoArgs = []) {
       if (dep.dep_kinds.some((k) => k.kind === null)) queue.push(dep.pkg);
     }
   }
-  return [...seen].map((id) => byId.get(id)).filter((p) => p.source !== null);
+  return [...seen].map((id) => byId.get(id)).filter((p) => p.source !== null || p.manifest_path.includes("/vendor/"));
 }
