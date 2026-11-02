@@ -116,6 +116,16 @@ exactly, that answer's Sources list the matching widget as a citation.
 Clicking it adds the widget to the open dashboard, or focuses its existing
 card if one is already there. With no match, nothing changes.
 
+**Call ledger (ruled 2026-11-02).** Matching uses what the call actually ran,
+so the ledger has to record it. Every client-routed `execute_agent_tool` call
+reaches `executeFunction` with `input_arguments.server_id` and `tool_name`.
+Record the call from there, whether or not its status step carried a
+`server_id`, the way live agent-rita 0011 sends plain calls without one. For a
+proxy tool (`PROXY_TOOLS`, e.g. `call_tool`), record the **effective** tool
+name, the one `displayToolName` already derives from the call's input, as the
+tool to match. Keep the proxy's own name alongside it, so the trail and the AI
+Library read as they do today. Each call is recorded once.
+
 ### H. Live-grid header credentials
 No code. The page's row is out of date: from v10 the app fetches a
 single-use ticket from the backend's `ws_ticket`. Rewrite the row when the
