@@ -333,6 +333,13 @@ export type WidgetDef = {
    * Offered to Rita only while Context Sharing is on -- see dashboardMcpUrls.
    */
   mcpUrl?: string;
+  /**
+   * `mcp_tool`: the MCP server name and tool this widget answers for. When
+   * Rita's latest answer called that tool on a server whose Settings name is
+   * `mcpServer`, Sources cites this widget (see citedWidgets). Both are
+   * non-empty strings, matched exactly.
+   */
+  mcpTool?: { mcpServer: string; toolId: string };
   /** The widget-level default for every param's `exchange`; see WidgetParam.exchange. */
   exchange?: string;
   /**
