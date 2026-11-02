@@ -3,11 +3,11 @@
 
 import { create } from "zustand";
 import { dashboardMcpUrls } from "../lib/agent/dashboardMcp";
-import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool, type ToolRequest } from "../lib/agent/execute";
+import { agentToolInput, buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool, type ToolRequest } from "../lib/agent/execute";
 import { LOCAL_TOOLS, forgetRitaCards } from "../lib/agent/localTools";
 import { assembleTools, callMcpTool, discoverMcpTools } from "../lib/agent/mcp";
 import { withMcpAuth } from "../lib/agent/mcpAuth";
-import { PROXY_TOOLS, displayToolName, mergeSeenTools } from "../lib/agent/proxiedTools";
+import { PROXY_TOOLS, displayToolName, effectiveToolNames, mergeSeenTools } from "../lib/agent/proxiedTools";
 import { runAgentQuery } from "../lib/agent/query";
 import { dashboardContext } from "../lib/agent/request";
 import { forcedSkills, skillsCatalog } from "../lib/agent/skills";
@@ -70,9 +70,9 @@ function withDisplay(status: AgentStatus, servers: McpServerConfig[]): AgentStat
 /**
  * Live agent-rita (0011) sends a step's tool_call without its server_id; the
  * copilotFunctionCall right after it names the server. That call labels the
- * latest unlabelled step for the same proxy tool (#37), and returns it.
+ * latest unlabelled step for the same proxy tool (#37).
  */
-function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>, servers: McpServerConfig[]): AgentStatus | undefined {
+function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>, servers: McpServerConfig[]): void {
   const args = payload.input_arguments;
   if (payload.function !== "execute_agent_tool" || !isRecord(args) || typeof args.server_id !== "string") return;
   if (!(PROXY_TOOLS as readonly string[]).includes(String(args.tool_name))) return;
@@ -80,8 +80,17 @@ function labelProxiedStep(trail: AgentStatus[], payload: Record<string, unknown>
     const step = trail[i].tool_call;
     if (!isRecord(step) || step.tool_name !== args.tool_name || step.server_id !== undefined || step.display !== undefined) continue;
     trail[i] = withDisplay({ ...trail[i], tool_call: { ...step, server_id: args.server_id } }, servers);
-    return trail[i];
+    return;
   }
+}
+
+/** The narration of the latest status step naming `tool` (not an error line), for the call ledger; "" when Rita sent none. */
+function narrationFor(trail: AgentStatus[], tool: string): string {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const step = trail[i].tool_call;
+    if (trail[i].eventType !== "ERROR" && isRecord(step) && step.tool_name === tool) return trail[i].message;
+  }
+  return "";
 }
 
 // Writes are chained: two proxied calls finishing together must not both
@@ -112,6 +121,12 @@ export type PendingTool = ToolRequest;
 type ChatState = {
   messages: ChatMessage[];
   calls: AgentCall[];
+  /**
+   * The latest finished turn's calls: what Sources' widget citations
+   * (mcp_tool) are matched against. Reset when a turn starts, like
+   * `citations`; not saved.
+   */
+  turnCalls: AgentCall[];
   trail: AgentStatus[];
   citations: Record<string, unknown>[];
   suggestions: string[];
@@ -154,6 +169,7 @@ const turnGroups = (d: Dashboard | undefined) => ({ groups: d?.groups, groupsDis
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   calls: [],
+  turnCalls: [],
   trail: [],
   citations: [],
   suggestions: [],
@@ -219,7 +235,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // whether THIS turn was stopped, after the shared one is already null.
     const mine = new AbortController();
     controller = mine;
-    set({ running: true, error: null, citations: [], suggestions: [], trail: [], messages: [...prior, human] });
+    set({ running: true, error: null, citations: [], suggestions: [], trail: [], turnCalls: [], messages: [...prior, human] });
     try {
       const turnDashboardId = useDashboardStore.getState().activeId;
       const cards = useDashboardStore.getState().activeDashboard()?.tabs.flatMap((t) => t.cards) ?? [];
@@ -393,21 +409,30 @@ export const useChatStore = create<ChatState>((set, get) => ({
         },
         tools,
         executeFunction: async (payload, signal) => {
-          const labelled = labelProxiedStep(trail, payload, settings.mcpServers);
+          labelProxiedStep(trail, payload, settings.mcpServers);
           show();
           const before = calls.length;
           const result = await executeFunction(payload, deps, signal);
-          // A step labelled here had no server_id, so the status branch never
-          // logged it; a failure was already logged by onToolError (#37).
-          // Calls run one at a time, so entries since `before` are this call's.
-          const step = labelled?.tool_call;
-          if (labelled && isRecord(step) && !calls.slice(before).some((c) => c.kind === "agent_tool" && c.ok === false)) {
+          // Every client-routed execute_agent_tool call is ledgered here, once,
+          // whether or not its status step named a server (spec G, ruled
+          // 2026-11-02). A failure, denial or stop was already ledgered by
+          // onToolError / onToolStopped. Calls run one at a time, so entries
+          // since `before` are this call's.
+          const args = payload.input_arguments;
+          if (payload.function === "execute_agent_tool" && isRecord(args) && !calls.slice(before).some((c) => c.kind === "agent_tool" && c.ok === false)) {
+            const serverId = String(args.server_id ?? "");
+            const tool = String(args.tool_name ?? args.tool ?? "");
+            const input = agentToolInput(args);
+            const effective = effectiveToolNames(tool, input);
             calls.push({
               kind: "agent_tool",
-              server_id: String(step.server_id),
-              tool: String(step.tool_name),
-              narrated: labelled.message,
-              ...(typeof step.display === "string" ? { display: step.display } : {}),
+              server_id: serverId,
+              tool,
+              narrated: narrationFor(trail, tool),
+              // A proxied call is matched and shown by what it ran.
+              ...(effective.ok && effective.via !== undefined
+                ? { display: displayToolName(mcpServerLabel(serverId, settings.mcpServers), tool, input), effectiveTools: effective.names }
+                : {}),
             });
           }
           return result;
@@ -437,22 +462,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           show();
           noticed();
         } else if (event.type === "status") {
-          const shownStatus = withDisplay(event.status, settings.mcpServers);
-          trail.push(shownStatus);
-          // Only a tool_call naming a real server_id is a client-routed
-          // execute_agent_tool call for the ledger; Rita's own internal
-          // narration (e.g. execute_sql against its own data) carries a
-          // tool_call with no server_id and stays trail-only.
-          const step = isRecord(event.status.tool_call) ? event.status.tool_call : null;
-          if (step && typeof step.server_id === "string") {
-            calls.push({
-              kind: "agent_tool",
-              server_id: step.server_id,
-              tool: typeof step.tool_name === "string" ? step.tool_name : String(step.name ?? ""),
-              narrated: event.status.message,
-              ...(isRecord(shownStatus.tool_call) && typeof shownStatus.tool_call.display === "string" ? { display: shownStatus.tool_call.display } : {}),
-            });
-          }
+          // Trail only: the executeFunction wrapper ledgers each client-routed
+          // call once, so a step that names its server_id is not ledgered here.
+          trail.push(withDisplay(event.status, settings.mcpServers));
           show();
         } else if (event.type === "artifact") {
           addArtifacts([event.payload]);
@@ -494,7 +506,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // way the save below already does, or an aborted-and-cleared turn's
       // calls resurrect into a chat that has no messages and no file.
       if (live() && get().messages.length > 0) {
-        set({ calls: [...get().calls, ...calls] });
+        set({ calls: [...get().calls, ...calls], turnCalls: calls });
         try {
           await saveChat({ messages: get().messages, calls: get().calls, sharedCardIds: get().sharedCardIds });
         } catch (err) {
@@ -523,6 +535,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       messages: [],
       calls: [],
+      turnCalls: [],
       trail: [],
       citations: [],
       suggestions: [],

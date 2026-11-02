@@ -97,6 +97,7 @@ beforeEach(() => {
   useChatStore.setState({
     messages: [],
     calls: [],
+    turnCalls: [],
     trail: [],
     citations: [],
     suggestions: [],
@@ -621,7 +622,14 @@ describe("chatStore.send", () => {
         replies(twoEvents(), fixture("rita/simple-text.sse"));
         await useChatStore.getState().send("price");
         expect(useChatStore.getState().calls).toEqual([
-          { kind: "agent_tool", server_id: "m1", tool: "call_tool", narrated: "Calling call_tool", display: "OpenBQ MCP · cboe_equity_historical (via call_tool)" },
+          {
+            kind: "agent_tool",
+            server_id: "m1",
+            tool: "call_tool",
+            narrated: "Calling call_tool",
+            display: "OpenBQ MCP · cboe_equity_historical (via call_tool)",
+            effectiveTools: ["cboe_equity_historical"],
+          },
         ]);
       });
 
@@ -632,6 +640,44 @@ describe("chatStore.send", () => {
         const { calls } = useChatStore.getState();
         expect(calls).toHaveLength(1);
         expect(calls[0]).toMatchObject({ kind: "agent_tool", ok: false, display: "OpenBQ MCP · cboe_equity_historical (via call_tool)" });
+      });
+
+      const fnCall = (tool: string, parameters: Record<string, unknown> = {}) =>
+        `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "m1", tool_name: tool, parameters } })}\n\n`;
+      const statusStep = (tool: string, extra: Record<string, unknown> = {}) =>
+        `event: copilotStatusUpdate\ndata: ${JSON.stringify({ eventType: "INFO", message: `Calling ${tool}`, tool_call: { tool_name: tool, ...extra } })}\n\n`;
+
+      it("logs a successful plain call whose status step has no server_id, once", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        replies(statusStep("get_company_revenue_data") + fnCall("get_company_revenue_data"), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("revenue");
+        expect(useChatStore.getState().calls).toEqual([
+          { kind: "agent_tool", server_id: "m1", tool: "get_company_revenue_data", narrated: "Calling get_company_revenue_data" },
+        ]);
+      });
+
+      it("logs a successful call that had no status step at all, once, with empty narration", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        replies(fnCall("get_company_revenue_data"), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("revenue");
+        expect(useChatStore.getState().calls).toEqual([{ kind: "agent_tool", server_id: "m1", tool: "get_company_revenue_data", narrated: "" }]);
+      });
+
+      it("logs a call once when its status step does carry server_id, with every pipeline step as an effective tool", async () => {
+        vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+        const steps = { steps: [{ tool: "equity_quote" }, { tool: "equity_price_historical" }] };
+        replies(statusStep("run_pipeline", { server_id: "m1", input: steps }) + fnCall("run_pipeline", steps), fixture("rita/simple-text.sse"));
+        await useChatStore.getState().send("pipeline");
+        expect(useChatStore.getState().calls).toEqual([
+          {
+            kind: "agent_tool",
+            server_id: "m1",
+            tool: "run_pipeline",
+            narrated: "Calling run_pipeline",
+            display: "OpenBQ MCP · pipeline: equity_quote → equity_price_historical (via run_pipeline)",
+            effectiveTools: ["equity_quote", "equity_price_historical"],
+          },
+        ]);
       });
     });
 
@@ -674,6 +720,27 @@ describe("chatStore.send", () => {
     replies(call, fixture("rita/simple-text.sse"));
     await useChatStore.getState().send("news AAPL");
     expect(callMcpTool).toHaveBeenCalled();
+  });
+
+  it("keeps the latest turn's calls apart from the ledger, and Clear empties them", async () => {
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", mcpServers: [{ id: "s1", name: "Financial Data", url: "https://mcp.example/mcp", enabled: true }] },
+    });
+    vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+    // Each client-routed call is ledgered from executeFunction (Task 2).
+    const fnCall = (tool: string) =>
+      `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "s1", tool_name: tool, parameters: {} } })}\n\n`;
+    replies(fnCall("quote"), fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("one");
+    expect(useChatStore.getState().turnCalls).toEqual([{ kind: "agent_tool", server_id: "s1", tool: "quote", narrated: "" }]);
+
+    replies(fnCall("news"), fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("two");
+    expect(useChatStore.getState().turnCalls.map((c) => (c.kind === "agent_tool" ? c.tool : c.kind))).toEqual(["news"]);
+    expect(useChatStore.getState().calls).toHaveLength(2);
+
+    await useChatStore.getState().clear();
+    expect(useChatStore.getState().turnCalls).toEqual([]);
   });
 
   it("refuses a card whose backend gains a key-maint widget after the turn started", async () => {
