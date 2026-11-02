@@ -33,6 +33,8 @@ Those probes run once at app start and again whenever **Refresh** or a saved key
 
 Below the badges is the widget's description, and under that one pill per dashboard the widget is already on, in rail order; beyond three, the rest collapse into a `+N` pill that names them in its tooltip. The pill for the dashboard this library adds to is drawn in the accent colour.
 
+When a widget declares an `imgUrl` (an `http` or `https` address), hovering its card or moving keyboard focus to it shows that image under the description. An image that fails to load shows nothing. The preview appears in the desktop app only; the [[web-preview|Web Preview]] does not load images from other sites.
+
 At this version a badge row wider than its card — a long provider name beside a long type — does not wrap. It widens the card's layout past the card's edge, the description is laid out at that wider width, and the overhang is clipped, so the badges run off the card and the description looks as if it does not wrap.
 
 ## Adding: click, double-click, drag

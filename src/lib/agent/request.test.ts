@@ -43,7 +43,7 @@ describe("buildQueryRequest", () => {
   });
 
   it("carries context items when given", () => {
-    const item = { name: "Dashboards", description: "x" };
+    const item = { uuid: "u", name: "Dashboards", description: "x", data: { items: [] } };
     expect(buildQueryRequest(messages, { context: [item] }).context).toEqual([item]);
   });
 
@@ -114,13 +114,14 @@ describe("buildQueryRequest", () => {
 });
 
 describe("dashboardContext", () => {
-  it("names the current dashboard and the others, as a description-only item Rita reads as text", () => {
+  it("names the current dashboard and the others, as a RawContext item whose text Rita reads", () => {
     const item = dashboardContext({ id: "a", name: "Main" }, [{ id: "a", name: "Main" }, { id: "b", name: "Macro" }]);
     expect(item.name).toBe("Dashboards");
     expect(item.description).toContain('"Main"');
     expect(item.description).toContain('"Macro"');
     expect(item.description).toMatch(/omit dashboard_name/i);
-    expect(item).not.toHaveProperty("data");
+    expect(item.uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(item.data.items).toEqual([{ content: item.description, data_format: { data_type: "object", parse_as: "text" }, citable: false }]);
   });
 
   it("says so when there is no current dashboard", () => {
