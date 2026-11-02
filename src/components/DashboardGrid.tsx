@@ -174,7 +174,7 @@ export function DashboardGrid({
           // positioned with `transform: translate(...)`, and a fixed or
           // absolute DESCENDANT of a transformed element is laid out against
           // that element rather than against the viewport.
-          <div key={card.id} data-card-id={card.id} className={card.id === maximizedCardId ? "card-maximized" : undefined}>
+          <div key={card.id} className={card.id === maximizedCardId ? "card-maximized" : undefined}>
             {/* A boundary per CARD, outside it: WidgetCard's own wraps only
                 its body, so a throw in the header, WidgetTabs or
                 WidgetFormPanel would otherwise reach "the dashboard" and

@@ -151,6 +151,12 @@ export type ClientArtifact = {
   chart_params?: unknown;
 };
 
+/**
+ * One highlighted line of a cited PDF quote, in PDF points from the page's
+ * top-left corner (pdfplumber's convention, which openbb-ai and Rita use).
+ */
+export type BoundingBox = { text: string; page: number; x0: number; top: number; x1: number; bottom: number };
+
 /** One entry of the "API calls made on your behalf" ledger persisted with the chat. */
 export type AgentCall =
   | {

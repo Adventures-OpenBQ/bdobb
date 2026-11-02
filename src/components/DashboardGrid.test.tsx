@@ -127,9 +127,8 @@ beforeEach(() => {
 
 describe("DashboardGrid", () => {
   it("renders one card per dashboard card", () => {
-    const { container } = render(<DashboardGrid onOpenLibrary={() => {}} />);
+    render(<DashboardGrid onOpenLibrary={() => {}} />);
     expect(screen.getAllByRole("article")).toHaveLength(2);
-    expect([...container.querySelectorAll<HTMLElement>("[data-card-id]")].map((e) => e.dataset.cardId)).toEqual(["c1", "c2"]);
   });
 
   it("keeps a throw outside a card's body to that one card, not the whole grid", () => {
