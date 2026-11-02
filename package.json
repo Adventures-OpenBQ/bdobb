@@ -36,6 +36,7 @@
     "web:serve": "node web/local.mjs",
     "test:web:browser": "node web/browser-smoke.mjs",
     "test:live": "bash scripts/rita-live-check.sh",
+    "test:conformance": "bash scripts/agent-conformance.sh",
     "pivot:build": "node scripts/build-pivot-wasm.mjs",
     "pivot:test": "cargo +1.98.1 test --locked --manifest-path crates/pivot-core/Cargo.toml && cargo +1.98.1 test --locked --manifest-path crates/pivot-wasm/Cargo.toml && vitest run src/lib/tableExecution/rust/wireCodec.test.ts",
     "pivot:verify": "node scripts/build-pivot-wasm.mjs --verify",

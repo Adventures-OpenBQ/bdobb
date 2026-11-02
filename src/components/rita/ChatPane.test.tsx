@@ -203,4 +203,16 @@ describe("ChatPane", () => {
     expect(lock).toHaveAttribute("title", "Unlock");
     expect(lock.querySelector("svg")?.getAttribute("data-glyph")).toBe("lock-open");
   });
+
+  it("shows feedback buttons when the agent advertises feedback", async () => {
+    fetchAgentsJson.mockResolvedValue({ rita: { id: "rita", name: "Rita", description: "", queryPath: "/v1/query", features: { feedback: { kind: "boolean", value: true } } } });
+    render(<ChatPane onInputFocus={() => {}} />);
+    expect(await screen.findByRole("button", { name: "Good response" })).toBeInTheDocument();
+  });
+
+  it("renders no feedback buttons when the agent does not advertise feedback", async () => {
+    render(<ChatPane onInputFocus={() => {}} />);
+    await screen.findByRole("img", { name: "Rita online" });
+    expect(screen.queryByRole("button", { name: "Good response" })).toBeNull();
+  });
 });

@@ -41,6 +41,7 @@ import type { DashboardCard, WidgetDef } from "../lib/types";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useChatStore } from "../stores/chatStore";
 import { useDashboardStore } from "../stores/dashboardStore";
+import { usePdfHighlightStore } from "../stores/pdfHighlightStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -169,6 +170,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // A boolean selector, not the id: only the card that gains or loses the
   // state re-renders, not every card on the tab.
   const maximized = useDashboardStore((s) => s.maximizedCardId === card.id);
+  // The quote a Rita citation opened on this card, if any; closing the card drops it.
+  const highlight = usePdfHighlightStore((s) => (s.highlight?.cardId === card.id ? s.highlight : null));
+  useEffect(() => () => usePdfHighlightStore.getState().clear(card.id), [card.id]);
   const duplicateCard = useDashboardStore((s) => s.duplicateCard);
   const copyCardTo = useDashboardStore((s) => s.copyCardTo);
   // Copy to ▸'s own list — every dashboard's tabs, not just the active one.
@@ -1128,7 +1132,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // rendering of it. Placed before the raw gate for the same reason as the
     // keys card above: a card persisted with `view: "raw"` must not dump
     // hundreds of kilobytes of base64 into the DOM.
-    if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} />;
+    if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} highlight={highlight} />;
 
     // Raw is returned BEFORE type dispatch, which is why a widget type that
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
@@ -1262,6 +1266,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   return (
     <article
       className="widget-card"
+      data-card-id={card.id}
       data-minimized={minimized || undefined}
       // The only feedback a manual Refresh gives once the body stops
       // blanking. Styled as a dimmed title plus a dot, not an animation:

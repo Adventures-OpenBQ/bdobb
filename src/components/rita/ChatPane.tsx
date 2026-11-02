@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useEffect, useState } from "react";
+import { advertisesFeedback } from "../../lib/agent/feedback";
+import { pickAgent } from "../../lib/agent/workspaceOptions";
 import type { AgentsJson } from "../../lib/agent/types";
 import { chatFilename, chatTitle, chatToMarkdown } from "../../lib/chatExport";
 import { exportChat } from "../../lib/chatExportFile";
@@ -10,6 +12,7 @@ import { sendToTarget } from "../../lib/shareSend";
 import type { ShareTarget } from "../../lib/shareTargets";
 import { useAgentDiscovery } from "../../stores/agentDiscoveryStore";
 import { useChatStore } from "../../stores/chatStore";
+import { useDashboardStore } from "../../stores/dashboardStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { LockGlyph } from "../LockGlyph";
 import { ChatMessages } from "./ChatMessages";
@@ -37,11 +40,15 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
   const shareTargets = useSettingsStore((s) => s.settings.shareTargets);
   const promptSuggestions = useSettingsStore((s) => s.settings.agentPromptSuggestions);
   const { messages, calls, trail, citations, suggestions, running, error, pinned, pendingTool, pendingMessage } = useChatStore();
+  // The dashboard object, not a fresh array: a selector returning a new array re-renders forever under zustand 5.
+  const dashboard = useDashboardStore((s) => s.activeDashboard());
   const { send, abort, clear, setPaneOpen, togglePinned, resolveTool } = useChatStore.getState();
   const [draft, setDraft] = useState("");
   const discovery = useAgentDiscovery(ritaUrl);
   const presence: Presence = discovery.state === "online" ? "online" : discovery.state === "offline" ? "offline" : "unknown";
   const model = discovery.state === "online" ? defaultModel(discovery.agents) : "";
+  // Context Sharing does not gate this: only the rated prompt and reply go, on a click.
+  const feedbackUrl = discovery.state === "online" && advertisesFeedback(pickAgent(discovery.agents, ritaUrl)) ? ritaUrl : null;
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -139,7 +146,7 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
         </p>
       ) : null}
       <div className="chat-body">
-        <ChatMessages messages={messages} />
+        <ChatMessages messages={messages} feedbackUrl={feedbackUrl} running={running} />
         <StatusTrail trail={trail} running={running} />
         {pendingTool !== null ? (
           <div className="chat-bubble chat-confirm" role="group" aria-label="Confirm tool call">
@@ -155,7 +162,7 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
             </button>
           </div>
         ) : null}
-        <Sources citations={citations} />
+        <Sources citations={citations} cards={dashboard?.tabs.flatMap((t) => t.cards) ?? []} />
         {promptSuggestions && suggestions.length > 0 ? (
           <div className="chat-suggestions">
             {suggestions.map((s) => (

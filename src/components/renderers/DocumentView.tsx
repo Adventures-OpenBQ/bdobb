@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchDocumentBytes } from "../../lib/dataClient";
+import type { BoundingBox } from "../../lib/agent/types";
 import type { Document } from "../../lib/documents";
 import { ErrorState } from "./ErrorState";
 import { PdfView } from "./PdfView";
@@ -16,9 +17,11 @@ import { PdfView } from "./PdfView";
  * "" when the backend sent no usable data_type, and "…: files are not
  * displayable" would read as a typo.
  */
-export function DocumentView({ doc }: { doc: Document }) {
+type Highlight = { page: number; boxes: BoundingBox[] } | null;
+
+export function DocumentView({ doc, highlight = null }: { doc: Document; highlight?: Highlight }) {
   if (doc.kind === "error") return <p className="empty-state">{`${doc.filename}: ${doc.message ?? ""}`}</p>;
-  if (doc.kind === "pdf" && doc.url) return <LinkedPdf url={doc.url} filename={doc.filename} />;
+  if (doc.kind === "pdf" && doc.url) return <LinkedPdf url={doc.url} filename={doc.filename} highlight={highlight} />;
   if (doc.kind !== "pdf" || !doc.bytes) {
     return (
       <p className="empty-state">
@@ -26,7 +29,7 @@ export function DocumentView({ doc }: { doc: Document }) {
       </p>
     );
   }
-  return <PdfView bytes={doc.bytes} filename={doc.filename} />;
+  return <PdfView bytes={doc.bytes} filename={doc.filename} highlight={highlight} />;
 }
 
 /**
@@ -38,7 +41,7 @@ export function DocumentView({ doc }: { doc: Document }) {
 /** A document is bigger than a widget payload; still finite. */
 const DOCUMENT_TIMEOUT_MS = 30_000;
 
-function LinkedPdf({ url, filename }: { url: string; filename: string }) {
+function LinkedPdf({ url, filename, highlight }: { url: string; filename: string; highlight: Highlight }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{ bytes: Uint8Array } | { error: string } | null>(null);
   useEffect(() => {
@@ -65,5 +68,5 @@ function LinkedPdf({ url, filename }: { url: string; filename: string }) {
 
   if (state === null) return <p className="empty-state">Loading…</p>;
   if ("error" in state) return <ErrorState message={state.error} onRetry={() => setAttempt((n) => n + 1)} />;
-  return <PdfView bytes={state.bytes} filename={filename} />;
+  return <PdfView bytes={state.bytes} filename={filename} highlight={highlight} />;
 }
