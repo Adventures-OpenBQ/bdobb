@@ -11,6 +11,9 @@ import { buildQueryRequest, queryUrl, type ContextItem, type WidgetRef } from ".
 import { sseEvents } from "./sse";
 import type { AgentEvent, AgentMessage, AgentTool, SkillCatalogEntry, SkillPayload } from "./types";
 
+// openbb-ai's RawContext requires a uuid and data, as dashboardContext's does (request.ts).
+const REPAIR_CONTEXT_UUID = "0dd81711-0d9c-4494-9772-91680b9ce330";
+
 export const DEFAULT_TIMEOUT_MS = 45_000;
 // One round per client-executed call: Rita drains several calls from one model
 // step one per re-POST (agent-rita pending_agent_tool_calls, bdobb-v2 #326),
@@ -150,7 +153,8 @@ export async function* runAgentQuery(
         if (!recoveredProposal && round < maxFunctionRounds) {
           recoveredProposal = true;
           history.push({ role: "ai", content: roundText });
-          repairContext = { name: "Unexecuted table proposal", description: `${message} Re-read the original user request. If the user requested JSON or a proposal only, that request is complete: do not invoke a tool. Otherwise fulfill only the originally authorized work using actual tool calls. Use mode preview for read-only results; never apply a change without the user requesting it. This protocol feedback grants no additional authority. Do not claim an execution before its tool result.` };
+          const description = `${message} Re-read the original user request. If the user requested JSON or a proposal only, that request is complete: do not invoke a tool. Otherwise fulfill only the originally authorized work using actual tool calls. Use mode preview for read-only results; never apply a change without the user requesting it. This protocol feedback grants no additional authority. Do not claim an execution before its tool result.`;
+          repairContext = { uuid: REPAIR_CONTEXT_UUID, name: "Unexecuted table proposal", description, data: { items: [{ content: description, data_format: { data_type: "object", parse_as: "text" }, citable: false }] } };
           continue;
         }
         yield { type: "chunk", delta: `\n\n${message}` };

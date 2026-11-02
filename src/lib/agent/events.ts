@@ -14,9 +14,28 @@
  */
 import { isRecord } from "../isRecord";
 import { logOnce } from "../logger";
-import type { AgentEvent, AgentStatus, SseEvent } from "./types";
+import type { AgentEvent, AgentStatus, BoundingBox, SseEvent } from "./types";
 
 const STATUS_KINDS = new Set(["INFO", "WARNING", "ERROR"]);
+
+function boxOf(v: unknown): BoundingBox | null {
+  if (!isRecord(v)) return null;
+  const { text, page, x0, top, x1, bottom } = v;
+  if (typeof text !== "string" || typeof page !== "number" || !Number.isInteger(page) || page < 1) return null;
+  if (![x0, top, x1, bottom].every((n) => typeof n === "number" && Number.isFinite(n))) return null;
+  const box = { text, page, x0, top, x1, bottom } as BoundingBox;
+  return box.x1 >= box.x0 && box.bottom >= box.top ? box : null;
+}
+
+/** A citation with its quote_bounding_boxes validated: bad boxes and emptied groups go, the citation stays. */
+export function withQuoteBoxes(c: Record<string, unknown>): Record<string, unknown> {
+  if (!("quote_bounding_boxes" in c)) return c;
+  const { quote_bounding_boxes: raw, ...rest } = c;
+  const groups = (Array.isArray(raw) ? raw : [])
+    .map((g) => (Array.isArray(g) ? g.map(boxOf).filter((b): b is BoundingBox => b !== null) : []))
+    .filter((g) => g.length > 0);
+  return groups.length > 0 ? { ...rest, quote_bounding_boxes: groups } : rest;
+}
 
 export function toAgentEvent(event: SseEvent): AgentEvent | null {
   // `error` and `done` are handled before a failed parse returns null: an
@@ -76,8 +95,14 @@ export function toAgentEvent(event: SseEvent): AgentEvent | null {
       return isRecord(payload) ? { type: "artifact", payload } : null;
 
     // AWAITING rita/roundtrip-answer.sse, which carries a citation collection.
-    case "copilotCitationCollection":
-      return isRecord(payload) ? { type: "citations", payload } : null;
+    case "copilotCitationCollection": {
+      if (!isRecord(payload)) return null;
+      const list = payload.citations;
+      return {
+        type: "citations",
+        payload: Array.isArray(list) ? { ...payload, citations: list.map((c) => (isRecord(c) ? withQuoteBoxes(c) : c)) } : payload,
+      };
+    }
 
     // AWAITING rita/suggestions.sse.
     case "copilotPromptSuggestions":

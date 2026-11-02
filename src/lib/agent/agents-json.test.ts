@@ -145,3 +145,8 @@ describe("fetchAgentsJson", () => {
     expect(run).toHaveLength(500);
   });
 });
+
+it("keeps features.feedback: true as a boolean feature (agents-for-openbb 42)", () => {
+  const out = normalizeAgentsJson({ a: { name: "A", endpoints: { query: "/v1/query" }, features: { feedback: true } } });
+  expect(out.a.features.feedback).toEqual({ kind: "boolean", value: true });
+});
