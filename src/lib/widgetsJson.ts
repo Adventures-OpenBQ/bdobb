@@ -566,6 +566,16 @@ export function normalizeWidgets(
       else issues.push({ id, reason: "storage.mcpUrl is not an http(s) URL; ignored" });
     }
 
+    // mcp_tool names a server and tool to match exactly, so both must be
+    // non-empty strings; anything else is reported and treated as absent.
+    let mcpTool: WidgetDef["mcpTool"];
+    if (w.mcp_tool !== undefined) {
+      const t = asRecord(w.mcp_tool);
+      if (t && typeof t.mcp_server === "string" && t.mcp_server !== "" && typeof t.tool_id === "string" && t.tool_id !== "") {
+        mcpTool = { mcpServer: t.mcp_server, toolId: t.tool_id };
+      } else issues.push({ id, reason: "mcp_tool needs non-empty string mcp_server and tool_id; ignored" });
+    }
+
     // A malformed pivot PRESET is the backend's manifest quirk, not a loss of
     // the user's own data, and it never stops the widget loading -- so it is
     // kept out of `issues` (which drives the connection's own notice).
@@ -601,6 +611,7 @@ export function normalizeWidgets(
       runButton: w.runButton === true ? true : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
       mcpUrl,
+      mcpTool,
       exchange: typeof w.exchange === "string" && w.exchange.trim() !== "" ? calendarSpelling(w.exchange) : undefined,
       ...fiscalFields(w, `widget ${id}`),
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,

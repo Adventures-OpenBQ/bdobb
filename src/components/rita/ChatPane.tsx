@@ -14,9 +14,10 @@ import { useAgentDiscovery } from "../../stores/agentDiscoveryStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useDashboardStore } from "../../stores/dashboardStore";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { useWidgetRegistryStore } from "../../stores/widgetRegistryStore";
 import { LockGlyph } from "../LockGlyph";
 import { ChatMessages } from "./ChatMessages";
-import { Sources } from "./Sources";
+import { Sources, citedWidgets } from "./Sources";
 import { StatusTrail } from "./StatusTrail";
 
 type Presence = "unknown" | "online" | "offline";
@@ -39,7 +40,9 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
   const ritaUrl = useSettingsStore((s) => s.settings.ritaUrl);
   const shareTargets = useSettingsStore((s) => s.settings.shareTargets);
   const promptSuggestions = useSettingsStore((s) => s.settings.agentPromptSuggestions);
-  const { messages, calls, trail, citations, suggestions, running, error, pinned, pendingTool, pendingMessage } = useChatStore();
+  const mcpServers = useSettingsStore((s) => s.settings.mcpServers);
+  const registry = useWidgetRegistryStore((s) => s.widgets);
+  const { messages, calls, turnCalls, trail, citations, suggestions, running, error, pinned, pendingTool, pendingMessage } = useChatStore();
   // The dashboard object, not a fresh array: a selector returning a new array re-renders forever under zustand 5.
   const dashboard = useDashboardStore((s) => s.activeDashboard());
   const { send, abort, clear, setPaneOpen, togglePinned, resolveTool } = useChatStore.getState();
@@ -162,7 +165,7 @@ export function ChatPane({ onInputFocus }: { onInputFocus: (focused: boolean) =>
             </button>
           </div>
         ) : null}
-        <Sources citations={citations} cards={dashboard?.tabs.flatMap((t) => t.cards) ?? []} />
+        <Sources citations={citations} cards={dashboard?.tabs.flatMap((t) => t.cards) ?? []} widgets={citedWidgets(turnCalls, mcpServers, registry)} />
         {promptSuggestions && suggestions.length > 0 ? (
           <div className="chat-suggestions">
             {suggestions.map((s) => (

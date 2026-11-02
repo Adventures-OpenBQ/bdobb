@@ -833,6 +833,26 @@ describe("issue reporting", () => {
     expect(widgets.find((w) => w.id === "none")?.mcpUrl).toBeUndefined();
     expect(issues).toContainEqual({ id: "bad", reason: "storage.mcpUrl is not an http(s) URL; ignored" });
   });
+
+  it("reads mcp_tool as two non-empty strings, exactly as written, and reports anything else as an issue", () => {
+    const { widgets, issues } = normalizeWidgets(
+      {
+        ok: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data", tool_id: "get_company_revenue_data" } },
+        empty: { endpoint: "e", mcp_tool: { mcp_server: "", tool_id: "t" } },
+        missing: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data" } },
+        number: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data", tool_id: 7 } },
+        string: { endpoint: "e", mcp_tool: "Financial Data/get_company_revenue_data" },
+        none: { endpoint: "e" },
+      },
+      "b1",
+    );
+    const tool = (id: string) => widgets.find((w) => w.id === id)?.mcpTool;
+    expect(tool("ok")).toEqual({ mcpServer: "Financial Data", toolId: "get_company_revenue_data" });
+    for (const id of ["empty", "missing", "number", "string", "none"]) expect(tool(id)).toBeUndefined();
+    const reason = "mcp_tool needs non-empty string mcp_server and tool_id; ignored";
+    for (const id of ["empty", "missing", "number", "string"]) expect(issues).toContainEqual({ id, reason });
+    expect(issues.filter((i) => i.id === "none" || i.id === "ok")).toEqual([]);
+  });
 });
 
 describe("toOptions (exported for fetched option lists)", () => {

@@ -304,6 +304,15 @@ function toolResultData(result: unknown, failure?: { code: string; message: stri
 }
 
 /**
+ * An execute_agent_tool call's input. agent-rita's executeAgentTool event
+ * carries it as `parameters` (src/protocol/events.ts); `input` / `args` are
+ * kept for the older shapes. With only the old keys every local tool ran with `{}`.
+ */
+export function agentToolInput(args: Record<string, unknown>): Record<string, unknown> {
+  return isRecord(args.parameters) ? args.parameters : isRecord(args.input) ? args.input : isRecord(args.args) ? args.args : {};
+}
+
+/**
  * Executes a copilotFunctionCall payload and builds the tool message Rita
  * expects back. The fields sit at the top level of the message, beside
  * `role`, because that is what agent-rita's `ToolMessage` type declares and
@@ -322,10 +331,7 @@ export async function executeFunction(
   } else if (fn === "execute_agent_tool") {
     const serverId = String(args.server_id ?? "");
     const tool = String(args.tool_name ?? args.tool ?? "");
-    // agent-rita's executeAgentTool event carries the tool's input as
-    // `parameters` (src/protocol/events.ts); `input` / `args` are kept for
-    // the older shapes. With only the old keys every local tool ran with `{}`.
-    const input = isRecord(args.parameters) ? args.parameters : isRecord(args.input) ? args.input : isRecord(args.args) ? args.args : {};
+    const input = agentToolInput(args);
     // The input rides on the error report only for a proxy, whose label needs it.
     const proxyInput = (PROXY_TOOLS as readonly string[]).includes(tool) ? { input } : {};
     let result: unknown;

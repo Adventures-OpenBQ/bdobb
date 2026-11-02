@@ -169,4 +169,15 @@ export type AgentCall =
       durationMs: number;
       rows: number;
     }
-  | { kind: "agent_tool"; server_id: string; tool: string; narrated: string; ok?: boolean; error?: string; display?: string };
+  | {
+      kind: "agent_tool";
+      server_id: string;
+      /** The tool Rita called: the proxy's own name (`call_tool`, `run_pipeline`) for a proxied call. */
+      tool: string;
+      narrated: string;
+      ok?: boolean;
+      error?: string;
+      display?: string;
+      /** A proxied call's effective tools (effectiveToolNames): what mcp_tool matches instead of `tool`. */
+      effectiveTools?: string[];
+    };
