@@ -37,7 +37,7 @@ These are places where the spec and the v3 code don't line up cleanly. Each one 
 - Gates: `pnpm typecheck`, `pnpm lint`, `pnpm test:run`, and `bash scripts/header-check.sh`. During tasks, prefer targeted `pnpm vitest run <file>`, because the full suite can time out under host load.
 - Every commit message ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Match the surrounding comment density and idiom. No abstractions beyond what a task shows.
-- Work only in `/Users/artcashin/Developer/openbq-bdobb-v3-field-gaps` on branch `claude/v3-workspace-field-gaps`.
+- Work only in this worktree, on branch `claude/v3-workspace-field-gaps`.
 
 ## Review Focus
 
