@@ -53,3 +53,33 @@ it("sends the Basic header single-line and correct for a long credential", () =>
   expect(hit.auth).toBe(`Basic ${Buffer.from(auth).toString("base64")}`);
   expect(seen.find(s => s.url === "/mcp").auth).toBeUndefined();
 }));
+
+// Retry on RITA_LIVE_RETRY_MODEL: only the failed tests, matched by their full names.
+const { retryPlan, retryPassed } = await import("./rita-live-retry.mjs");
+const fileResult = (name, results, status = results.some((r) => r[1] === "failed") ? "failed" : "passed") =>
+  ({ name, status, assertionResults: results.map(([fullName, s]) => ({ fullName, status: s })) });
+const report = (testResults, extra = {}) => ({ numPendingTests: 0, numFailedTests: 0, numPassedTests: 0, testResults, ...extra });
+
+it("plans a retry of exactly the failed tests, with an anchored name pattern", () => {
+  const plan = retryPlan(report([
+    fileResult("/a.test.ts", [["A moves/resizes (x)", "failed"], ["A other", "passed"]]),
+    fileResult("/b.test.ts", [["B ok", "passed"]]),
+    fileResult("/c.test.ts", [["C totals", "failed"]]),
+  ], { numFailedTests: 2 }));
+  expect(plan.files).toEqual(["/a.test.ts", "/c.test.ts"]);
+  const re = new RegExp(plan.pattern);
+  expect(re.test("A moves/resizes (x)")).toBe(true);
+  expect(re.test("C totals")).toBe(true);
+  expect(re.test("A other")).toBe(false);
+  expect(re.test("A moves/resizes (x) and more")).toBe(false);
+});
+it("does not retry when tests were skipped or a file failed to load", () => {
+  expect(retryPlan(report([fileResult("/a.test.ts", [["A", "failed"]])], { numPendingTests: 1 }))).toBeNull();
+  expect(retryPlan(report([fileResult("/a.test.ts", [["A", "failed"]]), { name: "/b.test.ts", status: "failed", assertionResults: [] }]))).toBeNull();
+});
+it("passes the retry only when every failed test passed on it", () => {
+  const plan = { names: ["A", "B"] };
+  expect(retryPassed(plan, { numFailedTests: 0, numPassedTests: 2 })).toBe(true);
+  expect(retryPassed(plan, { numFailedTests: 1, numPassedTests: 1 })).toBe(false);
+  expect(retryPassed(plan, { numFailedTests: 0, numPassedTests: 1 })).toBe(false);
+});

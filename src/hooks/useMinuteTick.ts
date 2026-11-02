@@ -6,6 +6,14 @@ import { useEffect, useState } from "react";
 const MINUTE = 60_000;
 
 /**
+ * Milliseconds from `now` to the next minute boundary. Shared with
+ * useWidgetData, whose cron refetch wakes on the same boundaries.
+ */
+export function msToNextMinute(now = Date.now()): number {
+  return MINUTE - (now % MINUTE);
+}
+
+/**
  * Ticks on the minute boundary rather than on an interval.
  *
  * The clock shows HH:MM and has no second hand, so a per-second timer would
@@ -20,7 +28,7 @@ export function useMinuteTick(): Date {
     let timer: ReturnType<typeof setTimeout>;
 
     const schedule = () => {
-      const ms = MINUTE - (Date.now() % MINUTE);
+      const ms = msToNextMinute();
       timer = setTimeout(() => {
         setNow(new Date());
         schedule();

@@ -3,7 +3,7 @@
 import type { ViewMode } from "../components/ViewToggle";
 import { fetchesData, SSRM_TYPES } from "./builtins";
 import { detectDateColumn } from "./calendarView";
-import { detectChartAxis, rowsOf } from "./chartShapes";
+import { rowChartAxes, rowsOf } from "./chartShapes";
 import { widenLongRows } from "./statementRows";
 import { detectStatement } from "./statementTaxonomy";
 import { tableRows } from "./tableColumns";
@@ -40,7 +40,7 @@ export function availableViews(widget: WidgetDef | undefined, data: unknown, car
   // Chart is offered when the widget is not already a chart and the rows that
   // actually arrived carry a time column — a property of the DATA, per the
   // spec, not of the widget's self-description.
-  if (type !== "chart" && rows && detectChartAxis(rows) !== null) list.push({ value: "chart", label: "Chart" });
+  if (type !== "chart" && rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
   if (isManaged(widget) || type === "local_table" || card.linkedSource || (type === "table" && tableData && detectStatement([...new Set((widenLongRows(tableData) ?? tableData).flatMap(row => Object.keys(row)))]) !== null)) list.push({ value: "statement", label: "Statement" });
   if (rows?.length && detectDateColumn(rows) !== null) list.push({ value: "calendar", label: "Calendar" });
   // Raw shows the payload useWidgetData fetched. iframe/note/clock/keys
