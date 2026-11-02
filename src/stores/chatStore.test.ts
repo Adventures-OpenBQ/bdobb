@@ -97,6 +97,7 @@ beforeEach(() => {
   useChatStore.setState({
     messages: [],
     calls: [],
+    turnCalls: [],
     trail: [],
     citations: [],
     suggestions: [],
@@ -719,6 +720,27 @@ describe("chatStore.send", () => {
     replies(call, fixture("rita/simple-text.sse"));
     await useChatStore.getState().send("news AAPL");
     expect(callMcpTool).toHaveBeenCalled();
+  });
+
+  it("keeps the latest turn's calls apart from the ledger, and Clear empties them", async () => {
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", mcpServers: [{ id: "s1", name: "Financial Data", url: "https://mcp.example/mcp", enabled: true }] },
+    });
+    vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+    // Each client-routed call is ledgered from executeFunction (Task 2).
+    const fnCall = (tool: string) =>
+      `event: copilotFunctionCall\ndata: ${JSON.stringify({ function: "execute_agent_tool", input_arguments: { server_id: "s1", tool_name: tool, parameters: {} } })}\n\n`;
+    replies(fnCall("quote"), fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("one");
+    expect(useChatStore.getState().turnCalls).toEqual([{ kind: "agent_tool", server_id: "s1", tool: "quote", narrated: "" }]);
+
+    replies(fnCall("news"), fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("two");
+    expect(useChatStore.getState().turnCalls.map((c) => (c.kind === "agent_tool" ? c.tool : c.kind))).toEqual(["news"]);
+    expect(useChatStore.getState().calls).toHaveLength(2);
+
+    await useChatStore.getState().clear();
+    expect(useChatStore.getState().turnCalls).toEqual([]);
   });
 
   it("refuses a card whose backend gains a key-maint widget after the turn started", async () => {

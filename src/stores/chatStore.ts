@@ -121,6 +121,12 @@ export type PendingTool = ToolRequest;
 type ChatState = {
   messages: ChatMessage[];
   calls: AgentCall[];
+  /**
+   * The latest finished turn's calls: what Sources' widget citations
+   * (mcp_tool) are matched against. Reset when a turn starts, like
+   * `citations`; not saved.
+   */
+  turnCalls: AgentCall[];
   trail: AgentStatus[];
   citations: Record<string, unknown>[];
   suggestions: string[];
@@ -163,6 +169,7 @@ const turnGroups = (d: Dashboard | undefined) => ({ groups: d?.groups, groupsDis
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   calls: [],
+  turnCalls: [],
   trail: [],
   citations: [],
   suggestions: [],
@@ -228,7 +235,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // whether THIS turn was stopped, after the shared one is already null.
     const mine = new AbortController();
     controller = mine;
-    set({ running: true, error: null, citations: [], suggestions: [], trail: [], messages: [...prior, human] });
+    set({ running: true, error: null, citations: [], suggestions: [], trail: [], turnCalls: [], messages: [...prior, human] });
     try {
       const turnDashboardId = useDashboardStore.getState().activeId;
       const cards = useDashboardStore.getState().activeDashboard()?.tabs.flatMap((t) => t.cards) ?? [];
@@ -497,7 +504,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // way the save below already does, or an aborted-and-cleared turn's
       // calls resurrect into a chat that has no messages and no file.
       if (live() && get().messages.length > 0) {
-        set({ calls: [...get().calls, ...calls] });
+        set({ calls: [...get().calls, ...calls], turnCalls: calls });
         try {
           await saveChat({ messages: get().messages, calls: get().calls, sharedCardIds: get().sharedCardIds });
         } catch (err) {
@@ -526,6 +533,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       messages: [],
       calls: [],
+      turnCalls: [],
       trail: [],
       citations: [],
       suggestions: [],
