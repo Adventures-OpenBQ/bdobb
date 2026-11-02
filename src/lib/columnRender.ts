@@ -13,8 +13,9 @@ import { isRecord } from "./isRecord";
  * `hoverCard` is acted on in TableRenderer (HoverCardCell), validated by
  * hoverCardOf (src/lib/tableColumns.ts). `showCellChange` is acted on too
  * (TableRenderer's data-flash), and so are `logo` and `rangeBar` (TableCell),
- * none of them here: they are not a colour this module computes. Parsed and
- * deliberately ignored, per the design's out-of-scope list: `columnColor`.
+ * none of them here: they are not a colour this module computes. `columnColor`
+ * needs no code of its own: colorRules colour a cell whatever renderFn says,
+ * and `renderFnParams.colorValueKey` points them at another field of the row.
  * (`sparkline` is a column declaration of its own, drawn by SparklineCell.)
  */
 
@@ -161,13 +162,23 @@ function matches(rule: ColorRule, value: unknown): boolean {
  * renderFnParams here would repeat that work on every row of every render.
  */
 export function cellVisual(
-  column: { renderFn: string[]; colorRules?: ColorRule[] },
+  column: { renderFn: string[]; colorRules?: ColorRule[]; colorValueKey?: string },
   value: unknown,
+  row?: Record<string, unknown>,
 ): CellVisual {
   const rules = column.colorRules ?? [];
   if (rules.length > 0) {
+    // renderFnParams.colorValueKey: the rules test THAT field of the same row
+    // (render-functions.md, "Multiple Render Functions and Color Rules"). A
+    // row without it matches no rule -- not even `ne`, which undefined would
+    // otherwise satisfy.
+    let tested = value;
+    if (column.colorValueKey !== undefined) {
+      if (row === undefined || !Object.hasOwn(row, column.colorValueKey)) return {};
+      tested = row[column.colorValueKey];
+    }
     // The FIRST match wins, as the spec says — not the narrowest.
-    const rule = rules.find((r) => matches(r, value));
+    const rule = rules.find((r) => matches(r, tested));
     if (!rule) return {};
     return rule.fill === true ? { color: rule.color, fill: true } : { color: rule.color };
   }

@@ -157,6 +157,12 @@ export type ClientArtifact = {
   chart_params?: unknown;
 };
 
+/**
+ * One highlighted line of a cited PDF quote, in PDF points from the page's
+ * top-left corner (pdfplumber's convention, which openbb-ai and Rita use).
+ */
+export type BoundingBox = { text: string; page: number; x0: number; top: number; x1: number; bottom: number };
+
 /** One entry of the "API calls made on your behalf" ledger persisted with the chat. */
 export type AgentCall =
   | {
@@ -169,4 +175,15 @@ export type AgentCall =
       durationMs: number;
       rows: number;
     }
-  | { kind: "agent_tool"; server_id: string; tool: string; narrated: string; ok?: boolean; error?: string; display?: string };
+  | {
+      kind: "agent_tool";
+      server_id: string;
+      /** The tool Rita called: the proxy's own name (`call_tool`, `run_pipeline`) for a proxied call. */
+      tool: string;
+      narrated: string;
+      ok?: boolean;
+      error?: string;
+      display?: string;
+      /** A proxied call's effective tools (effectiveToolNames): what mcp_tool matches instead of `tool`. */
+      effectiveTools?: string[];
+    };
