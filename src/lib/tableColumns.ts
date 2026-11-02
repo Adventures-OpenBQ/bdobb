@@ -64,6 +64,12 @@ export type TableColumn = {
    */
   colorRules: ColorRule[];
   /**
+   * `renderFnParams.colorValueKey`, when a non-empty string: colorRules test
+   * that field of the row instead of the cell. showCellChange's own use of the
+   * same key (cellChange below) is separate and unchanged.
+   */
+  colorValueKey?: string;
+  /**
    * `renderFn: "showCellChange"`: flash the cell when its value changes,
    * coloured by the sign of `renderFnParams.colorValueKey`'s field. `enabled`
    * is false when the column set `enableCellChangeWs: false`. Absent when the
@@ -102,7 +108,7 @@ export type TableColumn = {
  * `"true"` or `1` would refetch a table whose author never asked for it.
  *
  * The rest of renderFnParams stays opaque; hoverCard has its own reader
- * below, and columnColor remains parsed-and-ignored.
+ * below, and colorValueKey is read in `declared`.
  */
 export function cellClickOf(spec: ColumnSpec): CellClick | undefined {
   if (!spec.renderFn?.includes("cellOnClick")) return undefined;
@@ -145,6 +151,7 @@ function undeclared(field: string, spec: TableSpec | undefined): TableColumn {
 }
 
 function declared(column: ColumnSpec, spec: TableSpec): TableColumn {
+  const colorValueKey = column.renderFnParams?.colorValueKey;
   return {
     field: column.field,
     header: `${column.prefix ?? ""}${column.headerName ?? column.field}${column.suffix ?? ""}`,
@@ -153,6 +160,7 @@ function declared(column: ColumnSpec, spec: TableSpec): TableColumn {
     format: cellFormat(column, spec),
     renderFn: column.renderFn ?? [],
     colorRules: colorRules(column.renderFnParams),
+    colorValueKey: typeof colorValueKey === "string" && colorValueKey !== "" ? colorValueKey : undefined,
     cellChange: (column.renderFn ?? []).includes("showCellChange")
       ? {
           colorValueKey:

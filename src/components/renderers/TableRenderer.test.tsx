@@ -337,6 +337,35 @@ describe("TableRenderer with a columnsDefs spec", () => {
     expect(cells[0].className).toBe("");
   });
 
+  it("colours a columnColor cell from colorValueKey's field of the same row", () => {
+    render(
+      <TableRenderer
+        data={[
+          { Symbol: "AAPL", Analyst: "Sarah Johnson" },
+          { Symbol: "MSFT", Analyst: "Bob Lee" },
+        ]}
+        spec={{
+          columns: [
+            {
+              field: "Symbol",
+              renderFn: ["cellOnClick", "columnColor"],
+              renderFnParams: {
+                actionType: "groupBy",
+                groupBy: { paramName: "symbol" },
+                colorValueKey: "Analyst",
+                colorRules: [{ condition: "eq", value: "Sarah Johnson", color: "rgb(0, 0, 255)", fill: true }],
+              },
+            },
+            { field: "Analyst" },
+          ],
+        }}
+      />,
+    );
+    const cells = [...document.querySelectorAll('td[data-field="Symbol"]')] as HTMLElement[];
+    expect(cells[0].style.background).toBe("rgb(0, 0, 255)");
+    expect(cells[1].style.background).toBe("");
+  });
+
   it("uses columnsDefs width as the initial column size", () => {
     render(
       <TableRenderer

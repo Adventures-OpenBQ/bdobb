@@ -21,7 +21,7 @@ Cards on tabs you are not looking at are not mounted, and are not refreshed.
 
 ## Automatic refresh
 
-Cron-style refresh schedules are not supported in v3. Use a numeric interval, the app-wide refresh setting, or manual Refresh/Run.
+A widget's `refetchInterval` may also be a five-field cron expression, such as `*/5 * * * *` or `0 8 * * 1-5`, in local time. Such a card refetches on each minute boundary the expression matches, for as long as it is on screen, and your app-wide setting does not apply to it. An expression the app cannot read is ignored, and shows only as the backend's widgets count in Connections when Validate widgets is on. Supported: `*`, numbers, lists, ranges and steps; day-of-week 0–7 with both 0 and 7 meaning Sunday.
 
 
 **Settings ▸ General ▸ Auto-refresh every** offers **Off**, **1 minute**, **5 minutes**, **15 minutes**, **30 minutes** and **60 minutes**. It is **Off** by default.
@@ -34,6 +34,8 @@ How the timer behaves, which is worth knowing before you blame it:
 - Nothing is armed while the window is hidden. When you come back, a card whose interval already elapsed fetches at once and the rest arm the remainder.
 - Widgets that fetch nothing — framed pages, notes, clocks, the keys panel — are never polled, and neither is a card blocked on an empty required parameter.
 - A card naming a backend that no longer exists shows *Backend not configured* and is deliberately never re-armed.
+
+A widget may also declare a `staleTime`, in milliseconds. Once its data is older than that, the card's **Refresh** (or **Run**) button turns orange, and the next fetch clears it. Coming back to a dashboard or tab always refetches its cards, because cards that are off screen are not mounted. A `dataUpdateDisplay` cron expression adds a line to that button's tooltip — *Data update: `<expression>` · last `<time>` · next `<time>`*, in local time — giving the schedule's previous and next times, not when the card last fetched. It never triggers a fetch.
 
 ## Run-button widgets
 

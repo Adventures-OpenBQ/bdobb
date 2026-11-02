@@ -24,7 +24,7 @@ A card is one widget on the grid. Everything you can do to it lives in its heade
 
 ## The ⋯ menu
 
-In order: **Rename…**, **Maximize** (or **Restore**), **Export ▸** (CSV, JSON, Excel), and, while a table is actually on screen, **Columns ▸** and **Reset table**. The menu appears only on cards that fetch data, and never on a PDF card — with one exception: the [[built-in-widgets|Markdown]] note has it too, with **Open file…** and **Save as…** where Export would be. So framed pages, plain notes, clocks, the RSS feed, the keys panel, document viewers and PDFs have none; they can still be renamed by double-clicking the title. Escape or a click outside closes it; reopening it always starts with the flyouts collapsed.
+In order: **Rename…**, **Maximize** (or **Restore**), **Export ▸** (CSV, JSON, Excel), and, while a table is actually on screen, **Columns ▸** and **Reset table**. A widget that declares `exportable: false` has no **Export ▸**; the rest of the menu is unchanged. The menu appears only on cards that fetch data, and never on a PDF card — with one exception: the [[built-in-widgets|Markdown]] note has it too, with **Open file…** and **Save as…** where Export would be. So framed pages, plain notes, clocks, the RSS feed, the keys panel, document viewers and PDFs have none; they can still be renamed by double-clicking the title. Escape or a click outside closes it; reopening it always starts with the flyouts collapsed.
 
 The in-app manual's "Widget cards" topic at this version says every built-in lacks the menu; its own "Built-in widgets" topic, and the code, give the Markdown note one.
 

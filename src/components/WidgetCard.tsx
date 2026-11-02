@@ -7,7 +7,8 @@ import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin
 import { useWidgetData } from "../hooks/useWidgetData";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
-import { detectChartAxis, rowsOf } from "../lib/chartShapes";
+import { rowChartAxes, rowsOf } from "../lib/chartShapes";
+import { dataUpdateText } from "../lib/cron";
 import { authHeaders } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
@@ -48,6 +49,7 @@ import { RssRenderer } from "./renderers/RssRenderer";
 import { TradingViewRenderer } from "./renderers/TradingViewRenderer";
 import { PdfRenderer } from "./renderers/PdfRenderer";
 import { RawJsonView } from "./renderers/RawJsonView";
+import { RawRequestView } from "./renderers/RawRequestView";
 import {
   TableRenderer,
   type CellClickEvent,
@@ -159,6 +161,20 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const minimized = card.minimized ?? false;
 
   const [controlsOpen, setControlsOpen] = useState(false);
+  /**
+   * When the refresh tooltip was last stamped. The pointer or focus reaching
+   * the button restamps it, so "last" and "next" are as of the hover, not of
+   * the card's last render. Only a dataUpdateDisplay widget needs it.
+   */
+  const [titleAt, setTitleAt] = useState(() => new Date());
+  const stampTitle = () => {
+    if (widget?.dataUpdateDisplay) setTitleAt(new Date());
+  };
+  // dataUpdateText scans minute by minute, so it runs once per stamp, not per render.
+  const dataUpdateLine = useMemo(
+    () => (widget?.dataUpdateDisplay ? dataUpdateText(widget.dataUpdateDisplay, titleAt) : undefined),
+    [widget?.dataUpdateDisplay, titleAt],
+  );
   /**
    * Is the title an InlineRename field right now? Transient by design: an
    * interrupted rename is not state worth persisting, and closing the field
@@ -289,7 +305,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data, error, warnings, retry, attempt, run, stale, intervalMs } = useWidgetData(
+  const { status, data, error, warnings, retry, attempt, run, stale, intervalMs, dataStale } = useWidgetData(
     card,
     query,
     widget?.runButton,
@@ -321,7 +337,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
     if (type !== "chart") {
       const rows = rowsOf(data);
-      if (rows && detectChartAxis(rows) !== null) list.push({ value: "chart", label: "Chart" });
+      if (rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
     }
     // Raw shows the payload useWidgetData fetched. iframe/note/clock/keys
     // never fetch — they report data: null unconditionally and WidgetCard's
@@ -348,19 +364,22 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       }
     }
     return list;
-  }, [widget?.type, data]);
+  }, [widget?.type, widget?.table, data]);
 
   // No export surface at all for the built-in and document cards: fetchesData
   // is already the "this card has a fetched payload" predicate (it is false
   // for iframe, keys, multi_file_viewer and every builtin, i.e. note and
   // clock), and `pdf` is excluded on top of it because its payload IS one
   // base64 document, not data.
-  const canExport = widget !== undefined && fetchesData(widget) && widget.type !== "pdf";
+  const hasPayload = widget !== undefined && fetchesData(widget) && widget.type !== "pdf";
+  // The manifest's `exportable: false` takes Export ▸ away and nothing else:
+  // Rename, Maximize and Columns stay, so the menu's gate is hasPayload.
+  const canExport = hasPayload && widget.exportable !== false;
   // The markdown note has a ⋯ menu without an Export section: its two items
-  // move a .md file in or out of the note. canExport keeps its exact meaning
+  // move a .md file in or out of the note. hasPayload keeps its exact meaning
   // ("this card has a fetched payload"); this is the menu's gate, not export's.
   const isMarkdownNote = widget?.type === "markdown_editor";
-  const hasMenu = canExport || isMarkdownNote;
+  const hasMenu = hasPayload || isMarkdownNote;
   /**
    * The transposed view's rows and their column order, computed once for the
    * body and the Export menu. null when the payload has nothing to turn on
@@ -982,10 +1001,29 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     // hundreds of kilobytes of base64 into the DOM.
     if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} />;
 
+    // html and youtube render markup or a video, not data: with `raw: true`
+    // their Raw view re-asks the endpoint with raw=true instead of dumping
+    // the payload already fetched (see RawRequestView).
+    if (
+      view === "raw" &&
+      widget?.raw &&
+      backend &&
+      (widget.type === "html" || widget.type === "youtube")
+    ) {
+      return (
+        <RawRequestView backend={backend} widget={widget} params={query} refreshKey={attempt + refreshEpoch} />
+      );
+    }
+
     // Raw is returned BEFORE type dispatch, which is why a widget type that
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
-    if (view === "chart") return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+    if (view === "chart") return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
     // Before the type dispatch, like raw and chart: the transposed grid is a
     // view of the payload, not of the widget's declared columns. local_table
     // is not here -- its rows never reach `data`, so its own renderer turns
@@ -1013,7 +1051,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
           />
         );
       case "chart":
-        return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+        return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
       case "markdown":
         return <MarkdownRenderer data={data} />;
       case "html":
@@ -1043,6 +1086,16 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
         return <RawJsonView data={data} />;
     }
   }
+
+  /** The refresh/Run tooltip: the button's own words, then staleness, then the data update schedule. */
+  const refreshTitle = (base?: string) =>
+    [
+      base,
+      dataStale ? "Data is older than its stale time" : undefined,
+      dataUpdateLine,
+    ]
+      .filter((line): line is string => line !== undefined)
+      .join("\n") || undefined;
 
   return (
     <article
@@ -1158,13 +1211,24 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                 type="button"
                 className="card-action card-run"
                 aria-label="Run"
-                title="Run (⌘-click: hard refresh)"
+                title={refreshTitle("Run (⌘-click: hard refresh)")}
+                data-stale={dataStale || undefined}
+                onPointerEnter={stampTitle}
+                onFocus={stampTitle}
                 onClick={(e) => (e.metaKey || e.ctrlKey ? retry() : run())}
               >
                 Run
               </button>
             ) : (
-              <button type="button" className="card-action" onClick={retry}>
+              <button
+                type="button"
+                className="card-action"
+                title={refreshTitle()}
+                data-stale={dataStale || undefined}
+                onPointerEnter={stampTitle}
+                onFocus={stampTitle}
+                onClick={retry}
+              >
                 Refresh
               </button>
             )}

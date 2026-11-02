@@ -38,6 +38,17 @@ function SourceBadge({ source }: { source: string[] }) {
   );
 }
 
+/**
+ * The widget's `imgUrl`, shown while its row is hovered or focused. An image
+ * that fails to load renders nothing rather than the browser's broken-image
+ * icon; it is remounted on the next hover, which tries again.
+ */
+function PreviewImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return <img className="library-card-preview" src={src} alt={alt} onError={() => setFailed(true)} />;
+}
+
 export function WidgetLibrary({ onClose, target }: { onClose: () => void; target: LibraryTarget }) {
   const widgets = useWidgetRegistryStore((s) => s.widgets);
   const addCardTo = useDashboardStore((s) => s.addCardTo);
@@ -50,6 +61,8 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<LibraryFilter>(EMPTY_FILTER);
+  // Which row's imgUrl preview is showing: the hovered or focused one.
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
   const backends = useBackendsStore((s) => s.backends);
 
   // A backend removed in Connections takes its widgets out of the registry, so
@@ -192,10 +205,15 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
         <div className="library-grid">
           {visible.map((w) => {
             const present = targetCards.some((c) => c.widgetId === w.id && c.backendId === w.backendId);
+            const key = `${w.backendId}:${w.id}`;
             return (
               <button
-                key={`${w.backendId}:${w.id}`}
+                key={key}
                 type="button"
+                onMouseEnter={() => setPreviewKey(key)}
+                onMouseLeave={() => setPreviewKey((k) => (k === key ? null : k))}
+                onFocus={() => setPreviewKey(key)}
+                onBlur={() => setPreviewKey((k) => (k === key ? null : k))}
                 className={present ? "library-card library-card-present" : "library-card"}
                 aria-label={`Add ${w.name}${present ? " (already on this tab)" : ""}`}
                 onClick={(e) => {
@@ -229,6 +247,7 @@ export function WidgetLibrary({ onClose, target }: { onClose: () => void; target
                   <span className="type-badge">{w.type}</span>
                 </span>
                 <span className="library-card-description">{w.description}</span>
+                {previewKey === key && w.imgUrl ? <PreviewImage src={w.imgUrl} alt={w.name} /> : null}
               </button>
             );
           })}

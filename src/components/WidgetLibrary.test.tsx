@@ -630,4 +630,39 @@ describe("WidgetLibrary", () => {
       expect(screen.getByRole("button", { name: /add candles/i })).toHaveClass("library-card-present");
     });
   });
+
+  it("previews a widget's imgUrl on hover and on keyboard focus, named for the widget", async () => {
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "p", name: "Price History", imgUrl: "https://img.example/p.png" })],
+    });
+    render(<WidgetLibrary onClose={vi.fn()} target={TARGET} />);
+    const row = screen.getByRole("button", { name: "Add Price History" });
+    expect(screen.queryByAltText("Price History")).toBeNull();
+
+    await userEvent.hover(row);
+    expect(screen.getByAltText("Price History")).toHaveAttribute("src", "https://img.example/p.png");
+    await userEvent.unhover(row);
+    expect(screen.queryByAltText("Price History")).toBeNull();
+
+    act(() => row.focus());
+    expect(screen.getByAltText("Price History")).toBeInTheDocument();
+  });
+
+  it("shows nothing, not a broken image, when the preview fails to load", async () => {
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "p", name: "Price History", imgUrl: "https://img.example/missing.png" })],
+    });
+    render(<WidgetLibrary onClose={vi.fn()} target={TARGET} />);
+    await userEvent.hover(screen.getByRole("button", { name: "Add Price History" }));
+
+    fireEvent.error(screen.getByAltText("Price History"));
+
+    expect(screen.queryByAltText("Price History")).toBeNull();
+  });
+
+  it("shows no preview for a widget without imgUrl", async () => {
+    render(<WidgetLibrary onClose={vi.fn()} target={TARGET} />);
+    await userEvent.hover(screen.getByRole("button", { name: "Add Price History" }));
+    expect(screen.queryByRole("img")).toBeNull();
+  });
 });

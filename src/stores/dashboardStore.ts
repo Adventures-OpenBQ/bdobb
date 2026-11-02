@@ -779,6 +779,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                       w: widget.gridData.w,
                       h: widget.gridData.h,
                     },
+                    // chartView.enabled opens a NEW card on its chart; an
+                    // imported or existing card keeps the view it saved.
+                    ...(widget.chartView?.enabled ? { view: "chart" as const } : {}),
                   },
                 ],
               }

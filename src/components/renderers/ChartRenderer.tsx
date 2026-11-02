@@ -2,13 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-  buildFigure,
-  detectChartAxis,
-  isPlotlyFigure,
-  rowsOf,
-  type PlotlyFigure,
-} from "../../lib/chartShapes";
+import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/chartShapes";
+import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
 import { purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot } from "../../lib/plotly";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -17,13 +12,16 @@ import { useSettingsStore } from "../../stores/settingsStore";
 // colours it already carries -- re-theming a provider's own figure is out of
 // scope. Only a figure this app builds itself, from raw rows, takes the
 // current theme.
-function figureFor(data: unknown, theme: "dark" | "light"): PlotlyFigure | null {
+function figureFor(
+  data: unknown,
+  theme: "dark" | "light",
+  columns?: ColumnSpec[],
+  chartType?: string,
+): PlotlyFigure | null {
   if (isPlotlyFigure(data)) return data;
   const rows = rowsOf(data);
   if (rows === null) return null;
-  const axisKey = detectChartAxis(rows);
-  if (axisKey === null) return null;
-  return buildFigure(rows, axisKey, theme);
+  return rowFigure(rows, columns, chartType, theme);
 }
 
 // Plotly's own default when a trace omits `type` is "scatter" — which is
@@ -48,10 +46,22 @@ function unregisteredTraceType(figure: PlotlyFigure): string | null {
  * theme flip; a new value (new params) resets the view. Absent, the chart
  * keeps one revision for as long as it is mounted.
  */
-export function ChartRenderer({ data, uirevision = "chart" }: { data: unknown; uirevision?: string }) {
+export function ChartRenderer({
+  data,
+  uirevision = "chart",
+  columns,
+  chartType,
+}: {
+  data: unknown;
+  uirevision?: string;
+  /** The widget's columnsDefs, for their chartDataType. */
+  columns?: ColumnSpec[];
+  /** The widget's chartView.chartType. */
+  chartType?: string;
+}) {
   const node = useRef<HTMLDivElement | null>(null);
   const theme = useSettingsStore((s) => s.settings.theme);
-  const figure = useMemo(() => figureFor(data, theme), [data, theme]);
+  const figure = useMemo(() => figureFor(data, theme, columns, chartType), [data, theme, columns, chartType]);
   const unregisteredType = useMemo(
     () => (figure ? unregisteredTraceType(figure) : null),
     [figure],

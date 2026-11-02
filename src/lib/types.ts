@@ -145,7 +145,7 @@ export type ColumnFormatterFn =
  * string. `renderFnParams` is kept opaque: `colorRules` is acted on (see
  * src/lib/columnRender.ts) and so is `cellOnClick`'s groupBy block (see
  * cellClickOf in src/lib/tableColumns.ts), and so is `hoverCard` (see
- * hoverCardOf there); `columnColor` is parsed and deliberately ignored.
+ * hoverCardOf there); `colorValueKey` points colorRules at another field of the row (see cellVisual).
  */
 export type ColumnSpec = {
   field: string;
@@ -171,6 +171,12 @@ export type ColumnSpec = {
    * is built; kept opaque here like renderFnParams.
    */
   sparkline?: Record<string, unknown>;
+  /**
+   * How a chart built from the rows treats this column: x is the first `time`
+   * column, else the first `category` one; y is every `series` column;
+   * `excluded` is never plotted. See rowChartAxes in src/lib/chartShapes.ts.
+   */
+  chartDataType?: "category" | "series" | "time" | "excluded";
 };
 
 /**
@@ -237,6 +243,12 @@ export type WidgetDef = {
    */
   table?: TableSpec;
   /**
+   * `data.table.chartView`. `enabled: true` opens a NEW card in chart view
+   * (addCardTo); `chartType` picks the trace of a chart built from rows (see
+   * rowFigure in src/lib/chartShapes.ts). Absent when it declares neither.
+   */
+  chartView?: { enabled?: true; chartType?: string };
+  /**
    * Only on a `type: "advanced_charting"` widget: what its TradingView card
    * charts and how. Its renderer issues its own UDF request (see
    * src/lib/udf.ts), so nothing here goes through the generic fetch.
@@ -244,6 +256,8 @@ export type WidgetDef = {
   udfChart?: UdfChartSpec;
   /** Provider name(s). Consumed by the library badges in SP5. */
   source: string[];
+  /** An http(s) image the Widget Library previews on hover or focus. Any other scheme is dropped. */
+  imgUrl?: string;
   /**
    * "Do not execute automatically when parameters change; the user clicks
    * Run." The card fetches once on load with its stored params and then only
@@ -254,6 +268,17 @@ export type WidgetDef = {
    */
   runButton?: boolean;
   /**
+   * `exportable: false` hides the card's Export ▸ (CSV, JSON, Excel). Only
+   * ever `false` or absent: any other value keeps export available.
+   */
+  exportable?: false;
+  /**
+   * `raw: true` on an html or youtube widget: its Raw view re-asks the
+   * endpoint with `raw=true` for the data behind the rendering (see
+   * RawRequestView). Only ever `true` or absent.
+   */
+  raw?: true;
+  /**
    * Milliseconds between automatic refreshes. A positive number wins over the
    * `autoRefreshMinutes` setting; anything else (0, a negative number, or the
    * `false` the manifest sometimes sends, which means "never auto-refresh
@@ -261,6 +286,22 @@ export type WidgetDef = {
    * src/hooks/useWidgetData.ts.
    */
   refetchInterval?: number | false;
+  /**
+   * A cron `refetchInterval`, already validated: the card refetches on each
+   * minute boundary it matches, and the app-wide interval does not apply. An
+   * invalid string never gets here (normalizeWidgets reports and drops it).
+   */
+  refetchCron?: string;
+  /**
+   * Milliseconds after a successful fetch at which the data counts as stale:
+   * the refresh button takes the stale tint. Applied only when declared.
+   */
+  staleTime?: number;
+  /**
+   * A cron expression shown in the refresh button's tooltip with its
+   * previous and next scheduled times. Display only: it never fetches.
+   */
+  dataUpdateDisplay?: string;
   /**
    * Only on a `type: "settings"` widget: which of the contract's UI modes
    * its section uses. Such a widget is a section of the Settings dialog, not

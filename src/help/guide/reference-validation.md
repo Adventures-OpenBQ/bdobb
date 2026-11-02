@@ -49,7 +49,7 @@ The October 6, 2026 clean v3 rehearsal used the curated reference image: 71 widg
 1. Add the running reference backend in **Connections**.
 2. Choose **Apps ▸ Open Onboarding App for Devs**.
 3. Open **Grouping** and change **Manufacturer** from Toyota to Tesla. Both linked controls and their data should change.
-4. Try **Run** on a run-button widget, and a numeric-refresh example. Cron scheduling remains deferred.
+4. Try **Run** on a run-button widget, a numeric-refresh example and a cron-refresh example.
 5. Save the dashboard with **Save…**, Format **BDOBB Workspace**, and import it back with **Keep both**. Ordinary names and table state travel with that file. Choose **Strict OpenBB Workspace** when you need the plain OpenBB shape.
 
 The full curated reference rendering sweep passed 71/71, including interactive PDF viewers, SQL Omni, Live Grid, Highcharts and Vega-Lite. Seven reference contract/import/export tests passed. A separate OpenBQ Docker smoke passed nine selected live cases; that is not certification of its whole catalog. The browser rehearsal used a test-only CORS adapter with unchanged backend responses. Native packaged restart and live Workspace account authentication remain unqualified.

@@ -966,3 +966,112 @@ describe("advanced_charting's chart spec", () => {
     expect(normalizeWidgets({ t: { type: "table", data: { defaultSymbol: "X" } } }, "b").widgets[0].udfChart).toBeUndefined();
   });
 });
+
+describe("exportable", () => {
+  it("keeps only a literal false", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { exportable: false }, b: { exportable: "false" }, c: { exportable: 0 }, d: { exportable: true }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.exportable)).toEqual([false, undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe("imgUrl", () => {
+  it("keeps an http(s) URL and drops every other scheme or type", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { imgUrl: "https://img.example/p.png" },
+        b: { imgUrl: "javascript:alert(1)" },
+        c: { imgUrl: "data:image/png;base64,AAAA" },
+        d: { imgUrl: 42 },
+        e: { imgUrl: "relative/p.png" },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.imgUrl)).toEqual(["https://img.example/p.png", undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe("chartDataType and chartView", () => {
+  it("keeps only the four documented chartDataType values", () => {
+    const { widgets: [w] } = normalizeWidgets(
+      {
+        a: {
+          data: {
+            table: {
+              columnsDefs: [
+                { field: "n", chartDataType: "category" },
+                { field: "t", chartDataType: "time" },
+                { field: "s", chartDataType: "series" },
+                { field: "x", chartDataType: "excluded" },
+                { field: "bad", chartDataType: "pie" },
+              ],
+            },
+          },
+        },
+      },
+      "b1",
+    );
+    expect(w.table?.columns.map((c) => c.chartDataType)).toEqual(["category", "time", "series", "excluded", undefined]);
+  });
+
+  it("reads data.table.chartView: enabled only as literal true, chartType only as a non-empty string", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { data: { table: { chartView: { enabled: true, chartType: "column" } } } },
+        b: { data: { table: { chartView: { enabled: "true", chartType: "" } } } },
+        c: { data: { table: {} } },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.chartView)).toEqual([{ enabled: true, chartType: "column" }, undefined, undefined]);
+  });
+});
+
+describe("raw", () => {
+  it("keeps only a literal true", () => {
+    const { widgets } = normalizeWidgets({ a: { raw: true }, b: { raw: "true" }, c: {} }, "b1");
+    expect(widgets.map((w) => w.raw)).toEqual([true, undefined, undefined]);
+  });
+});
+
+describe("cron refetchInterval", () => {
+  it("keeps a valid cron string as refetchCron, leaving the numeric field unset", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "*/1 * * * *" } }, "b1");
+    expect(w.refetchCron).toBe("*/1 * * * *");
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([]);
+  });
+
+  it("treats an invalid cron string as absent and reports it", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "every minute" } }, "b1");
+    expect(w.refetchCron).toBeUndefined();
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([{ id: "a", reason: 'refetchInterval "every minute" is not a valid cron expression; ignored' }]);
+  });
+
+  it("leaves numbers and false exactly as before", () => {
+    const { widgets } = normalizeWidgets({ a: { refetchInterval: 60_000 }, b: { refetchInterval: false } }, "b1");
+    expect(widgets.map((w) => [w.refetchInterval, w.refetchCron])).toEqual([[60_000, undefined], [false, undefined]]);
+  });
+});
+
+describe("staleTime and dataUpdateDisplay", () => {
+  it("keeps a finite positive staleTime and nothing else", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { staleTime: 5000 }, b: { staleTime: 0 }, c: { staleTime: "5000" }, d: { staleTime: Infinity }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.staleTime)).toEqual([5000, undefined, undefined, undefined, undefined]);
+  });
+
+  it("keeps only a valid cron dataUpdateDisplay", () => {
+    const { widgets, issues } = normalizeWidgets(
+      { a: { dataUpdateDisplay: "0 10 * * *" }, b: { dataUpdateDisplay: "daily" }, c: { dataUpdateDisplay: 10 } },
+      "b1",
+    );
+    expect(widgets.map((w) => w.dataUpdateDisplay)).toEqual(["0 10 * * *", undefined, undefined]);
+    expect(issues).toEqual([]);
+  });
+});

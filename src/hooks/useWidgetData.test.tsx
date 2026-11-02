@@ -407,6 +407,10 @@ describe("refreshIntervalMs", () => {
   const widget = (over: Partial<WidgetDef>): WidgetDef =>
     makeWidget({ id: "w1", category: "", gridData: { w: 1, h: 1 }, ...over });
 
+  it("leaves a cron widget off the app-wide interval", () => {
+    expect(refreshIntervalMs(widget({ refetchCron: "0 * * * *" }), 5)).toBeUndefined();
+  });
+
   it("prefers the manifest's own positive interval over the setting", () => {
     expect(refreshIntervalMs(widget({ refetchInterval: 86_400_000 }), 5)).toBe(86_400_000);
   });
@@ -454,6 +458,77 @@ describe("useWidgetData auto-refresh", () => {
   }
 
   const priceRequests = (s: MockServer) => s.requests.filter((r) => r.path === "/equity/price").length;
+
+  /** Registers w1 with a cron refetchInterval, already normalised. */
+  function registerCron(expr: string) {
+    registerWidget();
+    useWidgetRegistryStore.setState((st) => ({ widgets: st.widgets.map((w) => ({ ...w, refetchCron: expr })) }));
+  }
+
+  it("refetches on each minute boundary the cron matches, and on no other", async () => {
+    const s = await serve({ "/equity/price": { results: [] } });
+    registerCron("*/5 * * * *");
+    useFakeClock();
+    vi.setSystemTime(new Date(2026, 9, 29, 10, 0, 30));
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(priceRequests(s)).toBe(1);
+
+    // 10:01 through 10:04 pass without a match.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(240_000);
+    });
+    expect(priceRequests(s)).toBe(1);
+
+    // 10:05 matches.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    await waitFor(() => expect(priceRequests(s)).toBe(2));
+  });
+
+  it("does not refetch on a minute boundary the expression does not match, and ignores the app-wide interval", async () => {
+    const s = await serve({ "/equity/price": { results: [] } });
+    registerCron("0 0 1 * *"); // monthly: far past setTimeout's ceiling
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, autoRefreshMinutes: 1 } });
+    useFakeClock();
+    vi.setSystemTime(new Date(2026, 9, 29, 10, 0, 30));
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+    });
+    expect(priceRequests(s)).toBe(1);
+    expect(result.current.intervalMs).toBeUndefined();
+  });
+
+  it("catches up once on becoming visible when a cron boundary passed while hidden", async () => {
+    const s = await serve({ "/equity/price": { results: [] } });
+    registerCron("*/5 * * * *");
+    useFakeClock();
+    vi.setSystemTime(new Date(2026, 9, 29, 10, 0, 30));
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    setHidden(true);
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6 * 60_000);
+    });
+    expect(priceRequests(s)).toBe(1);
+
+    setHidden(false);
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await waitFor(() => expect(priceRequests(s)).toBe(2));
+  });
 
   it("refetches on the setting's interval and never overlaps two requests", async () => {
     const s = await serve({ "/equity/price": { results: [{ close: 1 }] } });
@@ -730,6 +805,38 @@ describe("useWidgetData auto-refresh", () => {
       await vi.advanceTimersByTimeAsync(600_000);
     });
     expect(priceRequests(s)).toBe(1);
+  });
+
+  it("reports data stale once it is older than staleTime, and fresh again after a refetch", async () => {
+    await serve({ "/equity/price": { results: [] } });
+    registerWidget();
+    useWidgetRegistryStore.setState((st) => ({ widgets: st.widgets.map((w) => ({ ...w, staleTime: 120_000 })) }));
+    useFakeClock();
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.dataStale).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(120_000);
+    });
+    expect(result.current.dataStale).toBe(true);
+
+    act(() => result.current.retry());
+    await waitFor(() => expect(result.current.dataStale).toBe(false));
+  });
+
+  it("never reports stale for a widget that declares no staleTime", async () => {
+    await serve({ "/equity/price": { results: [] } });
+    registerWidget();
+    useFakeClock();
+
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_600_000);
+    });
+    expect(result.current.dataStale).toBe(false);
   });
 });
 
