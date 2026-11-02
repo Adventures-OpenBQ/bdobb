@@ -4,10 +4,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { widget } from "../../test/fixtures";
 import { DEFAULT_SETTINGS } from "../../lib/settingsFile";
 import { __resetAgentDiscoveryForTests } from "../../stores/agentDiscoveryStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { useWidgetRegistryStore } from "../../stores/widgetRegistryStore";
 import { ChatPane } from "./ChatPane";
 
 const fetchAgentsJson = vi.fn();
@@ -56,6 +58,7 @@ beforeEach(() => {
   useChatStore.setState({
     messages: [{ role: "human", content: "hi" }, { role: "ai", content: "hello" }],
     calls: [],
+    turnCalls: [],
     trail: [],
     citations: [],
     suggestions: ["Tell me more"],
@@ -105,6 +108,26 @@ describe("ChatPane", () => {
   it("shows no confirmation when nothing is pending", () => {
     render(<ChatPane onInputFocus={() => {}} />);
     expect(screen.queryByRole("group", { name: "Confirm tool call" })).toBeNull();
+  });
+
+  it("cites a widget whose mcp_tool matches a call in the latest turn", () => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, mcpServers: [{ id: "s1", name: "Financial Data", url: "https://mcp.example/mcp", enabled: true }] },
+    });
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "rev", name: "Revenue", mcpTool: { mcpServer: "Financial Data", toolId: "get_company_revenue_data" } })],
+    });
+    useChatStore.setState({ turnCalls: [{ kind: "agent_tool", server_id: "s1", tool: "get_company_revenue_data", narrated: "Calling" }] });
+    render(<ChatPane onInputFocus={() => {}} />);
+    expect(screen.getByRole("button", { name: "Revenue" })).toBeTruthy();
+  });
+
+  it("cites nothing when the latest turn made no matching call", () => {
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "rev", name: "Revenue", mcpTool: { mcpServer: "Financial Data", toolId: "get_company_revenue_data" } })],
+    });
+    render(<ChatPane onInputFocus={() => {}} />);
+    expect(screen.queryByRole("button", { name: "Revenue" })).toBeNull();
   });
 
   it("marks the pane open while mounted and shows the online dot", async () => {

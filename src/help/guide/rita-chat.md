@@ -39,7 +39,7 @@ While Rita is answering, the Send button reads **Stop**. Stop aborts the request
 Under an answer you may see:
 
 - **A status trail** — *3 steps · 0 errors*, expandable to the reasoning and tool-call steps Rita reported, open while a turn runs and collapsed afterwards. A call to a proxied MCP tool is labelled with the tool it really runs, for example `OpenBQ MCP · equity_price_historical (via call_tool)`.
-- **Sources** — the widgets and documents Rita cited, clickable when they have an address.
+- **Sources** — the widgets and documents Rita cited, clickable when they have an address. A widget whose `widgets.json` declares `mcp_tool` (`mcp_server`, `tool_id`) is listed too when this answer called that tool on an MCP server with that exact name in **AI Library ▸ MCP Servers**. Click it to add the widget to the open dashboard, or, if a card of it is already there, to switch to that card's tab and bring it into view.
 - **Follow-up suggestions** — buttons Rita proposes; click one to send it. The **Follow-up suggestions** switch in **AI Library ▸ Agents** (on by default) controls whether these appear at all. Committing it off clears any suggestions already on screen, and none arrive while it stays off; committing it back on does not resurrect what was cleared.
 
 A request that goes quiet for **45 seconds** is abandoned with a message rather than left hanging. Quiet means no bytes at all: the keepalive comments Rita sends while a model is still thinking count as activity, so a long think is not cut off. Rita being unreachable is reported as *Rita offline* in the header and an error line above the box.
