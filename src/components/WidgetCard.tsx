@@ -25,6 +25,7 @@ import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
 import { isCardAgentOffLimits, keyMaintBackendIds } from "../lib/providerKeys";
 import { availableViews } from "../lib/cardViews";
 import { rowsOf } from "../lib/chartShapes";
+import { dataUpdateText } from "../lib/cron";
 import { authHeaders } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, collectPresentedExport, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
@@ -42,6 +43,7 @@ import type { DashboardCard, WidgetDef } from "../lib/types";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useChatStore } from "../stores/chatStore";
 import { useDashboardStore } from "../stores/dashboardStore";
+import { usePdfHighlightStore } from "../stores/pdfHighlightStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -77,6 +79,7 @@ import { RssRenderer } from "./renderers/RssRenderer";
 import { TradingViewRenderer } from "./renderers/TradingViewRenderer";
 import { PdfRenderer } from "./renderers/PdfRenderer";
 import { RawJsonView } from "./renderers/RawJsonView";
+import { RawRequestView } from "./renderers/RawRequestView";
 import {
   TableRenderer,
   type CellClickEvent,
@@ -170,6 +173,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // A boolean selector, not the id: only the card that gains or loses the
   // state re-renders, not every card on the tab.
   const maximized = useDashboardStore((s) => s.maximizedCardId === card.id);
+  // The quote a Rita citation opened on this card, if any; closing the card drops it.
+  const highlight = usePdfHighlightStore((s) => (s.highlight?.cardId === card.id ? s.highlight : null));
+  useEffect(() => () => usePdfHighlightStore.getState().clear(card.id), [card.id]);
   const duplicateCard = useDashboardStore((s) => s.duplicateCard);
   const copyCardTo = useDashboardStore((s) => s.copyCardTo);
   // Copy to ▸'s own list — every dashboard's tabs, not just the active one.
@@ -188,6 +194,20 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const minimized = card.minimized ?? false;
 
   const [controlsOpen, setControlsOpen] = useState(false);
+  /**
+   * When the refresh tooltip was last stamped. The pointer or focus reaching
+   * the button restamps it, so "last" and "next" are as of the hover, not of
+   * the card's last render. Only a dataUpdateDisplay widget needs it.
+   */
+  const [titleAt, setTitleAt] = useState(() => new Date());
+  const stampTitle = () => {
+    if (widget?.dataUpdateDisplay) setTitleAt(new Date());
+  };
+  // dataUpdateText scans minute by minute, so it runs once per stamp, not per render.
+  const dataUpdateLine = useMemo(
+    () => (widget?.dataUpdateDisplay ? dataUpdateText(widget.dataUpdateDisplay, titleAt) : undefined),
+    [widget?.dataUpdateDisplay, titleAt],
+  );
   /**
    * Is the title an InlineRename field right now? Transient by design: an
    * interrupted rename is not state worth persisting, and closing the field
@@ -355,7 +375,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data: rawData, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval } =
+  const { status, data: rawData, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale } =
     useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
@@ -368,7 +388,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // The timer's tooltip, as the Workspace words it. `stale` (un-run edits) is
   // the run-button card's message; `stalePastInterval` (an old answer) only
   // colours the control, it does not change the words.
-  const timerTitle = (() => {
+  const baseTimerTitle = (() => {
     if (widget?.runButton) {
       // ⌘/Ctrl-click refreshes without adopting the edited parameters; the
       // tooltip is the only place that says so.
@@ -382,7 +402,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     if (completedAt === null) return "Not fetched yet";
     return `Last refresh ${relativeTime(completedAt)} · ${new Date(completedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
   })();
-  const timerTone = status === "error" || stalePastInterval ? "stale" : completedAt === null ? "idle" : "fresh";
+  // Then the carried staleTime and dataUpdateDisplay lines, one per line.
+  const timerTitle = [baseTimerTitle, dataStale ? "Data is older than its stale time" : undefined, dataUpdateLine]
+    .filter((line): line is string => line !== undefined)
+    .join("\n");
+  const timerTone = status === "error" || stalePastInterval || dataStale ? "stale" : completedAt === null ? "idle" : "fresh";
 
   // Declared controls that render in the BODY rather than in the header row:
   // tabs are meant to be seen, and a form is the card's main verb.
@@ -455,7 +479,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // worker holds the rows it presents: runExport reads those instead (D-018).
   // Not in the Statement view: that exports the Statement it presents.
   const workerExport = workerTable && dashboard !== undefined && !isStatement;
-  const canExport = isStatement || workerExport || (widget !== undefined && fetchesData(widget) && widget.type !== "pdf");
+  // The manifest's `exportable: false` takes Export ▸ away and nothing else:
+  // Rename, Maximize and Columns stay, as hasMenu does not read canExport.
+  const canExport =
+    (isStatement || workerExport || (widget !== undefined && fetchesData(widget) && widget.type !== "pdf")) &&
+    widget?.exportable !== false;
   // The markdown note has a ⋯ menu without an Export section: its two items
   // move a .md file in or out of the note. canExport means "this card has a
   // fetched payload, or is a worker table"; this is the menu's gate, not export's.
@@ -1128,12 +1156,31 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // rendering of it. Placed before the raw gate for the same reason as the
     // keys card above: a card persisted with `view: "raw"` must not dump
     // hundreds of kilobytes of base64 into the DOM.
-    if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} />;
+    if (widget?.type === "pdf") return <PdfRenderer data={data} onRetry={retry} highlight={highlight} />;
+
+    // html and youtube render markup or a video, not data: with `raw: true`
+    // their Raw view re-asks the endpoint with raw=true instead of dumping
+    // the payload already fetched (see RawRequestView).
+    if (
+      view === "raw" &&
+      widget?.raw &&
+      backend &&
+      (widget.type === "html" || widget.type === "youtube")
+    ) {
+      return (
+        <RawRequestView backend={backend} widget={widget} params={query} refreshKey={attempt + refreshEpoch} />
+      );
+    }
 
     // Raw is returned BEFORE type dispatch, which is why a widget type that
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
-    if (view === "chart") return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+    if (view === "chart") return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
     if (view === "calendar") {
       const rows = rowsOf(data);
       if (rows?.length) return <CalendarRenderer rows={rows} state={card.calendar ?? {}} onPatch={patch => void saveCalendar(patch)} onRange={onCalendarRange} readOnly={viewer} table={widget?.table} range={calendarRange} />;
@@ -1193,7 +1240,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           />
         );
       case "chart":
-        return <ChartRenderer data={data} uirevision={paramsKey(query)} />;
+        return <ChartRenderer
+        data={data}
+        uirevision={paramsKey(query)}
+        columns={widget?.table?.columns}
+        chartType={widget?.chartView?.chartType}
+      />;
       case "markdown":
         return <MarkdownRenderer data={data} />;
       case "html":
@@ -1262,6 +1314,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   return (
     <article
       className="widget-card"
+      data-card-id={card.id}
       data-minimized={minimized || undefined}
       // The only feedback a manual Refresh gives once the body stops
       // blanking. Styled as a dimmed title plus a dot, not an animation:
@@ -1298,6 +1351,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           aria-describedby={`${card.id}-timer-desc`}
           title={timerTitle}
           data-tone={timerTone}
+          onPointerEnter={stampTitle}
+          onFocus={stampTitle}
           onClick={(e) => (widget?.runButton && !(e.metaKey || e.ctrlKey) ? run() : retry())}
         >
           {widget?.runButton ? "▶" : "◷"}

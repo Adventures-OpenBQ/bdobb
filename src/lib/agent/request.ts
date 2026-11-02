@@ -20,12 +20,15 @@ export type QueryRequest = {
   selected_skills: SkillPayload[];
 };
 
-/**
- * A `request.context` item. Rita puts one with no `data` into its system
- * prompt as a text block (agent-rita `splitContext`), which is how the model
- * learns anything the widget lists do not say.
- */
-export type ContextItem = { name: string; description: string };
+export type ContextItem = {
+  uuid: string;
+  name: string;
+  description: string;
+  data: { items: { content: string; data_format: { data_type: "object"; parse_as: "text" }; citable: boolean }[] };
+};
+
+// openbb-ai's RawContext requires a uuid and data; Rita reads the same text block either way (conformance Q1).
+const DASHBOARDS_CONTEXT_UUID = "6f1d5b2e-3c4a-4e8b-9a7d-0b5c2e1f4a90";
 
 /**
  * Which dashboard the user is on, and what the others are called. Without it
@@ -36,13 +39,16 @@ export type ContextItem = { name: string; description: string };
  * switches on bridge tools this app does not run, so this rides in context.
  */
 export function dashboardContext(current: { id: string; name: string } | undefined, all: { id: string; name: string }[]): ContextItem {
-  if (!current) return { name: "Dashboards", description: "The user has no dashboard open." };
-  const others = all.filter((d) => d.id !== current.id).map((d) => JSON.stringify(d.name));
+  const others = current ? all.filter((d) => d.id !== current.id).map((d) => JSON.stringify(d.name)) : [];
+  const description = !current
+    ? "The user has no dashboard open."
+    : `The user is on the dashboard ${JSON.stringify(current.name)}; tools act on it by default, so omit dashboard_name to target it. ` +
+      (others.length > 0 ? `Their other dashboards: ${others.join(", ")}.` : "They have no other dashboards.");
   return {
+    uuid: DASHBOARDS_CONTEXT_UUID,
     name: "Dashboards",
-    description:
-      `The user is on the dashboard ${JSON.stringify(current.name)}; tools act on it by default, so omit dashboard_name to target it. ` +
-      (others.length > 0 ? `Their other dashboards: ${others.join(", ")}.` : "They have no other dashboards."),
+    description,
+    data: { items: [{ content: description, data_format: { data_type: "object", parse_as: "text" }, citable: false }] },
   };
 }
 
