@@ -3,7 +3,7 @@
 
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useMinuteTick } from "./useMinuteTick";
+import { msToNextMinute, useMinuteTick } from "./useMinuteTick";
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -47,5 +47,12 @@ describe("useMinuteTick", () => {
     const { unmount } = renderHook(() => useMinuteTick());
     unmount();
     expect(clear).toHaveBeenCalled();
+  });
+});
+
+describe("msToNextMinute", () => {
+  it("is the time left to the next minute boundary", () => {
+    expect(msToNextMinute(Date.UTC(2026, 0, 1, 0, 0, 15))).toBe(45_000);
+    expect(msToNextMinute(Date.UTC(2026, 0, 1, 0, 0, 59, 999))).toBe(1);
   });
 });

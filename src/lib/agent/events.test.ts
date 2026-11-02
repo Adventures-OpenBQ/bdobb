@@ -6,7 +6,7 @@
 // Node, not jsdom: reads captures from disk.
 import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { toAgentEvent } from "./events";
+import { toAgentEvent, withQuoteBoxes } from "./events";
 import { sseEvents } from "./sse";
 import type { AgentEvent } from "./types";
 
@@ -131,5 +131,30 @@ describe("toAgentEvent validation", () => {
 
   it("maps a bare done event with no data", () => {
     expect(toAgentEvent({ event: "done", data: "" })).toEqual({ type: "done" });
+  });
+});
+
+describe("citation quote boxes", () => {
+  const good = { text: "Revenue grew", page: 1, x0: 72, top: 92, x1: 255, bottom: 104 };
+  const sse = (payload: unknown) => toAgentEvent({ event: "copilotCitationCollection", data: JSON.stringify(payload) });
+
+  it("keeps well-formed boxes in their groups", () => {
+    const event = sse({ citations: [{ id: "c", source_info: { type: "widget" }, quote_bounding_boxes: [[good]] }] });
+    expect(event).toEqual({ type: "citations", payload: { citations: [{ id: "c", source_info: { type: "widget" }, quote_bounding_boxes: [[good]] }] } });
+  });
+
+  it("drops malformed boxes and emptied groups, and keeps the citation", () => {
+    const c = withQuoteBoxes({
+      id: "c",
+      quote_bounding_boxes: [[good, { ...good, page: "1" }, { ...good, x1: 10 }], [{ ...good, top: undefined }], "junk"],
+    });
+    expect(c).toEqual({ id: "c", quote_bounding_boxes: [[good]] });
+  });
+
+  it("removes the field when no box survives, and leaves a citation without it alone", () => {
+    expect(withQuoteBoxes({ id: "c", quote_bounding_boxes: [[{ page: 0 }]] })).toEqual({ id: "c" });
+    expect(withQuoteBoxes({ id: "c", quote_bounding_boxes: null })).toEqual({ id: "c" });
+    const plain = { id: "c" };
+    expect(withQuoteBoxes(plain)).toBe(plain);
   });
 });

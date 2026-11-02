@@ -833,6 +833,26 @@ describe("issue reporting", () => {
     expect(widgets.find((w) => w.id === "none")?.mcpUrl).toBeUndefined();
     expect(issues).toContainEqual({ id: "bad", reason: "storage.mcpUrl is not an http(s) URL; ignored" });
   });
+
+  it("reads mcp_tool as two non-empty strings, exactly as written, and reports anything else as an issue", () => {
+    const { widgets, issues } = normalizeWidgets(
+      {
+        ok: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data", tool_id: "get_company_revenue_data" } },
+        empty: { endpoint: "e", mcp_tool: { mcp_server: "", tool_id: "t" } },
+        missing: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data" } },
+        number: { endpoint: "e", mcp_tool: { mcp_server: "Financial Data", tool_id: 7 } },
+        string: { endpoint: "e", mcp_tool: "Financial Data/get_company_revenue_data" },
+        none: { endpoint: "e" },
+      },
+      "b1",
+    );
+    const tool = (id: string) => widgets.find((w) => w.id === id)?.mcpTool;
+    expect(tool("ok")).toEqual({ mcpServer: "Financial Data", toolId: "get_company_revenue_data" });
+    for (const id of ["empty", "missing", "number", "string", "none"]) expect(tool(id)).toBeUndefined();
+    const reason = "mcp_tool needs non-empty string mcp_server and tool_id; ignored";
+    for (const id of ["empty", "missing", "number", "string"]) expect(issues).toContainEqual({ id, reason });
+    expect(issues.filter((i) => i.id === "none" || i.id === "ok")).toEqual([]);
+  });
 });
 
 describe("toOptions (exported for fetched option lists)", () => {
@@ -1273,4 +1293,113 @@ it('keeps declared fixed-schema SSRM pivots without inventing support for malfor
  const {widgets}=normalizeWidgets({a:{type:'ssrm_table',endpoint:'/data',ssrm:{pivot:{columns:[{id:'US',label:'US',dtype:'number'}]}}},b:{type:'ssrm_table',endpoint:'/data',ssrm:{pivot:{columns:[{id:3}]}}}},'b');
  expect(widgets[0].ssrm?.pivot?.columns).toEqual([{id:'US',label:'US',dtype:'number'}]);
  expect(widgets[1].ssrm?.pivot).toBeUndefined();
+});
+
+describe("exportable", () => {
+  it("keeps only a literal false", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { exportable: false }, b: { exportable: "false" }, c: { exportable: 0 }, d: { exportable: true }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.exportable)).toEqual([false, undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe("imgUrl", () => {
+  it("keeps an http(s) URL and drops every other scheme or type", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { imgUrl: "https://img.example/p.png" },
+        b: { imgUrl: "javascript:alert(1)" },
+        c: { imgUrl: "data:image/png;base64,AAAA" },
+        d: { imgUrl: 42 },
+        e: { imgUrl: "relative/p.png" },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.imgUrl)).toEqual(["https://img.example/p.png", undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe("chartDataType and chartView", () => {
+  it("keeps only the four documented chartDataType values", () => {
+    const { widgets: [w] } = normalizeWidgets(
+      {
+        a: {
+          data: {
+            table: {
+              columnsDefs: [
+                { field: "n", chartDataType: "category" },
+                { field: "t", chartDataType: "time" },
+                { field: "s", chartDataType: "series" },
+                { field: "x", chartDataType: "excluded" },
+                { field: "bad", chartDataType: "pie" },
+              ],
+            },
+          },
+        },
+      },
+      "b1",
+    );
+    expect(w.table?.columns.map((c) => c.chartDataType)).toEqual(["category", "time", "series", "excluded", undefined]);
+  });
+
+  it("reads data.table.chartView: enabled only as literal true, chartType only as a non-empty string", () => {
+    const { widgets } = normalizeWidgets(
+      {
+        a: { data: { table: { chartView: { enabled: true, chartType: "column" } } } },
+        b: { data: { table: { chartView: { enabled: "true", chartType: "" } } } },
+        c: { data: { table: {} } },
+      },
+      "b1",
+    );
+    expect(widgets.map((w) => w.chartView)).toEqual([{ enabled: true, chartType: "column" }, undefined, undefined]);
+  });
+});
+
+describe("raw", () => {
+  it("keeps only a literal true", () => {
+    const { widgets } = normalizeWidgets({ a: { raw: true }, b: { raw: "true" }, c: {} }, "b1");
+    expect(widgets.map((w) => w.raw)).toEqual([true, undefined, undefined]);
+  });
+});
+
+describe("cron refetchInterval", () => {
+  it("keeps a valid cron string as refetchCron, leaving the numeric field unset", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "*/1 * * * *" } }, "b1");
+    expect(w.refetchCron).toBe("*/1 * * * *");
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([]);
+  });
+
+  it("treats an invalid cron string as absent and reports it", () => {
+    const { widgets: [w], issues } = normalizeWidgets({ a: { refetchInterval: "every minute" } }, "b1");
+    expect(w.refetchCron).toBeUndefined();
+    expect(w.refetchInterval).toBeUndefined();
+    expect(issues).toEqual([{ id: "a", reason: 'refetchInterval "every minute" is not a valid cron expression; ignored' }]);
+  });
+
+  it("leaves numbers and false exactly as before", () => {
+    const { widgets } = normalizeWidgets({ a: { refetchInterval: 60_000 }, b: { refetchInterval: false } }, "b1");
+    expect(widgets.map((w) => [w.refetchInterval, w.refetchCron])).toEqual([[60_000, undefined], [false, undefined]]);
+  });
+});
+
+describe("staleTime and dataUpdateDisplay", () => {
+  it("keeps a finite positive staleTime and nothing else", () => {
+    const { widgets } = normalizeWidgets(
+      { a: { staleTime: 5000 }, b: { staleTime: 0 }, c: { staleTime: "5000" }, d: { staleTime: Infinity }, e: {} },
+      "b1",
+    );
+    expect(widgets.map((w) => w.staleTime)).toEqual([5000, undefined, undefined, undefined, undefined]);
+  });
+
+  it("keeps only a valid cron dataUpdateDisplay", () => {
+    const { widgets, issues } = normalizeWidgets(
+      { a: { dataUpdateDisplay: "0 10 * * *" }, b: { dataUpdateDisplay: "daily" }, c: { dataUpdateDisplay: 10 } },
+      "b1",
+    );
+    expect(widgets.map((w) => w.dataUpdateDisplay)).toEqual(["0 10 * * *", undefined, undefined]);
+    expect(issues).toEqual([]);
+  });
 });

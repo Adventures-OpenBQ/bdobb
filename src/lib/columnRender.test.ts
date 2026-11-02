@@ -229,3 +229,27 @@ describe("cellVisual", () => {
     expect(cellVisual(column, -1.5)).toEqual({});
   });
 });
+
+describe("cellVisual with colorValueKey", () => {
+  const rules: ColorRule[] = [{ condition: "eq", value: "Sarah Johnson", color: "blue", fill: true }];
+
+  it("tests the rules against the named field of the same row, not the cell", () => {
+    const column = { renderFn: ["columnColor"], colorRules: rules, colorValueKey: "Analyst" };
+    expect(cellVisual(column, "AAPL", { Symbol: "AAPL", Analyst: "Sarah Johnson" })).toEqual({ color: "blue", fill: true });
+    expect(cellVisual(column, "MSFT", { Symbol: "MSFT", Analyst: "Bob" })).toEqual({});
+  });
+
+  it("matches no rule when the row lacks the field, not even ne", () => {
+    const column = {
+      renderFn: ["columnColor"],
+      colorRules: [{ condition: "ne", value: "x", color: "red" } as ColorRule],
+      colorValueKey: "Analyst",
+    };
+    expect(cellVisual(column, "AAPL", { Symbol: "AAPL" })).toEqual({});
+    expect(cellVisual(column, "AAPL")).toEqual({});
+  });
+
+  it("still tests the cell's own value when no colorValueKey is set", () => {
+    expect(cellVisual({ renderFn: [], colorRules: rules }, "Sarah Johnson", { other: 1 })).toEqual({ color: "blue", fill: true });
+  });
+});
