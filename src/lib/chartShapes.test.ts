@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from "vitest";
-import { buildFigure, detectChartAxis, detectTimeColumn, isPlotlyFigure, rowsOf } from "./chartShapes";
+import { buildFigure, detectChartAxis, detectTimeColumn, isPlotlyFigure, rowChartAxes, rowFigure, rowsOf } from "./chartShapes";
 
 const ohlc = [
   { date: "2026-01-02", open: 1, high: 3, low: 0.5, close: 2, volume: 100 },
@@ -309,5 +309,72 @@ describe("buildFigure", () => {
     const figure = buildFigure(series, "period_ending")!;
     const layout = figure.layout as { paper_bgcolor?: string };
     expect(layout.paper_bgcolor).toBe("#1e242e");
+  });
+});
+
+describe("rowFigure (chartDataType / chartView)", () => {
+  // aggrid-table-charts.md, "Table to Chart Widget".
+  const tvl = [
+    { name: "Ethereum", tvl: 45e9, change_1d: 2.5 },
+    { name: "Bitcoin", tvl: 35e9, change_1d: 1.2 },
+  ];
+  const tvlCols = [
+    { field: "name", chartDataType: "category" as const },
+    { field: "tvl", chartDataType: "series" as const },
+  ];
+
+  it("plots only the series columns against the category column, as columns by default", () => {
+    const fig = rowFigure(tvl, tvlCols, undefined)!;
+    expect(fig.data).toEqual([{ type: "bar", name: "tvl", x: ["Ethereum", "Bitcoin"], y: [45e9, 35e9] }]);
+    expect(fig.layout.xaxis).toEqual({ type: "category" });
+  });
+
+  it("prefers the first time column over a category column, drawing lines by default", () => {
+    const rows = [{ d: "2026-01-02", n: "a", v: 1 }];
+    const fig = rowFigure(rows, [
+      { field: "n", chartDataType: "category" },
+      { field: "d", chartDataType: "time" },
+      { field: "v", chartDataType: "series" },
+    ], undefined)!;
+    expect(fig.data).toEqual([{ type: "scatter", mode: "lines", name: "v", x: ["2026-01-02"], y: [1] }]);
+    expect(fig.layout.xaxis).toEqual({ type: "date" });
+  });
+
+  it("never plots an excluded column, even a numeric one", () => {
+    const fig = rowFigure(tvl, [...tvlCols, { field: "change_1d", chartDataType: "excluded" as const }], undefined)!;
+    expect(fig.data.map((t) => (t as { name: string }).name)).toEqual(["tvl"]);
+  });
+
+  it.each([
+    ["line", { type: "scatter", mode: "lines" }],
+    ["area", { type: "scatter", mode: "lines", fill: "tozeroy" }],
+    ["column", { type: "bar" }],
+    ["scatter", { type: "scatter", mode: "markers" }],
+    ["pie", { type: "scatter", mode: "lines" }],
+  ])("draws chartType %s as the matching trace", (chartType, shape) => {
+    expect(rowFigure(tvl, tvlCols, chartType)!.data[0]).toMatchObject(shape);
+  });
+
+  it("draws chartType bar horizontally, the axis on y", () => {
+    const fig = rowFigure(tvl, tvlCols, "bar")!;
+    expect(fig.data[0]).toEqual({ type: "bar", orientation: "h", name: "tvl", x: [45e9, 35e9], y: ["Ethereum", "Bitcoin"] });
+    expect(fig.layout.yaxis).toEqual({ type: "category" });
+  });
+
+  it("returns null with no series column or no time/category column", () => {
+    expect(rowFigure(tvl, [{ field: "name", chartDataType: "category" }], undefined)).toBeNull();
+    expect(rowFigure(tvl, [{ field: "tvl", chartDataType: "series" }], undefined)).toBeNull();
+    expect(rowChartAxes(tvl, [{ field: "tvl", chartDataType: "series" }])).toBeNull();
+  });
+
+  it("is today's figure exactly when nothing is declared", () => {
+    const rows = [{ date: "2026-01-02", open: 1, high: 2, low: 0.5, close: 1.5 }];
+    expect(rowFigure(rows, undefined, undefined, "dark")).toEqual(buildFigure(rows, "date", "dark"));
+    expect(rowChartAxes(rows)).toEqual({ x: "date", series: ["open", "high", "low", "close"], time: true });
+  });
+
+  it("applies a chartType without declarations to the detected axis", () => {
+    const fig = rowFigure([{ symbol: "AAPL", v: 1 }], undefined, "area")!;
+    expect(fig.data).toEqual([{ type: "scatter", mode: "lines", fill: "tozeroy", name: "v", x: ["AAPL"], y: [1] }]);
   });
 });

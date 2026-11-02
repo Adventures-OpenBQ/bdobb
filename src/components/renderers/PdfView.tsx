@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { isTypingTarget } from "../../hooks/useDashboardShortcuts";
 import { installAbortSignalAny } from "../../lib/abortSignalAny";
+import type { BoundingBox } from "../../lib/agent/types";
 import { openLinkExternally } from "./openLinkExternally";
 // pdf.js's own page, text-layer and annotation-layer stylesheet. vitest runs
 // with `css: false` (vite.config.ts), so under jsdom this resolves to an empty
@@ -98,7 +99,38 @@ const PAGE_INPUT = /^\s*\d+\s*$/;
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>
   a.byteLength === b.byteLength && a.every((value, i) => value === b[i]);
 
-type Props = { bytes: Uint8Array; filename: string };
+type Props = { bytes: Uint8Array; filename: string; highlight?: Highlight | null };
+
+/** A cited quote on one page: what Sources opened. */
+type Highlight = { page: number; boxes: BoundingBox[] };
+
+/** A quote box in CSS pixels: PDF points (top-left origin) times the page view's viewport scale. */
+export function boxRect(box: BoundingBox, scale: number) {
+  return { left: box.x0 * scale, top: box.top * scale, width: (box.x1 - box.x0) * scale, height: (box.bottom - box.top) * scale };
+}
+
+/**
+ * Replaces the overlays: removes every one in this viewer, then draws `h`'s boxes
+ * into its page's div. pdf.js empties that div whenever it re-renders the page
+ * (PDFPageView.reset, on zoom or scroll-back), so `pagerendered` calls this again.
+ * ponytail: ignores page rotation; add viewport.convertToViewportRectangle if a rotated PDF ever matters.
+ */
+function drawHighlights(viewer: Viewer, body: HTMLElement, h: Highlight | null) {
+  body.querySelectorAll(".pdf-highlight").forEach((n) => n.remove());
+  if (!h) return;
+  const view = viewer.getPageView(h.page - 1) as { div: HTMLDivElement; viewport: { scale: number } } | undefined;
+  if (!view) return;
+  for (const box of h.boxes) {
+    const r = boxRect(box, view.viewport.scale);
+    const el = document.createElement("div");
+    el.className = "pdf-highlight";
+    el.style.left = `${r.left}px`;
+    el.style.top = `${r.top}px`;
+    el.style.width = `${r.width}px`;
+    el.style.height = `${r.height}px`;
+    view.div.append(el);
+  }
+}
 
 /**
  * One document, rendered by pdf.js's own viewer components: page virtualisation,
@@ -106,7 +138,7 @@ type Props = { bytes: Uint8Array; filename: string };
  * controller behind the find bar. No print, no download, no thumbnails, no
  * outline: a card is for reading a report, not for editing one.
  */
-export function PdfView({ bytes, filename }: Props) {
+export function PdfView({ bytes, filename, highlight = null }: Props) {
   /**
    * The scroll container, held as STATE rather than a ref: the error branch
    * swaps `.pdf-body` out for a message, so a ref alone would leave the viewer
@@ -147,6 +179,7 @@ export function PdfView({ bytes, filename }: Props) {
    * nothing typed a no-op.
    */
   const pageDirtyRef = useRef(false);
+  const highlightRef = useRef<Highlight | null>(highlight);
 
   /**
    * The bytes as last LOADED, which is not always the latest `bytes` prop:
@@ -279,6 +312,9 @@ export function PdfView({ bytes, filename }: Props) {
           if (cancelled) return;
           setZoomPct(Math.round(evt.scale * 100));
         });
+        eventBus.on("pagerendered", (evt: { pageNumber: number }) => {
+          if (!cancelled && evt.pageNumber === highlightRef.current?.page) drawHighlights(viewer, body, highlightRef.current);
+        });
         // { source, matchesCount: { current, total } } (web/pdf_viewer.mjs:1453-1458).
         eventBus.on("updatefindmatchescount", (evt: { matchesCount: MatchesCount }) => {
           if (cancelled) return;
@@ -376,6 +412,16 @@ export function PdfView({ bytes, filename }: Props) {
       observer.disconnect();
     };
   }, [body]);
+
+  // A highlight opens its page and draws now; the pagerendered listener above
+  // redraws it each time pdf.js re-renders that page (zoom included).
+  useEffect(() => {
+    highlightRef.current = highlight;
+    const viewer = viewerRef.current;
+    if (!body || !viewer || pageCount === 0) return;
+    if (highlight) viewer.currentPageNumber = Math.min(Math.max(highlight.page, 1), pageCount);
+    drawHighlights(viewer, body, highlight);
+  }, [highlight, pageCount, body]);
 
   const commitPage = () => {
     // Nothing was typed, so there is nothing to commit: a blur out of an

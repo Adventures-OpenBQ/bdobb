@@ -307,4 +307,18 @@ describe("ChartRenderer", () => {
     rerender(<ChartRenderer data={[...ohlc]} />);
     expect(renderPlot.mock.calls.at(-1)![2]).toBe(first);
   });
+
+  it("charts rows by the widget's chartDataType columns and chartType", () => {
+    render(
+      <ChartRenderer
+        data={[{ name: "ETH", tvl: 1, change: 2 }]}
+        columns={[
+          { field: "name", chartDataType: "category" },
+          { field: "tvl", chartDataType: "series" },
+        ]}
+        chartType="column"
+      />,
+    );
+    expect(figureFromLastCall().data).toEqual([{ type: "bar", name: "tvl", x: ["ETH"], y: [1] }]);
+  });
 });

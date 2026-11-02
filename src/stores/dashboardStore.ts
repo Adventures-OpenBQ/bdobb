@@ -1279,6 +1279,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     backendId: widget.backendId,
                     params: { ...seedParams(widget), ...paramsOverride },
                     layout,
+                    // chartView.enabled opens a NEW card on its chart; an
+                    // imported or existing card keeps the view it saved.
+                    ...(widget.chartView?.enabled ? { view: "chart" as const } : {}),
                   },
                 ],
               }
