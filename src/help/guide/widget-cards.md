@@ -39,7 +39,7 @@ In order:
 - **Create linked chart** and **Create linked table** — table cards only: a new card on the same tab that draws from this card's rows. A linked card offers **Choose source** instead. See [[linked-widgets|Linked Widgets]].
 - **Quick actions ▸** — table cards only, while a table is actually on screen: **Autosize columns** and **Reset columns** (what earlier versions called **Reset table**). See [[tables|Tables]].
 - **Columns ▸** — table cards only, on the same condition.
-- **Export ▸** (CSV, JSON, Excel) — only on cards that fetch data, and never on a PDF card.
+- **Export ▸** (CSV, JSON, Excel) — only on cards that fetch data, and never on a PDF card. A widget that declares `exportable: false` has no **Export ▸**; the rest of the menu is unchanged.
 - **Open file…** and **Save as…** — the [[built-in-widgets|Markdown]] note only, where Export would be.
 
 **Duplicate** and **Copy to ▸** are not offered in a viewer window, which does not write dashboards.

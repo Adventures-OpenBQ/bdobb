@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { calendarSpelling } from "./calendars/catalogue";
+import { parseCron } from "./cron";
 import { isRangeType } from "./dateExpressions";
 import { asRecord, isRecord } from "./isRecord";
 import { logOnce } from "./logger";
 import { parseFyEndMonth } from "./periods";
+import { safeUrl } from "./safeUrl";
 import { AGG_NAMES, BUCKETS, HINT_STATUSES, UDF_COLOR_KEYS } from "./types";
 import type {
   AggregationHint,
@@ -294,6 +296,8 @@ function toFormatterFn(value: unknown): ColumnFormatterFn | undefined {
     : undefined;
 }
 
+const CHART_DATA_TYPES = new Set(["category", "series", "time", "excluded"]);
+
 /**
  * One columnsDefs entry, with exactly toParam's discipline: an entry with no
  * string `field` names no column and is dropped; every other property is kept
@@ -320,6 +324,9 @@ function toColumnSpec(c: Record<string, unknown>): ColumnSpec | null {
   copyTyped(column, c, "number", ["width", "minWidth", "maxWidth"]);
   if (typeof c.cellDataType === "string" && CELL_DATA_TYPES.has(c.cellDataType)) {
     column.cellDataType = c.cellDataType as ColumnSpec["cellDataType"];
+  }
+  if (typeof c.chartDataType === "string" && CHART_DATA_TYPES.has(c.chartDataType)) {
+    column.chartDataType = c.chartDataType as ColumnSpec["chartDataType"];
   }
   const formatterFn = toFormatterFn(c.formatterFn);
   if (formatterFn) column.formatterFn = formatterFn;
@@ -423,6 +430,20 @@ function toPivot(data: Record<string, unknown> | undefined): PivotConfig | undef
   return pivot;
 }
 
+/**
+ * `data.table.chartView`, read on its own because a widget may declare it
+ * with no columnsDefs (and so no TableSpec). Only a literal `true` and a
+ * non-empty string survive.
+ */
+function toChartView(data: Record<string, unknown> | undefined): WidgetDef["chartView"] {
+  const cv = asRecord(asRecord(data?.table)?.chartView);
+  if (!cv) return undefined;
+  const view: NonNullable<WidgetDef["chartView"]> = {};
+  if (cv.enabled === true) view.enabled = true;
+  if (typeof cv.chartType === "string" && cv.chartType !== "") view.chartType = cv.chartType;
+  return Object.keys(view).length > 0 ? view : undefined;
+}
+
 function toGridData(value: unknown): { w: number; h: number } {
   const g = asRecord(value);
   if (!g || typeof g.w !== "number" || typeof g.h !== "number") return { ...DEFAULT_GRID };
@@ -515,7 +536,7 @@ function toUdfChart(data: Record<string, unknown> | undefined): UdfChartSpec {
  *
  * `issues` covers loss at the level of a whole entry or a whole field
  * (a non-object entry, a params array whose entries don't survive, a
- * params value that isn't an array at all). It does NOT cover field-level
+ * params value that isn't an array at all, and a string `refetchInterval` that is not a valid cron expression). It does NOT cover field-level
  * coercion within a widget that is otherwise kept — e.g. a non-string
  * `endpoint` silently becomes `""`, a non-number `refetchInterval` becomes
  * `undefined` and a positive one under a second is raised to a second —
@@ -560,6 +581,13 @@ export function normalizeWidgets(
     // the user's own data, and it never stops the widget loading -- so it is
     // kept out of `issues` (which drives the connection's own notice).
     const pivot = toPivot(data);
+    // A string refetchInterval is a cron expression (refetch-interval.md).
+    // One that does not parse is treated as absent, and reported.
+    const cronText = typeof w.refetchInterval === "string" ? w.refetchInterval : undefined;
+    const refetchCron = cronText !== undefined && parseCron(cronText) !== null ? cronText : undefined;
+    if (cronText !== undefined && refetchCron === undefined) {
+      issues.push({ id, reason: `refetchInterval "${cronText}" is not a valid cron expression; ignored` });
+    }
 
     widgets.push({
       id,
@@ -580,8 +608,11 @@ export function normalizeWidgets(
       dataKey: data && typeof data.dataKey === "string" ? data.dataKey : undefined,
       table: toTable(data),
       ...(pivot ? { pivot } : {}),
+      chartView: toChartView(data),
       udfChart: w.type === "advanced_charting" ? toUdfChart(data) : undefined,
       source: toStringArray(w.source),
+      // safeUrl is the app's http/https boundary; anything else is dropped.
+      imgUrl: typeof w.imgUrl === "string" ? (safeUrl(w.imgUrl) ?? undefined) : undefined,
       // A literal `true` and nothing else. Anything truthy would opt a widget
       // out of automatic execution that never asked to be — the opposite of
       // this file's rule everywhere else, which is to drop what the reference
@@ -589,9 +620,18 @@ export function normalizeWidgets(
       calendarBinding: w.calendarBinding as WidgetDef["calendarBinding"],
       calendarResolutionPolicy: w.calendarResolutionPolicy as WidgetDef["calendarResolutionPolicy"],
       runButton: w.runButton === true ? true : undefined,
+      exportable: w.exportable === false ? false : undefined,
+      raw: w.raw === true ? true : undefined,
       refetchInterval: w.refetchInterval === false ? false : refetchMs(w.refetchInterval),
       exchange: typeof w.exchange === "string" && w.exchange.trim() !== "" ? calendarSpelling(w.exchange) : undefined,
       ...fiscalFields(w, `widget ${id}`),
+      refetchCron,
+      staleTime:
+        typeof w.staleTime === "number" && Number.isFinite(w.staleTime) && w.staleTime > 0 ? w.staleTime : undefined,
+      dataUpdateDisplay:
+        typeof w.dataUpdateDisplay === "string" && parseCron(w.dataUpdateDisplay) !== null
+          ? w.dataUpdateDisplay
+          : undefined,
       settingsUi: w.type === "settings" ? toSettingsUi(w.settings) : undefined,
     });
   }

@@ -653,3 +653,16 @@ describe("showCellChange parsing", () => {
     expect(volume.cellChange?.enabled).toBe(false);
   });
 });
+
+describe("colorValueKey", () => {
+  it("resolves a non-empty renderFnParams.colorValueKey onto the column, and drops an empty or non-string one", () => {
+    const cols = tableColumns([{ a: 1, b: 2, c: 3 }], {
+      columns: [
+        { field: "a", renderFnParams: { colorValueKey: "b" } },
+        { field: "b", renderFnParams: { colorValueKey: "" } },
+        { field: "c", renderFnParams: { colorValueKey: 7 } },
+      ],
+    });
+    expect(cols.map((c) => c.colorValueKey)).toEqual(["b", undefined, undefined]);
+  });
+});
