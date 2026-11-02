@@ -41,7 +41,7 @@ In order:
 - **Share with Rita** (or **Stop sharing with Rita**) — only while **AI Library ▸ Agents ▸ Context sharing** is on, never on an off-limits card (the Provider API Keys table, a settings widget, any widget on a key-maint backend, or a Linked table built on one of those), and never in a viewer window. It marks the card as added to Rita's context and puts the **Rita** badge on its title. See [[rita-chat|Rita (AI Chat)]].
 - **Quick actions ▸** — table cards only, while a table is actually on screen: **Autosize columns** and **Reset columns** (what earlier versions called **Reset table**). See [[tables|Tables]].
 - **Columns ▸** — table cards only, on the same condition.
-- **Export ▸** (CSV, JSON, Excel) — only on cards that fetch data, and never on a PDF card.
+- **Export ▸** (CSV, JSON, Excel) — only on cards that fetch data, and never on a PDF card. A widget that declares `exportable: false` has no **Export ▸**; the rest of the menu is unchanged.
 - **Open file…** and **Save as…** — the [[built-in-widgets|Markdown]] note only, where Export would be.
 
 **Duplicate** and **Copy to ▸** are not offered in a viewer window, which does not write dashboards.
