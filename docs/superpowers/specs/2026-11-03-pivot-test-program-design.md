@@ -1,7 +1,7 @@
 # Pivot, Statement and linked-widget test program
 
 Date: 2026-11-03
-Status: Proposed design; staged approach approved, this document awaiting approval.
+Status: Approved by user on 2026-11-03.
 Target: BDOBB release/v4, TypeScript and Rust/WASM.
 
 ## Intent and agreed approach
