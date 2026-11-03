@@ -57,11 +57,16 @@ pub enum StoredSource {
 /// invalidate this descriptor. Dropping the lease releases the retained bytes.
 #[derive(Debug)]
 pub struct SourceLease {
+    principal: Principal,
     pub source: StoredSource,
     upload: Option<File>,
     max_upload_bytes: u64,
 }
 impl SourceLease {
+    /// Authenticated namespace owner; supplied to trusted acquisition only.
+    pub fn principal(&self) -> &Principal {
+        &self.principal
+    }
     /// Bounded, integrity-checked read without exposing a caller-usable path.
     /// Uses positional reads so repeated/concurrent reads do not share a cursor.
     pub fn read_upload(&self) -> Result<Vec<u8>, ServiceError> {
@@ -282,6 +287,7 @@ impl SourceCatalog {
             }
         };
         Ok(SourceLease {
+            principal: principal.clone(),
             source,
             upload,
             max_upload_bytes: self.config.limits.max_upload_bytes,

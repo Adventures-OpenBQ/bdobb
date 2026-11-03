@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import {parseQueryBinding} from '../temporal/bindings';
 import { LOCAL_TABLE_ID, SSRM_TYPES } from '../builtins';
 import { tableRows } from '../tableColumns';
 import type { DashboardCard } from '../types';
@@ -41,6 +42,7 @@ export function isTemporalTable(card: DashboardCard): boolean {
 }
 /** Shared runtime/picker boundary: legacy presentations do not publish ordinary table output. */
 export function isManagedTable(card: DashboardCard): boolean {
+ try{if(card.queryBinding&&parseQueryBinding(card.queryBinding).tableExecution)return true;}catch{/* Invalid intent is refused by Temporal acquisition rather than silently repaired. */}
  // Like ordinary backend tables, discovery runs outside the card error boundary.
  try {
   const widget=useWidgetRegistryStore.getState().find(card.backendId,card.widgetId);

@@ -44,6 +44,15 @@ impl Harness {
         runtime: RuntimeConfig,
         worker: Option<PathBuf>,
     ) -> Self {
+        Self::configured_source(limits, observer, runtime, worker, None)
+    }
+    pub fn configured_source(
+        limits: ServiceLimits,
+        observer: Option<Arc<dyn table_service::sessions::ComputeObserver>>,
+        runtime: RuntimeConfig,
+        worker: Option<PathBuf>,
+        acquisition: Option<(PathBuf, CatalogConfig)>,
+    ) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let config = CatalogConfig {
             limits: limits.clone(),
@@ -52,6 +61,13 @@ impl Harness {
                 [("quotes".into(), ["symbol".into()].into())].into(),
             )]
             .into(),
+        };
+        let (backend_config, config) = match acquisition {
+            Some((path, mut c)) => {
+                c.limits = limits.clone();
+                (Some(path), c)
+            }
+            None => (None, config),
         };
         let catalog = Arc::new(SourceCatalog::open(dir.path(), config.clone()).unwrap());
         let node = std::process::Command::new(
@@ -67,7 +83,7 @@ impl Harness {
                     .join("../../server/table-ingest/dist/child.mjs")
                     .canonicalize()
                     .unwrap(),
-                backend_config: None,
+                backend_config,
                 max_concurrent_children: 4,
                 max_child_heap_mb: 128,
             },

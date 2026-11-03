@@ -7,17 +7,20 @@ import { correctStatementRows, FISCAL_AS_REPORTED, fiscalPeriodLabel, isStatemen
 import { FISCAL_YEAR_END_PATH, fiscalYearEndOf } from '../../src/lib/periods';
 import { toAggregationHint } from '../../src/lib/aggregationHint';
 import { admitDataset } from './index';
+import {acquireTemporalExecution} from './temporal';
 
 export type BackendBinding={backendId:string;widgetId:string;params:Record<string,unknown>};
 export type BackendWidget={
   label?:string;
   /** Trusted operator configuration only; redirects are always refused. */
   url:string;headers?:Record<string,string>;parameters:string[];
-  response:{kind:'dataset'}|{kind:'rows';rowsPath?:string[];columns:DatasetColumn[];provenance:DatasetProvenance;completeness?:DatasetCompleteness};
+  response:{kind:'temporalExecution';principalHeaders:Record<string,Record<string,string>>}|{kind:'dataset'}|{kind:'rows';rowsPath?:string[];columns:DatasetColumn[];provenance:DatasetProvenance;completeness?:DatasetCompleteness};
 };
 export type ServerBackendConfig={
   maxBytes:number;maxRows:number;maxColumns:number;timeoutMs:number;
   targetWidgetId?:string;inputRevision?:number;
+  /** Authenticated catalog principal supplied by the service, never a browser binding. */
+  principal?:string;
   /**
    * `url` is the backend's base URL, as a client connection names it. Ingest reads `<url>/widgets.json`
    * to tell a statement widget (the client's isStatementPeriodParam) and relabels its rows from
@@ -98,6 +101,10 @@ export async function acquireBackend(binding:BackendBinding,context:ServerBacken
     for(const n of [context.maxBytes,context.maxRows,context.maxColumns,context.timeoutMs]) if(!Number.isSafeInteger(n)||n<=0) throw new Error();
     const backend=own(context.backends,binding.backendId);
     const widget=backend&&own(backend.widgets,binding.widgetId);if(!widget)throw new Error();
+    if(widget.response.kind==='temporalExecution'){
+      if(Object.keys(binding.params).length!==2||!widget.parameters.includes('execution_id')||!widget.parameters.includes('expected_hash')||typeof binding.params.execution_id!=='string'||typeof binding.params.expected_hash!=='string')throw Error();
+      return await acquireTemporalExecution({executionId:binding.params.execution_id,resultHash:binding.params.expected_hash},{...context,url:widget.url,principalHeaders:widget.response.principalHeaders});
+    }
     const url=upstreamUrl(widget.url);
     for(const [key,value] of Object.entries(binding.params)) {
       if(forbidden.test(key)||!widget.parameters.includes(key))throw new Error();

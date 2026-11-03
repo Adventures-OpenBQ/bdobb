@@ -13,6 +13,7 @@ pub mod ingest;
 pub mod server_config;
 pub mod sessions;
 pub mod sources;
+mod temporal;
 
 pub use auth::{AuthConfig, Authenticator, Principal, RequestCredentials};
 pub use config::{CatalogConfig, ServiceLimits};

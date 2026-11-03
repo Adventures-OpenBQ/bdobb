@@ -182,6 +182,7 @@ enum RetainedKind {
     Export,
 }
 struct Input {
+    source_receipt_wire: Option<Value>,
     json: Box<str>,
     _slot: Slot,
 }
@@ -589,6 +590,10 @@ impl SessionManager {
             return Err(limit("encoded input exceeds budget"));
         }
         Ok(Arc::new(Input {
+            source_receipt_wire: crate::temporal::source_receipt(
+                dataset.provenance.receipt.as_ref(),
+                self.limits.max_metadata_bytes,
+            )?,
             json: json.into_boxed_str(),
             _slot: slot,
         }))
@@ -651,6 +656,7 @@ impl SessionManager {
         }
         cancel.commit()?;
         cancel.detach();
+        let source_receipt_wire = input.source_receipt_wire.clone();
         r.sessions.insert(
             identity.session_id.clone(),
             Arc::new(OwnedSession {
@@ -671,6 +677,9 @@ impl SessionManager {
             }),
         );
         let mut value = serde_json::to_value(identity).unwrap();
+        if let Some(proof) = source_receipt_wire {
+            value["sourceReceiptWire"] = proof;
+        }
         value["capabilities"] = capabilities();
         value["limits"] = serde_json::to_value(&self.limits).unwrap();
         value["expiresInSeconds"] = json!(self.limits.max_session_seconds);
@@ -1540,10 +1549,16 @@ mod execution_tests {
             },
         };
         for (limit, fields) in [(0, 0), (101, 0), (100, 101)] {
-            assert!(manager.preflight(&q(limit, fields)).is_err(), "{limit} {fields}");
+            assert!(
+                manager.preflight(&q(limit, fields)).is_err(),
+                "{limit} {fields}"
+            );
         }
         for (limit, fields) in [(1, 0), (100, 100)] {
-            assert!(manager.preflight(&q(limit, fields)).is_ok(), "{limit} {fields}");
+            assert!(
+                manager.preflight(&q(limit, fields)).is_ok(),
+                "{limit} {fields}"
+            );
         }
     }
 }

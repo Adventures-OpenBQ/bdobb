@@ -65,8 +65,14 @@ struct ParseLimits {
 #[derive(Serialize)]
 #[serde(tag = "operation", rename_all = "camelCase")]
 enum Acquisition<'a> {
-    File { name: &'a str, bytes: String },
-    Backend { binding: &'a crate::BackendBinding },
+    File {
+        name: &'a str,
+        bytes: String,
+    },
+    Backend {
+        binding: &'a crate::BackendBinding,
+        principal: &'a str,
+    },
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -171,7 +177,10 @@ impl Ingestor {
                     bytes: base64::engine::general_purpose::STANDARD.encode(lease.read_upload()?),
                 }
             }
-            StoredSource::Backend { binding } => Acquisition::Backend { binding },
+            StoredSource::Backend { binding } => Acquisition::Backend {
+                binding,
+                principal: &lease.principal().0,
+            },
         };
         let request = serde_json::to_vec(&Request {
             widget_id,

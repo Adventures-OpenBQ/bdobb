@@ -7,7 +7,7 @@ import { acquireBackend, type BackendBinding, type ServerBackendConfig } from '.
 import { encodeRequest } from '../../src/lib/tableExecution/rust/protocol';
 
 type Command={widgetId:string;inputRevision:number;limits:{maxBytes:number;maxRows:number;maxColumns:number;timeoutMs:number}} &
- ({operation:'file';name:string;bytes:string}|{operation:'backend';binding:BackendBinding});
+ ({operation:'file';name:string;bytes:string}|{operation:'backend';binding:BackendBinding;principal?:string});
 const option=(key:string)=>{const index=process.argv.indexOf(key);return index<0?undefined:process.argv[index+1];};
 const bound=(name:string)=>{const n=Number(option(name));if(!Number.isSafeInteger(n)||n<1||n>0xffffffff)throw new Error();return n;};
 async function main() {
@@ -15,7 +15,7 @@ async function main() {
   try {
     const maxInput=bound('--max-request-bytes');maxOutput=bound('--max-output-bytes');
     const command=JSON.parse(await readFrame(process.stdin,maxInput)) as Command;
-    const operationFields=command.operation==='file'?['name','bytes']:command.operation==='backend'?['binding']:undefined;
+    const operationFields=command.operation==='file'?['name','bytes']:command.operation==='backend'?['binding',...(Object.hasOwn(command,'principal')?['principal']:[])]:undefined;
     if(!operationFields)throw new Error();
     const fields=['operation','widgetId','inputRevision','limits',...operationFields];
     if(Object.keys(command).some(key=>!fields.includes(key))||fields.some(key=>!Object.hasOwn(command,key)))throw new Error();
@@ -29,9 +29,10 @@ async function main() {
       const bytes=Buffer.from(command.bytes,'base64');if(bytes.length>command.limits.maxBytes)throw new Error();
       dataset=await ingestFile(command.name,bytes,command.widgetId,command.inputRevision);
     } else if(command.operation==='backend') {
+      if(command.principal!==undefined&&(typeof command.principal!=='string'||!command.principal.length||command.principal.length>512||command.principal.trim()!==command.principal||/[\x00-\x1f\x7f]/.test(command.principal)))throw Error();
       const path=option('--backend-config');if(!path||(await stat(path)).size>1024*1024)throw new Error();
       const config=JSON.parse(await readFile(path,'utf8')) as ServerBackendConfig;
-      dataset=await acquireBackend(command.binding,{...config,maxBytes:Math.min(config.maxBytes,command.limits.maxBytes),maxRows:Math.min(config.maxRows,command.limits.maxRows),maxColumns:Math.min(config.maxColumns,command.limits.maxColumns),timeoutMs:Math.min(config.timeoutMs,command.limits.timeoutMs),targetWidgetId:command.widgetId,inputRevision:command.inputRevision});
+      dataset=await acquireBackend(command.binding,{...config,principal:command.principal,maxBytes:Math.min(config.maxBytes,command.limits.maxBytes),maxRows:Math.min(config.maxRows,command.limits.maxRows),maxColumns:Math.min(config.maxColumns,command.limits.maxColumns),timeoutMs:Math.min(config.timeoutMs,command.limits.timeoutMs),targetWidgetId:command.widgetId,inputRevision:command.inputRevision});
     } else throw new Error();
     admitDataset(dataset,command.limits.maxRows,command.limits.maxColumns);
     const json=encodeRequest({kind:'registerInput',requestId:'ingest',revision:{widgetId:command.widgetId,input:command.inputRevision,model:0,output:0},inputRevision:command.inputRevision,input:dataset},'en-US',0);

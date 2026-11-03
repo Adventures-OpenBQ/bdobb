@@ -18,6 +18,7 @@ import { LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
 import { createTemporalClient,type TemporalClient } from '../lib/temporal/client';
 import {createTemporalPager,type TemporalPager,type TemporalPage} from '../lib/temporal/paging';
+import {createTemporalTableProvider} from '../lib/tableExecution/remote/temporalProvider';
 import { createTemporalSourceAdapter } from '../lib/temporal/sourceAdapter';
 import { parseQueryBinding } from '../lib/temporal/bindings';
 import { onTemporalScopeChange } from '../lib/temporal/security';
@@ -90,6 +91,7 @@ export type ExecutionDependencies = {
   viewerAuthority?: {isViewer:()=>boolean;subscribe:(listener:()=>void)=>()=>void};
   managedProvider?: (card: DashboardCard) => ExecutionProvider;
   temporalClient?: (card:DashboardCard)=>TemporalClient;
+  temporalManagedProvider?:(card:DashboardCard,identity:{executionId:string;resultHash:string})=>ExecutionProvider;
   executor?: (id: string) => LocalWorkerExecutor;
   engine?: TableEngine;
   source: (card: DashboardCard) => SourceAdapter | undefined;
@@ -143,6 +145,18 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     return createManagedTableProvider(backend);
   });
   async function openManaged(node: Node, inputRevision: number, signal: AbortSignal) {
+    if(isTemporalTable(node.card)){
+      const binding=parseQueryBinding(node.card.queryBinding),target=binding.tableExecution;
+      if(!target)throw new Error('Temporal managed target unavailable');
+      sourceFor(node);const state=node.temporal;if(!state)throw new Error('Temporal source unavailable');
+      const page=await state.pager.open(signal);if(signal.aborted||node.temporal!==state)throw new DOMException('Temporal source changed','AbortError');
+      state.page=page;const identity={executionId:page.executionId,resultHash:page.page.receipt.result_hash};
+      const backend=useBackendsStore.getState().backends.find(b=>b.id===target.backendId);
+      const provider=deps.temporalManagedProvider?deps.temporalManagedProvider(node.card,identity):backend?createTemporalTableProvider({tableBackend:backend,temporalBackendId:target.sourceBackendId,...identity}):undefined;
+      if(!provider)throw new Error('Managed table connection unavailable');
+      return provider.open({kind:'remote',sourceId:identity.executionId,snapshotId:identity.resultHash,managed:{version:1,inputRevision}}, {protocolVersion:1,widgetId:node.card.id,locale:new Intl.Collator().resolvedOptions().locale,signal});
+    }
+
     const source=node.card.managedSource;
     if(!source || source.version!==1 || !source.sourceId) throw new Error('Source unavailable; re-upload or rebind a source');
     return managedProvider(node.card).open({kind:'remote',sourceId:source.sourceId,snapshotId:'',managed:{version:1,inputRevision}},
@@ -659,7 +673,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       emit();
       void ensure(d, id);
     },
-    readTemporalPaging(d:string,id:string){return get(d,id)?.temporal?.view;},
+    readTemporalPaging(d:string,id:string){const node=get(d,id);return node&&!isManagedTable(node.card)?node.temporal?.view:undefined;},
     nextTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'next'),
     previousTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'previous'),
     refresh(d: string, id: string) {
@@ -676,6 +690,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       }
       if (!node)
         return;
+      if(isTemporalTable(node.card)&&isManagedTable(node.card)){retireExecutor(node,node.executor);node.executor=undefined;node.managed=undefined;}
       disposeTemporal(node);
       invalidate(runtime, node.card.id, true);
       emit();
@@ -766,6 +781,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       retireExecutor(node,node.executor);node.executor=undefined;node.managed=undefined;
       invalidate(runtime,id,true);emit();void ensure(d,id);
     },
+    readTemporalSourceReceipt(d:string,id:string){const proof=get(d,id)?.managed?.sourceReceipt;return proof===undefined?undefined:structuredClone(proof);},
     readCapabilities(d: string,id: string) { return get(d,id)?.managed?.capabilities; },
     readExecutor(d: string, id: string) {
       return get(d, id)?.executor;
@@ -803,7 +819,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           const node = runtime.nodes.get(id)!;
           disposeTemporal(node);
           node.version++; node.controller?.abort(); node.acquisition?.controller.abort();
-          node.acquisition = undefined; node.promise = undefined; node.executor?.dispose(); node.executor = undefined;
+          node.acquisition = undefined; node.promise = undefined; disposeNode(node); node.executor = undefined; node.managed=undefined;
           node.acquired = false; node.sourceRevision = undefined; node.incomingColumns = undefined;
           node.view = { ...node.view, active: undefined, sourceRevision: undefined, ready: undefined, status: 'unavailable', stale: false, error: 'TemporalDB scope changed; refresh to reload authorized results' };
         }

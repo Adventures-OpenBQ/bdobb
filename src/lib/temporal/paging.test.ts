@@ -61,3 +61,8 @@ it('does not let a consumer mutate the cached retained page or receipt',async()=
  const pager=createTemporalPager(client(),fixed),first=await pager.open(signal());first.page.rows[0].Revenue=1234;first.page.receipt.parameters.changed=true;
  const same=await pager.open(signal());expect(same.page.rows[0].Revenue).toBe(0);expect(same.page.receipt.parameters).toEqual({});
 });
+it('accepts an explicit managed execution target but rejects malformed routing metadata',async()=>{
+ const binding={...fixed,tableExecution:{kind:'managed' as const,version:1 as const,backendId:'tables',sourceBackendId:'tdb'}};
+ const c=client();await expect(createTemporalPager(c,binding).open(signal())).resolves.toMatchObject({executionId});
+ for(const tableExecution of [{kind:'unknown',backendId:'tables',sourceBackendId:'tdb'},{kind:'managed',backendId:'tables',sourceBackendId:'tdb',url:'https://other'},{kind:'managed',backendId:'',sourceBackendId:'tdb'}])expect(()=>createTemporalPager(c,{...fixed,tableExecution:{...tableExecution,version:1}} as unknown as typeof binding)).toThrow();
+});

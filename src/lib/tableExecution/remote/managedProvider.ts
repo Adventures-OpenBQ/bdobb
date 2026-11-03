@@ -7,7 +7,7 @@ import {ExecutionProtocolError} from '../validation';
 import {ProviderContractError,capabilityPreflight,freezeCapabilities,localCapabilities,refusal,requireFeature} from '../rust/providerCapabilities';
 import {captureApplyRequirements,validateSessionOptions} from '../rust/providerContract';
 import {decodeResponse,encodeRequest,presentationShape,type PresentationShape} from '../rust/protocol';
-import {assertUnicodeScalarGraph} from '../rust/wireCodec';
+import {assertUnicodeScalarGraph,decodeWire,type WireValue} from '../rust/wireCodec';
 import {createRemoteTransport,withRemoteSignal,positiveLimit,RemoteHttpError,type RemoteTransportConfig} from './transport';
 /** HTTP identities wrap the core wire envelope without replacing its numeric handle. */
 type RemoteIdentity={sessionId:string;sourceSnapshotId:string;resultId?:string};
@@ -49,8 +49,10 @@ export function createManagedProvider(config:RemoteProviderConfig):ExecutionProv
  const bind=async(opened:ObjectValue,captured:SessionOptions,initialRevision:number,derived=false):Promise<ProviderSession>=>{
   let inputRevision=initialRevision;
   const sessionId=id(opened.sessionId),sessionPath=`sessions/${encodeURIComponent(sessionId)}`;
+  let sourceReceipt:unknown;
   let snapshotId:string,capabilities:ProviderCapabilities,maxRows:number,responseWireLimit:number;
   try{
+   sourceReceipt=opened.sourceReceiptWire===undefined?undefined:decodeWire(opened.sourceReceiptWire as WireValue);
    snapshotId=id(opened.sourceSnapshotId);capabilities=parseCapabilities(opened.capabilities);
    validateSessionOptions(captured,capabilities);if(!capabilities.remoteAcquisition)refusal('remoteAcquisition');
    const limits=object(opened.limits);maxRows=Math.min(rowLimit,negotiatedLimit(limits.max_row_block_rows));
@@ -190,7 +192,7 @@ export function createManagedProvider(config:RemoteProviderConfig):ExecutionProv
     finally{combined.removeEventListener('abort',abort);}
    });
   }:undefined;
-  return Object.freeze({sessionId,rowBlockLimit:maxRows,protocolVersion:1 as const,get sourceSnapshotId(){return snapshotId;},consistency:{kind:'snapshot'} as const,capabilities,result,...(deriveLinked?{deriveLinked}:{})});
+  return Object.freeze({...(sourceReceipt===undefined?{}:{sourceReceipt}),sessionId,rowBlockLimit:maxRows,protocolVersion:1 as const,get sourceSnapshotId(){return snapshotId;},consistency:{kind:'snapshot'} as const,capabilities,result,...(deriveLinked?{deriveLinked}:{})});
  };
  return {async open(source:SourceBinding,options:SessionOptions):Promise<ProviderSession>{
   inert(source);

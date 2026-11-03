@@ -281,3 +281,9 @@ it('refuses columnProfile before HTTP when the table-service does not advertise 
  await expect(session.result.columnProfile!(revision,{definition,scope:'input',offset:0,limit:1},signal)).rejects.toMatchObject({descriptor:{code:'UNSUPPORTED_CAPABILITY',capability:'columnProfile'}});
  expect(http.calls.length).toBe(before);session.result.dispose();
 });
+it('retains a typed source receipt attested by the server when opening a session',async()=>{
+ const s=server();const proof={executionId:'22222222-2222-4222-8222-222222222222',resultHash:'a'.repeat(64)};
+ const request:typeof fetch=async(input,init)=>{const response=await s.request(input,init);if(new URL(String(input)).pathname.endsWith('/sessions'))return Response.json({...await response.json(),sourceReceiptWire:encodeWire(proof)});return response;};
+ const session=await createManagedProvider({baseUrl:'https://service/api',request}).open(source,options);
+ expect(session.sourceReceipt).toEqual(proof);session.result.dispose();
+});

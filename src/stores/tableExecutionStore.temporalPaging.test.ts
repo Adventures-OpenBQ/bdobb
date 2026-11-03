@@ -25,7 +25,7 @@ function setup(){
  const store=createTableExecutionStore({source:()=>undefined,temporalClient:()=>c,executor:id=>{const e=createTableProvider(id,'typescript',{workerFactory:()=>new Boundary() as unknown as Worker});const register=e.registerInput.bind(e);e.registerInput=async(data,rev,signal)=>{registered.set(id,structuredClone(data));await register(data,rev,signal);};return e;}});
  stores.push(store);const q=card({id:'q',widgetId:'temporaldb_query',queryBinding:fixed});
  useWidgetRegistryStore.setState({widgets:[widget({id:'temporaldb_query',type:'query_data'})]});
- store.syncDashboard({id:'d',tabs:[{id:'t',name:'T',cards:[q]}]} as Dashboard);
+ store.syncDashboard({id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[q]}]} as Dashboard);
  return {store,c,registered,q};
 }
 it('pages one execution, exposes bounded state and refreshes into a new execution',async()=>{
@@ -58,13 +58,13 @@ it('keeps accepted page and an explicit error on failed navigation',async()=>{
 it('disposes the old pager when a binding changes during navigation',async()=>{
  const {store,c,q,registered}=setup();store.ensureTable('d','q');await store.settled('d');let finish!:(p:ResultPage)=>void;
  vi.mocked(c.page).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));const pending=store.nextTemporalPage('d','q');await vi.waitFor(()=>expect(finish).toBeTypeOf('function'));
- store.syncDashboard({id:'d',tabs:[{id:'t',name:'T',cards:[{...q,queryBinding:{...fixed,params:{ticker:'NEW'}}}]}]} as Dashboard);
+ store.syncDashboard({id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[{...q,queryBinding:{...fixed,params:{ticker:'NEW'}}}]}]} as Dashboard);
  store.ensureTable('d','q');await store.settled('d');finish({...page,total_count:3,rows:[{Revenue:999}],next_cursor:null});await pending;
  expect(c.start).toHaveBeenCalledTimes(2);expect(registered.get('q')?.rows[0].values.Revenue).toBe(110);expect(store.readTemporalPaging('d','q')?.offset).toBe(0);
 });
 it('invalidates linked input when the parent page changes without starting another query',async()=>{
  const {store,c,q,registered}=setup();const child=card({id:'child',widgetId:'local_table',linkedSource:{kind:'widget',sourceWidgetId:'q'}});
- store.syncDashboard({id:'d',tabs:[{id:'t',name:'T',cards:[q,child]}]} as Dashboard);store.ensureTable('d','child');await store.settled('d');
+ store.syncDashboard({id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[q,child]}]} as Dashboard);store.ensureTable('d','child');await store.settled('d');
  expect(registered.get('child')?.rows.map(r=>r.values.Revenue)).toEqual([10,20]);
  await store.nextTemporalPage('d','q');store.ensureTable('d','child');await store.settled('d');
  expect(registered.get('child')?.rows.map(r=>r.values.Revenue)).toEqual([30]);expect(c.start).toHaveBeenCalledTimes(1);

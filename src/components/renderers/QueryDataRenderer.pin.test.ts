@@ -19,3 +19,10 @@ it('reads the receipt fields the drawer shows from dataset provenance',()=>{
  const v=receiptView({executionId,queryId:receipt.query_id,queryRevision:2,resultHash:'abc',knowledgeBasis:null,context:receipt.context,inputManifest:{pins:[{catalog_id:'lake',snapshot_id:7}]},frozenAt:'2026-10-16T18:00:00Z'},{as_of:'2026-10-15'});
  expect(v).toMatchObject({executionId,queryRevision:2,pins:[{catalog_id:'lake',snapshot_id:7}],parameters:{as_of:'2026-10-15'},frozenAt:'2026-10-16T18:00:00Z'});
 });
+it('preserves the managed table target when pinning a whole-result widget',async()=>{
+ const target={kind:'managed' as const,version:1 as const,backendId:'tables',sourceBackendId:'tdb'};
+ const duplicateCard=vi.fn(async()=>'managed-copy');const patchCardField=vi.fn(async()=>{});
+ vi.spyOn(useDashboardStore,'getState').mockReturnValue({...useDashboardStore.getState(),duplicateCard,patchCardField});
+ await pinExecution({id:'live',queryBinding:{...fixed,tableExecution:target}} as unknown as DashboardCard,executionId);
+ expect(patchCardField).toHaveBeenCalledWith('managed-copy','queryBinding',{kind:'execution',executionId,tableExecution:target});
+});

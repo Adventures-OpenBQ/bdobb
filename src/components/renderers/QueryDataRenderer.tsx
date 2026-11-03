@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import {isRecord} from '../../lib/temporal/contracts';
 import {useEffect,useState,useSyncExternalStore} from 'react';
 import type {DashboardCard,TableCardState} from '../../lib/types';
 import {parseQueryBinding,type QueryBinding} from '../../lib/temporal/bindings';
@@ -23,7 +24,8 @@ export function receiptView(temporal:Record<string,unknown>,parameters:unknown):
 /** Pin = a copy of this widget bound to the retained execution. The original keeps running live. */
 export async function pinExecution(card:DashboardCard,executionId:string):Promise<string|null>{
  const store=useDashboardStore.getState();const id=await store.duplicateCard(card.id);if(!id)return null;
- await store.patchCardField(id,'queryBinding',{kind:'execution',executionId});
+ const target=card.queryBinding?parseQueryBinding(card.queryBinding).tableExecution:undefined;
+ await store.patchCardField(id,'queryBinding',{kind:'execution',executionId,...(target?{tableExecution:target}:{})});
  await store.patchCardField(id,'title',`${card.title??'Shared query'} · pinned`);
  return id;
 }
@@ -75,7 +77,7 @@ export function QueryDataRenderer({dashboardId,card,filterRow,onStateChange,read
  const ref=view.ready?.completeness;
  const [receipt,setReceipt]=useState<ReceiptView>();
  const ready=!!view.ready;
- useEffect(()=>{let active=true;setReceipt(undefined);if(view.active&&ready){const executor=tableExecutionStore.readExecutor(dashboardId,card.id);if(executor)void executor.chartData(view.active,[],new AbortController().signal).then(data=>{const r=data.provenance.receipt?.temporal;if(active&&r)setReceipt(receiptView(r as Record<string,unknown>,data.provenance.parameters));}).catch(()=>{});}return()=>{active=false;};},[dashboardId,card.id,view.active,ready]);
+ useEffect(()=>{let active=true;setReceipt(undefined);if(view.active&&ready){const attested=tableExecutionStore.readTemporalSourceReceipt?.(dashboardId,card.id);if(isRecord(attested)){setReceipt(receiptView(attested,attested.parameters));return()=>{active=false;};}const executor=tableExecutionStore.readExecutor(dashboardId,card.id);if(executor)void executor.chartData(view.active,[],new AbortController().signal).then(data=>{const r=data.provenance.receipt?.temporal;if(active&&r)setReceipt(receiptView(r as Record<string,unknown>,data.provenance.parameters));}).catch(()=>{});}return()=>{active=false;};},[dashboardId,card.id,view.active,ready]);
  const paging=tableExecutionStore.readTemporalPaging?.(dashboardId,card.id);
  const pagingBusy=!!paging?.busy||view.status==='pending'||view.status==='updating';
  const binding=card.queryBinding;const pinned=binding?.kind==='execution';
@@ -84,7 +86,7 @@ export function QueryDataRenderer({dashboardId,card,filterRow,onStateChange,read
  const ctx=receipt?.context;
  return <div className="query-data-renderer">
   <div className="query-data-bar">
-   {binding&&!error?<div className="query-receipt" role="status" aria-label="Execution receipt">{view.stale?<span className="bd-badge query-receipt-stale">Stale result</span>:null}<span className="bd-badge">{bindingLabel}</span>{receipt?<><span className="bd-badge">Resolved revision {receipt.queryRevision}</span>{pinned&&ctx?<span className="bd-badge">{TEMPORAL_MODE_LABELS[ctx.mode]??ctx.mode}{ctx.known_at?` ${ctx.known_at}`:''}</span>:null}<span className="bd-badge">{basisLabel(receipt.knowledgeBasis)}</span></>:null}{ref?<span className={`bd-badge${ref.kind==='complete'?'':' query-receipt-partial'}`}>{ref.kind} · {rows} loaded {rows===1?'row':'rows'}</span>:null}{receipt?<button type="button" className="bd-badge query-receipt-toggle" aria-expanded={drawer} aria-controls={`query-receipt-${card.id}`} onClick={()=>setDrawer(d=>!d)}>Receipt {short(receipt.executionId,8)}</button>:null}</div>:<span className="bd-muted">No shared query bound</span>}
+   {binding&&!error?<div className="query-receipt" role="status" aria-label="Execution receipt">{view.stale?<span className="bd-badge query-receipt-stale">Stale result</span>:null}<span className="bd-badge">{bindingLabel}</span>{receipt?<><span className="bd-badge">Resolved revision {receipt.queryRevision}</span>{pinned&&ctx?<span className="bd-badge">{TEMPORAL_MODE_LABELS[ctx.mode]??ctx.mode}{ctx.known_at?` ${ctx.known_at}`:''}</span>:null}<span className="bd-badge">{basisLabel(receipt.knowledgeBasis)}</span></>:null}{ref?<span className={`bd-badge${ref.kind==='complete'?'':' query-receipt-partial'}`}>{ref.kind} · {rows} {card.queryBinding?.tableExecution?'source':'loaded'} {rows===1?'row':'rows'}</span>:null}{receipt?<button type="button" className="bd-badge query-receipt-toggle" aria-expanded={drawer} aria-controls={`query-receipt-${card.id}`} onClick={()=>setDrawer(d=>!d)}>Receipt {short(receipt.executionId,8)}</button>:null}</div>:<span className="bd-muted">No shared query bound</span>}
    <div className="bd-actions"><button className="bd-button" disabled={readOnly} onClick={()=>setLibrary(true)}>Open query library</button>{binding?<button className="bd-button" title={pinned?'Reads the same retained execution again':'Starts a new execution'} onClick={()=>tableExecutionStore.refresh(dashboardId,card.id)}>{pinned?'Reload execution':'Refresh query'}</button>:null}</div>
   </div>
   {paging?<div className="query-data-bar" role="group" aria-label="Temporal result paging"><span role="status" aria-label="Temporal result page">Page {paging.pageNumber} · rows {paging.loadedRows?paging.offset+1:0}–{paging.offset+paging.loadedRows} of {paging.countQuality==='lower_bound'?'at least ':''}{paging.totalCount}{pagingBusy?' · loading':''}{view.stale?' · previous result shown':''}</span><div className="bd-actions"><button className="bd-button" aria-label="Previous result page" disabled={pagingBusy||!paging.hasPrevious} onClick={()=>void tableExecutionStore.previousTemporalPage(dashboardId,card.id)}>Previous</button><button className="bd-button" aria-label="Next result page" disabled={pagingBusy||!paging.hasNext} onClick={()=>void tableExecutionStore.nextTemporalPage(dashboardId,card.id)}>Next</button></div>{paging.error?<span className="bd-notice bd-notice--error" role="alert">{paging.error}</span>:null}</div>:null}

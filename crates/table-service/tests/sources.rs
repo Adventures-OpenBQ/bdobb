@@ -747,3 +747,15 @@ fn backend_params_match_ingestion_limits() {
         register(&format!("ok{i}"), value).unwrap();
     }
 }
+
+#[test]
+fn retained_source_lease_carries_authenticated_catalog_principal() {
+    let dir = tempfile::tempdir().unwrap();
+    let catalog = open(dir.path());
+    let p = owner();
+    let source = catalog
+        .create_upload(&p, "principal", metadata(), &b"x\n1"[..])
+        .unwrap();
+    let lease = catalog.acquire(&p, &source.source_id).unwrap();
+    assert_eq!(lease.principal(), &p);
+}

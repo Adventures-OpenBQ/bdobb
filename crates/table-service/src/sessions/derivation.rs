@@ -223,6 +223,10 @@ impl SessionManager {
                     return Err(limit("derived source exceeds byte limit"));
                 }
                 return Ok(Arc::new(Input {
+                    source_receipt_wire: crate::temporal::source_receipt(
+                        source.provenance.receipt.as_ref(),
+                        self.limits.max_metadata_bytes,
+                    )?,
                     json: json.into_boxed_str(),
                     _slot: input_slot,
                 }));
