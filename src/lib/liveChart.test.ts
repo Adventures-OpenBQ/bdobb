@@ -184,3 +184,19 @@ describe("volumeStep", () => {
     expect(volumeStep(undefined, tick(null, 7))).toEqual({ add: 7, prev: undefined });
   });
 });
+
+describe('market timestamp interchange', () => {
+  it.each([
+    ['2026-01-15T09:30:00-05:00', '2026-01-15T14:30:00Z'],
+    ['2026-07-15T09:30:00-04:00', '2026-07-15T13:30:00Z'],
+    ['2026-11-01T01:30:00-04:00', '2026-11-01T05:30:00Z'],
+    ['2026-11-01T01:30:00-05:00', '2026-11-01T06:30:00Z'],
+  ])('respects the explicit offset in %s', (source, utc) => {
+    const row = {date: source, open: 1, high: 1, low: 1, close: 1};
+    expect(seriesBars([row])[0].time).toBe(Date.parse(utc)/1000);
+  });
+  it.each(['2026-02-30', '2026-04-31T09:30:00Z', '2026-01-15T24:00:00Z'])
+  ('rejects invalid calendar/time input %s instead of rolling it over', (date) => {
+    expect(seriesBars([{date, open:1, high:1, low:1, close:1}])).toEqual([]);
+  });
+});

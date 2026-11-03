@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isRecord } from "./isRecord";
+import { barTimeSeconds as isoSeconds } from "./marketTime";
 import type { UdfBar } from "./udf";
 
 /**
@@ -18,19 +19,6 @@ import type { UdfBar } from "./udf";
 const NOT_SERIES = "not a series payload";
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-
-/**
- * An ISO date as unix seconds, always read as UTC. live-grid's bars are UTC,
- * but not every one says so: a daily bar is a bare `YYYY-MM-DD` (which JS
- * already reads as UTC) and an upstream intraday row can arrive with no zone
- * at all, which `Date.parse` would read as LOCAL time and shift by the
- * reader's offset. A zoneless time gets a `Z`. NaN when it does not parse.
- */
-function isoSeconds(date: string): number {
-  let iso = date.trim().replace(" ", "T");
-  if (iso.includes("T") && !/(Z|[+-]\d\d:?\d\d)$/i.test(iso)) iso += "Z";
-  return Date.parse(iso) / 1000;
-}
 
 /**
  * live-grid's `/series` answer -- `{symbol, interval, start, end, bars, cache}`
