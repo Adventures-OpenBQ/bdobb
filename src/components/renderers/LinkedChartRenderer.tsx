@@ -49,6 +49,13 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         const executor = source ? store.readExecutor(dashboardId, source) : undefined;
         if (!revision || revision.widgetId !== source || !executor || !view.ready || !['ready', 'empty'].includes(view.status))
             return;
+        // A completed empty scope can drop generated columns; it is not a broken binding.
+        if (view.status === 'empty') {
+            setCompleted(undefined);
+            setError(undefined);
+            setNoMatches(true);
+            return;
+        }
         const available = new Map((view.ready.chartColumns ?? view.ready.columns).map(c => [c.id, c]));
         setNoMatches(false);
         const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));

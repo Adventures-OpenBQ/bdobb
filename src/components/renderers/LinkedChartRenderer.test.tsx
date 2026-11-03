@@ -53,6 +53,7 @@ it('failed chart transport retains its completed figure and exposes the delivery
     store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
     await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'A' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     expect(screen.getByTestId('figure').textContent).toBe(old);
     cleanup();
     store.disposeDashboard('d');
@@ -84,6 +85,7 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     expect(figure.data.map((t: { name: string; y: number[] }) => ({ name: t.name, y: t.y }))).toEqual([{ name: 'Revenue — Average', y: [15, 90] }, { name: 'Revenue — Total', y: [30, 90] }]);
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -136,5 +138,37 @@ it.each([false, true])('keeps split bindings through filters and fresh reopen wi
     await apply(''); await screen.findByTestId('figure');
     expect(JSON.parse(screen.getByTestId('figure').textContent!).data).toHaveLength(2);
     expect(boundChart.linkedChart.measures).toEqual(measures);
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('clears a completed figure when a successful empty linked scope loses its generated series, then restores fresh data', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: [{ id: 'nvda', values: { region: 'FY2024', team: 'NVDA', revenue: 60922000000 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    const selected = { ...chart, id: 'selected', widgetId: 'local_table', linkedChart: undefined };
+    const target = { ...chart, linkedSource: { kind: 'widget' as const, sourceWidgetId: 'selected' } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, selected, target] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    const columns = store.readView('d', 'selected').ready!.columns;
+    const category = columns[0].id, measures = columns.filter(column => column.measureId === 'sales').map(column => column.id);
+    expect(measures).toHaveLength(1);
+    const bound = { ...target, linkedChart: { ...settings, category, measures } };
+    render(<LinkedChartRenderer dashboardId="d" card={bound} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    const apply = async (search: string) => act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search }, { kind: 'none' }); await store.settled('d'); });
+    await apply('no matching company');
+    const empty = store.readView('d', 'c');
+    expect(empty.status).toBe('empty');
+    expect(empty.ready!.columns.some(column => column.id === measures[0])).toBe(false);
+    expect((empty.ready!.chartColumns ?? empty.ready!.columns).some(column => column.id === measures[0])).toBe(false);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('No selected series match the current filter.')).toBeVisible();
+    await apply(''); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/stale/)).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
