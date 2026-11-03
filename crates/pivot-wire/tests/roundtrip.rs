@@ -253,3 +253,95 @@ fn invalid_protocol_and_unknown_envelope_command_and_nested_fields_fail() {
     )
     .is_err());
 }
+// The wrapper optimization must preserve the original sorted JSON bytes, not
+// just object equivalence, including special numbers and ordered record entries.
+#[test]
+fn response_wrapper_preserves_exact_legacy_bytes() {
+    let mut dataset: SourceDataset = serde_json::from_value(input()).unwrap();
+    for (name, number) in [
+        ("min", f64::MIN),
+        ("max", f64::MAX),
+        ("tiny", f64::from_bits(1)),
+        ("signedZero", -0.0),
+    ] {
+        dataset.rows[0]
+            .values
+            .insert(name.into(), WireValue::F64(WireNumber::Finite(number)));
+    }
+    dataset.rows[0]
+        .values
+        .insert("boolean".into(), WireValue::Bool(true));
+    dataset.rows[0].values.insert(
+        "ordered".into(),
+        WireValue::Record(vec![
+            (
+                "z".into(),
+                WireValue::Array(vec![WireValue::Record(vec![]), WireValue::Array(vec![])]),
+            ),
+            ("a".into(), WireValue::Bool(false)),
+        ]),
+    );
+    dataset.rows[0].values.insert(
+        "escaped\"\\\n😀".into(),
+        WireValue::String("\0\t\r😀".into()),
+    );
+    let batch = SubsetBatch {
+        transfer_id: "export\"\\😀".into(),
+        sequence: u64::MAX,
+        final_batch: true,
+        rows: dataset.rows.clone(),
+        columns: Some(dataset.columns.clone()),
+        provenance: Some(dataset.provenance.clone()),
+        freshness: Some(dataset.freshness.clone()),
+    };
+    let mut continuation = batch.clone();
+    continuation.columns = None;
+    continuation.provenance = None;
+    continuation.freshness = None;
+    let completeness = dataset.completeness.clone();
+    let mut cases = vec![
+        (
+            "subset",
+            json!(continuation),
+            Response::Subset(continuation.clone()),
+        ),
+        ("subset", json!(batch), Response::Subset(batch)),
+        ("chartData", json!(dataset), Response::ChartData(dataset)),
+        ("registered", json!({}), Response::Registered),
+    ];
+    for variant in 0..5 {
+        let mut batch = continuation.clone();
+        match variant {
+            0 => batch.rows[0].cell_errors = Some(Default::default()),
+            1 => batch.rows[0].cell_formats = Some(Default::default()),
+            2 => batch.rows[0].group_path = Some(vec![]),
+            3 => batch.sequence = 0,
+            _ => batch.rows.clear(),
+        }
+        cases.push(("subset", json!(batch), Response::Subset(batch)));
+    }
+    for (kind, payload, result) in cases {
+        let mut value = response(result);
+        value.completeness = completeness.clone();
+        value.diagnostics = vec![serde_json::from_value(json!({"code":"bounded","message":"partial","severity":"warning","unmatchedCount":0,"truncated":false})).unwrap()];
+        value.model_warnings = Some(vec![ModelWarning {
+            code: "warning".into(),
+            message: "bounded".into(),
+            category_id: Some("fy".into()),
+            period_count: 0,
+            origin: value.revision.clone(),
+        }]);
+        value.model_warning_count = Some(0);
+        let mut expected = json!({"kind":kind,"requestId":value.request_id,"revision":value.revision,"completeness":value.completeness,"diagnostics":value.diagnostics,"modelWarnings":value.model_warnings,"modelWarningCount":value.model_warning_count});
+        expected
+            .as_object_mut()
+            .unwrap()
+            .extend(payload.as_object().unwrap().clone());
+        let expected = serde_json::to_string(&json!({"protocolVersion":pivot_core::PROTOCOL_VERSION,"sessionId":u32::MAX,"response":expected})).unwrap();
+        assert_eq!(
+            encode_response(u32::MAX, value).unwrap(),
+            expected,
+            "{kind}"
+        );
+    }
+}

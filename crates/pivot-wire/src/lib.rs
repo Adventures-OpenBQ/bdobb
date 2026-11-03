@@ -2,9 +2,10 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 use pivot_core::{contract::*, session::*};
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, value::RawValue, Value};
 use std::collections::BTreeMap;
+mod subset;
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Request {
@@ -205,6 +206,9 @@ fn request(v: &Fields) -> Result<CoreRequest, String> {
 }
 /// Encode the unchanged worker response shape; HTTP identities belong outside it.
 pub fn encode_response(session_id: u32, response: CoreResponse) -> Result<String, String> {
+    if let Some(encoded) = subset::encode(session_id, &response) {
+        return encoded;
+    }
     let (kind, payload) = match response.result {
         Response::Registered => ("registered", json!({})),
         Response::InputSchema(columns) => ("inputSchema", json!({"columns":columns})),
@@ -241,6 +245,19 @@ pub fn encode_response(session_id: u32, response: CoreResponse) -> Result<String
     if let Value::Object(payload) = payload {
         envelope.as_object_mut().unwrap().extend(payload);
     }
-    serde_json::to_string(&json!({"protocolVersion":pivot_core::PROTOCOL_VERSION,"sessionId":session_id,"response":envelope}))
-        .map_err(|e| e.to_string())
+    // Match the old Value map's lexicographic key order without copying the
+    // entire flattened response into a second Value tree.
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Envelope<'a> {
+        protocol_version: u32,
+        response: &'a Value,
+        session_id: u32,
+    }
+    serde_json::to_string(&Envelope {
+        protocol_version: pivot_core::PROTOCOL_VERSION,
+        response: &envelope,
+        session_id,
+    })
+    .map_err(|e| e.to_string())
 }
