@@ -172,3 +172,62 @@ it('clears a completed figure when a successful empty linked scope loses its gen
     expect(screen.queryByText(/stale/)).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
+
+// These seams hold only delivery: the real executor has already computed each chart.
+it('late_A_cannot_replace_completed_B', async () => {
+    const store = await setup();
+    const executor = store.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    let release!: () => void;
+    executor.chartData = async (...args) => {
+        const result = await real(...args);
+        executor.chartData = real;
+        await new Promise<void>(resolve => { release = resolve; });
+        return result;
+    };
+    const apply = async (id: string) => act(async () => { store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: [id] }); await store.settled('d'); });
+    await apply('r1'); await waitFor(() => expect(release).toBeDefined());
+    expect(screen.getByText(/Updating chart/)).toBeVisible();
+    await apply('r2');
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([2]));
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    expect(store.readView('d', 's').active).toEqual(revision);
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('disposed_generation_cannot_publish into remounted reused widget IDs', async () => {
+    const oldStore = await setup(), executor = oldStore.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    let release!: () => void;
+    executor.chartData = async (...args) => { const result = await real(...args); await new Promise<void>(resolve => { release = resolve; }); return result; };
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, onSettingsChange: async () => true };
+    const mounted = render(<LinkedChartRenderer {...props} store={oldStore}/>);
+    await waitFor(() => expect(release).toBeDefined());
+    mounted.unmount(); oldStore.disposeDashboard('d');
+    const store = await setup();
+    store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: ['r7'] }); await store.settled('d');
+    render(<LinkedChartRenderer {...props} store={store}/>); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([7]);
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    cleanup(); store.disposeDashboard('d');
+});
+it('missing_series_marks_old_figure_stale and repairing settings restores current data', async () => {
+    const store = await setup();
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    const completed = screen.getByTestId('figure').textContent;
+    rerender(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: { ...settings, measures: ['missing'] } }}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Field missing is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    rerender(<LinkedChartRenderer {...props}/>);
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
