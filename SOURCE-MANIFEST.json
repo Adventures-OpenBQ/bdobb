@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "8c6d2a25b6ba6c6f3ae1d1efc857e8554c842f57",
-  "sourceId": "2a8a7cc4d23285f3cb216c58b4b703cd9f2ea4fba04557e58d1f23ee0c7fc1aa",
+  "baseCommit": "91d5b6b360efe44df66513d2d6684e665e37ad78",
+  "sourceId": "1cff459e99d160112cbced41c840cb8cc1e5ef14aa9b8fb512ae9eb4182c1d04",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20793,6 +20793,13 @@
       "sha256": "389e20b80898d804d59109fa7dabacb2812a451f106f20ff30b829c81e2f3be5"
     },
     {
+      "path": "docs/superpowers/specs/2026-11-03-temporal-widget-gap-closure-design.md",
+      "type": "file",
+      "mode": 420,
+      "size": 11287,
+      "sha256": "eb25a01fbbd3c0b04075d13c3a33dc86fd11016cc1ab12feed4c263cd7482325"
+    },
+    {
       "path": "docs/test-environment.md",
       "type": "file",
       "mode": 420,
@@ -21560,7 +21567,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "9134ab433102f676126e5f0bfb6f4e5e3f11d33337ace36b5a19a63c4ea0d91e"
+      "sha256": "6315d5e46bcc859a110cc3f4e4fab5fc6568b5845711fa76691b49f2b8b4510b"
     },
     {
       "path": "playwright.config.ts",
@@ -22232,7 +22239,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "64f5aceb35f1d8350439b4bad8fa73d696ce88fcdc9d9a9b0b3a0346715e4f01"
+      "sha256": "ebe54d3b4ce60b51e7b3f6e7ac232e152bf0afaf67f53eca970ceaccf5f041e0"
     },
     {
       "path": "source_bundle.py",
@@ -23145,11 +23152,18 @@
       "sha256": "db2fef105e1066887e2bc1f165525feaec56066ef49cbbb9d44a5900b2f5ed49"
     },
     {
+      "path": "src/components/dialogs/QueryLibraryDialog.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 2056,
+      "sha256": "da5fcfc17f1a69a7c23ced03c9e69f35d81104076a651c3d77fe7bca4a453155"
+    },
+    {
       "path": "src/components/dialogs/QueryLibraryDialog.tsx",
       "type": "file",
       "mode": 420,
-      "size": 13509,
-      "sha256": "792e5a94a0c7a5b33f2f87077aae7c21117fa3aaa2b43deeadc19d23afa67459"
+      "size": 13520,
+      "sha256": "79f70bc5e9e3b7bcebac81c8df6d8ccc8e1bbd6de992d0a6203ecaa722f7e6be"
     },
     {
       "path": "src/components/dialogs/RangeRow.tsx",
@@ -32368,7 +32382,7 @@
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "54a6ad40b3cd6de4c2f05e099e2d785408d743dd1e5bdf53f93ef97b05e5224d"
+      "sha256": "053f5dbc50132a0c12933a9f0389d156c4dcf6526660aa0728e1d583b1e2913d"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
@@ -32431,14 +32445,14 @@
       "type": "file",
       "mode": 420,
       "size": 2939,
-      "sha256": "60f4bf5fa2c7fb3632676f22f65cba67a6904b089a67dd33c9b1ee0cac9b509b"
+      "sha256": "175d10be3d08608f4e3507d7b0fda490f305693c7a19fad351aceaac68edb491"
     },
     {
       "path": "web/temporal-policy.vendored.json",
       "type": "file",
       "mode": 420,
       "size": 246,
-      "sha256": "233f42d11c7eb8d5e124d7d586761a7e00f8223296886f6a830a5e51179a0439"
+      "sha256": "468def04c199fc739797aafa4019d9406cc66a07ad90f82acad90e90fa521822"
     }
   ],
   "thirdPartySources": {
