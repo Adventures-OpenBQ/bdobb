@@ -226,7 +226,7 @@ impl EligiblePool {
                 .rows
                 .iter()
                 .filter_map(|r| self.members.get(&r.id))
-                .flat_map(BTreeMap::keys)
+                .flat_map(|members| members.keys())
                 .collect();
             for (i, row) in self.rows.iter().enumerate() {
                 index.by_id.entry(row.id.clone()).or_default().push(i);

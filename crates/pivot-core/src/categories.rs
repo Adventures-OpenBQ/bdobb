@@ -19,9 +19,13 @@ pub struct CategoryMember {
     pub period: Option<(String, String)>,
     pub fiscal: Option<ResolvedFiscalPeriod>,
 }
+mod member_map;
+pub use member_map::RowCategoryMembers;
+
 pub type CategoryMemberResult = Result<CategoryMember, ModelError>;
 /// Shared after derivation; mutation uses copy-on-write to preserve snapshot isolation.
-pub type CategoryMembers = std::sync::Arc<BTreeMap<String, BTreeMap<String, CategoryMemberResult>>>;
+pub type CategoryMembers = std::sync::Arc<BTreeMap<String, RowCategoryMembers>>;
+
 #[derive(Clone, Debug)]
 pub struct CategoryMetadata {
     pub id: String,
@@ -131,7 +135,7 @@ pub fn derive_categories(
         }
     }
     for (i, row) in input.rows.iter().enumerate() {
-        let mut members = BTreeMap::new();
+        let mut members = Vec::with_capacity(model.categories.len());
         for c in &model.categories {
             let fail = |code: &str, msg: String| Err(error(code, msg, &c.id, vec![row.id.clone()]));
             let mut member = (|| {
@@ -341,9 +345,10 @@ pub fn derive_categories(
                         .insert(c.id.clone(), e.clone());
                 }
             }
-            members.insert(c.id.clone(), member);
+            members.push((c.id.clone(), member));
         }
-        std::sync::Arc::make_mut(&mut result.members).insert(row.id.clone(), members);
+        std::sync::Arc::make_mut(&mut result.members)
+            .insert(row.id.clone(), RowCategoryMembers::from_entries(members));
     }
     for c in &model.categories {
         if let Some(periods) = fiscal_periods.get(&c.id) {
