@@ -10,6 +10,7 @@ import { remapWidgetReferences } from "../lib/widgetData/persistence";
 import { validateTableModel } from "../lib/tableExecution/validation";
 import type { TableDefinition, SelectionSpec } from "../lib/tableExecution/types";
 import { create } from "zustand";
+import { parseQueryBinding } from "../lib/temporal/bindings";
 import { pinResolvedBackends } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, BUILTIN_WIDGETS, LINKED_TABLE_ID, LINKED_CHART_ID, LOCAL_TABLE_ID } from "../lib/builtins";
 import {
@@ -293,6 +294,12 @@ type DashboardState = {
    */
   /** Clear only the deleted source, checked inside the serialized dashboard write. */
   clearManagedSource: (cardId: string, backendId: string, sourceId: string) => Promise<void>;
+  /**
+   * v11: bind a query widget and, when the definition saved one, its table
+   * layout, in ONE write -- so the runtime never runs the new source against
+   * the old model. Without a layout the card keeps its own.
+   */
+  bindQueryCard: (cardId: string, binding: import("../lib/temporal/bindings").QueryBinding, tableDefinition?: TableDefinition) => Promise<void>;
   patchCardField: <K extends CardField>(
     cardId: string,
     field: K,
@@ -305,6 +312,7 @@ type DashboardState = {
 // v5.5.1: a fifth, `hideTitleParams` — the Parameters popover's title-bar checkbox.
 type CardFieldPatch = {
   managedSource: import("../lib/types").ManagedSourceReference;
+  queryBinding: import("../lib/temporal/bindings").QueryBinding;
   view: CardView;
   title: string;
   table: Partial<TableCardState>;
@@ -1552,7 +1560,19 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       }));
     },
 
+    bindQueryCard: async (cardId, binding, tableDefinition) => {
+      const parsed = parseQueryBinding(binding);
+      await mutateOwnerOfCard(cardId, (d) =>
+        updateCardInDashboard(d, cardId, (c) => ({
+          ...c,
+          queryBinding: parsed,
+          ...(tableDefinition ? { tableDefinition: structuredClone(tableDefinition), table: structuredClone(tableDefinition.table) } : {}),
+        })),
+      );
+    },
+
     patchCardField: async (cardId, field, value) => {
+      if (field === "queryBinding" && value !== null) value = parseQueryBinding(value) as typeof value;
       await mutateOwnerOfCard(cardId, (d) =>
         updateCardInDashboard(d, cardId, (c) => {
           const next = { ...c };

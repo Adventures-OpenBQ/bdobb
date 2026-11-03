@@ -231,7 +231,8 @@ export async function saveDashboard(dashboard: Dashboard): Promise<void> {
   await notifyDashboardChanged(dashboard.id);
 }
 
-/** A dashboard as its file holds it: each card as persistedCard keeps it. */
+/** A dashboard as its file holds it, including query binding intent (never receipts or rows).
+ * Malformed/future binding values survive reads and exports for non-destructive repair. */
 export function storedDashboard(dashboard: Dashboard): Dashboard {
   return { ...dashboard, tabs: dashboard.tabs.map(t => ({ ...t, cards: t.cards.map(persistedCard) })) };
 }

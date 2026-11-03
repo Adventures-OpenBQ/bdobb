@@ -27,7 +27,7 @@ export function appendSubset(input: PendingInput, batch: SubsetBatch): void {
       throw new Error('Missing subset metadata');
     input.requestId = batch.requestId;
     input.data = structuredClone({ columns: batch.columns, rows: [], resultRevision: input.upstream.model, outputRevision: input.upstream.output,
-      provenance: { ...batch.provenance, lineage: [...(batch.provenance.lineage ?? []), { widgetId: input.upstream.widgetId, resultRevision: input.upstream.model, outputRevision: input.upstream.output }] }, completeness: batch.completeness, freshness: batch.freshness, diagnostics: batch.diagnostics, modelWarnings: batch.modelWarnings, modelWarningCount: batch.modelWarningCount });
+      provenance: { ...batch.provenance, ...(batch.provenance.receipt?.temporal ? { metadata: { ...batch.provenance.metadata, temporalTransforms: [...(Array.isArray(batch.provenance.metadata?.temporalTransforms) ? batch.provenance.metadata.temporalTransforms : []), { engine: 'bdobb-table', version: 1, ...input.upstream }] } } : {}), lineage: [...(batch.provenance.lineage ?? []), { widgetId: input.upstream.widgetId, resultRevision: input.upstream.model, outputRevision: input.upstream.output }] }, completeness: batch.completeness, freshness: batch.freshness, diagnostics: batch.diagnostics, modelWarnings: batch.modelWarnings, modelWarningCount: batch.modelWarningCount });
   }
   input.data!.rows.push(...structuredClone(batch.rows));
   input.sequence++;

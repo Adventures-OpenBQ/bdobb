@@ -11,7 +11,7 @@ import { useWidgetRegistryStore } from '../../stores/widgetRegistryStore';
  * (SSRM_TYPES) and never match; they wait for the server executor.
  */
 export function isBackendTable(card: DashboardCard): boolean {
-  if (card.widgetId === LOCAL_TABLE_ID || card.linkedSource) return false;
+  if (card.widgetId === LOCAL_TABLE_ID || card.linkedSource || card.queryBinding || isTemporalTable(card)) return false;
   // The runtime asks for every card, outside any card's error boundary: a
   // lookup that throws leaves this card off the worker, and the card's own
   // render meets the same throw inside its boundary.
@@ -29,6 +29,16 @@ export function fitsTableWorker(data: unknown): boolean {
   const rows = tableRows(data);
   return !rows || rows.length * Math.max(1, Object.keys(rows[0] ?? {}).length) <= WORKER_MAX_CELLS;
 }
+/** Query tables acquire through the execution graph, never the widget GET hook. */
+export function isTemporalTable(card: DashboardCard): boolean {
+  if (card.queryBinding) return true;
+  // Discovery is also inspected outside each card's render error boundary.
+  try {
+    return useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.type === 'query_data';
+  } catch {
+    return false;
+  }
+}
 /** Shared runtime/picker boundary: legacy presentations do not publish ordinary table output. */
 export function isManagedTable(card: DashboardCard): boolean {
  // Like ordinary backend tables, discovery runs outside the card error boundary.
@@ -38,6 +48,6 @@ export function isManagedTable(card: DashboardCard): boolean {
  } catch { return false; }
 }
 export function isWorkerTableProducer(card: DashboardCard): boolean {
-  return !card.linkedChart && (card.widgetId === LOCAL_TABLE_ID || !!card.linkedSource || isBackendTable(card) || isManagedTable(card))
+  return !card.linkedChart && (card.widgetId === LOCAL_TABLE_ID || !!card.linkedSource || isTemporalTable(card) || isBackendTable(card) || isManagedTable(card))
     && (isManagedTable(card) || card.view === undefined || card.view === 'table' || card.view === 'statement');
 }

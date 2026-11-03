@@ -62,6 +62,9 @@ export function readConfig(env = process.env) {
   if (tableRelayToken && (!backend || !/^[A-Za-z0-9_-]{32,256}$/.test(tableRelayToken) || tableRelayToken === token)) throw new Error("TABLE_RELAY_TOKEN: distinct private credential required");
   let ssrmRoutes; try { ssrmRoutes = env.SSRM_ROUTES_JSON === undefined ? vendoredSsrmRoutes : JSON.parse(env.SSRM_ROUTES_JSON || "[]"); } catch { throw new Error("SSRM_ROUTES_JSON: invalid JSON"); }
   if (!validSsrmRoutes(ssrmRoutes)) throw new Error("SSRM_ROUTES_JSON: invalid routes");
+  if (env.TEMPORALDB_V11 !== undefined && !["true", "false"].includes(env.TEMPORALDB_V11)) throw new Error("TEMPORALDB_V11: true or false");
+  const temporalDB = env.TEMPORALDB_V11 === "true";
+  if (temporalDB && !backend) throw new Error("TEMPORALDB_V11 requires backend ingress");
   // Rita through the door's /ai (openbq-docker funnel-gateway rita-policy.mjs). Only with a
   // gateway, which must have "rita": true; the door forces the model and sets the limits.
   if (env.PREVIEW_RITA !== undefined && !["true", "false"].includes(env.PREVIEW_RITA)) throw new Error("PREVIEW_RITA: true or false");
@@ -72,7 +75,7 @@ export function readConfig(env = process.env) {
   const mcp = env.PREVIEW_MCP === "true";
   if (mcp && !backend) throw new Error("PREVIEW_MCP requires BACKEND_GATEWAY_ORIGIN");
   return {
-    rita, mcp, tableRelayToken, ssrmRoutes, tableTimeoutMs, ssrmTimeoutMs,
+    temporalDB, rita, mcp, tableRelayToken, ssrmRoutes, tableTimeoutMs, ssrmTimeoutMs,
     origin: origin(env.APP_ORIGIN, "APP_ORIGIN"), allowedIds: new Set(ids), feeds, backend, token,
     secret: env.AUTH_SECRET, githubId: env.AUTH_GITHUB_ID, githubSecret: env.AUTH_GITHUB_SECRET,
     epoch: env.SESSION_EPOCH,

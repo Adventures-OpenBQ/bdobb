@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import temporalDbMark from "../../assets/temporaldb-mark.svg";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { OPENBB_PLATFORM_SERVICE, OPENBB_REFERENCE_SERVICE } from "../../lib/dataClient";
@@ -188,7 +189,7 @@ export function ConnectionsDialog({ onClose }: { onClose: () => void }) {
 
   /** Discovery's `GET /` probe names the OpenBB Platform API; see fetchServiceName. */
   const markFor = (b: BackendConfig) =>
-    services[b.id] === OPENBB_PLATFORM_SERVICE || services[b.id] === OPENBB_REFERENCE_SERVICE ? OPENBB_MARK : "DB";
+    services[b.id] === "TemporalDB" ? <img src={temporalDbMark} alt="TemporalDB" width="28" height="28" /> : services[b.id] === OPENBB_PLATFORM_SERVICE || services[b.id] === OPENBB_REFERENCE_SERVICE ? OPENBB_MARK : "DB";
 
   function statusFor(b: BackendConfig): ServiceState {
     const s: BackendStatus | undefined = statuses[b.id];

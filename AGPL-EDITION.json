@@ -13,5 +13,8 @@
   "calendarProviderPrHead": "f9e3908155601108df957cf55e61b8c5b4e4f501",
   "pairedProviderCommit": "e7bb14d5546eca3218111b7930471d5965ac7496",
   "patchRelease": "v10.0.0",
-  "sourceRevisionReason": "Visible help/reference copyright and separately scoped documentation terms; original software and third-party permissions preserved"
+  "sourceRevisionReason": "Visible help/reference copyright and separately scoped documentation terms; original software and third-party permissions preserved",
+  "candidateRelease": "v11.0.0",
+  "candidateScope": "v11 temporal platform",
+  "candidateBaseline": "0281a7580c0a44a25736c62358f223a389fb8008"
 }

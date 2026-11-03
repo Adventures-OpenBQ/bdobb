@@ -47,6 +47,8 @@ export type DatasetColumn = {
   aggregation?: AggName;
   metadata?: { [key: string]: CloneSafeValue };
 };
+/** Immutable origin reference; local transforms append lineage and never replace this value. */
+export type TemporalReceiptReference = { readonly executionId: string; readonly queryId: string; readonly queryRevision: number; readonly resultHash: string; [key: string]: CloneSafeValue };
 export type DatasetProvenance = {
   /** Immediate selected input scope, separate from original acquisition bounds. */
   presentation?: { scope: 'presented'; rowCount: number; revision: { widgetId: string; input: number; model: number; output: number } };
@@ -55,7 +57,7 @@ export type DatasetProvenance = {
   inputMayContainAggregates?: boolean;
   sample?: string;
   lineage?: { widgetId: string; resultRevision: number; outputRevision: number }[];
-  receipt?: { [key: string]: CloneSafeValue };
+  receipt?: { [key: string]: CloneSafeValue; temporal?: TemporalReceiptReference };
   parameters?: { [key: string]: CloneSafeValue };
   metadata?: { [key: string]: CloneSafeValue };
 };

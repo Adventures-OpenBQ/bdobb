@@ -1015,3 +1015,10 @@ describe("ConnectionsDialog Workspace group", () => {
     });
   });
 });
+
+it('uses the exact bundled TemporalDB mark by discovered service identity after renaming',()=>{
+ useBackendsStore.setState({backends:[backend({id:'temporal',name:'My renamed service'}),backend({id:'pretender',name:'TemporalDB'})],services:{temporal:'TemporalDB',pretender:'generic'},statuses:{temporal:'online',pretender:'online'}});
+ render(<ConnectionsDialog onClose={()=>{}}/>);
+ const recognized=screen.getByRole('article',{name:/My renamed service/i});expect(recognized.querySelector('.bd-service-icon img')).toHaveAttribute('src',expect.stringContaining('temporaldb-mark.svg'));
+ expect(screen.getByRole('article',{name:/TemporalDB/i}).querySelector('.bd-service-icon')).toHaveTextContent('DB');
+});

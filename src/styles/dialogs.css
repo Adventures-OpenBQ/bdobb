@@ -329,3 +329,240 @@
 .bd-ws-row--folder { color: var(--text-muted); }
 .bd-ws-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bd-ws-row-letter { flex: none; font-size: var(--bd-xs); font-weight: 650; color: var(--accent); }
+
+/* Shared temporal query library. Data Workbench layout (27 Sep 2026 design):
+   search toolbar, saved-query rows with metadata badges and right-aligned
+   actions, then the selected definition. Existing dialog tokens only. */
+.bd-dialog--query-library .bd-body { display: grid; align-content: start; gap: var(--bd-s4); }
+.bd-query-tools { display: flex; align-items: center; gap: var(--bd-s2); }
+.bd-query-tools > .bd-input { flex: 1; min-width: 0; }
+.bd-query-list { display: grid; gap: var(--bd-s3); }
+.bd-query-row { background: var(--bg-panel); }
+.bd-query-row--selected { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+.bd-query-row .bd-row-title { font-size: var(--bd-md); }
+.bd-query-row > .bd-actions { margin-left: auto; }
+.bd-query-meta { display: flex; flex-wrap: wrap; gap: var(--bd-s1); margin-top: var(--bd-s1); }
+.bd-dialog--query-library .bd-empty { margin: 0; color: var(--text-muted); font-size: var(--bd-sm); }
+.bd-dialog--query-library fieldset { display: grid; gap: var(--bd-s3); border: 1px solid var(--border); border-radius: 8px; padding: var(--bd-s4); margin: 0; min-width: 0; }
+.bd-dialog--query-library legend { padding: 0 var(--bd-s1); font-weight: 600; font-size: var(--bd-sm); }
+.bd-dialog--query-library fieldset > .bd-button { justify-self: end; }
+.bd-dialog--query-library label { display: grid; gap: var(--bd-s2); color: var(--text-muted); font-size: var(--bd-xs); }
+.bd-dialog--query-library label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: var(--bd-s2); color: var(--text); font-size: var(--bd-sm); }
+.bd-dialog--query-library textarea { width: 100%; min-height: 100px; resize: vertical; font-family: ui-monospace, monospace; font-size: var(--bd-xs); }
+.bd-query-editor > summary { cursor: pointer; color: var(--text-muted); font-size: var(--bd-sm); }
+.bd-query-editor[open] { display: grid; gap: var(--bd-s3); }
+@media (max-width: 600px) {
+  .bd-query-tools { flex-wrap: wrap; }
+  .bd-query-tools > .bd-input { flex-basis: 100%; }
+  .bd-query-row > .bd-actions { margin-left: 0; width: 100%; }
+}
+
+/* Query-backed widget: receipt strip left, actions right (design .receipt). */
+.query-data-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--bd-s2); margin-bottom: var(--bd-s2); }
+.query-data-bar > .bd-actions { gap: var(--bd-s1); margin-left: auto; }
+.query-data-bar .bd-button { min-height: 26px; padding: 2px var(--bd-s2); font-size: var(--font-size-12); }
+.query-receipt { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bd-s1); min-width: 0; }
+.query-receipt .bd-badge { font-variant-numeric: tabular-nums; }
+.query-receipt-partial { color: var(--bd-warning); border-color: color-mix(in srgb, var(--bd-warning) 32%, transparent); }
+.query-receipt-stale { color: var(--bd-warning); background: var(--bd-warning-bg); }
+.query-data-renderer > .bd-notice { margin-bottom: var(--bd-s2); }
+
+/* v11 design review, decided 2026-10-16: typed parameters, description,
+   saved pivot, receipt drawer and per-widget context bar. Same tokens as the
+   Data Workbench prototype's .field, .contextbar and .inspector dl. */
+.bd-badge--accent { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: transparent; }
+.bd-query-description { margin: var(--bd-s1) 0 0; font-size: var(--bd-xs); }
+.bd-query-params { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); align-items: start; gap: var(--bd-s3); }
+.bd-query-param { display: grid; align-content: start; gap: var(--bd-s1); min-width: 0; }
+.bd-dialog--query-library .bd-query-param-head { display: flex; align-items: center; gap: var(--bd-s2); min-height: 24px; color: var(--text-muted); font-size: var(--bd-xs); }
+.bd-dialog--query-library .bd-query-param-check { display: flex; align-items: center; gap: var(--bd-s2); min-height: 40px; color: var(--text); font-size: var(--bd-sm); }
+.bd-query-param-name { color: var(--text); font-size: var(--bd-sm); font-family: ui-monospace, monospace; }
+.bd-query-param > .bd-input { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+.bd-query-param > .bd-input[aria-invalid="true"] { border-color: var(--error); }
+.bd-query-param-hint { font-size: var(--bd-xs); color: var(--accent); }
+.bd-query-param-hint.bd-muted { color: var(--text-muted); }
+.bd-query-param-hint--error { color: var(--error); }
+.bd-query-selected > .bd-actions { justify-content: flex-end; flex-wrap: wrap; }
+
+.query-receipt-toggle { cursor: pointer; font: inherit; font-size: var(--bd-xs); color: var(--accent); }
+.query-receipt-toggle[aria-expanded="true"] { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); }
+.query-receipt-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.query-context-bar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--bd-s3); padding-bottom: var(--bd-s2); margin-bottom: var(--bd-s2); border-bottom: 1px solid var(--border); font-size: var(--bd-xs); }
+.query-context-bar label { display: grid; gap: 2px; color: var(--text-muted); }
+.query-context-bar .bd-input { min-height: 26px; padding: 2px var(--bd-s2); font-size: var(--font-size-12); max-width: 220px; }
+.query-context-bar .bd-button { min-height: 26px; padding: 2px var(--bd-s2); font-size: var(--font-size-12); }
+.query-context-error { color: var(--error); align-self: center; }
+.query-receipt-drawer { max-height: 320px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); padding: var(--bd-s3) var(--bd-s4); margin-bottom: var(--bd-s2); }
+.query-receipt-drawer-head { display: flex; align-items: center; justify-content: space-between; }
+.query-receipt-drawer-head h3 { margin: 0; font-size: var(--bd-sm); font-weight: 600; }
+.query-receipt-fields { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--bd-s4); row-gap: var(--bd-s2); margin: var(--bd-s3) 0; }
+.query-receipt-fields dt { font-size: var(--bd-xs); color: var(--text-muted); }
+.query-receipt-fields dd { margin: 0; font-size: var(--bd-sm); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.query-receipt-fields code { font-family: ui-monospace, monospace; font-size: var(--bd-xs); }
+.query-receipt-id { user-select: all; }
+.query-receipt-params { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.query-receipt-param-name { font-family: ui-monospace, monospace; font-size: var(--bd-xs); color: var(--text); }
+.query-receipt-drawer > .bd-notice { margin-top: var(--bd-s2); }
+@media (max-width: 700px) {
+  .query-receipt-fields { grid-template-columns: 1fr; row-gap: 2px; }
+  .query-receipt-fields dd { margin-bottom: var(--bd-s2); }
+  .query-context-bar .bd-input { max-width: none; }
+  .query-context-bar label { flex: 1 1 140px; }
+}
+
+/* TemporalDB explorer — design of record.
+   Append this block to Adventures-OpenBQ/bdobb src/styles/dialogs.css.
+   Copy it. Do not restyle it, rename these classes, or replace it with another visual system.
+   Shell tokens (--text, --border, --bg-panel, --accent, --font-size-base, --bd-*) already exist.
+   Do not redefine them. */
+
+.bd-dialog--temporal-explorer { width: min(840px, calc(100vw - 32px)); }
+.bd-dialog--temporal-explorer .bd-body { display: block; overflow: auto; padding: var(--bd-s4) var(--bd-s5); }
+.bd-temporal-explorer {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 228px;
+  gap: var(--bd-s3);
+  align-items: start;
+}
+.bd-temporal-pane,
+.bd-temporal-catalog,
+.bd-temporal-inspector,
+.bd-temporal-builder { display: grid; gap: var(--bd-s3); min-width: 0; align-content: start; }
+.bd-temporal-pane > h3 { margin: 0; }
+.bd-temporal-eyebrow {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--bd-xs);
+  font-weight: 650;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.bd-temporal-dataset {
+  display: grid;
+  gap: var(--bd-s2);
+  padding: var(--bd-s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+}
+.bd-temporal-dataset--selected { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+.bd-temporal-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bd-s2); }
+.bd-temporal-tier { cursor: pointer; border-top-width: 2px; }
+.bd-temporal-tier[data-tier="bronze"] { border-top-color: #b07a4a; }
+.bd-temporal-tier[data-tier="silver"] { border-top-color: #9aa5b4; }
+.bd-temporal-tier[data-tier="gold"] { border-top-color: #d2a94a; }
+.bd-temporal-tier[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.bd-temporal-tier:not([data-available]) { opacity: .6; }
+.bd-temporal-inspector [role="tab"][aria-selected="true"],
+.bd-temporal-builder [role="tab"][aria-selected="true"] { box-shadow: inset 0 -2px 0 var(--accent); color: var(--text); }
+.bd-temporal-list { margin: 0; padding-left: var(--bd-s4); font-size: var(--bd-xs); }
+.bd-temporal-clock {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--bd-s1) var(--bd-s3);
+  margin: 0;
+  font-size: var(--bd-xs);
+}
+.bd-temporal-clock dt { color: var(--text-muted); }
+.bd-temporal-clock dd { margin: 0; overflow-wrap: anywhere; }
+.bd-temporal-builder label { display: grid; gap: var(--bd-s1); color: var(--text-muted); font-size: var(--bd-xs); min-width: 0; }
+.bd-temporal-builder label:has(input[type="checkbox"]),
+.bd-temporal-builder label:has(input[type="radio"]) {
+  display: flex;
+  align-items: center;
+  gap: var(--bd-s2);
+  color: var(--text);
+  font-size: var(--bd-sm);
+}
+.bd-temporal-builder fieldset {
+  display: grid;
+  gap: var(--bd-s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: var(--bd-s3);
+  margin: 0;
+  min-width: 0;
+}
+.bd-temporal-builder .query-context-bar { display: flex; flex-wrap: wrap; gap: var(--bd-s2); align-items: end; }
+.bd-temporal-sql, .bd-temporal-json { width: 100%; font-family: ui-monospace, monospace; font-size: var(--bd-xs); }
+.bd-temporal-json {
+  max-height: 160px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--bd-s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bd-field);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bd-temporal-table { overflow: auto; max-height: 180px; }
+.bd-temporal-table table { border-collapse: collapse; font-size: var(--bd-xs); width: 100%; }
+.bd-temporal-table th, .bd-temporal-table td {
+  padding: 2px var(--bd-s2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.bd-temporal-table th { color: var(--text-muted); font-weight: 550; }
+.temporal-explorer-card { display: grid; gap: var(--bd-s3); padding: var(--bd-s3); align-content: start; }
+.temporal-explorer-summary { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--bd-s1) var(--bd-s3); margin: 0; }
+.temporal-explorer-summary dt { color: var(--text-muted); font-size: var(--bd-xs); }
+.temporal-explorer-summary dd { margin: 0; font-size: var(--bd-sm); overflow-wrap: anywhere; }
+.temporal-explorer-card .bd-button--primary { justify-self: start; }
+
+.bd-temporal-profile {
+  display: grid;
+  gap: var(--bd-s2);
+  padding: var(--bd-s3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bd-nav);
+  min-width: 0;
+}
+.bd-temporal-profile-note { margin: 0; overflow-wrap: anywhere; }
+.bd-temporal-schema-flag { justify-self: start; }
+.bd-temporal-column {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: var(--bd-s2);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.bd-temporal-column code, .bd-temporal-column .bd-muted { overflow-wrap: anywhere; }
+.bd-temporal-column[aria-current="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.bd-temporal-facts {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 2px var(--bd-s2);
+  margin: var(--bd-s2) 0 0;
+  font-size: var(--bd-xs);
+}
+.bd-temporal-facts dt { color: var(--text-muted); }
+.bd-temporal-facts dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bd-temporal-samples { display: flex; flex-wrap: wrap; gap: var(--bd-s1); }
+.bd-temporal-sample {
+  font-family: ui-monospace, monospace;
+  font-size: var(--bd-xs);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 840px) {
+  .bd-dialog--temporal-explorer { width: 100vw; height: 100dvh; max-height: none; border-radius: 0; }
+  .bd-temporal-explorer { grid-template-columns: minmax(0, 1fr); }
+  .bd-temporal-facts { grid-template-columns: 5.5rem minmax(0, 1fr); }
+}
+
+/* The column's click target inside .bd-temporal-column: no button chrome, focus ring kept. */
+.bd-temporal-column > button { display: grid; gap: 2px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }

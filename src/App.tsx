@@ -30,6 +30,7 @@ import { bootstrap, viewerIdFromLocation } from "./lib/bootstrap";
 import { onDashboardChanged } from "./lib/dashboardSync";
 import { DOCKS_ID } from "./lib/dashboardsFile";
 import { logError, logInfo } from "./lib/logger";
+import { servedTemporalApp } from "./lib/temporal/portable";
 import { firstDashboardInReadingOrder, focusDashboardInWorkspace } from "./lib/workspaceFocus";
 import { useAgentDiscovery } from "./stores/agentDiscoveryStore";
 import { useChatStore } from "./stores/chatStore";
@@ -289,7 +290,7 @@ export default function App() {
       // tell two copies apart, so whether there should be two is the user's
       // call; Keep both still makes a plain dashboard named as the importer
       // names it ("Macro (2)").
-      const text = JSON.stringify([app]);
+      const text = JSON.stringify([servedTemporalApp(app, backendId)]);
       const decided = await decideAppsImport(text, text.length);
       // Cancel import and Skip write nothing, so the dialog stays up for
       // another pick and nothing below runs.
@@ -322,10 +323,12 @@ export default function App() {
       openingApp.current = false;
     }
 
-    // The one use of the dialog's backendId: MCP servers the app names
-    // remember which backend they came from, so a "token" server can be
-    // given that backend's credential (spec §4). Dashboards still keep no
-    // provenance (D3).
+    // The dialog's backendId has two uses. Above, servedTemporalApp rebinds
+    // a served TemporalDB example's query cards to the connection that
+    // served it, since the app cannot know this install's connection ids.
+    // Here, MCP servers the app names remember which backend they came
+    // from, so a "token" server can be given that backend's credential
+    // (spec §4). Dashboards still keep no provenance (D3).
     //
     // A failed MCP-server save is logged there and must neither leave the
     // dialog up nor escape as an unhandled rejection (final review M3).
@@ -736,11 +739,13 @@ export default function App() {
           <ErrorBoundary label="the apps dialog" onDismiss={() => setAppsOpen(false)}>
             <AppsDialog
               onClose={() => setAppsOpen(false)}
-              // The backendId the dialog hands over is now used for exactly
-              // one thing: MCP-server provenance (see openApp). A card still
-              // resolves against the whole registry rather than against the
-              // backend the app came from, and a dashboard itself still keeps
-              // no provenance at all -- per the design's D3.
+              // The backendId the dialog hands over is used for two things
+              // (see openApp): rebinding a served TemporalDB example's query
+              // cards to the connection that served it, and MCP-server
+              // provenance. Any other card still resolves against the whole
+              // registry rather than against the backend the app came from,
+              // and a dashboard itself still keeps no provenance at all --
+              // per the design's D3.
               onOpen={(app, backendId) => void openApp(app, backendId)}
               error={appsError ?? undefined}
             />

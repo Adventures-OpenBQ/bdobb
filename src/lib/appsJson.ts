@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { exportTemporalApp, prepareTemporalApps, type TemporalAppOverlay } from "./temporal/portable";
 import { exportV5, needsV5, type V5AppExtension } from "./appsExtensionsV5";
 import { exportV4, needsV4 } from "./appsExtensionsV4";
 import { exportV8, needsV8, prepareV8, type V8AppExtension, type V8Skipped } from "./appsExtensionsV8";
@@ -73,7 +74,7 @@ export type AppGroup = {
 };
 
 export type App = {
-  extensions?: { bdobb: V3AppExtension | V4AppExtension | V5AppExtension | V8AppExtension };
+  extensions?: { bdobb: V3AppExtension | V4AppExtension | V5AppExtension | V8AppExtension; bdobbV11?: TemporalAppOverlay };
   name: string;
   description: string;
   img: string;
@@ -496,7 +497,7 @@ export function exportCompatibleApp(dashboard: Dashboard): ExtensionResult<App> 
   const baseExport = (base: Dashboard) => needsV4(base) ? exportV4(base, exportCompatibleV3) : exportCompatibleV3(base);
   const v5Export = (base: Dashboard) => needsV5(base) ? exportV5(base, baseExport) : baseExport(base);
   // v8 wraps whatever the older profiles wrote; they never see a v8 field (R1).
-  return needsV8(dashboard) ? exportV8(dashboard, v5Export) : v5Export(dashboard);
+  return exportTemporalApp(dashboard, base => needsV8(base) ? exportV8(base, v5Export) : v5Export(base));
 }
 
 /**
@@ -938,6 +939,6 @@ function importPivotView(card: DashboardCard, pivot: Record<string, unknown>, pa
 }
 
 export function importApps(json: unknown, registry: WidgetDef[]): ImportResult {
-  const prepared = prepareV8(json);
+  const prepared = prepareTemporalApps(json, prepareV8);
   return prepared.restore(importAppsBase(prepared.plain, registry));
 }

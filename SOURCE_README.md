@@ -1,7 +1,7 @@
-# Source for the proposed v10.0.0 AGPL edition
+# Source for the proposed v11.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: 92cd43f98be70f7852cf4d9d8a0f55c4ef496bfd
+Baseline: public v10 main 0281a7580c0a44a25736c62358f223a389fb8008; exact candidate revision is recorded in source-offer.json.
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the proposed AGPL migration, revision-specific Help

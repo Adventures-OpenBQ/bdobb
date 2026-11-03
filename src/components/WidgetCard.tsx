@@ -30,6 +30,7 @@ import { rowsOf } from "../lib/chartShapes";
 import { dataUpdateText } from "../lib/cron";
 import { authHeaders } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
+import { temporalExportMetadata, temporalJson, temporalCsv } from "../lib/temporal/export";
 import { exportFilename, collectPresentedExport, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
 import { logError, logOnce } from "../lib/logger";
 import { clampLogName } from "../lib/logNames";
@@ -67,6 +68,8 @@ import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
 import { canUseLinkedSource } from "../lib/widgetData/sources";
 import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
+import { QueryDataRenderer } from "./renderers/QueryDataRenderer";
+import { TemporalExplorerRenderer } from "./renderers/TemporalExplorerRenderer";
 import { SsrmTableRenderer } from "./renderers/SsrmTableRenderer";
 import { LocalTableRenderer, schemaColumns } from "./renderers/LocalTableRenderer";
 import { MarkdownRenderer } from "./renderers/MarkdownRenderer";
@@ -622,7 +625,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
     // which no built-in card has (see canExport).
-    ((isManagedTable(card) || widget?.type === "local_table" || (card.linkedSource && !card.linkedChart)) && !isTransposed && !isStatement);
+    ((isManagedTable(card) || widget?.type === "local_table" || widget?.type === "query_data" || !!card.queryBinding || (card.linkedSource && !card.linkedChart)) && !isTransposed && !isStatement);
 
   /**
    * The same column list the renderer builds, from the same pure function.
@@ -958,18 +961,23 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       // the compiler.
       const table = executor && view?.active
         ? { ...(await collectPresentedExport(executor, view.active, new AbortController().signal)), labels: undefined }
-        : { rows: exportRows ?? [], columns: exportColumns, dates: undefined, labels: exportLabels };
+        : { rows: exportRows ?? [], columns: exportColumns, dates: undefined, labels: exportLabels, temporal: undefined };
+      // Rows are revision-bound already; only a TemporalDB result, which a scope change can
+      // evict mid-export, is refused when the view re-activated (v10 cards export as before).
+      if (table.temporal && tableExecutionStore.readView(dashboard!.id, card.id).active !== view?.active) throw new Error("Table changed during export");
+      // v11: a TemporalDB result exports with its provenance and completeness (temporal/export).
+      const temporal = table.temporal && temporalExportMetadata(table.temporal.provenance, table.temporal.completeness);
       if (kind === "json") {
         // JSON follows the view too, same as CSV/Excel (spec D5): the
         // transposed rows when the transposed view is showing, the raw
         // payload otherwise. toJsonRows, not toJson, for the reason toCsv
         // takes an explicit list -- a transposed row's own keys put an
         // integer-like header ("2024") ahead of `Field`.
-        await saveTextFile(fileName, EXPORT_LABELS[kind], workerExport || isTransposed || isStatement ? toJsonRows(table.rows, table.columns) : toJson(data), kind);
+        await saveTextFile(fileName, EXPORT_LABELS[kind], temporal ? temporalJson(table.rows, temporal) : workerExport || isTransposed || isStatement ? toJsonRows(table.rows, table.columns) : toJson(data), kind);
       } else if (kind === "csv") {
-        await saveTextFile(fileName, EXPORT_LABELS[kind], toCsv(table.rows, table.columns, table.labels), kind);
+        await saveTextFile(fileName, EXPORT_LABELS[kind], temporal ? temporalCsv(table.rows, table.columns, temporal) : toCsv(table.rows, table.columns, table.labels), kind);
       } else {
-        await saveBinaryFile(fileName, EXPORT_LABELS[kind], await toXlsx(table.rows, table.columns, table.dates, table.labels), kind);
+        await saveBinaryFile(fileName, EXPORT_LABELS[kind], await toXlsx(table.rows, table.columns, table.dates, table.labels, temporal), kind);
       }
     });
   }
@@ -1061,6 +1069,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         const collapsed = folded.includes(section) ? folded.filter(name => name !== section) : [...folded, section];
         void patchCardField(card.id, "statement", collapsed.length ? { collapsed } : null).catch(() => setExportNotice("Could not save Statement sections."));
       }} />;
+    if (widget?.type === "temporaldb_explorer") return <TemporalExplorerRenderer card={card} readOnly={readOnly} />;
+    if ((widget?.type === "query_data" || card.queryBinding) && !card.linkedSource && dashboard) return <QueryDataRenderer dashboardId={dashboard.id} card={card} filterRow={filterRowOpen} onStateChange={patch => void saveTable(patch)} readOnly={readOnly}/>;
     if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
 
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {

@@ -605,6 +605,7 @@ export function normalizeWidgets(
       backendId,
       name: str(w.name, id),
       description: str(w.description, ""),
+      // query_data is self-acquiring through the temporal SourceAdapter, like local_table.
       type: str(w.type, "table"),
       provider: typeof w.provider === "string" ? w.provider : undefined,
       protocolVersion: typeof w.protocolVersion === "number" ? w.protocolVersion : undefined,

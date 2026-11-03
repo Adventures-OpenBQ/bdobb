@@ -1,0 +1,67 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import {expect,it,vi} from 'vitest';
+import {createTemporalSourceAdapter} from './sourceAdapter';
+import {parseQueryBinding} from './bindings';
+import {definition,executionId,fixed,page,receipt} from './fixtures';
+import type {TemporalClient} from './client';
+const signal=()=>new AbortController().signal;
+function client(){return {get:vi.fn(async()=>definition),start:vi.fn(async()=>({execution_id:executionId,state:'queued' as const})),status:vi.fn(async()=>({execution_id:executionId,state:'succeeded' as const,error:null})),page:vi.fn(async()=>page)} as unknown as TemporalClient;}
+it('keeps fixed revisions and page limits while refresh starts a new execution',async()=>{
+ const c=client();const source=createTemporalSourceAdapter(c,fixed);
+ const acquired=await source.acquire(signal());expect(acquired.kind).toBe('dataset');
+ if(acquired.kind!=='dataset')throw Error('dataset');
+ expect(acquired.dataset.completeness).toMatchObject({kind:'paged',acquiredRowCount:1,totalRowCount:2000,totalRowCountKind:'exact'});
+ expect(acquired.dataset.provenance.receipt?.temporal).toMatchObject({executionId,resultHash:receipt.result_hash,queryRevision:2});
+ expect(c.start).toHaveBeenCalledWith(expect.objectContaining({revision:2,context:{mode:'current_corrected'}}),expect.any(AbortSignal));
+ expect(vi.mocked(c.start).mock.calls[0][0]).not.toHaveProperty('input_manifest');
+ await source.acquire(signal());expect(c.start).toHaveBeenCalledTimes(2);expect(c.get).not.toHaveBeenCalled();
+});
+it('resolves latest only by explicit opt in and reads pinned executions without starting',async()=>{
+ const c=client();await createTemporalSourceAdapter(c,{kind:'query',queryId:fixed.queryId,revisionPolicy:'latest',params:{},context:fixed.context}).acquire(signal());
+ expect(c.get).toHaveBeenCalledWith(fixed.queryId,undefined,expect.any(AbortSignal));
+ vi.mocked(c.start).mockClear();await createTemporalSourceAdapter(c,{kind:'execution',executionId}).acquire(signal());expect(c.start).not.toHaveBeenCalled();
+});
+it('refuses malformed/future binding intent without dropping it',()=>{
+ expect(parseQueryBinding(fixed)).toEqual(fixed);
+ for(const value of [{...fixed,revision:undefined},{...fixed,schemaVersion:2},{kind:'execution',executionId:'invalid'},{...fixed,revisionPolicy:'silent-latest'}])expect(()=>parseQueryBinding(value)).toThrow();
+});
+it('aborts stale noncooperative pages and never calls them complete',async()=>{
+ const c=client();let done!:(p:typeof page)=>void;vi.mocked(c.page).mockImplementation(()=>new Promise(resolve=>{done=resolve}));
+ const control=new AbortController();const pending=createTemporalSourceAdapter(c,fixed).acquire(control.signal);await vi.waitFor(()=>expect(done).toBeTypeOf('function'));control.abort();done(page);await expect(pending).rejects.toMatchObject({name:'AbortError'});
+});
+it('retains truncated lower-bound semantics and rejects the wrong origin',async()=>{
+ const c=client();vi.mocked(c.page).mockResolvedValue({...page,next_cursor:null,complete:false,truncated:true,count_quality:'lower_bound'});
+ const data=await createTemporalSourceAdapter(c,fixed).acquire(signal());expect(data.kind==='dataset'&&data.dataset.completeness).toMatchObject({kind:'partial',totalRowCount:2000});
+ vi.mocked(c.page).mockResolvedValue({...page,receipt:{...receipt,query_revision:3}});await expect(createTemporalSourceAdapter(c,fixed).acquire(signal())).rejects.toThrow(/revision/i);
+});
+
+it('retains exact Arrow scalar strings through acquisition and records lower-bound page metadata',async()=>{
+ const c=client();const schema=[{name:'Id',type:'int64',nullable:false},{name:'Amount',type:'decimal128(38, 18)',nullable:false},{name:'Day',type:'date32[day]',nullable:false}];const values={Id:'9223372036854775807',Amount:'1.000000000000000001',Day:'2026-10-15'};
+ vi.mocked(c.page).mockResolvedValue({...page,schema,rows:[values],receipt:{...receipt,schema},count_quality:'lower_bound',complete:false,truncated:true,next_cursor:null});
+ const acquired=await createTemporalSourceAdapter(c,fixed).acquire(signal());if(acquired.kind!=='dataset')throw Error('dataset');expect(acquired.dataset.rows[0].values).toEqual(values);expect(acquired.dataset.columns.map(c=>c.dtype)).toEqual(['text','text','dateString']);expect(acquired.dataset.provenance.metadata?.temporalPage).toMatchObject({countQuality:'lower_bound',loadedRows:1});
+});
+
+it('retains exact snapshot pins through fixed, latest and pinned acquisition into all serialized export metadata',async()=>{
+ const {temporalExportMetadata,temporalJson,temporalCsv}=await import('./export');const {toXlsx}=await import('../export');const XLSX=await import('xlsx');
+ const ids=[Number.MAX_SAFE_INTEGER,'9007199254740992','9223372036854775807'];const input_manifest={...receipt.input_manifest,pins:ids.map((snapshot_id,i)=>({catalog_id:`catalog-${i}`,snapshot_id})),source_manifests:{'eodhd.eod':{manifest_id:receipt.input_manifest.manifest_id,pins:[{catalog_id:'hot',snapshot_id:'9223372036854775807'}],projection_versions:{'gold.eodhd.eod':'daily-v1'}},'eodhd.fundamentals':{manifest_id:receipt.input_manifest.manifest_id,pins:[{catalog_id:'hot',snapshot_id:'9007199254740992'}],projection_versions:{'gold.eodhd.fundamentals':'fundamentals-v1'}}}};
+ const bindings=[fixed,{kind:'query' as const,queryId:fixed.queryId,revisionPolicy:'latest' as const,params:{},context:fixed.context},{kind:'execution' as const,executionId}];
+ for(const binding of bindings){
+  const c=client();vi.mocked(c.page).mockResolvedValue({...page,receipt:{...receipt,input_manifest}});
+  const acquired=await createTemporalSourceAdapter(c,binding).acquire(signal());if(acquired.kind!=='dataset')throw Error('dataset');
+  const data=acquired.dataset,metadata=temporalExportMetadata(data.provenance,data.completeness),rows=data.rows.map(r=>r.values);
+  const exported=JSON.parse(temporalJson(rows,metadata));expect(exported.provenance.receipt.temporal.inputManifest).toEqual(input_manifest);
+  const csv=XLSX.read(temporalCsv(rows,['Revenue'],metadata),{type:'string'}),csvRows=XLSX.utils.sheet_to_json<Record<string,string>>(csv.Sheets[csv.SheetNames[0]]);
+  expect(JSON.parse(csvRows[0].__temporaldb_provenance_v1).receipt.temporal.inputManifest).toEqual(input_manifest);
+  const excel=XLSX.read(await toXlsx(rows,['Revenue'],undefined,{},metadata),{type:'array'}),excelRows=XLSX.utils.sheet_to_json<Record<string,string>>(excel.Sheets.TemporalDB);
+  expect(JSON.parse(excelRows.find(r=>r.Field==='provenance')!.JSON).receipt.temporal.inputManifest).toEqual(input_manifest);
+ }
+});
+
+it('resolves relative date parameters at run time and sends only literals',async()=>{
+ const c=client();vi.mocked(c.get).mockResolvedValue({...definition,parameters:[{name:'as_of',type:'date',required:true},{name:'ticker',type:'string',required:true}]});
+ await createTemporalSourceAdapter(c,{...fixed,params:{as_of:'T-1bd',ticker:'T'}}).acquire(signal());
+ expect(c.get).toHaveBeenCalledWith(fixed.queryId,2,expect.any(AbortSignal));
+ const sent=vi.mocked(c.start).mock.calls[0][0].params;
+ expect(sent.ticker).toBe('T');expect(sent.as_of).toMatch(/^\d{4}-\d{2}-\d{2}$/);expect(sent.as_of).not.toBe('T-1bd');
+});

@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { afterEach, expect, it } from 'vitest';
-import { isBackendTable } from './eligibility';
+import { isBackendTable, isTemporalTable } from './eligibility';
 import { useWidgetRegistryStore } from '../../stores/widgetRegistryStore';
 import type { DashboardCard } from '../types';
 
@@ -15,4 +15,10 @@ it('is a backend table only for a discovered table widget, and a throwing lookup
   expect(isBackendTable({ ...card, linkedSource: { kind: 'widget', sourceWidgetId: 'x' } })).toBe(false);
   useWidgetRegistryStore.setState({ find: () => { throw new Error('lookup failed'); } });
   expect(isBackendTable(card)).toBe(false);
+});
+
+it('refuses failed discovery for temporal eligibility while retaining an explicit binding', () => {
+  useWidgetRegistryStore.setState({ find: () => { throw new Error('lookup failed'); } });
+  expect(isTemporalTable(card)).toBe(false);
+  expect(isTemporalTable({ ...card, queryBinding: { kind: 'execution', executionId: '11111111-1111-4111-8111-111111111111' } })).toBe(true);
 });

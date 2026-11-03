@@ -48,6 +48,7 @@ export default tseslint.config(
       // directory; linting them would report another commit's code (the
       // same trap vite.config.ts's test exclude documents).
       ".claude/**",
+      ".worktrees/**",
       "docs/**",
       "playwright-report/**",
       "e2e-results/**",

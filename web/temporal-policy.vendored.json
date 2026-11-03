@@ -1,0 +1,7 @@
+{
+  "interfaceVersion": 11,
+  "repository": "openbq-docker",
+  "commit": "ba2154764f61e6a470379cab29a8765cce05a227",
+  "path": "funnel-gateway/temporal-policy.mjs",
+  "sha256": "ee0eb16d8d30b24393579cc7c40504861c5102dc306794131c80f43c53bca173"
+}

@@ -18,7 +18,7 @@ import { authConfig, identity } from "./auth.mjs";
 import { newsSubscription, refSubscription, socketTarget, socketTicket, socketTicketNonce, socketTicketValid, upstreamPath } from "./policy.mjs";
 import * as vendoredPolicy from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
-import { createPreviewServer, gridSocketServed } from "./server.mjs";
+import { createPreviewServer, gridSocketServed, STATE_LIST_RESPONSE_MAX } from "./server.mjs";
 
 const env = {
   APP_ORIGIN: "https://preview.example.com",
@@ -442,10 +442,13 @@ test("Auth.js issues CSRF cookie; missing CSRF and wrong Origin cannot start OAu
   assert.ok(JSON.parse(csrf.body).csrfToken);
   assert.match(csrf.headers["set-cookie"].join(), /HttpOnly/);
   assert.match(csrf.headers["set-cookie"].join(), /Secure/);
+  const diagnostic = t.mock.method(console, "error", () => {});
   const denied = await call("/auth/signin/github", {
     method: "POST", headers: { origin: env.APP_ORIGIN, "content-type": "application/x-www-form-urlencoded" },
     body: "callbackUrl=https%3A%2F%2Fevil.example.com",
   });
+  assert.deepEqual(diagnostic.mock.calls.map(call => call.arguments), [["Preview authentication failed"]]);
+  diagnostic.mock.restore();
   assert.ok(!denied.headers.location?.startsWith("https://github.com"));
   assert.equal((await call("/auth/signin/github", { method: "POST",
     headers: { origin: "https://evil.example.com" } })).status, 403);
@@ -1365,4 +1368,121 @@ test("SSRM relays get their own deadline (default 170 s, at most 300 s); managed
   const headers={cookie:await cookie(),Origin:cfg.origin,"Content-Type":"application/json"};
   assert.equal((await call("/api/api/v1/test/rows",{method:"POST",headers,body:"{}"})).status,200);
   assert.equal((await call("/table/sessions",{method:"POST",headers,body:"{}"})).status,502);
+});
+
+test('v11 TemporalDB opt-in relays exact methods with CSRF checks and gateway-only credentials', async t => {
+  assert.throws(()=>readConfig({...env,TEMPORALDB_V11:'yes'}));
+  assert.throws(()=>readConfig({...env,TEMPORALDB_V11:'true',BACKEND_GATEWAY_ORIGIN:'',BACKEND_GATEWAY_TOKEN:''}));
+  const calls=[];
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"query_id":"fixture"}',{status:201,headers:{'Content-Type':'application/json','Set-Cookie':'secret=leak'}});}});
+  const path='/temporal/temporal/v1/queries';
+  const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret'};
+  assert.equal((await call(path,{method:'POST',headers,body:'{}'})).status,201);
+  assert.equal(calls[0].url,env.BACKEND_GATEWAY_ORIGIN+path);
+  assert.equal(calls[0].options.method,'POST');assert.equal(calls[0].options.headers.Authorization,'Bearer '+env.BACKEND_GATEWAY_TOKEN);
+  assert.equal(calls[0].options.headers.Cookie,undefined);
+  assert.equal((await call(path,{method:'POST',headers:{...headers,'Content-Type':'application/jsonp'},body:'{}'})).status,415);
+  assert.equal((await call(path,{method:'POST',headers:{Cookie:await cookie(),'Content-Type':'application/json'},body:'{}'})).status,403);
+  assert.equal((await call('/temporal/temporal/v1/captures',{method:'POST',headers,body:'{}'})).status,404);
+  const off=await fixture(t);assert.equal((await off.call(path,{headers:{Cookie:await cookie()}})).status,404);
+  const seed=bootstrap(readConfig({...env,TEMPORALDB_V11:'true'}));assert.match(seed,/preview-temporal/);assert.doesNotMatch(seed,new RegExp(env.BACKEND_GATEWAY_TOKEN));
+});
+
+test('v11 policy overlay has its own immutable source receipt; v10 is independently pinned', () => {
+  const receipt=JSON.parse(readFileSync(new URL('./temporal-policy.vendored.json',import.meta.url),'utf8'));
+  const source=readFileSync(new URL('./temporal-policy.mjs',import.meta.url),'utf8');
+  assert.equal(receipt.interfaceVersion,11);assert.equal(receipt.path,'funnel-gateway/temporal-policy.mjs');
+  assert.match(receipt.commit,/^[0-9a-f]{40}$/);
+  assert.equal(source.split('\n')[0],`// vendored from openbq-docker ${receipt.commit} ${receipt.path} sha256:${receipt.sha256}`);
+  assert.equal(createHash('sha256').update(source.slice(source.indexOf('\n')+1)).digest('hex'),receipt.sha256);
+});
+
+test('TemporalDB failures preserve safe status semantics without leaking upstream secrets or expiring browser sessions', async t => {
+  let status=401;
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async()=>new Response('{"credential":"secret-upstream"}',{status,headers:{'Content-Type':'application/json','Set-Cookie':'secret-upstream','WWW-Authenticate':'secret-upstream'}})});
+  for(const [upstream,want] of [[401,502],[302,502],[500,502],[403,403],[409,409],[429,429]]) {
+    status=upstream;
+    const answer=await call('/temporal/temporal/v1/queries',{headers:{Cookie:await cookie()}});
+    assert.equal(answer.status,want);assert.doesNotMatch(answer.body,/credential|secret-upstream/);
+    assert.equal(answer.headers['set-cookie'],undefined);assert.equal(answer.headers['www-authenticate'],undefined);
+  }
+});
+
+test("at-quota escaped state bootstraps completely before persistence is enabled", async t => {
+  const raw = '{"x":1}' + '\t'.repeat(262137);
+  const saved = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`dashboards/quota${i}.json`, raw]));
+  const envelope = JSON.stringify({ files: saved });
+  assert.equal(Buffer.byteLength(envelope), 4194499);
+  const { call } = await fixture(t, { fetchUpstream: async () => new Response(envelope) });
+  const js = (await call("/preview-bootstrap.js", { headers: { cookie: await cookie() } })).body;
+  assert.match(js, /window\.__bdobbPersist=true;/);
+  assert.doesNotMatch(js, /dashboards\/preview\.json/);
+  for (const [name, value] of Object.entries(saved)) assert.ok(js.includes(JSON.stringify(name) + ':' + JSON.stringify(value)));
+});
+
+test("state declared overflow is refused without reading and streamed overflow restores no partial files", async t => {
+  for (const declared of [true, false]) {
+    let reads = 0, cancelled = false;
+    const stream = new ReadableStream({
+      pull(controller) { reads++; controller.enqueue(new Uint8Array(1024 * 1024).fill(32)); },
+      cancel() { cancelled = true; },
+    }, { highWaterMark: 0 });
+    const { call } = await fixture(t, { fetchUpstream: async () => new Response(stream,
+      { headers: declared ? { "content-length": "12603324" } : {} }) });
+    const js = (await call("/preview-bootstrap.js", { headers: { cookie: await cookie() } })).body;
+    assert.doesNotMatch(js, /__bdobbPersist/); assert.match(js, /dashboards\/preview\.json/);
+    assert.equal(cancelled, true);
+    if (declared) assert.equal(reads, 0); else assert.equal(reads, 13);
+  }
+});
+
+test("maximum names and replacement-decoded bytes fit the derived state bound and restore completely", async t => {
+  const saved = {}; let remaining = 2097152;
+  for (let i = 0; i < 200; i++) {
+    const size = Math.ceil(remaining / (200 - i)); remaining -= size;
+    const name = `dashboards/${String(i).padStart(80, 'x')}.json`;
+    assert.equal(name.length, 96); assert.ok(vendoredPolicy.stateFile(name));
+    saved[name] = Buffer.concat([Buffer.from('"'), Buffer.alloc(size - 2, 255), Buffer.from('"')]).toString('utf8');
+  }
+  const envelope = JSON.stringify({ files: saved });
+  assert.equal(STATE_LIST_RESPONSE_MAX, 6 * 2097152 + 200 * (96 + 6) + 11);
+  assert.ok(Buffer.byteLength(envelope) < STATE_LIST_RESPONSE_MAX);
+  // Any decoded code point costs at most six JSON bytes per source byte,
+  // including controls, lone surrogates, escaping and replacement characters.
+  for (const value of ['\u0000', '\t', '"', '\\', '\ud800', '\ufffd'])
+    assert.ok(Buffer.byteLength(JSON.stringify(value)) - 2 <= 6 * Buffer.byteLength(value));
+  const { call } = await fixture(t, { fetchUpstream: async () => new Response(envelope) });
+  const js = (await call('/preview-bootstrap.js', { headers: { cookie: await cookie() } })).body;
+  assert.match(js, /window\.__bdobbPersist=true;/); assert.doesNotMatch(js, /dashboards\/preview\.json/);
+  for (const [name, value] of Object.entries(saved)) assert.ok(js.includes(JSON.stringify(name) + ':' + JSON.stringify(value)));
+});
+
+test('protected publication relay preserves exact paths and existing browser authentication', async t => {
+  const calls=[];
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{
+    calls.push({url,options});return new Response('{}',{status:200,headers:{'Content-Type':'application/json'}});
+  }});
+  const id='11111111-1111-4111-8111-111111111111';
+  const collection='/temporal/temporal/v1/audits/'+id+'/publications';
+  const item=collection+'/'+id;
+  const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json'};
+  assert.equal((await call(collection,{method:'POST',headers,body:'{"format":"arrow-ipc-stream-v1","idempotency_key":"fixture"}'})).status,200);
+  assert.equal((await call(item,{headers})).status,200);
+  assert.deepEqual(calls.map(x=>[x.options.method,x.url]),[['POST',env.BACKEND_GATEWAY_ORIGIN+collection],['GET',env.BACKEND_GATEWAY_ORIGIN+item]]);
+  for(const entry of calls) assert.equal(entry.options.headers.Authorization,'Bearer '+env.BACKEND_GATEWAY_TOKEN);
+  for(const [method,path] of [['GET',collection],['POST',item],['DELETE',item],['GET',item+'?cursor=x'],['POST',collection+'?format=x'],['GET',item+'/extra'],['GET',collection+'/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA'],['GET',collection+'/%2e%2e%2f'+id]]) {
+    assert.equal((await call(path,{method,headers,...(method==='POST'?{body:'{}'}:{})})).status,path.includes('%')?421:404,method+' '+path);
+  }
+  assert.equal((await call(collection,{method:'POST',headers:{Origin:env.APP_ORIGIN,'Content-Type':'application/json'},body:'{}'})).status,401);
+  assert.equal((await call(collection,{method:'POST',headers:{...headers,Origin:'https://crossed.example'},body:'{}'})).status,403);
+  assert.equal(calls.length,2);
+});
+
+test('v11 explorer routes come with the vendored TemporalDB policy', async () => {
+  const { temporalRoute } = await import('./temporal-policy.mjs');
+  const origin = 'https://preview.example.test';
+  for (const [method, path] of [['GET', '/temporal/temporal/v1/cache/datasets?limit=50'], ['POST', '/temporal/temporal/v1/cache/describe'], ['POST', '/temporal/temporal/v1/cache/coverage'], ['POST', '/temporal/temporal/v1/queries/validate']])
+    assert.equal(temporalRoute(new URL(path, origin), method, { temporalDB: true })?.path, path, method + ' ' + path);
+  assert.equal(temporalRoute(new URL('/temporal/temporal/v1/cache/datasets', origin), 'POST', { temporalDB: true }), null);
+  assert.equal(temporalRoute(new URL('/temporal/temporal/v1/cache/datasets?limit=101', origin), 'GET', { temporalDB: true }), null);
 });

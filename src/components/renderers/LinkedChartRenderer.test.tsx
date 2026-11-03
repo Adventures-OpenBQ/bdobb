@@ -138,3 +138,8 @@ it.each([false, true])('keeps split bindings through filters and fresh reopen wi
     expect(boundChart.linkedChart.measures).toEqual(measures);
     cleanup(); store.disposeDashboard('d');
 });
+
+it('discards a delivered figure when its privileged activation is evicted', async () => {
+ const store=await setup();render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={async()=>true}/>);
+ await screen.findByTestId('figure');act(()=>store.disposeDashboard('d'));expect(screen.queryByTestId('figure')).toBeNull();
+});

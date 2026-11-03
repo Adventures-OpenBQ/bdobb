@@ -103,3 +103,12 @@ it('a read superseded by a newer view shows no error', async () => {
   expect(hook.result.current.view.error).toBeUndefined();
   store.disposeDashboard('d');
 });
+
+it('clears delivered row caches when privileged activation is evicted', async () => {
+  const store = await setup(); const hook = renderHook(() => useTableResult('d', 'w', store));
+  await waitFor(() => expect(hook.result.current.blocks).toHaveLength(1));
+  act(() => store.disposeDashboard('d'));
+  expect(hook.result.current.blocks).toEqual([]);
+  expect(hook.result.current.totals).toBeUndefined();
+  expect(hook.result.current.view.active).toBeUndefined();
+});

@@ -5,7 +5,7 @@ tags: [bdobb, help, about, sources, provenance, versions]
 
 # About This Guide
 
-This guide documents clean BDOBB **v10.0.0**, which builds on the Episode 5 line. It builds on the v3 reference desktop with analytical tables, reusable version-pinned Statement templates, date expressions and exchange calendars, Calendar presentation, improved library and key controls, and docked parameter panels. Version 6.0.0 adds the Rita agent, MCP servers and the AI Library; their pages are under *Rita and AI*. Version 7.0.0 adds the iPad, under *iPad*. Version 8.0.0 adds the News wire, pinned cards and locked widgets, under *Widgets*, and pairs with openbq-docker v8, under *Integrations*. Version 9.0.0 adds EODHD data, served by openbq-docker v9's openbq-eodhd extension, under *Integrations*. Version 10.0.0 adds the live grid and its logo, range-bar and percent columns, on the Tables page, and the Live Chart, on the Charts page. Historical source-version citations identify donors; they do not name this release.
+This guide documents clean BDOBB **v11.0.0**, which builds on the Episode 5 line. It builds on the v3 reference desktop with analytical tables, reusable version-pinned Statement templates, date expressions and exchange calendars, Calendar presentation, improved library and key controls, and docked parameter panels. Version 6.0.0 adds the Rita agent, MCP servers and the AI Library; their pages are under *Rita and AI*. Version 7.0.0 adds the iPad, under *iPad*. Version 8.0.0 adds the News wire, pinned cards and locked widgets, under *Widgets*, and pairs with openbq-docker v8, under *Integrations*. Version 9.0.0 adds EODHD data, served by openbq-docker v9's openbq-eodhd extension, under *Integrations*. Version 10.0.0 adds the live grid and its logo, range-bar and percent columns, on the Tables page, and the Live Chart, on the Charts page. Version 11.0.0 adds TemporalDB shared queries, under *Integrations*. Historical source-version citations identify donors; they do not name this release.
 
 
 V5 adds Workspace layouts and generic Statement presentation to the inherited v4 analytical core. Cron scheduling is not supported. BDOBB Workspace saves preserve validated analytical definitions, Statement snapshots and the v5 presentation; unknown or malformed extensions are refused before import writes anything; from 8.0.0, v8 card data a version cannot read is skipped instead, and the import notice names what was left off. Exact source commits and validation receipts are recorded in `docs/releases/provenance.md` and the v4 integration ledger.
@@ -67,7 +67,7 @@ Screenshots come from the running app in both themes. Quick Help and this search
 The current guide is bundled with this release under `src/help/guide/`, alongside Quick Help under `src/help/topics/`. Release history preserves earlier snapshots. Historical donor citations remain as attribution and context; current code, documentation and validation evidence define clean v10 behavior.
 
 ---
-*Updated for clean BDOBB v10.0.0 from the BDOBB v3.3.3 guide. Historical citations retain source provenance.*
+*Updated for clean BDOBB v11.0.0 from the BDOBB v3.3.3 guide. Historical citations retain source provenance.*
 
 ---
 

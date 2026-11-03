@@ -1,6 +1,10 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+// State response only: JSON escaping/UTF-8 replacement plus names and envelope.
+const STATE_USER_BYTES = 2097152, STATE_MAX_FILES = 200, STATE_MAX_NAME_BYTES = 96;
+export const STATE_LIST_RESPONSE_MAX = 6 * STATE_USER_BYTES + STATE_MAX_FILES * (STATE_MAX_NAME_BYTES + 6) + 11;
+
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { Readable, Transform } from "node:stream";
@@ -16,6 +20,7 @@ import { handleAuth, identity } from "./auth.mjs";
 // serves the /grid family; under a policy without it every /grid route and socket is
 // refused.
 import * as vendoredPolicy from "./policy.mjs";
+import { temporalRoute, temporalStatus } from "./temporal-policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 
 const MIME = {
@@ -240,7 +245,11 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       const response = await fetchUpstream(`${cfg.backend}/state/${who.id}`, {
         headers: gatewayHeaders(cfg), redirect: "error", signal: AbortSignal.timeout(8000) });
       if (!response.ok) { await response.body?.cancel(); return null; }
-      const { files } = JSON.parse((await boundedBody(response.body, 3 * 1024 * 1024)).toString("utf8"));
+      const declared = response.headers.get("content-length");
+      if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > STATE_LIST_RESPONSE_MAX)) {
+        await response.body?.cancel(); return null;
+      }
+      const { files } = JSON.parse((await boundedBody(response.body, STATE_LIST_RESPONSE_MAX)).toString("utf8"));
       const entries = Object.entries(files);
       return entries.every(([name, text]) => stateFile(name) && typeof text === "string") ? Object.fromEntries(entries) : null;
     } catch { return null; }
@@ -362,6 +371,33 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
             JSON.stringify({error:{code:"upstream_refused",message:"Table request refused"}}),MIME[".json"]);
           return reply(res,response.status,bytes,MIME[".json"]);
         }finally{if(control)tableControlInflight--;else tableInflight--;clearTimeout(timer);res.off("close",disconnect);controller.signal.removeEventListener("abort",stopBody);}
+      }
+      if (url.pathname.startsWith("/temporal/")) {
+        const route = temporalRoute(url, req.method, cfg);
+        if (!route) return reply(res, 404);
+        if (req.method !== "GET" && foreign(req, cfg)) return reply(res, 403);
+        if (req.headers.origin && req.headers.origin !== cfg.origin) return reply(res, 403);
+        if (!cfg.backend) return reply(res, 503);
+        let body;
+        if (req.method === "POST" || req.method === "PUT") {
+          if (!/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"] ?? "")) return reply(res, 415);
+          body = await jsonBody(req, 1048576);
+          if (typeof body === "number") return reply(res, body);
+        } else if (req.headers["transfer-encoding"] || (req.headers["content-length"] && req.headers["content-length"] !== "0")) return reply(res, 405);
+        const headers = gatewayHeaders(cfg);
+        if (body !== undefined) headers["Content-Type"] = "application/json";
+        const response = await fetchUpstream(cfg.backend + route.path, {
+          method: req.method, headers, body, redirect: "error", signal: AbortSignal.timeout(12000),
+        });
+        const status = temporalStatus(response.status);
+        if (![200,201,202].includes(status)) {
+          await response.body?.cancel();
+          return reply(res, status, '{"error":"TemporalDB request refused"}', MIME[".json"]);
+        }
+        if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "")) {
+          await response.body?.cancel(); return reply(res, 502);
+        }
+        return reply(res, status, await boundedBody(response.body, 2 * 1024 * 1024), MIME[".json"]);
       }
       // No /ai/v1/query, and no /ai family at all: openbq-docker's gateway serves
       // /api, /news and /state only (ruling R3a), so Rita is not on the preview. A POST

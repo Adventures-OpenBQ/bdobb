@@ -1,4 +1,4 @@
-// vendored from openbq-docker v10.0.0 funnel-gateway/policy.mjs sha256:cbe50fed7a0d5a673e4a0343c8fe8d68d475e2728c4e49e876029022133b72c3
+// vendored from openbq-docker v11.0.0 funnel-gateway/policy.mjs sha256:cbe50fed7a0d5a673e4a0343c8fe8d68d475e2728c4e49e876029022133b72c3
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 

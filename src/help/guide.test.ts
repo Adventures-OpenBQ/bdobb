@@ -14,8 +14,8 @@ describe("the help guide", () => {
     const slugs = GUIDE_SECTIONS.flatMap((s) => s.pages.map((p) => p.slug));
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
-    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate; so is v4's Linked Widgets page.
-    expect(GUIDE_PAGES).toHaveLength(46);
+    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate. v10 adds the kdb+ Tick Cache page; v11 adds TemporalDB Shared Queries. v11 also adds the TemporalDB Explorer, and v4's Linked Widgets page is carried forward.
+    expect(GUIDE_PAGES).toHaveLength(48);
   });
 
   it("gives every page a title from its own H1, with the frontmatter gone", () => {
@@ -141,9 +141,9 @@ describe("v6 troubleshooting and guide hunks", () => {
     const t = body("troubleshooting-using-bdobb") + body("troubleshooting-infrastructure");
     for (const s of ["fresh chat", "rejected", "round limit", "keepalive", "MCP", "private network", "server-execution-pending"]) expect(t).toContain(s);
   });
-  it("guide pages mention v10.0.0 consistently", () => {
-    expect(body("home")).toMatch(/version 10\.0\.0/);
-    expect(body("about-this-guide")).toMatch(/clean BDOBB \*\*v10\.0\.0\*\*/);
+  it("guide pages mention v11.0.0 consistently", () => {
+    expect(body("home")).toMatch(/version 11\.0\.0/);
+    expect(body("about-this-guide")).toMatch(/clean BDOBB \*\*v11\.0\.0\*\*/);
   });
   it("no longer claims the app has no AI side", () => {
     const all = GUIDE_PAGES.map((p) => p.body).join("\n");
@@ -399,8 +399,8 @@ describe("the v10 live grid in the guide", () => {
     // (same policy bytes), so the page names the tag and the tag-only vendor command, as at 9.0.0.
     // REVIEW (SSRM walk, user rulings 2026-10-15): each walked line pairs openbqDocker with its X commit until the tags are
     // re-cut, so the page names the commit pin and the vendor command with the commit; it names the tag form again on re-tag.
-    for (const s of ["**BDOBB 10.0.0 pairs with openbq-docker v10.0.0**", "`openbqDocker` names the openbq-docker commit that the v10.0.0 tag points at", "`pnpm gateway:vendor v10.0.0`"]) expect(stack).toContain(s);
-    expect(stack).not.toContain("until the `v10.0.0` tag is cut");
+    for (const s of ["**BDOBB 10.0.0 pairs with openbq-docker v10.0.0**", "**BDOBB 11.0.0 pairs with openbq-docker v11.0.0**", "`openbqDocker` names the openbq-docker commit that the v11.0.0 tag points at", "`pnpm gateway:vendor v11.0.0`"]) expect(stack).toContain(s);
+    expect(stack).not.toContain("until the `v11.0.0` tag is cut");
     expect(stack).not.toContain("Until the stack's tag is cut");
     // Review B9: the example has no ta_chart card, and the preview's CSP keeps eodhd.com's logos out.
     expect(preview).toContain("`/grid/chart` — and the tick chart's `/grid/ta_chart`");
@@ -415,5 +415,31 @@ describe("the v10 live grid in the guide", () => {
       "`live_grid`", "`subscriptions`", "`kdb_ticks`", "`live_chart`", "`kdb_cache_chart`", "then each trade folded into the newest bar"]) {
       expect(body).toContain(s);
     }
+  });
+});
+
+describe("the TemporalDB Explorer", () => {
+  const page = (slug: string) => GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}${slug}`)!.body;
+  it("names the card, panes, both modes, the actions and the coverage caveat", () => {
+    const body = page("temporaldb-explorer");
+    for (const s of ["**Open explorer**", "**Load more**", "**Schema**", "**Coverage**", "`unknown`", "Gold has no identity coverage",
+      "**Dataset**", "**SQL**", "**Add as source**", "`$name`", "**Validate**", "**Save to library**", "**Run**", "**Open as query widget**", "request ID"]) {
+      expect(body).toContain(s);
+    }
+  });
+  it("names the uncheckable schema types and profiles only the preview page", () => {
+    const body = page("temporaldb-explorer");
+    for (const s of ["column type TemporalDB cannot check", "such a query runs without a schema expectation", "the query keeps no schema expectation",
+      "**Column profile**", "*Not profiled. Run a saved revision to profile this page.*", "**1,000+**", "It is exact over that preview page only, not over the accepted cache."]) {
+      expect(body).toContain(s);
+    }
+  });
+  it("is linked from Shared Queries and lists the TemporalDB example", () => {
+    expect(page("temporaldb-queries")).toContain("(#guide/temporaldb-explorer)");
+    const examples = page("example-dashboards");
+    for (const s of ["## Example Dashboard - Version 11.0.0 - TemporalDB", "`temporaldb_explorer`", "`temporaldb-examples`", "11.0.0 or later"]) expect(examples).toContain(s);
+    // An execution with no accepted inputs is an error, never an empty table.
+    expect(examples).toContain("*accepted cached inputs unavailable*");
+    expect(examples).not.toContain("stay empty");
   });
 });

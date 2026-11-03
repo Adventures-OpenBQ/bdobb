@@ -1,7 +1,7 @@
 {
   "name": "bdobb",
   "private": true,
-  "version": "10.0.0",
+  "version": "11.0.0",
   "license": "AGPL-3.0-only",
   "type": "module",
   "packageManager": "pnpm@10.34.4",
@@ -107,5 +107,5 @@
     "vitest": "^2.1.8"
   },
   "openbbDocker": "v3.0.1",
-  "openbqDocker": "e7bb14d5546eca3218111b7930471d5965ac7496"
+  "openbqDocker": "ba2154764f61e6a470379cab29a8765cce05a227"
 }

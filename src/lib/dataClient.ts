@@ -370,7 +370,7 @@ export class HttpError extends Error {
  * Response keeps the body this function's to consume.
  */
 async function request(
-  method: "GET" | "PUT" | "POST",
+  method: "GET" | "PUT" | "POST" | "DELETE",
   url: string,
   headers: Record<string, string>,
   body?: unknown,
@@ -386,7 +386,7 @@ async function request(
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  const hasBody = method !== "GET";
+  const hasBody = method === "POST" || method === "PUT";
   let res: Response;
   try {
     res = await fetch(url, {
@@ -906,4 +906,9 @@ export async function readCapped(res: Response, max: number, tooLarge: () => Err
     chunks.push(value);
   }
   return new Uint8Array(await new Blob(chunks as Uint8Array<ArrayBuffer>[]).arrayBuffer());
+}
+
+/** Shared authenticated transport for versioned service APIs. */
+export function backendRequest(backend: BackendConfig, method: "GET" | "POST" | "PUT" | "DELETE", path: string, body?: unknown, signal?: AbortSignal): Promise<unknown> {
+  return request(method, applyAuthQuery(new URL(joinUrl(backend.baseUrl, path)), backend).toString(), authHeaders(backend), body, { signal });
 }

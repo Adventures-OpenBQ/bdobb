@@ -1,21 +1,24 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { TableExecutor, Revision } from './tableExecution/types';
+import type { TableExecutor, Revision, SubsetBatch } from './tableExecution/types';
 import { beginSubset, appendSubset, commitSubset } from './tableExecution/subsetTransfer';
 
 /** Complete revision-bound output, never the renderer's cache. Card exports keep their
  * existing all-eligible scope; callers can request the selected presented scope. */
 export async function collectPresentedExport(executor: TableExecutor, revision: Revision, signal: AbortSignal, ignoreSelection = true) {
   let transfer: ReturnType<typeof beginSubset> | undefined;
+  // v11: a TemporalDB result's provenance and completeness, as the batch carried them, for the export's metadata.
+  let temporal: { provenance: NonNullable<SubsetBatch['provenance']>; completeness: SubsetBatch['completeness'] } | undefined;
   for await (const batch of executor.presented(revision, signal, ignoreSelection)) {
     signal.throwIfAborted();
     transfer ??= beginSubset(batch.transferId, revision);
     appendSubset(transfer, batch);
+    if (batch.provenance?.receipt?.temporal) temporal = { provenance: batch.provenance, completeness: batch.completeness };
   }
   signal.throwIfAborted();
   if (!transfer) throw new Error('Table export returned no complete result');
   const data = commitSubset(transfer);
-  return presentedForExport(data.columns, data.rows);
+  return { ...presentedForExport(data.columns, data.rows), temporal };
 }
 
 /**
@@ -207,6 +210,7 @@ export async function toXlsx(
   columns: string[] = columnsOf(rows),
   dates: readonly string[] = [],
   labels: Record<string, string> = {},
+  metadata?: import("./temporal/export").TemporalExportMetadata,
 ): Promise<Uint8Array> {
   const XLSX = await import("xlsx");
   // `header` is SheetJS's own name for the column list and its order — the
@@ -235,6 +239,7 @@ export async function toXlsx(
   }
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, "Data");
+  if (metadata) XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(Object.entries(metadata).map(([Field, value]) => ({ Field, JSON: JSON.stringify(value) }))), "TemporalDB");
   return new Uint8Array(XLSX.write(book, { bookType: "xlsx", type: "array" }) as ArrayBuffer);
 }
 

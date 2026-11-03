@@ -92,6 +92,10 @@ describe("fetchesData", () => {
   const widget = (over: Partial<WidgetDef>): WidgetDef =>
     baseWidget({ category: "", gridData: { w: 1, h: 1 }, ...over });
 
+  it("is false for temporaldb_explorer: its card calls the cache discovery routes itself", () => {
+    expect(fetchesData(widget({ type: "temporaldb_explorer" }))).toBe(false);
+  });
+
   it("is true for an ordinary backend widget", () => {
     expect(fetchesData(widget({}))).toBe(true);
   });

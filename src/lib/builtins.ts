@@ -325,6 +325,10 @@ export const SSRM_TYPES = new Set(["ssrm_table", "table_ssrm"]);
  * predicate now holds seven checks, not five.)
  */
 const NO_FETCH_TYPES = new Set([
+  // A query_data card runs its bound TemporalDB query itself (v11).
+  "query_data",
+  // The TemporalDB explorer calls the cache discovery routes itself (v11).
+  "temporaldb_explorer",
   "iframe", "keys", "settings", "multi_file_viewer",
   // A live_grid fetches its own snapshot and then streams; an omni POSTs on
   // prompt submit. Both own their requests, so the card must not also fetch,

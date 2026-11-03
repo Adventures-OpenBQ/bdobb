@@ -38,7 +38,7 @@ describe("BDOBB icon contract", () => {
 
   it("ships self-contained vector SVGs, not embedded raster files or executable content", () => {
     const files = readdirSync("src/assets/branding").filter(name => name.endsWith(".svg"));
-    expect(files.length).toBe(10);
+    expect(files.length).toBe(11);
     for (const file of [...files.map(name => `src/assets/branding/${name}`),
       "public/favicon.svg", "public/safari-pinned-tab.svg"]) {
       const doc = new DOMParser().parseFromString(text(file), "image/svg+xml");

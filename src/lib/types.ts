@@ -632,6 +632,7 @@ export const PIN_EDGES: readonly PinEdge[] = ["top", "bottom"];
 export type DashboardCard = {
   /** Private source reference only. Bytes and connection credentials never enter the card. */
   managedSource?: ManagedSourceReference;
+  queryBinding?: import("./temporal/bindings").QueryBinding;
   linkedSource?: LinkedSource;
   linkedChart?: LinkedChartSettings;
   id: string;

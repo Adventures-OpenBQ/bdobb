@@ -47,6 +47,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         const controller = new AbortController();
         const revision = view.sourceRevision;
         const executor = source ? store.readExecutor(dashboardId, source) : undefined;
+        if (!view.active) { setCompleted(undefined); setError(undefined); setNoMatches(false); return; }
         if (!revision || revision.widgetId !== source || !executor || !view.ready || !['ready', 'empty'].includes(view.status))
             return;
         const available = new Map((view.ready.chartColumns ?? view.ready.columns).map(c => [c.id, c]));
@@ -84,7 +85,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         // Status-only failure transitions keep the completed schema, dataset and mapping together.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [store, dashboardId, card.id, source, mapping, active, view.ready]);
-    const delivered = completed?.identity === identity ? completed : undefined;
+    const delivered = view.active && completed?.identity === identity ? completed : undefined;
     const figure = useMemo((): PlotlyFigure | undefined => { if (!delivered)
         return; const result = buildLinkedFigure(delivered.dataset, delivered.renderedSettings, theme); return result.ok ? result.figure : undefined; }, [delivered, theme]);
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));

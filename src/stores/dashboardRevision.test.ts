@@ -54,6 +54,7 @@ const MUTATING = [
   "pinCard",
   "patchCardField",
   "clearManagedSource",
+  "bindQueryCard",
   "setDashboardExchange",
   "dropUngroupable",
   "savePreset",
@@ -163,6 +164,7 @@ const STEPS: Record<(typeof MUTATING)[number], Step> = {
   pinCard: { run: () => store().pinCard("c1", "bottom") },
   clearManagedSource: { setup: () => store().patchCardField('c1', 'managedSource', {sourceId:'source',kind:'upload',version:1}), run: () => store().clearManagedSource('c1',store().dashboards.find(d=>d.id==='d1')!.tabs[0].cards[0].backendId,'source') },
   patchCardField: { run: () => store().patchCardField("c1", "title", "Prices") },
+  bindQueryCard: { run: () => store().bindQueryCard("c1", { kind: "execution" as const, executionId: "22222222-2222-4222-8222-222222222222" }) },
   setDashboardExchange: { run: () => store().setDashboardExchange("d1", "XLON") },
   dropUngroupable: { setup: () => store().createGroup("c1", "symbol", "ticker", "AAPL"), run: () => store().dropUngroupable("c1", ["symbol"]) },
   savePreset: { run: () => store().savePreset(store().activeId!, "Two weeks", "T-2w") },
@@ -226,6 +228,7 @@ const SCOPED: Record<string, Step> = {
   pinCard: { run: () => store().pinCard("c1", "top") },
   clearManagedSource: { setup: () => store().patchCardField('c1', 'managedSource', {sourceId:'source',kind:'upload',version:1}), run: () => store().clearManagedSource('c1',store().dashboards.find(d=>d.id==='d1')!.tabs[0].cards[0].backendId,'source') },
   patchCardField: { run: () => store().patchCardField("c1", "title", "Prices") },
+  bindQueryCard: { run: () => store().bindQueryCard("c1", { kind: "execution" as const, executionId: "22222222-2222-4222-8222-222222222222" }) },
 };
 
 beforeEach(async () => {

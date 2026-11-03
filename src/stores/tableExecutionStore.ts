@@ -10,18 +10,23 @@ import { activeRuntimeKeys, validateRuntimeParams, type RuntimeParams } from '..
 import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
 import type { Dashboard, DashboardCard } from '../lib/types';
-import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
+import { fitsTableWorker, isBackendTable, isManagedTable, isTemporalTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
 import { datasetFromRows } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
 import { LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
+import { createTemporalClient } from '../lib/temporal/client';
+import { createTemporalSourceAdapter } from '../lib/temporal/sourceAdapter';
+import { parseQueryBinding } from '../lib/temporal/bindings';
+import { onTemporalScopeChange } from '../lib/temporal/security';
+import { useBackendsStore } from './backendsStore';
+import { useSharedQueryLibraryStore } from './sharedQueryLibraryStore';
 import { validateGraph } from '../lib/widgetData/graph';
 import type { SourceAdapter } from '../lib/widgetData/source';
 import type { ExecutionProvider, ProviderSession, LocalWorkerExecutor, TableDefinition, SelectionSpec, Revision, ViewReady } from '../lib/tableExecution/types';
 import { ExecutionProtocolError, validateTableModel } from '../lib/tableExecution/validation';
 import { createManagedTableProvider, createTableProvider, resolveTableEngine, type TableEngine } from '../lib/tableExecution/rust/providerFactory';
-import { useBackendsStore } from './backendsStore';
 import { statementYearEnds } from '../hooks/useStatementYearEnds';
 import { tableExecutorAdapter } from '../lib/tableExecution/rust/providerContract';
 import { beginSubset, appendSubset, commitSubset } from '../lib/tableExecution/subsetTransfer';
@@ -475,7 +480,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     syncDashboard(dashboard: Dashboard) {
       const runtime: Runtime = dashboards.get(dashboard.id) ?? { nodes: new Map(), seen: new Set(), leases: 0, jobs: new Set() };
       dashboards.set(dashboard.id, runtime);runtime.groups=dashboard.groups;runtime.groupsDisabled=dashboard.groupsDisabled;runtime.exchange=dashboard.exchange;
-      const cards = dashboard.tabs.flatMap(tab => tab.cards).filter(c => c.widgetId === LOCAL_TABLE_ID || c.linkedSource || isBackendTable(c) || isManagedTable(c));
+      const cards = dashboard.tabs.flatMap(tab => tab.cards).filter(c => c.widgetId === LOCAL_TABLE_ID || c.linkedSource || isTemporalTable(c) || isBackendTable(c) || isManagedTable(c));
       const ids = new Set(cards.map(c => c.id));
       // A previously owned deleted source is unavailable, whereas foreign persisted references are invalid.
       const graph = cards.map(c => ({ id: c.id, source: c.linkedSource?.sourceWidgetId, producer: !c.linkedChart }));
@@ -516,7 +521,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         if (!existing)
           runtime.nodes.set(card.id, { card: structuredClone(card), runtimeParams:emptyRuntime, groupCandidates:snapshotCandidates(baseline.candidates),groupDiagnostics:baseline.diagnostics, acquired: false, version: 0, view: { status: 'pending', requested: { widgetId: card.id, input: 0, model: 1, output: 1 }, definition: structuredClone(definition), selection: structuredClone(selection), stale: false } });
         else {
-          const sourceChanged = JSON.stringify([existing.card.params, existing.card.linkedSource, existing.card.managedSource, existing.card.backendId, existing.card.widgetId]) !== JSON.stringify([card.params, card.linkedSource, card.managedSource, card.backendId, card.widgetId]) || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
+          const sourceChanged = JSON.stringify([existing.card.params, existing.card.linkedSource, existing.card.managedSource, existing.card.queryBinding, existing.card.backendId, existing.card.widgetId]) !== JSON.stringify([card.params, card.linkedSource, card.managedSource, card.queryBinding, card.backendId, card.widgetId]) || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
           // Compare against the last persisted card, separately from live runtime edits.
           const definitionChanged = !sameConfig(existing.card.tableDefinition, card.tableDefinition);
           const tableChanged = !sameConfig(existing.card.table, card.table);
@@ -692,7 +697,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     sourceMatches(d: string, id: string, liveCards: readonly DashboardCard[], ownActivation?: {view:ViewState;executor:LocalWorkerExecutor}): boolean {
       const runtime=dashboards.get(d); if(!runtime||runtime.invalid)return false;
       const seen=new Set<string>(); let currentId:string|undefined=id;
-      const source=(card:DashboardCard)=>[card.widgetId,card.backendId,card.params,card.linkedSource,card.managedSource,card.view];
+      const source=(card:DashboardCard)=>[card.widgetId,card.backendId,card.params,card.linkedSource,card.managedSource,card.queryBinding,card.view];
       while(currentId) {
         if(seen.has(currentId))return false;seen.add(currentId);
         const node=runtime.nodes.get(currentId),live=liveCards.find(card=>card.id===currentId);
@@ -746,6 +751,22 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         });
       };
     },
+    /** Privileged data must disappear immediately, including every linked descendant. */
+    clearTemporalResults() {
+      for (const runtime of dashboards.values()) {
+        const affected = new Set([...runtime.nodes.values()].filter(n => isTemporalTable(n.card)).map(n => n.card.id));
+        let size = -1;
+        while (size !== affected.size) { size = affected.size; for (const n of runtime.nodes.values()) if (n.card.linkedSource && affected.has(n.card.linkedSource.sourceWidgetId)) affected.add(n.card.id); }
+        for (const id of affected) {
+          const node = runtime.nodes.get(id)!;
+          node.version++; node.controller?.abort(); node.acquisition?.controller.abort();
+          node.acquisition = undefined; node.promise = undefined; node.executor?.dispose(); node.executor = undefined;
+          node.acquired = false; node.sourceRevision = undefined; node.incomingColumns = undefined;
+          node.view = { ...node.view, active: undefined, sourceRevision: undefined, ready: undefined, status: 'unavailable', stale: false, error: 'TemporalDB scope changed; refresh to reload authorized results' };
+        }
+      }
+      emit();
+    },
     disposeDashboard(d: string) {
       const runtime = dashboards.get(d);
       if (!runtime)
@@ -780,7 +801,14 @@ export const tableExecutionStore = createTableExecutionStore({
   reconcileSelection: async (d, id, definition, selection, guard) => {
     const { useDashboardStore } = await import('./dashboardStore');
     return useDashboardStore.getState().commitTableDefinition(d, id, definition, selection, guard);
-  }, source: card => card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
+  }, source: card => isTemporalTable(card) && !card.linkedSource ? {
+      async acquire(signal) {
+        const binding = parseQueryBinding(card.queryBinding);
+        const state = useBackendsStore.getState(), backend = state.backends.find(b => b.id === card.backendId);
+        if (!backend || state.services[backend.id] !== 'TemporalDB') throw new Error('TemporalDB source unavailable; reconnect the original service');
+        return createTemporalSourceAdapter(createTemporalClient(backend), binding).acquire(signal);
+      }
+    } : card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
       const bytes = await readLocalFile(card.params.file);
       if (signal.aborted)
         throw new DOMException('Aborted', 'AbortError');
@@ -788,6 +816,10 @@ export const tableExecutionStore = createTableExecutionStore({
       const backend = backendId ? useBackendsStore.getState().backends.find(b => b.id === backendId) : undefined;
       return { kind: 'file', name: card.params.file, bytes, ...(backend ? { yearEnds: (symbols: string[]) => statementYearEnds(backend, symbols) } : {}) };
     } } : isBackendTable(card) ? backendTableSource(card) : undefined });
+onTemporalScopeChange(() => {
+  useSharedQueryLibraryStore.getState().clear();
+  tableExecutionStore.clearTemporalResults();
+});
 export type TableExecutionStore = ReturnType<typeof createTableExecutionStore>;
 
 /** Release store waiters immediately even when a native read ignores cancellation. */

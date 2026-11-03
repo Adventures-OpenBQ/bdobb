@@ -5,6 +5,7 @@
 // Export menu as a backend table, and write what the worker presents.
 vi.mock('../lib/plotly', () => ({ renderPlot: async () => {}, purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter']) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ save: vi.fn(), open: vi.fn(), confirm: vi.fn() }));
+vi.mock('@tauri-apps/plugin-http', () => ({ fetch: globalThis.fetch }));
 vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count }: { count: number }) => ({ getVirtualItems: () => Array.from({ length: Math.min(count, 8) }, (_, index) => ({ index, start: index * 28, end: (index + 1) * 28 })), getTotalSize: () => count * 28, measureElement: () => {}, scrollToIndex: () => {} }) }));
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -16,7 +17,11 @@ import { useWidgetRegistryStore } from '../stores/widgetRegistryStore';
 import { tableExecutionStore } from '../stores/tableExecutionStore';
 import { __read, __readBytes, __reset } from '../test/memfs';
 import { __resetJsonStoreForTests } from '../lib/jsonStore';
-import { card } from '../test/fixtures';
+import { backend, card, widget } from '../test/fixtures';
+import { useBackendsStore } from '../stores/backendsStore';
+import { startMockServer } from '../test/mockServer';
+import { page } from '../lib/temporal/fixtures';
+import type { TableExecutor } from '../lib/tableExecution/types';
 import { Boundary } from '../test/tableWorkerBoundary';
 import { saveLocalFile } from '../lib/localFiles';
 import type { DashboardCard } from '../lib/types';
@@ -111,4 +116,84 @@ it('writes a date column as Excel date cells, not text (#28)', async () => {
   expect(XLSX.SSF.format(sheet.A2.z as string, sheet.A2.v as number)).toBe('2025-01-02');
   expect(sheet.B2).toMatchObject({ t: 's', v: 'AAPL' });
   expect(sheet.C3).toMatchObject({ t: 'n', v: 200 });
+});
+
+/** The real worker's presented() batches, merged with `stamp` (what a TemporalDB source adds); `during` runs mid-stream. */
+function wrapPresented(stamp: object, during: () => void = () => {}) {
+  const read = tableExecutionStore.readExecutor.bind(tableExecutionStore);
+  return vi.spyOn(tableExecutionStore, 'readExecutor').mockImplementation((...args) => {
+    const executor = read(...args);
+    return executor && { ...executor, async *presented(...p: Parameters<TableExecutor['presented']>) { for await (const batch of executor.presented(...p)) { during(); yield { ...batch, ...stamp }; } } } as ReturnType<typeof read>;
+  });
+}
+/** readView reporting a newer active revision once the export has started reading, as a refresh-interval card re-activating would. */
+function reactivateDuringExport() {
+  let reactivated = false;
+  const read = tableExecutionStore.readView.bind(tableExecutionStore);
+  // Memoised per view: readView feeds a store subscription, which needs a stable snapshot.
+  const next = new WeakMap<object, ReturnType<typeof read>>();
+  const view = vi.spyOn(tableExecutionStore, 'readView').mockImplementation((...args) => {
+    const v = read(...args);
+    if (!reactivated || !v.active) return v;
+    if (!next.has(v)) next.set(v, { ...v, active: { ...v.active, output: v.active.output + 1 } });
+    return next.get(v)!;
+  });
+  return { view, during: () => { reactivated = true; } };
+}
+
+// v11: a TemporalDB result's batches carry its receipt; the export writes it as provenance metadata.
+it('exports a temporal receipt batch with its provenance and completeness in CSV and JSON', async () => {
+  const [source] = await setUp();
+  const provenance = { sourceWidgetId: 's', receipt: { temporal: { executionId: page.receipt.execution_id, queryId: page.receipt.query_id, queryRevision: 2, resultHash: page.receipt.result_hash } } };
+  const completeness = { kind: 'paged' as const, acquiredRowCount: 4, totalRowCount: 2000, totalRowCountKind: 'exact' as const, warnings: [] };
+  const spy = wrapPresented({ provenance, completeness });
+  try {
+    const csv = await exportAs(source, 'CSV', '/temporal.csv');
+    const [header, first] = csv!.split('\r\n');
+    expect(header).toBe('Company,Amount,__temporaldb_record_kind_v1,__temporaldb_provenance_v1,__temporaldb_completeness_v1,__temporaldb_export_v1');
+    expect(first.startsWith('AAPL,100,data,')).toBe(true);
+    cleanup();
+    const json = JSON.parse((await exportAs(source, 'JSON', '/temporal.json'))!);
+    expect(json).toMatchObject({ schemaVersion: 1, provenance, completeness });
+    expect(json.rows).toEqual([{ Company: 'AAPL', Amount: 100 }, { Company: 'AAPL', Amount: null }, { Company: 'MSFT', Amount: 200 }]);
+  } finally { spy.mockRestore(); }
+});
+
+// The v10 contract for an ordinary backend table: plain CSV, no TemporalDB columns.
+it('exports a plain backend table on the worker exactly as v10 did', async () => {
+  const server = await startMockServer({ '/prices': [{ Company: 'AAPL', Amount: 100 }, { Company: 'MSFT', Amount: 200 }] });
+  try {
+    useBackendsStore.setState({ backends: [backend({ baseUrl: server.url })], statuses: { b1: 'online' } });
+    useWidgetRegistryStore.setState((st) => ({ widgets: [...st.widgets, widget({ id: 'prices', type: 'table', endpoint: 'prices' })] }));
+    const table = card({ id: 'bt', widgetId: 'prices', title: 'Prices' });
+    useDashboardStore.setState({ dashboards: [{ id: 'd', name: 'D', tabs: [{ id: 't', name: 'First', cards: [table] }] }], activeId: 'd', activeTabId: 't', viewer: false, pendingCardRemoval: null });
+    expect(await exportAs(table, 'CSV', '/backend.csv')).toBe('Company,Amount\r\nAAPL,100\r\nMSFT,200');
+  } finally { await server.close(); }
+});
+
+// The export is revision-bound (collectPresentedExport), so a card re-activating mid-export still writes the revision it read.
+it('still exports a plain worker table whose view re-activates mid-export', async () => {
+  const [source] = await setUp();
+  const { view, during } = reactivateDuringExport();
+  const spy = wrapPresented({}, during);
+  try {
+    expect(await exportAs(source, 'CSV', '/refreshed.csv')).toBe('Company,Amount\r\nAAPL,100\r\nAAPL,\r\nMSFT,200');
+  } finally { spy.mockRestore(); view.mockRestore(); }
+});
+
+// A TemporalDB result is scope-bound: a re-activation (e.g. scope eviction) mid-export refuses the stale result.
+it('refuses a temporal export whose view re-activates mid-export', async () => {
+  const [source] = await setUp();
+  const { container } = render(<><TableExecutionRuntime /><WidgetCard card={source} onRemove={() => {}} /></>);
+  await waitFor(() => expect(container.querySelector('tbody')?.textContent).toContain('MSFT'));
+  const { view, during } = reactivateDuringExport();
+  const spy = wrapPresented({ provenance: { sourceWidgetId: 's', receipt: { temporal: { executionId: page.receipt.execution_id, queryId: page.receipt.query_id, queryRevision: 2, resultHash: page.receipt.result_hash } } } }, during);
+  try {
+    vi.mocked(save).mockResolvedValue('/stale.csv');
+    fireEvent.click(screen.getByRole('button', { name: 'Card menu' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Export ▸' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'CSV' }));
+    await waitFor(() => expect(screen.getByText('Export failed: Table changed during export')).toBeDefined());
+    expect(__read('/stale.csv')).toBeUndefined();
+  } finally { spy.mockRestore(); view.mockRestore(); }
 });

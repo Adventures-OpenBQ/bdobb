@@ -51,6 +51,10 @@ export function bootstrap(config, saved, { grid = false } = {}) {
         id: "preview-ref", name: "OpenBQ Reference (preview)", baseUrl: config.origin + "/ref",
         authLocation: "header", validateWidgets: false,
       }] : []),
+      ...(config.temporalDB && config.backend ? [{
+        id: "preview-temporal", name: "TemporalDB", baseUrl: config.origin + "/temporal",
+        authLocation: "header", validateWidgets: false,
+      }] : []),
       ...(liveGrid ? [{
         id: "preview-grid", name: "Live grid (preview)", baseUrl: config.origin + "/grid",
         authLocation: "header", validateWidgets: false,

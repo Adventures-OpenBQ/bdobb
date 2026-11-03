@@ -31,7 +31,8 @@ export function useTableResult(dashboardId: string, widgetId: string, store = ta
     pendingReads.clear();
     const candidate = currentRef.current;
     const executor = store.readExecutor(dashboardId, widgetId);
-    if (!executor || !candidate.active || !candidate.ready || !["ready", "empty"].includes(candidate.status)) return;
+    if (!candidate.active) { setSnapshot(undefined); setError(undefined); return; }
+    if (!executor || !candidate.ready || !["ready", "empty"].includes(candidate.status)) return;
     const controller = new AbortController(); const revision = candidate.active;
     void Promise.all([
       executor.rows(revision, { groupPath: [], offset: 0, limit: TABLE_BLOCK_SIZE }, controller.signal),
@@ -62,7 +63,7 @@ export function useTableResult(dashboardId: string, widgetId: string, store = ta
       setSnapshot(s => s && key(s.view.active) === key(revision) ? { ...s, blocks: [...s.blocks.filter(b => blockKey(b) !== id), block].slice(-TABLE_CACHE_BLOCKS) } : s);
     }).catch((e: unknown) => { if (!controller.signal.aborted && version === generation.current && !superseded(e)) setError('Could not load table rows'); }).finally(() => { if (pending.current.get(id) === controller) pending.current.delete(id); });
   }, [store, dashboardId, widgetId]);
-  const delivered = snapshot?.identity === JSON.stringify([dashboardId, widgetId]) ? snapshot : undefined;
+  const delivered = current.active && snapshot?.identity === JSON.stringify([dashboardId, widgetId]) ? snapshot : undefined;
   const view = delivered ? { ...delivered.view, definition: current.definition, selection: current.selection,
     status: current.error ? current.status : key(delivered.view.active) !== key(current.active) || current.status === 'updating' ? 'updating' as const : current.status,
     stale: current.stale, error: current.error ?? error } : { ...current, ready: undefined, active: undefined, error: current.error ?? error };
