@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #[wasm_bindgen::prelude::wasm_bindgen(typescript_custom_section)]
 const HOST_TYPES: &str =
-    "export type RustHostOptions = { wire: string; order(request: string): string };";
+    "export type RustHostOptions = { wire: string; order(request: string): string; nativeFiniteNumbers?: boolean };";
 use pivot_core::{
     contract::*,
     ordering::{Comparison, ValueOrder},
@@ -18,6 +18,9 @@ extern "C" {
     pub type HostOptions;
     #[wasm_bindgen(method, getter, structural)]
     fn wire(this: &HostOptions) -> String;
+    // Trusted adapter assertion; omission/nonboolean values preserve all callbacks.
+    #[wasm_bindgen(method, getter, structural, js_name = nativeFiniteNumbers)]
+    fn native_finite_numbers(this: &HostOptions) -> JsValue;
     #[wasm_bindgen(method, structural, catch)]
     fn order(this: &HostOptions, request: &str) -> Result<String, JsValue>;
 }
@@ -32,6 +35,7 @@ struct Options {
 struct State {
     session: Session,
     host: HostOptions,
+    native_finite_numbers: bool,
 }
 thread_local! {static SESSIONS:RefCell<(u32,BTreeMap<u32,State>)>=const {RefCell::new((0,BTreeMap::new()))};}
 #[wasm_bindgen]
@@ -45,6 +49,7 @@ pub fn open_session(host: HostOptions) -> Result<u32, JsValue> {
     if opts.protocol_version != protocol_version() || opts.locale.is_empty() {
         return Err(JsValue::from_str("Unsupported session protocol or locale"));
     }
+    let native_finite_numbers = host.native_finite_numbers().as_bool().unwrap_or(false);
     let limits = opts.limits.unwrap_or_default();
     let mut session = Session::new(opts.locale, limits);
     if let Some(rows) = opts.batch_rows {
@@ -62,7 +67,14 @@ pub fn open_session(host: HostOptions) -> Result<u32, JsValue> {
             .checked_add(1)
             .ok_or_else(|| JsValue::from_str("Rust session identity exhausted"))?;
         let id = map.0;
-        map.1.insert(id, State { session, host });
+        map.1.insert(
+            id,
+            State {
+                session,
+                host,
+                native_finite_numbers,
+            },
+        );
         Ok(id)
     })
 }
@@ -82,7 +94,9 @@ pub fn dispatch(handle: u32, request: &str) -> Result<String, JsValue> {
             .1
             .get_mut(&handle)
             .ok_or_else(|| JsValue::from_str("Unknown Rust session"))?;
-        let response = state.session.dispatch(core, &HostOrder(&state.host));
+        let response = state
+            .session
+            .dispatch(core, &HostOrder(&state.host, state.native_finite_numbers));
         pivot_wire::encode_response(handle, response).map_err(|e| JsValue::from_str(&e))
     })
 }
@@ -104,7 +118,16 @@ pub fn close_session(handle: u32) {
         map.borrow_mut().1.remove(&handle);
     });
 }
-struct HostOrder<'a>(&'a HostOptions);
+struct HostOrder<'a>(&'a HostOptions, bool);
+
+fn native_finite_order(a: &WireValue, b: &WireValue) -> Option<Comparison> {
+    let a = pivot_core::ordering::number(a)?;
+    let b = pivot_core::ordering::number(b)?;
+    if !a.is_finite() || !b.is_finite() {
+        return None;
+    }
+    a.partial_cmp(&b).map(Comparison::Ordered)
+}
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct HostResult<T> {
@@ -142,6 +165,11 @@ impl ValueOrder for HostOrder<'_> {
         Self::sign(self.call(serde_json::json!({"kind":"scalar","a":a,"b":b}))?)
     }
     fn compare_raw(&self, a: &WireValue, b: &WireValue) -> Result<Comparison, Diagnostic> {
+        if self.1 {
+            if let Some(comparison) = native_finite_order(a, b) {
+                return Ok(comparison);
+            }
+        }
         let result: serde_json::Value = self.call(serde_json::json!({"kind":"raw","a":a,"b":b}))?;
         if result.as_str() == Some("unordered") {
             return Ok(Comparison::Unordered);
