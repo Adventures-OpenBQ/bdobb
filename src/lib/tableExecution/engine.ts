@@ -20,7 +20,9 @@ import type { TableColumn } from '../tableColumns';
 import type { WidgetDataset, DatasetColumn, DatasetRow, DatasetGroupMember, CloneSafeValue } from '../widgetData/types';
 import type { CalculatedView, TableDefinition, SelectionSpec, LogicalGroup } from './types';
 import { ExecutionProtocolError } from './validation';
-import { selectPresentedRows } from './selection';
+import { reconcileViewSelection as reconcileView } from './selection';
+import {attachSortReuse} from './analyticalSortReuse';
+import {sortReuseDefinition} from './sortReusePolicy';
 const collator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
 function member(key: string, field: string, bucket: DatasetGroupMember['bucket']): DatasetGroupMember {
   const [tag, value] = JSON.parse(key) as [
@@ -31,16 +33,22 @@ function member(key: string, field: string, bucket: DatasetGroupMember['bucket']
   return { field, value: decoded, memberKey: key, bucket };
 }
 /** Calculate once from the complete acquired input, never from delivery blocks. */
-export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
-  return calculate(input, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
+export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams, sortReuseBytes?:number): CalculatedView {
+  const runtime=validateRuntimeParams(runtimeParams,definition);
+  let capture=sortReuseBytes;
+  if(capture!==undefined){
+    if(!sortReuseDefinition(definition)||!Number.isSafeInteger(capture)||capture<=0||capture>4294967295||input.rows.length*128>capture)capture=undefined;
+    else {const ids=new Set<string>();for(const row of input.rows){if(ids.has(row.id)){capture=undefined;break;}ids.add(row.id);}}
+  }
+  return calculate(input, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, runtime,capture);
 }
-function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
+function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams, sortReuseBytes?:number): CalculatedView {
   input = structuredClone(input);
   definition = structuredClone(definition);
   selection = structuredClone(selection);
   if (definition.analytical !== undefined) {
     validateDefinition(definition,selection);
-    return calculateAnalyticalView(input,definition,selection,reconcile,previousSelectionNamespace,provenAbsentIds,runtimeParams);
+    return calculateAnalyticalView(input,definition,selection,reconcile,previousSelectionNamespace,provenAbsentIds,runtimeParams,sortReuseBytes);
   }
   const state = definition.table;
   const config = state.pivot ?? EMPTY_PIVOT;
@@ -230,39 +238,6 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
   view.selectionIdentityRows = universe.groups.length ? identities : universe.selectionEligibleRows;
   return reconcileView(view,selection,reconcile,previousSelectionNamespace,provenAbsentIds);
 }
-function reconcileView(view: CalculatedView, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = []): CalculatedView {
-  const selectionNamespace = view.selectionNamespace;
-  if (selection.kind !== 'none') {
-    const knownIds = new Set(view.selectionIdentityRows.map(row => row.id));
-    const absent = new Set(provenAbsentIds);
-    const original = [...new Set(selection.kind === 'explicit' ? selection.ids : selection.excludedIds)];
-    const retained = original.filter(id => {
-      if (knownIds.has(id)) return true;
-      if (reconcile || absent.has(id)) return false;
-      const namespace = groupNamespace(id);
-      // A current pivot defines exactly which ID namespace it can generate.
-      // Compatible absent IDs may still be hidden upstream and must survive.
-      if (selectionNamespace !== undefined) return namespace === selectionNamespace;
-      // Ordinary linked input can itself contain upstream group IDs. Only a
-      // prior locally generated namespace proves a pivot-off incompatibility.
-      return previousSelectionNamespace === undefined || namespace !== previousSelectionNamespace;
-    });
-    if (retained.length < original.length) {
-      selection = selection.kind === 'explicit'
-        ? retained.length ? { kind: 'explicit', ids: retained } : { kind: 'none' }
-        : { kind: 'allMatching', excludedIds: retained };
-      view.diagnostics.push({ code: 'SELECTION_RECONCILED', severity: 'info', message: `${original.length - retained.length} selection identities removed because they are no longer available in this arrangement.` });
-    }
-  }
-  if (selection.kind === 'explicit') {
-    const ids = [...new Set(selection.ids)];
-    const covered = new Set(ids.flatMap(id => view.selectionHierarchy.get(id) ?? []));
-    selection = { kind: 'explicit', ids: ids.filter(id => !covered.has(id)) };
-  } else if (selection.kind === 'allMatching') selection = { kind: 'allMatching', excludedIds: [...new Set(selection.excludedIds)] };
-  view.selection = selection;
-  view.presentedRows = selectPresentedRows(view, selection);
-  return view;
-}
 
 /** Generated member sorts remain bound while their member has no current rows. */
 function validPivotMemberKey(key: string): boolean {
@@ -282,17 +257,8 @@ function validPivotMemberKey(key: string): boolean {
   } catch { return false; }
 }
 
-/** Read only the typed local group namespace; never infer origin from a prefix. */
-function groupNamespace(id: string): string | undefined {
-  try {
-    const value: unknown = JSON.parse(id);
-    return Array.isArray(value) && value.length === 3 && value[0] === 'group'
-      && typeof value[1] === 'string' && typeof value[2] === 'string' ? value[1] : undefined;
-  } catch { return undefined; }
-}
-
 /** Adapt the single private analytical result to existing bounded delivery and selection. */
-function calculateAnalyticalView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
+function calculateAnalyticalView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams, sortReuseBytes?:number): CalculatedView {
   const statement = (definition.analytical as {schemaVersion?:number})?.schemaVersion === 2 ? definition.analytical as StatementIntent : undefined;
   const effective = statement ? compileStatement(statement,input.columns) : undefined;
   let source = input;
@@ -304,7 +270,7 @@ function calculateAnalyticalView(input: WidgetDataset, definition: TableDefiniti
     if(source.rows.some(row=>!Object.hasOwn(effective.sectionByLine,String(row.values[itemField])))) throw new StatementCompilationError([{code:'missing-reference',severity:'error',path:'bindings.longFields.itemFieldId',message:'Source line item is not declared in the template; repair the item binding.'}]);
     source={...source,columns:[...source.columns,{id:effective.sectionField,label:'Section'}],rows:source.rows.map(row=>({...row,values:{...row.values,[effective.sectionField]:effective.sectionByLine[String(row.values[itemField])]}}))};
   }
-  const result = calculateTable({source,model:effective?.model??definition.analytical,table:definition.table,search:definition.search,runtimeParams,context:{execution:effective?.execution}});
+  const result = calculateTable({source,model:effective?.model??definition.analytical,table:definition.table,search:definition.search,runtimeParams,context:{execution:effective?.execution},captureDisplayOrder:sortReuseBytes===undefined?undefined:Math.floor(sortReuseBytes/1024)});
   const diagnosticMap = new Map<string, CalculatedView['diagnostics'][number]>();
   for (const error of result.errors) diagnosticMap.set(JSON.stringify([error.code,error.message]),{code:error.code,message:error.message,severity:'error'});
   for (const warning of result.warnings) diagnosticMap.set(JSON.stringify([warning.code,warning.message]),{code:warning.code,message:warning.message,severity:'warning'});
@@ -342,5 +308,6 @@ function calculateAnalyticalView(input: WidgetDataset, definition: TableDefiniti
     if(effective) { const visit=(nodes:LogicalGroup[])=>{for(const node of nodes){view.selectionHierarchy.set(node.id,node.children.map(c=>c.id));visit(node.children);}};visit(result.groups); }
     view.selectionIdentityRows=[...ids.values()];
   } else view.selectionIdentityRows=result.selectionNamespace===undefined?result.pool.universe.rows:result.eligibleRows;
+  if(sortReuseBytes!==undefined)attachSortReuse(view,runtimeParams,sortReuseBytes);
   return reconcileView(view,selection,reconcile,previousSelectionNamespace,provenAbsentIds);
 }

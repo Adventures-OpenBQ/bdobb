@@ -59,3 +59,46 @@ export function selectionSummary(view: CalculatedView, action: SelectionAction, 
   });
   return { selection, selectedCount: selected.size, eligibleCount: eligible.length, checked, indeterminate: !checked && selected.size > 0, rows };
 }
+
+export function reconcileViewSelection(view: CalculatedView, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = []): CalculatedView {
+  const selectionNamespace = view.selectionNamespace;
+  if (selection.kind !== 'none') {
+    const knownIds = new Set(view.selectionIdentityRows.map(row => row.id));
+    const absent = new Set(provenAbsentIds);
+    const original = [...new Set(selection.kind === 'explicit' ? selection.ids : selection.excludedIds)];
+    const retained = original.filter(id => {
+      if (knownIds.has(id)) return true;
+      if (reconcile || absent.has(id)) return false;
+      const namespace = groupNamespace(id);
+      // A current pivot defines exactly which ID namespace it can generate.
+      // Compatible absent IDs may still be hidden upstream and must survive.
+      if (selectionNamespace !== undefined) return namespace === selectionNamespace;
+      // Ordinary linked input can itself contain upstream group IDs. Only a
+      // prior locally generated namespace proves a pivot-off incompatibility.
+      return previousSelectionNamespace === undefined || namespace !== previousSelectionNamespace;
+    });
+    if (retained.length < original.length) {
+      selection = selection.kind === 'explicit'
+        ? retained.length ? { kind: 'explicit', ids: retained } : { kind: 'none' }
+        : { kind: 'allMatching', excludedIds: retained };
+      view.diagnostics.push({ code: 'SELECTION_RECONCILED', severity: 'info', message: `${original.length - retained.length} selection identities removed because they are no longer available in this arrangement.` });
+    }
+  }
+  if (selection.kind === 'explicit') {
+    const ids = [...new Set(selection.ids)];
+    const covered = new Set(ids.flatMap(id => view.selectionHierarchy.get(id) ?? []));
+    selection = { kind: 'explicit', ids: ids.filter(id => !covered.has(id)) };
+  } else if (selection.kind === 'allMatching') selection = { kind: 'allMatching', excludedIds: [...new Set(selection.excludedIds)] };
+  view.selection = selection;
+  view.presentedRows = selectPresentedRows(view, selection);
+  return view;
+}
+
+/** Read only the typed local group namespace; never infer origin from a prefix. */
+function groupNamespace(id: string): string | undefined {
+  try {
+    const value: unknown = JSON.parse(id);
+    return Array.isArray(value) && value.length === 3 && value[0] === 'group'
+      && typeof value[1] === 'string' && typeof value[2] === 'string' ? value[1] : undefined;
+  } catch { return undefined; }
+}
