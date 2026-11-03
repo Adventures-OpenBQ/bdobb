@@ -329,6 +329,48 @@ struct Combo {
     id: String,
     labels: Vec<String>,
 }
+/// The identity universe and displayed pivot must interpret grouped values identically.
+pub(crate) fn group_value_key(
+    cell: &WireValue,
+    column: &PivotColumn,
+    bucket: Bucket,
+) -> Result<(String, WireValue), Diagnostic> {
+    let shown = if matches!(cell, WireValue::Record(_) | WireValue::Array(_)) {
+        if let Some(WireValue::Record(hover)) = column.properties.get("hoverCard") {
+            if let Some((_, WireValue::String(key))) = hover.iter().find(|(k, _)| k == "cellField")
+            {
+                property(cell, key)
+            } else {
+                std::borrow::Cow::Borrowed(cell)
+            }
+        } else {
+            std::borrow::Cow::Borrowed(cell)
+        }
+    } else {
+        std::borrow::Cow::Borrowed(cell)
+    };
+    let inner = property(&shown, "value");
+    let value = if matches!(
+        inner.as_ref(),
+        WireValue::String(_) | WireValue::F64(_) | WireValue::Bool(_) | WireValue::BigIntString(_)
+    ) {
+        inner.as_ref()
+    } else {
+        shown.as_ref()
+    };
+    if missing(value) {
+        return Ok((pivot_value_key(&WireValue::Null), WireValue::Missing));
+    }
+    if bucket != Bucket::Native {
+        if let Some(key) = bucket_key(&string_value(value)?, bucket) {
+            let raw = WireValue::String(key);
+            return Ok((pivot_value_key(&raw), raw));
+        }
+    }
+    string_value(value)?;
+    Ok((pivot_value_key(value), value.clone()))
+}
+
 struct Engine<'a> {
     input: &'a PivotInput,
     order: &'a dyn ValueOrder,
@@ -361,46 +403,11 @@ impl Engine<'_> {
         }
     }
     fn key(&self, index: usize, field: &str) -> Result<(String, WireValue), Diagnostic> {
-        let cell = read(&self.input.rows[index], field);
-        let shown = if matches!(cell, WireValue::Record(_) | WireValue::Array(_)) {
-            if let Some(WireValue::Record(hover)) = self.column(field).properties.get("hoverCard") {
-                if let Some((_, WireValue::String(key))) =
-                    hover.iter().find(|(k, _)| k == "cellField")
-                {
-                    property(cell, key)
-                } else {
-                    std::borrow::Cow::Borrowed(cell)
-                }
-            } else {
-                std::borrow::Cow::Borrowed(cell)
-            }
-        } else {
-            std::borrow::Cow::Borrowed(cell)
-        };
-        let inner = property(&shown, "value");
-        let value = if matches!(
-            inner.as_ref(),
-            WireValue::String(_)
-                | WireValue::F64(_)
-                | WireValue::Bool(_)
-                | WireValue::BigIntString(_)
-        ) {
-            inner.as_ref()
-        } else {
-            shown.as_ref()
-        };
-        if missing(value) {
-            return Ok((pivot_value_key(&WireValue::Null), WireValue::Missing));
-        }
-        let bucket = self.bucket(field);
-        if bucket != Bucket::Native {
-            if let Some(key) = bucket_key(&string_value(value)?, bucket) {
-                let raw = WireValue::String(key);
-                return Ok((pivot_value_key(&raw), raw));
-            }
-        }
-        string_value(value)?;
-        Ok((pivot_value_key(value), value.clone()))
+        group_value_key(
+            read(&self.input.rows[index], field),
+            self.column(field),
+            self.bucket(field),
+        )
     }
     fn partition(&self, indices: &[usize], field: &str) -> Result<Vec<Group>, Diagnostic> {
         let mut groups: Vec<Group> = vec![];
@@ -599,7 +606,9 @@ impl Engine<'_> {
                                         self.order,
                                     )?
                                 }
-                                _ => read(&self.input.rows[index], &measure.source_field_id).clone(),
+                                _ => {
+                                    read(&self.input.rows[index], &measure.source_field_id).clone()
+                                }
                             };
                             row.insert(measure.id.clone(), value);
                         }
