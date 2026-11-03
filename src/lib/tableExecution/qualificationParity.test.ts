@@ -3,10 +3,11 @@
 // @vitest-environment node
 import { expect, it } from 'vitest';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { input } from './fixtures';
 import { createPureExecutor, pivotOffData, pivotOffDefinition } from './testContract';
 import { createWasmTestExecutor } from './testing/wasmExecutor';
-import { generateTrace, runTrace, parseTrace, serializeTrace, reduceTrace, traceMismatchClass, normalizeTrace, type TraceFixture, type TraceAction } from './testing/actionTrace';
+import { generateTrace, runTrace, parseTrace, serializeTrace, reduceTrace, traceMismatchClass, normalizeTrace, qualifyTrace, captureTrace, traceOutcomeMismatchClass, type TraceFixture, type TraceAction } from './testing/actionTrace';
 import type { TableDefinition } from './types';
 import reference from '../../test/fixtures/sec-statements/reference.json';
 import expected from '../../test/fixtures/sec-statements/expected.json';
@@ -21,19 +22,13 @@ for (const seed of seeds) it(`TS/compiled-WASM action trace seed ${seed}`, async
   const actions = generateTrace(seed, extended ? 200 : 50);
   expect(generateTrace(seed, actions.length)).toStrictEqual(actions);
   const replay = parseTrace(serializeTrace({ version: 1, seed, fixture, actions }));
-  const ts = await runTrace(pure, fixture, actions), wasm = await runTrace(createWasmTestExecutor, replay.fixture, replay.actions);
-  const failureClass = traceMismatchClass(ts, wasm);
-  if (failureClass) {
-    const minimized = await reduceTrace(actions, async candidate => {
-      try { return traceMismatchClass(await runTrace(pure,fixture,candidate),await runTrace(createWasmTestExecutor,fixture,candidate)); }
-      catch { return 'unexpected-execution-error'; }
-    });
+  expect(replay).toStrictEqual({version:1,seed,fixture,actions});
+  const failure = await qualifyTrace(pure,createWasmTestExecutor,replay,(suffix,trace,failureClass)=>{
     const directory = new URL('../../test/fixtures/sec-statements/failing-traces/',import.meta.url);
     mkdirSync(directory,{recursive:true});
-    for (const [suffix, trace] of [['full',actions],['minimized',minimized]] as const) writeFileSync(new URL(`seed-${seed}-${failureClass}-${suffix}.json`,directory),serializeTrace({version:1,seed,fixture,actions:trace}));
-    throw new Error(`Seed ${seed}: ${failureClass}; frozen full/minimized traces in ${directory.pathname}`);
-  }
-  expect(wasm).toStrictEqual(ts);
+    writeFileSync(new URL(`seed-${seed}-${createHash('sha256').update(failureClass).digest('hex').slice(0,16)}-${suffix}.json`,directory),serializeTrace(trace));
+  });
+  expect(failure, failure ? `Seed ${seed}: ${failure.failureClass}; full/minimized replays saved` : undefined).toBeNull();
 });
 it('register/apply revisions and proposed immutable selection use distinct newer snapshots', async () => {
   const actions: TraceAction[] = [{ kind: 'select', action: { kind: 'toggle', rowId: 'r2' }, visibleIds: ['r0'] }, { kind: 'replace', reverse: true }, { kind: 'presented' }];
@@ -134,4 +129,65 @@ it('disposes acquired executors on failed operations', async () => {
 it('normalizes transport identifiers while preserving identically named source fields', () => {
   const source = {requestId:'source-request',transferId:'source-transfer',nested:{requestId:'nested-source'}};
   expect(normalizeTrace({kind:'subset',requestId:'transport-request',transferId:'transport-transfer',revision:{input:1},rows:[{id:'row',values:source}],provenance:source})).toEqual({kind:'subset',revision:{input:1},rows:[{id:'row',values:source}],provenance:source});
+});
+
+it('round-trips property presence and literal tag-shaped metadata without changing values or key order', () => {
+  const replay = {version:1 as const,seed:7,fixture:structuredClone(fixture),actions:[] as TraceAction[]};
+  const sparseInput = new Array<undefined>(2); sparseInput[1] = undefined;
+  const metadata = {present:undefined,nested:[undefined,{$traceNumber:'-0',extra:'literal'}, {tag:'missing'},-0,null,NaN,Infinity,-Infinity,9007199254740993n],sparse:sparseInput,last:'last'};
+  replay.fixture.dataset.provenance.metadata = metadata;
+  replay.fixture.dataset.columns[0].metadata = {present:undefined};
+  Object.assign(replay.fixture.definition,{analytical:undefined});
+  const restored = parseTrace(serializeTrace(replay));
+  expect(restored).toStrictEqual(replay);
+  expect(Object.keys(restored.fixture.dataset.provenance.metadata!)).toEqual(Object.keys(metadata));
+  expect(Object.hasOwn(restored.fixture.dataset.provenance.metadata!,'present')).toBe(true);
+  expect(Object.hasOwn(restored.fixture.dataset.provenance.metadata!,'absent')).toBe(false);
+  const sparse = restored.fixture.dataset.provenance.metadata!.sparse as unknown[];
+  expect(Object.hasOwn(sparse,0)).toBe(false); expect(Object.hasOwn(sparse,1)).toBe(true);
+});
+it('captures one-engine errors and saves full replay before reduction, retaining engine and failure class', async () => {
+  let throwingRuns = 0;
+  const throwing = async () => { throwingRuns++; const executor = createPureExecutor(); executor.chartData = async () => { throw new TypeError('deliberate chart failure'); }; return executor; };
+  const replay = {version:1 as const,seed:8,fixture,actions:[{kind:'rows',request:{groupPath:[],offset:0,limit:1}},{kind:'chartData',fields:['revenue']},{kind:'presented'}] as TraceAction[]};
+  const saved: {suffix:string;trace:ReturnType<typeof parseTrace>}[] = [];
+  const failure = await qualifyTrace(pure,throwing,replay,(suffix,trace) => { if(suffix === 'full') expect(throwingRuns).toBe(1); saved.push({suffix,trace:parseTrace(serializeTrace(trace))}); });
+  expect(failure?.failureClass).toBe('execution:wasm:chartData:TypeError:"deliberate chart failure"');
+  expect(saved.map(s=>s.suffix)).toEqual(['full','minimized']);
+  expect(saved[0].trace.actions).toEqual(replay.actions);
+  expect(saved[0].trace.failure).toMatchObject({failureClass:failure?.failureClass,wasm:{action:'chartData',actionIndex:1,name:'TypeError',message:'deliberate chart failure'}});
+  expect(saved[1].trace.actions).toEqual([{kind:'chartData',fields:['revenue']}]);
+  expect(failure?.wasm).toMatchObject({kind:'failure',failure:{action:'chartData',actionIndex:1,name:'TypeError',message:'deliberate chart failure'}});
+  const tsFailure = await captureTrace(throwing,fixture,[{kind:'chartData'}]);
+  const success = await captureTrace(pure,fixture,[{kind:'chartData'}]);
+  expect(traceOutcomeMismatchClass(tsFailure,success)).toBe('execution:ts:chartData:TypeError:"deliberate chart failure"');
+  const bothFail = await captureTrace(throwing,fixture,[{kind:'chartData'}]);
+  expect(traceOutcomeMismatchClass(tsFailure,bothFail)).not.toBe(failure?.failureClass);
+});
+
+it('rejects invalid reducer candidates with a different one-engine error reason', async () => {
+  const throwing = async () => {
+    const executor = createPureExecutor(), original = executor.chartData;
+    executor.chartData = async (...args) => {
+      const chart = await original(...args);
+      throw new TypeError(chart.rows.length === 0 ? 'original failure' : 'invalid candidate failure');
+    };
+    return executor;
+  };
+  const actions: TraceAction[] = [{kind:'apply',definition:{table:{},search:'definitely-absent'}},{kind:'chartData'},{kind:'presented'}];
+  const saved: string[] = [];
+  const result = await qualifyTrace(pure,throwing,{version:1,seed:9,fixture,actions},suffix=>{saved.push(suffix);});
+  expect(result?.minimized).toEqual(actions.slice(0,2));
+  expect(result?.failureClass).toContain('original failure');
+  expect(saved).toEqual(['full','minimized']);
+});
+it('retains full replay when original failure no longer reproduces during minimization', async () => {
+  let runs = 0;
+  const changing = async () => {
+    const executor = createPureExecutor(), reason = ++runs === 1 ? 'original failure' : 'changed failure';
+    executor.chartData = async () => { throw new TypeError(reason); }; return executor;
+  };
+  const saved: string[] = [];
+  await expect(qualifyTrace(pure,changing,{version:1,seed:10,fixture,actions:[{kind:'chartData'}]},suffix=>{saved.push(suffix);})).rejects.toThrow('Trace does not fail');
+  expect(saved).toEqual(['full']);
 });

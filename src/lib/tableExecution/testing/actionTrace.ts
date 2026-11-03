@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { encodeWire, decodeWire, type WireValue } from '../rust/wireCodec';
 import type { WidgetDataset } from '../../widgetData/types';
 import type { Revision, TableDefinition, TableExecutor, SelectionSpec, SelectionAction, RowRequest } from '../types';
 export interface TraceFixture { dataset: WidgetDataset; definition: TableDefinition; selection: SelectionSpec }
@@ -23,16 +24,20 @@ export function normalizeTrace(value: unknown): unknown {
   return value;
 }
 export async function runTrace(create: () => Promise<TableExecutor>, fixture: TraceFixture, actions: TraceAction[]): Promise<TraceObservation[]> {
-  const executor = await create(), signal = new AbortController().signal;
+  let executor: TableExecutor;
+  try { executor = await create(); } catch (error) { throw new TraceExecutionError(error, 'acquire', -1, {widgetId:'trace',input:0,model:0,output:0}); }
+  const signal = new AbortController().signal;
   let dataset = structuredClone(fixture.dataset), definition = structuredClone(fixture.definition), selection = structuredClone(fixture.selection);
   const revision: Revision = { widgetId: 'trace', input: 1, model: 0, output: 0 }, observations: TraceObservation[] = [];
   let fields: string[] = [];
   const apply = async () => { revision.model++; revision.output++; const ready = await executor.applyModel(definition, selection, { ...revision }, signal); fields = ready.columns.map(c => c.id); return ready; };
   const record = (action: TraceObservation['action'], value: unknown) => observations.push({ action, revision: { ...revision }, value: normalizeTrace(value) });
+  let actionKind: TraceObservation['action'] = 'initial', actionIndex = -1;
   try {
     await executor.registerInput(dataset, revision.input, signal);
     record('initial', await apply());
-    for (const action of actions) {
+    for (const [index, action] of actions.entries()) {
+      actionKind = action.kind; actionIndex = index;
       let value: unknown;
       switch (action.kind) {
         case 'apply': definition = structuredClone(action.definition); if (action.selection) selection = structuredClone(action.selection); value = await apply(); break;
@@ -45,7 +50,7 @@ export async function runTrace(create: () => Promise<TableExecutor>, fixture: Tr
       record(action.kind, value);
     }
     return observations;
-  } finally { executor.dispose(); }
+  } catch (error) { throw new TraceExecutionError(error, actionKind, actionIndex, { ...revision }); } finally { executor.dispose(); }
 }
 /** Mulberry32: stable bounded traces with no dependence on Math.random or wall time. */
 export function generateTrace(seed: number, steps: number): TraceAction[] {
@@ -65,14 +70,73 @@ export function generateTrace(seed: number, steps: number): TraceAction[] {
     return { kind: 'apply', definition: { table, search: '' }, ...(pick === 9 ? { selection: { kind: 'none' as const } } : {}) };
   });
 }
-export interface ReplayTrace { version: 1; seed: number; fixture: TraceFixture; actions: TraceAction[] }
+export interface ReplayTrace { version: 1; seed: number; fixture: TraceFixture; actions: TraceAction[]; failure?: {failureClass:string;ts?:TraceExecutionFailure;wasm?:TraceExecutionFailure} }
+/** The existing wire codec escapes every user object and preserves missing values and numeric tags. */
 export function serializeTrace(trace: ReplayTrace): string {
-  return JSON.stringify(trace, (_key, value) => typeof value === 'number' && Object.is(value, -0) ? { $traceNumber: '-0' } : value, 2);
+  const value = encodeWire(trace), holes: string[][] = [];
+  const collect = (child: unknown, path: string[]) => {
+    if (!child || typeof child !== 'object') return;
+    if (Array.isArray(child)) for (let i = 0; i < child.length; i++) if (!Object.hasOwn(child,i)) holes.push([...path,String(i)]);
+    for (const key of Object.keys(child)) collect((child as Record<string,unknown>)[key],[...path,key]);
+  };
+  collect(trace,[]);
+  // The wire codec materializes array holes; this out-of-band shape restores their presence exactly.
+  return JSON.stringify({format:'pivot-action-trace/wire-v1',value,holes},null,2);
 }
 export function parseTrace(json: string): ReplayTrace {
-  const trace = JSON.parse(json, (_key, value) => value && typeof value === 'object' && value.$traceNumber === '-0' ? -0 : value) as ReplayTrace;
-  if (trace.version !== 1 || !Array.isArray(trace.actions)) throw new Error('Unsupported trace');
+  const encoded = JSON.parse(json) as {format?:string;value:WireValue;holes:string[][]};
+  if (encoded.format !== 'pivot-action-trace/wire-v1' || !Array.isArray(encoded.holes)) throw new Error('Unsupported trace encoding');
+  const trace = decodeWire(encoded.value) as ReplayTrace;
+  for (const path of encoded.holes) {
+    if (!Array.isArray(path) || !path.length || path.some(key=>typeof key !== 'string')) throw new Error('Invalid trace array shape');
+    let parent: unknown = trace;
+    for (const key of path.slice(0,-1)) {
+      if (!parent || typeof parent !== 'object' || !Object.hasOwn(parent,key)) throw new Error('Invalid trace array path');
+      parent = (parent as Record<string,unknown>)[key];
+    }
+    const index = path.at(-1)!;
+    if (!Array.isArray(parent) || !/^(0|[1-9][0-9]*)$/.test(index) || Number(index) >= parent.length) throw new Error('Invalid trace array index');
+    delete parent[Number(index)];
+  }
+  if (!trace || trace.version !== 1 || !Array.isArray(trace.actions)) throw new Error('Unsupported trace');
   return trace;
+}
+export interface TraceExecutionFailure { action: TraceObservation['action'] | 'acquire'; actionIndex: number; revision: Revision; name: string; message: string; code?: string }
+class TraceExecutionError extends Error {
+  readonly failure: TraceExecutionFailure;
+  constructor(error: unknown, action: TraceExecutionFailure['action'], actionIndex: number, revision: Revision) {
+    super(error instanceof Error ? error.message : String(error), {cause:error});
+    const descriptor = (error as {descriptor?:{code?:unknown}} | null)?.descriptor;
+    this.failure = {action,actionIndex,revision,name:error instanceof Error ? error.name : 'ThrownValue',message:this.message,...(typeof descriptor?.code === 'string' ? {code:descriptor.code} : {})};
+  }
+}
+export type TraceOutcome = {kind:'success';observations:TraceObservation[]} | {kind:'failure';failure:TraceExecutionFailure};
+export async function captureTrace(create:()=>Promise<TableExecutor>,fixture:TraceFixture,actions:TraceAction[]):Promise<TraceOutcome> {
+  try { return {kind:'success',observations:await runTrace(create,fixture,actions)}; }
+  catch(error) {
+    if (!(error instanceof TraceExecutionError)) throw error;
+    return {kind:'failure',failure:error.failure};
+  }
+}
+export function traceOutcomeMismatchClass(ts:TraceOutcome,wasm:TraceOutcome):string|null {
+  const signature = (engine:string,outcome:TraceOutcome) => outcome.kind === 'failure' ? `${engine}:${outcome.failure.action}:${outcome.failure.name}${outcome.failure.code ? `:${outcome.failure.code}` : ''}:${JSON.stringify(outcome.failure.message)}` : '';
+  if (ts.kind === 'failure' || wasm.kind === 'failure') return `execution:${[signature('ts',ts),signature('wasm',wasm)].filter(Boolean).join('|')}`;
+  return traceMismatchClass(ts.observations,wasm.observations);
+}
+export interface TraceParityFailure {failureClass:string;ts:TraceOutcome;wasm:TraceOutcome;minimized:TraceAction[]}
+/** Persist the complete input before minimization; unexpected reduction errors cannot erase it. */
+export async function qualifyTrace(tsCreate:()=>Promise<TableExecutor>,wasmCreate:()=>Promise<TableExecutor>,replay:ReplayTrace,save:(suffix:'full'|'minimized',trace:ReplayTrace,failureClass:string)=>void):Promise<TraceParityFailure|null> {
+  const ts = await captureTrace(tsCreate,replay.fixture,replay.actions), wasm = await captureTrace(wasmCreate,replay.fixture,replay.actions);
+  const failureClass = traceOutcomeMismatchClass(ts,wasm);
+  if (!failureClass) return null;
+  const failedReplay: ReplayTrace = {...replay,failure:{failureClass,...(ts.kind === 'failure' ? {ts:ts.failure} : {}),...(wasm.kind === 'failure' ? {wasm:wasm.failure} : {})}};
+  save('full',failedReplay,failureClass);
+  const minimized = await reduceTrace(replay.actions,async actions=>{
+    const candidateClass = traceOutcomeMismatchClass(await captureTrace(tsCreate,replay.fixture,actions),await captureTrace(wasmCreate,replay.fixture,actions));
+    return candidateClass === failureClass ? candidateClass : null;
+  });
+  save('minimized',{...failedReplay,actions:minimized},failureClass);
+  return {failureClass,ts,wasm,minimized};
 }
 /** Deletion reducer retains the original semantic mismatch class, never any arbitrary failure. */
 export async function reduceTrace(actions: TraceAction[], classify: (actions: TraceAction[]) => Promise<string | null>): Promise<TraceAction[]> {
