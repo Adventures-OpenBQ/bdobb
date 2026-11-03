@@ -65,3 +65,14 @@ it('resolves relative date parameters at run time and sends only literals',async
  const sent=vi.mocked(c.start).mock.calls[0][0].params;
  expect(sent.ticker).toBe('T');expect(sent.as_of).toMatch(/^\d{4}-\d{2}-\d{2}$/);expect(sent.as_of).not.toBe('T-1bd');
 });
+
+it('adapts a retained later page without starting a query and keeps row identity global',async()=>{
+ const c=client();const retained={page:{...page,total_count:2001,rows:[{Revenue:10}],next_cursor:null},executionId,offset:2000,pageNumber:3,hasPrevious:true,hasNext:false};
+ const data=await createTemporalSourceAdapter(c,fixed,retained).acquire(signal());
+ if(data.kind!=='dataset')throw Error('dataset');
+ expect(c.start).not.toHaveBeenCalled();expect(c.page).not.toHaveBeenCalled();
+ expect(data.dataset.rows[0].id).toBe(`${executionId}:2000`);
+ expect(data.dataset.completeness.kind).toBe('paged');
+ expect(data.dataset.provenance.metadata?.temporalPage).toMatchObject({pageOffset:2000,pageNumber:3,hasNextPage:false});
+ expect(data.dataset.completeness.warnings?.join(' ')).toContain('loaded rows only');
+});
