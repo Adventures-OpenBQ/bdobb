@@ -16,7 +16,8 @@ import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
 import { LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
-import { createTemporalClient } from '../lib/temporal/client';
+import { createTemporalClient,type TemporalClient } from '../lib/temporal/client';
+import {createTemporalPager,type TemporalPager,type TemporalPage} from '../lib/temporal/paging';
 import { createTemporalSourceAdapter } from '../lib/temporal/sourceAdapter';
 import { parseQueryBinding } from '../lib/temporal/bindings';
 import { onTemporalScopeChange } from '../lib/temporal/security';
@@ -54,7 +55,10 @@ export type ViewState = {
   stale: boolean;
   error?: string;
 };
+export type TemporalPagingView={pageNumber:number;offset:number;loadedRows:number;totalCount:number;countQuality:'exact'|'lower_bound';hasPrevious:boolean;hasNext:boolean;busy:boolean;error?:string};
+type TemporalState={pager:TemporalPager;client:TemporalClient;page?:TemporalPage;view?:TemporalPagingView;controller?:AbortController};
 type Node = {
+  temporal?:TemporalState;
   card: DashboardCard;
   runtimeParams: RuntimeParams;
   groupCandidates: readonly PivotGroupCandidate[];
@@ -85,6 +89,7 @@ type Runtime = {
 export type ExecutionDependencies = {
   viewerAuthority?: {isViewer:()=>boolean;subscribe:(listener:()=>void)=>()=>void};
   managedProvider?: (card: DashboardCard) => ExecutionProvider;
+  temporalClient?: (card:DashboardCard)=>TemporalClient;
   executor?: (id: string) => LocalWorkerExecutor;
   engine?: TableEngine;
   source: (card: DashboardCard) => SourceAdapter | undefined;
@@ -186,13 +191,45 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     const owner = node.managedOwners?.get(executor);
     if (owner) owner.retire(); else executor.dispose();
   }
+  function disposeTemporal(node:Node){node.temporal?.controller?.abort();node.temporal?.pager.dispose();node.temporal=undefined;}
   function disposeNode(node: Node) {
+    disposeTemporal(node);
     node.executor?.dispose();
     for (const owner of node.managedOwners?.values() ?? []) owner.dispose();
   }
   const dashboards = new Map<string, Runtime>(), listeners = new Set<() => void>(), missingViews = new Map<string, ViewState>();
   const emit = () => listeners.forEach(fn => fn());
   const get = (d: string, id: string) => dashboards.get(d)?.nodes.get(id);
+  function pagingView(state:TemporalState,busy=false,error?:string):TemporalPagingView|undefined {
+    const page=state.page;if(!page)return undefined;
+    return {pageNumber:page.pageNumber,offset:page.offset,loadedRows:page.page.rows.length,totalCount:page.page.total_count,countQuality:page.page.count_quality,hasPrevious:page.hasPrevious,hasNext:page.hasNext,busy,...(error?{error}:{})};
+  }
+  function sourceFor(node:Node):SourceAdapter|undefined {
+    if(!deps.temporalClient||!isTemporalTable(node.card)||node.card.linkedSource)return deps.source(node.card);
+    const binding=parseQueryBinding(node.card.queryBinding);
+    if(!node.temporal){const client=deps.temporalClient(node.card);node.temporal={client,pager:createTemporalPager(client,binding)};}
+    const state=node.temporal;
+    return {async acquire(signal){
+      const page=state.page??await state.pager.open(signal);
+      if(signal.aborted||node.temporal!==state)throw new DOMException('Temporal acquisition cancelled','AbortError');
+      state.page=page;state.view=pagingView(state,!!state.controller);
+      return createTemporalSourceAdapter(state.client,binding,page).acquire(signal);
+    }};
+  }
+  async function navigateTemporal(d:string,id:string,direction:'next'|'previous'):Promise<void>{
+    const runtime=dashboards.get(d),node=get(d,id),state=node?.temporal;
+    if(!runtime||runtime.invalid||!node||!state?.page||state.controller)return;
+    if(direction==='next'?!state.page.hasNext:!state.page.hasPrevious)return;
+    const controller=new AbortController();state.controller=controller;state.view=pagingView(state,true);
+    node.view={...node.view};emit();
+    const owns=()=>!controller.signal.aborted&&get(d,id)===node&&node.temporal===state&&!runtime.invalid;
+    try{
+      const page=await state.pager[direction](controller.signal);if(!owns())return;
+      state.page=page;state.view=pagingView(state,true);invalidate(runtime,id,true);emit();
+      await ensure(d,id);
+    }catch(error){if(owns())state.view=pagingView(state,false,error instanceof Error?error.message:'Temporal page unavailable');}
+    finally{if(owns()){state.controller=undefined;state.view=pagingView(state,false,state.view?.error);node.view={...node.view};emit();}}
+  }
   const emptyCandidates=Object.freeze([]) as readonly PivotGroupCandidate[];
   const emptyRuntime=Object.freeze({}) as RuntimeParams;
   const snapshotRuntime=(value:RuntimeParams):RuntimeParams=>{const copy=structuredClone(value);for(const entry of Object.values(copy)){if(entry.source==='viewer'&&entry.memberKeys)Object.freeze(entry.memberKeys);Object.freeze(entry);}return Object.freeze(copy);};
@@ -373,7 +410,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           }
         }
         else {
-          const source = deps.source(node.card);
+          const source = sourceFor(node);
           if (!source) {
             unavailable(node, 'unavailable', 'Source unavailable; choose a source');
             return;
@@ -538,6 +575,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           if (modelChanged) {
             existing.view = { ...existing.view, definition: structuredClone(nextDefinition), selection: structuredClone(nextSelection) };
           }
+          if(sourceChanged)disposeTemporal(existing);
           if(sourceChanged && existing.managed){disposeNode(existing);existing.executor=undefined;existing.managed=undefined;}
           if (sourceChanged || modelChanged || runtimeChanged || groupsChanged)
             invalidate(runtime, card.id, sourceChanged);
@@ -621,6 +659,9 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       emit();
       void ensure(d, id);
     },
+    readTemporalPaging(d:string,id:string){return get(d,id)?.temporal?.view;},
+    nextTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'next'),
+    previousTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'previous'),
     refresh(d: string, id: string) {
       const runtime = dashboards.get(d);
       if (!runtime)
@@ -635,6 +676,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       }
       if (!node)
         return;
+      disposeTemporal(node);
       invalidate(runtime, node.card.id, true);
       emit();
       void ensure(d, node.card.id);
@@ -678,7 +720,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           return preview.columns;
         }finally{session.result.dispose();}
       }
-      const source = deps.source(node.card);
+      const source = sourceFor(node);
       if (!source) throw new Error('Source schema unavailable');
       const executor = makeExecutor(id);
       try {
@@ -759,6 +801,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         while (size !== affected.size) { size = affected.size; for (const n of runtime.nodes.values()) if (n.card.linkedSource && affected.has(n.card.linkedSource.sourceWidgetId)) affected.add(n.card.id); }
         for (const id of affected) {
           const node = runtime.nodes.get(id)!;
+          disposeTemporal(node);
           node.version++; node.controller?.abort(); node.acquisition?.controller.abort();
           node.acquisition = undefined; node.promise = undefined; node.executor?.dispose(); node.executor = undefined;
           node.acquired = false; node.sourceRevision = undefined; node.incomingColumns = undefined;
@@ -801,14 +844,11 @@ export const tableExecutionStore = createTableExecutionStore({
   reconcileSelection: async (d, id, definition, selection, guard) => {
     const { useDashboardStore } = await import('./dashboardStore');
     return useDashboardStore.getState().commitTableDefinition(d, id, definition, selection, guard);
-  }, source: card => isTemporalTable(card) && !card.linkedSource ? {
-      async acquire(signal) {
-        const binding = parseQueryBinding(card.queryBinding);
-        const state = useBackendsStore.getState(), backend = state.backends.find(b => b.id === card.backendId);
-        if (!backend || state.services[backend.id] !== 'TemporalDB') throw new Error('TemporalDB source unavailable; reconnect the original service');
-        return createTemporalSourceAdapter(createTemporalClient(backend), binding).acquire(signal);
-      }
-    } : card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
+  }, temporalClient:card=>{
+      const state=useBackendsStore.getState(),backend=state.backends.find(b=>b.id===card.backendId);
+      if(!backend||state.services[backend.id]!=='TemporalDB')throw new Error('TemporalDB source unavailable; reconnect the original service');
+      return createTemporalClient(backend);
+    }, source: card => card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
       const bytes = await readLocalFile(card.params.file);
       if (signal.aborted)
         throw new DOMException('Aborted', 'AbortError');
