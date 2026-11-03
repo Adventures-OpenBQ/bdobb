@@ -11,7 +11,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "e2e",
   // Portable Pivot owns a built/dev/private fixture server and Chromium/WebKit projects.
-  testIgnore: ["rust-pivot.spec.ts", "rust-pivot-resources.spec.ts", "ssrm-widget.spec.ts", "ssrm-resources.spec.ts"],
+  testIgnore: ["sec-linked-qualification.spec.ts", "rust-pivot.spec.ts", "rust-pivot-resources.spec.ts", "ssrm-widget.spec.ts", "ssrm-resources.spec.ts"],
   outputDir: "e2e-results",
   workers: 1,
   // A net for a lost race, not a substitute for fixing the race: only CI
