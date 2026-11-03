@@ -429,3 +429,117 @@ fn chart_data_refuses_over_batch_wire_budget() {
         Response::Totals(_)
     ));
 }
+
+// Optional accounting must not change payloads, metadata or cursor progress.
+#[test]
+fn permissive_export_ceilings_match_unbounded_batches() {
+    for ignore_selection in [false, true] {
+        let export = |limits| {
+            let (input, definition) = raw();
+            let mut s = Session::new("en-US".into(), limits);
+            s.register(input, 1).unwrap();
+            s.set_batch_rows(1).unwrap();
+            assert!(matches!(
+                call(
+                    &mut s,
+                    1,
+                    Operation::ApplyModel {
+                        definition,
+                        selection: SelectionSpec::AllMatching {
+                            excluded_ids: vec![]
+                        },
+                        reconcile_missing: false,
+                        previous_selection_namespace: None,
+                        proven_absent_ids: vec![],
+                        runtime_params: RuntimeParams::new(),
+                    }
+                ),
+                Response::ViewReady(_)
+            ));
+            let mut batches = vec![];
+            let mut operation = Operation::Presented {
+                transfer_id: "export".into(),
+                ignore_selection,
+            };
+            loop {
+                let Response::Subset(batch) = call(&mut s, 1, operation) else {
+                    panic!("subset")
+                };
+                let done = batch.final_batch;
+                operation = Operation::NextSubset {
+                    transfer_id: "export".into(),
+                    sequence: batch.sequence + 1,
+                };
+                batches.push(serde_json::to_value(batch).unwrap());
+                if done {
+                    break;
+                }
+            }
+            batches
+        };
+        let unbounded = export(ResourceLimits::default());
+        let bounded = export(ResourceLimits {
+            max_state_bytes: Some(usize::MAX),
+            max_batch_bytes: Some(usize::MAX),
+            export_bytes: Some(usize::MAX),
+            ..Default::default()
+        });
+        assert_eq!(bounded, unbounded);
+        assert!(unbounded.len() > 1, "exercise transfer continuation");
+    }
+}
+
+#[test]
+fn registration_byte_limits_keep_exact_boundary_and_stricter_alias() {
+    let (input, definition) = raw();
+    let bytes = serde_json::to_vec(&input).unwrap().len();
+    for (legacy, current, accepts) in [
+        (None, None, true),
+        (Some(bytes), None, true),
+        (None, Some(bytes), true),
+        (Some(bytes), Some(bytes + 1), true),
+        (Some(bytes - 1), Some(bytes), false),
+        (Some(bytes), Some(bytes - 1), false),
+        (Some(0), None, false),
+        (None, Some(0), false),
+    ] {
+        let mut session = Session::new("en-US".into(), ResourceLimits {
+            input_bytes: legacy, max_input_bytes: current, ..Default::default()
+        });
+        let result = session.register(input.clone(), 1);
+        assert_eq!(result.is_ok(), accepts, "legacy={legacy:?}, current={current:?}");
+        if accepts {
+            assert!(matches!(apply(&mut session, definition.clone(), 1), Response::ViewReady(_)));
+        } else {
+            let error = result.unwrap_err();
+            assert_eq!(error.code, "RESOURCE_LIMIT");
+            assert_eq!(error.message, "Input admission budget exceeded");
+        }
+    }
+}
+
+#[test]
+fn registration_without_byte_ceiling_still_validates_dataset() {
+    let (mut input, _) = raw();
+    input.rows[0].id.clear();
+    let mut session = Session::new("en-US".into(), ResourceLimits::default());
+    assert_eq!(session.register(input, 1).unwrap_err().code, "INVALID_REQUEST");
+}
+
+#[test]
+fn byte_admission_refusal_precedes_other_checks_and_keeps_publication() {
+    let (input, definition) = raw();
+    let bytes = serde_json::to_vec(&input).unwrap().len();
+    let mut session = Session::new("en-US".into(), ResourceLimits {
+        max_input_bytes: Some(bytes), max_rows: Some(input.rows.len()), ..Default::default()
+    });
+    session.register(input.clone(), 1).unwrap();
+    assert!(matches!(apply(&mut session, definition, 1), Response::ViewReady(_)));
+    let mut invalid = input;
+    invalid.rows.push(invalid.rows[0].clone());
+    invalid.rows.last_mut().unwrap().id.clear();
+    let error = session.register(invalid, 2).unwrap_err();
+    assert_eq!(error.code, "RESOURCE_LIMIT");
+    assert_eq!(error.message, "Input admission budget exceeded");
+    assert!(matches!(call(&mut session, 1, Operation::Totals), Response::Totals(_)));
+}
