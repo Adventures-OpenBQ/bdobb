@@ -12,8 +12,7 @@ const facts = (page:Page) => card(page,'SEC company facts');
 const chart = (page:Page) => card(page,'Selected line — FY2024');
 const plot = (page:Page) => chart(page).locator('.js-plotly-plot');
 async function ys(page:Page):Promise<unknown[][]> {
- if(!await plot(page).count()) return [];
- return plot(page).evaluate(el=>(el as unknown as {data:{y:unknown[]}[]}).data.map(t=>t.y));
+ return plot(page).evaluateAll(elements=>elements.flatMap(el=>(el as unknown as {data?:{y:unknown[]}[]}).data?.map(trace=>trace.y)??[]));
 }
 async function snapshot(page:Page):Promise<Record<string,Delivery>> {
  return page.evaluate(async()=>{
