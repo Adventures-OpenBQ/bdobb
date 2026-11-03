@@ -33,7 +33,7 @@ jobs:
       - run: pnpm pivot:build
       # Native-order integration bundles TypeScript and needs installed dev
       # dependencies; the artifact smoke also runs in dependency-free temp roots.
-      - run: node --test scripts/pivot-wasm-native-order.test.mjs
+      - run: node --test scripts/pivot-wasm-native-order.mjs
       # notices:check reads every crate's metadata offline; the app's own
       # crates are not otherwise downloaded until the later cargo steps.
       - run: cargo fetch --locked --manifest-path src-tauri/Cargo.toml
