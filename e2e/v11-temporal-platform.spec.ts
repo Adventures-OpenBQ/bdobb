@@ -148,7 +148,7 @@ test('full Query Data app shares revisions and preserves linked chart/export rec
   }
   try {
     for(const scope of ['workspace','entitlement'] as const){
-      gatewayConfig.temporalAuthorization='Bearer denied-'+scope+'-token';
+      gatewayConfig.temporalAuthorization='Bearer denied-'+scope+'-token-padded-to-thirty-two-characters';
       const post=await deniedResponse(await context.request.post(publicationPath,{headers:{Origin:config.origin},data:{format:'arrow-ipc-stream-v1',idempotency_key:'foreign-'+scope}}));
       const get=await deniedResponse(await context.request.get(publicationPath+'/'+publication.publication_id));
       expect({post,get}).toEqual({post:403,get:403});publicationNegative[scope]={post,get};
