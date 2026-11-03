@@ -13,6 +13,7 @@ async function open(mode,wire){
  await executor.registerInput(c.dataset,revision.input,controller.signal);
  const ready=await executor.applyModel(c.definition,{kind:'none'},revision,controller.signal,true,undefined,undefined,active.runtime);
  active.target=ready.columns.find(c=>c.id!=='\x1egroup')?.id;
+ return {topLevelCount:ready.topLevelCount,completeness:ready.completeness.kind};
 }
 async function sort(count){
  const a=active;
