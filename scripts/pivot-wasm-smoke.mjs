@@ -12,3 +12,6 @@ test('emitted web Wasm initializes and negotiates protocol 1 without shared memo
  assert.ok(exports.memory.buffer instanceof ArrayBuffer);
  assert.equal(exports.memory.buffer instanceof SharedArrayBuffer,false);
 });
+
+// Keep the emitted-artifact boundary checks in every stock WASM build.
+import './pivot-wasm-native-order.test.mjs';

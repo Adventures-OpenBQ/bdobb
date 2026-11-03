@@ -111,3 +111,83 @@ fn sorting_moves_payload_and_no_keys_do_not_clone() {
     assert_eq!(clones.get(), 0, "permutation must move payloads");
     assert!(sort_by_keys(&mut items, &[vec![]], &[], &Numeric).is_err());
 }
+
+struct AllocationCounter;
+thread_local! {
+    static COUNT_ALLOCATIONS: Cell<bool> = const { Cell::new(false) };
+    static ALLOCATIONS: Cell<usize> = const { Cell::new(0) };
+}
+unsafe impl std::alloc::GlobalAlloc for AllocationCounter {
+    unsafe fn alloc(&self, layout: std::alloc::Layout) -> *mut u8 {
+        let _ = COUNT_ALLOCATIONS.try_with(|enabled| {
+            if enabled.get() {
+                ALLOCATIONS.with(|n| n.set(n.get() + 1));
+            }
+        });
+        unsafe { std::alloc::System.alloc(layout) }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: std::alloc::Layout) {
+        unsafe { std::alloc::System.dealloc(ptr, layout) }
+    }
+}
+#[global_allocator]
+static ALLOCATOR: AllocationCounter = AllocationCounter;
+#[test]
+fn warmed_numeric_cache_hits_do_not_allocate_or_repeat_host_calls() {
+    let host = Host {
+        scalar_fail: false,
+        raw_fail: false,
+        scalar_calls: Cell::new(0),
+        raw_calls: Cell::new(0),
+    };
+    let cache = CachedOrder::new(&host, 2);
+    let a = value(123.5);
+    let b = value(-789.25);
+    cache.compare_raw(&a, &b).unwrap();
+    ALLOCATIONS.with(|n| n.set(0));
+    COUNT_ALLOCATIONS.with(|enabled| enabled.set(true));
+    for _ in 0..100 {
+        assert_eq!(cache.compare_raw(&a, &b).unwrap(), Comparison::Unordered);
+    }
+    COUNT_ALLOCATIONS.with(|enabled| enabled.set(false));
+    assert_eq!(
+        ALLOCATIONS.with(|n| n.get()),
+        0,
+        "numeric cache hits must not construct strings"
+    );
+    assert_eq!(
+        host.raw_calls.get(),
+        1,
+        "the negotiated callback stays authoritative and cached"
+    );
+}
+#[test]
+fn cache_keeps_signed_zero_types_and_compound_entry_order_distinct() {
+    let host = Host {
+        scalar_fail: false,
+        raw_fail: false,
+        scalar_calls: Cell::new(0),
+        raw_calls: Cell::new(0),
+    };
+    let cache = CachedOrder::new(&host, 64);
+    let variants = [
+        value(0.),
+        value(-0.),
+        WireValue::F64(WireNumber::Special(SpecialNumber::NegativeZero)),
+        WireValue::String("0".into()),
+        WireValue::BigIntString("0".into()),
+        WireValue::Bool(false),
+        WireValue::Null,
+        WireValue::Missing,
+        WireValue::Record(vec![("a".into(), value(1.)), ("b".into(), value(2.))]),
+        WireValue::Record(vec![("b".into(), value(2.)), ("a".into(), value(1.))]),
+    ];
+    for a in &variants {
+        cache.compare_raw(a, &value(1.)).unwrap();
+    }
+    for a in &variants {
+        cache.compare_raw(a, &value(1.)).unwrap();
+    }
+    assert_eq!(host.raw_calls.get(), variants.len());
+    assert_eq!(cache.cache_size(), variants.len());
+}
