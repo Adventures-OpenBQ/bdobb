@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {"types": ["node", "vitest/globals"], "noEmit": true},
+  "compilerOptions": {"types": ["node", "vitest/globals", "vite/client"], "noEmit": true},
   "include": ["./**/*.ts"],
   "exclude": []
 }
