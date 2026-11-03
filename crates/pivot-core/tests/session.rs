@@ -1122,3 +1122,51 @@ fn group_domain_inspection_scales_linearly_with_members() {
         t.elapsed()
     });
 }
+
+#[test]
+fn explicit_empty_selection_stays_empty_while_clear_means_all_rows() {
+    let (mut s, d, runtime) = session("ratio-source-scope");
+    let result = call(
+        &mut s,
+        1,
+        Operation::ApplyModel {
+            definition: d.clone(),
+            selection: SelectionSpec::Explicit { ids: vec![] },
+            reconcile_missing: true,
+            previous_selection_namespace: None,
+            proven_absent_ids: vec![],
+            runtime_params: runtime.clone(),
+        },
+    );
+    let Response::ViewReady(ready) = result else {
+        panic!("apply failed: {result:?}")
+    };
+    assert!(matches!(ready.selection, SelectionSpec::Explicit { ref ids } if ids.is_empty()));
+    let Response::Subset(batch) = call(
+        &mut s,
+        1,
+        Operation::Presented {
+            transfer_id: "empty-selection".into(),
+            ignore_selection: false,
+        },
+    ) else {
+        panic!("subset failed")
+    };
+    assert!(batch.rows.is_empty());
+    assert!(batch.final_batch);
+    assert!(matches!(
+        apply(&mut s, d, runtime, 2),
+        Response::ViewReady(_)
+    ));
+    let Response::Subset(all) = call(
+        &mut s,
+        2,
+        Operation::Presented {
+            transfer_id: "clear-selection".into(),
+            ignore_selection: false,
+        },
+    ) else {
+        panic!("clear subset failed")
+    };
+    assert!(!all.rows.is_empty());
+}
