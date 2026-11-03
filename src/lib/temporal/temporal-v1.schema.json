@@ -1,5 +1,317 @@
 {
   "$defs": {
+    "AcquisitionLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "coverage_reads": {
+          "default": 128,
+          "maximum": 4096,
+          "minimum": 1,
+          "title": "Coverage Reads",
+          "type": "integer"
+        },
+        "freshness_seconds": {
+          "default": 86400,
+          "maximum": 2678400,
+          "minimum": 60,
+          "title": "Freshness Seconds",
+          "type": "integer"
+        },
+        "max_bytes": {
+          "default": 67108864,
+          "maximum": 1073741824,
+          "minimum": 1,
+          "title": "Max Bytes",
+          "type": "integer"
+        },
+        "max_concurrency": {
+          "default": 2,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Max Concurrency",
+          "type": "integer"
+        },
+        "max_days": {
+          "default": 3660,
+          "maximum": 36600,
+          "minimum": 1,
+          "title": "Max Days",
+          "type": "integer"
+        },
+        "max_identities": {
+          "default": 25,
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Max Identities",
+          "type": "integer"
+        },
+        "max_requests": {
+          "default": 32,
+          "maximum": 1024,
+          "minimum": 1,
+          "title": "Max Requests",
+          "type": "integer"
+        },
+        "max_retries": {
+          "default": 1,
+          "maximum": 3,
+          "minimum": 0,
+          "title": "Max Retries",
+          "type": "integer"
+        },
+        "negative_ttl_seconds": {
+          "default": 3600,
+          "maximum": 604800,
+          "minimum": 60,
+          "title": "Negative Ttl Seconds",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 300,
+          "maximum": 3600,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "AcquisitionLimits",
+      "type": "object"
+    },
+    "AcquisitionMapping": {
+      "additionalProperties": false,
+      "properties": {
+        "dataset_id": {
+          "enum": [
+            "eodhd.eod",
+            "yfinance.YfinanceEquityHistorical"
+          ],
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "end_parameter": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "End Parameter",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_alias": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Source Alias",
+          "type": "string"
+        },
+        "start_parameter": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Start Parameter",
+          "type": "string"
+        },
+        "symbol_parameter": {
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$",
+          "title": "Symbol Parameter",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_alias",
+        "dataset_id",
+        "symbol_parameter",
+        "start_parameter",
+        "end_parameter"
+      ],
+      "title": "AcquisitionMapping",
+      "type": "object"
+    },
+    "AcquisitionPolicy": {
+      "additionalProperties": false,
+      "description": "Versioned assumptions; current revision and scoped grants are checked separately.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "limits": {
+          "$ref": "#/$defs/AcquisitionLimits"
+        },
+        "mappings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AcquisitionMapping"
+          },
+          "maxItems": 16,
+          "title": "Mappings",
+          "type": "array"
+        },
+        "policy_id": {
+          "format": "uuid",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 2147483647,
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/AcquisitionSource"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "title": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "revision",
+        "title",
+        "sources"
+      ],
+      "title": "AcquisitionPolicy",
+      "type": "object"
+    },
+    "AcquisitionPolicySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "datasets": {
+          "items": {
+            "enum": [
+              "eodhd.eod",
+              "yfinance.YfinanceEquityHistorical"
+            ],
+            "type": "string"
+          },
+          "title": "Datasets",
+          "type": "array"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "policy_id": {
+          "format": "uuid",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "revision": {
+          "minimum": 1,
+          "title": "Revision",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "title": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "revision",
+        "title",
+        "enabled",
+        "datasets"
+      ],
+      "title": "AcquisitionPolicySummary",
+      "type": "object"
+    },
+    "AcquisitionSource": {
+      "additionalProperties": false,
+      "description": "Allowed acquisition identities and request bounds, not proof of effective data coverage.",
+      "properties": {
+        "account_ref": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:\\-]+$",
+          "title": "Account Ref",
+          "type": "string"
+        },
+        "dataset_id": {
+          "enum": [
+            "eodhd.eod",
+            "yfinance.YfinanceEquityHistorical"
+          ],
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "date_end": {
+          "format": "date",
+          "title": "Date End",
+          "type": "string"
+        },
+        "date_start": {
+          "format": "date",
+          "title": "Date Start",
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "eodhd",
+            "yfinance"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "symbols": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._^=\\-]{0,63}$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Symbols",
+          "type": "array"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "provider",
+        "account_ref",
+        "symbols",
+        "date_start",
+        "date_end"
+      ],
+      "title": "AcquisitionSource",
+      "type": "object"
+    },
     "CaptureAck": {
       "additionalProperties": false,
       "properties": {

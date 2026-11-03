@@ -3,7 +3,7 @@
 
 import {contractSchema,type ContractTypes} from './generated';
 export type {QueryDefinition,TemporalContext,InputManifest,ParameterSpec,ColumnSpec} from './generated';
-type Schema = { $ref?:string; const?:unknown; enum?:unknown[]; type?:string; anyOf?:Schema[]; allOf?:Schema[]; not?:Schema; if?:Schema; then?:Schema; properties?:Record<string,Schema>; required?:string[]; additionalProperties?:boolean|Schema; items?:Schema; contains?:Schema; minimum?:number; maximum?:number; minLength?:number; maxLength?:number; pattern?:string; format?:string };
+type Schema = { $ref?:string; const?:unknown; enum?:unknown[]; type?:string; anyOf?:Schema[]; allOf?:Schema[]; not?:Schema; if?:Schema; then?:Schema; properties?:Record<string,Schema>; required?:string[]; additionalProperties?:boolean|Schema; items?:Schema; contains?:Schema; minimum?:number; maximum?:number; minLength?:number; maxLength?:number; minItems?:number; maxItems?:number; pattern?:string; format?:string };
 export class TemporalValidationError extends Error {}
 export const isRecord=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,6 +34,7 @@ function valid(v:unknown,s:Schema,definitions=domainDefinitions):boolean {
  }
  if(s.type==='array'&&!Array.isArray(v))return false;
  if(Array.isArray(v)){
+  if(s.minItems!==undefined&&v.length<s.minItems||s.maxItems!==undefined&&v.length>s.maxItems)return false;
   if(s.items&&!v.every(x=>valid(x,s.items!,definitions)))return false;
   if(s.contains&&!v.some(x=>valid(x,s.contains!,definitions)))return false;
  }
