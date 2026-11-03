@@ -171,14 +171,17 @@ impl Session {
         if self.disposed {
             return Err(problem("INVALID_REQUEST", "Session is disposed"));
         }
-        resources::check(
-            match (self.limits.input_bytes, self.limits.max_input_bytes) {
-                (Some(a), Some(b)) => Some(a.min(b)),
-                (a, b) => a.or(b),
-            },
-            resources::wire_size(&input),
-            "Input admission budget exceeded",
-        )?;
+        let input_limit = match (self.limits.input_bytes, self.limits.max_input_bytes) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            (a, b) => a.or(b),
+        };
+        if input_limit.is_some() {
+            resources::check(
+                input_limit,
+                resources::wire_size(&input),
+                "Input admission budget exceeded",
+            )?;
+        }
         resources::check(
             self.limits.max_rows,
             input.rows.len(),

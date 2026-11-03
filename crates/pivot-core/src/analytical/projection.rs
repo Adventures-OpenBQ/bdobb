@@ -7,6 +7,31 @@ use super::{
     projection_columns::*,
 };
 use crate::pivot::{self, FieldKind, PivotColumn, PivotInput, PivotRowMeta, KEY_SEP, LABEL_FIELD};
+// One entry, owned by one projection loop with a fixed row population/model.
+// The builder captures that immutable context; constraints alone are not a
+// global scope identity. Drop the old entry before constructing another.
+struct ColumnContext<F> {
+    build: F,
+    last: Option<(CategoryConstraints, Vec<DatasetRow>, CalculationScope)>,
+}
+impl<F: Fn(&CategoryConstraints) -> (Vec<DatasetRow>, CalculationScope)> ColumnContext<F> {
+    fn new(build: F) -> Self {
+        Self { build, last: None }
+    }
+    fn get(&mut self, constraints: &CategoryConstraints) -> (&[DatasetRow], &CalculationScope) {
+        if !self
+            .last
+            .as_ref()
+            .is_some_and(|(key, _, _)| key == constraints)
+        {
+            self.last = None;
+            let (rows, scope) = (self.build)(constraints);
+            self.last = Some((constraints.clone(), rows, scope));
+        }
+        let (_, rows, scope) = self.last.as_ref().unwrap();
+        (rows, scope)
+    }
+}
 #[allow(clippy::result_large_err)]
 pub(super) fn project(
     v: &mut CalculatedView,
@@ -228,6 +253,11 @@ pub(super) fn project(
     let page_rows = std::cell::OnceCell::new();
     let mut totals_values = BTreeMap::new();
     let mut total_errors = BTreeMap::new();
+    let mut total_context = ColumnContext::new(|constraints: &CategoryConstraints| {
+        let records = surviving_rows.select(&v.pool, constraints);
+        let scope = scope_for(&v.pool, &records, constraints, &v.compiled);
+        (records, scope)
+    });
     for c in pivot.columns.iter().filter(|c| {
         c.field != LABEL_FIELD && (v.compiled.execution.is_none() || a.subtotals.grand_total)
     }) {
@@ -237,17 +267,13 @@ pub(super) fn project(
             .enumerate()
             .map(|(i, k)| (a.layout.columns[i].clone(), k.clone()))
             .collect();
-        let records = surviving_rows.select(&v.pool, &constraints);
-        let result = scope_results.calculate(
-            &v.pool,
-            &scope_for(&v.pool, &records, &constraints, &v.compiled),
-            &v.compiled,
-            order,
-        )?;
+        let (_, scope) = total_context.get(&constraints);
+        let result = scope_results.calculate(&v.pool, scope, &v.compiled, order)?;
         if let Some(cell) = cell(result, c.measure_id.as_deref().unwrap_or(""), &v.compiled) {
             put_cell(&c.field, &cell, &mut totals_values, &mut total_errors)?;
         }
     }
+    drop(total_context);
     v.totals.values = totals_values;
     v.totals.cell_errors = (!total_errors.is_empty()).then_some(total_errors);
     // Paths are explicit category keys; declared Statement members never create facts.
@@ -396,6 +422,18 @@ pub(super) fn project(
         let mut values = BTreeMap::from([(LABEL_FIELD.into(), WireValue::String(label))]);
         let mut errors = BTreeMap::new();
         let mut formats = BTreeMap::new();
+        let mut column_context = ColumnContext::new(|full: &CategoryConstraints| {
+            let mut inputs = scope_rows(&records, &v.pool, full);
+            if inputs.is_empty() {
+                if let Some(o) = output {
+                    let mut retained = full.clone();
+                    retained.retain(|id, _| !o.selectors.iter().any(|s| &s.category_id == id));
+                    inputs = surviving_rows.select(&v.pool, &retained);
+                }
+            }
+            let scope = scope_for(&v.pool, &inputs, full, &v.compiled);
+            (inputs, scope)
+        });
         for c in pivot.columns.iter().filter(|c| {
             c.field != LABEL_FIELD
                 && (v.compiled.execution.is_none()
@@ -409,20 +447,8 @@ pub(super) fn project(
                     .enumerate()
                     .map(|(i, k)| (a.layout.columns[i].clone(), k.clone())),
             );
-            let mut inputs = scope_rows(&records, &v.pool, &full);
-            if inputs.is_empty() {
-                if let Some(o) = output {
-                    let mut retained = full.clone();
-                    retained.retain(|id, _| !o.selectors.iter().any(|s| &s.category_id == id));
-                    inputs = surviving_rows.select(&v.pool, &retained);
-                }
-            }
-            let result = scope_results.calculate(
-                &v.pool,
-                &scope_for(&v.pool, &inputs, &full, &v.compiled),
-                &v.compiled,
-                order,
-            )?;
+            let (inputs, scope) = column_context.get(&full);
+            let result = scope_results.calculate(&v.pool, scope, &v.compiled, order)?;
             if result.formulas.empty {
                 continue;
             }
@@ -479,6 +505,7 @@ pub(super) fn project(
                 }
             }
         }
+        drop(column_context);
         let path: Vec<_> = (1..=keys.len())
             .map(|d| identity(&keys[..d].join(KEY_SEP), &signature))
             .collect();
