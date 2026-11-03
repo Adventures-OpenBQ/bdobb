@@ -1,0 +1,1019 @@
+{
+  "format": 1,
+  "synthetic": true,
+  "provenance": "Independent hand-specified boundary invariants, not SEC filings or candidate output. 53-week span is 371 inclusive days; next span is 364 days.",
+  "numericPolicy": "decimal-source-binary64/1",
+  "cases": [
+    {
+      "name": "fifty_three_week_flow_and_stock_endpoints_flow",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": -25
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "valueDecimal": "75",
+        "exactSafeInteger": true
+      }
+    },
+    {
+      "name": "fifty_three_week_flow_and_stock_endpoints_stock",
+      "source": [
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": -25
+          }
+        },
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        }
+      ],
+      "definition": {
+        "policy": "stock",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "valueDecimal": "-25",
+        "exactSafeInteger": true
+      }
+    },
+    {
+      "name": "mixed_company_and_currency_refuse_company",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "OTHER",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": -25
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Mixed company contexts cannot be aggregated.",
+          "recordIds": [
+            "fy53",
+            "fy52"
+          ]
+        }
+      }
+    },
+    {
+      "name": "mixed_company_and_currency_refuse_currency",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "OTHER",
+            "unit": "dollars",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": -25
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Mixed currency contexts cannot be aggregated.",
+          "recordIds": [
+            "fy53",
+            "fy52"
+          ]
+        }
+      }
+    },
+    {
+      "name": "mixed_company_and_currency_refuse_unit",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "OTHER",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": -25
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Mixed unit contexts cannot be aggregated.",
+          "recordIds": [
+            "fy53",
+            "fy52"
+          ]
+        }
+      }
+    },
+    {
+      "name": "distinct_id_duplicate_is_refused",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "distinct",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Duplicate facts for the same company, line and fiscal period.",
+          "recordIds": [
+            "fy53",
+            "distinct"
+          ]
+        }
+      }
+    },
+    {
+      "name": "same_source_identity_is_not_double_counted",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        },
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 100
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Duplicate facts for the same company, line and fiscal period.",
+          "recordIds": [
+            "fy53",
+            "fy53"
+          ]
+        }
+      }
+    },
+    {
+      "name": "missing_is_not_zero_missing",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": null
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "missing-input",
+          "message": "Line value is missing or nonnumeric.",
+          "recordIds": [
+            "fy53"
+          ]
+        }
+      }
+    },
+    {
+      "name": "missing_is_not_zero_explicit_zero",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 0
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "valueDecimal": "0",
+        "exactSafeInteger": true
+      }
+    },
+    {
+      "name": "single_period_eps_refuses_rollup",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "USD/shares",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 3.25
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "USD/shares",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": 1.5
+          }
+        }
+      ],
+      "definition": {
+        "policy": "single",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "scope",
+          "message": "Single-observation policy requires exactly one fact.",
+          "recordIds": [
+            "fy53",
+            "fy52"
+          ]
+        }
+      }
+    },
+    {
+      "name": "single_period_eps_preserves_observation",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "USD/shares",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 3.25
+          }
+        }
+      ],
+      "definition": {
+        "policy": "single",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "valueDecimal": "3.25",
+        "tolerance": {
+          "absolute": 0,
+          "ulp": 0,
+          "reason": "Single observation is an exactly representable binary fraction; no arithmetic."
+        }
+      }
+    },
+    {
+      "name": "safe_integer_boundary_is_exact",
+      "source": [
+        {
+          "id": "fy53",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2023,
+            "date": "2024-01-06",
+            "start": "2023-01-01",
+            "end": "2024-01-06",
+            "value": 9007199254740990
+          }
+        },
+        {
+          "id": "fy52",
+          "values": {
+            "company": "A",
+            "currency": "USD",
+            "unit": "dollars",
+            "year": 2024,
+            "date": "2025-01-04",
+            "start": "2024-01-07",
+            "end": "2025-01-04",
+            "value": 1
+          }
+        }
+      ],
+      "definition": {
+        "policy": "flow",
+        "valueFieldId": "value",
+        "context": {
+          "periodKind": "FY",
+          "companyFieldId": "company",
+          "currencyFieldId": "currency",
+          "unitFieldId": "unit",
+          "fiscal": {
+            "companyFieldId": "company",
+            "dateFieldId": "date",
+            "fiscalYearFieldId": "year",
+            "periodStartFieldId": "start",
+            "periodEndFieldId": "end",
+            "periodKind": "FY"
+          },
+          "requestedPeriods": [
+            {
+              "kind": "FY",
+              "year": 2023,
+              "start": "2023-01-01",
+              "end": "2024-01-06",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2023",
+              "key": "2023"
+            },
+            {
+              "kind": "FY",
+              "year": 2024,
+              "start": "2024-01-07",
+              "end": "2025-01-04",
+              "companyKey": "A",
+              "precision": "authoritative",
+              "source": "synthetic declared bounds",
+              "label": "2024",
+              "key": "2024"
+            }
+          ],
+          "required": true
+        }
+      },
+      "expected": {
+        "valueDecimal": "9007199254740991",
+        "exactSafeInteger": true
+      }
+    }
+  ],
+  "amendment": {
+    "name": "amendment_asof_chooses_one_filing",
+    "source": [
+      {
+        "id": "original",
+        "accession": "SYNTHETIC-original",
+        "filed": "2024-02-01",
+        "value": 100
+      },
+      {
+        "id": "amendment",
+        "accession": "SYNTHETIC-amendment",
+        "filed": "2024-03-01",
+        "value": 90
+      }
+    ],
+    "definition": "One company/concept/unit/fiscal coordinate; choose latest filed <= cutoff before pivot evaluation.",
+    "expected": [
+      {
+        "cutoff": "2024-02-15",
+        "ids": [
+          "original"
+        ],
+        "value": 100
+      },
+      {
+        "cutoff": "2024-03-15",
+        "ids": [
+          "amendment"
+        ],
+        "value": 90
+      }
+    ]
+  },
+  "annualQuarterOverlap": {
+    "name": "annual_quarter_overlap_refuses",
+    "source": [
+      {
+        "id": "annual-source",
+        "period": "FY"
+      },
+      {
+        "id": "quarter-source",
+        "period": "FQ"
+      }
+    ],
+    "definition": {
+      "periodKind": "FY",
+      "scope": "whole Statement input"
+    },
+    "expected": {
+      "diagnostic": {
+        "code": "invalid-structure",
+        "severity": "error",
+        "path": "periodKind",
+        "message": "Source facts must all have the selected FY period kind; FY/FQ overlap is not permitted."
+      },
+      "affectedSourceIds": [
+        "annual-source",
+        "quarter-source"
+      ],
+      "note": "Compilation diagnostics carry a binding path, not per-row IDs; affected source IDs are the refused whole input."
+    }
+  },
+  "reportedAndCalculated": {
+    "name": "reported_and_calculated_lines_stay_distinct_and_missing_dependencies_propagate",
+    "source": {
+      "id": "a",
+      "values": {
+        "revenue": 100,
+        "cost_of_revenue": 60,
+        "reported_profit": 999
+      }
+    },
+    "definition": {
+      "reportedLine": "gross_profit",
+      "calculatedLine": "calculated_gross_profit",
+      "formula": "revenue - cost_of_revenue"
+    },
+    "expected": {
+      "reported": "999",
+      "calculated": "40",
+      "missingDependencyError": {
+        "code": "invalid-type",
+        "message": "Arithmetic requires numeric values; blanks and text are not zero."
+      },
+      "affectedSourceIds": [
+        "a"
+      ]
+    }
+  }
+}

@@ -194,3 +194,21 @@ These names are literal source strings; template interpolation denotes parameter
 
 - `commits complete metadata and rejects partial, reordered and foreign revision input`
 - `rejects mismatched request identity within one transfer`
+
+## Task 2 independent financial boundary evidence
+
+Task 2 adds `qualification.test.ts` and `sec-statements/edge-cases.json` after inspecting the inventory above. These are hand-specified synthetic invariants, not SEC facts or candidate-generated goldens. Existing broad assertions remain; additions strengthen exact errors/affected identities and missing financial boundaries.
+
+| Existing coverage | Added assertion / scope |
+|---|---|
+| `missingLines.test.ts` blank/error display | `missing_is_not_zero_missing`, `missing_is_not_zero_explicit_zero`; direct missing-input versus exact zero |
+| `compile.test.ts` duplicate diagnostic | `distinct_id_duplicate_is_refused`, `same_source_identity_is_not_double_counted`; exact scope error/message/IDs, including repeated identity |
+| `linePolicy.test.ts` mixed-context boolean refusal | `mixed_company_and_currency_refuse_company/currency/unit`; exact error/message/IDs |
+| `compile.test.ts` overlap exception | `annual_quarter_overlap_refuses`; whole-input invalid-structure diagnostic, binding path and unchanged refused source |
+| `linePolicy.test.ts` calendar-year stock/flow | `fifty_three_week_flow_and_stock_endpoints_flow/stock`; 371-day and contiguous 364-day authoritative years, negative latest stock |
+| `linePolicy.test.ts` single refusal | `single_period_eps_refuses_rollup`, `single_period_eps_preserves_observation`; exact binary fraction, zero absolute/ULP tolerance declared |
+| No filing-selection policy coverage | `amendment_asof_chooses_one_filing`; explicit pre/post amendment IDs and evaluator values, no acquisition feature |
+| `compile.test.ts` calculated gross profit | `reported_and_calculated_lines_stay_distinct_and_missing_dependencies_propagate`; deliberately different reported 999 and calculated 40, null dependency invalid-type |
+| Task 1 verifier checks valid corpus | `safe_integer_boundary_is_exact`; exact maximum safe accumulated integer; verifier mutation test refuses unsafe integer and lossy decimal after rehashing payloads |
+
+The 12 direct policy cases run independently in TS and native Rust (`independent_financial_boundary_oracles`), without consulting candidate output or using TS as the Rust oracle. Filing policy, explicit whole-input overlap diagnostic and reported/calculated full-engine assertions run in TS here; existing native frozen fixtures still exercise overlap and formulas. Task 3 remains responsible for required TS/WASM traces and SEC engine execution. Task 2 is not browser/native-app acceptance. See the Task 2 report for attributable commands, first-run outcomes, hashes and limitations.
