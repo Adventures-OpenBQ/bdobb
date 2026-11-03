@@ -94,12 +94,13 @@ test('mixed companies deliver a scope error and never an aggregate numeric reven
  }
  await info.attach('prior-and-mixed-deliveries',{body:JSON.stringify({before,mixed},null,2),contentType:'application/json'});
 });
-test('company Clear removes completed numeric chart and restoring NVDA restores original facts',async({page})=>{
+test('company Clear removes completed numeric chart and restoring NVDA restores original facts',async({page},info)=>{
  await facts(page).getByRole('button',{name:/^Company:/}).click();
  await page.getByRole('dialog',{name:'Company values'}).getByRole('button',{name:'Clear',exact:true}).click();
  await expect.poll(async()=>(await snapshot(page)).facts.rows.length).toBe(0);
  expect((await snapshot(page)).facts.batches.flatMap(batch=>batch.rows)).toEqual([]);
  await expect.poll(async()=>(await ys(page)).flat().filter(value=>typeof value==='number').length).toBe(0);
+ await info.attach('successful-empty-delivery',{body:JSON.stringify({views:await snapshot(page),visibleChartValues:await ys(page)},null,2),contentType:'application/json'});
  await chooseCompanies(page,['CIK:0001045810']);
  await expect.poll(async()=>(await snapshot(page)).facts.rows.length).toBe(30);
  await expect.poll(()=>ys(page)).toEqual([[60922000000]]);
