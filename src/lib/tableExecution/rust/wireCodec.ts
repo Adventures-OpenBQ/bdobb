@@ -57,8 +57,27 @@ export function encodeWire(value:unknown):WireValue {
  };
  return encode(value);
 }
+// Scalar graphs cannot contain cycles. Inspect the same strict data descriptors
+// directly, then retain the ordinary schema decoder below (including its reads).
+function scalarGraph(value:unknown):boolean {
+ if(value===null||typeof value!=='object'||Array.isArray(value))return false;
+ const tag=Object.getOwnPropertyDescriptor(value,'tag');
+ if(!tag||!('value' in tag)||!tag.enumerable)return false;
+ const kind=tag.value,empty=kind==='missing'||kind==='null';
+ if(!empty&&kind!=='f64'&&kind!=='string'&&kind!=='bool'&&kind!=='bigint-string')return false;
+ const proto=Object.getPrototypeOf(value);
+ if(proto!==Object.prototype&&proto!==null)return false;
+ const keys=Reflect.ownKeys(value);
+ if(keys.length!==(empty?1:2)||!keys.includes('tag')||keys.some(key=>key!=='tag'&&key!=='value'))return false;
+ if(empty)return true;
+ const payload=Object.getOwnPropertyDescriptor(value,'value');
+ if(!payload||!('value' in payload)||!payload.enumerable)return false;
+ const cell=payload.value;
+ if(typeof cell==='string'){assertUnicodeScalar(cell);return true;}
+ return cell===null||cell===undefined||typeof cell==='boolean'||typeof cell==='number'||typeof cell==='bigint';
+}
 export function decodeWire(value:WireValue):unknown {
- graphWalk(value,true);
+ if(!scalarGraph(value))graphWalk(value,true);
  const fail=():never=>{throw new Error('Malformed wire value');};
  const decode=(v:unknown):unknown=>{
   if(v===null||typeof v!=='object'||Array.isArray(v))return fail();

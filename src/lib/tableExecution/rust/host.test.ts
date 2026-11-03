@@ -17,7 +17,8 @@ for(const method of ['compare','compareRaw','sortPermutation','compareRecipe'] a
  it(`propagates complete ${method} host Diagnostic and preserves the committed native revision`,()=>{
   const handle=runtime.open_session({protocolVersion:1,locale:'en-US'});
   const call=(command:object,rev=revision)=>runtime.dispatch(handle,{requestId:'host',revision:rev,...command} as ExecutionRequest)!;
-  const data=method==='sortPermutation'?{...input,rows:[{id:'a',values:{revenue:10}},{id:'b',values:{revenue:'20'}}]}:input;
+  // Use text to exercise the fallible raw host path, including engines with native finite comparisons.
+  const data=method==='sortPermutation'?{...input,rows:[{id:'a',values:{revenue:10}},{id:'b',values:{revenue:'20'}}]}:method==='compareRaw'?{...input,rows:[{id:'a',values:{revenue:'item10'}},{id:'b',values:{revenue:'item2'}}]}:input;
   call({kind:'registerInput',input:data,inputRevision:1});
   const initial={table:{},search:''};expect(call({kind:'applyModel',definition:initial,selection:{kind:'none'}}).kind).toBe('viewReady');
   const diagnostic={code:'MISSING_FIELD',message:`${method} original evidence`,severity:'error',path:'host-path',definitionId:'defined',dependencyId:'dep',key:'key',memberKeys:['member'],unmatchedCount:1,truncated:true};

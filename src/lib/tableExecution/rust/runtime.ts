@@ -26,7 +26,8 @@ export async function loadRustRuntime(loader:()=>Promise<WasmModule> = async()=>
       const stateBudget=options.limits?.maxStateBytes===undefined?undefined:Math.floor(options.limits.maxStateBytes/2);
       const nativeOptions={...options,limits:{...options.limits,...(stateBudget===undefined?{}:{maxStateBytes:stateBudget})}};
       const bridge=new LocaleOrderBridge(options.locale,4096,stateBudget);
-      const handle=module.open_session({wire:JSON.stringify(nativeOptions),order:(json:string)=>{
+      // This concrete adapter promises baseline JS numeric subtraction semantics.
+      const handle=module.open_session({nativeFiniteNumbers:true,wire:JSON.stringify(nativeOptions),order:(json:string)=>{
         try {
           const command=JSON.parse(json) as {kind:string;a:WireValue&string;b:WireValue&string;values:WireValue[][];descending:boolean[]};
           let value:unknown;
