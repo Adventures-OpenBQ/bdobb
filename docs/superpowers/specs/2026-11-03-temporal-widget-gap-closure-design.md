@@ -51,6 +51,20 @@ SQL cannot be safely translated into arbitrary provider requests. Automatic acqu
 
 Expose policy discovery, preflight and acquisition/run status to Rita through MCP. A tool that can acquire data is a write-capable tool, not a read-only cache query. Preserve existing cache-only discovery/query behavior. Rita and direct widgets use the same execution service and receipts.
 
+## Engineering decisions from builder review
+
+These are proposed implementation choices, not additional user preferences:
+
+- Implement a server retained-execution-to-managed-table adapter. Existing managed sessions, wire commands, result identities and exact-count admission cannot be replaced by raw result cursors. Cursor-only viewing remains capability-limited until that adapter is qualified.
+- Implement and qualify a managed yfinance acquisition adapter using the existing provider capture boundary before enabling automatic yfinance misses. The existing ConfiguredAcquisition provider list does not include yfinance. EODHD and yfinance qualify independently.
+- Resolve relative parameters and requested temporal context once when the run is submitted. Waiting for acquisition cannot move date bounds. Freeze the final current-corrected input manifest after accepted publication.
+- Persist a scoped orchestration attempt with waiting/acquiring/normalizing/ready/failed/cancelled states, separate from the final immutable execution. Only call ExecutionService.start when its inputs are ready; its interactive deadline is not an acquisition deadline. Status polling, recovery and cancellation operate on the attempt first.
+- Deduplicate within compatible workspace, entitlement and provider-account scopes. Cancellation detaches a waiter and cancels shared work only when no authorized waiters remain and cancellation is safe. Recheck permission and policy revision/revocation before scheduling, freezing and serving.
+- Bound preflight itself: source count, identities, date span, coverage-read work and planned requests. SQL requires an explicit bounded acquisition mapping per declared source.
+- Persist scoped negative-coverage evidence for accepted empty responses and unavailable history, with retry/freshness limits. Do not treat a no-observation day as a perpetual cache miss.
+- Initially permit automatic acquisition only for current-corrected runs. Other temporal modes, including effective-on, known-at, snapshot and replay, stay cache-only; extending them requires a separate temporal eligibility qualification.
+- Policy creation/update initially requires an explicit operator policy-management permission. Widgets and Rita may select only policies already granted to their scope. A displayed policy is never authorization by itself.
+
 ## Implementation order
 
 1. Protocol inventory and failing conformance tests: map the safer table protocol to the Temporal adapter and list supported/refused capabilities explicitly.
