@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "a92fefc6651e70483b06c41cb06f8c573a890d6f",
-  "sourceId": "81ca555d0074f31e26eb70f09b345a286a27bc0f91e20ece738cb0a047383fe5",
+  "baseCommit": "8c6d2a25b6ba6c6f3ae1d1efc857e8554c842f57",
+  "sourceId": "2a8a7cc4d23285f3cb216c58b4b703cd9f2ea4fba04557e58d1f23ee0c7fc1aa",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21517,8 +21517,8 @@
       "path": "e2e/v11-temporal-platform.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 16676,
-      "sha256": "99d6b53fe5e7c33c856623b08244bcaad28c8eb6865b65dbd64acf3e7bf00474"
+      "size": 16708,
+      "sha256": "f05138c95d1171aad6564e31aa81f3923c85e588bc1dc87a9eb02cc6a8b02e14"
     },
     {
       "path": "e2e/workspace-resolution.spec.ts",
@@ -22232,7 +22232,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "3cee0bcdea139dd3b849052a336a90d3bb5f64d5c5603d179c750843883e16f3"
+      "sha256": "64f5aceb35f1d8350439b4bad8fa73d696ce88fcdc9d9a9b0b3a0346715e4f01"
     },
     {
       "path": "source_bundle.py",
