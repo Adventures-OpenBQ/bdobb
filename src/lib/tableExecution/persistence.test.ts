@@ -87,3 +87,54 @@ it.each([{ kind: 'widget' }, { kind: 'url', sourceWidgetId: 'root' }, null])('in
   expect(store.readView('d', 'root').status).toBe('blocked');
   expect(store.readView('d', 'child').status).toBe('blocked'); expect(starts).toBe(0);
 });
+it('missing local file reopens in explicit failed state without losing the saved source reference',async()=>{
+ const file=await saveLocalFile(new File(['value\n7'],'rows.csv'));
+ const d:Dashboard={id:'missing',name:'Missing',tabs:[{id:'t',name:'Main',cards:[{id:'source',widgetId:'local_table',backendId:'builtin',params:{file},layout:{x:0,y:0,w:1,h:1}}]}]};
+ await saveDashboard(d);
+ const {deleteLocalFile}=await import('../localFiles');await deleteLocalFile(file);
+ const reopened=(await loadDashboards())[0];const store=runtime();store.syncDashboard(reopened);store.ensureTable(d.id,'source');await store.settled(d.id);
+ expect(store.readView(d.id,'source').status).toBe('failed');
+ expect(store.readView(d.id,'source').error).toMatch(/ENOENT|not found/i);
+ expect(JSON.parse(__read('dashboards/missing.json')!).tabs[0].cards[0].params.file).toBe(file);
+ store.disposeDashboard(d.id);
+});
+it('replaced local file requests repair for a persisted unavailable sorting field',async()=>{
+ const file=await saveLocalFile(new File(['value\n7'],'rows.csv'));
+ const d:Dashboard={id:'replaced',name:'Replaced',tabs:[{id:'t',name:'Main',cards:[{id:'source',widgetId:'local_table',backendId:'builtin',params:{file},layout:{x:0,y:0,w:1,h:1},tableDefinition:{table:{sorting:[{id:'value',desc:true}]},search:''}}]}]};
+ await saveDashboard(d);
+ const {__seed}=await import('../../test/memfs');__seed('files/'+file,Array.from(new TextEncoder().encode('other\n9')));
+ const store=runtime();store.syncDashboard((await loadDashboards())[0]);store.ensureTable(d.id,'source');await store.settled(d.id);
+ expect(store.readView(d.id,'source').status).toBe('blocked');
+ expect(store.readView(d.id,'source').error).toMatch(/value|field|column/i);
+ expect(JSON.parse(__read('dashboards/replaced.json')!).tabs[0].cards[0].tableDefinition.table.sorting).toEqual([{id:'value',desc:true}]);
+ store.disposeDashboard(d.id);
+});
+it('saved SEC intent recomputes cell errors and source provenance after reopen without private evaluator state',async()=>{
+ const {default:reference}=await import('../../test/fixtures/sec-statements/reference.json');
+ const {dashboardLayout}=await import('../../../e2e/fixtures/sec-statements/dashboard');
+ const {__seed,__readBytes}=await import('../../test/memfs');
+ const dashboard=structuredClone(dashboardLayout) as unknown as Dashboard;
+ dashboard.tabs[0].cards[1].tableDefinition=structuredClone(reference.companies.NVDA.definition) as unknown as Dashboard['tabs'][number]['cards'][number]['tableDefinition'];
+ const columns=['sec_source_row_id',...reference.companies.NVDA.dataset.columns.map(c=>c.id)];
+ const quote=(v:unknown)=>JSON.stringify(String(v??''));
+ const csv=[columns.map(quote).join(','),...Object.values(reference.companies).flatMap(c=>c.dataset.rows).map(r=>columns.map(k=>quote(k==='sec_source_row_id'?r.id:r.values[k as keyof typeof r.values])).join(','))].join('\n');
+ const built={dashboard,files:{['files/'+dashboard.tabs[0].cards[0].params.file]:csv}};
+ const facts=built.dashboard.tabs[0].cards[0];
+ const model=facts.tableDefinition!.analytical as {checklists:{memberKeys:string[]}[]};
+ model.checklists[0].memberKeys=['["string","CIK:0001045810"]','["string","CIK:0001652044"]'];
+ for(const [path,csv] of Object.entries(built.files))__seed(path,Array.from(new TextEncoder().encode(csv)));
+ await saveDashboard(built.dashboard);
+ const collect=async(d:Dashboard)=>{
+  const store=runtime();store.syncDashboard(d);store.ensureTable(d.id,'statement');await store.settled(d.id);
+  const view=store.readView(d.id,'statement');expect(view.status).toBe('ready');
+  const batches=[];for await(const b of store.readExecutor(d.id,'statement')!.presented(view.active!,new AbortController().signal))batches.push(b);
+  store.disposeDashboard(d.id);return batches.flatMap(b=>b.rows);
+ };
+ const before=await collect(built.dashboard);expect(before).toHaveLength(1);expect(before[0].cellErrors).toBeTruthy();
+ const after=await collect((await loadDashboards())[0]);expect(after).toEqual(before);
+ expect(Object.values(after[0].cellErrors!)).toEqual(expect.arrayContaining([expect.objectContaining({code:'scope',recordPreview:expect.any(Array)})]));
+ const saved=JSON.parse(__read('dashboards/d1.json')!);
+ expect(saved.tabs[0].cards[1].tableDefinition).toEqual(built.dashboard.tabs[0].cards[1].tableDefinition);
+ for(const c of saved.tabs[0].cards)for(const key of ['rows','active','ready','execution','cellErrors','provenance'])expect(c).not.toHaveProperty(key);
+ for(const path of Object.keys(built.files))expect(new TextDecoder().decode(__readBytes(path)!)).toBe(built.files[path]);
+});
