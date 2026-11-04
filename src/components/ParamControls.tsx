@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useParamOptions, type OptionsState } from "../hooks/useParamOptions";
 import { controlKind, paramsKey, resolveParamValue, visibleParams } from "../lib/params";
 import { splitParamEdit, type ParamEdit } from "../lib/paramGroups";
@@ -11,6 +11,7 @@ import type {
   ParamGroup,
   ParamOption,
   WidgetDef,
+  WidgetParam,
 } from "../lib/types";
 import { GroupLink } from "./GroupLink";
 import { ParamInput } from "./ParamInput";
@@ -25,7 +26,37 @@ type Props = {
   /** Needed to fetch optionsEndpoint options. Undefined = every such param errors. */
   backend: BackendConfig | undefined;
   onApply: (edit: ParamEdit) => void;
+  /**
+   * Told whether the title-bar row is crowded, so the card can fold its own
+   * buttons away and give the row the room (see nextCrowded). Called with
+   * false when the card has no title-bar row.
+   */
+  onCrowdedChange?: (crowded: boolean) => void;
+  /**
+   * How much room the row must have to spare before the card's buttons
+   * unfold again. Defaults to ROOMY_AT; a card whose buttons are wider than
+   * that passes their width plus a margin, or unfolding them would crowd the
+   * row again at once and the buttons would fold and unfold in a loop.
+   */
+  roomyAt?: () => number;
 };
+
+/**
+ * The title-bar row is crowded once its controls leave it this many pixels or
+ * fewer to spare, and stops being crowded only once it has this many again:
+ * the gap between the two keeps the card's buttons from flickering in and out
+ * at the boundary. Workspace's own title bar uses the same two numbers, sized
+ * for its buttons; BDOBB's are often wider, so the card raises the second one
+ * to fit them (the roomyAt prop).
+ */
+export const CROWDED_AT = 20;
+export const ROOMY_AT = 150;
+
+/** One step of the crowded state, from the room the title-bar row has to spare. */
+export function nextCrowded(crowded: boolean, spare: number, roomyAt: number = ROOMY_AT): boolean {
+  if (crowded) return spare < Math.max(roomyAt, ROOMY_AT);
+  return spare <= CROWDED_AT;
+}
 
 /**
  * Before useParamOptions' first effect commits, a param has no entry yet.
@@ -81,6 +112,8 @@ export function ParamControls({
   effective,
   backend,
   onApply,
+  onCrowdedChange,
+  roomyAt,
 }: Props) {
   const params = useMemo(() => visibleParams(widget), [widget]);
 
@@ -268,100 +301,156 @@ export function ParamControls({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optionStates, params, kindByName]);
 
-  return (
-    <div className="card-params">
-      {params.map((p) => {
-        const kind = controlKind(p);
-        const id = `${card.id}-${p.paramName}`;
-        const label = p.label ?? p.paramName;
-        const value = shown(p.paramName);
-        const typed = isTyped(p.paramName);
-        // Only a param with an endpoint has a fetch state. A multiSelect
-        // param with a static list has none, and must not be left waiting
-        // on one that will never arrive.
-        const state = p.optionsEndpoint ? (optionStates[p.paramName] ?? LOADING) : undefined;
-        // An errored endpoint param falls back to a hand-typed text input
-        // below, so it drafts and commits exactly like a declared text field.
-        const typedOrError = typed || state?.status === "error";
-        const set = (v: string) =>
-          typedOrError ? setDrafts((d) => ({ ...d, [p.paramName]: v })) : commit(p.paramName, v);
-        // The endpoint is authoritative when there is one: static options on
-        // an endpoint param are ignored (the one live case declaring both,
-        // Chamber, declares identical content).
-        const options =
-          state === undefined
-            ? (p.options ?? [])
-            : state.status === "error"
-              ? []
-              : (state.options ?? []);
-        // Nothing to choose from yet: disabled, showing the current value
-        // (see unofferedValues) rather than an empty control. A cascade
-        // refetch carries the previous list, so it is not pending and stays
-        // populated.
-        const pending = state?.status === "loading" && options.length === 0;
-        const unoffered = unofferedValues(value, options, kind === "multi", state !== undefined);
-        // One Enter handler for the whole control, on the wrapper: putting a
-        // second one on the input itself would commit twice in one event.
-        // An Enter that ends an IME composition is the IME's, not a commit.
-        const onKeyDown = typedOrError
-          ? (e: KeyboardEvent) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) commitDraft(p.paramName);
-            }
-          : undefined;
+  // The title-bar row's room to spare: its own width less what its controls
+  // need. The track is sized to its content (width: max-content), so its width
+  // is what the controls need whatever the row has been given.
+  const row0Ref = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const crowdedRef = useRef(false);
+  const hasRow0 = params.some((p) => (p.row ?? 0) === 0);
+  useLayoutEffect(() => {
+    const report = (crowded: boolean) => {
+      if (crowded === crowdedRef.current) return;
+      crowdedRef.current = crowded;
+      onCrowdedChange?.(crowded);
+    };
+    const row = row0Ref.current;
+    const track = trackRef.current;
+    if (!hasRow0 || !row || !track || typeof ResizeObserver === "undefined") {
+      report(false);
+      return;
+    }
+    const check = () =>
+      report(nextCrowded(crowdedRef.current, row.clientWidth - track.offsetWidth, roomyAt?.() ?? ROOMY_AT));
+    const observer = new ResizeObserver(check);
+    observer.observe(row);
+    observer.observe(track);
+    check();
+    return () => observer.disconnect();
+  }, [hasRow0, onCrowdedChange, roomyAt]);
 
-        return (
-          // The hint is a sibling of the label, not inside it: a description
-          // or a fetch error must not be absorbed into the control's
-          // accessible name, which is the param's label alone. The link is a
-          // sibling for the same reason.
-          <div key={p.paramName} className="param-field" title={p.description}>
-            <GroupLink
-              card={card}
-              param={p}
-              groups={groups}
-              groupsDisabled={groupsDisabled}
-              // What the control SHOWS, draft included: clicking the link
-              // from a half-typed field must seed the new group with what is
-              // on screen, not with the committed value the pending blur has
-              // yet to replace.
-              value={shown(p.paramName)}
+  const field = (p: WidgetParam) => {
+    const kind = controlKind(p);
+    const id = `${card.id}-${p.paramName}`;
+    const label = p.label ?? p.paramName;
+    const value = shown(p.paramName);
+    const typed = isTyped(p.paramName);
+    // Only a param with an endpoint has a fetch state. A multiSelect
+    // param with a static list has none, and must not be left waiting
+    // on one that will never arrive.
+    const state = p.optionsEndpoint ? (optionStates[p.paramName] ?? LOADING) : undefined;
+    // An errored endpoint param falls back to a hand-typed text input
+    // below, so it drafts and commits exactly like a declared text field.
+    const typedOrError = typed || state?.status === "error";
+    const set = (v: string) =>
+      typedOrError ? setDrafts((d) => ({ ...d, [p.paramName]: v })) : commit(p.paramName, v);
+    // The endpoint is authoritative when there is one: static options on
+    // an endpoint param are ignored (the one live case declaring both,
+    // Chamber, declares identical content).
+    const options =
+      state === undefined
+        ? (p.options ?? [])
+        : state.status === "error"
+          ? []
+          : (state.options ?? []);
+    // Nothing to choose from yet: disabled, showing the current value
+    // (see unofferedValues) rather than an empty control. A cascade
+    // refetch carries the previous list, so it is not pending and stays
+    // populated.
+    const pending = state?.status === "loading" && options.length === 0;
+    const unoffered = unofferedValues(value, options, kind === "multi", state !== undefined);
+    // One Enter handler for the whole control, on the wrapper: putting a
+    // second one on the input itself would commit twice in one event.
+    // An Enter that ends an IME composition is the IME's, not a commit.
+    const onKeyDown = typedOrError
+      ? (e: KeyboardEvent) => {
+          if (e.key === "Enter" && !e.nativeEvent.isComposing) commitDraft(p.paramName);
+        }
+      : undefined;
+
+    return (
+      // The hint is a sibling of the label, not inside it: a description
+      // or a fetch error must not be absorbed into the control's
+      // accessible name, which is the param's label alone. The link is a
+      // sibling for the same reason.
+      <div key={p.paramName} className="param-field" title={p.description}>
+        <GroupLink
+          card={card}
+          param={p}
+          groups={groups}
+          groupsDisabled={groupsDisabled}
+          // What the control SHOWS, draft included: clicking the link
+          // from a half-typed field must seed the new group with what is
+          // on screen, not with the committed value the pending blur has
+          // yet to replace.
+          value={shown(p.paramName)}
+        />
+        <label className="param-label" htmlFor={id}>
+          {label}
+        </label>
+        {/* The span only relays a bubbled keydown from the real
+            input/select inside it -- that child is the interactive
+            element and already carries its own role and tabIndex. */}
+        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+        <span onKeyDown={onKeyDown}>
+          {state?.status === "error" ? (
+            // The list could not be fetched. A text input keeps the param
+            // usable by hand; the error is the field's title in place of
+            // the description.
+            <input
+              id={id}
+              type="text"
+              title={state.error}
+              value={value}
+              onChange={(e) => set(e.target.value)}
+              onBlur={() => commitDraft(p.paramName)}
             />
-            <label className="param-label" htmlFor={id}>
-              {label}
-            </label>
-            {/* The span only relays a bubbled keydown from the real
-                input/select inside it -- that child is the interactive
-                element and already carries its own role and tabIndex. */}
-            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-            <span onKeyDown={onKeyDown}>
-              {state?.status === "error" ? (
-                // The list could not be fetched. A text input keeps the param
-                // usable by hand; the error is the field's title in place of
-                // the description.
-                <input
-                  id={id}
-                  type="text"
-                  title={state.error}
-                  value={value}
-                  onChange={(e) => set(e.target.value)}
-                  onBlur={() => commitDraft(p.paramName)}
-                />
-              ) : (
-                <ParamInput
-                  id={id}
-                  kind={kind}
-                  value={value}
-                  options={options}
-                  unoffered={unoffered}
-                  disabled={pending}
-                  onChange={set}
-                  onBlur={typed ? () => commitDraft(p.paramName) : undefined}
-                />
-              )}
-            </span>
+          ) : (
+            <ParamInput
+              id={id}
+              kind={kind}
+              value={value}
+              options={options}
+              unoffered={unoffered}
+              disabled={pending}
+              onChange={set}
+              onBlur={typed ? () => commitDraft(p.paramName) : undefined}
+            />
+          )}
+        </span>
+      </div>
+    );
+  };
+
+  const row0 = params.filter((p) => (p.row ?? 0) === 0);
+  // Rows under the title bar, in row order. A row whose params are all hidden
+  // renders nothing, and so does an empty section: as in Workspace, `[]`
+  // moves the params after it down without leaving a blank line.
+  const byRow = new Map<number, WidgetParam[]>();
+  for (const p of params) {
+    const row = p.row ?? 0;
+    if (row > 0) byRow.set(row, [...(byRow.get(row) ?? []), p]);
+  }
+  const below = [...byRow].sort(([a], [b]) => a - b);
+
+  return (
+    <>
+      {row0.length > 0 ? (
+        <div className="card-params card-params-row0" ref={row0Ref}>
+          <div className="card-params-track" ref={trackRef}>
+            {row0.map(field)}
           </div>
-        );
-      })}
-    </div>
+        </div>
+      ) : null}
+      {below.length > 0 ? (
+        <div className="card-params-rows">
+          {below.map(([row, rowParams]) => (
+            <div key={row} className="card-params card-params-line" data-param-row={row}>
+              {rowParams.map(field)}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </>
   );
 }

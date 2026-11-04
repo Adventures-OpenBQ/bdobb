@@ -189,18 +189,34 @@ function toParams(value: unknown): { params: WidgetParam[]; dropped: number; wro
     const wrongShape = value !== undefined && value !== null;
     return { params: [], dropped: 0, wrongShape };
   }
-  // OpenBB's "organized params" publish each visual section as a NESTED array.
-  // Flattened one level so both shapes parse -- a no-op on a flat list. BDOBB
-  // has no param sections, so the grouping is lost here and the controls are
-  // not; read as-is, every section is a non-record and the widget arrives with
-  // no controls at all. Counting drops against the flattened list keeps a
-  // section of two junk entries reported as two, not as one.
-  const flat = value.flat();
-  const params = flat
-    .filter(isRecord)
-    .map(toParam)
-    .filter((p): p is WidgetParam => p !== null);
-  return { params, dropped: flat.length - params.length, wrongShape: false };
+  // OpenBB's parameter positioning publishes each line of controls as a NESTED
+  // array. Rows are numbered the way Workspace numbers them: a bare param sits
+  // on row 0, the title bar, wherever it appears in the list; each nested
+  // array is the next row, starting at 1 when the list opens with a bare
+  // param and at 0 otherwise; an empty array still takes a row number, which
+  // is how `[]` pushes the params after it down a line. Read as a flat list,
+  // every section is a non-record and the widget arrives with no controls at
+  // all. Row 0 is left unrecorded, as WidgetParam.row says. Counting drops
+  // against the flattened list keeps a section of two junk entries reported
+  // as two, not as one.
+  const params: WidgetParam[] = [];
+  let total = 0;
+  let row = isRecord(value[0]) ? 1 : 0;
+  for (const item of value) {
+    if (Array.isArray(item)) {
+      for (const entry of item) {
+        total++;
+        const p = isRecord(entry) ? toParam(entry) : null;
+        if (p) params.push(row === 0 ? p : { ...p, row });
+      }
+      row++;
+      continue;
+    }
+    total++;
+    const p = isRecord(item) ? toParam(item) : null;
+    if (p) params.push(p);
+  }
+  return { params, dropped: total - params.length, wrongShape: false };
 }
 
 const CELL_DATA_TYPES = new Set(["text", "number", "boolean", "date", "dateString", "object"]);

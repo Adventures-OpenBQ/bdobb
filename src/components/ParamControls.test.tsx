@@ -17,7 +17,7 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import type { ParamEdit } from "../lib/paramGroups";
 import type { BackendConfig, DashboardCard, ParamGroup, ParamOption, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
-import { ParamControls } from "./ParamControls";
+import { CROWDED_AT, nextCrowded, ParamControls, ROOMY_AT } from "./ParamControls";
 
 const widget: WidgetDef = makeWidget({
   id: "w1",
@@ -1019,5 +1019,140 @@ describe("ParamControls multi-select params", () => {
     expect(labelsOf(select)).toEqual(["Alpha", "Bravo", "Charlie"]);
     await settle();
     expect(lastServer().requests).toHaveLength(0);
+  });
+});
+
+describe("ParamControls rows", () => {
+  const rowsWidget: WidgetDef = makeWidget({
+    id: "w2",
+    category: "",
+    gridData: { w: 1, h: 1 },
+    params: [
+      { paramName: "symbol", label: "Symbol", type: "text" },
+      { paramName: "start", label: "Start", type: "date", row: 1 },
+      { paramName: "end", label: "End", type: "date", row: 1 },
+      { paramName: "hidden", label: "Hidden", show: false, row: 2 },
+      { paramName: "volume", label: "Volume", type: "boolean", row: 3 },
+    ],
+  });
+
+  function renderRows(onCrowdedChange?: (crowded: boolean) => void) {
+    return render(
+      <ParamControls
+        widget={rowsWidget}
+        card={makeCard({ id: "c2", widgetId: "w2", params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } })}
+        groups={undefined}
+        groupsDisabled={false}
+        effective={{}}
+        backend={undefined}
+        onApply={vi.fn()}
+        onCrowdedChange={onCrowdedChange}
+      />,
+    );
+  }
+
+  it("puts row 0 in the title-bar row and each further row on its own line, in order", () => {
+    const { container } = renderRows();
+    const row0 = container.querySelector(".card-params-row0");
+    expect(row0).toContainElement(screen.getByLabelText("Symbol"));
+    expect(row0).not.toContainElement(screen.getByLabelText("Start"));
+    const lines = [...container.querySelectorAll(".card-params-rows .card-params-line")];
+    // Row 2 holds only a hidden param, so it draws no line at all.
+    expect(lines.map((l) => l.getAttribute("data-param-row"))).toEqual(["1", "3"]);
+    expect(lines[0]).toContainElement(screen.getByLabelText("Start"));
+    expect(lines[0]).toContainElement(screen.getByLabelText("End"));
+    expect(lines[1]).toContainElement(screen.getByLabelText("Volume"));
+  });
+
+  it("draws no title-bar row when every param sits on a row below it, and says it is not crowded", () => {
+    const onCrowdedChange = vi.fn();
+    const below: WidgetDef = { ...rowsWidget, params: rowsWidget.params.filter((p) => (p.row ?? 0) > 0) };
+    const { container } = render(
+      <ParamControls
+        widget={below}
+        card={makeCard({ id: "c3", widgetId: "w2", params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } })}
+        groups={undefined}
+        groupsDisabled={false}
+        effective={{}}
+        backend={undefined}
+        onApply={vi.fn()}
+        onCrowdedChange={onCrowdedChange}
+      />,
+    );
+    expect(container.querySelector(".card-params-row0")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".card-params-line")).toHaveLength(2);
+    expect(onCrowdedChange).not.toHaveBeenCalledWith(true);
+  });
+
+  describe("crowding", () => {
+    let callback: ResizeObserverCallback | undefined;
+    const widths = { row: 400, track: 100 };
+    const spies: { mockRestore(): void }[] = [];
+
+    beforeEach(() => {
+      callback = undefined;
+      widths.row = 400;
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(cb: ResizeObserverCallback) {
+            callback = cb;
+          }
+          observe() {}
+          disconnect() {}
+          unobserve() {}
+        },
+      );
+      spies.push(
+        vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+          return this.classList.contains("card-params-row0") ? widths.row : 0;
+        }),
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+          return this.classList.contains("card-params-track") ? widths.track : 0;
+        }),
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      for (const spy of spies.splice(0)) spy.mockRestore();
+    });
+
+    const resize = (row: number) =>
+      act(() => {
+        widths.row = row;
+        callback?.([], {} as ResizeObserver);
+      });
+
+    it("reports crowded once the title-bar row is out of room, and roomy only once it has room again", () => {
+      const onCrowdedChange = vi.fn();
+      renderRows(onCrowdedChange);
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(widths.track + CROWDED_AT); // exactly at the threshold
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(true);
+      resize(widths.track + ROOMY_AT - 1); // more room, but not enough to unfold
+      expect(onCrowdedChange).toHaveBeenCalledTimes(1);
+      resize(widths.track + ROOMY_AT);
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(false);
+      expect(onCrowdedChange).toHaveBeenCalledTimes(2);
+    });
+  });
+});
+
+describe("nextCrowded", () => {
+  it("crowds at the lower threshold and unfolds only at the upper one", () => {
+    expect(nextCrowded(false, CROWDED_AT + 1)).toBe(false);
+    expect(nextCrowded(false, CROWDED_AT)).toBe(true);
+    expect(nextCrowded(true, ROOMY_AT - 1)).toBe(true);
+    expect(nextCrowded(true, ROOMY_AT)).toBe(false);
+  });
+
+  it("waits for the room wide buttons need, never less than ROOMY_AT", () => {
+    // Buttons 220px wide: unfolding them with 200px to spare would leave the
+    // row crowded again at once.
+    expect(nextCrowded(true, 200, 260)).toBe(true);
+    expect(nextCrowded(true, 260, 260)).toBe(false);
+    // A narrow card's buttons do not lower the bar below Workspace's.
+    expect(nextCrowded(true, ROOMY_AT - 1, 60)).toBe(true);
   });
 });
