@@ -22,3 +22,18 @@ test('tick reference interpretation is versioned and bound to original reference
  r.identity.referencePolicy=hashJSON({sourceChecksum:r.identity.reference,policy:r.workload.referencePolicy});assert.equal(validateRun(r),r);
  r.identity.reference='b'.repeat(64);assert.throws(()=>validateRun(r));
 });
+
+test('observer publication failure cannot be an accepted run even with completed numerical samples',()=>{
+ const r=sample();r.observations[0].observer={status:'incomplete',archiveStatus:'failed',spoolPath:'/recoverable/spool',archivePath:'/failed/archive',errors:['EIO']};assert.throws(()=>validateRun(r),/Incomplete observer/);
+ r.status='not-run';assert.equal(validateRun(r),r);
+ r.observations[0].observer={status:'completed',archiveStatus:'completed',spoolPath:'/spool',archivePath:'/archive',errors:[],expectedSha256:sha,spoolSha256:sha,archiveSha256:'b'.repeat(64)};assert.throws(()=>validateRun(r));
+});
+
+test('optional process metadata preserves legacy and checks unique RSS and null timings',()=>{
+ const r=sample();assert.equal(validateRun(r),r);
+ const process={id:'control',pid:4,intervalMs:100,method:'ps',samples:[{status:'measured',elapsedMs:1,collectionMs:1,processes:[{pid:4,ppid:1,rssBytes:10}],treeRssBytes:10}],errors:[],sampledTreePeakBytes:10,doneElapsedMs:null,exitElapsedMs:2};
+ r.observations[0].process=process;assert.equal(validateRun(r),r);
+ for(const mutate of [p=>p.samples[0].processes.push({...p.samples[0].processes[0]}),p=>p.samples[0].treeRssBytes=11,p=>p.sampledTreePeakBytes=0,p=>p.doneElapsedMs=-1,p=>p.samples[0].processes[0].pid=5]){const bad=structuredClone(r);mutate(bad.observations[0].process);assert.throws(()=>validateRun(bad));}
+ process.samples=[{status:'unavailable',elapsedMs:1,collectionMs:1,processes:[],treeRssBytes:null,reason:'absent'}];process.sampledTreePeakBytes=null;assert.equal(validateRun(r),r);
+ process.sampledTreePeakBytes=0;assert.throws(()=>validateRun(r));
+});

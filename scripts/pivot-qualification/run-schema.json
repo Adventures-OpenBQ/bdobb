@@ -513,6 +513,307 @@
                 "heapUsedBytes"
               ]
             }
+          },
+          "process": {
+            "type": "object",
+            "required": [
+              "id",
+              "pid",
+              "intervalMs",
+              "method",
+              "samples",
+              "errors",
+              "sampledTreePeakBytes"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "pid": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "intervalMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 100
+              },
+              "method": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sampledTreePeakBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "samples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "elapsedMs",
+                    "collectionMs",
+                    "processes",
+                    "treeRssBytes",
+                    "status"
+                  ],
+                  "properties": {
+                    "elapsedMs": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "collectionMs": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "treeRssBytes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "processes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "pid",
+                          "ppid",
+                          "rssBytes"
+                        ],
+                        "properties": {
+                          "pid": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "ppid": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "rssBytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    },
+                    "status": {
+                      "enum": [
+                        "measured",
+                        "unavailable"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "status": {
+                            "const": "unavailable"
+                          }
+                        }
+                      },
+                      "then": {
+                        "required": [
+                          "reason"
+                        ],
+                        "properties": {
+                          "treeRssBytes": {
+                            "type": "null"
+                          },
+                          "processes": {
+                            "maxItems": 0
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "treeRssBytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "processes": {
+                            "minItems": 1
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "doneElapsedMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "exitElapsedMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "observer": {
+            "type": "object",
+            "required": [
+              "status",
+              "spoolPath",
+              "archivePath",
+              "archiveStatus",
+              "errors"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "completed",
+                  "incomplete"
+                ]
+              },
+              "archiveStatus": {
+                "enum": [
+                  "completed",
+                  "failed"
+                ]
+              },
+              "spoolDirectory": {
+                "type": "string"
+              },
+              "spoolPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "archivePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "storage": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expectedSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "spoolSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "archiveSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "spoolWriteMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "archiveMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "flushMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "events": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "peakQueuedBytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerPolls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerSkipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerTimeoutMs": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "completed"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "expectedSha256",
+                    "spoolSha256",
+                    "archiveSha256"
+                  ],
+                  "properties": {
+                    "archiveStatus": {
+                      "const": "completed"
+                    },
+                    "errors": {
+                      "maxItems": 0
+                    },
+                    "expectedSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "spoolSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "archiveSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            ]
           }
         },
         "allOf": [

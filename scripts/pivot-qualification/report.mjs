@@ -27,6 +27,27 @@ export function validateRun(r){
   }
   if(o.status==='passed'){assert.equal(o.outcome,'completed','Refusal cannot pass');assert.equal(o.numericalCheck,'passed');assert.equal(o.stages.compute.status,'measured');}
   if(['profile-refused','timeout'].includes(o.outcome)){assert.notEqual(o.status,'passed');assert.notEqual(o.stages.totalUsableView.status,'measured');}
+  if(o.process){
+   const p=o.process;assert.ok(p.id&&Array.isArray(p.samples)&&Array.isArray(p.errors));
+   assert.ok(p.pid===null||Number.isSafeInteger(p.pid)&&p.pid>=0);
+   assert.ok(p.intervalMs===null||Number.isInteger(p.intervalMs)&&p.intervalMs>=100&&p.intervalMs<=5000);
+   for(const k of ['doneElapsedMs','exitElapsedMs'])assert.ok(p[k]===null||Number.isFinite(p[k])&&p[k]>=0);
+   for(const s of p.samples){
+    for(const k of ['elapsedMs','collectionMs'])assert.ok(Number.isFinite(s[k])&&s[k]>=0);
+    if(s.status==='unavailable'){assert.equal(s.treeRssBytes,null);assert.ok(s.reason);assert.deepEqual(s.processes,[]);continue;}
+    assert.equal(s.status,'measured');assert.ok(s.processes.some(row=>row.pid===p.pid));
+    assert.equal(new Set(s.processes.map(row=>row.pid)).size,s.processes.length);
+    for(const row of s.processes)for(const k of ['pid','ppid','rssBytes'])assert.ok(Number.isSafeInteger(row[k])&&row[k]>=0);
+    assert.equal(s.treeRssBytes,s.processes.reduce((sum,row)=>sum+row.rssBytes,0));
+   }
+   const peaks=p.samples.filter(s=>s.status==='measured').map(s=>s.treeRssBytes);assert.equal(p.sampledTreePeakBytes,peaks.length?Math.max(...peaks):null);
+  }
+  if(o.observer){
+   assert.ok(['completed','incomplete'].includes(o.observer.status));assert.ok(['completed','failed'].includes(o.observer.archiveStatus));assert.ok(o.observer.spoolPath&&o.observer.archivePath&&Array.isArray(o.observer.errors));
+   if(o.observer.status==='completed'){assert.equal(o.observer.archiveStatus,'completed');assert.equal(o.observer.errors.length,0);for(const k of ['expectedSha256','spoolSha256','archiveSha256'])assert.match(o.observer[k]??'',/^[a-f0-9]{64}$/);assert.equal(o.observer.expectedSha256,o.observer.spoolSha256);assert.equal(o.observer.spoolSha256,o.observer.archiveSha256);}
+   if(r.status==='passed')assert.equal(o.observer.status,'completed','Incomplete observer cannot be accepted');
+  }
+  if(o.outcome==='observer-incomplete')assert.notEqual(o.status,'passed');
   for(const k of ['peakRssBytes','wasmBufferBytes'])assert.ok(o.memory[k]===null||Number.isSafeInteger(o.memory[k])&&o.memory[k]>=0);
  }
  if(r.status==='passed')assert.ok(r.observations.every(o=>o.status==='passed'),'Nonpassing observation');

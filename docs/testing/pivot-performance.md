@@ -41,3 +41,16 @@ A representative control may select canonical SEC facts whose SHA-256 of UTF-8 `
 Each child now emits phase and completed-observation NDJSON events. The parent appends and fsyncs a per-process `.jsonl` journal before accepting a sample. A later warm exception or timeout preserves completed cold samples and appends a failure with the latest actual temperature/stage. Use a fresh output directory for each run: journals are created exclusively and never overwrite earlier evidence. Journal identity headers bind events to the source/artifact/dataset/model/action fingerprints.
 
 Tick references must explicitly declare `reference.policy` as `{ "version": "tick-bucket-index/1", "bucketEncoding": "interval-index", "outputBucketUnit": "epoch-seconds" }`. Each reference `bucket` is `floor(timestampMilliseconds / bucketMilliseconds)`, as in the independent P1 generator. The adapter multiplies that index by `bucketMilliseconds / 1000` to compare with the existing engine's epoch-second bucket. Only 1000ms and 60000ms widths are accepted. Unknown/missing policies are rejected; neither actual result magnitudes nor inferred factors choose the conversion. Original reference bytes and SHA-256 remain unchanged. `identity.referencePolicy` binds their checksum together with the complete versioned policy; `workload.referencePolicy` records the policy itself. OHLC prices, volume and counts are never converted. Archived pre-policy reports remain tied to their older source contract and are not silently rewritten.
+
+### Collector durability and recovery
+
+Child work retains its fixed60-second deadline. Terminal done disarms the work
+timeout; async observer flush/publication is separate and can still wait on a
+stuck filesystem. Events are written in order to an async durable OS temporary
+spool, then published exclusively and synced at the requested archive path.
+Expected event, spool and read-back archive SHA256 must agree before acceptance.
+Observer metadata records paths, queue peak, IO durations and failures. Recovery
+spools remain available after failure; OS temporary storage is not permanent.
+Completed numerical samples survive observer failure, but the run is not accepted.
+Optional sampler polls are single-flight and bounded; absent/late root RSS is
+unknown/null, never zero. Sampling remains disabled in this generic CLI.
