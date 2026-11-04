@@ -545,6 +545,18 @@ describe("WidgetCard", () => {
     expect(screen.getByRole("button", { name: /remove card/i })).toBeInTheDocument();
   });
 
+  it("keeps Run beside the chevron, outside the folded icons, on a runButton card", () => {
+    register({ runButton: true });
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS, collapseWidgetControls: true },
+    });
+    const { container } = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    const run = screen.getByRole("button", { name: "Run" });
+    expect(container.querySelector(".card-controls-icons")).not.toContainElement(run);
+    expect(container.querySelector(".card-controls-collapsed")).toContainElement(run);
+    expect(screen.getAllByRole("button", { name: "Run" })).toHaveLength(1);
+  });
+
   it("toggles the chevron open and closed on click", async () => {
     register();
     useSettingsStore.setState({

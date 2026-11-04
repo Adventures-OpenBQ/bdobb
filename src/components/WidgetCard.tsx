@@ -1141,6 +1141,27 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       .filter((line): line is string => line !== undefined)
       .join("\n") || undefined;
 
+  // Run REPLACES Refresh rather than joining it: the manifest's contract is
+  // "this widget does not execute on its own", and a second button that
+  // fetched unconditionally would undo it. Ctrl/Cmd-click goes to `retry` — a
+  // hard refetch of the armed params — which is also what `run` itself falls
+  // through to when nothing has been edited. One element, rendered among the
+  // icons while they are unfolded and beside the chevron while they are not.
+  const runControl = (
+    <button
+      type="button"
+      className="card-action card-run"
+      aria-label="Run"
+      title={refreshTitle("Run (⌘-click: hard refresh)")}
+      data-stale={dataStale || undefined}
+      onPointerEnter={stampTitle}
+      onFocus={stampTitle}
+      onClick={(e) => (e.metaKey || e.ctrlKey ? retry() : run())}
+    >
+      Run
+    </button>
+  );
+
   return (
     <article
       className="widget-card"
@@ -1229,6 +1250,11 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
               : "card-controls"
           }
         >
+          {/* Run never folds: a runButton card fetches nothing until it is
+              pressed, so hiding it behind the chevron would hide the card's
+              one essential control. Workspace likewise keeps Run and Refresh
+              in the title bar when it collapses the rest. */}
+          {collapseControls && widget?.runButton ? runControl : null}
           {collapseControls ? (
             <button
               type="button"
@@ -1265,24 +1291,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
               </button>
             ) : null}
             {widget?.runButton ? (
-              // Run REPLACES Refresh rather than joining it: the manifest's
-              // contract is "this widget does not execute on its own", and a
-              // second button that fetched unconditionally would undo it.
-              // Ctrl/Cmd-click goes to `retry` — a hard refetch of the armed
-              // params — which is also what `run` itself falls through to when
-              // nothing has been edited.
-              <button
-                type="button"
-                className="card-action card-run"
-                aria-label="Run"
-                title={refreshTitle("Run (⌘-click: hard refresh)")}
-                data-stale={dataStale || undefined}
-                onPointerEnter={stampTitle}
-                onFocus={stampTitle}
-                onClick={(e) => (e.metaKey || e.ctrlKey ? retry() : run())}
-              >
-                Run
-              </button>
+              // Folded, Run sits beside the chevron instead (runControl).
+              collapseControls ? null : runControl
             ) : (
               <button
                 type="button"
