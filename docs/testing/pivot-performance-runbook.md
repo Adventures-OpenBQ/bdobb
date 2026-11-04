@@ -22,8 +22,8 @@ artifacts as newly qualified delivery artifacts.
 Existing measurements identify their original source and immutable external
 evidence. They are historical advisory observations, not results for this delivery
 revision. No production optimization or speedup is claimed. The proposed
-empty/Clear attribution experiment remains unexecuted and requires separate scope
-approval. Release qualification remains incomplete.
+empty/Clear attribution experiment was separately approved and is recorded below.
+Release qualification remains incomplete; no optimization was authorized.
 
 ## External manifest
 
@@ -159,3 +159,57 @@ Observer-incomplete stops later observations/batches/attribution until investiga
 The ps sampler allows one in-flight command (2-second bound), skips overlapping
 polls, and cancels at terminal work. Late/cancelled samples stay unavailable;
 no valid root snapshot is reported as incomplete sampling, never zero RSS.
+
+## Revision-bound empty/Clear collection (2026-11-04)
+
+The approved Task 3 collection uses runner `0bab849583b5ebf070ee398eec7dcfc6f63cccdc`
+and a new external root, `/Volumes/Builds/openbq-benchmarks/empty-clear-evidence-0bab8495`.
+Its frozen `launch.json`, `matrix.json`, `frozen-inputs.json`, `source-inventory.json`
+and `environment.json` bind the inputs, references, models, actions, dependencies,
+source and machine context before collection. P3 stays read-only. Only certified
+98 facts/110 cells and 60k count/OHLCV are eligible; prior seven TS preflight
+refusals and all ten Rust ladder outcomes are retained without new attempts.
+
+Private artifacts are `empty-clear-clean` and `empty-clear-profile`, with engine
+source checksum `b7220d1ba59a197aedf4c97c51c7789678d732adfd5ea0b4e4f891ededcaca93`.
+Their build metadata records `2a40c4a`; fresh applicability verifies byte-equivalent
+engine sources at the collection commit. This is not a claim that those builds
+qualify another delivery revision. Build identities and emitted artifact hashes
+are retained in `applicability.log` and every primary v1 report. All 35 focused
+clean/profile controls passed before collection, with no skips.
+
+```sh
+node scripts/pivot-qualification/run-performance-matrix.mjs \
+  --manifest /Volumes/Builds/openbq-benchmarks/empty-clear-evidence-0bab8495/matrix.json \
+  --engine typescript \
+  --output /Volumes/Builds/openbq-benchmarks/empty-clear-evidence-0bab8495/typescript
+```
+
+Every clean case has two independent batches of five alternating same-source
+baseline/candidate pairs, each process carrying cold then warm work. Only after
+both clean batches pass may the existing runner collect the exploratory profile
+pair. Certified work has six sessions per process, each with ten children and
+five retained rows; each tick case has one such session. Do not count child
+records or repeated cold/warm process metadata as independent processes.
+
+Audit each child's finite apply/read/check duration, advancing revisions, empty
+result, clear result, exact model/action/consumer parity, disjoint original event
+IDs/timestamps/parents and full parent-event coverage. Counter coverage uses
+name/unit/scope tuples. Preserve the original parent probes, enclosing action
+and cumulative stages. Snapshot/slicing work adds observer cost; no engine work
+is removed. Each instrumented session makes 20 boundary snapshots. Snapshot CPU
+and live allocation bytes are not independently timed: disclose that absence,
+the added serialized child fields and recorded spool/flush/archive durations.
+Never infer exclusive overhead by subtracting inclusive envelopes.
+
+Any genuine engine, accounting or observer failure stops collection; keep the
+partial reports/spools and record later work as not run. Do not repair the
+collector during a collection or retry it into the same directory. The final
+Task 3 findings and immutable audit inventory identify the accepted scope.
+
+Task 3's frozen `inventory.json` SHA256 is
+`95a486c8f40851b86c7ef7188e70b120a925d5c7189f82aa5f3cc6850dfe0f34`;
+it binds 136 evidence files. `audit.json` passed all report/archive, ownership,
+parity and memory checks; the existing ranking adapter validated all nine v1
+reports. Final source/input/artifact checks passed after collection. The evidence
+files are read-only; future analysis or collection must use new output paths.

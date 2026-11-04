@@ -1,10 +1,11 @@
 # Pivot measured assessment and one proposed experiment
 
-Status: **PROPOSED; retain baseline. No optimization selected, implemented, or production-ready.**
+Status: **Bounded attribution completed; retain baseline. No optimization selected, implemented, or production-ready.**
 Measured source is `594151886b11d44564af923ae7abf6d48d19af04`, runner source SHA
 `d3e26d29475d604be81c70dac3dea6589eb6523f43dfa25d40ea4bf8a1c20a62`.
-The next experiment below is a provisional design for review, not authorization
-to execute it. The approved P4 deliverable is the analysis tool and this proposal.
+The P3/P4 assessment below is historical. The attribution experiment was later
+separately approved; its revision-bound Task 3 outcome is recorded at the end.
+That approval authorizes attribution only, not a production optimization.
 
 ## Evidence and reproducibility
 
@@ -252,3 +253,120 @@ is blocked and release qualification INCOMPLETE.** A profiling recommendation
 neither resolves those failures nor authorizes integration. Any eventual engine
 patch requires exact-revision full correctness, browser/native/device gates and
 repeatable matched clean benefit before promotion. No merge/push is part of P4.
+
+## Current qualification context (2026-11-04)
+
+The older gate snapshot above remains historical and must not be read as the
+current CI result. Retained `pivot-delivery-verification/ci-after-merged25.json`
+records all five checks green after #25 merged: PR #27 at
+`e946f9deda14c9c9ef3cb59089d4f5df25b54407`, run 41781308021; PR #28 at
+`6d1bf8a126ef91ff79f9425374aad8aa9862ed4f`, run 41781316014. These are recorded
+receipts for those exact commits, not newly queried status or qualification of
+Task 3's `0bab8495` runner/artifacts. The historical clean-base Rust failures
+are not transferred forward as current failures; exact-revision Rust correctness
+remains a required gate for any eventual engine patch.
+
+`native-current-execution.md` and `native-current-review.md` accept partial native
+qualification of `e946f9d` only. Scoped restart/value propagation, selected
+keyboard actions, failure diagnostics and restoration passed. Actual native UI
+CSV import/drop, complete in-app Statement/Inspect repair navigation, native
+archive roundtrip, worker failure/recovery/termination and stale delivery fencing,
+exact source/child/delivered revision chain, measured narrow viewport, touch and
+other native OS/device coverage remain unqualified. Real-server sync remains
+blocked by the absent authorized disposable fixture. Copied fixture acquisition
+is not UI import, and external restoration is not successful in-app repair.
+
+**Overall release qualification remains BLOCKED.** Native/server gaps, exact
+revision correctness and matched clean benefit must be closed for a separately
+approved optimization. No current or historical CI/native receipt transfers to
+the attribution experiment as full release acceptance.
+
+## Task 3 outcome: ownership attributed; baseline retained
+
+Approved collection completed at `0bab849583b5ebf070ee398eec7dcfc6f63cccdc` in
+`/Volumes/Builds/openbq-benchmarks/empty-clear-evidence-0bab8495`. Both clean
+batches passed all five alternating baseline/candidate pairs for all three cases.
+All three subsequent exploratory profile pairs passed exact action/model/result
+and consumer parity. Fresh controls passed 35/35 with no skips. No collection
+failure, retry, refused-case attempt, engine change or optimization occurred.
+
+The audit checks nine checksum-bound v1 reports, 66 distinct processes and 66
+complete journal publications; 132 cold/warm observations carry 176 warm sessions,
+1,760 timed reset children and 880 retained-cycle rows. Each certified process has
+six separate company sessions; ticks have one. All 1,680 instrumented child events
+exactly cover their enclosing probes without duplicate ownership, changed IDs,
+timestamps or parents. Name/unit/scope counter deltas cover each original parent.
+Eight unavailable polls remain unavailable with null RSS; no missing value is zero.
+
+**Hypothesis outcome:** empty versus clear stage ownership is attributable in the
+observed controls and repeats across all five cycles and both profile roles for
+each of eight separate case/company groups. Each child has 11 inclusive events
+for certified Statements or nine for ticks. Event structure (comparing parent
+positions, while retaining original IDs) and scoped counter values repeat. Both
+empty and Clear still evaluate the source: count and OHLCV each record 60,000
+source-input rows and 2,566 aggregate calls per child; scoped vectors/sorts are
+2,566 for count and 15,396 for OHLCV. These counts are not exclusive durations.
+
+The clean child distributions below are cycle 0 only, milliseconds median
+[min, max], n=5 per separate batch/role. Certified rows show NVDA only. The full
+480 child cohorts, every company and cycle, all samples and original action/stage/
+responsiveness envelopes are retained in `child-medians.md`,
+`child-stage-statistics.json`, `assessments.json` and the primary reports.
+
+| Case | Batch | Role | Explicit empty ms | Clear ms |
+|---|---:|---|---|---|
+| certified-98-110 | 1 | baseline | 12.15 [11.74, 13.27] | 12.45 [12.34, 12.95] |
+| certified-98-110 | 1 | candidate | 12.30 [11.94, 12.76] | 12.63 [12.16, 13.25] |
+| 60k count | 1 | baseline | 1405.17 [1355.74, 1459.96] | 1421.84 [1386.70, 1435.01] |
+| 60k count | 1 | candidate | 1428.23 [1288.52, 1450.70] | 1412.81 [1351.95, 1551.53] |
+| 60k ohlcv | 1 | baseline | 1573.29 [1523.25, 1625.11] | 1632.42 [1603.09, 1667.02] |
+| 60k ohlcv | 1 | candidate | 1565.84 [1537.99, 1695.08] | 1726.14 [1652.68, 1762.70] |
+| certified-98-110 | 2 | baseline | 12.69 [12.25, 14.10] | 13.61 [12.43, 14.63] |
+| certified-98-110 | 2 | candidate | 12.76 [12.46, 12.99] | 12.72 [12.16, 13.20] |
+| 60k count | 2 | baseline | 1485.78 [1364.92, 3092.02] | 1595.32 [1385.16, 2330.06] |
+| 60k count | 2 | candidate | 1948.87 [1362.08, 2071.44] | 1888.25 [1403.87, 2257.56] |
+| 60k ohlcv | 2 | baseline | 2167.77 [1537.46, 2704.50] | 2312.03 [1590.30, 2433.35] |
+| 60k ohlcv | 2 | candidate | 2032.08 [1796.53, 2402.08] | 2335.04 [2102.71, 2858.90] |
+
+Batch 2 tick timings vary substantially and differ from batch 1; neither batch
+is pooled away. These observations do not establish a repeatable timing-based choice of empty
+versus Clear as an optimization target. Ownership repetition is supported; stable instrumental
+duration across independent batches was not tested because attribution has only
+one exploratory pair per case. Keep the baseline. No removed work, speedup,
+exclusive reducer/facet cost, cache benefit or Rust/TS ratio is established.
+
+Each instrumented session adds 20 boundary snapshots: 320 total in these controls.
+The derived serialized-size estimate across those cumulative snapshots is
+1,593,053 bytes, not a live allocation or retained-memory measurement. Added child
+ms/probe fields account for approximately 166,118–166,928 serialized journal bytes
+per certified profile process, 25,174–25,176 for count, and 25,204–25,246 for OHLCV.
+These fields occur in both durable phase and observation records. Snapshot clone/
+slice CPU time is not independently timed and remains unavailable. Original outer
+timing includes that work; do not subtract overlapping envelopes to invent it.
+
+Profile archive publication durations were 1206.81/1245.04 ms (certified,
+baseline/candidate), 104.08/1102.78 ms (count), and 490.97/2812.13 ms (OHLCV).
+`observer-memory-statistics.json` retains every clean/profile batch/role's archive
+bytes, write/flush/archive timing, sampler overhead and memory samples;
+`audit.json` retains raw observer metadata and unavailable polls. Observer time is
+not engine time and cannot be isolated causally by comparing these samples.
+
+Deduplicated maximum clean process high-water RSS was 183,058,432 bytes certified,
+3,162,963,968 count and 3,707,125,760 OHLCV. Separate sampled unique-PID tree maxima
+were 182,829,056 / 3,152,805,888 / 3,707,125,760 bytes. These are whole-process
+metrics, never summed with each other or attributed to a child. Unknown WASM and
+retained-state size remain null; retained rows have no forced GC or plateau claim.
+
+The existing `rank-profile.mjs` consumed a checksum-bound derived summary and
+validated all primary v1 reports, yielding 768 separate assessments with 2,816
+preserved samples, not independent processes. The immutable inventory and task
+report bind the detailed files. A later optimization still needs a new design,
+approval, exact-revision correctness and matched clean benefit; the native/server
+and other qualification gates above remain blocking.
+
+Task 3's frozen `inventory.json` SHA256 is
+`95a486c8f40851b86c7ef7188e70b120a925d5c7189f82aa5f3cc6850dfe0f34`;
+it binds 136 evidence files. `audit.json` passed all report/archive, ownership,
+parity and memory checks; the existing ranking adapter validated all nine v1
+reports. Final source/input/artifact checks passed after collection. The evidence
+files are read-only; future analysis or collection must use new output paths.
