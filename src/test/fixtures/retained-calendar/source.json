@@ -1,0 +1,22 @@
+{
+  "origin": "openbq-docker calendar source qualification 2026-11-03",
+  "qualified_image": "sha256:0820fc939831d47d87551d798b9bd42fea5d187fb5866012b91e116b5ab999f0",
+  "architecture": "arm64",
+  "nas_qualified": false,
+  "files": {
+    "xnys_2026.json": "fa89d05e84386b40c7256de2911b679f72bad8139e23679bfff75976f0c4476b",
+    "xhkg_2026.json": "c8d389aa994b1c41a19e0bd4301381be78d3e15706d42f7f9b8123b31dfe7724",
+    "clipped_xshg_1990.json": "d7d926e70da08ece871ffa451388ff367100b81ebe9bef39d3fd4602b545e381"
+  },
+  "retained_contract": {
+    "backend_commit": "0e145593d4d4fc28e576a03a127ebcf2ca693959",
+    "dataset": "calendar_source.CalendarBundle",
+    "projection": "runtime-calendar-observations-1",
+    "result_grain": "one exact authority-qualified bundle observation",
+    "received_clock": "local_received",
+    "unsupported": [
+      "provider publication history",
+      "security effective history"
+    ]
+  }
+}

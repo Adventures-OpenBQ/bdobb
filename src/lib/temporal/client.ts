@@ -36,7 +36,7 @@ export function createTemporalClient(backend:BackendConfig){
   async importEntries(entries:unknown[]){return parseImportReport(await call('POST','queries/import',{entries}));},
   async exportImport(importId:string){return parseExport(await call('GET',`queries/import/${id(importId)}/export`));},
   async exportQuery(queryId:string,revision?:number,receiptId?:string){const path=queryPath(queryId,revision,receiptId);const [base,args]=path.split('?');return parseExport(await call('GET',`queries/${base}/export${args?'?'+args:''}`));},
-  async start(input:{query_id:string;revision:number;params:Record<string,unknown>;context:TemporalContext;page_size?:number},signal?:AbortSignal){return parseHandle(await call('POST','executions',{page_size:1000,...input},signal));},
+  async start(input:{query_id:string;revision:number;params:Record<string,unknown>;context:TemporalContext;page_size?:number},signal?:AbortSignal){return parseHandle(await call('POST','executions',{page_size:100,...input},signal));},
   async status(executionId:string,signal?:AbortSignal){const v=await call('GET',`executions/${id(executionId)}`,undefined,signal);const h=parseHandle(v);if(!isRecord(v)||!Object.hasOwn(v,'error'))throw new Error('Invalid execution status');return {...h,error:v.error};},
   async page(executionId:string,cursor?:string,signal?:AbortSignal){return parseResultPage(await call('GET',`executions/${id(executionId)}/pages${cursor?'?cursor='+encodeURIComponent(cursor):''}`,undefined,signal));},
   async cancel(executionId:string){const v=await call('DELETE',`executions/${id(executionId)}`);if(!isRecord(v)||!['queued','running','succeeded','failed','cancelled'].includes(String(v.state)))throw new Error('Invalid cancellation response');return v.state;},

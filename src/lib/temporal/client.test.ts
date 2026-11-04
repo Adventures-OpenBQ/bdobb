@@ -16,11 +16,16 @@ it('uses existing URL and auth placement for actual Q1 Q2 and Q3 routes',async()
  expect(vi.mocked(fetch).mock.calls[0]).toMatchObject(['https://example.test/root/temporal/v1/queries',{headers:{Authorization:'Bearer secret'}}]);
  vi.mocked(fetch).mockResolvedValueOnce(response({execution_id:executionId,state:'queued'}));
  await client.start({query_id:queryId,revision:2,params:{},context:definition.temporal});
- expect(JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)![1]!.body))).toMatchObject({revision:2,page_size:1000});
+ expect(JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)![1]!.body))).toMatchObject({revision:2,page_size:100});
  vi.mocked(fetch).mockResolvedValueOnce(response({execution_id:executionId,state:'queued'}));
  await client.replay(executionId);expect(String(vi.mocked(fetch).mock.calls.at(-1)![0]).endsWith(`/audits/${executionId}/replay`)).toBe(true);
  vi.mocked(fetch).mockResolvedValueOnce(response({error:{code:'ACCESS_DENIED',message:'credentials or scope rejected',request_id:queryId}},401));
  await expect(client.list()).rejects.toMatchObject({code:'ACCESS_DENIED',status:401});
+});
+it('preserves an explicit larger HTTP page size while default runs remain MCP compatible',async()=>{
+ vi.mocked(fetch).mockResolvedValueOnce(response({execution_id:executionId,state:'queued'}));
+ await createTemporalClient(backend()).start({query_id:queryId,revision:2,params:{},context:definition.temporal,page_size:1000});
+ expect(JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)![1]!.body)).page_size).toBe(1000);
 });
 it('validates canonical definitions, conditional temporal rules and finite typed pages at runtime',()=>{
  expect(parseContract('QueryDefinition',definition)).toEqual(definition);
