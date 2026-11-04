@@ -44,7 +44,7 @@ export async function runBenchmark(manifest,{engine,workload,output,manifestDire
  const commit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
  // Hash every tracked source byte plus new runner files, not timestamps or commit alone.
  const names=execFileSync('git',['ls-files','src','crates','scripts/pivot-qualification'],{cwd:root,encoding:'utf8'}).trim().split('\n');
- for(const n of ['benchmark.mjs','benchmark-worker.ts','report.mjs','ticks.mjs','child-process.mjs','performance-trace.ts','run-performance-matrix.mjs','performance-common.mjs','process-tree.mjs','profiling-build.mjs','profile.mjs'])names.push(`scripts/pivot-qualification/${n}`);
+ for(const n of ['benchmark.mjs','benchmark-worker.ts','report.mjs','ticks.mjs','child-process.mjs','performance-trace.ts','run-performance-matrix.mjs','performance-common.mjs','process-tree.mjs','profiling-build.mjs','profile.mjs','profile-slice.mjs'])names.push(`scripts/pivot-qualification/${n}`);
  const source=hashJSON(await Promise.all([...new Set(names)].sort().map(async n=>[n,await checksumFile(join(root,n))])));
  await mkdir(output,{recursive:true});
  const bundle=join(resolve(output),`runner-${source}.mjs`);

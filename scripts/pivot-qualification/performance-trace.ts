@@ -8,6 +8,8 @@ import {hashJSON,unavailable} from './report.mjs';
 import {tickModel,checkTickBars} from './ticks.mjs';
 import {validatePerformanceActions} from './performance-common.mjs';
 import {validateProbe} from './profile.mjs';
+import {sliceProbe} from './profile-slice.mjs';
+export class AttributionUnavailableError extends Error {readonly code='PIVOT_ATTRIBUTION_UNAVAILABLE';}
 import type {TableExecutor,TableDefinition,Revision,ViewReady,SelectionSpec,FacetResult} from '../../src/lib/tableExecution/types';
 import type {WidgetDataset,DatasetRow} from '../../src/lib/widgetData/types';
 type Session={symbol:string;dataset:WidgetDataset;definition:TableDefinition;runtimeParams?:Parameters<TableExecutor['applyModel']>[7];executor:TableExecutor;revision:Revision};
@@ -72,13 +74,45 @@ export async function performanceTrace({sessions,request,expected,parseMs,wasm,g
      const errors=rows.flatMap(r=>Object.entries(r.cellErrors??{}));
      consumers={table:hashJSON(table.rows),chart:hashJSON(chart.rows),export:hashJSON(exported),selection:hashJSON(selection.selection),facets:hashJSON(facets.map(({requestId:_,revision:__,...rest})=>rest)),inspection:hashJSON(inspection.rows),errors:hashJSON(errors),readyDiagnostics:hashJSON(ready!.diagnostics)};
     }else if(action.kind==='empty-clear'){
-     for(let cycle=0;cycle<action.cycles!;cycle++){
-      await apply({kind:'explicit',ids:[]},'filterReselection');const empty=await timed('transfer',()=>read());assert.equal(empty.length,0);
-      const emptyRecord:TraceRecord={sessionId:sessionIds.get(c)!,action:{kind:'explicit-empty',cycle},revision:{...revision},modelChecksum:hashJSON({definition:c.definition,runtimeParams:c.runtimeParams}),numericalCheck:'passed',resultChecksum:hashJSON(empty)};trace.push(emptyRecord);emit({type:'phase',temperature,stage:'filterReselection',completedAction:emptyRecord});
-      await apply({kind:'none'},'filterReselection');rows=await timed('transfer',()=>read());checkedCells+=check(rows);
-      const resetRecord:TraceRecord={sessionId:sessionIds.get(c)!,action:{kind:'clear-reset',cycle},revision:{...revision},modelChecksum:hashJSON({definition:c.definition,runtimeParams:c.runtimeParams}),numericalCheck:'passed',resultChecksum:hashJSON(rows)};trace.push(resetRecord);emit({type:'phase',temperature,stage:'filterReselection',completedAction:resetRecord});
-      retained.push({symbol:c.symbol,sessionId:sessionIds.get(c)!,cycle,revision:{...revision},rssBytes:process.memoryUsage().rss,heapUsedBytes:process.memoryUsage().heapUsed,wasmBufferBytes:getMemory().wasmBufferBytes});
-     }
+     // Probe reads may expose live arrays. Own each boundary snapshot until the
+     // child is sliced; never reset the enclosing action's probe here.
+     let rawParentProbe:unknown;
+     const snapshot=()=>{
+      try{rawParentProbe=probe?.__pivot_profile_read();return structuredClone(typeof rawParentProbe==='string'?JSON.parse(rawParentProbe):rawParentProbe);}
+      catch(error){throw new AttributionUnavailableError(`Probe snapshot unavailable: ${String(error)}`,{cause:error});}
+     };
+     const child=async(kind:'explicit-empty'|'clear-reset',cycle:number)=>{
+      const before=probe?snapshot():undefined;
+      const childStart=performance.now();
+      await apply(kind==='explicit-empty'?{kind:'explicit',ids:[]}:{kind:'none'},'filterReselection');
+      const result=await timed('transfer',()=>read());
+      if(kind==='explicit-empty')assert.equal(result.length,0);else checkedCells+=check(result);
+      const ms=performance.now()-childStart;
+      let childProbe:ReturnType<typeof validateProbe>|undefined;
+      if(probe){
+       const after=snapshot();
+       try{childProbe=sliceProbe(before,after);}
+       catch(error){throw new AttributionUnavailableError(`Probe slice unavailable: ${String(error)}`,{cause:error});}
+      }
+      const record:TraceRecord={sessionId:sessionIds.get(c)!,action:{kind,cycle},revision:{...revision},modelChecksum:hashJSON({definition:c.definition,runtimeParams:c.runtimeParams}),numericalCheck:'passed',resultChecksum:hashJSON(result),ms,...(childProbe?{probe:childProbe}:{})};
+      trace.push(record);emit({type:'phase',temperature,stage:'filterReselection',completedAction:record});
+      rawParentProbe=undefined;
+      return result;
+     };
+     try{
+      for(let cycle=0;cycle<action.cycles!;cycle++){
+       await child('explicit-empty',cycle);
+       rows=await child('clear-reset',cycle);
+       retained.push({symbol:c.symbol,sessionId:sessionIds.get(c)!,cycle,revision:{...revision},rssBytes:process.memoryUsage().rss,heapUsedBytes:process.memoryUsage().heapUsed,wasmBufferBytes:getMemory().wasmBufferBytes});
+      }
+     }catch(error){
+      const accounting=error instanceof AttributionUnavailableError;
+      // A failed engine operation may still have completed probe events. Reading
+      // those must never replace its original exception or imply clear success.
+      if(!accounting&&probe){try{snapshot();}catch{/* Preserve the engine failure. */}}
+      emit({type:'phase',temperature,stage:'filterReselection',attribution:{status:'unavailable',kind:accounting?'accounting-failure':'engine-failure',reason:String(error),sessionId:sessionIds.get(c)!,revision:{...revision},...(probe?{rawParentProbe}:{} )}});
+      throw error;
+     }finally{rawParentProbe=undefined;}
     }else throw Error(`Unknown performance action ${action.kind}`);
     const actionMs=performance.now()-start;responsiveness.push({action:action.kind,blockedMs:await pulse});
     const rawProbe=probe?.__pivot_profile_read();

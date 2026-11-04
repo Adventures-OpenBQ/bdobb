@@ -12,7 +12,7 @@ import {loadRustRuntime,createRustExecutor,type WasmModule,type ResourceLimits} 
 import {estimatedHostBytes} from '../../src/lib/tableExecution/rust/resources';
 import {datasetFromBytes} from '../../src/lib/localTableData';
 import {hashJSON,hashBytes,unavailable} from './report.mjs';
-import {performanceTrace} from './performance-trace';
+import {performanceTrace,AttributionUnavailableError} from './performance-trace';
 import {tickDataset,tickModel,checkTickBars} from './ticks.mjs';
 const chunks=[];for await(const chunk of process.stdin)chunks.push(chunk);
 type BoundFile={sha256:string};
@@ -112,7 +112,7 @@ try{
  const assertion=caught&&'code' in caught&&caught.code==='ERR_ASSERTION';
  emit({
   type:'failure',
-  outcome:resource?'profile-refused':assertion?'numerical-mismatch':'execution-failure',
+  outcome:error instanceof AttributionUnavailableError?'attribution-unavailable':resource?'profile-refused':assertion?'numerical-mismatch':'execution-failure',
   error:String(error),
   memory:{peakRssBytes:process.resourceUsage().maxRSS*1024,wasmBufferBytes:wasmMemory?.buffer.byteLength??null},
  });
