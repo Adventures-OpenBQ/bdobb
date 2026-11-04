@@ -358,6 +358,13 @@
 }
 
 /* Query-backed widget: receipt strip left, actions right (design .receipt). */
+.query-data-renderer { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
+/* Keep the virtual viewport inside the card. An auto-height wrapper otherwise
+   requests the whole result and continually evicts its bounded row cache. */
+.query-data-renderer > .table-with-pivot { flex: 1; min-height: 0; height: auto; }
+.query-data-renderer > .query-data-bar,
+.query-data-renderer > .query-context-bar,
+.query-data-renderer > .bd-notice { flex: none; }
 .query-data-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--bd-s2); margin-bottom: var(--bd-s2); }
 .query-data-bar > .bd-actions { gap: var(--bd-s1); margin-left: auto; }
 .query-data-bar .bd-button { min-height: 26px; padding: 2px var(--bd-s2); font-size: var(--font-size-12); }
