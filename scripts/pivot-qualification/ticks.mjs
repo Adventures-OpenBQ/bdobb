@@ -1,6 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
+export const TICK_REFERENCE_POLICY=Object.freeze({version:'tick-bucket-index/1',bucketEncoding:'interval-index',outputBucketUnit:'epoch-seconds'});
+export function validateTickReferencePolicy(policy){assert.deepEqual(policy,TICK_REFERENCE_POLICY,'Unknown or ambiguous tick reference bucket policy');}
 /** Raw mixed venues; never prefilter Q or use substring membership. */
 export function tickDataset(csv,expectedRows){
  const lines=csv.trimEnd().split(/\r?\n/);assert.equal(lines.shift(),'ts,seq,mkt,price,shares');assert.equal(lines.length,expectedRows);
@@ -16,8 +18,14 @@ export function tickModel({granularity,venue,countOnly=false}){
 }
 /** OHLC prices are source selections/min/max, not arithmetic: exact binary64 equality.
  * Shares/count are safe integers and exact sums. No blanket financial tolerance. */
-export function checkTickBars(rows,reference,{granularity,venue,countOnly=false}){
- const expected=reference.filter(r=>r.venue===venue&&r.bucketMilliseconds===(granularity==='1s'?1000:60000)).sort((a,b)=>a.bucket-b.bucket);
+export function checkTickBars(rows,reference,{granularity,venue,countOnly=false},policy){
+ validateTickReferencePolicy(policy);
+ assert.ok(['1s','1m'].includes(granularity));
+ for(const row of reference){
+  assert.ok([1000,60000].includes(row.bucketMilliseconds),'Unknown reference bucket width');
+  assert.ok(Number.isSafeInteger(row.bucket)&&Number.isSafeInteger(row.bucket*(row.bucketMilliseconds/1000)),'Invalid reference bucket index');
+ }
+ const expected=reference.filter(r=>r.venue===venue&&r.bucketMilliseconds===(granularity==='1s'?1000:60000)).map(r=>({...r,bucket:r.bucket*(r.bucketMilliseconds/1000)})).sort((a,b)=>a.bucket-b.bucket);
  const actual=rows.filter(r=>r.groupPath?.length===1).map(r=>({bucket:Number(r.groupPath[0].value),...r.values})).sort((a,b)=>a.bucket-b.bucket);
  assert.equal(actual.length,expected.length,'Independent bar count');
  for(let i=0;i<expected.length;i++){assert.equal(actual[i].bucket,expected[i].bucket);for(const key of countOnly?['ticks']:['open','high','low','close','volume','ticks']){assert.equal(actual[i][key],expected[i][key],`bar ${i} ${key}`);if(['volume','ticks'].includes(key))assert.ok(Number.isSafeInteger(actual[i][key]));}}

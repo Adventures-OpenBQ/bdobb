@@ -75,6 +75,10 @@
         "environment": {
           "type": "string",
           "pattern": "^[a-f0-9]{64}$"
+        },
+        "referencePolicy": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
         }
       }
     },
@@ -459,5 +463,48 @@
       }
     }
   },
-  "$comment": "report.mjs is the semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract."
+  "$comment": "report.mjs is the semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "workload": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "ticks"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "identity": {
+            "required": [
+              "referencePolicy"
+            ]
+          },
+          "workload": {
+            "type": "object",
+            "required": [
+              "referencePolicy"
+            ],
+            "properties": {
+              "referencePolicy": {
+                "const": {
+                  "version": "tick-bucket-index/1",
+                  "bucketEncoding": "interval-index",
+                  "outputBucketUnit": "epoch-seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

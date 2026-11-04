@@ -65,7 +65,7 @@ try{
      const column=ready.columns.find((col:any)=>col.measureId?.endsWith('/value')&&col.splitPath?.some((p:any)=>p.value===`FY${year}`));
      assert.ok(row&&column,`Missing ${c.symbol}/${year}/${line}`);assert.equal(row.values[column.id],Number(value));cells++;
     }
-   }else if(manifest.kind==='ticks'){cells+=checkTickBars(rows,expected,manifest.tick);
+   }else if(manifest.kind==='ticks'){cells+=checkTickBars(rows,expected,manifest.tick,manifest.reference.policy);
    }else{assert.equal(rows.length,expected.rows);assert.equal(new Set(rows.map((r:any)=>r.id)).size,expected.uniqueIds);}
    results.push(hashJSON(rows));
    phase('chartDelivery');t=performance.now();await executor.chartData({...revision},ready.columns.map((c:any)=>c.id),signal);totals.chartDelivery+=performance.now()-t;

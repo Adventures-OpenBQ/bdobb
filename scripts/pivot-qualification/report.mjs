@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {validateTickReferencePolicy} from './ticks.mjs';
 export const STAGES=['acquisitionParse','registrationEncoding','compute','filterReselection','transfer','chartDelivery','rendering','totalUsableView'];
 export const hashBytes=bytes=>createHash('sha256').update(bytes).digest('hex');
 const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
@@ -13,6 +14,7 @@ export function validateRun(r){
  assert.match(r.identity?.commit??'',/^[a-f0-9]{40}$/,'Missing commit');
  for(const k of ['artifact','source','dataset','reference','model','actions','environment'])assert.match(r.identity[k]??'',/^[a-f0-9]{64}$/,`Missing ${k} checksum`);
  assert.ok(r.workload?.id&&['bulk','statement','ticks'].includes(r.workload.kind));
+ if(r.workload.kind==='ticks'){validateTickReferencePolicy(r.workload.referencePolicy);assert.equal(r.identity.referencePolicy,hashJSON({sourceChecksum:r.identity.reference,policy:r.workload.referencePolicy}),'Reference policy binding mismatch');}
  assert.ok(Number.isSafeInteger(r.workload.rows)&&r.workload.rows>0);
  assert.ok(r.environment&&r.limits&&Array.isArray(r.limitations));assert.ok(statuses.includes(r.status));
  assert.ok(Array.isArray(r.observations)&&r.observations.length,'Missing observations');

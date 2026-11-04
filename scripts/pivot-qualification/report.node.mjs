@@ -16,3 +16,9 @@ test('hashJSON changes on semantic change and is sha256',()=>{assert.match(hashJ
 test('fixed admission refuses row ceiling before loading payload',async()=>{const {admit,ADMISSION_PROFILE}=await import('./benchmark.mjs');assert.equal(ADMISSION_PROFILE.maxRows,300000);assert.equal(admit({rows:1000000,format:'csv'},1).outcome,'profile-refused');assert.equal(admit({rows:98,format:'certified-json'},1000),null);});
 test('action contract rejects arbitrary actions instead of hashing ignored instructions',async()=>{const {validateActions}=await import('./benchmark.mjs');assert.throws(()=>validateActions([{kind:'ignored'}]));});
 test('runner verifies actual file bytes before admission or artifact execution',async()=>{const {mkdtemp,writeFile,rm}=await import('node:fs/promises');const {tmpdir}=await import('node:os');const {join}=await import('node:path');const {runBenchmark}=await import('./benchmark.mjs');const directory=await mkdtemp(join(tmpdir(),'pivot-admission-'));try{await writeFile(join(directory,'input'),'changed');await assert.rejects(runBenchmark({version:1,kind:'bulk',rows:1000000,input:{path:'input',sha256:sha}},{engine:'typescript',workload:'bulk',manifestDirectory:directory,output:directory}),/checksum mismatch/);}finally{await rm(directory,{recursive:true,force:true});}});
+test('tick reference interpretation is versioned and bound to original reference checksum',()=>{
+ const r=sample();r.workload.kind='ticks';r.workload.referencePolicy={version:'tick-bucket-index/1',bucketEncoding:'interval-index',outputBucketUnit:'epoch-seconds'};
+ assert.throws(()=>validateRun(r));
+ r.identity.referencePolicy=hashJSON({sourceChecksum:r.identity.reference,policy:r.workload.referencePolicy});assert.equal(validateRun(r),r);
+ r.identity.reference='b'.repeat(64);assert.throws(()=>validateRun(r));
+});

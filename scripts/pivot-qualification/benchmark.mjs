@@ -12,6 +12,7 @@ import v8 from 'node:v8';
 import {build} from 'esbuild';
 import {hashJSON,validateRun,summarizeRun} from './report.mjs';
 import {runChild,childObservations} from './child-process.mjs';
+import {validateTickReferencePolicy} from './ticks.mjs';
 export const ADMISSION_PROFILE=Object.freeze({maxRows:300000,maxInputBytes:268435456,maxStateBytes:2147483648,maxPivotColumns:10000,maxBatchBytes:33554432,maxCachedBlockBytes:67108864,maxConcurrentTransfers:2});
 export const ACTIONS=Object.freeze([{kind:'apply'},{kind:'presented'},{kind:'chartData'},{kind:'empty-clear',cycles:5}]);
 export function validateActions(actions){assert.deepEqual(actions,ACTIONS,'Unsupported action contract');}
@@ -35,6 +36,7 @@ export async function runBenchmark(manifest,{engine,workload,output,manifestDire
  assert.equal(manifest.version,1);assert.equal(manifest.kind,workload);
  const paths={};for(const k of ['input','reference','model','actions'])paths[k]=await checked(manifestDirectory,manifest[k]);
  validateActions(JSON.parse(await readFile(paths.actions,'utf8')));
+ if(workload==='ticks')validateTickReferencePolicy(manifest.reference.policy);
  const commit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
  // Hash every tracked source byte plus new runner files, not timestamps or commit alone.
  const names=execFileSync('git',['ls-files','src','crates','scripts/pivot-qualification'],{cwd:root,encoding:'utf8'}).trim().split('\n');
@@ -49,7 +51,7 @@ export async function runBenchmark(manifest,{engine,workload,output,manifestDire
  await writeFile(modulePath,await readFile(join(root,'src/lib/tableExecution/rust/generated/pivot_wasm.js')));
  const artifact=hashJSON({bundle:await checksumFile(bundle),wasm:await checksumFile(wasmPath),module:await checksumFile(modulePath)});
  const environment={node:process.version,platform:process.platform,release:os.release(),arch:os.arch(),cpu:os.cpus()[0]?.model,cpuCount:os.cpus().length,memoryBytes:os.totalmem(),locale:Intl.DateTimeFormat().resolvedOptions(),defaultNodeHeapBytes:v8.getHeapStatistics().heap_size_limit,execArgv:process.execArgv};
- const identity={commit,source,artifact,dataset:manifest.input.sha256,reference:manifest.reference.sha256,model:manifest.model.sha256,actions:manifest.actions.sha256,environment:hashJSON(environment)};
+ const identity={commit,source,artifact,dataset:manifest.input.sha256,reference:manifest.reference.sha256,model:manifest.model.sha256,actions:manifest.actions.sha256,environment:hashJSON(environment),...(workload==='ticks'?{referencePolicy:hashJSON({sourceChecksum:manifest.reference.sha256,policy:manifest.reference.policy})}:{})};
  const refusal=admit(manifest,(await stat(paths.input)).size),observations=[];
  observationLoop: for(let i=0;i<(refusal?1:samples);i++){
   for(const variant of ['baseline','candidate']){
@@ -60,7 +62,7 @@ export async function runBenchmark(manifest,{engine,workload,output,manifestDire
    if(result.outcome&&!refusal)break observationLoop;
   }
  }
- const report={schemaVersion:1,engine,identity,environment,workload:{id:manifest.id,kind:workload,rows:manifest.rows,sampling:manifest.sampling,classification:manifest.classification},limits:{policy:'fixed-experimental-runner-not-supported-device-default',...ADMISSION_PROFILE,preparseReservation:'128 times file bytes; conservative runner heuristic, not engine RESOURCE_LIMIT',enforcement:engine==='rust'?'runner preflight and production Rust worker/runtime':'runner preflight; TS worker has no matching engine resource profile',timeoutMs},status:observations.every(o=>o.status==='passed')?'passed':observations.some(o=>o.status==='failed')?'failed':'not-run',observations,limitations:['Same-source baseline/candidate calibration; no optimization or speedup claim.','In-process production worker handler transport in fresh Node subprocess, not browser/native acceptance.','RSS is process resourceUsage high-water mark, not sampled process-tree RSS.','Rendering, usable view and browser input responsiveness not run.','WASM exported buffer may be unavailable; null is not zero.','No representative-hash sample or synthetic financial corpus is implied by prefix/control runs.']};
+ const report={schemaVersion:1,engine,identity,environment,workload:{id:manifest.id,kind:workload,rows:manifest.rows,sampling:manifest.sampling,classification:manifest.classification,...(workload==='ticks'?{referencePolicy:manifest.reference.policy}:{})},limits:{policy:'fixed-experimental-runner-not-supported-device-default',...ADMISSION_PROFILE,preparseReservation:'128 times file bytes; conservative runner heuristic, not engine RESOURCE_LIMIT',enforcement:engine==='rust'?'runner preflight and production Rust worker/runtime':'runner preflight; TS worker has no matching engine resource profile',timeoutMs},status:observations.every(o=>o.status==='passed')?'passed':observations.some(o=>o.status==='failed')?'failed':'not-run',observations,limitations:['Same-source baseline/candidate calibration; no optimization or speedup claim.','In-process production worker handler transport in fresh Node subprocess, not browser/native acceptance.','RSS is process resourceUsage high-water mark, not sampled process-tree RSS.','Rendering, usable view and browser input responsiveness not run.','WASM exported buffer may be unavailable; null is not zero.','No representative-hash sample or synthetic financial corpus is implied by prefix/control runs.']};
  validateRun(report);report.summary=summarizeRun(report);await writeFile(join(output,`${manifest.id}-${engine}.json`),JSON.stringify(report,null,2)+'\n');return report;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
