@@ -35,3 +35,9 @@ it('connects an admitted backend binding to the temporal acquisition path',async
  const data=await acquireBackend({backendId:'tdb',widgetId:'temporal_execution',params:{execution_id:executionId,expected_hash:receipt.result_hash}},context);
  expect(data.rows[0].values.Revenue).toBe(7);expect(data.provenance.receipt?.temporal).toMatchObject({executionId});
 });
+it('retains sampled-inspection warnings after bounded complete server-side exhaustion',async()=>{
+ const url=await upstream((_q,r)=>{r.setHeader('Content-Type','application/json');r.end(JSON.stringify({...page,total_count:1,rows:[{Revenue:7}],next_cursor:null,receipt:{...receipt,transform_versions:{'gold.sip_archive.ObservedSlice':'legacy-sip-inspection-v1'}}}));});
+ const data=await acquireTemporalExecution(binding,config(url));
+ expect(data.completeness.kind).toBe('complete');
+ expect(data.completeness.warnings?.join(' ')).toMatch(/SIP inspection only.*sampled partition/i);
+});

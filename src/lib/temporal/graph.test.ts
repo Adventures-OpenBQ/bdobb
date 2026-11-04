@@ -52,3 +52,22 @@ it('auth failure stays an error and never publishes fake success',async()=>{
  const service=createTemporalClient(backend());vi.spyOn(service,'status').mockRejectedValue(new Error('HTTP 401'));
  const store=createTableExecutionStore({executor,source:()=>createTemporalSourceAdapter(service,{kind:'execution',executionId})});store.syncDashboard(dash([card({queryBinding:fixed})]));store.ensureTable('d','c');await store.settled('d');expect(store.readView('d','c')).toMatchObject({status:'failed',error:'HTTP 401'});expect(store.readView('d','c').active).toBeUndefined();
 });
+
+it('retains inspection coverage warnings through complete linked filtering, sorting, pivot, chart and export',async()=>{
+ const root=card({id:'root',queryBinding:fixed});
+ const subset=card({id:'subset',linkedSource:{kind:'widget',sourceWidgetId:'root'},table:{columnFilters:[{id:'Revenue',value:{min:5}}],sorting:[{id:'Revenue',desc:true}]}});
+ const pivot=card({id:'pivot',linkedSource:{kind:'widget',sourceWidgetId:'subset'},table:{pivot:{enabled:true,grouping:[],split:[],aggregationFns:{Revenue:'sum'}}}});
+ const client=fakeClient();vi.spyOn(client,'page').mockResolvedValue({...page,total_count:1,next_cursor:null,receipt:{...page.receipt,transform_versions:{'gold.sip_archive.ObservedSlice':'legacy-sip-inspection-v1'}}});
+ const store=createTableExecutionStore({executor,source:c=>c.queryBinding?createTemporalSourceAdapter(client,c.queryBinding):undefined});
+ try{
+  store.syncDashboard(dash([root,subset,pivot]));store.ensureTable('d','pivot');await store.settled('d');
+  for(const id of ['root','subset','pivot']){
+   const view=store.readView('d',id);expect(view.status).toBe('ready');
+   expect(view.ready?.completeness).toMatchObject({kind:'complete',warnings:[expect.stringContaining('SIP inspection only')]});
+   const exec=store.readExecutor('d',id)!;
+   const chart=await exec.chartData(view.active!,['Revenue'],new AbortController().signal);
+   expect(chart.completeness.warnings).toContainEqual(expect.stringContaining('sampled partition'));
+   for await(const batch of exec.presented(view.active!,new AbortController().signal))expect(batch.completeness.warnings).toContainEqual(expect.stringContaining('canonical tick'));
+  }
+ }finally{store.disposeDashboard('d');}
+});

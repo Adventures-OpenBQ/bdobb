@@ -76,3 +76,21 @@ it('adapts a retained later page without starting a query and keeps row identity
  expect(data.dataset.provenance.metadata?.temporalPage).toMatchObject({pageOffset:2000,pageNumber:3,hasNextPage:false});
  expect(data.dataset.completeness.warnings?.join(' ')).toContain('loaded rows only');
 });
+
+it('keeps inspection-domain warnings on complete and empty retained results, including pinned copies and exports',async()=>{
+ const {temporalExportMetadata,temporalJson,temporalCsv}=await import('./export');
+ for(const rows of [[{Revenue:10}],[]]){
+  const schema=page.schema;
+  const inspected={...page,schema,rows,total_count:rows.length,next_cursor:null,complete:true,truncated:false,receipt:{...receipt,schema,transform_versions:{'sip_archive.ObservedSlice':'runtime-legacy-sip-inspection-1','gold.sip_archive.ObservedSlice':'legacy-sip-inspection-v1'}}};
+  for(const binding of [fixed,{kind:'execution' as const,executionId}]){
+   const data=await createTemporalSourceAdapter(client(),binding,{page:inspected,executionId,offset:0,pageNumber:1,hasPrevious:false,hasNext:false}).acquire(signal());
+   if(data.kind!=='dataset')throw Error('dataset');
+   expect(data.dataset.completeness.kind).toBe('complete');
+   expect(data.dataset.completeness.warnings?.join(' ')).toMatch(/SIP inspection only.*sampled partition/i);
+   expect(data.dataset.completeness.warnings?.join(' ')).toContain('canonical tick');
+   const metadata=temporalExportMetadata(data.dataset.provenance,data.dataset.completeness);
+   expect(temporalJson(rows,metadata)).toContain('SIP inspection only');
+   expect(temporalCsv(rows,['Revenue'],metadata)).toContain('SIP inspection only');
+  }
+ }
+});
