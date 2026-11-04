@@ -1486,3 +1486,22 @@ test('v11 explorer routes come with the vendored TemporalDB policy', async () =>
   assert.equal(temporalRoute(new URL('/temporal/temporal/v1/cache/datasets', origin), 'POST', { temporalDB: true }), null);
   assert.equal(temporalRoute(new URL('/temporal/temporal/v1/cache/datasets?limit=101', origin), 'GET', { temporalDB: true }), null);
 });
+
+test('v11 acquisition relay preserves exact run intent, CSRF and backend credential isolation',async t=>{
+ const calls=[];
+ const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"state":"waiting"}',{status:202,headers:{'Content-Type':'application/json'}});}});
+ const id='11111111-1111-4111-8111-111111111111',root='/temporal/temporal/v1';
+ const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret'};
+ const body=JSON.stringify({policy_id:id,policy_revision:3,idempotency_key:'widget:stable'});
+ for(const [method,path] of [['GET',root+'/acquisition/policies'],['GET',root+'/acquisition/policies/'+id+'?revision=3'],['POST',root+'/acquisition/preflight'],['POST',root+'/runs'],['GET',root+'/runs/'+id],['DELETE',root+'/runs/'+id]]){
+  assert.equal((await call(path,{method,headers,...(method==='POST'?{body}:{})})).status,202);
+  const request=calls.at(-1);assert.equal(request.url,env.BACKEND_GATEWAY_ORIGIN+path);assert.equal(request.options.method,method);
+  assert.equal(request.options.headers.Authorization,'Bearer '+env.BACKEND_GATEWAY_TOKEN);assert.equal(request.options.headers.Cookie,undefined);
+  if(method==='POST')assert.equal(Buffer.from(request.options.body).toString('utf8'),body);
+ }
+ const count=calls.length;
+ assert.equal((await call(root+'/runs',{method:'POST',headers:{Cookie:headers.Cookie,'Content-Type':'application/json'},body})).status,403);
+ assert.equal((await call(root+'/acquisition/policies',{method:'POST',headers,body})).status,404);
+ assert.equal((await call(root+'/runs/'+id+'?account=forged',{headers})).status,404);
+ assert.equal(calls.length,count);
+});

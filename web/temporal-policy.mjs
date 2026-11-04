@@ -1,4 +1,4 @@
-// vendored from openbq-docker 84ac1af9cf21ad026d9ac9e70420b3bcb55c2538 funnel-gateway/temporal-policy.mjs sha256:ee0eb16d8d30b24393579cc7c40504861c5102dc306794131c80f43c53bca173
+// vendored from openbq-docker f2df9098976f4bb77ccd5299d7b8d2bab8b799ad funnel-gateway/temporal-policy.mjs sha256:578bee6617beab9ed16c4f5616598956bd5f63409d016bfa9694d56e198bb49d
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -6,6 +6,11 @@
 // Backend base: <preview>/temporal. Strip exactly that outer prefix at the gateway.
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const rules = [
+  ['GET', /^\/temporal\/temporal\/v1\/acquisition\/policies$/, []],
+  ['GET', new RegExp(`^/temporal/temporal/v1/acquisition/policies/${UUID}$`), ['revision']],
+  ['POST', /^\/temporal\/temporal\/v1\/acquisition\/preflight$/, []],
+  ['POST', /^\/temporal\/temporal\/v1\/runs$/, []],
+  ['GET|DELETE', new RegExp(`^/temporal/temporal/v1/runs/${UUID}$`), []],
   ['GET', /^\/temporal\/(?:widgets\.json|apps\.json)?$/, []],
   ['GET', /^\/temporal\/temporal\/v1\/capabilities$/, []],
   ['GET|POST', /^\/temporal\/temporal\/v1\/queries$/, []],
