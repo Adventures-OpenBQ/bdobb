@@ -602,18 +602,21 @@ fn scope_diagnostics_keep_constraint_insertion_order() {
     for id in ["z", "a"] {
         p.categories.push(p.categories[0].clone());
         p.categories.last_mut().unwrap().id = id.into();
-        p.members.get_mut("a").unwrap().insert(
-            id.into(),
-            Err(ModelError {
-                record_ids_present: true,
-                dependency_ids_present: false,
-                code: "invalid-date".into(),
-                message: id.into(),
-                definition_id: id.into(),
-                record_ids: vec!["a".into()],
-                dependency_ids: vec![],
-            }),
-        );
+        std::sync::Arc::make_mut(&mut p.members)
+            .get_mut("a")
+            .unwrap()
+            .insert(
+                id.into(),
+                Err(ModelError {
+                    record_ids_present: true,
+                    dependency_ids_present: false,
+                    code: "invalid-date".into(),
+                    message: id.into(),
+                    definition_id: id.into(),
+                    record_ids: vec!["a".into()],
+                    dependency_ids: vec![],
+                }),
+            );
     }
     p.rows.retain(|r| r.id == "a");
     let mut scope = CalculationScope {
@@ -1495,4 +1498,28 @@ fn null_date_source_filter_throws_like_the_baseline() {
         "{:?}",
         pool.runtime_diagnostics
     );
+}
+
+#[test]
+fn eligible_pool_reuses_immutable_category_members_from_its_universe() {
+    let (model, input) = fixture();
+    let pool = eligible_pool(&input, &model, &RuntimeParams::new(), &Host);
+    assert!(!pool.members.is_empty());
+    let id = pool.members.keys().next().unwrap();
+    assert!(std::ptr::eq(
+        pool.members.get(id).unwrap(),
+        pool.universe.members.get(id).unwrap()
+    ));
+}
+
+#[test]
+fn changing_shared_members_detaches_from_universe_and_other_snapshots() {
+    let (model, input) = fixture();
+    let pool = eligible_pool(&input, &model, &RuntimeParams::new(), &Host);
+    let mut other = pool.clone();
+    let id = pool.members.keys().next().unwrap().clone();
+    std::sync::Arc::make_mut(&mut other.members).remove(&id);
+    assert!(!other.members.contains_key(&id));
+    assert!(pool.members.contains_key(&id));
+    assert!(other.universe.members.contains_key(&id));
 }
