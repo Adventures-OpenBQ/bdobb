@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {expect,it} from 'vitest';
 import {parseContract,parseResultPage,parseWireInputManifest} from './contracts';
-import {page,receipt,queryId} from './fixtures';
+import {page,receipt,queryId,acquisition} from './fixtures';
+it('validates retained acquisition explanations and rejects credential-shaped extras',()=>{
+ expect(parseResultPage({...page,receipt:{...receipt,acquisition}}).receipt).toMatchObject({acquisition});
+ expect(()=>parseResultPage({...page,receipt:{...receipt,acquisition:{...acquisition,policy_revision:0}}})).toThrow();
+ expect(()=>parseResultPage({...page,receipt:{...receipt,acquisition:{...acquisition,assumptions:{...acquisition.assumptions,sources:[{...acquisition.assumptions.sources[0],account_ref:'private'}]}}}})).toThrow();
+});
 
 it.each([0,42,Number.MAX_SAFE_INTEGER,'9007199254740992','9223372036854775807'])('validates snapshot ID %s using its exact service wire representation',snapshot_id=>{
  const input_manifest={manifest_id:queryId,pins:[{catalog_id:'facts',snapshot_id}],projection_versions:{facts:'v1'}};

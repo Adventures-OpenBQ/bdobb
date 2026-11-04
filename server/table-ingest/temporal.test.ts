@@ -4,11 +4,24 @@
 import {createServer,type Server,type RequestListener} from 'node:http';
 import {afterEach,expect,it} from 'vitest';
 import {acquireTemporalExecution,type TemporalAcquisitionConfig} from './temporal';
-import {executionId,page,receipt} from '../../src/lib/temporal/fixtures';
+import {executionId,page,receipt,acquisition} from '../../src/lib/temporal/fixtures';
 const servers:Server[]=[];afterEach(async()=>{await Promise.all(servers.splice(0).map(s=>new Promise<void>(r=>{s.closeAllConnections();s.close(()=>r());})));});
 async function upstream(handler:RequestListener){const s=createServer(handler);servers.push(s);await new Promise<void>(r=>s.listen(0,'127.0.0.1',r));return `http://127.0.0.1:${(s.address() as {port:number}).port}/temporal/v1`;}
 function config(url:string):TemporalAcquisitionConfig{return {url,principal:'alice',principalHeaders:{alice:{Authorization:'Bearer scoped-for-alice'}},maxBytes:1000000,maxRows:2000,maxColumns:10,timeoutMs:1000,targetWidgetId:'full',inputRevision:1};}
 const binding={executionId,resultHash:receipt.result_hash};
+it('keeps durable acquisition decisions on complete managed source receipts',async()=>{
+ const url=await upstream((_q,r)=>{r.setHeader('Content-Type','application/json');r.end(JSON.stringify({...page,total_count:1,next_cursor:null,receipt:{...receipt,acquisition}}));});
+ const data=await acquireTemporalExecution(binding,config(url));expect(data.provenance.receipt?.temporal?.acquisition).toEqual(acquisition);
+});
+it('preserves full inspection clock text and exact sequence presentation in managed tables',async()=>{
+ const {formatCell}=await import('../../src/lib/format');
+ const schema=[{name:'source_timestamp_naive',type:'string',nullable:false},{name:'corroborated_timestamp_utc',type:'string',nullable:false},{name:'source_sequence',type:'int64',nullable:false}];
+ const rows=[{source_timestamp_naive:'2025-01-21T09:00:00.030000',corroborated_timestamp_utc:'2025-01-21T09:00:00.030Z',source_sequence:84176},{source_timestamp_naive:'2025-01-21T09:00:00.030001',corroborated_timestamp_utc:'2025-01-21T09:00:00.031Z',source_sequence:'9007199254740993'}];
+ const url=await upstream((_q,r)=>{r.setHeader('Content-Type','application/json');r.end(JSON.stringify({...page,schema,rows,total_count:2,next_cursor:null,receipt:{...receipt,schema,transform_versions:{'gold.sip_archive.ObservedSlice':'legacy-sip-inspection-v1'}}}));});
+ const data=await acquireTemporalExecution(binding,config(url));
+ for(const row of data.rows)for(const column of data.columns)expect(formatCell(row.values[column.id],column.id,2,'en-US',column.format)).toBe(String(row.values[column.id]));
+ expect(data.columns.every(column=>column.format?.formatterFn==='none')).toBe(true);
+});
 it('exhausts retained pages on the server with scoped credentials and complete provenance',async()=>{
  const requests:string[]=[];const url=await upstream((req,res)=>{expect(req.headers.authorization).toBe('Bearer scoped-for-alice');requests.push(req.url!);const next=req.url?.includes('cursor=');res.setHeader('Content-Type','application/json');res.end(JSON.stringify({...page,total_count:1001,rows:next?[{Revenue:1001}]:Array.from({length:1000},(_,i)=>({Revenue:i})),next_cursor:next?null:'next'}));});
  const data=await acquireTemporalExecution(binding,config(url));expect(requests).toEqual([`/temporal/v1/executions/${executionId}/pages`,`/temporal/v1/executions/${executionId}/pages?cursor=next`]);

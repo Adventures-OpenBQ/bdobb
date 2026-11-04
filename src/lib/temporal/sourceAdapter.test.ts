@@ -3,10 +3,28 @@
 import {expect,it,vi} from 'vitest';
 import {createTemporalSourceAdapter} from './sourceAdapter';
 import {parseQueryBinding} from './bindings';
-import {definition,executionId,fixed,page,receipt} from './fixtures';
+import {definition,executionId,fixed,page,receipt,acquisition} from './fixtures';
 import type {TemporalClient} from './client';
 const signal=()=>new AbortController().signal;
+it('presents inspection clocks and sequence identifiers exactly without guessing a zone',async()=>{
+ const {formatCell}=await import('../format');
+ const schema=[{name:'source_timestamp_naive',type:'string',nullable:false},{name:'corroborated_timestamp_utc',type:'string',nullable:false},{name:'source_sequence',type:'int64',nullable:false}];
+ const rows=[{source_timestamp_naive:'2025-01-21T09:00:00.030000',corroborated_timestamp_utc:'2025-01-21T09:00:00.030Z',source_sequence:84176},{source_timestamp_naive:'2025-01-21T09:00:00.030001',corroborated_timestamp_utc:'2025-01-21T09:00:00.031Z',source_sequence:'9007199254740993'}];
+ const c=client();vi.mocked(c.page).mockResolvedValue({...page,schema,rows,total_count:2,next_cursor:null,receipt:{...receipt,schema,transform_versions:{'gold.sip_archive.ObservedSlice':'legacy-sip-inspection-v1'}}});
+ const acquired=await createTemporalSourceAdapter(c,{kind:'execution',executionId}).acquire(signal());if(acquired.kind!=='dataset')throw Error('dataset');
+ for(const row of acquired.dataset.rows)for(const column of acquired.dataset.columns)expect(formatCell(row.values[column.id],column.id,2,'en-US',column.format)).toBe(String(row.values[column.id]));
+ expect(acquired.dataset.columns.every(column=>column.format?.formatterFn==='none')).toBe(true);
+});
 function client(){return {get:vi.fn(async()=>definition),start:vi.fn(async()=>({execution_id:executionId,state:'queued' as const})),status:vi.fn(async()=>({execution_id:executionId,state:'succeeded' as const,error:null})),page:vi.fn(async()=>page)} as unknown as TemporalClient;}
+it('preserves the original acquisition explanation through pinned loading and serialized export',async()=>{
+ const {temporalJson,temporalExportMetadata}=await import('./export');const original=structuredClone(acquisition),c=client();
+ vi.mocked(c.page).mockResolvedValue({...page,receipt:{...receipt,acquisition:original}});
+ const result=await createTemporalSourceAdapter(c,{kind:'execution',executionId}).acquire(signal());if(result.kind!=='dataset')throw Error('dataset');
+ original.policy_revision=2;original.assumptions.freshness_seconds=60;
+ expect(result.dataset.provenance.receipt?.temporal?.acquisition).toEqual(acquisition);
+ const exported=JSON.parse(temporalJson(result.dataset.rows.map(r=>r.values),temporalExportMetadata(result.dataset.provenance,result.dataset.completeness)));
+ expect(exported.provenance.receipt.temporal.acquisition).toEqual(acquisition);expect(c.start).not.toHaveBeenCalled();
+});
 it('keeps fixed revisions and page limits while refresh starts a new execution',async()=>{
  const c=client();const source=createTemporalSourceAdapter(c,fixed);
  const acquired=await source.acquire(signal());expect(acquired.kind).toBe('dataset');

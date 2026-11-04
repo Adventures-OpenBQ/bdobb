@@ -76,7 +76,7 @@ export function parseWireInputManifest(value:unknown):WireInputManifest {
  if(!valid(value,domainDefinitions.InputManifest,wireManifestDefinitions))throw new TemporalValidationError('Invalid TemporalDB wire InputManifest');
  return value as WireInputManifest;
 }
-export type ExecutionReceipt={execution_id:string;query_id:string;query_revision:number;parameters:Record<string,unknown>;context:ContractTypes['TemporalContext'];input_manifest:WireInputManifest;environment_digest:string;transform_versions:Record<string,unknown>;schema:ResultColumn[];completeness:string;result_hash:string;order_contract:string;frozen_at:string;codec:'arrow-json-v1';runtime_artifact:string|null};
+export type ExecutionReceipt={execution_id:string;query_id:string;query_revision:number;parameters:Record<string,unknown>;context:ContractTypes['TemporalContext'];input_manifest:WireInputManifest;environment_digest:string;transform_versions:Record<string,unknown>;schema:ResultColumn[];completeness:string;result_hash:string;order_contract:string;frozen_at:string;codec:'arrow-json-v1';runtime_artifact:string|null;acquisition?:ContractTypes['AcquisitionExplanation']|null};
 export type ResultPage={rows:Record<string,unknown>[];schema:ResultColumn[];receipt:ExecutionReceipt;total_count:number;count_quality:'exact'|'lower_bound';complete:boolean;truncated:boolean;next_cursor:string|null;codec:'arrow-json-v1'};
 export type ImportReport={import_id:string;entries:{index:number;status:'imported'|'unavailable';source_backend?:string|null;target_backend?:string|null;query_id?:string|null;reason?:string|null}[]};
 export type QueryExport={version:1;entries:unknown[]};
@@ -109,6 +109,7 @@ function scalar(value:unknown,column:ResultColumn):boolean {
 export function parseResultPage(v:unknown):ResultPage {
  require(isRecord(v)&&finiteJson(v),'finite result page');columns(v.schema);
  const r=v.receipt;require(isRecord(r)&&isUuid(r.execution_id)&&isUuid(r.query_id)&&Number.isSafeInteger(r.query_revision)&&Number(r.query_revision)>0&&isRecord(r.parameters)&&isRecord(r.transform_versions)&&typeof r.environment_digest==='string'&&typeof r.completeness==='string'&&typeof r.result_hash==='string'&&/^[a-f0-9]{64}$/.test(r.result_hash)&&typeof r.order_contract==='string'&&typeof r.frozen_at==='string'&&Number.isFinite(Date.parse(r.frozen_at))&&r.codec==='arrow-json-v1'&&(r.runtime_artifact===null||typeof r.runtime_artifact==='string'),'execution receipt');
+ if(r.acquisition!=null)parseContract('AcquisitionExplanation',r.acquisition);
  parseContract('TemporalContext',r.context);parseWireInputManifest(r.input_manifest);columns(r.schema);
  require(JSON.stringify(r.schema)===JSON.stringify(v.schema),'receipt schema mismatch');
  require(v.codec==='arrow-json-v1'&&Array.isArray(v.rows)&&v.rows.every(row=>isRecord(row)&&Object.keys(row).length===(v.schema as ResultColumn[]).length&&(v.schema as ResultColumn[]).every(c=>Object.hasOwn(row,c.name)&&scalar(row[c.name],c)))&&Number.isSafeInteger(v.total_count)&&Number(v.total_count)>=v.rows.length&&['exact','lower_bound'].includes(String(v.count_quality))&&typeof v.complete==='boolean'&&typeof v.truncated==='boolean'&&(v.next_cursor===null||typeof v.next_cursor==='string'),'result page');

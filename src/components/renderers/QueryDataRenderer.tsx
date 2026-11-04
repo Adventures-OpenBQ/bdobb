@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import {isRecord} from '../../lib/temporal/contracts';
+import type {AcquisitionExplanation} from '../../lib/temporal/generated';
 import {useEffect,useState,useSyncExternalStore} from 'react';
 import type {DashboardCard,TableCardState} from '../../lib/types';
 import {parseQueryBinding,type QueryBinding} from '../../lib/temporal/bindings';
@@ -13,12 +14,12 @@ import {LocalTableRenderer} from './LocalTableRenderer';
 import {KNOWLEDGE_BASIS_LABELS,TEMPORAL_MODE_LABELS,basisLabel} from '../../lib/temporal/labels';
 
 /** The receipt fields the source adapter carries on the dataset's provenance. */
-export type ReceiptView={executionId:string;queryId:string;queryRevision:number;resultHash:string;knowledgeBasis:string|null;context?:TemporalContext;pins:{catalog_id:string;snapshot_id:number|string}[];environmentDigest?:string;frozenAt?:string;completeness?:string;orderContract?:string;codec?:string;parameters:Record<string,unknown>};
+export type ReceiptView={executionId:string;queryId:string;queryRevision:number;resultHash:string;knowledgeBasis:string|null;context?:TemporalContext;pins:{catalog_id:string;snapshot_id:number|string}[];environmentDigest?:string;frozenAt?:string;completeness?:string;orderContract?:string;codec?:string;parameters:Record<string,unknown>;acquisition?:AcquisitionExplanation};
 const short=(v:string,n=12)=>v.length>n+1?`${v.slice(0,n)}…`:v;
 
 export function receiptView(temporal:Record<string,unknown>,parameters:unknown):ReceiptView{
  const manifest=(temporal.inputManifest??{}) as {pins?:ReceiptView['pins']};
- return {executionId:String(temporal.executionId),queryId:String(temporal.queryId),queryRevision:Number(temporal.queryRevision),resultHash:String(temporal.resultHash),knowledgeBasis:temporal.knowledgeBasis==null?null:String(temporal.knowledgeBasis),context:temporal.context as TemporalContext|undefined,pins:Array.isArray(manifest.pins)?manifest.pins:[],environmentDigest:temporal.environmentDigest as string|undefined,frozenAt:temporal.frozenAt as string|undefined,completeness:temporal.completeness as string|undefined,orderContract:temporal.orderContract as string|undefined,codec:temporal.codec as string|undefined,parameters:parameters&&typeof parameters==='object'?parameters as Record<string,unknown>:{}};
+ return {executionId:String(temporal.executionId),queryId:String(temporal.queryId),queryRevision:Number(temporal.queryRevision),resultHash:String(temporal.resultHash),knowledgeBasis:temporal.knowledgeBasis==null?null:String(temporal.knowledgeBasis),context:temporal.context as TemporalContext|undefined,pins:Array.isArray(manifest.pins)?manifest.pins:[],environmentDigest:temporal.environmentDigest as string|undefined,frozenAt:temporal.frozenAt as string|undefined,completeness:temporal.completeness as string|undefined,orderContract:temporal.orderContract as string|undefined,codec:temporal.codec as string|undefined,parameters:parameters&&typeof parameters==='object'?parameters as Record<string,unknown>:{},acquisition:temporal.acquisition==null?undefined:parseContract('AcquisitionExplanation',temporal.acquisition)};
 }
 
 /** Pin = a copy of this widget bound to the retained execution. The original keeps running live. */
@@ -42,6 +43,15 @@ function ReceiptDrawer({receipt,binding,card,onClose,readOnly}:{receipt:ReceiptV
    <dt>Parameters</dt><dd>{Object.keys(receipt.parameters).length?<ul className="query-receipt-params">{Object.entries(receipt.parameters).map(([k,v])=>{const typed=raw[k];const expr=typeof typed==='string'&&typed!==v?typed:null;return <li key={k}><span className="query-receipt-param-name">{k}</span> <code>{JSON.stringify(v)}</code>{expr?<span className="bd-muted"> from {expr}</span>:null}</li>;})}</ul>:'None'}</dd>
    <dt>Pinned inputs</dt><dd>{receipt.pins.length?<ul className="query-receipt-params">{receipt.pins.map(p=><li key={`${p.catalog_id}:${p.snapshot_id}`}><code>{p.catalog_id}</code> @ snapshot {String(p.snapshot_id)}</li>)}</ul>:'None'}</dd>
    {receipt.environmentDigest?<><dt>Environment</dt><dd><code title={receipt.environmentDigest}>{short(receipt.environmentDigest,16)}</code></dd></>:null}
+   <dt>Acquisition</dt><dd>{receipt.acquisition?<>
+    <span>{receipt.acquisition.decision==='cache_hit'?'Cache hit':'Provider-backed'}</span>
+    <p>Policy {receipt.acquisition.policy_id} · revision {receipt.acquisition.policy_revision}</p>
+    <p>Run <code>{receipt.acquisition.run_id}</code></p>
+    {receipt.acquisition.execution_id!==receipt.executionId?<p>Original acquisition for replayed execution <code>{receipt.acquisition.execution_id}</code></p>:null}
+    <p>{receipt.acquisition.provider_operations} attached provider operations. Shared work may be included; this does not count SDK-internal HTTP requests.</p>
+    <details><summary>Frozen policy assumptions</summary><pre>{JSON.stringify(receipt.acquisition.assumptions,null,2)}</pre></details>
+    <details><summary>Selected accepted coverage ({receipt.acquisition.selected_coverage.length})</summary><pre>{JSON.stringify(receipt.acquisition.selected_coverage,null,2)}</pre></details>
+   </>: 'No acquisition explanation in this receipt'}</dd>
    <dt>Result</dt><dd>{[receipt.completeness,receipt.orderContract,receipt.codec].filter(Boolean).join(' · ')}</dd>
   </dl>
   <div className="bd-actions"><button className="bd-button" onClick={()=>void copy()}>Copy execution ID</button>{binding.kind==='query'?<button className="bd-button bd-button--primary" disabled={readOnly} title="Adds a copy of this widget that always reads this exact retained execution" onClick={()=>void pinExecution(card,receipt.executionId).then(id=>setNote(id?'Pinned copy added to this tab':'Could not pin this execution'))}>Pin this execution</button>:null}</div>
