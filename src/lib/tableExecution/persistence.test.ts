@@ -128,11 +128,22 @@ it('saved SEC intent recomputes cell errors and source provenance after reopen w
   const store=runtime();store.syncDashboard(d);store.ensureTable(d.id,'statement');await store.settled(d.id);
   const view=store.readView(d.id,'statement');expect(view.status).toBe('ready');
   const batches=[];for await(const b of store.readExecutor(d.id,'statement')!.presented(view.active!,new AbortController().signal))batches.push(b);
-  store.disposeDashboard(d.id);return batches.flatMap(b=>b.rows);
+  const factsView=store.readView(d.id,'facts');
+  const source=await store.readExecutor(d.id,'facts')!.rows(factsView.active!,{groupPath:[],offset:0,limit:200},new AbortController().signal);
+  store.disposeDashboard(d.id);return {rows:batches.flatMap(b=>b.rows),source:source.rows};
  };
- const before=await collect(built.dashboard);expect(before).toHaveLength(1);expect(before[0].cellErrors).toBeTruthy();
+ const before=await collect(built.dashboard);expect(before.rows).toHaveLength(1);expect(before.rows[0].cellErrors).toBeTruthy();
  const after=await collect((await loadDashboards())[0]);expect(after).toEqual(before);
- expect(Object.values(after[0].cellErrors!)).toEqual(expect.arrayContaining([expect.objectContaining({code:'scope',recordPreview:expect.any(Array)})]));
+ // The preview uses worker row identities; the SEC identity survives as a source column.
+ const revenue=after.source.find(row=>row.values.sec_source_row_id==='sec:nvda:3336cc6afa306e9fc087deac');
+ expect(revenue).toBeDefined();
+ const errors=Object.values(after.rows[0].cellErrors!).filter(error=>error.code==='scope');
+ expect(errors.length).toBeGreaterThan(0);
+ for(const error of errors){
+  const preview=error.recordPreview??[];
+  expect(preview).toContain(revenue!.id);
+  expect(preview.every(id=>after.source.some(row=>row.id===id))).toBe(true);
+ }
  const saved=JSON.parse(__read('dashboards/d1.json')!);
  expect(saved.tabs[0].cards[1].tableDefinition).toEqual(built.dashboard.tabs[0].cards[1].tableDefinition);
  for(const c of saved.tabs[0].cards)for(const key of ['rows','active','ready','execution','cellErrors','provenance'])expect(c).not.toHaveProperty(key);

@@ -202,7 +202,7 @@ These names are literal source strings; template interpolation denotes parameter
 Task 2 adds `qualification.test.ts` and `sec-statements/edge-cases.json` after inspecting the inventory above. These are hand-specified synthetic invariants, not SEC facts or candidate-generated goldens. Existing broad assertions remain; additions strengthen exact errors/affected identities and missing financial boundaries.
 
 | Existing coverage | Added assertion / scope |
-|---|---|---|
+|---|---|
 | `missingLines.test.ts` blank/error display | `missing_is_not_zero_missing`, `missing_is_not_zero_explicit_zero`; direct missing-input versus exact zero |
 | `compile.test.ts` duplicate diagnostic | `distinct_id_duplicate_is_refused`, `same_source_identity_is_not_double_counted`; exact scope error/message/IDs, including repeated identity |
 | `linePolicy.test.ts` mixed-context boolean refusal | `mixed_company_and_currency_refuse_company/currency/unit`; exact error/message/IDs |

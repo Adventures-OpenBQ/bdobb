@@ -437,6 +437,82 @@
                 ]
               }
             }
+          },
+          "memory": {
+            "type": "object",
+            "properties": {
+              "peakRssBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "wasmBufferBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sampler": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  },
+                  "intervalMs": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "required": [
+              "peakRssBytes",
+              "wasmBufferBytes"
+            ]
+          },
+          "retained": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "symbol": {
+                  "type": "string"
+                },
+                "cycle": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rssBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "heapUsedBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "symbol",
+                "cycle",
+                "rssBytes",
+                "heapUsedBytes"
+              ]
+            }
           }
         },
         "allOf": [
@@ -461,9 +537,150 @@
           }
         ]
       }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "cpuCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memoryBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "defaultNodeHeapBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "execArgv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locale": {
+          "type": "object",
+          "properties": {
+            "locale": {
+              "type": "string"
+            },
+            "calendar": {
+              "type": "string"
+            },
+            "numberingSystem": {
+              "type": "string"
+            },
+            "timeZone": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxRows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxInputBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxStateBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxPivotColumns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxBatchBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxCachedBlockBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxConcurrentTransfers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policy": {
+          "type": "string"
+        },
+        "preparseReservation": {
+          "type": "string"
+        },
+        "enforcement": {
+          "type": "string"
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "bulk",
+            "statement",
+            "ticks"
+          ]
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sampling": {
+          "type": "string"
+        },
+        "classification": {
+          "type": "string"
+        },
+        "referencePolicy": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "rows"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
-  "$comment": "report.mjs is the semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract.",
+  "$comment": "report.mjs remains the required semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract. Metadata allows optional extension fields; null memory values mean unknown, never zero.",
   "allOf": [
     {
       "if": {
