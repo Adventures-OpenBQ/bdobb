@@ -4,46 +4,48 @@ Target: release/v4. Inventory baseline: `ed169dd1d6f0ba88cf5a8a2bb0945efaba27d82
 
 `Existing` means an assertion was located, not that it satisfies the entire requirement or has run here. Paths in the table are under `src/lib/statementModel/`, except `resultStore`, `linkedAnalytical` under `src/lib/tableExecution/` and the new verifier under `scripts/pivot-qualification/`. Required engine/platform execution remains a gap until attributable results exist. Correctness and required platform evidence gate release; performance is advisory. Limits/calendar changes are excluded.
 
-| Spec | Requirement | Located assertion file | Named assertion | Coverage / gap | Tier | Required environment |
-|---|---|---|---|---|---|---|
-| A | Missing versus zero; negatives; optional/required lines | missingLines.test.ts | long shape: an optional line with no facts is blank, not #ERROR | Existing partial; new explicit zero/negative golden | PR | Node/TS and WASM |
-| A | Distinct duplicate fact IDs and duplicate row identities | compile.test.ts | duplicateFactsFailWithoutRevisionGuess | Existing partial; new distinct-ID/identity cases | PR | Node/TS and WASM |
-| A | Original/amended filing as-of selection | — | — | New; not run | PR | Node/TS and WASM |
-| A | Multiple companies, currencies, units; no silent mixed totals | linePolicy.test.ts | refuses mixed company currency and unit and preserves incoming errors | Existing refusal; new separate-company comparison | PR | Node/TS and WASM |
-| A | Annual/quarter overlap; fiscal boundaries; 52/53-week evidence | compile.test.ts | annualQuarterOverlapBlocked | Existing overlap; new real fiscal-boundary execution | PR | Node/TS and WASM |
-| A | Flow accumulation, stock endpoints, single refusal | linePolicy.test.ts | stockFlowRatioScopesDiffer: flow sums, stock selects latest explicit endpoint, single refuses rollup | Existing | PR | Node/TS and WASM |
-| A | Dependency scope, hidden formulas, required errors | compile.test.ts | hidden derived member remains a valid formula dependency | Existing; see assertion inventory | PR | Node/TS and WASM |
-| A | Absent, mapped and derived lines; reported versus calculated gross profit | catalog.test.ts | keeps provider aliases distinct and cash observations stock | Existing partial; new SEC execution | PR | Node/TS and WASM |
-| A | 98 facts / 110 Decimal cells, safe integers, fractional conversion refusal | verify-fixtures.node.mjs | unchanged_corpus_has_98_facts_and_110_expected_cells | New fixture verification passed; engine execution not run | PR | Node built-ins |
-| A | Refusal kind/scope/affected identities | linePolicy.test.ts | rejects duplicate stock facts before endpoint selection and incomplete flow spans | Existing partial; new identity assertions | PR | Node/TS and WASM |
-| B | Same seeded filter/sort/group/split/select/unselect/clear/reset/source trace | — | — | New; not run | PR fixed / extended rotating | TS + built WASM |
-| B | Values, errors, identities/order, subset, completeness, provenance | resultStore.test.ts | all responses preserve context and chart/subset IDs and revisions | Existing partial; new differential trace | PR / extended | TS + built WASM |
-| B | Explicit [] yields zero; clear/no selection yields eligible rows; removed identities | — | — | New dedicated regression; prior external fix is not suite evidence | PR | TS + WASM workers |
-| B | Typed collisions/nulls/formulas; saved seeds/traces and minimization | — | — | New; not run | PR / extended | TS + built WASM |
-| B | Stable IDs/dependencies beyond viewport | compile.test.ts | derived row selection survives reconciliation and reorder | Existing partial; new viewport-independent parity | Extended | TS + WASM |
-| C | Company/line switching, empty filter, all/clear/reset, error selection | — | — | New; not run | PR short / extended | Browser workers |
-| C | Chains/siblings: Statement, value chart, original raw drilldown | resultStore.test.ts | reselected child reaches chart and subset while sibling stays excluded | Existing unit seam; new browser chain | PR / extended | Chromium workers |
-| C | Excluded units, missing chart fields, renamed USD allowlist | — | — | New; not run; general unit guard out of scope | Extended | Browser workers |
-| C | Delayed/out-of-order, cancel, dispose/remount, source revision during transfer | — | — | New; not run | Extended | Transport fault injection + browser |
-| C | Stale coherent figures; successful empty clears; errors never current numeric | — | — | New visible-output acceptance; not run | Extended | Chromium/WebKit |
-| D | Pinned definitions/mappings/links/export-import | persistence.test.ts | snapshotReopensWithoutCatalog: Workspace interchange carries the exact pinned snapshot and remaps linked owners | Existing serialization; new app restart/local data | Extended / release | Browser + native macOS |
-| D | Durable selections versus session viewer params; reset/defaults | updates.test.ts | resets local changes while preserving bindings and Page membership | Existing model reset; new lifecycle acceptance | Extended / release | Browser + native macOS |
-| D | Missing/replaced local files, template labels/versions, chart fields | updates.test.ts | maps all stable semantic references across version prefixes without consulting display labels | Existing template mapping; new missing-file/chart acceptance | Extended | Browser + native macOS |
-| D | Public provenance; no private evaluator state or upstream formula replay | linkedAnalytical.test.ts | treats upstream formula columns as received values without replaying the producer formula | Existing unit coverage; new lifecycle acceptance | PR / extended | Node + browser workers |
-| D | Cross-window both directions and viewer persistence contract | — | — | New; not run | Release | Native macOS windows |
-| E | Worker termination, malformed input, documented row/column/byte limits | — | — | New qualification scenarios; not run | Extended | Browser workers |
-| E | Interrupted subset/refused acquisition; first/replacement failures; no partial completion | — | — | New fault matrix; not run | Extended | Transport seams + browser |
-| E | Previous coherent stale/error result; retry/reset recovers in-app | — | — | New; not run | Extended / release | Browser + native macOS |
-| F | Bulk 100k / 1m / 3,658,551 rows preserves duplicates/units/versions | — | — | New external benchmark; not run; bulk is not certified Statement | Release advisory | External SEC bulk + native process |
-| F | Certified attainable size and labeled valid synthetic cardinality | — | — | New; not run; 98-fact corpus is correctness only | Release advisory | External certified/synthetic manifests |
-| F | Stable hashed and prefix samples; skew/cardinality/missing/duplicate observations | — | — | New; not run | Release advisory | External data + deterministic sampler |
-| F | Phase timing, usable view, responsiveness, peak RSS versus WASM buffer | — | — | New; not run | Release advisory | Browser + OS instrumentation |
-| F | Repeated warm cycles/memory retention; cold/warm fresh isolated runs | — | — | New; not run | Release advisory | Sequential isolated builds/processes |
-| F | Five alternating observations or exploratory fewer; all samples/median/range | — | — | New; not run; no p95 claim or threshold gate | Release advisory | Pinned machine/runtime/locale/limits/checksums |
-| G | Both engines; Chromium/WebKit browser workers | — | — | New qualification execution; not run in Task 1 | PR / extended | Built WASM + browsers |
-| G | Native Tauri lifecycle/worker/import checklist | — | — | New; not run | Release required | Available macOS device |
-| G | Narrow viewport, coarse pointer, keyboard, scrolling/virtualization | — | — | New; not run | Extended / release | Browser + native macOS |
-| G | Other OS/devices remain unqualified; unrun/unsupported distinct | — | — | New evidence classification; not run | Release required | Explicit device inventory |
+| ID | Spec | Requirement | Located assertion file | Named assertion | Coverage / gap | Tier | Required environment |
+|---|---|---|---|---|---|---|---|
+| PIVOT-A-01 | A | Missing versus zero; negatives; optional/required lines | missingLines.test.ts | long shape: an optional line with no facts is blank, not #ERROR | Existing partial; new explicit zero/negative golden | PR | Node/TS and WASM |
+| PIVOT-A-02 | A | Distinct duplicate fact IDs and duplicate row identities | compile.test.ts | duplicateFactsFailWithoutRevisionGuess | Existing partial; new distinct-ID/identity cases | PR | Node/TS and WASM |
+| PIVOT-A-03 | A | Original/amended filing as-of selection | — | — | New; not run | PR | Node/TS and WASM |
+| PIVOT-A-04 | A | Multiple companies, currencies, units; no silent mixed totals | linePolicy.test.ts | refuses mixed company currency and unit and preserves incoming errors | Existing refusal; new separate-company comparison | PR | Node/TS and WASM |
+| PIVOT-A-05 | A | Annual/quarter overlap; fiscal boundaries; 52/53-week evidence | compile.test.ts | annualQuarterOverlapBlocked | Existing overlap; new real fiscal-boundary execution | PR | Node/TS and WASM |
+| PIVOT-A-06 | A | Flow accumulation, stock endpoints, single refusal | linePolicy.test.ts | stockFlowRatioScopesDiffer: flow sums, stock selects latest explicit endpoint, single refuses rollup | Existing | PR | Node/TS and WASM |
+| PIVOT-A-07 | A | Dependency scope, hidden formulas, required errors | compile.test.ts | hidden derived member remains a valid formula dependency | Existing; see assertion inventory | PR | Node/TS and WASM |
+| PIVOT-A-08 | A | Absent, mapped and derived lines; reported versus calculated gross profit | catalog.test.ts | keeps provider aliases distinct and cash observations stock | Existing partial; new SEC execution | PR | Node/TS and WASM |
+| PIVOT-A-09 | A | 98 facts / 110 Decimal cells, safe integers, fractional conversion refusal | verify-fixtures.node.mjs | unchanged_corpus_has_98_facts_and_110_expected_cells | New fixture verification passed; engine execution not run | PR | Node built-ins |
+| PIVOT-A-10 | A | Refusal kind/scope/affected identities | linePolicy.test.ts | rejects duplicate stock facts before endpoint selection and incomplete flow spans | Existing partial; new identity assertions | PR | Node/TS and WASM |
+| PIVOT-B-01 | B | Same seeded filter/sort/group/split/select/unselect/clear/reset/source trace | — | — | New; not run | PR fixed / extended rotating | TS + built WASM |
+| PIVOT-B-02 | B | Values, errors, identities/order, subset, completeness, provenance | resultStore.test.ts | all responses preserve context and chart/subset IDs and revisions | Existing partial; new differential trace | PR / extended | TS + built WASM |
+| PIVOT-B-03 | B | Explicit [] yields zero; clear/no selection yields eligible rows; removed identities | — | — | New dedicated regression; prior external fix is not suite evidence | PR | TS + WASM workers |
+| PIVOT-B-04 | B | Typed collisions/nulls/formulas; saved seeds/traces and minimization | — | — | New; not run | PR / extended | TS + built WASM |
+| PIVOT-B-05 | B | Stable IDs/dependencies beyond viewport | compile.test.ts | derived row selection survives reconciliation and reorder | Existing partial; new viewport-independent parity | Extended | TS + WASM |
+| PIVOT-C-01 | C | Company/line switching, empty filter, all/clear/reset, error selection | — | — | New; not run | PR short / extended | Browser workers |
+| PIVOT-C-02 | C | Chains/siblings: Statement, value chart, original raw drilldown | resultStore.test.ts | reselected child reaches chart and subset while sibling stays excluded | Existing unit seam; new browser chain | PR / extended | Chromium workers |
+| PIVOT-C-03 | C | Excluded units, missing chart fields, renamed USD allowlist | — | — | New; not run; general unit guard out of scope | Extended | Browser workers |
+| PIVOT-C-04 | C | Delayed/out-of-order, cancel, dispose/remount, source revision during transfer | — | — | New; not run | Extended | Transport fault injection + browser |
+| PIVOT-C-05 | C | Stale coherent figures; successful empty clears; errors never current numeric | — | — | New visible-output acceptance; not run | Extended | Chromium/WebKit |
+| PIVOT-D-01 | D | Pinned definitions/mappings/links/export-import | persistence.test.ts | snapshotReopensWithoutCatalog: Workspace interchange carries the exact pinned snapshot and remaps linked owners | Existing serialization; new app restart/local data | Extended / release | Browser + native macOS |
+| PIVOT-D-02 | D | Durable selections versus session viewer params; reset/defaults | updates.test.ts | resets local changes while preserving bindings and Page membership | Existing model reset; new lifecycle acceptance | Extended / release | Browser + native macOS |
+| PIVOT-D-03 | D | Missing/replaced local files, template labels/versions, chart fields | updates.test.ts | maps all stable semantic references across version prefixes without consulting display labels | Existing template mapping; new missing-file/chart acceptance | Extended | Browser + native macOS |
+| PIVOT-D-04 | D | Public provenance; no private evaluator state or upstream formula replay | linkedAnalytical.test.ts | treats upstream formula columns as received values without replaying the producer formula | Existing unit coverage; new lifecycle acceptance | PR / extended | Node + browser workers |
+| PIVOT-D-05 | D | Cross-window both directions and viewer persistence contract | — | — | New; not run | Release | Native macOS windows |
+| PIVOT-E-01 | E | Worker termination, malformed input, documented row/column/byte limits | — | — | New qualification scenarios; not run | Extended | Browser workers |
+| PIVOT-E-02 | E | Interrupted subset/refused acquisition; first/replacement failures; no partial completion | — | — | New fault matrix; not run | Extended | Transport seams + browser |
+| PIVOT-E-03 | E | Previous coherent stale/error result; retry/reset recovers in-app | — | — | New; not run | Extended / release | Browser + native macOS |
+| PIVOT-F-01 | F | Bulk 100k / 1m / 3,658,551 rows preserves duplicates/units/versions | — | — | New external benchmark; not run; bulk is not certified Statement | Release advisory | External SEC bulk + native process |
+| PIVOT-F-02 | F | Certified attainable size and labeled valid synthetic cardinality | — | — | New; not run; 98-fact corpus is correctness only | Release advisory | External certified/synthetic manifests |
+| PIVOT-F-03 | F | Stable hashed and prefix samples; skew/cardinality/missing/duplicate observations | — | — | New; not run | Release advisory | External data + deterministic sampler |
+| PIVOT-F-04 | F | Phase timing, usable view, responsiveness, peak RSS versus WASM buffer | — | — | New; not run | Release advisory | Browser + OS instrumentation |
+| PIVOT-F-05 | F | Repeated warm cycles/memory retention; cold/warm fresh isolated runs | — | — | New; not run | Release advisory | Sequential isolated builds/processes |
+| PIVOT-F-06 | F | Five alternating observations or exploratory fewer; all samples/median/range | — | — | New; not run; no p95 claim or threshold gate | Release advisory | Pinned machine/runtime/locale/limits/checksums |
+| PIVOT-G-01 | G | Both engines; Chromium/WebKit browser workers | — | — | New qualification execution; not run in Task 1 | PR / extended | Built WASM + browsers |
+| PIVOT-G-02 | G | Native Tauri lifecycle/worker/import checklist | — | — | New; not run | Release required | Available macOS device |
+| PIVOT-G-03 | G | Narrow viewport, coarse pointer, keyboard, scrolling/virtualization | — | — | New; not run | Extended / release | Browser + native macOS |
+| PIVOT-G-04 | G | Other OS/devices remain unqualified; unrun/unsupported distinct | — | — | New evidence classification; not run | Release required | Explicit device inventory |
+
+Stable IDs in the table are mirrored in [`pivot-requirements.json`](pivot-requirements.json), consumed by the release report. Additional `PIVOT-N-*` IDs split required native lifecycle subitems; `PIVOT-E-refusal` tracks refusal-only negative capability. See [`pivot-release-qualification.md`](pivot-release-qualification.md) for evidence and decision rules.
 
 ## Reproducible portable corpus
 
@@ -200,7 +202,7 @@ These names are literal source strings; template interpolation denotes parameter
 Task 2 adds `qualification.test.ts` and `sec-statements/edge-cases.json` after inspecting the inventory above. These are hand-specified synthetic invariants, not SEC facts or candidate-generated goldens. Existing broad assertions remain; additions strengthen exact errors/affected identities and missing financial boundaries.
 
 | Existing coverage | Added assertion / scope |
-|---|---|
+|---|---|---|
 | `missingLines.test.ts` blank/error display | `missing_is_not_zero_missing`, `missing_is_not_zero_explicit_zero`; direct missing-input versus exact zero |
 | `compile.test.ts` duplicate diagnostic | `distinct_id_duplicate_is_refused`, `same_source_identity_is_not_double_counted`; exact scope error/message/IDs, including repeated identity |
 | `linePolicy.test.ts` mixed-context boolean refusal | `mixed_company_and_currency_refuse_company/currency/unit`; exact error/message/IDs |

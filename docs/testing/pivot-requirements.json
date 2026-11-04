@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "targetPlatform": "macos-arm64",
+  "requirements": [
+    {
+      "id": "PIVOT-A-01",
+      "description": "Missing versus zero; negatives; optional/required lines",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-02",
+      "description": "Distinct duplicate fact IDs and duplicate row identities",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-03",
+      "description": "Original/amended filing as-of selection",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-04",
+      "description": "Multiple companies, currencies, units; no silent mixed totals",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-05",
+      "description": "Annual/quarter overlap; fiscal boundaries; 52/53-week evidence",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-06",
+      "description": "Flow accumulation, stock endpoints, single refusal",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-07",
+      "description": "Dependency scope, hidden formulas, required errors",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-08",
+      "description": "Absent, mapped and derived lines; reported versus calculated gross profit",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-09",
+      "description": "98 facts / 110 Decimal cells, safe integers, fractional conversion refusal",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-A-10",
+      "description": "Refusal kind/scope/affected identities",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-B-01",
+      "description": "Same seeded filter/sort/group/split/select/unselect/clear/reset/source trace",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-B-02",
+      "description": "Values, errors, identities/order, subset, completeness, provenance",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-B-03",
+      "description": "Explicit [] yields zero; clear/no selection yields eligible rows; removed identities",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-B-04",
+      "description": "Typed collisions/nulls/formulas; saved seeds/traces and minimization",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-B-05",
+      "description": "Stable IDs/dependencies beyond viewport",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-C-01",
+      "description": "Company/line switching, empty filter, all/clear/reset, error selection",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-C-02",
+      "description": "Chains/siblings: Statement, value chart, original raw drilldown",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-C-03",
+      "description": "Excluded units, missing chart fields, renamed USD allowlist",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-C-04",
+      "description": "Delayed/out-of-order, cancel, dispose/remount, source revision during transfer",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-C-05",
+      "description": "Stale coherent figures; successful empty clears; errors never current numeric",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-D-01",
+      "description": "Pinned definitions/mappings/links/export-import",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-D-02",
+      "description": "Durable selections versus session viewer params; reset/defaults",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-D-03",
+      "description": "Missing/replaced local files, template labels/versions, chart fields",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-D-04",
+      "description": "Public provenance; no private evaluator state or upstream formula replay",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-D-05",
+      "description": "Cross-window both directions and viewer persistence contract",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-E-01",
+      "description": "Worker termination, malformed input, documented row/column/byte limits",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-E-02",
+      "description": "Interrupted subset/refused acquisition; first/replacement failures; no partial completion",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-E-03",
+      "description": "Previous coherent stale/error result; retry/reset recovers in-app",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-01",
+      "description": "Bulk 100k / 1m / 3,658,551 rows preserves duplicates/units/versions",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-02",
+      "description": "Certified attainable size and labeled valid synthetic cardinality",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-03",
+      "description": "Stable hashed and prefix samples; skew/cardinality/missing/duplicate observations",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-04",
+      "description": "Phase timing, usable view, responsiveness, peak RSS versus WASM buffer",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-05",
+      "description": "Repeated warm cycles/memory retention; cold/warm fresh isolated runs",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-F-06",
+      "description": "Five alternating observations or exploratory fewer; all samples/median/range",
+      "required": false,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-G-01",
+      "description": "Both engines; Chromium/WebKit browser workers",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-G-02",
+      "description": "Native Tauri lifecycle/worker/import checklist",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-G-03",
+      "description": "Narrow viewport, coarse pointer, keyboard, scrolling/virtualization",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-G-04",
+      "description": "Other OS/devices remain unqualified; unrun/unsupported distinct",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-restart",
+      "description": "Actual disk persistence and restart",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-import-export",
+      "description": "Native UI export/import roundtrip",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-viewer",
+      "description": "Viewer reset and persisted authoring",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-cross-window",
+      "description": "Native visible propagation and exact revision chain",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-worker",
+      "description": "Native worker failure and recovery",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-repair",
+      "description": "Missing/replaced source and template/chart repair",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-input",
+      "description": "Native keyboard/coarse pointer/offscreen rows",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-N-server-sync",
+      "description": "Real server sync with configured environment",
+      "required": true,
+      "scope": "native",
+      "negativeCapability": false
+    },
+    {
+      "id": "PIVOT-E-refusal",
+      "description": "Documented unsupported negative capability refusal assertions only",
+      "required": true,
+      "scope": "portable",
+      "negativeCapability": true
+    }
+  ]
+}
