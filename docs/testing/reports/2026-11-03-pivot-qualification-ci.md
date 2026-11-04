@@ -1,5 +1,7 @@
 # Task 8 implementer report
 
+> Historical implementation-validation record. This report describes the original isolated candidate, which included the unmerged Rust optimization stack. Its 6,709-test result and 7d549040 workflow pin are historical; they do not assert passing parity on the clean release/v4 delivery base. The current delivery workflow pins 8e067284f44ddbccc604c96a4217bfc409642cc8. Rust qualification still depends on PR #25 and its prerequisites; current delivery checks are reported separately. Required native/server qualification remains INCOMPLETE.
+
 Status: DONE_WITH_CONCERNS. CI/report/checklist implementation complete locally; real release decision remains **INCOMPLETE**, not qualified. Publication belongs to root after whole-branch review. Worktree `/Volumes/Builds/openbq-benchmarks/pivot-test-program-work`, baseline `c3cf728c70874cd7d50fb764d5a328c32dc121fd`.
 
 ## Implementation
