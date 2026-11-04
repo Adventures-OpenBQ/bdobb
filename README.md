@@ -1,5 +1,18 @@
 # BDOBB — Adventures in OpenBQ
 
+Main contains **BDOBB v11**. Earlier episode builds remain on their release
+branches and tags.
+
+**TemporalDB is optional.** Normal provider widgets, tables, charts and Rita can
+run with their configured services without deploying TemporalDB. The separate
+TemporalDB integration adds retained query results, temporal selection,
+saved-policy acquisition and protected replay. Widgets bound to that service
+need it connected; they do not become a prerequisite for the rest of BDOBB.
+BDOBB is AGPL-3.0-only; TemporalDB has its own Business Source License 1.1 and is
+licensed/deployed separately. See the [TemporalDB help](src/help/guide/temporaldb-explorer.md).
+
+The following sections retain the historical episode checkpoints.
+
 This repository reconstructs a clean release sequence. Version 3.0.0 provides the reference-build desktop: ordinary tables and charts, documents, grouped controls, Run and numeric refresh, backend Apps discovery, and compatible JSON interchange.
 
 Cron refetch is deferred. Analytical Pivot, workspaces and Statement are not part of v3.
