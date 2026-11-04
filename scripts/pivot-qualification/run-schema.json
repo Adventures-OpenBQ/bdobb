@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Advisory pivot qualification run v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "engine",
+    "identity",
+    "environment",
+    "workload",
+    "limits",
+    "status",
+    "observations",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "engine": {
+      "enum": [
+        "typescript",
+        "rust"
+      ]
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed",
+        "not-run",
+        "unsupported"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "commit",
+        "artifact",
+        "source",
+        "dataset",
+        "reference",
+        "model",
+        "actions",
+        "environment"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "artifact": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "dataset": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reference": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "actions": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "environment": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "variant",
+          "temperature",
+          "status",
+          "outcome",
+          "numericalCheck",
+          "stages",
+          "memory",
+          "retained"
+        ],
+        "properties": {
+          "variant": {
+            "enum": [
+              "baseline",
+              "candidate"
+            ]
+          },
+          "temperature": {
+            "enum": [
+              "cold",
+              "warm"
+            ]
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "not-run",
+              "unsupported"
+            ]
+          },
+          "stages": {
+            "type": "object",
+            "required": [
+              "acquisitionParse",
+              "registrationEncoding",
+              "compute",
+              "filterReselection",
+              "transfer",
+              "chartDelivery",
+              "rendering",
+              "totalUsableView"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "acquisitionParse": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "registrationEncoding": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "compute": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "filterReselection": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "transfer": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "chartDelivery": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "rendering": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "totalUsableView": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "passed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "const": "completed"
+                },
+                "numericalCheck": {
+                  "const": "passed"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$comment": "report.mjs is the semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract."
+}
