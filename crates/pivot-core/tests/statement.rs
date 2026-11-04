@@ -502,3 +502,22 @@ fn independent_financial_boundary_oracles() {
         }
     }
 }
+
+#[test]
+fn statement_preparation_preserves_wide_long_and_refused_source_snapshots() {
+    for name in [
+        "statement-income-wide",
+        "statement-income-long",
+        "statement-annual-quarter-overlap",
+    ] {
+        let (_, input, definition, runtime) = fixture(name);
+        let before = serde_json::to_value(&input).unwrap();
+        let result = calculate_view(&input, &definition, &SelectionSpec::None, &runtime, &Host);
+        assert_eq!(
+            result.is_ok(),
+            name != "statement-annual-quarter-overlap",
+            "{name}"
+        );
+        assert_eq!(serde_json::to_value(&input).unwrap(), before, "{name}");
+    }
+}
