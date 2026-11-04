@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Advisory pivot qualification run v1",
+  "description": "Structural description only. JSON Schema validation does not certify measurement admission. Runtime semantic validation, artifact and evidence checksum verification, cross-record identity checks, and per-phase observer validity are mandatory before admitting measurements.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -504,6 +505,42 @@
                     "null"
                   ],
                   "minimum": 0
+                },
+                "sessionId": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "object",
+                  "required": [
+                    "widgetId",
+                    "input",
+                    "model",
+                    "output"
+                  ],
+                  "properties": {
+                    "widgetId": {
+                      "type": "string"
+                    },
+                    "input": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "model": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "output": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "wasmBufferBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
                 }
               },
               "required": [
@@ -673,6 +710,195 @@
                   "null"
                 ],
                 "minimum": 0
+              }
+            }
+          },
+          "sessions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "symbol",
+                "revision"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "symbol": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "object",
+                  "required": [
+                    "widgetId",
+                    "input",
+                    "model",
+                    "output"
+                  ],
+                  "properties": {
+                    "widgetId": {
+                      "type": "string"
+                    },
+                    "input": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "model": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "output": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "trace": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "sessionId",
+                "action",
+                "revision",
+                "modelChecksum",
+                "resultChecksum",
+                "numericalCheck"
+              ],
+              "properties": {
+                "sessionId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "action": {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "apply",
+                        "sort",
+                        "linkedRead",
+                        "empty-clear",
+                        "explicit-empty",
+                        "clear-reset"
+                      ]
+                    }
+                  }
+                },
+                "revision": {
+                  "type": "object",
+                  "required": [
+                    "widgetId",
+                    "input",
+                    "model",
+                    "output"
+                  ],
+                  "properties": {
+                    "widgetId": {
+                      "type": "string"
+                    },
+                    "input": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "model": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "output": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "modelChecksum": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "resultChecksum": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "numericalCheck": {
+                  "const": "passed"
+                },
+                "ms": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "consumers": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "probe": {
+                  "type": "object",
+                  "required": [
+                    "accounting",
+                    "events",
+                    "counters"
+                  ],
+                  "properties": {
+                    "accounting": {
+                      "const": "inclusive-do-not-sum"
+                    },
+                    "events": {
+                      "type": "array"
+                    },
+                    "counters": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responsiveness": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "enum": [
+                  "measured",
+                  "not-run"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "samples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "action",
+                    "blockedMs"
+                  ],
+                  "properties": {
+                    "action": {
+                      "type": "string"
+                    },
+                    "blockedMs": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  }
+                }
               }
             }
           },
@@ -979,6 +1205,37 @@
       "items": {
         "type": "string"
       }
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "contract",
+        "instrumented",
+        "sampleIntervalMs"
+      ],
+      "properties": {
+        "contract": {
+          "const": "performance-trace/1"
+        },
+        "instrumented": {
+          "type": "boolean"
+        },
+        "sampleIntervalMs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 5000
+        },
+        "buildIdentityChecksum": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "build": {
+          "type": "object"
+        }
+      }
     }
   },
   "$comment": "report.mjs remains the required semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract. Metadata allows optional extension fields; null memory values mean unknown, never zero.",
@@ -1018,6 +1275,39 @@
                   "bucketEncoding": "interval-index",
                   "outputBucketUnit": "epoch-seconds"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "performance"
+        ]
+      },
+      "then": {
+        "properties": {
+          "observations": {
+            "items": {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "passed"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "then": {
+                "required": [
+                  "process",
+                  "sessions",
+                  "trace",
+                  "responsiveness"
+                ]
               }
             }
           }

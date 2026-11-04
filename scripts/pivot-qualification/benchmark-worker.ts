@@ -12,11 +12,12 @@ import {loadRustRuntime,createRustExecutor,type WasmModule,type ResourceLimits} 
 import {estimatedHostBytes} from '../../src/lib/tableExecution/rust/resources';
 import {datasetFromBytes} from '../../src/lib/localTableData';
 import {hashJSON,hashBytes,unavailable} from './report.mjs';
+import {performanceTrace} from './performance-trace';
 import {tickDataset,tickModel,checkTickBars} from './ticks.mjs';
 const chunks=[];for await(const chunk of process.stdin)chunks.push(chunk);
 type BoundFile={sha256:string};
 type TickConfig={granularity:'1s'|'1m';venue:'Q'|'24EQ';countOnly?:boolean};
-type QualificationRequest={paths:Record<'input'|'reference'|'model'|'actions',string>;engine:'typescript'|'rust';limits:ResourceLimits;manifest:{format:string;kind:'statement'|'ticks'|'bulk';rows:number;tick:TickConfig;input:BoundFile;reference:BoundFile & {policy:unknown};model:BoundFile;actions:BoundFile};modulePath:string;wasmPath:string};
+type QualificationRequest={paths:Record<'input'|'reference'|'model'|'actions',string>;engine:'typescript'|'rust';limits:ResourceLimits;manifest:{format:string;kind:'statement'|'ticks'|'bulk';rows:number;tick:TickConfig;input:BoundFile;reference:BoundFile & {policy:unknown;independent?:boolean};model:BoundFile;actions:BoundFile};modulePath:string;wasmPath:string;performance?:Parameters<typeof performanceTrace>[0]['request']['performance']};
 type Company={symbol:string;dataset:WidgetDataset;definition:TableDefinition;runtimeParams?:Parameters<TableExecutor['applyModel']>[7]};
 type QualifiedWasm=WasmModule & {default(options:{module_or_path:Uint8Array}):Promise<{memory:WebAssembly.Memory}>};
 type Stage={status:'measured';ms:number}|{status:'not-run';reason:string};
@@ -56,7 +57,8 @@ try{
  assert.equal(companies.reduce((n,c)=>n+c.dataset.rows.length,0),manifest.rows);
  for(const c of companies)estimatedHostBytes(c.dataset,limits.maxInputBytes);
  const sessions:Array<{symbol:string;dataset:WidgetDataset;definition:TableDefinition;runtimeParams?:Parameters<TableExecutor['applyModel']>[7];executor:TableExecutor;revision:Revision}>=[];for(const c of companies)sessions.push({...c,executor:await create(),revision:{widgetId:'qualification',input:1,model:0,output:0}});
- for(const nextTemperature of ['cold','warm'] as const){
+ if(request.performance){await performanceTrace({sessions,request:{...request,performance:request.performance},expected,parseMs,wasm,getMemory:()=>({peakRssBytes:process.resourceUsage().maxRSS*1024,wasmBufferBytes:wasmMemory?.buffer.byteLength??null}),emit,setPhase:(t:'cold'|'warm',stage:string)=>{temperature=t;phase(stage);}});}
+ else for(const nextTemperature of ['cold','warm'] as const){
   temperature=nextTemperature;
   const stages:Record<string,Stage>=unavailable('Unavailable in headless Node transport') as Record<string,Stage>;const totals={registrationEncoding:0,compute:0,filterReselection:0,transfer:0,chartDelivery:0};let cells=0;const retained=[];const results=[];
   const signal=new AbortController().signal;

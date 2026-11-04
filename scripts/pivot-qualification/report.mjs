@@ -27,6 +27,7 @@ export function validateRun(r){
   }
   if(o.status==='passed'){assert.equal(o.outcome,'completed','Refusal cannot pass');assert.equal(o.numericalCheck,'passed');assert.equal(o.stages.compute.status,'measured');}
   if(['profile-refused','timeout'].includes(o.outcome)){assert.notEqual(o.status,'passed');assert.notEqual(o.stages.totalUsableView.status,'measured');}
+  for(const k of ['peakRssBytes','wasmBufferBytes'])assert.ok(o.memory[k]===null||Number.isSafeInteger(o.memory[k])&&o.memory[k]>=0);
   if(o.process){
    const p=o.process;assert.ok(p.id&&Array.isArray(p.samples)&&Array.isArray(p.errors));
    assert.ok(p.pid===null||Number.isSafeInteger(p.pid)&&p.pid>=0);
@@ -48,7 +49,25 @@ export function validateRun(r){
    if(r.status==='passed')assert.equal(o.observer.status,'completed','Incomplete observer cannot be accepted');
   }
   if(o.outcome==='observer-incomplete')assert.notEqual(o.status,'passed');
-  for(const k of ['peakRssBytes','wasmBufferBytes'])assert.ok(o.memory[k]===null||Number.isSafeInteger(o.memory[k])&&o.memory[k]>=0);
+ }
+ if(r.performance){
+  assert.equal(r.performance.contract,'performance-trace/1');assert.equal(typeof r.performance.instrumented,'boolean');
+  const processes=new Map(),sessions=new Map();
+  for(const o of r.observations){
+   if(o.status!=='passed')continue;
+   assert.ok(o.process?.id&&Number.isSafeInteger(o.process.pid),'Missing process identity');
+   assert.ok(Array.isArray(o.sessions)&&o.sessions.length,'Missing sessions');
+   assert.ok(Array.isArray(o.trace)&&o.trace.length,'Missing action trace');
+   assert.ok(o.checkedCells>0,'Omitted independent correctness validation');
+   const key=`${o.variant}/${o.index}`;
+   if(processes.has(key))assert.equal(o.process.id,processes.get(key),'Warm process changed');
+   else {assert.ok(![...processes.values()].includes(o.process.id),'Cold process reused');processes.set(key,o.process.id);}
+   const ids=o.sessions.map(s=>s.id);
+   if(sessions.has(key))assert.deepEqual(ids,sessions.get(key),'Warm session changed');else sessions.set(key,ids);
+   for(const t of o.trace){assert.ok(ids.includes(t.sessionId),'Trace session mismatch');assert.equal(t.numericalCheck,'passed');assert.match(t.resultChecksum??'',/^[a-f0-9]{64}$/);for(const k of ['input','model','output'])assert.ok(Number.isSafeInteger(t.revision?.[k])&&t.revision[k]>0,'Missing action revision');}
+   for(const sample of o.process.samples){if(sample.status==='unavailable'){assert.equal(sample.treeRssBytes,null);assert.ok(sample.reason);assert.deepEqual(sample.processes,[]);continue;}assert.equal(sample.status,'measured');assert.ok(sample.processes.some(p=>p.pid===o.process.pid),'Measured sample missing root');assert.equal(new Set(sample.processes.map(p=>p.pid)).size,sample.processes.length,'Duplicate PID RSS');assert.equal(sample.treeRssBytes,sample.processes.reduce((n,p)=>n+p.rssBytes,0),'Tree RSS is not unique PID sum');}
+   const peaks=o.process.samples.filter(s=>s.status==='measured').map(s=>s.treeRssBytes);assert.equal(o.process.sampledTreePeakBytes,peaks.length?Math.max(...peaks):null,'Unavailable samples must not become measured zero');
+  }
  }
  if(r.status==='passed')assert.ok(r.observations.every(o=>o.status==='passed'),'Nonpassing observation');
  return r;
