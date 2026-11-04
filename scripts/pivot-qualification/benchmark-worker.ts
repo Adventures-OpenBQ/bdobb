@@ -16,7 +16,10 @@ import {tickDataset,tickModel,checkTickBars} from './ticks.mjs';
 const chunks=[];for await(const chunk of process.stdin)chunks.push(chunk);
 const request=JSON.parse(Buffer.concat(chunks).toString());
 const {paths,engine,limits,manifest}=request;
-const observations=[];let failureStage='acquisitionParse';
+let temperature:'cold'|'warm'='cold';
+const emit=(event:unknown)=>process.stdout.write(JSON.stringify(event)+'\n');
+const phase=(stage:string)=>emit({type:'phase',temperature,stage});
+phase('acquisitionParse');
 let wasm:any;let wasmMemory:WebAssembly.Memory|undefined;
 async function create(){
  let handler:any;
@@ -46,15 +49,16 @@ try{
  assert.equal(companies.reduce((n:number,c:any)=>n+c.dataset.rows.length,0),manifest.rows);
  for(const c of companies)estimatedHostBytes(c.dataset,limits.maxInputBytes);
  const sessions:Array<{symbol:string;dataset:WidgetDataset;definition:TableDefinition;runtimeParams?:Parameters<TableExecutor['applyModel']>[7];executor:TableExecutor;revision:Revision}>=[];for(const c of companies)sessions.push({...c,executor:await create(),revision:{widgetId:'qualification',input:1,model:0,output:0}});
- for(const temperature of ['cold','warm']){
+ for(const nextTemperature of ['cold','warm'] as const){
+  temperature=nextTemperature;
   const stages:any=unavailable('Unavailable in headless Node transport');const totals:any={registrationEncoding:0,compute:0,filterReselection:0,transfer:0,chartDelivery:0};let cells=0;const retained=[];const results=[];
   const signal=new AbortController().signal;
   for(const c of sessions){
    const {executor,dataset,definition,revision}=c;
-   failureStage='registrationEncoding';let t=performance.now();if(temperature==='cold')await executor.registerInput(dataset,1,signal);totals.registrationEncoding+=performance.now()-t;
+   phase('registrationEncoding');let t=performance.now();if(temperature==='cold')await executor.registerInput(dataset,1,signal);totals.registrationEncoding+=performance.now()-t;
    const apply=async(selection:any)=>{revision.model++;revision.output++;return executor.applyModel(definition,selection,{...revision},signal,true,undefined,[],c.runtimeParams);};
-   failureStage='compute';t=performance.now();const ready=await apply({kind:'none'});totals.compute+=performance.now()-t;
-   failureStage='transfer';t=performance.now();const rows=[];for await(const batch of executor.presented({...revision},signal))rows.push(...batch.rows);totals.transfer+=performance.now()-t;
+   phase('compute');t=performance.now();const ready=await apply({kind:'none'});totals.compute+=performance.now()-t;
+   phase('transfer');t=performance.now();const rows=[];for await(const batch of executor.presented({...revision},signal))rows.push(...batch.rows);totals.transfer+=performance.now()-t;
    if(manifest.kind==='statement'){
     for(const [year,lines] of Object.entries(expected[c.symbol]))for(const [line,value] of Object.entries(lines as any)){
      const row:any=rows.find((r:any)=>r.groupPath?.some((p:any)=>p.value===line));
@@ -64,8 +68,8 @@ try{
    }else if(manifest.kind==='ticks'){cells+=checkTickBars(rows,expected,manifest.tick);
    }else{assert.equal(rows.length,expected.rows);assert.equal(new Set(rows.map((r:any)=>r.id)).size,expected.uniqueIds);}
    results.push(hashJSON(rows));
-   failureStage='chartDelivery';t=performance.now();await executor.chartData({...revision},ready.columns.map((c:any)=>c.id),signal);totals.chartDelivery+=performance.now()-t;
-   failureStage='filterReselection';t=performance.now();for(let cycle=0;cycle<5;cycle++){
+   phase('chartDelivery');t=performance.now();await executor.chartData({...revision},ready.columns.map((c:any)=>c.id),signal);totals.chartDelivery+=performance.now()-t;
+   phase('filterReselection');t=performance.now();for(let cycle=0;cycle<5;cycle++){
     await apply({kind:'explicit',ids:[]});let empty=0;for await(const batch of executor.presented({...revision},signal))empty+=batch.rows.length;assert.equal(empty,0);
     await apply({kind:'none'});let reset=0;for await(const batch of executor.presented({...revision},signal))reset+=batch.rows.length;assert.equal(reset,rows.length);
     retained.push({symbol:c.symbol,cycle,rssBytes:process.memoryUsage().rss,heapUsedBytes:process.memoryUsage().heapUsed});
@@ -75,8 +79,28 @@ try{
   for(const [key,ms] of Object.entries(totals))stages[key]={status:'measured',ms};
   stages.acquisitionParse=temperature==='cold'?{status:'measured',ms:parseMs}:{status:'not-run',reason:'Warm same-session input retained'};
   if(temperature==='warm')stages.registrationEncoding={status:'not-run',reason:'Warm same-session registration retained'};
-  observations.push({temperature,status:'passed',outcome:'completed',numericalCheck:'passed',checkedCells:cells,resultChecksum:hashJSON(results),stages,retained,responsiveness:{status:'not-run',reason:'No browser input event loop'},memory:{peakRssBytes:process.resourceUsage().maxRSS*1024,wasmBufferBytes:wasmMemory?.buffer.byteLength??null,sampler:{method:'resourceUsage high-water mark',scope:'child-process',intervalMs:null}}});
+  emit({
+   type:'observation',
+   observation:{
+    temperature,status:'passed',outcome:'completed',numericalCheck:'passed',
+    checkedCells:cells,resultChecksum:hashJSON(results),stages,retained,
+    responsiveness:{status:'not-run',reason:'No browser input event loop'},
+    memory:{
+     peakRssBytes:process.resourceUsage().maxRSS*1024,
+     wasmBufferBytes:wasmMemory?.buffer.byteLength??null,
+     sampler:{method:'resourceUsage high-water mark',scope:'child-process',intervalMs:null},
+    },
+   },
+  });
  }
+ phase('disposal');
  for(const c of sessions)c.executor.dispose();
- console.log(JSON.stringify({observations}));
-}catch(error:any){console.log(JSON.stringify({outcome:error?.descriptor?.code==='RESOURCE_LIMIT'?'profile-refused':error?.code==='ERR_ASSERTION'?'numerical-mismatch':'execution-failure',error:String(error),failureStage,memory:{peakRssBytes:process.resourceUsage().maxRSS*1024,wasmBufferBytes:wasmMemory?.buffer.byteLength??null}}));}
+ emit({type:'done'});
+}catch(error:any){
+ emit({
+  type:'failure',
+  outcome:error?.descriptor?.code==='RESOURCE_LIMIT'?'profile-refused':error?.code==='ERR_ASSERTION'?'numerical-mismatch':'execution-failure',
+  error:String(error),
+  memory:{peakRssBytes:process.resourceUsage().maxRSS*1024,wasmBufferBytes:wasmMemory?.buffer.byteLength??null},
+ });
+}
