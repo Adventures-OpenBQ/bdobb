@@ -1406,7 +1406,7 @@ Ruled 2026-10-29 (Q1 = D, Q2 = A, Q3 = A, Q4 = B). Apply these diffs:
 
 ### Task C1: Worktree and patched baseline
 
-- [ ] **Step 1:** 
+- [ ] **Step 1:**
 
 ```bash
 C=~/Developer/adventures-in-openbb-articles/openbq-relaunch/agent-rita-bdobb
