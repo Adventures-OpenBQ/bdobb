@@ -260,7 +260,7 @@ pub(super) fn reconcile(
     }
     v.selection = match &v.selection {
         SelectionSpec::Explicit { .. } => {
-            if ids.is_empty() {
+            if ids.is_empty() && count > 0 {
                 SelectionSpec::None
             } else {
                 let covered: BTreeSet<_> = ids
