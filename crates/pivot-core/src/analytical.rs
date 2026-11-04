@@ -83,10 +83,12 @@ pub fn calculate_view(
             .unwrap_or(&WireValue::Missing),
     )
     .map_err(|errors| diagnostic(&errors[0].code, &errors[0].message))?;
-    let mut source = input.clone();
+    // Table preparation reads the source; Statement enrichment detaches before mutation.
+    let mut source = std::borrow::Cow::Borrowed(input);
     let mut effective = definition.clone();
     let mut execution = None;
     if let Some(AnalyticalDefinition::Statement(intent)) = &definition.definition.analytical {
+        let source = source.to_mut();
         crate::validation::validate_analytical_recipe_source(
             definition
                 .analytical_recipe_source
@@ -120,7 +122,7 @@ pub fn calculate_view(
                 }
             }
             let (long, descriptors) = crate::statement::unpivot_dataset(&source, spec)?;
-            source = long;
+            *source = long;
             compiled.execution.source_columns_by_row_id = descriptors;
         }
         let item_field = compiled.model.categories[1].source_field_id.clone();
