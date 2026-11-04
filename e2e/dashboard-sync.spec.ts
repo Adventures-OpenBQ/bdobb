@@ -284,4 +284,32 @@ test.describe("Workspace dashboard sync against a real key-mode server", () => {
     await expect(page.getByRole("tab", { name: "Extra" })).toHaveCount(0);
     await expect.poll(() => ownedTabKeys(request, uuid).then((k) => k.length), { timeout: 15_000 }).toBe(1);
   });
+  test("SEC pinned definitions, links and selections survive remote sync and persisted relaunch", async ({page,request}) => {
+    const {buildSecDashboard}=await import('./fixtures/sec-statements/fixtureBuilder');
+    const built=buildSecDashboard();
+    const files=seedFiles({d1:built.dashboard.name});
+    files['dashboards/d1.json']=JSON.stringify(built.dashboard);
+    await seedApp(page,{...files,...built.files});
+    await expect.poll(()=>ownedNames(request),{timeout:15000}).toContain(built.dashboard.name);
+    const response=await request.get(`${SERVER.origin}/pro/dash/sync/owned`,{headers:authHeaders()});
+    expect(response.ok()).toBe(true);
+    const owned=(await response.json()) as {owned:Record<string,{content:{data?:{name?:string}}}>};
+    const content=Object.values(owned.owned).find(r=>r.content.data?.name===built.dashboard.name)!.content;
+    const restored=await page.evaluate(async content=>{
+      const path='/src/lib/workspaceDashboards.ts';
+      const {fromWorkspace}=await import(path) as typeof import('../src/lib/workspaceDashboards');
+      return fromWorkspace(content,'dashboard',[]);
+    },content);
+    const original=built.dashboard.tabs[0].cards;const cards=restored.tabs[0].cards;
+    for(let i=0;i<original.length;i++) {
+      expect(cards[i].tableDefinition).toEqual(original[i].tableDefinition);
+      expect(cards[i].tableSelection).toEqual(original[i].tableSelection);
+      expect(cards[i].linkedChart).toEqual(original[i].linkedChart);
+      if(original[i].linkedSource)expect(cards[i].linkedSource?.sourceWidgetId).toBe(cards[original.findIndex(c=>c.id===original[i].linkedSource!.sourceWidgetId)].id);
+    }
+    const before=await read(page,'dashboards/d1.json');
+    await relaunch(page);
+    await expect.poll(()=>read(page,'dashboards/d1.json')).toBe(before);
+  });
+
 });
