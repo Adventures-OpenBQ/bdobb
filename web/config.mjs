@@ -65,6 +65,7 @@ export function readConfig(env = process.env) {
   if (env.TEMPORALDB_V11 !== undefined && !["true", "false"].includes(env.TEMPORALDB_V11)) throw new Error("TEMPORALDB_V11: true or false");
   const temporalDB = env.TEMPORALDB_V11 === "true";
   if (temporalDB && !backend) throw new Error("TEMPORALDB_V11 requires backend ingress");
+  if (temporalDB && !tableRelayToken) throw new Error("TEMPORALDB_V11 requires TABLE_RELAY_TOKEN");
   // Rita through the door's /ai (openbq-docker funnel-gateway rita-policy.mjs). Only with a
   // gateway, which must have "rita": true; the door forces the model and sets the limits.
   if (env.PREVIEW_RITA !== undefined && !["true", "false"].includes(env.PREVIEW_RITA)) throw new Error("PREVIEW_RITA: true or false");

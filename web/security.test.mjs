@@ -1372,20 +1372,23 @@ test("SSRM relays get their own deadline (default 170 s, at most 300 s); managed
 
 test('v11 TemporalDB opt-in relays exact methods with CSRF checks and gateway-only credentials', async t => {
   assert.throws(()=>readConfig({...env,TEMPORALDB_V11:'yes'}));
+  assert.throws(()=>readConfig({...env,TEMPORALDB_V11:'true'}));
   assert.throws(()=>readConfig({...env,TEMPORALDB_V11:'true',BACKEND_GATEWAY_ORIGIN:'',BACKEND_GATEWAY_TOKEN:''}));
   const calls=[];
-  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"query_id":"fixture"}',{status:201,headers:{'Content-Type':'application/json','Set-Cookie':'secret=leak'}});}});
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true',TABLE_RELAY_TOKEN:'synthetic_distinct_relay_token_for_tests'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"query_id":"fixture"}',{status:201,headers:{'Content-Type':'application/json','Set-Cookie':'secret=leak'}});}});
   const path='/temporal/temporal/v1/queries';
-  const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret'};
+  const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret','X-Table-Principal':'github:999','X-Table-Relay-Token':'forged'};
   assert.equal((await call(path,{method:'POST',headers,body:'{}'})).status,201);
   assert.equal(calls[0].url,env.BACKEND_GATEWAY_ORIGIN+path);
   assert.equal(calls[0].options.method,'POST');assert.equal(calls[0].options.headers.Authorization,'Bearer '+env.BACKEND_GATEWAY_TOKEN);
   assert.equal(calls[0].options.headers.Cookie,undefined);
+  assert.equal(calls[0].options.headers['X-Table-Principal'],'github:42');
+  assert.equal(calls[0].options.headers['X-Table-Relay-Token'],'synthetic_distinct_relay_token_for_tests');
   assert.equal((await call(path,{method:'POST',headers:{...headers,'Content-Type':'application/jsonp'},body:'{}'})).status,415);
   assert.equal((await call(path,{method:'POST',headers:{Cookie:await cookie(),'Content-Type':'application/json'},body:'{}'})).status,403);
   assert.equal((await call('/temporal/temporal/v1/captures',{method:'POST',headers,body:'{}'})).status,404);
   const off=await fixture(t);assert.equal((await off.call(path,{headers:{Cookie:await cookie()}})).status,404);
-  const seed=bootstrap(readConfig({...env,TEMPORALDB_V11:'true'}));assert.match(seed,/preview-temporal/);assert.doesNotMatch(seed,new RegExp(env.BACKEND_GATEWAY_TOKEN));
+  const seed=bootstrap(readConfig({...env,TEMPORALDB_V11:'true',TABLE_RELAY_TOKEN:'synthetic_distinct_relay_token_for_tests'}));assert.match(seed,/preview-temporal/);assert.doesNotMatch(seed,new RegExp(env.BACKEND_GATEWAY_TOKEN));assert.doesNotMatch(seed,/synthetic_distinct_relay_token_for_tests/);
 });
 
 test('v11 policy overlay has its own immutable source receipt; v10 is independently pinned', () => {
@@ -1399,7 +1402,7 @@ test('v11 policy overlay has its own immutable source receipt; v10 is independen
 
 test('TemporalDB failures preserve safe status semantics without leaking upstream secrets or expiring browser sessions', async t => {
   let status=401;
-  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async()=>new Response('{"credential":"secret-upstream"}',{status,headers:{'Content-Type':'application/json','Set-Cookie':'secret-upstream','WWW-Authenticate':'secret-upstream'}})});
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true',TABLE_RELAY_TOKEN:'synthetic_distinct_relay_token_for_tests'}),fetchUpstream:async()=>new Response('{"credential":"secret-upstream"}',{status,headers:{'Content-Type':'application/json','Set-Cookie':'secret-upstream','WWW-Authenticate':'secret-upstream'}})});
   for(const [upstream,want] of [[401,502],[302,502],[500,502],[403,403],[409,409],[429,429]]) {
     status=upstream;
     const answer=await call('/temporal/temporal/v1/queries',{headers:{Cookie:await cookie()}});
@@ -1459,7 +1462,7 @@ test("maximum names and replacement-decoded bytes fit the derived state bound an
 
 test('protected publication relay preserves exact paths and existing browser authentication', async t => {
   const calls=[];
-  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{
+  const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true',TABLE_RELAY_TOKEN:'synthetic_distinct_relay_token_for_tests'}),fetchUpstream:async(url,options)=>{
     calls.push({url,options});return new Response('{}',{status:200,headers:{'Content-Type':'application/json'}});
   }});
   const id='11111111-1111-4111-8111-111111111111';
@@ -1489,9 +1492,9 @@ test('v11 explorer routes come with the vendored TemporalDB policy', async () =>
 
 test('v11 acquisition relay preserves exact run intent, CSRF and backend credential isolation',async t=>{
  const calls=[];
- const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"state":"waiting"}',{status:202,headers:{'Content-Type':'application/json'}});}});
+ const {call}=await fixture(t,{config:readConfig({...env,TEMPORALDB_V11:'true',TABLE_RELAY_TOKEN:'synthetic_distinct_relay_token_for_tests'}),fetchUpstream:async(url,options)=>{calls.push({url,options});return new Response('{"state":"waiting"}',{status:202,headers:{'Content-Type':'application/json'}});}});
  const id='11111111-1111-4111-8111-111111111111',root='/temporal/temporal/v1';
- const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret'};
+ const headers={Cookie:await cookie(),Origin:env.APP_ORIGIN,'Content-Type':'application/json',Authorization:'Bearer browser-secret','X-Table-Principal':'github:999','X-Table-Relay-Token':'forged'};
  const body=JSON.stringify({policy_id:id,policy_revision:3,idempotency_key:'widget:stable'});
  for(const [method,path] of [['GET',root+'/acquisition/policies'],['GET',root+'/acquisition/policies/'+id+'?revision=3'],['POST',root+'/acquisition/preflight'],['POST',root+'/runs'],['GET',root+'/runs/'+id],['DELETE',root+'/runs/'+id]]){
   assert.equal((await call(path,{method,headers,...(method==='POST'?{body}:{})})).status,202);

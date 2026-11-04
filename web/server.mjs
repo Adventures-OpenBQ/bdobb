@@ -384,7 +384,9 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
           body = await jsonBody(req, 1048576);
           if (typeof body === "number") return reply(res, body);
         } else if (req.headers["transfer-encoding"] || (req.headers["content-length"] && req.headers["content-length"] !== "0")) return reply(res, 405);
-        const headers = gatewayHeaders(cfg);
+        const headers = { ...gatewayHeaders(cfg),
+          "X-Table-Relay-Token": cfg.tableRelayToken,
+          "X-Table-Principal": `github:${who.id}` };
         if (body !== undefined) headers["Content-Type"] = "application/json";
         const response = await fetchUpstream(cfg.backend + route.path, {
           method: req.method, headers, body, redirect: "error", signal: AbortSignal.timeout(12000),
