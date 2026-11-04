@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 45
     env:
       # Schedule always checks out this exact reviewed candidate, not default HEAD.
-      CANDIDATE_SHA: ${{ inputs.candidate_sha || '2aff39850fa356f31d342e86ee772537cc791d12' }}
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || 'cfc27c836b0ebc77505af39361820f8e44b50a94' }}
       TRACE_SEED: ${{ inputs.trace_seed || '20261103' }}
     steps:
       - name: Validate literal inputs before checkout
