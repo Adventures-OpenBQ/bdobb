@@ -75,3 +75,43 @@ it('opens the acquisition run execution without starting a second query',async()
  await pager.next(signal());expect(c.submitRun).toHaveBeenCalledTimes(1);expect(c.start).not.toHaveBeenCalled();
  expect(vi.mocked(c.submitRun).mock.calls[0][0]).toMatchObject({query_id:definition.query_id,revision:2,policy_revision:3});
 });
+
+it('accepts renewed opaque cursors only for the same retained page and advances with the renewed capability',async()=>{
+ const c=client();let renewal=0;
+ vi.mocked(c.page).mockImplementation(async(_id,cursor)=>{const index=Number(cursor?.split(':')[0]??0);return {...page,total_count:2001,rows:rows(index*1000,index===2?1:1000),next_cursor:index===2?null:`${index+1}:${++renewal}`};});
+ const pager=createTemporalPager(c,fixed);await pager.open(signal());await pager.next(signal());
+ expect(await pager.previous(signal())).toMatchObject({pageNumber:1,offset:0});
+ expect(await pager.next(signal())).toMatchObject({pageNumber:2,offset:1000});
+ expect(vi.mocked(c.page).mock.calls.at(-1)?.[1]).toBe('1:3');
+});
+
+it('rejects changed retained page contents even when the opaque cursor is unchanged',async()=>{
+ const c=client(),pager=createTemporalPager(c,fixed);await pager.open(signal());await pager.next(signal());
+ const changed=rows(0,1000);changed[512].Revenue=-999;
+ vi.mocked(c.page).mockResolvedValueOnce({...page,total_count:2001,rows:changed,next_cursor:'p1'});
+ await expect(pager.previous(signal())).rejects.toThrow(/page.*content/i);
+ expect(await pager.open(signal())).toMatchObject({pageNumber:2,offset:1000});
+});
+
+it('detects signed-zero changes in revisited floating-point pages',async()=>{
+ const c=client(),schema=[{name:'Revenue',type:'double',nullable:false}];
+ const first={...page,schema,receipt:{...receipt,schema},rows:[{Revenue:-0},{Revenue:1}],total_count:3,next_cursor:'last'};
+ vi.mocked(c.page).mockResolvedValueOnce(first).mockResolvedValueOnce({...first,rows:[{Revenue:2}],next_cursor:null}).mockResolvedValueOnce({...first,rows:[{Revenue:0},{Revenue:1}]});
+ const pager=createTemporalPager(c,fixed);await pager.open(signal());await pager.next(signal());
+ await expect(pager.previous(signal())).rejects.toThrow(/page.*content/i);
+});
+
+it.each(['mutation','abort'] as const)('protects admission across the asynchronous content digest: %s',async kind=>{
+ const c=client(),raw={...page,total_count:2001,rows:rows(0,1000),next_cursor:'p1'};
+ vi.mocked(c.page).mockResolvedValueOnce(raw);
+ let release!:()=>void;const barrier=new Promise<void>(resolve=>{release=resolve;});
+ const original=crypto.subtle.digest.bind(crypto.subtle),digest=vi.spyOn(crypto.subtle,'digest').mockImplementationOnce(async(algorithm,data)=>{await barrier;return original(algorithm,data);});
+ const control=new AbortController(),pager=createTemporalPager(c,fixed),pending=pager.open(control.signal);
+ try{
+  await vi.waitFor(()=>expect(digest).toHaveBeenCalledTimes(1));
+  raw.rows[0].Revenue=999;
+  if(kind==='abort')control.abort();release();
+  if(kind==='abort')await expect(pending).rejects.toMatchObject({name:'AbortError'});
+  else expect((await pending).page.rows[0].Revenue).toBe(0);
+ }finally{release();digest.mockRestore();pager.dispose();}
+});

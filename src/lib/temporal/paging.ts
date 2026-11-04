@@ -17,6 +17,18 @@ export interface TemporalPager {
 const MAX_PAGES=1000,MAX_ROWS=1000,MAX_CURSOR=4096,MAX_PAGE_BYTES=2*1024*1024;
 const check=(signal:AbortSignal)=>{if(signal.aborted)throw new DOMException('Temporal acquisition cancelled','AbortError');};
 const canonical=(value:unknown)=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a.localeCompare(b))):item);
+/** Preserve row order and signed zero; object-key order is not page content. */
+function rowCanonical(value:unknown):string {
+ if(Array.isArray(value))return '['+value.map(rowCanonical).join(',')+']';
+ if(value!==null&&typeof value==='object')return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+rowCanonical((value as Record<string,unknown>)[key])).join(',')+'}';
+ if(Object.is(value,-0))return '-0';
+ const encoded=JSON.stringify(value);if(encoded===undefined)throw new Error('Invalid temporal page value');return encoded;
+}
+async function pageDigest(rows:ResultPage['rows']):Promise<string>{
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(rowCanonical(rows)));
+ return [...new Uint8Array(digest)].map(n=>n.toString(16).padStart(2,'0')).join('');
+}
+
 function delay(signal:AbortSignal){return new Promise<void>((resolve,reject)=>{
  const abort=()=>{clearTimeout(timer);reject(new DOMException('Temporal acquisition cancelled','AbortError'));};
  const timer=setTimeout(()=>{signal.removeEventListener('abort',abort);resolve();},250);
@@ -28,7 +40,7 @@ export function createTemporalPager(client:TemporalClient,binding:QueryBinding,o
  let run:ReturnType<typeof createTemporalRun>|undefined;
  let disposed=false,busy=false,active:AbortController|undefined,executionId:string|undefined,revision:number|undefined,identity:string|undefined,current:TemporalPage|undefined;
  let commit:()=>void=()=>{};
- const history:Array<{cursor:string|undefined;offset:number;next:string|null}>=[];
+ const history:Array<{cursor:string|undefined;offset:number;next:string|null;digest:string}>=[];
  async function transaction(work:(signal:AbortSignal)=>Promise<TemporalPage>,signal:AbortSignal){
   check(signal);if(disposed)throw new DOMException('Temporal pager disposed','AbortError');
   if(busy)throw new Error('Temporal page request already in progress');
@@ -73,7 +85,7 @@ export function createTemporalPager(client:TemporalClient,binding:QueryBinding,o
   const offset=known?.offset??(index===0?0:current!.offset+current!.page.rows.length);
   const raw=await client.page(executionId!,cursor,signal);check(signal);
   if(new TextEncoder().encode(JSON.stringify(raw)).byteLength>MAX_PAGE_BYTES)throw new Error('Temporal page byte limit exceeded');
-  const page=parseResultPage(raw),r=page.receipt;
+  const page=structuredClone(parseResultPage(raw)),r=page.receipt;
   if(r.execution_id!==executionId)throw new Error('Execution receipt identity mismatch');
   if(intent.kind==='query'&&(r.query_id!==intent.queryId||r.query_revision!==revision))throw new Error('Query receipt revision mismatch');
   if(page.rows.length>MAX_ROWS)throw new Error('Temporal page row limit exceeded');
@@ -81,11 +93,13 @@ export function createTemporalPager(client:TemporalClient,binding:QueryBinding,o
   if(page.next_cursor!==null&&(!page.rows.length||history.slice(0,index+1).some(item=>item.cursor===page.next_cursor)||page.next_cursor===cursor))throw new Error('Non-progressing temporal page cursor');
   const nextIdentity=canonical({receipt:r,schema:page.schema,count:page.total_count,countQuality:page.count_quality,complete:page.complete,truncated:page.truncated});
   if(identity!==undefined&&identity!==nextIdentity)throw new Error('Temporal page receipt, schema or count changed');
-  if(known&&known.next!==page.next_cursor)throw new Error('Temporal page cursor changed');
+  if(known&&(known.next===null)!==(page.next_cursor===null))throw new Error('Temporal page terminal cursor changed');
   if(page.count_quality==='exact'&&(offset+page.rows.length>page.total_count||page.next_cursor!==null&&offset+page.rows.length>=page.total_count||page.next_cursor===null&&page.complete&&!page.truncated&&offset+page.rows.length!==page.total_count))throw new Error('Temporal page count mismatch');
+  const digest=await pageDigest(page.rows);check(signal);
+  if(known&&known.digest!==digest)throw new Error('Temporal page contents changed');
   // Publish only after all checks; failed reads never replace accepted data/history.
   check(signal);const accepted={page:structuredClone(page),executionId:executionId!,offset,pageNumber:index+1,hasPrevious:index>0,hasNext:page.next_cursor!==null};
-  commit=()=>{identity=nextIdentity;history[index]={cursor,offset,next:page.next_cursor};current=accepted;};
+  commit=()=>{identity=nextIdentity;history[index]={cursor,offset,next:page.next_cursor,digest};if(page.next_cursor!==null&&history[index+1])history[index+1].cursor=page.next_cursor;current=accepted;};
   return accepted;
  }
  return {

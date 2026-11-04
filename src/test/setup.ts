@@ -4,6 +4,9 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+import {webcrypto} from "node:crypto";
+// jsdom supplies randomUUID but omits the browser WebCrypto digest API.
+if(!globalThis.crypto.subtle)Object.defineProperty(globalThis.crypto,"subtle",{value:webcrypto.subtle,configurable:true});
 
 /**
  * Every module the app reads or writes a file through imports
