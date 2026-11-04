@@ -55,16 +55,20 @@ function qualify(input: CategorizedRows, constraints: SourceConstraints, excludi
       errors.push(error); rows.forEach(row => exclude(row, { kind: 'error', error: { ...error, recordIds: [row.id] } }));
     }
   }
-  const defs: ColumnDef<DatasetRow>[] = columns.map(c => ({ id: c.field, accessorFn: row => accessorFor(c)(row.values), filterFn: filterFnFor(kinds.get(c.field) ?? 'none') as ColumnDef<DatasetRow>['filterFn'] }));
-  const table = createTable<DatasetRow>({ data: rows, columns: defs, state: { columnFilters: filters.filter(f => columns.some(c => c.field === f.id) && kinds.get(f.id) !== 'none') }, onStateChange: () => {}, renderFallbackValue: undefined, getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel() });
-  const matching = new Set(table.getFilteredRowModel().rows.map(r => r.original.id));
+  let matching: Set<string> | undefined;
+  // Without active column filters every source row matches; avoid allocating a full table row model.
+  if (filters.length) {
+    const defs: ColumnDef<DatasetRow>[] = columns.map(c => ({ id: c.field, accessorFn: row => accessorFor(c)(row.values), filterFn: filterFnFor(kinds.get(c.field) ?? 'none') as ColumnDef<DatasetRow>['filterFn'] }));
+    const table = createTable<DatasetRow>({ data: rows, columns: defs, state: { columnFilters: filters.filter(f => columns.some(c => c.field === f.id) && kinds.get(f.id) !== 'none') }, onStateChange: () => {}, renderFallbackValue: undefined, getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel() });
+    matching = new Set(table.getFilteredRowModel().rows.map(r => r.original.id));
+  }
   const search = constraints.search?.toLowerCase();
   for (const row of rows) {
     for (const filter of filters) {
       const error = input.errors.get(row.id)?.get(filter.id);
       if (error) exclude(row, { kind: 'error', error });
     }
-    if (!matching.has(row.id)) exclude(row, { kind: 'column-filter' });
+    if (matching && !matching.has(row.id)) exclude(row, { kind: 'column-filter' });
     if (search && !columns.some(c => String(accessorFor(c)(row.values) ?? '').toLowerCase().includes(search))) {
       const failed = columns.flatMap(c => { const error = input.errors.get(row.id)?.get(c.field); return error ? [error] : []; });
       if (failed.length) failed.forEach(error => exclude(row, { kind: 'error', error }));
