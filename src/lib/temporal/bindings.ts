@@ -8,7 +8,7 @@ export type QueryBinding = ({kind:'query';queryId:string;revisionPolicy:'fixed'|
 export function parseQueryBinding(v:unknown):QueryBinding {
  const fail=()=>{throw new Error('Invalid or future TemporalDB query binding; choose a query to repair it');};
  if(!isRecord(v)||!finiteJson(v))return fail();
- if(v.tableExecution!==undefined){const t=v.tableExecution;if(!isRecord(t)||t.kind!=='managed'||t.version!==1||Object.keys(t).some(k=>!['kind','version','backendId','sourceBackendId'].includes(k))||typeof t.backendId!=='string'||!t.backendId.length||t.backendId.length>256||/[\x00-\x1f\x7f]/.test(t.backendId)||typeof t.sourceBackendId!=='string'||!/^[A-Za-z0-9_.-]{1,128}$/.test(t.sourceBackendId)||['.','..'].includes(t.sourceBackendId))return fail();}
+ if(v.tableExecution!==undefined){const t=v.tableExecution;if(!isRecord(t)||t.kind!=='managed'||t.version!==1||Object.keys(t).some(k=>!['kind','version','backendId','sourceBackendId'].includes(k))||typeof t.backendId!=='string'||!t.backendId.length||t.backendId.length>256||Array.from(t.backendId).some(c=>c.charCodeAt(0)<32||c.charCodeAt(0)===127)||typeof t.sourceBackendId!=='string'||!/^[A-Za-z0-9_.-]{1,128}$/.test(t.sourceBackendId)||['.','..'].includes(t.sourceBackendId))return fail();}
  if(v.kind==='execution'){
   if(Object.keys(v).some(k=>!['kind','executionId','tableExecution'].includes(k))||!isUuid(v.executionId))return fail();
  }else if(v.kind==='query'){

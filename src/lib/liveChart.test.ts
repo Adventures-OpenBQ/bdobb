@@ -195,8 +195,7 @@ describe('market timestamp interchange', () => {
     const row = {date: source, open: 1, high: 1, low: 1, close: 1};
     expect(seriesBars([row])[0].time).toBe(Date.parse(utc)/1000);
   });
-  it.each(['2026-02-30', '2026-04-31T09:30:00Z', '2026-01-15T24:00:00Z'])
-  ('rejects invalid calendar/time input %s instead of rolling it over', (date) => {
+  it.each(['2026-02-30', '2026-04-31T09:30:00Z', '2026-01-15T24:00:00Z'])('rejects invalid calendar/time input %s instead of rolling it over', (date) => {
     expect(seriesBars([{date, open:1, high:1, low:1, close:1}])).toEqual([]);
   });
 });

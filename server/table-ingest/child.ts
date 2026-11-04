@@ -29,7 +29,7 @@ async function main() {
       const bytes=Buffer.from(command.bytes,'base64');if(bytes.length>command.limits.maxBytes)throw new Error();
       dataset=await ingestFile(command.name,bytes,command.widgetId,command.inputRevision);
     } else if(command.operation==='backend') {
-      if(command.principal!==undefined&&(typeof command.principal!=='string'||!command.principal.length||command.principal.length>512||command.principal.trim()!==command.principal||/[\x00-\x1f\x7f]/.test(command.principal)))throw Error();
+      if(command.principal!==undefined&&(typeof command.principal!=='string'||!command.principal.length||command.principal.length>512||command.principal.trim()!==command.principal||Array.from(command.principal).some(c=>c.charCodeAt(0)<32||c.charCodeAt(0)===127)))throw Error();
       const path=option('--backend-config');if(!path||(await stat(path)).size>1024*1024)throw new Error();
       const config=JSON.parse(await readFile(path,'utf8')) as ServerBackendConfig;
       dataset=await acquireBackend(command.binding,{...config,principal:command.principal,maxBytes:Math.min(config.maxBytes,command.limits.maxBytes),maxRows:Math.min(config.maxRows,command.limits.maxRows),maxColumns:Math.min(config.maxColumns,command.limits.maxColumns),timeoutMs:Math.min(config.timeoutMs,command.limits.timeoutMs),targetWidgetId:command.widgetId,inputRevision:command.inputRevision});
