@@ -130,12 +130,14 @@ impl Session {
                     self.transfers.len().saturating_add(1),
                     "Concurrent transfer budget exceeded",
                 )?;
-                resources::check(
-                    self.limits.max_state_bytes,
-                    self.retained_bytes()
-                        .saturating_add(resources::estimated(q)),
-                    "Transfer state budget exceeded",
-                )?;
+                if let Some(max) = self.limits.max_state_bytes {
+                    resources::check(
+                        Some(max),
+                        self.retained_bytes()
+                            .saturating_add(resources::estimated(q)),
+                        "Transfer state budget exceeded",
+                    )?;
+                }
                 self.transfers.insert(
                     transfer_id.clone(),
                     Transfer {

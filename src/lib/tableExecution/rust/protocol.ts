@@ -118,15 +118,23 @@ export function decodeResponse(json:string,request:ExecutionRequest,sessionId:nu
 // JSON permits -0, but JSON.stringify rewrites it to 0. Retain floating literals;
 // integer coordinates use their validated canonical zero representation.
 const integerFields=new Set(['protocolVersion','sessionId','input','model','output','inputRevision','resultRevision','outputRevision','offset','limit','sequence','acquiredRowCount','totalRowCount','periodCount','affectedRecordCount','modelWarningCount','decimalPlaces']);
-function stringifyRequest(value:unknown,key=''):string|undefined {
+function stringifyRequest(value:unknown,key='',names=new Map<string,string>()):string|undefined {
  if(value===undefined)return undefined;
  if(typeof value==='number'){
   if(!Number.isFinite(value))throw new Error('Nonfinite structural wire number');
   return Object.is(value,-0)&&!integerFields.has(key)?'-0':JSON.stringify(value);
  }
  if(value===null||typeof value!=='object')return JSON.stringify(value);
- if(Array.isArray(value))return `[${value.map(item=>stringifyRequest(item)??'null').join(',')}]`;
+ if(Array.isArray(value))return `[${value.map(item=>stringifyRequest(item,'',names)??'null').join(',')}]`;
  const fields:string[]=[];
- for(const [name,child] of Object.entries(value)){const encoded=stringifyRequest(child,name);if(encoded!==undefined)fields.push(`${JSON.stringify(name)}:${encoded}`);}
+ // Bounded per-request escaped names avoid repeated formatting and entry-pair arrays.
+ // Only inert validated/converted objects reach this private serializer.
+ for(const name of Object.keys(value)){
+  const encoded=stringifyRequest((value as Record<string,unknown>)[name],name,names);
+  if(encoded===undefined)continue;
+  let escaped=names.get(name);
+  if(escaped===undefined){escaped=JSON.stringify(name);if(names.size<32&&name.length<=64)names.set(name,escaped);}
+  fields.push(`${escaped}:${encoded}`);
+ }
  return `{${fields.join(',')}}`;
 }
