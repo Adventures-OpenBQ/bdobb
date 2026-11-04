@@ -264,13 +264,33 @@ pub fn sort_by_keys<T>(
     }
     Ok(())
 }
+/// Cache identity, not value order. Preserve signed-zero bits and distinguish
+/// numeric pairs from the original typed/ordered Debug encoding for other pairs.
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum ComparisonKey {
+    FiniteNumbers(u8, u64, u64),
+    General(u8, String, String),
+}
+impl ComparisonKey {
+    fn new(mode: u8, a: &WireValue, b: &WireValue) -> Self {
+        if let (WireValue::F64(WireNumber::Finite(a)), WireValue::F64(WireNumber::Finite(b))) =
+            (a, b)
+        {
+            if a.is_finite() && b.is_finite() {
+                return Self::FiniteNumbers(mode, a.to_bits(), b.to_bits());
+            }
+        }
+        Self::General(mode, format!("{a:?}"), format!("{b:?}"))
+    }
+}
+
 /// Bounded per-stage host comparison cache; keys retain types and opaque record order.
 /// Scalar and raw modes use distinct keys under one combined entry limit.
 /// Stage lifetime and cache limits bound memory; eviction only changes callback frequency.
 pub struct CachedOrder<'a> {
     host: &'a dyn ValueOrder,
     limit: usize,
-    entries: std::cell::RefCell<std::collections::BTreeMap<(u8, String, String), Comparison>>,
+    entries: std::cell::RefCell<std::collections::BTreeMap<ComparisonKey, Comparison>>,
 }
 impl<'a> CachedOrder<'a> {
     pub fn new(host: &'a dyn ValueOrder, limit: usize) -> Self {
@@ -291,7 +311,7 @@ impl<'a> CachedOrder<'a> {
         b: &WireValue,
         f: impl FnOnce() -> Result<Comparison, Diagnostic>,
     ) -> Result<Comparison, Diagnostic> {
-        let key = (mode, format!("{a:?}"), format!("{b:?}"));
+        let key = ComparisonKey::new(mode, a, b);
         if let Some(value) = self.entries.borrow().get(&key) {
             return Ok(*value);
         }
