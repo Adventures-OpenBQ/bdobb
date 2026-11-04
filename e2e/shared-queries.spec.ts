@@ -14,7 +14,7 @@ async function service(page:Page){
   else if(path==='/apps.json')data=[];
   else if(path==='/temporal/v1/queries')data={queries:[definition]};
   else if(path===`/temporal/v1/queries/${queryId}`)data=definition;
-  else if(path==='/temporal/v1/executions'){starts++;expect(route.request().postDataJSON()).toMatchObject({revision:2,page_size:1000});data={execution_id:executionId,state:'queued'};}
+  else if(path==='/temporal/v1/executions'){starts++;expect(route.request().postDataJSON()).toMatchObject({revision:2,page_size:100});data={execution_id:executionId,state:'queued'};}
   else if(path===`/temporal/v1/executions/${executionId}`)data={execution_id:executionId,state:'succeeded',error:null};
   else if(path===`/temporal/v1/executions/${executionId}/pages`)data=resultWithPins;
   else {await route.continue();return;}
