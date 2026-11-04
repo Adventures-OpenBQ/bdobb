@@ -43,6 +43,10 @@ Fixed refusal-only passed-label loophole with RED/GREEN regression. Preserved al
 
 Required native worker recovery, exact revision chain, native UI import/export and remaining platform/input evidence remain unrun; real server-sync `.env` unavailable. Actual private native observations not committed. Other OS remain unqualified without blocking a specifically scoped macOS target. Performance refuses/slowdowns do not erase these gaps. No release-qualified claim.
 
-Schedule/dispatch cannot be claimed active from this branch. Default-branch workflow presence/initial activation prerequisite documented using official GitHub docs verified by root 2026-11-03. The scheduled pin will be advanced to the local Task8 implementation commit in a small follow-up; final candidate changes require an intentional reviewed bump.
+Schedule/dispatch cannot be claimed active from this branch. Default-branch workflow presence/initial activation prerequisite documented using official GitHub docs verified by root 2026-11-03. The scheduled pin is advanced to the local Task8 implementation commit `7d54904054cb840bf4b11a655ad68f9ab37b2e6b` in the follow-up; final candidate changes require an intentional reviewed bump.
 
 Inherited open Rust optimization stack (`25e858d619`) remains a publication dependency: root must prevent inherited production commits from accidentally appearing in the final TS/test-infrastructure PR. Task8 contains no Rust/TS production fixes.
+
+## Final follow-up verification
+
+`pnpm exec eslint scripts/pivot-qualification/release-report.mjs scripts/pivot-qualification/release-report.node.mjs` → exit 0, no output. Workflow pin follow-up points to `7d54904054cb840bf4b11a655ad68f9ab37b2e6b`, which contains Task8 scripts/tests. Python BaseLoader parse and full 40-hex SHA comparison to the existing implementation commit passed; docs match. `git diff --check` passed. No broad test repeat for metadata-only pin change.
