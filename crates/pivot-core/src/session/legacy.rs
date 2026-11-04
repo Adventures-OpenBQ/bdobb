@@ -256,6 +256,139 @@ fn build(
     }
     (rows, groups, eligible)
 }
+/// Aggregates which cannot invoke fallible source conversion or host ordering.
+/// Keep the full universe path for operators/sort values whose errors it exposes.
+fn identity_only_safe(input: &SourceDataset, base: &PivotInput) -> bool {
+    let safe = |op: Aggregation| {
+        matches!(
+            op,
+            Aggregation::Sum | Aggregation::Mean | Aggregation::Median | Aggregation::Count
+        )
+    };
+    let aggregates_safe = if let Some(measures) = &base.config.measures {
+        measures.iter().all(|m| m.aggregation.is_none_or(safe))
+    } else {
+        base.config
+            .aggregation_fns
+            .as_ref()
+            .is_none_or(|ops| ops.values().all(|op| safe(*op)))
+    };
+    // Nested descendants are returned in AllMatching toggle arrays; preserve
+    // their existing aggregate-sorted order through the full preparation path.
+    base.config.grouping.len() <= 1
+        && aggregates_safe
+        && base.sorting.iter().all(|sort| {
+            let field = if base.config.grouping.contains(&sort.id) {
+                sort.id.as_str()
+            } else {
+                base.config
+                    .measures
+                    .as_ref()
+                    .and_then(|ms| ms.iter().find(|m| m.id == sort.id))
+                    .map(|m| m.source_field_id.as_str())
+                    .unwrap_or(&sort.id)
+            };
+            input.rows.iter().all(|row| {
+                !matches!(
+                    row.values.get(field),
+                    Some(WireValue::Record(_) | WireValue::Array(_))
+                )
+            })
+        })
+}
+
+type IdentityUniverse = (BTreeSet<String>, BTreeMap<String, Vec<String>>);
+
+/// Only group identity and descendant membership are needed from the unfiltered
+/// no-split universe. Never calculate measures, sort leaves, or clone output rows.
+fn identity_universe(
+    input: &SourceDataset,
+    base: &PivotInput,
+    signature: &str,
+) -> Result<IdentityUniverse, Diagnostic> {
+    debug_assert!(base.config.split.is_empty());
+    // The old unfiltered preparation also converted every declared cell while
+    // building facets. Retain its fallible structured-value validation without
+    // allocating scalar strings or rebuilding counts.
+    for column in &input.columns {
+        for row in &input.rows {
+            if let Some(value @ (WireValue::Record(_) | WireValue::Array(_))) =
+                row.values.get(&column.id)
+            {
+                crate::ordering::string_value(value)?;
+            }
+        }
+    }
+    let known: BTreeMap<_, _> = base.columns.iter().map(|c| (c.field.as_str(), c)).collect();
+    let mut taken = BTreeSet::new();
+    let fields: Vec<_> = base
+        .config
+        .grouping
+        .iter()
+        .filter(|f| known.contains_key(f.as_str()) && taken.insert(f.as_str()))
+        .collect();
+    if !base.config.enabled || fields.is_empty() {
+        return Ok((
+            input.rows.iter().map(|r| r.id.clone()).collect(),
+            BTreeMap::new(),
+        ));
+    }
+    let mut paths: BTreeMap<String, String> = BTreeMap::new();
+    let mut descendants: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    // Borrow a bounded set of raw strings. In a single field, an identical
+    // string always has the same typed/bucketed key and no descendant counts.
+    // Source-wide fallible validation has already covered every row above.
+    let mut seen_strings = BTreeSet::new();
+    for row in &input.rows {
+        if fields.len() == 1 {
+            if let Some(WireValue::String(value)) = row.values.get(fields[0]) {
+                if seen_strings.contains(value.as_str()) {
+                    continue;
+                }
+                if seen_strings.len() < 128 {
+                    seen_strings.insert(value.as_str());
+                }
+            }
+        }
+        let mut path = String::new();
+        let mut ancestors: Vec<String> = vec![];
+        for field in &fields {
+            let bucket = if base.kinds.get(*field) == Some(&FieldKind::Date) {
+                base.config
+                    .buckets
+                    .as_ref()
+                    .and_then(|b| b.get(*field))
+                    .copied()
+                    .unwrap_or(Bucket::Native)
+            } else {
+                Bucket::Native
+            };
+            let value = row.values.get(*field).unwrap_or(&WireValue::Missing);
+            let (key, _) = group_value_key(value, known[field.as_str()], bucket)?;
+            if !path.is_empty() {
+                path.push_str(KEY_SEP);
+            }
+            path.push_str(&key);
+            let id = paths
+                .entry(path.clone())
+                .or_insert_with(|| identity(&path, signature))
+                .clone();
+            descendants.entry(id.clone()).or_default();
+            for ancestor in &ancestors {
+                descendants.get_mut(ancestor).unwrap().insert(id.clone());
+            }
+            ancestors.push(id);
+        }
+    }
+    Ok((
+        descendants.keys().cloned().collect(),
+        descendants
+            .into_iter()
+            .map(|(id, children)| (id, children.into_iter().collect()))
+            .collect(),
+    ))
+}
+
 pub(crate) fn prepare(
     input: &SourceDataset,
     d: &ValidatedDefinition,
@@ -501,14 +634,19 @@ pub(crate) fn prepare(
         && (!d.definition.search.is_empty()
             || state.column_filters.as_ref().is_some_and(|f| !f.is_empty()))
     {
-        let mut raw = d.clone();
-        raw.definition.search.clear();
-        raw.definition.table.column_filters = None;
-        let all = prepare(input, &raw, &SelectionSpec::None, revision, order, true)?;
-        identity_ids = all.identity_ids;
-        hierarchy = all.hierarchy;
-        if !config.split.is_empty() {
-            chart_columns = Some(all.columns);
+        if config.split.is_empty() && identity_only_safe(input, &base) {
+            (identity_ids, hierarchy) = identity_universe(input, &base, &signature)?;
+        } else {
+            // Split domains and fallible operators retain full unfiltered preparation.
+            let mut raw = d.clone();
+            raw.definition.search.clear();
+            raw.definition.table.column_filters = None;
+            let all = prepare(input, &raw, &SelectionSpec::None, revision, order, true)?;
+            identity_ids = all.identity_ids;
+            hierarchy = all.hierarchy;
+            if !config.split.is_empty() {
+                chart_columns = Some(all.columns);
+            }
         }
     } else if !config.split.is_empty() {
         chart_columns = Some(output.clone());
@@ -580,3 +718,7 @@ pub(crate) fn prepare(
         input_periodicity,
     })
 }
+
+#[cfg(test)]
+#[path = "legacy_identity_tests.rs"]
+mod identity_tests;
