@@ -10,15 +10,58 @@ impl Evaluator<'_> {
         id: &str,
         meta: &mut FormulaMetadata,
     ) -> CellResult {
-        merge(
-            meta,
-            &FormulaMetadata {
-                scopes: vec![at.clone()],
-                value_kind: matches!(op, Aggregation::Count | Aggregation::UniqueCount)
-                    .then_some(ValueKind::Number),
-                ..Default::default()
-            },
-        );
+        if op == Aggregation::Sum {
+            if let FormulaAst::Reference {
+                target: ReferenceTarget::Field,
+                id: field,
+            } = ast
+            {
+                if self.shared_sums.eligible(field) {
+                    if let Some((value, has_column)) = self.shared_sums.get(field, at) {
+                        scope_metadata(meta, at, op);
+                        if has_column {
+                            self.source_column(meta, field);
+                        }
+                        return CellResult::Value(value);
+                    }
+                    if shared_sum::bounded_scope(at) {
+                        self.shared_sums.make_room();
+                        let mut delta = FormulaMetadata::default();
+                        let result = self.uncached_input(ast, op, at, id, &mut delta);
+                        merge(meta, &delta);
+                        if let CellResult::Value(WireValue::F64(WireNumber::Finite(v))) = &result {
+                            if v.is_finite() {
+                                self.shared_sums.remember(
+                                    field,
+                                    at,
+                                    &WireValue::F64(WireNumber::Finite(*v)),
+                                    delta,
+                                );
+                            }
+                        }
+                        return result;
+                    }
+                }
+            }
+        }
+        self.uncached_input(ast, op, at, id, meta)
+    }
+    fn source_column(&self, meta: &mut FormulaMetadata, input: &str) {
+        if !meta.source_columns.iter().any(|c| c.id == input) {
+            if let Some(c) = self.pool.columns.iter().find(|c| c.id == input) {
+                meta.source_columns.push(c.clone());
+            }
+        }
+    }
+    fn uncached_input(
+        &mut self,
+        ast: &FormulaAst,
+        op: Aggregation,
+        at: &CalculationScope,
+        id: &str,
+        meta: &mut FormulaMetadata,
+    ) -> CellResult {
+        scope_metadata(meta, at, op);
         let q = self.errors(at);
         if !q.is_empty() {
             return self.fail("blocked-dependency", &q[0].message, id, at, &q, &[]);
@@ -28,7 +71,7 @@ impl Evaluator<'_> {
             .pool
             .rows_in(&at.source_record_ids)
             .into_iter()
-            .filter(|r| seen.insert(r.id.clone()))
+            .filter(|r| seen.insert(r.id.as_str()))
             .collect();
         if !rows.is_empty()
             && matches!(op, Aggregation::First | Aggregation::Last)
@@ -47,7 +90,7 @@ impl Evaluator<'_> {
         let mut failures = vec![];
         let empty_cells = BTreeMap::new();
         for row in &rows {
-            let row_scope = CalculationScope {
+            let row_scope = || CalculationScope {
                 source_record_ids: BTreeSet::from([row.id.clone()]),
                 ..Default::default()
             };
@@ -56,8 +99,9 @@ impl Evaluator<'_> {
                 let FormulaAst::Reference { target, id: field } = node else {
                     return None;
                 };
-                let mut inputs = vec![field.clone()];
-                if *target == ReferenceTarget::Formula {
+                let inputs: std::borrow::Cow<'_, [String]> = if *target == ReferenceTarget::Formula
+                {
+                    let mut inputs = vec![field.clone()];
                     let mut idx = 0;
                     while idx < inputs.len() {
                         let current = inputs[idx].clone();
@@ -75,13 +119,12 @@ impl Evaluator<'_> {
                         }
                         idx += 1;
                     }
-                }
-                for input in inputs {
-                    if let Some(c) = self.pool.columns.iter().find(|c| c.id == input) {
-                        if !meta.source_columns.iter().any(|c| c.id == input) {
-                            meta.source_columns.push(c.clone());
-                        }
-                    }
+                    std::borrow::Cow::Owned(inputs)
+                } else {
+                    std::borrow::Cow::Borrowed(std::slice::from_ref(field))
+                };
+                for input in inputs.iter() {
+                    self.source_column(meta, input);
                 }
                 if *target != ReferenceTarget::Field {
                     return None;
@@ -117,7 +160,7 @@ impl Evaluator<'_> {
                                 "invalid-type",
                                 "Incoming count must be an integer.",
                                 id,
-                                &row_scope,
+                                &row_scope(),
                                 &[],
                                 std::slice::from_ref(field),
                             )
@@ -126,7 +169,7 @@ impl Evaluator<'_> {
                                 "nonfinite",
                                 "Incoming count exceeds the exact integer range.",
                                 id,
-                                &row_scope,
+                                &row_scope(),
                                 &[],
                                 std::slice::from_ref(field),
                             )
@@ -214,4 +257,16 @@ impl Evaluator<'_> {
             CellResult::Value(v)
         }
     }
+}
+
+fn scope_metadata(meta: &mut FormulaMetadata, at: &CalculationScope, op: Aggregation) {
+    merge(
+        meta,
+        &FormulaMetadata {
+            scopes: vec![at.clone()],
+            value_kind: matches!(op, Aggregation::Count | Aggregation::UniqueCount)
+                .then_some(ValueKind::Number),
+            ..Default::default()
+        },
+    );
 }

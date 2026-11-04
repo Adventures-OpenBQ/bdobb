@@ -209,34 +209,37 @@ fn frozen_runtime_group_apply_filters_native_calculation_before_selection() {
 }
 #[test]
 fn incoming_invalid_count_error_names_only_affected_record() {
-    let (_, mut input, mut d, runtime) = fixture("ratio-source-scope");
-    input
-        .columns
-        .iter_mut()
-        .find(|c| c.id == "x")
-        .unwrap()
-        .aggregation = Some(Aggregation::Count);
-    input.rows[0]
-        .values
-        .insert("x".into(), WireValue::String("not count".into()));
-    input.rows[1]
-        .values
-        .insert("x".into(), WireValue::String("3".into()));
-    let a = d
-        .definition
-        .analytical
-        .as_mut()
-        .unwrap()
-        .table_mut()
-        .unwrap();
-    a.formulas=vec![serde_json::from_value(serde_json::json!({"id":"sumCounts","name":"Counts","scope":"aggregate","expression":"","ast":{"kind":"call","function":"sum","args":[{"kind":"reference","target":"field","id":"x"}]}})).unwrap()];
-    a.layout.values = vec!["sumCounts".into()];
-    refresh_recipe(&mut d);
-    let view = calculate_view(&input, &d, &SelectionSpec::None, &runtime, &Host).unwrap();
-    let error = &view.totals.cell_errors.as_ref().unwrap()["sumCounts"];
-    assert_eq!(error.affected_record_count, Some(1));
-    assert_eq!(error.record_preview, Some(vec!["a".into()]));
+    for bad in ["not count", "9007199254740992"] {
+        let (_, mut input, mut d, runtime) = fixture("ratio-source-scope");
+        input
+            .columns
+            .iter_mut()
+            .find(|c| c.id == "x")
+            .unwrap()
+            .aggregation = Some(Aggregation::Count);
+        input.rows[0]
+            .values
+            .insert("x".into(), WireValue::String(bad.into()));
+        input.rows[1]
+            .values
+            .insert("x".into(), WireValue::String("3".into()));
+        let a = d
+            .definition
+            .analytical
+            .as_mut()
+            .unwrap()
+            .table_mut()
+            .unwrap();
+        a.formulas=vec![serde_json::from_value(serde_json::json!({"id":"sumCounts","name":"Counts","scope":"aggregate","expression":"","ast":{"kind":"call","function":"sum","args":[{"kind":"reference","target":"field","id":"x"}]}})).unwrap()];
+        a.layout.values = vec!["sumCounts".into()];
+        refresh_recipe(&mut d);
+        let view = calculate_view(&input, &d, &SelectionSpec::None, &runtime, &Host).unwrap();
+        let error = &view.totals.cell_errors.as_ref().unwrap()["sumCounts"];
+        assert_eq!(error.affected_record_count, Some(1));
+        assert_eq!(error.record_preview, Some(vec!["a".into()]));
+    }
 }
+
 #[test]
 fn forged_ordered_recipe_evidence_refuses_the_view() {
     let (_, input, mut d, runtime) = fixture("ratio-source-scope");
@@ -549,4 +552,42 @@ fn grouped_projection_scales_linearly_with_groups() {
         assert_eq!(view.groups.len(), n);
         elapsed
     });
+}
+
+#[test]
+fn aggregate_only_publication_preserves_totals_and_input_with_sparse_source_state() {
+    let (root, input, definition, runtime) = fixture("analytical-all-operators");
+    let before = serde_json::to_value(&input).unwrap();
+    let view = calculate_view(&input, &definition, &SelectionSpec::None, &runtime, &Host).unwrap();
+    assert_values(
+        &view.totals.values,
+        get(get(get(&root, "result"), "totals"), "values"),
+        "aggregate-only sparse totals",
+    );
+    assert_eq!(serde_json::to_value(&input).unwrap(), before);
+    assert!(view.pool.formula_cells.is_empty());
+    assert!(view.pool.source_dependencies.is_empty());
+}
+
+#[test]
+fn incoming_field_errors_block_aggregates_without_authored_source_formulas() {
+    let (_, mut input, definition, runtime) = fixture("analytical-all-operators");
+    input.rows[0].cell_errors = Some(std::collections::BTreeMap::from([(
+        "revenue".into(),
+        CellError {
+            code: "upstream".into(),
+            message: "Source unavailable".into(),
+            definition_id: None,
+            dependency_ids: Some(vec!["origin".into()]),
+            affected_record_count: None,
+            record_preview: None,
+        },
+    )]));
+    let before = serde_json::to_value(&input).unwrap();
+    let view = calculate_view(&input, &definition, &SelectionSpec::None, &runtime, &Host).unwrap();
+    assert_eq!(
+        view.totals.cell_errors.as_ref().unwrap()["sum"].code,
+        "blocked-dependency"
+    );
+    assert_eq!(serde_json::to_value(&input).unwrap(), before);
 }

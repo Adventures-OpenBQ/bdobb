@@ -178,7 +178,7 @@ pub struct EligiblePool {
     pub rows: Vec<DatasetRow>,
     pub universe: CategorizedRows,
     pub columns: Vec<DatasetColumn>,
-    pub members: BTreeMap<String, BTreeMap<String, CategoryMemberResult>>,
+    pub members: CategoryMembers,
     pub categories: Vec<CategoryMetadata>,
     pub errors: BTreeMap<String, BTreeMap<String, ModelError>>,
     pub formula_cells: BTreeMap<String, BTreeMap<String, CellResult>>,
@@ -226,7 +226,7 @@ impl EligiblePool {
                 .rows
                 .iter()
                 .filter_map(|r| self.members.get(&r.id))
-                .flat_map(BTreeMap::keys)
+                .flat_map(|members| members.keys())
                 .collect();
             for (i, row) in self.rows.iter().enumerate() {
                 index.by_id.entry(row.id.clone()).or_default().push(i);
@@ -2169,12 +2169,12 @@ fn refused_pool(input: &EvaluatedRows, d: Diagnostic) -> EligiblePool {
         rows: vec![],
         universe: CategorizedRows {
             evaluated: input.clone(),
-            members: BTreeMap::new(),
+            members: Default::default(),
             categories: vec![],
             warnings: vec![],
         },
         columns: input.columns.clone(),
-        members: BTreeMap::new(),
+        members: Default::default(),
         categories: vec![],
         errors: input.errors.clone(),
         formula_cells: input.formula_cells.clone(),
@@ -2380,7 +2380,7 @@ pub(crate) fn qualify_source(
             source_dependencies: BTreeMap::new(),
             errors: BTreeMap::new(),
         },
-        members: BTreeMap::new(),
+        members: Default::default(),
         categories: vec![],
         warnings: vec![],
     };

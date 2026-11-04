@@ -4,6 +4,7 @@
 use super::*;
 mod input;
 mod metadata;
+mod shared_sum;
 use crate::{ordering::ValueOrder, scopes::*};
 use metadata::*;
 use std::collections::BTreeSet;
@@ -32,6 +33,7 @@ struct Evaluator<'a> {
     memo: BTreeMap<(String, String), (CellResult, FormulaMetadata)>,
     failure: Option<Diagnostic>,
     scope_errors: Vec<(CalculationScope, Vec<ModelError>)>,
+    shared_sums: shared_sum::SharedSums,
 }
 impl Evaluator<'_> {
     fn errors(&mut self, scope: &CalculationScope) -> Vec<ModelError> {
@@ -417,6 +419,7 @@ pub fn evaluate_aggregate(
         memo: BTreeMap::new(),
         failure: None,
         scope_errors: vec![],
+        shared_sums: shared_sum::SharedSums::new(model),
     };
     let mut result = FormulaValues {
         scope_errors: e.errors(scope),

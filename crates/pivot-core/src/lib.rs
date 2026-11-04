@@ -20,3 +20,6 @@ pub mod provider_contract;
 pub mod session;
 pub mod statement;
 pub mod witness;
+
+#[cfg(test)]
+extern crate self as pivot_core;

@@ -34,11 +34,13 @@ impl Session {
         let end = start.saturating_add(self.batch_rows as usize).min(count);
         let fields = v.columns.iter().map(|c| c.id.clone()).collect::<Vec<_>>();
         let (reservation, rows) = resources::bounded_rows(rows.skip(start).take(end - start));
-        resources::check(
-            self.limits.max_state_bytes,
-            self.retained_bytes().saturating_add(reservation),
-            "Export transient state budget exceeded",
-        )?;
+        if let Some(max) = self.limits.max_state_bytes {
+            resources::check(
+                Some(max),
+                self.retained_bytes().saturating_add(reservation),
+                "Export transient state budget exceeded",
+            )?;
+        }
         let batch_rows = project(rows, &fields);
         if let Some(max) = self.limits.export_bytes {
             if resources::wire_size(&batch_rows) > max {
@@ -64,11 +66,13 @@ impl Session {
             provenance,
             freshness: (sequence == 0).then(|| v.freshness.clone()),
         };
-        resources::check(
-            self.limits.max_batch_bytes,
-            resources::wire_size(&batch).saturating_add(self.envelope_wire_bytes(q)),
-            "Export batch including metadata budget exceeded",
-        )?;
+        if let Some(max) = self.limits.max_batch_bytes {
+            resources::check(
+                Some(max),
+                resources::wire_size(&batch).saturating_add(self.envelope_wire_bytes(q)),
+                "Export batch including metadata budget exceeded",
+            )?;
+        }
         if final_batch {
             self.transfers.remove(id);
         } else {
