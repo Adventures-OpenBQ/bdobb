@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type {AcquisitionRunRequest} from './generated';
 import {invalidateTemporalScope} from './security';
 import {backendRequest,HttpError} from '../dataClient';
 import type {BackendConfig} from '../types';
@@ -22,6 +23,11 @@ export function createTemporalClient(backend:BackendConfig){
   const args=new URLSearchParams();if(revision!==undefined)args.set('revision',String(revision));if(receiptId)args.set('receipt_id',id(receiptId));return `${id(queryId)}${args.size?'?'+args:''}`;
  };
  return {
+  async policies(signal?:AbortSignal){const v=await call('GET','acquisition/policies',undefined,signal);if(!isRecord(v)||v.schema_version!==1||!Array.isArray(v.policies))throw new Error('Invalid TemporalDB policies');return v.policies.map(x=>parseContract('AcquisitionPolicySummary',x));},
+  async policy(policyId:string,revision?:number,signal?:AbortSignal){return parseContract('AcquisitionPolicy',await call('GET',`acquisition/policies/${queryPath(policyId,revision)}`,undefined,signal));},
+  async submitRun(request:AcquisitionRunRequest,signal?:AbortSignal){parseContract('AcquisitionRunRequest',request);return parseContract('AcquisitionRunHandle',await call('POST','runs',request,signal));},
+  async runStatus(runId:string,signal?:AbortSignal){return parseContract('AcquisitionRunHandle',await call('GET',`runs/${id(runId)}`,undefined,signal));},
+  async cancelRun(runId:string){return parseContract('AcquisitionRunHandle',await call('DELETE',`runs/${id(runId)}`));},
   async list(signal?:AbortSignal){const v=await call('GET','queries',undefined,signal);if(!isRecord(v)||!Array.isArray(v.queries))throw new Error('Invalid TemporalDB library');return v.queries.map(x=>parseContract('QueryDefinition',x));},
   async get(queryId:string,revision?:number,signal?:AbortSignal,receiptId?:string){return parseContract('QueryDefinition',await call('GET',`queries/${queryPath(queryId,revision,receiptId)}`,undefined,signal));},
   async create(definition:QueryDefinition){parseContract('QueryDefinition',definition);return parseContract('QueryDefinition',await call('POST','queries',definition));},

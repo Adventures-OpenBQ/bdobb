@@ -69,3 +69,12 @@ it('invalidates linked input when the parent page changes without starting anoth
  await store.nextTemporalPage('d','q');store.ensureTable('d','child');await store.settled('d');
  expect(registered.get('child')?.rows.map(r=>r.values.Revenue)).toEqual([30]);expect(c.start).toHaveBeenCalledTimes(1);
 });
+it('publishes caller run progress before results and cancels it without cancelling a provider operation',async()=>{
+ const {store,c,q}=setup();const runId='55555555-5555-4555-8555-555555555555';
+ const h={run_id:runId,state:'acquiring' as const,policy_id:definition.query_id,policy_revision:3,submitted_at:'2026-11-03T20:00:00Z',deadline:'2099-11-03T20:05:00Z',context:definition.temporal,stage:'provider',resolved_params:{symbol:'AAPL.US'}};
+ Object.assign(c,{submitRun:vi.fn(async()=>h),runStatus:vi.fn(async()=>({...h,state:'cancelled'})),cancelRun:vi.fn(async()=>({...h,state:'cancelled'}))});
+ store.syncDashboard({id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[{...q,queryBinding:{...fixed,acquisition:{version:1,policyId:definition.query_id,policyRevision:3}}}]}]} as Dashboard);
+ store.ensureTable('d','q');await vi.waitFor(()=>expect(store.readTemporalRun('d','q')).toMatchObject({state:'acquiring',resolved_params:{symbol:'AAPL.US'}}));
+ await store.cancelTemporalRun('d','q');await store.settled('d');
+ expect(c.cancelRun).toHaveBeenCalledWith(runId);expect(c.start).not.toHaveBeenCalled();expect(c.page).not.toHaveBeenCalled();
+});

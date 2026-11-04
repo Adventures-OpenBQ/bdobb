@@ -4,12 +4,13 @@ import {render,screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {beforeEach,expect,it,vi} from 'vitest';
 import {card} from '../../test/fixtures';
+import type {AcquisitionRunHandle} from '../../lib/temporal/generated';
 import {fixed} from '../../lib/temporal/fixtures';
-const fake=vi.hoisted(()=>({view:{status:'ready',requested:{widgetId:'q',input:1,model:1,output:1},active:{widgetId:'q',input:1,model:1,output:1},ready:{completeness:{kind:'paged',acquiredRowCount:2,totalRowCount:3}},definition:{table:{},search:''},selection:{kind:'none'},stale:false},paging:{pageNumber:1,offset:0,loadedRows:2,totalCount:3,countQuality:'exact',hasPrevious:false,hasNext:true,busy:false,error:undefined as string|undefined},next:vi.fn(),previous:vi.fn()}));
-vi.mock('../../stores/tableExecutionStore',()=>({tableExecutionStore:{subscribe:()=>()=>{},readView:()=>fake.view,readTemporalPaging:()=>fake.paging,readExecutor:()=>undefined,ensureTable:vi.fn(),nextTemporalPage:fake.next,previousTemporalPage:fake.previous}}));
+const fake=vi.hoisted(()=>({view:{status:'ready',requested:{widgetId:'q',input:1,model:1,output:1},active:{widgetId:'q',input:1,model:1,output:1},ready:{completeness:{kind:'paged',acquiredRowCount:2,totalRowCount:3}},definition:{table:{},search:''},selection:{kind:'none'},stale:false},paging:{pageNumber:1,offset:0,loadedRows:2,totalCount:3,countQuality:'exact',hasPrevious:false,hasNext:true,busy:false,error:undefined as string|undefined},run:undefined as AcquisitionRunHandle|undefined,cancel:vi.fn(),next:vi.fn(),previous:vi.fn()}));
+vi.mock('../../stores/tableExecutionStore',()=>({tableExecutionStore:{subscribe:()=>()=>{},readView:()=>fake.view,readTemporalPaging:()=>fake.paging,readTemporalRun:()=>fake.run,cancelTemporalRun:fake.cancel,readExecutor:()=>undefined,ensureTable:vi.fn(),nextTemporalPage:fake.next,previousTemporalPage:fake.previous}}));
 vi.mock('./LocalTableRenderer',()=>({LocalTableRenderer:()=> <div>Execution table</div>}));
 import {QueryDataRenderer} from './QueryDataRenderer';
-beforeEach(()=>{fake.next.mockReset();fake.previous.mockReset();fake.paging={pageNumber:1,offset:0,loadedRows:2,totalCount:3,countQuality:'exact',hasPrevious:false,hasNext:true,busy:false,error:undefined};});
+beforeEach(()=>{fake.run=undefined;fake.cancel.mockReset();fake.cancel.mockResolvedValue(undefined);fake.next.mockReset();fake.previous.mockReset();fake.paging={pageNumber:1,offset:0,loadedRows:2,totalCount:3,countQuality:'exact',hasPrevious:false,hasNext:true,busy:false,error:undefined};});
 const ui=()=> <QueryDataRenderer dashboardId="d" card={card({id:'q',queryBinding:fixed})} filterRow={false}/>;
 it('shows range and permits only available page navigation',async()=>{
  const {rerender}=render(ui());expect(screen.getByRole('button',{name:'Previous result page'})).toBeDisabled();
@@ -21,4 +22,10 @@ it('shows range and permits only available page navigation',async()=>{
 it('disables navigation during a request and reports a failure without hiding the table',()=>{
  const {rerender}=render(ui());fake.paging={...fake.paging,busy:true};rerender(ui());expect(screen.getByRole('button',{name:'Next result page'})).toBeDisabled();
  fake.paging={...fake.paging,busy:false,error:'page unavailable'};rerender(ui());expect(screen.getByRole('alert')).toHaveTextContent('page unavailable');expect(screen.getByText('Execution table')).toBeVisible();
+});
+
+it('shows acquisition progress, frozen inputs and the selected policy revision with a caller cancellation control',async()=>{
+ fake.run={run_id:'55555555-5555-4555-8555-555555555555',policy_id:'11111111-1111-4111-8111-111111111111',policy_revision:3,state:'normalizing',stage:'accepted_capture',context:{mode:'current_corrected'},resolved_params:{symbol:'AAPL.US'},submitted_at:'2026-11-03T20:00:00Z',deadline:'2026-11-03T20:05:00Z'};
+ render(ui());expect(screen.getByLabelText('Acquisition run')).toHaveTextContent('normalizing');expect(screen.getByLabelText('Acquisition run')).toHaveTextContent('revision 3');expect(screen.getByLabelText('Acquisition run')).toHaveTextContent('AAPL.US');
+ await userEvent.click(screen.getByRole('button',{name:'Cancel acquisition run'}));expect(fake.cancel).toHaveBeenCalledWith('d','q');
 });

@@ -17,6 +17,7 @@ import { useWidgetRegistryStore } from "./widgetRegistryStore";
 import { LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
 import { createTemporalClient,type TemporalClient } from '../lib/temporal/client';
+import type {AcquisitionRunHandle} from '../lib/temporal/generated';
 import {createTemporalPager,type TemporalPager,type TemporalPage} from '../lib/temporal/paging';
 import {createTemporalTableProvider} from '../lib/tableExecution/remote/temporalProvider';
 import { createTemporalSourceAdapter } from '../lib/temporal/sourceAdapter';
@@ -57,7 +58,7 @@ export type ViewState = {
   error?: string;
 };
 export type TemporalPagingView={pageNumber:number;offset:number;loadedRows:number;totalCount:number;countQuality:'exact'|'lower_bound';hasPrevious:boolean;hasNext:boolean;busy:boolean;error?:string};
-type TemporalState={pager:TemporalPager;client:TemporalClient;page?:TemporalPage;view?:TemporalPagingView;controller?:AbortController};
+type TemporalState={run?:AcquisitionRunHandle;pager:TemporalPager;client:TemporalClient;page?:TemporalPage;view?:TemporalPagingView;controller?:AbortController};
 type Node = {
   temporal?:TemporalState;
   card: DashboardCard;
@@ -221,7 +222,14 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
   function sourceFor(node:Node):SourceAdapter|undefined {
     if(!deps.temporalClient||!isTemporalTable(node.card)||node.card.linkedSource)return deps.source(node.card);
     const binding=parseQueryBinding(node.card.queryBinding);
-    if(!node.temporal){const client=deps.temporalClient(node.card);node.temporal={client,pager:createTemporalPager(client,binding)};}
+    if(!node.temporal){
+      const client=deps.temporalClient(node.card);
+      const state:TemporalState={client,pager:createTemporalPager(client,binding,{progress:handle=>{
+        if(node.temporal!==state)return;
+        state.run=structuredClone(handle);node.view={...node.view};emit();
+      }})};
+      node.temporal=state;
+    }
     const state=node.temporal;
     return {async acquire(signal){
       const page=state.page??await state.pager.open(signal);
@@ -673,6 +681,8 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       emit();
       void ensure(d, id);
     },
+    readTemporalRun(d:string,id:string){const run=get(d,id)?.temporal?.run;return run?structuredClone(run):undefined;},
+    async cancelTemporalRun(d:string,id:string){await get(d,id)?.temporal?.pager.cancel();},
     readTemporalPaging(d:string,id:string){const node=get(d,id);return node&&!isManagedTable(node.card)?node.temporal?.view:undefined;},
     nextTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'next'),
     previousTemporalPage:(d:string,id:string)=>navigateTemporal(d,id,'previous'),

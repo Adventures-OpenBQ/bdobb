@@ -258,9 +258,9 @@ type DashboardState = {
   undoCardRemoval: () => Promise<void>;
   dismissCardRemoval: () => Promise<void>;
   /** A copy of the card on its own tab, placed below everything there. Bindings are not copied: a group binding belongs to one card. */
-  duplicateCard: (cardId: string) => Promise<string | null>;
+  duplicateCard: (cardId: string, pinnedExecutionId?: string) => Promise<string | null>;
   /** The same copy, appended to `tabId` of `dashboardId` (any dashboard, not only the active one). */
-  copyCardTo: (cardId: string, dashboardId: string, tabId: string) => Promise<string | null>;
+  copyCardTo: (cardId: string, dashboardId: string, tabId: string, pinnedExecutionId?: string) => Promise<string | null>;
   updateLayouts: (layouts: GridLayoutItem[]) => Promise<void>;
   applyCardParams: (cardId: string, edit: ParamEdit) => Promise<void>;
   /** Purely in-memory — order itself is persisted in settings.json, not per-dashboard. */
@@ -1304,11 +1304,15 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
     addCard: async (widget, paramsOverride) =>
       get().addCardTo(get().activeId, get().activeTabId, widget, paramsOverride),
 
-    copyCardTo: async (cardId, dashboardId, tabId) => {
+    copyCardTo: async (cardId, dashboardId, tabId, pinnedExecutionId) => {
+      if (refuse("copyCardTo")) return null;
       const found = findCard([...get().dashboards, get().docks], cardId);
       const targetDashboard = dashboardById(dashboardId);
       const target = targetDashboard?.tabs.find((t) => t.id === tabId);
       if (!found || !targetDashboard || !target) return null;
+      const sourceBinding = pinnedExecutionId !== undefined && found.card.queryBinding ? parseQueryBinding(found.card.queryBinding) : undefined;
+      const pinnedBinding = pinnedExecutionId !== undefined && sourceBinding ? parseQueryBinding({kind:'execution',executionId:pinnedExecutionId,...(sourceBinding.tableExecution?{tableExecution:sourceBinding.tableExecution}:{})}) : undefined;
+      if (pinnedExecutionId !== undefined && !pinnedBinding) return null;
       // Into the docks (Duplicate in the Locked Widgets editor): the first
       // free spot inside the band's rows, as an add from the library.
       const edge = isDocks(targetDashboard) ? PIN_EDGES.find((e) => e === tabId) : undefined;
@@ -1319,6 +1323,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         tabs: d.tabs.map((t) => {
           if (t.id !== tabId) return t;
           const copy = copyOf(found.card, t.cards);
+          if (pinnedBinding) {
+            copy.queryBinding = structuredClone(pinnedBinding);
+            copy.title = `${found.card.title ?? 'Shared query'} · pinned`;
+            delete copy.linkedSource; delete copy.linkedChart; delete copy.managedSource;
+          }
           if (edge) copy.layout = firstFreeSpot(t.cards.map((c) => c.layout), copy.layout.w, copy.layout.h, GRID_COLS, (d.dockRows ?? DEFAULT_DOCK_ROWS)[edge]);
           // A link names a card on its own dashboard; elsewhere it would be a
           // foreign reference that blocks every table there.
@@ -1330,10 +1339,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       return updated ? newId : null;
     },
 
-    duplicateCard: async (cardId) => {
+    duplicateCard: async (cardId, pinnedExecutionId) => {
       const found = findCard([...get().dashboards, get().docks], cardId);
       if (!found) return null;
-      return get().copyCardTo(cardId, found.dashboard.id, found.tab.id);
+      return get().copyCardTo(cardId, found.dashboard.id, found.tab.id, pinnedExecutionId);
     },
 
     /**

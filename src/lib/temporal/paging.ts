@@ -1,5 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import {createTemporalRun} from './runs';
+import type {AcquisitionRunHandle} from './generated';
 import type {TemporalClient} from './client';
 import {parseQueryBinding,type QueryBinding} from './bindings';
 import {parseResultPage,type ResultPage} from './contracts';
@@ -9,6 +11,7 @@ export interface TemporalPager {
  open(signal:AbortSignal):Promise<TemporalPage>;
  next(signal:AbortSignal):Promise<TemporalPage>;
  previous(signal:AbortSignal):Promise<TemporalPage>;
+ cancel():Promise<void>;
  dispose():void;
 }
 const MAX_PAGES=1000,MAX_ROWS=1000,MAX_CURSOR=4096,MAX_PAGE_BYTES=2*1024*1024;
@@ -20,8 +23,9 @@ function delay(signal:AbortSignal){return new Promise<void>((resolve,reject)=>{
  signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();
 });}
 /** Private cursor history for exactly one retained execution; never persisted in a card. */
-export function createTemporalPager(client:TemporalClient,binding:QueryBinding):TemporalPager {
+export function createTemporalPager(client:TemporalClient,binding:QueryBinding,options:{progress?:(handle:AcquisitionRunHandle)=>void}={}):TemporalPager {
  const intent=parseQueryBinding(binding);
+ let run:ReturnType<typeof createTemporalRun>|undefined;
  let disposed=false,busy=false,active:AbortController|undefined,executionId:string|undefined,revision:number|undefined,identity:string|undefined,current:TemporalPage|undefined;
  let commit:()=>void=()=>{};
  const history:Array<{cursor:string|undefined;offset:number;next:string|null}>=[];
@@ -36,13 +40,20 @@ export function createTemporalPager(client:TemporalClient,binding:QueryBinding):
  async function ensureExecution(signal:AbortSignal){
   if(!executionId){
    if(intent.kind==='execution')executionId=intent.executionId;
+   else if(run){executionId=await run.open(signal);}
    else {
     const needsDefinition=intent.revisionPolicy==='latest'||mayNeedResolution(intent.params);
     const definition=needsDefinition?await client.get(intent.queryId,intent.revisionPolicy==='latest'?undefined:intent.revision,signal):undefined;
     check(signal);revision=intent.revisionPolicy==='latest'?definition!.revision:intent.revision!;
     const params=definition?resolveParams(definition.parameters,intent.params,new Date()).params:intent.params;
-    const handle=await client.start({query_id:intent.queryId,revision,params,context:intent.context},signal);
-    executionId=handle.execution_id;check(signal);
+    if(intent.acquisition){
+     run=createTemporalRun(client,{query_id:intent.queryId,revision,params,context:intent.context,policy_id:intent.acquisition.policyId,policy_revision:intent.acquisition.policyRevision,idempotency_key:`widget:${crypto.randomUUID()}`},options);
+     executionId=await run.open(signal);
+    }else{
+     const handle=await client.start({query_id:intent.queryId,revision,params,context:intent.context},signal);
+     executionId=handle.execution_id;
+    }
+    check(signal);
    }
   }
   for(let attempts=0;;attempts++){
@@ -81,6 +92,7 @@ export function createTemporalPager(client:TemporalClient,binding:QueryBinding):
   open:signal=>transaction(async s=>{if(current)return current;await ensureExecution(s);return read(0,s);},signal),
   next:signal=>transaction(async s=>{if(!current)throw new Error('Open the temporal execution first');if(!current.hasNext)throw new Error('No next temporal page');return read(current.pageNumber,s);},signal),
   previous:signal=>transaction(async s=>{if(!current?.hasPrevious)throw new Error('No previous temporal page');return read(current.pageNumber-2,s);},signal),
-  dispose(){disposed=true;active?.abort();current=undefined;history.length=0;identity=undefined;},
+  cancel:async()=>{await run?.cancel();},
+  dispose(){disposed=true;active?.abort();void run?.cancel().catch(()=>{});current=undefined;history.length=0;identity=undefined;},
  };
 }

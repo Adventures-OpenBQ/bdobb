@@ -104,3 +104,21 @@ it('carries the request ID on TemporalDB errors and evicts the scope on a discov
  await expect(client.datasets()).rejects.toMatchObject({status:401});
  expect(temporalScope('b')).not.toBe(before);
 });
+
+it('uses scoped policy discovery and durable run routes without starting an execution',async()=>{
+ const client=createTemporalClient(backend({baseUrl:'https://temporal.test'}));
+ const policy={policy_id:queryId,revision:3,title:'Reviewed daily prices',enabled:true,datasets:['eodhd.eod']};
+ const request={query_id:queryId,revision:2,params:{symbol:'AAPL.US'},context:definition.temporal,policy_id:queryId,policy_revision:3,idempotency_key:'widget:stable-attempt'};
+ const handle={run_id:executionId,state:'waiting',policy_id:queryId,policy_revision:3,submitted_at:'2026-11-03T20:00:00Z',deadline:'2026-11-03T20:05:00Z',context:definition.temporal,stage:'coverage',resolved_params:request.params};
+ vi.mocked(fetch).mockResolvedValueOnce(response({schema_version:1,policies:[policy]}));
+ expect(await client.policies()).toEqual([policy]);
+ vi.mocked(fetch).mockResolvedValueOnce(response(handle));expect(await client.submitRun(request)).toEqual(handle);
+ expect(JSON.parse(String(vi.mocked(fetch).mock.calls.at(-1)![1]!.body))).toEqual(request);
+ vi.mocked(fetch).mockResolvedValueOnce(response({...handle,state:'ready',execution_id:queryId}));expect((await client.runStatus(executionId)).execution_id).toBe(queryId);
+ vi.mocked(fetch).mockResolvedValueOnce(response({...handle,state:'cancelled'}));expect((await client.cancelRun(executionId)).state).toBe('cancelled');
+ expect(vi.mocked(fetch).mock.calls.map(([url,init])=>[new URL(String(url)).pathname,init?.method])).toEqual([
+  ['/temporal/v1/acquisition/policies','GET'],['/temporal/v1/runs','POST'],[`/temporal/v1/runs/${executionId}`,'GET'],[`/temporal/v1/runs/${executionId}`,'DELETE']]);
+ const calls=vi.mocked(fetch).mock.calls.length;
+ await expect(client.submitRun({...request,policy_revision:0})).rejects.toThrow();expect(vi.mocked(fetch).mock.calls.length).toBe(calls);
+ vi.mocked(fetch).mockResolvedValueOnce(response({...handle,state:'future'}));await expect(client.runStatus(executionId)).rejects.toThrow();
+});

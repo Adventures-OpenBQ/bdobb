@@ -3,7 +3,7 @@
 
 import {finiteJson,isRecord,isUuid,parseContract,type TemporalContext} from './contracts';
 export type TemporalTableTarget={kind:'managed';version:1;backendId:string;sourceBackendId:string};
-export type QueryBinding = ({kind:'query';queryId:string;revisionPolicy:'fixed'|'latest';revision?:number;params:Record<string,unknown>;context:TemporalContext}|{kind:'execution';executionId:string}) & {tableExecution?:TemporalTableTarget};
+export type QueryBinding = ({kind:'query';queryId:string;revisionPolicy:'fixed'|'latest';revision?:number;params:Record<string,unknown>;context:TemporalContext;acquisition?:{version:1;policyId:string;policyRevision:number}}|{kind:'execution';executionId:string}) & {tableExecution?:TemporalTableTarget};
 /** Reject invalid intent at use time; disk/import retains original fields for repair. */
 export function parseQueryBinding(v:unknown):QueryBinding {
  const fail=()=>{throw new Error('Invalid or future TemporalDB query binding; choose a query to repair it');};
@@ -12,8 +12,9 @@ export function parseQueryBinding(v:unknown):QueryBinding {
  if(v.kind==='execution'){
   if(Object.keys(v).some(k=>!['kind','executionId','tableExecution'].includes(k))||!isUuid(v.executionId))return fail();
  }else if(v.kind==='query'){
-  if(Object.keys(v).some(k=>!['kind','queryId','revisionPolicy','revision','params','context','tableExecution'].includes(k))||!isUuid(v.queryId)||!isRecord(v.params)||!['fixed','latest'].includes(String(v.revisionPolicy))||v.revisionPolicy==='fixed'&&(!Number.isSafeInteger(v.revision)||Number(v.revision)<1)||v.revision!==undefined&&(!Number.isSafeInteger(v.revision)||Number(v.revision)<1))return fail();
+  if(Object.keys(v).some(k=>!['kind','queryId','revisionPolicy','revision','params','context','tableExecution','acquisition'].includes(k))||!isUuid(v.queryId)||!isRecord(v.params)||!['fixed','latest'].includes(String(v.revisionPolicy))||v.revisionPolicy==='fixed'&&(!Number.isSafeInteger(v.revision)||Number(v.revision)<1)||v.revision!==undefined&&(!Number.isSafeInteger(v.revision)||Number(v.revision)<1))return fail();
   try{parseContract('TemporalContext',v.context);}catch{return fail();}
+  if(v.acquisition!==undefined){const a=v.acquisition;if(!isRecord(a)||a.version!==1||!isUuid(a.policyId)||!Number.isSafeInteger(a.policyRevision)||Number(a.policyRevision)<1||Number(a.policyRevision)>2147483647||Object.keys(a).some(k=>!['version','policyId','policyRevision'].includes(k))||!isRecord(v.context)||v.context.mode!=='current_corrected')return fail();}
  }else return fail();
  return structuredClone(v) as QueryBinding;
 }

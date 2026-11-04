@@ -66,3 +66,12 @@ it('accepts an explicit managed execution target but rejects malformed routing m
  const c=client();await expect(createTemporalPager(c,binding).open(signal())).resolves.toMatchObject({executionId});
  for(const tableExecution of [{kind:'unknown',backendId:'tables',sourceBackendId:'tdb'},{kind:'managed',backendId:'tables',sourceBackendId:'tdb',url:'https://other'},{kind:'managed',backendId:'',sourceBackendId:'tdb'}])expect(()=>createTemporalPager(c,{...fixed,tableExecution:{...tableExecution,version:1}} as unknown as typeof binding)).toThrow();
 });
+it('opens the acquisition run execution without starting a second query',async()=>{
+ const c=client(),runId='55555555-5555-4555-8555-555555555555';
+ const handle={run_id:runId,state:'ready' as const,execution_id:executionId,policy_id:definition.query_id,policy_revision:3,submitted_at:'2026-11-03T20:00:00Z',deadline:'2099-11-03T20:05:00Z',context:fixed.kind==='query'?fixed.context:{mode:'current_corrected' as const},stage:'ready'};
+ Object.assign(c,{submitRun:vi.fn(async()=>handle),runStatus:vi.fn(),cancelRun:vi.fn()});
+ const pager=createTemporalPager(c,{...fixed,acquisition:{version:1,policyId:definition.query_id,policyRevision:3}});
+ await expect(pager.open(signal())).resolves.toMatchObject({executionId});
+ await pager.next(signal());expect(c.submitRun).toHaveBeenCalledTimes(1);expect(c.start).not.toHaveBeenCalled();
+ expect(vi.mocked(c.submitRun).mock.calls[0][0]).toMatchObject({query_id:definition.query_id,revision:2,policy_revision:3});
+});
