@@ -50,11 +50,16 @@ it('failed chart transport retains its completed figure and exposes the delivery
     render(<LinkedChartRenderer {...props}/>);
     await screen.findByTestId('figure');
     const old = screen.getByTestId('figure').textContent;
+    const delivery = screen.getByTestId('figure').closest('.linked-chart-renderer')!;
+    const priorRevision = store.readView('d', 'c').sourceRevision;
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
     await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'A' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
     expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     expect(screen.getByTestId('figure').textContent).toBe(old);
+    expect(store.readView('d', 'c').sourceRevision).not.toEqual(priorRevision);
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     cleanup();
     store.disposeDashboard('d');
 });

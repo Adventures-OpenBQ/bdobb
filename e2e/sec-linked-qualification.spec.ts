@@ -77,6 +77,10 @@ test('company switch, row checkboxes, explicit empty, USD eligibility and clear 
 });
 test('mixed companies deliver a scope error and never an aggregate numeric revenue',async({page},info)=>{
  const before=await snapshot(page);const priorFigure=await ys(page);
+ const delivery=chart(page).locator('.linked-chart-renderer');
+ const priorChartRevision=await delivery.getAttribute('data-delivered-revision');
+ expect(priorChartRevision).toBeTruthy();
+ expect(JSON.parse(priorChartRevision!)).toEqual(before['usd-lines'].active);
  await chooseCompanies(page,['CIK:0001045810','CIK:0001652044']);
  await expect.poll(async()=>(await snapshot(page)).facts.rows.length).toBe(44);
  const mixed=await snapshot(page);
@@ -91,8 +95,10 @@ test('mixed companies deliver a scope error and never an aggregate numeric reven
   await expect(chart(page).getByText(/showing completed data \(stale\)/)).toBeVisible();
   expect(await ys(page)).toEqual(priorFigure);
   expect(mixed['usd-lines'].active).not.toEqual(before['usd-lines'].active);
+  await expect(delivery).toHaveAttribute('data-delivered-revision',priorChartRevision!);
+  expect(JSON.parse((await delivery.getAttribute('data-delivered-revision'))!)).not.toEqual(mixed['usd-lines'].active);
  }
- await info.attach('prior-and-mixed-deliveries',{body:JSON.stringify({before,mixed},null,2),contentType:'application/json'});
+ await info.attach('prior-and-mixed-deliveries',{body:JSON.stringify({before,mixed,priorChartRevision:JSON.parse(priorChartRevision!),retainedChartRevision:JSON.parse((await delivery.getAttribute('data-delivered-revision'))!),priorFigure,retainedFigure:await ys(page)},null,2),contentType:'application/json'});
 });
 test('company Clear removes completed numeric chart and restoring NVDA restores original facts',async({page},info)=>{
  await facts(page).getByRole('button',{name:/^Company:/}).click();
