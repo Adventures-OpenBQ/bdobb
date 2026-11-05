@@ -21,8 +21,9 @@ export async function fetch(
   init?: RequestInit & { connectTimeout?: number },
 ): Promise<Response> {
   const { connectTimeout: _drop, ...rest } = init ?? {};
+  const credentials = rest.credentials ?? (input instanceof Request ? input.credentials : "same-origin");
   const response = await window.fetch(input, rest);
-  if (response.status === 401 && sameOrigin(input)) signedOut();
+  if (response.status === 401 && credentials !== "omit" && sameOrigin(input)) signedOut();
   return response;
 }
 
@@ -31,8 +32,9 @@ export async function fetch(
  * Once it lapses, every request to the app's OWN origin answers 401, and the app
  * read that as "Backend is offline" on every card. web/server.mjs answers 401
  * only from its session gate -- an upstream failure is relayed as 502 -- so a
- * same-origin 401 can only mean "signed out": go to the sign-in page. Another
- * origin's 401 is a backend refusing a credential and is the caller's to report.
+ * cookie-bearing same-origin 401 means "signed out": go to the sign-in page.
+ * Cookie-free Workspace probes cannot test the web session. Their 401, like
+ * another origin's refusal, remains the caller's to report.
  */
 let leaving = false;
 /** The session has lapsed and the page is on its way to sign-in (fs.ts saves nothing then). */

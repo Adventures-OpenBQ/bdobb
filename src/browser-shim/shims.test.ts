@@ -397,6 +397,36 @@ describe("http shim", () => {
       expect(assign).toHaveBeenCalledWith("/auth/signin");
     });
 
+    it.each(["init", "request", "init overrides request"] as const)(
+      "keeps the web session after an anonymous probe's 401 (%s)", async (mode) => {
+        vi.stubGlobal("fetch", answer(401));
+        const { fetch, sessionLapsed } = await import("./http");
+        const url = "https://preview.example.com/api/_openbq/settings/v1";
+        const input = mode === "init" ? url : new Request(url, {
+          credentials: mode === "request" ? "omit" : "include",
+        });
+        const response = await fetch(input, mode === "request" ? undefined : { credentials: "omit" });
+        expect(response.status).toBe(401);
+        expect(sessionLapsed()).toBe(false);
+        expect(assign).not.toHaveBeenCalled();
+
+        // An actual cookie-bearing request must still detect an expired session.
+        await fetch("/api/widgets.json");
+        expect(sessionLapsed()).toBe(true);
+        expect(assign).toHaveBeenCalledOnce();
+      },
+    );
+
+    it("detects expiry when init opts a Request back into same-origin cookies", async () => {
+      vi.stubGlobal("fetch", answer(401));
+      const { fetch, sessionLapsed } = await import("./http");
+      await fetch(new Request("https://preview.example.com/api/widgets.json", { credentials: "omit" }), {
+        credentials: "same-origin",
+      });
+      expect(sessionLapsed()).toBe(true);
+      expect(assign).toHaveBeenCalledWith("/auth/signin");
+    });
+
     it("leaves another origin's 401 alone -- that is a backend refusing a credential", async () => {
       vi.stubGlobal("fetch", answer(401));
       const { fetch } = await import("./http");
