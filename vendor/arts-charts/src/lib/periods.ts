@@ -7,7 +7,7 @@ import { isRecord } from "./isRecord";
 /**
  * Everything a fiscal or ISO period IS, as pure functions over CalendarDate.
  * Nothing here knows about widgets, groups or the wire: paramGroups.ts
- * relabels a group value through `relabel`, dateExpressions.ts projects an
+ * relabels a group value through `relabel`, the host grammar projects an
  * instant into a label through `fiscalPeriod` / `isoWeek`, and the pickers
  * draw their grids from the spans. One file, so the three cannot disagree
  * about which months a quarter covers.

@@ -51,7 +51,7 @@ const SESSIONS: ReadonlyArray<NonNullable<ChartCardState["session"]>> = ["extend
 /**
  * The range value on the wire between the card and its group (spec 2026-09-25,
  * F4): `<from>..<to>`, e.g. `now-5d..now`. `..` is already this app's range
- * separator (dateExpressions.ts treats `..` and `/` as range markers), so this
+ * separator (the host grammar treats `..` and `/` as range markers), so this
  * is the house notation, not an invention. `ParamGroup.value` stays a plain
  * string, so the groups file, the group menu and apps.json all keep their
  * shape. `from`/`to` are date EXPRESSIONS or absolute datetimes; neither ever

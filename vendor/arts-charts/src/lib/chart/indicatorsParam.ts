@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 import type { StudyInstance } from "../types";
-import { isExpression } from "../dateExpressions";
+import { isExpression } from "../dates";
 import { defaultColor, isBusinessDays, normalizeExpression, type CatalogEntry, type ParseOptions } from "./studyExpression";
 
 /**

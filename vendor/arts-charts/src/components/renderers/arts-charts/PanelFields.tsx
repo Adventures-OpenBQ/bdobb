@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 import { useRef, useState } from "react";
 import { encodePanels, loopText, parsePanels, scaleOrder, type PanelDef } from "../../../lib/chart/panels";
-import { parseExpression } from "../../../lib/dateExpressions";
+import { parseExpression } from "../../../lib/dates";
 
 /**
  * One panel's ten fields in the four groups of the layout editor's Panels tab

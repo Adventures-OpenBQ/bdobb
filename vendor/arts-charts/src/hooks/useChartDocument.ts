@@ -31,7 +31,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { getHost } from "../host";
-import { bodyFromCard, cardFromBody, type ChartBody, type ChartDocument } from "../lib/chartDocument";
+import { bodyFromCard, cardFromBody, sameCard, type ChartBody, type ChartDocument, type Stamp } from "../lib/chartDocument";
 import type { ChartEdit } from "../lib/chart/chartGroups";
 import { ChartServerError, RETRY_MS, createChart, getChart, listCharts, saveChart, watchCharts } from "../lib/chartServer";
 import type { ChartCardState } from "../lib/types";
@@ -53,6 +53,8 @@ type Card = {
   onPatch: (edit: ChartEdit) => void;
   onParam: (patch: Record<string, string>) => void;
   registry: TaRegistry;
+  /** The card's resolvers (S14), read at save time. */
+  stamp?: () => Stamp | null;
 };
 
 export function useChartDocument(card: Card): { onPatch: (edit: ChartEdit) => void; onParam: (patch: Record<string, string>) => void; note: string | null } | null {
@@ -93,7 +95,7 @@ export function useChartDocument(card: Card): { onPatch: (edit: ChartEdit) => vo
     // A server that answers 5xx (a proxy mid-restart) is as unreachable as one that does not answer.
     const unreachableError = (error: unknown) => !(error instanceof ChartServerError) || error.status >= 500;
     const lookup = (name: string) => live.current.registry.lookup(name);
-    const body = () => bodyFromCard(live.current.params, live.current.state, lookup);
+    const body = () => bodyFromCard(live.current.params, live.current.state, lookup, live.current.stamp?.() ?? null);
 
     const adopt = (next: ChartDocument, write: boolean) => {
       if (bound.current !== next.id) return; // a document the card was pointed away from
@@ -105,6 +107,7 @@ export function useChartDocument(card: Card): { onPatch: (edit: ChartEdit) => vo
       const read = cardFromBody(next.body, lookup);
       const changed = Object.fromEntries(Object.entries(read.params).filter(([k, v]) => params[k] !== v));
       onPatch(read.state);
+      if (read.notes.length > 0) setNote(read.notes.join("; "));
       if (Object.keys(changed).length > 0) onParam(changed);
       // An edit before the next render builds on the adopted card, not the one it replaced.
       live.current = { ...live.current, state: { ...state, ...read.state }, params: { ...params, ...changed } };
@@ -176,12 +179,13 @@ export function useChartDocument(card: Card): { onPatch: (edit: ChartEdit) => vo
           // The card may have been pointed at a document while this one uploaded: the new one is then an orphan.
           if (epoch.current !== e || (live.current.params.chart_id ?? "") !== "") return;
           bound.current = created.id;
+          setNote(null); // before adopt, which may set a legacy-entry note
           adopt(created, true); // the card now holds the series ids the document named
           if (active) live.current.onParam({ chart_id: created.id });
-          setNote(null);
         } else if (doc.current === null) {
-          adopt(await getChart(f, id), true);
-          setNote(null);
+          const got = await getChart(f, id);
+          setNote(null); // before adopt, which may set a legacy-entry note
+          adopt(got, true);
         } else if (pending.current !== null) {
           await flush();
         } else {
@@ -196,10 +200,10 @@ export function useChartDocument(card: Card): { onPatch: (edit: ChartEdit) => vo
     const queue = () => { chain.current = chain.current.then(sync); };
 
     edits.current = (apply) => {
-      const before = JSON.stringify(body());
+      const before = body();
       apply();
       const after = body();
-      if (JSON.stringify(after) === before) return;
+      if (sameCard(after, before)) return;
       if (doc.current === null) {
         if ((live.current.params.chart_id ?? "") === "") queue(); // a card that had nothing to upload may now
         return;

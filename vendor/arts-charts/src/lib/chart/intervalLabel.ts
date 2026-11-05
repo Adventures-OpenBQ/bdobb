@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import { parseExpression } from "../dateExpressions";
+import { parseExpression } from "../dates";
 import { shownAs } from "./rangeExpr";
 
 /**
@@ -65,7 +65,7 @@ function humanizeDuration(seconds: number): string {
  *
  * The duration is read through the app's OWN grammar, not a second copy of
  * it: we anchor the text on `T-` and hand it to `parseExpression`, so `min`
- * is minutes and `m`/`mo` are months exactly as dateExpressions.ts documents.
+ * is minutes and `m`/`mo` are months exactly as the host grammar documents.
  * That is what makes `5m` five months here -- the regression the whole
  * sub-project guards -- rather than five minutes.
  *

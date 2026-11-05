@@ -26,6 +26,7 @@ import { useDashboardStore } from "../stores/dashboardStore";
 import { artsChartsConnections } from "./artsCharts/connection";
 import { artsChartWidget } from "./artsCharts/widget";
 import { applyAuthQuery, authHeaders, buildWidgetWsUrl as bdobbWsUrl, fetchWidgetPath, joinUrl } from "./dataClient";
+import { isExpression, isRangeType, parseExpression, previewExpression, resolveExpression, resolveValue, splitRange } from "./dateExpressions";
 import { logError, logInfo } from "./logger";
 import { wireParams } from "./params";
 import { safeUrl } from "./safeUrl";
@@ -125,6 +126,9 @@ export function buildHost({ viewer }: { viewer: boolean }): ArtsChartsHost {
     log: (level, message) => (level === "error" ? logError(message) : logInfo(message)),
     useResolvedTheme,
     groups: { createGroup: store.createGroup, joinGroup: store.joinGroup, dropUngroupable: store.dropUngroupable },
+    // The time language is bdobb's (spec 2026-11-04 S4): the vendored client carries none.
+    dates: { parseExpression, isExpression, resolveExpression, resolveValue, previewExpression,
+             isRangeType, splitRange },
     components: { DatetimePicker, RelativeTab, AnchorChips: () => null, GroupLink: Link },
     ...(b === null ? {} : { chartsFetch }),
     ...(b === null || b.door === "tailnet" ? {} : { chartsSocketUrl }),

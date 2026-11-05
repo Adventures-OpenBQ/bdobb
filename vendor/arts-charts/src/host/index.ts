@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 import type { ComponentType } from "react";
+import type { HostDates } from "./dates";
 import type { BackendConfig, DashboardCard, Granularity, ParamGroup, WidgetDef, WidgetParam } from "../lib/types";
 
 /**
@@ -70,6 +71,9 @@ export type ChartsFetch = (path: string, init?: RequestInit) => Promise<Response
 
 /** Everything Art's Charts needs from the app it runs in. */
 export type ArtsChartsHost = {
+  /** The host's date grammar (spec 2026-11-04 §1, S4): Art's Charts carries none. BDOBB
+   *  supplies its own date grammar; a host without one resolves literals only. */
+  dates: HostDates;
   /** GET `{backend}/{path}?{params}` with the backend's auth; empty values omitted; the parsed JSON. */
   fetchWidgetPath: (backend: BackendConfig, path: string, params: Record<string, string>) => Promise<unknown>;
   /** The widget's socket URL with its parameters wired (expressions resolved), empty values omitted, auth applied; null when the widget has no wsEndpoint. */
@@ -137,3 +141,4 @@ export function getHost(): ArtsChartsHost {
 export function __resetHostForTests(): void {
   current = null;
 }
+export type { HostDates } from "./dates";

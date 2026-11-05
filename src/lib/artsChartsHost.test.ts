@@ -1,6 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+import * as grammar from "./dateExpressions";
 import type { BackendConfig } from "./types";
 
 const httpFetch = vi.fn(async (..._args: unknown[]) => new Response("{}"));
@@ -99,5 +102,22 @@ describe("lifecycle", () => {
   it("components.AnchorChips renders nothing (B16)", () => {
     const AnchorChips = buildHost({ viewer: false }).components.AnchorChips as unknown as (p: { onPick: () => void }) => null;
     expect(AnchorChips({ onPick: () => {} })).toBeNull();
+  });
+});
+
+describe("the vendored client resolves dates through bdobb (spec 2026-11-04 §1)", () => {
+  it("buildHost supplies bdobb's own grammar", () => {
+    const { dates } = buildHost({ viewer: false });
+    for (const name of ["parseExpression", "isExpression", "resolveExpression", "resolveValue",
+                        "previewExpression", "isRangeType", "splitRange"] as const)
+      expect(dates[name]).toBe(grammar[name]);
+  });
+  it("no vendored file carries a grammar of its own", () => {
+    const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
+      const p = join(dir, f); return statSync(p).isDirectory() ? walk(p) : [p];
+    });
+    const files = walk("vendor/arts-charts/src");
+    expect(files.filter((f) => /dateExpressions/.test(f))).toEqual([]);
+    expect(files.filter((f) => /from "[^"]*dateExpressions"/.test(readFileSync(f, "utf8")))).toEqual([]);
   });
 });

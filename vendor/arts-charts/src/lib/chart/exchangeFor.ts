@@ -3,7 +3,7 @@
 
 import type { ChartWindow } from "./rangeExpr";
 import { getLocalTimeZone } from "@internationalized/date";
-import { parseExpression, resolveExpression, wireDatetime, type Expression } from "../dateExpressions";
+import { parseExpression, resolveExpression, wireDatetime, type Expression } from "../dates";
 import { DEFAULT_EXCHANGE, exchangeOf, weekdayCalendar, type ExchangeCalendar } from "../tradingCalendar";
 import type { AnchorResolver } from "./indicatorsParam";
 
@@ -106,7 +106,7 @@ export function anchorResolver(
  * is read on, and the calendar every production consults. With an exchange
  * both are the exchange's -- the bundled holidays included. With none:
  *
- * I1 fix: with no exchange, `T@14:00`'s clock branch (dateExpressions.ts's
+ * I1 fix: with no exchange, `T@14:00`'s clock branch (the host grammar's
  * applyAt) must build the instant on the VIEWER's zone, not XNYS's -- the
  * zone every other control on a crypto/forex card already reads. Standing
  * in a weekday calendar whose timezone is the viewer's own keeps that

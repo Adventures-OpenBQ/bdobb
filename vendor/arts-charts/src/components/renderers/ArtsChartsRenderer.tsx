@@ -1,7 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
+import type { Stamp } from "../../lib/chartDocument";
 import {
   AreaSeries, BarSeries, CandlestickSeries, CrosshairMode, HistogramSeries, LineSeries, LineStyle, LineType,
 } from "lightweight-charts";
@@ -56,7 +57,7 @@ import {
 } from "../../lib/chart/series";
 import { matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
 import { sendRaw } from "../../lib/chart/wireAnchor";
-import { isExpression } from "../../lib/dateExpressions";
+import { isExpression } from "../../lib/dates";
 // The card's `start`/`end` as instants, read exactly as the wire reads them
 // for `S`/`E` in any other widget parameter -- one parser, one answer.
 import { paramInstant } from "../../lib/params";
@@ -266,13 +267,15 @@ function ChartCard({
   backend, widget, params, state: rawState, onPatch, exchange: dashboardExchange, onParam, groups, groupsDisabled,
   card,
   controlsSlot, paramsOpen, onOpenParams, onOk, onCancel, paramsDirty,
-  refreshKey, host,
+  refreshKey, host, stampRef,
 }: {
   /**
    * The app this chart runs in (arts-charts-openbq). Optional: an app that
    * calls configureArtsCharts(host) at startup need not pass it again.
    */
   host?: ArtsChartsHost;
+  /** S14: the card hands its resolvers up here for the document save path. */
+  stampRef?: MutableRefObject<Stamp | null>;
   backend: BackendConfig;
   widget: WidgetDef;
   params: Record<string, string>;
@@ -747,25 +750,11 @@ function ChartCard({
     () => anchorResolver(calendar, new Date(), { start: windowStart, end: anchorWindowRef.current.end }),
     [calendar, windowStart],
   );
-  // v12.4.2: in EODHD mode live-grid resolves anchors itself (T forms in the
-  // symbol's exchange zone, OBS-n against ticks) and echoes the RAW text, so
-  // the wire carries the expression and the matcher compares raw to raw. On
-  // the tick plane the client keeps resolving T forms for kdb-ws, and passes
-  // OBS-n through because only kdb-ws can count trades.
-  //
-  // Final whole-branch review, B1: "in EODHD mode" above overstated it --
-  // live-grid only resolves the six named anchors with the six narrow-unit
-  // offsets `sendRaw` checks for. `S`/`E`, a period anchor, or a wide unit
-  // (`w m q y fq fy`) is a client-only form the server cannot parse, so
-  // `wireResolver` still resolves those to an instant even on the EODHD
-  // plane; only the forms live-grid actually understands go out raw.
+  // Only `OBS-n` rides raw, on either plane (spec 2026-11-04 §2): only the
+  // server can count trades. Every other expression is resolved to an instant
+  // by the host's grammar here, so the wire carries instants and the matcher
+  // compares instants.
   const wireResolver = useCallback((text: string) => {
-    // v12.4.2 B1 fix (final whole-branch review): live-grid's own anchor
-    // grammar is narrower than the client's (`sendRaw`'s own comment names
-    // `live-grid/app/anchors.py` as the source of truth) -- an `S`/`E`, a
-    // period anchor, or a wide-unit offset must still be resolved to an
-    // instant here even in EODHD mode, or the server 400s on a form only
-    // the client understands.
     return sendRaw(text, eodhd) ? text : resolveAnchor(text);
   }, [eodhd, resolveAnchor]);
   // The kdb tick plane is the ONLY source of an anchored VWAP's running
@@ -1110,6 +1099,12 @@ function ChartCard({
     },
     [calendar, anchorWindow, groups],
   );
+  const iso = (s: number) => new Date(s * 1000).toISOString().replace(".000Z", "Z");
+  // S14: the save path stamps each expression with what this card resolves it to now.
+  if (stampRef) stampRef.current = {
+    at: (expr) => { const s = resolveWindowed(expr); return s === null ? null : iso(s); },
+    range: (r) => { const w = resolveRange(r, new Date(), calendar, anchorWindow); return w && { from: iso(w.from), to: iso(w.to) }; },
+  };
   /** The loaded window in unix seconds: what an `xs`/`xe` that resolves to nothing falls back to. */
   const loadedWindow = useMemo(
     () => ({ start: candles[0]?.time ?? null, end: candles.at(-1)?.time ?? null }),
@@ -3885,13 +3880,14 @@ function ChartCard({
 export function ArtsChartsRenderer(props: Parameters<typeof ChartCard>[0]) {
   if (props.host !== undefined) configureArtsCharts(props.host);
   const registry = useTaRegistry(props.backend);
-  const sync = useChartDocument({ params: props.params, state: props.state, onPatch: props.onPatch, onParam: props.onParam, registry });
+  const stampRef = useRef<Stamp | null>(null);
+  const sync = useChartDocument({ params: props.params, state: props.state, onPatch: props.onPatch, onParam: props.onParam, registry, stamp: () => stampRef.current });
   const watches = useWatches(props.params.chart_id ?? "");
-  if (sync === null) return <ChartCard {...props} />;
+  if (sync === null) return <ChartCard {...props} stampRef={stampRef} />;
   const n = watches.length;
   return (
     <div className="chart-doc">
-      <ChartCard {...props} onPatch={sync.onPatch} onParam={sync.onParam} />
+      <ChartCard {...props} stampRef={stampRef} onPatch={sync.onPatch} onParam={sync.onParam} />
       {sync.note === null ? null : <div className="chart-doc-note" role="status">{sync.note}</div>}
       {n === 0 ? null : (
         <span className="chart-doc-bell" role="img" aria-label={`${n} watch${n === 1 ? "" : "es"}`} title={watches.map((w) => w.condition).join("\n")}>

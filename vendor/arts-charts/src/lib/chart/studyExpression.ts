@@ -36,6 +36,8 @@ export type CatalogEntry = {
    * it -- which then simply never accepts a `bd` (see unifyWindows).
    */
   windows: readonly string[];
+  /** Names of the params that take a time (S14): saved as expression plus instant. */
+  times?: string[];
   // `readonly`: the fixtures (here and in useTaRegistry's tests) build a catalog
   // entry with `as const` for its literal `pane`/`render` unions, which makes
   // `params` a readonly tuple -- nothing in this module ever mutates it.

@@ -3,52 +3,24 @@
 
 import {
   isExpression, parseExpression, parseWireDatetime, previewExpression,
-  type Preview, type Unit,
-} from "../dateExpressions";
-
-/**
- * The six named anchors live-grid resolves itself, and the six offset units
- * it parses on one -- `live-grid/app/anchors.py`'s own grammar, which is
- * narrower than the client's (final whole-branch review, B1). The client
- * additionally has `S`/`E`, the period anchors (`W0 M0 Q0 Y0 FQ0 FY0`), and
- * the wider unit set (`w m q y fq fy`); none of those parse on the server,
- * so an expression using them must be resolved here, not echoed raw.
- *
- * `AnchorName` (dateExpressions' own six-plus-`S`/`E` union) isn't exported,
- * so this set is typed as a plain string set rather than imported -- its
- * six literals are still exactly that union minus `S`/`E`.
- */
-const LIVE_GRID_NAMED_ANCHORS: ReadonlySet<string> = new Set([
-  "T", "now", "trade_date", "prev_trade_date", "session_open", "session_close",
-]);
-const LIVE_GRID_OFFSET_UNITS: ReadonlySet<Unit> = new Set(["s", "min", "h", "d", "bd"] satisfies Unit[]);
+  type Preview,
+} from "../dates";
 
 /**
  * Whether `wireResolver` may hand `text` to the server exactly as typed,
- * rather than resolving it to an instant first. Two cases:
- *
- * - An `OBS-n` anchor, on EITHER plane: it names a fact about the trade
- *   data (the n-th most recent trade) that only the server can answer, so
- *   it always rides raw -- kdb-ws counts its own trades on the tick plane,
- *   live-grid counts EODHD's on the EODHD one.
- * - Any other expression, but only on the EODHD plane, and only when it
- *   stays inside live-grid's narrower grammar: a bare named anchor from the
- *   six-name set above, with every offset's unit in the six-unit set above.
- *   `S`/`E`, a period anchor, or a wider unit falls through to `false` and
- *   is resolved to an instant by the caller instead.
+ * rather than resolving it to an instant first. Only `OBS-n`, on either
+ * plane (spec 2026-11-04 §2): it names a fact about the trade data (the n-th
+ * most recent trade) that only the server can answer -- kdb-ws counts its own
+ * trades on the tick plane, live-grid counts EODHD's on the EODHD one. Every
+ * other expression is resolved to an instant by the host's grammar first.
  *
  * A malformed expression (`parseExpression` returns null) is never sent
  * raw -- there is nothing here for the server to parse either.
  */
-export function sendRaw(text: string, eodhd: boolean): boolean {
+export function sendRaw(text: string, _eodhd: boolean): boolean {
   const expr = parseExpression(text);
   if (expr === null) return false;
-  if (expr.start.anchor.kind === "obs") return true;
-  if (!eodhd) return false;
-  const { anchor, offsets } = expr.start;
-  if (anchor.kind !== "named") return false;
-  if (!LIVE_GRID_NAMED_ANCHORS.has(anchor.name)) return false;
-  return offsets.every((o) => LIVE_GRID_OFFSET_UNITS.has(o.unit));
+  return expr.start.anchor.kind === "obs";
 }
 
 /**
