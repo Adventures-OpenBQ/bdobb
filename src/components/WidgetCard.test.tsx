@@ -653,7 +653,7 @@ describe("WidgetCard header controls", () => {
     expect(screen.queryByRole("button", { name: /^Parameters \(/ })).toBeNull();
   });
 
-  it("puts title-bar params beside the title and folds the buttons once they run out of room", () => {
+  it("puts title-bar params beside the title, scrolls them first, and folds the buttons only on a very narrow row", () => {
     register({
       params: [
         { paramName: "symbol", label: "Symbol", type: "text" },
@@ -673,7 +673,7 @@ describe("WidgetCard header controls", () => {
       activeTabId: "t1",
     });
     let callback: ResizeObserverCallback | undefined;
-    const widths = { row: 400, track: 100 };
+    const widths = { row: 400, track: 300 };
     // This file stubs ResizeObserver for every test; swap in one that hands
     // back its callback, and put the file's stub back afterwards.
     const fileStub = globalThis.ResizeObserver;
@@ -700,8 +700,16 @@ describe("WidgetCard header controls", () => {
       expect(container.querySelector(".card-params-rows")).toContainElement(screen.getByLabelText("Start"));
       expect(screen.queryByRole("button", { name: "Show widget controls" })).toBeNull();
 
+      // Narrower than the controls: the row scrolls and the buttons stay.
       act(() => {
-        widths.row = 110;
+        widths.row = 200;
+        callback?.([], {} as ResizeObserver);
+      });
+      expect(screen.queryByRole("button", { name: "Show widget controls" })).toBeNull();
+
+      // Narrower than about one control: the buttons fold.
+      act(() => {
+        widths.row = 100;
         callback?.([], {} as ResizeObserver);
       });
       expect(screen.getByRole("button", { name: "Show widget controls" })).toBeInTheDocument();

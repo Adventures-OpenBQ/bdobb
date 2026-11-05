@@ -8,9 +8,10 @@ The controls sit where OpenBB Workspace puts them. By default they share the
 title bar, after the card's name. A widget can arrange them in rows (OpenBB's
 parameter positioning): its first row still shares the title bar, and each
 further row gets a line of its own under it. A row that is wider than the
-card scrolls sideways rather than wrapping. When the title-bar row runs out
-of room, the card's own buttons fold behind the **⌄** chevron, as they do
-with **Collapse widget controls** on, and come back once there is room again.
+card scrolls sideways rather than wrapping. On a very narrow card, once the
+title-bar row would be squeezed to about one control's width, the card's own
+buttons fold behind the **⌄** chevron, as they do with **Collapse widget
+controls** on, and come back once there is room again. **Run** never folds.
 
 ![Two cards with their parameter rows](./shots/card-parameters.png)
 

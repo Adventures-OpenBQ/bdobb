@@ -17,7 +17,7 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import type { ParamEdit } from "../lib/paramGroups";
 import type { BackendConfig, DashboardCard, ParamGroup, ParamOption, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
-import { CROWDED_AT, nextCrowded, ParamControls, ROOMY_AT } from "./ParamControls";
+import { nextCrowded, ParamControls, ROW_MIN, UNFOLD_MARGIN } from "./ParamControls";
 
 const widget: WidgetDef = makeWidget({
   id: "w1",
@@ -1092,6 +1092,7 @@ describe("ParamControls rows", () => {
     beforeEach(() => {
       callback = undefined;
       widths.row = 400;
+      widths.track = 100;
       vi.stubGlobal(
         "ResizeObserver",
         class {
@@ -1124,35 +1125,46 @@ describe("ParamControls rows", () => {
         callback?.([], {} as ResizeObserver);
       });
 
-    it("reports crowded once the title-bar row is out of room, and roomy only once it has room again", () => {
+    it("scrolls first, reports crowded only below one control's width, and roomy only past it again", () => {
       const onCrowdedChange = vi.fn();
+      widths.track = 300; // controls that need more than ROW_MIN
       renderRows(onCrowdedChange);
       expect(onCrowdedChange).not.toHaveBeenCalled();
-      resize(widths.track + CROWDED_AT); // exactly at the threshold
+      resize(200); // narrower than the controls: the row scrolls, nothing folds
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(ROW_MIN - 1);
       expect(onCrowdedChange).toHaveBeenLastCalledWith(true);
-      resize(widths.track + ROOMY_AT - 1); // more room, but not enough to unfold
+      resize(ROW_MIN + UNFOLD_MARGIN - 1); // back over ROW_MIN, but inside the margin
       expect(onCrowdedChange).toHaveBeenCalledTimes(1);
-      resize(widths.track + ROOMY_AT);
+      resize(ROW_MIN + UNFOLD_MARGIN);
       expect(onCrowdedChange).toHaveBeenLastCalledWith(false);
       expect(onCrowdedChange).toHaveBeenCalledTimes(2);
+    });
+
+    it("never folds for a row whose controls need less than ROW_MIN, while they fit", () => {
+      const onCrowdedChange = vi.fn();
+      widths.track = 80;
+      renderRows(onCrowdedChange);
+      resize(80);
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(79);
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(true);
     });
   });
 });
 
 describe("nextCrowded", () => {
-  it("crowds at the lower threshold and unfolds only at the upper one", () => {
-    expect(nextCrowded(false, CROWDED_AT + 1)).toBe(false);
-    expect(nextCrowded(false, CROWDED_AT)).toBe(true);
-    expect(nextCrowded(true, ROOMY_AT - 1)).toBe(true);
-    expect(nextCrowded(true, ROOMY_AT)).toBe(false);
+  it("folds only once the row is narrower than the smaller of what it needs and ROW_MIN", () => {
+    expect(nextCrowded(false, 200, 300)).toBe(false); // scrolls
+    expect(nextCrowded(false, ROW_MIN, 300)).toBe(false);
+    expect(nextCrowded(false, ROW_MIN - 1, 300)).toBe(true);
+    expect(nextCrowded(false, 60, 60)).toBe(false); // short row that fits
+    expect(nextCrowded(false, 59, 60)).toBe(true);
   });
 
-  it("waits for the room wide buttons need, never less than ROOMY_AT", () => {
-    // Buttons 220px wide: unfolding them with 200px to spare would leave the
-    // row crowded again at once.
-    expect(nextCrowded(true, 200, 260)).toBe(true);
-    expect(nextCrowded(true, 260, 260)).toBe(false);
-    // A narrow card's buttons do not lower the bar below Workspace's.
-    expect(nextCrowded(true, ROOMY_AT - 1, 60)).toBe(true);
+  it("unfolds only if the row would keep the floor plus the margin with the buttons back", () => {
+    // Buttons 250px wide: the row loses 250px when they unfold.
+    expect(nextCrowded(true, 250 + ROW_MIN + UNFOLD_MARGIN - 1, 300, 250)).toBe(true);
+    expect(nextCrowded(true, 250 + ROW_MIN + UNFOLD_MARGIN, 300, 250)).toBe(false);
   });
 });

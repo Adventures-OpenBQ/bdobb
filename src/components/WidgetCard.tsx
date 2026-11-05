@@ -24,7 +24,7 @@ import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { InlineRename } from "./InlineRename";
-import { CROWDED_AT, ParamControls } from "./ParamControls";
+import { ParamControls } from "./ParamControls";
 import { MenuPanel } from "./RowContextMenu";
 import { WidgetFormPanel } from "./WidgetFormPanel";
 import { WidgetTabs } from "./WidgetTabs";
@@ -102,13 +102,6 @@ const TYPE_LABELS: Record<string, string> = {
  */
 const DOCUMENT_TYPES = new Set(["pdf", "multi_file_viewer"]);
 
-/**
- * Room beyond the buttons' own width that the title-bar row must have before
- * they unfold: enough that, once unfolded, the row is still clear of
- * CROWDED_AT and does not fold them straight back.
- */
-const ROOMY_MARGIN = CROWDED_AT + 20;
-
 /** .card-header's gap, in pixels (styles.css). */
 const HEADER_GAP = 8;
 
@@ -173,14 +166,14 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const [paramsCrowded, setParamsCrowded] = useState(false);
   const onCrowdedChange = useCallback((crowded: boolean) => setParamsCrowded(crowded), []);
   // The width the buttons take while unfolded, measured whenever they are, so
-  // the row unfolds them only once it can hold them (see roomyAt on
-  // ParamControls). .card-controls and its icon strip are display: contents
+  // the row unfolds them only once it can spare that width (see buttonsWidth
+  // on ParamControls). .card-controls and its icon strip are display: contents
   // while unfolded, so their children are the header's own flex items: the
   // span runs over those (the view toggle as well as the buttons) and adds
   // one header gap for the space before the first of them.
   const controlsRef = useRef<HTMLDivElement>(null);
   const unfoldedWidth = useRef(0);
-  const roomyAt = useCallback(() => unfoldedWidth.current + ROOMY_MARGIN, []);
+  const buttonsWidth = useCallback(() => unfoldedWidth.current, []);
   const chartTheme = useSettingsStore((s) => s.settings.theme);
   const minimized = card.minimized ?? false;
 
@@ -1235,7 +1228,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             backend={backend}
             onApply={(edit) => void apply(edit)}
             onCrowdedChange={onCrowdedChange}
-            roomyAt={roomyAt}
+            buttonsWidth={buttonsWidth}
           />
         ) : null}
         <div

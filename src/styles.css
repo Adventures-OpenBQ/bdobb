@@ -1204,9 +1204,9 @@ body {
    space and scrolls sideways when its controls need more, rather than
    wrapping. Rows 1 and up each get a line of their own under the title bar,
    one control-height tall, and scroll sideways the same way. Compact by
-   design: this is a titlebar, not a form. When row 0 runs out of room the
-   card folds its buttons behind the chevron (nextCrowded in
-   ParamControls.tsx). */
+   design: this is a titlebar, not a form. Row 0 scrolls first; only when it
+   would be narrower than about one control does the card fold its buttons
+   behind the chevron (nextCrowded and ROW_MIN in ParamControls.tsx). */
 .card-params {
   display: flex;
   flex-wrap: nowrap;

@@ -33,29 +33,40 @@ type Props = {
    */
   onCrowdedChange?: (crowded: boolean) => void;
   /**
-   * How much room the row must have to spare before the card's buttons
-   * unfold again. Defaults to ROOMY_AT; a card whose buttons are wider than
-   * that passes their width plus a margin, or unfolding them would crowd the
-   * row again at once and the buttons would fold and unfold in a loop.
+   * The width the card's buttons take while unfolded: the width the row loses
+   * when they unfold. The row unfolds them only once it could lose that and
+   * still be wide enough (see nextCrowded). Absent means 0.
    */
-  roomyAt?: () => number;
+  buttonsWidth?: () => number;
 };
 
 /**
- * The title-bar row is crowded once its controls leave it this many pixels or
- * fewer to spare, and stops being crowded only once it has this many again:
- * the gap between the two keeps the card's buttons from flickering in and out
- * at the boundary. Workspace's own title bar uses the same two numbers, sized
- * for its buttons; BDOBB's are often wider, so the card raises the second one
- * to fit them (the roomyAt prop).
+ * The title-bar row scrolls before the card folds anything: its controls
+ * shrink into a sideways scroll, and only when the row would be narrower than
+ * this (roughly one control) does the card fold its buttons behind the
+ * chevron. A row whose controls need less than this never folds them at all.
+ * Workspace folds as soon as its row runs out of spare room; BDOBB's buttons
+ * are text, about two and a half times as wide as Workspace's icons, and that
+ * rule would fold them on most half-width cards.
  */
-export const CROWDED_AT = 20;
-export const ROOMY_AT = 150;
+export const ROW_MIN = 120;
 
-/** One step of the crowded state, from the room the title-bar row has to spare. */
-export function nextCrowded(crowded: boolean, spare: number, roomyAt: number = ROOMY_AT): boolean {
-  if (crowded) return spare < Math.max(roomyAt, ROOMY_AT);
-  return spare <= CROWDED_AT;
+/**
+ * How much wider than it needs the row must be, once the buttons are back,
+ * before they unfold: the margin keeps them from folding and unfolding at the
+ * boundary.
+ */
+export const UNFOLD_MARGIN = 20;
+
+/**
+ * One step of the folded state. `rowWidth` is the row's width now, `needed`
+ * the width its controls take unscrolled, `buttonsWidth` the width the card's
+ * buttons take while unfolded (the width the row loses when they unfold).
+ */
+export function nextCrowded(crowded: boolean, rowWidth: number, needed: number, buttonsWidth = 0): boolean {
+  const floor = Math.min(needed, ROW_MIN);
+  if (crowded) return rowWidth - buttonsWidth < floor + UNFOLD_MARGIN;
+  return rowWidth < floor;
 }
 
 /**
@@ -113,7 +124,7 @@ export function ParamControls({
   backend,
   onApply,
   onCrowdedChange,
-  roomyAt,
+  buttonsWidth,
 }: Props) {
   const params = useMemo(() => visibleParams(widget), [widget]);
 
@@ -301,9 +312,9 @@ export function ParamControls({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [optionStates, params, kindByName]);
 
-  // The title-bar row's room to spare: its own width less what its controls
-  // need. The track is sized to its content (width: max-content), so its width
-  // is what the controls need whatever the row has been given.
+  // The title-bar row's width against what its controls need. The track is
+  // sized to its content (width: max-content), so its width is what the
+  // controls need whatever the row has been given.
   const row0Ref = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const crowdedRef = useRef(false);
@@ -321,13 +332,13 @@ export function ParamControls({
       return;
     }
     const check = () =>
-      report(nextCrowded(crowdedRef.current, row.clientWidth - track.offsetWidth, roomyAt?.() ?? ROOMY_AT));
+      report(nextCrowded(crowdedRef.current, row.clientWidth, track.offsetWidth, buttonsWidth?.() ?? 0));
     const observer = new ResizeObserver(check);
     observer.observe(row);
     observer.observe(track);
     check();
     return () => observer.disconnect();
-  }, [hasRow0, onCrowdedChange, roomyAt]);
+  }, [hasRow0, onCrowdedChange, buttonsWidth]);
 
   const field = (p: WidgetParam) => {
     const kind = controlKind(p);
