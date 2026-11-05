@@ -1,6 +1,6 @@
-// vendored from openbq-docker e5ceb5d47b18e850bdd91d87a2c2cae7cd253f34 funnel-gateway/charts-policy.mjs sha256:df43ca0fdea127b5ba6dd9e7b83a635c1b310b373b63ca49c34125e13047b760
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
-// SPDX-License-Identifier: AGPL-3.0-only
+// vendored from openbq-docker 45d26cb8bee9cba565668e4546c5b2c6495c6503 funnel-gateway/charts-policy.mjs sha256:a73e791e59a2b60dd5b3c6698d09759b7bbafa3a0f2ac0da03010de68f12ed65
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
+// SPDX-License-Identifier: Apache-2.0
 
 /**
  * The /charts family on the door (openbq-docker v12 part 1): Art's Charts, the opt-in
@@ -36,6 +36,10 @@ const STUDY = [...SERIES, "source", "macro", "indicators", "anchor", "basis", "w
 const ROUTES = [
   ["GET|POST", /^\/charts$/, [], "json"],
   ["GET", /^\/charts\/events$/, [], "sse"],
+  // BDOBB's companion widgets (v12 part 5, trimmed by the 2026-11-04 engine split): read-only GETs, no query. The bars widget is live-grid's.
+  ["GET", /^\/charts\/widgets\.json$/, [], "json"],
+  ["GET", /^\/charts\/widgets\/documents$/, [], "json"],
+  ["GET", /^\/charts\/widgets\/alerts$/, [], "json"],
   ["POST", /^\/charts\/mcp$/, [], "mcp"],
   ["GET|PUT|DELETE", exact(`/charts/${ID}`), [], "json"],
   ["GET", exact(`/charts/${ID}/history`), [], "json"],

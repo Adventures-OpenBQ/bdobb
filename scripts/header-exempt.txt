@@ -6,6 +6,7 @@ src-tauri/vendor/
 # Byte-identical imported Apache policy contracts; preserve their pinned hashes.
 web/policy.mjs
 web/temporal-policy.mjs
+web/charts-policy.mjs
 # Historical validation receipts keep the license they originally recorded.
 docs/releases/validation/
 # Historical design mockups are evidence, not application source.
