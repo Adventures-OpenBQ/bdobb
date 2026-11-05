@@ -148,7 +148,11 @@ try {
   function json(body) {
     return new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
   }
-  server.on("request", (req, res) => app.emit("request", req, res));
+  const settingsProbes = [];
+  server.on("request", (req, res) => {
+    if (req.url?.endsWith("/pro/user")) settingsProbes.push({ cookiePresent: Boolean(req.headers.cookie) });
+    app.emit("request", req, res);
+  });
   server.on("upgrade", (req, socket, head) => app.emit("upgrade", req, socket, head));
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1440, height: 1000 } });
@@ -214,6 +218,21 @@ try {
   await echoed("AAPL");
   // The backend was discovered through the relay, the only way the catalogue reaches the page.
   assert.ok(forwarded.includes("/api/widgets.json"), JSON.stringify(forwarded));
+  // Connections deliberately probes Workspace without borrowing this web session.
+  // Its expected anonymous 401 must neither send cookies nor sign the user out.
+  const anonymousProbe = page.waitForResponse(response =>
+    response.url() === origin + "/api/pro/user" && response.status() === 401);
+  await page.hover("nav.left-rail");
+  await page.getByRole("button", { name: "Connections", exact: true }).click();
+  await anonymousProbe;
+  const connections = page.getByRole("dialog", { name: "Connections" });
+  await connections.getByText("Settings API: login", { exact: true }).first().waitFor();
+  assert.ok(settingsProbes.length > 0);
+  assert.ok(settingsProbes.every(probe => !probe.cookiePresent));
+  await connections.getByRole("button", { name: "Close", exact: true }).click();
+  assert.equal(page.url(), origin + "/");
+  assert.equal((await context.request.get(origin + "/api/widgets.json")).status(), 200);
+  await page.mouse.move(600, 400);
   // The notice bar takes 28px off the top of the page, and the app shell is sized
   // from the VIEWPORT (100dvh), not from #root -- so unless the web build gives
   // those 28px back, the shell runs past the bottom and carries the rail's last
