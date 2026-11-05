@@ -248,10 +248,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## JavaScript packages (464)
+## JavaScript packages (466)
 
 | Package | Version | License | Copyright |
 |---|---|---|---|
+| @adventures-openbq/arts-charts | 0.1.0 | BUSL-1.1 | (c) 2026 SecretoftheUniverse.com LLC |
 | @auth/core | 0.41.3 | ISC | Copyright (c) 2022-2024, Balázs Orbán |
 | @blocknote/core | 0.54.0 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
 | @blocknote/mantine | 0.54.0 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
@@ -297,7 +298,8 @@ SOFTWARE.
 | @tanstack/react-virtual | 3.14.10 | MIT | Copyright (c) 2021-present Tanner Linsley |
 | @tanstack/table-core | 8.21.3 | MIT | Copyright (c) 2016 Tanner Linsley |
 | @tanstack/virtual-core | 3.17.8 | MIT | Copyright (c) 2021-present Tanner Linsley |
-| @tauri-apps/api | 2.11.1 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| @tauri-apps/api | 2.12.4 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| @tauri-apps/plugin-deep-link | 2.6.2 | MIT OR Apache-2.0 | (none stated in its license file) |
 | @tauri-apps/plugin-dialog | 2.7.2 | MIT OR Apache-2.0 | (none stated in its license file) |
 | @tauri-apps/plugin-fs | 2.5.1 | MIT OR Apache-2.0 | (none stated in its license file) |
 | @tauri-apps/plugin-http | 2.5.9 | MIT OR Apache-2.0 | (none stated in its license file) |
@@ -717,14 +719,14 @@ SOFTWARE.
 | zustand | 5.0.15 | MIT | Copyright (c) 2019 Paul Henschel |
 | zwitch | 2.0.4 | MIT | Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com> |
 
-## Rust crates (504)
+## Rust crates (516)
 
 | Package | Version | License | Copyright |
 |---|---|---|---|
 | adler2 | 2.0.1 | 0BSD OR MIT OR Apache-2.0 | Copyright (C) Jonas Schievink <jonasschievink@gmail.com>; Copyright [yyyy] [name of copyright owner] |
 | aho-corasick | 1.1.5 | Unlicense OR MIT | Copyright (c) 2015 Andrew Gallant |
-| alloc-no-stdlib | 2.0.4 | BSD-3-Clause | Copyright (c) 2016 Dropbox, Inc. |
-| alloc-stdlib | 0.2.4 | BSD-3-Clause | (no license file shipped) |
+| alloc-no-stdlib | 3.0.0 | BSD-3-Clause | Copyright (c) 2016 Dropbox, Inc. |
+| alloc-stdlib | 0.3.0 | BSD-3-Clause | (no license file shipped) |
 | android_system_properties | 0.1.6 | MIT OR Apache-2.0 | Copyright 2016 Nicolas Silva; Copyright (c) 2013 Nicolas Silva |
 | anyhow | 1.0.104 | MIT OR Apache-2.0 | (none stated in its license file) |
 | async-broadcast | 0.7.2 | MIT OR Apache-2.0 | Copyright 2020 Yoshua Wuyts; Copyright (c) 2020 Yoshua Wuyts |
@@ -742,6 +744,7 @@ SOFTWARE.
 | atomic-waker | 1.1.2 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Alex Crichton; Copyright (c) 2017 The Tokio Authors |
 | base64 | 0.21.7 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 Alice Maz |
 | base64 | 0.22.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 Alice Maz |
+| base64 | 0.23.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2025 Alice Maz, Marshall Pierce |
 | bit-set | 0.8.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2023 The Rust Project Developers |
 | bit-vec | 0.8.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2023 The Rust Project Developers |
 | bitflags | 1.3.2 | MIT/Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The Rust Project Developers |
@@ -749,8 +752,8 @@ SOFTWARE.
 | block-buffer | 0.10.4 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2018-2019 The RustCrypto Project Developers |
 | block2 | 0.6.2 | MIT | (no license file shipped) |
 | blocking | 1.6.2 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner] |
-| brotli | 8.0.4 | BSD-3-Clause AND MIT | Copyright (c) 2016 Dropbox, Inc.; Copyright (c) 2009, 2010, 2013-2016 by the Brotli Authors. |
-| brotli-decompressor | 5.0.3 | BSD-3-Clause/MIT | Copyright (c) 2016 Dropbox, Inc. |
+| brotli | 9.1.1 | BSD-3-Clause AND MIT | Copyright (c) 2016 Dropbox, Inc.; Copyright (c) 2009, 2010, 2013-2016 by the Brotli Authors. |
+| brotli-decompressor | 6.2.0 | BSD-3-Clause/MIT | Copyright (c) 2016 Dropbox, Inc. |
 | bs58 | 0.5.1 | MIT/Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 The roaring-rs developers. |
 | bumpalo | 3.20.3 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019 Nick Fitzgerald |
 | bytemuck | 1.25.2 | Zlib OR Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019 Daniel "Lokathor" Gee. |
@@ -762,13 +765,15 @@ SOFTWARE.
 | cargo_metadata | 0.19.2 | MIT | (none stated in its license file) |
 | cargo-platform | 0.1.9 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | cesu8 | 1.1.0 | Apache-2.0/MIT | (no license file shipped) |
-| cfb | 0.7.3 | MIT | Copyright (c) 2017 Matthew D. Steele |
+| cfb | 0.14.0 | MIT | Copyright (c) 2017 Matthew D. Steele |
 | cfg-if | 1.0.4 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 Alex Crichton |
 | cfg-if | 1.0.5 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 Alex Crichton |
 | chacha20 | 0.10.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019-2026 The RustCrypto Project Developers |
 | chrono | 0.4.45 | MIT OR Apache-2.0 | Copyright (c) 2014, Kang Seonghoon.; Copyright [yyyy] [name of copyright owner] |
 | combine | 4.6.7 | MIT | Copyright (c) 2015 Markus Westerlind |
 | concurrent-queue | 2.5.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner] |
+| const-random | 0.1.18 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Amanieu d'Antras |
+| const-random-macro | 0.1.16 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Amanieu d'Antras |
 | cookie | 0.18.2 | MIT OR Apache-2.0 | Copyright 2017 Sergio Benitez; Copyright 2014 Alex Chricton; Copyright (c) 2017 Sergio Benitez; Copyright (c) 2014 Alex Crichton |
 | cookie_store | 0.22.1 | MIT OR Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2017 |
 | core-foundation | 0.9.4 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2012-2013 Mozilla Foundation |
@@ -781,11 +786,11 @@ SOFTWARE.
 | crc32fast | 1.5.0 | MIT OR Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2018 Sam Rijs, Alex Crichton and contributors |
 | crossbeam-channel | 0.5.16 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019 The Crossbeam Project Developers; Copyright (c) 2009 The Go Authors. All rights reserved. |
 | crossbeam-utils | 0.8.22 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019 The Crossbeam Project Developers |
+| crunchy | 0.2.4 | MIT | Copyright 2017-2023 Eira Fransham. |
 | crypto-common | 0.1.7 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2021 RustCrypto Developers |
-| cssparser | 0.36.0 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
-| cssparser-macros | 0.6.1 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
-| ctor | 0.8.0 | Apache-2.0 OR MIT | Copyright {yyyy} {name of copyright owner} |
-| ctor-proc-macro | 0.0.7 | Apache-2.0 OR MIT | Copyright {yyyy} {name of copyright owner} |
+| cssparser | 0.37.0 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
+| cssparser-macros | 0.7.1 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
+| ctor | 1.0.13 | Apache-2.0 OR MIT | Copyright {yyyy} {name of copyright owner} |
 | darling | 0.23.0 | MIT | Copyright (c) 2017 Ted Driggs |
 | darling_core | 0.23.0 | MIT | Copyright (c) 2017 Ted Driggs |
 | darling_macro | 0.23.0 | MIT | Copyright (c) 2017 Ted Driggs |
@@ -798,19 +803,18 @@ SOFTWARE.
 | derive_more | 2.1.1 | MIT | Copyright (c) 2016 Jelte Fennema |
 | derive_more-impl | 2.1.1 | MIT | Copyright (c) 2016 Jelte Fennema |
 | digest | 0.10.7 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2017 Artyom Pavlov |
-| dirs | 6.0.0 | MIT OR Apache-2.0 | Copyright (c) 2018-2019 dirs-rs contributors |
+| dirs | 7.0.0 | MIT OR Apache-2.0 | Copyright (c) 2018-2019 dirs-rs contributors |
 | dirs-sys | 0.5.0 | MIT OR Apache-2.0 | Copyright (c) 2018-2019 dirs-rs contributors |
 | dispatch2 | 0.3.1 | Zlib OR Apache-2.0 OR MIT | (no license file shipped) |
 | displaydoc | 0.2.7 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | dlopen2 | 0.8.2 | MIT | (no license file shipped) |
 | dlopen2_derive | 0.4.3 | MIT | (no license file shipped) |
+| dlv-list | 0.5.2 | MIT OR Apache-2.0 | Copyright (c) 2022 Scott Godwin |
 | document-features | 0.2.12 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020 Olivier Goffart <ogoffart@sixtyfps.io> |
-| dom_query | 0.27.0 | MIT | Copyright (c) 2023 Mykola Humanov |
+| dom_query | 0.28.0 | MIT | Copyright (c) 2023 Mykola Humanov |
 | dpi | 0.1.2 | Apache-2.0 AND MIT | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2018 Jorge Aparicio; copyright:; Copyright © 2005-2020 Rich Felker, et al.; Copyright © 1993,2004 Sun Microsystems or; Copyright © 2003-2011 David Schultz or; Copyright © 2003-2009 Steven G. Kargl or; Copyright © 2003-2009 Bruce D. Evans or; Copyright © 2008 Stephen L. Moshier or; Copyright © 2017-2018 Arm Limited |
 | dtoa | 1.0.11 | MIT OR Apache-2.0 | (none stated in its license file) |
 | dtoa-short | 0.3.5 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
-| dtor | 0.3.0 | Apache-2.0 OR MIT | Copyright {yyyy} {name of copyright owner} |
-| dtor-proc-macro | 0.0.6 | Apache-2.0 OR MIT | Copyright {yyyy} {name of copyright owner} |
 | dunce | 1.0.5 | CC0-1.0 OR MIT-0 OR Apache-2.0 | (none stated in its license file) |
 | dyn-clone | 1.0.20 | MIT OR Apache-2.0 | (none stated in its license file) |
 | embed_plist | 1.2.2 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020 Nikolai Vazquez |
@@ -865,12 +869,13 @@ SOFTWARE.
 | gtk3-macros | 0.18.2 | MIT | (none stated in its license file) |
 | h2 | 0.4.15 | MIT | Copyright (c) 2017 h2 authors |
 | hashbrown | 0.12.3 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Amanieu d'Antras |
+| hashbrown | 0.14.5 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Amanieu d'Antras |
 | hashbrown | 0.17.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 Amanieu d'Antras |
 | heck | 0.4.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 The Rust Project Developers |
 | heck | 0.5.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 The Rust Project Developers |
 | hermit-abi | 0.5.2 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | hex | 0.4.3 | MIT OR Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2013-2014 The Rust Project Developers.; Copyright (c) 2015-2020 The rust-hex Developers |
-| html5ever | 0.38.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The html5ever Project Developers |
+| html5ever | 0.39.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The html5ever Project Developers |
 | http | 1.5.0 | MIT OR Apache-2.0 | Copyright 2017 http-rs authors; Copyright (c) 2017 http-rs authors |
 | http-body | 1.1.0 | MIT | Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors |
 | http-body-util | 0.1.5 | MIT | Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors |
@@ -880,7 +885,7 @@ SOFTWARE.
 | hyper-util | 0.1.20 | MIT | Copyright (c) 2023-2025 Sean McArthur |
 | iana-time-zone | 0.1.65 | MIT OR Apache-2.0 | Copyright 2020 Andrew Straw; Copyright (c) 2020 Andrew D. Straw |
 | iana-time-zone-haiku | 0.1.2 | MIT OR Apache-2.0 | Copyright 2020 Andrew Straw; Copyright (c) 2020 Andrew D. Straw |
-| ico | 0.5.0 | MIT | Copyright (c) 2018 Matthew D. Steele |
+| ico | 0.6.0 | MIT | Copyright (c) 2018 Matthew D. Steele |
 | icu_collections | 2.2.0 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
 | icu_locale_core | 2.2.0 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
 | icu_normalizer | 2.2.0 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
@@ -893,7 +898,7 @@ SOFTWARE.
 | idna_adapter | 1.2.2 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) The rust-url developers |
 | indexmap | 1.9.3 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016--2017 |
 | indexmap | 2.14.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016--2017 |
-| infer | 0.19.0 | MIT | Copyright (c) 2019 Bojan |
+| infer | 0.22.0 | MIT | Copyright (c) 2019 Bojan |
 | ipnet | 2.12.1 | MIT OR Apache-2.0 | Copyright 2017 Juniper Networks, Inc. |
 | is-docker | 0.2.0 | MIT | Copyright (c) 2023 Sean Larkin |
 | is-wsl | 0.4.0 | MIT | Copyright (c) 2023 Sean Larkin |
@@ -910,9 +915,9 @@ SOFTWARE.
 | jni-sys | 0.4.1 | MIT OR Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2015 The rust-jni-sys Developers |
 | jni-sys-macros | 0.4.1 | MIT OR Apache-2.0 | (no license file shipped) |
 | js-sys | 0.3.104 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 Alex Crichton |
-| json-patch | 3.0.1 | MIT/Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2017 Ivan Dubrov |
-| jsonptr | 0.6.3 | MIT OR Apache-2.0 | Copyright 2024 Chance Dinkins; Copyright (c) 2022 Chance Dinkins |
-| keyboard-types | 0.7.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2017 Pyfisch |
+| json-patch | 4.2.0 | MIT/Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2017 Ivan Dubrov |
+| jsonptr | 0.7.1 | MIT OR Apache-2.0 | Copyright 2024 Chance Dinkins; Copyright (c) 2022 Chance Dinkins |
+| keyboard-types | 0.8.3 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2017 Pyfisch |
 | libappindicator | 0.9.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2017-2021 qDot; Copyright (c) 2021 Tauri Apps Contributors |
 | libappindicator-sys | 0.9.0 | Apache-2.0 OR MIT | (no license file shipped) |
 | libc | 0.2.189 | MIT OR Apache-2.0 | Copyright (c) The Rust Project Developers |
@@ -925,14 +930,15 @@ SOFTWARE.
 | lock_api | 0.4.14 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016 The Rust Project Developers |
 | log | 0.4.33 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The Rust Project Developers |
 | lru-slab | 0.1.2 | MIT OR Apache-2.0 OR Zlib | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2024 The lru-slab Developers |
-| markup5ever | 0.38.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The html5ever Project Developers |
+| markup5ever | 0.39.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The html5ever Project Developers |
 | memchr | 2.8.3 | Unlicense OR MIT | Copyright (c) 2015 Andrew Gallant |
 | memoffset | 0.9.1 | MIT | Copyright (c) 2017 Gilad Naaman |
 | mime | 0.3.17 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 Sean McArthur |
 | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | Copyright 2013-2014 RAD Game Tools and Valve Software; Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC; Copyright (c) 2017 Frommi; Copyright (c) 2017-2024 oyvindln; Copyright (c) 2020 Frommi |
 | mio | 1.2.2 | MIT | Copyright (c) 2014 Carl Lerche and other MIO contributors |
-| muda | 0.19.3 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2022-2022 Tauri Programme within The Commons Conservancy |
+| muda | 0.20.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2022-2022 Tauri Programme within The Commons Conservancy |
 | ndk | 0.9.0 | MIT OR Apache-2.0 | (no license file shipped) |
+| ndk-context | 0.1.1 | MIT OR Apache-2.0 | (no license file shipped) |
 | ndk-sys | 0.6.0+11769913 | MIT OR Apache-2.0 | (no license file shipped) |
 | new_debug_unreachable | 1.0.6 | MIT | Copyright (c) 2015 Jonathan Reem |
 | num_enum | 0.7.6 | BSD-3-Clause OR MIT OR Apache-2.0 | Copyright (c) 2018, Daniel Wagner-Hall |
@@ -959,6 +965,7 @@ SOFTWARE.
 | once_cell | 1.21.4 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | open | 5.4.1 | MIT | Copyright © `2015` `Sebastian Thiel` |
 | option-ext | 0.2.0 | MPL-2.0 | (c) under Patent Claims infringed by Covered Software in the absence of |
+| ordered-multimap | 0.7.3 | MIT | Copyright (c) 2018 sgodwincs |
 | ordered-stream | 0.2.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | pango | 0.18.3 | MIT | (none stated in its license file) |
 | pango-sys | 0.18.0 | MIT | (none stated in its license file) |
@@ -973,7 +980,6 @@ SOFTWARE.
 | pin-project-lite | 0.2.17 | Apache-2.0 OR MIT | (none stated in its license file) |
 | piper | 0.2.5 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | plist | 1.10.0 | MIT | Copyright (c) 2015 Edward Barnard |
-| png | 0.17.16 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 nwin |
 | png | 0.18.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 nwin |
 | polling | 3.11.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner] |
 | portable-atomic | 1.15.0 | Apache-2.0 OR MIT | (none stated in its license file) |
@@ -1011,6 +1017,7 @@ SOFTWARE.
 | reqwest | 0.13.4 | MIT OR Apache-2.0 | Copyright 2016 Sean McArthur; Copyright (c) 2016-2026 Sean McArthur |
 | rfd | 0.16.0 | MIT | Copyright (c) 2022 Bartłomiej Maryńczak |
 | ring | 0.17.14 | Apache-2.0 AND ISC | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2009 The Go Authors. All rights reserved.; Copyright 2015 The Chromium Authors. All rights reserved.; Copyright 2015-2025 Brian Smith. |
+| rust-ini | 0.21.3 | MIT | Copyright (c) 2014 Y. T. CHUNG |
 | rustc-hash | 2.1.3 | Apache-2.0 OR MIT | (none stated in its license file) |
 | rustix | 1.1.4 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner] |
 | rustls | 0.23.43 | Apache-2.0 OR ISC OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016, Joseph Birr-Pixton <jpixton@gmail.com>; Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com> |
@@ -1025,7 +1032,7 @@ SOFTWARE.
 | schemars | 1.2.2 | MIT | Copyright (c) 2019 Graham Esau |
 | schemars_derive | 0.8.22 | MIT | Copyright (c) 2019 Graham Esau |
 | scopeguard | 1.2.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2016-2019 Ulrik Sverdrup "bluss" and scopeguard developers |
-| selectors | 0.36.1 | MPL-2.0 | (no license file shipped) |
+| selectors | 0.38.0 | MPL-2.0 | (no license file shipped) |
 | semver | 1.0.28 | MIT OR Apache-2.0 | (none stated in its license file) |
 | serde | 1.0.229 | MIT OR Apache-2.0 | (none stated in its license file) |
 | serde_core | 1.0.229 | MIT OR Apache-2.0 | (none stated in its license file) |
@@ -1056,7 +1063,7 @@ SOFTWARE.
 | string_cache | 0.9.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2012-2013 Mozilla Foundation |
 | strsim | 0.11.1 | MIT | Copyright (c) 2015 Danny Guo; Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>; Copyright (c) 2018 Akash Kurdekar |
 | subtle | 2.6.1 | BSD-3-Clause | Copyright (c) 2016-2017 Isis Agora Lovecruft, Henry de Valence. All rights reserved.; Copyright (c) 2016-2024 Isis Agora Lovecruft. All rights reserved. |
-| swift-rs | 1.0.8 | MIT OR Apache-2.0 | Copyright 2023 The swift-rs developers; Copyright (c) 2023 The swift-rs Developers |
+| swift-rs | 1.0.9 | MIT OR Apache-2.0 | Copyright 2023 The swift-rs developers; Copyright (c) 2023 The swift-rs Developers |
 | syn | 1.0.109 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner] |
 | syn | 2.0.119 | MIT OR Apache-2.0 | (none stated in its license file) |
 | syn | 3.0.3 | MIT OR Apache-2.0 | (none stated in its license file) |
@@ -1065,18 +1072,19 @@ SOFTWARE.
 | synstructure | 0.13.2 | MIT | Copyright 2016 Nika Layzell |
 | system-configuration | 0.7.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2024 Mullvad VPN AB |
 | system-configuration-sys | 0.6.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2024 Mullvad VPN AB |
-| tao | 0.35.3 | Apache-2.0 | Copyright {yyyy} {name of copyright owner} |
+| tao | 0.37.2 | Apache-2.0 | Copyright {yyyy} {name of copyright owner} |
 | tao-macros | 0.1.4 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2022 - Present Tauri Apps Contributors |
-| tauri | 2.11.5 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
-| tauri-codegen | 2.6.3 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
-| tauri-macros | 2.6.3 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri | 2.12.5 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-codegen | 2.7.4 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-macros | 2.7.4 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-plugin-deep-link | 2.6.2 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
 | tauri-plugin-dialog | 2.7.2 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
 | tauri-plugin-fs | 2.5.1 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
 | tauri-plugin-http | 2.5.9 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
 | tauri-plugin-opener | 2.5.4 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
-| tauri-runtime | 2.11.3 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
-| tauri-runtime-wry | 2.11.4 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
-| tauri-utils | 2.9.3 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-runtime | 2.12.2 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-runtime-wry | 2.12.3 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
+| tauri-utils | 2.10.2 | Apache-2.0 OR MIT | Copyright (c) 2017 - Present Tauri Apps Contributors |
 | tempfile | 3.27.0 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 Steven Allen |
 | tendril | 0.5.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2015 Keegan McAllister |
 | thiserror | 1.0.69 | MIT OR Apache-2.0 | (none stated in its license file) |
@@ -1086,6 +1094,7 @@ SOFTWARE.
 | time | 0.3.55 | MIT OR Apache-2.0 | Copyright (c) Jacob Pratt et al. |
 | time-core | 0.1.9 | MIT OR Apache-2.0 | Copyright (c) Jacob Pratt et al. |
 | time-macros | 0.2.32 | MIT OR Apache-2.0 | Copyright (c) Jacob Pratt et al. |
+| tiny-keccak | 2.0.2 | CC0-1.0 | (none stated in its license file) |
 | tinystr | 0.8.3 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
 | tinyvec | 1.12.0 | Zlib OR Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2019 Daniel "Lokathor" Gee. |
 | tinyvec_macros | 0.1.1 | MIT OR Apache-2.0 OR Zlib | Copyright 2020 Tomasz "Soveu" Marx; Copyright (c) 2020 Soveu; (C) 2020 Tomasz "Soveu" Marx |
@@ -1108,7 +1117,7 @@ SOFTWARE.
 | tracing | 0.1.44 | MIT | Copyright (c) 2019 Tokio Contributors |
 | tracing-attributes | 0.1.31 | MIT | Copyright (c) 2019 Tokio Contributors |
 | tracing-core | 0.1.36 | MIT | Copyright (c) 2019 Tokio Contributors |
-| tray-icon | 0.24.2 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2022-2022 Tauri Programme within The Commons Conservancy |
+| tray-icon | 0.25.1 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2022-2022 Tauri Programme within The Commons Conservancy |
 | try-lock | 0.2.5 | MIT | Copyright (c) 2018-2023 Sean McArthur; Copyright (c) 2016 Alex Crichton |
 | typeid | 1.0.3 | MIT OR Apache-2.0 | (none stated in its license file) |
 | typenum | 1.20.1 | MIT OR Apache-2.0 | Copyright 2014 Paho Lurie-Gregg; Copyright (c) 2014 Paho Lurie-Gregg |
@@ -1124,6 +1133,7 @@ SOFTWARE.
 | untrusted | 0.9.0 | ISC | (none stated in its license file) |
 | url | 2.5.8 | MIT OR Apache-2.0 | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2013-2025 The rust-url developers |
 | urlpattern | 0.3.0 | MIT | Copyright (c) 2021 the Deno authors |
+| urlpattern | 0.6.0 | MIT | Copyright (c) 2021 the Deno authors |
 | utf8_iter | 1.0.4 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright Mozilla Foundation |
 | uuid | 1.24.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2014 The Rust Project Developers; Copyright (c) 2018 Ashley Mannix, Christopher Armstrong, Dylan DPC, Hunar Roop Kahlon |
 | walkdir | 2.5.0 | Unlicense/MIT | Copyright (c) 2015 Andrew Gallant |
@@ -1146,15 +1156,16 @@ SOFTWARE.
 | webkit2gtk | 2.0.2 | MIT | Copyright (c) 2016 Boucher, Antoni <bouanto@zoho.com>; Copyright (c) 2017-2021, The Gtk-rs Project Developers.; Copyright (c) 2021, Tauri Programme within The Commons Conservancy |
 | webkit2gtk-sys | 2.0.2 | MIT | Copyright (c) 2016 Boucher, Antoni <bouanto@zoho.com> |
 | webpki-roots | 1.0.9 | CDLA-Permissive-2.0 | (none stated in its license file) |
-| webview2-com | 0.38.2 | MIT | (no license file shipped) |
+| webview2-com | 0.39.1 | MIT | (no license file shipped) |
 | webview2-com-macros | 0.8.1 | MIT | (no license file shipped) |
-| webview2-com-sys | 0.38.2 | MIT | (no license file shipped) |
+| webview2-com-sys | 0.39.1 | MIT | (no license file shipped) |
 | winapi | 0.3.9 | MIT/Apache-2.0 | Copyright {yyyy} {name of copyright owner}; Copyright (c) 2015-2018 The winapi-rs Developers |
 | winapi-i686-pc-windows-gnu | 0.4.0 | MIT/Apache-2.0 | (no license file shipped) |
 | winapi-util | 0.1.11 | Unlicense OR MIT | Copyright (c) 2017 Andrew Gallant |
 | winapi-x86_64-pc-windows-gnu | 0.4.0 | MIT/Apache-2.0 | (no license file shipped) |
-| window-vibrancy | 0.6.0 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020-2022 Tauri Programme within The Commons Conservancy |
+| window-vibrancy | 0.8.1 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020-2022 Tauri Programme within The Commons Conservancy |
 | windows | 0.61.3 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
+| windows | 0.62.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows_aarch64_gnullvm | 0.42.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows_aarch64_gnullvm | 0.52.6 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows_aarch64_gnullvm | 0.53.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
@@ -1179,14 +1190,17 @@ SOFTWARE.
 | windows_x86_64_msvc | 0.52.6 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows_x86_64_msvc | 0.53.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-collections | 0.2.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
+| windows-collections | 0.3.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-core | 0.61.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-core | 0.62.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-future | 0.2.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
+| windows-future | 0.3.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-implement | 0.60.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-interface | 0.59.3 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-link | 0.1.3 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-link | 0.2.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-numerics | 0.2.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
+| windows-numerics | 0.3.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-registry | 0.6.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-result | 0.3.4 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-result | 0.4.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
@@ -1194,19 +1208,19 @@ SOFTWARE.
 | windows-strings | 0.5.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-sys | 0.45.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-sys | 0.52.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
-| windows-sys | 0.59.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-sys | 0.60.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-sys | 0.61.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-targets | 0.42.2 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-targets | 0.52.6 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-targets | 0.53.5 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-threading | 0.1.0 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
+| windows-threading | 0.2.1 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | windows-version | 0.1.7 | MIT OR Apache-2.0 | Copyright (c) Microsoft Corporation. |
 | winnow | 0.5.40 | MIT | (none stated in its license file) |
 | winnow | 1.0.4 | MIT | (none stated in its license file) |
 | wit-bindgen | 0.57.1 | Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner] |
 | writeable | 0.6.3 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
-| wry | 0.55.1 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020-2023 Ngo Iok Ui & Tauri Programme within The Commons Conservancy |
+| wry | 0.57.1 | Apache-2.0 OR MIT | Copyright [yyyy] [name of copyright owner]; Copyright (c) 2020-2023 Ngo Iok Ui & Tauri Programme within The Commons Conservancy |
 | x11 | 2.21.0 | MIT | (none stated in its license file) |
 | x11-dl | 2.21.0 | MIT | (none stated in its license file) |
 | yoke | 0.8.3 | Unicode-3.0 | Copyright © 2020-2024 Unicode, Inc. |
@@ -1228,7 +1242,166 @@ SOFTWARE.
 
 ## License texts
 
-### Text 1 (ISC)
+### Text 1 (BUSL-1.1)
+
+Used by: @adventures-openbq/arts-charts@0.1.0
+
+````text
+Business Source License 1.1
+
+Parameters
+
+Licensor: SecretoftheUniverse.com LLC
+
+Licensed Work: Art's Charts 0.1.0 or later
+ The Licensed Work is (c) 2026 SecretoftheUniverse.com LLC.
+
+Additional Use Grant: You may make production use of the Licensed Work,
+ without charge, only within one of the following
+ grants:
+
+ 1. Academic use. By an accredited educational
+ institution, or by a person doing non-commercial
+ research or teaching, where no output is used to
+ trade, advise or manage assets for compensation.
+
+ 2. Individual use. By a natural person managing only
+ their own assets, or those of their immediate family,
+ totalling less than US$10,000,000, and not on behalf
+ of any employer, client or other organization.
+
+ 3. Small-organization use. By an Organization for its
+ own internal purposes, if at all times, counting
+ TemporalDB and Art's Charts together:
+ (a) it has no more than 5 Seats;
+ (b) it runs no more than 5 Installations;
+ (c) its Assets Under Management are less than
+ US$100,000,000; and
+ (d) it is not a Financial Institution.
+
+ No grant covers use that makes the Licensed Work, or
+ substantially similar functionality, available to
+ third parties as a hosted, managed, embedded or
+ bundled offering. Nor does any grant cover use to
+ provide consulting, implementation or managed
+ services to third parties. Such use requires a
+ commercial license from the Licensor.
+
+ Definitions.
+
+ "Organization": a legal entity together with every
+ entity that controls it, is controlled by it, or is
+ under common control with it. Control means more than
+ 50% ownership or the power to direct management.
+
+ "Seat": an individual with access to the Licensed
+ Work or its outputs through any interface.
+
+ "Installation": a running deployment, including
+ production, disaster-recovery and cloud copies.
+
+ "Assets Under Management": regulatory assets under
+ management, or gross private fund assets, from the
+ Organization's most recent regulatory filing. If it
+ has no such filing, the fair market value of assets
+ it manages or advises as of its most recent fiscal
+ quarter end. Either way, summed across the
+ Organization.
+
+ "Financial Institution": a bank, savings association,
+ credit union, broker-dealer, futures commission
+ merchant or insurance company, or an affiliate of
+ one.
+
+Change Date: Three years after the date the Licensor first makes
+ each version of the Licensed Work publicly available.
+
+Change License: GPL Version 2.0 or any later version
+
+For information about alternative licensing arrangements for the Licensed
+Work, please contact SecretoftheUniverse.com LLC at
+https://secretoftheuniverse.com.
+
+Notice
+
+The Business Source License (this document, or the "License") is not an Open
+Source license. However, the Licensed Work will eventually be made available
+under an Open Source License, as stated in this License.
+
+License text copyright © 2017 MariaDB Corporation Ab, All Rights Reserved.
+"Business Source License" is a trademark of MariaDB Corporation Ab.
+
+-----------------------------------------------------------------------------
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create derivative
+works, redistribute, and make non-production use of the Licensed Work. The
+Licensor may make an Additional Use Grant, above, permitting limited
+production use.
+
+Effective on the Change Date, or the fourth anniversary of the first publicly
+available distribution of a specific version of the Licensed Work under this
+License, whichever comes first, the Licensor hereby grants you rights under
+the terms of the Change License, and the rights granted in the paragraph
+above terminate.
+
+If your use of the Licensed Work does not comply with the requirements
+currently in effect as described in this License, you must purchase a
+commercial license from the Licensor, its affiliated entities, or authorized
+resellers, or you must refrain from using the Licensed Work.
+
+All copies of the original and modified Licensed Work, and derivative works
+of the Licensed Work, are subject to this License. This License applies
+separately for each version of the Licensed Work and the Change Date may vary
+for each version of the Licensed Work released by Licensor.
+
+You must conspicuously display this License on each original or modified copy
+of the Licensed Work. If you receive the Licensed Work in original or
+modified form from a third party, the terms and conditions set forth in this
+License apply to your use of that work.
+
+Any use of the Licensed Work in violation of this License will automatically
+terminate your rights under this License for the current and all other
+versions of the Licensed Work.
+
+This License does not grant you any right in any trademark or logo of
+Licensor or its affiliates (provided that you may use a trademark or logo of
+Licensor as expressly required by this License).
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED ON
+AN “AS IS” BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS,
+EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
+TITLE.
+
+MariaDB hereby grants you permission to use this License’s text to license
+your works, and to refer to it using the trademark “Business Source License”,
+as long as you comply with the Covenants of Licensor below.
+
+Covenants of Licensor
+
+In consideration of the right to use this License’s text and the “Business
+Source License” name and trademark, Licensor covenants to MariaDB, and to all
+other recipients of the licensed work to be provided by Licensor:
+
+1. To specify as the Change License the GPL Version 2.0 or any later version,
+ or a license that is compatible with GPL Version 2.0 or a later version,
+ where “compatible” means that software provided under the Change License can
+ be included in a program with software provided under GPL Version 2.0 or a
+ later version. Licensor may specify additional Change Licenses without
+ limitation.
+
+2. To either: (a) specify an additional grant of rights to use that does not
+ impose any additional restriction on the right granted in this License, as
+ the Additional Use Grant; or (b) insert the text “None”.
+
+3. To specify a Change Date.
+
+4. Not to modify this License in any other way.
+````
+
+### Text 2 (ISC)
 
 Used by: @auth/core@0.41.3, @mapbox/whoots-js@3.1.0, @ungap/structured-clone@1.3.3, d@1.0.2, earcut@2.2.4, earcut@3.2.3, es5-ext@0.10.64, es6-symbol@3.1.4, es6-weak-map@2.0.3, esniff@2.0.1, ext@1.7.0, geojson-vt@3.2.1, geojson-vt@4.0.3, kdbush@3.0.0, kdbush@4.1.0, next-tick@1.1.0, potpack@1.0.2, potpack@2.1.0, quickselect@2.0.0, quickselect@3.0.0, supercluster@7.1.5, supercluster@8.0.1, tinyqueue@2.0.3, tinyqueue@3.0.0, type@2.7.3
 
@@ -1249,9 +1422,9 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### Text 2 (MPL-2.0)
+### Text 3 (MPL-2.0)
 
-Used by: @blocknote/core@0.54.0, @blocknote/mantine@0.54.0, @blocknote/react@0.54.0, cssparser@0.36.0, cssparser-macros@0.6.1, dtoa-short@0.3.5
+Used by: @blocknote/core@0.54.0, @blocknote/mantine@0.54.0, @blocknote/react@0.54.0, cssparser@0.37.0, cssparser-macros@0.7.1, dtoa-short@0.3.5
 
 ````text
 Mozilla Public License Version 2.0
@@ -1628,9 +1801,9 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
  defined by the Mozilla Public License, v. 2.0.
 ````
 
-### Text 3 (MIT)
+### Text 4 (MIT)
 
-Used by: @emoji-mart/data@1.2.1, @floating-ui/core@1.8.0, @floating-ui/dom@1.8.0, @floating-ui/react@0.27.20, @floating-ui/react-dom@2.1.9, @floating-ui/utils@0.2.12, @handlewithcare/prosemirror-inputrules@0.1.4, @mantine/core@9.6.0, @mantine/hooks@9.6.0, @mapbox/geojson-types@1.0.2, @mapbox/jsonlint-lines-primitives@2.0.3, @napi-rs/canvas@0.1.100, @plotly/d3-sankey-circular@0.33.1, @shikijs/types@4.4.3, @tanstack/react-table@8.21.3, @tanstack/react-virtual@3.14.10, @tanstack/table-core@8.21.3, @tanstack/virtual-core@3.17.8, @tauri-apps/api@2.11.1, @tiptap/core@3.31.0, @tiptap/extension-bold@3.31.0, @tiptap/extension-bubble-menu@3.31.0, @tiptap/extension-code@3.31.0, @tiptap/extension-floating-menu@3.31.0, @tiptap/extension-italic@3.31.0, @tiptap/extension-strike@3.31.0, @tiptap/extension-text@3.31.0, @tiptap/extension-underline@3.31.0, @tiptap/extensions@3.31.0, @tiptap/pm@3.31.0, @tiptap/react@3.31.0, acorn@7.4.1, aria-hidden@1.2.6, buffer-from@1.1.2, clsx@2.1.1, detect-node-es@1.1.0, emoji-mart@5.6.0, es-errors@1.3.0, escape-string-regexp@5.0.0, falafel@2.2.5, fast-deep-equal@3.1.3, fast-equals@4.0.3, fast-equals@5.4.1, get-nonce@1.0.1, get-stream@6.0.1, hasown@2.0.4, is-finite@1.1.0, is-plain-obj@4.1.0, isarray@2.0.5, plotly.js@3.7.0, prop-types@15.8.1, prosemirror-highlight@0.15.3, react@19.2.8, react-dom@19.2.8, react-is@16.13.1, react-number-format@5.4.5, react-remove-scroll@2.7.2, react-style-singleton@2.2.3, resolve@1.22.12, safer-buffer@2.1.2, scheduler@0.27.0, static-eval@2.1.1, supports-preserve-symlinks-flag@1.0.0, tagged-tag@1.0.0, type-fest@5.9.0, use-callback-ref@1.3.3, use-sidecar@1.1.3, use-sync-external-store@1.6.0, world-calendars@1.0.4, zustand@5.0.15, bs58@0.5.1, cfb@0.7.3, cookie_store@0.22.1, crc32fast@1.5.0, darling@0.23.0, darling_core@0.23.0, darling_macro@0.23.0, embed_plist@1.2.2, fdeflate@0.3.7, field-offset@0.3.6, ico@0.5.0, ident_case@1.0.1, infer@0.19.0, is-docker@0.2.0, is-wsl@0.4.0, json-patch@3.0.1, jsonptr@0.6.3, libappindicator@0.9.0, libredox@0.1.19, miniz_oxide@0.8.9, muda@0.19.3, precomputed-hash@0.1.1, proc-macro-error@1.0.4, proc-macro-error-attr@1.0.4, psl-types@2.0.11, publicsuffix@2.3.0, raw-window-handle@0.6.2, redox_syscall@0.5.18, rfd@0.16.0, schemars@0.8.22, schemars@0.9.0, schemars@1.2.2, schemars_derive@0.8.22, serialize-to-javascript@0.1.2, serialize-to-javascript-impl@0.1.2, simd-adler32@0.3.10, tao-macros@0.1.4, tauri@2.11.5, tauri-codegen@2.6.3, tauri-macros@2.6.3, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4, tauri-runtime@2.11.3, tauri-runtime-wry@2.11.4, tauri-utils@2.9.3, tinyvec_macros@0.1.1, tokio@1.53.1, tokio-macros@2.7.2, tokio-util@0.7.19, tray-icon@0.24.2, urlpattern@0.3.0, web-time@1.1.0, window-vibrancy@0.6.0, wry@0.55.1
+Used by: @emoji-mart/data@1.2.1, @floating-ui/core@1.8.0, @floating-ui/dom@1.8.0, @floating-ui/react@0.27.20, @floating-ui/react-dom@2.1.9, @floating-ui/utils@0.2.12, @handlewithcare/prosemirror-inputrules@0.1.4, @mantine/core@9.6.0, @mantine/hooks@9.6.0, @mapbox/geojson-types@1.0.2, @mapbox/jsonlint-lines-primitives@2.0.3, @napi-rs/canvas@0.1.100, @plotly/d3-sankey-circular@0.33.1, @shikijs/types@4.4.3, @tanstack/react-table@8.21.3, @tanstack/react-virtual@3.14.10, @tanstack/table-core@8.21.3, @tanstack/virtual-core@3.17.8, @tauri-apps/api@2.12.4, @tiptap/core@3.31.0, @tiptap/extension-bold@3.31.0, @tiptap/extension-bubble-menu@3.31.0, @tiptap/extension-code@3.31.0, @tiptap/extension-floating-menu@3.31.0, @tiptap/extension-italic@3.31.0, @tiptap/extension-strike@3.31.0, @tiptap/extension-text@3.31.0, @tiptap/extension-underline@3.31.0, @tiptap/extensions@3.31.0, @tiptap/pm@3.31.0, @tiptap/react@3.31.0, acorn@7.4.1, aria-hidden@1.2.6, buffer-from@1.1.2, clsx@2.1.1, detect-node-es@1.1.0, emoji-mart@5.6.0, es-errors@1.3.0, escape-string-regexp@5.0.0, falafel@2.2.5, fast-deep-equal@3.1.3, fast-equals@4.0.3, fast-equals@5.4.1, get-nonce@1.0.1, get-stream@6.0.1, hasown@2.0.4, is-finite@1.1.0, is-plain-obj@4.1.0, isarray@2.0.5, plotly.js@3.7.0, prop-types@15.8.1, prosemirror-highlight@0.15.3, react@19.2.8, react-dom@19.2.8, react-is@16.13.1, react-number-format@5.4.5, react-remove-scroll@2.7.2, react-style-singleton@2.2.3, resolve@1.22.12, safer-buffer@2.1.2, scheduler@0.27.0, static-eval@2.1.1, supports-preserve-symlinks-flag@1.0.0, tagged-tag@1.0.0, type-fest@5.9.0, use-callback-ref@1.3.3, use-sidecar@1.1.3, use-sync-external-store@1.6.0, world-calendars@1.0.4, zustand@5.0.15, bs58@0.5.1, cfb@0.14.0, cookie_store@0.22.1, crc32fast@1.5.0, darling@0.23.0, darling_core@0.23.0, darling_macro@0.23.0, dlv-list@0.5.2, embed_plist@1.2.2, fdeflate@0.3.7, field-offset@0.3.6, ico@0.6.0, ident_case@1.0.1, infer@0.22.0, is-docker@0.2.0, is-wsl@0.4.0, json-patch@4.2.0, jsonptr@0.7.1, libappindicator@0.9.0, libredox@0.1.19, miniz_oxide@0.8.9, muda@0.20.0, ordered-multimap@0.7.3, precomputed-hash@0.1.1, proc-macro-error@1.0.4, proc-macro-error-attr@1.0.4, psl-types@2.0.11, publicsuffix@2.3.0, raw-window-handle@0.6.2, redox_syscall@0.5.18, rfd@0.16.0, schemars@0.8.22, schemars@0.9.0, schemars@1.2.2, schemars_derive@0.8.22, serialize-to-javascript@0.1.2, serialize-to-javascript-impl@0.1.2, simd-adler32@0.3.10, tao-macros@0.1.4, tauri@2.12.5, tauri-codegen@2.7.4, tauri-macros@2.7.4, tauri-plugin-deep-link@2.6.2, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4, tauri-runtime@2.12.2, tauri-runtime-wry@2.12.3, tauri-utils@2.10.2, tinyvec_macros@0.1.1, tokio@1.53.1, tokio-macros@2.7.2, tokio-util@0.7.19, tray-icon@0.25.1, urlpattern@0.3.0, urlpattern@0.6.0, web-time@1.1.0, window-vibrancy@0.8.1, wry@0.57.1
 
 ````text
 MIT License
@@ -1655,9 +1828,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### Text 4 (Apache-2.0)
+### Text 5 (Apache-2.0)
 
-Used by: @internationalized/date@3.12.4, @internationalized/number@3.6.8, @internationalized/string@3.2.10, @react-types/shared@3.36.1, @swc/helpers@0.5.23, lightweight-charts@5.0.8, react-aria@3.52.1, react-aria-components@1.21.1, react-stately@3.50.0, async-channel@2.5.0, async-executor@1.14.0, async-io@2.6.0, async-lock@3.4.2, async-process@2.5.0, async-recursion@1.1.1, async-signal@0.2.14, async-task@4.7.1, atomic-waker@1.1.2, base64@0.21.7, base64@0.22.1, bit-set@0.8.0, bit-vec@0.8.0, bitflags@1.3.2, bitflags@2.13.1, block-buffer@0.10.4, blocking@1.6.2, bs58@0.5.1, bumpalo@3.20.3, bytemuck@1.25.2, camino@1.2.5, cfg-if@1.0.4, cfg-if@1.0.5, chacha20@0.10.1, concurrent-queue@2.5.0, cookie@0.18.2, core-foundation@0.9.4, core-foundation@0.10.1, core-foundation-sys@0.8.7, core-graphics@0.25.0, core-graphics-types@0.2.0, cpufeatures@0.2.17, cpufeatures@0.3.0, crossbeam-channel@0.5.16, crossbeam-utils@0.8.22, crypto-common@0.1.7, data-url@0.3.2, defmt@1.1.1, defmt-macros@1.1.1, deranged@0.5.8, digest@0.10.7, displaydoc@0.2.7, document-features@0.2.12, embed_plist@1.2.2, encoding_rs@0.8.35, equivalent@1.0.2, errno@0.3.14, event-listener@5.4.2, event-listener-strategy@0.5.4, fastrand@2.5.0, flate2@1.1.9, fnv@1.0.7, form_urlencoded@1.2.2, futures-channel@0.3.34, futures-core@0.3.34, futures-executor@0.3.34, futures-io@0.3.34, futures-lite@2.6.1, futures-macro@0.3.34, futures-sink@0.3.34, futures-task@0.3.34, futures-util@0.3.34, glob@0.3.4, hashbrown@0.12.3, hashbrown@0.17.1, heck@0.4.1, heck@0.5.0, hermit-abi@0.5.2, html5ever@0.38.0, http@1.5.0, httparse@1.10.1, hyper-rustls@0.27.9, iana-time-zone@0.1.65, iana-time-zone-haiku@0.1.2, idna@1.1.0, idna_adapter@1.2.2, indexmap@1.9.3, indexmap@2.14.0, jni@0.21.1, js-sys@0.3.104, jsonptr@0.6.3, keyboard-types@0.7.0, libappindicator@0.9.0, linux-raw-sys@0.12.1, lock_api@0.4.14, log@0.4.33, lru-slab@0.1.2, markup5ever@0.38.0, mime@0.3.17, muda@0.19.3, num-traits@0.2.19, once_cell@1.21.4, ordered-stream@0.2.0, parking@2.2.1, parking_lot@0.12.5, parking_lot_core@0.9.12, percent-encoding@2.3.2, piper@0.2.5, png@0.17.16, png@0.18.1, polling@3.11.0, powerfmt@0.2.0, proc-macro-error@1.0.4, proc-macro-error-attr@1.0.4, psl-types@2.0.11, publicsuffix@2.3.0, quinn@0.11.11, quinn-proto@0.11.16, quinn-udp@0.5.15, regex@1.13.1, regex-automata@0.4.18, regex-syntax@0.8.11, reqwest@0.12.28, reqwest@0.13.4, rustix@1.1.4, rustls@0.23.43, rustls-pki-types@1.15.1, scopeguard@1.2.0, serde_with@3.22.0, serde_with_macros@3.22.0, serialize-to-javascript@0.1.2, serialize-to-javascript-impl@0.1.2, servo_arc@0.4.3, sha2@0.10.9, signal-hook-registry@1.4.8, smallvec@1.15.2, socket2@0.6.5, stable_deref_trait@1.2.1, string_cache@0.9.0, syn@1.0.109, system-configuration@0.7.0, system-configuration-sys@0.6.0, tao-macros@0.1.4, tempfile@3.27.0, tendril@0.5.1, tinyvec@1.12.0, tinyvec_macros@0.1.1, tokio-rustls@0.26.4, toml_datetime@0.6.3, tray-icon@0.24.2, typenum@1.20.1, unicode-segmentation@1.13.3, url@2.5.8, utf8_iter@1.0.4, uuid@1.24.0, wasi@0.11.1+wasi-snapshot-preview1, wasip2@1.0.4+wasi-0.2.12, wasm-bindgen@0.2.127, wasm-bindgen@0.2.128, wasm-bindgen-futures@0.4.77, wasm-bindgen-macro@0.2.127, wasm-bindgen-macro@0.2.128, wasm-bindgen-macro-support@0.2.127, wasm-bindgen-macro-support@0.2.128, wasm-bindgen-shared@0.2.127, wasm-bindgen-shared@0.2.128, web_atoms@0.2.6, web-sys@0.3.104, web-time@1.1.0, window-vibrancy@0.6.0, windows@0.61.3, windows_aarch64_gnullvm@0.42.2, windows_aarch64_gnullvm@0.52.6, windows_aarch64_gnullvm@0.53.1, windows_aarch64_msvc@0.42.2, windows_aarch64_msvc@0.52.6, windows_aarch64_msvc@0.53.1, windows_i686_gnu@0.42.2, windows_i686_gnu@0.52.6, windows_i686_gnu@0.53.1, windows_i686_gnullvm@0.52.6, windows_i686_gnullvm@0.53.1, windows_i686_msvc@0.42.2, windows_i686_msvc@0.52.6, windows_i686_msvc@0.53.1, windows_x86_64_gnu@0.42.2, windows_x86_64_gnu@0.52.6, windows_x86_64_gnu@0.53.1, windows_x86_64_gnullvm@0.42.2, windows_x86_64_gnullvm@0.52.6, windows_x86_64_gnullvm@0.53.1, windows_x86_64_msvc@0.42.2, windows_x86_64_msvc@0.52.6, windows_x86_64_msvc@0.53.1, windows-collections@0.2.0, windows-core@0.61.2, windows-core@0.62.2, windows-future@0.2.1, windows-implement@0.60.2, windows-interface@0.59.3, windows-link@0.1.3, windows-link@0.2.1, windows-numerics@0.2.0, windows-registry@0.6.1, windows-result@0.3.4, windows-result@0.4.1, windows-strings@0.4.2, windows-strings@0.5.1, windows-sys@0.45.0, windows-sys@0.52.0, windows-sys@0.59.0, windows-sys@0.60.2, windows-sys@0.61.2, windows-targets@0.42.2, windows-targets@0.52.6, windows-targets@0.53.5, windows-threading@0.1.0, windows-version@0.1.7, wit-bindgen@0.57.1, wry@0.55.1, zeroize@1.9.0
+Used by: @internationalized/date@3.12.4, @internationalized/number@3.6.8, @internationalized/string@3.2.10, @react-types/shared@3.36.1, @swc/helpers@0.5.23, lightweight-charts@5.0.8, react-aria@3.52.1, react-aria-components@1.21.1, react-stately@3.50.0, async-channel@2.5.0, async-executor@1.14.0, async-io@2.6.0, async-lock@3.4.2, async-process@2.5.0, async-recursion@1.1.1, async-signal@0.2.14, async-task@4.7.1, atomic-waker@1.1.2, base64@0.21.7, base64@0.22.1, base64@0.23.1, bit-set@0.8.0, bit-vec@0.8.0, bitflags@1.3.2, bitflags@2.13.1, block-buffer@0.10.4, blocking@1.6.2, bs58@0.5.1, bumpalo@3.20.3, bytemuck@1.25.2, camino@1.2.5, cfg-if@1.0.4, cfg-if@1.0.5, chacha20@0.10.1, concurrent-queue@2.5.0, const-random@0.1.18, const-random-macro@0.1.16, cookie@0.18.2, core-foundation@0.9.4, core-foundation@0.10.1, core-foundation-sys@0.8.7, core-graphics@0.25.0, core-graphics-types@0.2.0, cpufeatures@0.2.17, cpufeatures@0.3.0, crossbeam-channel@0.5.16, crossbeam-utils@0.8.22, crypto-common@0.1.7, data-url@0.3.2, defmt@1.1.1, defmt-macros@1.1.1, deranged@0.5.8, digest@0.10.7, displaydoc@0.2.7, document-features@0.2.12, embed_plist@1.2.2, encoding_rs@0.8.35, equivalent@1.0.2, errno@0.3.14, event-listener@5.4.2, event-listener-strategy@0.5.4, fastrand@2.5.0, flate2@1.1.9, fnv@1.0.7, form_urlencoded@1.2.2, futures-channel@0.3.34, futures-core@0.3.34, futures-executor@0.3.34, futures-io@0.3.34, futures-lite@2.6.1, futures-macro@0.3.34, futures-sink@0.3.34, futures-task@0.3.34, futures-util@0.3.34, glob@0.3.4, hashbrown@0.12.3, hashbrown@0.14.5, hashbrown@0.17.1, heck@0.4.1, heck@0.5.0, hermit-abi@0.5.2, html5ever@0.39.0, http@1.5.0, httparse@1.10.1, hyper-rustls@0.27.9, iana-time-zone@0.1.65, iana-time-zone-haiku@0.1.2, idna@1.1.0, idna_adapter@1.2.2, indexmap@1.9.3, indexmap@2.14.0, jni@0.21.1, js-sys@0.3.104, jsonptr@0.7.1, keyboard-types@0.8.3, libappindicator@0.9.0, linux-raw-sys@0.12.1, lock_api@0.4.14, log@0.4.33, lru-slab@0.1.2, markup5ever@0.39.0, mime@0.3.17, muda@0.20.0, num-traits@0.2.19, once_cell@1.21.4, ordered-stream@0.2.0, parking@2.2.1, parking_lot@0.12.5, parking_lot_core@0.9.12, percent-encoding@2.3.2, piper@0.2.5, png@0.18.1, polling@3.11.0, powerfmt@0.2.0, proc-macro-error@1.0.4, proc-macro-error-attr@1.0.4, psl-types@2.0.11, publicsuffix@2.3.0, quinn@0.11.11, quinn-proto@0.11.16, quinn-udp@0.5.15, regex@1.13.1, regex-automata@0.4.18, regex-syntax@0.8.11, reqwest@0.12.28, reqwest@0.13.4, rustix@1.1.4, rustls@0.23.43, rustls-pki-types@1.15.1, scopeguard@1.2.0, serde_with@3.22.0, serde_with_macros@3.22.0, serialize-to-javascript@0.1.2, serialize-to-javascript-impl@0.1.2, servo_arc@0.4.3, sha2@0.10.9, signal-hook-registry@1.4.8, smallvec@1.15.2, socket2@0.6.5, stable_deref_trait@1.2.1, string_cache@0.9.0, syn@1.0.109, system-configuration@0.7.0, system-configuration-sys@0.6.0, tao-macros@0.1.4, tempfile@3.27.0, tendril@0.5.1, tinyvec@1.12.0, tinyvec_macros@0.1.1, tokio-rustls@0.26.4, toml_datetime@0.6.3, tray-icon@0.25.1, typenum@1.20.1, unicode-segmentation@1.13.3, url@2.5.8, utf8_iter@1.0.4, uuid@1.24.0, wasi@0.11.1+wasi-snapshot-preview1, wasip2@1.0.4+wasi-0.2.12, wasm-bindgen@0.2.127, wasm-bindgen@0.2.128, wasm-bindgen-futures@0.4.77, wasm-bindgen-macro@0.2.127, wasm-bindgen-macro@0.2.128, wasm-bindgen-macro-support@0.2.127, wasm-bindgen-macro-support@0.2.128, wasm-bindgen-shared@0.2.127, wasm-bindgen-shared@0.2.128, web_atoms@0.2.6, web-sys@0.3.104, web-time@1.1.0, window-vibrancy@0.8.1, windows@0.61.3, windows@0.62.2, windows_aarch64_gnullvm@0.42.2, windows_aarch64_gnullvm@0.52.6, windows_aarch64_gnullvm@0.53.1, windows_aarch64_msvc@0.42.2, windows_aarch64_msvc@0.52.6, windows_aarch64_msvc@0.53.1, windows_i686_gnu@0.42.2, windows_i686_gnu@0.52.6, windows_i686_gnu@0.53.1, windows_i686_gnullvm@0.52.6, windows_i686_gnullvm@0.53.1, windows_i686_msvc@0.42.2, windows_i686_msvc@0.52.6, windows_i686_msvc@0.53.1, windows_x86_64_gnu@0.42.2, windows_x86_64_gnu@0.52.6, windows_x86_64_gnu@0.53.1, windows_x86_64_gnullvm@0.42.2, windows_x86_64_gnullvm@0.52.6, windows_x86_64_gnullvm@0.53.1, windows_x86_64_msvc@0.42.2, windows_x86_64_msvc@0.52.6, windows_x86_64_msvc@0.53.1, windows-collections@0.2.0, windows-collections@0.3.2, windows-core@0.61.2, windows-core@0.62.2, windows-future@0.2.1, windows-future@0.3.2, windows-implement@0.60.2, windows-interface@0.59.3, windows-link@0.1.3, windows-link@0.2.1, windows-numerics@0.2.0, windows-numerics@0.3.1, windows-registry@0.6.1, windows-result@0.3.4, windows-result@0.4.1, windows-strings@0.4.2, windows-strings@0.5.1, windows-sys@0.45.0, windows-sys@0.52.0, windows-sys@0.60.2, windows-sys@0.61.2, windows-targets@0.42.2, windows-targets@0.52.6, windows-targets@0.53.5, windows-threading@0.1.0, windows-threading@0.2.1, windows-version@0.1.7, wit-bindgen@0.57.1, wry@0.57.1, zeroize@1.9.0
 
 ````text
 Apache License
@@ -1862,7 +2035,7 @@ Apache License
  limitations under the License.
 ````
 
-### Text 5 (ISC)
+### Text 6 (ISC)
 
 Used by: @mapbox/geojson-rewind@0.5.2, @mapbox/point-geometry@0.1.0, d3-color@3.1.0, d3-interpolate@3.0.1, grid-index@1.1.0, topojson-client@3.1.0, libloading@0.7.4, ring@0.17.14
 
@@ -1880,7 +2053,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### Text 6 (BSD-3-Clause)
+### Text 7 (BSD-3-Clause)
 
 Used by: @mapbox/mapbox-gl-supported@1.5.0
 
@@ -1915,7 +2088,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 7 (BSD-2-Clause)
+### Text 8 (BSD-2-Clause)
 
 Used by: @mapbox/tiny-sdf@1.2.5
 
@@ -1928,7 +2101,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 8 (BSD-2-Clause)
+### Text 9 (BSD-2-Clause)
 
 Used by: @mapbox/tiny-sdf@2.2.0
 
@@ -1943,7 +2116,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 9 (BSD-2-Clause)
+### Text 10 (BSD-2-Clause)
 
 Used by: @mapbox/unitbezier@0.0.1
 
@@ -1977,7 +2150,7 @@ Ported from Webkit
 http://svn.webkit.org/repository/webkit/trunk/Source/WebCore/platform/graphics/UnitBezier.h
 ````
 
-### Text 10 (BSD-3-Clause)
+### Text 11 (BSD-3-Clause)
 
 Used by: @mapbox/vector-tile@1.3.1
 
@@ -2009,7 +2182,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 11 (ISC)
+### Text 12 (ISC)
 
 Used by: @maplibre/maplibre-gl-style-spec@20.4.0, maplibre-gl@4.7.1
 
@@ -2127,9 +2300,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 12 (MIT)
+### Text 13 (MIT)
 
-Used by: @panva/hkdf@1.2.1, @plotly/point-cluster@3.1.9, @plotly/regl@2.1.2, @shikijs/vscode-textmate@10.0.2, @turf/area@7.4.0, @turf/bbox@7.4.0, @turf/centroid@7.4.0, @turf/helpers@7.4.0, @turf/meta@7.4.0, array-find-index@1.0.2, array-range@1.0.1, binary-search-bounds@2.0.5, bit-twiddle@1.0.2, color-name@1.1.4, color-name@2.1.1, color-parse@1.4.3, color-parse@2.1.2, country-regex@1.1.0, css-font@1.2.0, css-font-size-keywords@1.0.0, css-font-stretch-keywords@1.0.1, css-font-style-keywords@1.0.1, css-font-weight-keywords@1.0.0, css-global-keywords@1.0.1, css-system-font-keywords@1.0.0, dequal@2.0.3, dup@1.0.0, duplexify@3.7.1, elementary-circuits-directed-graph@1.3.1, end-of-stream@1.4.5, es6-iterator@2.0.3, extend@3.0.2, fast-isnumeric@1.1.4, flatten-vertex-data@1.0.2, get-canvas-context@1.0.2, gl-text@1.4.0, global-prefix@4.0.0, glsl-token-inject-block@1.1.0, glsl-token-whitespace-trim@1.0.0, has-passive-events@1.0.0, is-core-module@2.16.2, is-firefox@1.0.3, is-obj@1.0.1, is-plain-obj@1.1.0, is-string-blank@1.0.1, jose@6.2.12, js-tokens@4.0.0, json-stringify-pretty-compact@4.0.0, kind-of@6.0.3, lib0@1.0.0-rc.22, loose-envify@1.4.0, math-log2@1.0.1, mouse-event-offset@3.0.2, ms@2.0.0, ms@2.1.3, number-is-integer@1.0.1, oauth4webapi@3.8.8, object-assign@4.1.1, parenthesis@3.1.8, parse-rect@1.2.0, parse-unit@1.0.1, path-parse@1.0.7, point-in-polygon@1.1.0, polybooljs@1.2.2, preact@10.24.3, preact-render-to-string@6.5.11, protocol-buffers-schema@3.6.1, react-grid-layout@1.5.4, react-markdown@10.1.0, react-resizable@3.2.0, regl@2.1.1, regl-error2d@2.0.12, regl-line2d@3.1.3, regl-scatter2d@3.4.0, regl-splom@1.0.14, resize-observer-polyfill@1.5.1, resolve-protobuf-schema@2.1.0, safe-buffer@5.1.2, safe-buffer@5.2.1, stream-shift@1.0.3, strongly-connected-components@1.0.1, style-to-js@1.1.21, style-to-object@1.0.14, tabbable@6.5.0, to-float32@1.1.0, to-px@1.1.0, typedarray-pool@1.2.0, webgl-context@2.2.0, xtend@4.0.2, aho-corasick@1.1.5, android_system_properties@0.1.6, async-broadcast@0.7.2, base64@0.21.7, base64@0.22.1, byteorder@1.5.0, combine@4.6.7, crossbeam-channel@0.5.16, crossbeam-utils@0.8.22, derive_more@2.1.1, derive_more-impl@2.1.1, generic-array@0.14.7, javascriptcore-rs@1.1.2, javascriptcore-rs-sys@1.1.1, jiff@0.2.35, jiff-core@0.1.0, jiff-static@0.2.35, jiff-tzdb@0.1.8, jiff-tzdb-platform@0.1.3, jni@0.21.1, memchr@2.8.3, phf@0.13.1, phf_generator@0.13.1, phf_macros@0.13.1, phf_shared@0.13.1, quick-xml@0.41.0, redox_users@0.5.2, same-file@1.0.6, soup3@0.5.0, soup3-sys@0.5.0, strsim@0.11.1, typenum@1.20.1, walkdir@2.5.0, winapi-util@0.1.11
+Used by: @panva/hkdf@1.2.1, @plotly/point-cluster@3.1.9, @plotly/regl@2.1.2, @shikijs/vscode-textmate@10.0.2, @turf/area@7.4.0, @turf/bbox@7.4.0, @turf/centroid@7.4.0, @turf/helpers@7.4.0, @turf/meta@7.4.0, array-find-index@1.0.2, array-range@1.0.1, binary-search-bounds@2.0.5, bit-twiddle@1.0.2, color-name@1.1.4, color-name@2.1.1, color-parse@1.4.3, color-parse@2.1.2, country-regex@1.1.0, css-font@1.2.0, css-font-size-keywords@1.0.0, css-font-stretch-keywords@1.0.1, css-font-style-keywords@1.0.1, css-font-weight-keywords@1.0.0, css-global-keywords@1.0.1, css-system-font-keywords@1.0.0, dequal@2.0.3, dup@1.0.0, duplexify@3.7.1, elementary-circuits-directed-graph@1.3.1, end-of-stream@1.4.5, es6-iterator@2.0.3, extend@3.0.2, fast-isnumeric@1.1.4, flatten-vertex-data@1.0.2, get-canvas-context@1.0.2, gl-text@1.4.0, global-prefix@4.0.0, glsl-token-inject-block@1.1.0, glsl-token-whitespace-trim@1.0.0, has-passive-events@1.0.0, is-core-module@2.16.2, is-firefox@1.0.3, is-obj@1.0.1, is-plain-obj@1.1.0, is-string-blank@1.0.1, jose@6.2.12, js-tokens@4.0.0, json-stringify-pretty-compact@4.0.0, kind-of@6.0.3, lib0@1.0.0-rc.22, loose-envify@1.4.0, math-log2@1.0.1, mouse-event-offset@3.0.2, ms@2.0.0, ms@2.1.3, number-is-integer@1.0.1, oauth4webapi@3.8.8, object-assign@4.1.1, parenthesis@3.1.8, parse-rect@1.2.0, parse-unit@1.0.1, path-parse@1.0.7, point-in-polygon@1.1.0, polybooljs@1.2.2, preact@10.24.3, preact-render-to-string@6.5.11, protocol-buffers-schema@3.6.1, react-grid-layout@1.5.4, react-markdown@10.1.0, react-resizable@3.2.0, regl@2.1.1, regl-error2d@2.0.12, regl-line2d@3.1.3, regl-scatter2d@3.4.0, regl-splom@1.0.14, resize-observer-polyfill@1.5.1, resolve-protobuf-schema@2.1.0, safe-buffer@5.1.2, safe-buffer@5.2.1, stream-shift@1.0.3, strongly-connected-components@1.0.1, style-to-js@1.1.21, style-to-object@1.0.14, tabbable@6.5.0, to-float32@1.1.0, to-px@1.1.0, typedarray-pool@1.2.0, webgl-context@2.2.0, xtend@4.0.2, aho-corasick@1.1.5, android_system_properties@0.1.6, async-broadcast@0.7.2, base64@0.21.7, base64@0.22.1, base64@0.23.1, byteorder@1.5.0, combine@4.6.7, crossbeam-channel@0.5.16, crossbeam-utils@0.8.22, crunchy@0.2.4, derive_more@2.1.1, derive_more-impl@2.1.1, generic-array@0.14.7, javascriptcore-rs@1.1.2, javascriptcore-rs-sys@1.1.1, jiff@0.2.35, jiff-core@0.1.0, jiff-static@0.2.35, jiff-tzdb@0.1.8, jiff-tzdb-platform@0.1.3, jni@0.21.1, memchr@2.8.3, phf@0.13.1, phf_generator@0.13.1, phf_macros@0.13.1, phf_shared@0.13.1, quick-xml@0.41.0, redox_users@0.5.2, rust-ini@0.21.3, same-file@1.0.6, soup3@0.5.0, soup3-sys@0.5.0, strsim@0.11.1, typenum@1.20.1, walkdir@2.5.0, winapi-util@0.1.11
 
 ````text
 The MIT License (MIT)
@@ -2154,7 +2327,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ````
 
-### Text 13 (BSD-3-Clause)
+### Text 14 (BSD-3-Clause)
 
 Used by: @plotly/d3@3.8.2, rw@1.3.3
 
@@ -2186,7 +2359,7 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 14 (BSD-3-Clause)
+### Text 15 (BSD-3-Clause)
 
 Used by: @plotly/d3-sankey@0.7.2, d3-array@1.2.4, d3-collection@1.0.7, d3-dispatch@1.0.6, d3-force@1.2.1, d3-format@1.4.5, d3-hierarchy@1.1.9, d3-path@1.0.9, d3-quadtree@1.0.7, d3-shape@1.3.7, d3-time@1.1.0, d3-time-format@2.3.0, d3-timer@1.0.10
 
@@ -2219,7 +2392,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 15 (BSD-3-Clause)
+### Text 16 (BSD-3-Clause)
 
 Used by: @plotly/mapbox-gl@1.13.4, mapbox-gl@1.13.3
 
@@ -2306,9 +2479,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 16 (Apache-2.0 OR MIT)
+### Text 17 (Apache-2.0 OR MIT)
 
-Used by: @tauri-apps/api@2.11.1, pdfjs-dist@5.7.284, anyhow@1.0.104, async-trait@0.1.92, dtoa@1.0.11, dyn-clone@1.0.20, erased-serde@0.4.10, fdeflate@0.3.7, field-offset@0.3.6, itoa@1.0.18, libc@0.2.189, litrs@1.0.0, miniz_oxide@0.8.9, num_enum@0.7.6, num_enum_derive@0.7.6, num-conv@0.2.2, pin-project-lite@0.2.17, portable-atomic@1.15.0, portable-atomic-util@0.2.7, proc-macro2@1.0.107, quote@1.0.47, raw-window-handle@0.6.2, ref-cast@1.0.26, ref-cast-impl@1.0.26, rustc-hash@2.1.3, rustversion@1.0.23, ryu@1.0.23, ryu-js@1.0.3, semver@1.0.28, serde@1.0.229, serde_core@1.0.229, serde_derive@1.0.229, serde_derive_internals@0.29.1, serde_json@1.0.151, serde_repr@0.1.21, serde_urlencoded@0.7.1, serde-untagged@0.1.9, syn@2.0.119, syn@3.0.3, syn@3.0.6, sync_wrapper@1.0.2, tauri@2.11.5, tauri-codegen@2.6.3, tauri-macros@2.6.3, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4, tauri-runtime@2.11.3, tauri-runtime-wry@2.11.4, tauri-utils@2.9.3, thiserror@1.0.69, thiserror@2.0.20, thiserror-impl@1.0.69, thiserror-impl@2.0.20, time@0.3.55, time-core@0.1.9, time-macros@0.2.32, typeid@1.0.3, unicode-ident@1.0.24, unicode-ident@1.0.26, wasm-streams@0.5.0
+Used by: @tauri-apps/api@2.12.4, pdfjs-dist@5.7.284, anyhow@1.0.104, async-trait@0.1.92, dlv-list@0.5.2, dtoa@1.0.11, dyn-clone@1.0.20, erased-serde@0.4.10, fdeflate@0.3.7, field-offset@0.3.6, itoa@1.0.18, libc@0.2.189, litrs@1.0.0, miniz_oxide@0.8.9, num_enum@0.7.6, num_enum_derive@0.7.6, num-conv@0.2.2, pin-project-lite@0.2.17, portable-atomic@1.15.0, portable-atomic-util@0.2.7, proc-macro2@1.0.107, quote@1.0.47, raw-window-handle@0.6.2, ref-cast@1.0.26, ref-cast-impl@1.0.26, rustc-hash@2.1.3, rustversion@1.0.23, ryu@1.0.23, ryu-js@1.0.3, semver@1.0.28, serde@1.0.229, serde_core@1.0.229, serde_derive@1.0.229, serde_derive_internals@0.29.1, serde_json@1.0.151, serde_repr@0.1.21, serde_urlencoded@0.7.1, serde-untagged@0.1.9, syn@2.0.119, syn@3.0.3, syn@3.0.6, sync_wrapper@1.0.2, tauri@2.12.5, tauri-codegen@2.7.4, tauri-macros@2.7.4, tauri-plugin-deep-link@2.6.2, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4, tauri-runtime@2.12.2, tauri-runtime-wry@2.12.3, tauri-utils@2.10.2, thiserror@1.0.69, thiserror@2.0.20, thiserror-impl@1.0.69, thiserror-impl@2.0.20, time@0.3.55, time-core@0.1.9, time-macros@0.2.32, typeid@1.0.3, unicode-ident@1.0.24, unicode-ident@1.0.26, wasm-streams@0.5.0
 
 ````text
 Apache License
@@ -2489,9 +2662,36 @@ Apache License
  END OF TERMS AND CONDITIONS
 ````
 
-### Text 17 (MIT OR Apache-2.0)
+### Text 18 (Apache-2.0 OR MIT)
 
-Used by: @tauri-apps/plugin-dialog@2.7.2, @tauri-apps/plugin-fs@2.5.1, @tauri-apps/plugin-http@2.5.9, @tauri-apps/plugin-opener@2.5.4, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4
+Used by: @tauri-apps/api@2.12.4
+
+````text
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+PackageName: tauri
+DataFormat: SPDXRef-1
+PackageSupplier: Organization: The Tauri Programme in the Commons Conservancy
+PackageHomePage: https://tauri.app
+PackageLicenseDeclared: Apache-2.0
+PackageLicenseDeclared: MIT
+PackageCopyrightText: 2019-2025, The Tauri Programme in the Commons Conservancy
+PackageSummary: <text>Tauri is a rust project that enables developers to make secure
+and small desktop applications using a web frontend.
+ </text>
+PackageComment: <text>The package includes the following libraries; see
+Relationship information.
+ </text>
+Created: 2019-05-20T09:00:00Z
+PackageDownloadLocation: git://github.com/tauri-apps/tauri
+PackageDownloadLocation: git+https://github.com/tauri-apps/tauri.git
+PackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git
+Creator: Person: Daniel Thompson-Yvetot
+````
+
+### Text 19 (MIT OR Apache-2.0)
+
+Used by: @tauri-apps/plugin-deep-link@2.6.2, @tauri-apps/plugin-dialog@2.7.2, @tauri-apps/plugin-fs@2.5.1, @tauri-apps/plugin-http@2.5.9, @tauri-apps/plugin-opener@2.5.4, tauri-plugin-deep-link@2.6.2, tauri-plugin-dialog@2.7.2, tauri-plugin-fs@2.5.1, tauri-plugin-http@2.5.9, tauri-plugin-opener@2.5.4
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -2516,9 +2716,9 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 18 (MIT)
+### Text 20 (MIT)
 
-Used by: @types/debug@4.1.13, @types/estree@1.0.9, @types/estree-jsx@1.0.5, @types/geojson@7946.0.16, @types/geojson-vt@3.2.5, @types/hast@3.0.5, @types/mapbox__point-geometry@0.1.4, @types/mapbox__vector-tile@1.3.4, @types/mdast@4.0.4, @types/ms@2.1.0, @types/pbf@3.0.5, @types/react@19.2.18, @types/react-dom@19.2.4, @types/supercluster@7.1.3, @types/unist@2.0.11, @types/unist@3.0.3, @types/use-sync-external-store@0.0.6, @types/use-sync-external-store@1.5.0, uds_windows@1.2.1, windows@0.61.3, windows_aarch64_gnullvm@0.42.2, windows_aarch64_gnullvm@0.52.6, windows_aarch64_gnullvm@0.53.1, windows_aarch64_msvc@0.42.2, windows_aarch64_msvc@0.52.6, windows_aarch64_msvc@0.53.1, windows_i686_gnu@0.42.2, windows_i686_gnu@0.52.6, windows_i686_gnu@0.53.1, windows_i686_gnullvm@0.52.6, windows_i686_gnullvm@0.53.1, windows_i686_msvc@0.42.2, windows_i686_msvc@0.52.6, windows_i686_msvc@0.53.1, windows_x86_64_gnu@0.42.2, windows_x86_64_gnu@0.52.6, windows_x86_64_gnu@0.53.1, windows_x86_64_gnullvm@0.42.2, windows_x86_64_gnullvm@0.52.6, windows_x86_64_gnullvm@0.53.1, windows_x86_64_msvc@0.42.2, windows_x86_64_msvc@0.52.6, windows_x86_64_msvc@0.53.1, windows-collections@0.2.0, windows-core@0.61.2, windows-core@0.62.2, windows-future@0.2.1, windows-implement@0.60.2, windows-interface@0.59.3, windows-link@0.1.3, windows-link@0.2.1, windows-numerics@0.2.0, windows-registry@0.6.1, windows-result@0.3.4, windows-result@0.4.1, windows-strings@0.4.2, windows-strings@0.5.1, windows-sys@0.45.0, windows-sys@0.52.0, windows-sys@0.59.0, windows-sys@0.60.2, windows-sys@0.61.2, windows-targets@0.42.2, windows-targets@0.52.6, windows-targets@0.53.5, windows-threading@0.1.0, windows-version@0.1.7
+Used by: @types/debug@4.1.13, @types/estree@1.0.9, @types/estree-jsx@1.0.5, @types/geojson@7946.0.16, @types/geojson-vt@3.2.5, @types/hast@3.0.5, @types/mapbox__point-geometry@0.1.4, @types/mapbox__vector-tile@1.3.4, @types/mdast@4.0.4, @types/ms@2.1.0, @types/pbf@3.0.5, @types/react@19.2.18, @types/react-dom@19.2.4, @types/supercluster@7.1.3, @types/unist@2.0.11, @types/unist@3.0.3, @types/use-sync-external-store@0.0.6, @types/use-sync-external-store@1.5.0, uds_windows@1.2.1, windows@0.61.3, windows@0.62.2, windows_aarch64_gnullvm@0.42.2, windows_aarch64_gnullvm@0.52.6, windows_aarch64_gnullvm@0.53.1, windows_aarch64_msvc@0.42.2, windows_aarch64_msvc@0.52.6, windows_aarch64_msvc@0.53.1, windows_i686_gnu@0.42.2, windows_i686_gnu@0.52.6, windows_i686_gnu@0.53.1, windows_i686_gnullvm@0.52.6, windows_i686_gnullvm@0.53.1, windows_i686_msvc@0.42.2, windows_i686_msvc@0.52.6, windows_i686_msvc@0.53.1, windows_x86_64_gnu@0.42.2, windows_x86_64_gnu@0.52.6, windows_x86_64_gnu@0.53.1, windows_x86_64_gnullvm@0.42.2, windows_x86_64_gnullvm@0.52.6, windows_x86_64_gnullvm@0.53.1, windows_x86_64_msvc@0.42.2, windows_x86_64_msvc@0.52.6, windows_x86_64_msvc@0.53.1, windows-collections@0.2.0, windows-collections@0.3.2, windows-core@0.61.2, windows-core@0.62.2, windows-future@0.2.1, windows-future@0.3.2, windows-implement@0.60.2, windows-interface@0.59.3, windows-link@0.1.3, windows-link@0.2.1, windows-numerics@0.2.0, windows-numerics@0.3.1, windows-registry@0.6.1, windows-result@0.3.4, windows-result@0.4.1, windows-strings@0.4.2, windows-strings@0.5.1, windows-sys@0.45.0, windows-sys@0.52.0, windows-sys@0.60.2, windows-sys@0.61.2, windows-targets@0.42.2, windows-targets@0.52.6, windows-targets@0.53.5, windows-threading@0.1.0, windows-threading@0.2.1, windows-version@0.1.7
 
 ````text
 MIT License
@@ -2543,7 +2743,7 @@ MIT License
  SOFTWARE
 ````
 
-### Text 19 (MIT)
+### Text 21 (MIT)
 
 Used by: bail@2.0.2, ccount@2.0.1, character-entities@2.0.2, character-entities-html4@2.1.0, character-entities-legacy@3.0.0, character-reference-invalid@2.0.1, comma-separated-tokens@2.0.3, commander@2.20.3, debug@2.6.9, debug@3.2.7, debug@4.4.3, decode-named-character-reference@1.3.0, devlop@1.1.0, estree-util-is-identifier-name@3.0.0, hast-util-to-jsx-runtime@2.3.6, hast-util-whitespace@3.0.0, inline-style-parser@0.2.7, is-alphabetical@2.0.1, is-alphanumerical@2.0.1, is-decimal@2.0.1, is-hexadecimal@2.0.1, longest-streak@3.1.0, markdown-table@3.0.4, mdast-util-find-and-replace@3.0.2, mdast-util-from-markdown@2.0.3, mdast-util-gfm@3.1.0, mdast-util-gfm-autolink-literal@2.0.1, mdast-util-gfm-footnote@2.1.0, mdast-util-gfm-strikethrough@2.0.0, mdast-util-gfm-table@2.0.0, mdast-util-gfm-task-list-item@2.0.0, mdast-util-mdx-expression@2.0.1, mdast-util-mdx-jsx@3.2.0, mdast-util-mdxjs-esm@2.0.1, mdast-util-phrasing@4.1.0, mdast-util-to-hast@13.2.1, mdast-util-to-markdown@2.1.2, mdast-util-to-string@4.0.0, micromark@4.0.2, micromark-core-commonmark@2.0.3, micromark-extension-gfm@3.0.0, micromark-extension-gfm-autolink-literal@2.1.0, micromark-extension-gfm-footnote@2.1.0, micromark-extension-gfm-strikethrough@2.1.0, micromark-extension-gfm-table@2.1.2, micromark-extension-gfm-tagfilter@2.0.0, micromark-extension-gfm-task-list-item@2.1.0, micromark-factory-destination@2.0.1, micromark-factory-label@2.0.1, micromark-factory-space@2.0.1, micromark-factory-title@2.0.1, micromark-factory-whitespace@2.0.1, micromark-util-character@2.1.1, micromark-util-chunked@2.0.1, micromark-util-classify-character@2.0.1, micromark-util-combine-extensions@2.0.1, micromark-util-decode-numeric-character-reference@2.0.2, micromark-util-decode-string@2.0.1, micromark-util-encode@2.0.1, micromark-util-html-tag-name@2.0.1, micromark-util-normalize-identifier@2.0.1, micromark-util-resolve-all@2.0.1, micromark-util-sanitize-uri@2.0.1, micromark-util-subtokenize@2.1.0, micromark-util-symbol@2.0.1, micromark-util-types@2.0.2, parse-entities@4.0.2, property-information@7.2.0, remark-gfm@4.0.1, remark-rehype@11.1.2, space-separated-tokens@2.0.2, stringify-entities@4.0.4, trim-lines@3.0.1, unist-util-position@5.0.0, unist-util-stringify-position@4.0.0, unist-util-visit@5.1.0, unist-util-visit-parents@6.0.2, vfile-message@4.0.3, zwitch@2.0.4
 
@@ -2571,9 +2771,9 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 20 (MIT)
+### Text 22 (MIT)
 
-Used by: base64-arraybuffer@1.0.2, core-util-is@1.0.3, csstype@3.2.3, dtype@2.0.0, event-emitter@0.3.5, function-bind@1.1.2, gl-matrix@3.4.4, iconv-lite@0.4.24, is-browser@2.1.0, needle@2.9.1, orderedmap@2.1.1, performance-now@2.1.0, probe-image-size@7.4.0, prosemirror-changeset@2.4.2, prosemirror-commands@1.7.2, prosemirror-dropcursor@1.8.3, prosemirror-gapcursor@1.4.1, prosemirror-history@1.5.0, prosemirror-inputrules@1.5.1, prosemirror-keymap@1.2.3, prosemirror-model@1.25.11, prosemirror-schema-list@1.5.1, prosemirror-state@1.4.4, prosemirror-tables@1.8.5, prosemirror-transform@1.12.1, prosemirror-view@1.42.3, raf@3.4.1, readable-stream@1.0.34, rope-sequence@1.3.4, stack-trace@0.0.9, string_decoder@0.10.31, tinycolor2@1.6.0, w3c-keyname@2.2.8, ws@8.21.3, xtend@2.2.0, adler2@2.0.1, anyhow@1.0.104, async-channel@2.5.0, async-executor@1.14.0, async-io@2.6.0, async-lock@3.4.2, async-process@2.5.0, async-recursion@1.1.1, async-signal@0.2.14, async-task@4.7.1, async-trait@0.1.92, atk@0.18.2, atk-sys@0.18.2, atomic-waker@1.1.2, bit-set@0.8.0, bit-vec@0.8.0, bitflags@1.3.2, bitflags@2.13.1, block-buffer@0.10.4, blocking@1.6.2, brotli@8.0.4, bumpalo@3.20.3, bytes@1.12.1, cairo-rs@0.18.5, cairo-sys-rs@0.18.2, camino@1.2.5, cargo_metadata@0.19.2, cargo-platform@0.1.9, cfg-if@1.0.4, cfg-if@1.0.5, chacha20@0.10.1, concurrent-queue@2.5.0, cookie@0.18.2, core-foundation@0.9.4, core-foundation@0.10.1, core-foundation-sys@0.8.7, core-graphics@0.25.0, core-graphics-types@0.2.0, cpufeatures@0.2.17, cpufeatures@0.3.0, crypto-common@0.1.7, ctor@0.8.0, ctor-proc-macro@0.0.7, data-url@0.3.2, dbus@0.9.12, defmt@1.1.1, defmt-macros@1.1.1, deranged@0.5.8, digest@0.10.7, dirs@6.0.0, dirs-sys@0.5.0, displaydoc@0.2.7, document-features@0.2.12, dtoa@1.0.11, dtor@0.3.0, dtor-proc-macro@0.0.6, dyn-clone@1.0.20, encoding_rs@0.8.35, endi@1.1.1, enumflags2@0.7.12, enumflags2_derive@0.7.12, equivalent@1.0.2, erased-serde@0.4.10, errno@0.3.14, event-listener@5.4.2, event-listener-strategy@0.5.4, fastrand@2.5.0, flate2@1.1.9, fnv@1.0.7, foreign-types@0.5.0, foreign-types-macros@0.2.4, foreign-types-shared@0.3.1, form_urlencoded@1.2.2, futures-channel@0.3.34, futures-core@0.3.34, futures-executor@0.3.34, futures-io@0.3.34, futures-lite@2.6.1, futures-macro@0.3.34, futures-sink@0.3.34, futures-task@0.3.34, futures-util@0.3.34, gdk@0.18.2, gdk-pixbuf@0.18.5, gdk-pixbuf-sys@0.18.0, gdk-sys@0.18.2, gdkwayland-sys@0.18.2, gdkx11@0.18.2, gdkx11-sys@0.18.2, getrandom@0.2.17, getrandom@0.3.4, getrandom@0.4.3, gio@0.18.4, gio-sys@0.18.1, glib@0.18.5, glib-macros@0.18.5, glib-sys@0.18.1, glob@0.3.4, gobject-sys@0.18.0, gtk@0.18.2, gtk-sys@0.18.2, gtk3-macros@0.18.2, h2@0.4.15, hashbrown@0.12.3, hashbrown@0.17.1, heck@0.4.1, heck@0.5.0, hermit-abi@0.5.2, hex@0.4.3, html5ever@0.38.0, http@1.5.0, http-body@1.1.0, http-body-util@0.1.5, httparse@1.10.1, hyper@1.11.0, hyper-rustls@0.27.9, hyper-util@0.1.20, iana-time-zone@0.1.65, iana-time-zone-haiku@0.1.2, idna@1.1.0, idna_adapter@1.2.2, indexmap@1.9.3, indexmap@2.14.0, ipnet@2.12.1, itoa@1.0.18, jni-sys@0.3.1, jni-sys@0.4.1, js-sys@0.3.104, keyboard-types@0.7.0, libc@0.2.189, libdbus-sys@0.2.7, linux-raw-sys@0.12.1, litrs@1.0.0, lock_api@0.4.14, log@0.4.33, lru-slab@0.1.2, markup5ever@0.38.0, memoffset@0.9.1, mime@0.3.17, mio@1.2.2, new_debug_unreachable@1.0.6, num_enum@0.7.6, num_enum_derive@0.7.6, num-conv@0.2.2, num-traits@0.2.19, once_cell@1.21.4, ordered-stream@0.2.0, pango@0.18.3, pango-sys@0.18.0, parking@2.2.1, parking_lot@0.12.5, parking_lot_core@0.9.12, percent-encoding@2.3.2, pin-project-lite@0.2.17, piper@0.2.5, plist@1.10.0, png@0.17.16, png@0.18.1, polling@3.11.0, portable-atomic@1.15.0, portable-atomic-util@0.2.7, powerfmt@0.2.0, proc-macro-crate@1.3.1, proc-macro-crate@2.0.2, proc-macro-crate@3.5.0, proc-macro2@1.0.107, quinn@0.11.11, quinn-proto@0.11.16, quinn-udp@0.5.15, quote@1.0.47, rand@0.10.2, rand_core@0.10.1, rand_pcg@0.10.2, ref-cast@1.0.26, ref-cast-impl@1.0.26, regex@1.13.1, regex-automata@0.4.18, regex-syntax@0.8.11, reqwest@0.12.28, reqwest@0.13.4, rustc-hash@2.1.3, rustix@1.1.4, rustls@0.23.43, rustls-pki-types@1.15.1, rustversion@1.0.23, scopeguard@1.2.0, semver@1.0.28, serde@1.0.229, serde_core@1.0.229, serde_derive@1.0.229, serde_derive_internals@0.29.1, serde_json@1.0.151, serde_repr@0.1.21, serde_spanned@0.6.9, serde_spanned@1.1.1, serde_urlencoded@0.7.1, serde_with@3.22.0, serde_with_macros@3.22.0, serde-untagged@0.1.9, servo_arc@0.4.3, sha2@0.10.9, signal-hook-registry@1.4.8, slab@0.4.12, smallvec@1.15.2, socket2@0.6.5, softbuffer@0.4.8, stable_deref_trait@1.2.1, string_cache@0.9.0, swift-rs@1.0.8, syn@1.0.109, syn@2.0.119, syn@3.0.3, syn@3.0.6, synstructure@0.13.2, system-configuration@0.7.0, system-configuration-sys@0.6.0, tempfile@3.27.0, tendril@0.5.1, thiserror@1.0.69, thiserror@2.0.20, thiserror-impl@1.0.69, thiserror-impl@2.0.20, time@0.3.55, time-core@0.1.9, time-macros@0.2.32, tinyvec@1.12.0, tokio-rustls@0.26.4, toml@1.1.4+spec-1.1.0, toml_datetime@0.6.3, toml_datetime@1.1.1+spec-1.1.0, toml_edit@0.19.15, toml_edit@0.20.2, toml_edit@0.25.13+spec-1.1.0, toml_parser@1.1.3+spec-1.1.0, toml_writer@1.1.2+spec-1.1.0, tower@0.5.3, tower-http@0.6.11, tower-layer@0.3.3, tower-service@0.3.3, tracing@0.1.44, tracing-attributes@0.1.31, tracing-core@0.1.36, try-lock@0.2.5, typeid@1.0.3, unicode-ident@1.0.24, unicode-ident@1.0.26, unicode-segmentation@1.13.3, url@2.5.8, utf8_iter@1.0.4, uuid@1.24.0, want@0.3.1, wasi@0.11.1+wasi-snapshot-preview1, wasip2@1.0.4+wasi-0.2.12, wasm-bindgen@0.2.127, wasm-bindgen@0.2.128, wasm-bindgen-futures@0.4.77, wasm-bindgen-macro@0.2.127, wasm-bindgen-macro@0.2.128, wasm-bindgen-macro-support@0.2.127, wasm-bindgen-macro-support@0.2.128, wasm-bindgen-shared@0.2.127, wasm-bindgen-shared@0.2.128, wasm-streams@0.5.0, web_atoms@0.2.6, web-sys@0.3.104, webkit2gtk@2.0.2, webkit2gtk-sys@2.0.2, winapi@0.3.9, winnow@0.5.40, winnow@1.0.4, wit-bindgen@0.57.1, x11@2.21.0, x11-dl@2.21.0, zbus@5.19.0, zbus_macros@5.19.0, zbus_names@4.3.4, zcheapstr@1.1.0, zeroize@1.9.0, zmij@1.0.23, zvariant@5.14.0, zvariant_derive@5.14.0, zvariant_utils@4.0.0
+Used by: base64-arraybuffer@1.0.2, core-util-is@1.0.3, csstype@3.2.3, dtype@2.0.0, event-emitter@0.3.5, function-bind@1.1.2, gl-matrix@3.4.4, iconv-lite@0.4.24, is-browser@2.1.0, needle@2.9.1, orderedmap@2.1.1, performance-now@2.1.0, probe-image-size@7.4.0, prosemirror-changeset@2.4.2, prosemirror-commands@1.7.2, prosemirror-dropcursor@1.8.3, prosemirror-gapcursor@1.4.1, prosemirror-history@1.5.0, prosemirror-inputrules@1.5.1, prosemirror-keymap@1.2.3, prosemirror-model@1.25.11, prosemirror-schema-list@1.5.1, prosemirror-state@1.4.4, prosemirror-tables@1.8.5, prosemirror-transform@1.12.1, prosemirror-view@1.42.3, raf@3.4.1, readable-stream@1.0.34, rope-sequence@1.3.4, stack-trace@0.0.9, string_decoder@0.10.31, tinycolor2@1.6.0, w3c-keyname@2.2.8, ws@8.21.3, xtend@2.2.0, adler2@2.0.1, anyhow@1.0.104, async-channel@2.5.0, async-executor@1.14.0, async-io@2.6.0, async-lock@3.4.2, async-process@2.5.0, async-recursion@1.1.1, async-signal@0.2.14, async-task@4.7.1, async-trait@0.1.92, atk@0.18.2, atk-sys@0.18.2, atomic-waker@1.1.2, bit-set@0.8.0, bit-vec@0.8.0, bitflags@1.3.2, bitflags@2.13.1, block-buffer@0.10.4, blocking@1.6.2, brotli@9.1.1, bumpalo@3.20.3, bytes@1.12.1, cairo-rs@0.18.5, cairo-sys-rs@0.18.2, camino@1.2.5, cargo_metadata@0.19.2, cargo-platform@0.1.9, cfg-if@1.0.4, cfg-if@1.0.5, chacha20@0.10.1, concurrent-queue@2.5.0, const-random@0.1.18, const-random-macro@0.1.16, cookie@0.18.2, core-foundation@0.9.4, core-foundation@0.10.1, core-foundation-sys@0.8.7, core-graphics@0.25.0, core-graphics-types@0.2.0, cpufeatures@0.2.17, cpufeatures@0.3.0, crypto-common@0.1.7, ctor@1.0.13, data-url@0.3.2, dbus@0.9.12, defmt@1.1.1, defmt-macros@1.1.1, deranged@0.5.8, digest@0.10.7, dirs@7.0.0, dirs-sys@0.5.0, displaydoc@0.2.7, document-features@0.2.12, dtoa@1.0.11, dyn-clone@1.0.20, encoding_rs@0.8.35, endi@1.1.1, enumflags2@0.7.12, enumflags2_derive@0.7.12, equivalent@1.0.2, erased-serde@0.4.10, errno@0.3.14, event-listener@5.4.2, event-listener-strategy@0.5.4, fastrand@2.5.0, flate2@1.1.9, fnv@1.0.7, foreign-types@0.5.0, foreign-types-macros@0.2.4, foreign-types-shared@0.3.1, form_urlencoded@1.2.2, futures-channel@0.3.34, futures-core@0.3.34, futures-executor@0.3.34, futures-io@0.3.34, futures-lite@2.6.1, futures-macro@0.3.34, futures-sink@0.3.34, futures-task@0.3.34, futures-util@0.3.34, gdk@0.18.2, gdk-pixbuf@0.18.5, gdk-pixbuf-sys@0.18.0, gdk-sys@0.18.2, gdkwayland-sys@0.18.2, gdkx11@0.18.2, gdkx11-sys@0.18.2, getrandom@0.2.17, getrandom@0.3.4, getrandom@0.4.3, gio@0.18.4, gio-sys@0.18.1, glib@0.18.5, glib-macros@0.18.5, glib-sys@0.18.1, glob@0.3.4, gobject-sys@0.18.0, gtk@0.18.2, gtk-sys@0.18.2, gtk3-macros@0.18.2, h2@0.4.15, hashbrown@0.12.3, hashbrown@0.14.5, hashbrown@0.17.1, heck@0.4.1, heck@0.5.0, hermit-abi@0.5.2, hex@0.4.3, html5ever@0.39.0, http@1.5.0, http-body@1.1.0, http-body-util@0.1.5, httparse@1.10.1, hyper@1.11.0, hyper-rustls@0.27.9, hyper-util@0.1.20, iana-time-zone@0.1.65, iana-time-zone-haiku@0.1.2, idna@1.1.0, idna_adapter@1.2.2, indexmap@1.9.3, indexmap@2.14.0, ipnet@2.12.1, itoa@1.0.18, jni-sys@0.3.1, jni-sys@0.4.1, js-sys@0.3.104, keyboard-types@0.8.3, libc@0.2.189, libdbus-sys@0.2.7, linux-raw-sys@0.12.1, litrs@1.0.0, lock_api@0.4.14, log@0.4.33, lru-slab@0.1.2, markup5ever@0.39.0, memoffset@0.9.1, mime@0.3.17, mio@1.2.2, new_debug_unreachable@1.0.6, num_enum@0.7.6, num_enum_derive@0.7.6, num-conv@0.2.2, num-traits@0.2.19, once_cell@1.21.4, ordered-stream@0.2.0, pango@0.18.3, pango-sys@0.18.0, parking@2.2.1, parking_lot@0.12.5, parking_lot_core@0.9.12, percent-encoding@2.3.2, pin-project-lite@0.2.17, piper@0.2.5, plist@1.10.0, png@0.18.1, polling@3.11.0, portable-atomic@1.15.0, portable-atomic-util@0.2.7, powerfmt@0.2.0, proc-macro-crate@1.3.1, proc-macro-crate@2.0.2, proc-macro-crate@3.5.0, proc-macro2@1.0.107, quinn@0.11.11, quinn-proto@0.11.16, quinn-udp@0.5.15, quote@1.0.47, rand@0.10.2, rand_core@0.10.1, rand_pcg@0.10.2, ref-cast@1.0.26, ref-cast-impl@1.0.26, regex@1.13.1, regex-automata@0.4.18, regex-syntax@0.8.11, reqwest@0.12.28, reqwest@0.13.4, rustc-hash@2.1.3, rustix@1.1.4, rustls@0.23.43, rustls-pki-types@1.15.1, rustversion@1.0.23, scopeguard@1.2.0, semver@1.0.28, serde@1.0.229, serde_core@1.0.229, serde_derive@1.0.229, serde_derive_internals@0.29.1, serde_json@1.0.151, serde_repr@0.1.21, serde_spanned@0.6.9, serde_spanned@1.1.1, serde_urlencoded@0.7.1, serde_with@3.22.0, serde_with_macros@3.22.0, serde-untagged@0.1.9, servo_arc@0.4.3, sha2@0.10.9, signal-hook-registry@1.4.8, slab@0.4.12, smallvec@1.15.2, socket2@0.6.5, softbuffer@0.4.8, stable_deref_trait@1.2.1, string_cache@0.9.0, swift-rs@1.0.9, syn@1.0.109, syn@2.0.119, syn@3.0.3, syn@3.0.6, synstructure@0.13.2, system-configuration@0.7.0, system-configuration-sys@0.6.0, tempfile@3.27.0, tendril@0.5.1, thiserror@1.0.69, thiserror@2.0.20, thiserror-impl@1.0.69, thiserror-impl@2.0.20, time@0.3.55, time-core@0.1.9, time-macros@0.2.32, tinyvec@1.12.0, tokio-rustls@0.26.4, toml@1.1.4+spec-1.1.0, toml_datetime@0.6.3, toml_datetime@1.1.1+spec-1.1.0, toml_edit@0.19.15, toml_edit@0.20.2, toml_edit@0.25.13+spec-1.1.0, toml_parser@1.1.3+spec-1.1.0, toml_writer@1.1.2+spec-1.1.0, tower@0.5.3, tower-http@0.6.11, tower-layer@0.3.3, tower-service@0.3.3, tracing@0.1.44, tracing-attributes@0.1.31, tracing-core@0.1.36, try-lock@0.2.5, typeid@1.0.3, unicode-ident@1.0.24, unicode-ident@1.0.26, unicode-segmentation@1.13.3, url@2.5.8, utf8_iter@1.0.4, uuid@1.24.0, want@0.3.1, wasi@0.11.1+wasi-snapshot-preview1, wasip2@1.0.4+wasi-0.2.12, wasm-bindgen@0.2.127, wasm-bindgen@0.2.128, wasm-bindgen-futures@0.4.77, wasm-bindgen-macro@0.2.127, wasm-bindgen-macro@0.2.128, wasm-bindgen-macro-support@0.2.127, wasm-bindgen-macro-support@0.2.128, wasm-bindgen-shared@0.2.127, wasm-bindgen-shared@0.2.128, wasm-streams@0.5.0, web_atoms@0.2.6, web-sys@0.3.104, webkit2gtk@2.0.2, webkit2gtk-sys@2.0.2, winapi@0.3.9, winnow@0.5.40, winnow@1.0.4, wit-bindgen@0.57.1, x11@2.21.0, x11-dl@2.21.0, zbus@5.19.0, zbus_macros@5.19.0, zbus_names@4.3.4, zcheapstr@1.1.0, zeroize@1.9.0, zmij@1.0.23, zvariant@5.14.0, zvariant_derive@5.14.0, zvariant_utils@4.0.0
 
 ````text
 Permission is hereby granted, free of charge, to any person
@@ -2598,7 +2798,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 21 (MIT)
+### Text 23 (MIT)
 
 Used by: bl@2.2.1
 
@@ -2617,7 +2817,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 22 (MIT)
+### Text 24 (MIT)
 
 Used by: clamp@1.0.1, from2@2.3.0, glsl-resolve@0.0.1, map-limit@0.0.1
 
@@ -2644,7 +2844,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### Text 23 (Unlicense)
+### Text 25 (Unlicense)
 
 Used by: color-space@2.3.2
 
@@ -2675,7 +2875,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 ````
 
-### Text 24 (MIT)
+### Text 26 (MIT)
 
 Used by: concat-stream@1.6.2
 
@@ -2705,7 +2905,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 25 (BSD-3-Clause)
+### Text 27 (BSD-3-Clause)
 
 Used by: d3-geo@1.12.1
 
@@ -2758,7 +2958,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 26 (BSD-3-Clause)
+### Text 28 (BSD-3-Clause)
 
 Used by: d3-geo-projection@2.9.0
 
@@ -2817,7 +3017,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### Text 27 (MIT)
+### Text 29 (MIT)
 
 Used by: defined@1.0.1, font-atlas@2.1.0, minimist@1.2.8, resolve@0.6.3, shallow-copy@0.0.1
 
@@ -2842,7 +3042,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 28 (BSD-2-Clause)
+### Text 30 (BSD-2-Clause)
 
 Used by: escodegen@2.1.0, esprima@4.0.1, estraverse@5.3.0, esutils@2.0.3
 
@@ -2868,7 +3068,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 29 (MIT)
+### Text 31 (MIT)
 
 Used by: events@3.3.0
 
@@ -2896,7 +3096,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 30 (Zlib)
+### Text 32 (Zlib)
 
 Used by: gl-mat4@1.2.0
 
@@ -2920,7 +3120,7 @@ freely, subject to the following restrictions:
  3. This notice may not be removed or altered from any source distribution.
 ````
 
-### Text 31 (MIT)
+### Text 33 (MIT)
 
 Used by: glsl-inject-defines@1.0.3, glsl-token-assignments@2.0.2, glsl-token-defines@1.0.0, glsl-token-depth@1.1.2, glsl-token-descope@1.0.2, glsl-token-properties@1.0.1, glsl-token-scope@1.1.2, glsl-token-string@1.0.1, glslify-bundle@5.1.1
 
@@ -2938,7 +3138,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 32 (MIT)
+### Text 34 (MIT)
 
 Used by: glsl-tokenizer@2.1.5
 
@@ -2954,7 +3154,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 33 (MIT)
+### Text 35 (MIT)
 
 Used by: glslify@7.1.1
 
@@ -2986,7 +3186,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 ````
 
-### Text 34 (ISC)
+### Text 36 (ISC)
 
 Used by: graceful-fs@4.2.11, inherits@2.0.4, ini@4.1.3, once@1.3.3, once@1.4.0, which@4.0.0, wrappy@1.0.2
 
@@ -3007,7 +3207,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### Text 35 (MIT)
+### Text 37 (MIT)
 
 Used by: html-url-attributes@3.0.1, remark-parse@11.0.0, remark-stringify@11.0.0, stream-parser@0.3.1, trough@2.2.0, unified@11.0.5, util-deprecate@1.0.2, vfile@6.0.3
 
@@ -3034,7 +3234,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ````
 
-### Text 36 (BSD-3-Clause)
+### Text 38 (BSD-3-Clause)
 
 Used by: ieee754@1.2.1, encoding_rs@0.8.35, subtle@2.6.1
 
@@ -3050,7 +3250,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 37 (BlueOak-1.0.0)
+### Text 39 (BlueOak-1.0.0)
 
 Used by: isexe@3.1.5, sax@1.6.1
 
@@ -3111,7 +3311,7 @@ will be liable to anyone for any damages related to this
 software or this license, under any kind of legal claim.***
 ````
 
-### Text 38 (MIT)
+### Text 40 (MIT)
 
 Used by: lodash.merge@4.6.2
 
@@ -3163,7 +3363,7 @@ licenses; we recommend you read them, as their terms may differ from the
 terms above.
 ````
 
-### Text 39 (MIT)
+### Text 41 (MIT)
 
 Used by: normalize-svg-path@1.1.0, parse-svg-path@0.1.2
 
@@ -3191,7 +3391,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 40 (BSD-3-Clause)
+### Text 42 (BSD-3-Clause)
 
 Used by: pbf@3.3.0
 
@@ -3224,7 +3424,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 41 (MIT)
+### Text 43 (MIT)
 
 Used by: process-nextick-args@2.0.1
 
@@ -3250,7 +3450,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.**
 ````
 
-### Text 42 (MIT)
+### Text 44 (MIT)
 
 Used by: react-draggable@4.7.1
 
@@ -3277,7 +3477,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 43 (MIT)
+### Text 45 (MIT)
 
 Used by: readable-stream@2.3.8, string_decoder@1.1.1
 
@@ -3329,7 +3529,7 @@ IN THE SOFTWARE.
 """
 ````
 
-### Text 44 (BSD-3-Clause)
+### Text 46 (BSD-3-Clause)
 
 Used by: source-map@0.6.1
 
@@ -3362,7 +3562,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 45 (ISC)
+### Text 47 (ISC)
 
 Used by: svg-arc-to-cubic-bezier@3.2.0
 
@@ -3384,7 +3584,7 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ````
 
-### Text 46 (MIT)
+### Text 48 (MIT)
 
 Used by: through2@0.6.5
 
@@ -3429,7 +3629,7 @@ programs and associated documentation files created by the
 Original Author, when distributed with the Software.
 ````
 
-### Text 47 (MIT)
+### Text 49 (MIT)
 
 Used by: through2@2.0.5
 
@@ -3445,7 +3645,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 48 (0BSD)
+### Text 50 (0BSD)
 
 Used by: tslib@2.8.1, adler2@2.0.1
 
@@ -3462,9 +3662,9 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### Text 49 ((MIT OR CC0-1.0))
+### Text 51 ((MIT OR CC0-1.0))
 
-Used by: type-fest@5.9.0, dunce@1.0.5
+Used by: type-fest@5.9.0, dunce@1.0.5, tiny-keccak@2.0.2
 
 ````text
 Creative Commons Legal Code
@@ -3590,7 +3790,7 @@ express Statement of Purpose.
  this CC0 or use of the Work.
 ````
 
-### Text 50 (MIT)
+### Text 52 (MIT)
 
 Used by: typedarray@0.0.6
 
@@ -3630,7 +3830,7 @@ Used by: typedarray@0.0.6
 // * Allows typed_array.get/set() as alias for subscripts (typed_array[])
 ````
 
-### Text 51 (MIT)
+### Text 53 (MIT)
 
 Used by: unist-util-is@6.0.1
 
@@ -3658,7 +3858,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 52 (MIT)
+### Text 54 (MIT)
 
 Used by: unquote@1.1.1
 
@@ -3688,7 +3888,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 53 (MIT)
+### Text 55 (MIT)
 
 Used by: vt-pbf@3.1.3
 
@@ -3746,9 +3946,9 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 54 (Apache-2.0)
+### Text 56 (Apache-2.0)
 
-Used by: xlsx@0.20.3, cookie_store@0.22.1, crc32fast@1.5.0, ctor@0.8.0, ctor-proc-macro@0.0.7, dbus@0.9.12, dpi@0.1.2, dtor@0.3.0, dtor-proc-macro@0.0.6, foreign-types@0.5.0, foreign-types-macros@0.2.4, foreign-types-shared@0.3.1, hex@0.4.3, ipnet@2.12.1, jni-sys@0.3.1, jni-sys@0.4.1, json-patch@3.0.1, libdbus-sys@0.2.7, serde_spanned@0.6.9, serde_spanned@1.1.1, softbuffer@0.4.8, swift-rs@1.0.8, tao@0.35.3, toml@1.1.4+spec-1.1.0, toml_datetime@1.1.1+spec-1.1.0, toml_edit@0.19.15, toml_edit@0.20.2, toml_edit@0.25.13+spec-1.1.0, toml_parser@1.1.3+spec-1.1.0, toml_writer@1.1.2+spec-1.1.0, winapi@0.3.9
+Used by: xlsx@0.20.3, cookie_store@0.22.1, crc32fast@1.5.0, ctor@1.0.13, dbus@0.9.12, dpi@0.1.2, foreign-types@0.5.0, foreign-types-macros@0.2.4, foreign-types-shared@0.3.1, hex@0.4.3, ipnet@2.12.1, jni-sys@0.3.1, jni-sys@0.4.1, json-patch@4.2.0, libdbus-sys@0.2.7, serde_spanned@0.6.9, serde_spanned@1.1.1, softbuffer@0.4.8, swift-rs@1.0.9, tao@0.37.2, toml@1.1.4+spec-1.1.0, toml_datetime@1.1.1+spec-1.1.0, toml_edit@0.19.15, toml_edit@0.20.2, toml_edit@0.25.13+spec-1.1.0, toml_parser@1.1.3+spec-1.1.0, toml_writer@1.1.2+spec-1.1.0, winapi@0.3.9
 
 ````text
 Apache License
@@ -3953,7 +4153,7 @@ Apache License
  limitations under the License.
 ````
 
-### Text 55 (0BSD OR MIT OR Apache-2.0)
+### Text 57 (0BSD OR MIT OR Apache-2.0)
 
 Used by: adler2@2.0.1, cargo-platform@0.1.9, proc-macro-crate@1.3.1, proc-macro-crate@2.0.2, proc-macro-crate@3.5.0
 
@@ -4160,7 +4360,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### Text 56 (Unlicense OR MIT)
+### Text 58 (Unlicense OR MIT)
 
 Used by: aho-corasick@1.1.5, byteorder@1.5.0, jiff@0.2.35, jiff-core@0.1.0, jiff-static@0.2.35, jiff-tzdb@0.1.8, jiff-tzdb-platform@0.1.3, memchr@2.8.3, same-file@1.0.6, walkdir@2.5.0, winapi-util@0.1.11
 
@@ -4170,9 +4370,9 @@ This project is dual-licensed under the Unlicense and MIT licenses.
 You may use this code under the terms of either license.
 ````
 
-### Text 57 (BSD-3-Clause)
+### Text 59 (BSD-3-Clause)
 
-Used by: alloc-no-stdlib@2.0.4, brotli@8.0.4, brotli-decompressor@5.0.3
+Used by: alloc-no-stdlib@3.0.0, brotli@9.1.1, brotli-decompressor@6.2.0
 
 ````text
 All rights reserved.
@@ -4188,7 +4388,7 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 58 (MIT OR Apache-2.0)
+### Text 60 (MIT OR Apache-2.0)
 
 Used by: android_system_properties@0.1.6
 
@@ -4206,7 +4406,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### Text 59 (MIT OR Apache-2.0)
+### Text 61 (MIT OR Apache-2.0)
 
 Used by: async-broadcast@0.7.2
 
@@ -4402,7 +4602,7 @@ Apache License
  limitations under the License.
 ````
 
-### Text 60 (Apache-2.0 OR MIT)
+### Text 62 (Apache-2.0 OR MIT)
 
 Used by: atomic-waker@1.1.2, futures-lite@2.6.1
 
@@ -4450,7 +4650,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 61 (Zlib OR Apache-2.0 OR MIT)
+### Text 63 (Zlib OR Apache-2.0 OR MIT)
 
 Used by: bytemuck@1.25.2
 
@@ -4465,7 +4665,7 @@ The above copyright notice and this permission notice (including the next paragr
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 62 (Zlib OR Apache-2.0 OR MIT)
+### Text 64 (Zlib OR Apache-2.0 OR MIT)
 
 Used by: bytemuck@1.25.2, foldhash@0.2.0, lru-slab@0.1.2, miniz_oxide@0.8.9, raw-window-handle@0.6.2, tinyvec@1.12.0
 
@@ -4481,7 +4681,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### Text 63 (MIT OR Apache-2.0)
+### Text 65 (MIT OR Apache-2.0)
 
 Used by: chrono@0.4.45
 
@@ -4725,7 +4925,7 @@ limitations under the License.
 ~~~~
 ````
 
-### Text 64 (MIT OR Apache-2.0)
+### Text 66 (MIT OR Apache-2.0)
 
 Used by: crossbeam-channel@0.5.16
 
@@ -5323,9 +5523,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### Text 65 (MIT OR Apache-2.0)
+### Text 67 (MIT OR Apache-2.0)
 
-Used by: dirs@6.0.0, dirs-sys@0.5.0
+Used by: dirs@7.0.0, dirs-sys@0.5.0
 
 ````text
 Apache License
@@ -5504,9 +5704,9 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
  of your accepting any such warranty or additional liability.
 ````
 
-### Text 66 (MIT)
+### Text 68 (MIT)
 
-Used by: dom_query@0.27.0
+Used by: dom_query@0.28.0
 
 ````text
 MIT License
@@ -5537,7 +5737,7 @@ derived from the "nipper" project (https://github.com/importcjj/nipper),
 developed by Chen Jiaju, licensed under the MIT License and the Apache License 2.0 (dual licensed).
 ````
 
-### Text 67 (Apache-2.0 AND MIT)
+### Text 69 (Apache-2.0 AND MIT)
 
 Used by: dpi@0.1.2
 
@@ -5586,7 +5786,7 @@ have been licensed under extremely permissive terms.
 ------------------------------------------------------------------------------
 ````
 
-### Text 68 (MIT OR Apache-2.0)
+### Text 70 (MIT OR Apache-2.0)
 
 Used by: enumflags2@0.7.12, enumflags2_derive@0.7.12
 
@@ -5660,7 +5860,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### Text 69 (MIT OR Apache-2.0)
+### Text 71 (MIT OR Apache-2.0)
 
 Used by: getrandom@0.2.17, getrandom@0.3.4, getrandom@0.4.3
 
@@ -5867,7 +6067,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ````
 
-### Text 70 (Apache-2.0 OR ISC OR MIT)
+### Text 72 (Apache-2.0 OR ISC OR MIT)
 
 Used by: hyper-rustls@0.27.9, rustls@0.23.43
 
@@ -5888,7 +6088,7 @@ ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ````
 
-### Text 71 (Unicode-3.0)
+### Text 73 (Unicode-3.0)
 
 Used by: icu_collections@2.2.0, icu_locale_core@2.2.0, icu_normalizer@2.2.0, icu_normalizer_data@2.2.0, icu_properties@2.2.0, icu_properties_data@2.2.0, icu_provider@2.2.0, litemap@0.8.2, potential_utf@0.1.5, tinystr@0.8.3, writeable@0.6.3, yoke@0.8.3, yoke-derive@0.8.2, zerofrom@0.1.8, zerofrom-derive@0.1.7, zerotrie@0.2.4, zerovec@0.11.6, zerovec-derive@0.11.3
 
@@ -5940,7 +6140,7 @@ Portions of ICU4X may have been adapted from ICU4C and/or ICU4J.
 ICU 1.8.1 to ICU 57.1 © 1995-2016 International Business Machines Corporation and others.
 ````
 
-### Text 72 (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT)
+### Text 74 (Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT)
 
 Used by: linux-raw-sys@0.12.1, rustix@1.1.4, wasi@0.11.1+wasi-snapshot-preview1, wasip2@1.0.4+wasi-0.2.12, wit-bindgen@0.57.1
 
@@ -6164,9 +6364,9 @@ the License, but only in their entirety and only with respect to the Combined
 Software.
 ````
 
-### Text 73 (Apache-2.0 OR MIT)
+### Text 75 (Apache-2.0 OR MIT)
 
-Used by: muda@0.19.3
+Used by: muda@0.20.0
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -6190,7 +6390,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/muda.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 74 (BSD-3-Clause OR MIT OR Apache-2.0)
+### Text 76 (BSD-3-Clause OR MIT OR Apache-2.0)
 
 Used by: num_enum@0.7.6, num_enum_derive@0.7.6
 
@@ -6223,7 +6423,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 75 (MIT)
+### Text 77 (MIT)
 
 Used by: open@5.4.1
 
@@ -6254,7 +6454,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 76 (MPL-2.0)
+### Text 78 (MPL-2.0)
 
 Used by: option-ext@0.2.0
 
@@ -6633,7 +6833,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
  defined by the Mozilla Public License, v. 2.0.
 ````
 
-### Text 77 (Apache-2.0 OR MIT)
+### Text 79 (Apache-2.0 OR MIT)
 
 Used by: parking@2.2.1
 
@@ -6648,7 +6848,7 @@ option. All files in the project carrying such notice may not be
 copied, modified, or distributed except according to those terms.
 ````
 
-### Text 78 (MIT OR Apache-2.0)
+### Text 80 (MIT OR Apache-2.0)
 
 Used by: rand@0.10.2
 
@@ -6831,7 +7031,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 END OF TERMS AND CONDITIONS
 ````
 
-### Text 79 (MIT OR Apache-2.0)
+### Text 81 (MIT OR Apache-2.0)
 
 Used by: rand_core@0.10.1, rand_pcg@0.10.2
 
@@ -7025,7 +7225,7 @@ APPENDIX: How to apply the Apache License to your work.
  identification within third-party archives.
 ````
 
-### Text 80 (Apache-2.0 AND ISC)
+### Text 82 (Apache-2.0 AND ISC)
 
 Used by: ring@0.17.14
 
@@ -7041,7 +7241,7 @@ See src/polyfill/once_cell/LICENSE-APACHE and src/polyfill/once_cell/LICENSE-MIT
 for the license to code that was sourced from the once_cell project.
 ````
 
-### Text 81 (Apache-2.0 AND ISC)
+### Text 83 (Apache-2.0 AND ISC)
 
 Used by: ring@0.17.14
 
@@ -7316,7 +7516,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ````
 
-### Text 82 (ISC)
+### Text 84 (ISC)
 
 Used by: rustls-webpki@0.103.14
 
@@ -7341,7 +7541,7 @@ The files under third-party/chromium are licensed as described in
 third-party/chromium/LICENSE.
 ````
 
-### Text 83 (Apache-2.0 OR BSL-1.0)
+### Text 85 (Apache-2.0 OR BSL-1.0)
 
 Used by: ryu@1.0.23, ryu-js@1.0.3
 
@@ -7371,7 +7571,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ````
 
-### Text 84 (MIT/Apache-2.0)
+### Text 86 (MIT/Apache-2.0)
 
 Used by: siphasher@1.0.3
 
@@ -7382,9 +7582,9 @@ http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 option.
 ````
 
-### Text 85 (Apache-2.0)
+### Text 87 (Apache-2.0)
 
-Used by: tao@0.35.3
+Used by: tao@0.37.2
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -7407,7 +7607,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tao.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 86 (MIT OR Apache-2.0)
+### Text 88 (MIT OR Apache-2.0)
 
 Used by: tao-macros@0.1.4
 
@@ -7433,7 +7633,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tao.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 87 (MIT OR Apache-2.0 OR Zlib)
+### Text 89 (MIT OR Apache-2.0 OR Zlib)
 
 Used by: tinyvec_macros@0.1.1
 
@@ -7458,9 +7658,9 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 ````
 
-### Text 88 (MIT OR Apache-2.0)
+### Text 90 (MIT OR Apache-2.0)
 
-Used by: tray-icon@0.24.2
+Used by: tray-icon@0.25.1
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -7484,7 +7684,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tray-icon.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 89 (MIT OR Apache-2.0)
+### Text 91 (MIT OR Apache-2.0)
 
 Used by: typenum@1.20.1
 
@@ -7492,7 +7692,7 @@ Used by: typenum@1.20.1
 MIT OR Apache-2.0
 ````
 
-### Text 90 ((MIT OR Apache-2.0) AND Unicode-3.0)
+### Text 92 ((MIT OR Apache-2.0) AND Unicode-3.0)
 
 Used by: unicode-ident@1.0.24, unicode-ident@1.0.26
 
@@ -7537,7 +7737,7 @@ dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 ````
 
-### Text 91 (ISC)
+### Text 93 (ISC)
 
 Used by: untrusted@0.9.0
 
@@ -7557,7 +7757,7 @@ Used by: untrusted@0.9.0
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ````
 
-### Text 92 (CDLA-Permissive-2.0)
+### Text 94 (CDLA-Permissive-2.0)
 
 Used by: webpki-roots@1.0.9
 
@@ -7625,9 +7825,9 @@ of Data, including for example machine learning models and models'
 insights.
 ````
 
-### Text 93 (Apache-2.0 OR MIT)
+### Text 95 (Apache-2.0 OR MIT)
 
-Used by: window-vibrancy@0.6.0
+Used by: window-vibrancy@0.8.1
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -7651,9 +7851,9 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/window-vibrancy.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
 
-### Text 94 (Apache-2.0 OR MIT)
+### Text 96 (Apache-2.0 OR MIT)
 
-Used by: wry@0.55.1
+Used by: wry@0.57.1
 
 ````text
 SPDXVersion: SPDX-2.1
@@ -7677,3 +7877,219 @@ PackageDownloadLocation: git+https://github.com/tauri-apps/wry.git
 PackageDownloadLocation: git+ssh://github.com/tauri-apps/wry.git
 Creator: Person: Daniel Thompson-Yvetot
 ````
+
+## Notices carried by @adventures-openbq/arts-charts
+
+# Third-party notices
+
+Art's Charts renders through **Lightweight Charts™** by TradingView (Apache-2.0). TradingView asks to be
+named as the product's creator and linked from a page users can reach; the attribution logo on every
+chart is that link and must stay on (see ARTS_CHARTS_TERMS.md, section 2).
+
+### lightweight-charts 5.0.8
+
+Licence: Apache-2.0 · https://www.tradingview.com/lightweight-charts/
+
+```
+Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright 2023 TradingView, Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+```

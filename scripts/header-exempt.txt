@@ -1,5 +1,5 @@
 # Third-party code that keeps its own license and notice (not BDOBB-authored).
-# swift-rs 1.0.8, vendored for the iOS build ([patch.crates-io] in src-tauri/Cargo.toml); MIT OR Apache-2.0.
+# swift-rs 1.0.9, vendored for the iOS build ([patch.crates-io] in src-tauri/Cargo.toml); MIT OR Apache-2.0.
 src-tauri/vendor/
 
 

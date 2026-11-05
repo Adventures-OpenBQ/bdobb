@@ -703,7 +703,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d045de693cb712d0b22c6a64be5b953f67b3ce00ab5ad3dd5d8b441886ab8e1a"
 dependencies = [
  "quote",
- "syn 3.0.3",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -3670,8 +3670,6 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "swift-rs"
 version = "1.0.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cefd87076fd385308ee4aff597256c902f1fbb4d031de1558efc12f8ffefadd9"
 dependencies = [
  "base64 0.21.7",
  "serde",
@@ -5726,7 +5724,3 @@ dependencies = [
  "syn 3.0.3",
  "winnow 1.0.4",
 ]
-
-[[patch.unused]]
-name = "swift-rs"
-version = "1.0.8"

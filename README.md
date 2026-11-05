@@ -46,7 +46,7 @@ pnpm ios:dev "<device name>"                       # iterate on a device
 pnpm ios:build                                     # release .ipa
 ```
 
-Signing needs `APPLE_DEVELOPMENT_TEAM` in `.env.local` (`pnpm ios:team` prints it). The iOS build vendors `swift-rs` 1.0.8 under `src-tauri/vendor/` for Xcode 27; it keeps its own license and is credited in `THIRD_PARTY_NOTICES.md`.
+Signing needs `APPLE_DEVELOPMENT_TEAM` in `.env.local` (`pnpm ios:team` prints it). The iOS build vendors `swift-rs` 1.0.9 under `src-tauri/vendor/` for Xcode 27; it keeps its own license and is credited in `THIRD_PARTY_NOTICES.md`.
 
 ## News, pinned cards and locked widgets (v8)
 

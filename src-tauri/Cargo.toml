@@ -41,7 +41,7 @@ objc2-app-kit = { version = "0.3", default-features = false, features = ["std", 
 objc2 = "0.6"
 
 # Xcode 27's SwiftPM internalizes the `@_cdecl` exports of a static Swift
-# product, so the Rust side of Tauri's iOS build fails to link. swift-rs 1.0.8
+# product, so the Rust side of Tauri's iOS build fails to link. swift-rs 1.0.9
 # fixes most of that (it plans with `--triple`, clamps the iOS deployment
 # target, finds the moved products dir, and re-globalizes the internalized
 # symbols with llvm-objcopy -- hence `scripts/ios.sh check` requiring
@@ -49,7 +49,7 @@ objc2 = "0.6"
 # PACKAGE, though, so swift-rs's own `SwiftRs.o` stays local and
 # `retain_object` / `release_object` / `string_from_bytes` still fail.
 #
-# vendor/swift-rs is pristine 1.0.8 with that one condition widened; the change
+# vendor/swift-rs is pristine 1.0.9 with that one condition widened; the change
 # and its reasoning are commented at the site, in src-rs/build.rs. Drop the
 # vendored copy and this patch when upstream covers SwiftRs.o.
 #
@@ -58,6 +58,5 @@ objc2 = "0.6"
 [patch.crates-io]
 swift-rs = { path = "vendor/swift-rs" }
 
-# SDK 27 scene configuration ownership fix: upstream tao PR #1245.
-# Remove this vendored 0.35.3 patch when Tauri supports the fixed Tao release.
-tao = { path = "vendor/tao" }
+# The SDK 27 scene configuration fix (tao PR #1245) is in tao 0.37.2, which
+# Tauri 2.12.5 uses, so the vendored tao 0.35.3 patch is gone.
