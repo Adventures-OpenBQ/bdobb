@@ -1,9 +1,17 @@
 # Card parameters
 
 Most widgets take parameters — a symbol, a date range, a provider. The card's
-header carries a row of controls, one per visible parameter, directly under
-the title. There is nothing to open: what a card is asking for is always in
-view.
+header carries a control for each visible parameter. There is nothing to open:
+what a card is asking for is always in view.
+
+The controls sit where OpenBB Workspace puts them. By default they share the
+title bar, after the card's name. A widget can arrange them in rows (OpenBB's
+parameter positioning): its first row still shares the title bar, and each
+further row gets a line of its own under it. A row that is wider than the
+card scrolls sideways rather than wrapping. On a very narrow card, once the
+title-bar row would be squeezed to about one control's width, the card's own
+buttons fold behind the **⌄** chevron, as they do with **Collapse widget
+controls** on, and come back once there is room again. **Run** never folds.
 
 ![Two cards with their parameter rows](./shots/card-parameters.png)
 

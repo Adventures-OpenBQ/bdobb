@@ -17,7 +17,7 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import type { ParamEdit } from "../lib/paramGroups";
 import type { BackendConfig, DashboardCard, ParamGroup, ParamOption, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
-import { ParamControls } from "./ParamControls";
+import { nextCrowded, ParamControls, ROW_MIN, UNFOLD_MARGIN } from "./ParamControls";
 
 const widget: WidgetDef = makeWidget({
   id: "w1",
@@ -1019,5 +1019,152 @@ describe("ParamControls multi-select params", () => {
     expect(labelsOf(select)).toEqual(["Alpha", "Bravo", "Charlie"]);
     await settle();
     expect(lastServer().requests).toHaveLength(0);
+  });
+});
+
+describe("ParamControls rows", () => {
+  const rowsWidget: WidgetDef = makeWidget({
+    id: "w2",
+    category: "",
+    gridData: { w: 1, h: 1 },
+    params: [
+      { paramName: "symbol", label: "Symbol", type: "text" },
+      { paramName: "start", label: "Start", type: "date", row: 1 },
+      { paramName: "end", label: "End", type: "date", row: 1 },
+      { paramName: "hidden", label: "Hidden", show: false, row: 2 },
+      { paramName: "volume", label: "Volume", type: "boolean", row: 3 },
+    ],
+  });
+
+  function renderRows(onCrowdedChange?: (crowded: boolean) => void) {
+    return render(
+      <ParamControls
+        widget={rowsWidget}
+        card={makeCard({ id: "c2", widgetId: "w2", params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } })}
+        groups={undefined}
+        groupsDisabled={false}
+        effective={{}}
+        backend={undefined}
+        onApply={vi.fn()}
+        onCrowdedChange={onCrowdedChange}
+      />,
+    );
+  }
+
+  it("puts row 0 in the title-bar row and each further row on its own line, in order", () => {
+    const { container } = renderRows();
+    const row0 = container.querySelector(".card-params-row0");
+    expect(row0).toContainElement(screen.getByLabelText("Symbol"));
+    expect(row0).not.toContainElement(screen.getByLabelText("Start"));
+    const lines = [...container.querySelectorAll(".card-params-rows .card-params-line")];
+    // Row 2 holds only a hidden param, so it draws no line at all.
+    expect(lines.map((l) => l.getAttribute("data-param-row"))).toEqual(["1", "3"]);
+    expect(lines[0]).toContainElement(screen.getByLabelText("Start"));
+    expect(lines[0]).toContainElement(screen.getByLabelText("End"));
+    expect(lines[1]).toContainElement(screen.getByLabelText("Volume"));
+  });
+
+  it("draws no title-bar row when every param sits on a row below it, and says it is not crowded", () => {
+    const onCrowdedChange = vi.fn();
+    const below: WidgetDef = { ...rowsWidget, params: rowsWidget.params.filter((p) => (p.row ?? 0) > 0) };
+    const { container } = render(
+      <ParamControls
+        widget={below}
+        card={makeCard({ id: "c3", widgetId: "w2", params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } })}
+        groups={undefined}
+        groupsDisabled={false}
+        effective={{}}
+        backend={undefined}
+        onApply={vi.fn()}
+        onCrowdedChange={onCrowdedChange}
+      />,
+    );
+    expect(container.querySelector(".card-params-row0")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".card-params-line")).toHaveLength(2);
+    expect(onCrowdedChange).not.toHaveBeenCalledWith(true);
+  });
+
+  describe("crowding", () => {
+    let callback: ResizeObserverCallback | undefined;
+    const widths = { row: 400, track: 100 };
+    const spies: { mockRestore(): void }[] = [];
+
+    beforeEach(() => {
+      callback = undefined;
+      widths.row = 400;
+      widths.track = 100;
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(cb: ResizeObserverCallback) {
+            callback = cb;
+          }
+          observe() {}
+          disconnect() {}
+          unobserve() {}
+        },
+      );
+      spies.push(
+        vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+          return this.classList.contains("card-params-row0") ? widths.row : 0;
+        }),
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+          return this.classList.contains("card-params-track") ? widths.track : 0;
+        }),
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      for (const spy of spies.splice(0)) spy.mockRestore();
+    });
+
+    const resize = (row: number) =>
+      act(() => {
+        widths.row = row;
+        callback?.([], {} as ResizeObserver);
+      });
+
+    it("scrolls first, reports crowded only below one control's width, and roomy only past it again", () => {
+      const onCrowdedChange = vi.fn();
+      widths.track = 300; // controls that need more than ROW_MIN
+      renderRows(onCrowdedChange);
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(200); // narrower than the controls: the row scrolls, nothing folds
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(ROW_MIN - 1);
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(true);
+      resize(ROW_MIN + UNFOLD_MARGIN - 1); // back over ROW_MIN, but inside the margin
+      expect(onCrowdedChange).toHaveBeenCalledTimes(1);
+      resize(ROW_MIN + UNFOLD_MARGIN);
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(false);
+      expect(onCrowdedChange).toHaveBeenCalledTimes(2);
+    });
+
+    it("never folds for a row whose controls need less than ROW_MIN, while they fit", () => {
+      const onCrowdedChange = vi.fn();
+      widths.track = 80;
+      renderRows(onCrowdedChange);
+      resize(80);
+      expect(onCrowdedChange).not.toHaveBeenCalled();
+      resize(79);
+      expect(onCrowdedChange).toHaveBeenLastCalledWith(true);
+    });
+  });
+});
+
+describe("nextCrowded", () => {
+  it("folds only once the row is narrower than the smaller of what it needs and ROW_MIN", () => {
+    expect(nextCrowded(false, 200, 300)).toBe(false); // scrolls
+    expect(nextCrowded(false, ROW_MIN, 300)).toBe(false);
+    expect(nextCrowded(false, ROW_MIN - 1, 300)).toBe(true);
+    expect(nextCrowded(false, 60, 60)).toBe(false); // short row that fits
+    expect(nextCrowded(false, 59, 60)).toBe(true);
+  });
+
+  it("unfolds only if the row would keep the floor plus the margin with the buttons back", () => {
+    // Buttons 250px wide: the row loses 250px when they unfold.
+    expect(nextCrowded(true, 250 + ROW_MIN + UNFOLD_MARGIN - 1, 300, 250)).toBe(true);
+    expect(nextCrowded(true, 250 + ROW_MIN + UNFOLD_MARGIN, 300, 250)).toBe(false);
   });
 });
