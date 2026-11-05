@@ -401,7 +401,7 @@ describe("http shim", () => {
       "keeps the web session after an anonymous probe's 401 (%s)", async (mode) => {
         vi.stubGlobal("fetch", answer(401));
         const { fetch, sessionLapsed } = await import("./http");
-        const url = "https://preview.example.com/api/_openbq/settings/v1";
+        const url = "https://preview.example.com/api/pro/user";
         const input = mode === "init" ? url : new Request(url, {
           credentials: mode === "request" ? "omit" : "include",
         });
