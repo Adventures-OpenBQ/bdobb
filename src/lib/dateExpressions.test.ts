@@ -7,6 +7,7 @@ import { __read, __reset } from "../test/memfs";
 import { bundledCalendar, newTrace, normalizeCalendar, type ExchangeCalendar } from "./calendar";
 import { __resetLoggerForTests } from "./logger";
 import {
+  canonicalExpression,
   isExpression,
   isRange,
   isPeriodType,
@@ -27,10 +28,7 @@ import {
   wireTime,
 } from "./dateExpressions";
 
-const canonical = (value: string) => {
-  const expr = parseExpression(value);
-  return expr ? serializeExpression(expr) : null;
-};
+const canonical = canonicalExpression;
 
 beforeEach(() => {
   __reset();
@@ -231,6 +229,8 @@ describe("projectValue", () => {
     expect(projectValue("fiscal_year", now, 6)).toBe("2027");
     expect(projectValue("time", now)).toBe("09:30:15");
     expect(projectValue("datetime", now)).toMatch(/^2026-09-14T09:30:15[+-]\d{2}:\d{2}$/);
+    // naive: the same instant as naive UTC -- no offset, a space, to the second.
+    expect(projectValue("datetime", now, 12, true)).toMatch(/^2026-09-1[345] \d{2}:\d{2}:15$/);
   });
 
   it("applies an hour offset before projecting a date, so T-1h at 00:30 is yesterday", () => {
@@ -1146,5 +1146,328 @@ describe("a legacy card past its calendar's catalogue bounds (ruling RF6)", () =
     expect(resolveValue("date", "T+1bd", { ...ctx, calendars: { XSES: xses2025 }, trace })).toBe("2026-11-23");
     expect(trace.fallback).toBe(true);
     expect(trace.reason).toBe("No XSES calendar for 2026; weekdays assumed");
+  });
+});
+
+describe("the @ production (v12.3.0)", () => {
+  const NY = "America/New_York";
+  const cal = bundledCalendar("XNYS")!;
+  const ny = (s: string) => parseZonedDateTime(`${s}[America/New_York]`).toDate();
+  const on = (type: "date" | "datetime", expr: string, now: Date) =>
+    resolveValue(type, expr, { now, zone: NY, calendar: cal });
+
+  it("T@14:00 is that date 14:00 on the exchange's clock, whatever the user's zone", () => {
+    expect(on("datetime", "T@14:00", ny("2026-09-14T09:30:00"))).toBe("2026-09-14T14:00:00-04:00");
+    // 08:00 Tuesday in Tokyo is 19:00 Monday in New York: the exchange's date
+    // is Monday's, so the clock is set on Monday, not on the user's Tuesday.
+    const tokyoMorning = parseZonedDateTime("2026-09-15T08:00:00[Asia/Tokyo]").toDate();
+    expect(resolveValue("datetime", "T@14:00", { now: tokyoMorning, zone: "Asia/Tokyo", calendar: cal })).toBe(
+      "2026-09-14T14:00:00-04:00",
+    );
+    // The suffix applies LAST: the offsets move the date, the clock is then set on it.
+    expect(on("datetime", "T-1w@09:30", ny("2026-09-14T16:05:00"))).toBe("2026-09-07T09:30:00-04:00");
+  });
+
+  it("FQ0@open is the quarter's first session open, and falls back to the weekday hours", () => {
+    expect(on("datetime", "FQ0@open", ny("2026-09-14T09:30:00"))).toBe("2026-07-01T09:30:00-04:00");
+    // No calendar for XLON: the weekday table's hours answer, and say so.
+    const trace = newTrace();
+    expect(
+      resolveValue("datetime", "T@open", { now: ny("2026-09-14T09:30:00"), zone: NY, exchange: "XLON", trace }),
+    ).toBe("2026-09-14T08:00:00+01:00");
+    expect(trace.fallback).toBe(true);
+    expect(trace.reason).toBe("No trading calendar for XLON on this backend; weekdays only");
+  });
+
+  it("@open rolls to the next session: FQ0@open inside Q1 is Jan 2, not Jan 1's holiday", () => {
+    // Q1 starts on Jan 1, which the bundled file marks Official every year.
+    expect(on("datetime", "FQ0@open", ny("2026-02-10T09:30:00"))).toBe("2026-01-02T09:30:00-05:00");
+  });
+
+  it("a period anchor keeps its own date: FQ0@open is the same session open in every viewer zone", () => {
+    // Midnight 2026-07-01 in Tokyo or Berlin is still 2026-06-30 in New York;
+    // a period start is date-only, so the exchange-local reading must not apply.
+    for (const zone of ["Asia/Tokyo", "Europe/Berlin"]) {
+      expect(resolveValue("datetime", "FQ0@open", { now: ny("2026-09-14T09:30:00"), zone, calendar: cal })).toBe(
+        "2026-07-01T09:30:00-04:00",
+      );
+    }
+  });
+
+  it("T-1bd@close from a Monday is Friday's close, early closes honoured", () => {
+    expect(on("datetime", "T-1bd@close", ny("2026-09-14T09:30:00"))).toBe("2026-09-11T16:00:00-04:00");
+    // Mon 2026-11-30 back one business day is Fri 2026-11-27, which the
+    // bundled file has closing at 13:00 (the day after Thanksgiving).
+    expect(on("datetime", "T-1bd@close", ny("2026-11-30T09:30:00"))).toBe("2026-11-27T13:00:00-05:00");
+  });
+
+  it("round-trips the suffix through stringifyAtom and canonicalExpression", () => {
+    expect(parseExpression("T-1bd@close")).toEqual({
+      start: { anchor: { kind: "named", name: "T" }, offsets: [{ sign: -1, amount: 1, unit: "bd" }], at: { kind: "close" } },
+    });
+    expect(parseExpression("T@14:00")).toEqual({
+      start: { anchor: { kind: "named", name: "T" }, offsets: [], at: { kind: "clock", hour: 14, minute: 0 } },
+    });
+    expect(stringifyExpression(parseExpression("T @ 14:00")!)).toBe("T@14:00");
+    // OpenBB's dialect has no `@`, so these keep the extended spelling.
+    for (const value of ["T@14:00", "T@00:05", "FQ0@open", "T-1bd@close", "T@09:30/T@16:00"]) {
+      expect(canonicalExpression(value)).toBe(value);
+    }
+    expect(canonicalExpression("T-3mo")).toBe("$currentDate-3M");
+  });
+
+  // Adjusted on main: an @ off a datetime param is refused (main's ruling R7a), not kept as a literal.
+  it("@ on a date param is refused, and T@9:5 is no expression at all", () => {
+    const now = ny("2026-09-14T09:30:00");
+    expect(() => on("date", "T@14:00", now)).toThrow("@ needs a date-and-time parameter");
+    expect(isExpression("date", "T@14:00")).toBe(false);
+    expect(isExpression("date_range", "T@09:30/T@16:00")).toBe(false);
+    expect(isExpression("datetime", "T@14:00")).toBe(true);
+    expect(previewExpression("date", "T@14:00", { now, zone: NY, calendar: cal })).toMatchObject({ error: "@ needs a date-and-time parameter" });
+    expect(previewExpression("datetime", "T@14:00", { now, zone: NY, calendar: cal })).toEqual({
+      text: "2026-09-14T14:00:00-04:00",
+      fallback: false,
+      reason: undefined,
+    });
+    // Strict two digits, and a real time of day: everything else is a literal.
+    expect(parseExpression("T@9:5")).toBeNull();
+    expect(parseExpression("T@25:00")).toBeNull();
+    expect(parseExpression("T@14:60")).toBeNull();
+    expect(parseExpression("@14:00")).toBeNull();
+    expect(parseExpression("T@noon")).toBeNull();
+    expect(on("datetime", "T@9:5", now)).toBe("T@9:5");
+  });
+});
+
+describe("S and E anchors", () => {
+  const ctx = { start: new Date("2026-09-01T00:00:00Z"), end: new Date("2026-09-17T00:00:00Z") };
+  it("resolves S and E from the context", () => {
+    expect(resolveExpression("S", NOW, "UTC", ctx)?.toString()).toContain("2026-09-01");
+    expect(resolveExpression("E", NOW, "UTC", ctx)?.toString()).toContain("2026-09-17");
+  });
+  it("takes offsets and @ like T", () => {
+    expect(resolveExpression("S+5d", NOW, "UTC", ctx)?.toString()).toContain("2026-09-06");
+    expect(resolveExpression("E-1m", NOW, "UTC", ctx)?.toString()).toContain("2026-08-17");
+    expect(resolveExpression("S@09:30", NOW, "America/New_York", { ...ctx, exchange: "XNYS" })?.toString()).toContain("09:30");
+  });
+  it("is unresolvable without a start or end in the context", () => {
+    expect(resolveExpression("S", NOW, "UTC", {})).toBeNull();
+    expect(resolveExpression("E-1d", NOW, "UTC", {})).toBeNull();
+  });
+  it("still parses S as a range end and keeps SMA-like words invalid", () => {
+    expect(parseExpression("S+2d..E")).not.toBeNull();
+    expect(parseExpression("SE")).toBeNull();
+  });
+});
+
+/**
+ * `@SOD` / `@EOD` — the day's bounds, read through the card's Session choice.
+ *
+ * Not aliases for `@open` / `@close`: those are always the regular session.
+ * SOD and EOD answer "the whole day as this card sees it", which is the
+ * regular session on a regular-hours card and the extended day on an
+ * extended-hours one.
+ */
+describe("the @SOD / @EOD production", () => {
+  const NY = "America/New_York";
+  const cal = bundledCalendar("XNYS")!;
+  const ny = (s: string) => parseZonedDateTime(`${s}[America/New_York]`).toDate();
+  const at = (expr: string, session: "regular" | "extended" | "24hr", calendar: ExchangeCalendar = cal) =>
+    resolveValue("datetime", expr, { now: ny("2026-09-14T12:00:00"), zone: NY, calendar, session });
+
+  /** The same calendar with its pre/after hours taken away: the venues a
+   *  backend serves no extended window for. */
+  const noExtended: ExchangeCalendar = {
+    ...cal,
+    session: { ...cal.session, preMarket: undefined, afterHours: undefined },
+  };
+
+  it("reads the regular session's own hours when the card is on regular hours", () => {
+    expect(at("T@SOD", "regular")).toBe("2026-09-14T09:30:00-04:00");
+    expect(at("T@EOD", "regular")).toBe("2026-09-14T16:00:00-04:00");
+  });
+
+  it("uses the real extended hours when the calendar knows them", () => {
+    // The bundled NYSE file carries them: 04:00 to 20:00. No fallback here.
+    expect(at("T@SOD", "extended")).toBe("2026-09-14T04:00:00-04:00");
+    expect(at("T@EOD", "extended")).toBe("2026-09-14T20:00:00-04:00");
+  });
+
+  it("falls back to the regular session when the calendar has no extended window", () => {
+    // Narrower than the truth, but always a real trading window -- and never
+    // a whole day, which is what the 24hr session means explicitly now.
+    expect(at("T@SOD", "extended", noExtended)).toBe("2026-09-14T09:30:00-04:00");
+    expect(at("T@EOD", "extended", noExtended)).toBe("2026-09-14T16:00:00-04:00");
+  });
+
+  it("reads the whole calendar day on a 24hr card, whatever the venue", () => {
+    // The explicit way to ask for the day itself: crypto and FX, where a
+    // session window is the wrong reading rather than a narrower one.
+    // (The wire carries no milliseconds -- wireDatetime zeroes them -- so
+    // .999 reads as :59.)
+    expect(at("T@SOD", "24hr")).toBe("2026-09-14T00:00:00-04:00");
+    expect(at("T@EOD", "24hr")).toBe("2026-09-14T23:59:59-04:00");
+    // Even where the calendar DOES know an extended window: 24hr is not
+    // "extended plus a bit", it is the whole day.
+    expect(at("T@SOD", "24hr", noExtended)).toBe("2026-09-14T00:00:00-04:00");
+  });
+
+  it("refuses rather than guessing when no session reaches the resolver", () => {
+    // The one production whose meaning depends on CARD state. A call site that
+    // forgets to pass it must get an error, not a plausible wrong number --
+    // silently answering "regular" would be a wrong instant on every
+    // extended-hours card. Adjusted on main: a suffixed atom that resolves to nothing is refused (review I2), not
+    // sent as the literal.
+    expect(() => resolveValue("datetime", "T@SOD", { now: ny("2026-09-14T12:00:00"), zone: NY, calendar: cal }))
+      .toThrow("Cannot resolve T@SOD");
+  });
+
+  it("applies after the offsets, like every other @ suffix", () => {
+    // 2026-09-14 is a Monday, so T-3d is Friday the 11th -- a session, so
+    // nothing rolls.
+    expect(at("T-3d@SOD", "regular")).toBe("2026-09-11T09:30:00-04:00");
+    expect(at("T-3d@EOD", "extended")).toBe("2026-09-11T20:00:00-04:00");
+    // T-1d is the Sunday, which is no session: it rolls forward to Monday,
+    // exactly as @open and @close already do.
+    expect(at("T-1d@SOD", "regular")).toBe("2026-09-14T09:30:00-04:00");
+  });
+
+  it("shortens EOD on an early close, because it reads the session like @close", () => {
+    // 2026-11-27 is the half-day after Thanksgiving in the bundled file.
+    const eve = ny("2026-11-27T10:00:00");
+    expect(resolveValue("datetime", "T@EOD", { now: eve, zone: NY, calendar: cal, session: "regular" }))
+      .toBe("2026-11-27T13:00:00-05:00");
+  });
+
+  // The optional venue: SOD(XNYS) is THAT exchange's start of trading for
+  // whatever date the expression before the @ landed on, rather than the
+  // card's own exchange.
+  it("takes an explicit exchange, and reads that venue's hours", () => {
+    // XLON opens 08:00 London, which is 03:00 in New York -- the card's own
+    // calendar is XNYS, so a plain @SOD would say 09:30 New York.
+    expect(at("T@SOD(XLON)", "regular")).toBe("2026-09-14T08:00:00+01:00");
+    expect(at("T@SOD", "regular")).toBe("2026-09-14T09:30:00-04:00");
+  });
+
+  it("names the venue for the DATE the expression already landed on", () => {
+    // The offsets run first and the suffix applies last, exactly as it does
+    // without a venue: the (XNYS) picks the hours, never the date.
+    expect(at("T-3d@SOD(XNYS)", "regular")).toBe("2026-09-11T09:30:00-04:00");
+    expect(at("T-3d@EOD(XNYS)", "regular")).toBe("2026-09-11T16:00:00-04:00");
+  });
+
+  it("marks a named venue the app has no real calendar for", () => {
+    // Only XNYS is bundled. Any other MIC resolves on the weekday table --
+    // right hours, no holidays -- and must SAY so rather than answer quietly.
+    const trace = newTrace();
+    resolveValue("datetime", "T@SOD(XLON)", { now: ny("2026-09-14T12:00:00"), zone: NY, calendar: cal, session: "regular", trace });
+    expect(trace.fallback).toBe(true);
+    expect(trace.reason).toMatch(/XLON/);
+  });
+
+  it("refuses an unknown or malformed venue rather than falling back to the card's", () => {
+    // Silently using the card's exchange for SOD(NOPE) would answer a
+    // question nobody asked. Adjusted on main: the venue is main's `(MIC)` qualifier, and an unknown one is
+    // refused with "Unknown calendar" rather than kept as a literal; an empty `()` is no qualifier and stays literal.
+    expect(() => at("T@SOD(nyse)", "regular")).toThrow("Unknown calendar NYSE");
+    expect(at("T@SOD()", "regular")).toBe("T@SOD()");
+    // The case that was never actually covered: an unknown venue in capitals matched
+    // the suffix and resolved on the default exchange's hours.
+    expect(() => at("T@SOD(NOPE)", "regular")).toThrow("Unknown calendar NOPE");
+    expect(() => at("T@EOD(NOPE)", "regular")).toThrow("Unknown calendar NOPE");
+    // A venue the app does know, in either case, is that venue.
+    expect(at("T@SOD(xlon)", "regular")).toBe(at("T@SOD(XLON)", "regular"));
+    expect(at("T@SOD(XLON)", "regular")).not.toBe("T@SOD(XLON)");
+  });
+
+  // Adjusted on main: refused off a datetime param (ruling R7a), not kept as a literal.
+  it("is a datetime production: a date param refuses it", () => {
+    expect(() => resolveValue("date", "T@SOD", { now: ny("2026-09-14T12:00:00"), zone: NY, calendar: cal, session: "regular" }))
+      .toThrow("@ needs a date-and-time parameter");
+  });
+});
+
+// v12.4.2: OBS-n, the n-th most recent TRADE. A fact about the data, so only
+// the server resolves it (live-grid, kdb-ws); the client parses it, carries
+// it raw, and never tries to answer it itself -- resolveExpression is null
+// for it on every call site, same as any other anchor a context can't reach.
+describe("OBS-n (v12.4.2)", () => {
+  it("parses OBS-n as an anchor the client never resolves", () => {
+    expect(parseExpression("OBS-100")).toEqual({ start: { anchor: { kind: "obs", n: 100 }, offsets: [] } });
+    expect(isExpression("datetime", "OBS-100")).toBe(true);
+    expect(resolveExpression("OBS-100", new Date("2026-09-18T15:00:00Z"))).toBeNull();
+    expect(stringifyExpression(parseExpression("OBS-100")!)).toBe("OBS-100");
+  });
+  it("rejects OBS without a positive count and OBS with offsets", () => {
+    expect(parseExpression("OBS")).toBeNull();
+    expect(parseExpression("OBS-0")).toBeNull();
+    expect(parseExpression("OBS-100-1h")).toBeNull();
+  });
+  it("is a datetime-only production, same as the other trade-clock anchors", () => {
+    expect(isExpression("date", "OBS-100")).toBe(false);
+  });
+});
+
+describe("case is not part of the grammar (2026-09-21)", () => {
+  // "t-1w@open is not a date", then "T-1W@OPEN still fails": the grammar was
+  // case-sensitive in every slot, so only `T-1w@open` was an expression. The three
+  // slots -- anchor, unit, `@` suffix -- are distinct positions, so folding case
+  // cannot make one read as another; and this parser only ever sees date-like
+  // parameter types (resolveValue's isPeriodType gate), so a symbol field's `t`
+  // or `T` is still a ticker. What is STORED stays the one canonical spelling.
+  const canonical = (v: string) => {
+    const expr = parseExpression(v);
+    return expr === null ? null : stringifyExpression(expr);
+  };
+
+  it("reads every slot in either case, and writes the canonical one", () => {
+    for (const typed of ["t-1w@open", "T-1W@OPEN", "T-1w@Open", "today-1W@open", "TODAY - 1w @ OPEN"]) {
+      expect(canonical(typed), typed).toBe("T-1w@open");
+    }
+    expect(canonical("NOW-1H")).toBe("now-1h");
+    expect(canonical("Trade_Date-5BD")).toBe("trade_date-5bd");
+    expect(canonical("SESSION_OPEN")).toBe("session_open");
+    expect(canonical("q-4")).toBe("Q-4");
+    expect(canonical("fq0")).toBe("FQ0");
+    expect(canonical("fy-1")).toBe("FY-1");
+    expect(canonical("w-26")).toBe("W-26");
+    expect(canonical("s+1d")).toBe("S+1d");
+    expect(canonical("e@close")).toBe("E@close");
+    expect(canonical("t@sod(xnys)")).toBe(canonical("T@SOD(XNYS)"));
+    expect(canonical("T@eod")).toBe(canonical("T@EOD"));
+    expect(canonical("obs-20")).toBe("OBS-20");
+    // Adjusted on main: `(nyse1)` is main's calendar qualifier, kept for the resolver to refuse, so it parses.
+    expect(parseExpression("T@SOD(nyse1)")?.start.calendar).toBe("NYSE1");
+    expect(canonical("today-7d..TODAY")).toBe("T-7d/T");
+  });
+
+  it("keeps the one distinction that is about meaning, not case: months and minutes", () => {
+    // `m`, `mo` and OpenBB's `M` are months; minutes are `min` -- in any case.
+    for (const months of ["T-3m", "T-3M", "T-3mo", "T-3MO", "t-3Mo"]) expect(canonical(months), months).toBe("T-3m");
+    for (const minutes of ["now-5min", "NOW-5MIN", "now-5Min"]) expect(canonical(minutes), minutes).toBe("now-5min");
+  });
+
+  it("still refuses what was never an expression", () => {
+    for (const literal of ["TSLA", "tsla", "T-1x", "t-1wk@open", "SE", "se", "T@9:5", "2026-09-18T13:30:00Z", "Q", "now-"]) {
+      expect(parseExpression(literal), literal).toBeNull();
+    }
+  });
+});
+
+// v5.3.0 §2 Anchors: `earliest` / `latest` -- "Data-driven bounds from the provider",
+// requiring `data_bounds {min, max}` in the resolution context; §5: "if the widget
+// hasn't yet reported bounds, the resolver defers". Specified in v5.3 and never
+// shipped (found 2026-09-21: "the range popover should be taking everything we
+// defined for v5" -- "fix earliest/latest").
+describe("previewExpression carries the whole context into its pre-check", () => {
+  const now = new Date("2026-09-29T15:00:00Z"); // Tuesday, 11:00 in New York
+  it("previews @SOD on the card's session", () => {
+    expect(previewExpression("datetime", "T@SOD", { now, zone: "America/New_York", session: "regular" })?.text)
+      .toBe("2026-09-29T09:30:00-04:00");
+  });
+  it("previews earliest from the loaded bounds", () => {
+    const bounds = { min: new Date("2026-09-01T13:30:00Z"), max: new Date("2026-09-28T20:00:00Z") };
+    expect(previewExpression("datetime", "earliest", { now, zone: "America/New_York", bounds })?.text)
+      .toBe("2026-09-01T09:30:00-04:00");
   });
 });

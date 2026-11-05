@@ -122,10 +122,11 @@ export type Rows = { start: AtomRows; end?: AtomRows };
 // 5.3.3: `earliest` / `latest` have none either -- they are typed, not picked: what
 // they resolve to is the card's own loaded data, which the tab has no way to preview
 // as a row. An expression using one opens on Absolute, as an `EXP` one does.
+// v12: `S` / `E` (the widget's own window) and `OBS-n` are the same: typed, not picked.
 const anchorKeyOf = (anchor: Anchor): AnchorKey | null =>
-  anchor.kind === "named" ? (anchor.name === "earliest" || anchor.name === "latest" ? null : anchor.name)
-    : anchor.kind === "expiry" ? null
-      : (`${anchor.period}0` as AnchorKey);
+  anchor.kind === "named" ? (["earliest", "latest", "S", "E"].includes(anchor.name) ? null : (anchor.name as AnchorKey))
+    : anchor.kind === "period" ? (`${anchor.period}0` as AnchorKey)
+      : null;
 
 function anchorFromKey(key: AnchorKey): Anchor {
   if (key.endsWith("0")) return { kind: "period", period: key.slice(0, -1) as PeriodLetter, n: 0 };

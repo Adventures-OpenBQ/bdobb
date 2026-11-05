@@ -105,7 +105,9 @@ export type Offset = { sign: 1 | -1; amount: number; unit: Unit };
 export type PeriodLetter = "W" | "M" | "Q" | "Y" | "FQ" | "FY";
 export type AnchorName = "T" | "$today" | "now" | "trade_date" | "prev_trade_date" | "session_open" | "session_close"
   // v5.3.0 §2: the data-driven bounds, specified here and first shipped in 5.3.3.
-  | "earliest" | "latest";
+  | "earliest" | "latest"
+  // v12.4.0: the widget's own start/end instants (a panel's series).
+  | "S" | "E";
 export type Anchor =
   | { kind: "named"; name: AnchorName }
   | { kind: "period"; period: PeriodLetter; n: number }
@@ -115,13 +117,28 @@ export type Anchor =
    * a period anchor's, and for the same reason: `EXP-1` has to mean one
    * EXPIRY earlier, and a named anchor would read the `-1` as a day.
    */
-  | { kind: "expiry"; n: number };
+  | { kind: "expiry"; n: number }
+  // v12.4.2: the n-th most recent TRADE. A fact about the data, so only the
+  // server resolves it (live-grid, kdb-ws); the client carries it raw.
+  | { kind: "obs"; n: number };
 /**
  * The `@` production (bdobb-v2 v12.3.0, f8fcfdc16): a time of day pinned onto whatever date the anchor and its
  * offsets land on. `clock` is a wall time on the calendar's clock; `open` and `close` are that date's session
  * hours, so an early close shortens `@close` by itself. Only a `datetime` param carries one (atFits).
  */
-export type AtTime = { kind: "clock"; hour: number; minute: number } | { kind: "open" } | { kind: "close" };
+export type AtTime =
+  | { kind: "clock"; hour: number; minute: number }
+  | { kind: "open" }
+  | { kind: "close" }
+  /**
+   * v12.4.0: the day's BOUNDS, read through the card's Session choice -- `sod` is its start, `eod` its last instant.
+   * Not aliases for open/close, which are always the regular session: the regular session on a regular-hours card,
+   * the calendar's real pre/after hours on an extended one, the whole day on a 24hr one. The only production whose
+   * meaning depends on card state, so a missing session refuses (applyAt). The venue is the atom's `(MIC)`:
+   * `T@SOD(XLON)` is London's start of day.
+   */
+  | { kind: "sod" }
+  | { kind: "eod" };
 /**
  * One atom of the grammar: an anchor, its offsets, and the optional suffixes. `calendar` (v4, spec 2026-10-23) is
  * the text of a closing `(MIC)`, upper-cased and NOT validated here: an unknown one must be a visible error, never a
@@ -137,10 +154,12 @@ export type Expression = { start: Atom; end?: Atom };
  *   value      := range | atom
  *   range      := atom ( "/" | ".." ) atom
  *   atom       := anchor ( sign offset )* at? cal?
- *   at         := "@" ( HH ":" MM | "open" | "close" )   -- port of bdobb-v2 v12.3.0
+ *   at         := "@" ( HH ":" MM | "open" | "close"     -- port of bdobb-v2 v12.3.0
+ *                     | "SOD" | "EOD" )                  -- v12.4.0
  *   cal        := "(" MIC ")"                              -- v4 calendar qualifier (2026-10-23)
  *   anchor     := "T" | "$currentDate" | "now" | "trade_date" | "prev_trade_date"
- *               | "session_open" | "session_close" | period signed_int
+ *               | "session_open" | "session_close" | "S" | "E" | period signed_int
+ *   obs        := "OBS-" count   (v12.4.2: a whole value, no offsets, no suffix)
  *   period     := "W" | "M" | "Q" | "Y" | "FQ" | "FY"
  *   offset     := integer unit?
  *   unit       := "s" | "min" | "h" | "d" | "bd" | "w" | "m" | "mo" | "q" | "y" | "fq" | "fy"
@@ -201,13 +220,17 @@ export type Expression = { start: Atom; end?: Atom };
 // typed. `TSLA`/`tsla` (no offset reads `sla`), `T-1x` and a bare `Q` still
 // fail. The one distinction left is about meaning, not case: `m`, `mo` and
 // OpenBB's `M` are months, and minutes are `min`. The words come BEFORE the
-// single letter: folded, `T` would otherwise take the `t` of `trade_date`.
-const NAMED = /^(?:\$today|\$currentDate|today|trade_date|prev_trade_date|session_open|session_close|earliest|latest|now|T)/i;
+// single letter: folded, `T` would otherwise take the `t` of `trade_date` and
+// `S` the `s` of `session_open`.
+// v12.4.0: `S` and `E` are the widget's own start/end anchors (a panel's
+// series). They take offsets and `@` exactly like `T`, and are single letters,
+// so `SE` still fails (NAMED reads only the `S`, and `E` is no offset).
+const NAMED = /^(?:\$today|\$currentDate|today|trade_date|prev_trade_date|session_open|session_close|earliest|latest|now|T|S|E)/i;
 // Three digits at most, so a four-digit year (`Q12024` from `Q1 2024`, `Y2024`) is not a shorthand count.
 const PERIOD = /^(FQ|FY|W|M|Q|Y)([+-]?\d{1,3})/i;
 /** Label spellings the shorthand would misread: `FY24` (not FY+24), `Q3-2025` (not Q+3 less 2025 days). */
 const PERIOD_LABEL = /^(?:FY\d{2}|(?:FQ|Q|W|M)[1-9]\d?-\d{4})$/i;
-/** `EXP`, `EXP-1`: the count is optional and bare means this contract's own. */
+/** `EXP`, `EXP-1`: the count is optional and bare means this contract's own. Tried BEFORE NAMED, whose single-letter `E` would otherwise take it. */
 const EXPIRY = /^EXP([+-]?\d{1,6})?/i;
 const OFFSET = /([+-])(\d{1,6})(min|mo|bd|fq|fy|s|h|d|w|m|q|y)?/iy;
 // v4 calendar qualifier: `(MIC)` closes the atom and names the calendar for all of it. Whatever is between the
@@ -219,12 +242,17 @@ const CAL = /\(([^()]+)\)$/;
 // The `@` suffix, taken off the end before the offsets are read so the sticky OFFSET loop still has to consume
 // every character before it. Two digits each side of the colon; `i` like the rest of the grammar (v5.3.4), so
 // `@Open` and `@CLOSE` read as `@open` and `@close`.
-const AT = /@(?:(\d{2}):(\d{2})|(open)|(close))$/i;
+const AT = /@(?:(\d{2}):(\d{2})|(open)|(close)|(sod)|(eod))$/i;
+// v12.4.2: OBS-n on its own, no offsets and no suffix -- the whole value must be this token, so a trailing offset or
+// suffix leaves it unmatched and the rest of parseAtom sees a literal (NAMED and PERIOD both reject "OBS").
+const OBS = /^OBS-(\d{1,7})$/i;
 
 /** The `@` suffix as an AtTime, or null when it matched but names no time (`@25:00`). */
 function atOf(m: RegExpExecArray): AtTime | null {
   if (m[3]) return { kind: "open" };
   if (m[4]) return { kind: "close" };
+  if (m[5]) return { kind: "sod" };
+  if (m[6]) return { kind: "eod" };
   const hour = Number(m[1]);
   const minute = Number(m[2]);
   return hour > 23 || minute > 59 ? null : { kind: "clock", hour, minute };
@@ -258,6 +286,11 @@ const isWeekday = (unit: Unit): unit is Weekday => unit in WEEKDAY_INDEX;
 
 /** One atom: its `(MIC)` and `@` suffixes come off the end first, then the anchor and offsets are read as before. */
 function parseAtom(input: string): Atom | null {
+  const obs = OBS.exec(input);
+  if (obs) {
+    const n = Number(obs[1]);
+    return n > 0 ? { anchor: { kind: "obs", n }, offsets: [] } : null;
+  }
   const cal = CAL.exec(input);
   const rest = cal ? input.slice(0, cal.index) : input;
   const suffix = AT.exec(rest);
@@ -302,10 +335,8 @@ function parseCore(text: string): Atom | null {
     // Folded to the canonical spelling: `T` is a capital, every word lowercase
     // (`$today` included), so `TODAY`, `$CurrentDate` and `t` are all `T`.
     const word = named[0].toLowerCase();
-    candidates.push({
-      anchor: { kind: "named", name: word === "$currentdate" || word === "today" || word === "t" ? "T" : (word as AnchorName) },
-      consumed: named[0].length,
-    });
+    const name = word === "$currentdate" || word === "today" || word === "t" ? "T" : word === "s" || word === "e" ? word.toUpperCase() : word;
+    candidates.push({ anchor: { kind: "named", name: name as AnchorName }, consumed: named[0].length });
   } else {
     const p = PERIOD.exec(text);
     // A fourth digit is an over-long count, never "W0 less 1000 days": the whole value is a literal.
@@ -373,6 +404,8 @@ export function parseExpression(value: string): Expression | null {
  */
 export function stringifyAtom(atom: Atom): string {
   const { anchor } = atom;
+  // v12.4.2: OBS-n round-trips as itself -- parseAtom never gives it offsets or a suffix.
+  if (anchor.kind === "obs") return `OBS-${anchor.n}`;
   const signed = (n: number) => (n === 0 ? "0" : n > 0 ? `+${n}` : String(n));
   const head =
     anchor.kind === "named"
@@ -437,6 +470,12 @@ export function serializeExpression(expr: Expression): string {
   return start !== null && end !== null ? `${start}/${end}` : stringifyExpression(expr);
 }
 
+/** The stored form of a value, or null when it is not an expression. */
+export function canonicalExpression(value: string): string | null {
+  const expr = parseExpression(value);
+  return expr ? serializeExpression(expr) : null;
+}
+
 /** Everything resolveValue reads besides the value: the clock, the zone, and the calendars an atom may resolve on. */
 export type ResolveContext = {
   now?: Date;
@@ -474,11 +513,25 @@ export type ResolveContext = {
    * Without it, resolveValue rethrows the CalendarError, so a caller that wants the typed error keeps it (ruling P1).
    */
   onError?: (message: string) => void;
+  /** v12.4.0: the widget's start/end instants, for the `S`/`E` anchors. */
+  start?: Date;
+  end?: Date;
+  /**
+   * A `datetime` goes on the wire as naive UTC (`YYYY-MM-DD HH:MM:SS`, no
+   * offset) instead of zoned ISO -- the Delta store's grammar admits neither
+   * `Z` nor an offset. Set from the param's `naive` field (WidgetParam).
+   */
+  naive?: boolean;
+  /**
+   * v12.4.0: the card's Session choice, for the `@SOD` / `@EOD` productions -- the only piece of CARD state the
+   * resolver reads. Absent, `@SOD` / `@EOD` refuse rather than assume regular hours.
+   */
+  session?: "extended" | "regular" | "24hr";
 };
 
 type CalendarContext = Pick<
   ResolveContext,
-  "fiscalYearEnd" | "exchange" | "calendar" | "calendars" | "strict" | "trace" | "symbol" | "bounds"
+  "fiscalYearEnd" | "exchange" | "calendar" | "calendars" | "strict" | "trace" | "symbol" | "bounds" | "start" | "end" | "session"
 >;
 
 /** The first day of the period `at` falls in, as a calendar date in `at`'s zone. */
@@ -590,7 +643,11 @@ function resolveAnchor(
   trace: CalendarTrace | undefined,
   symbol: string | undefined,
   bounds: { min?: Date; max?: Date } | undefined,
+  start?: Date,
+  end?: Date,
 ): ZonedDateTime | null {
+  // v12.4.2: OBS-n is a fact about the trade data, not the clock or the calendar -- the client cannot answer it.
+  if (anchor.kind === "obs") return null;
   /**
    * An option contract's expiry, from the SYMBOL -- an OCC symbol carries it,
    * so nothing is looked up. Null when there is no symbol, when it is not an
@@ -635,6 +692,11 @@ function resolveAnchor(
     case "T":
     case "now":
       return fromDate(now, zone);
+    // v12.4.0: the widget's own start/end. Unresolvable without one in the context.
+    case "S":
+      return start ? fromDate(start, zone) : null;
+    case "E":
+      return end ? fromDate(end, zone) : null;
     /**
      * The START of today, where T is this instant. On a `date` param the two
      * are identical -- the projection throws the time away -- so this only
@@ -671,22 +733,43 @@ function resolveAnchor(
  * "FQ0@open(XHKG): the first Hong Kong session open of the fiscal quarter"), as `session_open` already does.
  * No separate consult: nextOpen records the year on a legacy calendar, and consulting a bundle calendar would raise a
  * false fallback warning (ruling P3).
+ *
+ * v12: a period anchor (`W0` … `FY0`) is DATE-ONLY -- resolveAnchor gives it midnight in the viewer's zone, whose
+ * exchange-local date is the day before for any viewer east of the exchange -- so `dateOnly` reads the date fields it
+ * already carries, and `FQ0@open` is the same session open in Tokyo, Berlin and New York.
+ *
+ * `@SOD` / `@EOD` (v12.4.0) read the day through the card's `session`, on the next open day like `@open`; with no
+ * session they answer null (refused by resolveValue) rather than assume regular hours.
  */
 function applyAt(
   instant: ZonedDateTime,
   at: AtTime,
   cal: ExchangeCalendar,
   clockZone: string,
-  trace?: CalendarTrace,
-): ZonedDateTime {
-  if (at.kind === "clock") {
-    const local = fromDate(instant.toDate(), clockZone);
-    const date = new CalendarDate(local.year, local.month, local.day);
-    return toZoned(toCalendarDateTime(date, new Time(at.hour, at.minute)), clockZone);
+  trace: CalendarTrace | undefined,
+  dateOnly: boolean,
+  session: ResolveContext["session"],
+): ZonedDateTime | null {
+  const dateOn = (zone: string): CalendarDate => {
+    const local = dateOnly ? instant : fromDate(instant.toDate(), zone);
+    return new CalendarDate(local.year, local.month, local.day);
+  };
+  if (at.kind === "clock") return toZoned(toCalendarDateTime(dateOn(clockZone), new Time(at.hour, at.minute)), clockZone);
+  const day = nextOpen(cal, dateOn(cal.timezone), trace);
+  if (at.kind === "open") return sessionOpen(cal, day, trace);
+  if (at.kind === "close") return sessionClose(cal, day, trace);
+  if (session === undefined) return null;
+  // 24hr: the whole calendar day, even on a venue whose extended window is known.
+  if (session === "24hr") {
+    const time = at.kind === "sod" ? new Time(0, 0, 0, 0) : new Time(23, 59, 59, 999);
+    return toZoned(toCalendarDateTime(day, time), cal.timezone);
   }
-  const local = fromDate(instant.toDate(), cal.timezone);
-  const session = nextOpen(cal, new CalendarDate(local.year, local.month, local.day), trace);
-  return at.kind === "open" ? sessionOpen(cal, session, trace) : sessionClose(cal, session, trace);
+  if (session === "regular") return at.kind === "sod" ? sessionOpen(cal, day, trace) : sessionClose(cal, day, trace);
+  // Extended: the calendar's real pre/after hours, else the regular session -- never silently the whole day.
+  const pre = cal.session.preMarket?.open;
+  const post = cal.session.afterHours?.close;
+  if (at.kind === "sod") return pre ? toZoned(toCalendarDateTime(day, parseTime(pre)), cal.timezone) : sessionOpen(cal, day, trace);
+  return post ? toZoned(toCalendarDateTime(day, parseTime(post)), cal.timezone) : sessionClose(cal, day, trace);
 }
 
 /**
@@ -695,6 +778,15 @@ function applyAt(
  */
 function atFits(type: PeriodType, expr: Expression): boolean {
   return type === "datetime" || (expr.start.at === undefined && expr.end?.at === undefined);
+}
+
+/**
+ * v12.4.2: `OBS-n` names a trade-data fact only a `datetime` can carry, so anywhere else it is a literal: not an
+ * expression, no preview, sent as stored (unlike an `@`, which is refused there).
+ */
+function obsFits(type: PeriodType, expr: Expression): boolean {
+  const isObs = (atom: Atom): boolean => atom.anchor.kind === "obs";
+  return type === "datetime" || !(isObs(expr.start) || (expr.end !== undefined && isObs(expr.end)));
 }
 
 const TRADING_ANCHORS: ReadonlySet<string> = new Set([
@@ -762,11 +854,12 @@ export function resolveExpression(
   if (!expr || expr.end) return null;
   const atom = expr.start;
   const cal = atomCalendar(atom, ctx);
-  let at = resolveAnchor(atom.anchor, now, zone, ctx.fiscalYearEnd ?? 12, cal, ctx.trace, ctx.symbol, ctx.bounds);
+  let at = resolveAnchor(atom.anchor, now, zone, ctx.fiscalYearEnd ?? 12, cal, ctx.trace, ctx.symbol, ctx.bounds, ctx.start, ctx.end);
   if (at === null) return null;
   for (const offset of atom.offsets) at = applyOffset(at, offset, cal, ctx.trace);
   // Ruling P13: a wall clock is the calendar's, Default (XNYS) included -- the spec's "on the calendar's clock".
-  if (atom.at) at = applyAt(at, atom.at, cal, cal.timezone, ctx.trace);
+  if (atom.at) at = applyAt(at, atom.at, cal, cal.timezone, ctx.trace, atom.anchor.kind === "period", ctx.session);
+  if (at === null) return null;
   // Past year 1 the calendar wraps into era BC; past 9999 it clamps to 9999-12-31. Either is a literal, not a date.
   if (at.era !== "AD" || (at.year === 9999 && at.month === 12 && at.day === 31)) return null;
   return at;
@@ -784,6 +877,9 @@ export function resolveExpression(
  */
 export const wireDatetime = (at: ZonedDateTime): string =>
   at.subtract({ milliseconds: at.millisecond }).toString().replace(/\[.*\]$/, "");
+
+/** The same instant as naive UTC to the second: what a `naive` datetime param sends (ResolveContext.naive). */
+export const naiveUtc = (at: ZonedDateTime): string => at.toDate().toISOString().slice(0, 19).replace("T", " ");
 
 export const wireTime = (t: Time): string => t.set({ millisecond: 0 }).toString();
 
@@ -809,14 +905,14 @@ export const parseWireTime = (value: string): Time | null => orNull(() => parseT
  * below a day (`s`, `min`, `h`) were already applied by resolveExpression, so
  * `T-1h` at 00:30 projects to yesterday's date.
  */
-export function projectValue(type: PeriodType, at: ZonedDateTime, fiscalYearEnd = 12): string {
+export function projectValue(type: PeriodType, at: ZonedDateTime, fiscalYearEnd = 12, naive = false): string {
   const date = new CalendarDate(at.year, at.month, at.day);
   switch (type) {
     case "date":
     case "date_range":
       return date.toString();
     case "datetime":
-      return wireDatetime(at);
+      return naive ? naiveUtc(at) : wireDatetime(at);
     case "week":
       return formatWeek(isoWeek(date));
     case "quarter":
@@ -847,6 +943,13 @@ const LOOKS_LIKE_TOKEN = /^(?:\$currentDate|today|T[+-]|now|trade_date|prev_trad
  * from this module instead.
  */
 const CURRENT_DATE_TOKEN = "$currentDate";
+
+/** Whether either end of an expression anchors on the WIDGET's own window (`S`/`E`) or its data bounds. */
+function namesWindow(expr: Expression): boolean {
+  const window = (atom: Atom): boolean =>
+    atom.anchor.kind === "named" && ["S", "E", "earliest", "latest"].includes(atom.anchor.name);
+  return window(expr.start) || (expr.end !== undefined && window(expr.end));
+}
 
 /** Whether a value is an expression anchored on the data's own bounds. */
 export function namesBounds(value: string): boolean {
@@ -880,7 +983,8 @@ export function resolveValue(type: string | undefined, value: string, ctx: Resol
   const one = (k: PeriodType, v: string): string => {
     // The whole context, not a field-by-field copy: a field left out of a copy
     // is not a type error, it is an anchor that silently refuses.
-    const expr = parseExpression(v);
+    const parsed = parseExpression(v);
+    const expr = parsed !== null && obsFits(k, parsed) ? parsed : null;
     let at: ZonedDateTime | null = null;
     try {
       // Ruling R7a: an `@` on a param with no time of day is refused, never sent as the literal it used to be.
@@ -892,7 +996,7 @@ export function resolveValue(type: string | undefined, value: string, ctx: Resol
       // contract, a date past 9999 -- is refused, never sent with its `(MIC)` or `@`. An unqualified one stays the
       // literal it always was, and a bound with no data defers (below).
       const qualified = (a?: Atom) => a !== undefined && (a.calendar !== undefined || a.at !== undefined);
-      if (expr !== null && at === null && !namesBounds(v) && (qualified(expr.start) || qualified(expr.end))) {
+      if (expr !== null && at === null && !namesWindow(expr) && (qualified(expr.start) || qualified(expr.end))) {
         throw new CalendarError("UNRESOLVED_EXPRESSION", `Cannot resolve ${v}`);
       }
     } catch (e) {
@@ -902,13 +1006,13 @@ export function resolveValue(type: string | undefined, value: string, ctx: Resol
       ctx.onError(e.message);
       return "";
     }
-    if (at) return projectValue(k, at, ctx.fiscalYearEnd ?? 12);
+    if (at) return projectValue(k, at, ctx.fiscalYearEnd ?? 12, ctx.naive);
     // v5.3.0 §5: "if the widget hasn't yet reported bounds, the resolver defers". An
     // `earliest` / `latest` there is no bound for is REFUSED -- empty, which every
     // caller already treats as "not set" (an empty value is left out of the query) --
     // rather than echoed: the "send it as-is" rule below is for a token this grammar
-    // does not know, and these are words it does.
-    if (namesBounds(v)) return "";
+    // does not know, and these are words it does. v12.4.0: `S` / `E` with no window loaded defer the same way.
+    if (expr !== null && namesWindow(expr)) return "";
     // v5.4.0 (spec §4.9): a label in OpenBB's `FY` spelling is sent unprefixed.
     if (k === "quarter" || k === "fiscal_year") {
       const compact = v.replace(/\s+/g, "");
@@ -993,12 +1097,12 @@ export function isExpression(type: string | undefined, value: string): boolean {
   // An atom with `@` is an expression on `datetime` only (atFits); anywhere else the stored value is a literal.
   const half = (v: string): boolean => {
     const expr = parseExpression(v);
-    return expr !== null && atFits(type, expr);
+    return expr !== null && atFits(type, expr) && obsFits(type, expr);
   };
   if (isRangeType(type)) {
     const [start, end] = splitRange(value);
     return half(start) || (end !== "" && half(end));
   }
   const expr = parseExpression(value);
-  return expr !== null && expr.end === undefined && atFits(type, expr);
+  return expr !== null && expr.end === undefined && atFits(type, expr) && obsFits(type, expr);
 }
