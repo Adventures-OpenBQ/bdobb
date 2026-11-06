@@ -872,7 +872,7 @@ export const tableExecutionStore = createTableExecutionStore({
     return useDashboardStore.getState().commitTableDefinition(d, id, definition, selection, guard);
   }, temporalClient:card=>{
       const state=useBackendsStore.getState(),backend=state.backends.find(b=>b.id===card.backendId);
-      if(!backend||state.services[backend.id]!=='TemporalDB')throw new Error('TemporalDB source unavailable; reconnect the original service');
+      if(!backend||state.services[backend.id]!=='TemporalDB')throw new Error(backend&&(state.statuses[backend.id]??'unknown')==='unknown'?'Waiting for backend discovery or startup credentials…':'TemporalDB source unavailable; reconnect the original service');
       return createTemporalClient(backend);
     }, source: card => card.widgetId === LOCAL_TABLE_ID && !card.linkedSource ? { async acquire(signal) {
       const bytes = await readLocalFile(card.params.file);
