@@ -19,7 +19,8 @@ import {DialogShell} from './DialogShell';
 /** The explorer in three panes (layout ported from the bdobb-v2 Data Workbench). Only TemporalDB adapters. */
 export function TemporalExplorerDialog({card,readOnly,onClose}:{card:DashboardCard;readOnly:boolean;onClose:()=>void}){
  const dialogRef=useModalDialog(onClose);
- const backend=useBackendsStore(s=>s.backends.find(b=>b.id===card.backendId));const service=useBackendsStore(s=>s.services[card.backendId]);
+ const backend=useBackendsStore(s=>s.backends.find(b=>b.id===card.backendId));const service=useBackendsStore(s=>s.services[card.backendId]);const status=useBackendsStore(s=>s.statuses[card.backendId]);
+ const discovering=!!backend&&(status??'unknown')==='unknown';
  const client=useMemo(()=>backend&&service==='TemporalDB'?createTemporalClient(backend):null,[backend,service]);
  const [datasetId,setDatasetId]=useState(card.params.dataset_id??'');
  const [tier,setTier]=useState<Tier>(TIERS.includes(card.params.tier as Tier)?card.params.tier as Tier:'silver');
@@ -52,7 +53,7 @@ export function TemporalExplorerDialog({card,readOnly,onClose}:{card:DashboardCa
   await store.bindQueryCard(id,binding);
  };
  return <DialogShell dialogRef={dialogRef} modifier="bd-dialog--temporal-explorer" ariaLabel="TemporalDB explorer" title="TemporalDB explorer" eyebrow="TemporalDB" subtitle={backend?.name??'Source unavailable'} onClose={onClose} footerActions={<button className="bd-button" type="button" onClick={onClose}>Done</button>}>
-  {!client?<p className="bd-notice bd-notice--error" role="alert">TemporalDB source unavailable. Reconnect the original service.</p>:<div className="bd-temporal-explorer">
+  {!client?<p className={discovering?"bd-notice":"bd-notice bd-notice--error"} role={discovering?"status":"alert"}>{discovering?"Waiting for backend discovery or startup credentials…":"TemporalDB source unavailable. Reconnect the original service."}</p>:<div className="bd-temporal-explorer">
    <section className="bd-temporal-pane" aria-label="Catalog"><h3 className="bd-temporal-eyebrow">Catalog</h3>
     <TemporalCatalog client={client} datasetId={datasetId} tier={tier} onSelect={(id,t)=>{setDatasetId(id);setTier(t);}} onAddSource={draft.mode==='sql'?id=>setDraft(d=>({...d,sources:{...d.sources,[sourceAlias(id,d.sources)]:id}})):undefined}/></section>
    <section className="bd-temporal-pane" aria-label="Builder"><h3 className="bd-temporal-eyebrow">Builder</h3>
