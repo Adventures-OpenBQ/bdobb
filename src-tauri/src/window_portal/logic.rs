@@ -278,8 +278,15 @@ impl<V: VolumeSlider> Mute<V> {
                 self.slider.step(source, label, false, steps(level, 0))
             }
         } else {
-            let to = self.recorded.take().map_or(FULL_VOLUME, |r| r.level);
-            if to > level { self.slider.step(source, label, true, steps(level, to)) } else { Ok(()) }
+            // Already audible: the user raised it in the player since BDOBB muted, so
+            // the recorded level is stale and there is nothing to step.
+            let recorded = self.recorded.take();
+            if level > 0 {
+                Ok(())
+            } else {
+                let to = recorded.map_or(FULL_VOLUME, |r| r.level);
+                self.slider.step(source, label, true, steps(level, to))
+            }
         };
         match stepped {
             Ok(()) if muted => MuteState::Muted,
@@ -292,7 +299,8 @@ impl<V: VolumeSlider> Mute<V> {
     pub fn restore(&mut self) {
         let Some(recorded) = self.recorded.take() else { return };
         if let Ok(level) = self.slider.level(&recorded.source, &recorded.label) {
-            if recorded.level > level {
+            // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
+            if level == 0 {
                 let _ = self.slider.step(&recorded.source, &recorded.label, true, steps(level, recorded.level));
             }
         }
@@ -579,5 +587,25 @@ mod tests {
         assert!(mute.slider.steps.is_empty());
         mute.set(SRC, LABEL, false);
         assert_eq!(mute.slider.level, 100);
+    }
+
+    #[test]
+    fn unmute_after_the_user_raised_the_volume_leaves_it_alone() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        mute.set(SRC, LABEL, true);
+        mute.slider.level = 40;
+        assert_eq!(mute.set(SRC, LABEL, false), MuteState::Sound);
+        assert_eq!(mute.slider.level, 40);
+        assert_eq!(mute.slider.steps, vec![(false, 7)]);
+    }
+
+    #[test]
+    fn restore_after_the_user_raised_the_volume_leaves_it_alone() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        mute.set(SRC, LABEL, true);
+        mute.slider.level = 40;
+        mute.restore();
+        assert_eq!(mute.slider.level, 40);
+        assert_eq!(mute.slider.steps, vec![(false, 7)]);
     }
 }
