@@ -121,3 +121,32 @@ test("on a narrow card no Parameters panel entry spills out of its cell or the p
     expect(cell!.x + cell!.width).toBeLessThanOrEqual(box!.x + box!.width + 1);
   }
 });
+
+test("a widget's parameter rows stack on the title line (OpenBB parameter positioning)", async ({ page }) => {
+  // The mock backend's congress widget declares a flat list; here its second
+  // param is moved into a nested array, which is row 1.
+  await page.route("**/widgets.json", async (route) => {
+    const response = await route.fetch();
+    const widgets = (await response.json()) as Record<string, { params?: unknown[] }>;
+    const [chamber, ...rest] = widgets.congress.params ?? [];
+    widgets.congress.params = [chamber, rest];
+    await route.fulfill({ response, json: widgets });
+  });
+  await seedCards(page, [
+    ...DEFAULT_CARDS,
+    {
+      id: "c-congress",
+      widgetId: "congress",
+      backendId: "b1",
+      params: { chamber: "house", committee: "wm" },
+      layout: { x: 0, y: 12, w: 20, h: 9 },
+    },
+  ]);
+  const card = page.locator(".widget-card").filter({ hasText: "Congress Committees" });
+  const chamber = (await card.getByLabel("Chamber", { exact: true }).boundingBox())!;
+  const committee = (await card.getByLabel("Committee", { exact: true }).boundingBox())!;
+  // Row 1 starts a line of its own, under row 0 and from the same left edge.
+  expect(committee.y).toBeGreaterThanOrEqual(chamber.y + chamber.height);
+  expect(Math.abs(committee.x - chamber.x)).toBeLessThan(30);
+  await card.screenshot({ path: "e2e-results/param-rows.png" });
+});

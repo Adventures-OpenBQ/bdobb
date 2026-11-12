@@ -171,6 +171,13 @@ export type WidgetParam = {
    * cannot be sized by a page, so a plain dropdown ignores it.
    */
   popupWidth?: number;
+  /**
+   * Which line of the card's parameter controls this param sits on, read from
+   * OpenBB's parameter positioning: 0 is the title bar, beside the card's
+   * name; 1 and up are the lines under it. A flat `params` list leaves every
+   * param on row 0. Absent means 0. See toParams in widgetsJson.ts.
+   */
+  row?: number;
 };
 
 /**
