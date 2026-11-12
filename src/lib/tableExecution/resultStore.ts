@@ -1,6 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import {resortAnalytical} from './analyticalSortReuse';
+import type {RuntimeParams} from './runtimeParams';
+import type {TableDefinition,SelectionSpec} from './types';
 import { filterKindFor } from '../tableFiltering';
 import { inspectionPage, inspectionCounts } from './inspection';
 import { selectionSummary } from './selection';
@@ -9,6 +12,8 @@ import type { CalculatedView, Revision, RowRequest, RowBlock, FacetResult, Total
 import type { DatasetRow } from '../widgetData/types';
 import { ExecutionProtocolError } from './validation';
 export interface ResultStore {
+  trySort?(definition:TableDefinition,selection:SelectionSpec,revision:Revision,runtimeParams:RuntimeParams|undefined,maximum:number):ResultStore|undefined;
+  sortReservation?():number;
   ready(requestId: string, revision: Revision): ViewReady;
   selection(requestId: string, revision: Revision, action: SelectionAction, visibleIds: string[]): SelectionResult;
   rows(requestId: string, revision: Revision, request: RowRequest): RowBlock;
@@ -20,8 +25,10 @@ export interface ResultStore {
 }
 /** Private immutable snapshot; no delivery result can mutate later reads. */
 export function createResultStore(view: CalculatedView, revision: Revision): ResultStore {
-  view = structuredClone(view);
-  revision = structuredClone(revision);
+  return createOwnedResultStore(structuredClone(view),structuredClone(revision));
+}
+/** Private candidate ownership only; ordinary callers retain the clone boundary. */
+function createOwnedResultStore(view:CalculatedView,revision:Revision):ResultStore {
   const ownWarnings = view.analytical?.warnings ?? [];
   const modelWarnings = [...(view.modelWarnings ?? []), ...ownWarnings.map(w => ({
     code: w.code, message: w.message.slice(0, 1000), ...(w.categoryId ? { categoryId: w.categoryId } : {}),
@@ -48,6 +55,13 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
     return kind==='none'?column:{...column,dtype:kind==='date'?'dateString' as const:kind};
   });
   return {
+    sortReservation(){return view.sortReuse?.reservation??0;},
+    trySort(definition,selection,next,runtimeParams,maximum){
+      if(![next.input,next.model,next.output].every(n=>Number.isSafeInteger(n)&&n>=0))return;
+      if(next.widgetId!==revision.widgetId||next.input!==revision.input||next.model<=revision.model||next.output<=revision.output)return;
+      const candidate=resortAnalytical(view,definition,selection,runtimeParams,maximum);
+      return candidate?createOwnedResultStore(candidate,structuredClone(next)):undefined;
+    },
     ready(requestId, requested) { return structuredClone({ ...context(requestId, requested), kind: 'viewReady', selection: view.selection, selectionNamespace: view.selectionNamespace, columns: view.columns, ...(view.chartColumns ? { chartColumns: view.chartColumns } : {}), topLevelCount: rootRows().length, inspection: { inputColumns, inputPeriodicity: view.inputPeriodicity, definition: view.definition, aggregations, counts: inspectionCounts(view), ...(view.paramMatches ? {paramMatches:view.paramMatches} : {}) } }); },
     selection(requestId, requested, action, visibleIds) { return structuredClone({ ...context(requestId, requested), kind: 'selection', ...selectionSummary(view, action, visibleIds) }); },
     rows(requestId, requested, request) {
