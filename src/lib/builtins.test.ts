@@ -78,6 +78,18 @@ describe("BUILTIN_WIDGETS", () => {
     expect(site.params.map((p) => p.paramName)).toContain("url");
   });
 
+  it("defines the Window Portal with its two settings and no fetch", () => {
+    const portal = byId("window_portal");
+    expect(portal.type).toBe("window_portal");
+    expect(portal.name).toBe("Window Portal");
+    expect(portal.gridData).toEqual({ w: 16, h: 14 });
+    expect(portal.params.map((p) => [p.paramName, p.type, p.value])).toEqual([
+      ["source", "text", "CNBC"],
+      ["volumeLabel", "text", "Volume Level"],
+    ]);
+    expect(fetchesData(portal)).toBe(false);
+  });
+
   it("warns in the url param description that many sites refuse framing", () => {
     const url = byId("website").params.find((p) => p.paramName === "url")!;
     expect(url.description).toMatch(/refuse to be embedded/i);

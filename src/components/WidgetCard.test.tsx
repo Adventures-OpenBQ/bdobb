@@ -1441,6 +1441,26 @@ describe("the clock built-in", () => {
   });
 });
 
+describe("the Window Portal built-in", () => {
+  it("dispatches to its renderer, which is a placeholder outside the macOS app", () => {
+    register({ id: "window_portal", backendId: "builtin", type: "window_portal", endpoint: "" });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    const c = { ...card, widgetId: "window_portal", backendId: "builtin", params: { source: "CNBC" } };
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }] }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+
+    // jsdom is not Tauri, so this is the web preview's placeholder, and no mute button.
+    expect(screen.getByText("Available in the macOS desktop app")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mute" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/No data for these parameters/)).not.toBeInTheDocument();
+  });
+});
+
 describe("the rss built-in", () => {
   /** Registers the built-in and puts one rss card on the active tab. */
   function setUpRss(params: Record<string, string>) {
