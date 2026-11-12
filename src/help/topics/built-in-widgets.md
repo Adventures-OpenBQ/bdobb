@@ -86,6 +86,21 @@ than an error.
 Plenty of sites refuse to be framed. See **HTML and iframe widgets** for what
 the card does about that and what **Open externally ↗** is for.
 
+## Window Portal
+
+*A parking spot for Chrome's floating video player.* The card body is blank.
+In the macOS app, BDOBB moves and sizes Chrome's `Picture in Picture` window
+to sit over it, follows the card and BDOBB's window, and hands the player
+back to where it was when the card goes away, BDOBB is minimized or BDOBB
+quits. It needs **Accessibility** permission, which the card asks for. The
+🔊 header button mutes by stepping the source tab's volume slider. Its two
+parameters, **Source tab title contains** (default `CNBC`) and **Volume
+slider label** (default `Volume Level`), find that tab and slider. The
+stream's tab must be the selected tab in its Chrome window. On iPad the card
+is an empty space to drag a picture-in-picture video onto, with no mute
+button. On Windows and in the web preview it reads *Available in the macOS
+desktop app*.
+
 ## RSS feed
 
 *Headlines from any RSS or Atom feed.* Two parameters: **Feed URL**, and
