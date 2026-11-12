@@ -3,3 +3,6 @@
 
 #[allow(dead_code)]
 mod logic;
+#[cfg(target_os = "macos")]
+#[allow(dead_code)]
+mod ax;
