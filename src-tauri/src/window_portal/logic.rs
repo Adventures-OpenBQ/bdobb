@@ -4,8 +4,8 @@
 //! The Window Portal's platform-neutral half (spec
 //! docs/superpowers/specs/2026-11-12-window-portal-card-design.md): the
 //! geometry, the placement state machine and the mute bookkeeping. Nothing
-//! here names macOS. `ax.rs` implements the two traits on macOS, and a later
-//! Windows design can implement them there.
+//! here names macOS. `ax.rs` implements `PlayerWindow` and `VolumeSlider` on
+//! macOS, and a later Windows design can implement them there.
 
 use serde::{Deserialize, Serialize};
 
@@ -198,6 +198,107 @@ impl<W: PlayerWindow> Portal<W> {
     }
 }
 
+/// One AXIncrement or AXDecrement moves the page's volume slider this far.
+pub const STEP_PERCENT: u8 = 10;
+/// Where Unmute goes when BDOBB recorded no level (the user muted in the player).
+pub const FULL_VOLUME: u8 = 100;
+
+/// What the mute button shows: `{ "state": "muted" }`,
+/// `{ "state": "unavailable", "reason": "…" }` and so on.
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum MuteState {
+    Sound,
+    Muted,
+    Unavailable { reason: String },
+}
+
+/// Whole steps between two levels, rounded up so a mute always reaches 0.
+pub fn steps(from: u8, to: u8) -> u32 {
+    u32::from(from.abs_diff(to)).div_ceil(u32::from(STEP_PERCENT))
+}
+
+/// The slider's value as Chrome reports it ("100%"), as a whole percent.
+pub fn parse_percent(text: &str) -> Option<u8> {
+    let value: f64 = text.trim().trim_end_matches('%').trim().parse().ok()?;
+    value.is_finite().then(|| value.round().clamp(0.0, 100.0) as u8)
+}
+
+/// The volume slider in the stream's tab, behind whatever reaches it.
+pub trait VolumeSlider {
+    fn level(&mut self, source: &str, label: &str) -> Result<u8, String>;
+    fn step(&mut self, source: &str, label: &str, up: bool, count: u32) -> Result<(), String>;
+}
+
+struct Recorded {
+    source: String,
+    label: String,
+    level: u8,
+}
+
+/// The slider's value is the state (spec, Mute). The only thing kept here is
+/// the level BDOBB stepped down from, so that Unmute and release can step
+/// back to it.
+pub struct Mute<V> {
+    slider: V,
+    recorded: Option<Recorded>,
+}
+
+impl<V: VolumeSlider> Mute<V> {
+    pub fn new(slider: V) -> Self {
+        Self { slider, recorded: None }
+    }
+
+    pub fn state(&mut self, source: &str, label: &str) -> MuteState {
+        match self.slider.level(source, label) {
+            Err(reason) => MuteState::Unavailable { reason },
+            Ok(0) => MuteState::Muted,
+            Ok(_) => {
+                // Sound again without BDOBB, so nothing is left for it to restore.
+                self.recorded = None;
+                MuteState::Sound
+            }
+        }
+    }
+
+    /// Answers the state it stepped to rather than re-reading the slider: a
+    /// page that applies steps late would otherwise read as "the user turned
+    /// it back up" and lose the recorded level. The card's next poll reads
+    /// the real value.
+    pub fn set(&mut self, source: &str, label: &str, muted: bool) -> MuteState {
+        let level = match self.slider.level(source, label) {
+            Ok(level) => level,
+            Err(reason) => return MuteState::Unavailable { reason },
+        };
+        let stepped = if muted {
+            if level == 0 {
+                Ok(())
+            } else {
+                self.recorded = Some(Recorded { source: source.to_owned(), label: label.to_owned(), level });
+                self.slider.step(source, label, false, steps(level, 0))
+            }
+        } else {
+            let to = self.recorded.take().map_or(FULL_VOLUME, |r| r.level);
+            if to > level { self.slider.step(source, label, true, steps(level, to)) } else { Ok(()) }
+        };
+        match stepped {
+            Ok(()) if muted => MuteState::Muted,
+            Ok(()) => MuteState::Sound,
+            Err(reason) => MuteState::Unavailable { reason },
+        }
+    }
+
+    /// Steps back to the recorded level if BDOBB muted it (spec, Flow 4).
+    pub fn restore(&mut self) {
+        let Some(recorded) = self.recorded.take() else { return };
+        if let Ok(level) = self.slider.level(&recorded.source, &recorded.label) {
+            if recorded.level > level {
+                let _ = self.slider.step(&recorded.source, &recorded.label, true, steps(level, recorded.level));
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -363,5 +464,120 @@ mod tests {
         assert_eq!(portal.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
         portal.release("a");
         assert_eq!(portal.window.frame, Some(ORIGINAL));
+    }
+
+    /// The page's Volume Level slider: AXDecrement / AXIncrement move it 10%
+    /// per step and stop at 0 and 100.
+    struct FakeSlider {
+        level: u8,
+        broken: Option<String>,
+        steps: Vec<(bool, u32)>,
+    }
+
+    impl FakeSlider {
+        fn at(level: u8) -> Self {
+            Self { level, broken: None, steps: Vec::new() }
+        }
+    }
+
+    impl VolumeSlider for FakeSlider {
+        fn level(&mut self, _source: &str, _label: &str) -> Result<u8, String> {
+            self.broken.clone().map_or(Ok(self.level), Err)
+        }
+        fn step(&mut self, _source: &str, _label: &str, up: bool, count: u32) -> Result<(), String> {
+            self.steps.push((up, count));
+            let moved = u32::from(STEP_PERCENT) * count;
+            let level = u32::from(self.level);
+            let next = if up { (level + moved).min(100) } else { level.saturating_sub(moved) };
+            self.level = next as u8;
+            Ok(())
+        }
+    }
+
+    const SRC: &str = "CNBC";
+    const LABEL: &str = "Volume Level";
+
+    #[test]
+    fn steps_round_up_to_whole_ten_percent_steps() {
+        assert_eq!(steps(100, 0), 10);
+        assert_eq!(steps(95, 0), 10);
+        assert_eq!(steps(0, 55), 6);
+        assert_eq!(steps(30, 30), 0);
+    }
+
+    #[test]
+    fn parse_percent_reads_the_slider_text() {
+        assert_eq!(parse_percent("100%"), Some(100));
+        assert_eq!(parse_percent(" 40 % "), Some(40));
+        assert_eq!(parse_percent("0%"), Some(0));
+        assert_eq!(parse_percent("150%"), Some(100));
+        assert_eq!(parse_percent("abc"), None);
+        assert_eq!(parse_percent(""), None);
+        assert_eq!(parse_percent("NaN%"), None);
+    }
+
+    #[test]
+    fn mute_records_the_level_and_unmute_returns_to_it() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        assert_eq!(mute.set(SRC, LABEL, true), MuteState::Muted);
+        assert_eq!(mute.slider.level, 0);
+        assert_eq!(mute.slider.steps, vec![(false, 7)]);
+        assert_eq!(mute.set(SRC, LABEL, false), MuteState::Sound);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.slider.steps[1], (true, 7));
+    }
+
+    #[test]
+    fn a_level_off_the_ten_percent_grid_comes_back_on_it() {
+        let mut mute = Mute::new(FakeSlider::at(95));
+        mute.set(SRC, LABEL, true);
+        assert_eq!(mute.slider.level, 0);
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.level, 100);
+    }
+
+    #[test]
+    fn the_slider_is_the_state_when_the_user_changes_the_volume_in_the_player() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        mute.set(SRC, LABEL, true);
+        mute.slider.level = 40;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        mute.slider.level = 0;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Muted);
+        // BDOBB did not mute it this time, so there is no recorded 70 to return to.
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.steps.last(), Some(&(true, 10)));
+        assert_eq!(mute.slider.level, 100);
+    }
+
+    #[test]
+    fn an_unreachable_slider_is_unavailable_with_its_reason() {
+        let mut slider = FakeSlider::at(70);
+        slider.broken = Some("No slider".into());
+        let mut mute = Mute::new(slider);
+        let unavailable = MuteState::Unavailable { reason: "No slider".into() };
+        assert_eq!(mute.set(SRC, LABEL, true), unavailable);
+        assert_eq!(mute.state(SRC, LABEL), unavailable);
+        assert!(mute.slider.steps.is_empty());
+    }
+
+    #[test]
+    fn restore_returns_the_volume_only_when_bdobb_muted_it() {
+        let mut mute = Mute::new(FakeSlider::at(60));
+        mute.set(SRC, LABEL, true);
+        mute.restore();
+        assert_eq!(mute.slider.level, 60);
+        assert_eq!(mute.slider.steps, vec![(false, 6), (true, 6)]);
+        mute.restore();
+        assert_eq!(mute.slider.steps.len(), 2);
+    }
+
+    #[test]
+    fn muting_an_already_silent_slider_records_nothing() {
+        let mut mute = Mute::new(FakeSlider::at(0));
+        assert_eq!(mute.set(SRC, LABEL, true), MuteState::Muted);
+        assert!(mute.slider.steps.is_empty());
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.level, 100);
     }
 }
