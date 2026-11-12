@@ -202,6 +202,8 @@ export async function startNativeHarness() {
             tableRelayToken: relay,
             tableDesktopPrincipal: 'desktop:qualification',
             ssrmRoutes: ['/api/api/v1/qualification/table'],
+            tableTimeoutMs: 65000,
+            ssrmTimeoutMs: 170000,
             stateDir: join(dir, 'state'),
         };
         gateway = createGateway(config);
