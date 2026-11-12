@@ -1199,17 +1199,55 @@ body {
 .group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
 .group-chip-label { white-space: nowrap; }
 
-/* The controls row lives INSIDE .card-header, under the title row. A full
-   flex-basis makes it its own line; wrapping keeps a card with many params
-   readable at any width instead of clipping the row (.widget-card hides
-   overflow). Compact by design: this is a titlebar, not a form. */
+/* The controls live INSIDE .card-header, laid out as Workspace lays them out.
+   Row 0 sits in the title bar, after the name: it takes the header's free
+   space and scrolls sideways when its controls need more, rather than
+   wrapping. Rows 1 and up each get a line of their own under the title bar,
+   one control-height tall, and scroll sideways the same way. Compact by
+   design: this is a titlebar, not a form. Row 0 scrolls first; only when it
+   would be narrower than about one control does the card fold its buttons
+   behind the chevron (nextCrowded and ROW_MIN in ParamControls.tsx). */
 .card-params {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+/* Basis 0 so the row gives way to the title and the buttons: it is the part
+   of the header that scrolls. */
+.card-params-row0 { flex: 1 1 0; min-width: 0; }
+
+/* Sized to its controls whatever the row is given, so ParamControls can read
+   how much room the row has to spare. */
+.card-params-track {
+  display: flex;
+  align-items: center;
+  gap: 4px 10px;
+  width: max-content;
+}
+
+/* With title-bar parameters the name keeps its own width (ellipsised only if
+   it alone would overflow) and the row takes the rest. */
+.card-header-params .card-title { flex: 0 1 auto; max-width: 60%; }
+
+/* Last in the header's flow, whatever comes after it in the DOM, and a full
+   line wide, so the rows sit under the title bar. */
+.card-params-rows {
+  order: 99;
   flex-basis: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  padding-top: 2px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
+
+.card-params-line { min-height: 22px; }
+
+.card-params .param-field { flex: 0 0 auto; }
 
 .param-field {
   display: inline-flex;
