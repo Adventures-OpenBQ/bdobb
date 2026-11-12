@@ -184,7 +184,13 @@ export function ParamControls({
   fiscalControl,
   idPrefix = "",
 }: Props) {
-  const params = useMemo(() => visibleParams(widget), [widget]);
+  // In row order (OpenBB's parameter positioning; WidgetParam.row). A bare
+  // param is on row 0 wherever the list puts it, so the sort is what brings
+  // row 0 together; it is stable, so a row keeps its declared order.
+  const params = useMemo(
+    () => [...visibleParams(widget)].sort((a, b) => (a.row ?? 0) - (b.row ?? 0)),
+    [widget],
+  );
 
   // Only the params the row actually renders: a show:false param (every
   // fileSelector in the live manifest) has no control, so fetching a list for
@@ -443,7 +449,7 @@ export function ParamControls({
   const Container=inline?Fragment:"div";
   return (
     <Container {...(inline?{}:{className:"card-params"})}>
-      {params.map((p) => {
+      {params.map((p, index) => {
         const kind = kindOf(p, monthParams);
         const id = `${idPrefix}${card.id}-${p.paramName}`;
         const label = p.label ?? p.paramName;
@@ -515,7 +521,14 @@ export function ParamControls({
           // or a fetch error must not be absorbed into the control's
           // accessible name, which is the param's label alone. The link is a
           // sibling for the same reason.
-          <div key={p.paramName} className="param-field" data-kind={kind} data-chip={chip ? "" : undefined} title={fieldTitle}>
+          <Fragment key={p.paramName}>
+          {/* A new row starts here: the break ends the chips' line. Drawn
+              only on the title line (.card-chips); the Parameters panel is a
+              form and lists every field. An empty row draws nothing. */}
+          {index > 0 && (p.row ?? 0) !== (params[index - 1].row ?? 0) ? (
+            <span className="card-params-break" aria-hidden="true" />
+          ) : null}
+          <div className="param-field" data-kind={kind} data-chip={chip ? "" : undefined} title={fieldTitle}>
             {/* v5.4.0 (spec §4.3): a groupable: false param shows no chain link at all. */}
             {p.groupable === false ? null : (
               <GroupLink
@@ -637,6 +650,7 @@ export function ParamControls({
             ) : null}
             </span>
           </div>
+          </Fragment>
         );
       })}
       {fiscalControl ? (
