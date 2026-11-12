@@ -1474,6 +1474,29 @@ describe("the Picture in Picture built-in", () => {
   });
 });
 
+describe("the Picture in Picture built-in with collapsed controls", () => {
+  it("tells the renderer a menu is open while the collapsed controls are dropped down", async () => {
+    register({ id: "picture_in_picture", backendId: "builtin", type: "picture_in_picture", endpoint: "" });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, collapseWidgetControls: true } });
+    const c = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: {} };
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }] }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+    pipProps.mockClear();
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(false);
+
+    await userEvent.click(screen.getByRole("button", { name: /show widget controls/i }));
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(true);
+
+    await userEvent.click(screen.getByRole("button", { name: /show widget controls/i }));
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(false);
+  });
+});
+
 describe("the Picture in Picture built-in in the docks", () => {
   const pipCard = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: {} };
   const dock = () => {
