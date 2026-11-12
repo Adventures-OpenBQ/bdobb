@@ -5,7 +5,7 @@ tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 
 # Picture in Picture
 
-**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome, such as the CNBC player. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
+**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
 
 ## On the Mac
 
@@ -21,7 +21,7 @@ Chrome's player goes back to where it was, at its old size, when you switch dash
 
 The 🔊 button in the card's header mutes the stream, and 🔇 turns it back on at the volume it had. BDOBB does this by stepping the video's own **Volume Level** slider in the Chrome tab the video came from, so the button stays right when you change the volume in the player yourself. Two settings in the card's parameters find that tab and slider:
 
-- **Source tab title contains**: text in the tab's title. The default is `CNBC`.
+- **Source tab title contains**: optional text in the tab's title. Leave it empty and BDOBB uses whichever Chrome window shows the slider; fill it in when more than one open tab has a player.
 - **Volume slider label**: what the site calls its slider. The default is `Volume Level`. Change it only if the site renames the control.
 
 Chrome shows BDOBB only the selected tab of each window. If the stream's tab is not the selected tab in its window, the button is dimmed, and hovering over it says why. The player still parks either way. When BDOBB hands the player back, it also turns the volume back up if BDOBB was the one that muted it.

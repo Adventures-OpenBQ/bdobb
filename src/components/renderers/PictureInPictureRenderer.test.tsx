@@ -104,12 +104,12 @@ describe("Picture in Picture on the macOS desktop app", () => {
 
   it("mutes and unmutes through the card's settings", async () => {
     answer({ state: "fitted" });
-    render(<PictureInPictureMute params={{ source: "Bloomberg", volumeLabel: "Volume" }} />);
+    render(<PictureInPictureMute params={{ source: "Live TV", volumeLabel: "Volume" }} />);
     const button = await screen.findByRole("button", { name: "Mute" });
     await waitFor(() => expect(button).toHaveAttribute("title", "Mute"));
-    expect(invoke).toHaveBeenCalledWith("picture_in_picture_mute_state", { source: "Bloomberg", label: "Volume" });
+    expect(invoke).toHaveBeenCalledWith("picture_in_picture_mute_state", { source: "Live TV", label: "Volume" });
     await userEvent.click(button);
-    expect(invoke).toHaveBeenCalledWith("picture_in_picture_set_muted", { source: "Bloomberg", label: "Volume", muted: true });
+    expect(invoke).toHaveBeenCalledWith("picture_in_picture_set_muted", { source: "Live TV", label: "Volume", muted: true });
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
     await userEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));

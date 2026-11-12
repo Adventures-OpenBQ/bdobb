@@ -642,7 +642,7 @@ mod tests {
         }
     }
 
-    const SRC: &str = "CNBC";
+    const SRC: &str = "Live TV";
     const LABEL: &str = "Volume Level";
 
     #[test]
@@ -739,7 +739,7 @@ mod tests {
 
     #[test]
     fn a_changed_source_or_label_forgets_the_recorded_level() {
-        for (source, label) in [("Bloomberg", LABEL), (SRC, "Volume")] {
+        for (source, label) in [("Other Stream", LABEL), (SRC, "Volume")] {
             let mut mute = Mute::new(FakeSlider::at(70));
             mute.set(SRC, LABEL, true);
             assert_eq!(mute.state(source, label), MuteState::Muted);
@@ -748,7 +748,7 @@ mod tests {
         }
         let mut mute = Mute::new(FakeSlider::at(70));
         mute.set(SRC, LABEL, true);
-        mute.set("Bloomberg", LABEL, false);
+        mute.set("Other Stream", LABEL, false);
         assert_eq!(mute.slider.steps.last(), Some(&(true, 10)));
     }
 

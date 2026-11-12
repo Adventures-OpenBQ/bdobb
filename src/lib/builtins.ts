@@ -145,7 +145,7 @@ export const BUILTIN_WIDGETS: WidgetDef[] = [
         label: "Source tab title contains",
         type: "text",
         value: DEFAULT_SOURCE,
-        description: "Text in the title of the Chrome tab the video came from. Used only to find that tab's volume slider for Mute.",
+        description: "Optional. Text in the title of the Chrome tab the video came from, used only to find that tab's volume slider for Mute. Leave it empty to use whichever Chrome window shows the slider.",
       },
       {
         paramName: "volumeLabel",

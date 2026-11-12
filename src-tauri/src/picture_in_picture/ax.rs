@@ -398,34 +398,44 @@ fn request_page_trees(app: &Cf) {
     }
 }
 
-/// Breadth-first through the Chrome window whose title contains `source`,
+/// Breadth-first through each Chrome window whose title contains `source`
+/// (every window when `source` is empty), never the floating player itself,
 /// for an AXSlider named `label`. The probe saw the name as its title;
 /// Chrome usually maps a page's aria-label to AXDescription, so both are
 /// accepted.
 fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
     let app = chrome().ok_or("Chrome is not running")?;
-    let window = elements_checked(app.0, "AXWindows")?
+    let windows: Vec<Cf> = elements_checked(app.0, "AXWindows")?
         .into_iter()
-        .find(|w| string_attr(w.0, "AXTitle").is_some_and(|t| t.contains(source)))
-        .ok_or_else(|| format!("No Chrome window shows a tab whose title contains \u{201c}{source}\u{201d}. Select the stream's tab in its window."))?;
-    let mut queue = VecDeque::from([window]);
-    let mut visited = 0;
+        .filter(|w| string_attr(w.0, "AXTitle").is_some_and(|t| t != PLAYER_TITLE && t.contains(source)))
+        .collect();
+    if windows.is_empty() {
+        return Err(if source.is_empty() {
+            "No Chrome window is open besides the player. Keep the stream's tab open and selected in its window.".to_owned()
+        } else {
+            format!("No Chrome window shows a tab whose title contains \u{201c}{source}\u{201d}. Select the stream's tab in its window.")
+        });
+    }
     let mut saw_web_area = false;
-    while let Some(element) = queue.pop_front() {
-        visited += 1;
-        if visited > SEARCH_LIMIT {
-            break;
+    for window in windows {
+        let mut queue = VecDeque::from([window]);
+        let mut visited = 0;
+        while let Some(element) = queue.pop_front() {
+            visited += 1;
+            if visited > SEARCH_LIMIT {
+                break;
+            }
+            let named = || {
+                string_attr(element.0, "AXTitle").as_deref() == Some(label)
+                    || string_attr(element.0, "AXDescription").as_deref() == Some(label)
+            };
+            let role = string_attr(element.0, "AXRole");
+            saw_web_area |= role.as_deref() == Some("AXWebArea");
+            if role.as_deref() == Some("AXSlider") && named() {
+                return Ok(element);
+            }
+            queue.extend(elements_checked(element.0, "AXChildren")?);
         }
-        let named = || {
-            string_attr(element.0, "AXTitle").as_deref() == Some(label)
-                || string_attr(element.0, "AXDescription").as_deref() == Some(label)
-        };
-        let role = string_attr(element.0, "AXRole");
-        saw_web_area |= role.as_deref() == Some("AXWebArea");
-        if role.as_deref() == Some("AXSlider") && named() {
-            return Ok(element);
-        }
-        queue.extend(elements_checked(element.0, "AXChildren")?);
     }
     if should_request_manual_accessibility(saw_web_area, MANUAL_ACCESSIBILITY_REQUESTED.load(Ordering::Relaxed)) {
         MANUAL_ACCESSIBILITY_REQUESTED.store(true, Ordering::Relaxed);
@@ -433,7 +443,7 @@ fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
         return Err(PREPARING_REASON.to_owned());
     }
     Err(format!(
-        "No \u{201c}{label}\u{201d} slider in that tab. The stream's tab must be the selected tab, and the site may have renamed the control."
+        "No \u{201c}{label}\u{201d} slider found. The stream's tab must be the selected tab in its window, and the site may have renamed the control."
     ))
 }
 
@@ -487,6 +497,6 @@ mod tests {
         let frame = window.frame().expect("AX read").expect("no Picture in Picture window");
         println!("player {frame:?} on display {:?}", window.display_bounds(frame));
         let mut slider = AxSlider::default();
-        println!("CNBC volume: {:?}", slider.level("CNBC", "Volume Level"));
+        println!("volume: {:?}", slider.level("", "Volume Level"));
     }
 }

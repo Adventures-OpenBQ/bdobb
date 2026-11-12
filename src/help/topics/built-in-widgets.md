@@ -96,7 +96,7 @@ quits. The player is kept 16:9 and no larger than about 80% of the display
 (1388 × 781 on a 1736 × 1133 display). It needs **Accessibility** permission,
 which the card asks for. The
 🔊 header button mutes by stepping the source tab's volume slider. Its two
-parameters, **Source tab title contains** (default `CNBC`) and **Volume
+parameters, **Source tab title contains** (optional, empty by default) and **Volume
 slider label** (default `Volume Level`), find that tab and slider. The
 stream's tab must be the selected tab in its Chrome window. On iPad the card
 is an empty space to drag a picture-in-picture video onto, with no mute

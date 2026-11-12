@@ -9,7 +9,7 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
  * src-tauri/src/picture_in_picture/). Command names, argument keys and answer
  * shapes match the Rust exactly.
  */
-export const DEFAULT_SOURCE = "CNBC";
+export const DEFAULT_SOURCE = "";
 export const DEFAULT_VOLUME_LABEL = "Volume Level";
 
 export type PipPlatform = "macos" | "ipad" | "other";

@@ -6,7 +6,7 @@ This replaces the first version of this document (a see-through card over an ord
 
 ## Intent and decisions
 
-Watch a live video popout (first use: the CNBC player in Chrome) at a fixed place in a BDOBB dashboard without embedding the player. The card is an ordinary blank card that reserves space; BDOBB moves and sizes Chrome's floating player to sit over it. BDOBB never loads, frames or re-transmits the stream. The user believes CNBC's licence restricts re-embedding; those terms have not been read as part of this design.
+Watch a live video popout (first use: the CNBC player in Chrome) at a fixed place in a BDOBB dashboard without embedding the player. The card is an ordinary blank card that reserves space; BDOBB moves and sizes Chrome's floating player to sit over it. BDOBB never loads, frames or re-transmits the stream. The sites' terms of use were read on 2026-11-12; see "Terms of use" below.
 
 Decided by the user:
 
@@ -43,7 +43,7 @@ Not verified: that 0% is audibly silent (the probe could not hear; the reading w
 
 Two units.
 
-**The card (frontend).** A new built-in card, "Picture in Picture", defined beside Website and Clock in `src/lib/builtins.ts` and rendered through the switch in `src/components/WidgetCard.tsx`. Its body is blank. It measures its body's rectangle relative to the window's content and reports it to the native controller when it changes (layout change, card resize, scroll), at most once per screen frame. One setting: "source tab title contains" (default `CNBC`), used only to find the tab for mute.
+**The card (frontend).** A new built-in card, "Picture in Picture", defined beside Website and Clock in `src/lib/builtins.ts` and rendered through the switch in `src/components/WidgetCard.tsx`. Its body is blank. It measures its body's rectangle relative to the window's content and reports it to the native controller when it changes (layout change, card resize, scroll), at most once per screen frame. One setting: "source tab title contains" (optional, empty by default; empty means whichever Chrome window shows the slider), used only to find the tab for mute.
 
 **The window controller (native).** A new Rust module in `src-tauri/src`, implemented for macOS only. Operations: fit (rectangle), release, set muted, is muted, status. These five operations and their arguments name nothing macOS-specific, and on other platforms they answer "not supported", which is what the card's placeholder states read. It finds Chrome's `Picture in Picture` window through Accessibility, converts the card's rectangle to screen coordinates using the BDOBB window's position and display scale, and listens for the BDOBB window moving or resizing so it can re-fit with the last rectangle. The Accessibility calls sit behind a small interface so the logic around them is testable without Chrome. No change to `tauri.conf.json` window settings is needed.
 
@@ -107,6 +107,19 @@ Accepted by the user on 2026-11-12 when the plan was approved. Where these diffe
 - The script-in-tab mute fallback is not built, since the slider route worked in the probe.
 - No capability entries are needed, and there is no page zoom to account for.
 - The help guide page must also be added to the help vault's v8.0 snapshot, or the next sync removes it.
+
+## Terms of use
+
+Read on 2026-11-12 through a summarising fetch, not from the raw pages, and not by a lawyer. This records where the wording points; it is not legal advice. The viewer, not BDOBB, is the party bound by a site's terms.
+
+Sources: the Versant Terms of Service (effective 2025-09-30) and Versant's Prohibited Actions list (undated), which govern CNBC together with CNBC's supplemental terms (updated 2026-04-28); and Bloomberg's Terms of Service (no date shown).
+
+- **Parking the browser's own pop-out.** BDOBB loads, frames, captures and retransmits nothing, and does not alter the page; the pop-out is the site's own control and the browser's own feature. Neither set of terms addresses moving or sizing a browser window. Versant's list bars surrounding content with third-party material, which is the closest wording to a video sitting inside a dashboard layout. Bloomberg's terms have no such clause; they bar framing, which the card does not do.
+- **Volume.** The card operates the player's own volume control. Both sets of terms restrict automated tools that access or monitor the service; the wording is aimed at scraping but is broad.
+- **Naming a site.** Both bar implying an association, and commercial use of the service. The card is therefore site-neutral: the source text is empty by default, and the card, its help pages and its tests name no site. This document names the sites only because the probe ran against them.
+- **Not built, by decision:** simulating a click to pop the video out, which is automated operation of a site's page with no viewer action.
+- **For the later automatic mute design:** CNBC's supplemental terms bar technology that automatically skips or deletes ads on recorded programmes, and Versant's list bars capturing content. A detector that reads the picture is the riskiest form; that design starts from these terms.
+- **Use:** personal viewing only. CNBC+ access excludes public viewing spaces.
 
 ## Testing
 

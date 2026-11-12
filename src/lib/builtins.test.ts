@@ -84,7 +84,7 @@ describe("BUILTIN_WIDGETS", () => {
     expect(placement.name).toBe("Picture in Picture");
     expect(placement.gridData).toEqual({ w: 16, h: 14 });
     expect(placement.params.map((p) => [p.paramName, p.type, p.value])).toEqual([
-      ["source", "text", "CNBC"],
+      ["source", "text", ""],
       ["volumeLabel", "text", "Volume Level"],
     ]);
     expect(fetchesData(placement)).toBe(false);

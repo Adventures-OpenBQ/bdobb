@@ -32,10 +32,10 @@ describe("pipPlatform", () => {
 });
 
 describe("pipSettings", () => {
-  it("falls back to CNBC and Volume Level for missing or blank values", () => {
-    expect(pipSettings({})).toEqual({ source: "CNBC", label: "Volume Level" });
-    expect(pipSettings({ source: "  ", volumeLabel: "" })).toEqual({ source: "CNBC", label: "Volume Level" });
-    expect(pipSettings({ source: " Bloomberg ", volumeLabel: "Volume" })).toEqual({ source: "Bloomberg", label: "Volume" });
+  it("leaves a missing or blank source empty and falls back to Volume Level", () => {
+    expect(pipSettings({})).toEqual({ source: "", label: "Volume Level" });
+    expect(pipSettings({ source: "  ", volumeLabel: "" })).toEqual({ source: "", label: "Volume Level" });
+    expect(pipSettings({ source: " Live TV ", volumeLabel: "Volume" })).toEqual({ source: "Live TV", label: "Volume" });
   });
 });
 

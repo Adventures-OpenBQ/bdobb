@@ -1445,7 +1445,7 @@ describe("the Picture in Picture built-in", () => {
   it("dispatches to its renderer, which is a placeholder outside the macOS app", () => {
     register({ id: "picture_in_picture", backendId: "builtin", type: "picture_in_picture", endpoint: "" });
     useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
-    const c = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: { source: "CNBC" } };
+    const c = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: { source: "Live TV" } };
     useDashboardStore.setState({
       dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }] }],
       activeId: "d1",
