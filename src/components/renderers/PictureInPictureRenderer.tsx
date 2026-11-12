@@ -113,9 +113,13 @@ function MacPlayer({
           }),
       );
     };
+    // A park that failed leaves the player in view: the recheck below tries again.
+    let parkFailed = false;
     const hide = () => {
       sent = null;
-      parkNow(cardId);
+      parkNow(cardId, false, (parked) => {
+        parkFailed = !parked;
+      });
     };
 
     // Every frame, but a rectangle only goes out when it changed: this
@@ -128,6 +132,7 @@ function MacPlayer({
       if (sent === null || !sameRect(sent, rect)) fit(rect);
     });
     const recheck = setInterval(() => {
+      if (!visible && parkFailed) hide();
       if (visible && !busy) fit(measure());
     }, RECHECK_MS);
     // Fully scrolled out: move the player off screen, still held. A card

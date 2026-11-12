@@ -107,8 +107,14 @@ export function releaseNow(card: string) {
   enqueuePlayerOp(card, () => releasePlayer(card).catch(() => undefined));
 }
 
-export function parkNow(card: string, menu = false) {
-  enqueuePlayerOp(card, () => parkPlayer(card, menu).catch(() => undefined));
+/** `done` is told whether the player is now parked (false: the move failed, so the card may try again). */
+export function parkNow(card: string, menu = false, done?: (parked: boolean) => void) {
+  enqueuePlayerOp(card, () =>
+    parkPlayer(card, menu).then(
+      (status) => done?.(status?.state !== "failed"),
+      () => done?.(false),
+    ),
+  );
 }
 
 function stopWatching(card: string) {

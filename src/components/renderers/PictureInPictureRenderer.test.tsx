@@ -160,6 +160,24 @@ describe("Picture in Picture on the macOS desktop app", () => {
     await waitFor(() => expect(fits()).toBe(before + 1));
   });
 
+  it("tries a failed park again on the next recheck, and stops once it worked", async () => {
+    let parkAnswer: PipStatus = { state: "failed", reason: "Chrome is not responding; try again in a moment" };
+    invoke.mockImplementation(async (cmd: string) => (cmd === "picture_in_picture_park" ? parkAnswer : { state: "fitted" }));
+    const scroll = stubIntersection();
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await vi.advanceTimersByTimeAsync(0);
+    scroll(false);
+    await vi.advanceTimersByTimeAsync(0);
+    const parks = () => invoke.mock.calls.filter(([cmd]) => cmd === "picture_in_picture_park").length;
+    expect(parks()).toBe(1);
+    parkAnswer = { state: "parked" };
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(parks()).toBe(2);
+    await vi.advanceTimersByTimeAsync(9000);
+    expect(parks()).toBe(2);
+  });
+
   it("parks while the card's menu is open and fits again when it closes", async () => {
     answer({ state: "fitted" });
     const { rerender } = render(<PictureInPictureRenderer cardId="c1" menuOpen={false} />);
