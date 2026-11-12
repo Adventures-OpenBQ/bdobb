@@ -12,6 +12,10 @@ license = "AGPL-3.0-only"
 name = "bdobb_lib"
 crate-type = ["rlib"]
 
+[features]
+# pnpm tauri dev --features mcp-bridge --config src-tauri/tauri.mcp.conf.json
+mcp-bridge = ["dep:tauri-plugin-mcp-bridge"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -21,6 +25,10 @@ tauri-plugin-http = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+# Lets an MCP client drive the running desktop app (screenshots, clicks, DOM,
+# console). It opens a control port, so it is optional, off by default, and
+# registered only in debug builds; scripts/release.sh refuses to build with it.
+tauri-plugin-mcp-bridge = { version = "=0.13.2", optional = true }
 serde = { version = "1", features = ["derive"] }
 
 # The Save panel's Format pop-up (src/save_panel.rs). Already in the lock
