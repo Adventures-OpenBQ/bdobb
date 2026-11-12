@@ -1406,7 +1406,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             the header itself. */}
         {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
+            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}${widget && visibleParams(widget).every((p) => (p.row ?? 0) > 0) ? " card-chips-below" : ""}`}
           >
             <ParamControls {...controlProps} />
           </div>

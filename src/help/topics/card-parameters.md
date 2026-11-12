@@ -14,6 +14,11 @@ chips off its title line. The form still edits them, and the choice is
 saved with the card. A **Date expression** card starts with the box
 unchecked; check it to put its chips on the title line.
 
+A widget can arrange its parameters in rows (OpenBB's parameter positioning).
+The first row's chips share the title line, and each further row starts a
+line of its own under it. A widget whose first row is empty puts all its
+chips under the title line.
+
 ![Two cards with their parameter rows](./shots/card-parameters.png)
 
 Some parameters are declared hidden by the backend. They never appear here, but
