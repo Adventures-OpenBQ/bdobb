@@ -4,18 +4,18 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 
 /**
- * The Window Portal card's side of the native controller (spec
- * docs/superpowers/specs/2026-11-12-window-portal-card-design.md; Rust in
- * src-tauri/src/window_portal/). Command names, argument keys and answer
+ * The Picture in Picture card's side of the native controller (spec
+ * docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md; Rust in
+ * src-tauri/src/picture_in_picture/). Command names, argument keys and answer
  * shapes match the Rust exactly.
  */
 export const DEFAULT_SOURCE = "CNBC";
 export const DEFAULT_VOLUME_LABEL = "Volume Level";
 
-export type PortalPlatform = "macos" | "ipad" | "other";
+export type PipPlatform = "macos" | "ipad" | "other";
 
 /** The macOS desktop app, the iPad app, or anything else (Windows, Linux, the web preview). */
-export function portalPlatform(): PortalPlatform {
+export function pipPlatform(): PipPlatform {
   if (!isTauri()) return "other";
   const platform = import.meta.env.TAURI_ENV_PLATFORM;
   if (platform === "darwin") return "macos";
@@ -25,14 +25,14 @@ export function portalPlatform(): PortalPlatform {
 
 export type CssRect = { x: number; y: number; width: number; height: number };
 
-export type PortalStatus =
+export type PipStatus =
   | { state: "fitted" | "no_permission" | "no_player" | "in_use" | "too_small" | "viewer_window" | "not_supported" }
   | { state: "failed"; reason: string };
 
 export type MuteState = { state: "sound" | "muted" } | { state: "unavailable"; reason: string };
 
 /** The card's two settings, with the defaults for a blank or missing value. */
-export function portalSettings(params: Record<string, string>): { source: string; label: string } {
+export function pipSettings(params: Record<string, string>): { source: string; label: string } {
   return {
     source: params.source?.trim() || DEFAULT_SOURCE,
     label: params.volumeLabel?.trim() || DEFAULT_VOLUME_LABEL,
@@ -49,13 +49,13 @@ export function sameRect(a: CssRect, b: CssRect): boolean {
   );
 }
 
-export const fitPlayer = (card: string, rect: CssRect) => invoke<PortalStatus>("window_portal_fit", { card, rect });
-export const releasePlayer = (card: string) => invoke<void>("window_portal_release", { card });
+export const fitPlayer = (card: string, rect: CssRect) => invoke<PipStatus>("picture_in_picture_fit", { card, rect });
+export const releasePlayer = (card: string) => invoke<void>("picture_in_picture_release", { card });
 export const setPlayerMuted = (source: string, label: string, muted: boolean) =>
-  invoke<MuteState>("window_portal_set_muted", { source, label, muted });
+  invoke<MuteState>("picture_in_picture_set_muted", { source, label, muted });
 export const readMuteState = (source: string, label: string) =>
-  invoke<MuteState>("window_portal_mute_state", { source, label });
-export const openAccessibilitySettings = () => invoke<void>("window_portal_open_settings");
+  invoke<MuteState>("picture_in_picture_mute_state", { source, label });
+export const openAccessibilitySettings = () => invoke<void>("picture_in_picture_open_settings");
 
 /**
  * A card that unmounts and remounts at once (pin, unpin, a layout re-render)
@@ -70,12 +70,12 @@ const queues = new Map<string, Promise<unknown>>();
 const pendingReleases = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Runs `op` after every earlier call for this card has settled. */
-export function enqueuePortal(card: string, op: () => Promise<unknown>) {
+export function enqueuePlayerOp(card: string, op: () => Promise<unknown>) {
   queues.set(card, (queues.get(card) ?? Promise.resolve()).then(op, op));
 }
 
 export function releaseNow(card: string) {
-  enqueuePortal(card, () => releasePlayer(card).catch(() => undefined));
+  enqueuePlayerOp(card, () => releasePlayer(card).catch(() => undefined));
 }
 
 export function cancelScheduledRelease(card: string) {

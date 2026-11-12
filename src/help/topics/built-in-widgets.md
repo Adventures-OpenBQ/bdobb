@@ -86,7 +86,7 @@ than an error.
 Plenty of sites refuse to be framed. See **HTML and iframe widgets** for what
 the card does about that and what **Open externally ↗** is for.
 
-## Window Portal
+## Picture in Picture
 
 *A parking spot for Chrome's floating video player.* The card body is blank.
 In the macOS app, BDOBB moves and sizes Chrome's `Picture in Picture` window

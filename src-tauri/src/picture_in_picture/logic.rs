@@ -1,8 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//! The Window Portal's platform-neutral half (spec
-//! docs/superpowers/specs/2026-11-12-window-portal-card-design.md): the
+//! The Picture in Picture's platform-neutral half (spec
+//! docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md): the
 //! geometry, the placement state machine and the mute bookkeeping. Nothing
 //! here names macOS. `ax.rs` implements `PlayerWindow` and `VolumeSlider` on
 //! macOS, and a later Windows design can implement them there.
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 /// Chrome's floating player, measured 2026-11-12 on a 1736 × 1133 display
 /// (spec, "What the probe measured"). The maximum may scale with the display
-/// (1388 is 80% of 1736), so `Portal::place` centres on the size Chrome
+/// (1388 is 80% of 1736), so `Placement::place` centres on the size Chrome
 /// reports back rather than trusting this constant.
 pub const MIN_SIZE: (f64, f64) = (284.0, 160.0);
 pub const MAX_SIZE: (f64, f64) = (1388.0, 781.0);
@@ -112,7 +112,7 @@ pub trait PlayerWindow {
 
 /// Which card holds the player, where the player was before, and the
 /// card's last rectangle for re-fits after a window move.
-pub struct Portal<W> {
+pub struct Placement<W> {
     window: W,
     holder: Option<String>,
     saved: Option<Rect>,
@@ -122,7 +122,7 @@ pub struct Portal<W> {
     handed_back: bool,
 }
 
-impl<W: PlayerWindow> Portal<W> {
+impl<W: PlayerWindow> Placement<W> {
     pub fn new(window: W) -> Self {
         Self { window, holder: None, saved: None, last: None, suspended: false, handed_back: false }
     }
@@ -223,7 +223,7 @@ impl<W: PlayerWindow> Portal<W> {
         let Some(saved) = self.saved.take() else { return };
         for op in restore_ops(saved, self.window.display_bounds(saved)) {
             if let Err(error) = self.window.apply(op) {
-                eprintln!("window portal: cannot restore the player: {error}");
+                eprintln!("picture in picture: cannot restore the player: {error}");
                 return;
             }
         }
@@ -482,125 +482,125 @@ mod tests {
 
     #[test]
     fn fit_moves_then_sizes_then_centres_in_screen_points() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::Fitted);
+        let mut placement = Placement::new(FakeWindow::with_player());
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Fitted);
         // Card at (110, 70) 640 × 400 on screen; 640 × 360 centred vertically.
-        assert_eq!(portal.window.ops, vec![Op::Move(110.0, 90.0), Op::Size(640.0, 360.0), Op::Move(110.0, 90.0)]);
-        assert_eq!(portal.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
+        assert_eq!(placement.window.ops, vec![Op::Move(110.0, 90.0), Op::Size(640.0, 360.0), Op::Move(110.0, 90.0)]);
+        assert_eq!(placement.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
     }
 
     #[test]
     fn fit_centres_on_the_size_chrome_actually_allowed() {
         let mut window = FakeWindow::with_player();
         window.max_width = 500.0;
-        let mut portal = Portal::new(window);
-        assert_eq!(portal.fit("a", r(0.0, 0.0, 1200.0, 800.0), (0.0, 0.0)), Status::Fitted);
-        assert_eq!(portal.window.ops.last(), Some(&Op::Move(350.0, 259.375)));
+        let mut placement = Placement::new(window);
+        assert_eq!(placement.fit("a", r(0.0, 0.0, 1200.0, 800.0), (0.0, 0.0)), Status::Fitted);
+        assert_eq!(placement.window.ops.last(), Some(&Op::Move(350.0, 259.375)));
     }
 
     #[test]
     fn release_by_the_holder_restores_a_player_that_was_partly_off_screen() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        assert!(portal.release("a"));
-        assert_eq!(portal.window.ops[3..], [Op::Move(1336.0, 100.0), Op::Size(400.0, 225.0), Op::Move(1600.0, 100.0)]);
-        assert_eq!(portal.window.frame, Some(ORIGINAL));
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.ops[3..], [Op::Move(1336.0, 100.0), Op::Size(400.0, 225.0), Op::Move(1600.0, 100.0)]);
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
     }
 
     #[test]
     fn a_second_card_neither_steals_nor_releases_the_player() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        let before = portal.window.ops.len();
-        assert_eq!(portal.fit("b", CARD, ORIGIN), Status::InUse);
-        assert!(!portal.release("b"));
-        assert_eq!(portal.window.ops.len(), before);
-        assert!(portal.release("a"));
-        assert_eq!(portal.fit("b", CARD, ORIGIN), Status::Fitted);
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        let before = placement.window.ops.len();
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::InUse);
+        assert!(!placement.release("b"));
+        assert_eq!(placement.window.ops.len(), before);
+        assert!(placement.release("a"));
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
     }
 
     #[test]
     fn no_permission_and_no_player_touch_nothing() {
         let mut window = FakeWindow::with_player();
         window.trusted = false;
-        let mut portal = Portal::new(window);
-        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPermission);
-        assert!(portal.window.ops.is_empty());
+        let mut placement = Placement::new(window);
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::NoPermission);
+        assert!(placement.window.ops.is_empty());
 
         let mut window = FakeWindow::with_player();
         window.frame = None;
-        let mut portal = Portal::new(window);
-        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPlayer);
-        assert_eq!(portal.refit(ORIGIN), None);
+        let mut placement = Placement::new(window);
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::NoPlayer);
+        assert_eq!(placement.refit(ORIGIN), None);
     }
 
     #[test]
     fn a_card_too_small_for_the_player_hands_it_back() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        assert_eq!(portal.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
-        assert_eq!(portal.window.frame, Some(ORIGINAL));
-        assert_eq!(portal.fit("b", CARD, ORIGIN), Status::Fitted);
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert_eq!(placement.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
     }
 
     #[test]
     fn suspend_hands_the_player_back_and_refit_takes_it_again() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        assert!(portal.suspend());
-        assert_eq!(portal.window.frame, Some(ORIGINAL));
-        assert!(!portal.suspend());
-        assert_eq!(portal.refit(ORIGIN), Some(Status::Fitted));
-        assert_eq!(portal.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
-        portal.release("a");
-        assert_eq!(portal.window.frame, Some(ORIGINAL));
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert!(placement.suspend());
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        assert!(!placement.suspend());
+        assert_eq!(placement.refit(ORIGIN), Some(Status::Fitted));
+        assert_eq!(placement.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
+        placement.release("a");
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
     }
 
     #[test]
     fn every_way_of_handing_the_player_back_is_reported_once() {
         // Too small after holding.
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        assert!(!portal.take_handed_back());
-        assert_eq!(portal.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
-        assert!(portal.take_handed_back());
-        assert!(!portal.take_handed_back());
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert!(!placement.take_handed_back());
+        assert_eq!(placement.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert!(placement.take_handed_back());
+        assert!(!placement.take_handed_back());
 
         // No player any more after holding.
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        portal.window.frame = None;
-        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPlayer);
-        assert!(portal.take_handed_back());
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.window.frame = None;
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::NoPlayer);
+        assert!(placement.take_handed_back());
 
         // Release by the holder, suspend, release_all.
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        assert!(portal.release("a"));
-        assert!(portal.take_handed_back());
-        portal.fit("a", CARD, ORIGIN);
-        assert!(portal.suspend());
-        assert!(portal.take_handed_back());
-        portal.release_all();
-        assert!(portal.take_handed_back());
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert!(placement.release("a"));
+        assert!(placement.take_handed_back());
+        placement.fit("a", CARD, ORIGIN);
+        assert!(placement.suspend());
+        assert!(placement.take_handed_back());
+        placement.release_all();
+        assert!(placement.take_handed_back());
     }
 
     #[test]
     fn nothing_is_reported_when_nothing_was_held() {
-        let mut portal = Portal::new(FakeWindow::with_player());
-        assert_eq!(portal.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
-        assert!(!portal.release("a"));
-        portal.release_all();
+        let mut placement = Placement::new(FakeWindow::with_player());
+        assert_eq!(placement.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert!(!placement.release("a"));
+        placement.release_all();
         let mut window = FakeWindow::with_player();
         window.frame = None;
-        let mut portal = Portal::new(window);
-        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPlayer);
-        assert!(!portal.take_handed_back());
+        let mut placement = Placement::new(window);
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::NoPlayer);
+        assert!(!placement.take_handed_back());
         // A second card turned away with InUse hands nothing back.
-        let mut portal = Portal::new(FakeWindow::with_player());
-        portal.fit("a", CARD, ORIGIN);
-        portal.fit("b", CARD, ORIGIN);
-        assert!(!portal.take_handed_back());
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.fit("b", CARD, ORIGIN);
+        assert!(!placement.take_handed_back());
     }
 
     /// The page's Volume Level slider: AXDecrement / AXIncrement move it 10%

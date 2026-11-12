@@ -74,7 +74,7 @@ import { NoteRenderer } from "./renderers/NoteRenderer";
 import { DateProbeRenderer } from "./renderers/DateProbeRenderer";
 import { ParamEchoRenderer } from "./renderers/ParamEchoRenderer";
 import { YouTubeRenderer } from "./renderers/YouTubeRenderer";
-import { WindowPortalMute, WindowPortalRenderer } from "./renderers/WindowPortalRenderer";
+import { PictureInPictureMute, PictureInPictureRenderer } from "./renderers/PictureInPictureRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
 import { OmniRenderer } from "./renderers/OmniRenderer";
@@ -1088,8 +1088,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     }
 
     // Same reason as the clock: no backend, data is always null.
-    if (widget?.type === "window_portal") {
-      return <WindowPortalRenderer cardId={card.id} />;
+    if (widget?.type === "picture_in_picture") {
+      return <PictureInPictureRenderer cardId={card.id} />;
     }
 
     // The date scratchpad. Given the group-merged params for the same reason
@@ -1938,7 +1938,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             </button>
           ) : null}
           <div className="card-controls-icons">
-            {widget?.type === "window_portal" ? <WindowPortalMute params={card.params} /> : null}
+            {widget?.type === "picture_in_picture" ? <PictureInPictureMute params={card.params} /> : null}
             {widget && DOCUMENT_TYPES.has(widget.type) ? null : (
               <ViewToggle
                 modes={modes}

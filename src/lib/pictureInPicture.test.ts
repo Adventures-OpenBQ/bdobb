@@ -6,14 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { tauri } = vi.hoisted(() => ({ tauri: { on: true } }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: () => tauri.on }));
 
-import { portalPlatform, portalSettings, sameRect } from "./windowPortal";
+import { pipPlatform, pipSettings, sameRect } from "./pictureInPicture";
 
 afterEach(() => {
   vi.unstubAllEnvs();
   tauri.on = true;
 });
 
-describe("portalPlatform", () => {
+describe("pipPlatform", () => {
   it.each([
     ["darwin", "macos"],
     ["ios", "ipad"],
@@ -21,21 +21,21 @@ describe("portalPlatform", () => {
     ["linux", "other"],
   ])("reads TAURI_ENV_PLATFORM %s as %s", (platform, expected) => {
     vi.stubEnv("TAURI_ENV_PLATFORM", platform);
-    expect(portalPlatform()).toBe(expected);
+    expect(pipPlatform()).toBe(expected);
   });
 
   it("is other in the browser build, whatever the env says", () => {
     vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
     tauri.on = false;
-    expect(portalPlatform()).toBe("other");
+    expect(pipPlatform()).toBe("other");
   });
 });
 
-describe("portalSettings", () => {
+describe("pipSettings", () => {
   it("falls back to CNBC and Volume Level for missing or blank values", () => {
-    expect(portalSettings({})).toEqual({ source: "CNBC", label: "Volume Level" });
-    expect(portalSettings({ source: "  ", volumeLabel: "" })).toEqual({ source: "CNBC", label: "Volume Level" });
-    expect(portalSettings({ source: " Bloomberg ", volumeLabel: "Volume" })).toEqual({ source: "Bloomberg", label: "Volume" });
+    expect(pipSettings({})).toEqual({ source: "CNBC", label: "Volume Level" });
+    expect(pipSettings({ source: "  ", volumeLabel: "" })).toEqual({ source: "CNBC", label: "Volume Level" });
+    expect(pipSettings({ source: " Bloomberg ", volumeLabel: "Volume" })).toEqual({ source: "Bloomberg", label: "Volume" });
   });
 });
 

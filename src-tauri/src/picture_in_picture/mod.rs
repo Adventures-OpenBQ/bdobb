@@ -1,8 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//! Window Portal: parks Chrome's floating video player over a card (spec
-//! docs/superpowers/specs/2026-11-12-window-portal-card-design.md). The
+//! Picture in Picture: parks Chrome's floating video player over a card (spec
+//! docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md). The
 //! commands exist on every platform. Only macOS implements them; the others
 //! answer "not supported", which the card reads as its placeholder.
 
@@ -19,7 +19,7 @@ fn unsupported() -> MuteState {
 }
 
 #[tauri::command]
-pub async fn window_portal_fit(window: tauri::WebviewWindow, card: String, rect: Rect) -> Status {
+pub async fn picture_in_picture_fit(window: tauri::WebviewWindow, card: String, rect: Rect) -> Status {
     #[cfg(target_os = "macos")]
     return native::fit(&window, &card, rect);
     #[cfg(not(target_os = "macos"))]
@@ -30,7 +30,7 @@ pub async fn window_portal_fit(window: tauri::WebviewWindow, card: String, rect:
 }
 
 #[tauri::command]
-pub async fn window_portal_release(card: String) {
+pub async fn picture_in_picture_release(card: String) {
     #[cfg(target_os = "macos")]
     native::release(&card);
     #[cfg(not(target_os = "macos"))]
@@ -38,7 +38,7 @@ pub async fn window_portal_release(card: String) {
 }
 
 #[tauri::command]
-pub async fn window_portal_set_muted(source: String, label: String, muted: bool) -> MuteState {
+pub async fn picture_in_picture_set_muted(source: String, label: String, muted: bool) -> MuteState {
     #[cfg(target_os = "macos")]
     return native::set_muted(&source, &label, muted);
     #[cfg(not(target_os = "macos"))]
@@ -49,7 +49,7 @@ pub async fn window_portal_set_muted(source: String, label: String, muted: bool)
 }
 
 #[tauri::command]
-pub async fn window_portal_mute_state(source: String, label: String) -> MuteState {
+pub async fn picture_in_picture_mute_state(source: String, label: String) -> MuteState {
     #[cfg(target_os = "macos")]
     return native::mute_state(&source, &label);
     #[cfg(not(target_os = "macos"))]
@@ -60,7 +60,7 @@ pub async fn window_portal_mute_state(source: String, label: String) -> MuteStat
 }
 
 #[tauri::command]
-pub async fn window_portal_open_settings() {
+pub async fn picture_in_picture_open_settings() {
     #[cfg(target_os = "macos")]
     ax::ask_for_permission();
 }
@@ -79,7 +79,7 @@ mod native {
     use tauri::{WebviewWindow, WindowEvent};
 
     use super::ax::{AxSlider, AxWindow};
-    use super::logic::{Mute, MuteState, Portal, Rect, Status};
+    use super::logic::{Mute, MuteState, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -91,13 +91,13 @@ mod native {
     // Two locks, so the slider search (about 150 ms) never holds up a re-fit
     // during a drag. Never call a Tauri window method while holding either:
     // the window event handler runs on the main thread and takes them too.
-    static PORTAL: Mutex<Option<Portal<AxWindow>>> = Mutex::new(None);
+    static PLACEMENT: Mutex<Option<Placement<AxWindow>>> = Mutex::new(None);
     static MUTE: Mutex<Option<Mute<AxSlider>>> = Mutex::new(None);
     static HOOKED: Once = Once::new();
 
-    fn portal<T>(f: impl FnOnce(&mut Portal<AxWindow>) -> T) -> T {
-        let mut guard = PORTAL.lock().unwrap_or_else(PoisonError::into_inner);
-        f(guard.get_or_insert_with(|| Portal::new(AxWindow::default())))
+    fn placement<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
+        let mut guard = PLACEMENT.lock().unwrap_or_else(PoisonError::into_inner);
+        f(guard.get_or_insert_with(|| Placement::new(AxWindow::default())))
     }
 
     fn mute<T>(f: impl FnOnce(&mut Mute<AxSlider>) -> T) -> T {
@@ -113,10 +113,10 @@ mod native {
         Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
     }
 
-    /// Runs `f` on the portal, then restores the volume if it handed the player
-    /// back, whatever the path. The portal lock is dropped first.
-    fn portal_and_volume<T>(f: impl FnOnce(&mut Portal<AxWindow>) -> T) -> T {
-        let (result, handed_back) = portal(|p| (f(p), p.take_handed_back()));
+    /// Runs `f` on the placement, then restores the volume if it handed the player
+    /// back, whatever the path. The placement lock is dropped first.
+    fn placement_and_volume<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
+        let (result, handed_back) = placement(|p| (f(p), p.take_handed_back()));
         if handed_back {
             mute(|m| m.restore());
         }
@@ -135,15 +135,15 @@ mod native {
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
-        portal_and_volume(|p| p.fit(card, rect, origin))
+        placement_and_volume(|p| p.fit(card, rect, origin))
     }
 
     pub fn release(card: &str) {
-        portal_and_volume(|p| p.release(card));
+        placement_and_volume(|p| p.release(card));
     }
 
     pub fn release_all() {
-        portal_and_volume(|p| p.release_all());
+        placement_and_volume(|p| p.release_all());
         // Quit: restore even when no card held the player.
         mute(|m| m.restore());
     }
@@ -182,11 +182,11 @@ mod native {
     /// The window is read BEFORE either lock is taken.
     fn sync(window: &WebviewWindow) {
         if window.is_minimized().unwrap_or(false) {
-            portal_and_volume(|p| p.suspend());
+            placement_and_volume(|p| p.suspend());
             return;
         }
         if let Some(origin) = origin(window) {
-            portal_and_volume(|p| p.refit(origin));
+            placement_and_volume(|p| p.refit(origin));
         }
     }
 }

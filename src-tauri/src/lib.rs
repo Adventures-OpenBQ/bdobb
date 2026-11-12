@@ -4,7 +4,7 @@
 mod migrate;
 mod save_panel;
 mod video_wrapper;
-mod window_portal;
+mod picture_in_picture;
 
 use tauri::Manager;
 
@@ -171,11 +171,11 @@ pub fn run() {
             video_wrapper::video_wrapper_port,
             set_window_pin,
             save_panel::save_workspace_panel,
-            window_portal::window_portal_fit,
-            window_portal::window_portal_release,
-            window_portal::window_portal_set_muted,
-            window_portal::window_portal_mute_state,
-            window_portal::window_portal_open_settings,
+            picture_in_picture::picture_in_picture_fit,
+            picture_in_picture::picture_in_picture_release,
+            picture_in_picture::picture_in_picture_set_muted,
+            picture_in_picture::picture_in_picture_mute_state,
+            picture_in_picture::picture_in_picture_open_settings,
         ])
         .setup(|app| {
             // Restore the baseline storage fix from 4ac9cd071 (issue #316).
@@ -243,9 +243,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running BDOBB")
         .run(|_app, event| {
-            // Quit hands Chrome's floating player back (window_portal, spec Flow 4).
+            // Quit hands Chrome's floating player back (picture_in_picture, spec Flow 4).
             if let tauri::RunEvent::Exit = event {
-                window_portal::release_all();
+                picture_in_picture::release_all();
             }
         });
 }

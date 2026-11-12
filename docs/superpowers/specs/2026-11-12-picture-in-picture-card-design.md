@@ -1,4 +1,4 @@
-# Window Portal card: a parking spot for Chrome's floating player
+# Picture in Picture card: a parking spot for Chrome's floating player
 
 Date: 2026-11-12. Repo: Adventures-OpenBQ/bdobb. Status: approved by the user on 2026-11-12 after the probe revision. Approval covers this document only; the implementation plan is not yet written or approved.
 
@@ -43,7 +43,7 @@ Not verified: that 0% is audibly silent (the probe could not hear; the reading w
 
 Two units.
 
-**The card (frontend).** A new built-in card, "Window Portal", defined beside Website and Clock in `src/lib/builtins.ts` and rendered through the switch in `src/components/WidgetCard.tsx`. Its body is blank. It measures its body's rectangle relative to the window's content and reports it to the native controller when it changes (layout change, card resize, scroll), at most once per screen frame. One setting: "source tab title contains" (default `CNBC`), used only to find the tab for mute.
+**The card (frontend).** A new built-in card, "Picture in Picture", defined beside Website and Clock in `src/lib/builtins.ts` and rendered through the switch in `src/components/WidgetCard.tsx`. Its body is blank. It measures its body's rectangle relative to the window's content and reports it to the native controller when it changes (layout change, card resize, scroll), at most once per screen frame. One setting: "source tab title contains" (default `CNBC`), used only to find the tab for mute.
 
 **The window controller (native).** A new Rust module in `src-tauri/src`, implemented for macOS only. Operations: fit (rectangle), release, set muted, is muted, status. These five operations and their arguments name nothing macOS-specific, and on other platforms they answer "not supported", which is what the card's placeholder states read. It finds Chrome's `Picture in Picture` window through Accessibility, converts the card's rectangle to screen coordinates using the BDOBB window's position and display scale, and listens for the BDOBB window moving or resizing so it can re-fit with the last rectangle. The Accessibility calls sit behind a small interface so the logic around them is testable without Chrome. No change to `tauri.conf.json` window settings is needed.
 

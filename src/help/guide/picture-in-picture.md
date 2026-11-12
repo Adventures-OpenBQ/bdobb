@@ -1,15 +1,15 @@
 ---
 type: Note
-tags: [bdobb, help, widgets, built-in, window-portal, video, chrome]
+tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 ---
 
-# Window Portal
+# Picture in Picture
 
-**Window Portal** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome, such as the CNBC player. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
+**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome, such as the CNBC player. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
 
 ## On the Mac
 
-1. Add **Window Portal** from the [[widget-library|Widget Library]]. It is under *Built-in*.
+1. Add **Picture in Picture** from the [[widget-library|Widget Library]]. It is under *Built-in*.
 2. The first time, the card asks for **Accessibility** permission. Choose **Open Accessibility settings**, switch BDOBB on in *System Settings ▸ Privacy & Security ▸ Accessibility*, and come back. BDOBB uses the permission only to move, size and mute Chrome's floating player.
 3. In Chrome, start the video and pop it out with its picture-in-picture button. Within a few seconds the player jumps onto the card.
 
@@ -31,7 +31,7 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 | Card says | Meaning |
 | --- | --- |
 | *Pop the video out in Chrome* | No floating player is open; the card checks again every few seconds |
-| *The player is in use by another card* | Another Window Portal card holds it; remove that card or scroll it away |
+| *The player is in use by another card* | Another Picture in Picture card holds it; remove that card or scroll it away |
 | *Open this dashboard in the main window* | The card is in an **Open in new window** viewer, which cannot hold the player |
 | *BDOBB needs Accessibility permission…* | See step 2 above |
 

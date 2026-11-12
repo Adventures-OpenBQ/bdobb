@@ -3,7 +3,7 @@
 
 import { DEFAULT_ZONES } from "./zones";
 import type { WidgetDef } from "./types";
-import { DEFAULT_SOURCE, DEFAULT_VOLUME_LABEL } from "./windowPortal";
+import { DEFAULT_SOURCE, DEFAULT_VOLUME_LABEL } from "./pictureInPicture";
 
 /**
  * Reserved: no BackendConfig may carry this id. That is what keeps the
@@ -131,11 +131,11 @@ export const BUILTIN_WIDGETS: WidgetDef[] = [
   },
   {
     ...base,
-    id: "window_portal",
-    name: "Window Portal",
+    id: "picture_in_picture",
+    name: "Picture in Picture",
     description:
       "A parking spot for Chrome's floating video player. In the macOS app, BDOBB moves and sizes the player over this card.",
-    type: "window_portal",
+    type: "picture_in_picture",
     // Room for the player's 284 × 160 minimum at ordinary dashboard widths;
     // WidgetDef.gridData has no minW/minH, so a smaller card says so instead.
     gridData: { w: 16, h: 14 },

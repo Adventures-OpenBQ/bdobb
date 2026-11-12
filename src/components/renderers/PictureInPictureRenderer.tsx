@@ -4,11 +4,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
   cancelScheduledRelease,
-  enqueuePortal,
+  enqueuePlayerOp,
   fitPlayer,
   openAccessibilitySettings,
-  portalPlatform,
-  portalSettings,
+  pipPlatform,
+  pipSettings,
   readMuteState,
   releaseNow,
   sameRect,
@@ -16,8 +16,8 @@ import {
   setPlayerMuted,
   type CssRect,
   type MuteState,
-  type PortalStatus,
-} from "../../lib/windowPortal";
+  type PipStatus,
+} from "../../lib/pictureInPicture";
 
 /**
  * How often the card fits again (a player opened, closed or dragged away,
@@ -35,20 +35,20 @@ const MESSAGES = {
 } as const;
 
 /**
- * The Window Portal card's body (spec
- * docs/superpowers/specs/2026-11-12-window-portal-card-design.md). It is
+ * The Picture in Picture card's body (spec
+ * docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md). It is
  * blank on purpose: on the Mac, Chrome's floating player is moved over it.
  */
-export function WindowPortalRenderer({ cardId }: { cardId: string }) {
-  const platform = portalPlatform();
+export function PictureInPictureRenderer({ cardId }: { cardId: string }) {
+  const platform = pipPlatform();
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
   if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
-  return <MacPortal cardId={cardId} />;
+  return <MacPlayer cardId={cardId} />;
 }
 
-function MacPortal({ cardId }: { cardId: string }) {
+function MacPlayer({ cardId }: { cardId: string }) {
   const body = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<PortalStatus | null>(null);
+  const [status, setStatus] = useState<PipStatus | null>(null);
 
   useEffect(() => {
     const el = body.current;
@@ -66,7 +66,7 @@ function MacPortal({ cardId }: { cardId: string }) {
     const fit = (rect: CssRect) => {
       busy = true;
       sent = rect;
-      enqueuePortal(cardId, () =>
+      enqueuePlayerOp(cardId, () =>
         fitPlayer(cardId, rect)
           .then(
             (next) => alive && setStatus(next),
@@ -114,13 +114,13 @@ function MacPortal({ cardId }: { cardId: string }) {
   }, [cardId]);
 
   return (
-    <div ref={body} className="window-portal" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>
-      <PortalMessage status={status} />
+    <div ref={body} className="picture-in-picture" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>
+      <PipMessage status={status} />
     </div>
   );
 }
 
-function PortalMessage({ status }: { status: PortalStatus | null }) {
+function PipMessage({ status }: { status: PipStatus | null }) {
   if (status === null) return <p className="empty-state">Looking for the floating player…</p>;
   if (status.state === "failed") return <p className="empty-state">Could not move the player: {status.reason}</p>;
   // A local, so each check below narrows it down to MESSAGES' keys.
@@ -140,9 +140,9 @@ function PortalMessage({ status }: { status: PortalStatus | null }) {
 }
 
 /** The header's mute toggle. macOS desktop only: iPadOS cannot reach another app's player. */
-export function WindowPortalMute({ params }: { params: Record<string, string> }) {
-  if (portalPlatform() !== "macos") return null;
-  const { source, label } = portalSettings(params);
+export function PictureInPictureMute({ params }: { params: Record<string, string> }) {
+  if (pipPlatform() !== "macos") return null;
+  const { source, label } = pipSettings(params);
   return <MuteButton source={source} label={label} />;
 }
 

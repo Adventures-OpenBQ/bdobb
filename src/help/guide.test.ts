@@ -14,7 +14,7 @@ describe("the help guide", () => {
     const slugs = GUIDE_SECTIONS.flatMap((s) => s.pages.map((p) => p.slug));
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
-    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News, Locked and Pinned Widgets and Window Portal pages, are deliberate; so is v4's Linked Widgets page.
+    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News, Locked and Pinned Widgets and Picture in Picture pages, are deliberate; so is v4's Linked Widgets page.
     expect(GUIDE_PAGES).toHaveLength(45);
   });
 
@@ -334,13 +334,13 @@ describe("example dashboards guide documents the v8.0.0 examples", () => {
   });
 });
 
-describe("the Window Portal page", () => {
+describe("the Picture in Picture page", () => {
   it("is listed under Widgets and states what the card says and needs on each platform", () => {
     const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");
-    expect(widgets?.pages.map((p) => p.slug)).toContain(`${GUIDE_PREFIX}window-portal`);
-    const body = GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}window-portal`)!.body;
+    expect(widgets?.pages.map((p) => p.slug)).toContain(`${GUIDE_PREFIX}picture-in-picture`);
+    const body = GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}picture-in-picture`)!.body;
     for (const s of [
-      "**Window Portal**",
+      "**Picture in Picture**",
       "`Picture in Picture`",
       "**Accessibility**",
       "**Source tab title contains**",
@@ -351,6 +351,6 @@ describe("the Window Portal page", () => {
       "*Available in the macOS desktop app*",
     ]) expect(body).toContain(s);
     const manual = TOPICS.find((t) => t.slug === "built-in-widgets")!.body;
-    expect(manual).toContain("## Window Portal");
+    expect(manual).toContain("## Picture in Picture");
   });
 });

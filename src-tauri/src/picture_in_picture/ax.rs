@@ -1,9 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-//! The Window Portal's macOS half: Chrome's floating player and its tab's
+//! The Picture in Picture's macOS half: Chrome's floating player and its tab's
 //! volume slider, reached through the Accessibility API (spec
-//! docs/superpowers/specs/2026-11-12-window-portal-card-design.md).
+//! docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md).
 //!
 //! Hand-written declarations, not a bindings crate. No crate in Cargo.lock
 //! binds ApplicationServices' AX calls, and naming core-foundation or
@@ -276,7 +276,7 @@ pub fn ask_for_permission() {
         }
     }
     if let Err(error) = std::process::Command::new("/usr/bin/open").arg(SETTINGS_URL).status() {
-        eprintln!("window portal: cannot open System Settings: {error}");
+        eprintln!("picture in picture: cannot open System Settings: {error}");
     }
 }
 
@@ -478,7 +478,7 @@ mod tests {
 
     /// Run by hand on a Mac with Chrome's floating player open and
     /// Accessibility granted to the terminal running cargo (Task 8):
-    /// cargo test --locked window_portal::ax -- --ignored --nocapture
+    /// cargo test --locked picture_in_picture::ax -- --ignored --nocapture
     #[test]
     #[ignore = "needs the real Chrome floating player and Accessibility permission"]
     fn reads_the_real_player_and_slider() {

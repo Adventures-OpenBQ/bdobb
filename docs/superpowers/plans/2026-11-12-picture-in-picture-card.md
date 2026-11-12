@@ -1,5 +1,7 @@
 # Window Portal Card Implementation Plan
 
+> **Renamed after execution (2026-11-12).** The card is the **Picture in Picture** widget. This plan was executed under its working name, Window Portal, and its task text keeps the names it was executed with. In the code: `window_portal` is `picture_in_picture`, `WindowPortal*` is `PictureInPicture*`, `windowPortal` is `pictureInPicture`, the commands `portal_*` are `pip_*`, and the `Portal` type is `Placement`. The spec is `docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A built-in "Window Portal" card that reserves space on a dashboard. On the macOS desktop app, BDOBB moves and sizes Chrome's floating `Picture in Picture` player over the card, hands it back when the card goes away, and offers a mute button that steps the source tab's `Volume Level` slider.
