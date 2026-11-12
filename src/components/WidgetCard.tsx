@@ -335,21 +335,34 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const hasControls = widget ? visibleParams(widget).length > 0 : false;
   const collapseControls = collapseSetting || (hasControls && !minimized && paramsCrowded);
   // A header with title-bar parameters gives them the free space, not the title.
+  // The first measurement waits for a frame. Measuring during the card's first
+  // commits forces a style pass between react-grid-layout's two mount renders
+  // (top/left, then transform with a transition), and every card then slides
+  // in from the grid's corner on load.
+  const measuredOnce = useRef(false);
   useLayoutEffect(() => {
-    const el = controlsRef.current;
-    if (!el || collapseControls) return;
-    let left = Infinity;
-    let right = -Infinity;
-    const items = [...el.children].flatMap((c) =>
-      c.classList.contains("card-controls-icons") ? [...c.children] : [c],
-    );
-    for (const item of items) {
-      const r = item.getBoundingClientRect();
-      if (r.width === 0) continue;
-      left = Math.min(left, r.left);
-      right = Math.max(right, r.right);
-    }
-    if (right > left) unfoldedWidth.current = right - left + HEADER_GAP;
+    const measure = () => {
+      const el = controlsRef.current;
+      if (!el || collapseControls) return;
+      let left = Infinity;
+      let right = -Infinity;
+      const items = [...el.children].flatMap((c) =>
+        c.classList.contains("card-controls-icons") ? [...c.children] : [c],
+      );
+      for (const item of items) {
+        const r = item.getBoundingClientRect();
+        if (r.width === 0) continue;
+        left = Math.min(left, r.left);
+        right = Math.max(right, r.right);
+      }
+      if (right > left) unfoldedWidth.current = right - left + HEADER_GAP;
+    };
+    if (measuredOnce.current) return measure();
+    const frame = requestAnimationFrame(() => {
+      measuredOnce.current = true;
+      measure();
+    });
+    return () => cancelAnimationFrame(frame);
   });
   const hasTitleParams =
     !minimized && widget !== undefined && visibleParams(widget).some((p) => (p.row ?? 0) === 0);
