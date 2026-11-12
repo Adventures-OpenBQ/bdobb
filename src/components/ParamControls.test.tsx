@@ -1741,6 +1741,37 @@ describe("chips", () => {
     );
   }
 
+  it("draws the params in row order with a break where a new row starts", () => {
+    // OpenBB's parameter positioning: a bare param is on row 0 wherever the
+    // list puts it; rows 1 and 3 here, so the empty row 2 draws nothing.
+    renderControls({
+      params: [
+        { paramName: "symbol", type: "text", label: "Symbol" },
+        { paramName: "start", type: "text", label: "Start", row: 1 },
+        { paramName: "end", type: "text", label: "End", row: 1 },
+        { paramName: "provider", type: "text", label: "Provider" },
+        { paramName: "limit", type: "text", label: "Limit", row: 3 },
+      ],
+      values: {},
+    });
+    const row = document.querySelector(".card-params")!;
+    const shape = [...row.children].map((el) =>
+      el.classList.contains("card-params-break") ? "|" : el.querySelector(".param-label")!.textContent,
+    );
+    expect(shape).toEqual(["Symbol", "Provider", "|", "Start", "End", "|", "Limit"]);
+  });
+
+  it("draws no break for a flat params list", () => {
+    renderControls({
+      params: [
+        { paramName: "a", type: "text", label: "A" },
+        { paramName: "b", type: "text", label: "B" },
+      ],
+      values: {},
+    });
+    expect(document.querySelector(".card-params-break")).toBeNull();
+  });
+
   it("hides the label visually for a select and keeps it as the accessible name", () => {
     renderControls({ params: [{ paramName: "chamber", type: "text", label: "Chamber", options: [{ label: "House", value: "house" }] }], values: { chamber: "house" } });
     const field = screen.getByLabelText("Chamber").closest(".param-field")!;
