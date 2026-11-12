@@ -78,7 +78,7 @@ describe("BUILTIN_WIDGETS", () => {
     expect(site.params.map((p) => p.paramName)).toContain("url");
   });
 
-  it("defines the Picture in Picture with its two settings and no fetch", () => {
+  it("defines the Picture in Picture with its three settings and no fetch", () => {
     const placement = byId("picture_in_picture");
     expect(placement.type).toBe("picture_in_picture");
     expect(placement.name).toBe("Picture in Picture");
@@ -86,7 +86,11 @@ describe("BUILTIN_WIDGETS", () => {
     expect(placement.params.map((p) => [p.paramName, p.type, p.value])).toEqual([
       ["source", "text", ""],
       ["volumeLabel", "text", "Volume Level"],
+      ["muteWhileHidden", undefined, "off"],
     ]);
+    const mute = placement.params.find((p) => p.paramName === "muteWhileHidden")!;
+    expect(mute.label).toBe("Mute while hidden");
+    expect(mute.options?.map((o) => o.value)).toEqual(["off", "on"]);
     expect(fetchesData(placement)).toBe(false);
   });
 

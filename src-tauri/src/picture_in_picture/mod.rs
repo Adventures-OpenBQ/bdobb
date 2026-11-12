@@ -11,7 +11,7 @@ mod logic;
 #[cfg(target_os = "macos")]
 mod ax;
 
-use logic::{MuteState, Rect, Status};
+use logic::{MuteState, MuteTarget, Rect, Status};
 
 #[cfg(not(target_os = "macos"))]
 fn unsupported() -> MuteState {
@@ -19,12 +19,17 @@ fn unsupported() -> MuteState {
 }
 
 #[tauri::command]
-pub async fn picture_in_picture_fit(window: tauri::WebviewWindow, card: String, rect: Rect) -> Status {
+pub async fn picture_in_picture_fit(
+    window: tauri::WebviewWindow,
+    card: String,
+    rect: Rect,
+    mute: Option<MuteTarget>,
+) -> Status {
     #[cfg(target_os = "macos")]
-    return native::fit(&window, &card, rect);
+    return native::fit(&window, &card, rect, mute);
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = (window, card, rect);
+        let _ = (window, card, rect, mute);
         Status::NotSupported
     }
 }
@@ -93,7 +98,7 @@ mod native {
 
     use super::ax::{AxSlider, AxWindow};
     use super::ax::blur_inputs;
-    use super::logic::{should_park_on_blur, Mute, MuteState, Placement, Rect, Status};
+    use super::logic::{should_park_on_blur, Mute, MuteState, MuteTarget, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -127,17 +132,21 @@ mod native {
         Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
     }
 
-    /// Runs `f` on the placement, then restores the volume if it handed the player
-    /// back, whatever the path. The placement lock is dropped first.
+    /// Runs `f` on the placement, then carries out the volume change it calls
+    /// for: a restore if it handed the player back, whatever the path; a mute
+    /// or its undoing if it parked or un-parked a hidden player. The
+    /// placement lock is dropped first.
     fn placement_and_volume<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
-        let (result, handed_back) = placement(|p| (f(p), p.take_handed_back()));
+        let (result, handed_back, action) = placement(|p| (f(p), p.take_handed_back(), p.take_volume_action()));
         if handed_back {
             mute(|m| m.restore());
+        } else if let Some(action) = action {
+            mute(|m| m.apply(action));
         }
         result
     }
 
-    pub fn fit(window: &WebviewWindow, card: &str, rect: Rect) -> Status {
+    pub fn fit(window: &WebviewWindow, card: &str, rect: Rect, target: Option<MuteTarget>) -> Status {
         if window.label() != MAIN {
             return Status::ViewerWindow;
         }
@@ -149,7 +158,10 @@ mod native {
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
-        placement_and_volume(|p| p.fit(card, rect, origin))
+        placement_and_volume(|p| {
+            p.set_mute_target(target);
+            p.fit(card, rect, origin)
+        })
     }
 
     pub fn park(card: &str, menu: bool) -> Status {

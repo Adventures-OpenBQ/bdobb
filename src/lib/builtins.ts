@@ -154,6 +154,16 @@ export const BUILTIN_WIDGETS: WidgetDef[] = [
         value: DEFAULT_VOLUME_LABEL,
         description: "What the site calls its volume slider. Change it only if the site renames the control.",
       },
+      {
+        paramName: "muteWhileHidden",
+        label: "Mute while hidden",
+        value: "off",
+        options: [
+          { label: "Off", value: "off" },
+          { label: "On", value: "on" },
+        ],
+        description: "Silences the player while it is hidden (the card is out of view, or BDOBB is minimised or not in front) and restores the volume when it returns.",
+      },
     ],
   },
   {

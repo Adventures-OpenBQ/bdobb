@@ -6,6 +6,7 @@ import {
   cancelScheduledRelease,
   enqueuePlayerOp,
   fitPlayer,
+  muteWhileHidden,
   openAccessibilitySettings,
   parkNow,
   pipPlatform,
@@ -47,14 +48,16 @@ const MESSAGES = {
  * docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md). It is
  * blank on purpose: on the Mac, Chrome's floating player is moved over it.
  */
-export function PictureInPictureRenderer({ cardId }: { cardId: string }) {
+export function PictureInPictureRenderer({ cardId, params = {} }: { cardId: string; params?: Record<string, string> }) {
   const platform = pipPlatform();
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
   if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
-  return <MacPlayer cardId={cardId} />;
+  const { source, label } = pipSettings(params);
+  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} />;
 }
 
-function MacPlayer({ cardId }: { cardId: string }) {
+/** `muteSource` is undefined unless "Mute while hidden" is on. */
+function MacPlayer({ cardId, muteSource, muteLabel }: { cardId: string; muteSource?: string; muteLabel: string }) {
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
 
@@ -65,6 +68,7 @@ function MacPlayer({ cardId }: { cardId: string }) {
     let visible = true;
     let busy = false;
     let sent: CssRect | null = null;
+    const mute = muteSource === undefined ? undefined : { source: muteSource, label: muteLabel };
     // A remount of this card inside the grace period keeps the player.
     cancelScheduledRelease(cardId);
     const measure = (): CssRect => {
@@ -75,7 +79,7 @@ function MacPlayer({ cardId }: { cardId: string }) {
       busy = true;
       sent = rect;
       enqueuePlayerOp(cardId, () =>
-        fitPlayer(cardId, rect)
+        fitPlayer(cardId, rect, mute)
           .then(
             (next) => alive && setStatus(next),
             (err: unknown) => alive && setStatus({ state: "failed", reason: String(err) }),
@@ -119,7 +123,7 @@ function MacPlayer({ cardId }: { cardId: string }) {
       observer?.disconnect();
       scheduleLeave(cardId, dashboardData);
     };
-  }, [cardId]);
+  }, [cardId, muteSource, muteLabel]);
 
   return (
     <div ref={body} className="picture-in-picture" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>

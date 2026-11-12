@@ -39,6 +39,9 @@ export function pipSettings(params: Record<string, string>): { source: string; l
   };
 }
 
+/** The "Mute while hidden" setting: an on/off choice, off unless the card says "on". */
+export const muteWhileHidden = (params: Record<string, string>): boolean => params.muteWhileHidden === "on";
+
 /** Whole-pixel equality: sub-pixel jitter is no reason to move the player. */
 export function sameRect(a: CssRect, b: CssRect): boolean {
   return (
@@ -49,7 +52,11 @@ export function sameRect(a: CssRect, b: CssRect): boolean {
   );
 }
 
-export const fitPlayer = (card: string, rect: CssRect) => invoke<PipStatus>("picture_in_picture_fit", { card, rect });
+/** Where the page's volume slider is, sent only when "Mute while hidden" is on. */
+export type MuteTarget = { source: string; label: string };
+
+export const fitPlayer = (card: string, rect: CssRect, mute?: MuteTarget) =>
+  invoke<PipStatus>("picture_in_picture_fit", { card, rect, mute });
 /** The card is hidden (`menu` false) or its own menu is open (`menu` true): the player moves off screen, still held. */
 export const parkPlayer = (card: string, menu: boolean) => invoke<PipStatus>("picture_in_picture_park", { card, menu });
 export const releasePlayer = (card: string) => invoke<void>("picture_in_picture_release", { card });

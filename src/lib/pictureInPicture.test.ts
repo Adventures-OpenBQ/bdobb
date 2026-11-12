@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { tauri } = vi.hoisted(() => ({ tauri: { on: true } }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: () => tauri.on }));
 
-import { pipPlatform, pipSettings, sameRect } from "./pictureInPicture";
+import { muteWhileHidden, pipPlatform, pipSettings, sameRect } from "./pictureInPicture";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -36,6 +36,15 @@ describe("pipSettings", () => {
     expect(pipSettings({})).toEqual({ source: "", label: "Volume Level" });
     expect(pipSettings({ source: "  ", volumeLabel: "" })).toEqual({ source: "", label: "Volume Level" });
     expect(pipSettings({ source: " Live TV ", volumeLabel: "Volume" })).toEqual({ source: "Live TV", label: "Volume" });
+  });
+});
+
+describe("muteWhileHidden", () => {
+  it("is off unless the card says on", () => {
+    expect(muteWhileHidden({})).toBe(false);
+    expect(muteWhileHidden({ muteWhileHidden: "off" })).toBe(false);
+    expect(muteWhileHidden({ muteWhileHidden: "" })).toBe(false);
+    expect(muteWhileHidden({ muteWhileHidden: "on" })).toBe(true);
   });
 });
 

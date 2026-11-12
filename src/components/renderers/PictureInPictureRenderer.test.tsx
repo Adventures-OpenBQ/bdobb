@@ -96,6 +96,34 @@ describe("Picture in Picture on the macOS desktop app", () => {
     expect(container.querySelector(".empty-state")).toBeNull();
   });
 
+  it("sends where the volume slider is only when Mute while hidden is on", async () => {
+    answer({ state: "fitted" });
+    render(<PictureInPictureRenderer cardId="c1" params={{ muteWhileHidden: "on", source: "Live TV", volumeLabel: "Vol" }} />);
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith("picture_in_picture_fit", {
+        card: "c1",
+        rect: expect.anything(),
+        mute: { source: "Live TV", label: "Vol" },
+      }),
+    );
+    cleanup();
+    invoke.mockClear();
+    render(<PictureInPictureRenderer cardId="c2" params={{ muteWhileHidden: "off", source: "Live TV" }} />);
+    await waitFor(fitCall);
+    for (const [cmd, args] of invoke.mock.calls) if (cmd === "picture_in_picture_fit") expect(args).not.toHaveProperty("mute", expect.anything());
+  });
+
+  it("fits again with the new setting when Mute while hidden changes", async () => {
+    answer({ state: "fitted" });
+    const { rerender } = render(<PictureInPictureRenderer cardId="c1" params={{ muteWhileHidden: "off" }} />);
+    await waitFor(fitCall);
+    invoke.mockClear();
+    rerender(<PictureInPictureRenderer cardId="c1" params={{ muteWhileHidden: "on" }} />);
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith("picture_in_picture_fit", expect.objectContaining({ mute: { source: "", label: "Volume Level" } })),
+    );
+  });
+
   it("shows a failure with its reason", async () => {
     answer({ state: "failed", reason: "Accessibility refused AXSize (error -25200)" });
     render(<PictureInPictureRenderer cardId="c1" />);

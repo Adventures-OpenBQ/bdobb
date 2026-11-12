@@ -45,6 +45,22 @@ pub enum Status {
     Failed { reason: String },
 }
 
+/// Where to find the page's volume slider; present when "Mute while hidden" is on.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+pub struct MuteTarget {
+    pub source: String,
+    pub label: String,
+}
+
+/// What the volume needs after a change of the placement.
+#[derive(Clone, Debug, PartialEq)]
+pub enum VolumeAction {
+    /// Step the volume to 0 because the player was hidden.
+    Hide(MuteTarget),
+    /// Undo the hide's mute, if it was the hide that muted.
+    Unhide,
+}
+
 /// One call on the player window.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Op {
@@ -153,13 +169,17 @@ pub struct Placement<W> {
     away: bool,
     /// The player is physically off screen.
     parked: bool,
+    /// "Mute while hidden", from the last fit.
+    mute: Option<MuteTarget>,
+    /// The volume has been told to hide-mute and not yet to undo it.
+    hide_muted: bool,
     /// Set whenever a held player is given back, for whatever reason; read by `take_handed_back`.
     handed_back: bool,
 }
 
 impl<W: PlayerWindow> Placement<W> {
     pub fn new(window: W) -> Self {
-        Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, parked: false, handed_back: false }
+        Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, parked: false, mute: None, hide_muted: false, handed_back: false }
     }
 
     /// True once since the last call if a held player was handed back (a release, a
@@ -167,6 +187,24 @@ impl<W: PlayerWindow> Placement<W> {
     /// then, so "player handed back" and "mute restored" cannot drift apart.
     pub fn take_handed_back(&mut self) -> bool {
         std::mem::take(&mut self.handed_back)
+    }
+
+    /// "Mute while hidden": set before a fit with the card's setting, None when it is off.
+    pub fn set_mute_target(&mut self, target: Option<MuteTarget>) {
+        self.mute = target;
+    }
+
+    /// The volume change the placement now calls for, once. Hidden (scrolled
+    /// out, another dashboard or tab) and away (minimised, not in front)
+    /// mute; the card's own menu does not.
+    pub fn take_volume_action(&mut self) -> Option<VolumeAction> {
+        let want = self.parked && (self.hidden || self.away);
+        let target = self.mute.clone().filter(|_| want);
+        if target.is_some() == self.hide_muted {
+            return None;
+        }
+        self.hide_muted = target.is_some();
+        Some(target.map_or(VolumeAction::Unhide, VolumeAction::Hide))
     }
 
     /// Parked, or about to be: a card asking to fit may take such a hold over.
@@ -377,11 +415,13 @@ struct Recorded {
 pub struct Mute<V> {
     slider: V,
     recorded: Option<Recorded>,
+    /// BDOBB's hide, not the user, muted it, and has not yet undone that.
+    hide_muted: bool,
 }
 
 impl<V: VolumeSlider> Mute<V> {
     pub fn new(slider: V) -> Self {
-        Self { slider, recorded: None }
+        Self { slider, recorded: None, hide_muted: false }
     }
 
     /// A level recorded for another tab or slider must never be replayed here.
@@ -450,8 +490,35 @@ impl<V: VolumeSlider> Mute<V> {
         }
     }
 
+    pub fn apply(&mut self, action: VolumeAction) {
+        match action {
+            VolumeAction::Hide(target) => self.hide(&target.source, &target.label),
+            VolumeAction::Unhide => self.unhide(),
+        }
+    }
+
+    /// Mutes for a hidden player, unless it is already silent: a player the
+    /// user muted stays muted when it comes back.
+    fn hide(&mut self, source: &str, label: &str) {
+        if self.hide_muted {
+            return;
+        }
+        self.forget_other(source, label);
+        if self.slider.level(source, label).is_ok_and(|level| level > 0) && self.set(source, label, true) == MuteState::Muted {
+            self.hide_muted = true;
+        }
+    }
+
+    /// Undoes the hide's mute, and only that.
+    fn unhide(&mut self) {
+        if std::mem::take(&mut self.hide_muted) {
+            self.restore();
+        }
+    }
+
     /// Steps back to the recorded level if BDOBB muted it (spec, Flow 4).
     pub fn restore(&mut self) {
+        self.hide_muted = false;
         let Some(recorded) = self.recorded.take() else { return };
         if let Ok(level) = self.slider.level(&recorded.source, &recorded.label) {
             // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
@@ -955,6 +1022,134 @@ mod tests {
         mute.set(SRC, LABEL, true);
         mute.restore();
         assert_eq!(mute.slider.settles, vec![0, 60]);
+    }
+
+    fn target() -> MuteTarget {
+        MuteTarget { source: SRC.into(), label: LABEL.into() }
+    }
+
+    /// What the native side does after every change: carries out the volume action the placement asks for.
+    fn drive(placement: &mut Placement<FakeWindow>, mute: &mut Mute<FakeSlider>) {
+        if let Some(action) = placement.take_volume_action() {
+            mute.apply(action);
+        }
+    }
+
+    fn held_with_mute(level: u8, on: bool) -> (Placement<FakeWindow>, Mute<FakeSlider>) {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.set_mute_target(on.then(target));
+        let mut mute = Mute::new(FakeSlider::at(level));
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        (placement, mute)
+    }
+
+    #[test]
+    fn hiding_mutes_and_coming_back_restores_the_level() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        assert_eq!(mute.slider.level, 70);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 0);
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.slider.steps, vec![(false, 7), (true, 7)]);
+    }
+
+    #[test]
+    fn hiding_again_while_hidden_mutes_once() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        placement.park("a", false);
+        placement.set_away(true, Some(ORIGIN));
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.steps, vec![(false, 7)]);
+    }
+
+    #[test]
+    fn a_player_the_user_already_muted_stays_muted_on_return() {
+        let (mut placement, mut mute) = held_with_mute(0, true);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 0);
+        assert!(mute.slider.steps.is_empty());
+    }
+
+    #[test]
+    fn a_volume_the_user_raised_while_hidden_is_left_alone_on_return() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        mute.slider.level = 40;
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 40);
+    }
+
+    #[test]
+    fn the_cards_menu_parks_without_muting() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.park("a", true);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+        assert!(mute.slider.steps.is_empty());
+        // Hiding on top of the menu does mute, and closing the menu alone does not unmute.
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 0);
+    }
+
+    #[test]
+    fn with_the_setting_off_nothing_is_muted() {
+        let (mut placement, mut mute) = held_with_mute(70, false);
+        placement.park("a", false);
+        placement.set_away(true, Some(ORIGIN));
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+        assert!(mute.slider.steps.is_empty());
+    }
+
+    #[test]
+    fn the_app_going_away_mutes_and_coming_back_restores() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.set_away(true, Some(ORIGIN));
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 0);
+        placement.set_away(false, Some(ORIGIN));
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+    }
+
+    #[test]
+    fn handing_the_player_back_while_hidden_also_hands_back_the_volume() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        placement.release("a");
+        assert!(placement.take_handed_back());
+        // The native side restores on a hand-back; the hide bookkeeping then has nothing left to undo.
+        mute.restore();
+        assert_eq!(placement.take_volume_action(), Some(VolumeAction::Unhide));
+        mute.apply(VolumeAction::Unhide);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.slider.steps, vec![(false, 7), (true, 7)]);
+    }
+
+    #[test]
+    fn a_slider_that_cannot_be_read_when_hiding_leaves_nothing_to_restore() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        mute.slider.broken = Some("No slider".into());
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        mute.slider.broken = None;
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+        assert!(mute.slider.steps.is_empty());
     }
 
     #[test]
