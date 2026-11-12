@@ -221,9 +221,10 @@ describe("Picture in Picture on the macOS desktop app", () => {
     render(<PictureInPictureMute params={{ source: "Live TV", volumeLabel: "Volume" }} />);
     const button = await screen.findByRole("button", { name: "Mute" });
     await waitFor(() => expect(button).toHaveAttribute("title", "Mute"));
-    expect(invoke).toHaveBeenCalledWith("picture_in_picture_mute_state", { source: "Live TV", label: "Volume" });
     await userEvent.click(button);
     expect(invoke).toHaveBeenCalledWith("picture_in_picture_set_muted", { source: "Live TV", label: "Volume", muted: true });
+    // The click starts the polling.
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_mute_state", { source: "Live TV", label: "Volume" }));
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
     await userEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
@@ -254,7 +255,7 @@ describe("Picture in Picture on the macOS desktop app", () => {
 
   it("shows an unavailable mute with its reason and does nothing on click", async () => {
     answer({ state: "fitted" }, { state: "unavailable", reason: "Select the stream's tab in its window." });
-    render(<PictureInPictureMute params={{}} />);
+    render(<PictureInPictureMute params={{ muteWhileHidden: "on" }} />);
     const button = await screen.findByRole("button", { name: "Mute" });
     await waitFor(() => expect(button).toHaveAttribute("title", "Select the stream's tab in its window."));
     expect(button).toHaveAttribute("aria-disabled", "true");
@@ -262,6 +263,41 @@ describe("Picture in Picture on the macOS desktop app", () => {
     expect(button).toHaveStyle({ opacity: "0.45" });
     await userEvent.click(button);
     expect(invoke).not.toHaveBeenCalledWith("picture_in_picture_set_muted", expect.anything());
+  });
+
+  const muteStateCalls = () => invoke.mock.calls.filter(([cmd]) => cmd === "picture_in_picture_mute_state").length;
+
+  it("does not read the volume until the Mute button is clicked, with Mute while hidden off", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      answer({ state: "fitted" });
+      render(<PictureInPictureMute params={{ muteWhileHidden: "off" }} />);
+      const button = screen.getByRole("button", { name: "Mute" });
+      // Sound on and enabled before anything has been read.
+      expect(button).toHaveAttribute("aria-disabled", "false");
+      expect(button).toHaveAttribute("title", "Mute");
+      expect(button).not.toHaveStyle({ opacity: "0.45" });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect(muteStateCalls()).toBe(0);
+      await userEvent.click(button);
+      expect(invoke).toHaveBeenCalledWith("picture_in_picture_set_muted", expect.objectContaining({ muted: true }));
+      await waitFor(() => expect(muteStateCalls()).toBeGreaterThan(0));
+      const after = muteStateCalls();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3100);
+      });
+      expect(muteStateCalls()).toBeGreaterThan(after);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("reads the volume from mount when Mute while hidden is on", async () => {
+    answer({ state: "fitted" });
+    render(<PictureInPictureMute params={{ muteWhileHidden: "on" }} />);
+    await waitFor(() => expect(muteStateCalls()).toBeGreaterThan(0));
   });
 
   it("is not dimmed while the mute is available", async () => {

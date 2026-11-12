@@ -290,16 +290,24 @@ function PipMessage({ status }: { status: PipStatus | null }) {
 export function PictureInPictureMute({ params }: { params: Record<string, string> }) {
   if (pipPlatform() !== "macos") return null;
   const { source, label } = pipSettings(params);
-  return <MuteButton source={source} label={label} />;
+  return <MuteButton source={source} label={label} eager={muteWhileHidden(params)} />;
 }
 
-function MuteButton({ source, label }: { source: string; label: string }) {
+/**
+ * Reading the volume makes the native side search Chrome, so nothing is read
+ * until Mute is wanted: after the first click on this mount, or from mount
+ * when `eager` (Mute while hidden is on).
+ */
+function MuteButton({ source, label, eager }: { source: string; label: string; eager: boolean }) {
   const [mute, setMute] = useState<MuteState | null>(null);
   // A click is ignored until the native call answers: two in flight would step the slider twice.
   const [pending, setPending] = useState(false);
   const inFlight = useRef(false);
+  const [clicked, setClicked] = useState(false);
+  const polling = clicked || eager;
 
   useEffect(() => {
+    if (!polling) return;
     let alive = true;
     const read = () =>
       void readMuteState(source, label).then(
@@ -312,10 +320,10 @@ function MuteButton({ source, label }: { source: string; label: string }) {
       alive = false;
       clearInterval(timer);
     };
-  }, [source, label]);
+  }, [source, label, polling]);
 
   const muted = mute?.state === "muted";
-  const reason = mute === null ? "Reading the volume…" : mute.state === "unavailable" ? mute.reason : undefined;
+  const reason = mute === null ? (polling ? "Reading the volume…" : undefined) : mute.state === "unavailable" ? mute.reason : undefined;
   return (
     <button
       type="button"
@@ -333,6 +341,7 @@ function MuteButton({ source, label }: { source: string; label: string }) {
         if (reason !== undefined || inFlight.current) return;
         inFlight.current = true;
         setPending(true);
+        setClicked(true);
         void setPlayerMuted(source, label, !muted)
           .then(setMute, (err: unknown) => setMute({ state: "unavailable", reason: String(err) }))
           .finally(() => {
