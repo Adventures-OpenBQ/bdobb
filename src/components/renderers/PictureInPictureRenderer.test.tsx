@@ -539,4 +539,25 @@ describe("the card's height follows its width", () => {
     await settle();
     expect(writes).toHaveLength(0);
   });
+
+  it("writes nothing inside a zoomed workspace grid", async () => {
+    place({ x: 0, y: 0, w: 20, h: 30 });
+    render(
+      <div className="workspace-grid" data-zoom="80">
+        {mounted()}
+      </div>,
+    );
+    await settle();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("snaps inside a workspace grid at full size", async () => {
+    place({ x: 0, y: 0, w: 20, h: 30 });
+    render(
+      <div className="workspace-grid" data-zoom="100">
+        {mounted()}
+      </div>,
+    );
+    await waitFor(() => expect(writes).toHaveLength(1));
+  });
 });

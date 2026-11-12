@@ -110,6 +110,9 @@ function MacPlayer({
       const card = cardIn(state, cardId);
       // A maximized card is as wide as the screen, not as wide as its grid cell.
       if (!el || !cardEl || !card || state.maximizedCardId === cardId) return;
+      // A zoomed workspace grid measures zoomed pixels against unzoomed rows.
+      const zoom = cardEl.closest(".workspace-grid")?.getAttribute("data-zoom");
+      if (zoom !== null && zoom !== undefined && zoom !== "100") return;
       const b = el.getBoundingClientRect();
       const rows = rowsForPlayer({
         bodyWidth: b.width,
