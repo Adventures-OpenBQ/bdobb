@@ -27,6 +27,9 @@ const SETTINGS_URL: &str = "x-apple.systempreferences:com.apple.preference.secur
 const SEARCH_LIMIT: usize = 20_000;
 /// After a failed search (about 150 ms each), repeat its reason this long instead of searching again.
 const SEARCH_COOLDOWN: Duration = Duration::from_secs(5);
+/// After stepping the slider, how long and how often to wait for it to read the target.
+const SETTLE_TIMEOUT: Duration = Duration::from_millis(500);
+const SETTLE_POLL: Duration = Duration::from_millis(25);
 
 type CFTypeRef = *const c_void;
 const UTF8: u32 = 0x0800_0100; // kCFStringEncodingUTF8
@@ -387,6 +390,7 @@ impl VolumeSlider for AxSlider {
         let slider = self.element(source, label)?;
         let raw = attr(slider, "AXValue").ok_or("the volume slider has no value")?;
         number(raw.0)
+            .filter(|n| *n >= 0.0)
             .map(|n| n.round().clamp(0.0, 100.0) as u8)
             .or_else(|| string(raw.0).and_then(|s| parse_percent(&s)))
             .ok_or_else(|| "the volume slider's value is not a percentage".to_string())
@@ -403,6 +407,16 @@ impl VolumeSlider for AxSlider {
             }
         }
         Ok(())
+    }
+
+    fn settle(&mut self, source: &str, label: &str, target: u8) {
+        let deadline = Instant::now() + SETTLE_TIMEOUT;
+        while Instant::now() < deadline {
+            if self.level(source, label).is_ok_and(|level| level == target) {
+                return;
+            }
+            std::thread::sleep(SETTLE_POLL);
+        }
     }
 }
 

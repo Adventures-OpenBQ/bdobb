@@ -231,14 +231,29 @@ pub fn steps(from: u8, to: u8) -> u32 {
 
 /// The slider's value as Chrome reports it ("100%"), as a whole percent.
 pub fn parse_percent(text: &str) -> Option<u8> {
-    let value: f64 = text.trim().trim_end_matches('%').trim().parse().ok()?;
-    value.is_finite().then(|| value.round().clamp(0.0, 100.0) as u8)
+    let digits = text.trim().strip_suffix('%').unwrap_or(text.trim()).trim();
+    // Digits and one optional point only: no sign, exponent, NaN or second %.
+    if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit() || c == '.') {
+        return None;
+    }
+    let value: f64 = digits.parse().ok()?;
+    Some(value.round().clamp(0.0, 100.0) as u8)
 }
 
 /// The volume slider in the stream's tab, behind whatever reaches it.
 pub trait VolumeSlider {
     fn level(&mut self, source: &str, label: &str) -> Result<u8, String>;
     fn step(&mut self, source: &str, label: &str, up: bool, count: u32) -> Result<(), String>;
+    /// Returns once the slider reads `target`, or a short timeout has passed, so
+    /// that a read straight after a step never sees a half-applied volume.
+    fn settle(&mut self, source: &str, label: &str, target: u8);
+}
+
+/// Where `count` whole steps from `level` land.
+fn landing(level: u8, up: bool, count: u32) -> u8 {
+    let moved = u32::from(STEP_PERCENT) * count;
+    let level = u32::from(level);
+    (if up { (level + moved).min(100) } else { level.saturating_sub(moved) }) as u8
 }
 
 struct Recorded {
@@ -260,7 +275,22 @@ impl<V: VolumeSlider> Mute<V> {
         Self { slider, recorded: None }
     }
 
+    /// A level recorded for another tab or slider must never be replayed here.
+    fn forget_other(&mut self, source: &str, label: &str) {
+        if self.recorded.as_ref().is_some_and(|r| r.source != source || r.label != label) {
+            self.recorded = None;
+        }
+    }
+
+    /// One step run, then the wait for the slider to land.
+    fn step_and_settle(&mut self, source: &str, label: &str, level: u8, up: bool, count: u32) -> Result<(), String> {
+        self.slider.step(source, label, up, count)?;
+        self.slider.settle(source, label, landing(level, up, count));
+        Ok(())
+    }
+
     pub fn state(&mut self, source: &str, label: &str) -> MuteState {
+        self.forget_other(source, label);
         match self.slider.level(source, label) {
             Err(reason) => MuteState::Unavailable { reason },
             Ok(0) => MuteState::Muted,
@@ -277,6 +307,7 @@ impl<V: VolumeSlider> Mute<V> {
     /// it back up" and lose the recorded level. The card's next poll reads
     /// the real value.
     pub fn set(&mut self, source: &str, label: &str, muted: bool) -> MuteState {
+        self.forget_other(source, label);
         let level = match self.slider.level(source, label) {
             Ok(level) => level,
             Err(reason) => return MuteState::Unavailable { reason },
@@ -285,8 +316,12 @@ impl<V: VolumeSlider> Mute<V> {
             if level == 0 {
                 Ok(())
             } else {
-                self.recorded = Some(Recorded { source: source.to_owned(), label: label.to_owned(), level });
-                self.slider.step(source, label, false, steps(level, 0))
+                // Recorded only once the step-down has worked.
+                let done = self.step_and_settle(source, label, level, false, steps(level, 0));
+                if done.is_ok() {
+                    self.recorded = Some(Recorded { source: source.to_owned(), label: label.to_owned(), level });
+                }
+                done
             }
         } else {
             // Already audible: the user raised it in the player since BDOBB muted, so
@@ -296,7 +331,7 @@ impl<V: VolumeSlider> Mute<V> {
                 Ok(())
             } else {
                 let to = recorded.map_or(FULL_VOLUME, |r| r.level);
-                self.slider.step(source, label, true, steps(level, to))
+                self.step_and_settle(source, label, level, true, steps(level, to))
             }
         };
         match stepped {
@@ -312,7 +347,7 @@ impl<V: VolumeSlider> Mute<V> {
         if let Ok(level) = self.slider.level(&recorded.source, &recorded.label) {
             // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
             if level == 0 {
-                let _ = self.slider.step(&recorded.source, &recorded.label, true, steps(level, recorded.level));
+                let _ = self.step_and_settle(&recorded.source, &recorded.label, level, true, steps(level, recorded.level));
             }
         }
     }
@@ -538,11 +573,14 @@ mod tests {
         level: u8,
         broken: Option<String>,
         steps: Vec<(bool, u32)>,
+        settles: Vec<u8>,
+        log: Vec<&'static str>,
+        step_fails: bool,
     }
 
     impl FakeSlider {
         fn at(level: u8) -> Self {
-            Self { level, broken: None, steps: Vec::new() }
+            Self { level, broken: None, steps: Vec::new(), settles: Vec::new(), log: Vec::new(), step_fails: false }
         }
     }
 
@@ -551,12 +589,20 @@ mod tests {
             self.broken.clone().map_or(Ok(self.level), Err)
         }
         fn step(&mut self, _source: &str, _label: &str, up: bool, count: u32) -> Result<(), String> {
+            if self.step_fails {
+                return Err("refused".into());
+            }
+            self.log.push("step");
             self.steps.push((up, count));
             let moved = u32::from(STEP_PERCENT) * count;
             let level = u32::from(self.level);
             let next = if up { (level + moved).min(100) } else { level.saturating_sub(moved) };
             self.level = next as u8;
             Ok(())
+        }
+        fn settle(&mut self, _source: &str, _label: &str, target: u8) {
+            self.log.push("settle");
+            self.settles.push(target);
         }
     }
 
@@ -580,6 +626,9 @@ mod tests {
         assert_eq!(parse_percent("abc"), None);
         assert_eq!(parse_percent(""), None);
         assert_eq!(parse_percent("NaN%"), None);
+        assert_eq!(parse_percent("-5%"), None);
+        assert_eq!(parse_percent("5%%"), None);
+        assert_eq!(parse_percent("1e2%"), None);
     }
 
     #[test]
@@ -600,6 +649,71 @@ mod tests {
         assert_eq!(mute.slider.level, 0);
         mute.set(SRC, LABEL, false);
         assert_eq!(mute.slider.level, 100);
+    }
+
+    #[test]
+    fn mute_waits_for_the_slider_to_reach_the_level_it_stepped_to() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        mute.set(SRC, LABEL, true);
+        assert_eq!(mute.slider.settles, vec![0]);
+        assert_eq!(mute.slider.log, vec!["step", "settle"]);
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.settles, vec![0, 70]);
+        assert_eq!(mute.slider.log, vec!["step", "settle", "step", "settle"]);
+    }
+
+    #[test]
+    fn the_settle_target_is_where_whole_steps_land() {
+        let mut mute = Mute::new(FakeSlider::at(95));
+        mute.set(SRC, LABEL, true);
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.settles, vec![0, 100]);
+    }
+
+    #[test]
+    fn nothing_is_settled_when_nothing_was_stepped() {
+        let mut mute = Mute::new(FakeSlider::at(0));
+        mute.set(SRC, LABEL, true);
+        let mut mute2 = Mute::new(FakeSlider::at(40));
+        mute2.set(SRC, LABEL, false);
+        assert!(mute.slider.settles.is_empty() && mute2.slider.settles.is_empty());
+    }
+
+    #[test]
+    fn restore_also_waits_for_the_slider() {
+        let mut mute = Mute::new(FakeSlider::at(60));
+        mute.set(SRC, LABEL, true);
+        mute.restore();
+        assert_eq!(mute.slider.settles, vec![0, 60]);
+    }
+
+    #[test]
+    fn a_failed_step_down_records_no_level() {
+        let mut slider = FakeSlider::at(70);
+        slider.step_fails = true;
+        let mut mute = Mute::new(slider);
+        assert_eq!(mute.set(SRC, LABEL, true), MuteState::Unavailable { reason: "refused".into() });
+        assert!(mute.slider.settles.is_empty());
+        // The user silences it themselves; Unmute must not replay the 70.
+        mute.slider.step_fails = false;
+        mute.slider.level = 0;
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.steps, vec![(true, 10)]);
+    }
+
+    #[test]
+    fn a_changed_source_or_label_forgets_the_recorded_level() {
+        for (source, label) in [("Bloomberg", LABEL), (SRC, "Volume")] {
+            let mut mute = Mute::new(FakeSlider::at(70));
+            mute.set(SRC, LABEL, true);
+            assert_eq!(mute.state(source, label), MuteState::Muted);
+            mute.set(source, label, false);
+            assert_eq!(mute.slider.steps.last(), Some(&(true, 10)), "{source}/{label}");
+        }
+        let mut mute = Mute::new(FakeSlider::at(70));
+        mute.set(SRC, LABEL, true);
+        mute.set("Bloomberg", LABEL, false);
+        assert_eq!(mute.slider.steps.last(), Some(&(true, 10)));
     }
 
     #[test]

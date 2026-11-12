@@ -115,6 +115,24 @@ describe("Window Portal on the macOS desktop app", () => {
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
   });
 
+  it("ignores a second click while the first mute call is in flight", async () => {
+    let finish: (state: MuteState) => void = () => undefined;
+    invoke.mockImplementation((cmd: string) =>
+      cmd === "window_portal_set_muted"
+        ? new Promise<MuteState>((resolve) => (finish = resolve))
+        : Promise.resolve({ state: "sound" }),
+    );
+    render(<WindowPortalMute params={{}} />);
+    const button = await screen.findByRole("button", { name: "Mute" });
+    await waitFor(() => expect(button).toHaveAttribute("title", "Mute"));
+    await userEvent.dblClick(button);
+    expect(invoke.mock.calls.filter(([cmd]) => cmd === "window_portal_set_muted")).toHaveLength(1);
+    expect(button).toBeDisabled();
+    finish({ state: "muted" });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows an unavailable mute with its reason and does nothing on click", async () => {
     answer({ state: "fitted" }, { state: "unavailable", reason: "Select the stream's tab in its window." });
     render(<WindowPortalMute params={{}} />);

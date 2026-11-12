@@ -148,6 +148,9 @@ export function WindowPortalMute({ params }: { params: Record<string, string> })
 
 function MuteButton({ source, label }: { source: string; label: string }) {
   const [mute, setMute] = useState<MuteState | null>(null);
+  // A click is ignored until the native call answers: two in flight would step the slider twice.
+  const [pending, setPending] = useState(false);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -175,12 +178,18 @@ function MuteButton({ source, label }: { source: string; label: string }) {
       aria-pressed={muted}
       // aria-disabled, not disabled: a disabled button shows no tooltip, and the reason is the point.
       aria-disabled={reason !== undefined}
+      disabled={pending}
       title={reason ?? (muted ? "Unmute" : "Mute")}
       onClick={() => {
-        if (reason !== undefined) return;
-        void setPlayerMuted(source, label, !muted).then(setMute, (err: unknown) =>
-          setMute({ state: "unavailable", reason: String(err) }),
-        );
+        if (reason !== undefined || inFlight.current) return;
+        inFlight.current = true;
+        setPending(true);
+        void setPlayerMuted(source, label, !muted)
+          .then(setMute, (err: unknown) => setMute({ state: "unavailable", reason: String(err) }))
+          .finally(() => {
+            inFlight.current = false;
+            setPending(false);
+          });
       }}
     >
       {muted ? "🔇" : "🔊"}
