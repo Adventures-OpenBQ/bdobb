@@ -160,6 +160,21 @@ describe("Picture in Picture on the macOS desktop app", () => {
     await waitFor(() => expect(fits()).toBe(before + 1));
   });
 
+  it("parks while the card's menu is open and fits again when it closes", async () => {
+    answer({ state: "fitted" });
+    const { rerender } = render(<PictureInPictureRenderer cardId="c1" menuOpen={false} />);
+    await waitFor(fitCall);
+    invoke.mockClear();
+    rerender(<PictureInPictureRenderer cardId="c1" menuOpen />);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: true }));
+    // Nothing fits, and nothing is released, while the menu is open.
+    await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 50));
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park"]);
+    rerender(<PictureInPictureRenderer cardId="c1" menuOpen={false} />);
+    await waitFor(fitCall);
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
+  });
+
   it("shows nothing once the player is parked", async () => {
     answer({ state: "parked" });
     const { container } = render(<PictureInPictureRenderer cardId="c1" />);

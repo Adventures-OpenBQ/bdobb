@@ -48,16 +48,35 @@ const MESSAGES = {
  * docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md). It is
  * blank on purpose: on the Mac, Chrome's floating player is moved over it.
  */
-export function PictureInPictureRenderer({ cardId, params = {} }: { cardId: string; params?: Record<string, string> }) {
+export function PictureInPictureRenderer({
+  cardId,
+  params = {},
+  menuOpen = false,
+}: {
+  cardId: string;
+  params?: Record<string, string>;
+  /** The card's own header menu is open: the player steps aside until it closes. */
+  menuOpen?: boolean;
+}) {
   const platform = pipPlatform();
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
   if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
   const { source, label } = pipSettings(params);
-  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} />;
+  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} />;
 }
 
 /** `muteSource` is undefined unless "Mute while hidden" is on. */
-function MacPlayer({ cardId, muteSource, muteLabel }: { cardId: string; muteSource?: string; muteLabel: string }) {
+function MacPlayer({
+  cardId,
+  muteSource,
+  muteLabel,
+  menuOpen,
+}: {
+  cardId: string;
+  muteSource?: string;
+  muteLabel: string;
+  menuOpen: boolean;
+}) {
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
 
@@ -71,6 +90,11 @@ function MacPlayer({ cardId, muteSource, muteLabel }: { cardId: string; muteSour
     const mute = muteSource === undefined ? undefined : { source: muteSource, label: muteLabel };
     // A remount of this card inside the grace period keeps the player.
     cancelScheduledRelease(cardId);
+    // The menu is drawn over the card, and the player would cover it: step aside, fit again on close.
+    if (menuOpen) {
+      parkNow(cardId, true);
+      return () => scheduleLeave(cardId, dashboardData);
+    }
     const measure = (): CssRect => {
       const r = el.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
@@ -123,7 +147,7 @@ function MacPlayer({ cardId, muteSource, muteLabel }: { cardId: string; muteSour
       observer?.disconnect();
       scheduleLeave(cardId, dashboardData);
     };
-  }, [cardId, muteSource, muteLabel]);
+  }, [cardId, muteSource, muteLabel, menuOpen]);
 
   return (
     <div ref={body} className="picture-in-picture" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>
