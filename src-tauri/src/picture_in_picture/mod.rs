@@ -37,22 +37,22 @@ pub async fn picture_in_picture_fit(
 /// The card is hidden (`menu` false) or its own menu is open (`menu` true):
 /// the player moves off screen but stays held.
 #[tauri::command]
-pub async fn picture_in_picture_park(card: String, menu: bool) -> Status {
+pub async fn picture_in_picture_park(window: tauri::WebviewWindow, card: String, menu: bool) -> Status {
     #[cfg(target_os = "macos")]
-    return native::park(&card, menu);
+    return native::park(&window, &card, menu);
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = (card, menu);
+        let _ = (window, card, menu);
         Status::NotSupported
     }
 }
 
 #[tauri::command]
-pub async fn picture_in_picture_release(card: String) {
+pub async fn picture_in_picture_release(window: tauri::WebviewWindow, card: String) {
     #[cfg(target_os = "macos")]
-    native::release(&card);
+    native::release(&window, &card);
     #[cfg(not(target_os = "macos"))]
-    let _ = card;
+    let _ = (window, card);
 }
 
 #[tauri::command]
@@ -243,11 +243,18 @@ mod native {
         placement_and_volume_queued(|p| p.fit_with_mute(card, rect, origin, target))
     }
 
-    pub fn park(card: &str, menu: bool) -> Status {
+    /// A viewer window shows the same card ids and must not move the main window's player.
+    pub fn park(window: &WebviewWindow, card: &str, menu: bool) -> Status {
+        if window.label() != MAIN {
+            return Status::ViewerWindow;
+        }
         placement_and_volume_queued(|p| p.park(card, menu))
     }
 
-    pub fn release(card: &str) {
+    pub fn release(window: &WebviewWindow, card: &str) {
+        if window.label() != MAIN {
+            return;
+        }
         placement_and_volume_queued(|p| p.release(card));
     }
 
