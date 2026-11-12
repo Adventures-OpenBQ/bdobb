@@ -96,6 +96,18 @@ These follow from the player being on top of everything. They were proposed afte
 - Windows, later design. Expected from general knowledge and not checked: Windows lets an app move another app's top-level window without a permission prompt; UI Automation is the counterpart to macOS Accessibility for reaching the page's volume slider; and Windows has per-application volume, which could mute all of Chrome without touching the page. That design starts with its own probe on a Windows PC or VM.
 - To settle when writing the plan: whether the v8 line has a zoom setting that scales the page; whether the new native commands need entries in the generated capabilities; which crate provides the Accessibility bindings.
 
+## Departures settled in the implementation plan
+
+Accepted by the user on 2026-11-12 when the plan was approved. Where these differ from the text above, these govern.
+
+- Cards on the v8 line have no minimum size. A card body smaller than 284 x 160 shows "Make this card at least 284 x 160" and the player is released, instead of the card enforcing a minimum.
+- The controller's "status" operation is folded into "fit", which returns the status. The fifth command opens the Accessibility settings pane for the permission button.
+- The 1388 x 781 maximum is probably a share of the display, so the controller centres the player using the size Chrome actually applies.
+- There is no minimise event. The controller checks whether BDOBB is minimised shortly after it loses focus. Unverified until manual acceptance.
+- The script-in-tab mute fallback is not built, since the slider route worked in the probe.
+- No capability entries are needed, and there is no page zoom to account for.
+- The help guide page must also be added to the help vault's v8.0 snapshot, or the next sync removes it.
+
 ## Testing
 
 - Frontend unit tests: each card state in the table, the built-in card definition, the minimum body size, the iPad reserved space (hint shown, no mute button), and the Windows and web placeholder.
