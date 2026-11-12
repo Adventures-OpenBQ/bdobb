@@ -1764,6 +1764,14 @@ body {
    before the group wraps under the title. */
 .card-params { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 
+/* OpenBB's parameter positioning: a full-width, zero-height item between two
+   rows of chips ends the line. Only the title line draws rows. */
+.card-params-break { display: none; }
+.card-chips .card-params-break { display: block; flex-basis: 100%; height: 0; }
+/* No param on row 0 (the list opens with `[]`): the chips go under the title
+   line instead of beside the name. */
+.card-chips-below { flex-basis: 100%; }
+
 /* Shared with WidgetFormPanel (the form card) and .card-params-panel (the
    Parameters panel): plain, bordered, roomy — the pre-title-bar look. The
    title row's tight chip chrome is layered on top of this, scoped to

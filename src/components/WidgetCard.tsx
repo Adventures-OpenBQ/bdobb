@@ -1413,7 +1413,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             the header itself. */}
         {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
+            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}${widget && visibleParams(widget).every((p) => (p.row ?? 0) > 0) ? " card-chips-below" : ""}`}
           >
             <ParamControls {...controlProps} />
           </div>

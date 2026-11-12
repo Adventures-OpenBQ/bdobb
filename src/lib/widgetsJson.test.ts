@@ -735,7 +735,7 @@ describe("issue reporting", () => {
     expect(result.issues).toEqual([{ id: "w1", reason: "1 malformed params dropped" }]);
   });
 
-  it("flattens OpenBB's organized params, where each section is a nested array", () => {
+  it("reads OpenBB's organized params, where each section is a nested array, as rows", () => {
     // The reference backend's markdown_widget_with_organized_params publishes
     // params this way. Read as a flat list, every section is a non-record and
     // the widget arrives with no controls at all.
@@ -750,13 +750,44 @@ describe("issue reporting", () => {
       },
     };
     const result = normalizeWidgets(raw, "b1");
-    expect(result.widgets[0].params.map((p) => p.paramName)).toEqual([
-      "enable_feature",
-      "selected_date",
-      "analysis_type",
+    // A list that opens with a section numbers its sections from 0, as
+    // Workspace does: the first section shares the title bar.
+    expect(result.widgets[0].params.map((p) => [p.paramName, p.row ?? 0])).toEqual([
+      ["enable_feature", 0],
+      ["selected_date", 1],
+      ["analysis_type", 1],
     ]);
-    // Sectioning is lost -- BDOBB has no param sections -- but nothing is
-    // dropped, so nothing is reported.
+    expect(result.issues).toEqual([]);
+  });
+
+  it("keeps a flat params list on row 0 and records no row at all", () => {
+    const raw = { w1: { name: "One", endpoint: "/a", params: [{ paramName: "a" }, { paramName: "b" }] } };
+    const params = normalizeWidgets(raw, "b1").widgets[0].params;
+    expect(params.map((p) => p.paramName)).toEqual(["a", "b"]);
+    expect(params.every((p) => !("row" in p))).toBe(true);
+  });
+
+  it("puts bare params on row 0 wherever they appear, and numbers sections from 1 after a bare first param", () => {
+    const raw = {
+      w1: {
+        name: "One",
+        endpoint: "/a",
+        params: [{ paramName: "symbol" }, [{ paramName: "start" }, { paramName: "end" }], { paramName: "provider" }],
+      },
+    };
+    const params = normalizeWidgets(raw, "b1").widgets[0].params;
+    expect(params.map((p) => [p.paramName, p.row ?? 0])).toEqual([
+      ["symbol", 0],
+      ["start", 1],
+      ["end", 1],
+      ["provider", 0],
+    ]);
+  });
+
+  it("lets an empty section push the params after it down a row", () => {
+    const raw = { w1: { name: "One", endpoint: "/a", params: [[], [{ paramName: "symbol" }]] } };
+    const result = normalizeWidgets(raw, "b1");
+    expect(result.widgets[0].params.map((p) => [p.paramName, p.row ?? 0])).toEqual([["symbol", 1]]);
     expect(result.issues).toEqual([]);
   });
 
