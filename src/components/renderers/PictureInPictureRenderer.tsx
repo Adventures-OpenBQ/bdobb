@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   cancelScheduledRelease,
   enqueuePlayerOp,
@@ -112,6 +112,35 @@ function MacPlayer({
   const gridW = useDashboardStore((s) => cardIn(s, cardId)?.layout.w);
   const gridH = useDashboardStore((s) => cardIn(s, cardId)?.layout.h);
   const seen = useRef<{ w: number; h: number } | null>(null);
+  const snap = useCallback(() => {
+    const el = body.current;
+    const cardEl = el?.closest(".widget-card");
+    const state = useDashboardStore.getState();
+    const card = cardIn(state, cardId);
+    // A maximized card is as wide as the screen, not as wide as its grid cell.
+    if (!el || !cardEl || !card || state.maximizedCardId === cardId) return;
+    // A card pinned to an edge keeps its stored slot for Unpin.
+    if (card.pinned) return;
+    // A zoomed workspace grid measures zoomed pixels against unzoomed rows.
+    const zoom = cardEl.closest(".workspace-grid")?.getAttribute("data-zoom");
+    if (zoom !== null && zoom !== undefined && zoom !== "100") return;
+    const b = el.getBoundingClientRect();
+    const rows = rowsForPlayer({
+      bodyWidth: b.width,
+      overhead: cardEl.getBoundingClientRect().height - b.height,
+      rowHeight: GRID_ROW_HEIGHT,
+      gap: selectEffective(useSettingsStore.getState()).widgetGap,
+    });
+    if (rows === null) return;
+    snapped.add(cardId);
+    // In a locked dock the card cannot be taller than its band (the dock's tab id is its edge).
+    const owner = ownerOfCard(state, cardId);
+    const band = owner?.id === DOCKS_ID ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[owner.tabs.find((t) => t.cards.some((c) => c.id === cardId))?.id as PinEdge] : Infinity;
+    const h = Math.min(rows, band);
+    if (h === card.layout.h) return;
+    const { x, y, w } = card.layout;
+    void state.updateLayouts([{ i: cardId, x, y: Math.min(y, band - h), w, h }]);
+  }, [cardId]);
   useEffect(() => {
     if (gridW === undefined || gridH === undefined) return;
     const last = seen.current;
@@ -128,37 +157,31 @@ function MacPlayer({
         snap();
       });
     });
-    function snap() {
-      const el = body.current;
-      const cardEl = el?.closest(".widget-card");
-      const state = useDashboardStore.getState();
-      const card = cardIn(state, cardId);
-      // A maximized card is as wide as the screen, not as wide as its grid cell.
-      if (!el || !cardEl || !card || state.maximizedCardId === cardId) return;
-      // A card pinned to an edge keeps its stored slot for Unpin.
-      if (card.pinned) return;
-      // A zoomed workspace grid measures zoomed pixels against unzoomed rows.
-      const zoom = cardEl.closest(".workspace-grid")?.getAttribute("data-zoom");
-      if (zoom !== null && zoom !== undefined && zoom !== "100") return;
-      const b = el.getBoundingClientRect();
-      const rows = rowsForPlayer({
-        bodyWidth: b.width,
-        overhead: cardEl.getBoundingClientRect().height - b.height,
-        rowHeight: GRID_ROW_HEIGHT,
-        gap: selectEffective(useSettingsStore.getState()).widgetGap,
-      });
-      if (rows === null) return;
-      snapped.add(cardId);
-      // In a locked dock the card cannot be taller than its band (the dock's tab id is its edge).
-      const owner = ownerOfCard(state, cardId);
-      const band = owner?.id === DOCKS_ID ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[owner.tabs.find((t) => t.cards.some((c) => c.id === cardId))?.id as PinEdge] : Infinity;
-      const h = Math.min(rows, band);
-      if (h === card.layout.h) return;
-      const { x, y, w } = card.layout;
-      void state.updateLayouts([{ i: cardId, x, y: Math.min(y, band - h), w, h }]);
-    }
     return () => cancelAnimationFrame(frame);
-  }, [cardId, gridW, gridH, readOnly]);
+  }, [cardId, gridW, gridH, readOnly, snap]);
+
+  // The Parameters panel and the header's rows take their height out of the
+  // body. When that overhead changes at an unchanged width -- the panel
+  // opened or closed -- the rows are counted again, so the player keeps its
+  // room. A window resize changes the width and is left alone, as above.
+  useEffect(() => {
+    const el = body.current;
+    const cardEl = el?.closest(".widget-card");
+    if (!el || !cardEl || readOnly || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const b = el.getBoundingClientRect();
+      return { width: Math.round(b.width), overhead: Math.round(cardEl.getBoundingClientRect().height - b.height) };
+    };
+    let last = measure();
+    const observer = new ResizeObserver(() => {
+      const now = measure();
+      const panelChanged = now.width === last.width && now.overhead !== last.overhead;
+      last = now;
+      if (panelChanged) snap();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [readOnly, snap]);
 
   useEffect(() => {
     const el = body.current;

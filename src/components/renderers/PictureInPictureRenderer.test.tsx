@@ -491,6 +491,60 @@ describe("the card's height follows its width", () => {
     await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 30, h: 21 }]]));
   });
 
+  describe("when the Parameters panel opens or closes", () => {
+    // The panel takes its height out of the body: the card stays 600 px tall and the body shrinks.
+    let resized: Array<() => void> = [];
+    beforeEach(() => {
+      resized = [];
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          constructor(callback: () => void) {
+            resized.push(callback);
+          }
+          observe() {}
+          disconnect() {}
+        },
+      );
+    });
+    afterEach(() => vi.unstubAllGlobals());
+    const bodyResized = () => resized.forEach((callback) => callback());
+
+    it("counts the open panel, and gives the rows back when it closes", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted());
+      await settle();
+      expect(writes).toHaveLength(0);
+      size.body = { width: 640, height: 460 }; // a 90 px panel: 140 + 360 = 500 px -> 17 rows
+      bodyResized();
+      await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 20, h: 17 }]]));
+      size.body = { width: 640, height: 550 };
+      bodyResized();
+      await waitFor(() => expect(writes).toHaveLength(2));
+      expect(writes[1]).toEqual([{ i: cid, x: 0, y: 0, w: 20, h: NEEDED }]);
+    });
+
+    it("leaves the card alone when the width changed too, as a window resize does", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted());
+      await settle();
+      size.body = { width: 900, height: 460 };
+      bodyResized();
+      await settle();
+      expect(writes).toHaveLength(0);
+    });
+
+    it("writes nothing for a read-only card", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted({ readOnly: true }));
+      await settle();
+      size.body = { width: 640, height: 460 };
+      bodyResized();
+      await settle();
+      expect(writes).toHaveLength(0);
+    });
+  });
+
   it("leaves a card alone when only its pixels change", async () => {
     place({ x: 0, y: 0, w: 20, h: NEEDED });
     const { rerender } = render(mounted());
