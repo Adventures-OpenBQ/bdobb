@@ -5,7 +5,7 @@ tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 
 # Picture in Picture
 
-**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome. For example, a Federal Reserve press conference video on federalreserve.gov. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
+**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome. For example, you can park a Federal Reserve press conference video. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
 
 ## On the Mac
 
@@ -19,7 +19,7 @@ If the card is wider than the video is tall, the player leaves empty space under
 
 ## Hiding
 
-When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes.
+When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes.
 
 Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it.
 

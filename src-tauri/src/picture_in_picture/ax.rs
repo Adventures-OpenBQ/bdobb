@@ -141,8 +141,12 @@ impl Drop for Cf {
     }
 }
 
-// SAFETY: CF retain and release are thread-safe, and every AX call made
-// through a Cf happens behind the controller's mutex (mod.rs).
+// SAFETY: CF retain and release are thread-safe. The Cf values that are kept
+// (AxWindow's player, AxSlider's cached slider) are only used behind the
+// PLACEMENT and MUTE mutexes (mod.rs). The AX calls made outside any mutex are
+// `blur_inputs` on the blur thread and `ask_for_permission`: they build their
+// own Cf values, use them on that one thread and drop them there, never
+// sharing one; and AX reads on a fresh element are safe from any thread.
 unsafe impl Send for Cf {}
 
 fn cfstr(text: &str) -> Option<Cf> {
