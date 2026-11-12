@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MuteState, PipStatus } from "../../lib/pictureInPicture";
@@ -418,11 +418,14 @@ describe("the card's height follows its width", () => {
   const NEEDED = 14;
   const size = { card: { width: 660, height: 600 }, body: { width: 640, height: 550 } };
   const writes: GridLayoutItem[][] = [];
+  // The renderer remembers which cards it has snapped this session, so each test has its own card.
+  let cid = "";
+  let counter = 0;
   let rects: { mockRestore: () => void } | undefined;
 
   /** Puts a card in the dashboard data with a layout; a layout write is recorded and applied. */
   function place(layout: { x: number; y: number; w: number; h: number }, over: Partial<ReturnType<typeof makeCard>> = {}, dockRows?: number, where: "dashboard" | "docks" = "dashboard") {
-    const cards = [makeCard({ id: "c1", layout, ...over })];
+    const cards = [makeCard({ id: cid, layout, ...over })];
     const state = useDashboardStore.getState();
     const docked = where === "docks";
     useDashboardStore.setState({
@@ -441,7 +444,7 @@ describe("the card's height follows its width", () => {
   }
   const mounted = (props: { readOnly?: boolean } = {}) => (
     <div className="widget-card">
-      <PictureInPictureRenderer cardId="c1" {...props} />
+      <PictureInPictureRenderer cardId={cid} {...props} />
     </div>
   );
   const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
@@ -449,6 +452,7 @@ describe("the card's height follows its width", () => {
   const BODY = { width: 640, height: 550 };
   beforeEach(() => {
     vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
+    cid = `snap-${counter++}`;
     size.body = { ...BODY };
     writes.length = 0;
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, widgetGap: 10 } });
@@ -461,6 +465,7 @@ describe("the card's height follows its width", () => {
     });
   });
   afterEach(() => {
+    vi.useRealTimers();
     size.body = { ...BODY };
     rects?.mockRestore();
     useSettingsStore.setState({ settings: DEFAULT_SETTINGS });
@@ -469,7 +474,7 @@ describe("the card's height follows its width", () => {
   it("sets the fewest rows that hold the player when the card mounts too tall, then settles", async () => {
     place({ x: 2, y: 3, w: 20, h: 30 });
     render(mounted());
-    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 2, y: 3, w: 20, h: NEEDED }]]));
+    await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 2, y: 3, w: 20, h: NEEDED }]]));
     await settle();
     expect(writes).toHaveLength(1);
   });
@@ -483,7 +488,7 @@ describe("the card's height follows its width", () => {
     useDashboardStore.setState((s) => ({
       dashboards: s.dashboards.map((d) => ({ ...d, tabs: d.tabs.map((t) => ({ ...t, cards: t.cards.map((c) => ({ ...c, layout: { ...c.layout, w: 30 } })) })) })),
     }));
-    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 30, h: 21 }]]));
+    await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 30, h: 21 }]]));
   });
 
   it("leaves a card alone when only its pixels change", async () => {
@@ -522,13 +527,13 @@ describe("the card's height follows its width", () => {
   it("snaps a card in a dock and keeps it within the band", async () => {
     place({ x: 0, y: 2, w: 20, h: 30 }, {}, 20, "docks");
     render(mounted());
-    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 2, w: 20, h: NEEDED }]]));
+    await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 0, y: 2, w: 20, h: NEEDED }]]));
   });
 
   it("clamps a dock card to the band's rows", async () => {
     place({ x: 0, y: 5, w: 20, h: 30 }, {}, 8, "docks");
     render(mounted());
-    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 20, h: 8 }]]));
+    await waitFor(() => expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 20, h: 8 }]]));
     await settle();
     expect(writes).toHaveLength(1);
   });
@@ -559,5 +564,65 @@ describe("the card's height follows its width", () => {
       </div>,
     );
     await waitFor(() => expect(writes).toHaveLength(1));
+  });
+
+  describe("what triggers a snap", () => {
+    let clock = new Date("2031-01-01T00:00:00Z").getTime();
+    const advance = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+    const setLayout = (patch: Partial<{ w: number; h: number }>) =>
+      act(() => {
+        useDashboardStore.setState((s) => ({
+          dashboards: s.dashboards.map((d) => ({ ...d, tabs: d.tabs.map((t) => ({ ...t, cards: t.cards.map((c) => ({ ...c, layout: { ...c.layout, ...patch } })) })) })),
+        }));
+      });
+    beforeEach(() => {
+      vi.useFakeTimers();
+      clock += 3_600_000; // far from any pointer release an earlier test made
+      vi.setSystemTime(clock);
+    });
+
+    it("snaps a change of height just after the pointer was released here", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted());
+      await advance(100);
+      window.dispatchEvent(new Event("pointerup"));
+      await advance(300);
+      setLayout({ h: 30 });
+      await advance(100);
+      expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 20, h: NEEDED }]]);
+    });
+
+    it("leaves a change of height alone when no pointer was released here (a layout from sync)", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted());
+      await advance(100);
+      window.dispatchEvent(new Event("mouseup"));
+      await advance(2000);
+      setLayout({ h: 30 });
+      await advance(100);
+      expect(writes).toHaveLength(0);
+    });
+
+    it("snaps a change of width without any pointer release", async () => {
+      place({ x: 0, y: 0, w: 20, h: NEEDED });
+      render(mounted());
+      await advance(100);
+      await advance(5000);
+      setLayout({ w: 30, h: 40 });
+      await advance(100);
+      expect(writes).toEqual([[{ i: cid, x: 0, y: 0, w: 30, h: NEEDED }]]);
+    });
+
+    it("snaps once per card per session: a second mount of the same card writes nothing", async () => {
+      place({ x: 0, y: 0, w: 20, h: 30 });
+      const first = render(mounted());
+      await advance(100);
+      expect(writes).toHaveLength(1);
+      first.unmount();
+      setLayout({ h: 30 });
+      render(mounted());
+      await advance(100);
+      expect(writes).toHaveLength(1);
+    });
   });
 });

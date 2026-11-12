@@ -39,6 +39,16 @@ const dashboardData: CardData = {
   subscribe: (listener) => useDashboardStore.subscribe(listener),
 };
 
+/** Cards that have been snapped this app session: a remount (every dashboard switch) does not snap again. */
+const snapped = new Set<string>();
+
+/** When the user last released the pointer in this window: a height change just after it is a local resize. */
+let lastPointerRelease = -Infinity;
+const LOCAL_RESIZE_MS = 1500;
+if (typeof window !== "undefined") {
+  for (const type of ["pointerup", "mouseup"]) window.addEventListener(type, () => (lastPointerRelease = Date.now()), true);
+}
+
 const cardIn = (s: Parameters<typeof ownerOfCard>[0], id: string) =>
   ownerOfCard(s, id)?.tabs.flatMap((t) => t.cards).find((c) => c.id === id);
 
@@ -92,16 +102,31 @@ function MacPlayer({
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
 
-  // The card's height follows its width: when the card mounts or its grid size
-  // changes (a resize, not a pixel-only change), it takes the fewest rows that
-  // hold the player. The rows depend only on the width, so this settles.
+  // The card's height follows its width: it takes the fewest rows that hold
+  // the player when the card is first mounted this session, when its grid
+  // width changes, and when its grid height changes just after the user
+  // released the pointer in this window (a resize). A layout that arrives from
+  // sync changes the height without a local release and is left alone, so two
+  // Macs with different windows do not rewrite each other's heights. The rows
+  // depend only on the width, so this settles.
   const gridW = useDashboardStore((s) => cardIn(s, cardId)?.layout.w);
   const gridH = useDashboardStore((s) => cardIn(s, cardId)?.layout.h);
+  const seen = useRef<{ w: number; h: number } | null>(null);
   useEffect(() => {
-    if (readOnly || gridW === undefined) return;
+    if (gridW === undefined || gridH === undefined) return;
+    const last = seen.current;
+    const wanted = last === null ? !snapped.has(cardId) : gridW !== last.w || (gridH !== last.h && Date.now() - lastPointerRelease < LOCAL_RESIZE_MS);
+    if (readOnly || !wanted) {
+      seen.current = { w: gridW, h: gridH };
+      return;
+    }
     // Two frames on, so the grid has laid the new size out (and, on mount, measured its width).
     let frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(snap);
+      frame = requestAnimationFrame(() => {
+        // Recorded here, not above: a cleanup that cancels the frame (Strict Mode's second pass) must not lose the trigger.
+        seen.current = { w: gridW, h: gridH };
+        snap();
+      });
     });
     function snap() {
       const el = body.current;
@@ -110,6 +135,8 @@ function MacPlayer({
       const card = cardIn(state, cardId);
       // A maximized card is as wide as the screen, not as wide as its grid cell.
       if (!el || !cardEl || !card || state.maximizedCardId === cardId) return;
+      // A card pinned to an edge keeps its stored slot for Unpin.
+      if (card.pinned) return;
       // A zoomed workspace grid measures zoomed pixels against unzoomed rows.
       const zoom = cardEl.closest(".workspace-grid")?.getAttribute("data-zoom");
       if (zoom !== null && zoom !== undefined && zoom !== "100") return;
@@ -121,8 +148,7 @@ function MacPlayer({
         gap: selectEffective(useSettingsStore.getState()).widgetGap,
       });
       if (rows === null) return;
-      // A card pinned to an edge keeps its stored slot for Unpin.
-      if (card.pinned) return;
+      snapped.add(cardId);
       // In a locked dock the card cannot be taller than its band (the dock's tab id is its edge).
       const owner = ownerOfCard(state, cardId);
       const band = owner?.id === DOCKS_ID ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[owner.tabs.find((t) => t.cards.some((c) => c.id === cardId))?.id as PinEdge] : Infinity;
