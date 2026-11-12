@@ -385,6 +385,125 @@ fn stock_negative_zero_remains_a_valid_explicit_wire_value() {
 }
 
 #[test]
+fn independent_financial_boundary_oracles() {
+    use pivot_core::{fiscal::*, formulas::CellResult, statement::*};
+    use serde_json::Value;
+    let edges: Value = serde_json::from_str(include_str!(
+        "../../../src/test/fixtures/sec-statements/edge-cases.json"
+    ))
+    .unwrap();
+    let (_, input, definition, runtime) = fixture("statement-cashflow");
+    let view = calculate_view(&input, &definition, &SelectionSpec::None, &runtime, &Host).unwrap();
+    for case in edges["cases"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let def = &case["definition"];
+        let context = &def["context"];
+        let mut policy = view.compiled.execution.as_ref().unwrap().policy.clone();
+        policy.value_field_id = def["valueFieldId"].as_str().unwrap().into();
+        policy.company_field_id = context["companyFieldId"].as_str().unwrap().into();
+        policy.currency_field_id = context["currencyFieldId"].as_str().map(String::from);
+        policy.unit_field_id = context["unitFieldId"].as_str().map(String::from);
+        policy.period_kind = serde_json::from_value(context["periodKind"].clone()).unwrap();
+        policy.fiscal = serde_json::from_value(context["fiscal"].clone()).unwrap();
+        let rows = case["source"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| DatasetRow {
+                id: row["id"].as_str().unwrap().into(),
+                values: row["values"]
+                    .as_object()
+                    .unwrap()
+                    .iter()
+                    .map(|(key, value)| {
+                        (
+                            key.clone(),
+                            match value {
+                                Value::Null => WireValue::Null,
+                                Value::String(s) => WireValue::String(s.clone()),
+                                Value::Number(n) => {
+                                    WireValue::F64(WireNumber::Finite(n.as_f64().unwrap()))
+                                }
+                                _ => panic!("unsupported oracle primitive"),
+                            },
+                        )
+                    })
+                    .collect(),
+                group_path: None,
+                cell_errors: None,
+                cell_formats: None,
+            })
+            .collect::<Vec<_>>();
+        let requested = context["requestedPeriods"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| {
+                let start = p["start"].as_str().unwrap().to_string();
+                let end = p["end"].as_str().unwrap().to_string();
+                ResolvedFiscalPeriod {
+                    period: FiscalPeriod {
+                        kind: serde_json::from_value(p["kind"].clone()).unwrap(),
+                        year: p["year"].as_i64().unwrap(),
+                        quarter: None,
+                        quarter_evidence: None,
+                        start: start.clone(),
+                        end: end.clone(),
+                        source: "independent synthetic oracle".into(),
+                    },
+                    company_key: p["companyKey"].as_str().unwrap().into(),
+                    label: p["label"].as_str().unwrap().into(),
+                    key: p["key"].as_str().unwrap().into(),
+                    precision: p["precision"].as_str().unwrap().into(),
+                    start,
+                    end,
+                }
+            })
+            .collect::<Vec<_>>();
+        let result = evaluate_statement_line(
+            serde_json::from_value(def["policy"].clone()).unwrap(),
+            &rows,
+            &policy,
+            view.compiled.fiscal_context.as_ref().unwrap(),
+            &requested,
+            context["required"].as_bool().unwrap(),
+        );
+        let expected = &case["expected"];
+        if expected["error"].is_object() {
+            let CellResult::Error(error) = result else {
+                panic!("{name}: expected refusal")
+            };
+            assert_eq!(
+                error.code,
+                expected["error"]["code"].as_str().unwrap(),
+                "{name}"
+            );
+            assert_eq!(
+                error.message,
+                expected["error"]["message"].as_str().unwrap(),
+                "{name}"
+            );
+            assert_eq!(
+                serde_json::json!(error.record_ids),
+                expected["error"]["recordIds"],
+                "{name}"
+            );
+        } else {
+            let value = expected["valueDecimal"]
+                .as_str()
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert_eq!(
+                result,
+                CellResult::Value(WireValue::F64(WireNumber::Finite(value))),
+                "{name}"
+            );
+        }
+    }
+}
+
+#[test]
 fn statement_preparation_preserves_wide_long_and_refused_source_snapshots() {
     for name in [
         "statement-income-wide",

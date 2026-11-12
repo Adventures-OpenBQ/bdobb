@@ -1,0 +1,1028 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Advisory pivot qualification run v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "engine",
+    "identity",
+    "environment",
+    "workload",
+    "limits",
+    "status",
+    "observations",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "engine": {
+      "enum": [
+        "typescript",
+        "rust"
+      ]
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed",
+        "not-run",
+        "unsupported"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "commit",
+        "artifact",
+        "source",
+        "dataset",
+        "reference",
+        "model",
+        "actions",
+        "environment"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "artifact": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "dataset": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "reference": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "actions": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "environment": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "referencePolicy": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "variant",
+          "temperature",
+          "status",
+          "outcome",
+          "numericalCheck",
+          "stages",
+          "memory",
+          "retained"
+        ],
+        "properties": {
+          "variant": {
+            "enum": [
+              "baseline",
+              "candidate"
+            ]
+          },
+          "temperature": {
+            "enum": [
+              "cold",
+              "warm"
+            ]
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed",
+              "not-run",
+              "unsupported"
+            ]
+          },
+          "stages": {
+            "type": "object",
+            "required": [
+              "acquisitionParse",
+              "registrationEncoding",
+              "compute",
+              "filterReselection",
+              "transfer",
+              "chartDelivery",
+              "rendering",
+              "totalUsableView"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "acquisitionParse": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "registrationEncoding": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "compute": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "filterReselection": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "transfer": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "chartDelivery": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "rendering": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "totalUsableView": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "ms"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "measured"
+                      },
+                      "ms": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "status",
+                      "reason"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "not-run"
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          },
+          "memory": {
+            "type": "object",
+            "properties": {
+              "peakRssBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "wasmBufferBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "sampler": {
+                "type": "object",
+                "properties": {
+                  "method": {
+                    "type": "string"
+                  },
+                  "scope": {
+                    "type": "string"
+                  },
+                  "intervalMs": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  }
+                }
+              }
+            },
+            "required": [
+              "peakRssBytes",
+              "wasmBufferBytes"
+            ]
+          },
+          "retained": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "symbol": {
+                  "type": "string"
+                },
+                "cycle": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rssBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                },
+                "heapUsedBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "symbol",
+                "cycle",
+                "rssBytes",
+                "heapUsedBytes"
+              ]
+            }
+          },
+          "process": {
+            "type": "object",
+            "required": [
+              "id",
+              "pid",
+              "intervalMs",
+              "method",
+              "samples",
+              "errors",
+              "sampledTreePeakBytes"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "pid": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "intervalMs": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 100
+              },
+              "method": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sampledTreePeakBytes": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "samples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "elapsedMs",
+                    "collectionMs",
+                    "processes",
+                    "treeRssBytes",
+                    "status"
+                  ],
+                  "properties": {
+                    "elapsedMs": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "collectionMs": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "treeRssBytes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0
+                    },
+                    "processes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "pid",
+                          "ppid",
+                          "rssBytes"
+                        ],
+                        "properties": {
+                          "pid": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "ppid": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "rssBytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    },
+                    "status": {
+                      "enum": [
+                        "measured",
+                        "unavailable"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "status": {
+                            "const": "unavailable"
+                          }
+                        }
+                      },
+                      "then": {
+                        "required": [
+                          "reason"
+                        ],
+                        "properties": {
+                          "treeRssBytes": {
+                            "type": "null"
+                          },
+                          "processes": {
+                            "maxItems": 0
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "treeRssBytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "processes": {
+                            "minItems": 1
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "doneElapsedMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "exitElapsedMs": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            }
+          },
+          "observer": {
+            "type": "object",
+            "required": [
+              "status",
+              "spoolPath",
+              "archivePath",
+              "archiveStatus",
+              "errors"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "completed",
+                  "incomplete"
+                ]
+              },
+              "archiveStatus": {
+                "enum": [
+                  "completed",
+                  "failed"
+                ]
+              },
+              "spoolDirectory": {
+                "type": "string"
+              },
+              "spoolPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "archivePath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "storage": {
+                "type": "string"
+              },
+              "errors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expectedSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "spoolSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "archiveSha256": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "spoolWriteMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "archiveMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "flushMs": {
+                "type": "number",
+                "minimum": 0
+              },
+              "events": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "peakQueuedBytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerPolls": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerSkipped": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "samplerTimeoutMs": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "status": {
+                      "const": "completed"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "expectedSha256",
+                    "spoolSha256",
+                    "archiveSha256"
+                  ],
+                  "properties": {
+                    "archiveStatus": {
+                      "const": "completed"
+                    },
+                    "errors": {
+                      "maxItems": 0
+                    },
+                    "expectedSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "spoolSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "archiveSha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "passed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "outcome": {
+                  "const": "completed"
+                },
+                "numericalCheck": {
+                  "const": "passed"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "cpuCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memoryBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "defaultNodeHeapBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "execArgv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locale": {
+          "type": "object",
+          "properties": {
+            "locale": {
+              "type": "string"
+            },
+            "calendar": {
+              "type": "string"
+            },
+            "numberingSystem": {
+              "type": "string"
+            },
+            "timeZone": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxRows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxInputBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxStateBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxPivotColumns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxBatchBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxCachedBlockBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxConcurrentTransfers": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policy": {
+          "type": "string"
+        },
+        "preparseReservation": {
+          "type": "string"
+        },
+        "enforcement": {
+          "type": "string"
+        }
+      }
+    },
+    "workload": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "bulk",
+            "statement",
+            "ticks"
+          ]
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sampling": {
+          "type": "string"
+        },
+        "classification": {
+          "type": "string"
+        },
+        "referencePolicy": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "rows"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$comment": "report.mjs remains the required semantic validator: rejects missing stages and successful refusals; schema is the portable structural contract. Metadata allows optional extension fields; null memory values mean unknown, never zero.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "workload": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "ticks"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "identity": {
+            "required": [
+              "referencePolicy"
+            ]
+          },
+          "workload": {
+            "type": "object",
+            "required": [
+              "referencePolicy"
+            ],
+            "properties": {
+              "referencePolicy": {
+                "const": {
+                  "version": "tick-bucket-index/1",
+                  "bucketEncoding": "interval-index",
+                  "outputBucketUnit": "epoch-seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

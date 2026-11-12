@@ -49,6 +49,13 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         const executor = source ? store.readExecutor(dashboardId, source) : undefined;
         if (!revision || revision.widgetId !== source || !executor || !view.ready || !['ready', 'empty'].includes(view.status))
             return;
+        // A completed empty scope can drop generated columns; it is not a broken binding.
+        if (view.status === 'empty') {
+            setCompleted(undefined);
+            setError(undefined);
+            setNoMatches(true);
+            return;
+        }
         const available = new Map((view.ready.chartColumns ?? view.ready.columns).map(c => [c.id, c]));
         setNoMatches(false);
         const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));
@@ -101,7 +108,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     } }
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
-    return <div className="linked-chart-renderer">
+    return <div className="linked-chart-renderer" data-delivered-revision={delivered?.revision}>
     {!viewer ? <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit({ ...settings, type: e.target.value as LinkedChartSettings['type'] })}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option></select></label>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
