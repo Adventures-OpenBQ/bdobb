@@ -1,0 +1,84 @@
+name: Extended pivot qualification
+# Schedule activates only once this workflow is present on the default branch.
+# Keep this full candidate SHA explicit; bump deliberately after review.
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full reviewed candidate commit SHA (never a moving branch)
+        required: true
+        type: string
+      trace_seed:
+        description: Reproducible additional integer trace seed
+        default: '20261103'
+        type: string
+  schedule:
+    - cron: '17 6 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: pivot-qualification
+  cancel-in-progress: false
+jobs:
+  extended:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Schedule always checks out this exact reviewed candidate, not default HEAD.
+      CANDIDATE_SHA: ${{ inputs.candidate_sha || 'cfc27c836b0ebc77505af39361820f8e44b50a94' }}
+      TRACE_SEED: ${{ inputs.trace_seed || '20261103' }}
+    steps:
+      - name: Validate literal inputs before checkout
+        shell: bash
+        run: |
+          [[ "$CANDIDATE_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          [[ "$TRACE_SEED" =~ ^-?[0-9]{1,10}$ ]] || exit 1
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          persist-credentials: false
+      - run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
+      - run: pnpm pivot:build
+      - run: node --test scripts/pivot-qualification/*.node.mjs
+      - name: Bounded extended parity (201 seeds, 200 actions)
+        run: pnpm exec vitest run src/lib/tableExecution/qualificationParity.test.ts
+        env:
+          PIVOT_TRACE_EXTENDED: '1'
+          PIVOT_TRACE_SEED: ${{ env.TRACE_SEED }}
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Full portable browser suite (TypeScript)
+        run: pnpm exec playwright test --config playwright.qualification.config.ts
+      - name: Preserve TypeScript browser evidence before next engine
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pivot-typescript-browser-${{ github.run_id }}
+          path: e2e-results/qualification/
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Full portable browser suite (Rust)
+        run: pnpm exec playwright test --config playwright.qualification.config.ts
+        env:
+          VITE_TABLE_ENGINE: rust
+      - name: Preserve attributable failure replay and browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pivot-qualification-${{ github.run_id }}
+          path: |
+            src/test/fixtures/sec-statements/failing-traces/
+            e2e-results/qualification/
+          retention-days: 7
+          if-no-files-found: ignore
+# No SEC downloads, bulk timing, credentials or native-device claims in Linux CI.
+# External data benchmarks and native acceptance are explicit operator tasks.

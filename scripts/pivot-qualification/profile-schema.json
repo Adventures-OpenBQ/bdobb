@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Copyright 2026 SecretoftheUniverse.com LLC. SPDX-License-Identifier: AGPL-3.0-only",
+  "title": "Private Pivot ProfileRecord format 1",
+  "description": "Structural description only. JSON Schema validation does not certify measurement admission. Runtime semantic validation, artifact and evidence checksum verification, cross-record identity checks, and per-phase observer validity are mandatory before admitting measurements.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "runID",
+    "workloadID",
+    "engine",
+    "sourceCommit",
+    "sourceChecksum",
+    "artifactChecksum",
+    "runnerChecksum",
+    "patchChecksum",
+    "inputChecksum",
+    "modelHash",
+    "resultChecksum",
+    "instrumentation",
+    "controlRunIDs",
+    "overhead",
+    "accounting",
+    "events",
+    "counters",
+    "host",
+    "unavailable"
+  ],
+  "properties": {
+    "format": {
+      "const": 1
+    },
+    "runID": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{1,128}$"
+    },
+    "workloadID": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{1,128}$"
+    },
+    "engine": {
+      "enum": [
+        "typescript",
+        "rust-wasm"
+      ]
+    },
+    "sourceCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "sourceChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "artifactChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "wasmChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runnerChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "supportChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "patchChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "inputChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "modelHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "resultChecksum": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "instrumentation": {
+      "const": {
+        "optIn": true,
+        "artifact": "private-profile",
+        "clock": "performance.now",
+        "perRowTimers": false
+      }
+    },
+    "controlRunIDs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]{1,128}$"
+      }
+    },
+    "overhead": {
+      "type": "object",
+      "required": [
+        "status",
+        "definition"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "paired-control-report"
+        },
+        "definition": {
+          "type": "string"
+        }
+      }
+    },
+    "accounting": {
+      "const": "inclusive-do-not-sum"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "startMs",
+          "endMs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "startMs": {
+            "type": "number"
+          },
+          "endMs": {
+            "type": "number"
+          },
+          "parentId": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "counters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value",
+          "unit",
+          "scope"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unit": {
+            "enum": [
+              "rows",
+              "vectors",
+              "sorts",
+              "calls"
+            ]
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "required": [
+        "accounting",
+        "events",
+        "counters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "accounting": {
+          "const": "inclusive-do-not-sum"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "startMs",
+              "endMs"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "startMs": {
+                "type": "number"
+              },
+              "endMs": {
+                "type": "number"
+              },
+              "parentId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "counters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value",
+              "unit",
+              "scope"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "value": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "unit": {
+                "enum": [
+                  "rows",
+                  "vectors",
+                  "sorts",
+                  "calls"
+                ]
+              },
+              "scope": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "unavailable": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

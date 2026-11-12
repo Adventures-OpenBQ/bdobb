@@ -1,0 +1,138 @@
+{
+  "NVDA": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "60922000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "16621000000",
+      "statement/sec-nvda-reference/1.0.0/line/reported_gross_profit": "44301000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "32972000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "29760000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "65728000000",
+      "statement/sec-nvda-reference/1.0.0/line/liabilities": "22750000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "42978000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "7280000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "28090000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-10566000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-13633000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "1.19",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "24940000000",
+      "statement/sec-nvda-reference/1.0.0/line/effective_tax_rate": "0.12",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "44301000000",
+      "statement/sec-nvda-reference/1.0.0/line/balance_check": "0"
+    },
+    "2025": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "130497000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "32639000000",
+      "statement/sec-nvda-reference/1.0.0/line/reported_gross_profit": "97858000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "81453000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "72880000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "111601000000",
+      "statement/sec-nvda-reference/1.0.0/line/liabilities": "32274000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "79327000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "8589000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "64089000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-20421000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-42359000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "2.94",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "24804000000",
+      "statement/sec-nvda-reference/1.0.0/line/effective_tax_rate": "0.133",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "97858000000",
+      "statement/sec-nvda-reference/1.0.0/line/balance_check": "0"
+    }
+  },
+  "AMD": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "25785000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "13060000000",
+      "statement/sec-nvda-reference/1.0.0/line/reported_gross_profit": "12725000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "1900000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "1641000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "69226000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "57568000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "3787000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "3041000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-1101000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-2062000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "1",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "1637000000",
+      "statement/sec-nvda-reference/1.0.0/line/effective_tax_rate": "0.19",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "12725000000"
+    }
+  },
+  "AMZN": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "637959000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "326288000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "68593000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "59248000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "624894000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "285970000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "78779000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "115877000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-94342000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-11812000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "5.53",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "10721000000",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "311671000000"
+    }
+  },
+  "GOOG": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "350018000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "146306000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "112390000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "100118000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "450256000000",
+      "statement/sec-nvda-reference/1.0.0/line/liabilities": "125172000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "325084000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "23466000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "125299000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-45536000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-79733000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "8.04",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "12447000000",
+      "statement/sec-nvda-reference/1.0.0/line/effective_tax_rate": "0.164",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "203712000000",
+      "statement/sec-nvda-reference/1.0.0/line/balance_check": "0"
+    }
+  },
+  "META": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "164501000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "30161000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "69380000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "62360000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "276054000000",
+      "statement/sec-nvda-reference/1.0.0/line/liabilities": "93417000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "182637000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "43889000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "91328000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-47150000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "-40781000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "23.86",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "2614000000",
+      "statement/sec-nvda-reference/1.0.0/line/effective_tax_rate": "0.118",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "134340000000",
+      "statement/sec-nvda-reference/1.0.0/line/balance_check": "0"
+    }
+  },
+  "TSLA": {
+    "2024": {
+      "statement/sec-nvda-reference/1.0.0/line/revenue": "97690000000",
+      "statement/sec-nvda-reference/1.0.0/line/cost_of_revenue": "80240000000",
+      "statement/sec-nvda-reference/1.0.0/line/reported_gross_profit": "17450000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_income": "7076000000",
+      "statement/sec-nvda-reference/1.0.0/line/net_income": "7091000000",
+      "statement/sec-nvda-reference/1.0.0/line/assets": "122070000000",
+      "statement/sec-nvda-reference/1.0.0/line/liabilities": "48390000000",
+      "statement/sec-nvda-reference/1.0.0/line/equity": "72913000000",
+      "statement/sec-nvda-reference/1.0.0/line/cash": "16139000000",
+      "statement/sec-nvda-reference/1.0.0/line/operating_cash": "14923000000",
+      "statement/sec-nvda-reference/1.0.0/line/investing_cash": "-18787000000",
+      "statement/sec-nvda-reference/1.0.0/line/financing_cash": "3853000000",
+      "statement/sec-nvda-reference/1.0.0/line/eps_diluted": "2.04",
+      "statement/sec-nvda-reference/1.0.0/line/weighted_shares": "3498000000",
+      "statement/sec-nvda-reference/1.0.0/line/calculated_gross_profit": "17450000000",
+      "statement/sec-nvda-reference/1.0.0/line/balance_check": "767000000"
+    }
+  }
+}

@@ -55,7 +55,58 @@ export async function replacementProbe() {
         executor.dispose();
     }
 }
-Object.assign(window, { pivotResourceHarness: { resourceProbe, replacementProbe } });
+/** Native WebWorker termination is silent. Recovery is explicitly driven by the
+ * supported cancellation/reset path; this does not simulate an error event. */
+export async function terminatedWorkerProbe() {
+    const workers: Worker[] = [];
+    let posted!: () => void;
+    const postedPromise = new Promise<void>(resolve => { posted = resolve; });
+    const executor = createRustExecutor('source', () => {
+        const worker = new Worker(new URL('../../src/lib/tableExecution/rust/rust.worker.ts', import.meta.url), { type: 'module' });
+        workers.push(worker);
+        const post = worker.postMessage.bind(worker);
+        worker.postMessage = ((request: import('../../src/lib/tableExecution/types').ExecutionRequest) => {
+            post(request);
+            if (request.kind === 'applyModel' && request.revision.model === 2) posted();
+        }) as typeof worker.postMessage;
+        return worker;
+    });
+    try {
+        await executor.registerInput(input, 1, signal);
+        await executor.applyModel(raw, { kind: 'explicit', ids: ['r2'] }, revision, signal);
+        const before = await executor.chartData(revision, ['region', 'revenue'], signal);
+        workers[0].terminate(); // Actual browser API; it emits no error notification.
+        const abort = new AbortController();
+        const candidate = executor.applyModel({ table: {}, search: 'A' }, { kind: 'none' }, { ...revision, model: 2, output: 2 }, abort.signal);
+        await postedPromise;
+        abort.abort();
+        const rejected = await refused(() => candidate);
+        const restored = await executor.chartData(revision, ['region', 'revenue'], signal);
+        return { route: 'WebWorker.terminate -> pending apply abort -> reset and rehydrate', rejected, workers: workers.length,
+            before: before.rows.map(row => row.values.revenue), after: restored.rows.map(row => row.values.revenue), revision: restored.revision,
+            selection: (await executor.rows(revision, { groupPath: [], offset: 0, limit: 3 }, signal)).selection?.selection };
+    } finally { executor.dispose(); }
+}
+export async function malformedFileProbe() {
+    const executor = createRustExecutor('source');
+    const malformed = () => executor.importFile('broken.json', new TextEncoder().encode('{'), 2, signal);
+    try {
+        const first = await refused(malformed);
+        await executor.registerInput(input, 1, signal);
+        await executor.applyModel(raw, { kind: 'none' }, revision, signal);
+        const replacement = await refused(malformed);
+        // Failed replacement acquisition preserves the last committed source/model;
+        // the next read rehydrates it in a fresh actual worker.
+        const retained = await executor.chartData(revision, ['region', 'revenue'], signal);
+        await executor.importFile('repaired.csv', new TextEncoder().encode('region,revenue\nRecovered,7\n'), 3, signal);
+        const next = { ...revision, input: 3, model: 3, output: 3 };
+        await executor.applyModel(raw, { kind: 'none' }, next, signal);
+        const repaired = await executor.chartData(next, ['region', 'revenue'], signal);
+        return { first, replacement, retained: retained.rows.map(row => row.values.revenue), retainedRevision: retained.revision,
+            repaired: repaired.rows.map(row => row.values.revenue), repairedRevision: repaired.revision };
+    } finally { executor.dispose(); }
+}
+Object.assign(window, { pivotResourceHarness: { resourceProbe, replacementProbe, terminatedWorkerProbe, malformedFileProbe } });
 export async function browserBenchmark(c: {
     dataset: import('../../src/lib/widgetData/types').WidgetDataset;
     definition: import('../../src/lib/tableExecution/types').TableDefinition;
