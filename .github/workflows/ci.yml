@@ -29,6 +29,9 @@ jobs:
       # eslint.config.js; pre-existing violations are baselined in
       # eslint-suppressions.json, so only a NEW one fails here.
       - run: pnpm lint
+      # knip.json: an unused file, an unused or unlisted dependency, or an
+      # unlisted binary fails; unused exports are reported as warnings only.
+      - run: pnpm knip
       # test:run, never test — the latter is watch mode and hangs forever.
       - run: pnpm test:run
       # The web preview's server tests (node --test web/*.test.mjs): the
