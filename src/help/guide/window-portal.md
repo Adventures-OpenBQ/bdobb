@@ -13,7 +13,7 @@ tags: [bdobb, help, widgets, built-in, window-portal, video, chrome]
 2. The first time, the card asks for **Accessibility** permission. Choose **Open Accessibility settings**, switch BDOBB on in *System Settings ▸ Privacy & Security ▸ Accessibility*, and come back. BDOBB uses the permission only to move, size and mute Chrome's floating player.
 3. In Chrome, start the video and pop it out with its picture-in-picture button. Within a few seconds the player jumps onto the card.
 
-The player follows the card when you move it, resize it, maximize it or scroll the dashboard, and when you drag BDOBB's window. It keeps the video's 16:9 shape, centred in the card, and Chrome will not make it smaller than 284 × 160. A card smaller than that says *Make this card at least 284 × 160 to park the player here*. A card partly scrolled out of view keeps the player, which may then overlap the header. A card scrolled fully out of view hands it back.
+The player follows the card when you move it, resize it, maximize it or scroll the dashboard, and when you drag BDOBB's window. It keeps the video's 16:9 shape, centred in the card. Chrome will not make it smaller than 284 × 160 or larger than about 80% of the display (1388 × 781 on a 1736 × 1133 display). A card smaller than that says *Make this card at least 284 × 160 to park the player here*. A card partly scrolled out of view keeps the player, which may then overlap the header. A card scrolled fully out of view hands it back.
 
 Chrome's player goes back to where it was, at its old size, when you switch dashboard, remove or minimize the card, minimize BDOBB or quit BDOBB. If BDOBB crashes, the player stays where BDOBB last put it.
 
@@ -35,9 +35,9 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 | *Open this dashboard in the main window* | The card is in an **Open in new window** viewer, which cannot hold the player |
 | *BDOBB needs Accessibility permission…* | See step 2 above |
 
-## On iPad, Windows and the web preview
+## On iPad, Windows, Linux and the web preview
 
-On iPad the card is an empty space with the hint *Park a picture-in-picture video here*. iPadOS gives an app no way to move another app's player, so drag the picture-in-picture video onto the card yourself. There is no mute button on iPad. The Windows app and the [[web-preview|Web Preview]] show *Available in the macOS desktop app*.
+On iPad the card is an empty space with the hint *Park a picture-in-picture video here*. iPadOS gives an app no way to move another app's player, so drag the picture-in-picture video onto the card yourself. There is no mute button on iPad. The Windows app, Linux and the [[web-preview|Web Preview]] show *Available in the macOS desktop app*.
 
 ## Limits
 

@@ -92,14 +92,16 @@ the card does about that and what **Open externally ↗** is for.
 In the macOS app, BDOBB moves and sizes Chrome's `Picture in Picture` window
 to sit over it, follows the card and BDOBB's window, and hands the player
 back to where it was when the card goes away, BDOBB is minimized or BDOBB
-quits. It needs **Accessibility** permission, which the card asks for. The
+quits. The player is kept 16:9 and no larger than about 80% of the display
+(1388 × 781 on a 1736 × 1133 display). It needs **Accessibility** permission,
+which the card asks for. The
 🔊 header button mutes by stepping the source tab's volume slider. Its two
 parameters, **Source tab title contains** (default `CNBC`) and **Volume
 slider label** (default `Volume Level`), find that tab and slider. The
 stream's tab must be the selected tab in its Chrome window. On iPad the card
 is an empty space to drag a picture-in-picture video onto, with no mute
-button. On Windows and in the web preview it reads *Available in the macOS
-desktop app*.
+button. On Windows, Linux and in the web preview it reads *Available in the
+macOS desktop app*.
 
 ## RSS feed
 
