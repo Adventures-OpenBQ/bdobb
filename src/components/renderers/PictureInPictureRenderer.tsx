@@ -12,6 +12,7 @@ import {
   pipPlatform,
   pipSettings,
   readMuteState,
+  rowsForPlayer,
   sameRect,
   scheduleLeave,
   setPlayerMuted,
@@ -20,7 +21,9 @@ import {
   type MuteState,
   type PipStatus,
 } from "../../lib/pictureInPicture";
-import { ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
+import { DEFAULT_DOCK_ROWS } from "../../lib/dashboardsFile";
+import { GRID_ROW_HEIGHT, ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
+import { selectEffective, useSettingsStore } from "../../stores/settingsStore";
 
 /**
  * How often the card fits again (a player opened, closed or dragged away,
@@ -34,6 +37,9 @@ const dashboardData: CardData = {
   has: (id) => ownerOfCard(useDashboardStore.getState(), id) !== undefined,
   subscribe: (listener) => useDashboardStore.subscribe(listener),
 };
+
+const cardIn = (s: Parameters<typeof ownerOfCard>[0], id: string) =>
+  ownerOfCard(s, id)?.tabs.flatMap((t) => t.cards).find((c) => c.id === id);
 
 const MESSAGES = {
   no_player: "Pop the video out in Chrome",
@@ -52,9 +58,12 @@ export function PictureInPictureRenderer({
   cardId,
   params = {},
   menuOpen = false,
+  readOnly = false,
 }: {
   cardId: string;
   params?: Record<string, string>;
+  /** A viewer window: the card may not change its own height. */
+  readOnly?: boolean;
   /** The card's own header menu is open: the player steps aside until it closes. */
   menuOpen?: boolean;
 }) {
@@ -62,7 +71,7 @@ export function PictureInPictureRenderer({
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
   if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
   const { source, label } = pipSettings(params);
-  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} />;
+  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} />;
 }
 
 /** `muteSource` is undefined unless "Mute while hidden" is on. */
@@ -71,14 +80,52 @@ function MacPlayer({
   muteSource,
   muteLabel,
   menuOpen,
+  readOnly,
 }: {
   cardId: string;
   muteSource?: string;
   muteLabel: string;
   menuOpen: boolean;
+  readOnly: boolean;
 }) {
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
+
+  // The card's height follows its width: when the card mounts or its grid size
+  // changes (a resize, not a pixel-only change), it takes the fewest rows that
+  // hold the player. The rows depend only on the width, so this settles.
+  const gridW = useDashboardStore((s) => cardIn(s, cardId)?.layout.w);
+  const gridH = useDashboardStore((s) => cardIn(s, cardId)?.layout.h);
+  useEffect(() => {
+    if (readOnly || gridW === undefined) return;
+    // Two frames on, so the grid has laid the new size out (and, on mount, measured its width).
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(snap);
+    });
+    function snap() {
+      const el = body.current;
+      const cardEl = el?.closest(".widget-card");
+      const state = useDashboardStore.getState();
+      const card = cardIn(state, cardId);
+      // A maximized card is as wide as the screen, not as wide as its grid cell.
+      if (!el || !cardEl || !card || state.maximizedCardId === cardId) return;
+      const b = el.getBoundingClientRect();
+      const rows = rowsForPlayer({
+        bodyWidth: b.width,
+        overhead: cardEl.getBoundingClientRect().height - b.height,
+        rowHeight: GRID_ROW_HEIGHT,
+        gap: selectEffective(useSettingsStore.getState()).widgetGap,
+      });
+      if (rows === null) return;
+      // In a locked band the card cannot be taller than the band.
+      const band = card.pinned ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[card.pinned] : Infinity;
+      const h = Math.min(rows, band);
+      if (h === card.layout.h) return;
+      const { x, y, w } = card.layout;
+      void state.updateLayouts([{ i: cardId, x, y: Math.min(y, band - h), w, h }]);
+    }
+    return () => cancelAnimationFrame(frame);
+  }, [cardId, gridW, gridH, readOnly]);
 
   useEffect(() => {
     const el = body.current;

@@ -13,7 +13,9 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
-import { useDashboardStore } from "../../stores/dashboardStore";
+import { DEFAULT_SETTINGS } from "../../lib/settingsFile";
+import { useDashboardStore, type GridLayoutItem } from "../../stores/dashboardStore";
+import { useSettingsStore } from "../../stores/settingsStore";
 import { card as makeCard } from "../../test/fixtures";
 import { PictureInPictureMute, PictureInPictureRenderer } from "./PictureInPictureRenderer";
 
@@ -407,5 +409,127 @@ describe("Picture in Picture on Windows and in the web preview", () => {
     const { container } = render(<PictureInPictureMute params={{}} />);
     expect(container).toBeEmptyDOMElement();
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+describe("the card's height follows its width", () => {
+  // 20 px rows, a 10 px gap: h rows are 30h - 10 px tall. The card adds 50 px around the body.
+  // A 640 px wide body holds a 640 x 360 player: 50 + 360 = 410 px -> 14 rows.
+  const NEEDED = 14;
+  const size = { card: { width: 660, height: 600 }, body: { width: 640, height: 550 } };
+  const writes: GridLayoutItem[][] = [];
+  let rects: { mockRestore: () => void } | undefined;
+
+  /** Puts a card in the dashboard data with a layout; a layout write is recorded and applied. */
+  function place(layout: { x: number; y: number; w: number; h: number }, over: Partial<ReturnType<typeof makeCard>> = {}, dockRows?: number) {
+    const cards = [makeCard({ id: "c1", layout, ...over })];
+    const state = useDashboardStore.getState();
+    const docked = over.pinned !== undefined;
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "T", cards: docked ? [] : cards }] }],
+      docks: { ...state.docks, ...(dockRows === undefined ? {} : { dockRows: { top: dockRows, bottom: dockRows } }), tabs: [{ id: "top", name: "top", cards: docked ? cards : [] }] },
+      updateLayouts: async (layouts) => {
+        writes.push(layouts);
+        const l = layouts[0];
+        const apply = (cs: typeof cards) => cs.map((c) => (c.id === l.i ? { ...c, layout: { x: l.x, y: l.y, w: l.w, h: l.h } } : c));
+        useDashboardStore.setState((s) => ({
+          dashboards: s.dashboards.map((d) => ({ ...d, tabs: d.tabs.map((t) => ({ ...t, cards: apply(t.cards) })) })),
+          docks: { ...s.docks, tabs: s.docks.tabs.map((t) => ({ ...t, cards: apply(t.cards) })) },
+        }));
+      },
+    });
+  }
+  const mounted = (props: { readOnly?: boolean } = {}) => (
+    <div className="widget-card">
+      <PictureInPictureRenderer cardId="c1" {...props} />
+    </div>
+  );
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
+
+  beforeEach(() => {
+    vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
+    writes.length = 0;
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, widgetGap: 10 } });
+    answer({ state: "fitted" });
+    const rectOf = (box: { width: number; height: number }) => ({ left: 0, top: 0, x: 0, y: 0, right: box.width, bottom: box.height, ...box, toJSON: () => ({}) });
+    rects = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("widget-card")) return rectOf(size.card) as DOMRect;
+      if (this.classList.contains("picture-in-picture")) return rectOf(size.body) as DOMRect;
+      return rectOf({ width: 0, height: 0 }) as DOMRect;
+    });
+  });
+  afterEach(() => {
+    rects?.mockRestore();
+    useSettingsStore.setState({ settings: DEFAULT_SETTINGS });
+  });
+
+  it("sets the fewest rows that hold the player when the card mounts too tall, then settles", async () => {
+    place({ x: 2, y: 3, w: 20, h: 30 });
+    render(mounted());
+    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 2, y: 3, w: 20, h: NEEDED }]]));
+    await settle();
+    expect(writes).toHaveLength(1);
+  });
+
+  it("follows a change of width", async () => {
+    place({ x: 0, y: 0, w: 20, h: NEEDED });
+    render(mounted());
+    await settle();
+    expect(writes).toHaveLength(0);
+    size.body = { width: 1000, height: 550 }; // 1000 x 563 player -> 50 + 563 = 613 px -> 21 rows
+    useDashboardStore.setState((s) => ({
+      dashboards: s.dashboards.map((d) => ({ ...d, tabs: d.tabs.map((t) => ({ ...t, cards: t.cards.map((c) => ({ ...c, layout: { ...c.layout, w: 30 } })) })) })),
+    }));
+    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 30, h: 21 }]]));
+    size.body = { width: 640, height: 550 };
+  });
+
+  it("leaves a card alone when only its pixels change", async () => {
+    place({ x: 0, y: 0, w: 20, h: NEEDED });
+    const { rerender } = render(mounted());
+    await settle();
+    size.body = { width: 900, height: 700 };
+    rerender(mounted());
+    window.dispatchEvent(new Event("resize"));
+    await settle();
+    expect(writes).toHaveLength(0);
+    size.body = { width: 640, height: 550 };
+  });
+
+  it("writes nothing when the height is already right", async () => {
+    place({ x: 0, y: 0, w: 20, h: NEEDED });
+    render(mounted());
+    await settle();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("writes nothing in a read-only context", async () => {
+    place({ x: 0, y: 0, w: 20, h: 30 });
+    render(mounted({ readOnly: true }));
+    await settle();
+    expect(writes).toHaveLength(0);
+  });
+
+  it("writes nothing when the card is not measured yet", async () => {
+    place({ x: 0, y: 0, w: 20, h: 30 });
+    size.body = { width: 0, height: 0 };
+    render(mounted());
+    await settle();
+    expect(writes).toHaveLength(0);
+    size.body = { width: 640, height: 550 };
+  });
+
+  it("snaps a card in a dock and keeps it within the band", async () => {
+    place({ x: 0, y: 2, w: 20, h: 30 }, { pinned: "top" }, 20);
+    render(mounted());
+    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 2, w: 20, h: NEEDED }]]));
+  });
+
+  it("clamps a dock card to the band's rows", async () => {
+    place({ x: 0, y: 5, w: 20, h: 30 }, { pinned: "top" }, 8);
+    render(mounted());
+    await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 20, h: 8 }]]));
+    await settle();
+    expect(writes).toHaveLength(1);
   });
 });

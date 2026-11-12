@@ -93,8 +93,9 @@ In the macOS app, BDOBB moves and sizes Chrome's `Picture in Picture` window
 to sit over it, against the top of the card, and follows the card and BDOBB's
 window. The player is kept 16:9 and no larger than about 80% of the display
 (1388 × 781 on a 1736 × 1133 display). It needs **Accessibility** permission,
-which the card asks for. A handle on the card's bottom edge trims the empty
-space under the player.
+which the card asks for. The card's height follows its width: resizing it
+snaps the height to the fewest rows that hold the video, so under one row of
+space is left below the player.
 
 When the card is scrolled out of view, on another dashboard or tab, BDOBB is
 minimized or not in front, or the card's own menu is open, the player moves

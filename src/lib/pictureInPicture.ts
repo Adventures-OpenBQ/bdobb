@@ -58,6 +58,24 @@ export function pipResizeHandles(widgetId: string, cornerDragHandles: boolean): 
 /** The "Mute while hidden" setting: an on/off choice, off unless the card says "on". */
 export const muteWhileHidden = (params: Record<string, string>): boolean => params.muteWhileHidden === "on";
 
+/** The floating player's size limits, in CSS pixels. Mirrors MIN_SIZE and MAX_SIZE in src-tauri/src/picture_in_picture/logic.rs. */
+export const PLAYER_MIN = { width: 284, height: 160 };
+export const PLAYER_MAX = { width: 1388, height: 781 };
+
+/**
+ * The fewest grid rows whose card holds the player at the body's width: the
+ * player is the body width within its limits and 16:9, and `overhead` is the
+ * card's height less the body's (header, borders, padding). Null when a
+ * measurement is missing, so the caller leaves the card alone.
+ */
+export function rowsForPlayer(m: { bodyWidth: number; overhead: number; rowHeight: number; gap: number }): number | null {
+  const { bodyWidth, overhead, rowHeight, gap } = m;
+  if (![bodyWidth, overhead, rowHeight, gap].every(Number.isFinite) || bodyWidth <= 0 || overhead < 0 || rowHeight <= 0 || gap < 0) return null;
+  const width = Math.min(PLAYER_MAX.width, Math.max(PLAYER_MIN.width, bodyWidth));
+  // h rows are h * rowHeight + (h - 1) * gap tall.
+  return Math.max(1, Math.ceil((overhead + Math.ceil((width * 9) / 16) + gap) / (rowHeight + gap)));
+}
+
 /** Whole-pixel equality: sub-pixel jitter is no reason to move the player. */
 export function sameRect(a: CssRect, b: CssRect): boolean {
   return (

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { tauri } = vi.hoisted(() => ({ tauri: { on: true } }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: () => tauri.on }));
 
-import { muteWhileHidden, pipPlatform, pipResizeHandles, pipSettings, sameRect } from "./pictureInPicture";
+import { muteWhileHidden, PLAYER_MAX, pipPlatform, pipResizeHandles, pipSettings, rowsForPlayer, sameRect } from "./pictureInPicture";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -61,5 +61,31 @@ describe("sameRect", () => {
     const a = { x: 10, y: 20, width: 300, height: 200 };
     expect(sameRect(a, { x: 10.2, y: 19.8, width: 300.4, height: 200 })).toBe(true);
     expect(sameRect(a, { ...a, x: 11 })).toBe(false);
+  });
+});
+
+describe("rowsForPlayer", () => {
+  // A 20 px row and a 10 px gap: h rows are 30h - 10 px tall. The card adds 50 px of header and padding around the body.
+  const base = { overhead: 50, rowHeight: 20, gap: 10 };
+  // 640 wide -> a 360 high player; 50 + 360 = 410 px of card -> 30h - 10 >= 410 -> 14 rows.
+  it("is the fewest rows that hold the player, exact fit included", () => {
+    expect(rowsForPlayer({ ...base, bodyWidth: 640 })).toBe(14);
+  });
+  it("needs one more row when the player is one pixel over", () => {
+    // 30h - 10 >= overhead + 360 exactly at 410 (h = 14); a 1 px larger overhead tips it over.
+    expect(rowsForPlayer({ ...base, bodyWidth: 640, overhead: 51 })).toBe(15);
+  });
+  it("limits the player to its largest size", () => {
+    expect(rowsForPlayer({ ...base, bodyWidth: 5000 })).toBe(rowsForPlayer({ ...base, bodyWidth: PLAYER_MAX.width }));
+    expect(rowsForPlayer({ ...base, bodyWidth: 5000 })).toBe(Math.ceil((50 + 781 + 10) / 30));
+  });
+  it("holds the smallest player when the body is narrower", () => {
+    expect(rowsForPlayer({ ...base, bodyWidth: 100 })).toBe(Math.ceil((50 + 160 + 10) / 30));
+  });
+  it("knows nothing without measurements", () => {
+    expect(rowsForPlayer({ ...base, bodyWidth: 0 })).toBeNull();
+    expect(rowsForPlayer({ ...base, bodyWidth: 640, overhead: -1 })).toBeNull();
+    expect(rowsForPlayer({ ...base, bodyWidth: Number.NaN })).toBeNull();
+    expect(rowsForPlayer({ ...base, bodyWidth: 640, rowHeight: 0 })).toBeNull();
   });
 });

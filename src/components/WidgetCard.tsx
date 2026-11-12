@@ -1089,7 +1089,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 
     // Same reason as the clock: no backend, data is always null.
     if (widget?.type === "picture_in_picture") {
-      return <PictureInPictureRenderer cardId={card.id} params={card.params} menuOpen={exportOpen} />;
+      return <PictureInPictureRenderer cardId={card.id} params={card.params} menuOpen={exportOpen} readOnly={viewer} />;
     }
 
     // The date scratchpad. Given the group-merged params for the same reason
