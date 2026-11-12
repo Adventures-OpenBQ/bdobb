@@ -446,8 +446,10 @@ describe("the card's height follows its width", () => {
   );
   const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
 
+  const BODY = { width: 640, height: 550 };
   beforeEach(() => {
     vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
+    size.body = { ...BODY };
     writes.length = 0;
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, widgetGap: 10 } });
     answer({ state: "fitted" });
@@ -459,6 +461,7 @@ describe("the card's height follows its width", () => {
     });
   });
   afterEach(() => {
+    size.body = { ...BODY };
     rects?.mockRestore();
     useSettingsStore.setState({ settings: DEFAULT_SETTINGS });
   });
@@ -481,7 +484,6 @@ describe("the card's height follows its width", () => {
       dashboards: s.dashboards.map((d) => ({ ...d, tabs: d.tabs.map((t) => ({ ...t, cards: t.cards.map((c) => ({ ...c, layout: { ...c.layout, w: 30 } })) })) })),
     }));
     await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 30, h: 21 }]]));
-    size.body = { width: 640, height: 550 };
   });
 
   it("leaves a card alone when only its pixels change", async () => {
@@ -493,7 +495,6 @@ describe("the card's height follows its width", () => {
     window.dispatchEvent(new Event("resize"));
     await settle();
     expect(writes).toHaveLength(0);
-    size.body = { width: 640, height: 550 };
   });
 
   it("writes nothing when the height is already right", async () => {
@@ -516,7 +517,6 @@ describe("the card's height follows its width", () => {
     render(mounted());
     await settle();
     expect(writes).toHaveLength(0);
-    size.body = { width: 640, height: 550 };
   });
 
   it("snaps a card in a dock and keeps it within the band", async () => {
