@@ -107,15 +107,22 @@ pub fn ax_failure_reason(code: i32) -> Option<&'static str> {
     (code == AX_CANNOT_COMPLETE).then_some("Chrome is not responding; try again in a moment")
 }
 
+/// The reason an Accessibility call failed: Chrome's timeout reads as "not
+/// responding", any other code is named after what was being done.
+pub fn ax_error_text(code: i32, what: &str) -> String {
+    ax_failure_reason(code).map_or_else(|| format!("{what} (error {code})"), str::to_owned)
+}
+
 /// What the slider lookup answers on the call that switches Chrome's page tree on.
 pub const PREPARING_REASON: &str = "Chrome is preparing the page; try again";
 
 /// Chrome builds a tab's accessibility tree only when asked. A window with no
-/// web area at all means it was not asked, so ask once per app session
-/// (AXManualAccessibility). A page that has a web area but no slider is a
-/// different problem and is never "fixed" this way.
-pub fn should_request_manual_accessibility(saw_web_area: bool, already_requested: bool) -> bool {
-    !saw_web_area && !already_requested
+/// web area at all means it was not asked, so ask once per Chrome process
+/// (AXManualAccessibility); `asked_pid` is the process last asked, 0 for none.
+/// A page that has a web area but no slider is a different problem and is
+/// never "fixed" this way.
+pub fn should_request_manual_accessibility(saw_web_area: bool, asked_pid: i32, pid: i32) -> bool {
+    !saw_web_area && asked_pid != pid
 }
 
 /// Where a parked player sits: just beyond the right-most display (the
@@ -519,12 +526,14 @@ impl<V: VolumeSlider> Mute<V> {
     /// Steps back to the recorded level if BDOBB muted it (spec, Flow 4).
     pub fn restore(&mut self) {
         self.hide_muted = false;
-        let Some(recorded) = self.recorded.take() else { return };
-        if let Ok(level) = self.slider.level(&recorded.source, &recorded.label) {
-            // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
-            if level == 0 {
-                let _ = self.step_and_settle(&recorded.source, &recorded.label, level, true, steps(level, recorded.level));
-            }
+        let Some(recorded) = &self.recorded else { return };
+        let (source, label, to) = (recorded.source.clone(), recorded.label.clone(), recorded.level);
+        // A slider that cannot be read right now keeps the recorded level for the next restore.
+        let Ok(level) = self.slider.level(&source, &label) else { return };
+        self.recorded = None;
+        // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
+        if level == 0 {
+            let _ = self.step_and_settle(&source, &label, level, true, steps(level, to));
         }
     }
 }
@@ -601,11 +610,22 @@ mod tests {
     }
 
     #[test]
-    fn the_page_tree_is_requested_only_when_no_web_area_was_seen_and_only_once() {
-        assert!(should_request_manual_accessibility(false, false));
-        assert!(!should_request_manual_accessibility(true, false));
-        assert!(!should_request_manual_accessibility(false, true));
-        assert!(!should_request_manual_accessibility(true, true));
+    fn the_page_tree_is_requested_only_when_no_web_area_was_seen_and_once_per_chrome_process() {
+        // Nothing asked yet (pid 0).
+        assert!(should_request_manual_accessibility(false, 0, 412));
+        assert!(!should_request_manual_accessibility(true, 0, 412));
+        // Already asked this Chrome process.
+        assert!(!should_request_manual_accessibility(false, 412, 412));
+        assert!(!should_request_manual_accessibility(true, 412, 412));
+        // Chrome was restarted: a new process builds no page trees until asked again.
+        assert!(should_request_manual_accessibility(false, 412, 977));
+    }
+
+    #[test]
+    fn an_accessibility_error_is_a_reason_for_a_timeout_and_a_code_otherwise() {
+        assert_eq!(ax_error_text(-25204, "the volume slider refused a step"), "Chrome is not responding; try again in a moment");
+        assert_eq!(ax_error_text(-25200, "the volume slider refused a step"), "the volume slider refused a step (error -25200)");
+        assert_eq!(ax_error_text(-25205, "Accessibility refused AXSize"), "Accessibility refused AXSize (error -25205)");
     }
 
     #[test]
@@ -1234,6 +1254,18 @@ mod tests {
         assert_eq!(mute.set(SRC, LABEL, false), MuteState::Sound);
         assert_eq!(mute.slider.level, 40);
         assert_eq!(mute.slider.steps, vec![(false, 7)]);
+    }
+
+    #[test]
+    fn a_restore_that_cannot_read_the_slider_keeps_the_recorded_level() {
+        let mut mute = Mute::new(FakeSlider::at(60));
+        mute.set(SRC, LABEL, true);
+        mute.slider.broken = Some("Chrome is not responding".into());
+        mute.restore();
+        assert_eq!(mute.slider.level, 0);
+        mute.slider.broken = None;
+        mute.restore();
+        assert_eq!(mute.slider.level, 60);
     }
 
     #[test]

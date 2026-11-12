@@ -14,11 +14,12 @@
 use std::collections::VecDeque;
 use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::Once;
 use std::time::{Duration, Instant};
 
 use super::logic::{
-    ax_failure_reason, parse_percent, should_request_manual_accessibility, Op, PlayerWindow, Rect, VolumeSlider, PREPARING_REASON,
+    ax_error_text, ax_failure_reason, parse_percent, should_request_manual_accessibility, Op, PlayerWindow, Rect, VolumeSlider, PREPARING_REASON,
 };
 
 const CHROME_BUNDLE_ID: &str = "com.google.Chrome";
@@ -36,8 +37,10 @@ const MESSAGING_TIMEOUT_SECONDS: f32 = 1.0;
 const SETTLE_TIMEOUT: Duration = Duration::from_millis(500);
 const SETTLE_POLL: Duration = Duration::from_millis(25);
 
-/// Set once BDOBB has asked Chrome to build its page trees, so it asks once per session.
-static MANUAL_ACCESSIBILITY_REQUESTED: AtomicBool = AtomicBool::new(false);
+/// The Chrome process BDOBB last asked to build its page trees (0: none), so it asks once per Chrome process.
+static MANUAL_ACCESSIBILITY_ASKED_PID: AtomicI32 = AtomicI32::new(0);
+/// The system-wide element's messaging timeout is set once per process.
+static SYSTEM_TIMEOUT: Once = Once::new();
 
 type CFTypeRef = *const c_void;
 const UTF8: u32 = 0x0800_0100; // kCFStringEncodingUTF8
@@ -104,6 +107,7 @@ extern "C" {
     fn AXIsProcessTrusted() -> u8;
     fn AXIsProcessTrustedWithOptions(options: CFTypeRef) -> u8;
     fn AXUIElementCreateApplication(pid: i32) -> CFTypeRef;
+    fn AXUIElementCreateSystemWide() -> CFTypeRef;
     fn AXUIElementCopyAttributeValue(element: CFTypeRef, attribute: CFTypeRef, value: *mut CFTypeRef) -> i32;
     fn AXUIElementSetMessagingTimeout(element: CFTypeRef, timeout_seconds: f32) -> i32;
     fn AXUIElementSetAttributeValue(element: CFTypeRef, attribute: CFTypeRef, value: CFTypeRef) -> i32;
@@ -164,7 +168,7 @@ fn set(element: CFTypeRef, name: &str, value: &Cf) -> Result<(), String> {
     // SAFETY: live element, CFString key, AXValue value.
     match unsafe { AXUIElementSetAttributeValue(element, key.0, value.0) } {
         AX_SUCCESS => Ok(()),
-        error => Err(format!("Accessibility refused {name} (error {error})")),
+        error => Err(ax_error_text(error, &format!("Accessibility refused {name}"))),
     }
 }
 
@@ -253,6 +257,13 @@ fn chrome() -> Option<(Cf, i32)> {
     let app = Cf::new(unsafe { AXUIElementCreateApplication(pid) })?;
     // SAFETY: live application element. A hung Chrome then answers "cannot complete" after a second.
     unsafe { AXUIElementSetMessagingTimeout(app.0, MESSAGING_TIMEOUT_SECONDS) };
+    // The per-application timeout does not cover the child elements Chrome hands back; the system-wide one does.
+    SYSTEM_TIMEOUT.call_once(|| {
+        // SAFETY: a +1 system-wide element, released by Cf on drop.
+        if let Some(system) = Cf::new(unsafe { AXUIElementCreateSystemWide() }) {
+            unsafe { AXUIElementSetMessagingTimeout(system.0, MESSAGING_TIMEOUT_SECONDS) };
+        }
+    });
     Some((app, pid))
 }
 
@@ -434,7 +445,7 @@ fn request_page_trees(app: &Cf) {
 /// Chrome usually maps a page's aria-label to AXDescription, so both are
 /// accepted.
 fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
-    let (app, _) = chrome().ok_or("Chrome is not running")?;
+    let (app, pid) = chrome().ok_or("Chrome is not running")?;
     let windows: Vec<Cf> = elements_checked(app.0, "AXWindows")?
         .into_iter()
         .filter(|w| string_attr(w.0, "AXTitle").is_some_and(|t| t != PLAYER_TITLE && t.contains(source)))
@@ -467,8 +478,8 @@ fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
             queue.extend(elements_checked(element.0, "AXChildren")?);
         }
     }
-    if should_request_manual_accessibility(saw_web_area, MANUAL_ACCESSIBILITY_REQUESTED.load(Ordering::Relaxed)) {
-        MANUAL_ACCESSIBILITY_REQUESTED.store(true, Ordering::Relaxed);
+    if should_request_manual_accessibility(saw_web_area, MANUAL_ACCESSIBILITY_ASKED_PID.load(Ordering::Relaxed), pid) {
+        MANUAL_ACCESSIBILITY_ASKED_PID.store(pid, Ordering::Relaxed);
         request_page_trees(&app);
         return Err(PREPARING_REASON.to_owned());
     }
@@ -495,7 +506,7 @@ impl VolumeSlider for AxSlider {
             // SAFETY: live slider element and CFString action name.
             let error = unsafe { AXUIElementPerformAction(slider, action.0) };
             if error != AX_SUCCESS {
-                return Err(format!("the volume slider refused a step (error {error})"));
+                return Err(ax_error_text(error, "the volume slider refused a step"));
             }
         }
         Ok(())

@@ -91,7 +91,8 @@ pub fn release_all() {
 
 #[cfg(target_os = "macos")]
 mod native {
-    use std::sync::{Mutex, Once, PoisonError};
+    use std::sync::mpsc::{channel, Sender};
+    use std::sync::{Mutex, Once, OnceLock, PoisonError};
     use std::time::Duration;
 
     use tauri::{WebviewWindow, WindowEvent};
@@ -132,16 +133,45 @@ mod native {
         Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
     }
 
-    /// Runs `f` on the placement, then carries out the volume change it calls
-    /// for: a restore if it handed the player back, whatever the path; a mute
-    /// or its undoing if it parked or un-parked a hidden player. The
-    /// placement lock is dropped first.
-    fn placement_and_volume<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
+    type Job = Box<dyn FnOnce() + Send>;
+
+    /// Runs `f` on the placement and returns the volume change it calls for:
+    /// a restore if it handed the player back, whatever the path; a mute or
+    /// its undoing if it parked or un-parked a hidden player. The placement
+    /// lock is dropped before the job is returned.
+    fn with_placement<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> (T, Option<Job>) {
         let (result, handed_back, action) = placement(|p| (f(p), p.take_handed_back(), p.take_volume_action()));
-        if handed_back {
-            mute(|m| m.restore());
-        } else if let Some(action) = action {
-            mute(|m| m.apply(action));
+        let job: Option<Job> = if handed_back {
+            Some(Box::new(|| mute(|m| m.restore())))
+        } else {
+            action.map(|action| -> Job { Box::new(move || mute(|m| m.apply(action))) })
+        };
+        (result, job)
+    }
+
+    /// For the commands (their own threads) and the quit path: the volume
+    /// change happens before this returns.
+    fn placement_and_volume<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
+        let (result, job) = with_placement(f);
+        if let Some(job) = job {
+            job();
+        }
+        result
+    }
+
+    /// For the window-event thread, which must not wait on Chrome (a slider
+    /// search takes about 150 ms, a hung Chrome a second per call): the
+    /// volume change goes to one worker thread, which keeps them in order.
+    fn placement_and_volume_queued<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
+        static WORKER: OnceLock<Sender<Job>> = OnceLock::new();
+        let (result, job) = with_placement(f);
+        if let Some(job) = job {
+            let worker = WORKER.get_or_init(|| {
+                let (sender, jobs) = channel::<Job>();
+                std::thread::spawn(move || jobs.into_iter().for_each(|job| job()));
+                sender
+            });
+            let _ = worker.send(job);
         }
         result
     }
@@ -215,7 +245,7 @@ mod native {
 
     fn set_away(window: &WebviewWindow, away: bool) {
         let origin = origin(window);
-        placement_and_volume(|p| p.set_away(away, origin));
+        placement_and_volume_queued(|p| p.set_away(away, origin));
     }
 
     /// The window is read BEFORE either lock is taken.
@@ -225,7 +255,7 @@ mod native {
         } else if focused {
             set_away(window, false);
         } else if let Some(origin) = origin(window) {
-            placement_and_volume(|p| p.refit(origin));
+            placement_and_volume_queued(|p| p.refit(origin));
         }
     }
 }

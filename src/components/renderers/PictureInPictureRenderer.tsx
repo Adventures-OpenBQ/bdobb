@@ -213,8 +213,8 @@ function MuteButton({ source, label }: { source: string; label: string }) {
       aria-label="Mute"
       aria-pressed={muted}
       // aria-disabled, not disabled: a disabled button shows no tooltip, and the reason is the point.
-      aria-disabled={reason !== undefined}
-      disabled={pending}
+      // Also while a call is in flight, and never `disabled`: the button keeps keyboard focus.
+      aria-disabled={reason !== undefined || pending}
       title={reason ?? (muted ? "Unmute" : "Mute")}
       onClick={() => {
         if (reason !== undefined || inFlight.current) return;

@@ -219,11 +219,16 @@ describe("Picture in Picture on the macOS desktop app", () => {
     render(<PictureInPictureMute params={{}} />);
     const button = await screen.findByRole("button", { name: "Mute" });
     await waitFor(() => expect(button).toHaveAttribute("title", "Mute"));
+    button.focus();
     await userEvent.dblClick(button);
     expect(invoke.mock.calls.filter(([cmd]) => cmd === "picture_in_picture_set_muted")).toHaveLength(1);
-    expect(button).toBeDisabled();
+    // aria-disabled, not disabled: the button keeps keyboard focus while the call is in flight.
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveFocus();
     finish({ state: "muted" });
-    await waitFor(() => expect(button).toBeEnabled());
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "false"));
+    expect(button).toHaveFocus();
     expect(button).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -324,6 +329,30 @@ describe("Picture in Picture remounts", () => {
     storeHolds(null);
     await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS * 2);
     expect(releases()).toEqual([]);
+  });
+
+  it("holds the next mount's fit behind the release, which waits on the old mount's unresolved fit", async () => {
+    let finish: (status: PipStatus) => void = () => undefined;
+    let first = true;
+    invoke.mockImplementation((cmd: string) => {
+      if (cmd !== "picture_in_picture_fit") return Promise.resolve(undefined);
+      if (!first) return Promise.resolve({ state: "fitted" });
+      first = false;
+      return new Promise<PipStatus>((resolve) => (finish = resolve));
+    });
+    const old = render(<PictureInPictureRenderer cardId="c9" />);
+    await firstFit();
+    old.unmount();
+    // The grace period expires while the old mount's fit is still unresolved, and the card remounts.
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    render(<PictureInPictureRenderer cardId="c9" />);
+    // Real animation frames, so the new mount has every chance to send its fit.
+    for (let i = 0; i < 4; i++) await new Promise((resolve) => requestAnimationFrame(resolve));
+    await vi.advanceTimersByTimeAsync(10);
+    // A queue per mount would already have sent the second fit.
+    expect(calls()).toEqual(["picture_in_picture_fit"]);
+    finish({ state: "fitted" });
+    await vi.waitFor(() => expect(calls()).toEqual(["picture_in_picture_fit", "picture_in_picture_release", "picture_in_picture_fit"]));
   });
 
   it("only cancels the release of its own card", async () => {
