@@ -203,7 +203,8 @@ pub struct Placement<W> {
     hidden: bool,
     menu: bool,
     away: bool,
-    /// A restore failed part-way: the card is gone and every settle retries the restore, never parks.
+    /// A restore failed part-way: the card is gone. A park, a release, a quit or a focus change retries
+    /// the restore (never parks); a window move or resize does not (`refit`).
     releasing: bool,
     /// The player is physically off screen.
     parked: bool,
@@ -330,10 +331,7 @@ impl<W: PlayerWindow> Placement<W> {
     fn settle(&mut self, origin: Option<(f64, f64)>) -> Status {
         if self.releasing {
             self.release_all();
-            return match self.holder {
-                Some(_) => Status::Failed { reason: "BDOBB could not put the player back; trying again".into() },
-                None => Status::NoPlayer,
-            };
+            return if self.holder.is_some() { Self::restore_pending() } else { Status::NoPlayer };
         }
         if self.parks() {
             return match self.park_now() {
@@ -354,6 +352,10 @@ impl<W: PlayerWindow> Placement<W> {
             Ok(()) => Status::Fitted,
             Err(reason) => Status::Failed { reason },
         }
+    }
+
+    fn restore_pending() -> Status {
+        Status::Failed { reason: "BDOBB could not put the player back; trying again".into() }
     }
 
     fn park_now(&mut self) -> Result<(), String> {
@@ -377,9 +379,14 @@ impl<W: PlayerWindow> Placement<W> {
 
     /// Re-fits the holder with its last rectangle (BDOBB's window moved or
     /// resized). None when no card holds it. A parked player stays parked.
+    /// A failed restore is not retried here: a move or resize arrives for every
+    /// pixel of a drag, and each retry can take seconds with Chrome hung.
     pub fn refit(&mut self, origin: (f64, f64)) -> Option<Status> {
         self.holder.as_ref()?;
         self.last?;
+        if self.releasing {
+            return Some(Self::restore_pending());
+        }
         Some(self.settle(Some(origin)))
     }
 
@@ -1074,12 +1081,33 @@ mod tests {
         placement.release_all();
         assert!(!placement.take_handed_back());
         assert!(!off_screen(placement.window.inner.frame, &[DISPLAY]));
-        // The next window event retries the restore instead of parking the player for a card that is gone.
-        assert_eq!(placement.refit(ORIGIN), Some(Status::NoPlayer));
+        // The next focus change retries the restore instead of parking the player for a card that is gone.
+        placement.set_away(true, Some(ORIGIN));
         assert_eq!(placement.window.inner.frame, Some(ORIGINAL));
         assert!(placement.take_handed_back());
         // Nothing is held now, so there is nothing left to retry.
         assert_eq!(placement.refit(ORIGIN), None);
+    }
+
+    #[test]
+    fn a_window_move_or_resize_does_not_retry_a_failed_restore_but_a_focus_change_does() {
+        let mut placement = Placement::new(RefusesNth { inner: FakeWindow::with_player(), calls: 0, nth: 0 });
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.calls = 0;
+        placement.window.nth = 2;
+        placement.release_all();
+        let before = placement.window.calls;
+        // Any number of re-fits: no window calls, the pending state is reported.
+        for _ in 0..3 {
+            assert!(matches!(placement.refit(ORIGIN), Some(Status::Failed { .. })));
+        }
+        assert_eq!(placement.window.calls, before);
+        assert!(!placement.take_handed_back());
+        placement.set_away(false, Some(ORIGIN));
+        assert!(placement.window.calls > before);
+        assert_eq!(placement.window.inner.frame, Some(ORIGINAL));
+        assert!(placement.take_handed_back());
     }
 
     #[test]
