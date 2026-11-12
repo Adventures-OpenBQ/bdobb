@@ -92,9 +92,29 @@ pub fn fit_16x9(area: Rect) -> Option<Rect> {
 /// player's current position, so first move to where `saved` fits wholly on
 /// `display`, then size, then put it back exactly.
 pub fn restore_ops(saved: Rect, display: Rect) -> [Op; 3] {
-    let x = saved.x.min(display.x + display.width - saved.width).max(display.x);
-    let y = saved.y.min(display.y + display.height - saved.height).max(display.y);
+    let (x, y) = clamp_into(saved, display);
     [Op::Move(x, y), Op::Size(saved.width, saved.height), Op::Move(saved.x, saved.y)]
+}
+
+/// The top-left that puts `rect` wholly on `display`, as close to where it is as possible.
+fn clamp_into(rect: Rect, display: Rect) -> (f64, f64) {
+    (
+        rect.x.min(display.x + display.width - rect.width).max(display.x),
+        rect.y.min(display.y + display.height - rect.height).max(display.y),
+    )
+}
+
+/// True when any part of `frame` is on a display; also when no display can be listed (nothing to judge by).
+fn on_a_display(frame: Rect, displays: &[Rect]) -> bool {
+    displays.is_empty()
+        || displays.iter().any(|d| frame.x < d.x + d.width && frame.x + frame.width > d.x && frame.y < d.y + d.height && frame.y + frame.height > d.y)
+}
+
+/// A blur decision is worked out after a delay and some Accessibility calls.
+/// Any focus event since it began (`recorded` is the focus generation then,
+/// `now` the generation now) makes it stale: it must not park a BDOBB that is in front.
+pub fn blur_result_is_current(recorded: u64, now: u64) -> bool {
+    recorded == now
 }
 
 /// kAXErrorCannotComplete: what Accessibility answers when the app does not
@@ -196,11 +216,6 @@ impl<W: PlayerWindow> Placement<W> {
         std::mem::take(&mut self.handed_back)
     }
 
-    /// "Mute while hidden": set before a fit with the card's setting, None when it is off.
-    pub fn set_mute_target(&mut self, target: Option<MuteTarget>) {
-        self.mute = target;
-    }
-
     /// The volume change the placement now calls for, once. Hidden (scrolled
     /// out, another dashboard or tab) and away (minimised, not in front)
     /// mute; the card's own menu does not.
@@ -214,18 +229,38 @@ impl<W: PlayerWindow> Placement<W> {
         Some(target.map_or(VolumeAction::Unhide, VolumeAction::Hide))
     }
 
-    /// Parked, or about to be: a card asking to fit may take such a hold over.
-    fn yielding(&self) -> bool {
+    /// Parked for a reason that is the holder's own business: a reason to stay
+    /// out of the way, not to give up the player.
+    fn parks(&self) -> bool {
         self.hidden || self.menu || self.away
+    }
+
+    /// Another card asking to fit may take the hold over only when its card is
+    /// hidden; not while BDOBB is away, and not while the holder's menu is open.
+    fn yields(&self) -> bool {
+        self.hidden
+    }
+
+    /// Where a frame just read from the player is saved as the original: as it
+    /// is, unless it lies on no display, then clamped onto one (the player is
+    /// never "restored" to an off-screen spot).
+    fn original_from(&self, frame: Rect) -> Rect {
+        if on_a_display(frame, &self.window.displays()) {
+            return frame;
+        }
+        let (x, y) = clamp_into(frame, self.window.display_bounds(frame));
+        Rect { x, y, ..frame }
     }
 
     /// The card is on screen and wants the player over it. Clears the card's
     /// own reasons to be parked; BDOBB being away still keeps it parked.
-    pub fn fit(&mut self, card: &str, css: Rect, origin: (f64, f64)) -> Status {
+    /// `mute` is the card's "Mute while hidden" setting, None when it is off;
+    /// it is taken only if the fit is accepted.
+    pub fn fit_with_mute(&mut self, card: &str, css: Rect, origin: (f64, f64), mute: Option<MuteTarget>) -> Status {
         if !self.window.trusted() {
             return Status::NoPermission;
         }
-        if self.holder.as_deref().is_some_and(|holder| holder != card) && !self.yielding() {
+        if self.holder.as_deref().is_some_and(|holder| holder != card) && !self.yields() {
             return Status::InUse;
         }
         if fit_16x9(to_screen(css, origin)).is_none() {
@@ -245,8 +280,9 @@ impl<W: PlayerWindow> Placement<W> {
             Err(reason) => return Status::Failed { reason },
         };
         if self.holder.is_none() {
-            self.saved = Some(frame);
+            self.saved = Some(self.original_from(frame));
         }
+        self.mute = mute;
         self.holder = Some(card.to_owned());
         self.last = Some(css);
         self.hidden = false;
@@ -279,7 +315,7 @@ impl<W: PlayerWindow> Placement<W> {
 
     /// Parks or places the holder according to the current reasons.
     fn settle(&mut self, origin: Option<(f64, f64)>) -> Status {
-        if self.yielding() {
+        if self.parks() {
             return match self.park_now() {
                 Ok(()) => Status::Parked,
                 Err(reason) => Status::Failed { reason },
@@ -336,9 +372,17 @@ impl<W: PlayerWindow> Placement<W> {
         true
     }
 
+    /// Gives the player back. If that fails the hold stays, with the original
+    /// frame, and counts as hidden so that a later fit, release or quit tries again.
     pub fn release_all(&mut self) {
-        self.restore();
-        self.forget();
+        match self.restore() {
+            Restored::Done => self.forget(),
+            Restored::Failed { moved } => {
+                self.hidden = true;
+                // A restore that got as far as moving the player on screen left it there.
+                self.parked &= !moved;
+            }
+        }
     }
 
     fn forget(&mut self) {
@@ -351,16 +395,27 @@ impl<W: PlayerWindow> Placement<W> {
         self.parked = false;
     }
 
-    fn restore(&mut self) {
-        self.handed_back |= self.holder.is_some();
-        let Some(saved) = self.saved.take() else { return };
-        for op in restore_ops(saved, self.window.display_bounds(saved)) {
+    fn restore(&mut self) -> Restored {
+        let Some(saved) = self.saved else { return Restored::Done };
+        for (done, op) in restore_ops(saved, self.window.display_bounds(saved)).into_iter().enumerate() {
             if let Err(error) = self.window.apply(op) {
+                // A player that has gone has nothing left to restore.
+                if matches!(self.window.frame(), Ok(None)) {
+                    return Restored::Done;
+                }
                 eprintln!("picture in picture: cannot restore the player: {error}");
-                return;
+                return Restored::Failed { moved: done > 0 };
             }
         }
+        Restored::Done
     }
+}
+
+enum Restored {
+    /// Restored, or the player is gone.
+    Done,
+    /// Some step was refused; `moved` is true if the player had already been moved on screen.
+    Failed { moved: bool },
 }
 
 /// One AXIncrement or AXDecrement moves the page's volume slider this far.
@@ -557,18 +612,29 @@ mod tests {
     }
 
     /// Chrome's floating player as the probe found it: position and size
-    /// settable, 16:9 locked with the width winning, and a width it refuses
-    /// past `max_width`.
+    /// settable, 16:9 locked with the width winning, a width it refuses past
+    /// `max_width`, and a resize clamped to the screen at its current position
+    /// (width at most the display's right edge minus x).
     struct FakeWindow {
         trusted: bool,
         frame: Option<Rect>,
         ops: Vec<Op>,
         max_width: f64,
+        /// The next this-many calls to `apply` fail and change nothing.
+        fail_next: u32,
     }
 
     impl FakeWindow {
         fn with_player() -> Self {
-            Self { trusted: true, frame: Some(ORIGINAL), ops: Vec::new(), max_width: f64::INFINITY }
+            Self { trusted: true, frame: Some(ORIGINAL), ops: Vec::new(), max_width: f64::INFINITY, fail_next: 0 }
+        }
+    }
+
+    /// The test-only face of `fit_with_mute`: the target already set is kept.
+    impl<W: PlayerWindow> Placement<W> {
+        fn fit(&mut self, card: &str, css: Rect, origin: (f64, f64)) -> Status {
+            let mute = self.mute.clone();
+            self.fit_with_mute(card, css, origin, mute)
         }
     }
 
@@ -581,6 +647,10 @@ mod tests {
         }
         fn apply(&mut self, op: Op) -> Result<(), String> {
             self.ops.push(op);
+            if self.fail_next > 0 {
+                self.fail_next -= 1;
+                return Err("refused".into());
+            }
             let frame = self.frame.as_mut().ok_or_else(|| "no player".to_string())?;
             match op {
                 Op::Move(x, y) => {
@@ -588,7 +658,7 @@ mod tests {
                     frame.y = y;
                 }
                 Op::Size(width, _) => {
-                    frame.width = width.min(self.max_width);
+                    frame.width = width.min(self.max_width).min(DISPLAY.x + DISPLAY.width - frame.x);
                     frame.height = frame.width * 9.0 / 16.0;
                 }
             }
@@ -914,6 +984,182 @@ mod tests {
     }
 
     #[test]
+    fn a_release_from_the_parked_state_ends_at_the_exact_original_frame() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        // Sizing before moving on screen would be clamped to the space left of x = 1936.
+        let tail = &placement.window.ops[placement.window.ops.len() - 3..];
+        assert_eq!(tail, [Op::Move(1336.0, 100.0), Op::Size(400.0, 225.0), Op::Move(1600.0, 100.0)]);
+    }
+
+    #[test]
+    fn a_failed_restore_keeps_the_saved_frame_and_a_later_release_restores_it() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.fail_next = 1;
+        placement.release_all();
+        // Nothing moved, the hold is kept and nothing was handed back.
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        assert!(!placement.take_handed_back());
+        placement.release_all();
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        assert!(placement.take_handed_back());
+    }
+
+    /// A player whose `n`th call on the window (counted from `calls = 0`) is refused.
+    struct RefusesNth {
+        inner: FakeWindow,
+        calls: u32,
+        nth: u32,
+    }
+
+    impl PlayerWindow for RefusesNth {
+        fn trusted(&self) -> bool {
+            true
+        }
+        fn frame(&mut self) -> Result<Option<Rect>, String> {
+            self.inner.frame()
+        }
+        fn apply(&mut self, op: Op) -> Result<(), String> {
+            self.calls += 1;
+            if self.calls == self.nth {
+                return Err("refused".into());
+            }
+            self.inner.apply(op)
+        }
+        fn display_bounds(&self, rect: Rect) -> Rect {
+            self.inner.display_bounds(rect)
+        }
+        fn displays(&self) -> Vec<Rect> {
+            self.inner.displays()
+        }
+    }
+
+    #[test]
+    fn a_restore_that_fails_part_way_leaves_the_player_to_be_parked_and_restored_again() {
+        let mut placement = Placement::new(RefusesNth { inner: FakeWindow::with_player(), calls: 0, nth: 0 });
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        // The move on screen works, the resize is refused.
+        placement.window.calls = 0;
+        placement.window.nth = 2;
+        placement.release_all();
+        assert!(!placement.take_handed_back());
+        // It is on screen now, so it is no longer flagged parked and the next settle parks it again.
+        assert!(!off_screen(placement.window.inner.frame, &[DISPLAY]));
+        assert_eq!(placement.refit(ORIGIN), Some(Status::Parked));
+        assert!(off_screen(placement.window.inner.frame, &[DISPLAY]));
+        placement.release_all();
+        assert_eq!(placement.window.inner.frame, Some(ORIGINAL));
+        assert!(placement.take_handed_back());
+    }
+
+    #[test]
+    fn a_restore_when_the_player_is_gone_forgets_the_hold() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.frame = None;
+        placement.release_all();
+        assert!(placement.take_handed_back());
+        // The next player is a fresh take: its frame is the new original.
+        let fresh = r(300.0, 300.0, 400.0, 225.0);
+        placement.window.frame = Some(fresh);
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
+        placement.release("b");
+        assert_eq!(placement.window.frame, Some(fresh));
+    }
+
+    #[test]
+    fn the_next_card_after_a_failed_restore_does_not_record_the_parked_spot_as_the_original() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.fail_next = 1;
+        placement.release_all();
+        // The failed hold counts as hidden, so b takes it over.
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
+        assert!(placement.release("b"));
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn a_player_found_off_every_display_is_saved_at_a_clamped_on_screen_position() {
+        let mut window = FakeWindow::with_player();
+        window.frame = Some(r(4000.0, 100.0, 400.0, 225.0));
+        let mut placement = Placement::new(window);
+        placement.fit("a", CARD, ORIGIN);
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.frame, Some(r(1336.0, 100.0, 400.0, 225.0)));
+        // A frame partly on a display is kept as it is (ORIGINAL sticks out to the right).
+        placement.window.frame = Some(ORIGINAL);
+        placement.fit("a", CARD, ORIGIN);
+        placement.release("a");
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn a_hold_parked_because_the_app_is_away_or_the_menu_is_open_is_not_taken_over() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.set_away(true, Some(ORIGIN));
+        let ops = placement.window.ops.len();
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::InUse);
+        assert_eq!(placement.window.ops.len(), ops);
+
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", true);
+        let ops = placement.window.ops.len();
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::InUse);
+        assert_eq!(placement.window.ops.len(), ops);
+        // Only the card's own hiding yields (a_parked_hold_yields_to_another_card...).
+        placement.park("a", false);
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
+    }
+
+    #[test]
+    fn only_an_accepted_fit_moves_the_mute_target() {
+        let other = MuteTarget { source: "Other".into(), label: "Vol".into() };
+        let mut placement = Placement::new(FakeWindow::with_player());
+        assert_eq!(placement.fit_with_mute("a", CARD, ORIGIN, Some(target())), Status::Fitted);
+        assert_eq!(placement.mute, Some(target()));
+        // Refused: in use.
+        assert_eq!(placement.fit_with_mute("b", CARD, ORIGIN, Some(other.clone())), Status::InUse);
+        assert_eq!(placement.mute, Some(target()));
+        // Refused: too small, from the holder itself.
+        let small = r(0.0, 0.0, 200.0, 100.0);
+        assert_eq!(placement.fit_with_mute("a", small, ORIGIN, Some(other.clone())), Status::TooSmall);
+        assert_eq!(placement.mute, Some(target()));
+        // Refused: no permission, no player.
+        let mut denied = Placement::new(FakeWindow { trusted: false, ..FakeWindow::with_player() });
+        denied.mute = Some(target());
+        assert_eq!(denied.fit_with_mute("b", CARD, ORIGIN, Some(other.clone())), Status::NoPermission);
+        assert_eq!(denied.mute, Some(target()));
+        // Refused: BDOBB is away and holds nothing.
+        let mut away = Placement::new(FakeWindow::with_player());
+        away.mute = Some(target());
+        away.set_away(true, Some(ORIGIN));
+        assert_eq!(away.fit_with_mute("b", CARD, ORIGIN, Some(other.clone())), Status::Parked);
+        assert_eq!(away.mute, Some(target()));
+        // Accepted: the next fit by the new holder sets it.
+        away.set_away(false, Some(ORIGIN));
+        assert_eq!(away.fit_with_mute("b", CARD, ORIGIN, Some(other.clone())), Status::Fitted);
+        assert_eq!(away.mute, Some(other));
+    }
+
+    #[test]
+    fn a_blur_decision_is_dropped_when_the_focus_changed_since_it_was_recorded() {
+        assert!(blur_result_is_current(7, 7));
+        assert!(!blur_result_is_current(7, 8));
+    }
+
+    #[test]
     fn a_focus_loss_parks_unless_another_bdobb_window_or_the_player_has_it() {
         // (frontmost is BDOBB, frontmost is Chrome, Chrome's focused window is the player)
         assert!(!should_park_on_blur(true, false, false));
@@ -1057,9 +1303,8 @@ mod tests {
 
     fn held_with_mute(level: u8, on: bool) -> (Placement<FakeWindow>, Mute<FakeSlider>) {
         let mut placement = Placement::new(FakeWindow::with_player());
-        placement.set_mute_target(on.then(target));
         let mut mute = Mute::new(FakeSlider::at(level));
-        placement.fit("a", CARD, ORIGIN);
+        placement.fit_with_mute("a", CARD, ORIGIN, on.then(target));
         drive(&mut placement, &mut mute);
         (placement, mute)
     }

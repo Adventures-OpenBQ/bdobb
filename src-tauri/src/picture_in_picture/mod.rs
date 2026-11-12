@@ -91,6 +91,7 @@ pub fn release_all() {
 
 #[cfg(target_os = "macos")]
 mod native {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::{Mutex, Once, OnceLock, PoisonError};
     use std::time::Duration;
@@ -99,7 +100,7 @@ mod native {
 
     use super::ax::{AxSlider, AxWindow};
     use super::ax::blur_inputs;
-    use super::logic::{should_park_on_blur, Mute, MuteState, MuteTarget, Placement, Rect, Status};
+    use super::logic::{blur_result_is_current, should_park_on_blur, Mute, MuteState, MuteTarget, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -114,6 +115,10 @@ mod native {
     static PLACEMENT: Mutex<Option<Placement<AxWindow>>> = Mutex::new(None);
     static MUTE: Mutex<Option<Mute<AxSlider>>> = Mutex::new(None);
     static HOOKED: Once = Once::new();
+    /// Bumped by every focus event; a blur decision made before the latest one is stale.
+    static FOCUS_GENERATION: AtomicU64 = AtomicU64::new(0);
+    /// Set at the start of the quit or window-destroy path: queued volume work then does nothing.
+    static QUITTING: AtomicBool = AtomicBool::new(false);
 
     fn placement<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
         let mut guard = PLACEMENT.lock().unwrap_or_else(PoisonError::into_inner);
@@ -133,7 +138,7 @@ mod native {
         Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
     }
 
-    type Job = Box<dyn FnOnce() + Send>;
+    type Job = Box<dyn FnOnce(&mut Mute<AxSlider>) + Send>;
 
     /// Runs `f` on the placement and returns the volume change it calls for:
     /// a restore if it handed the player back, whatever the path; a mute or
@@ -142,33 +147,44 @@ mod native {
     fn with_placement<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> (T, Option<Job>) {
         let (result, handed_back, action) = placement(|p| (f(p), p.take_handed_back(), p.take_volume_action()));
         let job: Option<Job> = if handed_back {
-            Some(Box::new(|| mute(|m| m.restore())))
+            Some(Box::new(|m| m.restore()))
         } else {
-            action.map(|action| -> Job { Box::new(move || mute(|m| m.apply(action))) })
+            action.map(|action| -> Job { Box::new(move |m| m.apply(action)) })
         };
         (result, job)
     }
 
-    /// For the commands (their own threads) and the quit path: the volume
-    /// change happens before this returns.
+    /// For the quit path: the volume change happens before this returns, and
+    /// whatever the worker still has queued is skipped (QUITTING is already set).
     fn placement_and_volume<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
         let (result, job) = with_placement(f);
         if let Some(job) = job {
-            job();
+            mute(job);
         }
         result
     }
 
-    /// For the window-event thread, which must not wait on Chrome (a slider
-    /// search takes about 150 ms, a hung Chrome a second per call): the
-    /// volume change goes to one worker thread, which keeps them in order.
+    /// For the commands and the window-event thread, which must not wait on
+    /// Chrome (a slider search takes about 150 ms, a hung Chrome a second per
+    /// call): the volume change goes to one worker thread, which keeps them in
+    /// order, so a hide can never land between a queued hide and its unhide.
+    /// The worker checks QUITTING under the mute lock, so nothing queued runs
+    /// after the quit's restore.
     fn placement_and_volume_queued<T>(f: impl FnOnce(&mut Placement<AxWindow>) -> T) -> T {
         static WORKER: OnceLock<Sender<Job>> = OnceLock::new();
         let (result, job) = with_placement(f);
         if let Some(job) = job {
             let worker = WORKER.get_or_init(|| {
                 let (sender, jobs) = channel::<Job>();
-                std::thread::spawn(move || jobs.into_iter().for_each(|job| job()));
+                std::thread::spawn(move || {
+                    for job in jobs {
+                        mute(|m| {
+                            if !QUITTING.load(Ordering::SeqCst) {
+                                job(m);
+                            }
+                        });
+                    }
+                });
                 sender
             });
             let _ = worker.send(job);
@@ -188,21 +204,20 @@ mod native {
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
-        placement_and_volume(|p| {
-            p.set_mute_target(target);
-            p.fit(card, rect, origin)
-        })
+        placement_and_volume_queued(|p| p.fit_with_mute(card, rect, origin, target))
     }
 
     pub fn park(card: &str, menu: bool) -> Status {
-        placement_and_volume(|p| p.park(card, menu))
+        placement_and_volume_queued(|p| p.park(card, menu))
     }
 
     pub fn release(card: &str) {
-        placement_and_volume(|p| p.release(card));
+        placement_and_volume_queued(|p| p.release(card));
     }
 
     pub fn release_all() {
+        // First, so a queued hide-mute cannot run after this restore.
+        QUITTING.store(true, Ordering::SeqCst);
         placement_and_volume(|p| p.release_all());
         // Quit: restore even when no card held the player.
         mute(|m| m.restore());
@@ -226,15 +241,22 @@ mod native {
                 WindowEvent::Moved(_) | WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. } => {
                     sync(&main, main.is_focused().unwrap_or(false))
                 }
-                WindowEvent::Focused(true) => sync(&main, true),
+                WindowEvent::Focused(true) => {
+                    FOCUS_GENERATION.fetch_add(1, Ordering::SeqCst);
+                    sync(&main, true)
+                }
                 WindowEvent::Focused(false) => {
+                    let recorded = FOCUS_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
                     let main = main.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(MINIMISE_SETTLE);
                         // The window is read BEFORE either lock is taken.
                         let (this, chrome, player) = blur_inputs();
                         let away = main.is_minimized().unwrap_or(false) || should_park_on_blur(this, chrome, player);
-                        set_away(&main, away);
+                        // Checked under the placement lock: a focus event after this
+                        // point queues behind it, so a late "away" never outlives the
+                        // "back" that followed it.
+                        set_away(&main, away, || blur_result_is_current(recorded, FOCUS_GENERATION.load(Ordering::SeqCst)));
                     });
                 }
                 WindowEvent::Destroyed => release_all(),
@@ -243,17 +265,21 @@ mod native {
         });
     }
 
-    fn set_away(window: &WebviewWindow, away: bool) {
+    fn set_away(window: &WebviewWindow, away: bool, current: impl FnOnce() -> bool) {
         let origin = origin(window);
-        placement_and_volume_queued(|p| p.set_away(away, origin));
+        placement_and_volume_queued(|p| {
+            if current() {
+                p.set_away(away, origin);
+            }
+        });
     }
 
     /// The window is read BEFORE either lock is taken.
     fn sync(window: &WebviewWindow, focused: bool) {
         if window.is_minimized().unwrap_or(false) {
-            set_away(window, true);
+            set_away(window, true, || true);
         } else if focused {
-            set_away(window, false);
+            set_away(window, false, || true);
         } else if let Some(origin) = origin(window) {
             placement_and_volume_queued(|p| p.refit(origin));
         }
