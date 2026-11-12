@@ -134,6 +134,15 @@ pub fn ax_error_text(code: i32, what: &str) -> String {
 }
 
 /// What the slider lookup answers on the call that switches Chrome's page tree on.
+/// How far below the window's top edge the page starts, in points: the
+/// window's height less the top of the area its title bar leaves free
+/// (AppKit's `contentLayoutRect`, measured from the window's bottom edge).
+/// Never negative, and 0 for a measurement that makes no sense.
+pub fn top_inset(window_height: f64, free_y: f64, free_height: f64) -> f64 {
+    let inset = window_height - (free_y + free_height);
+    if inset.is_finite() && inset > 0.0 { inset } else { 0.0 }
+}
+
 pub const PREPARING_REASON: &str = "Chrome is preparing the page; try again";
 
 /// Chrome builds a tab's accessibility tree only when asked. A window with no
@@ -1261,6 +1270,14 @@ mod tests {
             self.log.push("settle");
             self.settles.push(target);
         }
+    }
+
+    #[test]
+    fn the_page_starts_below_the_title_bar_by_the_measured_inset() {
+        assert_eq!(top_inset(900.0, 0.0, 868.0), 32.0);
+        assert_eq!(top_inset(900.0, 0.0, 900.0), 0.0, "full screen: no title bar");
+        assert_eq!(top_inset(900.0, 10.0, 900.0), 0.0, "never negative");
+        assert_eq!(top_inset(f64::NAN, 0.0, 868.0), 0.0);
     }
 
     const SRC: &str = "Live TV";

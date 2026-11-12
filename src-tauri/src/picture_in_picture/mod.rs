@@ -100,7 +100,7 @@ mod native {
 
     use super::ax::{AxSlider, AxWindow};
     use super::ax::blur_inputs;
-    use super::logic::{blur_result_is_current, should_park_on_blur, Mute, MuteState, MuteTarget, Placement, Rect, Status};
+    use super::logic::{blur_result_is_current, should_park_on_blur, top_inset, Mute, MuteState, MuteTarget, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -130,12 +130,48 @@ mod native {
         f(guard.get_or_insert_with(|| Mute::new(AxSlider::default())))
     }
 
-    /// The content area's top-left in global points. The webview fills it,
-    /// so a CSS rectangle plus this is a screen rectangle.
+    /// Points between the window's top edge and the top of the page, as f64
+    /// bits; `UNMEASURED` until the main thread has asked AppKit once.
+    static TOP_INSET: AtomicU64 = AtomicU64::new(UNMEASURED);
+    const UNMEASURED: u64 = u64::MAX;
+
+    /// Asks AppKit where the page starts. Tauri reports the content area as
+    /// the whole window here (inner position and size equal the outer ones),
+    /// yet the page is laid out below the title bar; `contentLayoutRect` is
+    /// the part of the window the title bar does not cover. MAIN THREAD ONLY.
+    fn measure_inset(window: &WebviewWindow) {
+        use objc2::{msg_send, runtime::AnyObject};
+        use objc2_foundation::NSRect;
+        let inset = window.ns_window().ok().map(|ptr| ptr.cast::<AnyObject>()).filter(|ns| !ns.is_null()).map_or(0.0, |ns| {
+            // SAFETY: `ns` is this window's live NSWindow and this runs on the main thread.
+            let (frame, layout): (NSRect, NSRect) = unsafe { (msg_send![ns, frame], msg_send![ns, contentLayoutRect]) };
+            top_inset(frame.size.height, layout.origin.y, layout.size.height)
+        });
+        TOP_INSET.store(inset.to_bits(), Ordering::SeqCst);
+    }
+
+    /// The measured inset; a command thread that arrives before any window
+    /// event has the main thread measure it and waits briefly for the answer.
+    fn inset(window: &WebviewWindow) -> f64 {
+        if TOP_INSET.load(Ordering::SeqCst) == UNMEASURED {
+            let (done, wait) = channel();
+            let main = window.clone();
+            if window.run_on_main_thread(move || { measure_inset(&main); let _ = done.send(()); }).is_ok() {
+                let _ = wait.recv_timeout(Duration::from_millis(500));
+            }
+        }
+        match TOP_INSET.load(Ordering::SeqCst) {
+            UNMEASURED => 0.0,
+            bits => f64::from_bits(bits),
+        }
+    }
+
+    /// The top-left of the page in global points, so a CSS rectangle plus
+    /// this is a screen rectangle.
     fn origin(window: &WebviewWindow) -> Option<(f64, f64)> {
         let scale = window.scale_factor().ok()?;
         let position = window.inner_position().ok()?;
-        Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
+        Some((f64::from(position.x) / scale, f64::from(position.y) / scale + inset(window)))
     }
 
     type Job = Box<dyn FnOnce(&mut Mute<AxSlider>) + Send>;
@@ -239,6 +275,8 @@ mod native {
             let main = window.clone();
             window.on_window_event(move |event| match event {
                 WindowEvent::Moved(_) | WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. } => {
+                    // Window events arrive on the main thread; full screen and back changes the inset.
+                    measure_inset(&main);
                     sync(&main, main.is_focused().unwrap_or(false))
                 }
                 WindowEvent::Focused(true) => {
