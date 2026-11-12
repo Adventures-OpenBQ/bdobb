@@ -596,8 +596,15 @@ impl<V: VolumeSlider> Mute<V> {
             return;
         }
         self.forget_other(source, label);
-        if self.slider.level(source, label).is_ok_and(|level| level > 0) && self.set(source, label, true) == MuteState::Muted {
-            self.hide_muted = true;
+        match self.slider.level(source, label) {
+            Ok(level) if level > 0 => {
+                if self.set(source, label, true) == MuteState::Muted {
+                    self.hide_muted = true;
+                }
+            }
+            // Said out loud: a player heard playing while this is logged means the page reported a level it was not at.
+            Ok(_) => eprintln!("picture in picture: not muting the hidden player, its volume slider already reads 0%"),
+            Err(reason) => eprintln!("picture in picture: cannot mute the hidden player: {reason}"),
         }
     }
 
