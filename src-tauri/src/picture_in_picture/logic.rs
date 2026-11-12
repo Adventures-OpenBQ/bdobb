@@ -35,6 +35,8 @@ pub enum Status {
     NoPermission,
     NoPlayer,
     InUse,
+    /// The player is held but moved off screen (the card is hidden, its menu is open, or BDOBB is in the background).
+    Parked,
     TooSmall,
     ViewerWindow,
     /// Built only by the commands off macOS.
@@ -54,8 +56,8 @@ pub fn to_screen(css: Rect, origin: (f64, f64)) -> Rect {
     Rect { x: origin.0 + css.x, y: origin.1 + css.y, ..css }
 }
 
-/// The largest 16:9 rectangle inside `area`, centred and no wider than
-/// MAX_SIZE; None when even MIN_SIZE does not fit.
+/// The largest 16:9 rectangle inside `area`, centred horizontally, against
+/// its top edge and no wider than MAX_SIZE; None when even MIN_SIZE does not fit.
 pub fn fit_16x9(area: Rect) -> Option<Rect> {
     let width = area.width.min(area.height * 16.0 / 9.0).min(MAX_SIZE.0);
     if width < MIN_SIZE.0 {
@@ -64,7 +66,7 @@ pub fn fit_16x9(area: Rect) -> Option<Rect> {
     let height = width * 9.0 / 16.0;
     Some(Rect {
         x: area.x + (area.width - width) / 2.0,
-        y: area.y + (area.height - height) / 2.0,
+        y: area.y,
         width,
         height,
     })
@@ -100,6 +102,27 @@ pub fn should_request_manual_accessibility(saw_web_area: bool, already_requested
     !saw_web_area && !already_requested
 }
 
+/// Where a parked player sits: just beyond the right-most display (the
+/// first of equals), at that display's top edge. The probe moved the player
+/// off every screen this way and it came back exactly (spec, Hiding).
+pub fn park_point(displays: &[Rect]) -> (f64, f64) {
+    displays
+        .iter()
+        .reduce(|best, d| if d.x + d.width > best.x + best.width { d } else { best })
+        .map_or((FALLBACK_PARK.0, FALLBACK_PARK.1), |d| (d.x + d.width + PARK_MARGIN, d.y))
+}
+
+/// How far past the right-most display's edge a parked player sits.
+const PARK_MARGIN: f64 = 200.0;
+/// Where it goes when no display can be listed.
+const FALLBACK_PARK: (f64, f64) = (4000.0, 0.0);
+
+/// What to do when BDOBB loses focus: park, unless another BDOBB window took
+/// the focus, or the user clicked the floating player's own controls.
+pub fn should_park_on_blur(frontmost_is_self: bool, frontmost_is_chrome: bool, chrome_focused_window_is_player: bool) -> bool {
+    !(frontmost_is_self || (frontmost_is_chrome && chrome_focused_window_is_player))
+}
+
 /// The floating player, behind whatever reaches it on this platform.
 pub trait PlayerWindow {
     fn trusted(&self) -> bool;
@@ -108,43 +131,66 @@ pub trait PlayerWindow {
     fn apply(&mut self, op: Op) -> Result<(), String>;
     /// The display holding the centre of `rect`, else the main display.
     fn display_bounds(&self, rect: Rect) -> Rect;
+    /// Every active display, global points.
+    fn displays(&self) -> Vec<Rect>;
 }
 
 /// Which card holds the player, where the player was before, and the
 /// card's last rectangle for re-fits after a window move.
+///
+/// A held player is either over its card or parked off screen. It is parked
+/// while any of three things holds: the card is hidden (scrolled out, or on
+/// another dashboard or tab), the card's menu is open, or BDOBB is away
+/// (minimised or not in front). Only a removed card, a quit or a card too
+/// small give it back to where it was.
 pub struct Placement<W> {
     window: W,
     holder: Option<String>,
     saved: Option<Rect>,
     last: Option<Rect>,
-    suspended: bool,
+    hidden: bool,
+    menu: bool,
+    away: bool,
+    /// The player is physically off screen.
+    parked: bool,
     /// Set whenever a held player is given back, for whatever reason; read by `take_handed_back`.
     handed_back: bool,
 }
 
 impl<W: PlayerWindow> Placement<W> {
     pub fn new(window: W) -> Self {
-        Self { window, holder: None, saved: None, last: None, suspended: false, handed_back: false }
+        Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, parked: false, handed_back: false }
     }
 
     /// True once since the last call if a held player was handed back (a release, a
-    /// suspend, a card too small, a vanished player). The caller restores the volume
+    /// card too small, a vanished player). The caller restores the volume
     /// then, so "player handed back" and "mute restored" cannot drift apart.
     pub fn take_handed_back(&mut self) -> bool {
         std::mem::take(&mut self.handed_back)
     }
 
+    /// Parked, or about to be: a card asking to fit may take such a hold over.
+    fn yielding(&self) -> bool {
+        self.hidden || self.menu || self.away
+    }
+
+    /// The card is on screen and wants the player over it. Clears the card's
+    /// own reasons to be parked; BDOBB being away still keeps it parked.
     pub fn fit(&mut self, card: &str, css: Rect, origin: (f64, f64)) -> Status {
         if !self.window.trusted() {
             return Status::NoPermission;
         }
-        if self.holder.as_deref().is_some_and(|holder| holder != card) {
+        if self.holder.as_deref().is_some_and(|holder| holder != card) && !self.yielding() {
             return Status::InUse;
         }
-        let Some(target) = fit_16x9(to_screen(css, origin)) else {
+        if fit_16x9(to_screen(css, origin)).is_none() {
             self.release(card);
             return Status::TooSmall;
-        };
+        }
+        // A BDOBB in the background does not grab a player it does not hold.
+        if self.holder.is_none() && self.away {
+            return Status::Parked;
+        }
         let frame = match self.window.frame() {
             Ok(Some(frame)) => frame,
             Ok(None) => {
@@ -153,47 +199,87 @@ impl<W: PlayerWindow> Placement<W> {
             }
             Err(reason) => return Status::Failed { reason },
         };
-        if self.holder.is_none() || self.suspended {
+        if self.holder.is_none() {
             self.saved = Some(frame);
         }
         self.holder = Some(card.to_owned());
         self.last = Some(css);
-        self.suspended = false;
+        self.hidden = false;
+        self.menu = false;
+        self.settle(Some(origin))
+    }
+
+    /// The card is hidden (`menu` false) or its menu is open (`menu` true).
+    /// Only the holder can park; a card never takes the player in order to park it.
+    pub fn park(&mut self, card: &str, menu: bool) -> Status {
+        if self.holder.as_deref() == Some(card) {
+            if menu {
+                self.menu = true;
+            } else {
+                self.hidden = true;
+            }
+            return self.settle(None);
+        }
+        Status::Parked
+    }
+
+    /// BDOBB went away (minimised, or not in front) or came back. Coming back
+    /// fits the holder again unless its card still has a reason to be parked.
+    pub fn set_away(&mut self, away: bool, origin: Option<(f64, f64)>) {
+        self.away = away;
+        if self.holder.is_some() {
+            let _ = self.settle(origin);
+        }
+    }
+
+    /// Parks or places the holder according to the current reasons.
+    fn settle(&mut self, origin: Option<(f64, f64)>) -> Status {
+        if self.yielding() {
+            return match self.park_now() {
+                Ok(()) => Status::Parked,
+                Err(reason) => Status::Failed { reason },
+            };
+        }
+        let Some(origin) = origin else {
+            return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
+        };
+        let Some(css) = self.last else { return Status::NoPlayer };
+        let Some(target) = fit_16x9(to_screen(css, origin)) else {
+            self.release_all();
+            return Status::TooSmall;
+        };
+        self.parked = false;
         match self.place(target) {
             Ok(()) => Status::Fitted,
             Err(reason) => Status::Failed { reason },
         }
     }
 
+    fn park_now(&mut self) -> Result<(), String> {
+        if self.parked {
+            return Ok(());
+        }
+        let (x, y) = park_point(&self.window.displays());
+        self.window.apply(Op::Move(x, y))?;
+        self.parked = true;
+        Ok(())
+    }
+
     /// Top-left first, so the resize is not clamped where the player was,
-    /// then the size, then centred on what Chrome actually allowed.
+    /// then the size, then centred horizontally on what Chrome actually allowed.
     fn place(&mut self, target: Rect) -> Result<(), String> {
         self.window.apply(Op::Move(target.x, target.y))?;
         self.window.apply(Op::Size(target.width, target.height))?;
         let actual = self.window.frame()?.unwrap_or(target);
-        self.window.apply(Op::Move(
-            target.x + (target.width - actual.width) / 2.0,
-            target.y + (target.height - actual.height) / 2.0,
-        ))
+        self.window.apply(Op::Move(target.x + (target.width - actual.width) / 2.0, target.y))
     }
 
-    /// Re-fits the holder with its last rectangle (BDOBB's window moved,
-    /// resized or came back from the Dock). None when no card holds it.
+    /// Re-fits the holder with its last rectangle (BDOBB's window moved or
+    /// resized). None when no card holds it. A parked player stays parked.
     pub fn refit(&mut self, origin: (f64, f64)) -> Option<Status> {
-        let card = self.holder.clone()?;
-        let css = self.last?;
-        Some(self.fit(&card, css, origin))
-    }
-
-    /// BDOBB minimised: hand the player back but remember the card, so the
-    /// next refit takes it again. True when this call handed it back.
-    pub fn suspend(&mut self) -> bool {
-        if self.holder.is_none() || self.suspended {
-            return false;
-        }
-        self.restore();
-        self.suspended = true;
-        true
+        self.holder.as_ref()?;
+        self.last?;
+        Some(self.settle(Some(origin)))
     }
 
     /// True when `card` held the player and it has been handed back.
@@ -215,7 +301,9 @@ impl<W: PlayerWindow> Placement<W> {
         self.holder = None;
         self.saved = None;
         self.last = None;
-        self.suspended = false;
+        self.hidden = false;
+        self.menu = false;
+        self.parked = false;
     }
 
     fn restore(&mut self) {
@@ -433,6 +521,9 @@ mod tests {
         fn display_bounds(&self, _rect: Rect) -> Rect {
             DISPLAY
         }
+        fn displays(&self) -> Vec<Rect> {
+            vec![DISPLAY]
+        }
     }
 
     #[test]
@@ -459,12 +550,12 @@ mod tests {
     fn fit_16x9_takes_the_largest_centred_16x9_rectangle() {
         let wide = fit_16x9(r(0.0, 0.0, 1000.0, 400.0)).unwrap();
         assert!(close(wide.width, 711.11) && close(wide.height, 400.0) && close(wide.x, 144.44) && close(wide.y, 0.0));
-        assert_eq!(fit_16x9(r(0.0, 0.0, 400.0, 1000.0)), Some(r(0.0, 387.5, 400.0, 225.0)));
+        assert_eq!(fit_16x9(r(0.0, 0.0, 400.0, 1000.0)), Some(r(0.0, 0.0, 400.0, 225.0)));
     }
 
     #[test]
     fn fit_16x9_stays_within_the_measured_limits() {
-        assert_eq!(fit_16x9(r(0.0, 0.0, 3000.0, 2000.0)), Some(r(806.0, 609.625, 1388.0, 780.75)));
+        assert_eq!(fit_16x9(r(0.0, 0.0, 3000.0, 2000.0)), Some(r(806.0, 0.0, 1388.0, 780.75)));
         assert_eq!(fit_16x9(r(0.0, 0.0, 284.0, 160.0)).map(|f| f.width), Some(284.0));
         assert_eq!(fit_16x9(r(0.0, 0.0, 283.0, 500.0)), None);
         assert_eq!(fit_16x9(r(0.0, 0.0, 500.0, 159.0)), None);
@@ -481,21 +572,21 @@ mod tests {
     }
 
     #[test]
-    fn fit_moves_then_sizes_then_centres_in_screen_points() {
+    fn fit_moves_then_sizes_then_aligns_to_the_top_in_screen_points() {
         let mut placement = Placement::new(FakeWindow::with_player());
         assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Fitted);
-        // Card at (110, 70) 640 × 400 on screen; 640 × 360 centred vertically.
-        assert_eq!(placement.window.ops, vec![Op::Move(110.0, 90.0), Op::Size(640.0, 360.0), Op::Move(110.0, 90.0)]);
-        assert_eq!(placement.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
+        // Card at (110, 70) 640 × 400 on screen; 640 × 360 against its top edge.
+        assert_eq!(placement.window.ops, vec![Op::Move(110.0, 70.0), Op::Size(640.0, 360.0), Op::Move(110.0, 70.0)]);
+        assert_eq!(placement.window.frame, Some(r(110.0, 70.0, 640.0, 360.0)));
     }
 
     #[test]
-    fn fit_centres_on_the_size_chrome_actually_allowed() {
+    fn fit_centres_horizontally_on_the_size_chrome_actually_allowed() {
         let mut window = FakeWindow::with_player();
         window.max_width = 500.0;
         let mut placement = Placement::new(window);
         assert_eq!(placement.fit("a", r(0.0, 0.0, 1200.0, 800.0), (0.0, 0.0)), Status::Fitted);
-        assert_eq!(placement.window.ops.last(), Some(&Op::Move(350.0, 259.375)));
+        assert_eq!(placement.window.ops.last(), Some(&Op::Move(350.0, 0.0)));
     }
 
     #[test]
@@ -544,19 +635,6 @@ mod tests {
     }
 
     #[test]
-    fn suspend_hands_the_player_back_and_refit_takes_it_again() {
-        let mut placement = Placement::new(FakeWindow::with_player());
-        placement.fit("a", CARD, ORIGIN);
-        assert!(placement.suspend());
-        assert_eq!(placement.window.frame, Some(ORIGINAL));
-        assert!(!placement.suspend());
-        assert_eq!(placement.refit(ORIGIN), Some(Status::Fitted));
-        assert_eq!(placement.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
-        placement.release("a");
-        assert_eq!(placement.window.frame, Some(ORIGINAL));
-    }
-
-    #[test]
     fn every_way_of_handing_the_player_back_is_reported_once() {
         // Too small after holding.
         let mut placement = Placement::new(FakeWindow::with_player());
@@ -573,16 +651,21 @@ mod tests {
         assert_eq!(placement.fit("a", CARD, ORIGIN), Status::NoPlayer);
         assert!(placement.take_handed_back());
 
-        // Release by the holder, suspend, release_all.
+        // Release by the holder, release_all.
         let mut placement = Placement::new(FakeWindow::with_player());
         placement.fit("a", CARD, ORIGIN);
         assert!(placement.release("a"));
         assert!(placement.take_handed_back());
         placement.fit("a", CARD, ORIGIN);
-        assert!(placement.suspend());
-        assert!(placement.take_handed_back());
         placement.release_all();
         assert!(placement.take_handed_back());
+
+        // Parking keeps the player, so it hands nothing back.
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.set_away(true, Some(ORIGIN));
+        assert!(!placement.take_handed_back());
     }
 
     #[test]
@@ -601,6 +684,157 @@ mod tests {
         placement.fit("a", CARD, ORIGIN);
         placement.fit("b", CARD, ORIGIN);
         assert!(!placement.take_handed_back());
+    }
+
+    const SIDE_BY_SIDE: [Rect; 2] = [Rect { x: 0.0, y: 0.0, width: 1920.0, height: 1080.0 }, Rect { x: 1920.0, y: 0.0, width: 1920.0, height: 1080.0 }];
+    const STACKED: [Rect; 2] = [Rect { x: 0.0, y: 0.0, width: 1920.0, height: 1080.0 }, Rect { x: 0.0, y: -1080.0, width: 1920.0, height: 1080.0 }];
+
+    #[test]
+    fn the_parking_point_is_beyond_every_display() {
+        assert_eq!(park_point(&[DISPLAY]), (1936.0, 0.0));
+        assert_eq!(park_point(&SIDE_BY_SIDE), (4040.0, 0.0));
+        // Equal right edges: the first of them, and its top edge is the y.
+        assert_eq!(park_point(&STACKED), (2120.0, 0.0));
+        // The right-most display decides, wherever it sits vertically.
+        assert_eq!(park_point(&[r(0.0, 0.0, 1000.0, 800.0), r(1000.0, -300.0, 500.0, 600.0)]), (1700.0, -300.0));
+        assert_eq!(park_point(&[]), (4000.0, 0.0));
+    }
+
+    fn off_screen(frame: Option<Rect>, displays: &[Rect]) -> bool {
+        let f = frame.unwrap();
+        displays.iter().all(|d| f.x >= d.x + d.width || f.x + f.width <= d.x || f.y >= d.y + d.height || f.y + f.height <= d.y)
+    }
+
+    #[test]
+    fn parking_moves_the_player_off_screen_and_keeps_the_hold() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        assert_eq!(placement.park("a", false), Status::Parked);
+        assert_eq!(placement.window.ops.last(), Some(&Op::Move(1936.0, 0.0)));
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        assert!(!placement.take_handed_back());
+        // The same call again moves nothing.
+        let ops = placement.window.ops.len();
+        placement.park("a", false);
+        assert_eq!(placement.window.ops.len(), ops);
+        // Release gives back the ORIGINAL place, not the card's.
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn a_fit_brings_a_parked_player_back_over_the_card() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", true);
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Fitted);
+        assert_eq!(placement.window.frame, Some(r(110.0, 70.0, 640.0, 360.0)));
+        placement.release("a");
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn only_the_holder_can_park_and_nothing_is_taken_to_park() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.park("a", false);
+        assert!(placement.window.ops.is_empty());
+        placement.fit("a", CARD, ORIGIN);
+        let ops = placement.window.ops.len();
+        placement.park("b", false);
+        assert_eq!(placement.window.ops.len(), ops);
+        assert_eq!(placement.window.frame, Some(r(110.0, 70.0, 640.0, 360.0)));
+    }
+
+    #[test]
+    fn a_window_move_does_not_bring_a_hidden_player_back() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        let ops = placement.window.ops.len();
+        assert_eq!(placement.refit((300.0, 300.0)), Some(Status::Parked));
+        assert_eq!(placement.window.ops.len(), ops);
+    }
+
+    #[test]
+    fn a_parked_hold_yields_to_another_card_and_keeps_the_original_frame() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
+        assert_eq!(placement.window.frame, Some(r(110.0, 70.0, 640.0, 360.0)));
+        // B is visibly fitted now, so A is turned away and does not release B's hold.
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::InUse);
+        assert!(!placement.release("a"));
+        assert!(placement.release("b"));
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        assert!(placement.take_handed_back());
+    }
+
+    #[test]
+    fn a_card_too_small_does_not_take_a_parked_hold() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        assert_eq!(placement.fit("b", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert!(placement.release("a"));
+    }
+
+    #[test]
+    fn the_app_going_away_parks_and_coming_back_fits_again() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.set_away(true, Some(ORIGIN));
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        // A recheck while away stays parked.
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Parked);
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        placement.set_away(false, Some(ORIGIN));
+        assert_eq!(placement.window.frame, Some(r(110.0, 70.0, 640.0, 360.0)));
+        placement.release("a");
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn coming_back_does_not_unpark_a_card_that_is_still_hidden() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.set_away(true, Some(ORIGIN));
+        placement.set_away(false, Some(ORIGIN));
+        assert!(off_screen(placement.window.frame, &[DISPLAY]));
+        placement.park("a", true);
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Fitted);
+    }
+
+    #[test]
+    fn an_app_in_the_background_does_not_take_a_player_it_does_not_hold() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.set_away(true, Some(ORIGIN));
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Parked);
+        assert!(placement.window.ops.is_empty());
+        placement.set_away(false, Some(ORIGIN));
+        assert_eq!(placement.fit("a", CARD, ORIGIN), Status::Fitted);
+    }
+
+    #[test]
+    fn a_card_shrunk_while_parked_hands_the_original_back() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        assert_eq!(placement.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
+        assert!(placement.take_handed_back());
+    }
+
+    #[test]
+    fn a_focus_loss_parks_unless_another_bdobb_window_or_the_player_has_it() {
+        // (frontmost is BDOBB, frontmost is Chrome, Chrome's focused window is the player)
+        assert!(!should_park_on_blur(true, false, false));
+        assert!(!should_park_on_blur(false, true, true));
+        assert!(should_park_on_blur(false, true, false));
+        assert!(should_park_on_blur(false, false, false));
+        // The player's focus only counts when Chrome is in front.
+        assert!(should_park_on_blur(false, false, true));
     }
 
     /// The page's Volume Level slider: AXDecrement / AXIncrement move it 10%

@@ -7,17 +7,19 @@ import {
   enqueuePlayerOp,
   fitPlayer,
   openAccessibilitySettings,
+  parkNow,
   pipPlatform,
   pipSettings,
   readMuteState,
-  releaseNow,
   sameRect,
-  scheduleRelease,
+  scheduleLeave,
   setPlayerMuted,
+  type CardData,
   type CssRect,
   type MuteState,
   type PipStatus,
 } from "../../lib/pictureInPicture";
+import { ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
 
 /**
  * How often the card fits again (a player opened, closed or dragged away,
@@ -25,6 +27,12 @@ import {
  * slider. Spec, States: "rechecked every few seconds".
  */
 const RECHECK_MS = 3000;
+
+/** Whether a card is still in the dashboards or the docks: a card that left the screen only parks the player; a removed one releases it. */
+const dashboardData: CardData = {
+  has: (id) => ownerOfCard(useDashboardStore.getState(), id) !== undefined,
+  subscribe: (listener) => useDashboardStore.subscribe(listener),
+};
 
 const MESSAGES = {
   no_player: "Pop the video out in Chrome",
@@ -77,9 +85,9 @@ function MacPlayer({ cardId }: { cardId: string }) {
           }),
       );
     };
-    const release = () => {
+    const hide = () => {
       sent = null;
-      releaseNow(cardId);
+      parkNow(cardId);
     };
 
     // Every frame, but a rectangle only goes out when it changed: this
@@ -94,14 +102,14 @@ function MacPlayer({ cardId }: { cardId: string }) {
     const recheck = setInterval(() => {
       if (visible && !busy) fit(measure());
     }, RECHECK_MS);
-    // Fully scrolled out, or on a hidden tab: hand the player back. A card
-    // partly in view keeps it (spec, Fitting).
+    // Fully scrolled out: move the player off screen, still held. A card
+    // partly in view keeps it over the card (spec, Fitting).
     const observer =
       typeof IntersectionObserver === "undefined"
         ? null
         : new IntersectionObserver(([entry]) => {
             visible = entry.isIntersecting;
-            if (!visible) release();
+            if (!visible) hide();
           });
     observer?.observe(el);
     return () => {
@@ -109,7 +117,7 @@ function MacPlayer({ cardId }: { cardId: string }) {
       cancelAnimationFrame(frame);
       clearInterval(recheck);
       observer?.disconnect();
-      scheduleRelease(cardId);
+      scheduleLeave(cardId, dashboardData);
     };
   }, [cardId]);
 
@@ -125,7 +133,7 @@ function PipMessage({ status }: { status: PipStatus | null }) {
   if (status.state === "failed") return <p className="empty-state">Could not move the player: {status.reason}</p>;
   // A local, so each check below narrows it down to MESSAGES' keys.
   const { state } = status;
-  if (state === "fitted") return null;
+  if (state === "fitted" || state === "parked") return null;
   if (state === "no_permission") {
     return (
       <div className="empty-state">

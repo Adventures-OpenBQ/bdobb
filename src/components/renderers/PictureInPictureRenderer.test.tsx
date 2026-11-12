@@ -13,7 +13,35 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
+import { useDashboardStore } from "../../stores/dashboardStore";
+import { card as makeCard } from "../../test/fixtures";
 import { PictureInPictureMute, PictureInPictureRenderer } from "./PictureInPictureRenderer";
+
+/** Puts a card in the dashboard data (`where` is a dashboard or the docks), or clears it. */
+function storeHolds(id: string | null, where: "dashboard" | "docks" = "dashboard") {
+  const cards = id === null ? [] : [makeCard({ id })];
+  const state = useDashboardStore.getState();
+  useDashboardStore.setState({
+    dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "T", cards: where === "dashboard" ? cards : [] }] }],
+    docks: { ...state.docks, tabs: [{ id: "top", name: "top", cards: where === "docks" ? cards : [] }] },
+  });
+}
+
+/** An IntersectionObserver the test can drive. */
+function stubIntersection() {
+  const callbacks: ((entries: { isIntersecting: boolean }[]) => void)[] = [];
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+        callbacks.push(cb);
+      }
+      observe() {}
+      disconnect() {}
+    },
+  );
+  return (isIntersecting: boolean) => callbacks.forEach((cb) => cb([{ isIntersecting }]));
+}
 
 /** Answers fit with `fit`, and the mute commands from a slider that starts at `mute`. */
 function answer(fit: PipStatus, mute: MuteState = { state: "sound" }) {
@@ -33,6 +61,8 @@ const fitCall = () => expect(invoke).toHaveBeenCalledWith("picture_in_picture_fi
 
 afterEach(async () => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
+  storeHolds(null);
   cleanup();
   // Let the unmount's release (after its grace period) reach the mock before it is reset.
   await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 30));
@@ -86,6 +116,27 @@ describe("Picture in Picture on the macOS desktop app", () => {
     await waitFor(fitCall);
     unmount();
     await waitFor(() => expect(invoke).toHaveBeenLastCalledWith("picture_in_picture_release", { card: "c1" }));
+  });
+
+  it("parks, not releases, when the card is scrolled fully out, and fits again when it is back", async () => {
+    answer({ state: "fitted" });
+    const scroll = stubIntersection();
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(fitCall);
+    scroll(false);
+    await waitFor(() => expect(invoke).toHaveBeenLastCalledWith("picture_in_picture_park", { card: "c1", menu: false }));
+    expect(invoke).not.toHaveBeenCalledWith("picture_in_picture_release", expect.anything());
+    const fits = () => invoke.mock.calls.filter(([cmd]) => cmd === "picture_in_picture_fit").length;
+    const before = fits();
+    scroll(true);
+    await waitFor(() => expect(fits()).toBe(before + 1));
+  });
+
+  it("shows nothing once the player is parked", async () => {
+    answer({ state: "parked" });
+    const { container } = render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(() => expect(container.querySelector(".picture-in-picture")).toHaveAttribute("data-state", "parked"));
+    expect(container.querySelector(".empty-state")).toBeNull();
   });
 
   it("never lets the release overtake a fit still in flight", async () => {
@@ -182,6 +233,54 @@ describe("Picture in Picture remounts", () => {
     await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
     render(<PictureInPictureRenderer cardId="c2" />);
     await vi.waitFor(() => expect(calls()).toEqual(["picture_in_picture_fit", "picture_in_picture_release", "picture_in_picture_fit"]));
+  });
+
+  it("parks, not releases, a card that left the screen but is still in the dashboard data", async () => {
+    storeHolds("c5");
+    const { unmount } = render(<PictureInPictureRenderer cardId="c5" />);
+    await firstFit();
+    unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    await vi.waitFor(() => expect(invoke).toHaveBeenLastCalledWith("picture_in_picture_park", { card: "c5", menu: false }));
+    expect(releases()).toEqual([]);
+    // It comes back (the user returns to the dashboard): a fit, which un-parks.
+    render(<PictureInPictureRenderer cardId="c5" />);
+    await vi.waitFor(() => expect(calls()).toEqual(["picture_in_picture_fit", "picture_in_picture_park", "picture_in_picture_fit"]));
+  });
+
+  it("counts a card in the docks as still existing", async () => {
+    storeHolds("c6", "docks");
+    const { unmount } = render(<PictureInPictureRenderer cardId="c6" />);
+    await firstFit();
+    unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    await vi.waitFor(() => expect(calls()).toContain("picture_in_picture_park"));
+    expect(releases()).toEqual([]);
+  });
+
+  it("releases a parked player when its card is removed from the dashboard data", async () => {
+    storeHolds("c7");
+    const { unmount } = render(<PictureInPictureRenderer cardId="c7" />);
+    await firstFit();
+    unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    await vi.waitFor(() => expect(calls()).toContain("picture_in_picture_park"));
+    expect(releases()).toEqual([]);
+    storeHolds(null);
+    await vi.waitFor(() => expect(releases()).toEqual(["picture_in_picture_release"]));
+  });
+
+  it("stops watching for removal once the card is back", async () => {
+    storeHolds("c8");
+    const first = render(<PictureInPictureRenderer cardId="c8" />);
+    await firstFit();
+    first.unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    await vi.waitFor(() => expect(calls()).toContain("picture_in_picture_park"));
+    render(<PictureInPictureRenderer cardId="c8" />);
+    storeHolds(null);
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS * 2);
+    expect(releases()).toEqual([]);
   });
 
   it("only cancels the release of its own card", async () => {

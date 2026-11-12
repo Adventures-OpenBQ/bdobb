@@ -172,6 +172,7 @@ pub fn run() {
             set_window_pin,
             save_panel::save_workspace_panel,
             picture_in_picture::picture_in_picture_fit,
+            picture_in_picture::picture_in_picture_park,
             picture_in_picture::picture_in_picture_release,
             picture_in_picture::picture_in_picture_set_muted,
             picture_in_picture::picture_in_picture_mute_state,

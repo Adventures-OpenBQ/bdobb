@@ -247,13 +247,13 @@ fn chrome_pid() -> Option<i32> {
     })
 }
 
-fn chrome() -> Option<Cf> {
+fn chrome() -> Option<(Cf, i32)> {
     let pid = chrome_pid()?;
     // SAFETY: returns a +1 AXUIElement for the pid.
     let app = Cf::new(unsafe { AXUIElementCreateApplication(pid) })?;
     // SAFETY: live application element. A hung Chrome then answers "cannot complete" after a second.
     unsafe { AXUIElementSetMessagingTimeout(app.0, MESSAGING_TIMEOUT_SECONDS) };
-    Some(app)
+    Some((app, pid))
 }
 
 /// Registers BDOBB in the Accessibility list (the system prompt) and opens
@@ -300,7 +300,7 @@ impl AxWindow {
             }
         }
         self.player = match chrome() {
-            Some(app) => elements_checked(app.0, "AXWindows")?
+            Some((app, _)) => elements_checked(app.0, "AXWindows")?
                 .into_iter()
                 .find(|w| string_attr(w.0, "AXTitle").as_deref() == Some(PLAYER_TITLE)),
             None => None,
@@ -333,20 +333,50 @@ impl PlayerWindow for AxWindow {
 
     fn display_bounds(&self, rect: Rect) -> Rect {
         let (cx, cy) = (rect.x + rect.width / 2.0, rect.y + rect.height / 2.0);
+        self.displays()
+            .into_iter()
+            .find(|b| cx >= b.x && cx < b.x + b.width && cy >= b.y && cy < b.y + b.height)
+            // SAFETY: no arguments.
+            .unwrap_or_else(|| cg_rect(unsafe { CGDisplayBounds(CGMainDisplayID()) }))
+    }
+
+    fn displays(&self) -> Vec<Rect> {
         let mut ids = [0u32; 16];
         let mut count = 0u32;
         // SAFETY: CoreGraphics writes at most 16 ids and reports how many.
-        let bounds = unsafe {
-            let listed: &[u32] =
-                if CGGetActiveDisplayList(16, ids.as_mut_ptr(), &mut count) == 0 { &ids[..count as usize] } else { &[] };
-            listed
-                .iter()
-                .map(|&id| CGDisplayBounds(id))
-                .find(|b| cx >= b.origin.x && cx < b.origin.x + b.size.width && cy >= b.origin.y && cy < b.origin.y + b.size.height)
-                .unwrap_or_else(|| CGDisplayBounds(CGMainDisplayID()))
-        };
-        Rect { x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width, height: bounds.size.height }
+        unsafe {
+            if CGGetActiveDisplayList(16, ids.as_mut_ptr(), &mut count) != 0 {
+                return Vec::new();
+            }
+            ids[..count as usize].iter().map(|&id| cg_rect(CGDisplayBounds(id))).collect()
+        }
     }
+}
+
+fn cg_rect(b: CGRect) -> Rect {
+    Rect { x: b.origin.x, y: b.origin.y, width: b.size.width, height: b.size.height }
+}
+
+/// What a focus loss needs to know, for `should_park_on_blur`: whether BDOBB
+/// itself, or Chrome, is the frontmost app, and whether Chrome's focused window
+/// is the floating player.
+pub fn blur_inputs() -> (bool, bool, bool) {
+    use objc2::{class, msg_send, rc::autoreleasepool, runtime::AnyObject};
+    let front: i32 = autoreleasepool(|_| {
+        // SAFETY: AppKit's NSWorkspace singleton and its frontmostApplication getter, with their declared types.
+        unsafe {
+            let workspace: *mut AnyObject = msg_send![class!(NSWorkspace), sharedWorkspace];
+            let app: *mut AnyObject = msg_send![workspace, frontmostApplication];
+            if app.is_null() { -1 } else { msg_send![app, processIdentifier] }
+        }
+    });
+    let is_self = u32::try_from(front).is_ok_and(|pid| pid == std::process::id());
+    // Some only while Chrome is the frontmost app.
+    let chrome = chrome().filter(|(_, pid)| *pid == front);
+    let player_focused = chrome.as_ref().is_some_and(|(app, _)| {
+        attr(app.0, "AXFocusedWindow").and_then(|w| string_attr(w.0, "AXTitle")).as_deref() == Some(PLAYER_TITLE)
+    });
+    (is_self, chrome.is_some(), player_focused)
 }
 
 /// The source tab's volume slider, cached while it answers. Chrome exposes
@@ -404,7 +434,7 @@ fn request_page_trees(app: &Cf) {
 /// Chrome usually maps a page's aria-label to AXDescription, so both are
 /// accepted.
 fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
-    let app = chrome().ok_or("Chrome is not running")?;
+    let (app, _) = chrome().ok_or("Chrome is not running")?;
     let windows: Vec<Cf> = elements_checked(app.0, "AXWindows")?
         .into_iter()
         .filter(|w| string_attr(w.0, "AXTitle").is_some_and(|t| t != PLAYER_TITLE && t.contains(source)))

@@ -29,6 +29,19 @@ pub async fn picture_in_picture_fit(window: tauri::WebviewWindow, card: String, 
     }
 }
 
+/// The card is hidden (`menu` false) or its own menu is open (`menu` true):
+/// the player moves off screen but stays held.
+#[tauri::command]
+pub async fn picture_in_picture_park(card: String, menu: bool) -> Status {
+    #[cfg(target_os = "macos")]
+    return native::park(&card, menu);
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (card, menu);
+        Status::NotSupported
+    }
+}
+
 #[tauri::command]
 pub async fn picture_in_picture_release(card: String) {
     #[cfg(target_os = "macos")]
@@ -79,12 +92,13 @@ mod native {
     use tauri::{WebviewWindow, WindowEvent};
 
     use super::ax::{AxSlider, AxWindow};
-    use super::logic::{Mute, MuteState, Placement, Rect, Status};
+    use super::ax::blur_inputs;
+    use super::logic::{should_park_on_blur, Mute, MuteState, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
     /// Tauri reports no minimise event. A focus loss is followed by this
-    /// wait and then is_minimized().
+    /// wait and then is_minimized() and the frontmost-app check.
     /// ponytail: fixed delay; switch to an NSWindow miniaturize observer if 700 ms misses the animation.
     const MINIMISE_SETTLE: Duration = Duration::from_millis(700);
 
@@ -128,14 +142,18 @@ mod native {
             return Status::ViewerWindow;
         }
         hook(window);
-        // A minimised window leaves the player alone; un-minimising re-takes it via the Focused(true) refit and the next recheck.
+        // A minimised window has no usable origin; the hold stays parked, and un-minimising refits via Focused(true).
         if window.is_minimized().unwrap_or(false) {
-            return Status::Fitted;
+            return Status::Parked;
         }
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
         placement_and_volume(|p| p.fit(card, rect, origin))
+    }
+
+    pub fn park(card: &str, menu: bool) -> Status {
+        placement_and_volume(|p| p.park(card, menu))
     }
 
     pub fn release(card: &str) {
@@ -157,20 +175,24 @@ mod native {
     }
 
     /// Follows the main window: a move, a resize or a change of display
-    /// re-fits; minimising hands the player back; closing releases it.
+    /// re-fits; minimising or losing the front parks the player; closing
+    /// releases it.
     fn hook(window: &WebviewWindow) {
         HOOKED.call_once(|| {
             let main = window.clone();
             window.on_window_event(move |event| match event {
-                WindowEvent::Moved(_)
-                | WindowEvent::Resized(_)
-                | WindowEvent::ScaleFactorChanged { .. }
-                | WindowEvent::Focused(true) => sync(&main),
+                WindowEvent::Moved(_) | WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. } => {
+                    sync(&main, main.is_focused().unwrap_or(false))
+                }
+                WindowEvent::Focused(true) => sync(&main, true),
                 WindowEvent::Focused(false) => {
                     let main = main.clone();
                     std::thread::spawn(move || {
                         std::thread::sleep(MINIMISE_SETTLE);
-                        sync(&main);
+                        // The window is read BEFORE either lock is taken.
+                        let (this, chrome, player) = blur_inputs();
+                        let away = main.is_minimized().unwrap_or(false) || should_park_on_blur(this, chrome, player);
+                        set_away(&main, away);
                     });
                 }
                 WindowEvent::Destroyed => release_all(),
@@ -179,13 +201,18 @@ mod native {
         });
     }
 
+    fn set_away(window: &WebviewWindow, away: bool) {
+        let origin = origin(window);
+        placement_and_volume(|p| p.set_away(away, origin));
+    }
+
     /// The window is read BEFORE either lock is taken.
-    fn sync(window: &WebviewWindow) {
+    fn sync(window: &WebviewWindow, focused: bool) {
         if window.is_minimized().unwrap_or(false) {
-            placement_and_volume(|p| p.suspend());
-            return;
-        }
-        if let Some(origin) = origin(window) {
+            set_away(window, true);
+        } else if focused {
+            set_away(window, false);
+        } else if let Some(origin) = origin(window) {
             placement_and_volume(|p| p.refit(origin));
         }
     }
