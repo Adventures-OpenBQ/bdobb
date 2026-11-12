@@ -62,6 +62,14 @@ pnpm typecheck
 pnpm test:run
 bash scripts/scrub-check.sh
 
+# The MCP bridge opens a control port and must never ship. It is an optional
+# dependency behind a feature a release never enables; this fails the release
+# if that ever stops being true (the feature made default, the dep made required).
+if cargo tree --manifest-path src-tauri/Cargo.toml -e normal 2>/dev/null | grep -q 'tauri-plugin-mcp-bridge'; then
+  echo "tauri-plugin-mcp-bridge is in the release build's dependency graph; refusing to release."
+  exit 1
+fi
+
 pnpm tauri:build
 
 APP=$(ls -d src-tauri/target/release/bundle/macos/*.app)
