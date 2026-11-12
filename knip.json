@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/*.mjs",
+    "web/entry.mjs",
+    "deploy/reference-demo/vercel/build.mjs",
+    "deploy/table-service/*.mjs",
+    "e2e/**/*.{ts,tsx,mjs}",
+    "playwright.*.config.ts"
+  ],
+  "ignore": [
+    "LICENSES/**",
+    "scripts/*.d.mts",
+    "src/lib/reportModelActivation.ts"
+  ],
+  "ignoreBinaries": [
+    "openssl"
+  ],
+  "ignoreDependencies": [
+    "@blocknote/core"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "exports": "warn",
+    "types": "warn",
+    "enumMembers": "warn",
+    "duplicates": "warn"
+  }
+}
