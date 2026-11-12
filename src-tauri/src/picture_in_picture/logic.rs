@@ -194,6 +194,8 @@ pub struct Placement<W> {
     hidden: bool,
     menu: bool,
     away: bool,
+    /// A restore failed part-way: the card is gone and every settle retries the restore, never parks.
+    releasing: bool,
     /// The player is physically off screen.
     parked: bool,
     /// "Mute while hidden", from the last fit.
@@ -206,7 +208,7 @@ pub struct Placement<W> {
 
 impl<W: PlayerWindow> Placement<W> {
     pub fn new(window: W) -> Self {
-        Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, parked: false, mute: None, hide_muted: false, handed_back: false }
+        Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, releasing: false, parked: false, mute: None, hide_muted: false, handed_back: false }
     }
 
     /// True once since the last call if a held player was handed back (a release, a
@@ -220,7 +222,7 @@ impl<W: PlayerWindow> Placement<W> {
     /// out, another dashboard or tab) and away (minimised, not in front)
     /// mute; the card's own menu does not.
     pub fn take_volume_action(&mut self) -> Option<VolumeAction> {
-        let want = self.parked && (self.hidden || self.away);
+        let want = self.parked && (self.hidden || self.away) && !self.releasing;
         let target = self.mute.clone().filter(|_| want);
         if target.is_some() == self.hide_muted {
             return None;
@@ -287,6 +289,8 @@ impl<W: PlayerWindow> Placement<W> {
         self.last = Some(css);
         self.hidden = false;
         self.menu = false;
+        // A fit takes the hold over (keeping `saved`): the failed restore is no longer wanted.
+        self.releasing = false;
         self.settle(Some(origin))
     }
 
@@ -315,6 +319,13 @@ impl<W: PlayerWindow> Placement<W> {
 
     /// Parks or places the holder according to the current reasons.
     fn settle(&mut self, origin: Option<(f64, f64)>) -> Status {
+        if self.releasing {
+            self.release_all();
+            return match self.holder {
+                Some(_) => Status::Failed { reason: "BDOBB could not put the player back; trying again".into() },
+                None => Status::NoPlayer,
+            };
+        }
         if self.parks() {
             return match self.park_now() {
                 Ok(()) => Status::Parked,
@@ -363,13 +374,14 @@ impl<W: PlayerWindow> Placement<W> {
         Some(self.settle(Some(origin)))
     }
 
-    /// True when `card` held the player and it has been handed back.
+    /// True when `card` held the player and the hold has been forgotten (a
+    /// failed restore keeps the hold, and returns false).
     pub fn release(&mut self, card: &str) -> bool {
         if self.holder.as_deref() != Some(card) {
             return false;
         }
         self.release_all();
-        true
+        self.holder.is_none()
     }
 
     /// Gives the player back. If that fails the hold stays, with the original
@@ -379,6 +391,7 @@ impl<W: PlayerWindow> Placement<W> {
             Restored::Done => self.forget(),
             Restored::Failed { moved } => {
                 self.hidden = true;
+                self.releasing = true;
                 // A restore that got as far as moving the player on screen left it there.
                 self.parked &= !moved;
             }
@@ -392,6 +405,7 @@ impl<W: PlayerWindow> Placement<W> {
         self.last = None;
         self.hidden = false;
         self.menu = false;
+        self.releasing = false;
         self.parked = false;
     }
 
@@ -1041,7 +1055,7 @@ mod tests {
     }
 
     #[test]
-    fn a_restore_that_fails_part_way_leaves_the_player_to_be_parked_and_restored_again() {
+    fn a_restore_that_fails_part_way_is_retried_by_the_next_settle_not_parked_again() {
         let mut placement = Placement::new(RefusesNth { inner: FakeWindow::with_player(), calls: 0, nth: 0 });
         placement.fit("a", CARD, ORIGIN);
         placement.park("a", false);
@@ -1050,13 +1064,53 @@ mod tests {
         placement.window.nth = 2;
         placement.release_all();
         assert!(!placement.take_handed_back());
-        // It is on screen now, so it is no longer flagged parked and the next settle parks it again.
         assert!(!off_screen(placement.window.inner.frame, &[DISPLAY]));
-        assert_eq!(placement.refit(ORIGIN), Some(Status::Parked));
-        assert!(off_screen(placement.window.inner.frame, &[DISPLAY]));
-        placement.release_all();
+        // The next window event retries the restore instead of parking the player for a card that is gone.
+        assert_eq!(placement.refit(ORIGIN), Some(Status::NoPlayer));
         assert_eq!(placement.window.inner.frame, Some(ORIGINAL));
         assert!(placement.take_handed_back());
+        // Nothing is held now, so there is nothing left to retry.
+        assert_eq!(placement.refit(ORIGIN), None);
+    }
+
+    #[test]
+    fn a_release_that_fails_does_not_report_the_hold_forgotten() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.fail_next = 1;
+        assert!(!placement.release("a"));
+        assert!(placement.release("a"));
+    }
+
+    #[test]
+    fn no_hide_mute_is_requested_while_a_restore_is_being_retried() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 0);
+        placement.window.fail_next = 1;
+        placement.release_all();
+        // Not asked to hide again, and the hide-mute is undone: the player is on its way back.
+        placement.set_away(true, Some(ORIGIN));
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.slider.steps, vec![(false, 7), (true, 7)]);
+    }
+
+    #[test]
+    fn a_fit_from_another_card_takes_over_a_failed_restore_and_ends_the_retrying() {
+        let mut placement = Placement::new(FakeWindow::with_player());
+        placement.fit("a", CARD, ORIGIN);
+        placement.park("a", false);
+        placement.window.fail_next = 1;
+        placement.release_all();
+        assert_eq!(placement.fit("b", CARD, ORIGIN), Status::Fitted);
+        // b holds the player over its card: a window move places it, and nothing restores it.
+        assert_eq!(placement.refit(ORIGIN), Some(Status::Fitted));
+        assert!(!placement.take_handed_back());
+        assert!(placement.release("b"));
+        assert_eq!(placement.window.frame, Some(ORIGINAL));
     }
 
     #[test]
