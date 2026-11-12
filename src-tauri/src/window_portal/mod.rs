@@ -118,6 +118,10 @@ mod native {
             return Status::ViewerWindow;
         }
         hook(window);
+        // A minimised window leaves the player alone; un-minimising re-takes it via the Focused(true) refit and the next recheck.
+        if window.is_minimized().unwrap_or(false) {
+            return Status::Fitted;
+        }
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
