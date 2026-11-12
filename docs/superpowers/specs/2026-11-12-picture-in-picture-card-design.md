@@ -122,6 +122,20 @@ Decided by the user on 2026-11-12 after trying the first build. Where these diff
 - **Not built:** simulating a click to force the pop-out (see Terms of use).
 - **Still to verify with a real click:** that clicking the floating player's own controls is recognised and does not park it.
 
+## As built
+
+Recorded on 2026-11-12 after the second acceptance run and the final review. Where this differs from the text above, this governs.
+
+- **Commands.** Six: fit, park, release, set muted, mute state, and open the Accessibility settings. Park and release are honoured only from the main window; a viewer window gets the viewer answer and cannot move the main window's player. Mute works from a viewer window.
+- **Where the page starts.** On this line Tauri reports the window's content area as the whole window, while the page starts below the title bar (32 points). The controller adds the inset macOS reports for the window (`contentLayoutRect`), measured on the main thread and re-measured when the window moves or resizes.
+- **Height snap** (user's choice: "snap the height"). The card sets its own grid height to the fewest rows that hold the 16:9 player at the card's width. It snaps the first time the card is shown in a session, when its grid width changes, when its grid height changes just after a local pointer release, and when the Parameters panel opens or closes. It never snaps a read-only or locked card, a card pinned to a dashboard edge, a maximized card, or a card in a zoomed workspace, and in a locked band it never exceeds the band's rows. A height arriving from sync is left alone. Resizing the BDOBB window does not snap.
+- **Hidden** also covers minimising the card with its own button, and the collapsed-controls overlay being open.
+- **Leaving after clicking the player.** After a click on the floating player's own controls, BDOBB keeps checking, for up to ten minutes, and parks the player once neither BDOBB nor the player is in front.
+- **When the floating player disappears** (the user closed it), the hold is dropped and a mute BDOBB made is undone.
+- **Mute and Chrome.** BDOBB does not search Chrome's windows for the slider until the Mute button is first used or "Mute while hidden" is on. If the page it finds exposes no content, it asks Chrome once per Chrome process to expose its pages (`AXManualAccessibility`). A restore that could not read the slider is retried at the next read. A hide that finds the slider already at 0%, or cannot read it, logs why it did not mute.
+- **Messages.** A card smaller than the minimum says "Make this card at least 284 x 160 to park the player here". An unavailable Mute button is dimmed.
+- **Known limits, accepted for now.** Accessibility calls made on a window move run on the main thread, so a hung Chrome can stall a drag of the BDOBB window. Leaving or returning through an "Open in new window" window is not detected. A development restart that kills BDOBB while the player is hide-muted loses the level to restore. On 2026-11-12 the page once reported the player silent while the user heard sound; it cleared when the slider was moved and was not root-caused.
+
 ## Terms of use
 
 Read on 2026-11-12 through a summarising fetch, not from the raw pages, and not by a lawyer. This records where the wording points; it is not legal advice. The viewer, not BDOBB, is the party bound by a site's terms.
