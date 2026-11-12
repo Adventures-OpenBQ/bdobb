@@ -12,6 +12,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   isTauri: () => tauri.on,
 }));
 
+import { RELEASE_GRACE_MS } from "../../lib/windowPortal";
 import { WindowPortalMute, WindowPortalRenderer } from "./WindowPortalRenderer";
 
 /** Answers fit with `fit`, and the mute commands from a slider that starts at `mute`. */
@@ -31,9 +32,10 @@ function answer(fit: PortalStatus, mute: MuteState = { state: "sound" }) {
 const fitCall = () => expect(invoke).toHaveBeenCalledWith("window_portal_fit", expect.anything());
 
 afterEach(async () => {
+  vi.useRealTimers();
   cleanup();
-  // Let the unmount's queued release reach the mock before it is reset.
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  // Let the unmount's release (after its grace period) reach the mock before it is reset.
+  await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 30));
   vi.unstubAllEnvs();
   tauri.on = true;
   invoke.mockReset();
@@ -121,6 +123,56 @@ describe("Window Portal on the macOS desktop app", () => {
     expect(button).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(button);
     expect(invoke).not.toHaveBeenCalledWith("window_portal_set_muted", expect.anything());
+  });
+});
+
+describe("Window Portal remounts", () => {
+  beforeEach(() => {
+    vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    answer({ state: "fitted" });
+  });
+  const calls = () => invoke.mock.calls.map(([cmd]) => cmd as string);
+  const firstFit = () => vi.waitFor(() => expect(calls()).toContain("window_portal_fit"));
+  const releases = () => calls().filter((c) => c === "window_portal_release");
+
+  it("does not release when the same card remounts within the grace period", async () => {
+    const first = render(<WindowPortalRenderer cardId="c1" />);
+    await firstFit();
+    first.unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS - 1);
+    render(<WindowPortalRenderer cardId="c1" />);
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS * 2);
+    expect(releases()).toEqual([]);
+  });
+
+  it("releases exactly once, only after the grace period, when the card does not come back", async () => {
+    const { unmount } = render(<WindowPortalRenderer cardId="c1" />);
+    await firstFit();
+    unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS - 1);
+    expect(releases()).toEqual([]);
+    await vi.advanceTimersByTimeAsync(2);
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS * 2);
+    expect(releases()).toEqual(["window_portal_release"]);
+  });
+
+  it("keeps release-then-fit in order for a card that comes back after the grace period", async () => {
+    const first = render(<WindowPortalRenderer cardId="c2" />);
+    await firstFit();
+    first.unmount();
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    render(<WindowPortalRenderer cardId="c2" />);
+    await vi.waitFor(() => expect(calls()).toEqual(["window_portal_fit", "window_portal_release", "window_portal_fit"]));
+  });
+
+  it("only cancels the release of its own card", async () => {
+    const first = render(<WindowPortalRenderer cardId="c3" />);
+    await firstFit();
+    first.unmount();
+    render(<WindowPortalRenderer cardId="c4" />);
+    await vi.advanceTimersByTimeAsync(RELEASE_GRACE_MS + 1);
+    expect(invoke).toHaveBeenCalledWith("window_portal_release", { card: "c3" });
   });
 });
 

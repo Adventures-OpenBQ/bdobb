@@ -3,13 +3,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  cancelScheduledRelease,
+  enqueuePortal,
   fitPlayer,
   openAccessibilitySettings,
   portalPlatform,
   portalSettings,
   readMuteState,
-  releasePlayer,
+  releaseNow,
   sameRect,
+  scheduleRelease,
   setPlayerMuted,
   type CssRect,
   type MuteState,
@@ -54,11 +57,8 @@ function MacPortal({ cardId }: { cardId: string }) {
     let visible = true;
     let busy = false;
     let sent: CssRect | null = null;
-    // One queue per card, so a release can never overtake the fit before it.
-    let queue: Promise<unknown> = Promise.resolve();
-    const enqueue = (op: () => Promise<unknown>) => {
-      queue = queue.then(op, op);
-    };
+    // A remount of this card inside the grace period keeps the player.
+    cancelScheduledRelease(cardId);
     const measure = (): CssRect => {
       const r = el.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
@@ -66,7 +66,7 @@ function MacPortal({ cardId }: { cardId: string }) {
     const fit = (rect: CssRect) => {
       busy = true;
       sent = rect;
-      enqueue(() =>
+      enqueuePortal(cardId, () =>
         fitPlayer(cardId, rect)
           .then(
             (next) => alive && setStatus(next),
@@ -79,7 +79,7 @@ function MacPortal({ cardId }: { cardId: string }) {
     };
     const release = () => {
       sent = null;
-      enqueue(() => releasePlayer(cardId).catch(() => undefined));
+      releaseNow(cardId);
     };
 
     // Every frame, but a rectangle only goes out when it changed: this
@@ -109,7 +109,7 @@ function MacPortal({ cardId }: { cardId: string }) {
       cancelAnimationFrame(frame);
       clearInterval(recheck);
       observer?.disconnect();
-      release();
+      scheduleRelease(cardId);
     };
   }, [cardId]);
 

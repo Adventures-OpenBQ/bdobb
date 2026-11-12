@@ -56,3 +56,41 @@ export const setPlayerMuted = (source: string, label: string, muted: boolean) =>
 export const readMuteState = (source: string, label: string) =>
   invoke<MuteState>("window_portal_mute_state", { source, label });
 export const openAccessibilitySettings = () => invoke<void>("window_portal_open_settings");
+
+/**
+ * A card that unmounts and remounts at once (pin, unpin, a layout re-render)
+ * must not hand the player back. Its release waits this long, and a mount of
+ * the same card cancels it.
+ */
+export const RELEASE_GRACE_MS = 250;
+
+// Per card and across mounts, so an old mount's release can never land after
+// the next mount's fit.
+const queues = new Map<string, Promise<unknown>>();
+const pendingReleases = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** Runs `op` after every earlier call for this card has settled. */
+export function enqueuePortal(card: string, op: () => Promise<unknown>) {
+  queues.set(card, (queues.get(card) ?? Promise.resolve()).then(op, op));
+}
+
+export function releaseNow(card: string) {
+  enqueuePortal(card, () => releasePlayer(card).catch(() => undefined));
+}
+
+export function cancelScheduledRelease(card: string) {
+  clearTimeout(pendingReleases.get(card));
+  pendingReleases.delete(card);
+}
+
+/** Releases after the grace period unless the card mounts again first. */
+export function scheduleRelease(card: string) {
+  cancelScheduledRelease(card);
+  pendingReleases.set(
+    card,
+    setTimeout(() => {
+      pendingReleases.delete(card);
+      releaseNow(card);
+    }, RELEASE_GRACE_MS),
+  );
+}
