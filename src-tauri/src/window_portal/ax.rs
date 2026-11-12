@@ -14,9 +14,12 @@
 use std::collections::VecDeque;
 use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use super::logic::{ax_failure_reason, parse_percent, Op, PlayerWindow, Rect, VolumeSlider};
+use super::logic::{
+    ax_failure_reason, parse_percent, should_request_manual_accessibility, Op, PlayerWindow, Rect, VolumeSlider, PREPARING_REASON,
+};
 
 const CHROME_BUNDLE_ID: &str = "com.google.Chrome";
 /// The floating player's AX title in an English Chrome (spec, "Not verified": other languages).
@@ -32,6 +35,9 @@ const SEARCH_COOLDOWN: Duration = Duration::from_secs(5);
 const MESSAGING_TIMEOUT_SECONDS: f32 = 1.0;
 const SETTLE_TIMEOUT: Duration = Duration::from_millis(500);
 const SETTLE_POLL: Duration = Duration::from_millis(25);
+
+/// Set once BDOBB has asked Chrome to build its page trees, so it asks once per session.
+static MANUAL_ACCESSIBILITY_REQUESTED: AtomicBool = AtomicBool::new(false);
 
 type CFTypeRef = *const c_void;
 const UTF8: u32 = 0x0800_0100; // kCFStringEncodingUTF8
@@ -360,6 +366,7 @@ impl AxSlider {
         }
         self.cached = None;
         if let Some((at, reason)) = &self.missed {
+            // PREPARING_REASON is never stored here, so the next poll searches again.
             if at.elapsed() < SEARCH_COOLDOWN {
                 return Err(reason.clone());
             }
@@ -372,10 +379,22 @@ impl AxSlider {
                 Ok(raw)
             }
             Err(reason) => {
-                self.missed = Some((Instant::now(), reason.clone()));
+                if reason != PREPARING_REASON {
+                    self.missed = Some((Instant::now(), reason.clone()));
+                }
                 Err(reason)
             }
         }
+    }
+}
+
+/// Asks Chrome to expose its web pages to Accessibility (the attribute VoiceOver sets).
+fn request_page_trees(app: &Cf) {
+    let Some(key) = cfstr("AXManualAccessibility") else { return };
+    // SAFETY: live application element; kCFBooleanTrue is a constant, retained so Cf may release it.
+    unsafe {
+        let Some(yes) = Cf::new(CFRetain(kCFBooleanTrue)) else { return };
+        let _ = AXUIElementSetAttributeValue(app.0, key.0, yes.0);
     }
 }
 
@@ -391,6 +410,7 @@ fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
         .ok_or_else(|| format!("No Chrome window shows a tab whose title contains \u{201c}{source}\u{201d}. Select the stream's tab in its window."))?;
     let mut queue = VecDeque::from([window]);
     let mut visited = 0;
+    let mut saw_web_area = false;
     while let Some(element) = queue.pop_front() {
         visited += 1;
         if visited > SEARCH_LIMIT {
@@ -400,10 +420,17 @@ fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
             string_attr(element.0, "AXTitle").as_deref() == Some(label)
                 || string_attr(element.0, "AXDescription").as_deref() == Some(label)
         };
-        if string_attr(element.0, "AXRole").as_deref() == Some("AXSlider") && named() {
+        let role = string_attr(element.0, "AXRole");
+        saw_web_area |= role.as_deref() == Some("AXWebArea");
+        if role.as_deref() == Some("AXSlider") && named() {
             return Ok(element);
         }
         queue.extend(elements_checked(element.0, "AXChildren")?);
+    }
+    if should_request_manual_accessibility(saw_web_area, MANUAL_ACCESSIBILITY_REQUESTED.load(Ordering::Relaxed)) {
+        MANUAL_ACCESSIBILITY_REQUESTED.store(true, Ordering::Relaxed);
+        request_page_trees(&app);
+        return Err(PREPARING_REASON.to_owned());
     }
     Err(format!(
         "No \u{201c}{label}\u{201d} slider in that tab. The stream's tab must be the selected tab, and the site may have renamed the control."

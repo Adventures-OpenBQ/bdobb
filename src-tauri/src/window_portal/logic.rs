@@ -89,6 +89,17 @@ pub fn ax_failure_reason(code: i32) -> Option<&'static str> {
     (code == AX_CANNOT_COMPLETE).then_some("Chrome is not responding; try again in a moment")
 }
 
+/// What the slider lookup answers on the call that switches Chrome's page tree on.
+pub const PREPARING_REASON: &str = "Chrome is preparing the page; try again";
+
+/// Chrome builds a tab's accessibility tree only when asked. A window with no
+/// web area at all means it was not asked, so ask once per app session
+/// (AXManualAccessibility). A page that has a web area but no slider is a
+/// different problem and is never "fixed" this way.
+pub fn should_request_manual_accessibility(saw_web_area: bool, already_requested: bool) -> bool {
+    !saw_web_area && !already_requested
+}
+
 /// The floating player, behind whatever reaches it on this platform.
 pub trait PlayerWindow {
     fn trusted(&self) -> bool;
@@ -429,6 +440,14 @@ mod tests {
         assert_eq!(ax_failure_reason(-25204), Some("Chrome is not responding; try again in a moment"));
         assert_eq!(ax_failure_reason(0), None);
         assert_eq!(ax_failure_reason(-25200), None);
+    }
+
+    #[test]
+    fn the_page_tree_is_requested_only_when_no_web_area_was_seen_and_only_once() {
+        assert!(should_request_manual_accessibility(false, false));
+        assert!(!should_request_manual_accessibility(true, false));
+        assert!(!should_request_manual_accessibility(false, true));
+        assert!(!should_request_manual_accessibility(true, true));
     }
 
     #[test]
