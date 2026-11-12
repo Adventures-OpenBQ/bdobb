@@ -509,17 +509,29 @@ pub struct Mute<V> {
     recorded: Option<Recorded>,
     /// BDOBB's hide, not the user, muted it, and has not yet undone that.
     hide_muted: bool,
+    /// A restore was due but the slider could not be read (the stream's tab
+    /// is not the selected tab); the next successful read pays it first.
+    restore_owed: bool,
 }
 
 impl<V: VolumeSlider> Mute<V> {
     pub fn new(slider: V) -> Self {
-        Self { slider, recorded: None, hide_muted: false }
+        Self { slider, recorded: None, hide_muted: false, restore_owed: false }
     }
 
     /// A level recorded for another tab or slider must never be replayed here.
     fn forget_other(&mut self, source: &str, label: &str) {
         if self.recorded.as_ref().is_some_and(|r| r.source != source || r.label != label) {
             self.recorded = None;
+            self.restore_owed = false;
+        }
+    }
+
+    /// Performs a restore that an earlier unreadable slider left owed. The
+    /// same rule as any restore: only a slider still at 0 is stepped up.
+    fn pay_owed_restore(&mut self) {
+        if self.restore_owed {
+            self.restore();
         }
     }
 
@@ -532,12 +544,14 @@ impl<V: VolumeSlider> Mute<V> {
 
     pub fn state(&mut self, source: &str, label: &str) -> MuteState {
         self.forget_other(source, label);
+        self.pay_owed_restore();
         match self.slider.level(source, label) {
             Err(reason) => MuteState::Unavailable { reason },
             Ok(0) => MuteState::Muted,
             Ok(_) => {
                 // Sound again without BDOBB, so nothing is left for it to restore.
                 self.recorded = None;
+                self.restore_owed = false;
                 MuteState::Sound
             }
         }
@@ -549,6 +563,7 @@ impl<V: VolumeSlider> Mute<V> {
     /// the real value.
     pub fn set(&mut self, source: &str, label: &str, muted: bool) -> MuteState {
         self.forget_other(source, label);
+        self.pay_owed_restore();
         let level = match self.slider.level(source, label) {
             Ok(level) => level,
             Err(reason) => return MuteState::Unavailable { reason },
@@ -596,6 +611,7 @@ impl<V: VolumeSlider> Mute<V> {
             return;
         }
         self.forget_other(source, label);
+        self.pay_owed_restore();
         match self.slider.level(source, label) {
             Ok(level) if level > 0 => {
                 if self.set(source, label, true) == MuteState::Muted {
@@ -618,11 +634,18 @@ impl<V: VolumeSlider> Mute<V> {
     /// Steps back to the recorded level if BDOBB muted it (spec, Flow 4).
     pub fn restore(&mut self) {
         self.hide_muted = false;
-        let Some(recorded) = &self.recorded else { return };
+        let Some(recorded) = &self.recorded else {
+            self.restore_owed = false;
+            return;
+        };
         let (source, label, to) = (recorded.source.clone(), recorded.label.clone(), recorded.level);
-        // A slider that cannot be read right now keeps the recorded level for the next restore.
-        let Ok(level) = self.slider.level(&source, &label) else { return };
+        // A slider that cannot be read right now keeps the recorded level, and the restore is owed.
+        let Ok(level) = self.slider.level(&source, &label) else {
+            self.restore_owed = true;
+            return;
+        };
         self.recorded = None;
+        self.restore_owed = false;
         // Only a slider still at 0 is BDOBB's mute; anything else was moved by the user.
         if level == 0 {
             let _ = self.step_and_settle(&source, &label, level, true, steps(level, to));
@@ -1659,5 +1682,74 @@ mod tests {
         mute.restore();
         assert_eq!(mute.slider.level, 40);
         assert_eq!(mute.slider.steps, vec![(false, 7)]);
+    }
+
+    /// BDOBB muted a hidden player and the player came back while the stream's tab was not selected.
+    fn owed_a_restore() -> Mute<FakeSlider> {
+        let mut mute = Mute::new(FakeSlider::at(60));
+        mute.hide(SRC, LABEL);
+        assert_eq!(mute.slider.level, 0);
+        mute.slider.broken = Some("Select the stream's tab".into());
+        mute.unhide();
+        assert_eq!(mute.slider.level, 0);
+        mute.slider.broken = None;
+        mute
+    }
+
+    #[test]
+    fn a_restore_still_owed_is_performed_by_the_next_state_read() {
+        let mut mute = owed_a_restore();
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        assert_eq!(mute.slider.level, 60);
+    }
+
+    #[test]
+    fn a_restore_still_owed_is_performed_before_a_set_and_before_a_hide() {
+        let mut mute = owed_a_restore();
+        // The user mutes: the owed restore goes first, then the mute, which records 60 again.
+        assert_eq!(mute.set(SRC, LABEL, true), MuteState::Muted);
+        assert_eq!(mute.slider.steps, vec![(false, 6), (true, 6), (false, 6)]);
+        mute.set(SRC, LABEL, false);
+        assert_eq!(mute.slider.level, 60);
+
+        let mut mute = owed_a_restore();
+        mute.hide(SRC, LABEL);
+        assert_eq!(mute.slider.level, 0);
+        mute.unhide();
+        assert_eq!(mute.slider.level, 60);
+    }
+
+    #[test]
+    fn a_restore_still_owed_is_not_performed_over_a_volume_the_user_raised() {
+        let mut mute = owed_a_restore();
+        mute.slider.level = 40;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        assert_eq!(mute.slider.level, 40);
+        assert_eq!(mute.slider.steps, vec![(false, 6)]);
+        // Nothing is owed any more: a later user mute is theirs.
+        mute.slider.level = 0;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Muted);
+        assert_eq!(mute.slider.steps, vec![(false, 6)]);
+    }
+
+    #[test]
+    fn a_restore_still_owed_stays_owed_while_the_slider_cannot_be_read() {
+        let mut mute = owed_a_restore();
+        mute.slider.broken = Some("Select the stream's tab".into());
+        assert!(matches!(mute.state(SRC, LABEL), MuteState::Unavailable { .. }));
+        mute.slider.broken = None;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        assert_eq!(mute.slider.level, 60);
+    }
+
+    #[test]
+    fn a_quit_or_release_restore_clears_what_was_owed() {
+        let mut mute = owed_a_restore();
+        mute.restore();
+        assert_eq!(mute.slider.level, 60);
+        // The user silences it themselves afterwards: nothing is owed, so nothing is stepped back up.
+        mute.slider.level = 0;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Muted);
+        assert_eq!(mute.slider.steps, vec![(false, 6), (true, 6)]);
     }
 }
