@@ -108,6 +108,20 @@ Accepted by the user on 2026-11-12 when the plan was approved. Where these diffe
 - No capability entries are needed, and there is no page zoom to account for.
 - The help guide page must also be added to the help vault's v8.0 snapshot, or the next sync removes it.
 
+## Changes from the first acceptance run
+
+Decided by the user on 2026-11-12 after trying the first build. Where these differ from the text above, these govern.
+
+- **Name.** The card is the Picture in Picture widget, in the product and in the code.
+- **Hiding parks the player off screen.** A further probe showed Chrome's floating player cannot be minimised (the attribute is not settable and its minimise button is disabled), but it can be moved fully off screen and back exactly, with the video staying in picture-in-picture. So when the card is hidden, BDOBB parks the player beyond all displays and keeps holding it, and brings it back over the card when the condition ends. Hidden means: the card is scrolled fully out of view; the user switched dashboard or tab; BDOBB is minimised; BDOBB is not the front app; or the card's own menu is open. Clicking the floating player's own controls does not count as leaving BDOBB.
+- **Releasing** (back to the original place and size) now happens only when the card is removed, when BDOBB quits or its window closes, or when the card body is smaller than 284 x 160. This replaces the earlier ruling that the player stays put when BDOBB is not in front, and the earlier default that the player covers the card's menu.
+- **A parked hold yields.** If another Picture in Picture card comes into view while the player is parked, that card takes it over. A visibly fitted card keeps it.
+- **Mute while hidden.** A card setting, off by default. Hiding mutes and returning restores the sound, only if the hide did the muting. Parking for the card's menu never mutes.
+- **Trimming whitespace.** The player is aligned to the top of the card body and centred horizontally, and the card has a bottom-edge resize handle on a dashboard and in a locked band.
+- **Example site.** Help text uses a Federal Reserve press conference on federalreserve.gov as its one example. Its player was checked on 2026-11-12: the same floating window, and a `Volume Level` slider that stepped from 100% to 90% and back. The Board's site policy puts its material in the public domain, asks for citation, permits linking but not framing, and reserves its seal and name.
+- **Not built:** simulating a click to force the pop-out (see Terms of use).
+- **Still to verify with a real click:** that clicking the floating player's own controls is recognised and does not park it.
+
 ## Terms of use
 
 Read on 2026-11-12 through a summarising fetch, not from the raw pages, and not by a lawyer. This records where the wording points; it is not legal advice. The viewer, not BDOBB, is the party bound by a site's terms.
