@@ -14,6 +14,10 @@ name = "bdobb_lib"
 # alongside the "rlib" the desktop build already relies on.
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# pnpm tauri dev --features mcp-bridge --config src-tauri/tauri.mcp.conf.json
+mcp-bridge = ["dep:tauri-plugin-mcp-bridge"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -23,6 +27,10 @@ tauri-plugin-http = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
+# Lets an MCP client drive the running desktop app (screenshots, clicks, DOM,
+# console). It opens a control port, so it is optional, off by default, and
+# registered only in debug builds; scripts/release.sh refuses to build with it.
+tauri-plugin-mcp-bridge = { version = "=0.13.2", optional = true }
 serde = { version = "1", features = ["derive"] }
 
 # The Save panel's Format pop-up (src/save_panel.rs). Already in the lock
@@ -53,8 +61,7 @@ objc2 = "0.6"
 # swift-rs is a transitive dependency (tauri -> tauri-utils -> swift-rs), never
 # named in [dependencies], so [patch.crates-io] is what makes the fix reach it.
 [patch.crates-io]
+# Tauri 2.12 asks for swift-rs 1.0.9, which is byte-identical to 1.0.8 apart from its
+# version (compared 2026-11-12) and still does not re-globalize SwiftRs.o, so the
+# vendored copy's version was bumped to keep this patch applying.
 swift-rs = { path = "vendor/swift-rs" }
-
-# SDK 27 scene configuration ownership fix: upstream tao PR #1245.
-# Remove this vendored 0.35.3 patch when Tauri supports the fixed Tao release.
-tao = { path = "vendor/tao" }
