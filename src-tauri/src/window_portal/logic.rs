@@ -79,6 +79,16 @@ pub fn restore_ops(saved: Rect, display: Rect) -> [Op; 3] {
     [Op::Move(x, y), Op::Size(saved.width, saved.height), Op::Move(saved.x, saved.y)]
 }
 
+/// kAXErrorCannotComplete: what Accessibility answers when the app does not
+/// reply within the messaging timeout (a hung Chrome).
+pub const AX_CANNOT_COMPLETE: i32 = -25204;
+
+/// The user-facing reason for an Accessibility error code that means "Chrome
+/// did not answer"; None for every other code.
+pub fn ax_failure_reason(code: i32) -> Option<&'static str> {
+    (code == AX_CANNOT_COMPLETE).then_some("Chrome is not responding; try again in a moment")
+}
+
 /// The floating player, behind whatever reaches it on this platform.
 pub trait PlayerWindow {
     fn trusted(&self) -> bool;
@@ -412,6 +422,13 @@ mod tests {
         fn display_bounds(&self, _rect: Rect) -> Rect {
             DISPLAY
         }
+    }
+
+    #[test]
+    fn a_timed_out_accessibility_call_has_a_reason_and_other_codes_do_not() {
+        assert_eq!(ax_failure_reason(-25204), Some("Chrome is not responding; try again in a moment"));
+        assert_eq!(ax_failure_reason(0), None);
+        assert_eq!(ax_failure_reason(-25200), None);
     }
 
     #[test]

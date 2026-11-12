@@ -16,7 +16,7 @@ use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
 use std::time::{Duration, Instant};
 
-use super::logic::{parse_percent, Op, PlayerWindow, Rect, VolumeSlider};
+use super::logic::{ax_failure_reason, parse_percent, Op, PlayerWindow, Rect, VolumeSlider};
 
 const CHROME_BUNDLE_ID: &str = "com.google.Chrome";
 /// The floating player's AX title in an English Chrome (spec, "Not verified": other languages).
@@ -28,6 +28,8 @@ const SEARCH_LIMIT: usize = 20_000;
 /// After a failed search (about 150 ms each), repeat its reason this long instead of searching again.
 const SEARCH_COOLDOWN: Duration = Duration::from_secs(5);
 /// After stepping the slider, how long and how often to wait for it to read the target.
+/// A call to a hung Chrome gives up after this long instead of freezing BDOBB.
+const MESSAGING_TIMEOUT_SECONDS: f32 = 1.0;
 const SETTLE_TIMEOUT: Duration = Duration::from_millis(500);
 const SETTLE_POLL: Duration = Duration::from_millis(25);
 
@@ -37,6 +39,8 @@ const NUMBER_DOUBLE: isize = 13; // kCFNumberDoubleType
 const AX_POINT: u32 = 1; // kAXValueTypeCGPoint
 const AX_SIZE: u32 = 2; // kAXValueTypeCGSize
 const AX_SUCCESS: i32 = 0;
+/// Not an AX code: our own failure to build the name or the value is not a timeout.
+const AX_NO_NAME: i32 = i32::MIN;
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -95,6 +99,7 @@ extern "C" {
     fn AXIsProcessTrustedWithOptions(options: CFTypeRef) -> u8;
     fn AXUIElementCreateApplication(pid: i32) -> CFTypeRef;
     fn AXUIElementCopyAttributeValue(element: CFTypeRef, attribute: CFTypeRef, value: *mut CFTypeRef) -> i32;
+    fn AXUIElementSetMessagingTimeout(element: CFTypeRef, timeout_seconds: f32) -> i32;
     fn AXUIElementSetAttributeValue(element: CFTypeRef, attribute: CFTypeRef, value: CFTypeRef) -> i32;
     fn AXUIElementPerformAction(element: CFTypeRef, action: CFTypeRef) -> i32;
     fn AXValueCreate(kind: u32, value: *const c_void) -> CFTypeRef;
@@ -135,12 +140,17 @@ fn cfstr(text: &str) -> Option<Cf> {
     Cf::new(unsafe { CFStringCreateWithBytes(ptr::null(), text.as_ptr(), text.len() as isize, UTF8, 0) })
 }
 
-fn attr(element: CFTypeRef, name: &str) -> Option<Cf> {
-    let name = cfstr(name)?;
+/// The attribute, or the AX error code (a timeout is -25204, see `ax_failure_reason`).
+fn attr_checked(element: CFTypeRef, name: &str) -> Result<Cf, i32> {
+    let name = cfstr(name).ok_or(AX_NO_NAME)?;
     let mut out: CFTypeRef = ptr::null();
     // SAFETY: element is a live AXUIElement; out receives a +1 reference on success.
     let error = unsafe { AXUIElementCopyAttributeValue(element, name.0, &mut out) };
-    if error == AX_SUCCESS { Cf::new(out) } else { None }
+    if error == AX_SUCCESS { Cf::new(out).ok_or(AX_NO_NAME) } else { Err(error) }
+}
+
+fn attr(element: CFTypeRef, name: &str) -> Option<Cf> {
+    attr_checked(element, name).ok()
 }
 
 fn set(element: CFTypeRef, name: &str, value: &Cf) -> Result<(), String> {
@@ -179,17 +189,20 @@ fn string_attr(element: CFTypeRef, name: &str) -> Option<String> {
     attr(element, name).and_then(|value| string(value.0))
 }
 
-/// An array attribute's elements, each retained.
-fn elements(element: CFTypeRef, name: &str) -> Vec<Cf> {
-    let Some(array) = attr(element, name) else { return Vec::new() };
+/// An array attribute's elements, each retained; a hung app is an Err with its reason.
+fn elements_checked(element: CFTypeRef, name: &str) -> Result<Vec<Cf>, String> {
+    let array = match attr_checked(element, name) {
+        Ok(array) => array,
+        Err(code) => return ax_failure_reason(code).map_or_else(|| Ok(Vec::new()), |reason| Err(reason.to_owned())),
+    };
     // SAFETY: type-checked; each value is retained before it is wrapped.
     unsafe {
         if CFGetTypeID(array.0) != CFArrayGetTypeID() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
-        (0..CFArrayGetCount(array.0))
+        Ok((0..CFArrayGetCount(array.0))
             .filter_map(|i| Cf::new(CFRetain(CFArrayGetValueAtIndex(array.0, i))))
-            .collect()
+            .collect())
     }
 }
 
@@ -231,7 +244,10 @@ fn chrome_pid() -> Option<i32> {
 fn chrome() -> Option<Cf> {
     let pid = chrome_pid()?;
     // SAFETY: returns a +1 AXUIElement for the pid.
-    Cf::new(unsafe { AXUIElementCreateApplication(pid) })
+    let app = Cf::new(unsafe { AXUIElementCreateApplication(pid) })?;
+    // SAFETY: live application element. A hung Chrome then answers "cannot complete" after a second.
+    unsafe { AXUIElementSetMessagingTimeout(app.0, MESSAGING_TIMEOUT_SECONDS) };
+    Some(app)
 }
 
 /// Registers BDOBB in the Accessibility list (the system prompt) and opens
@@ -265,16 +281,25 @@ pub struct AxWindow {
 }
 
 impl AxWindow {
-    fn player(&mut self) -> Option<CFTypeRef> {
-        let alive = self.player.as_ref().is_some_and(|p| attr(p.0, "AXPosition").is_some());
-        if !alive {
-            self.player = chrome().and_then(|app| {
-                elements(app.0, "AXWindows")
-                    .into_iter()
-                    .find(|w| string_attr(w.0, "AXTitle").as_deref() == Some(PLAYER_TITLE))
-            });
+    /// Ok(None): no floating player. Err: Chrome did not answer in time.
+    fn player(&mut self) -> Result<Option<CFTypeRef>, String> {
+        if let Some(player) = &self.player {
+            match attr_checked(player.0, "AXPosition") {
+                Ok(_) => return Ok(Some(player.0)),
+                Err(code) => {
+                    if let Some(reason) = ax_failure_reason(code) {
+                        return Err(reason.to_owned());
+                    }
+                }
+            }
         }
-        self.player.as_ref().map(|p| p.0)
+        self.player = match chrome() {
+            Some(app) => elements_checked(app.0, "AXWindows")?
+                .into_iter()
+                .find(|w| string_attr(w.0, "AXTitle").as_deref() == Some(PLAYER_TITLE)),
+            None => None,
+        };
+        Ok(self.player.as_ref().map(|p| p.0))
     }
 }
 
@@ -285,14 +310,14 @@ impl PlayerWindow for AxWindow {
     }
 
     fn frame(&mut self) -> Result<Option<Rect>, String> {
-        let Some(player) = self.player() else { return Ok(None) };
+        let Some(player) = self.player()? else { return Ok(None) };
         let position: CGPoint = value(player, "AXPosition", AX_POINT).ok_or("cannot read the player's position")?;
         let size: CGSize = value(player, "AXSize", AX_SIZE).ok_or("cannot read the player's size")?;
         Ok(Some(Rect { x: position.x, y: position.y, width: size.width, height: size.height }))
     }
 
     fn apply(&mut self, op: Op) -> Result<(), String> {
-        let player = self.player().ok_or("the floating player closed")?;
+        let player = self.player()?.ok_or("the floating player closed")?;
         let (name, raw) = match op {
             Op::Move(x, y) => ("AXPosition", ax_value(AX_POINT, &CGPoint { x, y })),
             Op::Size(width, height) => ("AXSize", ax_value(AX_SIZE, &CGSize { width, height })),
@@ -360,7 +385,7 @@ impl AxSlider {
 /// accepted.
 fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
     let app = chrome().ok_or("Chrome is not running")?;
-    let window = elements(app.0, "AXWindows")
+    let window = elements_checked(app.0, "AXWindows")?
         .into_iter()
         .find(|w| string_attr(w.0, "AXTitle").is_some_and(|t| t.contains(source)))
         .ok_or_else(|| format!("No Chrome window shows a tab whose title contains \u{201c}{source}\u{201d}. Select the stream's tab in its window."))?;
@@ -378,7 +403,7 @@ fn find_slider(source: &str, label: &str) -> Result<Cf, String> {
         if string_attr(element.0, "AXRole").as_deref() == Some("AXSlider") && named() {
             return Ok(element);
         }
-        queue.extend(elements(element.0, "AXChildren"));
+        queue.extend(elements_checked(element.0, "AXChildren")?);
     }
     Err(format!(
         "No \u{201c}{label}\u{201d} slider in that tab. The stream's tab must be the selected tab, and the site may have renamed the control."
