@@ -113,6 +113,16 @@ mod native {
         Some((f64::from(position.x) / scale, f64::from(position.y) / scale))
     }
 
+    /// Runs `f` on the portal, then restores the volume if it handed the player
+    /// back, whatever the path. The portal lock is dropped first.
+    fn portal_and_volume<T>(f: impl FnOnce(&mut Portal<AxWindow>) -> T) -> T {
+        let (result, handed_back) = portal(|p| (f(p), p.take_handed_back()));
+        if handed_back {
+            mute(|m| m.restore());
+        }
+        result
+    }
+
     pub fn fit(window: &WebviewWindow, card: &str, rect: Rect) -> Status {
         if window.label() != MAIN {
             return Status::ViewerWindow;
@@ -125,17 +135,16 @@ mod native {
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
-        portal(|p| p.fit(card, rect, origin))
+        portal_and_volume(|p| p.fit(card, rect, origin))
     }
 
     pub fn release(card: &str) {
-        if portal(|p| p.release(card)) {
-            mute(|m| m.restore());
-        }
+        portal_and_volume(|p| p.release(card));
     }
 
     pub fn release_all() {
-        portal(|p| p.release_all());
+        portal_and_volume(|p| p.release_all());
+        // Quit: restore even when no card held the player.
         mute(|m| m.restore());
     }
 
@@ -173,13 +182,11 @@ mod native {
     /// The window is read BEFORE either lock is taken.
     fn sync(window: &WebviewWindow) {
         if window.is_minimized().unwrap_or(false) {
-            if portal(|p| p.suspend()) {
-                mute(|m| m.restore());
-            }
+            portal_and_volume(|p| p.suspend());
             return;
         }
         if let Some(origin) = origin(window) {
-            portal(|p| p.refit(origin));
+            portal_and_volume(|p| p.refit(origin));
         }
     }
 }

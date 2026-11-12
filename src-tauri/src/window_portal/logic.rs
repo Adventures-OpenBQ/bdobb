@@ -97,11 +97,20 @@ pub struct Portal<W> {
     saved: Option<Rect>,
     last: Option<Rect>,
     suspended: bool,
+    /// Set whenever a held player is given back, for whatever reason; read by `take_handed_back`.
+    handed_back: bool,
 }
 
 impl<W: PlayerWindow> Portal<W> {
     pub fn new(window: W) -> Self {
-        Self { window, holder: None, saved: None, last: None, suspended: false }
+        Self { window, holder: None, saved: None, last: None, suspended: false, handed_back: false }
+    }
+
+    /// True once since the last call if a held player was handed back (a release, a
+    /// suspend, a card too small, a vanished player). The caller restores the volume
+    /// then, so "player handed back" and "mute restored" cannot drift apart.
+    pub fn take_handed_back(&mut self) -> bool {
+        std::mem::take(&mut self.handed_back)
     }
 
     pub fn fit(&mut self, card: &str, css: Rect, origin: (f64, f64)) -> Status {
@@ -181,6 +190,7 @@ impl<W: PlayerWindow> Portal<W> {
     }
 
     fn forget(&mut self) {
+        self.handed_back |= self.holder.is_some();
         self.holder = None;
         self.saved = None;
         self.last = None;
@@ -188,6 +198,7 @@ impl<W: PlayerWindow> Portal<W> {
     }
 
     fn restore(&mut self) {
+        self.handed_back |= self.holder.is_some();
         let Some(saved) = self.saved.take() else { return };
         for op in restore_ops(saved, self.window.display_bounds(saved)) {
             if let Err(error) = self.window.apply(op) {
@@ -472,6 +483,53 @@ mod tests {
         assert_eq!(portal.window.frame, Some(r(110.0, 90.0, 640.0, 360.0)));
         portal.release("a");
         assert_eq!(portal.window.frame, Some(ORIGINAL));
+    }
+
+    #[test]
+    fn every_way_of_handing_the_player_back_is_reported_once() {
+        // Too small after holding.
+        let mut portal = Portal::new(FakeWindow::with_player());
+        portal.fit("a", CARD, ORIGIN);
+        assert!(!portal.take_handed_back());
+        assert_eq!(portal.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert!(portal.take_handed_back());
+        assert!(!portal.take_handed_back());
+
+        // No player any more after holding.
+        let mut portal = Portal::new(FakeWindow::with_player());
+        portal.fit("a", CARD, ORIGIN);
+        portal.window.frame = None;
+        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPlayer);
+        assert!(portal.take_handed_back());
+
+        // Release by the holder, suspend, release_all.
+        let mut portal = Portal::new(FakeWindow::with_player());
+        portal.fit("a", CARD, ORIGIN);
+        assert!(portal.release("a"));
+        assert!(portal.take_handed_back());
+        portal.fit("a", CARD, ORIGIN);
+        assert!(portal.suspend());
+        assert!(portal.take_handed_back());
+        portal.release_all();
+        assert!(portal.take_handed_back());
+    }
+
+    #[test]
+    fn nothing_is_reported_when_nothing_was_held() {
+        let mut portal = Portal::new(FakeWindow::with_player());
+        assert_eq!(portal.fit("a", r(0.0, 0.0, 200.0, 100.0), ORIGIN), Status::TooSmall);
+        assert!(!portal.release("a"));
+        portal.release_all();
+        let mut window = FakeWindow::with_player();
+        window.frame = None;
+        let mut portal = Portal::new(window);
+        assert_eq!(portal.fit("a", CARD, ORIGIN), Status::NoPlayer);
+        assert!(!portal.take_handed_back());
+        // A second card turned away with InUse hands nothing back.
+        let mut portal = Portal::new(FakeWindow::with_player());
+        portal.fit("a", CARD, ORIGIN);
+        portal.fit("b", CARD, ORIGIN);
+        assert!(!portal.take_handed_back());
     }
 
     /// The page's Volume Level slider: AXDecrement / AXIncrement move it 10%
