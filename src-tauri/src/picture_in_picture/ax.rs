@@ -31,9 +31,9 @@ const SETTINGS_URL: &str = "x-apple.systempreferences:com.apple.preference.secur
 const SEARCH_LIMIT: usize = 20_000;
 /// After a failed search (about 150 ms each), repeat its reason this long instead of searching again.
 const SEARCH_COOLDOWN: Duration = Duration::from_secs(5);
-/// After stepping the slider, how long and how often to wait for it to read the target.
 /// A call to a hung Chrome gives up after this long instead of freezing BDOBB.
 const MESSAGING_TIMEOUT_SECONDS: f32 = 1.0;
+/// After stepping the slider, how long and how often to wait for it to read the target.
 const SETTLE_TIMEOUT: Duration = Duration::from_millis(500);
 const SETTLE_POLL: Duration = Duration::from_millis(25);
 

@@ -76,7 +76,7 @@ export function PictureInPictureRenderer({
 }: {
   cardId: string;
   params?: Record<string, string>;
-  /** A viewer window: the card may not change its own height. */
+  /** A viewer window or a locked card: the card may not change its own height. */
   readOnly?: boolean;
   /** The card's own header menu is open: the player steps aside until it closes. */
   menuOpen?: boolean;
