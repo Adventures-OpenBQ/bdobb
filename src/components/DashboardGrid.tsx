@@ -19,6 +19,7 @@ import {
   type GridLayoutItem,
 } from "../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../stores/settingsStore";
+import { pipResizeHandles, type ResizeHandles } from "../lib/pictureInPicture";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { TabBar } from "./TabBar";
 import { TableExecutionRuntime } from "./TableExecutionRuntime";
@@ -125,10 +126,11 @@ export function DashboardGrid({
    *
    * Neither flag can reach the disk: updateLayouts writes i/x/y/w/h only.
    */
-  const layout: (GridLayoutItem & { isDraggable?: boolean; isResizable?: boolean })[] =
+  const layout: (GridLayoutItem & ResizeHandles & { isDraggable?: boolean; isResizable?: boolean })[] =
     gridCards.map((c) => ({
       i: c.id,
       ...c.layout,
+      ...pipResizeHandles(c.widgetId, cornerDragHandles),
       ...(c.id === maximizedCardId ? { isDraggable: false, isResizable: false } : {}),
     }));
 

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const { tauri } = vi.hoisted(() => ({ tauri: { on: true } }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: () => tauri.on }));
 
-import { muteWhileHidden, pipPlatform, pipSettings, sameRect } from "./pictureInPicture";
+import { muteWhileHidden, pipPlatform, pipResizeHandles, pipSettings, sameRect } from "./pictureInPicture";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -45,6 +45,14 @@ describe("muteWhileHidden", () => {
     expect(muteWhileHidden({ muteWhileHidden: "off" })).toBe(false);
     expect(muteWhileHidden({ muteWhileHidden: "" })).toBe(false);
     expect(muteWhileHidden({ muteWhileHidden: "on" })).toBe(true);
+  });
+});
+
+describe("pipResizeHandles", () => {
+  it("adds the bottom edge to the grid's handles for this card only", () => {
+    expect(pipResizeHandles("picture_in_picture", false)).toEqual({ resizeHandles: ["se", "s"] });
+    expect(pipResizeHandles("picture_in_picture", true)).toEqual({ resizeHandles: ["nw", "ne", "sw", "se", "s"] });
+    expect(pipResizeHandles("clock", true)).toEqual({});
   });
 });
 

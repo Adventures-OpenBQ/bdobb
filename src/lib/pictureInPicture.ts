@@ -39,6 +39,22 @@ export function pipSettings(params: Record<string, string>): { source: string; l
   };
 }
 
+/** The built-in's id: the only card that is given a bottom-edge resize handle. */
+export const PICTURE_IN_PICTURE_ID = "picture_in_picture";
+
+type Handle = "nw" | "ne" | "sw" | "se" | "s";
+export type ResizeHandles = { resizeHandles?: Handle[] };
+
+/**
+ * Per-item resize handles for react-grid-layout, spread into a layout item:
+ * this card keeps the grid's own handles and gains the bottom edge's, for
+ * trimming the empty space under a player that is fitted to the card's width.
+ * Every other card gets nothing, so the grid-level handles apply to it.
+ */
+export function pipResizeHandles(widgetId: string, cornerDragHandles: boolean): ResizeHandles {
+  return widgetId === PICTURE_IN_PICTURE_ID ? { resizeHandles: [...(cornerDragHandles ? (["nw", "ne", "sw", "se"] as const) : (["se"] as const)), "s"] } : {};
+}
+
 /** The "Mute while hidden" setting: an on/off choice, off unless the card says "on". */
 export const muteWhileHidden = (params: Record<string, string>): boolean => params.muteWhileHidden === "on";
 
