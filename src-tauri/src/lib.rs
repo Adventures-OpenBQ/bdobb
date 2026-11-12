@@ -167,7 +167,16 @@ pub fn run() {
     );
 
     let builder = builder
-        .invoke_handler(tauri::generate_handler![video_wrapper::video_wrapper_port, set_window_pin, save_panel::save_workspace_panel])
+        .invoke_handler(tauri::generate_handler![
+            video_wrapper::video_wrapper_port,
+            set_window_pin,
+            save_panel::save_workspace_panel,
+            window_portal::window_portal_fit,
+            window_portal::window_portal_release,
+            window_portal::window_portal_set_muted,
+            window_portal::window_portal_mute_state,
+            window_portal::window_portal_open_settings,
+        ])
         .setup(|app| {
             // Restore the baseline storage fix from 4ac9cd071 (issue #316).
             // Root-level settings seed before nested stores create directories.
@@ -231,8 +240,14 @@ pub fn run() {
         });
 
     builder
-        .run(tauri::generate_context!())
-        .expect("error while running BDOBB");
+        .build(tauri::generate_context!())
+        .expect("error while running BDOBB")
+        .run(|_app, event| {
+            // Quit hands Chrome's floating player back (window_portal, spec Flow 4).
+            if let tauri::RunEvent::Exit = event {
+                window_portal::release_all();
+            }
+        });
 }
 
 #[cfg(all(test, desktop))]
