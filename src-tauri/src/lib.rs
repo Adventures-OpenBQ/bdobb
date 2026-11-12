@@ -4,6 +4,7 @@
 mod migrate;
 mod save_panel;
 mod video_wrapper;
+mod window_portal;
 
 use tauri::Manager;
 
