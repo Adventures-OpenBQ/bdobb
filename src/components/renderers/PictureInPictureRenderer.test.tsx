@@ -258,8 +258,18 @@ describe("Picture in Picture on the macOS desktop app", () => {
     const button = await screen.findByRole("button", { name: "Mute" });
     await waitFor(() => expect(button).toHaveAttribute("title", "Select the stream's tab in its window."));
     expect(button).toHaveAttribute("aria-disabled", "true");
+    // Dimmed, so it looks unavailable as well as being so.
+    expect(button).toHaveStyle({ opacity: "0.45" });
     await userEvent.click(button);
     expect(invoke).not.toHaveBeenCalledWith("picture_in_picture_set_muted", expect.anything());
+  });
+
+  it("is not dimmed while the mute is available", async () => {
+    answer({ state: "fitted" });
+    render(<PictureInPictureMute params={{}} />);
+    const button = await screen.findByRole("button", { name: "Mute" });
+    await waitFor(() => expect(button).toHaveAttribute("title", "Mute"));
+    expect(button).not.toHaveStyle({ opacity: "0.45" });
   });
 });
 

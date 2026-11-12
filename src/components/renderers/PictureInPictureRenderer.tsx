@@ -33,6 +33,9 @@ import { selectEffective, useSettingsStore } from "../../stores/settingsStore";
  */
 const RECHECK_MS = 3000;
 
+/** How dim the Mute button looks while it cannot be used. */
+const UNAVAILABLE_OPACITY = 0.45;
+
 /** Whether a card is still in the dashboards or the docks: a card that left the screen only parks the player; a removed one releases it. */
 const dashboardData: CardData = {
   has: (id) => ownerOfCard(useDashboardStore.getState(), id) !== undefined,
@@ -324,6 +327,8 @@ function MuteButton({ source, label }: { source: string; label: string }) {
       // Also while a call is in flight, and never `disabled`: the button keeps keyboard focus.
       aria-disabled={reason !== undefined || pending}
       title={reason ?? (muted ? "Unmute" : "Mute")}
+      // Dimmed from here: the card's stylesheet has no rule for aria-disabled.
+      style={reason !== undefined ? { opacity: UNAVAILABLE_OPACITY } : undefined}
       onClick={() => {
         if (reason !== undefined || inFlight.current) return;
         inFlight.current = true;
