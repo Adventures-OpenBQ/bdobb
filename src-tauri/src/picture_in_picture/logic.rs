@@ -133,7 +133,6 @@ pub fn ax_error_text(code: i32, what: &str) -> String {
     ax_failure_reason(code).map_or_else(|| format!("{what} (error {code})"), str::to_owned)
 }
 
-/// What the slider lookup answers on the call that switches Chrome's page tree on.
 /// How far below the window's top edge the page starts, in points: the
 /// window's height less the top of the area its title bar leaves free
 /// (AppKit's `contentLayoutRect`, measured from the window's bottom edge).
@@ -143,6 +142,7 @@ pub fn top_inset(window_height: f64, free_y: f64, free_height: f64) -> f64 {
     if inset.is_finite() && inset > 0.0 { inset } else { 0.0 }
 }
 
+/// What the slider lookup answers on the call that switches Chrome's page tree on.
 pub const PREPARING_REASON: &str = "Chrome is preparing the page; try again";
 
 /// Chrome builds a tab's accessibility tree only when asked. A window with no
@@ -627,6 +627,27 @@ impl<V: VolumeSlider> Mute<V> {
         if level == 0 {
             let _ = self.step_and_settle(&source, &label, level, true, steps(level, to));
         }
+    }
+}
+
+/// What one look at the frontmost app decides after BDOBB lost focus.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum BlurCheck {
+    /// Neither BDOBB nor the player is in front: park.
+    ParkNow,
+    /// Chrome is in front with the player focused (the user is using its controls); look again later.
+    KeepWatching,
+    /// BDOBB is in front again.
+    Stop,
+}
+
+pub fn blur_check(frontmost_is_self: bool, frontmost_is_chrome: bool, chrome_focused_window_is_player: bool) -> BlurCheck {
+    if should_park_on_blur(frontmost_is_self, frontmost_is_chrome, chrome_focused_window_is_player) {
+        BlurCheck::ParkNow
+    } else if frontmost_is_self {
+        BlurCheck::Stop
+    } else {
+        BlurCheck::KeepWatching
     }
 }
 
@@ -1266,6 +1287,17 @@ mod tests {
         assert!(should_park_on_blur(false, false, false));
         // The player's focus only counts when Chrome is in front.
         assert!(should_park_on_blur(false, false, true));
+    }
+
+    #[test]
+    fn a_blur_check_parks_watches_or_stops() {
+        // (frontmost is BDOBB, frontmost is Chrome, Chrome's focused window is the player)
+        assert_eq!(blur_check(true, false, false), BlurCheck::Stop);
+        // The user clicked the player's own controls: Chrome is in front with the player focused. Keep watching.
+        assert_eq!(blur_check(false, true, true), BlurCheck::KeepWatching);
+        // They then left for a third app, or Chrome's focus moved off the player.
+        assert_eq!(blur_check(false, false, false), BlurCheck::ParkNow);
+        assert_eq!(blur_check(false, true, false), BlurCheck::ParkNow);
     }
 
     /// The page's Volume Level slider: AXDecrement / AXIncrement move it 10%

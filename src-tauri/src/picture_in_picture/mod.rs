@@ -94,13 +94,13 @@ mod native {
     use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::{Mutex, Once, OnceLock, PoisonError};
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use tauri::{WebviewWindow, WindowEvent};
 
     use super::ax::{AxSlider, AxWindow};
     use super::ax::blur_inputs;
-    use super::logic::{blur_result_is_current, should_park_on_blur, top_inset, Mute, MuteState, MuteTarget, Placement, Rect, Status};
+    use super::logic::{blur_check, blur_result_is_current, BlurCheck, top_inset, Mute, MuteState, MuteTarget, Placement, Rect, Status};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -108,6 +108,12 @@ mod native {
     /// wait and then is_minimized() and the frontmost-app check.
     /// ponytail: fixed delay; switch to an NSWindow miniaturize observer if 700 ms misses the animation.
     const MINIMISE_SETTLE: Duration = Duration::from_millis(700);
+
+    /// While the user works the floating player's own controls, the blur
+    /// watcher looks again this often.
+    const BLUR_RECHECK: Duration = Duration::from_millis(500);
+    /// The longest one blur is watched (10 minutes), so a thread cannot outlive lost events.
+    const BLUR_WATCH_LIMIT: Duration = Duration::from_secs(600);
 
     // Two locks, so the slider search (about 150 ms) never holds up a re-fit
     // during a drag. Never call a Tauri window method while holding either:
@@ -293,21 +299,36 @@ mod native {
                 WindowEvent::Focused(false) => {
                     let recorded = FOCUS_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
                     let main = main.clone();
-                    std::thread::spawn(move || {
-                        std::thread::sleep(MINIMISE_SETTLE);
-                        // The window is read BEFORE either lock is taken.
-                        let (this, chrome, player) = blur_inputs();
-                        let away = main.is_minimized().unwrap_or(false) || should_park_on_blur(this, chrome, player);
-                        // Checked under the placement lock: a focus event after this
-                        // point queues behind it, so a late "away" never outlives the
-                        // "back" that followed it.
-                        set_away(&main, away, || blur_result_is_current(recorded, FOCUS_GENERATION.load(Ordering::SeqCst)));
-                    });
+                    std::thread::spawn(move || watch_blur(&main, recorded));
                 }
                 WindowEvent::Destroyed => release_all(),
                 _ => {}
             });
         });
+    }
+
+    /// After BDOBB loses focus: waits out the minimise animation, then keeps
+    /// looking while the user works the floating player's own controls (Chrome
+    /// in front, player focused), because no event arrives when they then
+    /// leave for a third app. Ends when BDOBB is in front again, the focus
+    /// generation moves on, or `BLUR_WATCH_LIMIT` has passed.
+    fn watch_blur(main: &WebviewWindow, recorded: u64) {
+        let current = || blur_result_is_current(recorded, FOCUS_GENERATION.load(Ordering::SeqCst));
+        let deadline = Instant::now() + BLUR_WATCH_LIMIT;
+        std::thread::sleep(MINIMISE_SETTLE);
+        while current() {
+            // The window is read BEFORE either lock is taken.
+            let (this, chrome, player) = blur_inputs();
+            let check = if main.is_minimized().unwrap_or(false) { BlurCheck::ParkNow } else { blur_check(this, chrome, player) };
+            // set_away re-checks `current` under the placement lock: a focus event after this
+            // point queues behind it, so a late "away" never outlives the "back" that followed it.
+            match check {
+                BlurCheck::ParkNow => return set_away(main, true, current),
+                BlurCheck::Stop => return set_away(main, false, current),
+                BlurCheck::KeepWatching if Instant::now() >= deadline => return,
+                BlurCheck::KeepWatching => std::thread::sleep(BLUR_RECHECK),
+            }
+        }
     }
 
     fn set_away(window: &WebviewWindow, away: bool, current: impl FnOnce() -> bool) {
