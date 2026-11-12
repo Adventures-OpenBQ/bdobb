@@ -563,11 +563,24 @@ impl<V: VolumeSlider> Mute<V> {
     /// the real value.
     pub fn set(&mut self, source: &str, label: &str, muted: bool) -> MuteState {
         self.forget_other(source, label);
-        self.pay_owed_restore();
+        if muted {
+            // A restore still owed is NOT paid before a mute: that would play a
+            // burst of sound. A player still silent stays BDOBB's mute, with the
+            // level it recorded; one the user raised is theirs to mute afresh.
+            if self.restore_owed && self.slider.level(source, label) == Ok(0) {
+                self.restore_owed = false;
+                return MuteState::Muted;
+            }
+        } else {
+            self.pay_owed_restore();
+        }
         let level = match self.slider.level(source, label) {
             Ok(level) => level,
             Err(reason) => return MuteState::Unavailable { reason },
         };
+        if muted && level > 0 {
+            self.restore_owed = false;
+        }
         let stepped = if muted {
             if level == 0 {
                 Ok(())
@@ -611,8 +624,16 @@ impl<V: VolumeSlider> Mute<V> {
             return;
         }
         self.forget_other(source, label);
-        self.pay_owed_restore();
-        match self.slider.level(source, label) {
+        let level = self.slider.level(source, label);
+        // A restore still owed while the player is hidden again: paying it would
+        // un-mute a hidden player. Still silent, or unreadable, it goes back to
+        // being this hide's mute, with the recorded level kept for the return.
+        if self.restore_owed && !matches!(level, Ok(level) if level > 0) {
+            self.restore_owed = false;
+            self.hide_muted = true;
+            return;
+        }
+        match level {
             Ok(level) if level > 0 => {
                 if self.set(source, label, true) == MuteState::Muted {
                     self.hide_muted = true;
@@ -1704,19 +1725,45 @@ mod tests {
     }
 
     #[test]
-    fn a_restore_still_owed_is_performed_before_a_set_and_before_a_hide() {
+    fn a_restore_still_owed_becomes_the_mute_again_on_a_mute_or_a_hide() {
         let mut mute = owed_a_restore();
-        // The user mutes: the owed restore goes first, then the mute, which records 60 again.
+        // The user mutes while it is still silent: no burst of sound, and the level BDOBB recorded is kept.
         assert_eq!(mute.set(SRC, LABEL, true), MuteState::Muted);
-        assert_eq!(mute.slider.steps, vec![(false, 6), (true, 6), (false, 6)]);
+        assert_eq!(mute.slider.steps, vec![(false, 6)]);
         mute.set(SRC, LABEL, false);
         assert_eq!(mute.slider.level, 60);
 
         let mut mute = owed_a_restore();
         mute.hide(SRC, LABEL);
         assert_eq!(mute.slider.level, 0);
+        assert_eq!(mute.slider.steps, vec![(false, 6)]);
         mute.unhide();
         assert_eq!(mute.slider.level, 60);
+    }
+
+    #[test]
+    fn a_hide_that_cannot_read_the_slider_keeps_an_owed_restore_from_unmuting_the_hidden_player() {
+        let mut mute = owed_a_restore();
+        // Hidden again while the stream's tab is still not the selected one.
+        mute.slider.broken = Some("Select the stream's tab".into());
+        mute.hide(SRC, LABEL);
+        // The tab comes back while the card is still hidden: a state read must not bring the sound back.
+        mute.slider.broken = None;
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Muted);
+        assert_eq!(mute.slider.level, 0);
+        // The return does.
+        mute.unhide();
+        assert_eq!(mute.slider.level, 60);
+    }
+
+    #[test]
+    fn an_owed_restore_is_dropped_by_a_hide_once_the_user_has_raised_the_volume() {
+        let mut mute = owed_a_restore();
+        mute.slider.level = 40;
+        mute.hide(SRC, LABEL);
+        assert_eq!(mute.slider.level, 0);
+        mute.unhide();
+        assert_eq!(mute.slider.level, 40);
     }
 
     #[test]
