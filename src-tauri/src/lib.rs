@@ -8,11 +8,22 @@ mod video_wrapper;
 use tauri::Manager;
 
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_http::init())
+        .plugin(tauri_plugin_http::init());
+
+    // The MCP bridge: debug builds with the `mcp-bridge` feature only, bound to
+    // loopback (the plugin's own default is every interface).
+    #[cfg(all(debug_assertions, feature = "mcp-bridge"))]
+    let builder = builder.plugin(
+        tauri_plugin_mcp_bridge::Builder::new()
+            .bind_address("127.0.0.1")
+            .build(),
+    );
+
+    builder
         .setup(|app| {
             // Restore baseline storage fix 4ac9cd071 (issue #316): the first
             // settings seed needs the root before nested stores initialize.

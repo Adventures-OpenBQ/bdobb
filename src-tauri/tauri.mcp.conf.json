@@ -1,0 +1,21 @@
+{
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "capabilities": [
+        "default",
+        {
+          "identifier": "mcp-bridge",
+          "description": "Dev only: the MCP bridge's permissions. Merged in with --config, never part of a release.",
+          "windows": [
+            "main",
+            "dash-*"
+          ],
+          "permissions": [
+            "mcp-bridge:default"
+          ]
+        }
+      ]
+    }
+  }
+}
