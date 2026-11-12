@@ -421,10 +421,10 @@ describe("the card's height follows its width", () => {
   let rects: { mockRestore: () => void } | undefined;
 
   /** Puts a card in the dashboard data with a layout; a layout write is recorded and applied. */
-  function place(layout: { x: number; y: number; w: number; h: number }, over: Partial<ReturnType<typeof makeCard>> = {}, dockRows?: number) {
+  function place(layout: { x: number; y: number; w: number; h: number }, over: Partial<ReturnType<typeof makeCard>> = {}, dockRows?: number, where: "dashboard" | "docks" = "dashboard") {
     const cards = [makeCard({ id: "c1", layout, ...over })];
     const state = useDashboardStore.getState();
-    const docked = over.pinned !== undefined;
+    const docked = where === "docks";
     useDashboardStore.setState({
       dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "T", cards: docked ? [] : cards }] }],
       docks: { ...state.docks, ...(dockRows === undefined ? {} : { dockRows: { top: dockRows, bottom: dockRows } }), tabs: [{ id: "top", name: "top", cards: docked ? cards : [] }] },
@@ -520,16 +520,23 @@ describe("the card's height follows its width", () => {
   });
 
   it("snaps a card in a dock and keeps it within the band", async () => {
-    place({ x: 0, y: 2, w: 20, h: 30 }, { pinned: "top" }, 20);
+    place({ x: 0, y: 2, w: 20, h: 30 }, {}, 20, "docks");
     render(mounted());
     await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 2, w: 20, h: NEEDED }]]));
   });
 
   it("clamps a dock card to the band's rows", async () => {
-    place({ x: 0, y: 5, w: 20, h: 30 }, { pinned: "top" }, 8);
+    place({ x: 0, y: 5, w: 20, h: 30 }, {}, 8, "docks");
     render(mounted());
     await waitFor(() => expect(writes).toEqual([[{ i: "c1", x: 0, y: 0, w: 20, h: 8 }]]));
     await settle();
     expect(writes).toHaveLength(1);
+  });
+
+  it("does not rewrite a dashboard card pinned to an edge", async () => {
+    place({ x: 0, y: 0, w: 20, h: 30 }, { pinned: "top" });
+    render(mounted());
+    await settle();
+    expect(writes).toHaveLength(0);
   });
 });

@@ -21,7 +21,8 @@ import {
   type MuteState,
   type PipStatus,
 } from "../../lib/pictureInPicture";
-import { DEFAULT_DOCK_ROWS } from "../../lib/dashboardsFile";
+import { DEFAULT_DOCK_ROWS, DOCKS_ID } from "../../lib/dashboardsFile";
+import type { PinEdge } from "../../lib/types";
 import { GRID_ROW_HEIGHT, ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../../stores/settingsStore";
 
@@ -117,8 +118,11 @@ function MacPlayer({
         gap: selectEffective(useSettingsStore.getState()).widgetGap,
       });
       if (rows === null) return;
-      // In a locked band the card cannot be taller than the band.
-      const band = card.pinned ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[card.pinned] : Infinity;
+      // A card pinned to an edge keeps its stored slot for Unpin.
+      if (card.pinned) return;
+      // In a locked dock the card cannot be taller than its band (the dock's tab id is its edge).
+      const owner = ownerOfCard(state, cardId);
+      const band = owner?.id === DOCKS_ID ? (state.docks.dockRows ?? DEFAULT_DOCK_ROWS)[owner.tabs.find((t) => t.cards.some((c) => c.id === cardId))?.id as PinEdge] : Infinity;
       const h = Math.min(rows, band);
       if (h === card.layout.h) return;
       const { x, y, w } = card.layout;
