@@ -90,18 +90,24 @@ the card does about that and what **Open externally ↗** is for.
 
 *A parking spot for Chrome's floating video player.* The card body is blank.
 In the macOS app, BDOBB moves and sizes Chrome's `Picture in Picture` window
-to sit over it, follows the card and BDOBB's window, and hands the player
-back to where it was when the card goes away, BDOBB is minimized or BDOBB
-quits. The player is kept 16:9 and no larger than about 80% of the display
+to sit over it, against the top of the card, and follows the card and BDOBB's
+window. The player is kept 16:9 and no larger than about 80% of the display
 (1388 × 781 on a 1736 × 1133 display). It needs **Accessibility** permission,
-which the card asks for. The
-🔊 header button mutes by stepping the source tab's volume slider. Its two
-parameters, **Source tab title contains** (optional, empty by default) and **Volume
-slider label** (default `Volume Level`), find that tab and slider. The
-stream's tab must be the selected tab in its Chrome window. On iPad the card
-is an empty space to drag a picture-in-picture video onto, with no mute
-button. On Windows, Linux and in the web preview it reads *Available in the
-macOS desktop app*.
+which the card asks for. A handle on the card's bottom edge trims the empty
+space under the player.
+
+When the card is scrolled out of view, on another dashboard or tab, BDOBB is
+minimized or not in front, or the card's own menu is open, the player moves
+off screen and comes back with the card. Removing the card or quitting BDOBB
+puts it back where it was. The 🔊 header button mutes by stepping the source
+tab's volume slider. Its parameters are **Source tab title contains**
+(optional, empty by default), **Volume slider label** (default
+`Volume Level`), which find that tab and slider, and **Mute while hidden**
+(*Off* by default), which silences the player while it is hidden and restores
+the volume when it returns. The stream's tab must be the selected tab in its
+Chrome window. On iPad the card is an empty space to drag a
+picture-in-picture video onto, with no mute button. On Windows, Linux and in
+the web preview it reads *Available in the macOS desktop app*.
 
 ## RSS feed
 
