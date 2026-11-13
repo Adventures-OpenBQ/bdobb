@@ -22,6 +22,19 @@ vi.mock("xlsx", () => ({
   write: () => new Uint8Array([0x50, 0x4b, 0x03, 0x04]).buffer,
 }));
 
+// WRAPPED, not replaced: the real renderer still runs, and the card's props to it are recorded.
+const pipProps = vi.hoisted(() => vi.fn());
+vi.mock("./renderers/PictureInPictureRenderer", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./renderers/PictureInPictureRenderer")>();
+  return {
+    ...actual,
+    PictureInPictureRenderer: (props: Parameters<typeof actual.PictureInPictureRenderer>[0]) => {
+      pipProps(props);
+      return actual.PictureInPictureRenderer(props);
+    },
+  };
+});
+
 // REPLACED like RssRenderer: the real one opens a websocket. What the card
 // owes it is five props, and this makes them observable.
 vi.mock("./renderers/NewsRenderer", () => ({
@@ -1560,6 +1573,73 @@ describe("the clock built-in", () => {
 
     expect(screen.getByText("London")).toBeInTheDocument();
     expect(screen.queryByText(/No data for these parameters/)).not.toBeInTheDocument();
+  });
+});
+
+describe("the Picture in Picture built-in", () => {
+  it("dispatches to its renderer, which is a placeholder outside the macOS app", () => {
+    register({ id: "picture_in_picture", backendId: "builtin", type: "picture_in_picture", endpoint: "" });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    const c = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: { source: "Live TV" } };
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }] }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+
+    // jsdom is not Tauri, so this is the web preview's placeholder, and no mute button.
+    expect(screen.getByText("Available in the macOS desktop app")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mute" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/No data for these parameters/)).not.toBeInTheDocument();
+  });
+});
+
+describe("the Picture in Picture built-in with collapsed controls", () => {
+  it("tells the renderer a menu is open while the collapsed controls are dropped down", async () => {
+    register({ id: "picture_in_picture", backendId: "builtin", type: "picture_in_picture", endpoint: "" });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, collapseWidgetControls: true } });
+    const c = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: {} };
+    useDashboardStore.setState({
+      dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [c] }] }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+    pipProps.mockClear();
+    render(<WidgetCard card={c} onRemove={vi.fn()} />);
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(false);
+
+    await userEvent.click(screen.getByRole("button", { name: /show widget controls/i }));
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(true);
+
+    await userEvent.click(screen.getByRole("button", { name: /show widget controls/i }));
+    expect(pipProps.mock.lastCall?.[0].menuOpen).toBe(false);
+  });
+});
+
+describe("the Picture in Picture built-in in the docks", () => {
+  const pipCard = { ...card, widgetId: "picture_in_picture", backendId: "builtin", params: {} };
+  const dock = () => {
+    const docks = makeDefaultDocks();
+    useDashboardStore.setState({ docks: { ...docks, tabs: [{ ...docks.tabs[0], cards: [pipCard] }, docks.tabs[1]] } });
+    register({ id: "picture_in_picture", backendId: "builtin", type: "picture_in_picture", endpoint: "" });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    pipProps.mockClear();
+  };
+
+  it("hands a locked card's renderer read-only, so the live band never rewrites its height", () => {
+    dock();
+    render(<WidgetCard card={pipCard} dashboardId={DOCKS_ID} onRemove={vi.fn()} locked />);
+    expect(pipProps).toHaveBeenCalled();
+    expect(pipProps.mock.calls.every(([p]) => p.readOnly === true)).toBe(true);
+  });
+
+  it("hands the dock editor's card a writable renderer", () => {
+    dock();
+    render(<WidgetCard card={pipCard} dashboardId={DOCKS_ID} onRemove={vi.fn()} />);
+    expect(pipProps.mock.calls.every(([p]) => p.readOnly === false)).toBe(true);
   });
 });
 

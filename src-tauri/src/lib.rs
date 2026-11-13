@@ -4,6 +4,7 @@
 mod migrate;
 mod save_panel;
 mod video_wrapper;
+mod picture_in_picture;
 
 use tauri::Manager;
 
@@ -166,7 +167,17 @@ pub fn run() {
     );
 
     let builder = builder
-        .invoke_handler(tauri::generate_handler![video_wrapper::video_wrapper_port, set_window_pin, save_panel::save_workspace_panel])
+        .invoke_handler(tauri::generate_handler![
+            video_wrapper::video_wrapper_port,
+            set_window_pin,
+            save_panel::save_workspace_panel,
+            picture_in_picture::picture_in_picture_fit,
+            picture_in_picture::picture_in_picture_park,
+            picture_in_picture::picture_in_picture_release,
+            picture_in_picture::picture_in_picture_set_muted,
+            picture_in_picture::picture_in_picture_mute_state,
+            picture_in_picture::picture_in_picture_open_settings,
+        ])
         .setup(|app| {
             // Restore the baseline storage fix from 4ac9cd071 (issue #316).
             // Root-level settings seed before nested stores create directories.
@@ -185,6 +196,7 @@ pub fn run() {
                     if let Err(error) = std::fs::create_dir_all(&dir) {
                         eprintln!("cannot create {}: {error}", dir.display());
                     }
+                    picture_in_picture::keep_hide_mute_in(&dir);
                 }
                 Err(error) => eprintln!("no app-data directory: {error}"),
             }
@@ -230,8 +242,14 @@ pub fn run() {
         });
 
     builder
-        .run(tauri::generate_context!())
-        .expect("error while running BDOBB");
+        .build(tauri::generate_context!())
+        .expect("error while running BDOBB")
+        .run(|_app, event| {
+            // Quit hands Chrome's floating player back (picture_in_picture, spec Flow 4).
+            if let tauri::RunEvent::Exit = event {
+                picture_in_picture::release_all();
+            }
+        });
 }
 
 #[cfg(all(test, desktop))]

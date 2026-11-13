@@ -1680,6 +1680,39 @@ body {
    bands paint over it. The band rises to the card's level for as long as one
    of its cards is maximized. */
 .dock-band-maximized { z-index: 20; }
+/* See-through locked bands (Settings ▸ Locked Widgets ▸ See-through where
+   empty). DockBand adds .dock-band-float while the switch is on, the band
+   fits the window and no workspace is shown (lib/dockSeeThrough.ts), and
+   useFloatingBand publishes the band's height on the area as
+   --dock-room-top / --dock-room-bottom. Only over a dashboard's own scroll
+   region: an area without one (no dashboard, no tab) keeps the column.
+   The band leaves the column -- a negative margin as tall as itself -- and
+   lies over the scroll region's end. `order` moves a floating top band after
+   the tab bar and a tab's pinned top card, and a floating bottom band before
+   a tab's pinned bottom card, so neither is covered; the DOM order, and so
+   the bands' mount-once guarantee, is untouched. No background, no border
+   line. Each rule names .dock-band-float, so an ordinary band is unchanged. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .card-dock-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dock-band-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-top.dock-band-float { order: 1; margin-bottom: calc(-1 * var(--dock-room-top, 0px)); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-bottom.dock-band-float) > .card-dock-bottom { order: 2; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-bottom.dock-band-float { margin-top: calc(-1 * var(--dock-room-bottom, 0px)); }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band.dock-band-float { background: none; border: 0; }
+/* The room: the region pads each floating end by that band's height, so its
+   last cards scroll up clear of a bottom band and its first cards down clear
+   of a top one. The grid is kept at least the region's height plus a top
+   band's room, so even a short tab can open scrolled past that room
+   (useFloatingBand) instead of sitting part-way down under the band. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { padding-top: var(--dock-room-top, 0px); padding-bottom: var(--dock-room-bottom, 0px); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll > .react-grid-layout { min-height: calc(100% + var(--dock-room-top, 0px)); }
+/* Empty band space is the dashboard's: a click, a drag, the wheel and a
+   finger's pan go to the region under it. Only the locked cards take the
+   pointer, so their own controls, menus and scrolling work as before. The
+   live band's grid is locked and has no drag or resize to lose; the editor's
+   canvas (.dock-canvas) is another element and is untouched. */
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float { pointer-events: none; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float .react-grid-item { pointer-events: auto; }
 /* Settings ▸ Locked Widgets' editor: a panel over the dashboard area, the
    widget library's footprint (the rail's edge to the window's edge, both rail
    widths, Rita's inset below) and one level BELOW it (29 < 30), so the green +
@@ -1692,6 +1725,7 @@ body {
 .dock-edit-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: var(--font-size-12); }
 .dock-edit-title { flex: 1 1 auto; margin: 0; font-size: var(--font-size-16); }
 .dock-edit-rows { display: inline-flex; align-items: center; gap: 4px; }
+.dock-edit-see-through { display: inline-flex; align-items: center; gap: 4px; }
 .dock-edit-hint { margin: 8px 16px; color: var(--text-muted); font-size: var(--font-size-12); }
 .dock-canvas { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); box-shadow: 0 0 0 2px var(--accent) inset; }
 .dock-empty { margin: auto; }

@@ -208,6 +208,30 @@ describe("the docks in the store", () => {
     expect(docksWrites()).toEqual(before);
   });
 
+  it("setDockSeeThrough turns one edge on and off as a docks edit, and off leaves no field on disk", async () => {
+    await store().load();
+    const before = store().docks.revision ?? 0;
+    await store().setDockSeeThrough("bottom", true);
+    expect(store().docks.dockSeeThrough).toEqual({ bottom: true });
+    expect(store().docks.revision ?? 0).toBeGreaterThan(before);
+    expect(JSON.parse(__read("dashboards/docks.json")!).dockSeeThrough).toEqual({ bottom: true });
+    await store().setDockSeeThrough("bottom", false);
+    expect(store().docks).not.toHaveProperty("dockSeeThrough");
+    expect(__read("dashboards/docks.json")).not.toContain("dockSeeThrough");
+  });
+
+  it("Cancel puts the switch back with the rest of the edit, and the viewer writes nothing", async () => {
+    await store().load();
+    store().beginDockEdit("top");
+    await store().setDockSeeThrough("top", true);
+    await store().cancelDockEdit();
+    expect(store().docks).not.toHaveProperty("dockSeeThrough");
+    useDashboardStore.setState({ viewer: true });
+    const writes = docksWrites();
+    await store().setDockSeeThrough("top", true);
+    expect(docksWrites()).toEqual(writes);
+  });
+
   it("viewer window: syncDashboard of the docks id re-reads the docks, never a rail dashboard", async () => {
     await store().load();
     __seed("dashboards/docks.json", DOCKS_FILE({ dockRows: { top: 3, bottom: 8 } }));
