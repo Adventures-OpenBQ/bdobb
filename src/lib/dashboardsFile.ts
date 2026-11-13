@@ -9,6 +9,7 @@ import { ABSENT, loadJson } from "./jsonStore";
 import { isRecord } from "./isRecord";
 import { parsePresets } from "./presets";
 import { PIN_EDGES } from "./types";
+import { readDockSeeThrough } from "./dockSeeThrough";
 import type { Dashboard, DashboardCard, DashboardTab, ParamBinding, ParamGroup, PinEdge } from "./types";
 
 const DIR = "dashboards";
@@ -94,7 +95,8 @@ type StoredDashboard = {
   extensions?: Dashboard["extensions"];
   hidden?: unknown;
   dockRows?: unknown;
-} & ({ cards: StoredCard[] } | { tabs: StoredTab[] });
+  dockSeeThrough?: unknown;
+} &({ cards: StoredCard[] } | { tabs: StoredTab[] });
 
 /**
  * `name` is shape-checked because loading sorts on it with localeCompare.
@@ -145,6 +147,7 @@ function withDefaults(stored: StoredDashboard): Dashboard {
     "tabs" in stored
       ? stored.tabs.map((t) => ({ ...t, cards: cards(t.cards) }))
       : [{ id: crypto.randomUUID(), name: "Main", cards: cards(stored.cards) }];
+  const seeThrough = readDockSeeThrough(stored.dockSeeThrough);
   return {
     id: stored.id,
     name: stored.name,
@@ -161,6 +164,7 @@ function withDefaults(stored: StoredDashboard): Dashboard {
     // v8 locked widgets: only `true` hides, and the rows are read leniently.
     ...(stored.hidden === true ? { hidden: true } : {}),
     ...(stored.dockRows !== undefined ? { dockRows: clampDockRows(stored.dockRows) } : {}),
+    ...(seeThrough ? { dockSeeThrough: seeThrough } : {}),
   };
 }
 
