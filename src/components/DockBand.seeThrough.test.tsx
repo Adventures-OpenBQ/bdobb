@@ -242,3 +242,20 @@ describe("styles.css: the scroll room", () => {
     );
   });
 });
+
+describe("styles.css: pointer pass-through", () => {
+  it("lets empty band space through and keeps the locked cards' pointer, never touching the editor's canvas", () => {
+    expect(css).toContain(".dashboard-area:has(> .dashboard-scroll) > .dock-band-float { pointer-events: none; }");
+    expect(css).toContain(".dashboard-area:has(> .dashboard-scroll) > .dock-band-float .react-grid-item { pointer-events: auto; }");
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+\{[^{}]*\}/g) ?? [];
+    expect(rules.filter((r) => r.includes("dock-canvas") && r.includes("pointer-events"))).toEqual([]);
+  });
+
+  it("the editor's canvas is not a band, so it cannot be a see-through one", () => {
+    seeThrough({ bottom: true });
+    useDashboardStore.getState().beginDockEdit("bottom");
+    render(<DockEditor onOpenLibrary={() => {}} />);
+    expect(document.querySelector(".dock-canvas")).not.toHaveClass("dock-band");
+    expect(document.querySelector(".dock-band-float")).toBeNull();
+  });
+});

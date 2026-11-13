@@ -1646,6 +1646,13 @@ body {
    (useFloatingBand) instead of sitting part-way down under the band. */
 .dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { padding-top: var(--dock-room-top, 0px); padding-bottom: var(--dock-room-bottom, 0px); }
 .dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll > .react-grid-layout { min-height: calc(100% + var(--dock-room-top, 0px)); }
+/* Empty band space is the dashboard's: a click, a drag, the wheel and a
+   finger's pan go to the region under it. Only the locked cards take the
+   pointer, so their own controls, menus and scrolling work as before. The
+   live band's grid is locked and has no drag or resize to lose; the editor's
+   canvas (.dock-canvas) is another element and is untouched. */
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float { pointer-events: none; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-float .react-grid-item { pointer-events: auto; }
 /* Settings ▸ Locked Widgets' editor: a panel over the dashboard area, the
    widget library's footprint (the rail's edge to the window's edge, both rail
    widths, Rita's inset below) and one level BELOW it (29 < 30), so the green +
