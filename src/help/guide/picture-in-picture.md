@@ -21,7 +21,7 @@ The card's height follows its width: whenever you resize the card, it snaps to t
 
 When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes. So does opening any dialog, such as **Settings**: Chrome's player floats above every window and would cover the dialog, so it stays away until the last dialog closes.
 
-Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it.
+Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it. If it crashed while **Mute while hidden** had the sound off, the next time BDOBB runs it turns the sound back up to where it was, provided that was within the last day and you have not changed the volume yourself.
 
 ## Mute
 

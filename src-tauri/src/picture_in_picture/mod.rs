@@ -83,6 +83,15 @@ pub async fn picture_in_picture_open_settings() {
     ax::ask_for_permission();
 }
 
+/// Called once at startup with the app's data folder: a hide's mute is noted
+/// there while it lasts, so a forced quit does not lose the stream's volume.
+pub fn keep_hide_mute_in(dir: &std::path::Path) {
+    #[cfg(target_os = "macos")]
+    native::keep_hide_mute_in(dir);
+    #[cfg(not(target_os = "macos"))]
+    let _ = dir;
+}
+
 /// Quit hands the player back and restores the volume (spec, Flow 4).
 pub fn release_all() {
     #[cfg(target_os = "macos")]
@@ -91,6 +100,7 @@ pub fn release_all() {
 
 #[cfg(target_os = "macos")]
 mod native {
+    use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::{Mutex, Once, OnceLock, PoisonError};
@@ -100,7 +110,7 @@ mod native {
 
     use super::ax::{AxSlider, AxWindow};
     use super::ax::blur_inputs;
-    use super::logic::{blur_check, blur_result_is_current, BlurCheck, top_inset, Mute, MuteState, MuteTarget, Placement, Rect, Status};
+    use super::logic::{blur_check, blur_result_is_current, decode_hide, encode_hide, BlurCheck, top_inset, Mute, MuteState, MuteTarget, Placement, Rect, Status, UnfinishedHide};
 
     /// Only the main window parks the player (spec, States: viewer window).
     const MAIN: &str = "main";
@@ -131,9 +141,51 @@ mod native {
         f(guard.get_or_insert_with(|| Placement::new(AxWindow::default())))
     }
 
+    /// Where a hide's mute is written down while it lasts; set once at startup.
+    static HIDE_FILE: OnceLock<PathBuf> = OnceLock::new();
+    /// A file older than this is from a session long gone: the stream it muted
+    /// has most likely been replaced, and raising another one's volume would be wrong.
+    const HIDE_FILE_MAX_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+
+    pub fn keep_hide_mute_in(dir: &Path) {
+        let _ = HIDE_FILE.set(dir.join("picture-in-picture-mute"));
+    }
+
+    /// The hide's mute a killed run left behind, if the file is recent and whole.
+    fn left_behind() -> Option<UnfinishedHide> {
+        let path = HIDE_FILE.get()?;
+        let age = std::fs::metadata(path).ok()?.modified().ok()?.elapsed().ok()?;
+        (age <= HIDE_FILE_MAX_AGE).then(|| std::fs::read_to_string(path).ok()).flatten().as_deref().and_then(decode_hide)
+    }
+
+    /// Every use of the mute goes through here, so this is also where a
+    /// hide's mute is written to disk when it starts and removed when it is
+    /// undone: a BDOBB killed in between leaves the file, and the next run
+    /// takes the restore up from it (`Mute::resume`).
     fn mute<T>(f: impl FnOnce(&mut Mute<AxSlider>) -> T) -> T {
         let mut guard = MUTE.lock().unwrap_or_else(PoisonError::into_inner);
-        f(guard.get_or_insert_with(|| Mute::new(AxSlider::default())))
+        let mute = guard.get_or_insert_with(|| {
+            let mut mute = Mute::new(AxSlider::default());
+            if let Some((source, label, level)) = left_behind() {
+                mute.resume(&source, &label, level);
+            }
+            mute
+        });
+        let before = mute.unfinished_hide();
+        let result = f(mute);
+        let after = mute.unfinished_hide();
+        if after != before {
+            if let Some(path) = HIDE_FILE.get() {
+                let written = match &after {
+                    Some(hide) => std::fs::write(path, encode_hide(hide)),
+                    None => std::fs::remove_file(path),
+                };
+                if let Err(error) = written {
+                    eprintln!("picture in picture: cannot update {}: {error}", path.display());
+                }
+            }
+        }
+        result
     }
 
     /// Points between the window's top edge and the top of the page, as f64
