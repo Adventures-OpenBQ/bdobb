@@ -129,7 +129,8 @@ function isLeadingLocSegment(segment: unknown): boolean {
 }
 
 /**
- * openbb-api (FastAPI) answers every failure with `{"detail": ...}` — a
+ * The OpenBB API server (`openbb-api`, FastAPI; the openbq-api service in
+ * openbq-docker) answers every failure with `{"detail": ...}` — a
  * string for OpenBBError/unexpected errors, an array of `{loc, msg}` for 422
  * validation. Render it after the status so the card names the problem
  * instead of just the number; cap it so a stack trace cannot flood the card.
@@ -148,7 +149,7 @@ export function describeHttpError(status: number, body: string): string {
     text = detail;
   } else if (Array.isArray(detail)) {
     const parts = detail.flatMap((item) => {
-      // openbb-api also answers with a bare list of strings (e.g. its JSON
+      // The API server also answers with a bare list of strings (e.g. its JSON
       // serialiser rejecting a NaN), not only pydantic's { loc, msg } items.
       if (typeof item === "string") return [item];
       if (typeof item !== "object" || item === null) return [];
@@ -240,7 +241,7 @@ export class HttpError extends Error {
  * inspects the URL and the thrown error's own message, neither of which
  * carries the request body.
  *
- * openbb-api answers EmptyDataError with 204 and no body; res.json() would
+ * The API server answers EmptyDataError with 204 and no body; res.json() would
  * throw on that, turning a correct "nothing matched" into an error card.
  *
  * `parse` is false for a caller contracted on the STATUS rather than on a
