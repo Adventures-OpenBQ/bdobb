@@ -43,6 +43,18 @@ const read = (row: DatasetRow, field: string): unknown => Object.hasOwn(row.valu
 
 /** `columns` supply a declared display key (`metadata.cellField`, the hoverCard cellField) for object cells. */
 export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[], fiscal: FiscalContext, columns: readonly DatasetColumn[] = []): CategorizedRows {
+  // Reuse calendar boundaries within this calculation, keeping row metadata independently mutable.
+  const boundaryCache = new Map<string, ReturnType<typeof monthBounds>>();
+  const boundaries = (year: number, month: number, length: number) => {
+    const key = `${year}:${month}:${length}`;
+    let value = boundaryCache.get(key);
+    if (!value) {
+      value = monthBounds(year, month, length);
+      // High-cardinality inputs must not grow an unbounded auxiliary cache.
+      if (boundaryCache.size < 256) boundaryCache.set(key, value);
+    }
+    return { ...value };
+  };
   const displayFields = new Map(columns.flatMap(c => typeof c.metadata?.cellField === 'string' ? [[c.id, c.metadata.cellField] as const] : []));
   const members: CategorizedRows['members'] = new Map();
   const errors: CategorizedRows['errors'] = new Map();
@@ -101,9 +113,9 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
             label = bucketLabel(String(value), bucket);
             const year = Number(date.slice(0, 4));
             const month = Number(date.slice(5, 7));
-            if (bucket === 'year') period = monthBounds(year, 1, 12);
-            else if (bucket === 'quarter') period = monthBounds(year, Math.floor((month - 1) / 3) * 3 + 1, 3);
-            else if (bucket === 'month') period = monthBounds(year, month, 1);
+            if (bucket === 'year') period = boundaries(year, 1, 12);
+            else if (bucket === 'quarter') period = boundaries(year, Math.floor((month - 1) / 3) * 3 + 1, 3);
+            else if (bucket === 'month') period = boundaries(year, month, 1);
             else if (bucket === 'week') {
               const monday = new Date(`${date}T00:00:00Z`);
               monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
