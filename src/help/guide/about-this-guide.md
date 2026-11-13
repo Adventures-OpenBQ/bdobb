@@ -13,9 +13,9 @@ At this version there is no Pivot model, no Statement view and no cron schedulin
 
 1. **The in-app manual.** BDOBB carries its own written manual — one CommonMark file per topic under `src/help/topics/`, opened with `⌘?` as **Quick Help** — and a branch that changes behaviour edits its topic in the same commit and the same review. That is the only mechanism that keeps a manual honest, and it makes those files the authority for what the app does. Every Interface, Widgets and Configuration page in this guide is built on them, expanded with the context and the *why* the terse in-app form leaves out. Where two topics disagree, the code decides, and the page says so.
 2. **The rebuild documents and design records.** `docs/specs/` in the `BDOBB` repository is the set of documents the app was rebuilt from — at this version the `v3.0.0` full baseline alone, carrying `> Superseded …` notes wherever the rebuild diverged from the original — plus the design and verification records under `docs/superpowers/`. These supply the design intent, the gotchas, and everything about the companion services the app talks to. The clean release includes functional Apps discovery and dark/light themes; the current code and its tests decide where historical design records disagree.
-3. **The companion repositories themselves.** `openbb-docker`'s README, compose file, Dockerfile, Serve configuration and `docs/funnel.md` for the stack; the `key-maint` README for its service. Read for their interfaces, as the app was.
+3. **The companion repositories themselves.** `openbq-docker`'s README, compose files (the base file and the Episode 3 overlay), Dockerfile, Serve configurations and `docs/v3/gateway.md` for the stack; the `key-maint` README for its service. Read for their interfaces, as the app was.
 
-The *Adventures in OpenBB* article series is the narrative behind all of it and is cited on each page for the reader who wants the story; it is not a source of fact where it and the shipped code disagree.
+The *Adventures in OpenBQ* article series is the narrative behind all of it and is cited on each page for the reader who wants the story; it is not a source of fact where it and the shipped code disagree.
 
 ## This guide ships inside the app
 
@@ -31,8 +31,8 @@ That arrangement is also why the rule about which source wins matters more than 
 | Interface | the in-app "The left rail", "Dashboards and folders", "Dashboard tabs", "The widget library", "Widget cards", "Card parameters", "Running and refreshing" and "Keyboard shortcuts" topics; `GroupLink.tsx`, `GroupMenu.tsx` and `src/lib/paramGroups.ts` |
 | Widgets | the in-app "Tables", "Charts", "Built-in widgets", "Documents, PDFs and files" and "HTML and iframe widgets" topics |
 | Configuration | the in-app "Settings and logs", "Provider keys", "Import and export" and "Troubleshooting" topics; `src/lib/settingsBundle.ts` and `src/lib/jsonStore.ts`; `key-maint/README.md`; the stack's Serve configuration |
-| Integrations | `openbb-docker`'s README, compose file, Dockerfile, Serve configuration and `docs/funnel.md`; `web/`, `vercel.json` and `scripts/gateway-vendor.mjs` for the web preview |
-| Troubleshooting | the in-app "Troubleshooting" topic and the Gotchas section of the v3.0.0 rebuild document; `openbb-docker`'s `docs/funnel.md` |
+| Integrations | `openbq-docker`'s README, compose files, Dockerfile, Serve configurations, `funnel-gateway/README.md` and `docs/v3/gateway.md`; `web/`, `vercel.json` and `scripts/gateway-vendor.mjs` for the web preview |
+| Troubleshooting | the in-app "Troubleshooting" topic and the Gotchas section of the v3.0.0 rebuild document; `openbq-docker`'s README and `VERIFICATION.md` |
 | Testing | `docs/test-environment.md`, `scripts/reference-backend.sh`, `src/test/integration/reference-backend.test.ts` and `docs/examples/*.apps.json` |
 
 ## Episodes, for the narrative

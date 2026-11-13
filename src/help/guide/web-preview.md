@@ -15,7 +15,7 @@ The page opens on a sign-in screen naming **Continue with GitHub**. A GitHub acc
 
 At this version the preview relays three families through the gateway it is paired with (openbq-docker v3.0.0's `funnel-gateway` service, `web` profile):
 
-- **`/api`** — the whole OpenBB widget catalogue, forwarded to openbb-api behind the GitHub gate. Every request is bounded structurally (path shape, query-pair count, value length, no control characters) rather than by a per-route list, so the app's own dashboards work against it exactly as they do against any other backend.
+- **`/api`** — the whole OpenBB widget catalogue, forwarded to the stack's API (`openbq-api`) behind the GitHub gate. Every request is bounded structurally (path shape, query-pair count, value length, no control characters) rather than by a per-route list, so the app's own dashboards work against it exactly as they do against any other backend.
 - **`/ref`** — the whole Episode 3 reference backend, keyless. Its root documents are served at exact paths; every other reference GET is bounded like `/api`, and `/ref/omni*` is refused.
 - **`/state`** — a signed-in user's own saved dashboards and settings, one JSON file at a time, kept per GitHub account. Nothing is saved until this route has proven it can be read back; a preview that could not confirm the store works never pretends changes are being kept.
 

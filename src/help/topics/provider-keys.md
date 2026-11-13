@@ -20,6 +20,11 @@ connected there is no tab at all. Each key-maint backend gets a tab of its own
 and reads only its own keys; when two would read the same, each carries its
 backend's name, as in *Provider API Keys (NAS)*.
 
+On the openbq-docker stack, key-maint comes with the Episode 3 overlay and is a
+connection of its own: `http://127.0.0.1:8447` on the Docker host, or
+`https://openbq-keys.<your-tailnet>.ts.net` through its Tailscale Service. Its
+auth follows the API's.
+
 Opening the tab does a cheap status fetch that reads the backend's own
 environment and **contacts no vendor**. Once visited, the tab stays loaded for
 as long as the dialog is open, so leaving and coming back neither re-fetches
@@ -75,6 +80,8 @@ When the backend reports that a restart is required you get:
 
 > Saved. The running `openbb-api` container cannot see this change — its
 > environment is fixed when the process starts. Restart it to pick the key up.
+
+On openbq-docker that container is `openbq-api`.
 
 On failure you get a fixed message and nothing else — *Save failed. The key was
 not updated.* — because a network error can carry a URL that may itself contain

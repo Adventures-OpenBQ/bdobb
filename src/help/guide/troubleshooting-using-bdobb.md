@@ -51,7 +51,7 @@ The card carries a saved view the data no longer supports — a chart view whose
 Check the dot in **Connections**: red means the app tried and failed, grey means it has not finished trying. Use **Edit** then **Test** to probe exactly what you have typed without saving it — that separates a wrong address from a rejected credential. A card naming a backend that no longer exists reads *Backend not configured* and is never retried on a timer; press its **Retry** once the connection exists again.
 
 **The seeded `Local` backend is always red.**
-It points at `http://localhost:6900`, which the openbb-docker stack never publishes to the host. Replace the URL with the stack's Serve address. See [[backends-and-connections|Backends and Connections]].
+It points at `http://localhost:6900`, which the openbq-docker stack never publishes to the host. Replace the URL with the stack's Serve address. See [[backends-and-connections|Backends and Connections]].
 
 **A card reads *Widget `<id>` is not on any connected backend.***
 Usually an import from another machine. It fixes itself when a backend serving that id connects.

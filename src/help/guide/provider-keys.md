@@ -5,7 +5,7 @@ tags: [bdobb, help, configuration, keys, providers, key-maint]
 
 # Provider Keys
 
-**Settings ▸ Provider API Keys** shows which data-vendor credentials the backend you are talking to actually has, and whether each vendor accepts them. It is the app-side face of the stack's **key-maint** service — the transport-tiered key status widget from Ep. 3 — and the only place in the app that touches a credential that is not your own connection's.
+**Settings ▸ Provider API Keys** shows which data-vendor credentials the backend you are talking to actually has, and whether each vendor accepts them. It is the app-side face of the stack's **key-maint** service — the transport-tiered key status widget from Ep. 3, part of openbq-docker's Episode 3 overlay — and the only place in the app that touches a credential that is not your own connection's.
 
 ![The Provider API Keys panel](../attachments/provider-keys.png)
 
@@ -13,7 +13,7 @@ It is not a widget you add. A `keys` widget is filtered out of the library, and 
 
 ## What it reads
 
-The tab is there only when a connected backend runs key-maint — one that serves a `keys` widget. It sits between **Layout** and **Logs** and takes the name the backend gives it in `widgets.json`, **Provider API Keys**; an older stack that serves only the `keys` widget gets the same tab, labelled with that widget's own name, or **Provider API Keys** when it has none. With no key-maint backend connected there is no tab at all. Each key-maint backend gets a tab of its own and reads only its own keys; when two would read the same, each carries its backend's name, as in *Provider API Keys (NAS)*. The key-maint service is a separate connection from the OpenBB API, on its own port or Tailscale Service name, with the same Basic auth; see [[backends-and-connections|Backends and Connections]].
+The tab is there only when a connected backend runs key-maint — one that serves a `keys` widget. It sits between **Layout** and **Logs** and takes the name the backend gives it in `widgets.json`, **Provider API Keys**; an older stack that serves only the `keys` widget gets the same tab, labelled with that widget's own name, or **Provider API Keys** when it has none. With no key-maint backend connected there is no tab at all. Each key-maint backend gets a tab of its own and reads only its own keys; when two would read the same, each carries its backend's name, as in *Provider API Keys (NAS)*. The key-maint service is a separate connection from the API: `http://127.0.0.1:8447` on the Docker host, or `https://openbq-keys.<your-tailnet>.ts.net` once the Tailscale Service `svc:openbq-keys` exists. Its auth follows the API's: none while `OPENBB_API_AUTH` is off, the API's own Basic auth when it is on. See [[backends-and-connections|Backends and Connections]].
 
 Opening the tab does a cheap status fetch that reads the backend's own environment and **contacts no vendor**. Once visited, the tab stays loaded for as long as the dialog is open.
 
@@ -33,10 +33,11 @@ key-maint's idea is that the same service shows more the closer you are:
 
 | Tier | How you connect | Sees |
 |---|---|---|
-| 2 | The service's tailnet address, from a tailnet device | key status, the demo flag, and live vendor probes |
-| 3 | A unix socket on the host, over an SSH session | plus the key values themselves — never shown in the app |
+| 1 | anything forwarded from outside the tailnet | key status and the demo flag |
+| 2 | `https://openbq-keys.<your-tailnet>.ts.net` from a tailnet device, or `http://127.0.0.1:8447` on the Docker host | plus live vendor probes |
+| 3 | A unix socket on the host, over an SSH session | plus the key values themselves, and writing a key — never shown in the app |
 
-(A tier 1, over a public funnel, was deliberately retired.) BDOBB is always a tier-2 caller. Below tier 2 the key service reports no test results, so every dot stays grey, *not probed*, no matter how often you refresh — which is the expected state for a service published any other way.
+Nothing in the stack forwards key-maint from outside the tailnet, so BDOBB, connected either way above, is a tier-2 caller. Below tier 2 the key service reports no test results, so every dot stays grey, *not probed*, no matter how often you refresh.
 
 ## Probing and testing
 
@@ -48,12 +49,12 @@ To test **one** vendor, open its card's **Details** dialog and click **Test** (o
 
 If the backend reports that it is willing to accept writes (tier 3), the Details dialog's footer gains a **Manage key** button, opening a form with a masked **New value** field and **Save**. The value goes in the request body, never in a query string, and is never logged or echoed back. After a successful save the panel re-probes so the card's status updates.
 
-When the backend reports that a restart is required you get: *Saved. The running `openbb-api` container cannot see this change — its environment is fixed when the process starts. Restart it to pick the key up.* On failure you get a fixed message and nothing else — *Save failed. The key was not updated.* — because a network error can carry a URL that may itself contain the value you just submitted.
+When the backend reports that a restart is required you get: *Saved. The running `openbb-api` container cannot see this change — its environment is fixed when the process starts. Restart it to pick the key up.* On openbq-docker that container is `openbq-api`; a written key reaches the API at its next restart. On failure you get a fixed message and nothing else — *Save failed. The key was not updated.* — because a network error can carry a URL that may itself contain the value you just submitted.
 
 Two details worth knowing: Alpaca appears as two cards but is one provider, and counts as keyed only when both are set; and there is deliberately no raw-JSON view for this panel, because a card can carry a plaintext credential.
 
 ---
-*Source: BDOBB v3.0.1 in-app manual, "Provider keys" and "The widget library"; `openbb-docker` `key-maint/README.md`; Adventures in OpenBB, Ep. 3 — "I Asked for Electron and Got Talked Out of It."*
+*Source: BDOBB v3.0.1 in-app manual, "Provider keys" and "The widget library"; `openbq-docker` `key-maint/README.md` and `docker-compose.v3.yml` at `v3.0.0`; Adventures in OpenBQ, Ep. 3.*
 *See also: [[widget-library|The Widget Library]] · [[backends-and-connections|Backends and Connections]] · [[openbq-docker-stack|The openbq-docker Stack]]*
 
 ---

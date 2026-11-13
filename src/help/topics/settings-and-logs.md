@@ -39,6 +39,10 @@ An OpenBB Workspace account is a connection: in **Connections**, choose **Add Wo
 
 **General ▸ User Settings** is **Local** (this computer) or **Server**. Server syncs your display settings with a connection you pick from the dropdown, each labelled **key** or **login**; connections that cannot hold settings say why. Choosing one connects to it and, when its settings differ from yours, asks **Use** the server's or **Keep local**. After that every save is uploaded. If a server refuses its key, Settings shows "Key refused by <connection name>; fix the key in Connections." and the choice stays where it was.
 
+On the openbq-docker stack, the API holds settings, dashboards and apps only
+with its Episode 3 overlay and `OPENBB_API_AUTH=true`; its key is then the
+API's Basic auth.
+
 **Ask for credentials on startup** (on any connection) makes the app ask for its username and password, or its Key and Value, at each launch. Your settings server always connects first.
 
 **Your dashboards and apps sync too**, in both directions, with a server that offers them (one that does not simply keeps settings-only sync). Connecting runs the sync after the settings step:

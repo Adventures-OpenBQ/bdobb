@@ -26,7 +26,7 @@ The footer is **Cancel** on its own at the left, and **Test** beside a filled **
 
 Escape closes the dialog first and the Connections list on the next press.
 
-For what goes in the credential fields for each service in the companion stack — the OpenBB API's Basic auth and key-maint's — see [[backends-and-connections|Backends and Connections]].
+For what goes in the credential fields for each service in the companion stack — the API's optional Basic auth, the reference backend and key-maint — see [[backends-and-connections|Backends and Connections]].
 
 ## The list
 
@@ -50,11 +50,11 @@ Discovery gives each backend's `widgets.json` **ten seconds**, end to end. That 
 
 ## The seeded `Local` entry
 
-A fresh install seeds one backend named `Local` at `http://localhost:6900`. It is a starting point, not a working connection: the openbb-docker stack deliberately publishes no host ports (Tailscale Serve is the only way in — see [[tailscale-networking|Tailscale Networking]]), so on almost every machine that entry sits with a red dot until you edit its URL. The seed only happens when the connections file is absent, so deleting the entry does not bring it back.
+A fresh install seeds one backend named `Local` at `http://localhost:6900`. It is a starting point, not a working connection: the openbq-docker stack publishes no host port for its API (Tailscale Serve is the only way in — see [[tailscale-networking|Tailscale Networking]]), so on almost every machine that entry sits with a red dot until you edit its URL. The seed only happens when the connections file is absent, so deleting the entry does not bring it back.
 
 ## More than one at once
 
-BDOBB is built around several simultaneous backends. A typical stack is two or more connections — the OpenBB Platform API and the key-maintenance service, say — each contributing its own widgets to the same library, and each tracked independently: one going offline shows a retry state only on the cards that depend on it. See [[openbq-docker-stack|The openbq-docker Stack]] for the full set and [[layout-and-navigation|Layout and Navigation]] for how degraded states are shown.
+BDOBB is built around several simultaneous backends. A typical stack is two or more connections — the API and key-maint, say — each contributing its own widgets to the same library, and each tracked independently: one going offline shows a retry state only on the cards that depend on it. See [[openbq-docker-stack|The openbq-docker Stack]] for the full set and [[layout-and-navigation|Layout and Navigation]] for how degraded states are shown.
 
 ## Where connections are kept
 

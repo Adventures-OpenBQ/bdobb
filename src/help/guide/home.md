@@ -15,7 +15,7 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 - [[connecting-a-backend|Connecting a Backend]] — the Connections dialog, Test, the status dot and the seeded `Local` entry
 - [[importing-dashboards|Importing Dashboards]] — `apps.json` two ways, unresolved cards, and parameter groups
 - [[reference-validation|Reference Validation]] — the reference backend anyone can run, and the conformance suite that checks the client against it
-- [[example-dashboards|Example Dashboards]] — the built-in widgets sample and the demo-providers sample, both keyless and served by the stack
+- [[example-dashboards|Example Dashboards]] — Built-in widgets, Demo providers and the Video Library, keyless and served by the openbq-docker stack
 
 ## Interface
 
@@ -47,14 +47,14 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 
 ## Integrations
 
-- [[openbq-docker-stack|The openbq-docker Stack]] — the services, the ports Tailscale Serve publishes, and what each one is in BDOBB
-- [[tailscale-networking|Tailscale Networking]] — Serve-only ingress, Tailscale Services, and the sharp edges
+- [[openbq-docker-stack|The openbq-docker Stack]] — the base compose, the Episode 3 overlay and the `web` profile, the ports Tailscale Serve publishes, and what each service is in BDOBB
+- [[tailscale-networking|Tailscale Networking]] — Serve-only ingress, key-maint's Tailscale Service, the one Funnel door, and the sharp edges
 - [[web-preview|Web Preview]] — the GitHub-gated Vercel preview of the dashboard grid, what it can reach, and what resets
 
 ## Troubleshooting
 
 - [[troubleshooting-using-bdobb|Using BDOBB]] — symptoms inside the app: cards, connections, the rail, settings, files
-- [[troubleshooting-infrastructure|Configuring the Infrastructure]] — symptoms in the stack: openbb-docker and Tailscale
+- [[troubleshooting-infrastructure|Configuring the Infrastructure]] — symptoms in the stack: openbq-docker and Tailscale
 
 ## About
 

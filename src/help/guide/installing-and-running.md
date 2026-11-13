@@ -37,7 +37,7 @@ The app installs as **BDOBB** and keeps its data under its own bundle identifier
 
 You are looking at an empty dashboard and a thin rail down the left edge. Three things to do, in order:
 
-1. **Connect a backend.** Open the rail, click **Connections**. The app ships with one entry already listed, named `Local` at `http://localhost:6900`. That address is a placeholder, not a promise: the openbb-docker stack publishes no host ports, so on almost every machine you will edit it to the address your stack actually answers on. See [[connecting-a-backend|Connecting a Backend]].
+1. **Connect a backend.** Open the rail, click **Connections**. The app ships with one entry already listed, named `Local` at `http://localhost:6900`. That address is a placeholder, not a promise: the openbq-docker stack publishes no host port for its API, so on almost every machine you will edit it to the address your stack actually answers on. See [[connecting-a-backend|Connecting a Backend]].
 2. **Open the widget library** with `⌘K`, or the rail's **Add widget (⌘K)** row. Everything every connected backend serves is listed, plus the built-ins.
 3. **Put a widget on the grid.** Click a card once to add it; drag it by its title to move it and by its bottom-right corner to resize it. Both are saved as you go.
 
@@ -47,7 +47,7 @@ Or skip the widget-by-widget route and import a whole dashboard set — see [[im
 
 ## What you need to connect to
 
-BDOBB serves no data of its own, and at this version the repository ships no backend to try it against. You need an OpenBB-compatible backend of your own; for the companion stack, see [[openbq-docker-stack|The openbq-docker Stack]].
+BDOBB serves no data of its own. `pnpm reference-backend` runs OpenBB's keyless reference backend locally to try it against (see [[reference-validation|Reference Validation]]); otherwise you need an OpenBB-compatible backend of your own. For the companion stack, see [[openbq-docker-stack|The openbq-docker Stack]].
 
 ---
 *Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; BDOBB v3.0.1 in-app manual, "Getting started".*

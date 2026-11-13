@@ -69,6 +69,8 @@ Connections that cannot hold settings are listed with the reason:
 
 **HTTP Basic as the key.** A server may use HTTP Basic as its key: the backend credential header is `Authorization` and its value is `Basic ...`, as with openbq-docker. A Basic challenge (a 401 with a Basic `WWW-Authenticate` header) after a credential was sent means the key was refused, shown as **Settings API: key refused**; without such a challenge a 401 means the server uses login.
 
+**On openbq-docker.** The API offers a settings API, with dashboard and app sync, only with the stack's Episode 3 overlay (`docker-compose.v3.yml`) and `OPENBB_API_AUTH=true` in its `credentials.env`; the connection's key is then that Basic auth. On the base compose alone, or with auth off, the API is listed as **No settings API**. See [[openbq-docker-stack|The openbq-docker Stack]].
+
 Removing the server connection returns storage to Local.
 
 **Dashboards and apps.** A server that offers them also syncs your dashboards and apps, in both directions, each time you connect. Changes on one side only are taken over; new dashboards on either side are created on the other. A dashboard changed on both sides asks **Use <server>**, **Keep local** or **Keep both** (the default, which keeps the server's copy under a new name). A dashboard deleted on the server but changed here asks **Delete** or **Keep as local**. Shared dashboards arrive read-only and are never uploaded. While connected, saves upload once your edits settle. Deleting a synced dashboard from the rail asks *Delete "X" here and on <server>?*; offline, the local delete happens at once and reaches the server on the next connect. The links live in `workspaceSync.json`.
@@ -116,7 +118,7 @@ A `settings.json` written by a newer build loads fine; unknown keys pass through
 Connections have their own dialog, and they are the one thing **Export…** does not carry: no file written here holds a backend URL or a credential. Dashboards travel separately, as `apps.json`.
 
 ---
-*Source: BDOBB v3.0.1 in-app manual, "Settings and logs" and "Import and export."*
+*Source: BDOBB v3.0.1 in-app manual, "Settings and logs" and "Import and export"; `openbq-docker` `credentials.env.example`, `docker-compose.v3.yml` and `v3/openbq_settings.py` at `v3.0.0`.*
 *See also: [[settings-export-and-import|Settings Export and Import]] · [[app-data-and-settings|App Data and Settings]] · [[provider-keys|Provider Keys]]*
 
 ---

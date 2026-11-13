@@ -57,7 +57,7 @@ One kind of failure is not contained at this version: an error thrown while draw
 This layout was not the first idea. It came out of a structured design pass that weighed four approaches — wrapping the hosted OpenBB interface, a from-scratch Electron app, a from-scratch Tauri app, and a bespoke chat protocol — before settling on an icon rail plus a folding chat pane, built on OpenBB's own published protocols rather than anything proprietary. The rebuild kept the conclusion; at this version it has built the rail, and there is no chat pane in the app.
 
 ---
-*Source: BDOBB v3.0.1 in-app manual, "The left rail", "Dashboard tabs", "Dashboards and folders"; `BDOBB` `src/components/LeftRail.tsx`, `src/components/dialogs/HelpDialog.tsx` and `src/App.tsx` at `v3.0.1`; Adventures in OpenBB, Ep. 3 — "I Asked for Electron and Got Talked Out of It."*
+*Source: BDOBB v3.0.1 in-app manual, "The left rail", "Dashboard tabs", "Dashboards and folders"; `BDOBB` `src/components/LeftRail.tsx`, `src/components/dialogs/HelpDialog.tsx` and `src/App.tsx` at `v3.0.1`; Adventures in OpenBQ, Ep. 3.*
 *See also: [[dashboards-and-folders|Dashboards and Folders]] · [[widget-library|The Widget Library]] · [[keyboard-shortcuts|Keyboard Shortcuts]]*
 
 ---

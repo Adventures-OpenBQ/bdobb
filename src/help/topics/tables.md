@@ -45,7 +45,7 @@ with one control per visible column:
 - anything structural — no control at all, rather than a guessed one
 
 At the right end of the filter row, after the last column, sit **Clear**, which
-clears every filter on the card, and a live count reading `142 of 5,000 rows`,
+clears every filter on the card, and a live count reading `142 of 5000 rows`,
 on one line.
 
 The filter *row* is not remembered — reopening the dashboard starts with it
@@ -54,15 +54,12 @@ scrolls out of view as you go down.
 
 ## Columns: showing, hiding, reordering and pinning
 
-Two ways in.
-
 The `⋯` menu's **Columns ▸** lists every column in its current order as
-`☑ Header` or `☐ Header`, each with a `◀` **Pin left** and `▶` **Pin right**
-button. Pressing the arrow a column is already pinned to unpins it, so the two
-arrows are one three-state toggle.
+`☑ Header` or `☐ Header`; tick or untick to show or hide it.
 
 **Right-clicking a column header** opens a menu at the pointer with
-**Pin left**, **Pin right**, **Unpin**, then **Hide**. The item matching the
+**Sort ascending**, **Sort descending** and, once there is a sort,
+**Clear sort**, then **Pin left**, **Pin right**, **Unpin**, then **Hide**. The item matching the
 column's current state is disabled. Escape or a click outside closes it.
 
 **Reorder by dragging a column header onto another header.** A pinned column
@@ -113,16 +110,19 @@ a hundred, and years pulled out of ISO dates. A per-column decimal-places
 setting overrides **Settings ▸ Widget ▸ Maximum decimal places**. Empty cells
 always render as an em dash.
 
-Two cell treatments are honoured: `greenRed`, which colours numbers by sign
-(zero is neither), and colour rules, which set a cell's text or background from
-conditions like *greater than*, *between* or *contains* — the first matching
-rule wins, and colour rules override `greenRed` entirely. There are no link,
-badge or sparkline cell renderers; a column asking for one draws a plain cell
-rather than an error.
+Cell treatments honoured: `greenRed`, which colours numbers by sign (zero is
+neither); `titleCase`; and colour rules, which set a cell's text or background
+from conditions like *greater than*, *between* or *contains* — the first
+matching rule wins, and colour rules override `greenRed` entirely. A
+`sparkline` column draws its array as a small chart inside the cell, a
+`hoverCard` column opens a small card when you point at the cell, and a
+`showCellChange` column flashes a cell green or red when its value changes.
+Any other renderer a column asks for draws a plain cell rather than an error.
 
 Sorting, filters, column order, hidden columns, widths and pins are all saved
-per card. None of it is included in an `apps.json` export, and none of it is
-saved from a viewer window.
+per card. None of it is included in a **Strict OpenBB Workspace** `apps.json`
+export — the **BDOBB Workspace** format carries it, see **Import and export** —
+and none of it is saved from a viewer window.
 
 ---
 

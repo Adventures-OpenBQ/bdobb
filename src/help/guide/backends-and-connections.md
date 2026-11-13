@@ -5,24 +5,25 @@ tags: [bdobb, help, configuration, backends, connections, credentials, auth]
 
 # Backends and Connections
 
-BDOBB has no data of its own — every widget comes from a backend you have connected by URL. The companion stack is two such backends, both behind the same Basic auth. This page is the reference. For the mechanics of the dialog, see [[connecting-a-backend|Connecting a Backend]].
+BDOBB has no data of its own — every widget comes from a backend you have connected by URL. The companion stack is up to three such backends. This page is the reference. For the mechanics of the dialog, see [[connecting-a-backend|Connecting a Backend]].
 
 ## What each service wants
 
-| Service | Connection? | Key / Value / Location |
+| Service | Needs | Key / Value / Location |
 |---|---|---|
-| **OpenBB Platform API** (`openbb-api`) — the standard providers | yes | `Authorization` / `Basic <base64 of user:password>` / **Header** — the HTTP Basic auth the stack requires from v2 on |
-| **key-maint** — the Provider API Keys backend | yes | the same Basic auth as the API |
+| **The API** (`openbq-api`) — the standard providers, at `https://openbq.<your-tailnet>.ts.net` | the base compose | nothing while `OPENBB_API_AUTH` is off; with it on, `Authorization` / `Basic <base64 of user:password>` / **Header** |
+| **The reference backend** (`openbq-reference`), at `https://openbq.<your-tailnet>.ts.net:8443` | the Episode 3 overlay | nothing |
+| **key-maint** — the Provider API Keys backend, at `http://127.0.0.1:8447` on the Docker host or `https://openbq-keys.<your-tailnet>.ts.net` | the Episode 3 overlay | the same as the API: nothing while its auth is off, the same Basic auth when it is on |
 
-The Basic auth is mandatory on the OpenBB API by design: the stack's compose file refuses to start the API without a password file, because Tailscale Funnel *can* expose port 443 to the public internet and there must be no configuration in which the public door exists and the lock does not. See [[tailscale-networking|Tailscale Networking]].
+With the API's auth on, `/widgets.json` and `/apps.json` stay open, so discovery succeeds without the credential and only the cards fail with a 401. The user name and password are `OPENBB_API_USERNAME` and `OPENBB_API_PASSWORD` in the stack's `credentials.env`. To keep your settings, dashboards and apps on the API (**Settings ▸ General ▸ User Settings ▸ Server**), it needs the Episode 3 overlay and `OPENBB_API_AUTH=true`, and the connection needs that Basic auth as its key; see [[settings-and-logs|Settings and Logs]].
 
 ## Reachability as the credential
 
-Both of the stack's services sit on its private bridge and are published only by Tailscale Serve, so reaching the address at all already takes a device on your tailnet; the Basic auth is the second gate, not the only one. Only the API's port 443 may be funnelled to the public internet, and key-maint's funnel was deliberately removed. The rule behind that is general: a service that authenticates nothing must never be given a public door. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
+Every service in the stack sits on its private bridge and is published only by Tailscale Serve (key-maint also on the host's loopback), so reaching an address at all already takes a device on your tailnet; the optional Basic auth is a second gate. None of these addresses is funnelled to the public internet. The one public door the stack can open, the `web` profile's funnel gateway for the [[web-preview|Web Preview]], is a separate service with a token of its own, and it is never a BDOBB connection. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
 
 ## Why the seeded `Local` never works
 
-A fresh install seeds one connection, `Local` at `http://localhost:6900`. The stack's API does listen on 6900 — inside the container network, not on your host. No openbb-docker compose publishes that port, so the entry sits red until you replace the URL with the Serve address. It is a placeholder for people who run an OpenBB backend of their own on the local machine.
+A fresh install seeds one connection, `Local` at `http://localhost:6900`. The stack's API does listen on 6900 — inside the container network, not on your host. openbq-docker publishes no port for it, so the entry sits red until you replace the URL with the Serve address. It is a placeholder for people who run an OpenBB backend of their own on the local machine.
 
 ## Where the credentials go
 
@@ -33,7 +34,7 @@ Into `backends.json` in the app's data directory, in the clear. Choosing **Query
 Each connection is tracked independently. Discovery runs at launch and on demand; a backend that fails moves to *Inactive* with a red dot, its cards show a retry state, and nothing else notices. A single dashboard can mix cards from every connection — a Platform table beside a widget from a backend of your own — because each card only ever depends on its own backend being reachable.
 
 ---
-*Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbb-docker` `README.md`, `api-auth.env.example`, `docker-compose.yml` and `ts-config/serve.json` at `v3.0.0`.*
+*Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbq-docker` `README.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `ts-config/serve-v3.json` and `key-maint/README.md` at `v3.0.0`.*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[provider-keys|Provider Keys]]*
 
 ---

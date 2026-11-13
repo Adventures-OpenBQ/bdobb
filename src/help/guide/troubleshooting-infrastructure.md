@@ -1,45 +1,54 @@
 ---
 type: Note
-tags: [bdobb, help, troubleshooting, infrastructure, openbb-docker, tailscale]
+tags: [bdobb, help, troubleshooting, infrastructure, openbq-docker, tailscale]
 ---
 
 # Troubleshooting: Configuring the Infrastructure
 
-Symptom-first index of issues in the services BDOBB connects to — the openbb-docker stack and Tailscale. These are all fixed server-side, not inside the app. For app-side symptoms, see [[troubleshooting-using-bdobb|Using BDOBB]].
+Symptom-first index of issues in the services BDOBB connects to — the openbq-docker stack and Tailscale. These are all fixed server-side, not inside the app. For app-side symptoms, see [[troubleshooting-using-bdobb|Using BDOBB]].
 
-## The OpenBB API and the stack
+## The API and the stack
 
 **Every connection to the stack is red, and `curl` gets nothing.**
-Check you are on the tailnet at all, and that the tailnet has **MagicDNS** and **HTTPS certificates** enabled in the admin console — the README lists both as prerequisites, and Serve's real certificate depends on them.
+Check you are on the tailnet at all, and that the tailnet has **MagicDNS** and **HTTPS certificates** enabled in the admin console; Serve's certificate depends on them. Right after the first start, the API's route discovery can take a couple of minutes, and Serve answers 502 until it is ready.
 
-**The API answers 401 to everything.**
-The stack requires HTTP Basic auth on the API and refuses to start without `api-auth.env`. The connection needs Key `Authorization`, Value `Basic <base64 of user:password>`, Location Header — the base64 of the *pair*, colon included; re-derive it if the password was rotated. The lock covers every path, `/widgets.json` included — the image patches OpenBB's `rest_api.py` to enforce it as middleware — so without the credential discovery fails as well as every card. The README and the compose file agree. `docs/funnel.md` at this version contradicts itself: its prose says `/widgets.json` answers 200 without credentials, and the example beneath it says 401. The code says 401. See [[backends-and-connections|Backends and Connections]].
+**The connection is green but every card answers 401.**
+The stack's `credentials.env` sets `OPENBB_API_AUTH=true`, so every data route needs HTTP Basic auth, while `/widgets.json` and `/apps.json` stay open. The connection needs Key `Authorization`, Value `Basic <base64 of user:password>`, Location Header — the base64 of the *pair* `OPENBB_API_USERNAME:OPENBB_API_PASSWORD`, colon included; re-derive it if the password was changed. See [[backends-and-connections|Backends and Connections]].
+
+**The connection card reads *Settings API: no*, and User Settings lists the API as *No settings API*.**
+The settings, dashboard and app sync routes come with the Episode 3 overlay (`docker-compose.v3.yml`) and answer only when `OPENBB_API_AUTH=true`. On the base compose alone, or with auth off, the API has no settings API. See [[openbq-docker-stack|The openbq-docker Stack]].
+
+**There is no Provider API Keys tab.**
+key-maint is not running or not connected. It is part of the Episode 3 overlay and needs its own connection; see [[provider-keys|Provider Keys]].
 
 **A new key saved from Provider API Keys has no effect.**
-The running `openbb-api` container cannot see it — its environment is fixed when the process starts. Restart it; the panel says so on save.
+The running API container cannot see it — its environment is fixed when the process starts. Restart `openbq-api`; the panel says so on save (its message names the container `openbb-api`, the original stack's name for it).
 
 **A provider key mysteriously equals a comment.**
 Compose's dotenv parser takes an inline `# comment` after an empty value as the value. In `credentials.env`, keep comments on their own lines, always.
 
+**An EIA or Congress.gov card stops answering after a while.**
+With no key of your own, those providers use the public demo key in `credentials.demo.env`, which allows 30 requests an hour and 50 a day per address. Put your own key in `credentials.env` and recreate the API.
+
+**A CFTC or FINRA bonds card answers 503 or 504.**
+openbq-docker runs `/api/v1/cftc/*` and FINRA bonds in a separate "heavy" lane, one request at a time, so their large responses cannot stall the rest of the API. A full queue, or a lane still starting, answers 503 with `Retry-After`; a request still running after 165 s answers 504 and the lane restarts; a result over 256 MB answers 413. Retry the card once the lane is free.
+
 ## Tailscale
 
-**`scripts/verify-isolation.sh` fails with *:6900 answered directly*.**
-The API's raw port answered a second tailnet device without going through Serve. The script's own hint is the fix: check `TS_USERSPACE=false` on the sidecar and the service bindings. See [[tailscale-networking|Tailscale Networking]].
+**`scripts/verify-isolation.sh` fails with *raw API TCP port 6900 is reachable*.**
+The API's raw port answered a second tailnet device without going through Serve. Check `TS_USERSPACE=false` on the sidecar and that no host port is published for `openbq-api`. See [[tailscale-networking|Tailscale Networking]].
 
-**`scripts/verify-isolation.sh` prints a curl 401 error at step 1.**
-Expected at this version. Step 1 fetches `/widgets.json` with no credential, and the API rightly refuses it, so the step prints curl's error instead of its *OK* and the script carries on to step 2 — the check that matters.
+**`https://openbq-keys.<your-tailnet>.ts.net` answers NXDOMAIN, or does not appear on the admin console.**
+The Tailscale Service `svc:openbq-keys` has to be created in the admin console with this node approved as its host, the host must be a tagged node, and `<your-tailnet>` in `ts-config/serve-v3-keys.json` must be replaced with your tailnet's name. Meanwhile key-maint still answers on `http://127.0.0.1:8447` on the Docker host.
 
-**A Tailscale Service name answers NXDOMAIN, or does not appear on the admin console.**
-The host must be a tagged node, and the service must be defined and approved in the admin console. The `${TS_CERT_DOMAIN}` handlers — the `openbb` node's own name and ports — keep working meanwhile.
+**Something configured with the `tailscale serve` CLI disappeared.**
+The Serve configuration file is applied wholesale, at startup and on every edit, with no merge. Put everything in the file the sidecar's `TS_SERVE_CONFIG` names, nothing by CLI.
 
-**The Service names went dark after a `tailscale serve` command.**
-`serve.json` is applied wholesale, at startup and on every edit, with no merge: anything configured with the `tailscale serve` or `tailscale advertise` CLI that is not in the file is erased at the next apply. Put everything in `serve.json`, nothing by CLI.
-
-**The sidecar died after an edit to `serve.json`.**
-Edits apply live, with no restart, and a malformed file kills the sidecar. Write to `serve.json.new`, run `jq empty` on it, then move it over `serve.json`.
+**The sidecar died after an edit to the Serve configuration.**
+A malformed file kills the sidecar. Check the new file with `jq empty` before it replaces the live one.
 
 ---
-*Source: `openbb-docker` `README.md`, `docker-compose.yml`, `ts-config/serve.json`, `docs/funnel.md` and `scripts/verify-isolation.sh` at `v3.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBB, Eps. 1–3.*
+*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `credentials.demo.env`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/`, `v3/openbq_settings.py`, `scripts/verify-isolation.sh` and `key-maint/README.md` at `v3.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBQ, Eps. 1–3.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
 
 ---
