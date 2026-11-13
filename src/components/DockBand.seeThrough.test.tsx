@@ -253,8 +253,11 @@ describe("styles.css: pointer pass-through", () => {
 
   it("the editor's canvas is not a band, so it cannot be a see-through one", () => {
     seeThrough({ bottom: true });
-    useDashboardStore.getState().beginDockEdit("bottom");
+    const { band } = inArea("bottom");
+    expect(band()).toHaveClass("dock-band-float");
+    act(() => useDashboardStore.getState().beginDockEdit("bottom"));
     render(<DockEditor onOpenLibrary={() => {}} />);
+    expect(band()).toBeNull();
     expect(document.querySelector(".dock-canvas")).not.toHaveClass("dock-band");
     expect(document.querySelector(".dock-band-float")).toBeNull();
   });

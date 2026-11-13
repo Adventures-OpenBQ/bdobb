@@ -96,7 +96,7 @@ type StoredDashboard = {
   hidden?: unknown;
   dockRows?: unknown;
   dockSeeThrough?: unknown;
-} &({ cards: StoredCard[] } | { tabs: StoredTab[] });
+} & ({ cards: StoredCard[] } | { tabs: StoredTab[] });
 
 /**
  * `name` is shape-checked because loading sorts on it with localeCompare.

@@ -1,6 +1,6 @@
 # See-through locked bands
 
-Date: 2026-11-12. Repo: Adventures-OpenBQ/bdobb (first written in `bdobb-dev/bdobb-v2`). Status: approved by the user on 2026-11-12. Approval covers this document only; the implementation plan is not yet written or approved. Updated 2026-11-12 by the implementation plan (docs/superpowers/plans/2026-11-12-see-through-locked-bands.md) with what reading the code settled; see "Settled when writing the plan".
+Date: 2026-11-12. Repo: Adventures-OpenBQ/bdobb (first written in `bdobb-dev/bdobb-v2`). Status: approved by the user on 2026-11-12. Approval covers this document only. Updated 2026-11-12 by the implementation plan (docs/superpowers/plans/2026-11-12-see-through-locked-bands.md) with what reading the code settled; see "Settled when writing the plan".
 
 ## Intent and decisions
 
