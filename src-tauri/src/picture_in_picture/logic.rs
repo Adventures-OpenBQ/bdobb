@@ -504,6 +504,23 @@ struct Recorded {
     level: u8,
 }
 
+/// (source, label, level) of a hide's mute not yet undone.
+pub type UnfinishedHide = (String, String, u8);
+
+/// The file's text: level, label, then the source last, because a tab title
+/// may hold any text.
+pub fn encode_hide((source, label, level): &UnfinishedHide) -> String {
+    format!("{level}\n{label}\n{source}")
+}
+
+/// None for anything `encode_hide` did not write: the file is then ignored.
+pub fn decode_hide(text: &str) -> Option<UnfinishedHide> {
+    let mut parts = text.splitn(3, '\n');
+    let level = parts.next()?.parse::<u8>().ok().filter(|level| (1..=100).contains(level))?;
+    let label = parts.next().filter(|label| !label.is_empty())?;
+    Some((parts.next()?.to_owned(), label.to_owned(), level))
+}
+
 /// The slider's value is the state (spec, Mute). The only thing kept here is
 /// the level BDOBB stepped down from, so that Unmute and release can step
 /// back to it.
@@ -520,6 +537,25 @@ pub struct Mute<V> {
 impl<V: VolumeSlider> Mute<V> {
     pub fn new(slider: V) -> Self {
         Self { slider, recorded: None, hide_muted: false, restore_owed: false }
+    }
+
+    /// The hide's mute that has not been undone yet, as (source, label,
+    /// level): what must outlive a BDOBB that is killed while the player is
+    /// hidden, or the stream stays at 0 with nobody left who knows its level.
+    /// A mute from the card's button is the user's own and is not one.
+    pub fn unfinished_hide(&self) -> Option<UnfinishedHide> {
+        let recorded = self.recorded.as_ref().filter(|_| self.hide_muted || self.restore_owed)?;
+        Some((recorded.source.clone(), recorded.label.clone(), recorded.level))
+    }
+
+    /// Takes up a hide's mute left by a run that was killed. The restore is
+    /// owed, so the rules for an owed restore apply unchanged: the next read
+    /// steps a slider still at 0 back up, leaves one the user has raised, and
+    /// a card that is hidden again keeps it muted until it returns.
+    pub fn resume(&mut self, source: &str, label: &str, level: u8) {
+        self.recorded = Some(Recorded { source: source.to_owned(), label: label.to_owned(), level });
+        self.hide_muted = false;
+        self.restore_owed = true;
     }
 
     /// A level recorded for another tab or slider must never be replayed here.
@@ -1505,6 +1541,72 @@ mod tests {
         drive(&mut placement, &mut mute);
         assert_eq!(mute.slider.level, 70);
         assert_eq!(mute.slider.steps, vec![(false, 7), (true, 7)]);
+    }
+
+    #[test]
+    fn a_hide_mute_is_unfinished_until_the_level_is_back() {
+        let (mut placement, mut mute) = held_with_mute(70, true);
+        assert_eq!(mute.unfinished_hide(), None);
+        placement.park("a", false);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.unfinished_hide(), Some((SRC.to_owned(), LABEL.to_owned(), 70)));
+        placement.fit("a", CARD, ORIGIN);
+        drive(&mut placement, &mut mute);
+        assert_eq!(mute.unfinished_hide(), None);
+    }
+
+    #[test]
+    fn a_mute_from_the_button_is_not_an_unfinished_hide() {
+        let mut mute = Mute::new(FakeSlider::at(70));
+        assert_eq!(mute.set(SRC, LABEL, true), MuteState::Muted);
+        assert_eq!(mute.unfinished_hide(), None);
+    }
+
+    #[test]
+    fn a_hide_mute_left_by_a_killed_app_is_restored_on_the_next_read() {
+        // The stream is still at 0 from the run that was killed.
+        let mut mute = Mute::new(FakeSlider::at(0));
+        mute.resume(SRC, LABEL, 70);
+        assert_eq!(mute.unfinished_hide(), Some((SRC.to_owned(), LABEL.to_owned(), 70)));
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.unfinished_hide(), None);
+    }
+
+    #[test]
+    fn a_resumed_hide_mute_leaves_a_volume_the_user_has_raised() {
+        let mut mute = Mute::new(FakeSlider::at(40));
+        mute.resume(SRC, LABEL, 70);
+        assert_eq!(mute.state(SRC, LABEL), MuteState::Sound);
+        assert_eq!(mute.slider.level, 40);
+        assert!(mute.slider.steps.is_empty());
+        assert_eq!(mute.unfinished_hide(), None);
+    }
+
+    #[test]
+    fn a_resumed_hide_mute_stays_muted_while_the_card_is_hidden_again() {
+        let mut mute = Mute::new(FakeSlider::at(0));
+        mute.resume(SRC, LABEL, 70);
+        mute.apply(VolumeAction::Hide(target()));
+        assert_eq!(mute.slider.level, 0);
+        assert_eq!(mute.unfinished_hide(), Some((SRC.to_owned(), LABEL.to_owned(), 70)));
+        mute.apply(VolumeAction::Unhide);
+        assert_eq!(mute.slider.level, 70);
+        assert_eq!(mute.unfinished_hide(), None);
+    }
+
+    #[test]
+    fn an_unfinished_hide_survives_the_file_and_a_damaged_file_is_ignored() {
+        let hide = ("Fed: press conference".to_owned(), "Volume Level".to_owned(), 70);
+        assert_eq!(decode_hide(&encode_hide(&hide)), Some(hide));
+        // An empty source means "any Chrome window"; a source may hold any text, line breaks included.
+        let any = (String::new(), "Volume".to_owned(), 100);
+        assert_eq!(decode_hide(&encode_hide(&any)), Some(any));
+        let odd = ("a\nb".to_owned(), "Volume".to_owned(), 10);
+        assert_eq!(decode_hide(&encode_hide(&odd)), Some(odd));
+        for damaged in ["", "70", "70\nVolume", "loud\nVolume\nx", "101\nVolume\nx", "0\nVolume\nx", "70\n\nx"] {
+            assert_eq!(decode_hide(damaged), None, "{damaged:?}");
+        }
     }
 
     #[test]

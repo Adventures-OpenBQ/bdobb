@@ -196,6 +196,7 @@ pub fn run() {
                     if let Err(error) = std::fs::create_dir_all(&dir) {
                         eprintln!("cannot create {}: {error}", dir.display());
                     }
+                    picture_in_picture::keep_hide_mute_in(&dir);
                 }
                 Err(error) => eprintln!("no app-data directory: {error}"),
             }
