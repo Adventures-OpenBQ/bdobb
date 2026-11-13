@@ -40,6 +40,14 @@ function wireValue(value: number | string, resolveAnchor: AnchorResolver | undef
 }
 
 /**
+ * The ticker parameter of a cross-symbol study (plan R10): a series reference, never a time,
+ * so it never goes through the anchor resolver -- the host's grammar may read `T` (AT&T) as
+ * today. ponytail: one name for every pack study's ticker parameter, so this module stays free
+ * of the catalog (see above); if a study ever names it otherwise, pass `entry.tickers` here.
+ */
+export const TICKER_PARAM = "vs";
+
+/**
  * The socket's `indicators` grammar, derived from the card's studies
  * (studies addendum §4): `name:key=value:...` per study, comma-joined, with
  * `source=` ALWAYS explicit and ALWAYS the CHART's source (v12.3.1 ruling:
@@ -83,7 +91,7 @@ export function indicatorsParam(
       for (const [key, value] of Object.entries(study.params)) {
         // A bd window with no exchange to count sessions on: drop the study.
         if (options.allowBusinessDays === false && typeof value === "string" && isBusinessDays(value)) return null;
-        const wire = wireValue(value, resolveAnchor);
+        const wire = key === TICKER_PARAM ? value : wireValue(value, resolveAnchor);
         if (wire === null) return null;                      // an anchor that does not resolve drops its study
         parts.push(`${key}=${String(wire)}`);
       }
@@ -172,7 +180,7 @@ function paramsEqual(
 ): boolean {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
-  return aKeys.length === bKeys.length && aKeys.every((key) => wireValue(a[key], resolveAnchor) === b[key]);
+  return aKeys.length === bKeys.length && aKeys.every((key) => (key === TICKER_PARAM ? a[key] : wireValue(a[key], resolveAnchor)) === b[key]);
 }
 
 /**

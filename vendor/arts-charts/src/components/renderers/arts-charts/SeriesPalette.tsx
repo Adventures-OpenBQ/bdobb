@@ -236,6 +236,8 @@ function paramInvalid(
 ): boolean {
   const raw = String(value ?? "").trim();
   if (raw === "") return true;
+  // A ticker parameter is a series reference (spec 2026-11-13 cross-symbol §5): the Symbol field's rule.
+  if (entry.tickers?.includes(p.name)) return !symbolAllowed("study", performanceSymbol(raw));
   if (p.text) return false;
   if (entry.windows.includes(p.name)) return !(allowBusinessDays ? /^\d+(bd)?$/ : /^\d+$/).test(raw);
   if (p.float === true) return !Number.isFinite(Number(raw));
@@ -730,6 +732,11 @@ export function SeriesPalette({
     return symbol === PERFORMANCE_SELF || symbol === "" ? built : { ...built, symbol, expr: studyExpr(built.expr, symbol) };
   };
 
+  /** A picked study's ticker parameter as a typed one is stored: `msft` -> `MSFT`, `LIST:2` -> `list:2`. */
+  const versusNormal = (params: Record<string, number | string>, found: CatalogEntry) =>
+    found.tickers === undefined ? params : Object.fromEntries(Object.entries(params).map(
+      ([key, value]) => [key, found.tickers?.includes(key) && typeof value === "string" ? performanceSymbol(value) : value]));
+
   function build(target: Draft, existing: Series | null): Series | null {
     const id = existing?.id ?? seriesId();
     if (target.type === "study") {
@@ -739,7 +746,7 @@ export function SeriesPalette({
       // The same path the typed expression takes -- normalizeExpression through
       // instanceFromParse -- so a picked SMA(20) and a typed one are one chip.
       const instance = instanceFromParse(
-        { name: found.name, params: unifyWindows(target.params, found), color: target.color }, found, fallbackColor,
+        { name: found.name, params: unifyWindows(versusNormal(target.params, found), found), color: target.color }, found, fallbackColor,
       );
       // A picked banded study is shaded by default (the swatch seeds from the
       // line colour in seed()); a typed expression stays unshaded, since
@@ -1240,6 +1247,7 @@ export function SeriesPalette({
                           <input
                             id={`${id}-${p.name}`}
                             type={asText ? "text" : "number"}
+                            list={entry.tickers?.includes(p.name) ? `${id}-symbols` : undefined}
                             step={asText ? undefined : (p.step ?? (p.float === true ? "any" : 1))}
                             value={held ?? ""}
                             data-invalid={invalidParam(p) ? "true" : undefined}

@@ -3,7 +3,7 @@
 
 import { isFillPattern, isPen } from "./chart/pen";
 import { parsePanels, scaleOrder, type PanelDef } from "./chart/panels";
-import { seriesId, seriesLabel, studyExpr, symbolAllowed } from "./chart/series";
+import { SYMBOL_REF, seriesId, seriesLabel, studyExpr, symbolAllowed } from "./chart/series";
 import { normalizeExpression, type CatalogEntry } from "./chart/studyExpression";
 import type { ChartLayout } from "./chartLayoutsFile";
 import { importRefusal } from "./importLimits";
@@ -123,6 +123,9 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
     for (const p of entry.params) {
       const v = params[p.name];
       if (v === undefined && p.default === null) return refuse(`${name}: ${studyName} needs ${p.name}.`);
+      if (entry.tickers?.includes(p.name) && v !== undefined && !(typeof v === "string" && SYMBOL_REF.test(v))) {
+        return refuse(`${name}: ${studyName} ${p.name} must be a ticker, $ymbol, $group:<Name> or list:<n>.`);
+      }
     }
     out.name = studyName;
     out.expr = studyExpr(normalizeExpression(studyName, params, entry, color || undefined), out.symbol);

@@ -17,6 +17,8 @@ export type StudySeries = {
    * as `local`. Absent for a hand-built series with no request behind it.
    */
   req?: { name: string; params: Record<string, unknown>; source: string | null };
+  /** Why this line is partial or empty, in the server's words (a gap, a vs it could not serve; plan R8). */
+  note?: string;
 };
 export type StudyPane = {
   id: string; height: number; guides: number[]; series: StudySeries[];
@@ -51,6 +53,7 @@ function parsePanes(raw: unknown): StudyPane[] {
                 source: typeof req.source === "string" ? req.source : null,
               } }
             : {}),
+          ...(typeof s.note === "string" ? { note: s.note } : {}),
           data: (Array.isArray(s.data) ? s.data : []).map((point) => {
             const d = point as { time: string; value: number | null };
             return { time: seconds(String(d.time)), value: d.value === null ? null : Number(d.value) };
@@ -82,9 +85,14 @@ function applyDelta(current: StudyPane[], incoming: StudyPane[]): StudyPane[] {
     ...pane,
     series: pane.series.map((series) => {
       const tail = byColumn.get(series.column);
-      if (tail === undefined || tail.data.length === 0) return series;
+      if (tail === undefined) return series;
+      if (tail.data.length === 0 && tail.note === series.note) return series;
+      // The tail's note is the line's standing note: present replaces, absent clears (plan R8).
+      const { note: _standing, ...rest } = series;
+      const noted = tail.note === undefined ? rest : { ...rest, note: tail.note };
+      if (tail.data.length === 0) return noted;
       const from = tail.data[0].time;
-      return { ...series, data: [...series.data.filter((p) => p.time < from), ...tail.data] };
+      return { ...noted, data: [...series.data.filter((p) => p.time < from), ...tail.data] };
     }),
   }));
 }

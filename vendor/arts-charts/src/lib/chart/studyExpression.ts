@@ -38,6 +38,12 @@ export type CatalogEntry = {
   windows: readonly string[];
   /** Names of the params that take a time (S14): saved as expression plus instant. */
   times?: string[];
+  /**
+   * Names of the params that take another ticker (spec 2026-11-13 cross-symbol §1): a series
+   * reference, resolved like a series' symbol. Absent from an older backend and on every
+   * single-ticker study.
+   */
+  tickers?: string[];
   // `readonly`: the fixtures (here and in useTaRegistry's tests) build a catalog
   // entry with `as const` for its literal `pane`/`render` unions, which makes
   // `params` a readonly tuple -- nothing in this module ever mutates it.

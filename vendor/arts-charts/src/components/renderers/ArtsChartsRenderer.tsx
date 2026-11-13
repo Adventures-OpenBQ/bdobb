@@ -54,15 +54,15 @@ import { DEFAULT_PANELS_TEXT, encodePanels, parsePanels, scaleOrder } from "../.
 import { closeData, ohlcData, performanceData, volumeData } from "../../lib/chart/derived";
 import {
   GROUP_PREFIX, MAX_LIST, SERIES_TYPE_LABELS, bareStudyExpr, indicatorsFromSeries, migrateChart, parseSymbolList,
-  seriesFromMacro, seriesLabel, seriesTicker,
+  resolveVersus, seriesFromMacro, seriesLabel, seriesTicker, versusLabel,
 } from "../../lib/chart/series";
-import { matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
+import { TICKER_PARAM, matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
 import { sendRaw } from "../../lib/chart/wireAnchor";
 import { isExpression } from "../../lib/dates";
 // The card's `start`/`end` as instants, read exactly as the wire reads them
 // for `S`/`E` in any other widget parameter -- one parser, one answer.
 import { paramInstant } from "../../lib/params";
-import { expressionLabel, isBusinessDays, type CatalogEntry } from "../../lib/chart/studyExpression";
+import { argText, expressionLabel, isBusinessDays, type CatalogEntry } from "../../lib/chart/studyExpression";
 import { anchorResolver, exchangeFor, type AssetClass } from "../../lib/chart/exchangeFor";
 import { attachBandFill, DEFAULT_SHADE_OPACITY } from "../../lib/chart/bandFill";
 import { sessionBars } from "../../lib/chart/sessionFilter";
@@ -989,6 +989,30 @@ function ChartCard({
   }, [series, symbols, symbol, groups, resolveWindowed]);
 
   /**
+   * Each cross-symbol study's `vs`, resolved as a series symbol is (spec 2026-11-13
+   * cross-symbol §5). `wired` is the card's series with every `vs` a ticker: what a socket is
+   * asked for, and what a frame's `req` echoes back. A `vs` that does not resolve leaves its
+   * study off the wire with a note. A cross-study takes no slot: `performance` is untouched.
+   * ponytail: until the catalog loads, a cross-study goes out with `vs` as written and the
+   * server notes it; the url changes once, when the catalog lands.
+   */
+  const versus = useMemo(() => {
+    const tickers = new Map<string, string>();
+    const notes: Record<string, string> = {};
+    const wired: Series[] = [];
+    for (const s of series) {
+      const resolved = resolveVersus(s, symbols, groups ?? [], registry.lookup);
+      if (resolved === null) { wired.push(s); continue; }
+      if ("note" in resolved) { notes[s.id] = resolved.note; continue; }
+      tickers.set(s.id, resolved.ticker);
+      wired.push({ ...s, params: { ...s.params, [resolved.key]: resolved.ticker } });
+    }
+    return { tickers, notes, wired };
+    // `registry.catalog` is the lookup's identity (see studyStart).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series, symbols, groups, registry.catalog]);
+
+  /**
    * Why a STUDY is not on the chart, keyed by series id: an anchor
    * `resolveAnchor` cannot answer is left off the wire by
    * `indicatorsParam` -- the raw expression would fail the whole socket --
@@ -1000,7 +1024,8 @@ function ChartCard({
     const out: Record<string, string> = {};
     for (const s of series) {
       if (s.type !== "study") continue;
-      for (const value of Object.values(s.params)) {
+      for (const [key, value] of Object.entries(s.params)) {
+        if (key === TICKER_PARAM) continue;
         if (typeof value !== "string" || !isExpression("datetime", value)) continue;
         if (resolveAnchor(value) === null) { out[s.id] = `anchor "${value}" does not resolve`; break; }
       }
@@ -1011,6 +1036,15 @@ function ChartCard({
   const overlayLabels = useMemo(() => {
     const out: Record<string, string> = {};
     for (const s of series) {
+      const vs = versus.tickers.get(s.id);
+      const entry = s.name === undefined ? undefined : registry.lookup(s.name);
+      const own = performance.byId.get(s.id);
+      if (vs !== undefined && entry !== undefined && own !== undefined) {
+        const rest = entry.params.filter((p) => !entry.tickers?.includes(p.name))
+          .map((p) => argText(p, s.params[p.name] ?? p.default ?? ""));
+        out[s.id] = versusLabel(entry, own, vs, rest);
+        continue;
+      }
       const ticker = performance.byId.get(s.id);
       if (ticker === undefined || ticker === symbol || s.type === "performance") continue;
       out[s.id] = s.type === "study"
@@ -1018,7 +1052,8 @@ function ChartCard({
         : `${ticker} ${SERIES_TYPE_LABELS[s.type]}`;
     }
     return out;
-  }, [series, performance.byId, symbol]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series, performance.byId, symbol, versus.tickers, registry.catalog]);
 
   // The other symbols' bars, one hook per slot (see MAX_EXTRA_SYMBOLS): an
   // unused slot is disabled and fetches nothing. The provider follows the
@@ -1102,8 +1137,8 @@ function ChartCard({
   // identity), not `registry.lookup`, which is a fresh closure every render.
   /** The series list:1's socket is asked for: every series when no study names another ticker (plan R5). */
   const ownSeries = useMemo(
-    () => series.filter((s) => s.type !== "study" || performance.byId.get(s.id) === symbol),
-    [series, performance.byId, symbol],
+    () => versus.wired.filter((s) => s.type !== "study" || performance.byId.get(s.id) === symbol),
+    [versus.wired, performance.byId, symbol],
   );
   const studyStart = useMemo(
     () => padStart(studyBase, warmupBars(ownSeries, registry.lookup), interval, calendar),
@@ -1165,13 +1200,13 @@ function ChartCard({
    */
   const extraStudyUrls = useMemo(
     () => extraSlots.map((ticker) => {
-      const own = series.filter((s) => s.type === "study" && ticker !== undefined && performance.byId.get(s.id) === ticker);
+      const own = versus.wired.filter((s) => s.type === "study" && ticker !== undefined && performance.byId.get(s.id) === ticker);
       if (ticker === undefined || own.length === 0) return null;
       const from = padStart(studyBase, warmupBars(own, registry.lookup), interval, calendar);
       return studyUrlOf({ ...studyParamsFor(own, ticker, from), macro: "none" });
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [extraSlots, series, performance.byId, studyBase, registry.catalog, interval, calendar, studyUrlOf, studyParamsFor],
+    [extraSlots, versus.wired, performance.byId, studyBase, registry.catalog, interval, calendar, studyUrlOf, studyParamsFor],
   );
   const { panes: mainPanes, extras: extraFeeds = NO_FEEDS } = useStudySeries({ url: studyUrl, extraUrls: extraStudyUrls });
   /** list:1's panes, then each extra ticker's, tagged; an extra pane id is prefixed so its guides stay its own (plan R4). */
@@ -1186,7 +1221,7 @@ function ChartCard({
   const studyTickers = series.map((s) => (s.type === "study" ? performance.byId.get(s.id) ?? "" : "")).join("\n");
   const studiesOn = useMemo(() => {
     const out = new Map<string, StudyInstance[]>();
-    for (const s of series) {
+    for (const s of versus.wired) {
       const ticker = performance.byId.get(s.id);
       if (s.type !== "study" || s.name === undefined || ticker === undefined) continue;
       out.set(ticker, [...(out.get(ticker) ?? []),
@@ -1196,7 +1231,7 @@ function ChartCard({
     // `performance` is new on every candle tick (its anchors read the window); the tickers it
     // resolved are what the map is made of, so the effect that draws from it does not rerun per tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series, studyTickers]);
+  }, [versus.wired, studyTickers]);
   /** An extra ticker's socket refused, or its bars unavailable: each of its studies says why (spec §2 Failures). */
   const feedNotes = useMemo(() => {
     const out: Record<string, string> = {};
@@ -1207,10 +1242,23 @@ function ChartCard({
     });
     return out;
   }, [extraFeeds, extraSlots, series, performance.byId]);
+  /** The engine's own word on a line (a gap, a vs it could not serve), from its frame (plan R8). */
+  const engineNotes = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const pane of panes) {
+      for (const line of pane.series) {
+        if (line.note === undefined) continue;
+        const hit = matchSeries(line, studiesOn.get(pane.ticker) ?? [], source, wireResolver);
+        const card = hit === undefined ? undefined : seriesByExpr.get(hit.expr);
+        if (card !== undefined) out[card.id] = line.note;
+      }
+    }
+    return out;
+  }, [panes, studiesOn, source, wireResolver, seriesByExpr]);
   /** Every reason a chip is not drawing, performance and study alike. */
   const seriesNotes = useMemo(
-    () => ({ ...performance.notes, ...studyNotes, ...feedNotes }),
-    [performance.notes, studyNotes, feedNotes],
+    () => ({ ...performance.notes, ...studyNotes, ...versus.notes, ...feedNotes, ...engineNotes }),
+    [performance.notes, studyNotes, versus.notes, feedNotes, engineNotes],
   );
 
   /**
@@ -1268,16 +1316,16 @@ function ChartCard({
      */
     const first = candles[0]?.time;
     const last = candles.at(-1)?.time;
-    for (const pane of mainPanes) {
-      for (const line of pane.series) {
-        for (const point of line.data) {
-          if (first !== undefined && last !== undefined && (point.time < first || point.time > last)) continue;
-          times.add(point.time);
-        }
-      }
-    }
+    const add = (time: number) => {
+      if (first !== undefined && last !== undefined && (time < first || time > last)) return;
+      times.add(time);
+    };
+    // Every socket's lines and every overlay's bars (spec 2026-11-13 cross-symbol §5, X8): a time
+    // list:2 has and list:1 lacks is on every panel too, clamped like the rest.
+    for (const pane of panes) for (const line of pane.series) for (const point of line.data) add(point.time);
+    for (const bars of extraBars.values()) for (const bar of bars) add(bar.time);
     return [...times].sort((a, b) => a - b);
-  }, [candles, mainPanes]);
+  }, [candles, panes, extraBars]);
   // What the socket ACTUALLY served each instance from, keyed by the
   // instance's expression, for the strip's parity mark (studies addendum
   // §4): an eodhd instance the backend had to compute locally is marked

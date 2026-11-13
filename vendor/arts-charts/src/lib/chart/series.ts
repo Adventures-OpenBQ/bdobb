@@ -467,6 +467,54 @@ const NOT_A_SYMBOL = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:bd)?$|^\d{4}-\d{2}-\d{2}|^OBS-
 export type ParsedStudy = NonNullable<ReturnType<typeof parseStudyExpression>> & { symbol?: string };
 
 /**
+ * A cross-symbol study typed (plan R10): `vs` is parsed as a stand-in `X`, because the
+ * expression charset refuses `$` and `^`, and put back normalised as a series symbol is
+ * (`msft` -> `MSFT`, `LIST:2` -> `list:2`). A leading symbol is the study's own ticker, as on
+ * any study: `RATIO(list:2, list:3)` is list:2's ratio to list:3.
+ */
+function parseVersus(
+  entry: CatalogEntry, args: string[], leading: boolean, tail: string,
+  lookup: (name: string) => CatalogEntry | undefined, options: ParseOptions,
+): ParsedStudy | null {
+  const key = (entry.tickers as string[])[0];
+  const rest = leading ? args.slice(1) : args;
+  const at = entry.params.findIndex((p) => p.name === key);
+  const raw = rest[at];
+  if (raw === undefined || raw === "") return null;
+  const vs = performanceSymbol(raw);
+  if (!SYMBOL_REF.test(vs)) return null;
+  const parsed = parseStudyExpression(`${entry.name}(${rest.map((a, i) => (i === at ? "X" : a)).join(", ")})${tail}`, lookup, options);
+  if (parsed === null) return null;
+  const out = { ...parsed, params: { ...parsed.params, [key]: vs } };
+  return leading ? { ...out, symbol: args[0] } : out;
+}
+
+/**
+ * The ticker a cross-symbol study's `vs` names on this card, or why it names none (spec
+ * 2026-11-13 cross-symbol §5): seriesTicker's rules, applied to the parameter. null for a series
+ * with no ticker parameter. The note's words are the server's (chart_body.versus_of).
+ */
+export function resolveVersus(
+  s: { type: SeriesType; name?: string; params: Record<string, number | string> },
+  list: readonly string[],
+  groups: readonly { name: string; paramName: string; value: string }[],
+  lookup: (name: string) => CatalogEntry | undefined,
+): { key: string; ticker: string } | { note: string } | null {
+  const key = s.type === "study" && s.name !== undefined ? lookup(s.name)?.tickers?.[0] : undefined;
+  if (key === undefined) return null;
+  const vs = s.params[key];
+  if (typeof vs !== "string" || vs === "") return { note: `no ${key} ticker` };
+  const resolved = seriesTicker({ type: "study", symbol: vs }, list, groups);
+  return "note" in resolved ? { note: `${key} ${vs}: ${resolved.note}` } : { key, ticker: resolved.ticker };
+}
+
+/** A cross-study's legend (spec §5; plan Q7): "AAPL / MSFT Ratio", "AAPL vs MSFT Corr 60". */
+export function versusLabel(entry: CatalogEntry, leading: string, vs: string, rest: string[]): string {
+  const name = entry.label.charAt(0) + entry.label.slice(1).toLowerCase();
+  return [entry.name === "ratio" ? `${leading} / ${vs} ${name}` : `${leading} vs ${vs} ${name}`, ...rest].join(" ");
+}
+
+/**
  * A typed study with an optional leading symbol (spec 2026-11-13 §1). The first argument is a
  * symbol when it is a series reference (`SYMBOL_REF`), is not a number, window or time, and the
  * study's first parameter is not a text one it could be (plan R1: `AVWAP(2026-09-01)` is an
@@ -481,7 +529,9 @@ export function parseStudy(
     const args = head[2].split(",").map((a) => a.trim());
     const first = args[0];
     const textFirst = entry.params[0]?.text === true && args.length <= entry.params.length;
-    if (first !== "" && SYMBOL_REF.test(first) && !NOT_A_SYMBOL.test(first) && !textFirst) {
+    const leading = first !== "" && SYMBOL_REF.test(first) && !NOT_A_SYMBOL.test(first) && !textFirst;
+    if (entry.tickers?.length) return parseVersus(entry, args, leading, text.slice(head[0].length), lookup, options);
+    if (leading) {
       const parsed = parseStudyExpression(text.replace(/\(\s*[^(),]*?\s*(?:,\s*|(?=\)))/, "("), lookup, options);
       return parsed === null ? null : { ...parsed, symbol: first };
     }
