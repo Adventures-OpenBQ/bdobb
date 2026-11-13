@@ -66,6 +66,8 @@ import { ErrorState } from "./renderers/ErrorState";
 import { HtmlRenderer } from "./renderers/HtmlRenderer";
 import { IframeRenderer } from "./renderers/IframeRenderer";
 import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
+import { FeedSymbolGroupDialog } from "./FeedSymbolGroupDialog";
+
 import { canUseLinkedSource } from "../lib/widgetData/sources";
 import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
@@ -225,6 +227,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const executionView = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
   const allBackends = useBackendsStore((s) => s.backends);
   const [chooseSource, setChooseSource] = useState(false);
+  const [feedGroup, setFeedGroup] = useState(false);
   const applyCardParams = useDashboardStore((s) => s.applyCardParams);
   const savePresetAction = useDashboardStore((s) => s.savePreset);
   const savePreset = (name: string, expr: string) => savePresetAction(dashboardId, name, expr);
@@ -1743,6 +1746,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                     {!readOnly && !inDocks && workerTable ? <>
                       <button type="button" role="menuitem" onClick={() => void createLinked('chart')}>Create linked chart</button>
                       <button type="button" role="menuitem" onClick={() => void createLinked('table')}>Create linked table</button>
+                      <button type="button" role="menuitem" onClick={() => { setExportOpen(false); setFeedGroup(true); }}>Feed symbol group</button>
                     </> : null}
                     {!readOnly && card.linkedSource ? <button type="button" role="menuitem" onClick={() => { setExportOpen(false); setChooseSource(true); }}>Choose source</button> : null}
                     {canShare ? (
@@ -2318,6 +2322,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         </p>
       ) : null}
       {chooseSource && dashboard ? <LinkedWidgetDialog dashboardId={dashboard.id} tabId={dashboard.tabs.find(t => t.cards.some(c => c.id === card.id))!.id} cardId={card.id} onClose={() => setChooseSource(false)} /> : null}
+      {feedGroup && dashboard ? <FeedSymbolGroupDialog dashboardId={dashboard.id} sourceWidgetId={card.id} onClose={() => setFeedGroup(false)} /> : null}
     </article>
   );
 }

@@ -151,3 +151,10 @@ it('keeps the chart presentation branch and completed metadata during recoverabl
   expect(screen.getByRole('alert').textContent).toContain('Missing source field');
   expect(screen.queryByText('Source unavailable')).toBeNull();
 });
+
+it('source menu opens Feed symbol group for the table (spec 2026-11-13 §2)', () => {
+  render(<WidgetCard card={source} onRemove={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Card menu' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Feed symbol group' }));
+  expect(screen.getByRole('dialog', { name: 'Feed symbol group' })).toBeTruthy();
+});
