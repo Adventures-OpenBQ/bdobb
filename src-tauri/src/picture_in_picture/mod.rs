@@ -245,10 +245,11 @@ mod native {
         }
         // macOS full screen is a Space of its own, and Chrome's player stays on
         // the desktop's: it can be moved there but not seen here (measured
-        // 2026-11-13). The hold is parked like any hidden card; leaving full
-        // screen resizes the window, and `sync` brings the player back.
+        // 2026-11-13). Only the answer is given here. Parking is `sync`'s, on
+        // the resize that entering full screen sends: a fit that read "full
+        // screen" just before the exit must not park after `sync` has brought
+        // the player back, because nothing would un-park it again.
         if window.is_fullscreen().unwrap_or(false) {
-            set_away(window, true, || true);
             return Status::FullScreen;
         }
         let Some(origin) = origin(window) else {
@@ -340,6 +341,9 @@ mod native {
     }
 
     fn set_away(window: &WebviewWindow, away: bool, current: impl FnOnce() -> bool) {
+        // In full screen the player is never brought back, whoever asks: a
+        // viewer window taking focus on the desktop would otherwise place it there.
+        let away = away || window.is_fullscreen().unwrap_or(false);
         let origin = origin(window);
         placement_and_volume_queued(|p| {
             if current() {

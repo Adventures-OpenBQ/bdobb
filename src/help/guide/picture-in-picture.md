@@ -39,7 +39,7 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 | --- | --- |
 | *Pop the video out in Chrome* | No floating player is open; the card checks again every few seconds |
 | *The player is in use by another card* | Another Picture in Picture card holds it; remove that card or scroll it away |
-| *Chrome's player cannot follow BDOBB into full screen* | BDOBB is in macOS full screen, which is a desktop of its own that Chrome's floating player does not join. The player is moved off screen until you leave full screen. To make BDOBB large and keep the video, hold Option and click the green button, or double-click the title bar |
+| *Chrome's player cannot follow BDOBB into full screen* | BDOBB is in macOS full screen, which is a desktop of its own that Chrome's floating player does not join. The player is moved off screen until you leave full screen. To make BDOBB large without full screen, hold Option and click the green button, which zooms the window on the same desktop |
 | *Open this dashboard in the main window* | The card is in an **Open in new window** viewer, which cannot hold the player |
 | *BDOBB needs Accessibility permission…* | See step 2 above |
 
