@@ -352,4 +352,3 @@ This ensures that you're testing the behavior the user would see in the browser.
       Tests  2907 passed | 7 skipped (2914)
    Start at  18:11:45
    Duration  61.79s (transform 1.72s, setup 11.60s, collect 6.95s, tests 43.14s, environment 28.29s, prepare 5.01s)
-

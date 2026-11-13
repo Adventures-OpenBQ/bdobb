@@ -95,8 +95,6 @@ describe("help shots on disk", () => {
         .map((f) => f.slice(0, -".md".length)),
     );
     expect([...pending].sort()).toEqual([
-      "built-in-widgets",
-      "card-parameters",
       "documents-pdf-and-files",
       "html-and-iframe-widgets",
       "running-and-refreshing",
