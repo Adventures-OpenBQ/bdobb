@@ -47,7 +47,7 @@ Or skip the widget-by-widget route and import a whole dashboard set — see [[im
 
 ## What you need to connect to
 
-BDOBB serves no data of its own, and at this version the repository ships no backend to try it against. You need an OpenBB-compatible backend of your own; for the companion stack, see [[openbb-docker-stack|The openbb-docker Stack]].
+BDOBB serves no data of its own, and at this version the repository ships no backend to try it against. You need an OpenBB-compatible backend of your own; for the companion stack, see [[openbq-docker-stack|The openbq-docker Stack]].
 
 ---
 *Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; BDOBB v3.0.1 in-app manual, "Getting started".*

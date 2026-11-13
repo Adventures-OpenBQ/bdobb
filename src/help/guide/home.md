@@ -47,7 +47,7 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 
 ## Integrations
 
-- [[openbb-docker-stack|The openbb-docker Stack]] — the services, the ports Tailscale Serve publishes, and what each one is in BDOBB
+- [[openbq-docker-stack|The openbq-docker Stack]] — the services, the ports Tailscale Serve publishes, and what each one is in BDOBB
 - [[tailscale-networking|Tailscale Networking]] — Serve-only ingress, Tailscale Services, and the sharp edges
 - [[web-preview|Web Preview]] — the GitHub-gated Vercel preview of the dashboard grid, what it can reach, and what resets
 

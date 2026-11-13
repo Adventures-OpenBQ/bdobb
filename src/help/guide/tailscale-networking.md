@@ -11,7 +11,7 @@ Every backend in the companion stack — the OpenBB API and key-maint — is des
 
 A service joins your private network as a compose service behind a Tailscale sidecar: on a private Docker bridge that other Docker networks cannot reach — processes on the Docker host itself can — not published on any host port, with **Tailscale Serve** terminating TLS and fronting it at `https://<node>.<your-tailnet>.ts.net:<port>`. Only devices on your tailnet can reach it at all — reachability substitutes for a chunk of what a public service would need explicit auth for.
 
-The `openbb` node publishes one port per service: 443 for the API and 10000 for key-maint. See [[openbb-docker-stack|The openbb-docker Stack]].
+The `openbb` node publishes one port per service: 443 for the API and 10000 for key-maint. See [[openbq-docker-stack|The openbq-docker Stack]].
 
 **Serve vs. Funnel.** Serve keeps a service tailnet-only. Funnel exposes it to the public internet. Only put a service behind Funnel if it authenticates on its own — which in this stack is the OpenBB API, with its mandatory Basic auth, enforced by the image on every path, metadata included — and even that is a choice, not a default. The funnel variant of the Serve config funnels exactly one address — the stack node's own name on port 443 (`${TS_CERT_DOMAIN}:443` in its `AllowFunnel`); no other port is funnelled, and none of the Tailscale Service names are. key-maint answers with the same Basic auth, but its funnel was deliberately removed and it is never funnelled. The README at this tag still describes key-maint's lowest tier as what *public* callers see; the Serve configuration gives the public no route to it, and this guide follows the configuration.
 
@@ -35,7 +35,7 @@ Service hostnames in `serve.json` are literal — `${TS_CERT_DOMAIN}` expands to
 
 ---
 *Source: `openbb-docker` `README.md`, `docker-compose.yml`, `ts-config/serve.json`, `ts-config/serve-funnel.json`, `docs/funnel.md`, `scripts/verify-isolation.sh` and `key-maint/app/server.py` at `v3.0.0`; Adventures in OpenBB, Ep. 1 — "Your Own Bloomberg in a Cabinet" and Ep. 2 — "The Borrowed Terminal."*
-*See also: [[openbb-docker-stack|The openbb-docker Stack]] · [[backends-and-connections|Backends and Connections]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
+*See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[backends-and-connections|Backends and Connections]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
 
 ---
 

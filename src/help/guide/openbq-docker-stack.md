@@ -3,7 +3,7 @@ type: Note
 tags: [bdobb, help, integrations, openbb-docker, stack, services, ports]
 ---
 
-# The openbb-docker Stack
+# The openbq-docker Stack
 
 **openbb-docker** is the self-hosted OpenBB Platform in Docker, behind a Tailscale sidecar, that the *Adventures in OpenBB* series builds episode by episode — and it is the backend BDOBB was written against. BDOBB v3.3.3 pairs with openbb-docker `v3.0.1`, the stack tag its `package.json` names and its web layer vendors the gateway policy from: the two repositories tag independently, and the stack is tagged only when it changes. Both were tagged for Episode 3, and the stack's Episode 3 point releases add what the table below lists — the funnel gateway behind the [[web-preview|Web Preview]] is an opt-in fourth container, started only with the `web` profile. This page is the map: what runs, how each piece is reached, and what each one is inside BDOBB.
 

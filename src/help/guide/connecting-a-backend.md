@@ -54,7 +54,7 @@ A fresh install seeds one backend named `Local` at `http://localhost:6900`. It i
 
 ## More than one at once
 
-BDOBB is built around several simultaneous backends. A typical stack is two or more connections — the OpenBB Platform API and the key-maintenance service, say — each contributing its own widgets to the same library, and each tracked independently: one going offline shows a retry state only on the cards that depend on it. See [[openbb-docker-stack|The openbb-docker Stack]] for the full set and [[layout-and-navigation|Layout and Navigation]] for how degraded states are shown.
+BDOBB is built around several simultaneous backends. A typical stack is two or more connections — the OpenBB Platform API and the key-maintenance service, say — each contributing its own widgets to the same library, and each tracked independently: one going offline shows a retry state only on the cards that depend on it. See [[openbq-docker-stack|The openbq-docker Stack]] for the full set and [[layout-and-navigation|Layout and Navigation]] for how degraded states are shown.
 
 ## Where connections are kept
 
@@ -62,7 +62,7 @@ Connections live in `backends.json` in the app's data directory, credentials inc
 
 ---
 *Source: BDOBB v3.0.2 in-app manual, "Connections" and "Getting started"; `BDOBB` `src/lib/dataClient.ts` at `v3.0.1`; `BDOBB` `src/components/dialogs/BackendEditForm.tsx` and `src/lib/omni.ts` at `v3.3.2`.*
-*See also: [[backends-and-connections|Backends and Connections]] · [[openbb-docker-stack|The openbb-docker Stack]] · [[importing-dashboards|Importing Dashboards]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
+*See also: [[backends-and-connections|Backends and Connections]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[importing-dashboards|Importing Dashboards]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
 
 ## Open a backend-served app
 

@@ -36,7 +36,7 @@ With no saved state yet, the preview seeds the **built-in widgets** example dash
 A layout tweak, a parameter edit, a view toggle — anything the desktop app would normally write to disk — is written here to the per-user store behind `/state` instead, and reloads with it. If that store cannot be reached, the page still works but says so: changes made in that session are memory-only and are gone on reload, exactly as if nothing had been saved.
 
 *Source: BDOBB v3.1.0 `web/server.mjs`, `web/bootstrap.mjs`, `web/policy.mjs` (vendored from openbq-docker v3.0.0's `funnel-gateway/policy.mjs`), `src/browser-shim/socket.ts` and `web/security.test.mjs` at `v3.1.0`; the `frame-src` directive in `web/server.mjs` at `v3.2.1`.*
-*See also: [[openbb-docker-stack|The openbb-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[example-dashboards|Example Dashboards]] · [[backends-and-connections|Backends and Connections]]*
+*See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[example-dashboards|Example Dashboards]] · [[backends-and-connections|Backends and Connections]]*
 
 ---
 

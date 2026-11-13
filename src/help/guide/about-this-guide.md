@@ -39,7 +39,7 @@ That arrangement is also why the rule about which source wins matters more than 
 
 | Episode | Title | Feeds into |
 |---|---|---|
-| 1 | Your Own Bloomberg in a Cabinet | [[openbb-docker-stack\|The openbb-docker Stack]], [[tailscale-networking\|Tailscale Networking]] |
+| 1 | Your Own Bloomberg in a Cabinet | [[openbq-docker-stack\|The openbq-docker Stack]], [[tailscale-networking\|Tailscale Networking]] |
 | 2 | The Borrowed Terminal | [[backends-and-connections\|Backends and Connections]] |
 | 3 | Kick the Tires on a Reference Build | [[layout-and-navigation\|Layout and Navigation]], [[provider-keys\|Provider Keys]] |
 

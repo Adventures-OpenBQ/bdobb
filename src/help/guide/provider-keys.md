@@ -54,7 +54,7 @@ Two details worth knowing: Alpaca appears as two cards but is one provider, and 
 
 ---
 *Source: BDOBB v3.0.1 in-app manual, "Provider keys" and "The widget library"; `openbb-docker` `key-maint/README.md`; Adventures in OpenBB, Ep. 3 — "I Asked for Electron and Got Talked Out of It."*
-*See also: [[widget-library|The Widget Library]] · [[backends-and-connections|Backends and Connections]] · [[openbb-docker-stack|The openbb-docker Stack]]*
+*See also: [[widget-library|The Widget Library]] · [[backends-and-connections|Backends and Connections]] · [[openbq-docker-stack|The openbq-docker Stack]]*
 
 ---
 

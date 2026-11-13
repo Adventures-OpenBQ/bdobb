@@ -40,7 +40,7 @@ Edits apply live, with no restart, and a malformed file kills the sidecar. Write
 
 ---
 *Source: `openbb-docker` `README.md`, `docker-compose.yml`, `ts-config/serve.json`, `docs/funnel.md` and `scripts/verify-isolation.sh` at `v3.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBB, Eps. 1–3.*
-*See also: [[openbb-docker-stack|The openbb-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
+*See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
 
 ---
 

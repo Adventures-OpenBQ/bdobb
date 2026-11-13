@@ -18,7 +18,7 @@ The Basic auth is mandatory on the OpenBB API by design: the stack's compose fil
 
 ## Reachability as the credential
 
-Both of the stack's services sit on its private bridge and are published only by Tailscale Serve, so reaching the address at all already takes a device on your tailnet; the Basic auth is the second gate, not the only one. Only the API's port 443 may be funnelled to the public internet, and key-maint's funnel was deliberately removed. The rule behind that is general: a service that authenticates nothing must never be given a public door. See [[openbb-docker-stack|The openbb-docker Stack]] for the ports.
+Both of the stack's services sit on its private bridge and are published only by Tailscale Serve, so reaching the address at all already takes a device on your tailnet; the Basic auth is the second gate, not the only one. Only the API's port 443 may be funnelled to the public internet, and key-maint's funnel was deliberately removed. The rule behind that is general: a service that authenticates nothing must never be given a public door. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
 
 ## Why the seeded `Local` never works
 
@@ -34,7 +34,7 @@ Each connection is tracked independently. Discovery runs at launch and on demand
 
 ---
 *Source: BDOBB v3.0.2 in-app manual, "Connections"; `openbb-docker` `README.md`, `api-auth.env.example`, `docker-compose.yml` and `ts-config/serve.json` at `v3.0.0`.*
-*See also: [[connecting-a-backend|Connecting a Backend]] · [[openbb-docker-stack|The openbb-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[provider-keys|Provider Keys]]*
+*See also: [[connecting-a-backend|Connecting a Backend]] · [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]] · [[provider-keys|Provider Keys]]*
 
 ---
 
