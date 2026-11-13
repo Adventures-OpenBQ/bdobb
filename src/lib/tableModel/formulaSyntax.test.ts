@@ -28,6 +28,12 @@ describe('formula syntax', () => {
   it.each(['SUM', 'MEAN', 'MEDIAN', 'MIN', 'MAX', 'COUNT', 'UNIQUECOUNT', 'FIRST', 'LAST'])('accepts %s explicitly', fn => {
     expect(parseFormula(`${fn}(Volume)`).diagnostics).toEqual([]);
   });
+  // describe_table lists these in lower case; live Rita sent first(open) and was refused until its round limit.
+  it.each(['sum', 'first', 'Last', 'uniqueCount', 'if'])('accepts %s in any letter case', fn => {
+    const text = fn.toUpperCase() === 'IF' ? `${fn}(Volume > 0, 1, 0)` : `${fn}(Volume)`;
+    expect(parseFormula(text).diagnostics).toEqual([]);
+    expect(parseFormula(text).ast).toEqual(parseFormula(text.replace(fn, fn.toUpperCase())).ast);
+  });
   it.each(['a.b', 'evil(1)', 'new Object()', '{}', '1; alert(1)', 'a["x"]', 'SUM()', 'SUM(1,2)', 'IF(1,2)', '1 2', '1e999', '"unterminated', '[unterminated'])('rejects unsafe or malformed syntax %s', text => {
     expect(parseFormula(text)).toMatchObject({ diagnostics: [expect.objectContaining({ code: 'syntax' })] });
     expect(parseFormula(text).ast).toBeUndefined();
