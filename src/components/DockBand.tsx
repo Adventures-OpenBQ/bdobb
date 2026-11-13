@@ -8,7 +8,6 @@ import { logError } from "../lib/logger";
 import type { PinEdge } from "../lib/types";
 import { GRID_COLS, GRID_ROW_HEIGHT, useDashboardStore, type GridLayoutItem } from "../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../stores/settingsStore";
-import { pipResizeHandles } from "../lib/pictureInPicture";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { WidgetCard } from "./WidgetCard";
 
@@ -86,7 +85,7 @@ function DockGrid({ edge, editing, viewer }: { edge: PinEdge; editing: boolean; 
   const cornerDragHandles = useSettingsStore((s) => s.settings.cornerDragHandles);
   const list = cards ?? [];
 
-  const layout = list.map((c) => ({ i: c.id, ...c.layout, ...pipResizeHandles(c.widgetId, cornerDragHandles) }));
+  const layout = list.map((c) => ({ i: c.id, ...c.layout }));
   /**
    * react-grid-layout reports its layout back on mount and whenever the
    * `layout` prop changes reference, neither of which is a user move -- so
