@@ -29,7 +29,7 @@ import { firstFreeSpot } from "../lib/dockLayout";
 import { IMPORT_MAX_DASHBOARDS } from "../lib/importLimits";
 import { deleteLocalFile } from "../lib/localFiles";
 import { logError, logInfo, logOnce } from "../lib/logger";
-import { effectiveParams, nextGroupName, type ParamEdit } from "../lib/paramGroups";
+import { effectiveParams, handBackValue, nextGroupName, type ParamEdit } from "../lib/paramGroups";
 import { fiscalChain } from "../lib/fiscalChain";
 import { isFiscalType, parseFyEndMonth, relabel } from "../lib/periods";
 import { bindableKeys, seedParams } from "../lib/params";
@@ -472,8 +472,10 @@ function unbind(card: DashboardCard, paramName: string, value: string): Dashboar
  * stays out of the store, so a member whose year end came from it shifts on
  * delete exactly as an endpoint-fed one does.
  */
-function deleteHandBack(dashboard: Dashboard, card: DashboardCard, paramName: string, value: string): string {
+function deleteHandBack(dashboard: Dashboard, card: DashboardCard, paramName: string, group: ParamGroup): string {
   const widget = useWidgetRegistryStore.getState().widgets.find((w) => w.id === card.widgetId);
+  // What the member showed (user ruling U4): a list group's first entry unless it takes the list.
+  const value = handBackValue(group, widget, paramName);
   const param = widget?.params.find((p) => p.paramName === paramName);
   if (!widget || !param || !isFiscalType(param.type)) return value;
   const values = effectiveParams(card, dashboard.groups, widget, dashboard.groupsDisabled ?? false);
@@ -1028,7 +1030,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
               // value instead of the one the group was holding.
               (c.bindings ?? [])
                 .filter((b) => b.groupId === groupId)
-                .reduce((acc, b) => unbind(acc, b.paramName, deleteHandBack(d, c, b.paramName, group.value)), c),
+                .reduce((acc, b) => unbind(acc, b.paramName, deleteHandBack(d, c, b.paramName, group)), c),
             ),
           })),
         };

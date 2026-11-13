@@ -16,7 +16,9 @@ export function artsChartWidget(backend: BackendConfig): WidgetDef {
     type: ARTS_CHART_TYPE, category: "Charts", subCategory: "", endpoint: "", source: [],
     wsEndpoint: "ta_series_ws", gridData: { w: 40, h: 20 },
     params: [
-      { paramName: "symbol", label: "Symbol", type: "text", value: "AAPL", groupType: "symbol" },
+      // multiSelect (spec 2026-11-13): a symbol group's whole list reaches this card. No options,
+      // so controlKind still draws the plain text box.
+      { paramName: "symbol", label: "Symbol", type: "text", value: "AAPL", groupType: "symbol", multiSelect: true },
       { paramName: "interval", label: "Interval", type: "text", value: "1d" },
       { paramName: "provider", label: "Provider", type: "text", value: "yfinance", options: [
         { label: "yfinance", value: "yfinance" }, { label: "EODHD", value: "eodhd" }, { label: "TemporalDB", value: "temporaldb" },

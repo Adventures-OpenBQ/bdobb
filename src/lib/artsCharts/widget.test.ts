@@ -42,3 +42,13 @@ describe("arts_chart widget", () => {
     expect(r.error).toBe("The server refused the credential (401)");
   });
 });
+
+describe("arts_chart symbol (spec 2026-11-13 §3)", () => {
+  it("is declared a comma list without changing the control it draws", async () => {
+    const { controlKind } = await import("../params");
+    const symbol = artsChartWidget(charts).params.find((p) => p.paramName === "symbol")!;
+    expect(symbol).toMatchObject({ type: "text", groupType: "symbol", multiSelect: true });
+    // multiSelect turns a control into the multi-select list only when it has options to pick from.
+    expect(controlKind(symbol)).toBe("text");
+  });
+});

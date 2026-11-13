@@ -3,11 +3,12 @@
 
 import { useState } from "react";
 import { logError } from "../lib/logger";
-import { compatibleGroups, groupFor, paramGroupType } from "../lib/paramGroups";
+import { compatibleGroups, groupFor, handBackValue, paramGroupType } from "../lib/paramGroups";
 import { relabel } from "../lib/periods";
 import { groupValueLabel } from "../lib/statementFiscal";
 import type { DashboardCard, ParamGroup, WidgetParam } from "../lib/types";
 import { useDashboardStore } from "../stores/dashboardStore";
+import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { MenuPanel } from "./RowContextMenu";
 
 type Props = {
@@ -37,6 +38,8 @@ export function GroupLink({ card, param, groups, groupsDisabled, value, fiscalYe
   const createGroup = useDashboardStore((s) => s.createGroup);
   const joinGroup = useDashboardStore((s) => s.joinGroup);
   const leaveGroup = useDashboardStore((s) => s.leaveGroup);
+  /** The card's widget, for what a member keeps when it leaves a list group (U4). */
+  const widget = useWidgetRegistryStore((s) => s.widgets.find((w) => w.id === card.widgetId));
   const [open, setOpen] = useState(false);
   /**
    * The button that opened the menu -- the chain-link, or the badge once the
@@ -157,7 +160,7 @@ export function GroupLink({ card, param, groups, groupsDisabled, value, fiscalYe
                 // such as `T-1q` through untouched.
                 onClick={() =>
                   checked
-                    ? run("leave a group", leaveGroup(card.id, param.paramName, bound && relabel(bound.value, 12, fiscalYearEnd ?? 12)))
+                    ? run("leave a group", leaveGroup(card.id, param.paramName, bound && relabel(handBackValue(bound, widget, param.paramName), 12, fiscalYearEnd ?? 12)))
                     : run("join a group", joinGroup(g.id, card.id, param.paramName))
                 }
               >

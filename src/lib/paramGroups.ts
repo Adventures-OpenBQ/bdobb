@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isPeriodType } from "./dateExpressions";
-import { bindableKeys } from "./params";
+import { bindableKeys, formFieldKey } from "./params";
 import { relabel } from "./periods";
 import type { DashboardCard, ParamGroup, WidgetDef, WidgetParam } from "./types";
 
@@ -97,6 +97,43 @@ export function groupedParamNames(
   );
 }
 
+/**
+ * The storage keys whose param takes a comma list (`multiSelect`). A form field is keyed
+ * `<form>.<field>` and judged by its own flag, as bindableKeys keys it.
+ */
+function multiKeys(widget: WidgetDef): Set<string> {
+  const out = new Set<string>();
+  for (const p of widget.params) {
+    if (p.form) {
+      for (const f of p.form.inputs) if (f.multiSelect === true) out.add(formFieldKey(p.paramName, f.paramName));
+    } else if (p.multiSelect === true) out.add(p.paramName);
+  }
+  return out;
+}
+
+/**
+ * What one member of `group` shows (spec 2026-11-13 §3): a symbol group may hold a list fed by
+ * a table; a member that takes one symbol gets the first non-blank entry, a `multiSelect` member
+ * the whole list. Any other group, and any value without a comma, passes through unchanged, so
+ * every group that existed before lists resolves exactly as it did. The stored value is never
+ * altered here.
+ */
+function memberValue(group: ParamGroup, multi: boolean): string {
+  if (multi || group.groupType !== "symbol" || !group.value.includes(",")) return group.value;
+  return group.value.split(",").map((s) => s.trim()).find((s) => s !== "") ?? "";
+}
+
+/**
+ * What a member keeps when it leaves `group`, or `group` is deleted (user ruling U4, 2026-11-13):
+ * what it showed. `name` is the binding's param name; a member any of whose keys under that name
+ * is `multiSelect` keeps the whole list. An unknown widget keeps the whole value, as before.
+ */
+export function handBackValue(group: ParamGroup, widget: WidgetDef | undefined, name: string): string {
+  if (!widget) return group.value;
+  const multi = multiKeys(widget);
+  return memberValue(group, [...bindableKeys(widget)].some(([key, n]) => n === name && multi.has(key)));
+}
+
 /*
  * A `quarter` / `fiscal_year` group stores the label computed with a
  * DECEMBER year end, so one stored value means the same calendar span to
@@ -126,6 +163,7 @@ export function effectiveParams(
   const bound = groupedParamNames(card, groups, widget, groupsDisabled);
   const out = Object.fromEntries(Object.entries(card.params).filter(([key])=>!reservedPivotName(key)));
   if (bound.size === 0) return out;
+  const multi = multiKeys(widget);
   // Over the KEYS, not the bound names: a bound `symbol` writes onto the
   // card's own `symbol` and onto `<form>.symbol` alike, so a form field joins
   // its group exactly as a top-level param does.
@@ -136,7 +174,8 @@ export function effectiveParams(
     // The map carries only the names takesFiscalYearEnd covers (useFiscalYearEnd
     // builds it for those types alone); any other name relabels 12 → 12.
     // v5.4.0: the map now covers date types too; relabel passes a date value through unchanged.
-    out[key] = relabel(group.value, 12, fiscalYearEnd?.[name] ?? 12);
+    // First entry before relabel: relabel is the identity on a ticker (spec 2026-11-13 R4).
+    out[key] = relabel(memberValue(group, multi.has(key)), 12, fiscalYearEnd?.[name] ?? 12);
   }
   return out;
 }
@@ -164,6 +203,7 @@ export function splitParamEdit(
 ): ParamEdit {
   const bound = groupedParamNames(card, groups, widget, groupsDisabled);
   const keys = bindableKeys(widget);
+  const multi = multiKeys(widget);
 
   const cardParams = { ...card.params };
   const groupEdits: Array<{ groupId: string; value: string }> = [];
@@ -184,7 +224,9 @@ export function splitParamEdit(
     // any other name relabels 12 → 12, which is the identity.
     // v5.4.0: the map now covers date types too; relabel passes a date value through unchanged.
     const stored = relabel(value, fiscalYearEnd?.[name] ?? 12, 12);
-    if (group && group.value !== stored && !groupEdits.some((e) => e.groupId === group.id)) {
+    // Compared with what this member SHOWS: a single-symbol member re-submitting its displayed
+    // first entry is no change, and must not collapse the group's list to it.
+    if (group && memberValue(group, multi.has(key)) !== stored && !groupEdits.some((e) => e.groupId === group.id)) {
       groupEdits.push({ groupId: group.id, value: stored });
     }
   }

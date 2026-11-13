@@ -9,6 +9,7 @@ import {
   groupedParamNames,
   groupFor,
   groupsForCard,
+  handBackValue,
   nextGroupName,
   paramGroupType,
   splitParamEdit,
@@ -249,4 +250,73 @@ describe("nextGroupName", () => {
 it('reserved pivot names never bind, emit or edit ordinary endpoint params',()=>{
  const reserved='pivot:filter:cat';const declared=makeWidget({params:[{paramName:reserved},{paramName:'symbol'}]});const card=makeCard({params:{symbol:'AAPL',[reserved]:'raw'},bindings:[{paramName:reserved,groupId:'g'}]});const groups=[{id:'g',name:'G',paramName:reserved,groupType:'region',value:'A,B'}];
  expect(groupedParamNames(card,groups,declared)).toEqual(new Set());expect(effectiveParams(card,groups,declared)).toEqual({symbol:'AAPL'});expect(splitParamEdit({[reserved]:'new'},card,groups,declared).cardParams).toEqual(card.params);
+});
+
+describe("symbol lists (spec 2026-11-13 §3)", () => {
+  const list: ParamGroup = { id: "g", name: "Watch", paramName: "symbol", groupType: "symbol", value: "AAPL,MSFT,NVDA" };
+  const member = (params: WidgetDef["params"]) => makeWidget({ id: "m", params });
+  const bound = makeCard({ id: "m1", widgetId: "m", params: { symbol: "TSLA" }, bindings: [{ groupId: "g", paramName: "symbol" }] });
+  const single = member([{ paramName: "symbol" }]);
+  const multi = member([{ paramName: "symbol", multiSelect: true }]);
+
+  it("gives a multiSelect member the whole list and any other member the first entry", () => {
+    expect(effectiveParams(bound, [list], multi).symbol).toBe("AAPL,MSFT,NVDA");
+    expect(effectiveParams(bound, [list], single).symbol).toBe("AAPL");
+  });
+
+  it("reads the first non-blank entry, trimmed", () => {
+    expect(effectiveParams(bound, [{ ...list, value: " , msft ,AAPL" }], single).symbol).toBe("msft");
+  });
+
+  it("passes a one-entry value through byte for byte", () => {
+    expect(effectiveParams(bound, [{ ...list, value: " AAPL " }], single).symbol).toBe(" AAPL ");
+  });
+
+  it("leaves a comma value in a group of any other type whole", () => {
+    const region: ParamGroup = { id: "g", name: "Region", paramName: "region", groupType: "region", value: "A,B" };
+    const card = makeCard({ id: "m2", widgetId: "m", params: {}, bindings: [{ groupId: "g", paramName: "region" }] });
+    expect(effectiveParams(card, [region], member([{ paramName: "region" }])).region).toBe("A,B");
+  });
+
+  it("judges a form field by its own multiSelect, under its <form>.<field> key", () => {
+    const form = (fieldMulti: boolean) => member([{
+      paramName: "report", type: "form",
+      form: { endpoint: "e", inputs: [
+        { paramName: "symbol", type: "dropdown", multiSelect: fieldMulti, options: [] },
+        { paramName: "go", type: "button" },
+      ] },
+    }]);
+    const card = makeCard({ id: "m3", widgetId: "m", params: { "report.symbol": "X" }, bindings: [{ groupId: "g", paramName: "symbol" }] });
+    expect(effectiveParams(card, [list], form(true))["report.symbol"]).toBe("AAPL,MSFT,NVDA");
+    expect(effectiveParams(card, [list], form(false))["report.symbol"]).toBe("AAPL");
+  });
+
+  it("does not write a single member's displayed first entry back over the list", () => {
+    expect(splitParamEdit({ symbol: "AAPL" }, bound, [list], single).groupEdits).toEqual([]);
+    expect(splitParamEdit({ symbol: "NVDA" }, bound, [list], single).groupEdits).toEqual([{ groupId: "g", value: "NVDA" }]);
+  });
+
+  it("writes a multiSelect member's edited list whole", () => {
+    expect(splitParamEdit({ symbol: "AAPL,MSFT,NVDA" }, bound, [list], multi).groupEdits).toEqual([]);
+    expect(splitParamEdit({ symbol: "AAPL,TSLA" }, bound, [list], multi).groupEdits).toEqual([{ groupId: "g", value: "AAPL,TSLA" }]);
+  });
+});
+
+describe("handBackValue (user ruling U4, 2026-11-13)", () => {
+  const list: ParamGroup = { id: "g", name: "Watch", paramName: "symbol", groupType: "symbol", value: "AAPL,MSFT" };
+
+  it("hands a single-symbol member the first entry and a multiSelect member the whole list", () => {
+    expect(handBackValue(list, makeWidget({ params: [{ paramName: "symbol" }] }), "symbol")).toBe("AAPL");
+    expect(handBackValue(list, makeWidget({ params: [{ paramName: "symbol", multiSelect: true }] }), "symbol")).toBe("AAPL,MSFT");
+  });
+
+  it("judges a form field bound by its name through its own multiSelect", () => {
+    const form = makeWidget({ params: [{ paramName: "report", type: "form", form: { endpoint: "e", inputs: [{ paramName: "symbol", type: "text", multiSelect: true }] } }] });
+    expect(handBackValue(list, form, "symbol")).toBe("AAPL,MSFT");
+  });
+
+  it("hands back a one-entry value byte for byte, and the whole value when the widget is unknown", () => {
+    expect(handBackValue({ ...list, value: " AAPL " }, makeWidget({ params: [{ paramName: "symbol" }] }), "symbol")).toBe(" AAPL ");
+    expect(handBackValue(list, undefined, "symbol")).toBe("AAPL,MSFT");
+  });
 });

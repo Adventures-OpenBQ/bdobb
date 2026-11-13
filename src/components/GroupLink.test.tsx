@@ -3,10 +3,11 @@
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDashboardStore } from "../stores/dashboardStore";
 import type { DashboardCard, ParamGroup } from "../lib/types";
-import { card as makeCard } from "../test/fixtures";
+import { card as makeCard, widget as makeWidget } from "../test/fixtures";
+import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { GroupLink } from "./GroupLink";
 
 const groups: ParamGroup[] = [
@@ -185,5 +186,32 @@ describe("GroupLink", () => {
     } finally {
       window.removeEventListener("keydown", restore);
     }
+  });
+});
+
+describe("GroupLink leave from a list (user ruling U4, 2026-11-13)", () => {
+  const list: ParamGroup = { id: "g1", name: "Ticker", paramName: "symbol", groupType: "symbol", value: "AAPL,MSFT" };
+  const member = { ...card, bindings: [{ groupId: "g1", paramName: "ticker" }] };
+  const leave = async (multiSelect: boolean, value = list.value) => {
+    useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: "w1", params: [{ paramName: "ticker", type: "text", groupType: "symbol", multiSelect }] })] });
+    renderLink({ card: member, groups: [{ ...list, value }] });
+    await userEvent.click(screen.getByRole("button", { name: "Group 1: Ticker — shared across grouped cards" }));
+    await userEvent.click(screen.getByRole("menuitemcheckbox", { checked: true }));
+  };
+  afterEach(() => useWidgetRegistryStore.setState({ widgets: [] }));
+
+  it("hands a single-symbol member the first entry", async () => {
+    await leave(false);
+    expect(useDashboardStore.getState().leaveGroup).toHaveBeenCalledWith("c1", "ticker", "AAPL");
+  });
+
+  it("hands a multiSelect member the whole list", async () => {
+    await leave(true);
+    expect(useDashboardStore.getState().leaveGroup).toHaveBeenCalledWith("c1", "ticker", "AAPL,MSFT");
+  });
+
+  it("hands back a one-entry value byte for byte", async () => {
+    await leave(false, " NVDA ");
+    expect(useDashboardStore.getState().leaveGroup).toHaveBeenCalledWith("c1", "ticker", " NVDA ");
   });
 });

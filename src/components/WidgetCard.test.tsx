@@ -4848,7 +4848,8 @@ describe("live_chart (v10, V10-P4)", () => {
 });
 
 describe("live_grid (v10)", () => {
-  const symbolParam = [{ paramName: "symbol", label: "Symbols", type: "text" }] as WidgetDef["params"];
+  // multiSelect as live-grid's manifest declares it: the grid takes a symbol group's whole list (spec 2026-11-13 §3).
+  const symbolParam = [{ paramName: "symbol", label: "Symbols", type: "text", multiSelect: true }] as WidgetDef["params"];
   function seed(over: Partial<DashboardCard> = {}, groups?: Dashboard["groups"]) {
     const c = { ...card, ...over };
     register({ type: "live_grid", endpoint: "live_grid", wsEndpoint: "live_grid_ws", params: symbolParam });
