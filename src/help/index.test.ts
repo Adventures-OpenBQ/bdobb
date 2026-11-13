@@ -170,6 +170,7 @@ describe("v8 topics", () => {
     for (const s of ["**Settings ▸ Locked Widgets**", "**Locked at Top…**", "**OK**", "**Cancel**", "`dashboards/docks.json`", "/pro/dash/sync/system/docks", "**Replace**", "**Keep mine**", "**Export all dashboards…**"]) {
       expect(topic("locked-widgets")).toContain(s);
     }
+    for (const s of ["**See-through where empty**", "scroll room"]) expect(topic("locked-widgets")).toContain(s);
   });
   it("gives Rita's pin_card its place among 18 tools", () => {
     expect(topic("rita")).toContain("18 tools");

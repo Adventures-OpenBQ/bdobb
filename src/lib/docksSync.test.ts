@@ -20,6 +20,13 @@ describe("the docks' server content (R6)", () => {
     expect(back?.dockRows).toEqual({ top: 4, bottom: 10 });
   });
 
+  it("carries the see-through switch both ways, and no field while it is off", () => {
+    const content = encodeDocksContent({ ...docks(), dockSeeThrough: { top: true } });
+    expect(content.dashboard.dockSeeThrough).toEqual({ top: true });
+    expect(decodeDocksContent(JSON.parse(JSON.stringify(content)))?.dockSeeThrough).toEqual({ top: true });
+    expect(JSON.stringify(encodeDocksContent(docks()))).not.toContain("dockSeeThrough");
+  });
+
   it("reads nothing it cannot read: another schema, unknown fields, not a dashboard, not the docks", () => {
     const good = JSON.parse(JSON.stringify(encodeDocksContent(docks())));
     for (const bad of [

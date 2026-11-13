@@ -294,6 +294,7 @@ describe("v8 guide pages", () => {
     for (const s of ["**Pin widget ▸**", "**Settings ▸ Locked Widgets**", "**OK**", "**Cancel**", "/pro/dash/sync/system/docks", "**Replace**", "**Keep mine**", "no shared example dashboard carries locked widgets", "`pin_card`"]) {
       expect(body).toContain(s);
     }
+    for (const s of ["**See-through where empty**", "under the tab bar", "while a workspace is shown"]) expect(body).toContain(s);
   });
   it("lists Live TV under Widgets and covers turning it on, connecting and off-air", () => {
     const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");

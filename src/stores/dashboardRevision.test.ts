@@ -98,7 +98,7 @@ const NOT_CONTENT = [
  * it. applySyncedDocks is the sync's own write and keeps the server's
  * revision (dashboardStore.docks.test.ts).
  */
-const DOCKS = ["beginDockEdit", "cancelDockEdit", "commitDockEdit", "setDockRows", "applySyncedDocks", "importDocks"] as const;
+const DOCKS = ["beginDockEdit", "cancelDockEdit", "commitDockEdit", "setDockRows", "setDockSeeThrough", "applySyncedDocks", "importDocks"] as const;
 
 const seed = (): Dashboard => ({
   id: "d1",
