@@ -203,6 +203,12 @@ describe("formulas, filters and Page", () => {
     expect(f).toMatchObject({ id: r.ids.margin, name: "Margin", scope: "aggregate", expression: "(R - C) / R" });
     expect(JSON.stringify(f.ast)).toContain(r.ids.rev);
   });
+  it("names the expected binding shape when ref is not an object", () => {
+    const r = buildCandidate({ table: {}, search: "" }, columns, arrange([
+      { op: "formula.set", target: { alias: "f" }, name: "F", scope: "source", expression: "R", bindings: { R: { target: "field", ref: "revenue" } } },
+    ]), allocate);
+    expect(r.errors[0]).toMatchObject({ code: "validation", message: 'binding R must be {"target":"field"|"formula"|"measure","ref":{"id":"..."} or {"alias":"..."}}' });
+  });
   it("refuses a forward alias reference before the target formula exists", () => {
     const r = buildCandidate(base().definition!, columns, arrange([
       { op: "formula.set", target: { alias: "a" }, name: "A", scope: "aggregate", expression: "B + 1", bindings: { B: { target: "formula", ref: { alias: "b" } } } },
