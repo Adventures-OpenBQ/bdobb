@@ -1,10 +1,10 @@
 # BDOBB v3.0.0 — reference desktop
 
-This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. Analytical Pivot belongs to v4; multi-dashboard workspaces and Statement belong to v5. Cron remains deferred.
+This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. It pairs with openbq-docker `v3.0.0`, whose API serves three example dashboards — **Built-in widgets**, **Demo providers** and **Video Library** — under **Apps**; see the Reference Manual's *The openbq-docker Stack* and *Example Dashboards*.
 
 ## Connect and open the reference app
 
-The reference backend must already be running. In **Connections**, choose **Connect Backend**, name it Reference, and enter its base URL. For the October 6 rehearsal this was `http://127.0.0.1:7780`; use the address of your own instance. Choose **Test**, then **Add**.
+The reference backend must already be running. In **Connections**, choose **Connect backend**, name it Reference, and enter its base URL. For the October 6 rehearsal this was `http://127.0.0.1:7780`; use the address of your own instance. Choose **Test**, then **Add**.
 
 Choose **Apps** in the left rail, find **Onboarding App for Devs**, and choose **Open**. Its fourteen tabs and 69 cards become a local dashboard in the qualified curated reference. Other backend revisions may have different counts. Apps are ready-made dashboards supplied by a backend; opening one does not subscribe it to future backend changes. A connection can have working widgets even when it serves no apps.
 
@@ -16,7 +16,7 @@ A later analytical app may appear in a backend catalog. v3 refuses an unsupporte
 
 Open **Grouping**. The manufacturer details and performance cards share Manufacturer and Model Year. Select Tesla in either Manufacturer control. Both controls should say Tesla; the details and performance data should change together. In the reference fixture, Tesla global sales are 2.1M. That is synthetic demonstration data.
 
-The numbered badges show group membership. A cell in the company table can also change the linked Symbol group. To let a dashboard's cards operate independently, use **Disable grouping** on its dashboard-row menu; the groups remain saved and can be enabled again.
+A card's parameter controls sit in its title bar; a widget that arranges them in rows gets a further line under the title for each extra row. The numbered badges show group membership. A cell in the company table can also change the linked Symbol group. To let a dashboard's cards operate independently, use **Disable grouping** on its dashboard-row menu; the groups remain saved and can be enabled again.
 
 ![Linked manufacturer controls after choosing Tesla](images/grouping-tesla.png)
 
@@ -24,14 +24,14 @@ The numbered badges show group membership. A cell in the company table can also 
 
 **Refresh** refetches one card. The tab's **↻** button or **⌘R** refreshes its mounted cards. A changed parameter clears the old answer while the new one loads; refreshing the same question keeps existing data visible.
 
-A **Run** widget fetches initially, then uses **Run** to execute committed changes. Changing a parameter alone marks it stale. A numeric widget interval overrides the app-wide **Settings ▸ General ▸ Auto-refresh every** preference. `false` disables automatic refresh for that widget. Timers wait for completion and pause while the page is hidden. Cron-style schedules are unsupported in v3.
+A **Run** widget fetches initially, then uses **Run** to execute committed changes. Changing a parameter alone marks it stale. A numeric widget interval overrides the app-wide **Settings ▸ General ▸ Auto-refresh** preference. `false` disables automatic refresh for that widget. Timers wait for completion and pause while the page is hidden. A five-field cron `refetchInterval` refetches on each matching minute, in local time. A widget's `staleTime` turns its **Refresh** or **Run** button orange once the data is older than that, and a `dataUpdateDisplay` schedule adds its last and next times to that button's tooltip.
 
 ## Save and exchange dashboards
 
-Dashboard edits save locally. For another machine, right-click a dashboard row:
+Dashboard edits save locally. For another machine, right-click a dashboard row and choose **Save…**. The Save panel's **Format** pop-up offers:
 
-- **Export BDOBB-compatible apps.json…** preserves dashboard/card names, tab order, parameter groups, and ordinary table sorting, filters, column order, hidden/pinned columns and transposed view.
-- **Export OpenBB apps.json…** writes the plain OpenBB app shape. BDOBB-specific table and title state is omitted.
+- **Strict OpenBB Workspace** (the default) writes the plain OpenBB app shape, with tab order and parameter groups. BDOBB-specific table and title state is omitted.
+- **BDOBB Workspace** also preserves dashboard/card names, ordinary table sorting, filters, column order, hidden/pinned columns and widths, and each card's view (table, chart, raw or transposed) and whether it is minimized.
 
 Import through **Import apps.json…** on the dashboard section menu, or drop the file onto the dashboard. Names use the same conflict choices as Apps. Missing widgets remain unresolved until a connected backend serves them. Imports refuse files over 10 MB or more than 500 dashboards before writing.
 
