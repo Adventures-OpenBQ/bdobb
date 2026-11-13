@@ -7,13 +7,18 @@ import {bindObservedFormula,observedMemberPage} from './formulaAuthoring';
 import { datasetFromBytes } from '../localTableData';
 import type { WidgetDataset } from '../widgetData/types';
 import { identityWitness } from './identityWitness';
+import {prefixSortDiagnostics} from './analyticalSortReuse';
+import {sortReuseDefinition} from './sortReusePolicy';
 import { calculateView } from './engine';
 import { createResultStore, type ResultStore } from './resultStore';
 import { ExecutionProtocolError, validateExecutionRequest } from './validation';
 import type { ExecutionRequest, ExecutionResponse, ResultContext, SubsetBatch } from './types';
 
 /** Worker-owned raw input, calculated store, and pull-based bounded transfers. */
-export function createWorkerHandler(send: (response: ExecutionResponse) => void) {
+export type TableWorkerOptions={experimentalSortReuseBytes?:number};
+export function createWorkerHandler(send: (response: ExecutionResponse) => void,options:TableWorkerOptions={}) {
+  const sortBudget=options.experimentalSortReuseBytes??0;
+  if(!Number.isSafeInteger(sortBudget)||sortBudget<0||sortBudget>4294967295)throw Error('Invalid experimental sort reservation');
   let input: WidgetDataset | undefined;
   let inputRevision = -1;
   let store: ResultStore | undefined;
@@ -75,8 +80,15 @@ export function createWorkerHandler(send: (response: ExecutionResponse) => void)
         case 'applyModel': {
           if (!input || inputRevision !== request.revision.input) throw new ExecutionProtocolError('REVISION_MISMATCH', 'Input is not registered for revision');
           transfers.clear();
-          const view = calculateView(input, request.definition, request.selection, request.reconcileMissing, request.previousSelectionNamespace, request.provenAbsentIds, request.runtimeParams);
-          view.diagnostics = [...(input.freshness.diagnostics ?? []).map(message => ({ code: 'INPUT', message, severity: 'warning' as const })), ...view.diagnostics];
+          const canReuse=sortBudget>0&&sortReuseDefinition(request.definition)&&request.reconcileMissing!==false&&request.previousSelectionNamespace===undefined&&!(request.provenAbsentIds?.length);
+          if(canReuse){
+            const candidate=store?.trySort?.(request.definition,request.selection,request.revision,request.runtimeParams,sortBudget);
+            if(candidate){const ready=candidate.ready(request.requestId,request.revision);store=candidate;context={completeness:ready.completeness,diagnostics:ready.diagnostics};send(ready);break;}
+          }
+          const captureBudget=canReuse?Math.max(0,sortBudget-(store?.sortReservation?.()??0)):undefined;
+          const view = calculateView(input, request.definition, request.selection, request.reconcileMissing, request.previousSelectionNamespace, request.provenAbsentIds, request.runtimeParams,captureBudget);
+          const fresh=(input.freshness.diagnostics??[]).map(message=>({code:'INPUT',message,severity:'warning' as const}));
+          view.diagnostics=[...fresh,...view.diagnostics];prefixSortDiagnostics(view,fresh);
           context = { completeness: view.completeness, diagnostics: view.diagnostics };
           store = createResultStore(view, request.revision);
           send(store.ready(request.requestId, request.revision)); break;
@@ -116,6 +128,8 @@ export function createWorkerHandler(send: (response: ExecutionResponse) => void)
 }
 // Importing the handler in tests never installs a Window message listener.
 if (typeof self !== 'undefined' && typeof document === 'undefined') {
-  const handler = createWorkerHandler(response => self.postMessage(response));
+  const prefix='bdobb-experimental-sort-reuse:';
+  const options=self.name.startsWith(prefix)?{experimentalSortReuseBytes:Number(self.name.slice(prefix.length))}:undefined;
+  const handler = createWorkerHandler(response => self.postMessage(response),options);
   self.onmessage = event => { void handler(event.data); };
 }
