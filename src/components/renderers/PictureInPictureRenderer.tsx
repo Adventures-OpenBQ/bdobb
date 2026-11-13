@@ -61,6 +61,7 @@ const MESSAGES = {
   in_use: "The player is in use by another card",
   too_small: "Make this card at least 284 × 160 to park the player here",
   viewer_window: "Open this dashboard in the main window",
+  full_screen: "Chrome's player cannot follow BDOBB into full screen",
   not_supported: "Available in the macOS desktop app",
 } as const;
 

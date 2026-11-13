@@ -39,6 +39,7 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 | --- | --- |
 | *Pop the video out in Chrome* | No floating player is open; the card checks again every few seconds |
 | *The player is in use by another card* | Another Picture in Picture card holds it; remove that card or scroll it away |
+| *Chrome's player cannot follow BDOBB into full screen* | BDOBB is in macOS full screen, which is a desktop of its own that Chrome's floating player does not join. The player is moved off screen until you leave full screen. To make BDOBB large and keep the video, hold Option and click the green button, or double-click the title bar |
 | *Open this dashboard in the main window* | The card is in an **Open in new window** viewer, which cannot hold the player |
 | *BDOBB needs Accessibility permission…* | See step 2 above |
 
@@ -48,7 +49,7 @@ On iPad the card is an empty space with the hint *Park a picture-in-picture vide
 
 ## Limits
 
-Chrome only, and only its one floating player. The window title BDOBB looks for is the English `Picture in Picture`, so a Chrome set to another language is not yet supported. The card does not crop the video, detect commercial breaks, or pop the video out for you.
+Chrome only, and only its one floating player. The player does not show while BDOBB is in macOS full screen. The window title BDOBB looks for is the English `Picture in Picture`, so a Chrome set to another language is not yet supported. The card does not crop the video, detect commercial breaks, or pop the video out for you.
 
 *See also: [[built-in-widgets|Built-in Widgets]] · [[widget-cards|Widget Cards]] · [[live-tv|Live TV]]*
 

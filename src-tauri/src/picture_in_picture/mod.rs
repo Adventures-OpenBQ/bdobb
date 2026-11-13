@@ -243,6 +243,14 @@ mod native {
         if window.is_minimized().unwrap_or(false) {
             return Status::Parked;
         }
+        // macOS full screen is a Space of its own, and Chrome's player stays on
+        // the desktop's: it can be moved there but not seen here (measured
+        // 2026-11-13). The hold is parked like any hidden card; leaving full
+        // screen resizes the window, and `sync` brings the player back.
+        if window.is_fullscreen().unwrap_or(false) {
+            set_away(window, true, || true);
+            return Status::FullScreen;
+        }
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
@@ -342,7 +350,7 @@ mod native {
 
     /// The window is read BEFORE either lock is taken.
     fn sync(window: &WebviewWindow, focused: bool) {
-        if window.is_minimized().unwrap_or(false) {
+        if window.is_minimized().unwrap_or(false) || window.is_fullscreen().unwrap_or(false) {
             set_away(window, true, || true);
         } else if focused {
             set_away(window, false, || true);

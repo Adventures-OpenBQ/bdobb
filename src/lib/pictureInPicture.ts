@@ -26,7 +26,7 @@ export function pipPlatform(): PipPlatform {
 export type CssRect = { x: number; y: number; width: number; height: number };
 
 export type PipStatus =
-  | { state: "fitted" | "parked" | "no_permission" | "no_player" | "in_use" | "too_small" | "viewer_window" | "not_supported" }
+  | { state: "fitted" | "parked" | "no_permission" | "no_player" | "in_use" | "too_small" | "viewer_window" | "full_screen" | "not_supported" }
   | { state: "failed"; reason: string };
 
 export type MuteState = { state: "sound" | "muted" } | { state: "unavailable"; reason: string };
