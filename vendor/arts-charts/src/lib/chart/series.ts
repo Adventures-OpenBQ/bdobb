@@ -505,7 +505,10 @@ export function resolveVersus(
   const vs = s.params[key];
   if (typeof vs !== "string" || vs === "") return { note: `no ${key} ticker` };
   const resolved = seriesTicker({ type: "study", symbol: vs }, list, groups);
-  return "note" in resolved ? { note: `${key} ${vs}: ${resolved.note}` } : { key, ticker: resolved.ticker };
+  if ("note" in resolved) return { note: `${key} ${vs}: ${resolved.note}` };
+  // The server's rule: a ticker outside it makes the funnel door refuse the whole socket url.
+  if (!/^[A-Za-z0-9.^_-]{1,24}$/.test(resolved.ticker)) return { note: `not a ticker: ${resolved.ticker}` };
+  return { key, ticker: resolved.ticker };
 }
 
 /** A cross-study's legend (spec §5; plan Q7): "AAPL / MSFT Ratio", "AAPL vs MSFT Corr 60". */
