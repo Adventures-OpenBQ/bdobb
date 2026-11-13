@@ -198,6 +198,8 @@ export function DockEditor({
     edge === null ? 0 : (s.docks.tabs.find((t) => t.id === edge)?.cards.length ?? 0),
   );
   const setDockRows = useDashboardStore((s) => s.setDockRows);
+  const seeThrough = useDashboardStore((s) => edge !== null && s.docks.dockSeeThrough?.[edge] === true);
+  const setDockSeeThrough = useDashboardStore((s) => s.setDockSeeThrough);
   const cancel = useDashboardStore((s) => s.cancelDockEdit);
   const commit = useDashboardStore((s) => s.commitDockEdit);
   const widgetGap = useSettingsStore((s) => selectEffective(s).widgetGap);
@@ -239,6 +241,17 @@ export function DockEditor({
             +
           </button>
         </span>
+        {/* Empty band space shows and takes the dashboard; the dashboard
+            gains scroll room at this edge (DockBand, useFloatingBand). */}
+        <label className="dock-edit-see-through">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={seeThrough}
+            onChange={(e) => report(edge, setDockSeeThrough(edge, e.target.checked), "see-through")}
+          />
+          See-through where empty
+        </label>
         <button type="button" onClick={() => report(edge, cancel().then(() => onCancelled?.()), "cancel")}>
           Cancel
         </button>

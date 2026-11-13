@@ -1632,6 +1632,7 @@ body {
 .dock-edit-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: var(--font-size-12); }
 .dock-edit-title { flex: 1 1 auto; margin: 0; font-size: var(--font-size-16); }
 .dock-edit-rows { display: inline-flex; align-items: center; gap: 4px; }
+.dock-edit-see-through { display: inline-flex; align-items: center; gap: 4px; }
 .dock-edit-hint { margin: 8px 16px; color: var(--text-muted); font-size: var(--font-size-12); }
 .dock-canvas { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); box-shadow: 0 0 0 2px var(--accent) inset; }
 .dock-empty { margin: auto; }
