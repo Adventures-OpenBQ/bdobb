@@ -1,6 +1,6 @@
 # See-through locked bands
 
-Date: 2026-11-12. Repo: Adventures-OpenBQ/bdobb (first written in `bdobb-dev/bdobb-v2`). Status: approved by the user on 2026-11-12. Approval covers this document only; the implementation plan is not yet written or approved.
+Date: 2026-11-12. Repo: Adventures-OpenBQ/bdobb (first written in `bdobb-dev/bdobb-v2`). Status: approved by the user on 2026-11-12. Approval covers this document only; the implementation plan is not yet written or approved. Updated 2026-11-12 by the implementation plan (docs/superpowers/plans/2026-11-12-see-through-locked-bands.md) with what reading the code settled; see "Settled when writing the plan".
 
 ## Intent and decisions
 
@@ -21,7 +21,7 @@ Decided by the user:
 
 ## Existing structure (read on the v8 line, 2026-11-12)
 
-- The page is a column in `.dashboard-area`: tab bar, top band, `.dashboard-scroll`, bottom band (`src/App.tsx`, `src/styles.css`).
+- The page is a column in `.dashboard-area`: top band, the dashboard's tab bar, a tab's pinned top card, `.dashboard-scroll`, a tab's pinned bottom card, bottom band (`src/App.tsx`, `src/components/DashboardGrid.tsx`, `src/styles.css`). The top band is above the tab bar, so a maximized card leaves it visible.
 - `DockBand` (`src/components/DockBand.tsx`) renders one edge's locked cards as a small grid of `dockRows` rows, with a fixed pixel height from `bandHeight`. It paints the page background, has a border on its inner edge, and sits at `z-index: 3`.
 - `.dashboard-scroll` takes what the bands leave, with `flex: 1 1 0` and `min-height: 20%`.
 - A band taller than the window is capped by `useFitRows` and scrolls its own rows.
@@ -53,11 +53,13 @@ File paths are from the v8 carry head the Picture in Picture card was built on a
 - **Viewer windows.** The same behaviour applies; the switch is read-only there like the rest of the locked widgets.
 - **The Picture in Picture card** in a see-through band needs nothing extra, since it reports its own rectangle. Note for any code that positions against the screen on this line: Tauri reports the window's content area as the whole window, and the page starts 32 points lower, at the bottom of the title bar.
 
-## To settle when writing the plan
+## Settled when writing the plan (2026-11-12)
 
-- How a local workspace arranges its own scroll area between the bands, and whether the scroll room and the opening scroll position can be applied there the same way. If not, a see-through band behaves as opaque while a workspace is shown, and the spec is updated to say so.
-- Whether the app restores a dashboard's scroll position when switching dashboards or tabs, and how that combines with opening scrolled past a top band's room.
-- Where the locked-widgets export, import and sync read and write `dockRows`, so the switch follows every one of them.
+- **Where a floating band lies.** Over the scroll region only. A see-through top band moves from above the tab bar to just below it (and below a tab's pinned top card); a see-through bottom band lies just above a tab's pinned bottom card, which becomes the outermost strip. Done with CSS `order`, so the bands are still mounted once. A maximized dashboard card covers a see-through top band.
+- **Local workspaces.** A workspace's area never scrolls and each tile scrolls its own region, so there is no one region to give the room to: every band behaves as opaque while a workspace is shown. Viewer windows show no workspace and float as the main window does.
+- **Scroll position.** Nothing saves or restores a dashboard's or tab's scroll; the one scroll element is reused across switches. While a top band floats, the dashboard is set scrolled past the room when the band starts floating and on every dashboard or tab switch, and at no other time.
+- **A short tab.** The dashboard grid is kept at least the region's height plus a top band's room, so a short tab still opens scrolled past the room.
+- **Export, import and sync.** The switch is `dockSeeThrough` beside `dockRows` in the docks data and `seeThrough` beside `rows` in the apps.json v8 `docks` member, written only for an edge that is on. A build from before the switch keeps a synced copy without it (and uploads it so after an edit there), and imports an exported file with a see-through band as an ordinary dashboard.
 
 ## Testing
 

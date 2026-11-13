@@ -54,6 +54,14 @@ inside them. An empty band takes no space. The bands' rows come off the
 dashboard area whatever the window size, so two tall bands suit a large
 monitor.
 
+**See-through where empty**, a switch in each band's editor, lays that band
+over the dashboard instead of taking its rows: empty band space shows the
+dashboard and takes its clicks, drags and scrolling, and the dashboard gains
+scroll room at that end as tall as the band, so anything under a locked widget
+can be scrolled clear of it. A see-through top band sits under the tab bar,
+and the dashboard opens scrolled past its room. A band the window caps, and
+every band while a workspace is shown, stays an ordinary band.
+
 ## Where they live and how they travel
 
 The two bands are one hidden dashboard, `dashboards/docks.json`, so it never

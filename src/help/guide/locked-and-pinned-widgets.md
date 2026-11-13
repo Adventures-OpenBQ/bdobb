@@ -45,7 +45,13 @@ The bands are mounted **once, outside the dashboard switch**, so changing dashbo
 
 ## How they stack
 
-The top locked band sits above the dashboard, tab bar included, and the bottom locked band below it; a dashboard's own pinned cards sit inside, so on the same edge the locked band is outermost. An empty band takes no space at all. The bands take their rows off the dashboard area whatever the window size, so on a small screen two tall bands leave little room: they are a feature for a large monitor.
+The top locked band sits above the dashboard, tab bar included, and the bottom locked band below it; a dashboard's own pinned cards sit inside, so on the same edge the locked band is outermost. An empty band takes no space at all. The bands take their rows off the dashboard area whatever the window size, so on a small screen two tall bands leave little room: they are a feature for a large monitor. A see-through band is the exception; see the next section.
+
+## See-through bands
+
+Each band's editor has a **See-through where empty** switch beside the rows stepper, off on a new install. Switched on, the band stops taking its rows off the dashboard and lies over it instead, with no background and no border line. Only its locked widgets take the pointer: where the band holds nothing you see the dashboard beneath, and click, drag and scroll it there. The dashboard's scroll area runs under the band and gains extra room at that end, as tall as the band, so a card under a locked widget can always be scrolled clear of it. At the bottom, scroll down past the last card. At the top, the dashboard opens scrolled past that room — its first rows sit beneath the band, visible in its gaps — and scrolling up brings them down clear of it; switching dashboards or tabs opens each one that way again.
+
+A see-through top band lies under the tab bar rather than above it, and a tab's own pinned card on the same edge stays outside the band, so neither is covered; a maximized card covers a see-through top band. The dashboard's scrollbar runs the full height, under a locked widget at the right edge. A band the window caps — one that has to scroll its own rows on a short screen — is an ordinary band until the window is tall enough again, and so is every band while a workspace is shown, since each tile scrolls on its own. The switch is saved, synced and exported with the bands. A BDOBB build from before the switch reads a synced copy without it, and reads an exported file whose band is see-through as an ordinary dashboard rather than as the bands.
 
 ## Where they live, and how they travel
 
