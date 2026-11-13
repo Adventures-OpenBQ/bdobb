@@ -1,7 +1,7 @@
 [
   {
     "name": "Demo providers",
-    "description": "One card per data provider that answers on the openbq-docker v3 stack without a sign-up of your own. BLS, CFTC, EconDB and Nasdaq need no key; EIA and Congress.gov use the providers' public demo keys from credentials.demo.env, and a key of your own in credentials.env takes their place. Demo keys are rate-limited, so answers can vary between runs.",
+    "description": "Demonstration cards for the openbq-docker v3 stack. EIA uses a public demo key unless you supply your own. The Congress 119 bills card uses keyless bulk data; BLS, CFTC and Nasdaq need no key. EconDB attempts a temporary token, but its service may refuse access; supply your own EconDB key or skip that card. Demo keys are rate-limited and upstream availability varies.",
     "img": "",
     "img_dark": "",
     "img_light": "",
