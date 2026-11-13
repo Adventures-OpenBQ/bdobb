@@ -43,6 +43,7 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 - [[built-in-widgets|Built-in Widgets]] — Note, Markdown, Clock, Website and RSS feed, none of which need a backend
 - [[news-widget|The News Widget]] — a headline wire from an rss-ticker server: feed tabs, highlights, two layouts, `rss-agg.json`, and the web preview's relay
 - [[live-tv|Live TV]] — a YouTube channel's live stream, from the rss-ticker server connected as a backend once you list channels for it
+- [[picture-in-picture|Picture in Picture]] — a parking spot for Chrome's floating video player: on the Mac BDOBB moves it over the card and the card can mute it
 - [[locked-and-pinned-widgets|Locked and Pinned Widgets]] — Pin widget ▸ and its bands, Settings ▸ Locked Widgets and its editor, the docks sync, and what an import replaces
 - [[documents-pdf-and-files|Documents, PDFs and Files]] — PDF cards, multi-file viewers, and dropping a data file on a dashboard
 - [[html-and-iframe-widgets|HTML and iframe Widgets]] — framed pages, why some go blank, and the messages a page can exchange with its card

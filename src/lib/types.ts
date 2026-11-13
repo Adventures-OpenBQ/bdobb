@@ -817,6 +817,8 @@ export type Dashboard = {
   hidden?: boolean;
   /** The docks only: the rows each edge's band reserves. */
   dockRows?: Record<PinEdge, number>;
+  /** The docks only: the edges whose band is see-through where empty (lib/dockSeeThrough.ts). Absent is off on both. */
+  dockSeeThrough?: Partial<Record<PinEdge, true>>;
 };
 
 export type Settings = {

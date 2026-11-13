@@ -14,8 +14,8 @@ describe("the help guide", () => {
     const slugs = GUIDE_SECTIONS.flatMap((s) => s.pages.map((p) => p.slug));
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
-    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate; so is v4's Linked Widgets page.
-    expect(GUIDE_PAGES).toHaveLength(45);
+    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News, Locked and Pinned Widgets and Picture in Picture pages, are deliberate; so is v4's Linked Widgets page.
+    expect(GUIDE_PAGES).toHaveLength(46);
   });
 
   it("gives every page a title from its own H1, with the frontmatter gone", () => {
@@ -294,6 +294,7 @@ describe("v8 guide pages", () => {
     for (const s of ["**Pin widget ▸**", "**Settings ▸ Locked Widgets**", "**OK**", "**Cancel**", "/pro/dash/sync/system/docks", "**Replace**", "**Keep mine**", "no shared example dashboard carries locked widgets", "`pin_card`"]) {
       expect(body).toContain(s);
     }
+    for (const s of ["**See-through where empty**", "under the tab bar", "while a workspace is shown"]) expect(body).toContain(s);
   });
   it("lists Live TV under Widgets and covers turning it on, connecting and off-air", () => {
     const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");
@@ -365,5 +366,26 @@ describe("the v9 EODHD guide page", () => {
     expect(page("home")).toContain("[EODHD Data](#guide/eodhd-data-provider)");
     expect(page("calendar-view")).toContain("(#guide/eodhd-data-provider)");
     expect(page("example-dashboards")).toContain("(#guide/eodhd-data-provider)");
+  });
+});
+
+describe("the Picture in Picture page", () => {
+  it("is listed under Widgets and states what the card says and needs on each platform", () => {
+    const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");
+    expect(widgets?.pages.map((p) => p.slug)).toContain(`${GUIDE_PREFIX}picture-in-picture`);
+    const body = GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}picture-in-picture`)!.body;
+    for (const s of [
+      "**Picture in Picture**",
+      "`Picture in Picture`",
+      "**Accessibility**",
+      "**Source tab title contains**",
+      "**Volume slider label**",
+      "`Volume Level`",
+      "*Pop the video out in Chrome*",
+      "*Park a picture-in-picture video here*",
+      "*Available in the macOS desktop app*",
+    ]) expect(body).toContain(s);
+    const manual = TOPICS.find((t) => t.slug === "built-in-widgets")!.body;
+    expect(manual).toContain("## Picture in Picture");
   });
 });

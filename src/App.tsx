@@ -203,7 +203,7 @@ export default function App() {
   // the bar is re-measured and the new band re-observed.
   const dockTopKey = useDashboardStore(
     (s) =>
-      `${s.docks.tabs.find((t) => t.id === "top")?.cards.length ?? 0}:${s.docks.dockRows?.top ?? ""}:${s.dockEdit?.edge === "top"}`,
+      `${s.docks.tabs.find((t) => t.id === "top")?.cards.length ?? 0}:${s.docks.dockRows?.top ?? ""}:${s.dockEdit?.edge === "top"}:${s.docks.dockSeeThrough?.top === true}`,
   );
   const dashboardArea = useRef<HTMLElement | null>(null);
   // Only for the effect below: the tab bar it measures does not exist until a

@@ -25,6 +25,7 @@ import {
   saveDashboard,
 } from "../lib/dashboardsFile";
 import { firstFreeSpot } from "../lib/dockLayout";
+import { withDockSeeThrough } from "../lib/dockSeeThrough";
 import { IMPORT_MAX_DASHBOARDS } from "../lib/importLimits";
 import { deleteLocalFile } from "../lib/localFiles";
 import { logError, logInfo, logOnce } from "../lib/logger";
@@ -95,6 +96,8 @@ type DashboardState = {
   commitDockEdit: () => Promise<void>;
   /** The rows `edge` reserves, clamped. */
   setDockRows: (edge: PinEdge, rows: number) => Promise<void>;
+  /** Settings ▸ Locked Widgets ▸ See-through where empty for `edge`; off removes it (lib/dockSeeThrough.ts). */
+  setDockSeeThrough: (edge: PinEdge, on: boolean) => Promise<void>;
   /**
    * The docks sync's own write (R6): the server's copy, taken whole, at the
    * server's revision -- no bump, these ARE the synced state. Refused in the
@@ -1615,6 +1618,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           }),
         };
       });
+    },
+
+    setDockSeeThrough: async (edge, on) => {
+      await mutateDashboard(DOCKS_ID, (d) => withDockSeeThrough(d, edge, on));
     },
 
     importDocks: async (incoming) => {

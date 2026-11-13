@@ -331,4 +331,17 @@ describe("the docks dashboard (v8 locked widgets)", () => {
     expect(clampDockRows(null)).toEqual(DEFAULT_DOCK_ROWS);
     expect(clampDockRows({ top: 1, bottom: 7.6 })).toEqual({ top: 2, bottom: 8 });
   });
+
+  it("round-trips the see-through switch, and writes nothing for it while it is off", async () => {
+    await saveDashboard({ ...makeDefaultDocks(), dockSeeThrough: { bottom: true } });
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)?.dockSeeThrough).toEqual({ bottom: true });
+    await saveDashboard(makeDefaultDocks());
+    expect(__read("dashboards/docks.json")).not.toContain("dockSeeThrough");
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)).not.toHaveProperty("dockSeeThrough");
+  });
+
+  it("reads the switch leniently: only true, only the two edges", async () => {
+    __seed("dashboards/docks.json", JSON.stringify({ ...makeDefaultDocks(), dockSeeThrough: { top: "yes", bottom: true, middle: true } }));
+    expect((await loadDashboards()).find((d) => d.id === DOCKS_ID)?.dockSeeThrough).toEqual({ bottom: true });
+  });
 });
