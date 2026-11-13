@@ -63,7 +63,7 @@ export const isDocks = (d: Pick<Dashboard, "id">): boolean => d.id === DOCKS_ID;
 /**
  * A group as an older file wrote it: groupType arrived at v5.1.0.
  */
-type StoredGroup = Omit<ParamGroup, "groupType"> & { groupType?: string };
+type StoredGroup = Omit<ParamGroup, "groupType" | "source"> & { groupType?: string; source?: unknown };
 
 /**
  * A card as an older file wrote it: `groupIds` was replaced by `bindings`
@@ -110,9 +110,21 @@ function isStoredDashboard(value: unknown): value is StoredDashboard {
   return Array.isArray(value.cards);
 }
 
-/** A group written before groupType existed is keyed by its own paramName. */
+/**
+ * A group written before groupType existed is keyed by its own paramName. A source (spec
+ * 2026-11-13 §4) is kept only whole and only on a symbol group: anything else drops the source,
+ * never the group or the file. A source naming a card that is gone is kept -- the group's menu
+ * says "Source unavailable" and the group works on its saved list.
+ */
 function withGroupType(groups: StoredGroup[] | undefined): ParamGroup[] | undefined {
-  return groups?.map((g) => ({ ...g, groupType: g.groupType ?? g.paramName }));
+  return groups?.map(({ source, ...stored }) => {
+    const group: ParamGroup = { ...stored, groupType: stored.groupType ?? stored.paramName };
+    const whole = isRecord(source) && typeof source.sourceWidgetId === "string" && source.sourceWidgetId !== ""
+      && typeof source.columnId === "string" && source.columnId !== "";
+    return whole && group.groupType === "symbol"
+      ? { ...group, source: { sourceWidgetId: source.sourceWidgetId as string, columnId: source.columnId as string } }
+      : group;
+  });
 }
 
 /**

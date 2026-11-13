@@ -767,6 +767,9 @@ export type DashboardTab = {
 
 export type ParamBinding = { groupId: string; paramName: string };
 
+/** A symbol group's table source (spec 2026-11-13 §1): the table card and the column whose tickers feed the group. */
+export type GroupSource = { sourceWidgetId: string; columnId: string };
+
 /** Declared at v3; created in-app from v5.1.0. */
 export type ParamGroup = {
   id: string;
@@ -776,6 +779,11 @@ export type ParamGroup = {
   /** Compatibility key, see paramGroupType. Defaults to paramName. */
   groupType: string;
   value: string;
+  /**
+   * Only on a `symbol` group: the table whose presented column writes `value` (spec 2026-11-13).
+   * Saved in bdobb's dashboard file, remapped on dashboard duplicate, never in apps.json.
+   */
+  source?: GroupSource;
 };
 
 /**

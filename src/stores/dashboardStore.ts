@@ -35,7 +35,9 @@ import { isFiscalType, parseFyEndMonth, relabel } from "../lib/periods";
 import { bindableKeys, seedParams } from "../lib/params";
 import { cardSourceIdentity } from "../lib/cardSourceIdentity";
 import { withOptional } from "../lib/collections";
+import { canFeedGroup } from "../lib/symbolGroupSource";
 import type {
+  GroupSource,
   ParamGroup,
   CardView,
   Dashboard,
@@ -221,6 +223,13 @@ type DashboardState = {
   dropUngroupable: (cardId: string, paramNames: string[]) => Promise<void>;
   renameGroup: (dashboardId: string, groupId: string, name: string) => Promise<void>;
   deleteGroup: (dashboardId: string, groupId: string) => Promise<void>;
+  /**
+   * Spec 2026-11-13: set, replace or (with null) remove a symbol group's table source; Remove
+   * keeps the group's current value. `groupId` null creates a new symbol group fed by `source`.
+   * Returns the group's id; null when the viewer refuses it, the group is not a symbol group, or
+   * the table may not feed it (canFeedGroup).
+   */
+  setGroupSource: (dashboardId: string, groupId: string | null, source: GroupSource | null) => Promise<string | null>;
   /**
    * The dashboard's saved relative presets (spec §4): save appends, or
    * replaces the entry with the same name in place; delete removes by name
@@ -899,7 +908,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             })),
           })),
         })),
-        groups: source.groups?.map((g) => ({ ...g, id: groupIdMap.get(g.id) ?? g.id })),
+        // A group's table source follows its table into the copy (spec 2026-11-13 §1); an id
+        // that names no card here is kept as it is, and reads as "Source unavailable".
+        groups: source.groups?.map((g) => ({
+          ...g,
+          id: groupIdMap.get(g.id) ?? g.id,
+          ...(g.source ? { source: { ...g.source, sourceWidgetId: cardIdMap.get(g.source.sourceWidgetId) ?? g.source.sourceWidgetId } } : {}),
+        })),
         presets: source.presets?.map((p) => ({ ...p })),
       };
 
@@ -1035,6 +1050,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           })),
         };
       });
+    },
+
+    setGroupSource: async (dashboardId, groupId, source) => {
+      if (refuse("setGroupSource")) return null;
+      const dashboard = dashboardById(dashboardId);
+      const group = groupId === null ? undefined : dashboard?.groups?.find((g) => g.id === groupId);
+      if (!dashboard || (groupId === null ? !source : group?.groupType !== "symbol")) return null;
+      if (source && !canFeedGroup(dashboard, groupId ?? undefined, source.sourceWidgetId)) return null;
+      const id = groupId ?? crypto.randomUUID();
+      const updated = await mutateDashboard(dashboardId, (d) => ({
+        ...d,
+        groups: groupId === null && source
+          ? [...(d.groups ?? []), { id, name: nextGroupName(d.groups), paramName: "symbol", groupType: "symbol", value: "", source }]
+          : d.groups?.map((g) => (g.id === id ? withOptional(g, "source", source ?? undefined) : g)),
+      }));
+      return updated ? id : null;
     },
 
     savePreset: async (dashboardId, name, expr) => {
