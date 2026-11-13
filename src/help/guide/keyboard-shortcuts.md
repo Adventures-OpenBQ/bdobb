@@ -5,7 +5,7 @@ tags: [bdobb, help, interface, keyboard, shortcuts, escape]
 
 # Keyboard Shortcuts
 
-Every global shortcut below is ignored while you are typing — in a text field, a text area, a dropdown or anything editable — and while a dialog is open. On Windows and Linux builds, read `⌘` as Ctrl.
+Every global shortcut below is ignored while you are typing — in a text field, a text area, a dropdown or anything editable — and while a dialog is open. They need the Command key itself; Ctrl does not stand in for it. Only the PDF find bar also answers to `Ctrl+F`.
 
 ## Global
 
@@ -15,7 +15,7 @@ Every global shortcut below is ignored while you are typing — in a text field,
 | `⌘R` | Refresh every card on the tab you are looking at. Same as the `↻` button. Works in a viewer window. |
 | `⌥1` … `⌥9` | Jump to the first to ninth dashboard in your saved order — one flat list, so with folders in the rail it need not match the rows top to bottom. Reordering reassigns them. There is no shortcut for a tenth. Inert in a viewer window. |
 | `⌥0` | Go back to the dashboard you were on before. Inert in a viewer window. |
-| `⌘?` | Open **Quick Help**, the in-app manual. It only opens; close it with Escape or its `✕`. The **Reference Manual** — this guide, carried inside the app — has no shortcut; it is the second item on the rail's Help menu. |
+| `⌘?` (`⌘⇧/`) | Open **Quick Help**, the in-app manual. It only opens; close it with Escape or its `✕`. The **Reference Manual** — this guide, carried inside the app — has no shortcut; it is the second item on the rail's Help menu. |
 
 ## In the widget library
 
@@ -26,7 +26,7 @@ Opening the library moves the keyboard into it: the **Search widgets** box takes
 
 ## In a menu
 
-The right-click menus — a table header's menu, the rail's row and section menus, the rail's Help menu and the Provider-keys row menu — are all one component, so they all behave alike:
+The right-click menus — a table header's menu, the rail's row and section menus, the rail's Help menu and a Pivot field's menu — are all one component, so they all behave alike:
 
 - The **first enabled item is focused** when the menu opens, so the keyboard works without a further click.
 - `↑` and `↓` move between items, skipping disabled ones.
@@ -39,11 +39,9 @@ A card's `⋯` menu is its own thing and has none of that: it opens under the `�
 
 `Enter`, `Space`, the Context-Menu key or `Shift+F10` on a focused header opens that column's menu rather than sorting — and **sorting is the first thing in that menu**: **Sort ascending**, **Sort descending** and, once the column is sorted, **Clear sort**, above the pinning items. So a sort is reachable without a pointer, and it follows the same single-and-multi-sort rule a click does. A click on the header still sorts directly. Every sortable header also announces its state to a screen reader, including "not sorted". See [[tables|Tables]].
 
-The **Provider** header in **Settings ▸ Provider keys** is in the Tab order too, and `Enter` or `Space` cycles it the same way a click does. See [[provider-keys|Provider Keys]].
-
 ## In a PDF card
 
-- `⌘F` — Open the find bar. Not global: it works only while the pointer is over a PDF card or that card holds focus.
+- `⌘F` (or `Ctrl+F`) — Open the find bar. Not global: it works only while the pointer is over a PDF card or that card holds focus.
 - `Enter` — Next match. `Shift+Enter` — Previous match.
 - `Escape` — Close the find bar. Inside a PDF card this closes *only* the find bar; it will not also un-maximize the card.
 
@@ -52,12 +50,19 @@ The **Provider** header in **Settings ▸ Provider keys** is in the Tab order to
 - `Enter` — Commit a rename. Clicking away does the same.
 - `Escape` — Cancel a rename and put the old text back.
 
+## Elsewhere
+
+- **Settings tabs** — `↑`/`↓` or `←`/`→` move between them; `Home` and `End` jump to the first and last.
+- **A note card** — `Enter` or `Space` on the note starts editing; `Escape` abandons the edit and restores the saved text.
+- **A calendar view** — in paged mode, `↓`/`→` and `↑`/`←` step to the next and previous page; `Home` goes back to today. See [[calendar-view|Calendar View]].
+- **A table's Pivot drawer** — `↑`/`↓` (`←`/`→` when the card is narrow), `Home` and `End` move between its sections; `Escape` goes back to the first section, and from there closes the drawer. The drawer's divider takes `↑`/`↓`, `Home` and `End` to resize. In its field lists, `⌥↑` and `⌥↓` move the focused field up or down, and `Enter`, `Space`, the Context-Menu key or `Shift+F10` on a field opens its menu. See [[tables|Tables]].
+
 ## What Escape does when more than one thing is open
 
 One press does exactly one thing. In order:
 
 1. **A rename in progress cancels.** Nothing else sees the press.
-2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu, a column menu, the rail's right-click menu, the Provider-keys row menu, the rail's Help menu. A maximized card underneath stays maximized and restores on the next press.
+2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu, a column menu, the rail's right-click menu, the rail's Help menu. A maximized card underneath stays maximized and restores on the next press.
 3. **An open dialog closes** — Settings, Connections, Apps, Quick Help or the Reference Manual. With one dialog over another (a backend's edit form over Connections), only the one on top closes; the one underneath stays open with its changes. A menu nested *inside* one of them still wins, by rule 2. Escape on Settings is **Cancel**: its unsaved changes, an uncommitted **Default widget ticker** included, are discarded.
 4. **A maximized card restores.**
 5. Otherwise, nothing.

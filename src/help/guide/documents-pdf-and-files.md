@@ -43,9 +43,11 @@ A document the backend could not serve takes its place in the pager as one line 
 
 Drag a file from your desktop onto the dashboard and a veil appears reading *Drop files to add widgets*. Accepted: `.csv`, `.tsv`, `.json`, `.xlsx`, `.xls`. Anything else says *Unsupported file: name*.
 
-A `.json` of 10 MB or less is sniffed first — if it turns out to be an `apps.json` it is imported as dashboards instead of becoming a table (see [[importing-dashboards|Importing Dashboards]]).
+A `.json` of 10 MB or less is sniffed first — if it turns out to be an `apps.json` it is imported as dashboards (see [[importing-dashboards|Importing Dashboards]]), and if it is a `bdobb-settings.json` it is imported as settings (see [[settings-export-and-import|Settings Export and Import]]), instead of becoming a table.
 
 Everything else becomes a **Local file** card whose title is the original filename. It lands **below everything already on the tab**, and a drop of several files stacks them downward. The bytes are copied into the app's own data directory, so the card keeps working if you move the original. The result goes through the ordinary table renderer, so filtering, pinning, sorting and transpose all apply; cell clicks do not, because a dropped-file table sets no parameters. Only the first sheet of a workbook is read (SheetJS does the reading, and is credited under **Credits**).
+
+When a connected backend serves a managed table service, a **Dropped file execution** select appears on the dashboard: **Local**, the default, or **Server ·** one of that service's widgets. With a server chosen, a dropped file is uploaded to it and becomes that widget's card, titled with the filename, instead of a stored local copy. The choice is not saved; see [[tables|Tables]].
 
 **Removing the card deletes the stored copy.** Duplicating a dashboard does not copy the file — both cards point at the same copy, deleted only when the last card naming it is removed. Exporting such a card in the **Strict OpenBB Workspace** format carries a reference that means nothing on another machine; the **BDOBB Workspace** format refuses the dashboard instead, with *Local assets require a repository archive.*
 

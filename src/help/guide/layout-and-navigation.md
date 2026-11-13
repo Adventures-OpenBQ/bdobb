@@ -28,7 +28,7 @@ The other three fixed rows are pinned to the bottom, always reachable however ma
 
 The two help items open two separate dialogs, each with its own search box above its own list. **Quick Help** is the in-app manual: one short topic per surface, written in the same commit as the behaviour it describes. **Reference Manual** is this guide — the longer, task-organised account — which the app now carries with it, so it is there whether or not you are online, and is grouped by the same sections this vault's front page lists. Links between its pages work inside the dialog, and its screenshots are the manual's own. Only Quick Help has a shortcut; the Reference Manual is reached from this menu.
 
-The first nine dashboards carry an `⌥1` to `⌥9` badge where the fixed rows' icons sit, so it is visible even when the rail is collapsed. The number is the dashboard's place in your saved order, which is one flat list — once folders sort the rail into a tree, the badges need not read 1, 2, 3 from top to bottom. Dashboards past the ninth show nothing while the rail is collapsed; pointing at the rail expands it.
+The first nine dashboards carry an `⌥1` to `⌥9` badge where the fixed rows' icons sit, so it is visible even when the rail is collapsed. The number is the dashboard's place in your saved order, which is one flat list — once folders sort the rail into a tree, the badges need not read 1, 2, 3 from top to bottom. Dashboards past the ninth show the first character of their name there instead, and folder rows show only their `▸`/`▾`; pointing at the rail, or moving keyboard focus into it, expands it.
 
 **Settings ▸ Layout ▸ Collapsed rail width** is a slider from 24 to 120 pixels, default 48. The expanded width is fixed at 240 and is not a setting.
 
@@ -40,7 +40,7 @@ Each dashboard has its own strip of tabs directly above the grid, pinned to the 
 
 ## Viewer windows
 
-**Open in a new window** on a dashboard's rail menu opens it in its own 1200 × 800 native window: the tab bar and the grid and nothing else — no rail, no library, no Settings. It is a viewer: you can switch tabs, edit parameters, refresh, maximize and export, but renaming, adding, removing, dragging and resizing are off, and nothing you change there is written to disk. At this version it does not follow the main window either: it reads the dashboard once, when it opens, and changes made in the main window after that do not reach it. See [[dashboards-and-folders|Dashboards and Folders]].
+**Open in a new window** on a dashboard's rail menu opens it in its own 1200 × 800 native window: the tab bar and the grid and nothing else — no rail, no library, no Settings. It is a viewer: you can switch tabs, edit parameters, refresh, maximize and export, but renaming, adding, removing, dragging and resizing are off, and nothing you change there is written to disk. It follows the main window: whenever the main window saves that dashboard, the viewer reloads it. See [[dashboards-and-folders|Dashboards and Folders]].
 
 ## Degraded states
 
@@ -49,12 +49,11 @@ BDOBB is built to fail in pieces:
 - **A backend goes offline** — only the cards that depend on it show a retry state; their **Retry** re-runs discovery. Cards on a working connection keep running, and the Connections dialog moves the backend to *Inactive* with a red dot.
 - **A widget answers with a shape the app cannot draw** — you get a raw-JSON view of what actually arrived, never a blank card.
 - **An app file on disk is unparseable** — it is quarantined as `<name>.corrupt` and the app carries on with defaults rather than overwriting it. A file that could not be *read* at all is a different event: it is left exactly where it is, and the app refuses to save over it for the rest of the session. See [[app-data-and-settings|App Data and Settings]].
-
-One kind of failure is not contained at this version: an error thrown while drawing. The app has no error boundary, so a render error anywhere — one card's renderer included — leaves the whole window blank, and nothing is written to the log about it. Restart the app to redraw it.
+- **Something throws while drawing** — only the part it happened in is replaced: a card, the rail, the dashboard area or a dialog shows *Something went wrong in …* with **Retry** (and **Dismiss** on a dialog), the rest of the window keeps working, and the error is written to the log.
 
 ## Why the layout works this way
 
-This layout was not the first idea. It came out of a structured design pass that weighed four approaches — wrapping the hosted OpenBB interface, a from-scratch Electron app, a from-scratch Tauri app, and a bespoke chat protocol — before settling on an icon rail plus a folding chat pane, built on OpenBB's own published protocols rather than anything proprietary. The rebuild kept the conclusion; at this version it has built the rail, and there is no chat pane in the app.
+This layout was not the first idea. It came out of a structured design pass that weighed four approaches — wrapping the hosted OpenBB interface, a from-scratch Electron app, a from-scratch Tauri app, and a bespoke chat protocol — before settling on an icon rail plus a folding chat pane, built on OpenBB's own published protocols rather than anything proprietary. The app has the rail; it has no chat pane.
 
 ---
 *Source: BDOBB v3.0.1 in-app manual, "The left rail", "Dashboard tabs", "Dashboards and folders"; `BDOBB` `src/components/LeftRail.tsx`, `src/components/dialogs/HelpDialog.tsx` and `src/App.tsx` at `v3.0.1`; Adventures in OpenBB, Ep. 3 — "I Asked for Electron and Got Talked Out of It."*

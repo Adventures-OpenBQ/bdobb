@@ -5,7 +5,7 @@ tags: [bdobb, help, interface, dashboards, folders, viewer-window]
 
 # Dashboards and Folders
 
-A dashboard is a named set of tabs, each tab a grid of widget cards. Dashboards live in the rail's *MY DASHBOARDS* area, optionally inside folders, and nearly everything you can do to one hangs off a right-click there: right-clicking empty space gives you the section menu, right-clicking a row gives you that row's own menu. At this version "empty space" is narrower than it sounds: the section menu belongs to the *MY DASHBOARDS* label and the list beneath it, and the blank rail below the last row is not part of it, so a right-click there does not open the section menu. Right-click the label instead.
+A dashboard is a named set of tabs, each tab a grid of widget cards. Dashboards live in the rail's *MY DASHBOARDS* area, optionally inside folders, and nearly everything you can do to one hangs off a right-click there: right-clicking empty space gives you the section menu, right-clicking a row gives you that row's own menu. "Empty space" is narrower than it sounds: the section menu belongs to the *MY DASHBOARDS* label and the list beneath it, and the blank rail below the last row is not part of it, so a right-click there does not open the section menu. Right-click the label instead.
 
 ![The rail's dashboard-row context menu](../attachments/dashboards-and-folders.png)
 
@@ -41,9 +41,13 @@ Drag a dashboard row onto another dashboard row to reorder, or onto a folder row
 
 The dashboard-row menu has a checkbox, **☐ Disable grouping**, just above **Exchange** (see [[date-expression|Date Expressions]]). Turn it on and every control's chain-link greys out: each card falls back to its own value instead of any shared group value. The groups are kept, not deleted, so turning it off again restores them intact, and the tab strip carries a small `grouping off` tag while it is on so a card quietly ignoring its group is never unexplained.
 
+## Exchange
+
+**Exchange ▸**, the last item on a dashboard row's menu, sets the dashboard's default exchange calendar: **Default (XNYS)** or any exchange in the catalogue, behind a search box, with the current one ticked. It applies to every widget and parameter on that dashboard that names no exchange of its own. See [[date-expression|Date Expressions]] for the calendars.
+
 ## Export
 
-**Save…** on a dashboard row writes it as a file; the Save panel's Format pop-up picks **Strict OpenBB Workspace** (the plain OpenBB shape) or **BDOBB Workspace** (which also preserves custom names and ordinary table state). See [[import-and-export|Import and Export]].
+**Save…** on a dashboard row writes it as a file; the Save panel's Format pop-up picks **Strict OpenBB Workspace** (the plain OpenBB shape) or **BDOBB Workspace** (which also preserves custom names, ordinary table state and, in a v4 profile, analytical and linked-card state). See [[import-and-export|Import and Export]].
 
 ## Open in a new window
 
@@ -54,7 +58,7 @@ A viewer window shows the tab bar and the grid, and nothing else — no rail, no
 - **What still works:** switching tabs, editing parameters, per-card **Refresh**, the `↻` button and `⌘R`, maximize and restore, `⌘?` for Help, every renderer, and Export.
 - **What is turned off:** renaming, adding or closing tabs; removing, minimizing, dragging or resizing cards; and `⌥1`–`⌥9` / `⌥0`, because the window is pinned to the one dashboard it was opened for.
 - **What is memory-only:** everything else. A parameter you change, a view you toggle, a layout you nudge — all of it shows on screen and none of it is written to disk or seen by the main window. Close the window and it is gone. Settings cannot be opened there at all.
-- **What it does not follow:** the main window. At this version a viewer window reads the dashboard once, when it opens, and never again. A parameter applied, a card added or a tab renamed in the main window after that does not reach it. That includes a shared group value, so the two windows can show one group's cards on different values. **Refresh** and `⌘R` refetch with the parameters the window opened with. Asking for the same dashboard again focuses the stale window rather than updating it, so close it and open it again to see the dashboard as it is now.
+- **What it follows:** the main window. Whenever the main window saves that dashboard — a parameter applied, a card added, a tab renamed, a shared group value changed — the viewer reloads it, and anything changed only in the viewer is replaced. If the tab you were on is gone, it opens on the first tab; a dashboard deleted in the main window disappears from the viewer.
 
 A viewer window that refuses an edit writes one `INFO` line to the log; see [[settings-and-logs|Settings and Logs]].
 

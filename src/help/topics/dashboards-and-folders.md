@@ -87,6 +87,18 @@ not deleted, so turning it off again restores them intact.
 While it is on, the dashboard's tab strip carries a small `grouping off` tag,
 so a card quietly ignoring its group is never unexplained.
 
+## Exchange
+
+**Exchange ▸**, the last item on a dashboard row's menu, sets the dashboard's
+default exchange calendar: **Default (XNYS)** or any exchange in the catalogue,
+behind a search box, with the current one ticked. It applies to every widget
+and parameter on that dashboard that names no exchange of its own.
+
+## Save…
+
+**Save…** writes the dashboard as an `apps.json` file. See **Import and
+export**.
+
 ## Open in a new window
 
 **Open in a new window** opens the dashboard in its own 1200 x 800 native
@@ -107,7 +119,12 @@ window is pinned to the one dashboard it was opened for.
 **What is memory-only there:** everything else. A parameter you change, a view
 you toggle, a layout you nudge — all of it shows on screen and none of it is
 written to disk or seen by the main window. Close the window and it is gone.
-Settings are the one exception: those are saved, and apply everywhere.
+Settings cannot be opened there at all.
+
+**It follows the main window.** Whenever the main window saves that dashboard,
+the viewer reloads it, so a group value changed there reaches the viewer too —
+and anything changed only in the viewer is replaced. A dashboard deleted in
+the main window disappears from the viewer.
 
 ---
 

@@ -72,14 +72,21 @@ Drag a file from your desktop onto the dashboard and a veil appears reading
 `.xls`. Anything else says *Unsupported file: name*.
 
 A `.json` of 10 MB or less is sniffed first — if it turns out to be an
-`apps.json` it is imported as dashboards instead of becoming a table.
+`apps.json` it is imported as dashboards, and if it is a
+`bdobb-settings.json` it is imported as settings, instead of becoming a table.
 
 Everything else becomes a card whose title is the original filename, landing
-where you dropped it; several files stack downward. The bytes are copied into
-the app's own data directory, so the card keeps working if you move the
-original. The result goes through the ordinary table renderer, so filtering,
-pinning, sorting and cell clicks all apply. Only the first sheet of a workbook
-is read.
+below everything already on the tab; several files stack downward. The bytes
+are copied into the app's own data directory, so the card keeps working if you
+move the original. Filtering, pinning, sorting and transpose all apply; cell
+clicks do not, because a dropped-file table sets no parameters. Only the first
+sheet of a workbook is read.
+
+When a connected backend serves a managed table service, a **Dropped file
+execution** select appears on the dashboard: **Local**, the default, or
+**Server ·** one of that service's widgets. With a server chosen, a dropped
+file is uploaded to it and becomes that widget's card, titled with the
+filename, instead of a stored local copy. The choice is not saved.
 
 **Removing the card deletes the stored copy.** Duplicating a dashboard does not
 copy the file — both cards point at the same copy, which is deleted only when
