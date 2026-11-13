@@ -28,9 +28,6 @@ Cards on tabs you are not looking at are not mounted, and are not refreshed.
 
 ## Automatic refresh
 
-A widget's `refetchInterval` may also be a five-field cron expression; such a card refetches on each minute boundary the expression matches, and your app-wide setting does not apply to it.
-
-
 **Settings ▸ General ▸ Auto-refresh** offers **Off**, **Every minute**,
 **Every 5 minutes**, **Every 15 minutes**, **Every 30 minutes** and **Every hour**. It is **Off**
 by default.
@@ -53,6 +50,22 @@ How the timer behaves, which is worth knowing before you blame it:
   parameter.
 - A card naming a backend that no longer exists shows *Backend not configured*
   and is deliberately never re-armed.
+
+A widget's `refetchInterval` may also be a five-field cron expression, such as
+`*/5 * * * *` or `0 8 * * 1-5`, in local time. Such a card refetches on each
+minute boundary the expression matches, for as long as it is on screen, and
+your app-wide setting does not apply to it. Supported: `*`, numbers, lists,
+ranges and steps; day-of-week 0–7, with both 0 and 7 meaning Sunday. An
+expression the app cannot read is ignored.
+
+## When data goes stale
+
+A widget may declare a `staleTime`, in milliseconds. Once its data is older
+than that, the card's **Refresh** (or **Run**) button turns orange, and the
+next fetch clears it. A `dataUpdateDisplay` cron expression adds a line to that
+button's tooltip — *Data update: `<expression>` · last `<time>` · next
+`<time>`*, in local time — giving the schedule's previous and next times, not
+when the card last fetched. It never triggers a fetch.
 
 ## Run-button widgets
 

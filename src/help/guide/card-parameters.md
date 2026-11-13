@@ -5,7 +5,9 @@ tags: [bdobb, help, interface, parameters, groups, forms]
 
 # Card Parameters
 
-Most widgets take parameters — a symbol, a date range, a provider. The card's header carries a row of controls, one per visible parameter, on its own line directly under the title. There is nothing to open: what a card is asking for is always in view. A card with many parameters wraps the row onto further lines rather than clipping it.
+Most widgets take parameters — a symbol, a date range, a provider. The card's header carries a control for each visible parameter. There is nothing to open: what a card is asking for is always in view.
+
+The controls sit where OpenBB Workspace puts them. By default they share the title bar, after the card's name. A widget can arrange them in rows (OpenBB's parameter positioning, where nested lists of parameters are rows): its first row still shares the title bar, and each further row gets a line of its own under it. A row wider than the card scrolls sideways rather than wrapping. On a very narrow card, once the title-bar row would be squeezed to about one control's width, the card's own buttons fold behind the **⌄** chevron, as they do with **Collapse widget controls** on, and come back once there is room again; **Run** never folds.
 
 Some parameters are declared hidden by the backend. They never appear here, but they are still sent with every request — that is how `provider` rides along on nearly every widget, and how a Note stores its text without cluttering the row.
 
@@ -75,7 +77,7 @@ A **form** parameter is drawn in the card body too. Its fields can be text, numb
 Three other things write a card's parameters through the same path as the header's controls, so grouping and persistence apply to them too: a click on a table cell whose column is set up to drive a parameter (see [[tables|Tables]]); a framed page asking its card to change a parameter (see [[html-and-iframe-widgets|HTML and iframe Widgets]]); and a run-button card, which records the edit but waits for **Run** (see [[running-and-refreshing|Running and Refreshing]]).
 
 ---
-*Source: BDOBB v3.1.0 in-app manual, "Card parameters"; `BDOBB` `src/components/ParamControls.tsx`, `GroupLink.tsx`, `GroupMenu.tsx`, `TabBar.tsx` and `src/lib/paramGroups.ts`, carried onto `v3.1.0` from the `v5.1.0` titlebar-parameter-groups design; `docs/superpowers/specs/2026-09-14-v5.1.0-parameter-groups-design.md`.*
+*Source: BDOBB v3.1.0 in-app manual, "Card parameters"; `BDOBB` `src/components/ParamControls.tsx`, `GroupLink.tsx`, `GroupMenu.tsx`, `TabBar.tsx` and `src/lib/paramGroups.ts`, carried onto `v3.1.0` from the `v5.1.0` titlebar-parameter-groups design; `docs/superpowers/specs/2026-09-14-v5.1.0-parameter-groups-design.md`; `src/components/ParamControls.tsx`, `src/components/WidgetCard.tsx` and `src/lib/widgetsJson.ts` at 3.0.0 (parameter rows in the title bar).*
 *See also: [[widget-cards|Widget Cards]] · [[running-and-refreshing|Running and Refreshing]] · [[dashboard-tabs|Dashboard Tabs]] · [[importing-dashboards|Importing Dashboards]] · [[tables|Tables]]*
 
 ---

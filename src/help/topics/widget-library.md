@@ -15,6 +15,9 @@ rail stays usable behind it. Close it with `✕` or **Escape**.
 The **Search widgets** box matches, case-insensitively, against both a widget's
 name and its description. It combines with the five filters as an AND.
 
+A widget that declares an `imgUrl` shows that image under its description when
+you hover or focus its card. The preview appears in the desktop app only.
+
 ## The five filters
 
 Left to right: **Backend**, **Category**, **Subcategory**, **Provider**,

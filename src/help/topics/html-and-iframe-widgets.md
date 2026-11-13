@@ -10,6 +10,11 @@ address and fetches nothing. The address *is* the widget. An address that is
 not `http` or `https` reads
 *This address is not a valid http or https URL.*
 
+An HTML widget that declares `raw: true` gets a **Raw** view that asks its
+endpoint again with `raw=true` added to the card's parameters; a list of
+records is shown as a table, anything else as JSON. The normal view never sends
+`raw`.
+
 ![An iframe widget and an HTML widget side by side](./shots/html-and-iframe-widgets.png)
 
 ## Why some sites refuse to be framed
@@ -32,10 +37,11 @@ cards on one dashboard can never speak for each other.
 
 `openbb-connect`, sent by the page, announces it. The app answers with
 `openbb-auth` carrying `headers` — the same header map the backend's own
-requests use — but only when all three of these hold: the message's origin
+requests use — but only when all four of these hold: the message's origin
 exactly matches the frame's own, that origin is nameable (so never a
-server-rendered HTML widget, which has no origin), and the backend actually has
-header credentials. Auth is always posted to that exact origin, never
+server-rendered HTML widget, which has no origin), it is the backend's own
+origin, and the backend actually has header credentials. A frame on any other
+origin gets an empty header map. Auth is always posted to that exact origin, never
 broadcast. Two consequences worth knowing: an HTML widget is never sent auth,
 and neither is the **Website** built-in, because a hand-typed address names no
 backend.

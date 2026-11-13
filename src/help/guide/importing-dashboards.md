@@ -14,7 +14,7 @@ For a file you were sent, or exported from another machine, there are two ways i
 - Right-click empty space in the rail's *MY DASHBOARDS* area and choose **Import apps.json…**.
 - **Drop the file on the dashboard.** A `.json` of 10 MB or less is sniffed first; if it turns out to be an `apps.json` it is imported as dashboards instead of becoming a table.
 
-Every app in the file becomes a new dashboard, unless its name is already one of yours (below). A name repeated *inside* the file is not asked about: the second copy becomes `Macro (2)`. The notice in the rail reads *Imported 3 dashboards, 12 cards (1 unresolved)*. The bracket is always there, `(0 unresolved)` included.
+Every app in the file becomes a new dashboard, unless its name is already one of yours (below). A name repeated *inside* the file is not asked about: the second copy becomes `Macro (2)`. The notice in the rail reads *Imported 3 dashboards, 12 cards (1 unresolved)* — *1 dashboard* and *1 card* when there is one. The bracket is always there, `(0 unresolved)` included.
 
 ## When a dashboard's name is already taken
 

@@ -7,7 +7,7 @@ tags: [bdobb, help, about, sources, provenance, versions]
 
 This guide documents the fresh BDOBB **v3.0.0** release for Episode 3, “Kick the Tires.” Its reference desktop includes backend-served Apps, parameter groups, Run and numeric refresh, ordinary tables and charts, and compatible import/export. The source baseline is maintained BDOBB v3.3.3, with selected Apps and ordinary-state export fixes carried into the clean release. Historical source-version citations below identify donors; they do not name this release.
 
-At this version there is no Pivot model, no Statement view and no cron scheduling. Unsupported extensions in an imported file, such as archived Pivot state, are refused before import writes anything. Exact source commits and reference-test receipts are recorded in `docs/releases/provenance.md`.
+At this version there is no Pivot model and no Statement view. Unsupported extensions in an imported file, such as archived Pivot state, are refused before import writes anything. Exact source commits and reference-test receipts are recorded in `docs/releases/provenance.md`.
 
 ## Three sources, in order of authority
 

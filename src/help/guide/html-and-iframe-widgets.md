@@ -19,7 +19,7 @@ Plenty of sites send a header telling a browser not to embed them. The app makes
 
 Every **iframe** card therefore carries the same permanent footer, on every address, reading **Blank? The site may refuse to be embedded.** beside an **Open externally ↗** button, which opens the address in your default browser. An HTML widget has no footer: its markup comes from the backend, so there is no address to open.
 
-The only address check is the http/https one above. Nothing about a loopback, link-local or private-range address is treated differently.
+The only address check is the http/https one above. Nothing about a loopback, link-local or private-range address is treated differently. The packaged app's content security policy leaves frames open to any address for exactly this reason; it is scripts, not frames, that it confines to the app itself.
 
 ## Talking to the app from inside the frame
 

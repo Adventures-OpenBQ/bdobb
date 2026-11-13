@@ -32,7 +32,7 @@ Vertical is a digital list, one row per zone: city, region, GMT offset and the t
 
 ## Website
 
-*Frames any web page.* One parameter, **URL**. With it empty the card reads *Enter a URL in Parameters to frame a page.*, which is a normal state rather than an error -- the message still names a **Parameters** button the card no longer has; the **URL** field is in the controls row under the title. Plenty of sites refuse to be framed; see [[html-and-iframe-widgets|HTML and iframe Widgets]] for what the card does about that and what **Open externally ↗** is for.
+*Frames any web page.* One parameter, **URL**. With it empty the card reads *Enter a URL in Parameters to frame a page.*, which is a normal state rather than an error -- the message still names a **Parameters** button the card no longer has; the **URL** field is in the card's title bar. Plenty of sites refuse to be framed; see [[html-and-iframe-widgets|HTML and iframe Widgets]] for what the card does about that and what **Open externally ↗** is for.
 
 ## RSS feed
 

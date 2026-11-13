@@ -113,7 +113,9 @@ always render as an em dash.
 Cell treatments honoured: `greenRed`, which colours numbers by sign (zero is
 neither); `titleCase`; and colour rules, which set a cell's text or background
 from conditions like *greater than*, *between* or *contains* — the first
-matching rule wins, and colour rules override `greenRed` entirely. A
+matching rule wins, and colour rules override `greenRed` entirely. When a
+column's options name a `colorValueKey`, its rules test that field of the same
+row instead of the cell's own value. A
 `sparkline` column draws its array as a small chart inside the cell, a
 `hoverCard` column opens a small card when you point at the cell, and a
 `showCellChange` column flashes a cell green or red when its value changes.

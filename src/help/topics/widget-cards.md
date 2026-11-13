@@ -8,11 +8,14 @@ header.
 ## The header, left to right
 
 - The **title**. This is also the drag handle.
-- `⌄` **Show widget controls** — only when
-  **Settings ▸ Widget ▸ Collapse widget controls** is on
-  (off by default). Everything after this point then hides behind it.
-- The **controls row** — one control per visible parameter, on its own line
-  under the title, whenever the widget has at least one. See **Card parameters**.
+- The **parameter controls** — in the title bar after the title, and on
+  lines of their own under it when the widget arranges them in rows. See
+  **Card parameters**.
+- `⌄` **Show widget controls** — when
+  **Settings ▸ Widget ▸ Collapse widget controls** is on (off by default), or
+  when the card is too narrow for its title-bar row. The card's buttons after
+  this point then fold behind it; the parameter controls stay, and so does
+  **Run**.
 - The **view dropdown**. Its first entry is named for the card's own kind:
   `Table`, `Chart`, `Markdown`, `HTML`, `Page`, `Metric`, `Note`, `Clock`,
   `Feed` or `Keys`, or `Default` for a kind it has no name for. A `Chart` entry
@@ -31,8 +34,9 @@ header.
 ## The ⋯ menu
 
 **Rename…**, **Maximize** (or **Restore**), **Export ▸** (CSV, JSON, Excel),
-and for tables **Columns ▸** and **Reset table**. It appears only on cards that
-fetch data and on a Markdown note, and never on a PDF card.
+and for tables **Columns ▸** and **Reset table**. A widget that declares
+`exportable: false` has no **Export ▸**. It appears only on cards that fetch
+data and on a Markdown note, and never on a PDF card.
 
 ## Moving and resizing
 
@@ -44,8 +48,8 @@ you let go, and only when something actually changed.
 
 ## Minimize
 
-`—` collapses the card to just its title row; the body and the controls row
-go, the grid slot stays. It is shown only while
+`—` collapses the card to just its title row; the body and the parameter
+controls go, the grid slot stays. It is shown only while
 **Settings ▸ Widget ▸ Minimize button on header** is on, which it is not by
 default.
 
@@ -71,7 +75,8 @@ The title is saved per card. A **Strict OpenBB Workspace** `apps.json` export
 does not carry it; the **BDOBB Workspace** format does.
 
 Cards with no `⋯` menu — framed pages, the keys panel, document viewers, PDFs
-and the built-ins — can still be renamed by double-clicking the title.
+and the built-ins other than Markdown — can still be renamed by
+double-clicking the title.
 
 ## Maximize
 

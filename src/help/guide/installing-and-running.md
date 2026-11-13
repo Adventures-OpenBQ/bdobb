@@ -31,7 +31,17 @@ xattr -dr com.apple.quarantine /Applications/BDOBB.app
 
 A disk image produced by `pnpm release` needs none of that: it is signed and notarized, so it opens the way any other downloaded Mac app does.
 
-The app installs as **BDOBB** and keeps its data under its own bundle identifier, separate from any original BDOBB you may still have — see [[app-data-and-settings|App Data and Settings]] for where.
+The app installs as **BDOBB** under the original BDOBB's bundle identifier, `com.artcashin.bdobb` — see [[app-data-and-settings|App Data and Settings]] for where its data lives and what the first launch does with an older folder.
+
+## Driving the app from a test agent (development only)
+
+The desktop app is built on Tauri 2.12. A development build can carry an MCP bridge, `tauri-plugin-mcp-bridge`, which lets a test agent drive the running app. It is off by default and never part of a release: it is compiled in only with the `mcp-bridge` feature in a debug build, listens on loopback only, and its permission comes from `src-tauri/tauri.mcp.conf.json`, merged in only when you ask for it:
+
+```bash
+pnpm tauri dev --features mcp-bridge --config src-tauri/tauri.mcp.conf.json
+```
+
+`pnpm release` refuses to build if the bridge is in the release dependency graph.
 
 ## First launch
 
@@ -50,7 +60,7 @@ Or skip the widget-by-widget route and import a whole dashboard set — see [[im
 BDOBB serves no data of its own. `pnpm reference-backend` runs OpenBB's keyless reference backend locally to try it against (see [[reference-validation|Reference Validation]]); otherwise you need an OpenBB-compatible backend of your own. For the companion stack, see [[openbq-docker-stack|The openbq-docker Stack]].
 
 ---
-*Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; BDOBB v3.0.1 in-app manual, "Getting started".*
+*Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; `src-tauri/Cargo.toml`, `src-tauri/src/lib.rs`, `src-tauri/tauri.mcp.conf.json` and `scripts/release.sh` at 3.0.0; BDOBB v3.0.1 in-app manual, "Getting started".*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[importing-dashboards|Importing Dashboards]] · [[app-data-and-settings|App Data and Settings]]*
 
 ---

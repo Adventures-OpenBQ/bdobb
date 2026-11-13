@@ -62,8 +62,8 @@ It no longer does. Discovery gives each backend's `widgets.json` ten seconds end
 **The widget count says `275, 12 skipped`.**
 The number counts manifest entries validation found a problem with, not entries dropped: an entry that is not a JSON object is dropped, while an entry with malformed parameters is kept with those parameters removed — all of them if its `params` is not a list. Set **Validate widgets** to No to take the payload as it comes, if you want to see them anyway.
 
-**A widget's parameters are not in sections.**
-Some OpenBB backends publish a widget's parameters in sections, as a list of lists rather than one flat list. The app reads every section's controls but has no sections of its own, so they appear as one flat row.
+**A card's buttons disappeared behind a `⌄`.**
+The card is too narrow for its title-bar row of parameter controls, so its buttons folded behind the chevron; **Run** stays. Widen the card and they come back. A widget that publishes its parameters as a list of lists gets one line per list, the first in the title bar. See [[card-parameters|Card Parameters]].
 
 ## The rail
 
@@ -81,8 +81,8 @@ If one of the app's own files is present but cannot be *parsed*, or has a field 
 **Your settings look like defaults, and nothing new was saved this session.**
 A file the app could not *read* — no permission, a volume that went away — is left where it is rather than quarantined, and the app spends the session on defaults while refusing to save over it. That refusal is what stops a good `settings.json`, `backends.json` or `folders.json` being replaced by the defaults on screen, and it is logged. Fix the cause and restart; your file is intact. See [[app-data-and-settings|App Data and Settings]].
 
-**Your dashboards are gone after installing BDOBB beside the original BDOBB.**
-They are not: the two apps keep data under different bundle identifiers and neither reads the other's. The original's data is still under its own folder.
+**Your dashboards changed after installing BDOBB over the original BDOBB.**
+BDOBB uses the original's bundle identifier, `com.artcashin.bdobb`, so it opens the same data folder. Only when the clean v3 repair build's folder exists does the first launch copy that in and move the original's folder aside, to `com.artcashin.bdobb.v1-backup/`, where it still is. See [[app-data-and-settings|App Data and Settings]].
 
 ## Files
 

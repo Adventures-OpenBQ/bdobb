@@ -3,9 +3,17 @@
 Charts are drawn with Plotly. There are two ways to get one.
 
 A widget whose declared type is `chart` is always a chart. Any other card whose
-rows turn out to carry a time column also gains a **Chart** entry in its view
-dropdown, beside **Table** and **Raw** — decided by the data that actually
-arrived, so it can appear only after the first load.
+rows turn out to carry a time column — or another axis column with numeric
+columns beside it — also gains a **Chart** entry in its view dropdown, beside
+**Table** and **Raw** — decided by the data that actually arrived, so it can
+appear only after the first load.
+
+A table widget can also say how its rows chart. When any column declares a
+`chartDataType`, the x-axis is the first `time` column (or, failing that, the
+first `category` column) and only `series` columns are plotted; `excluded`
+columns never are. The widget's `chartView.chartType` picks `line`, `area`,
+`column`, `bar` or `scatter` (anything else draws as a line), and
+`chartView.enabled: true` opens a newly added card on its chart.
 
 ![A price chart drawn from a table payload](./shots/charts.png)
 

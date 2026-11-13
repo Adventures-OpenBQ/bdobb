@@ -11,7 +11,7 @@ Everything the app remembers is plain JSON on your own disk, in the app's data d
 
 On macOS: `~/Library/Application Support/com.artcashin.bdobb/`. The folder is named after the app's **bundle identifier**, not its display name.
 
-This BDOBB uses the original BDOBB's identifier. On its first launch it copies in the data of the clean v3 repair build (`com.artcashin.bdobb.clean.v3.repair/`, which is left as it was) and renames any folder already there, the original BDOBB's, to `com.artcashin.bdobb.v1-backup/`. Nothing is deleted, and the copy happens only once.
+This BDOBB uses the original BDOBB's identifier, so with no other data it opens the original's folder. When the clean v3 repair build's folder (`com.artcashin.bdobb.clean.v3.repair/`) exists, the first launch copies it in — leaving the source as it was — and renames any folder already there, the original BDOBB's, to `com.artcashin.bdobb.v1-backup/` (numbered if that exists). Nothing is deleted, and the copy happens only once.
 
 ## What is in it
 
@@ -51,7 +51,7 @@ Smaller problems are handled more gently: an unrecognised theme, font size or au
 In two pieces, which between them cover everything but your connections: dashboards travel one at a time as `apps.json`, and your preferences and folder tree travel together as `bdobb-settings.json` — see [[settings-export-and-import|Settings Export and Import]]. Connections still have no export: `backends.json` holds credentials in the clear, and nothing writes it out. See [[import-and-export|Import and Export]].
 
 ---
-*Source: BDOBB v3.0.1 in-app manual, "Getting started ▸ Where your data lives" and "Troubleshooting"; `BDOBB` `src/lib/jsonStore.ts` at `v3.0.1`.*
+*Source: BDOBB v3.0.1 in-app manual, "Getting started ▸ Where your data lives" and "Troubleshooting"; `BDOBB` `src/lib/jsonStore.ts` at `v3.0.1`; `src-tauri/src/migrate.rs` at 3.0.0.*
 *See also: [[settings-and-logs|Settings and Logs]] · [[settings-export-and-import|Settings Export and Import]] · [[import-and-export|Import and Export]] · [[troubleshooting-using-bdobb|Using BDOBB]]*
 
 ---
