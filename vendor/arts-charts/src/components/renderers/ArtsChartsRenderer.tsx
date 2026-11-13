@@ -11,7 +11,7 @@ import { configureArtsCharts, getHost, type ArtsChartsHost } from "../../host";
 import { useTickCache, type AvwapSeries, type Candle } from "../../hooks/useTickCache";
 import { chartTickRelay } from "../../lib/chartTickRelay";
 import { useSeriesBars } from "../../hooks/useSeriesBars";
-import { useStudySeries, type StudySeries } from "../../hooks/useStudySeries";
+import { useStudySeries, type StudyFeed, type StudySeries } from "../../hooks/useStudySeries";
 import { useTaRegistry } from "../../hooks/useTaRegistry";
 import { useChartDocument } from "../../hooks/useChartDocument";
 import { useWatches } from "../../hooks/useWatches";
@@ -53,7 +53,7 @@ import { buildChartSpec, parseChartSpec, specJson } from "../../lib/chart/chartS
 import { DEFAULT_PANELS_TEXT, encodePanels, parsePanels, scaleOrder } from "../../lib/chart/panels";
 import { closeData, ohlcData, performanceData, volumeData } from "../../lib/chart/derived";
 import {
-  GROUP_PREFIX, MAX_LIST, SERIES_TYPE_LABELS, indicatorsFromSeries, migrateChart, parseSymbolList,
+  GROUP_PREFIX, MAX_LIST, SERIES_TYPE_LABELS, bareStudyExpr, indicatorsFromSeries, migrateChart, parseSymbolList,
   seriesFromMacro, seriesLabel, seriesTicker,
 } from "../../lib/chart/series";
 import { matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
@@ -62,7 +62,7 @@ import { isExpression } from "../../lib/dates";
 // The card's `start`/`end` as instants, read exactly as the wire reads them
 // for `S`/`E` in any other widget parameter -- one parser, one answer.
 import { paramInstant } from "../../lib/params";
-import { isBusinessDays, type CatalogEntry } from "../../lib/chart/studyExpression";
+import { expressionLabel, isBusinessDays, type CatalogEntry } from "../../lib/chart/studyExpression";
 import { anchorResolver, exchangeFor, type AssetClass } from "../../lib/chart/exchangeFor";
 import { attachBandFill, DEFAULT_SHADE_OPACITY } from "../../lib/chart/bandFill";
 import { sessionBars } from "../../lib/chart/sessionFilter";
@@ -117,6 +117,7 @@ const DEFAULT_PANELS = parsePanels(DEFAULT_PANELS_TEXT).panels;
  * <SeriesBars symbol=… onBars=…/> child per ticker, lifting its bars up.
  */
 const MAX_EXTRA_SYMBOLS = 4;
+const NO_FEEDS: StudyFeed[] = [];
 
 /** An area series' fill opacity when the series does not name one (spec, Series). */
 const AREA_FILL_OPACITY = 0.15;
@@ -920,6 +921,161 @@ function ChartCard({
    * factory, so a rerender is never mistaken for a reason to rebuild.
    */
   const timeScaleBehavior = useCallback(() => createTimeScaleBehavior(() => localWeights.current), []);
+
+  /**
+   * A date expression as unix seconds, on THIS card's calendar and window:
+   * a panel's `xs`/`xe` and a performance series' rebase anchor both ask it.
+   * `new Date()` per call rather than a memoised now -- unlike the study
+   * wire, nothing has to agree with anything else about what `T` meant a
+   * minute ago; this only decides where a line starts on screen.
+   *
+   * `$group:<Name>` in a DATE position (spec, Group references; the
+   * branch-end round, finding 5) is the same lookup the symbol branch
+   * below does: the group's own value -- an ISO date, or an expression of
+   * its own -- is substituted in and then parsed like anything else. A
+   * reference naming no group resolves to nothing, which every caller
+   * already reads as the unresolvable note it gives a bad anchor.
+   */
+  const resolveWindowed = useCallback(
+    (expr: string): number | null => {
+      const text = expr.startsWith(GROUP_PREFIX)
+        ? (groups ?? []).find((g) => g.name === expr.slice(GROUP_PREFIX.length))?.value
+        : expr;
+      if (text === undefined || text === "") return null;
+      return resolveInstant(text, new Date(), calendar, anchorWindow);
+    },
+    [calendar, anchorWindow, groups],
+  );
+  const iso = (s: number) => new Date(s * 1000).toISOString().replace(".000Z", "Z");
+  // S14: the save path stamps each expression with what this card resolves it to now.
+  if (stampRef) stampRef.current = {
+    at: (expr) => { const s = resolveWindowed(expr); return s === null ? null : iso(s); },
+    range: (r) => { const w = resolveRange(r, new Date(), calendar, anchorWindow); return w && { from: iso(w.from), to: iso(w.to) }; },
+  };
+  /** The loaded window in unix seconds: what an `xs`/`xe` that resolves to nothing falls back to. */
+  const loadedWindow = useMemo(
+    () => ({ start: candles[0]?.time ?? null, end: candles.at(-1)?.time ?? null }),
+    [candles],
+  );
+
+  /**
+   * Each bar series' and each study's ticker, resolved by `seriesTicker` (spec 2026-11-13 §2; studies, spec 2026-11-13 studies §2): list:1 is the
+   * card's own bars; any other ticker takes an extra-bars slot, one per distinct ticker. A
+   * reference that does not resolve leaves its series off with a note, and so does a
+   * performance line with no anchor it can rebase on.
+   */
+  const performance = useMemo(() => {
+    const byId = new Map<string, string>();
+    const notes: Record<string, string> = {};
+    const extras: string[] = [];
+    for (const s of series) {
+      const resolved = seriesTicker(s, symbols, groups ?? []);
+      if ("note" in resolved) { notes[s.id] = resolved.note; continue; }
+      const ticker = resolved.ticker;
+      // An empty card's own series draw its (empty) bars quietly, as they always have.
+      if (ticker === "" && (s.type === "performance" || symbol !== "")) { notes[s.id] = "no symbol"; continue; }
+      if (s.type === "performance") {
+        // A series with no anchor at all has nothing to quote back (T6 review, finding 10).
+        if (s.anchor === undefined || s.anchor === "") { notes[s.id] = "no rebase anchor"; continue; }
+        if (resolveWindowed(s.anchor) === null) { notes[s.id] = `anchor "${s.anchor}" does not resolve`; continue; }
+      }
+      if (ticker !== symbol && !extras.includes(ticker)) {
+        if (extras.length >= MAX_EXTRA_SYMBOLS) { notes[s.id] = `only ${MAX_EXTRA_SYMBOLS} extra symbols per card`; continue; }
+        extras.push(ticker);
+      }
+      byId.set(s.id, ticker);
+    }
+    return { byId, notes, extras };
+  }, [series, symbols, symbol, groups, resolveWindowed]);
+
+  /**
+   * Why a STUDY is not on the chart, keyed by series id: an anchor
+   * `resolveAnchor` cannot answer is left off the wire by
+   * `indicatorsParam` -- the raw expression would fail the whole socket --
+   * and used to vanish without a word (the branch-end round, finding 1).
+   * The same test `wireValue` applies, and the same note a performance
+   * series' bad anchor gets, so a chip never goes quiet.
+   */
+  const studyNotes = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const s of series) {
+      if (s.type !== "study") continue;
+      for (const value of Object.values(s.params)) {
+        if (typeof value !== "string" || !isExpression("datetime", value)) continue;
+        if (resolveAnchor(value) === null) { out[s.id] = `anchor "${value}" does not resolve`; break; }
+      }
+    }
+    return out;
+  }, [series, resolveAnchor]);
+  /** A series drawn off another ticker reads under it, chip and legend alike: "MSFT Candlestick". */
+  const overlayLabels = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const s of series) {
+      const ticker = performance.byId.get(s.id);
+      if (ticker === undefined || ticker === symbol || s.type === "performance") continue;
+      out[s.id] = s.type === "study"
+        ? `${ticker} ${expressionLabel({ expr: bareStudyExpr(s.expr, s.symbol), name: s.name ?? "", params: s.params, color: s.color })}`
+        : `${ticker} ${SERIES_TYPE_LABELS[s.type]}`;
+    }
+    return out;
+  }, [series, performance.byId, symbol]);
+
+  // The other symbols' bars, one hook per slot (see MAX_EXTRA_SYMBOLS): an
+  // unused slot is disabled and fetches nothing. The provider follows the
+  // card's one source -- an EODHD chart's benchmark comes from EODHD, a
+  // local one's from the same kdb history `/series` serves -- and the
+  // window is the card's, so the two lines rebase over the same bars.
+  /**
+   * Which slot each extra ticker holds, kept across renders (T6 review,
+   * finding 7). Positional assignment (`performance.extras[i]`) moved every
+   * survivor down a slot when an earlier performance series was deleted, and
+   * a `useSeriesBars` whose `symbol` changed refetches from scratch -- so
+   * removing one benchmark blanked the others for a beat. A ticker keeps the
+   * slot it was first given; a new one takes the lowest FREE slot.
+   */
+  const slots = useRef<(string | undefined)[]>([]);
+  const extraSlots = useMemo(() => {
+    const held = Array.from({ length: MAX_EXTRA_SYMBOLS }, (_unused, i) => slots.current[i]);
+    for (let i = 0; i < held.length; i += 1) {
+      if (held[i] !== undefined && !performance.extras.includes(held[i] as string)) held[i] = undefined;
+    }
+    for (const ticker of performance.extras) {
+      if (held.includes(ticker)) continue;
+      const free = held.indexOf(undefined);
+      // `performance.extras` is capped at MAX_EXTRA_SYMBOLS, so there is
+      // always one -- the guard is for the reader, not for a live case.
+      if (free === -1) continue;
+      held[free] = ticker;
+    }
+    // `performance.extras` is a new array on every candle tick; the slots it names are what the
+    // panes and the study sockets key on, so an unchanged assignment keeps its identity.
+    if (held.length === slots.current.length && held.every((ticker, i) => ticker === slots.current[i])) return slots.current;
+    slots.current = held;
+    return held;
+  }, [performance.extras]);
+  /** The tickers a bar series draws: a slot whose ticker only has studies fetches no bars (plan Q2). */
+  const barTickers = useMemo(
+    () => new Set(series.filter((s) => s.type !== "study").map((s) => performance.byId.get(s.id)).filter((t): t is string => t !== undefined)),
+    [series, performance.byId],
+  );
+  const extra0 = useSeriesBars({ backend, symbol: extraSlots[0] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: barTickers.has(extraSlots[0] ?? "") });
+  const extra1 = useSeriesBars({ backend, symbol: extraSlots[1] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: barTickers.has(extraSlots[1] ?? "") });
+  const extra2 = useSeriesBars({ backend, symbol: extraSlots[2] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: barTickers.has(extraSlots[2] ?? "") });
+  const extra3 = useSeriesBars({ backend, symbol: extraSlots[3] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: barTickers.has(extraSlots[3] ?? "") });
+  const extraBars = useMemo(() => {
+    const out = new Map<string, Candle[]>();
+    [extra0, extra1, extra2, extra3].forEach((slot, i) => {
+      const ticker = extraSlots[i];
+      // Filtered like the card's own bars: an unfiltered comparison series
+      // would put the extended hours back on the shared time scale.
+      if (ticker !== undefined) out.set(ticker, regular && calendar !== null ? sessionBars(slot.candles, calendar) : slot.candles);
+    });
+    return out;
+    // The candle arrays are what this map is made of; the slots themselves
+    // are new objects on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [extraSlots, extra0.candles, extra1.candles, extra2.candles, extra3.candles, regular, calendar]);
+
   // /ta_series_ws is query-scoped (unlike live_grid's socket-frame
   // subscription): it reads symbol/interval/etc straight off the connect
   // URL and defaults to AAPL/1d when absent. `symbol` and `interval` here
@@ -944,10 +1100,15 @@ function ChartCard({
   // never `now`, so it is the same "one time call" the owner asked for and the
   // socket URL does not churn. Keyed on `registry.catalog` (its stable
   // identity), not `registry.lookup`, which is a fresh closure every render.
+  /** The series list:1's socket is asked for: every series when no study names another ticker (plan R5). */
+  const ownSeries = useMemo(
+    () => series.filter((s) => s.type !== "study" || performance.byId.get(s.id) === symbol),
+    [series, performance.byId, symbol],
+  );
   const studyStart = useMemo(
-    () => padStart(studyBase, warmupBars(series, registry.lookup), interval, calendar),
+    () => padStart(studyBase, warmupBars(ownSeries, registry.lookup), interval, calendar),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [studyBase, series, registry.catalog, interval, calendar],
+    [studyBase, ownSeries, registry.catalog, interval, calendar],
   );
   // `provider` and the bounded window ride along in EODHD mode. `/series` gets
   // the user's window; the studies socket gets `studyStart` -- the same window
@@ -955,9 +1116,10 @@ function ChartCard({
   // points fall outside the visible range the chart already sets). `end` and a
   // no-study `start` are the card's own parameters when it set them, so with no
   // studies `studyStart === start` and this is a no-op rather than an override.
-  const studyParams = useMemo(
-    () => ({
-      ...params, symbol, interval, basis,
+  /** One socket's parameters: list:1's, with the ticker, its own studies and its own warm-up (plan R6). */
+  const studyParamsFor = useCallback(
+    (own: Series[], ticker: string, from: string) => ({
+      ...params, symbol: ticker, interval, basis,
       // v12.4.0: the string is derived from the card's STUDY SERIES, which
       // is the same wire indicatorsParam wrote for the same studies. The
       // condition is unchanged: a card that has never carried a list of its
@@ -965,7 +1127,7 @@ function ChartCard({
       // parameter) still sends that parameter byte for byte.
       ...(state.series === undefined && state.studies === undefined
         ? {}
-        : { indicators: indicatorsFromSeries(series, wireResolver, { allowBusinessDays: exchange !== null, source }) }),
+        : { indicators: indicatorsFromSeries(own, wireResolver, { allowBusinessDays: exchange !== null, source }) }),
       ...(regular ? { session: "regular" } : {}),
       // The PADDED start, whatever the provider (owner, 2026-09-27: "lookback
       // feature not fixed"). It used to ride ONLY in the EODHD branch below,
@@ -980,20 +1142,76 @@ function ChartCard({
       // would ask for. Sending a padded start there would NARROW the window,
       // not widen it, and make the lookback worse on exactly the cards that
       // are fine today.
-      ...(params.start === undefined || params.start === "" ? {} : { start: studyStart }),
+      ...(params.start === undefined || params.start === "" ? {} : { start: from }),
       // A live card's studies socket is the chart server's: the window and the
       // provider its /series is asked for, as on the EODHD plane.
-      ...(httpBars || liveStudies ? { provider: barsProvider, start: studyStart, end } : {}),
+      ...(httpBars || liveStudies ? { provider: barsProvider, start: from, end } : {}),
     }),
-    [params, symbol, interval, basis, state.series, state.studies, series, wireResolver, regular, exchange, source, httpBars, liveStudies, barsProvider, studyStart, end],
+    [params, interval, basis, state.series, state.studies, wireResolver, regular, exchange, source, httpBars, liveStudies, barsProvider, end],
   );
-  const studyUrl = useMemo(
-    () => (liveCard && chartsSocket !== undefined
-      ? studySocketUrl(chartsSocket("/ta_series_ws"), studyParams)
-      : buildWidgetWsUrl(backend, widget, studyParams)),
-    [liveCard, chartsSocket, backend, widget, studyParams],
+  const studyParams = useMemo(() => studyParamsFor(ownSeries, symbol, studyStart), [studyParamsFor, ownSeries, symbol, studyStart]);
+  const studyUrlOf = useCallback(
+    (p: Record<string, string>) => (liveCard && chartsSocket !== undefined
+      ? studySocketUrl(chartsSocket("/ta_series_ws"), p)
+      : buildWidgetWsUrl(backend, widget, p)),
+    [liveCard, chartsSocket, backend, widget],
   );
-  const { panes } = useStudySeries({ url: studyUrl });
+  const studyUrl = useMemo(() => studyUrlOf(studyParams), [studyUrlOf, studyParams]);
+  /**
+   * Each slot's study socket (spec 2026-11-13 studies §2 Slots): open only while its ticker has
+   * a study, asked for that ticker's studies alone. A ticker's url depends on its own studies
+   * only, so removing another ticker's study never reconnects it. `macro: "none"`: a backend
+   * macro is list:1's, and another socket would serve it twice.
+   */
+  const extraStudyUrls = useMemo(
+    () => extraSlots.map((ticker) => {
+      const own = series.filter((s) => s.type === "study" && ticker !== undefined && performance.byId.get(s.id) === ticker);
+      if (ticker === undefined || own.length === 0) return null;
+      const from = padStart(studyBase, warmupBars(own, registry.lookup), interval, calendar);
+      return studyUrlOf({ ...studyParamsFor(own, ticker, from), macro: "none" });
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [extraSlots, series, performance.byId, studyBase, registry.catalog, interval, calendar, studyUrlOf, studyParamsFor],
+  );
+  const { panes: mainPanes, extras: extraFeeds = NO_FEEDS } = useStudySeries({ url: studyUrl, extraUrls: extraStudyUrls });
+  /** list:1's panes, then each extra ticker's, tagged; an extra pane id is prefixed so its guides stay its own (plan R4). */
+  const panes = useMemo(() => [
+    ...mainPanes.map((pane) => ({ ...pane, ticker: symbol })),
+    ...extraFeeds.flatMap((feed, i) => {
+      const ticker = extraSlots[i];
+      return ticker === undefined || feed.note !== null ? [] : feed.panes.map((pane) => ({ ...pane, id: `${ticker}|${pane.id}`, ticker }));
+    }),
+  ], [mainPanes, extraFeeds, extraSlots, symbol]);
+  /** Each ticker's study instances: a frame's line is matched only against its own ticker's (plan R4). */
+  const studyTickers = series.map((s) => (s.type === "study" ? performance.byId.get(s.id) ?? "" : "")).join("\n");
+  const studiesOn = useMemo(() => {
+    const out = new Map<string, StudyInstance[]>();
+    for (const s of series) {
+      const ticker = performance.byId.get(s.id);
+      if (s.type !== "study" || s.name === undefined || ticker === undefined) continue;
+      out.set(ticker, [...(out.get(ticker) ?? []),
+        { expr: s.expr, name: s.name, params: s.params, color: s.color, source: s.source, style: s.style }]);
+    }
+    return out;
+    // `performance` is new on every candle tick (its anchors read the window); the tickers it
+    // resolved are what the map is made of, so the effect that draws from it does not rerun per tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series, studyTickers]);
+  /** An extra ticker's socket refused, or its bars unavailable: each of its studies says why (spec §2 Failures). */
+  const feedNotes = useMemo(() => {
+    const out: Record<string, string> = {};
+    extraFeeds.forEach((feed, i) => {
+      const ticker = extraSlots[i];
+      if (ticker === undefined || feed.note === null) return;
+      for (const s of series) if (s.type === "study" && performance.byId.get(s.id) === ticker) out[s.id] = feed.note;
+    });
+    return out;
+  }, [extraFeeds, extraSlots, series, performance.byId]);
+  /** Every reason a chip is not drawing, performance and study alike. */
+  const seriesNotes = useMemo(
+    () => ({ ...performance.notes, ...studyNotes, ...feedNotes }),
+    [performance.notes, studyNotes, feedNotes],
+  );
 
   /**
    * Every instant that must exist on EVERY panel's time scale: the card's bar
@@ -1050,7 +1268,7 @@ function ChartCard({
      */
     const first = candles[0]?.time;
     const last = candles.at(-1)?.time;
-    for (const pane of panes) {
+    for (const pane of mainPanes) {
       for (const line of pane.series) {
         for (const point of line.data) {
           if (first !== undefined && last !== undefined && (point.time < first || point.time > last)) continue;
@@ -1059,7 +1277,7 @@ function ChartCard({
       }
     }
     return [...times].sort((a, b) => a - b);
-  }, [candles, panes]);
+  }, [candles, mainPanes]);
   // What the socket ACTUALLY served each instance from, keyed by the
   // instance's expression, for the strip's parity mark (studies addendum
   // §4): an eodhd instance the backend had to compute locally is marked
@@ -1069,162 +1287,12 @@ function ChartCard({
     for (const pane of panes) {
       for (const line of pane.series) {
         const servedSource = line.render.source;
-        const hit = matchSeries(line, studies, source, wireResolver);
+        const hit = matchSeries(line, studiesOn.get(pane.ticker) ?? [], source, wireResolver);
         if (hit !== undefined && (servedSource === "local" || servedSource === "eodhd")) out[hit.expr] = servedSource;
       }
     }
     return out;
-  }, [panes, studies, source, wireResolver]);
-
-  /**
-   * A date expression as unix seconds, on THIS card's calendar and window:
-   * a panel's `xs`/`xe` and a performance series' rebase anchor both ask it.
-   * `new Date()` per call rather than a memoised now -- unlike the study
-   * wire, nothing has to agree with anything else about what `T` meant a
-   * minute ago; this only decides where a line starts on screen.
-   *
-   * `$group:<Name>` in a DATE position (spec, Group references; the
-   * branch-end round, finding 5) is the same lookup the symbol branch
-   * below does: the group's own value -- an ISO date, or an expression of
-   * its own -- is substituted in and then parsed like anything else. A
-   * reference naming no group resolves to nothing, which every caller
-   * already reads as the unresolvable note it gives a bad anchor.
-   */
-  const resolveWindowed = useCallback(
-    (expr: string): number | null => {
-      const text = expr.startsWith(GROUP_PREFIX)
-        ? (groups ?? []).find((g) => g.name === expr.slice(GROUP_PREFIX.length))?.value
-        : expr;
-      if (text === undefined || text === "") return null;
-      return resolveInstant(text, new Date(), calendar, anchorWindow);
-    },
-    [calendar, anchorWindow, groups],
-  );
-  const iso = (s: number) => new Date(s * 1000).toISOString().replace(".000Z", "Z");
-  // S14: the save path stamps each expression with what this card resolves it to now.
-  if (stampRef) stampRef.current = {
-    at: (expr) => { const s = resolveWindowed(expr); return s === null ? null : iso(s); },
-    range: (r) => { const w = resolveRange(r, new Date(), calendar, anchorWindow); return w && { from: iso(w.from), to: iso(w.to) }; },
-  };
-  /** The loaded window in unix seconds: what an `xs`/`xe` that resolves to nothing falls back to. */
-  const loadedWindow = useMemo(
-    () => ({ start: candles[0]?.time ?? null, end: candles.at(-1)?.time ?? null }),
-    [candles],
-  );
-
-  /**
-   * Each bar series' ticker, resolved by `seriesTicker` (spec 2026-11-13 §2): list:1 is the
-   * card's own bars; any other ticker takes an extra-bars slot, one per distinct ticker. A
-   * reference that does not resolve leaves its series off with a note, and so does a
-   * performance line with no anchor it can rebase on.
-   */
-  const performance = useMemo(() => {
-    const byId = new Map<string, string>();
-    const notes: Record<string, string> = {};
-    const extras: string[] = [];
-    for (const s of series) {
-      const resolved = seriesTicker(s, symbols, groups ?? []);
-      if ("note" in resolved) { notes[s.id] = resolved.note; continue; }
-      if (s.type === "study") continue; // drawn from the socket, on list:1
-      const ticker = resolved.ticker;
-      // An empty card's own series draw its (empty) bars quietly, as they always have.
-      if (ticker === "" && (s.type === "performance" || symbol !== "")) { notes[s.id] = "no symbol"; continue; }
-      if (s.type === "performance") {
-        // A series with no anchor at all has nothing to quote back (T6 review, finding 10).
-        if (s.anchor === undefined || s.anchor === "") { notes[s.id] = "no rebase anchor"; continue; }
-        if (resolveWindowed(s.anchor) === null) { notes[s.id] = `anchor "${s.anchor}" does not resolve`; continue; }
-      }
-      if (ticker !== symbol && !extras.includes(ticker)) {
-        if (extras.length >= MAX_EXTRA_SYMBOLS) { notes[s.id] = `only ${MAX_EXTRA_SYMBOLS} extra symbols per card`; continue; }
-        extras.push(ticker);
-      }
-      byId.set(s.id, ticker);
-    }
-    return { byId, notes, extras };
-  }, [series, symbols, symbol, groups, resolveWindowed]);
-
-  /**
-   * Why a STUDY is not on the chart, keyed by series id: an anchor
-   * `resolveAnchor` cannot answer is left off the wire by
-   * `indicatorsParam` -- the raw expression would fail the whole socket --
-   * and used to vanish without a word (the branch-end round, finding 1).
-   * The same test `wireValue` applies, and the same note a performance
-   * series' bad anchor gets, so a chip never goes quiet.
-   */
-  const studyNotes = useMemo(() => {
-    const out: Record<string, string> = {};
-    for (const s of series) {
-      if (s.type !== "study") continue;
-      for (const value of Object.values(s.params)) {
-        if (typeof value !== "string" || !isExpression("datetime", value)) continue;
-        if (resolveAnchor(value) === null) { out[s.id] = `anchor "${value}" does not resolve`; break; }
-      }
-    }
-    return out;
-  }, [series, resolveAnchor]);
-  /** Every reason a chip is not drawing, performance and study alike. */
-  const seriesNotes = useMemo(
-    () => ({ ...performance.notes, ...studyNotes }),
-    [performance.notes, studyNotes],
-  );
-  /** A bar series drawn off another ticker reads under it, chip and legend alike: "MSFT Candlestick". */
-  const overlayLabels = useMemo(() => {
-    const out: Record<string, string> = {};
-    for (const s of series) {
-      const ticker = performance.byId.get(s.id);
-      if (ticker === undefined || ticker === symbol || s.type === "performance" || s.type === "study") continue;
-      out[s.id] = `${ticker} ${SERIES_TYPE_LABELS[s.type]}`;
-    }
-    return out;
-  }, [series, performance.byId, symbol]);
-
-  // The other symbols' bars, one hook per slot (see MAX_EXTRA_SYMBOLS): an
-  // unused slot is disabled and fetches nothing. The provider follows the
-  // card's one source -- an EODHD chart's benchmark comes from EODHD, a
-  // local one's from the same kdb history `/series` serves -- and the
-  // window is the card's, so the two lines rebase over the same bars.
-  /**
-   * Which slot each extra ticker holds, kept across renders (T6 review,
-   * finding 7). Positional assignment (`performance.extras[i]`) moved every
-   * survivor down a slot when an earlier performance series was deleted, and
-   * a `useSeriesBars` whose `symbol` changed refetches from scratch -- so
-   * removing one benchmark blanked the others for a beat. A ticker keeps the
-   * slot it was first given; a new one takes the lowest FREE slot.
-   */
-  const slots = useRef<(string | undefined)[]>([]);
-  const extraSlots = useMemo(() => {
-    const held = Array.from({ length: MAX_EXTRA_SYMBOLS }, (_unused, i) => slots.current[i]);
-    for (let i = 0; i < held.length; i += 1) {
-      if (held[i] !== undefined && !performance.extras.includes(held[i] as string)) held[i] = undefined;
-    }
-    for (const ticker of performance.extras) {
-      if (held.includes(ticker)) continue;
-      const free = held.indexOf(undefined);
-      // `performance.extras` is capped at MAX_EXTRA_SYMBOLS, so there is
-      // always one -- the guard is for the reader, not for a live case.
-      if (free === -1) continue;
-      held[free] = ticker;
-    }
-    slots.current = held;
-    return held;
-  }, [performance.extras]);
-  const extra0 = useSeriesBars({ backend, symbol: extraSlots[0] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: extraSlots[0] !== undefined });
-  const extra1 = useSeriesBars({ backend, symbol: extraSlots[1] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: extraSlots[1] !== undefined });
-  const extra2 = useSeriesBars({ backend, symbol: extraSlots[2] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: extraSlots[2] !== undefined });
-  const extra3 = useSeriesBars({ backend, symbol: extraSlots[3] ?? "", interval, provider: httpBars ? barsProvider : "kdb", start, end, enabled: extraSlots[3] !== undefined });
-  const extraBars = useMemo(() => {
-    const out = new Map<string, Candle[]>();
-    [extra0, extra1, extra2, extra3].forEach((slot, i) => {
-      const ticker = extraSlots[i];
-      // Filtered like the card's own bars: an unfiltered comparison series
-      // would put the extended hours back on the shared time scale.
-      if (ticker !== undefined) out.set(ticker, regular && calendar !== null ? sessionBars(slot.candles, calendar) : slot.candles);
-    });
-    return out;
-    // The candle arrays are what this map is made of; the slots themselves
-    // are new objects on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [extraSlots, extra0.candles, extra1.candles, extra2.candles, extra3.candles, regular, calendar]);
+  }, [panes, studiesOn, source, wireResolver]);
 
   // Read inside the click handler, which is subscribed once per chart
   // instance: a stale closure would leave every click applying whichever
@@ -1262,8 +1330,8 @@ function ChartCard({
   // `series`, `t` and `perf` (v12.4.0) ride along for the same reason
   // `panes` does: the legend reads them out of a handler subscribed once
   // per set of charts, and must report the card as it is NOW.
-  const live = useRef({ tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo });
-  live.current = { tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo };
+  const live = useRef({ tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, studiesOn, symbol, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo });
+  live.current = { tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, studiesOn, symbol, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo };
   /**
    * Every chart series this card has drawn, keyed by what it draws:
    * `<series id>` for a card series with one line, `<series id>|<column>`
@@ -1873,8 +1941,9 @@ function ChartCard({
     for (const pane of panes) {
       let firstLine: ISeriesApi<PlotSeriesType> | null = null;
       for (const line of pane.series) {
-        const hit = matchSeries(line, studies, source, wireResolver);
+        const hit = matchSeries(line, studiesOn.get(pane.ticker) ?? [], source, wireResolver);
         const card = hit === undefined ? undefined : seriesByExpr.get(hit.expr);
+        if (card === undefined && pane.ticker !== symbol) continue; // another ticker's unclaimed line: never on list:1's fallback (plan R4)
         // ponytail: a series no card series claims -- a backend too old to
         // send `req`, or a frame that lands between an edit and the socket
         // reconnecting -- is drawn on panel 1's right scale in the server's
@@ -1949,7 +2018,7 @@ function ChartCard({
         pattern: FillPattern;
       }>();
       for (const line of pane.series) {
-        const hit = matchSeries(line, studies, source, wireResolver);
+        const hit = matchSeries(line, studiesOn.get(pane.ticker) ?? [], source, wireResolver);
         const card = hit === undefined ? undefined : seriesByExpr.get(hit.expr);
         const entry = hit === undefined ? undefined : registry.lookup(hit.name);
         // The instance's shade, else the registry's default for the study
@@ -2033,7 +2102,7 @@ function ChartCard({
     // the split (finding 4).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    chartEpoch, panes, studies, seriesByExpr, t, registry.status, source, wireResolver,
+    chartEpoch, panes, studies, studiesOn, symbol, seriesByExpr, t, registry.status, source, wireResolver,
     place, syncCrosshairSeries, settlePanels,
   ]);
 
@@ -2833,7 +2902,7 @@ function ChartCard({
     // name one study one way; anything else keeps the server's label and
     // the same colour fallback the line itself takes.
     const {
-      panes: livePanes, studies: instances, series: cardSeries, overlayLabels: liveLabels, t: liveTheme,
+      panes: livePanes, studiesOn: liveStudiesOn, symbol: liveSymbol, series: cardSeries, overlayLabels: liveLabels, t: liveTheme,
       source: liveSource, wireResolver: liveResolve,
     } = live.current;
     if (bar === null) return { bar, decimals, studies: [] };
@@ -2848,8 +2917,9 @@ function ChartCard({
     const rank = (s: Series | undefined): number => (s === undefined ? Number.MAX_SAFE_INTEGER : order.get(s.id) ?? Number.MAX_SAFE_INTEGER);
     const readings: (LegendStudy & { order: number })[] = livePanes.flatMap((pane) =>
       pane.series.flatMap((line) => {
-        const hit = matchSeries(line, instances, liveSource, liveResolve);
+        const hit = matchSeries(line, liveStudiesOn.get(pane.ticker) ?? [], liveSource, liveResolve);
         const card = hit === undefined ? undefined : byExpr.get(hit.expr);
+        if (card === undefined && pane.ticker !== liveSymbol) return [];
         // Undrawn, unread: an output the study hides must not appear in the
         // crosshair readout either, or the legend names a line that is not on
         // the chart (spec 2026-09-27).
@@ -2861,7 +2931,7 @@ function ChartCard({
           // The expr, then the socket's own label, are the fallbacks for a
           // line no card series claims (a macro's expansion).
           key: card?.id ?? hit?.expr ?? line.label,
-          label: card === undefined ? line.label : seriesLabel(card),
+          label: card === undefined ? line.label : liveLabels[card.id] ?? seriesLabel(card),
           color: card !== undefined && card.color !== ""
             ? card.color
             : (line.render.color as string | undefined) ?? liveTheme.drawings.study,
@@ -2917,7 +2987,7 @@ function ChartCard({
   useEffect(() => {
     if (macro === "" || macro === "none") { convertedMacro.current = null; return; }
     if (convertedMacro.current === macro) return;
-    const built = seriesFromMacro(panes, panelsText, registry.lookup, live.current.t.drawings.study);
+    const built = seriesFromMacro(mainPanes, panelsText, registry.lookup, live.current.t.drawings.study);
     // No request in the frame yet (a `series` frame can land before the
     // server has named what asked for it): wait for the next one rather
     // than blanking the card.
@@ -2927,7 +2997,7 @@ function ChartCard({
     live.current.onParam({ panels: built.panelsText, macro: "none" });
     // The callbacks come off `live` (the card hands down a fresh closure
     // every render), so this runs on the frames and the macro alone.
-  }, [macro, panes, panelsText, registry]);
+  }, [macro, mainPanes, panelsText, registry]);
 
   // The legend's default reading: the last loaded bar. Through the sink like
   // the crosshair's, so only the legend re-renders -- candle pushes are

@@ -14,7 +14,7 @@
 import type { ChartCardState, Series, SeriesType, StudyInstance } from "../types";
 import { indicatorsParam, type AnchorResolver } from "./indicatorsParam";
 import { DEFAULT_PANELS_TEXT, encodePanels, parsePanels, type PanelDef } from "./panels";
-import { expressionLabel, instanceFromParse, type CatalogEntry, type ParseOptions } from "./studyExpression";
+import { expressionLabel, instanceFromParse, parseStudyExpression, type CatalogEntry, type ParseOptions } from "./studyExpression";
 import { isFillPattern, isPen } from "./pen";
 
 /**
@@ -66,14 +66,12 @@ export function parseSymbolList(text: string): { list: string[]; truncated: bool
  * The ticker a series draws, or why it draws nothing (spec 2026-11-13 §2): absent, `$ymbol` and
  * `list:1` are the list's first entry; `list:n` its n-th; `$group:<Name>` that symbol group's
  * value (its first entry when the group holds a list); anything else a literal, upper-cased.
- * A study follows list:1 and may name no symbol.
  */
 export function seriesTicker(
   s: { type: SeriesType; symbol?: string },
   list: readonly string[],
   groups: readonly { name: string; paramName: string; value: string }[],
 ): { ticker: string } | { note: string } {
-  if (s.type === "study") return s.symbol === undefined ? { ticker: list[0] ?? "" } : { note: "studies follow list:1" };
   const named = s.symbol ?? PERFORMANCE_SELF;
   if (named === PERFORMANCE_SELF || named === "list:1") return { ticker: list[0] ?? "" };
   const at = LIST_REF.exec(named);
@@ -439,6 +437,58 @@ export function seriesFromMacro(
   return { series, panelsText: encodePanels(panels) };
 }
 
+/** A symbol that leaves a study's expression bare: it is the card's own ticker (plan R2). */
+const onListOne = (symbol: string | undefined) => symbol === undefined || symbol === PERFORMANCE_SELF || symbol === "list:1";
+
+/**
+ * A study's expression with its leading symbol (spec 2026-11-13 §1, S5): `SMA(list:2, 50)`.
+ * Bare on list:1, so every expression saved before this round-trips byte for byte. The
+ * symbol is in the expr because the card keys a series by it (plan R2).
+ */
+export function studyExpr(expr: string, symbol: string | undefined): string {
+  if (onListOne(symbol)) return expr;
+  const at = expr.indexOf("(") + 1;
+  return `${expr.slice(0, at)}${symbol}${expr[at] === ")" ? "" : ", "}${expr.slice(at)}`;
+}
+
+/** `studyExpr` undone: the expression a study would have on list:1. */
+export function bareStudyExpr(expr: string, symbol: string | undefined): string {
+  if (onListOne(symbol)) return expr;
+  const at = expr.indexOf("(") + 1;
+  const rest = expr.slice(at);
+  if (rest.startsWith(`${symbol}, `)) return expr.slice(0, at) + rest.slice((symbol as string).length + 2);
+  if (rest.startsWith(`${symbol})`)) return expr.slice(0, at) + rest.slice((symbol as string).length);
+  return expr;
+}
+
+/** A number, a `bd` window, an ISO date, OBS-n or an intraday anchor: never a symbol (plan R1). */
+const NOT_A_SYMBOL = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:bd)?$|^\d{4}-\d{2}-\d{2}|^OBS-\d+$|@/i;
+
+export type ParsedStudy = NonNullable<ReturnType<typeof parseStudyExpression>> & { symbol?: string };
+
+/**
+ * A typed study with an optional leading symbol (spec 2026-11-13 §1). The first argument is a
+ * symbol when it is a series reference (`SYMBOL_REF`), is not a number, window or time, and the
+ * study's first parameter is not a text one it could be (plan R1: `AVWAP(2026-09-01)` is an
+ * anchor, `AVWAP(MSFT, 2026-09-01)` MSFT's). The rest is `parseStudyExpression`'s, unchanged.
+ */
+export function parseStudy(
+  text: string, lookup: (name: string) => CatalogEntry | undefined, options: ParseOptions = {},
+): ParsedStudy | null {
+  const head = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\(([^()]*)\)/.exec(text);
+  const entry = head === null ? undefined : lookup(head[1].toLowerCase());
+  if (head !== null && entry !== undefined) {
+    const args = head[2].split(",").map((a) => a.trim());
+    const first = args[0];
+    const textFirst = entry.params[0]?.text === true && args.length <= entry.params.length;
+    if (first !== "" && SYMBOL_REF.test(first) && !NOT_A_SYMBOL.test(first) && !textFirst) {
+      const parsed = parseStudyExpression(text.replace(/\(\s*[^(),]*?\s*(?:,\s*|(?=\)))/, "("), lookup, options);
+      return parsed === null ? null : { ...parsed, symbol: first };
+    }
+  }
+  return parseStudyExpression(text, lookup, options);
+}
+
 /**
  * The socket's `indicators` string from a card's series: the study ones,
  * read back as the instances `indicatorsParam` already knows how to
@@ -454,8 +504,8 @@ export function indicatorsFromSeries(
   options: ParseOptions & { source: "local" | "eodhd" },
 ): string {
   const studies: StudyInstance[] = series
-    // A study naming a symbol is left off: studies follow list:1 (spec 2026-11-13 §2).
-    .filter((s) => s.type === "study" && s.name !== undefined && s.symbol === undefined)
+    // The caller hands it one socket's series: list:1's own, or one other ticker's (spec 2026-11-13 §2).
+    .filter((s) => s.type === "study" && s.name !== undefined)
     .map((s) => ({
       expr: s.expr, name: s.name as string, params: s.params, color: s.color, source: s.source, style: s.style,
     }));

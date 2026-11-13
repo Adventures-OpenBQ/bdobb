@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { logError } from "../lib/logger";
 import { useReconnectingSocket } from "./useReconnectingSocket";
 import type { TickStatus } from "./useTickCache";
@@ -18,7 +18,7 @@ export type StudySeries = {
    */
   req?: { name: string; params: Record<string, unknown>; source: string | null };
 };
-type StudyPane = {
+export type StudyPane = {
   id: string; height: number; guides: number[]; series: StudySeries[];
 };
 
@@ -121,9 +121,12 @@ function plotted(url: string | null): string {
   }
 }
 
-export function useStudySeries({ url }: { url: string | null }):
-  { status: TickStatus; panes: StudyPane[] } {
+export type StudyFeed = { panes: StudyPane[]; note: string | null };
+
+/** One study socket: its panes, and why it is not drawing when the server said (spec 2026-11-13 §2 Failures). */
+function useFeed(url: string | null): { status: TickStatus; panes: StudyPane[]; note: string | null } {
   const [panes, setPanes] = useState<StudyPane[]>([]);
+  const [note, setNote] = useState<string | null>(null);
 
   const identity = plotted(url);
   useEffect(() => {
@@ -132,6 +135,7 @@ export function useStudySeries({ url }: { url: string | null }):
     // autoscale spanned Bitcoin's ~100k studies and AAPL's ~230 candles.
     // Keyed on what is plotted, not on the url: see `plotted`.
     setPanes([]);
+    setNote(null);
   }, [identity]);
 
   const { status } = useReconnectingSocket(url, {
@@ -144,10 +148,37 @@ export function useStudySeries({ url }: { url: string | null }):
         return;
       }
       const incoming = parsePanes(message.panes);
-      if (message.type === "series") setPanes(incoming);
-      else if (message.type === "delta") setPanes((current) => applyDelta(current, incoming));
+      if (message.type === "series") {
+        setPanes(incoming);
+        // live-grid names a bars failure in the frame's subtitle (router ta_series_ws).
+        setNote(String(message.subtitle ?? "").includes("bars unavailable") ? "bars unavailable" : null);
+      } else if (message.type === "delta") setPanes((current) => applyDelta(current, incoming));
     },
+    onClose: (reason) => { if (reason !== undefined) setNote(reason); },
   });
 
-  return { status, panes };
+  return { status, panes, note };
+}
+
+const NO_EXTRAS: readonly (string | null)[] = [];
+
+/**
+ * The card's study feeds: list:1's socket, and one per extra ticker that has a study
+ * (spec 2026-11-13 §2, plan R3). Always four extra feeds -- MAX_EXTRA_SYMBOLS, fixed because
+ * hooks cannot be called in a loop -- and a null url opens nothing.
+ */
+export function useStudySeries({ url, extraUrls = NO_EXTRAS }: { url: string | null; extraUrls?: readonly (string | null)[] }):
+  { status: TickStatus; panes: StudyPane[]; extras: StudyFeed[] } {
+  const main = useFeed(url);
+  const a = useFeed(extraUrls[0] ?? null);
+  const b = useFeed(extraUrls[1] ?? null);
+  const c = useFeed(extraUrls[2] ?? null);
+  const d = useFeed(extraUrls[3] ?? null);
+  const extras = useMemo(
+    () => [a, b, c, d].map(({ panes, note }) => ({ panes, note })),
+    // The feeds are new objects every render; their panes and notes are what this is made of.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [a.panes, a.note, b.panes, b.note, c.panes, c.note, d.panes, d.note],
+  );
+  return { status: main.status, panes: main.panes, extras };
 }

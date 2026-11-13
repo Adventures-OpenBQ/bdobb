@@ -94,8 +94,8 @@ function seriesProblem(
   if (s.symbol !== undefined && (typeof s.symbol !== "string" || s.symbol === "")) {
     return ".symbol: needs a non-empty string";
   }
-  // What the server refuses on save is refused here; a study's symbol is dropped on save instead.
-  if (typeof s.symbol === "string" && s.type !== "study" && !symbolAllowed(s.type as SeriesType, s.symbol)) {
+  // What the server refuses on save is refused here, a study's symbol included (spec 2026-11-13 studies §1).
+  if (typeof s.symbol === "string" && !symbolAllowed(s.type as SeriesType, s.symbol)) {
     return ".symbol: must be a ticker, $ymbol, $group:<Name> or list:<n>";
   }
   if (typeof s.panel !== "number" || !Number.isFinite(s.panel) || !Number.isInteger(s.panel) || s.panel < 1) {

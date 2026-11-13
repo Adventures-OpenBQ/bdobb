@@ -23,8 +23,8 @@ type SocketCycle = {
 type SocketHandlers = {
   onOpen?: (cycle: SocketCycle) => void;
   onMessage: (event: MessageEvent, cycle: SocketCycle) => void;
-  /** A DROP: a close or an error that will be retried. Not an unmount. */
-  onClose?: () => void;
+  /** A DROP: a close or an error that will be retried. Not an unmount. `reason` is the server's close reason when it gave one. */
+  onClose?: (reason?: string) => void;
 };
 
 /** A connection open this long counts as recovered: the next drop waits the base delay again. */
@@ -108,13 +108,15 @@ export function useReconnectingSocket(
       let retrying = false;
       let openedAt: number | null = null;
 
-      const retry = () => {
+      const retry = (event?: Event) => {
         if (stale() || retrying) return;
         retrying = true;
         ws.close();
         socket.current = null;
         setStatus("error");
-        current.current.onClose?.();
+        // A server that refuses a socket says why in the close frame (live-grid closes 1011 with it).
+        const reason = (event as { reason?: unknown } | undefined)?.reason;
+        current.current.onClose?.(typeof reason === "string" && reason !== "" ? reason : undefined);
         drops = openedAt !== null && Date.now() - openedAt >= STABLE_MS ? 0 : drops + 1;
         timer = setTimeout(() => {
           timer = null;

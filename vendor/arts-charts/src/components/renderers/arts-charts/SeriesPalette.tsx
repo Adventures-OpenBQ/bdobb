@@ -9,9 +9,11 @@ import {
   performanceSymbol,
   SERIES_TYPE_LABELS,
   parsePerformance,
+  parseStudy,
   seriesFromStudy,
   seriesId,
   seriesLabel,
+  studyExpr,
   symbolAllowed,
 } from "../../../lib/chart/series";
 import type { PanelDef } from "../../../lib/chart/panels";
@@ -23,7 +25,6 @@ import {
   instanceFromParse,
   isBusinessDays,
   normalizeExpression,
-  parseStudyExpression,
   referenceLabel,
   safeWiki,
   unifyWindows,
@@ -606,7 +607,7 @@ export function SeriesPalette({
   const performanceIncomplete = staged !== null && staged.type === "performance"
     && (staged.symbol.trim() === "" || staged.anchor.trim() === "");
   // A bar series or performance line naming something that is not a reference (spec 2026-11-13 §1).
-  const symbolInvalid = staged !== null && staged.type !== "study" && !symbolAllowed(staged.type, performanceSymbol(staged.symbol));
+  const symbolInvalid = staged !== null && !symbolAllowed(staged.type, performanceSymbol(staged.symbol));
   const incomplete = (entry !== undefined && entry.params.some(invalidParam)) || performanceIncomplete || symbolInvalid;
   /** What the Symbol field's picker offers; free text is the field itself. */
   const symbolOptions = [PERFORMANCE_SELF, ...symbols.slice(1).map((_t, i) => `list:${i + 2}`), ...symbolGroups.map((g) => `$group:${g}`)];
@@ -626,7 +627,7 @@ export function SeriesPalette({
    */
   const placeholder = staged === null ? PLACEHOLDER
     : staged.type === "study"
-      ? (entry === undefined ? PLACEHOLDER : normalizeExpression(staged.name, applied, entry))
+      ? (entry === undefined ? PLACEHOLDER : studyExpr(normalizeExpression(staged.name, applied, entry), performanceSymbol(staged.symbol)))
       : staged.type === "performance"
         ? `Performance(${staged.symbol.trim() === "" ? PERFORMANCE_SELF : staged.symbol}, ${staged.anchor.trim() === "" ? DEFAULT_ANCHOR : staged.anchor})`
         : PRICE_LABELS[staged.type as PriceType];
@@ -713,7 +714,7 @@ export function SeriesPalette({
   /** What the pill shows: a study's normalised expression, else the series' own label. */
   const labelOf = (d: Draft): string => {
     if (d.type !== "study") return seriesLabel(shapeOf(d));
-    return entry === undefined ? d.name.toUpperCase() : normalizeExpression(entry.name, applied, entry);
+    return entry === undefined ? d.name.toUpperCase() : studyExpr(normalizeExpression(entry.name, applied, entry), performanceSymbol(d.symbol));
   };
 
   /**
@@ -723,6 +724,12 @@ export function SeriesPalette({
    * series being REPLACED (the palette's edit), which keeps the id and
    * whatever this pane does not edit.
    */
+  /** A study series on the staged symbol (spec 2026-11-13 studies §1): none written for $ymbol. */
+  const onSymbol = (built: Series, typed: string): Series => {
+    const symbol = performanceSymbol(typed);
+    return symbol === PERFORMANCE_SELF || symbol === "" ? built : { ...built, symbol, expr: studyExpr(built.expr, symbol) };
+  };
+
   function build(target: Draft, existing: Series | null): Series | null {
     const id = existing?.id ?? seriesId();
     if (target.type === "study") {
@@ -771,10 +778,10 @@ export function SeriesPalette({
       // is the only thing an edit has that a fresh placement does not.
       // `source` is dead weight on the wire (the chart has one source) but it
       // is part of a pre-12.4.0 bundle's identity, so an edit carries it.
-      return seriesFromStudy(
+      return onSymbol(seriesFromStudy(
         { ...instance, source: existing?.source, style: Object.keys(style).length === 0 ? undefined : style },
         target.panel, target.side, id,
-      );
+      ), target.symbol);
     }
     if (!symbolAllowed(target.type, performanceSymbol(target.symbol))) return null;
     if (target.type === "performance" && (target.symbol.trim() === "" || target.anchor.trim() === "")) return null;
@@ -883,7 +890,7 @@ export function SeriesPalette({
     // cannot serve is refused here exactly as it is absent from the list,
     // rather than slipping in as a locally-computed line.
     const inSource = (name: string) => sourcedStudies.find((e) => e.name === name);
-    const parsed = parseStudyExpression(typed, inSource, { allowBusinessDays });
+    const parsed = parseStudy(typed, inSource, { allowBusinessDays });
     // Silent rejection (addendum §2): no chip, no request, no dialog -- the
     // field tints and the text stays for the user to fix.
     if (parsed === null) { setInvalid(true); return; }
@@ -895,7 +902,8 @@ export function SeriesPalette({
       id: seriesId(), type: "study", name: instance.name, params: instance.params,
       panel: defaultPanel(row, lastPanel), side: "right", color: instance.color, expr: instance.expr,
     };
-    if (!duplicate(built, null)) onAdd(built);
+    const placed = parsed.symbol === undefined ? built : onSymbol(built, parsed.symbol);
+    if (!duplicate(placed, null)) onAdd(placed);
     setText("");
     setInvalid(false);
   }
@@ -1184,7 +1192,7 @@ export function SeriesPalette({
                         registry's fields for a study, or a performance line's
                         symbol and anchor. Grouped in a native <fieldset> whose
                         <legend> is the group's accessible name. */}
-                    {((entry !== undefined && entry.params.length > 0) || staged.type !== "study") && (
+                    {(entry !== undefined || staged.type !== "study") && (
                     <fieldset className="chart-sel-group">
                     <legend>Study parameters</legend>
                     {/* The study's formula/reading as the group intro (J closeout,
@@ -1288,9 +1296,8 @@ export function SeriesPalette({
                         </div>
                       );
                     })}
-                    {/* A bar series' symbol (spec 2026-11-13: a ticker, `$ymbol`, `list:<n>` or `$group:<Name>`, picked or typed), then a performance line's anchor. */}
-                    {staged.type !== "study" && (
-                      <div className="chart-sel-frow">
+                    {/* A bar or study series' symbol (spec 2026-11-13: a ticker, `$ymbol`, `list:<n>` or `$group:<Name>`, picked or typed), then a performance line's anchor. */}
+                    <div className="chart-sel-frow">
                         <label htmlFor={`${id}-symbol`}>Symbol</label>
                         <input
                           id={`${id}-symbol`}
@@ -1306,7 +1313,6 @@ export function SeriesPalette({
                         </datalist>
                         <div className="chart-sel-help">{PERFORMANCE_SELF} is this card&apos;s symbol ({symbol})</div>
                       </div>
-                    )}
                     {staged.type === "performance" && (
                       <div
                         className="chart-sel-frow"

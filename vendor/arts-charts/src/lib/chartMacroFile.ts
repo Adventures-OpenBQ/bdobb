@@ -3,7 +3,7 @@
 
 import { isFillPattern, isPen } from "./chart/pen";
 import { parsePanels, scaleOrder, type PanelDef } from "./chart/panels";
-import { seriesId, seriesLabel, symbolAllowed } from "./chart/series";
+import { seriesId, seriesLabel, studyExpr, symbolAllowed } from "./chart/series";
 import { normalizeExpression, type CatalogEntry } from "./chart/studyExpression";
 import type { ChartLayout } from "./chartLayoutsFile";
 import { importRefusal } from "./importLimits";
@@ -106,9 +106,9 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
   // reorder the chart's indicators if its colour suffix is wrong or missing.
   const out: Series = { id: seriesId(), type, params, panel, side: raw.side, color, expr: "" };
 
-  // A bar series or a performance line may name a ticker or a position in the card's list
-  // (spec 2026-11-13 §3): never the list itself, which stays the widget's setting.
-  if (type !== "study" && raw.symbol !== undefined) {
+  // A series may name a ticker or a position in the card's list (spec 2026-11-13 §3; a study
+  // too, spec 2026-11-13 studies §1): never the list itself, which stays the widget's setting.
+  if (raw.symbol !== undefined) {
     if (typeof raw.symbol !== "string" || !symbolAllowed(type, raw.symbol)) {
       return refuse(`${name}: symbol must be a ticker, $ymbol, $group:<Name> or list:<n>.`);
     }
@@ -125,7 +125,7 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
       if (v === undefined && p.default === null) return refuse(`${name}: ${studyName} needs ${p.name}.`);
     }
     out.name = studyName;
-    out.expr = normalizeExpression(studyName, params, entry, color || undefined);
+    out.expr = studyExpr(normalizeExpression(studyName, params, entry, color || undefined), out.symbol);
   } else if (type === "performance") {
     if (out.symbol === undefined) return refuse(`${name}: a performance series needs a symbol.`);
     const anchor = typeof raw.anchor === "string" && raw.anchor.trim() !== "" ? raw.anchor : refuse(`${name}: a performance series needs an anchor.`);

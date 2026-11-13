@@ -22,7 +22,7 @@ import { studiesFromParam } from "./chart/indicatorsParam";
 import { DEFAULT_PANELS_TEXT, parsePanels } from "./chart/panels";
 import { isFillPattern, isPen } from "./chart/pen";
 import type { ChartRange } from "./chart/rangeExpr";
-import { migrateChart, parseSymbolList, seriesId, seriesLabel } from "./chart/series";
+import { migrateChart, parseSymbolList, seriesId, seriesLabel, studyExpr } from "./chart/series";
 import { defaultColor, normalizeExpression, type CatalogEntry } from "./chart/studyExpression";
 import type { ChartCardState, ChartDrawing, ChartLevel, Series, SeriesType } from "./types";
 
@@ -118,7 +118,7 @@ function entryOf(s: Series, lookup: Lookup, stamp: Stamp | null): ChartSeries {
     side: s.side,
     ...(COLOR.test(s.color) ? { color: s.color } : {}),
     ...(Object.keys(style).length > 0 ? { style } : {}),
-    ...(s.type !== "study" && text(s.symbol, 64) ? { symbol: s.symbol } : {}),
+    ...(text(s.symbol, 64) ? { symbol: s.symbol } : {}),
     ...(s.type === "performance" && s.anchor !== undefined ? { anchor: stamped(s.anchor, stamp?.at(s.anchor)) } : {}),
   };
 }
@@ -144,9 +144,9 @@ function seriesOf(e: ChartSeries, lookup: Lookup, panels: number): Series {
   const name = e.name as string;
   return {
     ...s,
-    expr: entry
+    expr: studyExpr(entry
       ? normalizeExpression(name, params, entry, color)
-      : `${name.toUpperCase()}(${Object.values(params).join(", ")})${color ? ` ${color.toLowerCase()}` : ""}`,
+      : `${name.toUpperCase()}(${Object.values(params).join(", ")})${color ? ` ${color.toLowerCase()}` : ""}`, e.symbol),
   };
 }
 
