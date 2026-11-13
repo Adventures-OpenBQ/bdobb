@@ -134,7 +134,6 @@ refetches.) A form is a request you assemble and then send. The submit
 button's label is whatever the backend named it; on a successful submit the
 card refetches, and on anything else an error line appears above the buttons.
 
-[shot-pending]: #27
 
 ---
 

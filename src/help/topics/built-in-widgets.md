@@ -100,7 +100,6 @@ It shows the values it would send, exactly as a request would carry them, with
 labelled as a `symbol`, so it can join a symbol group from any other widget,
 its Date joins any date group, and its Year joins a `year` group.
 
-[shot-pending]: #24
 
 ---
 

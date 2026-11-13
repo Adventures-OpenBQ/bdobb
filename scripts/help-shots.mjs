@@ -109,8 +109,12 @@ function dashboard(id, name, tabs) {
   return JSON.stringify({ id, name, tabs });
 }
 
-function card(id, widgetId, params, layout) {
-  return { id, widgetId, backendId: "b1", params, layout };
+function card(id, widgetId, params, layout, backendId = "b1") {
+  return { id, widgetId, backendId, params, layout };
+}
+
+function builtin(id, widgetId, params, layout) {
+  return card(id, widgetId, params, layout, "builtin");
 }
 
 /**
@@ -254,6 +258,50 @@ const SHOTS = [
       await page.getByRole("dialog", { name: "Connections" }).waitFor();
     },
     take: async (page) => page.getByRole("region", { name: "Workspace connections" }).screenshot({ animations: "disabled" }),
+  },
+  {
+    slug: "card-parameters",
+    // v3 draws parameters in the card's title bar: Congress Committees is the
+    // cascading pair (committee's options depend on chamber), Form Table adds a
+    // form in the body. Nothing to open -- the controls are always in view.
+    seed: () => seedWith({
+      "dashboards/d1.json": dashboard("d1", "Main", [{
+        id: "t1", name: "Main", cards: [
+          card("c-congress", "congress", { chamber: "house", committee: "wm" }, { x: 0, y: 0, w: 20, h: 11 }),
+          card("c-form", "form_table", { symbol: "AAPL" }, { x: 20, y: 0, w: 20, h: 11 }),
+        ],
+      }]),
+    }),
+    prepare: async (page) => {
+      // The cascading select only fills once /committees has answered.
+      await page.getByLabel("Committee", { exact: true }).waitFor();
+    },
+    take: async (page) => page.screenshot({ animations: "disabled" }),
+  },
+  {
+    slug: "built-in-widgets",
+    // Five of the six: note and clock, website and feed, markdown below; the
+    // Parameter echo is not pictured.
+    seed: () => seedWith({
+      "dashboards/d1.json": dashboard("d1", "Main", [{
+        id: "t1", name: "Main", cards: [
+          builtin("c-note", "note", { text: "## Desk notes\n\nEarnings on Thursday.\n\n- check the fails print\n- roll the hedge" }, { x: 0, y: 0, w: 20, h: 11 }),
+          builtin("c-clock", "clock", {}, { x: 20, y: 0, w: 20, h: 11 }),
+          builtin("c-site", "website", { url: `${MOCK_URL}/embed` }, { x: 0, y: 11, w: 20, h: 11 }),
+          builtin("c-rss", "rss", { url: `${MOCK_URL}/feed.xml` }, { x: 20, y: 11, w: 20, h: 11 }),
+          builtin("c-md", "markdown", { text: "# Trading plan\n\nSize down into the number.\n\n1. Confirm the print\n2. Fade the first move" }, { x: 0, y: 22, w: 40, h: 12 }),
+        ],
+      }]),
+    }),
+    prepare: async (page) => {
+      // Five cards deep the grid is taller than the viewport; the dashboard
+      // area scrolls internally, so a taller viewport shows the whole tab.
+      await page.setViewportSize({ width: 1280, height: 1200 });
+      await page.locator(".rss-item, .rss-list li").first().waitFor();
+      // The markdown editor loads lazily; wait for its heading, not the fallback.
+      await page.locator(".markdown-editor h1").first().waitFor();
+    },
+    take: async (page) => page.screenshot({ animations: "disabled" }),
   },
   {
     slug: "import-and-export",
