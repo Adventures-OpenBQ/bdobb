@@ -85,7 +85,6 @@ run-button card. They always use the parameters that were last run, never
 un-run edits. There is no keyboard shortcut for Run, and no way to turn a run
 button on or off per card.
 
-[shot-pending]: #19
 
 ---
 

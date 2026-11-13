@@ -99,7 +99,6 @@ Data files are capped at 50 MB, checked before a byte is read:
 *name is 51.2 MB; the limit is 50 MB.* Dropping onto a viewer window does
 nothing at all — there is no veil there.
 
-[shot-pending]: #25
 
 ---
 

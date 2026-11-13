@@ -79,7 +79,6 @@ would look like mystery data loss.
 disk it is `logs/bdobb.log` inside the app's data directory, with up to five
 rotated generations beside it. It rotates at 10 MB.
 
-[shot-pending]: #23
 
 ---
 

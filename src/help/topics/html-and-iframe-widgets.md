@@ -62,7 +62,6 @@ shows and every request puts in a query string.
 
 Sub-widget data messages are recognised and ignored.
 
-[shot-pending]: #21
 
 ---
 
