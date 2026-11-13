@@ -1,4 +1,4 @@
-// vendored from openbq-docker 45d26cb8bee9cba565668e4546c5b2c6495c6503 funnel-gateway/charts-policy.mjs sha256:a73e791e59a2b60dd5b3c6698d09759b7bbafa3a0f2ac0da03010de68f12ed65
+// vendored from openbq-docker ec8bc00ce12b3f4a1967370903578934601b83eb funnel-gateway/charts-policy.mjs sha256:a2a9a802a8af84037e6ba9a013bc312bf51e3e8c6f001e91ec9107636f2cf60e
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -23,7 +23,8 @@ const VALUES = {
   start: INSTANT, end: INSTANT, anchor: INSTANT,
   provider: /^(?:yfinance|eodhd|temporaldb)$/, session: /^(?:extended|regular|24hr)$/,
   source: /^(?:local|eodhd)$/, macro: /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/,
-  indicators: /^[A-Za-z0-9:=.,+_-]{0,240}$/, basis: /^(?:adjusted|raw)$/,
+  // `^` is a cross-symbol study's vs ticker (ratio:vs=^GSPC); the server checks every vs against its own ticker rule.
+  indicators: /^[A-Za-z0-9:=.,+_^-]{0,240}$/, basis: /^(?:adjusted|raw)$/,
   warmup: /^(?:auto|none)$/, fresh: /^(?:true|false)$/,
   width: /^[1-9][0-9]{2,3}$/, height: /^[1-9][0-9]{2,3}$/, theme: /^(?:light|dark)$/,
   limit: /^(?:[1-9]|[1-9][0-9]|1[0-9]{2}|200)$/, before: /^[A-Za-z0-9_-]{1,512}$/,
