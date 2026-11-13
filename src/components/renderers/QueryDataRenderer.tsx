@@ -10,6 +10,7 @@ import {parseContract,type TemporalContext} from '../../lib/temporal/contracts';
 import {tableExecutionStore} from '../../stores/tableExecutionStore';
 import {useDashboardStore} from '../../stores/dashboardStore';
 import {QueryLibraryDialog} from '../dialogs/QueryLibraryDialog';
+import {FeedSymbolGroupDialog} from '../FeedSymbolGroupDialog';
 import {LocalTableRenderer} from './LocalTableRenderer';
 import {KNOWLEDGE_BASIS_LABELS,TEMPORAL_MODE_LABELS,basisLabel} from '../../lib/temporal/labels';
 
@@ -77,7 +78,7 @@ export function ContextBar({context:c,readOnly,onApply,submitLabel='Apply and ru
 }
 
 export function QueryDataRenderer({dashboardId,card,filterRow,onStateChange,readOnly=false}:{dashboardId:string;card:DashboardCard;filterRow:boolean;onStateChange?:(state:Partial<TableCardState>)=>void;readOnly?:boolean}){
- const [library,setLibrary]=useState(false),[drawer,setDrawer]=useState(false);const view=useSyncExternalStore(tableExecutionStore.subscribe,()=>tableExecutionStore.readView(dashboardId,card.id));
+ const [library,setLibrary]=useState(false),[drawer,setDrawer]=useState(false);const [feed,setFeed]=useState(false);const view=useSyncExternalStore(tableExecutionStore.subscribe,()=>tableExecutionStore.readView(dashboardId,card.id));
  let error:string|undefined;try{if(card.queryBinding)parseQueryBinding(card.queryBinding);}catch(e){error=e instanceof Error?e.message:'Invalid query binding';}
  useEffect(()=>{if(card.queryBinding&&!error)tableExecutionStore.ensureTable(dashboardId,card.id);},[dashboardId,card.id,card.queryBinding,error]);
  const ref=view.ready?.completeness;
@@ -103,6 +104,7 @@ export function QueryDataRenderer({dashboardId,card,filterRow,onStateChange,read
   {drawer&&receipt&&binding?<div id={`query-receipt-${card.id}`}><ReceiptDrawer receipt={receipt} binding={binding} card={card} readOnly={readOnly} onClose={()=>setDrawer(false)}/></div>:null}
   {error?<p className="bd-notice bd-notice--error" role="alert">{error}</p>:null}
   {binding&&!error?<LocalTableRenderer executionIdentity={{dashboardId,widgetId:card.id}} file="" label={card.title??'Shared query'} refreshKey={0} state={card.table} onStateChange={onStateChange} filterRow={filterRow}/>:null}
-  {library?<QueryLibraryDialog backendId={card.backendId} readOnly={readOnly} currentTable={{definition:card.tableDefinition,queryId:binding?.kind==='query'?binding.queryId:undefined}} onClose={()=>setLibrary(false)} onBind={(next,layout)=>useDashboardStore.getState().bindQueryCard(card.id,next,layout)}/>:null}
+  {library?<QueryLibraryDialog backendId={card.backendId} readOnly={readOnly} currentTable={{definition:card.tableDefinition,queryId:binding?.kind==='query'?binding.queryId:undefined}} onFeed={readOnly?undefined:()=>setFeed(true)} onClose={()=>setLibrary(false)} onBind={(next,layout)=>useDashboardStore.getState().bindQueryCard(card.id,next,layout)}/>:null}
+  {feed?<FeedSymbolGroupDialog dashboardId={dashboardId} sourceWidgetId={card.id} onClose={()=>setFeed(false)}/>:null}
  </div>;
 }

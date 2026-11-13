@@ -41,3 +41,19 @@ it('opts into an exact reviewed acquisition policy while cache-only remains the 
  await userEvent.click(screen.getByRole('button',{name:'Open as table widget'}));
  await waitFor(()=>expect(bind).toHaveBeenCalledWith(expect.objectContaining({acquisition:{version:1,policyId:queryId,policyRevision:3}}),undefined));
 });
+
+it('opens the selected query as the table, then asks to feed a symbol group (spec 2026-11-13 G4)',async()=>{
+ const definition:QueryDefinition={schema_version:1,query_id:queryId,revision:1,title:'Watchlist',kind:'sql',parameters:[],request:{sql:'SELECT 1',sources:{},bindings:{}},temporal:{mode:'current_corrected'},schema_expectation:[]};
+ fake.list.mockResolvedValue([definition]);
+ const order:string[]=[];
+ const bind=vi.fn(async()=>{order.push('bind');});
+ const {unmount}=render(<QueryLibraryDialog backendId="b1" onClose={()=>{order.push('close');}} onBind={bind} onFeed={()=>{order.push('feed');}}/>);
+ await userEvent.click(await screen.findByRole('button',{name:'Select Watchlist'}));
+ await userEvent.click(screen.getByRole('button',{name:'Open as table and feed a symbol group'}));
+ await waitFor(()=>expect(order).toEqual(['bind','close','feed']));
+ expect(bind).toHaveBeenCalledWith(expect.objectContaining({queryId,revision:1}),undefined);
+ unmount();
+ render(<QueryLibraryDialog backendId="b1" onClose={()=>{}} onBind={bind}/>);
+ await userEvent.click(await screen.findByRole('button',{name:'Select Watchlist'}));
+ expect(screen.queryByRole('button',{name:'Open as table and feed a symbol group'})).toBeNull();
+});
