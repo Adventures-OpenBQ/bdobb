@@ -5,12 +5,14 @@ import { STUDY_SWATCHES } from "../../../lib/chart/createChartTheme";
 import {
   PERFORMANCE_SELF,
   panelLabel,
+  parseBarSeries,
   performanceSymbol,
   SERIES_TYPE_LABELS,
   parsePerformance,
   seriesFromStudy,
   seriesId,
   seriesLabel,
+  symbolAllowed,
 } from "../../../lib/chart/series";
 import type { PanelDef } from "../../../lib/chart/panels";
 import {
@@ -58,6 +60,10 @@ type Props = {
   panels: PanelDef[];
   /** The card's symbol, shown as the Performance row's `$ymbol` reading. */
   symbol: string;
+  /** The card's symbol list (spec 2026-11-13): the picker offers list:2 … list:n for it. Defaults to [symbol]. */
+  symbols?: string[];
+  /** The dashboard's symbol groups, by name: the picker offers each as $group:<Name>. */
+  symbolGroups?: string[];
   onAdd: (series: Series) => void;
   onApply: (series: Series) => void;
   /** The adapter's `drawings.study` -- a token value, passed in, never a literal here. */
@@ -401,7 +407,7 @@ function AddSeriesModal({ titleId, onClose, children }: {
  * hands a new id up -- starts from a fresh draft.
  */
 export function SeriesPalette({
-  catalog, status, active, editing, panels, symbol, onAdd, onApply,
+  catalog, status, active, editing, panels, symbol, symbols = [symbol], symbolGroups = [], onAdd, onApply,
   fallbackColor, allowBusinessDays, source, onClose, onRefresh, onEditSeries, onReorderSeries, panelFilter,
   favorites, onAddFavorite, onRemoveFavorite,
 }: Props) {
@@ -599,7 +605,11 @@ export function SeriesPalette({
     entry !== undefined && staged !== null && paramInvalid(entry, p, staged.params[p.name], allowBusinessDays);
   const performanceIncomplete = staged !== null && staged.type === "performance"
     && (staged.symbol.trim() === "" || staged.anchor.trim() === "");
-  const incomplete = (entry !== undefined && entry.params.some(invalidParam)) || performanceIncomplete;
+  // A bar series or performance line naming something that is not a reference (spec 2026-11-13 §1).
+  const symbolInvalid = staged !== null && staged.type !== "study" && !symbolAllowed(staged.type, performanceSymbol(staged.symbol));
+  const incomplete = (entry !== undefined && entry.params.some(invalidParam)) || performanceIncomplete || symbolInvalid;
+  /** What the Symbol field's picker offers; free text is the field itself. */
+  const symbolOptions = [PERFORMANCE_SELF, ...symbols.slice(1).map((_t, i) => `list:${i + 2}`), ...symbolGroups.map((g) => `$group:${g}`)];
   // One unit per study (unifyWindows): a `bd` in one window field pulls the
   // entry's other windows with it.
   const applied = entry === undefined || staged === null ? {} : unifyWindows(staged.params, entry);
@@ -690,12 +700,15 @@ export function SeriesPalette({
    * reads to name it, so the pill, the chip and the saved card all call a
    * series the same thing.
    */
-  const shapeOf = (d: Draft): Series => ({
-    id: "", type: d.type, params: {}, panel: d.panel, side: d.side, color: "", expr: "",
-    ...(d.type === "performance"
-      ? { symbol: performanceSymbol(d.symbol), anchor: d.anchor.trim() }
-      : {}),
-  });
+  const shapeOf = (d: Draft): Series => {
+    const symbol = performanceSymbol(d.symbol);
+    return {
+      id: "", type: d.type, params: {}, panel: d.panel, side: d.side, color: "", expr: "",
+      ...(d.type === "performance" ? { symbol, anchor: d.anchor.trim() } : {}),
+      // A bar series on the card's own symbol stores none, so a one-ticker card saves as before.
+      ...(d.type !== "performance" && d.type !== "study" && symbol !== PERFORMANCE_SELF ? { symbol } : {}),
+    };
+  };
 
   /** What the pill shows: a study's normalised expression, else the series' own label. */
   const labelOf = (d: Draft): string => {
@@ -763,6 +776,7 @@ export function SeriesPalette({
         target.panel, target.side, id,
       );
     }
+    if (!symbolAllowed(target.type, performanceSymbol(target.symbol))) return null;
     if (target.type === "performance" && (target.symbol.trim() === "" || target.anchor.trim() === "")) return null;
     const isColoured = COLOURED.includes(target.type as PriceType);
     // Only what the NEW type can use survives (T7 review, finding 3): staging
@@ -836,14 +850,14 @@ export function SeriesPalette({
 
   /**
    * A typed Price & volume expression: one of the five fixed names
-   * (`OHLC`, `Volume`, …) or the performance notation, which always names
+   * (`OHLC`, `Volume`, …), optionally with a symbol (`Candlestick(list:2)`), or the performance notation, which always names
    * the symbol first and reads a one-argument `Performance(T-3m)` as the
    * card's own symbol. The placement is the default one -- the pickers are
    * for the staged row, and a typed line has not been staged.
    */
   function typedDraft(value: string): Draft | null {
-    const fixed = PRICE_TYPES.find((t) => t !== "performance" && PRICE_LABELS[t].toLowerCase() === value.toLowerCase());
-    if (fixed !== undefined) return seed(priceRow(fixed));
+    const bar = parseBarSeries(value);
+    if (bar !== null) return { ...seed(priceRow(bar.type)), symbol: bar.symbol ?? PERFORMANCE_SELF };
     const perf = parsePerformance(value);
     if (perf === null) return null;
     return { ...seed(priceRow("performance")), symbol: perf.symbol, anchor: perf.anchor };
@@ -1170,7 +1184,7 @@ export function SeriesPalette({
                         registry's fields for a study, or a performance line's
                         symbol and anchor. Grouped in a native <fieldset> whose
                         <legend> is the group's accessible name. */}
-                    {((entry !== undefined && entry.params.length > 0) || staged.type === "performance") && (
+                    {((entry !== undefined && entry.params.length > 0) || staged.type !== "study") && (
                     <fieldset className="chart-sel-group">
                     <legend>Study parameters</legend>
                     {/* The study's formula/reading as the group intro (J closeout,
@@ -1274,48 +1288,46 @@ export function SeriesPalette({
                         </div>
                       );
                     })}
-                    {/* A performance line's two arguments (spec, Series): the
-                        symbol first -- a ticker, `$ymbol` for the card's own,
-                        or `$group:<Name>` -- then the instant it is rebased
-                        on. Both are text: the symbol may be a group reference
-                        the dashboard resolves, and the anchor is the date
-                        grammar the chart resolves. Neither is interpreted
-                        here. */}
+                    {/* A bar series' symbol (spec 2026-11-13: a ticker, `$ymbol`, `list:<n>` or `$group:<Name>`, picked or typed), then a performance line's anchor. */}
+                    {staged.type !== "study" && (
+                      <div className="chart-sel-frow">
+                        <label htmlFor={`${id}-symbol`}>Symbol</label>
+                        <input
+                          id={`${id}-symbol`}
+                          type="text"
+                          spellCheck={false}
+                          list={`${id}-symbols`}
+                          value={staged.symbol}
+                          data-invalid={(staged.type === "performance" && staged.symbol.trim() === "") || symbolInvalid ? "true" : undefined}
+                          onChange={(event) => patch({ symbol: event.target.value })}
+                        />
+                        <datalist id={`${id}-symbols`}>
+                          {symbolOptions.map((option) => <option key={option} value={option} />)}
+                        </datalist>
+                        <div className="chart-sel-help">{PERFORMANCE_SELF} is this card&apos;s symbol ({symbol})</div>
+                      </div>
+                    )}
                     {staged.type === "performance" && (
-                      <>
-                        <div className="chart-sel-frow">
-                          <label htmlFor={`${id}-symbol`}>Symbol</label>
-                          <input
-                            id={`${id}-symbol`}
-                            type="text"
-                            spellCheck={false}
-                            value={staged.symbol}
-                            data-invalid={staged.symbol.trim() === "" ? "true" : undefined}
-                            onChange={(event) => patch({ symbol: event.target.value })}
-                          />
-                          <div className="chart-sel-help">{PERFORMANCE_SELF} is this card&apos;s symbol ({symbol})</div>
-                        </div>
-                        <div
-                          className="chart-sel-frow"
-                          onFocus={() => setAnchorFocus("perf")}
-                          onBlur={(event) => {
-                            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                              setAnchorFocus(null);
-                            }
-                          }}
-                        >
-                          <label htmlFor={`${id}-anchor`}>Anchor</label>
-                          <input
-                            id={`${id}-anchor`}
-                            type="text"
-                            spellCheck={false}
-                            value={staged.anchor}
-                            data-invalid={staged.anchor.trim() === "" ? "true" : undefined}
-                            onChange={(event) => patch({ anchor: event.target.value })}
-                          />
-                          {anchorFocus === "perf" ? <AnchorChips onPick={(expr) => patch({ anchor: expr })} /> : null}
-                        </div>
-                      </>
+                      <div
+                        className="chart-sel-frow"
+                        onFocus={() => setAnchorFocus("perf")}
+                        onBlur={(event) => {
+                          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                            setAnchorFocus(null);
+                          }
+                        }}
+                      >
+                        <label htmlFor={`${id}-anchor`}>Anchor</label>
+                        <input
+                          id={`${id}-anchor`}
+                          type="text"
+                          spellCheck={false}
+                          value={staged.anchor}
+                          data-invalid={staged.anchor.trim() === "" ? "true" : undefined}
+                          onChange={(event) => patch({ anchor: event.target.value })}
+                        />
+                        {anchorFocus === "perf" ? <AnchorChips onPick={(expr) => patch({ anchor: expr })} /> : null}
+                      </div>
                     )}
                     </fieldset>
                     )}

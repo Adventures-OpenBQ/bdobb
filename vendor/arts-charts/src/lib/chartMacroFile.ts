@@ -3,7 +3,7 @@
 
 import { isFillPattern, isPen } from "./chart/pen";
 import { parsePanels, scaleOrder, type PanelDef } from "./chart/panels";
-import { SERIES_TYPE_LABELS, seriesId, seriesLabel } from "./chart/series";
+import { seriesId, seriesLabel, symbolAllowed } from "./chart/series";
 import { normalizeExpression, type CatalogEntry } from "./chart/studyExpression";
 import type { ChartLayout } from "./chartLayoutsFile";
 import { importRefusal } from "./importLimits";
@@ -106,6 +106,15 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
   // reorder the chart's indicators if its colour suffix is wrong or missing.
   const out: Series = { id: seriesId(), type, params, panel, side: raw.side, color, expr: "" };
 
+  // A bar series or a performance line may name a ticker or a position in the card's list
+  // (spec 2026-11-13 §3): never the list itself, which stays the widget's setting.
+  if (type !== "study" && raw.symbol !== undefined) {
+    if (typeof raw.symbol !== "string" || !symbolAllowed(type, raw.symbol)) {
+      return refuse(`${name}: symbol must be a ticker, $ymbol, $group:<Name> or list:<n>.`);
+    }
+    out.symbol = raw.symbol;
+  }
+
   let entry: CatalogEntry | undefined;
   if (type === "study") {
     const studyName = typeof raw.name === "string" ? raw.name : refuse(`${name}: a study needs a name.`);
@@ -118,13 +127,12 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
     out.name = studyName;
     out.expr = normalizeExpression(studyName, params, entry, color || undefined);
   } else if (type === "performance") {
-    const symbol = typeof raw.symbol === "string" && raw.symbol.trim() !== "" ? raw.symbol : refuse(`${name}: a performance series needs a symbol.`);
+    if (out.symbol === undefined) return refuse(`${name}: a performance series needs a symbol.`);
     const anchor = typeof raw.anchor === "string" && raw.anchor.trim() !== "" ? raw.anchor : refuse(`${name}: a performance series needs an anchor.`);
-    out.symbol = symbol;
     out.anchor = anchor;
-    out.expr = `Performance(${symbol}, ${anchor})`;
+    out.expr = seriesLabel(out);
   } else {
-    out.expr = SERIES_TYPE_LABELS[type as Exclude<SeriesType, "performance" | "study">];
+    out.expr = seriesLabel(out);
   }
 
   // The appearance whitelist (E2). Unknown keys, out-of-range values, or a

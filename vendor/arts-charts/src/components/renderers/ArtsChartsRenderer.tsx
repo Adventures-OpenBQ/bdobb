@@ -53,7 +53,8 @@ import { buildChartSpec, parseChartSpec, specJson } from "../../lib/chart/chartS
 import { DEFAULT_PANELS_TEXT, encodePanels, parsePanels, scaleOrder } from "../../lib/chart/panels";
 import { closeData, ohlcData, performanceData, volumeData } from "../../lib/chart/derived";
 import {
-  GROUP_PREFIX, PERFORMANCE_SELF, indicatorsFromSeries, migrateChart, seriesFromMacro, seriesLabel,
+  GROUP_PREFIX, MAX_LIST, SERIES_TYPE_LABELS, indicatorsFromSeries, migrateChart, parseSymbolList,
+  seriesFromMacro, seriesLabel, seriesTicker,
 } from "../../lib/chart/series";
 import { matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
 import { sendRaw } from "../../lib/chart/wireAnchor";
@@ -107,7 +108,7 @@ const NARROW_WIDTH = 540;
 const DEFAULT_PANELS = parsePanels(DEFAULT_PANELS_TEXT).panels;
 
 /**
- * How many OTHER symbols one card's performance series may name.
+ * How many OTHER symbols one card's bar series may name: list entries, literals and groups compete for the same slots (spec 2026-11-13 §2).
  *
  * ponytail: a fixed ceiling, because a hook cannot be called in a loop whose
  * length changes and every extra ticker is one `useSeriesBars`. Four covers
@@ -132,9 +133,6 @@ const VOLUME_SCALE_MARGINS = { top: 0.1, bottom: 0 };
  * off explicitly or the newcomer is squashed into the top 90%.
  */
 const DEFAULT_SCALE_MARGINS = { top: 0.2, bottom: 0.1 };
-
-/** The parameter a symbol group is a group OF: any other group is the wrong kind here. */
-const SYMBOL_PARAM = "symbol";
 
 /** A bar time (unix seconds) as an instant, or undefined when there is no bar. */
 function barInstant(time: number | undefined): Date | undefined {
@@ -518,7 +516,10 @@ function ChartCard({
   // and an iPad's keyboard capitalises the first letter it is handed, so a
   // card typed there asked for "Btc-usd" and drew nothing while the Mac's
   // "BTC-USD" drew 1440 bars off the same socket (2026-09-14).
-  const symbol = (params.symbol ?? "").toUpperCase();
+  // The card's symbol list (spec 2026-11-13 §1): `symbol` is list:1, the one ticker the study
+  // socket, the tick cache, the symbol-meta lookup and the card's own /series ever see.
+  const { list: symbols, truncated: listTruncated } = useMemo(() => parseSymbolList(params.symbol ?? ""), [params.symbol]);
+  const symbol = symbols[0] ?? "";
   const interval = state.interval ?? params.interval ?? "1m";
   const declared = widget.params.find((p) => p.paramName === "interval")?.options?.map((o) => String(o.value));
   // Spread the shared list into a mutable array: it is `readonly string[]`,
@@ -1112,38 +1113,26 @@ function ChartCard({
   );
 
   /**
-   * Each performance series' symbol, resolved (spec, Series): `$ymbol` (and
-   * a series that names none) is the card's own, `$group:<Name>` is the
-   * named symbol group's current value, anything else is a ticker as typed.
-   * A reference that names no group, or a group of another kind, is not
-   * resolved to something else -- the series is left off with a note, the
-   * same reading an unresolvable anchor gets.
+   * Each bar series' ticker, resolved by `seriesTicker` (spec 2026-11-13 §2): list:1 is the
+   * card's own bars; any other ticker takes an extra-bars slot, one per distinct ticker. A
+   * reference that does not resolve leaves its series off with a note, and so does a
+   * performance line with no anchor it can rebase on.
    */
   const performance = useMemo(() => {
     const byId = new Map<string, string>();
     const notes: Record<string, string> = {};
     const extras: string[] = [];
     for (const s of series) {
-      if (s.type !== "performance") continue;
-      const named = s.symbol ?? PERFORMANCE_SELF;
-      let ticker: string | null = named === PERFORMANCE_SELF ? symbol : named;
-      if (named.startsWith(GROUP_PREFIX)) {
-        const name = named.slice(GROUP_PREFIX.length);
-        const group = (groups ?? []).find((g) => g.name === name);
-        if (group === undefined) { notes[s.id] = `no group "${name}"`; ticker = null; }
-        // A group is a group OF a parameter; one bound to `interval` or
-        // `as_of` has a value, and it is not a symbol.
-        else if (group.paramName !== SYMBOL_PARAM) { notes[s.id] = `"${name}" is not a symbol group`; ticker = null; }
-        else ticker = group.value.toUpperCase();
-      }
-      if (ticker === null || ticker === "") { if (notes[s.id] === undefined) notes[s.id] = "no symbol"; continue; }
-      // A series with no anchor at all has nothing to quote back (T6 review,
-      // finding 10): `anchor "" does not resolve` read as a bug in the card
-      // rather than as a field the user has not filled in yet.
-      if (s.anchor === undefined || s.anchor === "") { notes[s.id] = "no rebase anchor"; continue; }
-      if (resolveWindowed(s.anchor) === null) {
-        notes[s.id] = `anchor "${s.anchor}" does not resolve`;
-        continue;
+      const resolved = seriesTicker(s, symbols, groups ?? []);
+      if ("note" in resolved) { notes[s.id] = resolved.note; continue; }
+      if (s.type === "study") continue; // drawn from the socket, on list:1
+      const ticker = resolved.ticker;
+      // An empty card's own series draw its (empty) bars quietly, as they always have.
+      if (ticker === "" && (s.type === "performance" || symbol !== "")) { notes[s.id] = "no symbol"; continue; }
+      if (s.type === "performance") {
+        // A series with no anchor at all has nothing to quote back (T6 review, finding 10).
+        if (s.anchor === undefined || s.anchor === "") { notes[s.id] = "no rebase anchor"; continue; }
+        if (resolveWindowed(s.anchor) === null) { notes[s.id] = `anchor "${s.anchor}" does not resolve`; continue; }
       }
       if (ticker !== symbol && !extras.includes(ticker)) {
         if (extras.length >= MAX_EXTRA_SYMBOLS) { notes[s.id] = `only ${MAX_EXTRA_SYMBOLS} extra symbols per card`; continue; }
@@ -1152,7 +1141,7 @@ function ChartCard({
       byId.set(s.id, ticker);
     }
     return { byId, notes, extras };
-  }, [series, symbol, groups, resolveWindowed]);
+  }, [series, symbols, symbol, groups, resolveWindowed]);
 
   /**
    * Why a STUDY is not on the chart, keyed by series id: an anchor
@@ -1178,6 +1167,16 @@ function ChartCard({
     () => ({ ...performance.notes, ...studyNotes }),
     [performance.notes, studyNotes],
   );
+  /** A bar series drawn off another ticker reads under it, chip and legend alike: "MSFT Candlestick". */
+  const overlayLabels = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const s of series) {
+      const ticker = performance.byId.get(s.id);
+      if (ticker === undefined || ticker === symbol || s.type === "performance" || s.type === "study") continue;
+      out[s.id] = `${ticker} ${SERIES_TYPE_LABELS[s.type]}`;
+    }
+    return out;
+  }, [series, performance.byId, symbol]);
 
   // The other symbols' bars, one hook per slot (see MAX_EXTRA_SYMBOLS): an
   // unused slot is disabled and fetches nothing. The provider follows the
@@ -1263,8 +1262,8 @@ function ChartCard({
   // `series`, `t` and `perf` (v12.4.0) ride along for the same reason
   // `panes` does: the legend reads them out of a handler subscribed once
   // per set of charts, and must report the card as it is NOW.
-  const live = useRef({ tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo });
-  live.current = { tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo };
+  const live = useRef({ tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo });
+  live.current = { tool, state, onPatch, onParam, drawingEdge, candles, intervalSeconds, panes, magnet, measure, studies, series, overlayLabels, t, theme, source, wireResolver, calendar, anchorWindow, clippedTo };
   /**
    * Every chart series this card has drawn, keyed by what it draws:
    * `<series id>` for a card series with one line, `<series id>|<column>`
@@ -1617,24 +1616,29 @@ function ChartCard({
       // answer than one silently moved somewhere it was not put.
       if (api === undefined) continue;
       if (s.type === "study") continue; // from the socket, below
+      // Every bar series draws off its resolved ticker's bars (spec 2026-11-13 §2): the card's
+      // own for list:1, an extra-bars slot otherwise; unresolved (the chip says why), nothing.
+      const ticker = performance.byId.get(s.id);
+      if (ticker === undefined) continue;
+      const bars = ticker === symbol ? candles : extraBars.get(ticker) ?? [];
       const colour = colourOf(s);
       // The side is part of the identity (finding 3): a series whose side
       // flipped has to be recreated on the other scale, not re-optioned.
       const kind = `${s.type}|${s.side}`;
       let line: ISeriesApi<PlotSeriesType> | null = null;
       if (s.type === "candlestick") {
-        line = draw(s.id, api, kind, CandlestickSeries, { ...t.candles, ...onScale(s.side) }, ohlcData(candles));
+        line = draw(s.id, api, kind, CandlestickSeries, { ...t.candles, ...onScale(s.side) }, ohlcData(bars));
       } else if (s.type === "ohlc") {
         // Black-and-white bars (spec, Series): both directions the text
         // colour, thin, so the open and close ticks read as the reading and
         // the colour says nothing at all.
         line = draw(s.id, api, kind, BarSeries, {
           thinBars: true, upColor: t.bars, downColor: t.bars, ...onScale(s.side),
-        }, ohlcData(candles));
+        }, ohlcData(bars));
       } else if (s.type === "line") {
         line = draw(s.id, api, kind, LineSeries, {
           color: colour, lineWidth: widthOf(s), lineStyle: penOf(s), ...onScale(s.side), ...annotation(),
-        }, closeData(candles));
+        }, closeData(bars));
       } else if (s.type === "area") {
         line = draw(s.id, api, kind, AreaSeries, {
           lineColor: colour, lineStyle: penOf(s),
@@ -1643,22 +1647,20 @@ function ChartCard({
           // under the line rather than a block behind it.
           bottomColor: withAlpha(colour, 0),
           ...onScale(s.side), ...annotation(),
-        }, closeData(candles));
+        }, closeData(bars));
       } else if (s.type === "volume") {
         line = draw(s.id, api, kind, HistogramSeries, {
           priceFormat: { type: "volume" }, color: t.volume.up, ...onScale(s.side), ...annotation(),
           // Tinted per bar to its own direction at under half opacity
           // (spec §8.3), so the auction's shape reads without competing
           // with price.
-        }, volumeData(candles, t.volume.up, t.volume.down));
+        }, volumeData(bars, t.volume.up, t.volume.down));
       } else if (s.type === "performance") {
         // Left off entirely when its symbol or its anchor does not resolve
         // -- the chip carries the reason (see `performance` above), which is
         // the same reading an unresolvable study anchor gets.
-        const ticker = performance.byId.get(s.id);
         const anchorAt = s.anchor === undefined ? null : resolveWindowed(s.anchor);
-        if (ticker === undefined || anchorAt === null) continue;
-        const bars = ticker === symbol ? candles : extraBars.get(ticker) ?? [];
+        if (anchorAt === null) continue;
         const data = performanceData(bars, anchorAt);
         perf.current.set(s.id, data);
         line = draw(s.id, api, kind, LineSeries, {
@@ -1674,6 +1676,11 @@ function ChartCard({
       // pen, and the price's label is the one label a panel has always had.
       if (line !== null && s.type !== "candlestick" && s.type !== "ohlc") {
         label(s.id, line, colourOf(s), s.style?.axisValue !== false);
+      }
+      // An overlay reads in the legend as a performance line does, off the data drawn for it.
+      if (s.type !== "performance") {
+        if (ticker === symbol) perf.current.delete(s.id);
+        else perf.current.set(s.id, s.type === "volume" ? bars.map((b) => ({ time: b.time, value: b.volume })) : closeData(bars));
       }
       // Panel 1's price drawing is what the levels hang off, what a click's
       // y is read through and what the drawing tools measure against. The
@@ -2826,7 +2833,7 @@ function ChartCard({
     // name one study one way; anything else keeps the server's label and
     // the same colour fallback the line itself takes.
     const {
-      panes: livePanes, studies: instances, series: cardSeries, t: liveTheme,
+      panes: livePanes, studies: instances, series: cardSeries, overlayLabels: liveLabels, t: liveTheme,
       source: liveSource, wireResolver: liveResolve,
     } = live.current;
     if (bar === null) return { bar, decimals, studies: [] };
@@ -2864,17 +2871,17 @@ function ChartCard({
           order: rank(card),
         }];
       }));
-    // A performance line reads in the legend too (spec, acceptance 2a: an
-    // NVDA card carrying SPX shows both) -- off the data last drawn for it,
-    // not off the bars, since the reading IS the rebased percentage.
+    // A performance line, and a bar series drawn off another ticker, read in the legend too
+    // (spec, acceptance 2a: an NVDA card carrying SPX shows both) -- off the data last drawn for
+    // it, not off the bars, since a performance reading IS the rebased percentage.
     for (const s of cardSeries) {
-      if (s.type !== "performance") continue;
+      if (s.type === "study") continue;
       const points = perf.current.get(s.id);
       if (points === undefined) continue;
       readings.push({
         // A performance line is one line, so its own id is its group.
         key: s.id,
-        label: seriesLabel(s),
+        label: liveLabels[s.id] ?? seriesLabel(s),
         color: s.color === "" ? liveTheme.drawings.study : s.color,
         value: points.find((point) => point.time === bar.time)?.value ?? null,
         panel: s.panel,
@@ -3618,8 +3625,9 @@ function ChartCard({
           the series strip are today's components in the opposite order,
           and the old .chart-header row is gone. */}
       <div className="chart-top">
+        {/* The list as typed (spec 2026-11-13 §3); everything the header looks up reads list:1. */}
         <Header
-          symbol={symbol}
+          symbol={(params.symbol ?? "").toUpperCase()}
           meta={meta}
           symbolEditing={symbolEditing}
           onSymbolEditing={setSymbolEditing}
@@ -3660,6 +3668,7 @@ function ChartCard({
           served={served}
           source={source}
           notes={seriesNotes}
+          labels={overlayLabels}
           showPanels={panelDefs.length > 1}
           onReorder={reorderSeries}
           onEdit={(id) => { setEditing(id); openLayout("series"); }}
@@ -3668,6 +3677,7 @@ function ChartCard({
         />}
       </div>
       {clippedTo === undefined ? null : <div className="chart-range-note" role="status">Range limited to {clippedTo} at this interval</div>}
+      {listTruncated ? <div className="chart-range-note" role="status">list truncated to {MAX_LIST}</div> : null}
       {/* Mounted on every live card, empty or not, so a screen reader announces the note that arrives in it. */}
       {liveCard ? <div className="chart-live-note" role="status">{liveText}{volumeText === null ? null : <div>{volumeText}</div>}</div> : null}
       {(state.levels ?? []).some((level) => level.origin !== undefined) && (
@@ -3813,6 +3823,8 @@ function ChartCard({
               // parsed for the host above.
               panels={panelDefs}
               symbol={symbol}
+              symbols={symbols}
+              symbolGroups={(groups ?? []).filter((g) => g.paramName === "symbol").map((g) => g.name)}
               onAdd={addSeries}
               onApply={applySeries}
               fallbackColor={studyFallback}

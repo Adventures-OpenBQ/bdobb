@@ -31,16 +31,80 @@ export const PERFORMANCE_SELF = "$ymbol";
 /** A `$group:<Name>` reference, in a symbol position or a date one. */
 export const GROUP_PREFIX = "$group:";
 
+/** A card's symbol list holds one primary plus the four extra-bars slots (spec 2026-11-13 §1). */
+export const MAX_LIST = 5;
+
+/** A position in the card's symbol list, 1-based. */
+const LIST_REF = /^list:([1-9]\d{0,5})$/;
+
+/**
+ * What a series' `symbol` may hold (spec 2026-11-13 §1): `$ymbol`, `$group:<Name>`, `list:<n>`,
+ * or a ticker -- up to 64 characters with no comma, not starting `$` or `list:`. The same rule
+ * as the server's chart_body.SYMBOL_REF, so a card never saves what the server refuses.
+ */
+export const SYMBOL_REF = /^(?:\$ymbol|\$group:.{1,64}|list:[1-9]\d{0,5}|(?![Ll][Ii][Ss][Tt]:)[^$,][^,]{0,63})$/;
+
+/**
+ * Whether a series of `type` may carry `symbol`. A bar series takes a SYMBOL_REF; a performance
+ * line keeps its pre-list rule -- any 1-64 characters -- so one saved before lists (`$NOPE`,
+ * `LIST:2`, a comma) still re-saves and imports. The server's chart_body makes the same split.
+ */
+export const symbolAllowed = (type: SeriesType, symbol: string): boolean =>
+  type === "performance" ? symbol.length >= 1 && symbol.length <= 64 : SYMBOL_REF.test(symbol);
+
+/**
+ * The card's `symbol` parameter as its list: split on commas only, each entry trimmed and
+ * upper-cased, empties dropped, duplicates kept in place so `list:2` always means position 2.
+ * Entries past the fifth are dropped and `truncated` says so.
+ */
+export function parseSymbolList(text: string): { list: string[]; truncated: boolean } {
+  const all = text.split(",").map((t) => t.trim().toUpperCase()).filter((t) => t !== "");
+  return { list: all.slice(0, MAX_LIST), truncated: all.length > MAX_LIST };
+}
+
+/**
+ * The ticker a series draws, or why it draws nothing (spec 2026-11-13 §2): absent, `$ymbol` and
+ * `list:1` are the list's first entry; `list:n` its n-th; `$group:<Name>` that symbol group's
+ * value (its first entry when the group holds a list); anything else a literal, upper-cased.
+ * A study follows list:1 and may name no symbol.
+ */
+export function seriesTicker(
+  s: { type: SeriesType; symbol?: string },
+  list: readonly string[],
+  groups: readonly { name: string; paramName: string; value: string }[],
+): { ticker: string } | { note: string } {
+  if (s.type === "study") return s.symbol === undefined ? { ticker: list[0] ?? "" } : { note: "studies follow list:1" };
+  const named = s.symbol ?? PERFORMANCE_SELF;
+  if (named === PERFORMANCE_SELF || named === "list:1") return { ticker: list[0] ?? "" };
+  const at = LIST_REF.exec(named);
+  if (at !== null) {
+    const n = Number(at[1]);
+    if (n <= list.length) return { ticker: list[n - 1] };
+    return { note: `list has ${list.length} ${list.length === 1 ? "entry" : "entries"}, no ${named}` };
+  }
+  if (named.startsWith(GROUP_PREFIX)) {
+    const name = named.slice(GROUP_PREFIX.length);
+    const group = groups.find((g) => g.name === name);
+    if (group === undefined) return { note: `no group "${name}"` };
+    // A group is a group OF a parameter; one bound to `interval` or `as_of` is not a symbol.
+    if (group.paramName !== "symbol") return { note: `"${name}" is not a symbol group` };
+    return { ticker: parseSymbolList(group.value).list[0] ?? "" };
+  }
+  return { ticker: named.toUpperCase() };
+}
+
 /**
  * A typed performance ticker as the card stores it: upper-cased, because
  * the tick plane's symbols are kdb symbols and an iPad capitalises only the
  * first letter it is handed -- the same reason the card's own symbol is
  * upper-cased (the branch-end round, finding 3). `$ymbol` and a `$group:`
  * reference are names, not tickers, and are left exactly as written.
+ * A `list:<n>` position is lower-cased, so `LIST:2` typed on an iPad is still a position.
  */
 export function performanceSymbol(text: string): string {
   const value = text.trim();
   if (value === "" || value === PERFORMANCE_SELF) return PERFORMANCE_SELF;
+  if (/^list:/i.test(value)) return value.toLowerCase();
   return value.startsWith(GROUP_PREFIX) ? value : value.toUpperCase();
 }
 
@@ -86,7 +150,10 @@ export const SERIES_TYPE_LABELS: Record<Exclude<SeriesType, "performance" | "stu
 export function seriesLabel(s: Series): string {
   if (s.type === "study") return expressionLabel({ expr: s.expr, name: s.name ?? "", params: s.params, color: s.color });
   if (s.type === "performance") return `Performance(${s.symbol ?? PERFORMANCE_SELF}, ${s.anchor ?? ""})`;
-  return SERIES_TYPE_LABELS[s.type];
+  // A bar series on the card's own symbol keeps its bare name, so every existing expression
+  // round-trips; one on another prints it: `Candlestick(list:2)` (spec 2026-11-13 §3).
+  const own = s.symbol === undefined || s.symbol === PERFORMANCE_SELF || s.symbol === "list:1";
+  return own ? SERIES_TYPE_LABELS[s.type] : `${SERIES_TYPE_LABELS[s.type]}(${s.symbol})`;
 }
 
 /**
@@ -106,6 +173,16 @@ export function parsePerformance(text: string): { symbol: string; anchor: string
   if (second === undefined) return first === "" ? null : { symbol: PERFORMANCE_SELF, anchor: first };
   if (second === "") return null;
   return { symbol: first === "" ? PERFORMANCE_SELF : first, anchor: second };
+}
+
+/** `Candlestick`, `Volume(MSFT)`, `OHLC(list:2)`: a bar series' notation read back (spec 2026-11-13 §3). */
+const BAR_SERIES = /^\s*(candlestick|ohlc|line|area|volume)\s*(?:\(\s*([^(),]+?)\s*\))?\s*$/i;
+
+export function parseBarSeries(text: string): { type: keyof typeof SERIES_TYPE_LABELS; symbol?: string } | null {
+  const match = BAR_SERIES.exec(text);
+  if (match === null) return null;
+  const type = match[1].toLowerCase() as keyof typeof SERIES_TYPE_LABELS;
+  return match[2] === undefined ? { type } : { type, symbol: match[2] };
 }
 
 /**
@@ -377,7 +454,8 @@ export function indicatorsFromSeries(
   options: ParseOptions & { source: "local" | "eodhd" },
 ): string {
   const studies: StudyInstance[] = series
-    .filter((s) => s.type === "study" && s.name !== undefined)
+    // A study naming a symbol is left off: studies follow list:1 (spec 2026-11-13 §2).
+    .filter((s) => s.type === "study" && s.name !== undefined && s.symbol === undefined)
     .map((s) => ({
       expr: s.expr, name: s.name as string, params: s.params, color: s.color, source: s.source, style: s.style,
     }));

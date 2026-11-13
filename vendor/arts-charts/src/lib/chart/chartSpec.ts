@@ -3,7 +3,7 @@
 import { isRecord } from "../isRecord";
 import type { ChartCardState, ChartDrawing, Series, SeriesType } from "../types";
 import { encodePanels, parsePanels } from "./panels";
-import { seriesId } from "./series";
+import { seriesId, symbolAllowed } from "./series";
 
 /**
  * The declarative chart spec (spec §9): the card's whole state as one JSON
@@ -93,6 +93,10 @@ function seriesProblem(
   // (the branch-end round, finding 4).
   if (s.symbol !== undefined && (typeof s.symbol !== "string" || s.symbol === "")) {
     return ".symbol: needs a non-empty string";
+  }
+  // What the server refuses on save is refused here; a study's symbol is dropped on save instead.
+  if (typeof s.symbol === "string" && s.type !== "study" && !symbolAllowed(s.type as SeriesType, s.symbol)) {
+    return ".symbol: must be a ticker, $ymbol, $group:<Name> or list:<n>";
   }
   if (typeof s.panel !== "number" || !Number.isFinite(s.panel) || !Number.isInteger(s.panel) || s.panel < 1) {
     return ".panel: expected a panel number";

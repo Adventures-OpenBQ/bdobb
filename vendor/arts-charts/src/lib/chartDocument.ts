@@ -15,13 +15,14 @@
  * series alike; a series written without one (Rita, a hand-made body) gets
  * one minted on read. A body with no `series` at all is the card's default
  * drawing: candlesticks in panel 1, volume in the last panel.
+ * The card's symbol list (spec 2026-11-13) is `symbols`, written only for two or more tickers, so a one-ticker card's body is unchanged.
  */
 import { getHost } from "../host";
 import { studiesFromParam } from "./chart/indicatorsParam";
 import { DEFAULT_PANELS_TEXT, parsePanels } from "./chart/panels";
 import { isFillPattern, isPen } from "./chart/pen";
 import type { ChartRange } from "./chart/rangeExpr";
-import { migrateChart, seriesId, seriesLabel } from "./chart/series";
+import { migrateChart, parseSymbolList, seriesId, seriesLabel } from "./chart/series";
 import { defaultColor, normalizeExpression, type CatalogEntry } from "./chart/studyExpression";
 import type { ChartCardState, ChartDrawing, ChartLevel, Series, SeriesType } from "./types";
 
@@ -44,6 +45,8 @@ type Flag = (typeof FLAGS)[number];
 export type ChartBody = {
   schema: "chart/1";
   symbol: string;
+  /** The card's list when it has two or more tickers (spec 2026-11-13); `symbol` is always its first. */
+  symbols?: string[];
   interval: string;
   provider?: string;
   range?: { from: TimeValue; to: TimeValue };
@@ -115,7 +118,7 @@ function entryOf(s: Series, lookup: Lookup, stamp: Stamp | null): ChartSeries {
     side: s.side,
     ...(COLOR.test(s.color) ? { color: s.color } : {}),
     ...(Object.keys(style).length > 0 ? { style } : {}),
-    ...(s.type === "performance" && text(s.symbol, 64) ? { symbol: s.symbol } : {}),
+    ...(s.type !== "study" && text(s.symbol, 64) ? { symbol: s.symbol } : {}),
     ...(s.type === "performance" && s.anchor !== undefined ? { anchor: stamped(s.anchor, stamp?.at(s.anchor)) } : {}),
   };
 }
@@ -156,11 +159,13 @@ export function cardSeries(params: Record<string, string>, state: ChartCardState
 /** The card as a chart/1 body. Empty facets are left out, so equal cards give equal bodies. */
 export function bodyFromCard(params: Record<string, string>, state: ChartCardState, lookup: Lookup, stamp: Stamp | null = null): ChartBody {
   const { series, panelsText } = cardSeries(params, state, lookup);
+  const { list } = parseSymbolList(params.symbol ?? "");
   const body: ChartBody = {
     schema: "chart/1",
-    symbol: (params.symbol ?? "").trim().toUpperCase(),
+    symbol: list[0] ?? "",
     interval: state.interval ?? params.interval ?? "1m",
   };
+  if (list.length > 1) body.symbols = list;
   if (params.provider) body.provider = params.provider;
   if (state.range) {
     const window = stamp?.range(state.range);
@@ -216,5 +221,5 @@ export function cardFromBody(body: ChartBody, lookup: Lookup): { state: Partial<
     panes: undefined,
   };
   for (const flag of FLAGS) patch[flag] = body[flag];
-  return { state: patch, notes, params: { symbol: body.symbol, panels: panelsText, ...(body.provider ? { provider: body.provider } : {}) } };
+  return { state: patch, notes, params: { symbol: body.symbols?.join(",") ?? body.symbol, panels: panelsText, ...(body.provider ? { provider: body.provider } : {}) } };
 }

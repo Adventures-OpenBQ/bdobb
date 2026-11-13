@@ -85,6 +85,8 @@ type Props = {
    * -- the chip stays, so the user can edit it, and says what is wrong.
    */
   notes?: Record<string, string>;
+  /** A chip's label when it is not the series' own (spec 2026-11-13): "MSFT Candlestick". */
+  labels?: Record<string, string>;
   /** Whether chips carry their `P<n>·L/R` prefix: only once the card has more than one panel. */
   showPanels: boolean;
   onReorder: (ids: string[]) => void;
@@ -103,7 +105,7 @@ type Props = {
  * dropping it on another panel's chip).
  */
 export function StudiesStrip({
-  series, served, source, notes = {}, showPanels, onReorder, onEdit, onRemove, activePreset,
+  series, served, source, notes = {}, labels = {}, showPanels, onReorder, onEdit, onRemove, activePreset,
 }: Props) {
   /** The id being dragged, for the .35 dim; cleared on drop or dragend. */
   const [dragging, setDragging] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export function StudiesStrip({
     <div className="chart-studies" role="list" aria-label="Series">
       <span className="chart-studies-label">Series</span>
       {shown.map((s) => {
-        const label = seriesLabel(s);
+        const label = labels[s.id] ?? seriesLabel(s);
         const actual = served[s.expr];
         const note = notes[s.id];
         return (
