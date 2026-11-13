@@ -17,8 +17,9 @@ header.
   See **Card parameters**.
 - The **title**. This is also the drag handle; double-click it to rename.
 - The **parameter chips** — one per visible parameter, on the title line
-  itself, wrapping to a second line when the title bar is narrow. See
-  **Card parameters**.
+  itself, wrapping to a second line when the title bar is narrow. A widget
+  that lays its parameters out in rows puts its first row here and each
+  further row on a line of its own under the title. See **Card parameters**.
 - `⌄` **Show widget controls** — only when
   **Settings ▸ Widget ▸ Collapse widget controls** is on
   (off by default). The chips and everything after this point then hide
@@ -52,7 +53,7 @@ open), **Duplicate**, **Copy to ▸** (every dashboard's tabs), **Maximize** (or
 which add a new card on the same tab drawing from this card's rows; on a
 linked card, **Choose source** (see **Linked widgets**); and, while a table is
 actually on screen, **Quick actions ▸** (**Autosize columns**, **Reset
-columns** — what **Reset table** did) and **Columns ▸**, then **Export ▸**
+columns**) and **Columns ▸**, then **Export ▸**
 (CSV, JSON, Excel) and, on a markdown note, **Open file…** and **Save as…**.
 
 Escape or a click outside closes it. Reopening it always starts with every
@@ -68,8 +69,8 @@ you let go, and only when something actually changed.
 
 ## Minimize
 
-`—` collapses the card to just its title row; the body and the controls row
-go, the grid slot stays. It is shown only while
+`—` collapses the card to just its title row; the body and the parameter
+chips go, the grid slot stays. It is shown only while
 **Settings ▸ Widget ▸ Minimize button on header** is on, which it is not by
 default.
 

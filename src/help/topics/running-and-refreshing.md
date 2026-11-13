@@ -2,15 +2,17 @@
 
 ## Refresh
 
-Every card has a **Refresh** button in its header. It refetches that one card,
-and it keeps the current data on screen while it does — so a chart's zoom and a
+The **timer** (`◷`) at the left of a card's header is its Refresh button.
+Clicking it refetches that one card, and it keeps the current data on screen
+while it does — so a chart's zoom and a
 table's scroll survive a refresh. The card is cleared to *Loading…* only when
 the *question* changes, which is to say when a parameter moves.
 
 While a manual refresh is in flight the title dims and shows a dot. Nothing
-spins and nothing animates.
+spins and nothing animates. The timer is not drawn on a card where a click
+would refresh nothing — a framed page, a note, the clock, the keys card.
 
-A card that failed shows its own **Retry** instead; on a card whose widget could
+A card that failed shows a **Retry** button in its body; on a card whose widget could
 not be resolved at all, Retry also re-runs backend discovery, which is the only
 thing that can rescue it.
 
@@ -28,9 +30,6 @@ Cards on tabs you are not looking at are not mounted, and are not refreshed.
 
 ## Automatic refresh
 
-A widget's `refetchInterval` may also be a five-field cron expression; such a card refetches on each minute boundary the expression matches, and your app-wide setting does not apply to it.
-
-
 **Settings ▸ General ▸ Auto-refresh** offers **Off**, **1 minute**,
 **5 minutes**, **15 minutes**, **30 minutes** and **60 minutes**. It is **Off**
 by default.
@@ -39,8 +38,13 @@ A widget may declare its own `refetchInterval`, in milliseconds. When it is a
 positive number it **wins over your setting** for that widget; a value under
 one second counts as one second, so a typo cannot poll every millisecond. When
 it is `refetchInterval: false` the widget never auto-refreshes at all, and your
-app-wide setting does not apply to it either — but **Refresh** and `⌘R` still
+app-wide setting does not apply to it either — but the timer and `⌘R` still
 work on it.
+
+`refetchInterval` may also be a five-field cron expression, such as
+`*/5 * * * *`, in local time. Such a card refetches on each minute boundary the
+expression matches, and your app-wide setting does not apply to it. An
+expression the app cannot read is ignored.
 
 How the timer behaves, which is worth knowing before you blame it:
 
@@ -57,8 +61,7 @@ How the timer behaves, which is worth knowing before you blame it:
 ## Run-button widgets
 
 Some widgets declare that they should not run automatically. On those, the
-header's **Refresh** is replaced by an accent **Run** button, and there is no
-Refresh beside it.
+header's timer reads `▶` and is the **Run** button.
 
 ![A run-button card showing its stale marker](./shots/running-and-refreshing.png)
 
@@ -68,9 +71,9 @@ that only when you press **Run**. Changing a parameter, choosing a tab, clicking
 cell, even a group value changed from another card — all of them update what
 the card *will* ask, and none of them issues a request.
 
-When the live parameters differ from the ones that were last run, a small
-accent `•` appears after the card's title, labelled
-*Parameters changed — press Run*. It goes away when you run.
+When the live parameters differ from the ones that were last run, the `▶`
+turns the accent colour and pulses, and its tooltip reads
+*Parameters changed — click to run*. It goes back when you run.
 
 **Run** adopts the current parameters and fetches. Pressing Run with nothing
 changed just re-issues the same request. **⌘-click** (or Ctrl-click) on **Run**
