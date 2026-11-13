@@ -132,7 +132,7 @@ export function applyModelOp(model: TableModelV1, op: Operation, ctx: Ctx): Tabl
       const sourceIds = new Set([...ctx.columns.map(c => c.id), ...model.formulas.filter(f => f.scope === "source").map(f => f.id)]);
       const bindings: DraftBindings = new Map();
       for (const [name, raw] of Object.entries(op.bindings as Record<string, { target: "field" | "formula" | "measure"; ref: Ref }>)) {
-        if (!isRecord(raw) || !isRecord(raw.ref) || !["field", "formula", "measure"].includes(raw.target)) fail(`binding ${name} is { target, ref }`);
+        if (!isRecord(raw) || !isRecord(raw.ref) || !["field", "formula", "measure"].includes(raw.target)) fail(`binding ${name} must be {"target":"field"|"formula"|"measure","ref":{"id":"..."} or {"alias":"..."}}`);
         let refId: string;
         if (raw.target === "field") {
           refId = (raw.ref as { id?: string }).id ?? "";

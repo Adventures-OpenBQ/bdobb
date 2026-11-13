@@ -209,7 +209,7 @@ export function parseFormula(text: string): ParseResult {
         const bracketed = token === '[';
         const identifier = name();
         if (!bracketed && peek() === '(') {
-          const fn = functionNames.get(identifier);
+          const fn = functionNames.get(identifier.toUpperCase());
           if (!fn) syntax('Unknown formula function.');
           position++;
           const args: SyntaxAst[] = [];
@@ -218,7 +218,7 @@ export function parseFormula(text: string): ParseResult {
             while (peek() === ',') { position++; args.push(expression(0, nesting + 1)); }
           }
           consume(')');
-          if (args.length !== (identifier === 'IF' ? 3 : 1)) syntax('Invalid function argument count.');
+          if (args.length !== (fn === 'IF' ? 3 : 1)) syntax('Invalid function argument count.');
           left = node({ kind: 'call', function: fn!, args });
         } else if (!bracketed && ['true', 'false', 'null'].includes(identifier)) {
           left = node({ kind: 'literal', value: identifier === 'null' ? null : identifier === 'true' });
