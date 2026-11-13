@@ -293,25 +293,6 @@ describe("DashboardGrid", () => {
     expect(screen.getByTestId("grid")).toHaveAttribute("data-resize-handles", "null");
   });
 
-  it("gives a Picture in Picture card a bottom handle beside the grid's own, and no other card", () => {
-    const pip = makeCard({ id: "p1", widgetId: "picture_in_picture", backendId: "builtin", layout: { x: 0, y: 9, w: 16, h: 14 } });
-    useDashboardStore.setState({
-      dashboards: [{ id: "d1", name: "Main", tabs: [{ id: "t1", name: "Main", cards: [card("c1", 0), pip] }] }],
-      activeId: "d1",
-      activeTabId: "t1",
-    });
-    const layoutOf = () => JSON.parse(screen.getByTestId("grid").getAttribute("data-layout")!) as { i: string; resizeHandles?: string[] }[];
-    const { unmount } = render(<DashboardGrid onOpenLibrary={() => {}} />);
-    expect(layoutOf().find((l) => l.i === "p1")?.resizeHandles).toEqual(["se", "s"]);
-    expect(layoutOf().find((l) => l.i === "c1")).not.toHaveProperty("resizeHandles");
-    unmount();
-
-    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, cornerDragHandles: true } });
-    render(<DashboardGrid onOpenLibrary={() => {}} />);
-    expect(layoutOf().find((l) => l.i === "p1")?.resizeHandles).toEqual(["nw", "ne", "sw", "se", "s"]);
-    expect(layoutOf().find((l) => l.i === "c1")).not.toHaveProperty("resizeHandles");
-  });
-
   it("passes all four corner handles when cornerDragHandles is on", () => {
     useSettingsStore.setState({
       settings: { ...DEFAULT_SETTINGS, cornerDragHandles: true },

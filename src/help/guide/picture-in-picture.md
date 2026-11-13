@@ -15,7 +15,7 @@ tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 
 The player follows the card when you move it, resize it, maximize it or scroll the dashboard, and when you drag BDOBB's window. It keeps the video's 16:9 shape and sits against the top of the card, centred left to right. Chrome will not make it smaller than 284 × 160 or larger than about 80% of the display (1388 × 781 on a 1736 × 1133 display). A card smaller than that says *Make this card at least 284 × 160 to park the player here*. A card partly scrolled out of view keeps the player, which may then overlap the header.
 
-The card's height follows its width: whenever you resize the card, it snaps to the fewest rows that hold the video at the card's width, so the video resizes with the width and under one row of space is left below it. Dragging the bottom-edge handle or a corner changes the height only until you let go, when it snaps back to fit the video. Opening the card's **Parameters** panel makes the card taller by the panel's height, so the video keeps its room, and closing it gives the rows back.
+The card's height follows its width: whenever you resize the card, it snaps to the fewest rows that hold the video at the card's width, so the video resizes with the width and under one row of space is left below it. Dragging a corner changes the height only until you let go, when it snaps back to fit the video. Opening the card's **Parameters** panel makes the card taller by the panel's height, so the video keeps its room, and closing it gives the rows back.
 
 ## Hiding
 

@@ -130,15 +130,6 @@ describe("DockBand", () => {
     expect(screen.queryByRole("button", { name: "Remove card" })).toBeNull();
   });
 
-  it("gives a Picture in Picture card a bottom handle beside the grid's own", () => {
-    const pip = makeCard({ id: "dp", widgetId: "picture_in_picture", backendId: "builtin", layout: { x: 0, y: 0, w: 16, h: 6 } });
-    useDashboardStore.setState({ docks: docksWith([dockCard, pip]) });
-    render(<DockBand edge="bottom" />);
-    const layout = JSON.parse(screen.getByTestId("grid").getAttribute("data-layout")!) as { i: string; resizeHandles?: string[] }[];
-    expect(layout.find((l) => l.i === "dp")?.resizeHandles).toEqual(["se", "s"]);
-    expect(layout.find((l) => l.i === "dc1")).not.toHaveProperty("resizeHandles");
-  });
-
   it("a 24-row band caps and scrolls only where it would push the dashboard off screen, keeping its rows", () => {
     useDashboardStore.setState({ docks: { ...docksWith([dockCard]), dockRows: { top: 6, bottom: 24 } } });
     const full = `${24 * 20 + 23 * 10 + 10}px`;
