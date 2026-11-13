@@ -4,7 +4,7 @@ This repository reconstructs a clean release sequence. Version 3.0.0 provides th
 
 Cron refetch is deferred. Analytical Pivot, workspaces and Statement are not part of v3.
 
-Read the [user guide](docs/user-guide.md) and [v3 reference manual](docs/reference-manual/v3/README.md), also available through the app’s Help menu.
+Read the [user guide](docs/user-guide.md) and [v4 reference manual](docs/reference-manual/v4/README.md) (and the [v3 one](docs/reference-manual/v3/README.md)), also available through the app’s Help menu.
 
 ## Run and verify
 

@@ -1,6 +1,6 @@
 # BDOBB v3.0.0 — reference desktop
 
-This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. Analytical Pivot belongs to v4; multi-dashboard workspaces and Statement belong to v5. Cron remains deferred.
+This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. Analytical Pivot arrives in [v4](../v4/README.md).
 
 ## Connect and open the reference app
 
@@ -24,7 +24,7 @@ The numbered badges show group membership. A cell in the company table can also 
 
 **Refresh** refetches one card. The tab's **↻** button or **⌘R** refreshes its mounted cards. A changed parameter clears the old answer while the new one loads; refreshing the same question keeps existing data visible.
 
-A **Run** widget fetches initially, then uses **Run** to execute committed changes. Changing a parameter alone marks it stale. A numeric widget interval overrides the app-wide **Settings ▸ General ▸ Auto-refresh every** preference. `false` disables automatic refresh for that widget. Timers wait for completion and pause while the page is hidden. Cron-style schedules are unsupported in v3.
+A **Run** widget fetches initially, then uses **Run** to execute committed changes. Changing a parameter alone marks it stale. A numeric widget interval overrides the app-wide **Settings ▸ General ▸ Auto-refresh every** preference. `false` disables automatic refresh for that widget. Timers wait for completion and pause while the page is hidden. `refetchInterval` may also be a five-field cron expression; the card then refetches on each minute it matches.
 
 ## Save and exchange dashboards
 
@@ -70,8 +70,6 @@ If no apps appear, check whether the connection actually serves `apps.json`. If 
 On October 6, 2026 the fresh client passed a 71-widget curated reference rendering sweep, seven reference contract/import/export checks, linked Toyota→Tesla browser acceptance, and real Run/numeric-refresh request checks. A separate OpenBQ Docker smoke passed eight live-data tables plus a historical chart view. It covers nine selected cases, not all 995 advertised widgets.
 
 Browser rehearsal used real backend responses with a test-only CORS adapter. Cron, live account authentication, and packaged native restart remain outside this qualification. Full regression and native bundle status are recorded in the release receipt; these reference passes alone do not announce a tagged release.
-
-Copyright 2026 SecretoftheUniverse.com LLC. Licensed under Apache-2.0.
 
 ---
 
