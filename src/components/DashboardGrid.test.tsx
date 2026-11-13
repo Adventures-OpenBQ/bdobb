@@ -643,3 +643,32 @@ describe("DashboardGrid backend table source on another tab", () => {
     }
   });
 });
+
+describe("DashboardGrid symbol group fed from another tab (spec 2026-11-13)", () => {
+  it("runs a group's backend source headless and writes its column into the group", async () => {
+    vi.stubGlobal("Worker", Boundary);
+    vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+    const s = await startMockServer({ "/prices": [{ ticker: "aapl", revenue: 10 }, { ticker: "msft", revenue: 20 }] });
+    try {
+      useBackendsStore.setState({ backends: [backend({ baseUrl: s.url })], statuses: { b1: "online" } });
+      useWidgetRegistryStore.getState().seedBuiltins();
+      useWidgetRegistryStore.setState((st) => ({ widgets: [...st.widgets, makeWidget({ id: "prices", type: "table", endpoint: "prices" })] }));
+      useDashboardStore.setState({
+        dashboards: [{
+          id: "d1", name: "Main",
+          groups: [{ id: "g", name: "Watch", paramName: "symbol", groupType: "symbol", value: "OLD", source: { sourceWidgetId: "src", columnId: "ticker" } }],
+          tabs: [{ id: "a", name: "Summary", cards: [] }, { id: "b", name: "Data", cards: [makeCard({ id: "src", widgetId: "prices" })] }],
+        }],
+        activeId: "d1",
+        activeTabId: "a",
+      });
+      render(<DashboardGrid onOpenLibrary={() => {}} />);
+      await waitFor(() => expect(useDashboardStore.getState().dashboards[0].groups![0].value).toBe("AAPL,MSFT"));
+      expect(s.requests.filter((r) => r.path === "/prices")).toHaveLength(1);
+    } finally {
+      tableExecutionStore.disposeDashboard("d1");
+      vi.unstubAllGlobals();
+      await s.close();
+    }
+  });
+});

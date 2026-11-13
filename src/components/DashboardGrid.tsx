@@ -21,6 +21,7 @@ import {
 import { selectEffective, useSettingsStore } from "../stores/settingsStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { TabBar } from "./TabBar";
+import { SymbolGroupFeeder } from "./SymbolGroupFeeder";
 import { TableExecutionRuntime } from "./TableExecutionRuntime";
 import { WidgetCard } from "./WidgetCard";
 
@@ -92,6 +93,7 @@ export function DashboardGrid({
     return (
       <>
         <TableExecutionRuntime dashboard={dashboard} />
+        <SymbolGroupFeeder dashboardId={dashboard.id} />
         <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} />
         <p className="empty-state">No tab selected. Add one to start.</p>
       </>
@@ -247,6 +249,7 @@ export function DashboardGrid({
   return (
     <>
       <TableExecutionRuntime dashboard={dashboard} />
+      <SymbolGroupFeeder dashboardId={dashboard.id} />
       <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} />
       <OffTabSources dashboard={dashboard} tabId={tab.id} />
       {dock("top", dashboard.id)}
@@ -350,15 +353,20 @@ export function DashboardGrid({
  * be visited, so its source runs headless instead -- useCardRequest, the
  * same request the card would send. Never for a source on this tab: its card
  * is mounted and fetching, so the two cannot both hand rows over. Unmounted
- * with the last linked table here that needs it.
+ * with the last linked table here that needs it. A symbol group's backend source on another tab runs the same way (spec 2026-11-13).
  */
 function OffTabSources({ dashboard, tabId }: { dashboard: Dashboard; tabId: string }) {
   // Discovery decides which cards are backend tables, so it re-renders this.
   useWidgetRegistryStore((s) => s.widgets);
   const cards = new Map(dashboard.tabs.flatMap((t) => t.cards).map((c) => [c.id, c]));
   const here = dashboard.tabs.find((t) => t.id === tabId)?.cards ?? [];
+  // A symbol group's source feeds the group from any tab (spec 2026-11-13 §2), so it starts a chain too.
+  const fed = (dashboard.groups ?? []).flatMap((g) => {
+    const source = g.source && cards.get(g.source.sourceWidgetId);
+    return source ? [source] : [];
+  });
   const sources = new Map<string, DashboardCard>();
-  for (const card of here) {
+  for (const card of [...here, ...fed]) {
     let root = card;
     const seen = new Set<string>();
     while (root.linkedSource && !seen.has(root.id)) {
@@ -367,7 +375,8 @@ function OffTabSources({ dashboard, tabId }: { dashboard: Dashboard; tabId: stri
       if (!next) break;
       root = next;
     }
-    if (root !== card && !here.includes(root) && isBackendTable(root)) sources.set(root.id, root);
+    // A root on this tab is fetched by its mounted card (for a card here, root === card is one of those).
+    if (!here.includes(root) && isBackendTable(root)) sources.set(root.id, root);
   }
   return [...sources.values()].map((card) => <BackendSourceRunner key={card.id} card={card} dashboard={dashboard} />);
 }
