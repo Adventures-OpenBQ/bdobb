@@ -27,14 +27,14 @@ import { makeDefaultDocks } from "../lib/dashboardsFile";
 import type { DockSeeThrough } from "../lib/dockSeeThrough";
 import { __resetLoggerForTests } from "../lib/logger";
 import { DEFAULT_SETTINGS } from "../lib/settingsFile";
-import type { Dashboard } from "../lib/types";
+import type { Dashboard, PinEdge } from "../lib/types";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { useWorkspacesStore } from "../stores/workspacesStore";
 import { card as makeCard, widget as makeWidget } from "../test/fixtures";
 import { __reset as __resetFs } from "../test/memfs";
-import { DockEditor } from "./DockBand";
+import { DockBand, DockEditor } from "./DockBand";
 
 const css = readFileSync("src/styles.css", "utf8");
 
@@ -102,6 +102,94 @@ describe("DockEditor's See-through where empty switch", () => {
   });
 });
 
-// Later tasks append below; these keep the imports used until they do.
-void act;
-void css;
+/** The band in the area's column with a scroll region after it, as App and DashboardGrid lay them out. */
+function inArea(edge: PinEdge, viewer = false) {
+  const tree = () => (
+    <main className="dashboard-area">
+      <DockBand edge={edge} viewer={viewer} />
+      <div className="dashboard-scroll" data-testid="scroll" />
+    </main>
+  );
+  const view = render(tree());
+  return {
+    area: screen.getByRole("main"),
+    band: () => document.querySelector<HTMLElement>(`.dock-band-${edge}`),
+    rerender: () => view.rerender(tree()),
+  };
+}
+
+describe("a see-through band", () => {
+  it("is today's band while its switch is off: no float class, nothing published on the area", () => {
+    const { area, band } = inArea("bottom");
+    expect(band()).not.toHaveClass("dock-band-float");
+    expect(band()?.style.height).toBe("240px");
+    expect(area.getAttribute("style")).toBeNull();
+  });
+
+  it("floats with its switch on, and publishes its height on the area", () => {
+    seeThrough({ bottom: true });
+    const { area, band } = inArea("bottom");
+    expect(band()).toHaveClass("dock-band-float");
+    expect(band()?.style.height).toBe("240px");
+    expect(area.style.getPropertyValue("--dock-room-bottom")).toBe("240px");
+    expect(area.style.getPropertyValue("--dock-room-top")).toBe("");
+  });
+
+  it("is an ordinary band while the window caps it, and floats again once it fits", () => {
+    useDashboardStore.setState({ docks: { ...docksBoth(), dockRows: { top: 6, bottom: 24 }, dockSeeThrough: { bottom: true } } });
+    const { area, band } = inArea("bottom");
+    expect(band()).toHaveClass("dock-band-float");
+    act(() => windowHeight(768));
+    expect(band()).not.toHaveClass("dock-band-float");
+    expect(band()?.style.overflowY).toBe("auto");
+    expect(area.style.getPropertyValue("--dock-room-bottom")).toBe("");
+    act(() => windowHeight(1200));
+    expect(band()).toHaveClass("dock-band-float");
+  });
+
+  it("is an ordinary band while a workspace is shown, and floats again on leaving it", () => {
+    seeThrough({ bottom: true });
+    useWorkspacesStore.setState({ activeWorkspaceId: "w1" });
+    const { band } = inArea("bottom");
+    expect(band()).not.toHaveClass("dock-band-float");
+    act(() => useWorkspacesStore.setState({ activeWorkspaceId: null }));
+    expect(band()).toHaveClass("dock-band-float");
+  });
+
+  it("floats in a viewer window whatever the workspace store holds", () => {
+    seeThrough({ bottom: true });
+    useWorkspacesStore.setState({ activeWorkspaceId: "w1" });
+    const { band } = inArea("bottom", true);
+    expect(band()).toHaveClass("dock-band-float");
+  });
+
+  it("leaves nothing on the area while its edge is being edited", () => {
+    seeThrough({ bottom: true });
+    const { area } = inArea("bottom");
+    act(() => useDashboardStore.getState().beginDockEdit("bottom"));
+    expect(area.style.getPropertyValue("--dock-room-bottom")).toBe("");
+  });
+});
+
+describe("styles.css for see-through bands", () => {
+  it("lays a .dock-band-float band over the scroll region's end, below the tab bar and inside a tab's pinned card", () => {
+    for (const rule of [
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { order: 1; }",
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .card-dock-bottom { order: 1; }",
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dock-band-bottom { order: 1; }",
+      ".dashboard-area:has(> .dashboard-scroll) > .dock-band-top.dock-band-float { order: 1; margin-bottom: calc(-1 * var(--dock-room-top, 0px)); }",
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-bottom.dock-band-float) > .card-dock-bottom { order: 2; }",
+      ".dashboard-area:has(> .dashboard-scroll) > .dock-band-bottom.dock-band-float { margin-top: calc(-1 * var(--dock-room-bottom, 0px)); }",
+      ".dashboard-area:has(> .dashboard-scroll) > .dock-band.dock-band-float { background: none; border: 0; }",
+    ]) {
+      expect(css).toContain(rule);
+    }
+  });
+
+  it("changes nothing for a band that is not see-through: every rule that floats or reads the room names .dock-band-float", () => {
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, "").match(/[^{}]+\{[^{}]*\}/g) ?? [];
+    const floating = rules.filter((r) => r.includes("dock-band-float") || r.includes("--dock-room"));
+    expect(floating.length).toBeGreaterThan(0);
+    for (const rule of floating) expect(rule.slice(0, rule.indexOf("{"))).toContain("dock-band-float");
+  });
+});

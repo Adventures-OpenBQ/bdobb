@@ -28,3 +28,14 @@ export function withDockSeeThrough(d: Dashboard, edge: PinEdge, on: boolean): Da
   const next = readDockSeeThrough({ ...d.dockSeeThrough, [edge]: on });
   return next ? { ...rest, dockSeeThrough: next } : rest;
 }
+
+/**
+ * Whether a band with cards, not being edited, floats over the dashboard.
+ * A band capped by the window scrolls its own rows, which a band that passes
+ * scrolling through cannot also do; a workspace has no one scroll region to
+ * give the room to (each tile scrolls its own). Either way the band is the
+ * ordinary opaque strip until that changes.
+ */
+export function bandFloats(o: { seeThrough: boolean; capped: boolean; workspace: boolean }): boolean {
+  return o.seeThrough && !o.capped && !o.workspace;
+}

@@ -1,13 +1,16 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import RGL, { WidthProvider } from "react-grid-layout";
 import { DEFAULT_DOCK_ROWS, DOCK_LABEL, DOCK_ROWS_MAX, DOCK_ROWS_MIN, DOCKS_ID } from "../lib/dashboardsFile";
+import { bandFloats } from "../lib/dockSeeThrough";
+import { useFloatingBand } from "../hooks/useFloatingBand";
 import { logError } from "../lib/logger";
 import type { PinEdge } from "../lib/types";
 import { GRID_COLS, GRID_ROW_HEIGHT, useDashboardStore, type GridLayoutItem } from "../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../stores/settingsStore";
+import { useWorkspacesStore } from "../stores/workspacesStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { WidgetCard } from "./WidgetCard";
 
@@ -156,15 +159,22 @@ export function DockBand({ edge, viewer = false }: { edge: PinEdge; viewer?: boo
   );
   const widgetGap = useSettingsStore((s) => selectEffective(s).widgetGap);
   const shown = Math.min(rows, useFitRows(edge, widgetGap));
+  // See-through where empty (lib/dockSeeThrough.ts). A viewer window shows no workspace.
+  const seeThrough = useDashboardStore((s) => s.docks.dockSeeThrough?.[edge] === true);
+  const workspace = useWorkspacesStore((s) => s.activeWorkspaceId !== null);
+  const floats = !editing && count > 0 && bandFloats({ seeThrough, capped: shown < rows, workspace: workspace && !viewer });
+  const ref = useRef<HTMLElement>(null);
+  useFloatingBand(ref, edge, floats ? bandHeight(shown, widgetGap) : null);
 
   if (editing || count === 0) return null;
   return (
     <section
+      ref={ref}
       // A maximized card is `position: fixed`, but the band is a stacking
       // context, so the card would be trapped at the band's own level and
       // painted over by the sibling bands. The band rises to the card's level
       // for as long as one of its cards is maximized.
-      className={`dock-band dock-band-${edge}${hasMaximized ? " dock-band-maximized" : ""}`}
+      className={`dock-band dock-band-${edge}${floats ? " dock-band-float" : ""}${hasMaximized ? " dock-band-maximized" : ""}`}
       aria-label={DOCK_LABEL[edge]}
       // Capped to the window, the band scrolls its rows; the grid keeps all of
       // them (maxRows), so nothing is moved or rewritten by a short window.

@@ -1620,6 +1620,25 @@ body {
    bands paint over it. The band rises to the card's level for as long as one
    of its cards is maximized. */
 .dock-band-maximized { z-index: 20; }
+/* See-through locked bands (Settings ▸ Locked Widgets ▸ See-through where
+   empty). DockBand adds .dock-band-float while the switch is on, the band
+   fits the window and no workspace is shown (lib/dockSeeThrough.ts), and
+   useFloatingBand publishes the band's height on the area as
+   --dock-room-top / --dock-room-bottom. Only over a dashboard's own scroll
+   region: an area without one (no dashboard, no tab) keeps the column.
+   The band leaves the column -- a negative margin as tall as itself -- and
+   lies over the scroll region's end. `order` moves a floating top band after
+   the tab bar and a tab's pinned top card, and a floating bottom band before
+   a tab's pinned bottom card, so neither is covered; the DOM order, and so
+   the bands' mount-once guarantee, is untouched. No background, no border
+   line. Each rule names .dock-band-float, so an ordinary band is unchanged. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .card-dock-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dock-band-bottom { order: 1; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-top.dock-band-float { order: 1; margin-bottom: calc(-1 * var(--dock-room-top, 0px)); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-bottom.dock-band-float) > .card-dock-bottom { order: 2; }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band-bottom.dock-band-float { margin-top: calc(-1 * var(--dock-room-bottom, 0px)); }
+.dashboard-area:has(> .dashboard-scroll) > .dock-band.dock-band-float { background: none; border: 0; }
 /* Settings ▸ Locked Widgets' editor: a panel over the dashboard area, the
    widget library's footprint (the rail's edge to the window's edge, both rail
    widths, Rita's inset below) and one level BELOW it (29 < 30), so the green +

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { makeDefaultDocks } from "./dashboardsFile";
-import { readDockSeeThrough, withDockSeeThrough } from "./dockSeeThrough";
+import { bandFloats, readDockSeeThrough, withDockSeeThrough } from "./dockSeeThrough";
 
 describe("the see-through switch's data (v8 locked widgets)", () => {
   it("reads only true, per edge, and nothing at all as absent", () => {
@@ -24,5 +24,14 @@ describe("the see-through switch's data (v8 locked widgets)", () => {
     const off = withDockSeeThrough(on, "bottom", false);
     expect(off).not.toHaveProperty("dockSeeThrough");
     expect(off).toEqual(docks);
+  });
+});
+
+describe("a band's mode", () => {
+  it("floats only with its switch on, uncapped by the window, and outside a workspace", () => {
+    expect(bandFloats({ seeThrough: true, capped: false, workspace: false })).toBe(true);
+    expect(bandFloats({ seeThrough: false, capped: false, workspace: false })).toBe(false);
+    expect(bandFloats({ seeThrough: true, capped: true, workspace: false })).toBe(false);
+    expect(bandFloats({ seeThrough: true, capped: false, workspace: true })).toBe(false);
   });
 });
