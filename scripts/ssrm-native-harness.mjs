@@ -204,6 +204,7 @@ export async function startNativeHarness() {
             ssrmRoutes: ['/api/api/v1/qualification/table'],
             tableTimeoutMs: 65000,
             ssrmTimeoutMs: 170000,
+            feeds: {},
             stateDir: join(dir, 'state'),
         };
         gateway = createGateway(config);
