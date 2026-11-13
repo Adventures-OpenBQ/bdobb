@@ -2014,7 +2014,8 @@ body {
   color: var(--text-muted);
 }
 .group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
-.group-chip-label { white-space: nowrap; }
+/* A fed symbol group can hold 500 tickers (spec 2026-11-13): the chip keeps its own width; the title has the rest. */
+.group-chip-label { white-space: nowrap; max-width: 40ch; overflow: hidden; text-overflow: ellipsis; }
 
 /* The chips row. Inside .card-chips on the title line; wraps within itself
    before the group wraps under the title. */

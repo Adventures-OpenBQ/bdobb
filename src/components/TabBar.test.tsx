@@ -17,6 +17,7 @@ import { DEFAULT_SETTINGS } from "../lib/settingsFile";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { __read, __reset as __resetFs } from "../test/memfs";
+import { useFeedNotes } from "./SymbolGroupFeeder";
 import { TabBar } from "./TabBar";
 import { WIDGET_DRAG_TYPE } from "./WidgetLibrary";
 
@@ -628,5 +629,73 @@ describe("tab bar overflow", () => {
     const rule = css.match(/\n\.tab-bar-tabs \{([^}]*)\}/)?.[1] ?? "";
     expect(rule).toMatch(/min-width:\s*0/);
     expect(rule).toMatch(/overflow-x:\s*auto/);
+  });
+});
+
+describe("symbol group sources (spec 2026-11-13)", () => {
+  function seedSourced(sourceWidgetId = "s") {
+    useDashboardStore.setState({
+      dashboards: [{
+        id: "d1", name: "Main",
+        groups: [
+          { id: "g1", name: "Watch", paramName: "symbol", groupType: "symbol", value: "AAPL,MSFT", source: { sourceWidgetId, columnId: "symbol" } },
+          { id: "g2", name: "Dates", paramName: "date", groupType: "date", value: "T" },
+        ],
+        tabs: [{ id: "t1", name: "First", cards: [
+          { id: "s", widgetId: "local_table", backendId: "builtin", params: {}, layout: { x: 0, y: 0, w: 1, h: 1 }, title: "Prices" },
+        ] }],
+      }],
+      activeId: "d1",
+      activeTabId: "t1",
+    });
+  }
+
+  afterEach(() => useFeedNotes.getState().put("g1", undefined));
+
+  it("marks a fed symbol group with its source; a group of another type has no source control", () => {
+    seedSourced();
+    render(<TabBar onOpenLibrary={() => {}} />);
+    expect(screen.getByRole("button", { name: "Source of Watch" })).toHaveAttribute("title", "Fed by Prices — First");
+    expect(screen.queryByRole("button", { name: "Source of Dates" })).toBeNull();
+  });
+
+  it("Remove source keeps the group's list", async () => {
+    seedSourced();
+    render(<TabBar onOpenLibrary={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: "Source of Watch" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Remove source" }));
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].groups![0]).toEqual(
+      { id: "g1", name: "Watch", paramName: "symbol", groupType: "symbol", value: "AAPL,MSFT" },
+    ));
+  });
+
+  it("says Source unavailable when the table is gone, and Choose source opens the picker", async () => {
+    seedSourced("gone");
+    render(<TabBar onOpenLibrary={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: "Source of Watch" }));
+    expect(screen.getByText("Source unavailable")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("menuitem", { name: "Choose source" }));
+    expect(screen.getByRole("dialog", { name: "Feed symbol group" })).toBeInTheDocument();
+  });
+
+  it("shows the feeder's note, and offers Choose column when the column is gone", async () => {
+    seedSourced();
+    useFeedNotes.getState().put("g1", "Column unavailable");
+    render(<TabBar onOpenLibrary={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: "Source of Watch" }));
+    expect(screen.getByRole("menuitem", { name: "Choose column" })).toBeInTheDocument();
+  });
+
+  it("shows the viewer the marker but no menu", () => {
+    seedSourced();
+    render(<TabBar onOpenLibrary={() => {}} viewer />);
+    expect(screen.getByRole("button", { name: "Source of Watch" })).toBeDisabled();
+  });
+
+  it("keeps a long list's chip to its own width, with the whole value in its title", () => {
+    seedSourced();
+    render(<TabBar onOpenLibrary={() => {}} />);
+    expect(screen.getByText("Watch · AAPL,MSFT")).toHaveAttribute("title", "AAPL,MSFT");
+    expect(readFileSync("src/styles.css", "utf8")).toMatch(/\.group-chip-label\s*\{[^}]*text-overflow:\s*ellipsis/);
   });
 });

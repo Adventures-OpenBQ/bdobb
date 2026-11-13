@@ -7,10 +7,15 @@ import { moveBefore, movedWithin } from "../lib/dragDrop";
 import { logError } from "../lib/logger";
 import { nextUntitledName } from "../lib/naming";
 import { groupValueLabel } from "../lib/statementFiscal";
+import { tableLabel } from "../lib/symbolGroupSource";
+import type { ParamGroup } from "../lib/types";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWorkspacesStore } from "../stores/workspacesStore";
+import { FeedSymbolGroupDialog } from "./FeedSymbolGroupDialog";
 import { InlineRename } from "./InlineRename";
+import { MenuPanel } from "./RowContextMenu";
+import { useFeedNotes } from "./SymbolGroupFeeder";
 
 /**
  * Defined where the drag originates, as WIDGET_DRAG_TYPE is in
@@ -90,6 +95,19 @@ export function TabBar({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   /** The group chip currently showing an InlineRename field, if any. */
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  /** The symbol group whose source menu is open, and the marker it hangs from (spec 2026-11-13 §2). */
+  const [sourceMenu, setSourceMenu] = useState<{ groupId: string; anchor: HTMLButtonElement } | null>(null);
+  /** The group the Feed symbol group dialog was opened for, from its menu. */
+  const [feedGroupId, setFeedGroupId] = useState<string | null>(null);
+  const setGroupSource = useDashboardStore((s) => s.setGroupSource);
+  const feedNotes = useFeedNotes((s) => s.notes);
+
+  /** What a symbol group's marker says: the feeder's note, else where it is fed from (R13). */
+  const sourceStatus = (g: ParamGroup): string => {
+    if (!g.source) return "No source";
+    const label = dashboard ? tableLabel(dashboard, g.source.sourceWidgetId) : undefined;
+    return feedNotes[g.id] ?? (label ? `Fed by ${label}` : "Source unavailable");
+  };
 
   /** Fire-and-forget a store write; a failure is logged as "failed to <what>". */
   const logged = (what: string, p: Promise<unknown>) =>
@@ -174,6 +192,8 @@ export function TabBar({
   }
 
   if (!dashboard) return null;
+
+  const menuGroup = sourceMenu ? dashboard.groups?.find((g) => g.id === sourceMenu.groupId) : undefined;
 
   return (
     <div className="tab-bar">
@@ -305,11 +325,26 @@ export function TabBar({
               ) : (
                 <span
                   className="group-chip-label"
+                  title={groupValueLabel(g)}
                   onDoubleClick={viewer ? undefined : () => setEditingGroupId(g.id)}
                 >
                   {`${g.name} · ${groupValueLabel(g)}`}
                 </span>
               )}
+              {g.groupType === "symbol" ? (
+                <button
+                  type="button"
+                  className="tab-close"
+                  aria-label={`Source of ${g.name}`}
+                  aria-haspopup="menu"
+                  aria-expanded={sourceMenu?.groupId === g.id}
+                  title={sourceStatus(g)}
+                  disabled={viewer}
+                  onClick={(e) => setSourceMenu(sourceMenu?.groupId === g.id ? null : { groupId: g.id, anchor: e.currentTarget })}
+                >
+                  {g.source ? "⇠" : "⋯"}
+                </button>
+              ) : null}
               {viewer ? null : (
                 <button
                   type="button"
@@ -324,6 +359,36 @@ export function TabBar({
           ))}
         </div>
       ) : null}
+      {sourceMenu && menuGroup ? (
+        <MenuPanel
+          className="group-menu"
+          aria-label={`Source of ${menuGroup.name}`}
+          x={sourceMenu.anchor.getBoundingClientRect().left}
+          y={sourceMenu.anchor.getBoundingClientRect().bottom}
+          portal
+          anchor={sourceMenu.anchor}
+          returnFocusTo={sourceMenu.anchor}
+          onClose={() => setSourceMenu(null)}
+        >
+          <div className="group-menu-title">{sourceStatus(menuGroup)}</div>
+          <button type="button" role="menuitem" onClick={() => { setSourceMenu(null); setFeedGroupId(menuGroup.id); }}>
+            {sourceStatus(menuGroup) === "Column unavailable" ? "Choose column" : "Choose source"}
+          </button>
+          {menuGroup.source ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setSourceMenu(null);
+                logged(`remove the source of group ${menuGroup.id}`, setGroupSource(dashboard.id, menuGroup.id, null));
+              }}
+            >
+              Remove source
+            </button>
+          ) : null}
+        </MenuPanel>
+      ) : null}
+      {feedGroupId ? <FeedSymbolGroupDialog dashboardId={dashboard.id} groupId={feedGroupId} onClose={() => setFeedGroupId(null)} /> : null}
       {/* Always enabled: with no fetching card on the active tab, a bump is
           simply a no-op, and a button that greys itself out based on what is
           on the tab is more surprising than one that does nothing. */}
