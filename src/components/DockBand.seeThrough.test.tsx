@@ -213,6 +213,7 @@ describe("the room under a see-through top band", () => {
     rerender();
     act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, theme: "light" } }));
     act(() => useDashboardStore.setState({ maximizedCardId: "nobody" }));
+    act(() => useDashboardStore.setState((s) => ({ activeTabIds: { ...s.activeTabIds } })));
     expect(scroll.top).toBe(40);
     act(() => useDashboardStore.setState({ activeTabId: "t2", activeTabIds: { d1: "t2" } }));
     expect(scroll.top).toBe(180);

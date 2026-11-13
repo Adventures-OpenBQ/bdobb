@@ -17,7 +17,8 @@ import { useDashboardStore } from "../stores/dashboardStore";
  * Nothing saves or restores a dashboard's scroll today: the one
  * .dashboard-scroll element is reused across dashboard and tab switches and
  * keeps its scrollTop. So "opening" is exactly when the band starts floating
- * and when the dashboard or tab on screen changes -- the deps below -- and
+ * and when the dashboard or tab on screen changes -- the deps below, all
+ * primitives so a store write that changes neither leaves them alone -- and
  * never another render, which would undo the user's own scrolling. `px` is
  * null while the band does not float, and then nothing is published or
  * scrolled. Layout effects, so the first painted frame is already right.
@@ -25,7 +26,7 @@ import { useDashboardStore } from "../stores/dashboardStore";
 export function useFloatingBand(ref: RefObject<HTMLElement | null>, edge: PinEdge, px: number | null): void {
   const activeId = useDashboardStore((s) => s.activeId);
   const activeTabId = useDashboardStore((s) => s.activeTabId);
-  const activeTabIds = useDashboardStore((s) => s.activeTabIds);
+  const tabOnScreen = useDashboardStore((s) => (s.activeId ? s.activeTabIds[s.activeId] : undefined));
 
   useLayoutEffect(() => {
     const area = ref.current?.closest<HTMLElement>(".dashboard-area");
@@ -39,5 +40,5 @@ export function useFloatingBand(ref: RefObject<HTMLElement | null>, edge: PinEdg
     if (edge !== "top" || px === null) return;
     const scroll = ref.current?.closest(".dashboard-area")?.querySelector<HTMLElement>(":scope > .dashboard-scroll");
     if (scroll) scroll.scrollTop = px;
-  }, [ref, edge, px, activeId, activeTabId, activeTabIds]);
+  }, [ref, edge, px, activeId, activeTabId, tabOnScreen]);
 }
