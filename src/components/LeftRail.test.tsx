@@ -1410,7 +1410,7 @@ describe("LeftRail apps.json and the viewer window", () => {
     await userEvent.click(screen.getByRole("menuitem", { name: "Import apps.json…" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Imported 1 dashboards, 2 cards (1 unresolved)",
+      "Imported 1 dashboard, 2 cards (1 unresolved)",
     );
     const added = useDashboardStore.getState().dashboards.find((d) => d.name === "Imported")!;
     expect(added.tabs[0].cards.map((c) => c.backendId)).toEqual(["b1", "unresolved"]);
@@ -1434,7 +1434,7 @@ describe("LeftRail apps.json and the viewer window", () => {
     await userEvent.click(screen.getByRole("menuitem", { name: "Import apps.json…" }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Imported 1 dashboards (1 replaced), 0 cards (0 unresolved)",
+      "Imported 1 dashboard (1 replaced), 0 cards (0 unresolved)",
     );
     const { dashboards } = useDashboardStore.getState();
     expect(dashboards.map((d) => d.id)).toEqual(["d1", "d2"]);

@@ -1,5 +1,5 @@
-// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -92,7 +92,7 @@ describe("docs/examples", () => {
     // param opens on today, and a one-day COT window is empty (204), so the card pins its start date.
     expect(layout.find((l) => l.i === "cftc_cot_cftc_obb")?.state?.params).toEqual({ code: "067651", start_date: "2025-01-01" });
     expect(apps[0].description).toContain("openbq-docker v3");
-    expect(apps[0].description).toContain("credentials.demo.env");
+    expect(apps[0].description).toContain("Congress 119 bills card uses keyless bulk data");
     expect(apps[0].description).not.toContain("openbb-docker");
   });
 

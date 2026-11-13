@@ -180,7 +180,7 @@ describe("dropping a .json", () => {
       expect(useDashboardStore.getState().dashboards.map((d) => d.name)).toContain("Imported"),
     );
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Imported 1 dashboards, 0 cards (0 unresolved)",
+      "Imported 1 dashboard, 0 cards (0 unresolved)",
     );
     expect(cards()).toHaveLength(0);
   });
@@ -198,7 +198,7 @@ describe("dropping a .json", () => {
     );
     expect(vi.mocked(decideImportConflicts).mock.calls[0][0]).toHaveLength(1);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Imported 1 dashboards, 0 cards (0 unresolved)",
+      "Imported 1 dashboard, 0 cards (0 unresolved)",
     );
   });
 
