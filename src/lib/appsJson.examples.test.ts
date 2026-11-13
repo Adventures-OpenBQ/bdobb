@@ -286,7 +286,10 @@ describe("docs/examples", () => {
       // no sample card, the same reason it gets no library entry.
       // Linked cards also need dashboard-owned table IDs. External apps.json
       // intentionally has no native dependency-reference extension.
-      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID].includes(w.id)) continue;
+      // The Picture in Picture only does anything in the macOS app (it is a
+      // placeholder elsewhere) and needs a Chrome player to park, so it gets
+      // no sample card either.
+      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, "picture_in_picture"].includes(w.id)) continue;
       expect(present.has(w.id), `${w.id} has no card in v4.0.0-builtins.apps.json`).toBe(true);
     }
     expect(present.has("param_echo")).toBe(true);

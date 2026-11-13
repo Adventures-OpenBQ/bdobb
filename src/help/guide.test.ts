@@ -14,8 +14,8 @@ describe("the help guide", () => {
     const slugs = GUIDE_SECTIONS.flatMap((s) => s.pages.map((p) => p.slug));
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
-    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate; so is v4's Linked Widgets page.
-    expect(GUIDE_PAGES).toHaveLength(44);
+    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News, Locked and Pinned Widgets and Picture in Picture pages, are deliberate; so is v4's Linked Widgets page.
+    expect(GUIDE_PAGES).toHaveLength(45);
   });
 
   it("gives every page a title from its own H1, with the frontmatter gone", () => {
@@ -331,5 +331,26 @@ describe("example dashboards guide documents the v8.0.0 examples", () => {
     for (const s of ["## Example Dashboard - Version 8.0.0", "v8.0.0-news.apps.json", "v8.0.0-pinned.apps.json", "BDOBB 8.0.0 or later", "**No example carries locked widgets.**"]) {
       expect(body).toContain(s);
     }
+  });
+});
+
+describe("the Picture in Picture page", () => {
+  it("is listed under Widgets and states what the card says and needs on each platform", () => {
+    const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");
+    expect(widgets?.pages.map((p) => p.slug)).toContain(`${GUIDE_PREFIX}picture-in-picture`);
+    const body = GUIDE_PAGES.find((p) => p.slug === `${GUIDE_PREFIX}picture-in-picture`)!.body;
+    for (const s of [
+      "**Picture in Picture**",
+      "`Picture in Picture`",
+      "**Accessibility**",
+      "**Source tab title contains**",
+      "**Volume slider label**",
+      "`Volume Level`",
+      "*Pop the video out in Chrome*",
+      "*Park a picture-in-picture video here*",
+      "*Available in the macOS desktop app*",
+    ]) expect(body).toContain(s);
+    const manual = TOPICS.find((t) => t.slug === "built-in-widgets")!.body;
+    expect(manual).toContain("## Picture in Picture");
   });
 });

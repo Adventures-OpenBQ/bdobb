@@ -35,6 +35,7 @@ export const RENDERED_TYPES: ReadonlySet<string> = new Set([
   "live_grid",
   "omni",
   "advanced_charting",
+  "picture_in_picture",
 ]);
 
 /**

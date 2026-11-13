@@ -74,6 +74,7 @@ import { NoteRenderer } from "./renderers/NoteRenderer";
 import { DateProbeRenderer } from "./renderers/DateProbeRenderer";
 import { ParamEchoRenderer } from "./renderers/ParamEchoRenderer";
 import { YouTubeRenderer } from "./renderers/YouTubeRenderer";
+import { PictureInPictureMute, PictureInPictureRenderer } from "./renderers/PictureInPictureRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
 import { OmniRenderer } from "./renderers/OmniRenderer";
@@ -1086,6 +1087,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       return <ClockRenderer params={card.params} />;
     }
 
+    // Same reason as the clock: no backend, data is always null.
+    if (widget?.type === "picture_in_picture") {
+      return <PictureInPictureRenderer cardId={card.id} params={card.params} menuOpen={exportOpen || (collapseControls && controlsOpen)} readOnly={readOnly} />;
+    }
+
     // The date scratchpad. Given the group-merged params for the same reason
     // the echo is: a grouped `expr` should probe whatever the group holds.
     // It fetches nothing -- resolution is the client's, through the same
@@ -1932,6 +1938,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             </button>
           ) : null}
           <div className="card-controls-icons">
+            {widget?.type === "picture_in_picture" ? <PictureInPictureMute params={card.params} /> : null}
             {widget && DOCUMENT_TYPES.has(widget.type) ? null : (
               <ViewToggle
                 modes={modes}
