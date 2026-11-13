@@ -47,7 +47,18 @@ jobs:
       # unlisted binary fails; unused exports are reported as warnings only.
       - run: pnpm knip
       # test:run, never test — the latter is watch mode and hangs forever.
+      - name: Portable qualification fixture and report contracts
+        run: node --test scripts/pivot-qualification/*.node.mjs
+      - name: Fixed TS and built WASM qualification parity
+        run: pnpm exec vitest run src/lib/tableExecution/qualificationParity.test.ts
       - run: pnpm test:run
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pivot-fixed-failing-traces
+          path: src/test/fixtures/sec-statements/failing-traces/
+          retention-days: 7
+          if-no-files-found: ignore
       # The web preview's server tests (node --test web/*.test.mjs): the
       # session, policy and relay checks web/README.md describes.
       - run: pnpm test:web
@@ -110,11 +121,19 @@ jobs:
       - run: pnpm build:web
       - run: pnpm test:web:browser
       - run: pnpm e2e
+      - name: Bounded linked Statement PR smoke (TypeScript, Chromium)
+        run: pnpm exec playwright test --config playwright.qualification.config.ts --project chromium --grep "company switch, row checkboxes"
+      - name: Bounded linked Statement PR smoke (Rust, Chromium)
+        run: pnpm exec playwright test --config playwright.qualification.config.ts --project chromium --grep "company switch, row checkboxes"
+        env:
+          VITE_TABLE_ENGINE: rust
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            e2e-results/qualification/
           retention-days: 7
 
   # The conformance suite runs against OpenBB's reference backend (bdobb-dev's
