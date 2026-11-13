@@ -29,6 +29,10 @@ scrolls instead, and **Taller** stops where the dashboard would run out of room.
 Parameters, groups, Rename, Close, and a News card's feed manager. A band is a
 small grid, so two locked widgets can share one, side by side or stacked.
 
+A widget added to a band without room for its usual size is
+shrunk to the largest free space, so it always lands inside the band; only
+a band with no free space at all puts it over the others.
+
 **OK** keeps the band and returns you to the dashboard. **Cancel**, or
 **Escape**, puts back exactly what the band held when the editor opened —
 every add, remove, move, resize, parameter and feed change since — and returns
