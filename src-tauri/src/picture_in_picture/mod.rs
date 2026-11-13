@@ -243,6 +243,15 @@ mod native {
         if window.is_minimized().unwrap_or(false) {
             return Status::Parked;
         }
+        // macOS full screen is a Space of its own, and Chrome's player stays on
+        // the desktop's: it can be moved there but not seen here (measured
+        // 2026-11-13). Only the answer is given here. Parking is `sync`'s, on
+        // the resize that entering full screen sends: a fit that read "full
+        // screen" just before the exit must not park after `sync` has brought
+        // the player back, because nothing would un-park it again.
+        if window.is_fullscreen().unwrap_or(false) {
+            return Status::FullScreen;
+        }
         let Some(origin) = origin(window) else {
             return Status::Failed { reason: "BDOBB cannot read its own window position".into() };
         };
@@ -332,6 +341,9 @@ mod native {
     }
 
     fn set_away(window: &WebviewWindow, away: bool, current: impl FnOnce() -> bool) {
+        // In full screen the player is never brought back, whoever asks: a
+        // viewer window taking focus on the desktop would otherwise place it there.
+        let away = away || window.is_fullscreen().unwrap_or(false);
         let origin = origin(window);
         placement_and_volume_queued(|p| {
             if current() {
@@ -342,7 +354,7 @@ mod native {
 
     /// The window is read BEFORE either lock is taken.
     fn sync(window: &WebviewWindow, focused: bool) {
-        if window.is_minimized().unwrap_or(false) {
+        if window.is_minimized().unwrap_or(false) || window.is_fullscreen().unwrap_or(false) {
             set_away(window, true, || true);
         } else if focused {
             set_away(window, false, || true);

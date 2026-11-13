@@ -12,6 +12,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   isTauri: () => tauri.on,
 }));
 
+import { modalStack } from "../../hooks/modalStack";
 import { RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
 import { DEFAULT_SETTINGS } from "../../lib/settingsFile";
 import { useDashboardStore, type GridLayoutItem } from "../../stores/dashboardStore";
@@ -66,6 +67,8 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   storeHolds(null);
   cleanup();
+  // A test that failed between a push and its remove must not park every later test.
+  while (modalStack.top()) modalStack.remove(modalStack.top()!);
   // Let the unmount's release (after its grace period) reach the mock before it is reset.
   await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 30));
   vi.unstubAllEnvs();
@@ -81,6 +84,7 @@ describe("Picture in Picture on the macOS desktop app", () => {
     ["in_use", "The player is in use by another card"],
     ["too_small", "Make this card at least 284 × 160 to park the player here"],
     ["viewer_window", "Open this dashboard in the main window"],
+    ["full_screen", "Chrome's player cannot follow BDOBB into full screen"],
     ["not_supported", "Available in the macOS desktop app"],
   ] as const)("shows %s as its message", async (state, text) => {
     answer({ state });
@@ -193,6 +197,44 @@ describe("Picture in Picture on the macOS desktop app", () => {
     rerender(<PictureInPictureRenderer cardId="c1" menuOpen={false} />);
     await waitFor(fitCall);
     expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
+  });
+
+  it("parks while any dialog is open and fits again when the last one closes", async () => {
+    answer({ state: "fitted" });
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(fitCall);
+    invoke.mockClear();
+    const parent = { close: () => {} };
+    const child = { close: () => {} };
+    act(() => modalStack.push(parent));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: true }));
+    // A dialog opened from the dialog, then closed, leaves the player parked.
+    act(() => modalStack.push(child));
+    act(() => modalStack.remove(child));
+    await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 50));
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park"]);
+    act(() => modalStack.remove(parent));
+    await waitFor(fitCall);
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
+  });
+
+  it("leaves a card that is scrolled out of view parked when a dialog closes", async () => {
+    answer({ state: "fitted" });
+    const intersect = stubIntersection();
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(fitCall);
+    act(() => intersect(false));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: false }));
+    const dialog = { close: () => {} };
+    act(() => modalStack.push(dialog));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: true }));
+    invoke.mockClear();
+    act(() => modalStack.remove(dialog));
+    // Several frames pass with the card still out of view: the player is not brought back.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(invoke).not.toHaveBeenCalledWith("picture_in_picture_fit", expect.anything());
+    act(() => intersect(true));
+    await waitFor(fitCall);
   });
 
   it("shows nothing once the player is parked", async () => {

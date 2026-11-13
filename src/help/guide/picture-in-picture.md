@@ -19,7 +19,7 @@ The card's height follows its width: whenever you resize the card, it snaps to t
 
 ## Hiding
 
-When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes.
+When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes. So does opening any dialog, such as **Settings**: Chrome's player floats above every window and would cover the dialog, so it stays away until the last dialog closes.
 
 Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it.
 
@@ -29,7 +29,7 @@ The 🔊 button in the card's header mutes the stream, and 🔇 turns it back on
 
 - **Source tab title contains**: optional text in the tab's title. Leave it empty and BDOBB uses whichever Chrome window shows the slider; fill it in when more than one open tab has a player.
 - **Volume slider label**: what the site calls its slider. The default is `Volume Level`. Change it only if the site renames the control.
-- **Mute while hidden**: *Off* by default. Set to *On*, the volume goes to 0 while the player is hidden and returns to its level when the player comes back. If you had already muted the video, it stays muted. Opening the card's menu never mutes.
+- **Mute while hidden**: *Off* by default. Set to *On*, the volume goes to 0 while the player is hidden and returns to its level when the player comes back. If you had already muted the video, it stays muted. Opening the card's menu or a dialog never mutes.
 
 Chrome shows BDOBB only the selected tab of each window. If the stream's tab is not the selected tab in its window, the button is dimmed, and hovering over it says why. The player still parks either way. When BDOBB puts the player back where it was, it also turns the volume back up if BDOBB was the one that muted it.
 
@@ -39,6 +39,7 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 | --- | --- |
 | *Pop the video out in Chrome* | No floating player is open; the card checks again every few seconds |
 | *The player is in use by another card* | Another Picture in Picture card holds it; remove that card or scroll it away |
+| *Chrome's player cannot follow BDOBB into full screen* | BDOBB is in macOS full screen, which is a desktop of its own that Chrome's floating player does not join. The player is moved off screen until you leave full screen. To make BDOBB large without full screen, hold Option and click the green button, which zooms the window on the same desktop |
 | *Open this dashboard in the main window* | The card is in an **Open in new window** viewer, which cannot hold the player |
 | *BDOBB needs Accessibility permission…* | See step 2 above |
 
@@ -48,7 +49,7 @@ On iPad the card is an empty space with the hint *Park a picture-in-picture vide
 
 ## Limits
 
-Chrome only, and only its one floating player. The window title BDOBB looks for is the English `Picture in Picture`, so a Chrome set to another language is not yet supported. The card does not crop the video, detect commercial breaks, or pop the video out for you.
+Chrome only, and only its one floating player. The player does not show while BDOBB is in macOS full screen. The window title BDOBB looks for is the English `Picture in Picture`, so a Chrome set to another language is not yet supported. The card does not crop the video, detect commercial breaks, or pop the video out for you.
 
 *See also: [[built-in-widgets|Built-in Widgets]] · [[widget-cards|Widget Cards]] · [[live-tv|Live TV]]*
 

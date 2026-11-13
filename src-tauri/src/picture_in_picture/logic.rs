@@ -39,6 +39,9 @@ pub enum Status {
     Parked,
     TooSmall,
     ViewerWindow,
+    /// BDOBB is in macOS full screen, a Space of its own that Chrome's player
+    /// does not join: the hold stays parked. Built only by the macOS commands.
+    FullScreen,
     /// Built only by the commands off macOS.
     #[allow(dead_code)]
     NotSupported,
