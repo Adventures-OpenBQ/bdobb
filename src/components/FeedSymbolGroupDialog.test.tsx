@@ -82,3 +82,11 @@ it("does not offer a table whose own parameters are bound to the chosen group", 
   expect(screen.getByRole("option", { name: "Prices — First" })).toBeTruthy();
   expect(screen.queryByLabelText("Symbol group")).toBeNull();
 });
+
+it("Choose source on a fed group preselects the group's own column", () => {
+  const two = { status: "ready", ready: { columns: [{ id: "tkr", label: "Ticker" }, { id: "alt", label: "Alt" }] } } as unknown as ViewState;
+  const st = { subscribe: () => () => {}, readView: () => two } as Pick<TableExecutionStore, "subscribe" | "readView">;
+  useDashboardStore.setState((s) => ({ dashboards: s.dashboards.map((d) => ({ ...d, groups: [{ ...d.groups![0], source: { sourceWidgetId: "s", columnId: "alt" } }] })) }));
+  render(<FeedSymbolGroupDialog dashboardId="d" groupId="g" store={st} onClose={() => {}} />);
+  expect((screen.getByLabelText("Ticker column") as HTMLSelectElement).value).toBe("alt");
+});

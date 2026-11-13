@@ -13,6 +13,7 @@ import {QueryLibraryDialog} from '../dialogs/QueryLibraryDialog';
 import {FeedSymbolGroupDialog} from '../FeedSymbolGroupDialog';
 import {LocalTableRenderer} from './LocalTableRenderer';
 import {KNOWLEDGE_BASIS_LABELS,TEMPORAL_MODE_LABELS,basisLabel} from '../../lib/temporal/labels';
+import {DOCKS_ID} from '../../lib/dashboardsFile';
 
 /** The receipt fields the source adapter carries on the dataset's provenance. */
 export type ReceiptView={executionId:string;queryId:string;queryRevision:number;resultHash:string;knowledgeBasis:string|null;context?:TemporalContext;pins:{catalog_id:string;snapshot_id:number|string}[];environmentDigest?:string;frozenAt?:string;completeness?:string;orderContract?:string;codec?:string;parameters:Record<string,unknown>;acquisition?:AcquisitionExplanation};
@@ -104,7 +105,7 @@ export function QueryDataRenderer({dashboardId,card,filterRow,onStateChange,read
   {drawer&&receipt&&binding?<div id={`query-receipt-${card.id}`}><ReceiptDrawer receipt={receipt} binding={binding} card={card} readOnly={readOnly} onClose={()=>setDrawer(false)}/></div>:null}
   {error?<p className="bd-notice bd-notice--error" role="alert">{error}</p>:null}
   {binding&&!error?<LocalTableRenderer executionIdentity={{dashboardId,widgetId:card.id}} file="" label={card.title??'Shared query'} refreshKey={0} state={card.table} onStateChange={onStateChange} filterRow={filterRow}/>:null}
-  {library?<QueryLibraryDialog backendId={card.backendId} readOnly={readOnly} currentTable={{definition:card.tableDefinition,queryId:binding?.kind==='query'?binding.queryId:undefined}} onFeed={readOnly?undefined:()=>setFeed(true)} onClose={()=>setLibrary(false)} onBind={(next,layout)=>useDashboardStore.getState().bindQueryCard(card.id,next,layout)}/>:null}
+  {library?<QueryLibraryDialog backendId={card.backendId} readOnly={readOnly} currentTable={{definition:card.tableDefinition,queryId:binding?.kind==='query'?binding.queryId:undefined}} onFeed={readOnly||dashboardId===DOCKS_ID?undefined:()=>setFeed(true)} onClose={()=>setLibrary(false)} onBind={(next,layout)=>useDashboardStore.getState().bindQueryCard(card.id,next,layout)}/>:null}
   {feed?<FeedSymbolGroupDialog dashboardId={dashboardId} sourceWidgetId={card.id} onClose={()=>setFeed(false)}/>:null}
  </div>;
 }

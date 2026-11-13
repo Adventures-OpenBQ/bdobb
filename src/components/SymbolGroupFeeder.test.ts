@@ -50,8 +50,9 @@ function harness(group: Partial<ParamGroup> = {}) {
   const feeder = createFeeder({ dashboardId: "d", store: fake.store, read: () => dashboard, write, note: (id, text) => notes.set(id, text) });
   fake.store.subscribe(feeder.run);
   /** A person types over the group: the dashboard store changes, and the feeder runs on it. */
+  const setSource = (source: ParamGroup["source"]) => { dashboard = { ...dashboard, groups: dashboard.groups!.map((g) => ({ ...g, source })) }; };
   const type = (value: string) => { setValue(value); feeder.run(); };
-  return { ...fake, feeder, write, notes, type, value: () => dashboard.groups![0].value };
+  return { ...fake, feeder, write, notes, type, setSource, value: () => dashboard.groups![0].value };
 }
 
 describe("createFeeder (spec 2026-11-13 §2)", () => {
@@ -115,6 +116,21 @@ describe("createFeeder (spec 2026-11-13 §2)", () => {
     h.feeder.run();
     expect(h.notes.get("g")).toBe("Source unavailable");
     expect(h.chartData).not.toHaveBeenCalled();
+  });
+
+  it("says Source unavailable, not loading, for an unavailable source table", () => {
+    const h = harness();
+    h.show("unavailable", 1);
+    expect(h.notes.get("g")).toBe("Source unavailable");
+  });
+
+  it("does not write a list read for a source the group has since left", async () => {
+    const h = harness();
+    h.show("ready", 1);
+    h.setSource({ sourceWidgetId: "s", columnId: "other" });
+    h.answers[0].resolve(["AAPL"]);
+    await flush();
+    expect(h.write).not.toHaveBeenCalled();
   });
 
   it("notes the cap and keeps the first 500", async () => {

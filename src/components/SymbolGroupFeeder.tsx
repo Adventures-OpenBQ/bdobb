@@ -56,7 +56,7 @@ export function createFeeder({ dashboardId, store, read, write, note }: {
       const view = store.readView(dashboardId, source.sourceWidgetId);
       const revision = view.active;
       if (!revision || !view.ready || (view.status !== "ready" && view.status !== "empty")) {
-        note(group.id, view.status === "failed" || view.status === "blocked" ? `Source ${view.status}` : "Source loading");
+        note(group.id, view.status === "failed" || view.status === "blocked" || view.status === "unavailable" ? `Source ${view.status}` : "Source loading");
         continue;
       }
       const key = JSON.stringify([revision, source.columnId]);
@@ -78,7 +78,7 @@ export function createFeeder({ dashboardId, store, read, write, note }: {
         settle(group.id, capped ? `Capped at ${SYMBOL_GROUP_CAP} tickers` : undefined);
         // Re-read: the person may have typed over the group, or removed its source, meanwhile.
         const now = read()?.groups?.find((g) => g.id === group.id);
-        if (now?.source && shouldWrite(now.value, list)) write(group.id, list);
+        if (now?.source?.sourceWidgetId === source.sourceWidgetId && now.source.columnId === source.columnId && shouldWrite(now.value, list)) write(group.id, list);
       }, () => { if (current()) settle(group.id, "Source failed"); });
     }
   };

@@ -27,7 +27,7 @@ export function FeedSymbolGroupDialog({ dashboardId, sourceWidgetId, groupId, st
   const dashboard = useDashboardStore((s) => s.dashboards.find((d) => d.id === dashboardId));
   const fixedGroup = groupId === undefined ? undefined : dashboard?.groups?.find((g) => g.id === groupId);
   const [source, setSource] = useState(sourceWidgetId ?? fixedGroup?.source?.sourceWidgetId ?? "");
-  const [picked, setPicked] = useState<string>();
+  const [picked, setPicked] = useState<string | undefined>(fixedGroup?.source?.columnId);
   /** "" is a new group: group ids are never empty. */
   const [target, setTarget] = useState(groupId ?? "");
   const [saving, setSaving] = useState(false);
