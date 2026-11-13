@@ -94,8 +94,12 @@ describe("docs/examples", () => {
     // The COT card needs a market code to load at all; 067651 is WTI crude oil (NYMEX). An unset date
     // param opens on today, and a one-day COT window is empty (204), so the card pins its start date.
     expect(layout.find((l) => l.i === "cftc_cot_cftc_obb")?.state?.params).toEqual({ code: "067651", start_date: "2025-01-01" });
-    expect(apps[0].description).toContain("openbq-docker v3");
-    expect(apps[0].description).toContain("credentials.demo.env");
+    // The description is openbq-docker's own text (its examples/bdobb/apps.json and the
+    // October 25 recheck in docs/credentials-demo-receipt.md): EIA alone uses a demo key, the
+    // Congress card reads keyless bulk data, and EconDB's temporary token may be refused.
+    expect(apps[0].description).toContain("EIA uses a public demo key");
+    expect(apps[0].description).toContain("Congress 119 bills card uses keyless bulk data");
+    expect(apps[0].description).toContain("supply your own EconDB key");
     expect(apps[0].description).not.toContain("openbb-docker");
   });
 
