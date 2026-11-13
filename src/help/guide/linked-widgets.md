@@ -16,7 +16,7 @@ The dropdown lists every eligible table on the dashboard, from every tab, as *ca
 
 ## What can be a source
 
-A table card on the same dashboard, showing its **Table** view: a dropped data file, a backend table widget, a server-side table, or another linked table. A linked chart is never a source, a card switched to its Chart, Transposed or Raw view is not one, and a choice that would make a loop is refused.
+A table card on the same dashboard, showing its **Table** view: a dropped data file, a backend table widget, a server snapshot (managed table), or another linked table. A linked chart is never a source, nor is a LIVE · paged table or a card switched to its Chart, Transposed or Raw view, and a choice that would make a loop is refused. The two **Create linked** items appear only on a card that can be a source. A backend table over 2,000,000 cells offers neither item, and a card linked to one reports *This table is too large for the table engine*.
 
 ## A linked table
 
@@ -31,13 +31,13 @@ Its controls sit above the plot and save as you change them:
 - **Measures** — a checkbox for each numeric column.
 - **Display** — **Grouped** or **Stacked**; not offered for Lines.
 
-Until a category and at least one measure are chosen it reads *Choose chart fields: select a category and numeric measures.*
+Until a category and at least one measure are chosen it reads *Choose chart fields: select a category and numeric measures.* When a chosen field disappears from the source it reads *Field … is unavailable. Repair chart fields.* When the source's current scope is successfully empty, for example after a filter leaves no rows, the chart clears its previous figure and reads *No selected series match the current filter.* Partial or sample source data keeps its coverage warnings under the chart.
 
 ## Changing or losing the source
 
 **Choose source** — in the `⋯` menu of a linked card, and as a button in its body — opens the same dialog to point it at another table. There is no unlink: to stop following a source, remove the card.
 
-While the source is updating, the card keeps showing *Showing completed data (stale).* If the source is removed or stops being eligible, the card reads *Source unavailable* until you choose another.
+While the source is updating, the card keeps showing its last completed result and reads *Showing completed data (stale).* A linked chart also reads *Updating chart — showing completed data (stale).* If the source is removed or stops being eligible, the card reads *Source unavailable* until you choose another.
 
 **Duplicate** keeps the link. **Copy to ▸** another dashboard drops it, since a link can only name a card on its own dashboard.
 

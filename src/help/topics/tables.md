@@ -4,8 +4,9 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 
 A table displays a window of rows while sorting and filtering operate over its
-loaded input, not just the visible window. Local and linked report tables use
-a worker and transfer bounded display blocks. This does not promise unlimited
+loaded input, not just the visible window. Local files, linked tables, server
+snapshots and backend tables up to 2,000,000 cells use a worker and transfer
+bounded display blocks. This does not promise unlimited
 file size or out-of-core processing; sample and partial-data warnings still apply.
 
 The body is one scroll box with the header row pinned to the top of it.
@@ -44,11 +45,13 @@ LIVE pages because loaded rows cannot represent the complete result. Warnings
 from the backend, such as FINRA's 250,000-record cap, appear as a notice line
 under the header, and boolean values display even in a column declared text.
 
-The OpenBQ API's largest datasets open as LIVE · paged tables: FINRA bonds and
-bond prices, the FFIEC institution tables, the large EIA series, CFTC swap and
-FX forward trades and the rest of the API's tables over about 10 MB. Each page
-is fetched, sorted and filtered on the server, with text and number filters
-only; grouping and the whole-result features above are not offered. Through
+The OpenBQ API's 41 largest datasets open as LIVE · paged tables: FINRA bonds
+and bond prices, the FFIEC institution tables, many EIA petroleum, natural gas
+and coal tables, CFTC swap and FX forward trades and the rest of the API's
+tables over about 10 MB. Each page of 100 rows is fetched, sorted and filtered
+on the server; **Previous page** and **Next page** move through it. Click a
+header to sort by that one column; filters are text *contains* and number
+ranges only; grouping and the whole-result features above are not offered. Through
 the web preview, the first open of the very largest can time out while the
 server prepares it; Reopen shows it once ready.
 
@@ -93,9 +96,8 @@ with one control per visible column:
 
 At the right end of the filter row, after the last column, sit **Clear**, which
 clears every filter on the card, and a live count reading `142 of 5000 rows`,
-on one line. A table computed in the background — a local file, or a card
-linked to another card's data — shows only its filtered count, such as
-`142 rows`.
+on one line. A linked table, or a table showing a pivot report, shows only its
+filtered count, such as `142 rows`.
 
 The filter *row* is not remembered — reopening the dashboard starts with it
 hidden — but the filter *values* are. It is horizontally sticky only, so it
@@ -124,10 +126,11 @@ something the backend pinned.
 Resize by dragging the handle at a header's right edge; the width is saved a
 moment after you let go.
 
-## Reset table
+## Autosize and reset columns
 
-The `⋯` menu's **Reset table** clears the card's whole saved table state at
-once — sorting, filters, column order, hidden columns, widths and your pins —
+The `⋯` menu's **Quick actions ▸ Autosize columns** sizes each column to the
+widest of its header and the first 200 rows. **Quick actions ▸ Reset columns**
+clears the card's whole saved table state at once — sorting, filters, column order, hidden columns, widths and your pins —
 and the table goes back to the layout the backend described. It does not touch
 the `⌕` toggle, the view mode, the parameters, the title or the card's size.
 
@@ -177,10 +180,12 @@ saved from a viewer window.
 
 ## Report models, formulas and live links
 
-**Pivot** on a backend table opens its pivot panel (Row Groups, Column
-Groups, Data Columns), saved with the card. On a local or linked table it opens
-the drawer. Arrange places categories
-and orders values; Categories, Measures, Pages, Formulas and Result filters edit their definitions. **Saved → Model** shows definitions, warnings and repair; **Saved → Statement template** maps a financial template. A table without a report model opens on the four-list chooser. Its first arrangement edit saves a report model; **Enable report model** is also available in the Arrange footer. **Pivot on** enables the saved report. Turning
+**Pivot** opens the drawer on a local, linked or backend table, and on a
+server snapshot whose service offers grouping. A backend table over 2,000,000
+cells is too large for the worker: its Pivot opens an in-card panel (Row
+Groups, Column Groups, Data Columns), saved with the card, and it cannot feed
+linked widgets. Arrange places categories
+and orders values; Categories, Measures, Pages, Formulas, Category filters and Result filters edit their definitions. **Saved → Model** shows definitions, warnings and repair; **Saved → Statement template** maps a financial template. A table without a report model opens on the four-list chooser. Its first arrangement edit saves a report model; **Enable report model** is also available in the Arrange footer. **Pivot on** enables the saved report. Turning
 it off shows source data while retaining the report definition. **Clear groups**, at the top of the Arrange
 panel, turns the pivot off and empties Row Groups and Column Groups; the data columns and their aggregations stay. Categories can use native values or **Y**, **Q**, **FY**, **FQ**.
 Calendar years and quarters use the report date. Fiscal categories need an
@@ -202,7 +207,10 @@ Budget with a source filter or checklist makes a Budget comparison unavailable;
 it does not fetch missing records or treat them as zero.
 
 Formulas support numeric/string/boolean literals, arithmetic, comparisons,
-SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Use the
+SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF, in any
+letter case (`first(...)` and `FIRST(...)` are the same). IF takes three
+arguments, the others one. Strings are double-quoted; `true`, `false` and
+`null` are lower case. Use the
 reference picker to insert bracketed fields, measures, formulas and comparison
 members. Source-row formulas operate on individual records; aggregate formulas
 need bound measure instances or explicit aggregations. Expressions are bounded

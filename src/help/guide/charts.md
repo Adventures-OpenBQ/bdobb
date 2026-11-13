@@ -5,9 +5,9 @@ tags: [bdobb, help, widgets, charts, plotly]
 
 # Charts
 
-BDOBB draws its charts as Plotly figures inside a card, which is what every `chart` widget in the OpenBB world produces and what any table with a time column can be turned into. The one exception is the TradingView chart, described below.
+BDOBB draws its charts as Plotly figures inside a card, which is what every `chart` widget in the OpenBB world produces and what a table with a date or category column can be turned into. The one exception is the TradingView chart, described below. A chart that follows another table on the same dashboard is a linked chart; see [[linked-widgets|Linked Widgets]].
 
-There are two ways to get a Plotly chart. A widget whose declared type is `chart` is drawn as a chart, with no detection involved — though **Raw** is still offered in its view dropdown, and choosing it wins. Any *other* card whose rows turn out to carry a time column also gains a **Chart** entry in the header's view dropdown, beside the card's own kind, **Raw** and, on a table, **Transposed** — decided by the data that actually arrived, so it can appear only after the first load.
+There are two ways to get a Plotly chart. A widget whose declared type is `chart` is drawn as a chart, with no detection involved — though **Raw** is still offered in its view dropdown, and choosing it wins. Any *other* card whose rows can be charted — a date column, or a category column with at least one numeric column beside it — also gains a **Chart** entry in the header's view dropdown, beside the card's own kind, **Raw** and, on a table, **Transposed** — decided by the data that actually arrived, so it can appear only after the first load.
 
 A table widget can also say how its rows chart. When any of its columns declares a `chartDataType`, the chart takes its x-axis from the first `time` column (or, failing that, the first `category` column) and plots only the `series` columns; `excluded` columns are never plotted, and the **Chart** entry is offered only when there is an axis and at least one series. The widget's `chartView.chartType` picks the drawing — `line`, `area`, `column` (vertical bars), `bar` (horizontal bars) or `scatter`; any other type draws as a line — and `chartView.enabled: true` opens a newly added card on its chart. A card that already saved a view keeps it. A Plotly figure from the backend is still drawn exactly as it arrives.
 
@@ -51,7 +51,7 @@ Charts the app draws itself follow the light/dark theme. A ready-made figure fro
 
 ---
 *Source: BDOBB v3.3.0 in-app manual, "Charts"; `BDOBB` `widgetsJson`, `src/lib/plotly.ts`, `src/lib/highcharts.ts`, `src/lib/vegaLite.ts` and `src/components/renderers/ChartRenderer.tsx` at `v3.3.0`; `BDOBB` `src/lib/chartShapes.ts` at `v3.0.6`.*
-*See also: [[tables|Tables]] · [[widget-cards|Widget Cards]]*
+*See also: [[tables|Tables]] · [[linked-widgets|Linked Widgets]] · [[widget-cards|Widget Cards]]*
 
 ---
 
