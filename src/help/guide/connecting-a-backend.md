@@ -30,9 +30,9 @@ For what goes in the credential fields for each service in the companion stack â
 
 ## The list
 
-Backends are grouped under **Active** and **Inactive** headings, each carrying a count badge; active means the app reached it on the last discovery run, and a group with nothing in it is not drawn. Each backend is a card, not a table row: its name, a status pill, an endpoint URL, a widget count, and **Edit**/**Remove** actions.
+Backends are grouped under **Active** and **Inactive** headings, each carrying a count badge; active means the app reached it on the last discovery run, and a group with nothing in it is not drawn. Each backend is a card, not a table row: its name, a status pill, an endpoint URL, a widget count, an app count, and **Edit**/**Remove** actions. **Refresh**, beside the *Your backends* heading, re-runs discovery; with nothing configured the list reads *No backends configured*. Above the backends, a **Workspace** section lists OpenBB Workspace accounts, with **Add Workspace**; see [[settings-and-logs|Settings and Logs]].
 
-The widget count on a card reads `Widgets unavailable` for a backend that is not online, `275 widgets` for one that is, `275 widgets, 12 skipped` when validation was on and some manifest entries were malformed, or `Widgets rejected` when the whole payload was the wrong shape.
+The widget count on a card reads `Widgets unavailable` for a backend that is not online, `275 widgets` for one that is, `275 widgets, 12 skipped` when validation was on and some manifest entries were malformed, or `Widgets rejected` when the whole payload was the wrong shape. The app count reads `Apps unavailable` when the backend is not online or its `apps.json` could not be read, otherwise `3 apps` (or `0 apps`); a reason it could not be read appears as a note under the card. Once the dialog has asked each connection whether it offers a settings API, the card also reads **Settings API: key**, **login**, **key refused** or **no**.
 
 Every card offers **Edit** and **Remove**. **Remove** asks first: a confirmation names the backend, and only its **Remove** button deletes it.
 

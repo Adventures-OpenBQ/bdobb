@@ -22,23 +22,24 @@ A drop's result is one line in the rail. **Import…** in the dialog shows the r
 
 Two things, and only two:
 
-- **Your preferences** — every control on the Settings dialog's **General**, **Widget** and **Layout** tabs: theme, font size, the auto-refresh interval, the default widget ticker, *Match dashboard symbol*, maximum decimal places, the minimize button, the widget-controls chevron, corner drag handles, the quick-add toolbar and the collapsed rail width.
+- **Your preferences** — every control on the Settings dialog's **General**, **Widget** and **Layout** tabs: theme, font size, the auto-refresh interval, the default widget ticker, *Match dashboard symbol*, maximum decimal places, the minimize button, the widget-controls chevron, corner drag handles, the quick-add toolbar, the collapsed rail width and the dashboard widget spacing.
 - **The rail's folder tree** — your folders, their sibling order, where each dashboard sits, and which folders are collapsed. A machine with no folders of its own writes no folder tree at all, deliberately; see the notices below.
 
 Deliberately **not** exported:
 
 - **The dashboard order.** Importing dashboards gives every one of them a new id, so an exported order would name dashboards that exist nowhere on the machine reading it.
+- **Where your settings live** — the **User Settings** choice of Local or a server, which names one of this machine's connections.
 - **Your connections, and any credential in them.** Those live in `backends.json` and have no export at this version — see [[backends-and-connections|Backends and Connections]].
 - **Your dashboards themselves.** Those are `apps.json`, one dashboard at a time; see [[import-and-export|Import and Export]].
 - **Provider keys**, which are the backend's, not the app's. See [[provider-keys|Provider Keys]].
 
-The file carries a `version` field. A file too new for this build to understand is refused outright, naming both versions; an older file written before this field existed still imports, under its own notice. Within a version every member is optional and additive, so a reader takes the parts it understands and ignores the rest.
+The file carries a `version` field. A file too new for this build to understand is refused outright, naming both versions; an older file written before this field existed still imports, under its own notice. Within a version every member is optional and additive, so a reader takes the parts it understands and ignores the rest; **Import…**'s review names what it ignored (*Ignored unknown fields: …*).
 
 ## What comes back
 
 The two halves are restored by deliberately different rules.
 
-**Preferences are applied one field at a time.** A setting the file does not mention keeps the value it already had, so an older file, or one you trimmed by hand, cannot quietly reset the rest of your preferences to their defaults. A field the app recognises carrying a value it does not — a theme it has never heard of — is downgraded to its default exactly as it would be in `settings.json` itself, rather than costing you the import.
+**Preferences are applied one field at a time.** A setting the file does not mention keeps the value it already had, so an older file, or one you trimmed by hand, cannot quietly reset the rest of your preferences to their defaults. A field the app recognises carrying a value it does not — a theme it has never heard of — refuses the whole import, naming the field (*theme must be dark, light or system.*), and nothing changes. That is stricter than `settings.json` itself, where such a value is quietly downgraded to its default: a file you chose to import is worth telling you about.
 
 **The folder tree is replaced.** Not merged: merging two trees has no sensible answer for two folders that share an id and disagree about their parent. What arrives is what you get.
 
@@ -54,7 +55,7 @@ A **dropped** file applies immediately and ends in one of three notices, which s
 
 ## The guards
 
-A file that is not JSON is refused with *That file is not JSON.* One that is JSON of the wrong shape is refused with *That file is not a bdobb-settings.json: expected a settings object.* Either way nothing changes — no half-import, no partially applied preferences.
+A file that is not JSON is refused with *That file is not JSON.* One that is JSON of the wrong shape is refused with *That file is not a bdobb-settings file: expected a settings object.* Either way nothing changes — no half-import, no partially applied preferences.
 
 **Import…** in the dialog checks the same **10 MB** ceiling the `apps.json` import uses, from the file's size before a byte is read, and refuses above it with *File is … MB; the limit is 10 MB.*
 

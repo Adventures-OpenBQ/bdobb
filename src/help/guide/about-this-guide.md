@@ -7,7 +7,7 @@ tags: [bdobb, help, about, sources, provenance, versions]
 
 This guide documents clean BDOBB **v4.0.0** for Episode 4. It builds on the v3 reference desktop with analytical tables, reusable version-pinned Statement templates, date expressions and exchange calendars, Calendar presentation, improved library and key controls, and docked parameter panels. Historical source-version citations identify donors; they do not name this release.
 
-Cron scheduling is not supported. BDOBB Workspace saves preserve validated analytical definitions and Statement snapshots; unknown or malformed extensions are refused before import writes anything. Exact source commits and validation receipts are recorded in `docs/releases/provenance.md` and the v4 integration ledger.
+A widget may declare its refresh as a five-field cron expression; see [[running-and-refreshing|Running and Refreshing]]. BDOBB Workspace saves preserve validated analytical definitions and Statement snapshots; unknown or malformed extensions are refused before import writes anything. Exact source commits and validation receipts are recorded in `docs/releases/provenance.md` and the v4 integration ledger.
 
 ## Three sources, in order of authority
 

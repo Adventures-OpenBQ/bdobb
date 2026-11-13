@@ -9,15 +9,16 @@ BDOBB is a Tauri desktop app that speaks OpenBB Workspace's published widget and
 
 ## Building from source
 
-The repository's one GitHub Actions workflow, `.github/workflows/ci.yml`, runs the type check, lint, the unit suite, the web layer's tests, a web build, a `cargo check` and the tests of the Rust side, the scrub check and the browser end-to-end suite on every push, with a read-only token. It builds no disk image and publishes nothing.
+The repository's CI workflow, `.github/workflows/ci.yml`, runs the type check, lint, an unused-code check, the third-party notices check, the unit suite, the web layer's tests, a web build, a `cargo check` and the tests of the Rust side, the scrub check, the browser end-to-end suite and the reference-backend conformance suite (see [[reference-validation|Reference Validation]]) on every push and pull request, with a read-only token. It builds no disk image and publishes nothing.
 
 Releases are cut locally instead, by `pnpm release v4.0.0`. That script builds the app, signs it with an Apple Developer ID, notarizes and staples both the app and its disk image, verifies the result with `codesign`, `stapler` and `spctl`, and publishes the disk image. It refuses to start unless the tag already exists and points at exactly the commit being built, and unless the working tree is clean — so a disk image and its tag can never disagree about where they came from.
 
-Prerequisites: Node with `pnpm`, and Rust.
+Prerequisites: Node with `pnpm`, and Rust. The tables' Pivot engine is Rust compiled to WebAssembly, and its build output is not committed, so you also need the toolchain `scripts/pivot-toolchain.json` names — Rust 1.98.1 with the `wasm32-unknown-unknown` target, and `wasm-bindgen-cli` 0.2.128 — and must build it once before the app will build:
 
 ```bash
 cd /path/to/bdobb
 pnpm install
+pnpm pivot:build
 pnpm dev
 ```
 
@@ -50,7 +51,7 @@ Or skip the widget-by-widget route and import a whole dashboard set — see [[im
 BDOBB serves no data of its own. `pnpm reference-backend` runs OpenBB's keyless reference backend locally to try it against (see [[reference-validation|Reference Validation]]); otherwise you need an OpenBB-compatible backend of your own. For the companion stack, see [[openbq-docker-stack|The openbq-docker Stack]].
 
 ---
-*Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; BDOBB v3.0.1 in-app manual, "Getting started".*
+*Source: `BDOBB` `package.json`, `src-tauri/tauri.conf.json`, `scripts/release.sh` and `.github/workflows/ci.yml` at `v3.3.3`; `BDOBB` `.github/workflows/ci.yml`, `scripts/build-pivot-wasm.mjs`, `scripts/pivot-toolchain.json` and `.gitignore` at `v4.0.0`; BDOBB v3.0.1 in-app manual, "Getting started".*
 *See also: [[connecting-a-backend|Connecting a Backend]] · [[importing-dashboards|Importing Dashboards]] · [[app-data-and-settings|App Data and Settings]]*
 
 ---

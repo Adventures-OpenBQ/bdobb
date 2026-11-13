@@ -13,7 +13,7 @@ Each service sits on the stack's private Docker bridge, `openbq-internal`, publi
 
 The `openbq` node publishes the API on 443 with the base compose (`ts-config/serve.json`), and adds the reference backend on 8443 with the Episode 3 overlay (`ts-config/serve-v3.json`). See [[openbq-docker-stack|The openbq-docker Stack]].
 
-**Funnel is off.** Funnel would expose a port to the public internet. Every Serve configuration in openbq-docker sets `AllowFunnel` to `false` for each of its ports, and no service in the stack is meant to be public.
+**Funnel is off.** Funnel would expose a port to the public internet. `serve.json`, `serve-v3.json` and `serve-v3-keys.json` set `AllowFunnel` to `false` for each of their ports. The one exception is opt-in: for the [[web-preview|Web Preview]], `serve-funnel.json` and `serve-v3-funnel.json` add the web door on port 10000 and funnel that port alone; 443 and 8443 stay tailnet-only. You copy one of those over the live file deliberately; nothing swaps it for you.
 
 ## key-maint: a Tailscale Service, or the host's loopback
 
@@ -32,7 +32,7 @@ The Service has to be created in your tailnet's admin console and this node appr
 **First start is slow.** The API's first route discovery can take a couple of minutes, and Serve can answer 502 until it is ready.
 
 ---
-*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `ts-config/serve-v3.json`, `ts-config/serve-v3-keys.json`, `key-maint/README.md` and `scripts/verify-isolation.sh` at `v4.0.0`; Adventures in OpenBQ, Eps. 1–3.*
+*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `ts-config/serve-v3.json`, `ts-config/serve-v3-keys.json`, `ts-config/serve-funnel.json`, `ts-config/serve-v3-funnel.json`, `funnel-gateway/README.md`, `key-maint/README.md` and `scripts/verify-isolation.sh` at `v4.0.0`; Adventures in OpenBQ, Eps. 1–3.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[backends-and-connections|Backends and Connections]] · [[troubleshooting-infrastructure|Configuring the Infrastructure]]*
 
 ---

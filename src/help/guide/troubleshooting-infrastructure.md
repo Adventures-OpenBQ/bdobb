@@ -33,6 +33,9 @@ openbq-docker's API serves `api/v1/calendar/trading` and `api/v1/fundamentals/fi
 **A CFTC or FINRA bonds card answers 503 or 504.**
 openbq-docker runs `/api/v1/cftc/*` and FINRA bonds in a separate "heavy" lane, one request at a time, so their large responses cannot stall the rest of the API. A full queue, or a lane still starting, answers 503 with `Retry-After`; a request still running after 165 s answers 504 and the lane restarts; a result over 256 MB answers 413. Retry the card once the lane is free.
 
+**A server-paged table answers 504 on its first page.**
+The 41 large tables the stack serves page by page fetch their full result once, server-side, and cache it for 15 minutes; a first fetch not done within 300 s answers 504 and caches nothing. Retry; later pages of a cached result are fast. The list and its settings are in openbq-docker's README, *Large datasets as server-paged tables*.
+
 ## Tailscale
 
 **`scripts/verify-isolation.sh` fails with *raw API TCP port 6900 is reachable*.**
@@ -48,7 +51,7 @@ The Serve configuration file is applied wholesale, at startup and on every edit,
 A malformed file kills the sidecar. Check the new file with `jq empty` before it replaces the live one.
 
 ---
-*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `v3/openbq_settings.py`, `v4/routes/`, `key-maint/README.md` and `scripts/verify-isolation.sh` at `v4.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBQ, Eps. 1–3.*
+*Source: `openbq-docker` `README.md`, `VERIFICATION.md`, `credentials.env.example`, `docker-compose.yml`, `docker-compose.v3.yml`, `ts-config/serve.json`, `v3/openbq_settings.py`, `v4/routes/`, `lanes/ssrm_widgets.json`, `key-maint/README.md` and `scripts/verify-isolation.sh` at `v4.0.0`; BDOBB v3.0.1 in-app manual, "Provider keys"; Adventures in OpenBQ, Eps. 1–3.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
 
 ---

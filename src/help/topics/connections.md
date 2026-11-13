@@ -23,7 +23,9 @@ validation was on and some entries in `widgets.json` were malformed, or
 follows the same offline/rejected precedence: `Apps unavailable` when the
 backend is not online or its own `apps.json` could not be read, and `3 apps`
 (or `0 apps`) otherwise — a reason it could not be read, when there is one,
-appears as a note under the card.
+appears as a note under the card. Once the dialog has asked each connection
+whether it offers a settings API, the card also reads **Settings API: key**,
+**login**, **key refused** or **no**.
 
 Every card offers **Edit** and **Remove**. **Remove** asks first: a
 confirmation names the backend, and only its **Remove** button deletes it.
@@ -46,11 +48,16 @@ stacked over the list — titled **Connect backend** or **Edit backend**:
 - **Validate widgets** — **Yes** by default. Yes drops malformed entries out of
   `widgets.json` and reports them as skipped; No takes the payload as it
   comes.
-- **Key** and **Value** share a row with **Location**: **Key** and **Value**
+- **Validate widgets** shares a row with **Location**, and **Key** and
+  **Value** share the next: **Key** and **Value**
   are the name of the header, query parameter or cookie your credential goes
   in, and the credential itself, masked; **Location** is **Header** (the
   default), **Query Parameter** or **Cookie**. Leaving **Key** or **Value**
   blank clears both — a half-pair is never stored.
+- **Ask for credentials on startup** — hides **Value** and removes any stored
+  value when you save, keeping **Key**. At each launch the app asks for the
+  value; with **Remember me** it is stored again, otherwise it is kept for
+  that run only.
 
 Choosing **Query Parameter** shows a warning, and it means it: a key in the
 URL can end up in server logs, browser history and proxies — and, on a failed
