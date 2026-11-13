@@ -146,6 +146,12 @@ mod native {
     /// A file older than this is from a session long gone: the stream it muted
     /// has most likely been replaced, and raising another one's volume would be wrong.
     const HIDE_FILE_MAX_AGE: Duration = Duration::from_secs(24 * 60 * 60);
+    /// While a hide's mute lasts the file is written again this often, so its
+    /// age counts from when BDOBB last ran, not from when the hide began: a
+    /// card hidden for two days and then killed must still get its volume back.
+    const HIDE_FILE_REFRESH: Duration = Duration::from_secs(10 * 60);
+    /// When this run last wrote the file. Only touched under the mute lock.
+    static HIDE_WRITTEN: Mutex<Option<Instant>> = Mutex::new(None);
 
     pub fn keep_hide_mute_in(dir: &Path) {
         let _ = HIDE_FILE.set(dir.join("picture-in-picture-mute"));
@@ -174,14 +180,18 @@ mod native {
         let before = mute.unfinished_hide();
         let result = f(mute);
         let after = mute.unfinished_hide();
-        if after != before {
+        let mut last = HIDE_WRITTEN.lock().unwrap_or_else(PoisonError::into_inner);
+        let due = after.is_some() && last.is_none_or(|at| at.elapsed() >= HIDE_FILE_REFRESH);
+        if after != before || due {
             if let Some(path) = HIDE_FILE.get() {
                 let written = match &after {
                     Some(hide) => std::fs::write(path, encode_hide(hide)),
                     None => std::fs::remove_file(path),
                 };
-                if let Err(error) = written {
-                    eprintln!("picture in picture: cannot update {}: {error}", path.display());
+                match written {
+                    // A failed write is tried again on the next use.
+                    Ok(()) => *last = after.as_ref().map(|_| Instant::now()),
+                    Err(error) => eprintln!("picture in picture: cannot update {}: {error}", path.display()),
                 }
             }
         }
