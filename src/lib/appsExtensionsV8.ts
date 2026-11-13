@@ -5,6 +5,7 @@ import { keys as checkKeys, type V4AppExtension } from './appsExtensionsV4';
 import { json as checkJson, ownValue, prepareV5, type V5AppExtension } from './appsExtensionsV5';
 import type { App, ImportResult } from './appsJson';
 import { DOCKS_ID, clampDockRows, isDocks, makeDefaultDocks } from './dashboardsFile';
+import { readDockSeeThrough, type DockSeeThrough } from './dockSeeThrough';
 import { isRecord } from './isRecord';
 import { safeUrl } from './safeUrl';
 import { PIN_EDGES } from './types';
@@ -22,7 +23,8 @@ type Overlay = V8CardState & { tab: string; index: number };
  * locked widgets, ruling R1 -- never the donor's plain `dock: true` /
  * `dockRows` fields). Its tabs are keyed by edge ("top", "bottom").
  */
-type V8Docks = { rows: Record<PinEdge, number> };
+/** `seeThrough`: the bands' See-through where empty, only the edges that are on, and only when one is. */
+type V8Docks = { rows: Record<PinEdge, number>; seeThrough?: DockSeeThrough };
 export type V8AppExtension = { schemaVersion: 1; profile: 'v8'; base: V3AppExtension | V4AppExtension | V5AppExtension; cards: Overlay[]; docks?: V8Docks };
 const CARD_STATE = ['pinned', 'news'] as const;
 
@@ -114,7 +116,7 @@ export function needsV8(dashboard: Dashboard): boolean {
  */
 function docksMember(value: unknown, path: string): V8Docks {
   if (!isRecord(value)) extensionError(path, 'Invalid v8 docks.');
-  keys(value, ['rows'], path);
+  keys(value, ['rows', 'seeThrough'], path);
   if (!isRecord(value.rows)) extensionError(`${path}.rows`, 'Invalid v8 docks rows.');
   keys(value.rows, PIN_EDGES, `${path}.rows`);
   const rows = {} as Record<PinEdge, number>;
@@ -123,7 +125,13 @@ function docksMember(value: unknown, path: string): V8Docks {
     if (!Number.isSafeInteger(n)) extensionError(`${path}.rows`, 'Invalid v8 docks rows.');
     rows[edge] = n as number;
   }
-  return { rows: clampDockRows(rows) };
+  if (value.seeThrough === undefined) return { rows: clampDockRows(rows) };
+  // As strict as `rows`: a record of the two edges, each exactly true. Empty reads as off.
+  if (!isRecord(value.seeThrough)) extensionError(`${path}.seeThrough`, 'Invalid v8 docks see-through.');
+  keys(value.seeThrough, PIN_EDGES, `${path}.seeThrough`);
+  if (Object.values(value.seeThrough).some(on => on !== true)) extensionError(`${path}.seeThrough`, 'Invalid v8 docks see-through.');
+  const seeThrough = readDockSeeThrough(value.seeThrough);
+  return seeThrough ? { rows: clampDockRows(rows), seeThrough } : { rows: clampDockRows(rows) };
 }
 export function exportV8(dashboard: Dashboard, baseExport: (dashboard: Dashboard) => ExtensionResult<App>): ExtensionResult<App> {
   try {
@@ -135,7 +143,8 @@ export function exportV8(dashboard: Dashboard, baseExport: (dashboard: Dashboard
     }) })) };
     const result = baseExport(clean); if (!result.ok) return result;
     const base = result.value.extensions!.bdobb as V3AppExtension | V4AppExtension | V5AppExtension;
-    const docks = isDocks(dashboard) ? { docks: { rows: clampDockRows(dashboard.dockRows) } } : {};
+    const seeThrough = readDockSeeThrough(dashboard.dockSeeThrough);
+    const docks = isDocks(dashboard) ? { docks: { rows: clampDockRows(dashboard.dockRows), ...(seeThrough ? { seeThrough } : {}) } } : {};
     result.value.extensions = { bdobb: { schemaVersion: 1, profile: 'v8', base, cards: overlays, ...docks } };
     return result;
   } catch (error) { if (error instanceof AppExtensionError) return { ok: false, issue: error.issue }; throw error; }
@@ -242,7 +251,7 @@ export function prepareV8(input: unknown): { plain: unknown; restore: (result: I
       const byEdge = new Map(source.tabs.map((tab, i) => [batch.tabOrder[i], tab]));
       const tabs = base.tabs.map(edgeTab => ({ ...edgeTab, cards: byEdge.get(edgeTab.id)?.cards ?? [] }));
       if (tabs.every(tab => tab.cards.length === 0)) continue;
-      docks = { ...source, id: DOCKS_ID, name: base.name, hidden: true, tabs, dockRows: batch.docks.rows };
+      docks = { ...source, id: DOCKS_ID, name: base.name, hidden: true, tabs, dockRows: batch.docks.rows, ...(batch.docks.seeThrough ? { dockSeeThrough: batch.docks.seeThrough } : {}) };
     }
     const dashboards = restored.dashboards.filter((_, i) => !docksApps.has(i));
     const out: ImportResult = { ...restored, dashboards, ...(docks ? { docks } : {}) };
