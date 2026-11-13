@@ -19,7 +19,7 @@ The card's height follows its width: whenever you resize the card, it snaps to t
 
 ## Hiding
 
-When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes.
+When the card cannot be seen, BDOBB moves the player off screen and brings it back when the card returns. This happens when the card is scrolled fully out of view, when you switch to another dashboard or tab, when you minimize the card (its `—` button), when you minimize BDOBB, and when another app is in front. Clicking the player's own controls does not count as leaving BDOBB. Opening the card's own **⋯** menu also moves the player aside, so it does not cover the menu, and it comes back when the menu closes. So does opening any dialog, such as **Settings**: Chrome's player floats above every window and would cover the dialog, so it stays away until the last dialog closes.
 
 Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it.
 
@@ -29,7 +29,7 @@ The 🔊 button in the card's header mutes the stream, and 🔇 turns it back on
 
 - **Source tab title contains**: optional text in the tab's title. Leave it empty and BDOBB uses whichever Chrome window shows the slider; fill it in when more than one open tab has a player.
 - **Volume slider label**: what the site calls its slider. The default is `Volume Level`. Change it only if the site renames the control.
-- **Mute while hidden**: *Off* by default. Set to *On*, the volume goes to 0 while the player is hidden and returns to its level when the player comes back. If you had already muted the video, it stays muted. Opening the card's menu never mutes.
+- **Mute while hidden**: *Off* by default. Set to *On*, the volume goes to 0 while the player is hidden and returns to its level when the player comes back. If you had already muted the video, it stays muted. Opening the card's menu or a dialog never mutes.
 
 Chrome shows BDOBB only the selected tab of each window. If the stream's tab is not the selected tab in its window, the button is dimmed, and hovering over it says why. The player still parks either way. When BDOBB puts the player back where it was, it also turns the volume back up if BDOBB was the one that muted it.
 

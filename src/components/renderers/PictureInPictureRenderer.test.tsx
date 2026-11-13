@@ -12,6 +12,7 @@ vi.mock("@tauri-apps/api/core", () => ({
   isTauri: () => tauri.on,
 }));
 
+import { modalStack } from "../../hooks/modalStack";
 import { RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
 import { DEFAULT_SETTINGS } from "../../lib/settingsFile";
 import { useDashboardStore, type GridLayoutItem } from "../../stores/dashboardStore";
@@ -191,6 +192,25 @@ describe("Picture in Picture on the macOS desktop app", () => {
     await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 50));
     expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park"]);
     rerender(<PictureInPictureRenderer cardId="c1" menuOpen={false} />);
+    await waitFor(fitCall);
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
+  });
+
+  it("parks while any dialog is open and fits again when the last one closes", async () => {
+    answer({ state: "fitted" });
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(fitCall);
+    invoke.mockClear();
+    const parent = { close: () => {} };
+    const child = { close: () => {} };
+    act(() => modalStack.push(parent));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: true }));
+    // A dialog opened from the dialog, then closed, leaves the player parked.
+    act(() => modalStack.push(child));
+    act(() => modalStack.remove(child));
+    await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 50));
+    expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park"]);
+    act(() => modalStack.remove(parent));
     await waitFor(fitCall);
     expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
   });

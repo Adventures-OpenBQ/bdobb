@@ -1,7 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { modalStack } from "../../hooks/modalStack";
 import {
   cancelScheduledRelease,
   enqueuePlayerOp,
@@ -104,6 +105,10 @@ function MacPlayer({
 }) {
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
+  // Chrome's player floats above every window, so it would cover a dialog as
+  // it covers the menu. Any open dialog moves it aside, wherever the dialog is.
+  const dialogOpen = useSyncExternalStore(modalStack.subscribe, modalStack.isOpen);
+  const aside = menuOpen || dialogOpen;
 
   // The card's height follows its width: it takes the fewest rows that hold
   // the player when the card is first mounted this session, when its grid
@@ -196,8 +201,8 @@ function MacPlayer({
     const mute = muteSource === undefined ? undefined : { source: muteSource, label: muteLabel };
     // A remount of this card inside the grace period keeps the player.
     cancelScheduledRelease(cardId);
-    // The menu is drawn over the card, and the player would cover it: step aside, fit again on close.
-    if (menuOpen) {
+    // The menu and a dialog are drawn over the card, and the player would cover them: step aside, fit again on close.
+    if (aside) {
       parkNow(cardId, true);
       return () => scheduleLeave(cardId, dashboardData);
     }
@@ -258,7 +263,7 @@ function MacPlayer({
       observer?.disconnect();
       scheduleLeave(cardId, dashboardData);
     };
-  }, [cardId, muteSource, muteLabel, menuOpen]);
+  }, [cardId, muteSource, muteLabel, aside]);
 
   return (
     <div ref={body} className="picture-in-picture" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>

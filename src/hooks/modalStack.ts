@@ -11,16 +11,32 @@
 export type ModalEntry = { close: () => void };
 
 const stack: ModalEntry[] = [];
+const listeners = new Set<() => void>();
+const changed = () => listeners.forEach((listener) => listener());
 
 export const modalStack = {
   push(entry: ModalEntry): void {
     stack.push(entry);
+    changed();
   },
   remove(entry: ModalEntry): void {
     const i = stack.indexOf(entry);
-    if (i !== -1) stack.splice(i, 1);
+    if (i === -1) return;
+    stack.splice(i, 1);
+    changed();
   },
   top(): ModalEntry | undefined {
     return stack[stack.length - 1];
+  },
+  /** Whether any dialog is open. With `subscribe`, the pair useSyncExternalStore takes. */
+  isOpen(): boolean {
+    return stack.length > 0;
+  },
+  /** Calls `listener` after every push and every remove; returns the unsubscribe. */
+  subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
   },
 };
