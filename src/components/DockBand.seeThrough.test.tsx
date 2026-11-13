@@ -193,3 +193,51 @@ describe("styles.css for see-through bands", () => {
     for (const rule of floating) expect(rule.slice(0, rule.indexOf("{"))).toContain("dock-band-float");
   });
 });
+
+/** jsdom keeps no scroll position of its own: record what the hook writes. */
+function scrollTopOf(el: HTMLElement) {
+  const box = { top: 0 };
+  Object.defineProperty(el, "scrollTop", { configurable: true, get: () => box.top, set: (v: number) => { box.top = v; } });
+  return box;
+}
+
+describe("the room under a see-through top band", () => {
+  it("opens the dashboard scrolled past it, on each dashboard or tab switch, and never on an unrelated render", () => {
+    const { band, rerender } = inArea("top");
+    const scroll = scrollTopOf(screen.getByTestId("scroll"));
+    expect(scroll.top).toBe(0);
+    act(() => seeThrough({ top: true }));
+    expect(band()).toHaveClass("dock-band-float");
+    expect(scroll.top).toBe(180);
+    scroll.top = 40; // the user scrolls
+    rerender();
+    act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, theme: "light" } }));
+    act(() => useDashboardStore.setState({ maximizedCardId: "nobody" }));
+    expect(scroll.top).toBe(40);
+    act(() => useDashboardStore.setState({ activeTabId: "t2", activeTabIds: { d1: "t2" } }));
+    expect(scroll.top).toBe(180);
+    scroll.top = 40;
+    act(() => useDashboardStore.setState({ activeId: "d2" }));
+    expect(scroll.top).toBe(180);
+  });
+
+  it("a bottom band, and a top band that is not see-through, never move the scroll position", () => {
+    seeThrough({ bottom: true });
+    const { rerender } = inArea("top");
+    const scroll = scrollTopOf(screen.getByTestId("scroll"));
+    rerender();
+    act(() => useDashboardStore.setState({ activeId: "d2" }));
+    expect(scroll.top).toBe(0);
+  });
+});
+
+describe("styles.css: the scroll room", () => {
+  it("pads the region's floating ends by the band's height, and keeps the grid tall enough to open past a top band's room", () => {
+    expect(css).toContain(
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { padding-top: var(--dock-room-top, 0px); padding-bottom: var(--dock-room-bottom, 0px); }",
+    );
+    expect(css).toContain(
+      ".dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll > .react-grid-layout { min-height: calc(100% + var(--dock-room-top, 0px)); }",
+    );
+  });
+});

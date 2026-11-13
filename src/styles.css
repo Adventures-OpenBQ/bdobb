@@ -1639,6 +1639,13 @@ body {
 .dashboard-area:has(> .dashboard-scroll):has(> .dock-band-bottom.dock-band-float) > .card-dock-bottom { order: 2; }
 .dashboard-area:has(> .dashboard-scroll) > .dock-band-bottom.dock-band-float { margin-top: calc(-1 * var(--dock-room-bottom, 0px)); }
 .dashboard-area:has(> .dashboard-scroll) > .dock-band.dock-band-float { background: none; border: 0; }
+/* The room: the region pads each floating end by that band's height, so its
+   last cards scroll up clear of a bottom band and its first cards down clear
+   of a top one. The grid is kept at least the region's height plus a top
+   band's room, so even a short tab can open scrolled past that room
+   (useFloatingBand) instead of sitting part-way down under the band. */
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll { padding-top: var(--dock-room-top, 0px); padding-bottom: var(--dock-room-bottom, 0px); }
+.dashboard-area:has(> .dashboard-scroll):has(> .dock-band-float) > .dashboard-scroll > .react-grid-layout { min-height: calc(100% + var(--dock-room-top, 0px)); }
 /* Settings ▸ Locked Widgets' editor: a panel over the dashboard area, the
    widget library's footprint (the rail's edge to the window's edge, both rail
    widths, Rita's inset below) and one level BELOW it (29 < 30), so the green +
