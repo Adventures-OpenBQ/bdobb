@@ -67,6 +67,8 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   storeHolds(null);
   cleanup();
+  // A test that failed between a push and its remove must not park every later test.
+  while (modalStack.top()) modalStack.remove(modalStack.top()!);
   // Let the unmount's release (after its grace period) reach the mock before it is reset.
   await new Promise((resolve) => setTimeout(resolve, RELEASE_GRACE_MS + 30));
   vi.unstubAllEnvs();
@@ -213,6 +215,25 @@ describe("Picture in Picture on the macOS desktop app", () => {
     act(() => modalStack.remove(parent));
     await waitFor(fitCall);
     expect(invoke.mock.calls.map(([cmd]) => cmd)).toEqual(["picture_in_picture_park", "picture_in_picture_fit"]);
+  });
+
+  it("leaves a card that is scrolled out of view parked when a dialog closes", async () => {
+    answer({ state: "fitted" });
+    const intersect = stubIntersection();
+    render(<PictureInPictureRenderer cardId="c1" />);
+    await waitFor(fitCall);
+    act(() => intersect(false));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: false }));
+    const dialog = { close: () => {} };
+    act(() => modalStack.push(dialog));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("picture_in_picture_park", { card: "c1", menu: true }));
+    invoke.mockClear();
+    act(() => modalStack.remove(dialog));
+    // Several frames pass with the card still out of view: the player is not brought back.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(invoke).not.toHaveBeenCalledWith("picture_in_picture_fit", expect.anything());
+    act(() => intersect(true));
+    await waitFor(fitCall);
   });
 
   it("shows nothing once the player is parked", async () => {

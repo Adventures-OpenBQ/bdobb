@@ -108,6 +108,10 @@ function MacPlayer({
   // Chrome's player floats above every window, so it would cover a dialog as
   // it covers the menu. Any open dialog moves it aside, wherever the dialog is.
   const dialogOpen = useSyncExternalStore(modalStack.subscribe, modalStack.isOpen);
+  // Whether the card was in view when last reported. It outlives the effect
+  // below, so a card scrolled out of view is not fitted for a frame each time
+  // a menu or a dialog closes, before the new observer has reported.
+  const inView = useRef(true);
   const aside = menuOpen || dialogOpen;
 
   // The card's height follows its width: it takes the fewest rows that hold
@@ -195,7 +199,7 @@ function MacPlayer({
     const el = body.current;
     if (!el) return;
     let alive = true;
-    let visible = true;
+    let visible = inView.current;
     let busy = false;
     let sent: CssRect | null = null;
     const mute = muteSource === undefined ? undefined : { source: muteSource, label: muteLabel };
@@ -252,7 +256,7 @@ function MacPlayer({
       typeof IntersectionObserver === "undefined"
         ? null
         : new IntersectionObserver(([entry]) => {
-            visible = entry.isIntersecting;
+            visible = inView.current = entry.isIntersecting;
             if (!visible) hide();
           });
     observer?.observe(el);
