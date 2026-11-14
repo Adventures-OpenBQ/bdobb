@@ -51,6 +51,8 @@ directory — on macOS that is
 - `backends.json` — your connections, including any credential you typed
 - `folders.json` — the rail's folder tree
 - `dashboards/<id>.json` — one file per dashboard
+- `workspaces/<id>.json` and `layouts/<id>.json` — one file per workspace and
+  per saved layout
 - `workspace.json` and `workspaceSync.json` — your OpenBB Workspace
   connections (never a password or token) and the links between synced
   dashboards

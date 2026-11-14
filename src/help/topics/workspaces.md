@@ -7,7 +7,7 @@ A workspace puts several existing dashboards on screen together. Each panel keep
 ## Creating and editing
 
 The **+** beside the rail's **Workspaces** heading, **New workspace…** on the
-rail background's right-click menu, **File ▸ New Workspace…** in the desktop
+rail's section menu, **File ▸ New Workspace…** in the desktop
 app, and `⌥N` all open the **Workspaces** dialog. Every workspace is a card
 down its left side, drawn in its layout with its minimum resolution and
 whether it fits this screen or opens zoomed. Pick a card to edit it, or

@@ -49,8 +49,8 @@ closes it; it does not select anything.
 ## Workspaces
 
 The *WORKSPACES* heading is there whether or not you have a workspace. Its
-**+** opens the New workspace dialog, as **New workspace…** on the rail
-background's right-click menu does. Click a workspace row to open it; click
+**+** opens the New workspace dialog, as **New workspace…** on the rail's
+section menu does. Click a workspace row to open it; click
 the active one again to go back to a single dashboard. A workspace row's
 right-click menu has **Edit…**, **Arrange…**, **Rename**, **Layout**,
 **Open at launch**, **Duplicate** and **Delete**.
