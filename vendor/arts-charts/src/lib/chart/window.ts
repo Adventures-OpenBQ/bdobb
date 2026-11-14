@@ -173,7 +173,7 @@ export function barsWindow(
  * for a window the vault did not fully cover.
  */
 export function weekdaysBefore(start: string, today: Date): number {
-  const [y, m, d] = start.split("-").map(Number);
+  const [y, m, d] = start.slice(0, 10).split("-").map(Number);
   let cursor = new Date(y, m - 1, d);
   // A `start` that doesn't parse (empty, malformed) asked for nothing --
   // `barsSource` reads a `0` the same way it reads any window the vault
