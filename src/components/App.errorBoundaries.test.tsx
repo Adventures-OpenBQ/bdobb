@@ -423,12 +423,18 @@ describe("the lazy help chunk", () => {
    * AFTER the dynamic import is mocked exercises the load path at all.
    */
   async function freshApp() {
+    // Without Art's Charts: every App mount's bootstrap import()s the whole
+    // charts runtime, and a vi.resetModules() that lands while one is still
+    // loading can leave the next fresh import of App hanging under a loaded
+    // full-suite run. These tests are about the help chunk only.
+    vi.doMock("../lib/artsCharts/load", () => ({ loadArtsCharts: () => Promise.resolve(null) }));
     const { default: FreshApp } = await import("../App");
     return FreshApp;
   }
 
   afterEach(() => {
     vi.doUnmock("./dialogs/HelpDialog");
+    vi.doUnmock("../lib/artsCharts/load");
   });
 
   it("keeps the shell when the import rejects, through HelpLoadFailed rather than the boundary", async () => {
