@@ -166,10 +166,10 @@ provider set. Of those, six work with zero sign-ups:
 | Provider | Path | Verified |
 |---|---|---|
 | EIA | `EIA_API_KEY=DEMO_KEY` (api.data.gov's shared demo key; 30 req/hour/IP) — the Short Term Energy Outlook needs no key at all | 200 |
-| Congress.gov | `CONGRESS_GOV_API_KEY=DEMO_KEY` — the provider refuses an empty key, so the demo value is the only zero-sign-up path | 200 |
+| Congress.gov | `CONGRESS_GOV_API_KEY=DEMO_KEY` for Congress.gov API queries; the Congress 119 bills card reads GovInfo BILLSTATUS bulk data (Congress 108 onward) and needs no key | 200 |
 | BLS | keyless via `bls_search` (`category`+`query`, e.g. `category=cpi&query=CUUR0000SA0`) — BLS's own API needs no `registrationkey` for either fetcher, but `bls_series`'s openbb-bls Fetcher never sets `require_credentials = False` the way `bls_search`'s does, so `bls_series` 400s on this stack's blank `BLS_API_KEY` even though BLS itself would answer it; the example and smoke.sh both use `bls_search` for this reason | 200 |
 | CFTC | keyless — `app_token` is optional; Socrata throttles by IP without one | 200 |
-| EconDB | keyless — the provider mints a temporary token when `ECONDB_API_KEY` is empty | 200 |
+| EconDB | the provider asks for a temporary token when `ECONDB_API_KEY` is empty; the service has refused it (403), so supply your own key or skip the card (openbq-docker `docs/credentials-demo-receipt.md`) | 200 then 403 |
 | Alpha Vantage | `ALPHA_VANTAGE_API_KEY=demo` answers only the documentation's example calls — through the OpenBB provider that means historical EPS for `IBM` works, nothing else does | EPS 200 |
 
 FMP's `demo` key is dead (401), TradingEconomics' `guest:guest` is

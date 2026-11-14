@@ -37,8 +37,8 @@ import { fileURLToPath } from "node:url";
 const SERVED = {
   // Built-ins only.
   "v3.1.0-builtins": true,
-  // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,
-  // and EIA and Congress.gov on credentials.demo.env's public demo keys.
+  // openbq-docker's keyless BLS, CFTC, Nasdaq, Videos and Congress bills widgets, EIA on
+  // credentials.demo.env's public demo key, and EconDB, whose temporary token the service may refuse.
   "v3.1.0-demo-providers": true,
   // The Videos card (the openbb-videos extension openbq-docker v3 adds).
   "v3.2.0-video-library": true,
