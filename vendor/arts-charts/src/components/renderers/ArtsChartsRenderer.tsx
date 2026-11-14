@@ -1723,6 +1723,29 @@ function ChartCard({
       priceLineVisible: false,
     });
 
+    // The spine (user ruling 2026-09-24, the grid marks that did not line
+    // up): the panels are kept on one time axis by mirroring a LOGICAL
+    // range -- bar indices -- so they only agree where bar N is the same
+    // instant on every panel. A panel holding only a study was not: its
+    // scale was built from the study's own points, warm-up dropped, so its
+    // bar 0 was panel 1's bar 14 and every grid line sat a warm-up to the
+    // right. Every panel now carries the card's bar TIMES as whitespace on
+    // a hidden overlay series -- nothing drawn, nothing priced, but every
+    // time on the scale -- so every panel's index space is the candles'.
+    // Set BEFORE the series below, so every pass ends on real data: re-setting
+    // this whitespace after a series refilled from empty (bars that were still
+    // loading) left lightweight-charts 5.0.8's time scale with no visible range,
+    // and the panel painted nothing until a later pass (hand check 2026-11-14).
+    for (const api of apis) {
+      draw(`spine|${api.index}`, api, "spine", LineSeries, {
+        visible: false, priceScaleId: "", lastValueVisible: false, priceLineVisible: false,
+        crosshairMarkerVisible: false, autoscaleInfoProvider: () => null,
+        // The union, not `candles`: see spineTimes. Every panel gets the same
+        // set, so bar N is the same instant everywhere and the logical-range
+        // mirror lands them on top of each other.
+      }, spineTimes.map((time) => ({ time })));
+    }
+
     for (const s of series) {
       const api = apis[s.panel - 1];
       // A series naming a panel the text does not have draws nothing. The
@@ -1806,25 +1829,6 @@ function ChartCard({
         price = line;
         priceOn = s.side;
       }
-    }
-
-    // The spine (user ruling 2026-09-24, the grid marks that did not line
-    // up): the panels are kept on one time axis by mirroring a LOGICAL
-    // range -- bar indices -- so they only agree where bar N is the same
-    // instant on every panel. A panel holding only a study was not: its
-    // scale was built from the study's own points, warm-up dropped, so its
-    // bar 0 was panel 1's bar 14 and every grid line sat a warm-up to the
-    // right. Every panel now carries the card's bar TIMES as whitespace on
-    // a hidden overlay series -- nothing drawn, nothing priced, but every
-    // time on the scale -- so every panel's index space is the candles'.
-    for (const api of apis) {
-      draw(`spine|${api.index}`, api, "spine", LineSeries, {
-        visible: false, priceScaleId: "", lastValueVisible: false, priceLineVisible: false,
-        crosshairMarkerVisible: false, autoscaleInfoProvider: () => null,
-        // The union, not `candles`: see spineTimes. Every panel gets the same
-        // set, so bar N is the same instant everywhere and the logical-range
-        // mirror lands them on top of each other.
-      }, spineTimes.map((time) => ({ time })));
     }
 
     // Volume bars grow off the floor of their scale. Only where nothing else
