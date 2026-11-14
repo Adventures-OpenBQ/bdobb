@@ -504,6 +504,8 @@ const SHOTS = [
     prepare: async (page) => {
       // The lookup has answered once the Automatic option names the ticker.
       await page.getByLabel("FY ends").locator("option:checked", { hasText: "AAPL" }).waitFor({ state: "attached" });
+      // The table drawn, not "Loading…".
+      await page.getByRole("cell", { name: "fiscal", exact: true }).waitFor();
     },
     take: grid,
   },
