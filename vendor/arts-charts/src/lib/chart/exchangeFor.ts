@@ -3,7 +3,9 @@
 
 import type { ChartWindow } from "./rangeExpr";
 import { getLocalTimeZone } from "@internationalized/date";
-import { parseExpression, resolveExpression, wireDatetime, type Expression } from "../dates";
+import { getHost } from "../../host";
+import type { Expression } from "../../host/dates";
+import { wireDatetime } from "../dates";
 import { DEFAULT_EXCHANGE, exchangeOf, weekdayCalendar, type ExchangeCalendar } from "../tradingCalendar";
 import type { AnchorResolver } from "./indicatorsParam";
 
@@ -91,10 +93,10 @@ export function anchorResolver(
   return (text) => {
     const cached = answered.get(text);
     if (cached !== undefined) return cached;
-    const expr = parseExpression(text);
+    const expr = getHost().dates.parseExpression(text);
     const at = expr === null || (calendar === null && needsCalendar(expr))
       ? null
-      : resolveExpression(text, now, zone, { calendar: cal, start: window.start, end: window.end });
+      : getHost().dates.resolveExpression(text, now, zone, { calendar: cal, start: window.start, end: window.end });
     const wire = at === null ? null : wireDatetime(at);
     answered.set(text, wire);
     return wire;

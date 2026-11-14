@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 import { getLocalTimeZone, parseDate, toCalendarDateTime, toZoned } from "@internationalized/date";
-import { parseExpression, parseWireDatetime, previewExpression, resolveValue, type Preview } from "../dates";
+import { getHost } from "../../host";
+import type { Preview } from "../../host/dates";
+import { parseWireDatetime } from "../dates";
 import type { ExchangeCalendar } from "../tradingCalendar";
 import { calendarContext, needsCalendar } from "./exchangeFor";
 
@@ -62,7 +64,7 @@ export const RANGE_PRESETS: { label: "1D" | "5D" | "1M"; range: ChartRange }[] =
  */
 function refused(value: string, calendar: ExchangeCalendar | null): boolean {
   if (calendar !== null) return false;
-  const expr = parseExpression(value);
+  const expr = getHost().dates.parseExpression(value);
   return expr !== null && needsCalendar(expr);
 }
 
@@ -96,7 +98,7 @@ export function resolveInstant(
 ): number | null {
   if (refused(value, calendar)) return null;
   const { zone, calendar: cal } = calendarContext(calendar);
-  const resolved = resolveValue("datetime", value, { now, zone, calendar: cal, ...window });
+  const resolved = getHost().dates.resolveValue("datetime", value, { now, zone, calendar: cal, ...window });
   const asInstant = parseWireDatetime(resolved, zone);
   if (asInstant !== null) return Math.floor(asInstant.toDate().getTime() / 1000);
   try {
@@ -178,7 +180,7 @@ export function instantWire(
 ): string {
   if (refused(value, calendar)) return "";
   const { zone, calendar: cal } = calendarContext(calendar);
-  const resolved = resolveValue("datetime", value, { now, zone, calendar: cal, ...window });
+  const resolved = getHost().dates.resolveValue("datetime", value, { now, zone, calendar: cal, ...window });
   return parseWireDatetime(resolved, zone) === null ? "" : resolved;
 }
 
@@ -192,7 +194,7 @@ export function previewChartExpression(
 ): Preview | null {
   if (refused(value, calendar)) return null;
   const { zone, calendar: cal } = calendarContext(calendar);
-  return previewExpression("datetime", value, { now, zone, calendar: cal, ...window });
+  return getHost().dates.previewExpression("datetime", value, { now, zone, calendar: cal, ...window });
 }
 
 /** The popover's live line: what each end resolves to right now. */

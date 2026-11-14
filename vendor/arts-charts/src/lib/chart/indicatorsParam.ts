@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
 import type { StudyInstance } from "../types";
-import { isExpression } from "../dates";
+import { getHost } from "../../host";
 import { defaultColor, isBusinessDays, normalizeExpression, type CatalogEntry, type ParseOptions } from "./studyExpression";
 
 /**
@@ -35,7 +35,7 @@ export type AnchorResolver = (text: string) => string | null;
  * midnight tick in the renderer that bumps the resolver's identity.
  */
 function wireValue(value: number | string, resolveAnchor: AnchorResolver | undefined): number | string | null {
-  if (resolveAnchor === undefined || typeof value !== "string" || !isExpression("datetime", value)) return value;
+  if (resolveAnchor === undefined || typeof value !== "string" || !getHost().dates.isExpression("datetime", value)) return value;
   return resolveAnchor(value);
 }
 

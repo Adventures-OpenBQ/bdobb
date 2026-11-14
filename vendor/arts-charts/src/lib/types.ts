@@ -248,21 +248,6 @@ export type ChartCardState = {
    */
   snapshotHeader?: boolean;
   /**
-   * Relative pane weights by pane id (v12.3.0): `price` and `volume` for the
-   * chart's own two, `study:<pane id>` for each own-pane study -- namespaced
-   * because the backend registers an indicator literally named `volume`
-   * with pane="own", which would otherwise share this record's "volume"
-   * key with the chart's own volume pane. Absent means the defaults (price
-   * 3, volume 1, a study pane 1). Weights, not pixels, so a card renders
-   * correctly at any dashboard-cell size.
-   *
-   * DEPRECATED (v12.4.0): superseded by the card's `panels` parameter,
-   * which lays panels out in percentages instead of weights. Kept optional
-   * for cards saved by v12.3.x, and read by the renderer until it switches
-   * over.
-   */
-  panes?: Record<string, number>;
-  /**
    * The view's range as two expressions (v12.3.0), resolved at every apply
    * and every chart open with the v5 grammar: `{ from: "now-1d", to: "now" }`
    * is the 1D chip, an ISO date is a literal. Absent means the fitted view.
@@ -290,7 +275,8 @@ export type ChartCardState = {
   /**
    * Everything the card draws (v12.4.0): the price drawing, the volume,
    * performance lines and the studies, each in a panel. Present means it
-   * is the source of truth and `studies`/`panes` above are dead data;
+   * is the source of truth and `studies` above is dead data (so is the
+   * `panes` weights record v12.3.x saved: no longer a field, ignored on read);
    * absent means the card predates the panels work and `migrateChart`
    * derives this list (and the widened `panels` text) from them.
    */

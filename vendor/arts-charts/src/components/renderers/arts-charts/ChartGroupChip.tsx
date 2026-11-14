@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { compatibleGroups, groupFor } from "../../../lib/paramGroups";
 import type { DashboardCard, ParamGroup } from "../../../lib/types";
 import { logError } from "../../../lib/logger";
-import { useDashboardStore } from "../../../stores/dashboardStore";
+import { getHost } from "../../../host";
 import { GroupMenu } from "../../GroupMenu";
 
 type Props = {
@@ -35,9 +35,7 @@ type Props = {
  * the hand-back IS the right behaviour.
  */
 export function ChartGroupChip({ card, groups, groupsDisabled, paramName, label, value }: Props) {
-  const createGroup = useDashboardStore((s) => s.createGroup);
-  const joinGroup = useDashboardStore((s) => s.joinGroup);
-  const dropUngroupable = useDashboardStore((s) => s.dropUngroupable);
+  const { createGroup, joinGroup, dropUngroupable } = getHost().groups;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement | null>(null);
 

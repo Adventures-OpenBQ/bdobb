@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 import { useId, useState, type ReactNode } from "react";
 import { CHART_INTERVAL, CHART_LAYOUT, CHART_RANGE, CHART_SESSION } from "../../../lib/chart/chartGroups";
+import { getHost } from "../../../host";
 import { groupFor } from "../../../lib/paramGroups";
 import { intervalLabel } from "../../../lib/chart/intervalLabel";
 import { RANGE_PRESETS, shownAs } from "../../../lib/chart/rangeExpr";
 import type { DashboardCard, ParamGroup, WidgetParam } from "../../../lib/types";
-import { GroupLink } from "../../GroupLink";
 import { ChartGroupChip } from "./ChartGroupChip";
 import { Popover } from "./Popover";
 import { SpecPopover } from "./SpecPopover";
@@ -202,6 +202,7 @@ export function ChartControls({
   seriesCount?: number;
   panelCount?: number;
 }) {
+  const { GroupLink } = getHost().components;
   const [specOpen, setSpecOpen] = useState(false);
   // Generated, not the literal "adj-hint": two chart cards on one dashboard
   // both render this strip, and a duplicated id points both buttons'

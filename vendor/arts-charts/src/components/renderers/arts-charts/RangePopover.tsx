@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { instantWire, previewChartExpression, previewInstant, resolveRange, type ChartRange, type ChartWindow } from "../../../lib/chart/rangeExpr";
-import { DatetimePicker } from "../../pickers/DatetimePicker";
-import type { RelativeContext } from "../../pickers/RelativeTab";
+import { getHost, type RelativeContext } from "../../../host";
 import type { ExchangeCalendar } from "../../../lib/tradingCalendar";
 
 /**
@@ -67,6 +66,7 @@ export function RangePopover({ range, calendar = null, window = {}, fixed = fals
   onApply: (range: ChartRange) => void;
   onClose: () => void;
 }) {
+  const { DatetimePicker } = getHost().components;
   const [typedFrom, setFrom] = useState(range?.from ?? "now-1d");
   const [typedTo, setTo] = useState(range?.to ?? "now");
   const id = useId();

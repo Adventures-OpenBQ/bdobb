@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
-import { confirm } from "../../../host/dialog";
+import { getHost } from "../../../host";
 import { Fragment, useId, type ReactNode } from "react";
 
 /** "panning" keeps its v12.2 name; the rail calls it Crosshair. */
@@ -44,7 +44,7 @@ const CONFIRM_ABOVE = 3;
  */
 export async function confirmClear(drawingCount: number): Promise<boolean> {
   if (drawingCount > CONFIRM_ABOVE) {
-    return confirm(`Clear all ${drawingCount} drawings on this chart?`, { title: "Clear drawings", kind: "warning", okLabel: "Clear", cancelLabel: "Cancel" });
+    return getHost().dialog.confirm(`Clear all ${drawingCount} drawings on this chart?`, { title: "Clear drawings", kind: "warning", okLabel: "Clear", cancelLabel: "Cancel" });
   }
   return true;
 }

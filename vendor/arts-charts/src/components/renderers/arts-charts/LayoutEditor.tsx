@@ -1,8 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { open } from "../../../host/dialog";
-import { stat, readTextFile } from "../../../host/fs";
+import { getHost } from "../../../host";
 import { loopText, scaleOrder, type PanelDef , overlapRects} from "../../../lib/chart/panels";
 import { movePanel, panelLabel, removePanel, seriesLabel, widen } from "../../../lib/chart/series";
 import type { CatalogEntry } from "../../../lib/chart/studyExpression";
@@ -322,12 +321,12 @@ export function LayoutEditor({
   // nothing (Review Focus 1). A refusal shows one line.
   const beginImport = async (): Promise<void> => {
     try {
-      const path = await open({ multiple: false, filters: [{ name: "Art's Charts layouts", extensions: ["json"] }] });
+      const path = await getHost().dialog.open({ multiple: false, filters: [{ name: "Art's Charts layouts", extensions: ["json"] }] });
       if (path === null || Array.isArray(path)) return;
-      const bytes = (await stat(path)).size;
+      const bytes = (await getHost().fs.stat(path)).size;
       const oversize = importRefusal(bytes);
       if (oversize !== null) { setReview({ layouts: [], choice: {}, refusal: oversize }); return; }
-      const plan = planLayoutImport(await readTextFile(path), bytes, lookup);
+      const plan = planLayoutImport(await getHost().fs.readTextFile(path), bytes, lookup);
       if (!plan.ok) { setReview({ layouts: [], choice: {}, refusal: plan.refusal }); return; }
       setReview({ layouts: plan.layouts, choice: {}, refusal: null });
     } catch (err) {

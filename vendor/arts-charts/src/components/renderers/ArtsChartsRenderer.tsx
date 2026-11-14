@@ -58,7 +58,6 @@ import {
 } from "../../lib/chart/series";
 import { TICKER_PARAM, matchSeries, studiesFromParam } from "../../lib/chart/indicatorsParam";
 import { sendRaw } from "../../lib/chart/wireAnchor";
-import { isExpression } from "../../lib/dates";
 // The card's `start`/`end` as instants, read exactly as the wire reads them
 // for `S`/`E` in any other widget parameter -- one parser, one answer.
 import { paramInstant } from "../../lib/params";
@@ -1026,7 +1025,7 @@ function ChartCard({
       if (s.type !== "study") continue;
       for (const [key, value] of Object.entries(s.params)) {
         if (key === TICKER_PARAM) continue;
-        if (typeof value !== "string" || !isExpression("datetime", value)) continue;
+        if (typeof value !== "string" || !getHost().dates.isExpression("datetime", value)) continue;
         if (resolveAnchor(value) === null) { out[s.id] = `anchor "${value}" does not resolve`; break; }
       }
     }

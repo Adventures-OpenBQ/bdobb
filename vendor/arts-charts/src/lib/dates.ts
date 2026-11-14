@@ -2,22 +2,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 /**
  * Date expressions come from the host (spec 2026-11-04 §1, S4): every grammar
- * call here is `getHost().dates`. Only the wire formatting of an instant,
+ * call is `getHost().dates`, made at the call site. Only the wire formatting of an instant,
  * which is `@internationalized/date` and not grammar, lives in this file.
  */
 import { getLocalTimeZone, parseAbsolute, type ZonedDateTime } from "@internationalized/date";
-import { getHost } from "../host";
-import type { HostDates } from "../host/dates";
-export type { Expression, Preview, Unit, ResolveContext, CalendarContext, PeriodType } from "../host/dates";
-
-const dates = (): HostDates => getHost().dates;
-export const parseExpression: HostDates["parseExpression"] = (v) => dates().parseExpression(v);
-export const isExpression: HostDates["isExpression"] = (t, v) => dates().isExpression(t, v);
-export const resolveExpression: HostDates["resolveExpression"] = (...a) => dates().resolveExpression(...a);
-export const resolveValue: HostDates["resolveValue"] = (...a) => dates().resolveValue(...a);
-export const previewExpression: HostDates["previewExpression"] = (...a) => dates().previewExpression(...a);
-export const isRangeType = (t: string | undefined): t is "date_range" | "quarter_range" => dates().isRangeType(t);
-export const splitRange: HostDates["splitRange"] = (v) => dates().splitRange(v);
 
 /**
  * `2026-09-14T09:30:15-04:00`: local time to the second with the UTC offset

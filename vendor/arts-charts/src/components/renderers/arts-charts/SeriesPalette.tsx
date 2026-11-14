@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { getHost } from "../../../host";
 import { STUDY_SWATCHES } from "../../../lib/chart/createChartTheme";
 import {
   PERFORMANCE_SELF,
@@ -35,8 +36,6 @@ import { FILL_PATTERNS, type FillPattern, isFillPattern, isPen, PENS, type Pen }
 import type { ChartFavorite } from "../../../lib/chartFavoritesFile";
 import type { TaRegistry } from "../../../hooks/useTaRegistry";
 import type { Series, SeriesType } from "../../../lib/types";
-import { AnchorChips } from "../../pickers/AnchorChips";
-import { RelativeTab } from "../../pickers/RelativeTab";
 import { anchorPreview } from "../../../lib/chart/wireAnchor";
 // The item-list reuses the chip strip's reorder idiom rather than inventing a
 // second one: the same drag TYPE (so a chip and an item row are the same
@@ -414,6 +413,7 @@ export function SeriesPalette({
   fallbackColor, allowBusinessDays, source, onClose, onRefresh, onEditSeries, onReorderSeries, panelFilter,
   favorites, onAddFavorite, onRemoveFavorite,
 }: Props) {
+  const { AnchorChips, RelativeTab } = getHost().components;
   const id = useId();
   const [query, setQuery] = useState("");
   const [text, setText] = useState("");

@@ -1,15 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import {
-  exists,
-  mkdir,
-  readDir,
-  readTextFile,
-  remove,
-  rename,
-  writeTextFile,
-} from "../host/fs";
+import { getHost } from "../host";
 import { logError } from "./logger";
 import { __resetSerializeForTests, serialize } from "./serialize";
 
@@ -71,11 +63,11 @@ function dirOf(path: string): string {
 async function quarantine(path: string): Promise<void> {
   let target = `${path}.corrupt`;
   let n = 1;
-  while (await exists(target, fsOpts)) {
+  while (await getHost().fs.exists(target, fsOpts)) {
     target = `${path}.corrupt.${n}`;
     n += 1;
   }
-  await rename(path, target, renameOpts);
+  await getHost().fs.rename(path, target, renameOpts);
   // Reporting the quarantine must not become the failure; the quarantine
   // itself already succeeded, and the caller must only ever observe ABSENT.
   await logError(`quarantined ${path} -> ${target}`);
@@ -85,7 +77,7 @@ async function readValidated<T>(
   path: string,
   validate: Validator<T>,
 ): Promise<T | typeof ABSENT> {
-  if (!(await exists(path, fsOpts))) return ABSENT;
+  if (!(await getHost().fs.exists(path, fsOpts))) return ABSENT;
 
   // The read sits OUTSIDE the quarantine try, and that placement is the whole
   // point. Corruption and an I/O failure are different events with opposite
@@ -102,7 +94,7 @@ async function readValidated<T>(
   // here the rejection propagates and the loader genuinely fails.
   let text: string;
   try {
-    text = await readTextFile(path, fsOpts);
+    text = await getHost().fs.readTextFile(path, fsOpts);
   } catch (err) {
     // Remembered, so saveJson refuses to write over what could not be read.
     unreadable.add(path);
@@ -140,9 +132,9 @@ export async function loadJsonDir<T>(
   dir: string,
   validate: Validator<T>,
 ): Promise<T[]> {
-  if (!(await exists(dir, fsOpts))) return [];
+  if (!(await getHost().fs.exists(dir, fsOpts))) return [];
 
-  const entries = await readDir(dir, fsOpts);
+  const entries = await getHost().fs.readDir(dir, fsOpts);
   const out: T[] = [];
   for (const entry of entries) {
     if (!entry.isFile || !entry.name.endsWith(".json")) continue;
@@ -186,18 +178,18 @@ export function saveJson(path: string, value: unknown): Promise<void> {
       );
     }
     const dir = dirOf(path);
-    if (dir) await mkdir(dir, { ...fsOpts, recursive: true });
+    if (dir) await getHost().fs.mkdir(dir, { ...fsOpts, recursive: true });
 
     tempCounter += 1;
     const temp = `${path}.tmp.${sessionNonce}.${tempCounter}`;
-    await writeTextFile(temp, `${JSON.stringify(value, null, 2)}\n`, fsOpts);
+    await getHost().fs.writeTextFile(temp, `${JSON.stringify(value, null, 2)}\n`, fsOpts);
     try {
-      await rename(temp, path, renameOpts);
+      await getHost().fs.rename(temp, path, renameOpts);
     } catch (err) {
       // The temp is already on disk; a failed rename would otherwise orphan
       // one file per failed save. The original error is what the caller
       // needs, so a failed cleanup must not mask it.
-      await remove(temp, fsOpts).catch(() => {});
+      await getHost().fs.remove(temp, fsOpts).catch(() => {});
       throw err;
     }
   });
@@ -205,13 +197,13 @@ export function saveJson(path: string, value: unknown): Promise<void> {
 
 export function removeJson(path: string): Promise<void> {
   return withPathLock(path, async () => {
-    if (await exists(path, fsOpts)) await remove(path, fsOpts);
+    if (await getHost().fs.exists(path, fsOpts)) await getHost().fs.remove(path, fsOpts);
   });
 }
 
 /** Whether anything is at `path` in AppData -- a file or a directory. */
 export function existsInAppData(path: string): Promise<boolean> {
-  return exists(path, fsOpts);
+  return getHost().fs.exists(path, fsOpts);
 }
 
 /**
@@ -228,7 +220,7 @@ export function existsInAppData(path: string): Promise<boolean> {
  * should see.
  */
 export async function seedIfAbsent(path: string, value: unknown): Promise<boolean> {
-  if (await exists(path, fsOpts)) return false;
+  if (await getHost().fs.exists(path, fsOpts)) return false;
   await saveJson(path, value);
   return true;
 }

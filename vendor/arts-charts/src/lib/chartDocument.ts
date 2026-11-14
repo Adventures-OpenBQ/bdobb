@@ -218,7 +218,6 @@ export function cardFromBody(body: ChartBody, lookup: Lookup): { state: Partial<
     series,
     // The deprecated inputs the series were migrated from: dead once `series` is written.
     studies: undefined,
-    panes: undefined,
   };
   for (const flag of FLAGS) patch[flag] = body[flag];
   return { state: patch, notes, params: { symbol: body.symbols?.join(",") ?? body.symbol, panels: panelsText, ...(body.provider ? { provider: body.provider } : {}) } };

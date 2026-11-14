@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import { parseExpression } from "../dates";
+import { getHost } from "../../host";
 import { shownAs } from "./rangeExpr";
 
 /**
@@ -86,7 +86,7 @@ export function parseIntervalDuration(text: string): IntervalDuration | { error:
   // Reuse the grammar: `T-<text>` is one anchor and one offset when `text` is
   // a single duration. Anything else (no offset, several offsets, an `@`
   // suffix, a leading sign or a bare `T`) leaves this a literal we refuse.
-  const expr = parseExpression(`T-${trimmed}`);
+  const expr = getHost().dates.parseExpression(`T-${trimmed}`);
   const atom = expr?.start;
   if (expr === null || expr.end !== undefined || atom === undefined
       || atom.at !== undefined || atom.offsets.length !== 1) {

@@ -1,10 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 
-import {
-  isExpression, parseExpression, parseWireDatetime, previewExpression,
-  type Preview,
-} from "../dates";
+import { getHost } from "../../host";
+import type { HostDates, Preview } from "../../host/dates";
+import { parseWireDatetime } from "../dates";
 
 /**
  * Whether `wireResolver` may hand `text` to the server exactly as typed,
@@ -18,7 +17,7 @@ import {
  * raw -- there is nothing here for the server to parse either.
  */
 export function sendRaw(text: string, _eodhd: boolean): boolean {
-  const expr = parseExpression(text);
+  const expr = getHost().dates.parseExpression(text);
   if (expr === null) return false;
   return expr.start.anchor.kind === "obs";
 }
@@ -43,7 +42,7 @@ export function sendRaw(text: string, _eodhd: boolean): boolean {
 export function anchorValid(text: string): boolean {
   const raw = text.trim();
   if (raw === "") return false;
-  return isExpression("datetime", raw) || parseWireDatetime(raw) !== null;
+  return getHost().dates.isExpression("datetime", raw) || parseWireDatetime(raw) !== null;
 }
 
 /**
@@ -58,14 +57,14 @@ export function anchorValid(text: string): boolean {
  * A literal echoes itself, and anything invalid is null -- the field's own
  * red border is what says so.
  */
-export function anchorPreview(text: string, ctx: Parameters<typeof previewExpression>[2] = {}): Preview | null {
+export function anchorPreview(text: string, ctx: Parameters<HostDates["previewExpression"]>[2] = {}): Preview | null {
   const raw = text.trim();
   if (raw === "") return null;
-  const expr = parseExpression(raw);
+  const expr = getHost().dates.parseExpression(raw);
   if (expr !== null && expr.start.anchor.kind === "obs") {
     return { text: `the last ${expr.start.anchor.n.toLocaleString()} trades, counted by the server`, fallback: false };
   }
-  const preview = previewExpression("datetime", raw, ctx);
+  const preview = getHost().dates.previewExpression("datetime", raw, ctx);
   if (preview !== null) return preview;
   return parseWireDatetime(raw) === null ? null : { text: raw, fallback: false };
 }

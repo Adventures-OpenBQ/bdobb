@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 import { useRef, useState } from "react";
 import { encodePanels, loopText, parsePanels, scaleOrder, type PanelDef } from "../../../lib/chart/panels";
-import { parseExpression } from "../../../lib/dates";
+import { getHost } from "../../../host";
 
 /**
  * One panel's ten fields in the four groups of the layout editor's Panels tab
@@ -176,7 +176,7 @@ export function PanelFields({
       accept({ ref: target });
       return;
     }
-    const expr = parseExpression(typed);
+    const expr = getHost().dates.parseExpression(typed);
     if (expr === null) { refuse("not a date expression"); return; }
     // Each of these is ONE end of the x-window; the grammar happily parses
     // `S..E` as a range, which means nothing here.

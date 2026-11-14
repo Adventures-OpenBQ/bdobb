@@ -3,7 +3,7 @@
 
 import { Fragment } from "react";
 
-import { openUrl } from "../../../host/opener";
+import { getHost } from "../../../host";
 
 import type { TickStatus } from "../../../hooks/useTickCache";
 import { formatClock, zoneAbbreviation } from "../../../lib/chart/formats";
@@ -201,7 +201,7 @@ export function StatusBar({
               // A plain browser build (the Vercel preview) has no Tauri to
               // invoke, and this link in particular must not silently do
               // nothing -- it is the attribution the licence asks for.
-              void openUrl(TRADINGVIEW_URL).catch(() => {
+              void getHost().openUrl(TRADINGVIEW_URL).catch(() => {
                 window.open(TRADINGVIEW_URL, "_blank", "noopener,noreferrer");
               });
             }}

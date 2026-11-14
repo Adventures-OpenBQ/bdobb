@@ -63,6 +63,7 @@ export function specJson(spec: ChartSpec): string {
     .replace(JSON.stringify(slot), () => encodePanels(panels).replace(/\n/g, "\n  "));
 }
 
+// `panes` is no longer a field, but a spec saved by v12.3.x carries it: it is a known key, read as nothing.
 const KEYS = new Set(["symbol", "timeframe", "range", "session", "panels", "series", "studies", "drawings", "panes"]);
 
 const SERIES_TYPES: readonly SeriesType[] = ["candlestick", "ohlc", "line", "area", "volume", "performance", "study"];
@@ -201,9 +202,6 @@ export function parseChartSpec(
     const bad = raw.drawings.findIndex((d) => !isDrawing(d));
     if (bad !== -1) return { patch: null, error: `drawings[${bad}] is not a segment, ray, fib or gann` };
   }
-  if (raw.panes !== undefined && !(isRecord(raw.panes) && Object.values(raw.panes).every((v) => typeof v === "number" && v > 0))) {
-    return { patch: null, error: "panes must map pane ids to positive numbers" };
-  }
   const patch: Partial<ChartCardState> & { interval?: string; panels?: string } = {};
   if (typeof raw.timeframe === "string") patch.interval = raw.timeframe;
   // `panels` is a widget PARAMETER, not card state: it rides back on the
@@ -221,6 +219,5 @@ export function parseChartSpec(
   if (raw.session !== undefined) (patch as { session?: string }).session = raw.session as string;
   if (raw.studies !== undefined) (patch as { studies?: unknown[] }).studies = raw.studies as unknown[];
   if (raw.drawings !== undefined) patch.drawings = raw.drawings as ChartDrawing[];
-  if (raw.panes !== undefined) patch.panes = raw.panes as Record<string, number>;
   return { patch, error: null };
 }
