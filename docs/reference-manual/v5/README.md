@@ -1,57 +1,46 @@
-# v5 Reference Manual — Workspaces and Statement
+# BDOBB v5.0.0 — Workspaces and Statement
 
-This manual describes the isolated development candidate. Final v4 reconciliation and cumulative release qualification remain pending; no v5 tag is present.
+v5 builds on the [v4 core tools](../v4/README.md) and the [v3 reference desktop](../v3/README.md). It adds workspaces, which put several dashboards on screen together with saved layouts, a per-workspace minimum resolution and a choice of which one opens at launch, and the **Statement** view, which lays financial rows out as line items and relabels a statement's fiscal periods from each company's fiscal year end. It pairs with openbq-docker `v5.0.0`. In-app **Help ▸ Quick Help** and **Help ▸ Reference Manual** cover every control in detail.
 
-V5 inherits the [v4 core controls](../v4/README.md) and the [v3 reference onboarding](../v3/README.md).
+## Workspaces
 
-## Workspaces and Saved Layouts
+A workspace shows several existing dashboards at once, one per tile. A tile holds the dashboard itself, not a copy: each keeps its own tabs, cards and parameter controls, and an edit made in a workspace is there wherever that dashboard opens.
 
-A workspace puts several existing dashboards on screen together. Each panel keeps its own tabs, cards and parameter controls. Focusing one panel does not transfer its card edits to another dashboard.
+The **+** beside the rail's **Workspaces** heading, **New workspace…** on the rail's section menu, **File ▸ New Workspace…** in the desktop app and `⌥N` open the **Workspaces** dialog. Name the workspace, choose **Full Screen**, **Laptop** or a saved layout, then click a tile and a dashboard to fill it (or drag a dashboard onto a tile). **Save** keeps the dialog open; **Open** saves and switches to it; **Cancel** or Escape leaves nothing behind. Select a workspace in the rail to open it and click it again to return to a single dashboard. Its row menu offers **Edit…**, **Arrange…**, **Rename**, **Layout**, **Open at launch**, **Duplicate** and **Delete**; deleting a workspace never deletes its dashboards.
 
-Choose **New workspace** in the left rail, name it and choose **Full Screen** or **Laptop**. Assign dashboards to its slots. Select the workspace in the rail to open it; use its menu to edit or delete it. Removing a workspace does not delete its dashboards. A dashboard can also be opened on its own.
+**Arrange…** puts a lettered face on each tile: drag to move, drag a corner to resize on a 12 × 12 grid, drop one tile on another to swap them, and **Add tile** fills the largest free space. **Done** saves; **Cancel** or Escape restores the arrangement. **Save layout as…** stores the geometry, not the dashboards, for reuse in any workspace.
 
-Use **Arrange** to resize and position panels or add a tile when room is available. **Done** commits the draft; **Cancel** or Escape discards it. **Save layout as…** stores reusable panel geometry, not dashboard data. Saving a layout is a separate action: Cancel after saving it still leaves that saved layout available. Applying a saved layout assigns geometry to a workspace; inspect which dashboards fill the resulting slots.
+![Two dashboards in a Laptop workspace](images/workspaces-light.png)
 
-Workspace definitions and saved layouts persist locally. They are separate from dashboard apps.json exports. Optional User Settings storage on a server (Settings ▸ General ▸ User Settings) syncs display settings only; it does not synchronize these dashboards, workspaces, layouts or dropped files. A layout is an arrangement, not a copy of its panels' data.
+[Dark-theme workspace](images/workspaces-dark.png).
 
-![Workspace panels](images/workspaces-light.png)
+## Screens, launch and the rail
 
-![Workspace panels in dark theme](images/workspaces-dark.png)
+A workspace's **Minimum resolution** is the smallest screen it is laid out for: **Any size**, one of your screens, a common size or **Custom…**. On a smaller screen it is laid out at that minimum and zoomed as a whole to fit, never above 100%. Tick **Open at launch** on several workspaces and BDOBB opens, at start-up, the ticked workspace with the largest minimum that fits the screen; if none fits, it opens a single dashboard as before.
 
-## Statement View
+In a workspace the rail can be pinned open with its lock or **Window ▸ Keep Sidebar Open**; each workspace remembers its own pin. **Settings ▸ Layout ▸ Option-number shortcuts** points `⌥1`–`⌥9` at **Dashboards** or **Workspaces**, and the rail's badges follow.
 
-**Statement** presents financial rows as line items grouped into sections, with a column for each fiscal period supplied by the data. Choose it in a supported table card's **View** control. Local and linked tables can offer the view; backend tables offer it when their rows contain recognized statement fields.
+Workspaces and saved layouts are local files, one each. Dashboard exports do not include them, and **User Settings** on a server, which syncs display settings and, where the server offers it, dashboards, does not sync workspaces, layouts or dropped files.
 
-The rows need recognized financial fields such as revenue, total assets or net cash from operating activities. Period headers use the supplied fiscal year, period or date. TTM stays TTM; missing cells stay blank and zero stays zero. The view does not invent totals or convert one provider's fiscal calendar into another.
+## Statement view
 
-Click a section heading to collapse or reopen it. Those folds save with the card. Switch back to **Table** to inspect the ordinary rows; Statement does not replace the analytical Pivot model. Filters, search and selected table scope affect the worker rows used for the Statement. Review the underlying Table if those choices hide a needed period or financial field.
+**Statement** presents financial rows as line items in sections, one column per fiscal period. Choose it in a table card's **View** control when the rows contain recognized fields such as revenue, total assets or net cash from operating activities. Click a section heading to fold or reopen it; folds save with the card. **Table** shows the ordinary rows again, and Statement does not replace the Pivot model. Filters, search and the selected table scope decide which rows the Statement reads. Missing cells stay blank, zero stays zero and nothing is totalled that the data does not supply.
 
-The view reads a completed worker result. During refresh it can retain completed data with a stale notice. Backend completeness may be unknown; that warning means a response is not proof of all available history. A table without recognized numeric line items shows an empty-state explanation.
+A backend statement widget, one whose **Period** offers FY and FQ, is relabelled from the reporting company's fiscal year end, asked of the card's backend per symbol: a January filer's quarter ending July 2026 reads `FY2027-Q2`, a December filer's quarter ending June 2026 `FY2026-Q2`. Table, charts and exports read the relabelled rows. A server table bound to such a widget is relabelled on the server, and a local CSV or XLS table from its rows' `fiscal_period` and `symbol` using the backend chosen under **FY ends from**. When a year end is unknown the rows stay as sent and the card says *Fiscal labels as reported*. Several companies in one table keep a column set each, prefixed with the symbol.
 
-CSV, JSON and XLSX exports from Statement use the completed line-item projection. Collapsing a section changes visibility, not the exported rows. **Export BDOBB-compatible apps.json…** preserves Statement and its folds using the v5 profile, together with inherited v4 settings. Plain OpenBB export omits that presentation. Compatible exports still do not bundle local-file bytes or credentials.
+v4 Statement templates also show in this view with their own labels, order and formats; a calculation error shows and exports as `#ERROR`.
 
-![Statement view in light theme](images/statement-view-light.png)
+![Statement view](images/statement-view-light.png)
 
-![Statement view in dark theme](images/statement-view-dark.png)
+[Dark-theme Statement](images/statement-view-dark.png).
 
-## Durable storage and exchange
+## Save, reopen and exchange
 
-The persistent store work associated with #339 continues to apply. Dashboard documents retain Statement folds, definitions, selections and links; workspaces have their own files under `workspaces/`, and saved arrangements under `layouts/`. A saved layout carries geometry without dashboard assignments. These documents are not worker-result caches.
+CSV, JSON and XLSX exports from a Statement contain every line item, folded sections included. A **BDOBB Workspace** save (**Save…** on a dashboard row) writes the v5 profile when a card uses Statement or has folds, nesting the v3 or v4 profile the rest of the dashboard needs, and its notice reads *Exported … with BDOBB v5 state.* A **Strict OpenBB Workspace** save omits the presentation. Import validates the profile before writing anything, gives cards fresh identities and remaps links; unknown versions and malformed or duplicate overlays are refused. Workspace arrangements, dropped-file bytes and credentials never travel in a dashboard file.
 
-BDOBB-compatible apps.json selects profile v5 when Statement state is present, nesting the applicable earlier profile. Imports validate that profile before writing, allocate fresh local card identities and remap inherited links. Unknown versions, malformed overlays and duplicate overlay positions are refused. Ordinary dashboards still use the appropriate earlier profile. An apps.json export does not bundle the workspace arrangement or local-file bytes. Portable preference bundles omit machine-local dashboard/workspace ordering IDs and do not synchronize data.
+## Examples
 
-Section folds are durable presentation state; tab focus is session navigation state. Viewer edits retain their existing transient boundary. Credentials, runtime buffers and generated worker results do not become portable dashboard configuration.
-
-## Verification boundaries
-
-The development ledger records actual browser, worker, persistence and codec checks. Prior donor tests and copied v4 results do not qualify this candidate. User documentation must be rechecked after reconciliation with final v4. AI/Skills, widget pinning and provider-specific #342 activation are outside this v5 scope.
-
-## Reproducible example
-
-The [synthetic financial demo](../../examples/v5-financial-demo/README.md) includes a keyless static backend and compatible Apps manifest. Use it to verify supplied Q3/TTM labels, negative cash flow, folded-section exports and a two-dashboard workspace. Its values are test fixtures.
-
-
-V4 Statement templates also work in this view. Their worker-calculated fiscal columns, authored section and line labels, order, and cell formats are preserved. The view shows only the producer’s presented or selected lines; it does not fill hidden lines or recalculate totals. A calculation error displays `#ERROR` with its reason on hover and exports as `#ERROR`, rather than a numeric value. Template section folds use stable identities, so renaming a section does not reopen it.
+openbq-docker v5 serves the earlier examples plus **V5 Statement Example**, a synthetic quarterly and TTM cash flow that needs no key, and *Example Dashboard - Version 5.0.0 - Treasury Auctions*, a Calendar of U.S. Treasury auctions on the API's own keyless Treasury widgets. The [synthetic financial demo](../../examples/v5-financial-demo/README.md) runs the Statement example from a local static backend.
 
 ---
 

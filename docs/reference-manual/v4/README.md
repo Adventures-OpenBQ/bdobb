@@ -1,66 +1,54 @@
 # BDOBB v4.0.0 — core tools and analytical tables
 
-This local candidate builds on the qualified v3 reference desktop. It adds analytical tables, date expressions and exchange sessions, richer library/key controls, Calendar presentation and persistent parameter panels. Pinned Statement templates belong to v4 under Pivot → Saved → Statement template; Workspace layouts and generic Statement presentation belong to v5. Cron remains deferred.
+v4 builds on the [v3 reference desktop](../v3/README.md). It adds analytical Pivot models and pinned Statement templates, linked tables and charts, server-paged tables, date expressions with exchange calendars and fiscal periods, Calendar presentation, parameter rows and a docked Parameters panel, and richer library and key controls. In-app **Help ▸ Quick Help** and **Help ▸ Reference Manual** cover every control in detail.
 
 ## Start with the reference desktop
 
-Connect an OpenBB-compatible backend in **Connections**, Test it, then Add. Open a supplied dashboard from **Apps** or add individual widgets from **Widget Library**. Apps and imported files ask **Keep both**, **Replace**, **Skip** or **Cancel import** when a dashboard name already exists. Escape cancels only the top conflict dialog. See the [v3 reference desktop manual](../v3/README.md) for ordinary groups, Run, numeric refresh, documents and onboarding.
+Connect an OpenBB-compatible backend in **Connections**, Test it, then Add. Open a supplied dashboard from **Apps** or add widgets from the **Widget Library**. When a dashboard name already exists, Apps and imports ask **Keep both** (the default), **Replace**, **Skip** or **Cancel import** before anything is written. The [v3 manual](../v3/README.md) covers groups, Run, refresh, documents and onboarding.
 
 ## Build an analytical table
 
-Open a table's **Pivot** drawer. Configure category rows and split columns, then add measures with independent aggregation choices. Two measures may use the same source column with different aggregations. Formula definitions and Page filters belong to the table's saved model; derived output is recalculated from its loaded input.
+Open a table's **Pivot** drawer from its header. Local, dropped-file, linked and backend tables up to 2,000,000 cells calculate in a worker; a larger backend table keeps the in-card panel and cannot feed linked widgets. The drawer's sections are **Arrange**, **Categories**, **Measures**, **Pages**, **Formulas**, **Category filters**, **Result filters** and **Saved** (with **Statement template**). The drawer opens on Arrange; its first arrangement edit saves a report model, and **Enable report model** is in the Arrange footer.
 
-Sorting and filtering operate over loaded input, not only visible rows. Local and linked tables calculate in a worker and transfer bounded display blocks. Partial or sampled inputs remain partial: Pivot does not acquire missing data or promise unlimited file size. Check completeness and provider-aggregation hints before interpreting totals.
+Measures choose an aggregation per data column, and two measures may aggregate the same column differently. Formula function names are accepted in any letter case. Sorting and filtering apply to the loaded input, not only visible rows. Partial or sampled inputs stay partial: Pivot never fetches missing data, so check completeness hints before reading totals.
 
-A table selection can be explicit or **all matching** with exclusions. Create a linked table or linked chart from a source to follow its presented input and selection. Linked cards retain their source relationship when saved and when exported through the v4 compatible format. Remove or change a source deliberately; a missing source should produce a diagnostic rather than unrelated data.
+## Linked tables and charts
 
-## Date expressions and trading calendars
+**Create linked table** and **Create linked chart** on a table's **⋯** menu, or the Linked table and Linked chart entries in the library, add a card that follows a source table's presented rows and selection. **Choose source** relinks it. A missing source shows a diagnostic, never unrelated data, and when the source's scope is successfully empty the linked chart clears its figure.
 
-Add the **Date expression** or **Period echo** built-in, or import `docs/examples/v4.0.0-parameters.apps.json`. Expressions resolve against their As of value; `T` means the current reference date and `T-5bd` moves back five business sessions. Choose the relevant exchange for session-aware expressions. Fiscal controls use the card's fiscal year-end month.
+## Server-paged tables
 
-Trading-calendar coverage is finite. Dates outside supported exchange data use the documented fallback and warning behavior; check the in-app **Date Expressions** page for syntax, fiscal periods, closed-session rules and fallback details. Date and datetime controls have different precision; inspect the echoed request value before linking a group to production data.
+A widget its backend serves as an SSRM table opens as **LIVE · paged**: 100-row pages with **Previous page** and **Next page**, sorting by one column, and text-contains and number-range filters, all evaluated by the backend. The openbq-docker v4 stack serves its 41 largest datasets this way. LIVE paged tables cannot be linked-widget sources.
 
-## Keep parameters visible
+## Parameters, dates and calendars
 
-Titlebar chips show parameter values. Open **Parameters** from the card menu or its chevron to dock the labeled controls beneath the titlebar. The panel stays open until you close it; clicking outside or Escape does not dismiss it. **Display on title bar** controls whether those values also appear as chips. Both choices save with the card and travel in a BDOBB-compatible v4 export.
+A widget's parameters can be laid out in rows, as in OpenBB Workspace: row 0 shares the title line and each later row gets a line of its own. The **▸** chevron or **⋯ ▸ Parameters** docks the labeled controls under the title bar; the panel stays until you close it (Escape or a click outside does not dismiss it). **Display on title bar** turns a card's chips off. Both choices save with the card.
 
-## Calendar, library and keys
+Date expressions resolve against an **As of** value: `T` is the reference date and `T-5bd` moves back five business sessions. A dashboard's **Exchange ▸** menu sets its calendar (**Default (XNYS)** otherwise). Without a backend calendar the app uses its bundled NYSE calendar for 2026–2028 and plain weekdays elsewhere, and says so with a badge. Fiscal controls use the symbol's fiscal year-end, falling back to December with a warning.
 
-For a table with a date column, select **Calendar** in its **View** control. Choose its day/week/month presentation and date/title fields; saved cursor, weekdays and series/tree filters travel in compatible exports. Calendar is a presentation of available rows, not an additional data fetch.
+## Calendar, refresh, library and keys
 
-Use the library's search and filter pills to narrow widgets and inspect which are already on the dashboard. Provider badges reflect available key checks. **Provider Keys** shows availability and a Details dialog; a configured credential and a successful probe are different states. Credentials remain backend/settings concerns and never enter dashboard exports.
+Any card whose rows have a date column offers **Calendar** in its **View** control; it presents loaded rows and fetches nothing extra. The card's timer is its refresh button; a run-button card's marker pulses when parameters change. A widget's `refetchInterval` may be a number or a five-field cron expression. The library filters by search and pills and marks widgets already on the dashboard. **Provider API Keys** (when a backend runs key-maint) shows each provider's state; a configured key and a passing check are different states.
 
 ![Calendar navigation and dated events](images/calendar-view-light.png)
 
 ## Save, reopen and exchange
 
-Edits save locally. **Export BDOBB-compatible apps.json…** selects a v4 profile when the dashboard needs analytical definitions, symbolic selections, links, fiscal/calendar or dock state. Ordinary dashboards can still use the strict v3 profile. Import allocates fresh local card identities and remaps links to the corresponding imported cards, including across tabs.
-
-Existing v3 files remain readable. Unknown profiles or malformed durable settings are refused before an import writes dashboards. The curated reference's supported `pivot-v1` layout overlay imports as the table's own Pivot settings, applied by the table itself; backend tables do not run on the in-app table worker. Do not assume another client or an older BDOBB understands this profile.
-
-**Export OpenBB apps.json…** writes the plain OpenBB shape and omits BDOBB-specific state. Compatible exports do not bundle dropped-file bytes; a local-file dependency can be refused as `MISSING_LOCAL_ASSET`. Transfer files separately and verify the reopened dashboard. Credentials, passwords, runtime caches and worker results are not included.
-
-## Settings and help
-
-**Settings** supports System, Light and Dark appearance, layout spacing, staged preferences and text-log export. Done saves pending edits; Cancel discards them. **General ▸ User Settings** is Local or Server: Server syncs display settings with a Workspace connection or a backend serving the Workspace settings API (chosen in **Connections**, which also offers **Ask for credentials on startup** on every connection); it does not synchronize dashboards. Use **Help ▸ Quick Help** or **Reference Manual** for the complete controls and screenshot walkthrough.
-
-## Qualification status
-
-V3 is qualified and locally tagged. V4 is under regression and reference validation; no v4 tag or publication exists yet. This candidate manual describes the assembled behavior, not a claim that the final gates have passed.
-
-Copyright 2026 SecretoftheUniverse.com LLC. Licensed under Apache-2.0.
-
-The raw-table drawer opens on Arrange. Its first arrangement edit saves a report model; explicit Enable report model is in the Arrange footer. Saved combines Model inspection/repair and Statement template authoring. Use compatible export for validated model intent; plain apps exports omit it, and local file bytes require a repository archive. This integration candidate remains untagged.
+Edits save locally. A dashboard row's **Save… ▸** writes **Strict OpenBB Workspace** (the plain OpenBB shape) or **BDOBB Workspace**, which uses a versioned v4 profile when analytical models, selections, linked cards, fiscal and calendar choices or panel state need to travel. Import gives cards fresh identities and remaps links, including across tabs. v3 files remain readable; unknown profiles, malformed extensions and archived enabled Pivot state are refused before anything is written. The reference backend's `pivot-v1` layouts import as the table's own Pivot settings. Dropped-file bytes, credentials and caches never travel; a dropped-file table is refused as `MISSING_LOCAL_ASSET`.
 
 ## Reusable Statement templates
 
-Choose **Pivot → Saved → Statement template**. Select Income statement, Balance sheet or Cash flow, map wide/long facts and fiscal evidence, then calculate a preview before applying. Snapshots remain version-pinned; updates require explicit comparison and repair. Flow, stock and formula rules retain missing/invalid facts as errors, and linked tables/charts use the same worker result without changing raw numeric values. Local labels, ordering, visibility and formula overrides persist with the saved definition.
+Choose **Pivot ▸ Saved ▸ Statement template**. Select Income statement, Balance sheet or Cash flow, map wide or long facts and fiscal evidence, then calculate a preview before applying. Snapshots stay version-pinned; updates need explicit comparison and repair. Missing or invalid facts stay visible as errors, and linked tables and charts use the same worker result without changing raw values.
 
-![Statement preview in the integrated dark-theme candidate](images/statement-preview-dark.png)
+![Statement preview, dark theme](images/statement-preview-dark.png)
 
-[Light-theme preview](images/statement-preview-light.png). Both images come from actual guarded authoring tests with synthetic data. See in-app Tables for mapping, coverage, preview and update details.
+[Light-theme preview](images/statement-preview-light.png). Both images come from guarded authoring tests with synthetic data.
 
-Statement calculations require compatible company, currency and unit contexts across the facts actually used by a formula. Mixed contexts produce a cell error; they are never silently added or subtracted. Unrelated lines do not invalidate a formula. When fiscal evidence comes from source metadata, switching FY/FQ preserves that metadata binding. Explicit period fields still require the corresponding fiscal year, quarter and start/end bounds.
+Statement formulas need compatible company, currency and unit contexts across the facts they use; mixed contexts produce a cell error and are never silently combined. Explicit period fields need the matching fiscal year, quarter and start and end bounds.
+
+## Settings and help
+
+**Settings** offers System, Light and Dark appearance, layout spacing, staged edits (Done saves, Cancel discards) and text-log export. **General ▸ User Settings** is Local or Server; Server syncs display settings with a connection that serves the Workspace settings API, and dashboards too when that server offers them.
 
 ---
 
