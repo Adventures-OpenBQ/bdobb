@@ -1793,6 +1793,9 @@ body {
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */
 .card-chips-hidden { display: none; }
+/* An Art's Charts card's command strip (Series, Panels, interval, range): a line of
+   its own inside .card-header, under the parameter rows. */
+.card-chart-strip { flex-basis: 100%; min-width: 0; }
 
 /* Belt and suspenders with the ellipsis above: if the card is narrow enough
    that even a fully-shrunk title can't leave room for Parameters/Raw/

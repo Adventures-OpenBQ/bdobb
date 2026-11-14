@@ -12,7 +12,7 @@ import { PivotIcon } from "./PivotIcon";
 import { StatementWorkerView } from "./renderers/StatementWorkerView";
 import type { StatementSnapshot } from "../lib/statementExecution";
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
-import { type ComponentProps, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ComponentProps, lazy, type ReactNode, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat } from "@tauri-apps/plugin-fs";
 import { saveBinaryFile, saveTextFile } from "../lib/saveTextFile";
@@ -293,6 +293,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    * content — the wrapper, its ref and its dismiss effect are unchanged; only
    * the toggle's label and the menu's items are new.
    */
+  /** An Art's Charts card's command strip (Series, Panels, interval, range), handed up through controlsSlot. Null for every other card. */
+  const [chartControls, setChartControls] = useState<ReactNode>(null);
   const [exportOpen, setExportOpen] = useState(false);
   /**
    * Which section of the ⋯ menu is expanded. Sections that open in place, not
@@ -1337,6 +1339,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           <ArtsChartsCard
             backend={backend} widget={widget} card={card} params={query} exchange={exchange}
             groups={groups} groupsDisabled={groupsDisabled} refreshKey={attempt + refreshEpoch}
+            controlsSlot={setChartControls}
             onParam={(patch) => void apply(splitParamEdit(patch, card, groups, widget, groupsDisabled, fiscalYearEnd))}
           />
         </Suspense>
@@ -2176,6 +2179,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           </div>
         ) : null}
         {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={readOnly} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline /> : undefined} /> : null}
+        {/* An Art's Charts card's command strip, handed up through controlsSlot: the
+            header's last line, under the parameter rows and the Parameters panel. */}
+        {!minimized && chartControls !== null ? <div className="card-chart-strip">{chartControls}</div> : null}
       </header>
       )}
       {railChrome ? (

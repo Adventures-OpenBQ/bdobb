@@ -9,6 +9,7 @@
  */
 import { ArtsChartsRenderer, splitChartEdit } from "@adventures-openbq/arts-charts";
 import "@adventures-openbq/arts-charts/arts-charts.css";
+import type { ReactNode } from "react";
 import { useArtsChartsStore } from "../../stores/artsChartsStore";
 import { useDashboardStore } from "../../stores/dashboardStore";
 import type { BackendConfig, DashboardCard, ParamGroup, WidgetDef } from "../types";
@@ -17,9 +18,11 @@ export type ArtsChartsCardProps = {
   backend: BackendConfig; widget: WidgetDef; card: DashboardCard; params: Record<string, string>;
   exchange?: string; groups?: ParamGroup[]; groupsDisabled: boolean; refreshKey: number;
   onParam: (patch: Record<string, string>) => void;
+  /** Receives the renderer's command strip; WidgetCard draws it under the card header. */
+  controlsSlot: (node: ReactNode) => void;
 };
 
-export default function ArtsChartsCard({ backend, widget, card, params, exchange, groups, groupsDisabled, refreshKey, onParam }: ArtsChartsCardProps) {
+export default function ArtsChartsCard({ backend, widget, card, params, exchange, groups, groupsDisabled, refreshKey, onParam, controlsSlot }: ArtsChartsCardProps) {
   const epoch = useArtsChartsStore((s) => s.epoch);
   const store = useDashboardStore.getState();
   const onPatch = (edit: Parameters<typeof splitChartEdit>[0]) => {
@@ -33,6 +36,7 @@ export default function ArtsChartsCard({ backend, widget, card, params, exchange
       backend={backend} widget={widget} params={params} state={card.chart ?? {}} card={card}
       onPatch={onPatch} onParam={onParam} onClear={() => void store.patchCardField(card.id, "chart", null)}
       exchange={exchange} groups={groups} groupsDisabled={groupsDisabled} refreshKey={refreshKey}
+      controlsSlot={controlsSlot}
     />
   );
 }

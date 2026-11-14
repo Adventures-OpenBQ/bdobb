@@ -4,9 +4,18 @@ import { act, render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 
 const seen = vi.hoisted(() => [] as unknown[]);
-vi.mock("../lib/artsCharts/card", () => ({
-  default: (props: Record<string, unknown>) => { seen.push(props); return <div data-testid="arts-card">{String((props.params as Record<string, string>).symbol)}</div>; },
-}));
+vi.mock("../lib/artsCharts/card", async () => {
+  const { useEffect } = await import("react");
+  return {
+    default: function MockArtsChartsCard(props: Record<string, unknown>) {
+      seen.push(props);
+      // The renderer hands its command strip up through controlsSlot.
+      const slot = props.controlsSlot as ((node: unknown) => void) | undefined;
+      useEffect(() => { slot?.(<button type="button">Series</button>); return () => slot?.(null); }, [slot]);
+      return <div data-testid="arts-card">{String((props.params as Record<string, string>).symbol)}</div>;
+    },
+  };
+});
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ save: vi.fn(), open: vi.fn(), confirm: vi.fn() }));
 vi.mock("../hooks/useWidgetData", () => ({
@@ -44,8 +53,16 @@ it("dispatches arts_chart to the Art's Charts card with WidgetCard's own writers
   renderCard();
   expect(await screen.findByTestId("arts-card")).toHaveTextContent("AAPL");
   const props = seen.at(-1) as Record<string, unknown>;
-  expect(Object.keys(props).sort()).toEqual(["backend", "card", "exchange", "groups", "groupsDisabled", "onParam", "params", "refreshKey", "widget"].sort());
+  expect(Object.keys(props).sort()).toEqual(["backend", "card", "controlsSlot", "exchange", "groups", "groupsDisabled", "onParam", "params", "refreshKey", "widget"].sort());
   expect(typeof props.onParam).toBe("function");
+});
+
+it("draws the chart's command strip, handed up through controlsSlot, as a line of the card header", async () => {
+  renderCard();
+  const card = await screen.findByTestId("arts-card");
+  const series = await screen.findByRole("button", { name: "Series" });
+  expect(card).not.toContainElement(series);
+  expect(series.closest(".card-header > .card-chart-strip")).not.toBeNull();
 });
 
 it("draws the refresh control on a chart card", async () => {
