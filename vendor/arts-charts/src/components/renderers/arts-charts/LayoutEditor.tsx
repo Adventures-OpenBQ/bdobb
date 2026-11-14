@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { getHost } from "../../../host";
 import { loopText, scaleOrder, type PanelDef , overlapRects} from "../../../lib/chart/panels";
 import { movePanel, panelLabel, removePanel, seriesLabel, widen } from "../../../lib/chart/series";
@@ -103,8 +103,11 @@ function planImportNames(
 /** The pending removal a confirmation is asking about, or null. `mode` is the series choice (D7): move (default) or delete. `moveTarget` names where the moved series land (spec 2026-09-25, J9), e.g. "P1 · Price". */
 type Removal = { index: number; label: string; moveTarget: string; series: Series[]; warning: string | null; mode: "move" | "delete" };
 
+/** The Series pane's staged-but-not-Updated edit, as OK reads it: the rebuilt series, or null. */
+export type PendingEdit = MutableRefObject<(() => Series | null) | null>;
+
 export function LayoutEditor({
-  initialTab, panels, series, seriesTab, onCommitPanels, onClose,
+  initialTab, panels, series, seriesTab, onCommitPanels, onClose, onApplySeries,
   layoutNames = [],
   onSaveLayout = async () => false,
   savedLayouts = [],
@@ -122,8 +125,10 @@ export function LayoutEditor({
    * sidebar card and the Dimensions tab detail follow. A plain node is still
    * accepted (tests, and any caller that does not scope) and ignores the panel.
    */
-  seriesTab: ReactNode | ((selectedPanel: number) => ReactNode);
+  seriesTab: ReactNode | ((selectedPanel: number, pendingEdit: PendingEdit) => ReactNode);
   onCommitPanels: (panels: PanelDef[], series: Series[]) => void;
+  /** OK on a clean panel draft writes a staged series edit through this (the pane's own Update path). */
+  onApplySeries?: (series: Series) => void;
   onClose: () => void;
   /** The names already in the library (spec 2026-09-24, D5): offered in the Save dialog, and used to ask again before replacing one, Default included. */
   layoutNames?: string[];
@@ -141,6 +146,7 @@ export function LayoutEditor({
   const id = useId();
   const [tab, setTab] = useState<"series" | "panels">(initialTab);
   const [ops, setOps] = useState<PanelOp[]>([]);
+  const pendingEdit: PendingEdit = useRef(null);
   const [selected, setSelected] = useState(0);
   const [removal, setRemoval] = useState<Removal | null>(null);
   const [dragFrom, setDragFrom] = useState<number | null>(null);
@@ -261,7 +267,17 @@ export function LayoutEditor({
     // to add a study and clicking OK must not rewrite -- or migrate -- the
     // layout. A dirty draft writes the panels and the remapped series together,
     // the same pair-write the renderer's series path makes.
-    if (dirty) onCommitPanels(draft.panels, draft.series);
+    //
+    // A series edit staged in the Series pane but not Updated is applied too
+    // (hand check 2026-11-14). With panel changes it is folded into the one
+    // pair-write -- written separately, the pair-write's series would undo it.
+    const edit = pendingEdit.current?.() ?? null;
+    if (dirty) {
+      const out = edit === null ? draft : applyOps(ops, panels, series.map((s) => (s.id === edit.id ? edit : s)));
+      onCommitPanels(out.panels, out.series);
+    } else if (edit !== null) {
+      onApplySeries?.(edit);
+    }
     onClose();
   };
 
@@ -553,7 +569,7 @@ export function LayoutEditor({
                   "+ Add series" to that panel; a plain node ignores it. `at` is
                   the clamped selection, so a stale index never names a panel the
                   draft no longer has. */}
-              {typeof seriesTab === "function" ? seriesTab(at + 1) : seriesTab}
+              {typeof seriesTab === "function" ? seriesTab(at + 1, pendingEdit) : seriesTab}
             </div>
           ) : (
             <div role="tabpanel" aria-label="Dimensions">

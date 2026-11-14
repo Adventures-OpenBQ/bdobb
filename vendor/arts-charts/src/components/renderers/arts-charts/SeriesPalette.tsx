@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Business Source License 1.1.
 // SPDX-License-Identifier: BUSL-1.1
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import type { PendingEdit } from "./LayoutEditor";
 import { getHost } from "../../../host";
 import { STUDY_SWATCHES } from "../../../lib/chart/createChartTheme";
 import {
@@ -120,6 +121,13 @@ type Props = {
    * unfiltered and the registry's default placement unchanged.
    */
   panelFilter?: number;
+  /**
+   * Where the Layout editor's OK reads an edit staged here but not yet
+   * Updated (hand check 2026-11-14): this pane registers a reader that
+   * returns the rebuilt series, or null when nothing was changed or the
+   * staged edit would not commit. Optional: any other mount ignores it.
+   */
+  pendingEdit?: PendingEdit;
   /**
    * Favorites (spec 2026-09-26, PART C): the user's saved one-click series,
    * each ONE configured study/line with its parameters and appearance -- not a
@@ -410,7 +418,7 @@ function AddSeriesModal({ titleId, onClose, children }: {
  */
 export function SeriesPalette({
   catalog, status, active, editing, panels, symbol, symbols = [symbol], symbolGroups = [], onAdd, onApply,
-  fallbackColor, allowBusinessDays, source, onClose, onRefresh, onEditSeries, onReorderSeries, panelFilter,
+  fallbackColor, allowBusinessDays, source, onClose, onRefresh, onEditSeries, onReorderSeries, panelFilter, pendingEdit,
   favorites, onAddFavorite, onRemoveFavorite,
 }: Props) {
   const { AnchorChips, RelativeTab } = getHost().components;
@@ -534,6 +542,9 @@ export function SeriesPalette({
       symbol: editing.symbol ?? PERFORMANCE_SELF, anchor: editing.anchor ?? DEFAULT_ANCHOR,
     },
   );
+  // The draft as mounted: a draft still equal to it is an edit nobody touched,
+  // which OK must not write back (the editor remounts this pane per edit).
+  const seededDraft = useRef(draft);
 
   // The pack keeps the highlighted row in view while the arrows walk it --
   // after the render that moved it, not before.
@@ -611,6 +622,18 @@ export function SeriesPalette({
   // A bar series or performance line naming something that is not a reference (spec 2026-11-13 §1).
   const symbolInvalid = staged !== null && !symbolAllowed(staged.type, performanceSymbol(staged.symbol));
   const incomplete = (entry !== undefined && entry.params.some(invalidParam)) || performanceIncomplete || symbolInvalid;
+  // OK reads the staged edit through this, so it no longer needs Update first.
+  // The same build and duplicate guard Update uses; an add (the modal) is not
+  // an edit and stays the modal's own.
+  useEffect(() => {
+    if (pendingEdit === undefined) return;
+    pendingEdit.current = () => {
+      if (editing === null || addOpen || staged === null || draft === seededDraft.current) return null;
+      const built = build(staged, editing);
+      return built === null || duplicate(built, editing) ? null : built;
+    };
+    return () => { pendingEdit.current = null; };
+  });
   /** What the Symbol field's picker offers; free text is the field itself. */
   const symbolOptions = [PERFORMANCE_SELF, ...symbols.slice(1).map((_t, i) => `list:${i + 2}`), ...symbolGroups.map((g) => `$group:${g}`)];
   // One unit per study (unifyWindows): a `bd` in one window field pulls the

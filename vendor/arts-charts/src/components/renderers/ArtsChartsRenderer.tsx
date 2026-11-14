@@ -3059,8 +3059,11 @@ function ChartCard({
     // `panes` too: a study arriving has to reach the resting legend, whose
     // values are read out of `live.current.panes` above. `studies` for the
     // same reason: a chip recoloured or relabelled in the editor has to
-    // reach the resting legend before the crosshair next moves.
-  }, [candles, panes, studies, legendValues]);
+    // reach the resting legend before the crosshair next moves. `series`,
+    // `extraBars` and `resolveWindowed` because they are what the bars pass
+    // above refills `perf` from: an overlay whose bars land after the first
+    // draw kept its "—" until something else re-rendered (hand check 2026-11-14).
+  }, [candles, panes, studies, series, extraBars, resolveWindowed, legendValues]);
 
   useEffect(() => {
     const apis = panels.current;
@@ -3930,9 +3933,10 @@ function ChartCard({
           // change (the key is the edited series), so an in-progress edit
           // survives clicking a different card; only the list and the add-default
           // re-scope.
-          seriesTab={(selectedPanel) => (
+          seriesTab={(selectedPanel, pendingEdit) => (
             <SeriesPalette
               panelFilter={selectedPanel}
+              pendingEdit={pendingEdit}
               catalog={registry.catalog}
               status={registry.status}
               onRefresh={registry.refresh}
@@ -3997,6 +4001,8 @@ function ChartCard({
           // Import writes through the shared store (E6): every open card sees the
           // new layouts at once (D6); it never touches this card's chart (E7).
           onImportLayouts={importLayoutsToLibrary}
+          // OK applies a series edit the pane staged but was not Updated.
+          onApplySeries={applySeries}
           onClose={closeLayout}
         />
       )}
