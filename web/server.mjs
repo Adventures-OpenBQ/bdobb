@@ -253,13 +253,14 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       }
       // The door's own status rule (chartsStatus), applied again here: a 409's JSON body is the
       // current document, which the client needs; anything else, or a wrong type, is a 502.
+      // Bodies are capped where the door caps them (8 MiB JSON, 16 MiB PNG), so what draws on desktop draws here.
       // A 401 never passes: the page's http shim reads any same-origin 401 as signed-out and bounces to
       // sign-in, which loops on a rotated gateway token. It is a 502 here (cf. temporalStatus).
       const status = response.status === 401 ? 502 : chartsStatus(response.status);
       if (status === 204) { await response.body?.cancel(); return reply(res, 204); }
       const want = binary && status === 200 ? /^image\/png$/i : /^application\/json(?:\s*;|$)/i;
       if (status === 502 || !want.test(type)) { await response.body?.cancel(); return reply(res, 502); }
-      return reply(res, status, await boundedBody(response.body, 2 * 1024 * 1024), want.source.includes("png") ? MIME[".png"] : MIME[".json"]);
+      return reply(res, status, await boundedBody(response.body, (binary ? 16 : 8) * 1024 * 1024), want.source.includes("png") ? MIME[".png"] : MIME[".json"]);
     } finally { clearTimeout(timer); res.off("close", disconnect); }
   }
   /**

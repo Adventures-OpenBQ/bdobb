@@ -116,15 +116,23 @@ test("off (PREVIEW_CHARTS unset) /arts is a 404", async (t) => {
   assert.equal((await call("/arts/charts", { headers: { Cookie: await cookie() } })).status, 404);
 });
 
-test("snapshot PNGs are the only non-JSON bodies; bodies are capped at 2 MiB", async (t) => {
+test("snapshot PNGs are the only non-JSON bodies; bodies are capped at the door's 8 MiB JSON / 16 MiB PNG", async (t) => {
   let make = png;
   const { call } = await fixture(t, { config: readConfig(charts), fetchUpstream: async () => make() });
   const headers = { Cookie: await cookie() };
   assert.equal((await call(`/arts/charts/${ID}/snapshot.png`, { headers })).headers["content-type"], "image/png");
   assert.equal((await call(`/arts/inbox/${ID}/snapshots/0.png`, { headers })).headers["content-type"], "image/png");
   assert.equal((await call("/arts/charts", { headers })).status, 502);
-  make = () => new Response("x".repeat(2 * 1024 * 1024 + 1), { headers: { "Content-Type": "application/json" } });
+  const MiB = 1024 * 1024;
+  const sized = (bytes, type) => () => new Response(Buffer.alloc(bytes, 120), { headers: { "Content-Type": type } });
+  make = sized(2 * MiB + 1, "application/json");     // a large chart document still passes
+  assert.equal((await call("/arts/charts", { headers })).status, 200);
+  make = sized(8 * MiB + 1, "application/json");
   assert.equal((await call("/arts/charts", { headers })).status, 502);
+  make = sized(2 * MiB + 1, "image/png");            // a dense snapshot still passes
+  assert.equal((await call(`/arts/charts/${ID}/snapshot.png`, { headers })).status, 200);
+  make = sized(16 * MiB + 1, "image/png");
+  assert.equal((await call(`/arts/charts/${ID}/snapshot.png`, { headers })).status, 502);
 });
 
 test("POST, PUT and DELETE ask what /state's writes ask", async (t) => {
