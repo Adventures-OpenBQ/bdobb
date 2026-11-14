@@ -20,8 +20,9 @@ export function Header({
    * The symbol block edits in place (user ruling 2026-09-17, replacing the
    * "focus the card's parameter" ruling): a click, or `/`, turns the ticker
    * into a text field; Enter commits through `onSymbol` (the card's own
-   * parameter path, so a grouped symbol moves its group), Esc and blur
-   * cancel. Controlled, because the renderer's keyboard map opens it.
+   * parameter path, so a grouped symbol moves its group), blur commits the
+   * same way, Esc cancels. Controlled, because the renderer's keyboard map
+   * opens it.
    */
   symbolEditing: boolean; onSymbolEditing: (open: boolean) => void; onSymbol: (symbol: string) => void;
 }) {
@@ -31,6 +32,17 @@ export function Header({
   useEffect(() => {
     if (symbolEditing) { symbolInput.current?.focus(); symbolInput.current?.select(); }
   }, [symbolEditing]);
+  // Enter and blur commit; Esc cancels. Esc's own close can blur the input
+  // afterwards, and a commit must run once, so either path marks it done.
+  const cancelled = useRef(false);
+  useEffect(() => { if (symbolEditing) cancelled.current = false; }, [symbolEditing]);
+  const commit = (raw: string) => {
+    if (cancelled.current) return;
+    cancelled.current = true;
+    const next = raw.trim().toUpperCase();
+    onSymbolEditing(false);
+    if (next !== "" && next !== symbol) onSymbol(next);
+  };
   // The pack's 22px round mark at the head of the symbol pill: the issuer's
   // logo when the backend knows one, and the ticker's initial on the accent
   // otherwise, so the pill never opens on a hole. Decorative either way --
@@ -50,14 +62,12 @@ export function Header({
             defaultValue={symbol}
             spellCheck={false}
             onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-              if (e.key === "Escape") { e.preventDefault(); onSymbolEditing(false); return; }
+              if (e.key === "Escape") { e.preventDefault(); cancelled.current = true; onSymbolEditing(false); return; }
               if (e.key !== "Enter") return;
               e.preventDefault();
-              const next = e.currentTarget.value.trim().toUpperCase();
-              onSymbolEditing(false);
-              if (next !== "" && next !== symbol) onSymbol(next);
+              commit(e.currentTarget.value);
             }}
-            onBlur={() => onSymbolEditing(false)}
+            onBlur={(e) => commit(e.currentTarget.value)}
           />
         </span>
       ) : (

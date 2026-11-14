@@ -2487,9 +2487,10 @@ function ChartCard({
         // the surrounding bars' range, not against the click alone.
         const window = price.data().filter(
           (bar) => Math.abs(Number(bar.time) - time) <= 5 * liveIntervalSeconds,
-        ) as { high: number; low: number }[];
-        const high = window.length > 0 ? Math.max(...window.map((b) => b.high)) : value;
-        const low = window.length > 0 ? Math.min(...window.map((b) => b.low)) : value;
+        ) as { high?: number; low?: number; value?: number }[];
+        // A line/area/performance price series carries `value`, not high/low.
+        const high = window.length > 0 ? Math.max(...window.map((b) => b.high ?? b.value ?? value)) : value;
+        const low = window.length > 0 ? Math.min(...window.map((b) => b.low ?? b.value ?? value)) : value;
         const sign: 1 | -1 = value - low <= high - value ? 1 : -1;
         // Degrees are measured on screen HERE, then recorded as slopes.
         const element = plotRect();
