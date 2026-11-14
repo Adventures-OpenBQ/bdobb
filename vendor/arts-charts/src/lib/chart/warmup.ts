@@ -122,13 +122,14 @@ const DAY_MS = 86_400_000;
 
 /** The session length (seconds) on `start`'s own date, from the exchange calendar's hours. */
 function sessionSecondsOf(start: string, calendar: ExchangeCalendar): number {
-  const [y, m, d] = start.split("-").map(Number);
+  const [y, m, d] = start.slice(0, 10).split("-").map(Number);
   const date = new CalendarDate(y, m, d);
   return (sessionClose(calendar, date).toDate().getTime() - sessionOpen(calendar, date).toDate().getTime()) / 1000;
 }
 
 /**
- * Move an ISO `YYYY-MM-DD` day (the shape `barsWindow` returns) earlier by
+ * Move an ISO `YYYY-MM-DD` day (the shape `barsWindow` returns; a full ISO datetime is read
+ * by its date) earlier by
  * enough calendar days to cover `bars` bars of warm-up, and return the same
  * shape. `bars === 0` returns `start` unchanged, byte for byte.
  *
@@ -153,7 +154,7 @@ export function padStart(
   const barsPerDay = INTRADAY.test(interval) ? Math.max(1, Math.floor(sessionSeconds / intervalSeconds(interval))) : 1;
   const tradingDays = Math.ceil(bars / barsPerDay) * sessionsPerBar(interval);
   const calendarDays = Math.ceil((tradingDays * 7) / 5) + HOLIDAY_SLACK_DAYS;
-  const [y, m, d] = start.split("-").map(Number);
+  const [y, m, d] = start.slice(0, 10).split("-").map(Number);
   const shifted = new Date(Date.UTC(y, m - 1, d) - calendarDays * DAY_MS);
   const pad = (n: number): string => String(n).padStart(2, "0");
   return `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}`;
