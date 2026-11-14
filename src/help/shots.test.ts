@@ -96,11 +96,6 @@ describe("help shots on disk", () => {
         .filter((f) => PENDING_MARKER.test(readFileSync(resolve(TOPICS_DIR, f), "utf8")))
         .map((f) => f.slice(0, -".md".length)),
     );
-    expect([...pending].sort()).toEqual([
-      "documents-pdf-and-files",
-      "html-and-iframe-widgets",
-      "running-and-refreshing",
-      "troubleshooting",
-    ]);
+    expect([...pending].sort()).toEqual([]);
   });
 });

@@ -19,13 +19,13 @@ Opening the tab does a cheap status fetch that reads the backend's own environme
 
 ## The provider cards
 
-Above the cards, summary tiles — **Available**, **Needs attention**, **Not configured**, **Not checked**, and (only when at least one provider needs no key) **No key required** — count every provider by status; clicking one filters the grid to it, and **All providers (N)** or the same tile again clears the filter. A **Sort** dropdown orders the grid by **Name: A to Z**, **Name: Z to A**, **Available first** or **Needs attention first** — there is no clickable column header, because there is no table.
+Above the cards, under **Provider availability**, summary tiles — **Available**, **Needs attention**, **Not configured**, **Not checked**, and (only when key-maint reports whether each provider needs a key) **No key required** — count every provider by status; clicking one filters the grid to it, and **All providers (N)** or the same tile again clears the filter. A **Sort** dropdown orders the grid by **Name: A to Z**, **Name: Z to A**, **Available first** or **Needs attention first** — there is no clickable column header, because there is no table.
 
-Each card shows the provider's name, a status label with a leading dot, a **Credential:** line, and a short explanation, then a **Details** button. The status label spells out what was last found: **Available**, **Not configured**, **Not checked**, **Not installed**, **Demo access**, or — grouped under **Needs attention** — a specific reason such as *Rejected*, *Timed out*, *Firewall blocked* or *DNS failed*. Needs attention is **amber, not red**, deliberately: several vendors report a bad key with an HTTP 200 and an error string in the body, so a rejection and an unreachable vendor are genuinely different problems.
+Each card shows the provider's name, a status label with a leading dot, a **Credential:** line, and a short explanation, then a **Details** button. The status label spells out what was last found: **Available**, **Not configured**, **Not checked**, **Not installed**, or — grouped under **Needs attention** — **Demo access** or a specific reason such as *Rejected*, *Timed out*, *Firewall blocked* or *DNS failed*. When the backend reports a provider's API usage, the card adds a usage line. Needs attention is **amber, not red**, deliberately: several vendors report a bad key with an HTTP 200 and an error string in the body, so a rejection and an unreachable vendor are genuinely different problems.
 
 **Credential** says what the deployment has configured: **Own key**, **Demo key**, **Not set**, **Unknown**, **Optional**, or **None Required** — plain text on the card now, not its own coloured dot.
 
-**Details** opens a child dialog over Settings with the full connectivity diagnostic (what happened, what to check) for a Needs-attention provider, and the actions below.
+**Details** opens a child dialog over Settings with one line per check the backend ran (credential and connectivity), the full diagnostic (what happened, what to check) for a Needs-attention provider, an **API usage** section when there is usage to show, and the actions below.
 
 ## Tiers: what you can see depends on how you connected
 
@@ -41,9 +41,9 @@ With Funnel off, nothing reaches key-maint from outside the tailnet, so BDOBB, c
 
 ## Probing and testing
 
-**Check all providers**, above the cards, makes a live call to every vendor, server-side, in one request. So does a successful key submit. The app itself also probes once at start-up, so the [[widget-library|Widget Library]]'s provider badges have a colour before you ever open this dialog. If it fails after at least one good load, the last known cards stay on screen under *Refresh failed. Showing the last known key status.*
+**Check all**, above the cards, makes a live call to every vendor, server-side, in one request. So does a successful key submit. The app itself also probes once at start-up, so the [[widget-library|Widget Library]]'s provider badges have a colour before you ever open this dialog. If it fails after at least one good load, the last known cards stay on screen under *Refresh failed. Showing the last known key status.*
 
-To test **one** vendor, open its card's **Details** dialog and click **Test** (or **Retest**, once it already has a result). It merges only that provider's result and never fans out.
+To test **one** vendor, open its card's **Details** dialog and click **Test** (or **Retest**, once it already has a result); a provider not installed on the backend has no Test. It merges only that provider's result and never fans out.
 
 ## Submitting a key
 

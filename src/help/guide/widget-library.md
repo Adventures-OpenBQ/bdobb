@@ -35,7 +35,7 @@ Below the badges is the widget's description, and under that one pill per dashbo
 
 When a widget declares an `imgUrl` (an `http` or `https` address), hovering its card or moving keyboard focus to it shows that image under the description. An image that fails to load shows nothing. The preview appears in the desktop app only; the [[web-preview|Web Preview]] does not load images from other sites.
 
-At this version a badge row wider than its card — a long provider name beside a long type — does not wrap. It widens the card's layout past the card's edge, the description is laid out at that wider width, and the overhang is clipped, so the badges run off the card and the description looks as if it does not wrap.
+A badge row wider than its card — a long provider name beside a long type — does not wrap. It widens the card's layout past the card's edge, the description is laid out at that wider width, and the overhang is clipped, so the badges run off the card and the description looks as if it does not wrap.
 
 ## Adding: click, double-click, drag
 
@@ -44,6 +44,10 @@ At this version a badge row wider than its card — a long provider name beside 
 - **Drag** a card onto a **dashboard row in the rail** to add it to *that* dashboard. Dropping on a different dashboard lands the card on the tab that dashboard was showing (its first tab if you have not opened it) and switches to it; in a workspace the dashboard takes a tile, as a new dashboard does; the library stays open. Cards can only be dropped on rail rows — not on the grid and not on a tab.
 
 New cards land **below everything already on the tab**, whichever way they were added. A widget that takes a `symbol` starts from **Settings ▸ General ▸ Default widget ticker**, or from the most recently added sibling card's symbol when *Match dashboard symbol* is on — see [[card-parameters|Card Parameters]].
+
+## Linked table and Linked chart
+
+The built-ins **Linked table** and **Linked chart** do not add a card straight away. Clicking one opens *Create linked table* (or *chart*) with a **Source table** list of the tables on this dashboard that can feed it, each shown as its title and tab. Choose one and press the button to add the card; with no eligible table the dialog says *No eligible table sources in this dashboard.* These two cannot be dragged, and a double-click does not take you anywhere. See [[linked-widgets|Linked Widgets]].
 
 ## How you know it worked
 

@@ -7,7 +7,7 @@ tags: [bdobb, help, home, index]
 
 BDOBB (Better Desktop for OpenBB, second edition) is a private desktop app for OpenBB-compatible backends — dashboards, live data and charts, all running against hardware you control. This vault is the searchable help guide for **version 5.0.0**: use the Reference Manual search box to jump straight to a topic, or browse by section below. BDOBB also carries this guide with it — it is the **Reference Manual** on the app's Help menu.
 
-This version adds workspaces — several dashboards on screen together, each workspace with a minimum resolution it zooms to fit below, an **Open at launch** choice that opens the workspace best fitted to the screen, and **Window ▸ Keep Sidebar Open** to pin the rail per workspace — and the **Statement** view, which lays financial rows out as line items and relabels a statement's fiscal periods from each company's fiscal year end. Analytical Pivot models, reusable Statement templates, date expressions and exchange calendars, Calendar presentation, improved library and key controls, and docked parameter panels came in version 4.0.0. Cron scheduling is not supported.
+This version adds workspaces — several dashboards on screen together, each workspace with a minimum resolution it zooms to fit below, an **Open at launch** choice that opens the workspace best fitted to the screen, and **Window ▸ Keep Sidebar Open** to pin the rail per workspace — and the **Statement** view, which lays financial rows out as line items and relabels a statement's fiscal periods from each company's fiscal year end. Analytical Pivot models, reusable Statement templates, date expressions and exchange calendars, Calendar presentation, improved library and key controls, and docked parameter panels came in version 4.0.0.
 
 If you have used the original BDOBB, the shape is familiar and the details are not. BDOBB is a from-scratch rebuild, and this guide describes what it actually does — every page was checked against the shipped app's own manual and code, not against the old app or its plans.
 
@@ -29,7 +29,7 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 - [[widget-cards|Widget Cards]] — the header, the ⋯ menu, moving, resizing, rename, maximize, minimize and remove
 - [[card-parameters|Card Parameters]] — Apply, the kinds of control, defaults, cascades, groups, tabs and forms
 - [[date-expression|Date Expressions]] — relative dates, fiscal periods and exchange sessions
-- [[running-and-refreshing|Running and Refreshing]] — Refresh, `⌘R`, automatic refresh, and run-button widgets
+- [[running-and-refreshing|Running and Refreshing]] — Refresh, `⌘R`, automatic and cron refresh, and run-button widgets
 - [[keyboard-shortcuts|Keyboard Shortcuts]] — every shortcut, and what Escape does when several things are open
 
 ## Widgets

@@ -13,26 +13,27 @@ The preview is not a standalone server. Every data call, and each signed-in user
 
 - **`/api`** — openbq-api's `widgets.json`, `apps.json` and its `/api/v1/**` data routes, inside the gateway's shape bounds and daily budget.
 - **`/state`** — each GitHub user's saved configuration (dashboards, settings, backends), kept on the stack. The page saves only after it has read the user's store; if it could not, changes last until reload.
-- **`/table`** — with the stack's `table` profile, the managed server tables. The seeded connections include **Managed tables** at the preview's own `/table`. See [[tables|Tables]].
-- **`/ref`** — the whole Episode 3 reference backend, keyless. The seeded connections include "OpenBQ Reference (preview)" at the preview's own `/ref`; a preview profile that already has saved connections does not get it added automatically, so add it under Connections with that URL.
+- **`/table`** — with the stack's `table` profile, the managed server tables. When the preview has a `TABLE_RELAY_TOKEN`, the seeded connections include **Managed tables** at the preview's own `/table`. See [[tables|Tables]].
+- **Server-paged tables** — the `POST` requests of the stack's server-paged (`ssrm_table`) widgets, on the routes in the preview's SSRM list. By default that list is the one vendored in `web/ssrm-routes.vendored.json`, 23 routes; openbq-docker v5 serves 41, so the other 18 (EIA tables) are refused through the preview unless `SSRM_ROUTES_JSON` names them, mirroring the gateway's `ssrmRoutes`.
+- **`/ref`** — the whole Episode 3 reference backend, keyless, when the stack runs the Episode 3 overlay. The seeded connections include "OpenBQ Reference (preview)" at the preview's own `/ref`; a preview profile that already has saved connections does not get it added automatically, so add it under Connections with that URL.
 
 One socket is served at this version: the reference's Live Grid socket, `/ref/live_grid_ws`. The browser opens it on the gateway with a thirty-second, single-use ticket, not through the Vercel Function.
 
-It is not desktop parity. Both layers are GET-only for data, so `multi_file_viewer` widgets and form widgets render but their `POST` fails. Native file workflows, keys, stores and admin paths are not available, and uploaded documents are never saved. The catalogue is unfiltered: a widget whose provider has no key on the stack loads, then shows the backend's error.
+It is not desktop parity. Apart from the managed-table and server-paged-table routes above and `/state`'s saves, both layers are GET-only, so `multi_file_viewer` widgets and form widgets render but their `POST` fails. Native file workflows, keys, stores and admin paths are not available, and uploaded documents are never saved. The catalogue is unfiltered: a widget whose provider has no key on the stack loads, then shows the backend's error.
 
 ## Setting it up
 
 1. **On the stack.** Turn the API's lock on (`OPENBB_API_AUTH=true`), fill `gateway.env` and `gateway-config/settings.json` from their examples (with `stateDir` set, for `/state`), and start `docker compose --profile web up -d`. Nothing is public until you also swap the sidecar's serve file for its Funnel variant, which publishes port 10000 alone. See openbq-docker's `funnel-gateway/README.md` and [[tailscale-networking|Tailscale Networking]].
-2. **The preview.** `pnpm build:web` writes a private Vercel function under `.vercel/output`; `pnpm web:serve` runs the same server on loopback behind your own HTTPS proxy. Set its environment from `web/.env.example`: the GitHub OAuth app, `AUTH_SECRET`, `SESSION_EPOCH`, the numeric `GITHUB_ALLOWED_USER_IDS` (empty admits nobody), `BACKEND_GATEWAY_ORIGIN` (`https://<node>.<tailnet>.ts.net:10000`) and `BACKEND_GATEWAY_TOKEN` (the gateway's `GATEWAY_TOKEN`).
+2. **The preview.** `pnpm build:web` writes a private Vercel function under `.vercel/output`; `pnpm web:serve` runs the same server on loopback behind your own HTTPS proxy. Set its environment from `web/.env.example`: the GitHub OAuth app, `AUTH_SECRET`, `SESSION_EPOCH`, the numeric `GITHUB_ALLOWED_USER_IDS` (empty admits nobody), `APP_ORIGIN`, `BACKEND_GATEWAY_ORIGIN` (`https://<node>.<tailnet>.ts.net:10000`) and `BACKEND_GATEWAY_TOKEN` (the gateway's `GATEWAY_TOKEN`); for the managed tables, `TABLE_RELAY_TOKEN`, and optionally `SSRM_ROUTES_JSON`, `TABLE_TIMEOUT_MS` and `SSRM_TIMEOUT_MS`.
 
 Sign-in is GitHub only, and each session ends after an hour.
 
 ## How the two stay in step
 
-`web/policy.mjs` is vendored from the gateway's `funnel-gateway/policy.mjs` at the openbq-docker commit `package.json` names as `openbqDocker`, so the preview and the gateway admit the same requests. `pnpm test:web` checks the copy against that commit. Nothing in the desktop app depends on the web layer.
+`web/policy.mjs` is vendored from the gateway's `funnel-gateway/policy.mjs` at the openbq-docker commit `package.json` names as `openbqDocker`, so the preview and the gateway admit the same requests. `pnpm test:web` checks the copy against that commit. The SSRM route list is vendored separately and can lag the stack's, as above. Nothing in the desktop app depends on the web layer.
 
 ---
-*Source: BDOBB `web/server.mjs`, `web/config.mjs`, `web/bootstrap.mjs`, `src/browser-shim/socket.ts`, `web/policy.mjs`, `web/security.test.mjs` and `package.json` at `v5.0.0`; `openbq-docker` `funnel-gateway/`, `docker-compose.yml` and `ts-config/` at `v5.0.0`.*
+*Source: BDOBB `web/server.mjs`, `web/config.mjs`, `web/bootstrap.mjs`, `src/browser-shim/socket.ts`, `web/policy.mjs`, `web/ssrm-routes.vendored.json`, `web/.env.example`, `web/security.test.mjs` and `package.json` at `v5.0.0`; `openbq-docker` `funnel-gateway/`, `docker-compose.yml` and `ts-config/` at `v5.0.0`.*
 *See also: [[openbq-docker-stack|The openbq-docker Stack]] · [[tailscale-networking|Tailscale Networking]]*
 
 ---

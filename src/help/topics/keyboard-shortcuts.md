@@ -2,6 +2,7 @@
 
 Every global shortcut below is ignored while you are typing — in a text field,
 a text area, a dropdown or anything editable — and while a dialog is open.
+They need the Command key itself; Ctrl does not stand in for it.
 
 ## Global
 
@@ -23,7 +24,7 @@ a text area, a dropdown or anything editable — and while a dialog is open.
   before. Inert in a viewer window.
 - `⌥N` — Open the New workspace dialog, the same dialog as the **+** beside
   the rail's Workspaces heading. Inert in a viewer window.
-- `⌘?` — Open Quick Help. It only opens; close it with Escape or its `✕`.
+- `⌘?` (`⌘⇧/`) — Open Quick Help. It only opens; close it with Escape or its `✕`.
   The Reference Manual has no shortcut; it is the second item on the rail's
   Help menu.
 
@@ -44,8 +45,8 @@ a text area, a dropdown or anything editable — and while a dialog is open.
 ## In a menu
 
 The right-click menus — a table header's menu, the rail's row and section
-menus, the rail's Help menu and the Provider-keys row menu — are all one
-component, so they all behave alike.
+menus, the rail's Help menu and a Pivot field's menu — are all one component,
+so they all behave alike.
 
 - The **first enabled item is focused** when the menu opens, so the keyboard
   works without a further click.
@@ -78,14 +79,28 @@ A card's `⋯` menu is its own thing and has none of that: it opens under the
   checkmark follows the pin however you change it. Greyed out when no
   workspace is open, because the pin belongs to a workspace. No shortcut.
 
+## Elsewhere
+
+- **Settings tabs** — `↑`/`↓` or `←`/`→` move between them, `Home` and `End`
+  jump to the first and last.
+- **A note card** — `Enter` or `Space` on the note starts editing; `Escape`
+  abandons the edit and restores the saved text.
+- **A calendar view** — in paged mode, `↓`/`→` and `↑`/`←` step to the next
+  and previous page; `Home` goes back to today.
+- **A table's Pivot drawer** — `↑`/`↓` (`←`/`→` when narrow), `Home` and
+  `End` move between its sections; `Escape` goes back to
+  the first section, and from there closes the drawer. The drawer's divider
+  takes `↑`/`↓`, `Home` and `End` to resize. In its field lists, `⌥↑` and
+  `⌥↓` move the focused field up or down, and `Enter`, `Space`, the
+  Context-Menu key or `Shift+F10` on a field opens its menu.
+
 ## What Escape does when more than one thing is open
 
 One press does exactly one thing. In order:
 
 1. **A rename in progress cancels.** Nothing else sees the press.
 2. **An open menu or overlay closes** — the widget library, a card's `⋯` menu,
-   a column menu, the rail's right-click menu, the Provider-keys row menu, the
-   rail's Help menu. A maximized card underneath stays maximized and restores
+   a column menu, the rail's right-click menu, the rail's Help menu. A maximized card underneath stays maximized and restores
    on the next press.
 3. **An open dialog closes** — Settings, Connections, Apps, the
    **Workspaces** dialog (Escape is its **Cancel**),

@@ -112,6 +112,16 @@ accent colour, so it and the shaded card agree.
   tab you are looking at. The library stays open. Cards can only be dropped on
   rail rows — not on the grid and not on a tab.
 
+## Linked table and Linked chart
+
+The built-ins **Linked table** and **Linked chart** do not add a card straight
+away. Clicking one opens *Create linked table* (or *chart*) with a **Source
+table** list of the tables on this dashboard that can feed it, each shown as
+its title and tab. Choose one and press the button to add the card; with no
+eligible table the dialog says *No eligible table sources in this dashboard.*
+These two cannot be dragged, and a double-click does not take you anywhere.
+See **Linked widgets**.
+
 ## How you know it worked
 
 There is no toast. A widget already on the target tab is drawn shaded, and its

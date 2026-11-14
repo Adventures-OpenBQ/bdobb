@@ -14,10 +14,13 @@ chips off its title line. The form still edits them, and the choice is
 saved with the card. A **Date expression** card starts with the box
 unchecked; check it to put its chips on the title line.
 
-A widget can arrange its parameters in rows (OpenBB's parameter positioning).
+A widget can arrange its parameters in rows (OpenBB's parameter positioning):
+in its `params` list a bare parameter sits on the first row, and each nested
+array is a row of its own, in order — an empty array `[]` still takes a row.
 The first row's chips share the title line, and each further row starts a
 line of its own under it. A widget whose first row is empty puts all its
-chips under the title line.
+chips under the title line. The Parameters panel ignores the rows: it lists
+every field as one form, in row order.
 
 ![Two cards with their parameter rows](./shots/card-parameters.png)
 
@@ -33,7 +36,7 @@ Enter, so a half-typed symbol does not refetch the card on every keystroke.
 Typing a value and typing it back writes nothing.
 
 A card whose widget declares a **Run** button is the exception: its controls
-save what you chose and mark the card stale (a dot beside the title); nothing
+save what you chose and mark the card stale (the `▶` timer pulses); nothing
 is fetched until you press Run.
 
 ## The kinds of control
@@ -159,9 +162,9 @@ drawn by the system and keeps its own width.
 ### Expressions
 
 A stored value may be an expression instead of a literal. It re-resolves every
-time the card fetches — on load, Refresh, `⌘R`, `↻`, auto-refresh and window
-focus — and never on a timer of its own, so `now` moves only when the card
-does. An expression is an **anchor**, then any number of offsets:
+time the card fetches — on load, a click on its timer, `⌘R`, `↻` and
+auto-refresh — and never on a timer of its own, so `now` moves only when the
+card does. An expression is an **anchor**, then any number of offsets:
 
 - `T` — now, in your own zone: today, this week, this quarter, whichever the
   control's type is.

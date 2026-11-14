@@ -5,7 +5,7 @@ tags: [bdobb, help, widgets, built-in, note, markdown, clock, website, rss, echo
 
 # Built-in Widgets
 
-Eight widgets need no backend at all. They are listed in the library under the **Built-in** category — and because they have no provider they appear under **All providers** but under no particular one. A ninth, **Local file**, is deliberately not listed, because such a card only makes sense created by dropping a data file on the dashboard (see [[documents-pdf-and-files|Documents, PDFs and Files]]).
+Eight widgets need no backend at all. They are listed in the library under the **Built-in** category — and because they have no provider they appear under **All providers** but under no particular one. The same category lists **Linked table** and **Linked chart**, which draw from another table on the dashboard rather than from a backend of their own; see [[linked-widgets|Linked Widgets]]. One more, **Local file**, is deliberately not listed, because such a card only makes sense created by dropping a data file on the dashboard (see [[documents-pdf-and-files|Documents, PDFs and Files]]).
 
 ![Five of the built-in widgets on one tab](../attachments/built-in-widgets.png)
 
@@ -13,7 +13,7 @@ The two echoes are not pictured here; the quarter, date-time and Relative-tab sh
 
 ## Note
 
-*A free-text markdown note.* Click the body — or focus it and press Enter or Space — to switch to a text area. Clicking away saves; **Escape** throws the draft away and puts the stored text back. An empty note reads *Click to write a note.* The text is a hidden parameter, so it does not clutter the header's controls row, and it travels with the dashboard on export.
+*A free-text markdown note.* Click the body — or focus it and press Enter or Space — to switch to a text area. Clicking away saves; **Escape** throws the draft away and puts the stored text back. An empty note reads *Click to write a note.* The text is a hidden parameter, so it does not clutter the title line, and it travels with the dashboard on export.
 
 ## Markdown
 
@@ -36,7 +36,7 @@ Vertical is a digital list, one row per zone: city, region, GMT offset and the t
 
 ## Website
 
-*Frames any web page.* One parameter, **URL**. With it empty the card reads *Enter a URL in Parameters to frame a page.*, which is a normal state rather than an error. At this version the message still names a **Parameters** button the card no longer has; the **URL** field is in the controls row under the title. Plenty of sites refuse to be framed; see [[html-and-iframe-widgets|HTML and iframe Widgets]] for what the card does about that and what **Open externally ↗** is for.
+*Frames any web page.* One parameter, **URL**. With it empty the card reads *Enter a URL in Parameters to frame a page.*, which is a normal state rather than an error. The **URL** field sits on the title line, and in the **Parameters** panel the `▸` chevron or the `⋯` menu opens. Plenty of sites refuse to be framed; see [[html-and-iframe-widgets|HTML and iframe Widgets]] for what the card does about that and what **Open externally ↗** is for.
 
 ## RSS feed
 
@@ -44,7 +44,7 @@ Vertical is a digital list, one row per zone: city, region, GMT offset and the t
 
 Each headline shows its title and, underneath, the source and how long ago it was published — or an em dash if the feed gave no usable date. The relative time keeps advancing once a minute even with auto-refresh off. Clicking a headline opens it in your browser; an item the feed gave no link for is a disabled row.
 
-**Refresh** and `⌘R` re-fetch, and the widget declares no interval of its own, so automatic refresh follows your app-wide setting. A feed larger than 5 MB is refused, and there is a 30-second connect timeout. If a feed fails you get an error card with **Retry** and one of *Could not reach the feed.*, *Not an RSS or Atom feed*, *Feed is too large to show.* or an HTTP status. The underlying error is deliberately not shown, because feed addresses routinely carry a personal token.
+The card's timer and `⌘R` re-fetch, and the widget declares no interval of its own, so automatic refresh follows your app-wide setting. A feed larger than 5 MB is refused, and there is a 30-second connect timeout. If a feed fails you get an error card with **Retry** and one of *Could not reach the feed.*, *Not an RSS or Atom feed*, *Feed is too large to show.* or an HTTP status. The underlying error is deliberately not shown, because feed addresses routinely carry a personal token.
 
 ## Date expression
 
@@ -77,7 +77,7 @@ Having no backend also means the echoes never reach the fiscal-year-end lookup: 
 
 ## What built-ins have in common
 
-None of them fetches through a connection, so none has an **Export ▸** menu, and none is polled by auto-refresh (the RSS feed excepted). They all travel with the dashboard in an `apps.json` export, because everything they need is in their parameters.
+None of the eight fetches through a connection, so none has an **Export ▸** menu, and none is polled by auto-refresh (the RSS feed excepted). They all travel with the dashboard in an `apps.json` export, because everything they need is in their parameters.
 
 ---
 *See also: [[widget-library|The Widget Library]] · [[widget-cards|Widget Cards]] · [[html-and-iframe-widgets|HTML and iframe Widgets]] · [[documents-pdf-and-files|Documents, PDFs and Files]]*

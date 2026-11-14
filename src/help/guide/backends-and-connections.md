@@ -19,7 +19,7 @@ With the API's auth on, `/widgets.json` and `/apps.json` stay open, so discovery
 
 ## Reachability as the credential
 
-Every service in the stack sits on its private bridge and is published only by Tailscale Serve (key-maint also on the host's loopback), so reaching an address at all already takes a device on your tailnet; the optional Basic auth is a second gate. Funnel is off on every port. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
+Every service in the stack sits on its private bridge and is published only by Tailscale Serve (key-maint also on the host's loopback), so reaching an address at all already takes a device on your tailnet; the optional Basic auth is a second gate. Funnel is off on every port these connections use; only the opt-in web door for the [[web-preview|Web Preview]] is ever funnelled, on port 10000. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
 
 ## Why the seeded `Local` never works
 

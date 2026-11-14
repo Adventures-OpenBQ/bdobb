@@ -92,10 +92,14 @@ timestamp, a level and a message:
 
 Almost everything written is `ERROR` — the app logs what went wrong, not what
 went right. The `INFO` lines are a viewer window refusing an edit it is not
-allowed to make; an unsupported parameter type or date token; a frame or a cell
-click naming a parameter its widget does not declare; a TradingView chart whose
-refetch or chart library failed; and each dashboard Workspace sync uploads or
-deletes. All but the sync lines and the refusal are written once per session,
+allowed to make, or not saving a change; an unsupported parameter type or date
+token, a range parameter with no end, or an invalid declared fiscal year start
+month; a control dropped from a group because
+it cannot be grouped; a frame or a cell click naming a parameter its widget does
+not declare; a trading-calendar or fiscal-year-end lookup that failed or
+answered something unusable, and a calendar entry the app had to interpret; a
+TradingView chart whose refetch or chart library failed; and each dashboard
+Workspace sync uploads or deletes. All but the sync lines and the refusal are written once per session,
 so a repeating cause does not fill the file.
 
 The file is read each time you open the **Logs** tab, and **Refresh** re-reads

@@ -6,7 +6,7 @@ tags: [bdobb, help, widgets, tables, columns, sorting, filtering, pivot, formula
 # Tables
 
 
-A table displays a window of rows while sorting and filtering operate over its loaded input, not just the visible window. Local and linked report tables use a worker for calculation and transfer bounded row blocks for display. This does not promise unlimited file size or out-of-core processing; sample and partial-data warnings still apply.
+A table displays a window of rows while sorting and filtering operate over its loaded input, not just the visible window. Local files, linked tables, server snapshots and backend tables up to 2,000,000 cells use a worker for calculation and transfer bounded row blocks for display. This does not promise unlimited file size or out-of-core processing; sample and partial-data warnings still apply.
 
 The body is one scroll box with the header row pinned to the top of it. Changing a sort or a filter jumps you back to the top, deliberately — the old scroll offset would land you in the middle of a different result.
 
@@ -26,7 +26,7 @@ A column whose field name contains a dot — `BRK.B`, `AAPL.US`, a literal `1.5`
 
 ## The filter row
 
-The `⌕` **Filter rows** button in the card header shows a second header row with one control per visible column: a *contains* box for text, **min** and **max** for numbers, **From** and **To** for dates (text boxes that start at the column's first and last date; type `YYYY-MM-DD`, or a date expression as a date parameter takes it (`T-1bd`, `T-26w`, `FQ-4` …), which stays an expression — the box keeps showing it, its tooltip names today's day, and every refresh works the day out again — and press Enter or leave the box to apply it; anything else is outlined in red and changes nothing, and the column widens to fit both boxes while the row is open), a dropdown of **any**/**true**/**false** for booleans, and no control at all for anything structural or a column that is null in every row. At the right end of the row, after the last column, sit **Clear**, which clears every filter on the card, and a live count reading `142 of 5000 rows`, on one line.
+The `⌕` **Filter rows** button in the card header shows a second header row with one control per visible column: a *contains* box for text, **min** and **max** for numbers, **From** and **To** for dates (text boxes that start at the column's first and last date; type `YYYY-MM-DD`, or a date expression as a date parameter takes it (`T-1bd`, `T-26w`, `FQ-4` …), which stays an expression — the box keeps showing it, its tooltip names today's day, and every refresh works the day out again — and press Enter or leave the box to apply it; anything else is outlined in red and changes nothing, and the column widens to fit both boxes while the row is open), a dropdown of **any**/**true**/**false** for booleans, and no control at all for anything structural or a column that is null in every row. At the right end of the row, after the last column, sit **Clear**, which clears every filter on the card, and a live count reading `142 of 5000 rows`, on one line. A linked table, or a table showing a pivot report, shows only its filtered count, such as `142 rows`.
 
 The filter *row* is not remembered — reopening the dashboard starts with it hidden — but the filter *values* are.
 
@@ -44,9 +44,9 @@ A table card offers a **Transposed** entry in the header's view dropdown. It tur
 
 What you get is a static grid — none of the toolkit applies, because it describes columns that are no longer on screen: no sorting, filtering, pinning, resizing, reordering or column menu while you are in it. Your saved table state is untouched and comes back when you leave. Export follows the view: from the transposed view, **CSV**, **JSON** and **Excel** all write the transposed rows. A payload with nothing to turn on its side shows *Nothing to transpose: the table needs at least one row and two columns.*
 
-## Reset table
+## Autosize and reset columns
 
-The `⋯` menu's **Reset table** clears the card's whole saved table state at once — sorting, filters, column order, hidden columns, widths and your pins — and the table goes back to the layout the backend described. It does not touch the `⌕` toggle, the view mode, the parameters, the title or the card's size.
+The `⋯` menu's **Quick actions ▸ Autosize columns** sizes each column to the widest of its header and the first 200 rows, measured in the table's own font. **Quick actions ▸ Reset columns** clears the card's whole saved table state at once — sorting, filters, column order, hidden columns, widths and your pins — and the table goes back to the layout the backend described. It does not touch the `⌕` toggle, the view mode, the parameters, the title or the card's size.
 
 ## Clicking a cell to drive other cards
 
@@ -58,7 +58,7 @@ A widget can describe its columns, and when it does the app honours: which field
 
 Formatting covers integers, percentages, normalised values, years pulled out of ISO dates, and `none`. A per-column decimal-places setting overrides **Settings ▸ Widget ▸ Maximum decimal places** — except on an integer column, where zero decimals is what `int` means. A null or absent cell renders as an em dash.
 
-One formatting rule is the app's own: a text value that starts with a `YYYY-MM-DD` date, in a column whose name contains `date`, `time`, `timestamp` or `period`, is cut to that date. At this version that applies even to a full timestamp, so a column of intraday times can read as the same day on every row; the card's **Raw** view shows the full value.
+One formatting rule is the app's own: a text value that starts with a `YYYY-MM-DD` date, in a column whose name contains `date`, `time`, `timestamp` or `period`, is cut to that date. That applies even to a full timestamp, so a column of intraday times can read as the same day on every row; the card's **Raw** view shows the full value.
 
 Cell treatments honoured: `greenRed`, which colours numbers by sign (zero is neither); `titleCase`; and colour rules, which set a cell's text or background from conditions like *greater than*, *between* or *contains* — the first matching rule wins, and colour rules override `greenRed` entirely. `cellOnClick` is honoured too, as a click target rather than an appearance — see above.
 
@@ -72,9 +72,15 @@ A backend statement widget, one whose **Period** offers FY and FQ, has its rows 
 
 Sorting, filters, column order, hidden columns, widths and pins are all saved per card. A **Strict OpenBB Workspace** save omits it; a **BDOBB Workspace** save carries supported table preferences, and none of it is saved from a viewer window.
 
+## Server tables
+
+**Server snapshot** identifies a managed table. Connect to the configured table service in Connections, then choose its managed table widget. Upload CSV, TSV, JSON or Excel under **Server execution**, or bind an allowed backend source; the **Dropped file execution** selector also sends dropped files to that service. The saved dashboard keeps a private source reference and your model, and reopening recreates server sessions. **Change source** rebinds it, **Delete server source** permanently removes the upload, and **Reopen table** recovers an expired session; after a source error that button reads **Re-upload or rebind source**. Pivot, formulas, filters, selection, charts and linked tables use the complete managed snapshot.
+
+**LIVE · paged** identifies a standard OpenBB SSRM provider whose pages may change between requests. Pages of 100 rows are fetched, sorted and filtered on the server, with **Previous page** and **Next page** and a count such as `About 12,000 rows`. A header click sorts by that one column; filters are text *contains* and number ranges, as the provider declares; **Pivot** appears only when the provider declares grouping or pivot columns, and not in a viewer window. Whole-result formulas, selection, charts, exports and linked tables are not offered, because loaded rows cannot represent the complete result. Backend warnings, such as FINRA's 250,000-record cap, appear as a notice line under the header, and boolean values display even in a column declared text. The OpenBQ API serves its 41 largest datasets this way.
+
 ## Pivot reports, Page sets and formulas
 
-The **Pivot** button on a backend table opens its pivot panel above the table — **Row Groups**, **Column Groups** and **Data Columns** — and saves the arrangement with the card; a backend table pivots in the app, not in the background table engine. For local and linked tables the button opens a drawer. **Arrange** places categories in Rows, Columns or Page and orders the values in Data Columns. **Categories**, **Measures**, **Pages**, **Formulas**, **Category filters**, **Result filters** edit their definitions. **Saved → Model** shows definitions, warnings and repair; **Saved → Statement template** maps a pinned financial template. Tables without a report model open on the four-list chooser; the first arrangement edit saves a model, or choose **Enable report model** in the Arrange footer. **Pivot on** enables the saved report; turning it off displays source data while retaining the report definition and source constraints. Escape returns an editor to Arrange, then closes the drawer; the close button returns focus to Pivot.
+The **Pivot** button opens a drawer on a local, linked or backend table, and on a server snapshot whose service offers grouping. A backend table over 2,000,000 cells is too large for the background table engine: its **Pivot** opens a panel above the table — **Row Groups**, **Column Groups** and **Data Columns** — saved with the card, and it cannot feed linked widgets. **Arrange** places categories in Rows, Columns or Page and orders the values in Data Columns. **Categories**, **Measures**, **Pages**, **Formulas**, **Category filters**, **Result filters** edit their definitions. **Saved → Model** shows definitions, warnings and repair; **Saved → Statement template** maps a pinned financial template. Tables without a report model open on the four-list chooser; the first arrangement edit saves a model, or choose **Enable report model** in the Arrange footer. **Dismiss on table click**, also in that footer and on by default, closes the drawer when you click the table; clear it to keep the drawer open. **Pivot on** enables the saved report; turning it off displays source data while retaining the report definition and source constraints. Escape returns an editor to Arrange, then closes the drawer; the close button returns focus to Pivot.
 
 A measure is an independent instance of a source field, with its own aggregation and label. Duplicate Revenue to keep Total and Average together; changing one does not change the other. Arrange controls their placement and order. Only the measures you add appear: a table without a report model opens with Data Columns empty. A new data column, from Move to Data Columns or **Add measure**, starts with no aggregation; its pill reads *Choose aggregation* and its cells stay blank until you choose one. Nothing is summed implicitly. First/Last requires a date category in report mode. **Show grand total** is in the Measures footer.
 
@@ -88,15 +94,15 @@ The header and panel show set counts, titles and details without using the first
 
 Source filters and search first constrain the acquired universe. Category checklists and Page constrain the report. Result filters then qualify groups at their chosen category level; the surviving source records are deduplicated before totals and formulas are evaluated again. A grand-total margin is a ratio of the underlying totals, not an average of displayed margins. Removing Budget with a source filter or checklist makes a Budget comparison unavailable; the engine does not fetch missing records or substitute zero.
 
-Formulas support numeric/string/boolean literals, arithmetic, comparisons, SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Source-row formulas operate on individual records; aggregate formulas bind independent measures or explicit aggregations. Use the reference picker to insert stable field, measure, formula and comparison-member references. An ambiguous label with duplicate measures requires the explicit instance; changing a label does not change its identity.
+Formulas support numeric/string/boolean/null literals, arithmetic, comparisons, SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Function names are accepted in any letter case — `first([Open])`, `First([Open])` and `FIRST([Open])` are the same; IF takes three arguments and the others one. Strings are double-quoted, `true`, `false` and `null` are lower case, and a name that is not a plain identifier goes in brackets, such as `[Net income]`. Source-row formulas operate on individual records; aggregate formulas bind independent measures or explicit aggregations. Use the reference picker to insert stable field, measure, formula and comparison-member references. An ambiguous label with duplicate measures requires the explicit instance; changing a label does not change its identity.
 
 The worker binds comparison members against observed typed identities, including members excluded by source constraints. Its picker pages the observed domain and distinguishes missing, excluded, ambiguous and partial evidence. Binding is not permission to bypass the source filters. Formulas keep visible errors for those cases, division by zero and invalid bindings. Expressions are bounded at 16 KiB UTF-8, 1,024 AST nodes and depth 64 (parser nesting 256); an oversized expression is refused rather than truncated into a different calculation.
 
 ### Calendar and fiscal categories
 
-**Y** and **Q** use the chosen report-date field for calendar years and quarters. **FY** and **FQ** are already implemented in this engine; they do not depend on a later provider release. Choose the report-date source, **Company field**, and either company-specific fiscal metadata or explicit **Fiscal year**, **Fiscal quarter**, **Period start** and **Period end** field mappings, with the appropriate bound period kind. Map fields that actually describe the supplied period; quarterly rows alone do not establish annual period bounds.
+**Y** and **Q** use the chosen report-date field for calendar years and quarters. **FY** and **FQ** are computed by the table engine itself. Choose the report-date source, **Company field**, and either company-specific fiscal metadata or explicit **Fiscal year**, **Fiscal quarter**, **Period start** and **Period end** field mappings, with the appropriate bound period kind. Map fields that actually describe the supplied period; quarterly rows alone do not establish annual period bounds.
 
-Missing fiscal context remains an error. The report does not guess a December year end. Same-label fiscal periods can cover different dates for different companies, so nonalignment warnings remain visible. **Saved → Model → Company period bounds** shows the interpretation before you compare companies. Provider enrichment may supply metadata later; it is separate from the client transform itself.
+Missing fiscal context remains an error. The report does not guess a December year end. Same-label fiscal periods can cover different dates for different companies, so nonalignment warnings remain visible. **Saved → Model → Company period bounds** shows the interpretation before you compare companies.
 
 ### Confirmed groups and viewer sessions
 
@@ -115,9 +121,6 @@ A report with categories only in Columns displays aggregate cells in its pinned 
 **Saved → Model** remains available for malformed imported intent or a disappearing source field. Definitions, warnings, company bounds and linked groups report the worker's actual bounded evidence. **Advanced repair** retains invalid text and failed drafts; a repaired definition must validate against the current source schema before it executes. A row cap or a preview is not proof of complete membership. Acquisition completeness and coverage warnings propagate through links and charts.
 
 
----
-*Source: BDOBB v3.3.0 in-app manual, "Tables"; `BDOBB` `TableRenderer`, `columnRender`, `SparklineCell` and `dotFont` at `v3.3.0`; `BDOBB` `src/lib/tableColumns.ts` and `src/components/renderers/HoverCardCell.tsx` at `v3.0.5`; `BDOBB` `src/lib/sparkline.ts` at `v3.2.2`.*
-*See also: [[widget-cards|Widget Cards]] · [[card-parameters|Card Parameters]] · [[import-and-export|Import and Export]]*
 
 ## Statement models
 
@@ -177,7 +180,9 @@ remain unformatted; currency symbols are not inferred or converted.
 
 Statement calculations require compatible company, currency and unit contexts across the facts actually used by a formula. Mixed contexts produce a cell error; they are never silently added or subtracted. Unrelated lines do not invalidate a formula. When fiscal evidence comes from source metadata, switching FY/FQ preserves that metadata binding. Explicit period fields still require the corresponding fiscal year, quarter and start/end bounds.
 
-*Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0. SPDX-License-Identifier: Apache-2.0*
+---
+*Source: BDOBB v3.3.0 in-app manual, "Tables"; `BDOBB` `TableRenderer`, `columnRender`, `SparklineCell` and `dotFont` at `v3.3.0`; `BDOBB` `src/lib/tableColumns.ts` and `src/components/renderers/HoverCardCell.tsx` at `v3.0.5`; `BDOBB` `src/lib/sparkline.ts` at `v3.2.2`.*
+*See also: [[widget-cards|Widget Cards]] · [[card-parameters|Card Parameters]] · [[linked-widgets|Linked Widgets]] · [[import-and-export|Import and Export]]*
 
 ---
 

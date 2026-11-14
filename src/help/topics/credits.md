@@ -7,7 +7,7 @@ to work from.
 Everything the app bundles is listed, with its licence text, in
 `THIRD_PARTY_NOTICES.md` at the root of the repository: every JavaScript
 package and Rust crate the app ships, regenerated from the lockfiles, and
-checked on every release by `node scripts/third-party-notices.mjs --check`.
+checked by `node scripts/third-party-notices.mjs --check` in CI.
 The pieces below ask to be named where you can see them, or are too large a
 part of the app to leave out.
 
@@ -60,6 +60,7 @@ Each under its own licence, and each reproduced in the notices file:
 - **React Aria Components** and **@internationalized/date** (Adobe): the
   date, period and fiscal pickers on card parameters.
 - **PDF.js** (Mozilla): the PDF viewer.
+- **react-markdown** and **remark-gfm**: drawing markdown cards.
 - **BlockNote** and **Mantine**: the Markdown card's editor.
 - **SheetJS**: Excel export, and reading a spreadsheet dropped on the app.
 

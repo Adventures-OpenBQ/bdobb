@@ -10,11 +10,26 @@ Both live on the rail's right-click menu. Right-click empty space in
 with a **Format** pop-up under the file name. It writes that one dashboard in
 OpenBB Workspace's app shape. Cancelling does nothing. You get a one-line
 notice in the rail: *Exported Markets.* or *Export failed*, with the message.
+A **BDOBB Workspace** save that cannot carry something on the dashboard writes
+nothing and says why instead: *Export refused:* followed by a code, where, and
+the reason — for example a dropped-file table, which reads
+*MISSING_LOCAL_ASSET … Local assets require a repository archive.*
 
-**Strict OpenBB Workspace**, the default format, writes the plain OpenBB shape. **BDOBB Workspace** also preserves dashboard/card names and ordinary table state in a validated BDOBB extension: sort, filters, column order, hidden columns, column widths, pinned columns, the card's view (table, chart, raw, transposed or calendar) and whether it is minimized; its notice names the profile it wrote, such as *Exported Markets with BDOBB v4 state.* Dropped file bytes and credentials are never included. Analytical models, linked cards and pinned Statement templates travel in the v4 profile (see Clean v4 compatible persistence below). In the browser build, which has no Save panel, **Save…** opens a small menu of the two formats first.
+**Strict OpenBB Workspace**, the default format, writes the plain OpenBB shape. **BDOBB Workspace** also preserves dashboard/card names and ordinary table state in a validated BDOBB extension: sort, filters, column order, hidden columns, column widths, pinned columns, the card's view (table, chart, raw, transposed, calendar or statement) and whether it is minimized; its notice names the profile it wrote, such as *Exported Markets with BDOBB v5 state.* Dropped file bytes and credentials are never included. Analytical models, linked cards and pinned Statement templates travel in the v4 profile, and the Statement view and its folds in the v5 profile (see Clean v4 compatible persistence below). In the browser build, which has no Save panel, **Save…** opens a small menu of the two formats first.
 
 **Import** opens a file picker and adds every app in the file as a new
-dashboard. Dropping an `apps.json` on the dashboard does the same.
+dashboard. Dropping an `apps.json` on the dashboard does the same; a drop's
+notice appears at the lower right of the dashboard instead of in the rail.
+
+A file BDOBB wrote with its own extension is read back with it: names, table
+state and, from a v4 profile, analytical models, symbolic selections, linked
+cards, fiscal-year and calendar choices and the parameter panel's state, and
+from a v5 profile the Statement view and its section folds. The
+whole import is refused before anything is written when that extension is
+malformed or has an unknown profile or schema, when a card carries archived
+Pivot state that is switched on, or when a BDOBB-extended file names a
+dropped-file table. The notice gives the code, where, and the reason, such as
+*UNSUPPORTED_EXTENSION at … Archived Pivot state is unsupported.*
 
 When a dashboard in the file has **exactly** the name of one of yours
 (capitals count), you are asked about it before anything is written, one
@@ -32,12 +47,14 @@ dialog per dashboard, with *Conflict 2 of 3* when there are several:
 
 A name repeated *inside* the file is not asked about: the second copy
 becomes `Macro (2)` as before. The notice reads
-*Imported 3 dashboards (1 replaced, 1 skipped), 21 cards (0 unresolved)*.
-The counts in parentheses appear only when they are not zero.
+*Imported 3 dashboards (1 replaced, 1 skipped), 21 cards (1 unresolved: fred_series)*.
+The parts in parentheses appear only when they are not zero.
 
-"Unresolved" means a card whose widget id no backend currently serves. It is
-not discarded — it reads *Widget `<id>` is not on any connected backend.* and
-comes alive by itself the moment a backend serving that id connects.
+"Unresolved" means a card whose widget id no backend currently serves. The
+notice counts distinct widget ids, not cards, and names up to five of them. A
+card is not discarded — it reads *Widget `<id>` is not on any connected
+backend.* and comes alive by itself the moment a backend serving that id
+connects.
 
 A Workspace file's **parameter groups** arrive as groups on the dashboard, with
 each card's membership read from the card itself (as Workspace writes it) or
@@ -73,8 +90,8 @@ in — the dialog's button, or simply **drop the file on the dashboard**, which
 is recognised by its shape rather than its name. Both parse the file the same
 way, but they end differently: the dialog's **Import…** shows a per-field
 review of what would change, with **Apply** and **Discard**, and nothing
-reaches disk until **Done**; a drop applies at once and leaves a notice in the
-rail.
+reaches disk until **Done**; a drop applies at once and leaves a notice at the
+lower right of the dashboard.
 
 **Export** writes your preferences and the folder tree. It does **not** write
 the dashboard order: importing dashboards gives them new ids, so an exported
@@ -109,8 +126,10 @@ large `.json` you drop.
 ![A card's Export submenu](./shots/import-and-export.png)
 
 A card's `⋯` menu has **Export ▸** with **CSV**, **JSON** and **Excel**. It is
-offered only on cards that actually fetch data, so not on framed pages, notes,
-clocks, the keys panel, document viewers or PDFs.
+offered on cards that actually fetch data, and on tables made by dropping a
+file or linked to another table — not on framed pages, notes, clocks, the keys
+panel, document viewers, PDFs, or a widget whose manifest says
+`exportable: false`.
 
 **When only JSON is offered**, CSV and Excel are shown disabled rather than
 hidden, with the tooltip *Only JSON export is available for this payload*.
@@ -118,9 +137,13 @@ That happens when the payload has no columns to make: an empty array, an array
 of bare values, a plain string or a number. An array of objects or a single
 object exports to all three. A payload of nothing at all offers none.
 
-What comes out is the **raw values, not what is on screen**. A table showing
+What comes out is the **raw values, not their formatting**. A table showing
 `2.3M` exports `2300000`, and the **Maximum decimal places** setting does not
-apply.
+apply. A table in its table view — a backend table, a dropped-file table or a
+linked table — exports the rows it presents: its filters, search, sort, column
+order, hidden columns and calculated columns apply, every row that passes is
+included whatever is selected, and the headings are the ones it shows. Other
+views export the payload; from the **Transposed** view, the transposed rows.
 
 CSV is RFC 4180 — comma-separated, CRLF line endings, a header row, fields
 quoted only when they need it. JSON is pretty-printed. Excel is a single sheet

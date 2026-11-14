@@ -39,8 +39,8 @@ nor loses an open edit.
 ## The provider cards
 
 Above the cards, summary tiles — **Available**, **Needs attention**,
-**Not configured**, **Not checked** and, when a provider needs no key,
-**No key required** — count every provider by status; clicking one filters the
+**Not configured**, **Not checked** and, when key-maint reports whether each
+provider needs a key, **No key required** — count every provider by status; clicking one filters the
 grid to it, and **All providers (N)** or the same tile again clears the filter.
 A **Sort** dropdown orders the grid by name or by status. There is no table and
 no clickable column header.
@@ -48,16 +48,18 @@ no clickable column header.
 Each card shows the provider's name, a status label with a leading dot, a
 **Credential:** line (**Own key**, **Demo key**, **Not set**, **Unknown**,
 **Optional** or **None Required**) and a short explanation, then a **Details**
-button. Needs attention is **amber, not red**, deliberately: several vendors
+button; a usage line appears when the backend reports a provider's API usage.
+**Demo access** counts under Needs attention. Needs attention is **amber, not red**, deliberately: several vendors
 report a bad key with an HTTP 200 and an error string in the body, so a
 rejection and an unreachable vendor are genuinely different problems.
 
-**Details** opens a child dialog with the full connectivity diagnostic and the
-actions below.
+**Details** opens a child dialog with one line per check the backend ran, the
+full connectivity diagnostic, an **API usage** section when there is usage to
+show, and the actions below.
 
 ## Probing and testing
 
-**Check all providers**, above the cards, makes a live call to every vendor,
+**Check all**, above the cards, makes a live call to every vendor,
 server-side, in one request. So does a successful key submit. The app itself
 also probes once at start-up, so the Widget Library's provider badges have a
 colour before you ever open this dialog — but only from tier 2 up. Below tier 2

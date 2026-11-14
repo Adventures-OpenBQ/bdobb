@@ -13,7 +13,7 @@ Symptom-first index of issues you hit while using the app itself — cards, conn
 OpenBB's server-side tables (`ssrm_table`, also spelled `table_ssrm`) are served. A managed table from the configured table service shows **Server snapshot** and supports the full table toolset over its complete snapshot. A standard OpenBB SSRM provider shows **LIVE · paged** and is LIVE only: pages are requested as you scroll and may change between requests, so loaded rows never stand for the whole result. A card also shows what the backend warned about its result, such as FINRA's 250,000-record cap, as a notice line under the header. Whole-result formulas, selection, charts, exports and linked tables are therefore unavailable on it; sorting, filtering and grouping follow the provider's declared capabilities. Use a managed source when you need them. See [[tables|Tables]].
 
 **A card shows raw JSON instead of what you expected.**
-Any widget type the app does not know falls through to the raw-JSON view rather than erroring. The types it draws: `table`, `chart`, `markdown`, `html`, `iframe`, `metric`, `note`, `clock`, `rss`, `keys`, `pdf`, `multi_file_viewer`, `local_table`, `youtube`, `newsfeed`, `live_grid`, `omni`, `chart-vegalite`, `chart-highcharts`, `advanced_charting`, `markdown_editor`, `param_echo`, and the server-side `ssrm_table` and `table_ssrm`. Anything else is the app telling you it fetched something fine and does not know how to draw it.
+Any widget type the app does not know falls through to the raw-JSON view rather than erroring. The types it draws: `table`, `chart`, `markdown`, `html`, `iframe`, `metric`, `note`, `clock`, `rss`, `keys`, `pdf`, `multi_file_viewer`, `local_table`, `youtube`, `newsfeed`, `live_grid`, `omni`, `chart-vegalite`, `chart-highcharts`, `advanced_charting`, `markdown_editor`, `param_echo`, the built-in **Date expression**, **Linked table** and **Linked chart**, and the server-side `ssrm_table` and `table_ssrm`. Anything else is the app telling you it fetched something fine and does not know how to draw it.
 
 **An image in a markdown card is missing.**
 Inline images a backend sends as `data:image/…` (PNG, JPEG, GIF, WebP or SVG) are drawn. Any other address that is not `http` or `https` is dropped from an image, and every such address is dropped from a link.
@@ -27,20 +27,20 @@ The widget sends code (Python, SQL, or another language it declares) for its bac
 **A framed page is blank.**
 Many sites refuse to be embedded, and the app has no way to tell that from a page that rendered nothing — so it never claims to know. Every iframe card carries the footer *Blank? The site may refuse to be embedded.* beside **Open externally ↗**. See [[html-and-iframe-widgets|HTML and iframe Widgets]].
 
-**The whole window went blank.**
-At this version the app has no error boundary, so an error thrown while drawing any part of the window — one card's renderer included — takes the whole window down with it, and nothing reaches the log. Restart the app to redraw it. See [[layout-and-navigation|Layout and Navigation]].
+**A card or panel reads *Something went wrong in …*.**
+Something threw while drawing it. Only that part is replaced — a card, the rail, the dashboard area or a dialog — and the error is written to the log. Press **Retry** to draw it again, or **Dismiss** to close a dialog. See [[layout-and-navigation|Layout and Navigation]].
 
 **A card is empty but nothing looks wrong.**
 *No data for these parameters.* is a correct answer with nothing in it — the backend replied, and replied empty. There is no Retry because retrying would ask the same question. *Enter Commodity, Year, Month to load this widget.* means a required parameter is blank and nothing was requested at all.
 
 **A card in the Widget Library runs off its edge, and its description does not seem to wrap.**
-At this version a badge row wider than the card widens the card's layout instead of wrapping, and the overhang is clipped. See [[widget-library|The Widget Library]].
+A badge row wider than the card widens the card's layout instead of wrapping, and the overhang is clipped. See [[widget-library|The Widget Library]].
 
 **A card's title shows a dot and *Parameters changed — press Run*.**
 It is a run-button widget; edits are recorded but nothing fetches until you press **Run**. See [[running-and-refreshing|Running and Refreshing]].
 
-**A viewer window shows old parameters, or a grouped card there disagrees with the main window.**
-At this version a viewer window reads its dashboard once, when it opens, and does not follow changes made in the main window after that. Refreshing it refetches with the parameters it opened with. Close the window and open it again. See [[dashboards-and-folders|Dashboards and Folders]].
+**A change made in a viewer window disappeared.**
+A viewer window keeps its changes in memory only, and reloads the dashboard whenever the main window saves it, which replaces them. Make lasting changes in the main window. See [[dashboards-and-folders|Dashboards and Folders]].
 
 **A chart's view dropdown shows a disabled entry.**
 The card carries a saved view the data no longer supports — a chart view whose rows lost their time column. Pick another entry; the control never claims to show something it is not.
@@ -68,10 +68,10 @@ Some OpenBB backends publish a widget's parameters in sections, as a list of lis
 ## The rail
 
 **An export or import notice will not leave the rail.**
-At this version the rail's notice has no timeout. It stays, on the collapsed rail as well as the expanded one, until the next export or import from the rail clears or replaces it.
+The rail's notice has no timeout. It shows while the rail is expanded and stays until the next export or import from the rail clears or replaces it.
 
 **Right-clicking the blank rail below your dashboards does not open the section menu.**
-At this version the section menu — **New dashboard**, **New folder**, **New workspace…**, **Import apps.json…** — belongs to the *WORKSPACES* and *MY DASHBOARDS* labels and the lists beneath them, not to the blank rail under the last row. Right-click a label. See [[dashboards-and-folders|Dashboards and Folders]].
+The section menu — **New dashboard**, **New folder**, **New workspace…**, **Import apps.json…** — belongs to the *WORKSPACES* and *MY DASHBOARDS* labels and the lists beneath them, not to the blank rail under the last row. Right-click a label. See [[dashboards-and-folders|Dashboards and Folders]].
 
 ## Settings and app data
 
@@ -93,7 +93,10 @@ Accepted: `.csv`, `.tsv`, `.json`, `.xlsx`, `.xls`. A `.json` that will not pars
 There is no drop veil in a viewer window, and no drop is taken while a dialog or the widget library is open over the dashboard.
 
 **An `apps.json` import failed.**
-*File is … MB; the limit is 10 MB*, *File holds 501 dashboards; the limit is 500*, or *not an apps.json file*. See [[importing-dashboards|Importing Dashboards]].
+*File is … MB; the limit is 10 MB*, *File holds 501 dashboards; the limit is 500*, or *not an apps.json file*. A notice that starts with a code, such as *UNSUPPORTED_EXTENSION at …*, is BDOBB's own extension refusing the file: malformed, an unknown profile, archived Pivot state switched on, or a dropped-file table. Nothing was written. See [[importing-dashboards|Importing Dashboards]].
+
+**Save… says *Export refused*.**
+The **BDOBB Workspace** format could not carry something on the dashboard — most often a dropped-file table (`MISSING_LOCAL_ASSET`). **Strict OpenBB Workspace** still saves it. See [[import-and-export|Import and Export]].
 
 
 ---

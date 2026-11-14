@@ -5,7 +5,7 @@ tags: [bdobb, help, examples, apps-json]
 
 # Example Dashboards
 
-The openbq-docker API serves ten example dashboards on its own `/apps.json`, next to its provider apps. Seven are BDOBB's own: **Built-in widgets**, **Demo providers**, **Video Library**, **V4 core tools**, **Parameters**, **V5 Statement Example** and *Example Dashboard - Version 5.0.0 - Treasury Auctions*. Each is an ordinary `apps.json` entry (see [[importing-dashboards|Importing Dashboards]]) that you open from the rail's **Apps** list like any other backend-served app. Each opens with nothing entered: no key, no sign-up, no configuration. The other three are OpenBB Workspace's own dashboards (CFTC Commitment of Traders, BLS and IMF Explorer), rebuilt for this stack (see **OpenBB Workspace dashboards** below).
+The openbq-docker API serves ten example dashboards on its own `/apps.json`, next to its provider apps. Seven are BDOBB's own: **Built-in widgets**, **Demo providers**, **Video Library**, **V4 core tools**, **Parameters**, **V5 Statement Example** and *Example Dashboard - Version 5.0.0 - Treasury Auctions*. Each is an ordinary `apps.json` entry (see [[importing-dashboards|Importing Dashboards]]) that you open from the rail's **Apps** list like any other backend-served app. Each opens with nothing entered and no sign-up; the one card that may want a key of your own is EconDB's on **Demo providers** (see below). The other three are OpenBB Workspace's own dashboards (CFTC Commitment of Traders, BLS and IMF Explorer), rebuilt for this stack (see **OpenBB Workspace dashboards** below).
 
 BDOBB 5.0.0 pairs with **openbq-docker v5** (Adventures-OpenBQ/openbq-docker, tag `v5.0.0`; see [[openbq-docker-stack|The openbq-docker Stack]]). Every openbq-docker release serves one combined `apps.json` of every BDOBB example from v3 up to its own version, and has from v3 on: openbq-docker v3 serves Built-in widgets, Demo providers and Video Library, its API carrying the `openbb-videos` and EconDB extensions those need. Both the base compose and the Episode 3 overlay serve them. Built-in widgets, V4 core tools and Parameters hold only built-ins, so they need no data from a backend; the others read widgets the stack serves.
 
@@ -23,18 +23,18 @@ One dashboard, six tabs: **Note**, **Markdown**, **Clock** (shown in both the ve
 
 ## Demo providers
 
-One dashboard, one card per OpenBB provider that answers on openbq-docker v3 with no sign-up of your own, and a seventh card, the Video Library (see below):
+One dashboard of demonstration cards for the stack, one per OpenBB provider that needs no sign-up of your own (EconDB aside, as below), and a seventh card, the Video Library (see below):
 
 | Provider | Key | What the card shows |
 |---|---|---|
-| EIA | public demo key | Short-Term Energy Outlook (`eia_short_term_energy_outlook_eia_obb`) |
-| Congress.gov | public demo key | Congressional bills of the 119th Congress |
+| EIA | public demo key, unless you supply your own | Short-Term Energy Outlook (`eia_short_term_energy_outlook_eia_obb`) |
+| Congress.gov | none: the card reads keyless bulk data | Congressional bills of the 119th Congress |
 | BLS | none | A named economic series (`CUUR0000SA0`, CPI-U), through BLS search |
-| CFTC | none | Commitment of Traders |
-| EconDB | none | An economic indicator (real GDP) |
+| CFTC | none | Commitment of Traders, opened on market `067651` (WTI crude oil) |
+| EconDB | a temporary token the provider may refuse | An economic indicator (real GDP for the US) |
 | Nasdaq | none | Historical EPS for `IBM` (`nasdaq_equity_fundamental_historical_eps_nasdaq_obb`). Earlier releases used Alpha Vantage here, whose demo key answers only its own example calls; Nasdaq needs no key at all |
 
-The two demo keys come from openbq-docker's committed `credentials.demo.env`, which holds those two providers' own public demo keys; Compose loads it before `credentials.env`, so your own keys there override them. The demo keys are rate-limited (api.data.gov's `DEMO_KEY` allows 30 requests an hour and 50 a day per IP address). Nothing here is app state, and BDOBB itself carries no provider keys; its Provider API Keys panel only reads and writes the stack's (see [[provider-keys|Provider Keys]]). The full survey of which providers answer keyless and why is in the reference-validation testing notes the app repository carries alongside the reference backend.
+openbq-docker's committed `credentials.demo.env` holds api.data.gov's public demo key for EIA and Congress.gov; Compose loads it before `credentials.env`, so your own keys there override it. The 119th-Congress card does not use it: the installed provider reads GovInfo's bulk bill-status data for Congress 108 onward, and only older Congresses go through the Congress.gov API. EconDB asks its service for a temporary token, and the service may refuse; then the card shows the provider's error rather than an empty table, and you can supply an EconDB key of your own in `credentials.env` or skip that card. Demo keys are rate-limited (api.data.gov's `DEMO_KEY` allows 30 requests an hour and 50 a day per IP address), and upstream availability varies. Nothing here is app state, and BDOBB itself carries no provider keys; its Provider API Keys panel only reads and writes the stack's (see [[provider-keys|Provider Keys]]). The stack's own record of each demo key's live check is its `docs/credentials-demo-receipt.md`.
 
 ## OpenBB Workspace dashboards
 
@@ -78,7 +78,7 @@ Episode 5's example uses the **Calendar** view (from v4): a table whose rows car
 Both widgets (`ustreasury_upcoming_auctions_us_treasury_obb` and `ustreasury_auction_results_us_treasury_obb`) are served by the API itself, from the `openbb-government-us` extension openbq-docker's base image installs, and need no API key. The file is `docs/examples/v5.0.0-treasury-calendar.apps.json`.
 
 ---
-*Source: BDOBB `docs/examples/v3.1.0-builtins.apps.json`, `docs/examples/v3.1.0-demo-providers.apps.json` and `docs/examples/v3.2.0-video-library.apps.json`, `docs/examples/v3.1.0-openbb-workspace.apps.json` (from bdobb-dev/bdobb-v2 `docs/examples/openbb-workspace/` on `main`), `scripts/apps-sync.mjs` and `package.json` (`openbqDocker`) at 5.0.0; `docs/examples/v5-financial-demo/` at 5.0.0; the user's pairing rulings of 2026-10-14 (the combined file from v3 on, openbq-docker v3's `openbb-videos` and EconDB extensions, `credentials.demo.env`, the logo route); BDOBB `docs/examples/v4.0.0-builtins.apps.json`, `docs/examples/v4.0.0-parameters.apps.json` and `docs/examples/v5.0.0-treasury-calendar.apps.json` at `v5.0.0`; `BDOBB` `src/lib/appsJson.examples.test.ts`; `openbq-docker` `requirements.in` at `v5.0.0`; `examples/bdobb/README.md`, `examples/bdobb/apps.json`, `Dockerfile` (stages `api` and `v3`).*
+*Source: BDOBB `docs/examples/v3.1.0-builtins.apps.json`, `docs/examples/v3.1.0-demo-providers.apps.json` and `docs/examples/v3.2.0-video-library.apps.json`, `docs/examples/v3.1.0-openbb-workspace.apps.json` (from bdobb-dev/bdobb-v2 `docs/examples/openbb-workspace/` on `main`), `scripts/apps-sync.mjs` and `package.json` (`openbqDocker`) at 5.0.0; `docs/examples/v5-financial-demo/` at 5.0.0; the user's pairing rulings of 2026-10-14 (the combined file from v3 on, openbq-docker v3's `openbb-videos` and EconDB extensions, `credentials.demo.env`, the logo route); BDOBB `docs/examples/v4.0.0-builtins.apps.json`, `docs/examples/v4.0.0-parameters.apps.json` and `docs/examples/v5.0.0-treasury-calendar.apps.json` at `v5.0.0`; `BDOBB` `src/lib/appsJson.examples.test.ts`; `openbq-docker` `requirements.in`, `examples/bdobb/README.md`, `examples/bdobb/apps.json`, `Dockerfile` (stages `api` and `v3`), `credentials.demo.env` and `docs/credentials-demo-receipt.md` at `v5.0.0`.*
 *See also: [[importing-dashboards|Importing Dashboards]] · [[built-in-widgets|Built-in Widgets]] · [[card-parameters|Card Parameters]] · [[calendar-view|Calendar View]] · [[reference-validation|Reference Validation]]*
 
 ---

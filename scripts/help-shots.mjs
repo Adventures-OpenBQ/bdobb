@@ -299,6 +299,8 @@ const SHOTS = [
         ],
       }]),
     }),
+    // Both tables drawn (each shows its selection bar), not "Loading…".
+    prepare: async (page) => page.getByRole("button", { name: "Clear selection" }).nth(1).waitFor(),
     take: async (page) => page.screenshot({ animations: "disabled" }),
   },
   {
@@ -448,6 +450,9 @@ const SHOTS = [
       await openParams(page, "Form Table");
       // The cascading select only fills once /committees has answered.
       await page.getByLabel("Committee", { exact: true }).waitFor();
+      // Both tables drawn, not "Loading…".
+      await page.getByRole("cell", { name: "42", exact: true }).waitFor();
+      await page.getByRole("cell", { name: "formed", exact: true }).waitFor();
     },
     take: grid,
   },
@@ -516,6 +521,8 @@ const SHOTS = [
       await symbol.fill("MSFT");
       await symbol.press("Enter");
       await cardBox.locator(".card-stale").waitFor();
+      // The table worker's transient "Updating…" note is not the state pictured.
+      await cardBox.getByRole("status").filter({ hasText: "Updating…" }).waitFor({ state: "detached" });
     },
     // The card, not the grid: it is half the grid's width, and the empty
     // half would be half the picture.

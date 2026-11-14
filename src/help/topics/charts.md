@@ -3,9 +3,14 @@
 Charts are drawn with Plotly. There are two ways to get one.
 
 A widget whose declared type is `chart` is always a chart. Any other card whose
-rows turn out to carry a time column also gains a **Chart** entry in its view
-dropdown, beside **Table** and **Raw** — decided by the data that actually
-arrived, so it can appear only after the first load.
+rows can be charted — a date column, or a category column with a numeric column
+beside it — also gains a **Chart** entry in its view dropdown, beside **Table**
+and **Raw** — decided by the data that actually arrived, so it can appear only
+after the first load. A table widget whose columns declare `chartDataType`
+charts its `time` (or else `category`) column against its `series` columns,
+drawn as the widget's `chartView.chartType`.
+
+A chart can also follow a table on the same dashboard: see **Linked widgets**.
 
 ![A price chart drawn from a table payload](./shots/charts.png)
 
@@ -72,7 +77,8 @@ press, because the whole gesture has to finish inside it. Miss it and nothing
 happens at all — you never get half a reset.
 
 Refreshing a chart's data reconciles the existing plot in place, so **a refresh
-keeps your zoom and pan**. Resizing the card redraws only when the box really
+keeps your zoom and pan**. Changing a parameter, such as the symbol, opens the
+chart at its full extent. Resizing the card redraws only when the box really
 changed size.
 
 Charts the app draws itself follow the light/dark theme. A ready-made figure

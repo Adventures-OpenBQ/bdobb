@@ -14,7 +14,7 @@ For a file you were sent, or exported from another machine, there are two ways i
 - Right-click empty space in the rail's *MY DASHBOARDS* area and choose **Import apps.json…**.
 - **Drop the file on the dashboard.** A `.json` of 10 MB or less is sniffed first; if it turns out to be an `apps.json` it is imported as dashboards instead of becoming a table.
 
-Every app in the file becomes a new dashboard, unless its name is already one of yours (below). A name repeated *inside* the file is not asked about: the second copy becomes `Macro (2)`. The notice in the rail reads *Imported 3 dashboards, 12 cards (1 unresolved)*. The bracket is always there, `(0 unresolved)` included.
+Every app in the file becomes a new dashboard, unless its name is already one of yours (below). A name repeated *inside* the file is not asked about: the second copy becomes `Macro (2)`. The notice — in the rail for the menu item, at the lower right of the dashboard for a drop — reads *Imported 3 dashboards, 12 cards (1 unresolved: fred_series)*. The unresolved part appears only when there is something unresolved.
 
 ## When a dashboard's name is already taken
 
@@ -31,7 +31,7 @@ An imported card asks for what a card added from the library would. A multi-sele
 
 ## Unresolved cards
 
-"Unresolved" means a card whose widget id no backend currently serves — usually an import from someone else's machine. It is not discarded: it reads *Widget `<id>` is not on any connected backend.* and comes alive by itself the moment a backend serving that id connects. At this version the notice only counts them, and it counts cards, not widgets: one missing widget placed on six tabs reads as `6 unresolved`. To find which widget it is, look for the cards that carry that sentence.
+"Unresolved" means a card whose widget id no backend currently serves — usually an import from someone else's machine. It is not discarded: it reads *Widget `<id>` is not on any connected backend.* and comes alive by itself the moment a backend serving that id connects. The notice counts distinct widget ids, not cards — one missing widget placed on six tabs reads as `1 unresolved` — and names the first five, ending in `…` when there are more.
 
 ## The size guard
 
@@ -41,6 +41,8 @@ Two hard ceilings, and hitting either imports nothing at all:
 - **500 dashboards**, checked after parsing but before anything is written: *File holds 501 dashboards; the limit is 500.*
 
 Both limits are inclusive, and a file that is not an array of apps fails with *Import failed: not an apps.json file*.
+
+A file carrying BDOBB's own extension is checked as a whole before anything is written, too. A malformed extension, an unknown profile or schema, archived Pivot state that is switched on, or a dropped-file table in a BDOBB-extended file refuses the import, and the notice gives the code, where, and the reason — for example *UNSUPPORTED_EXTENSION at … Archived Pivot state is unsupported.*
 
 ## Parameter groups arrive with the import
 
@@ -52,7 +54,7 @@ Once imported they are ordinary groups, the same as ones made in the app: a boun
 
 ## Exporting the other way
 
-Right-click a dashboard row for **Save…** and pick the format in the Save panel: **Strict OpenBB Workspace** writes the plain OpenBB app shape; **BDOBB Workspace** also preserves custom names and ordinary table state in validated extensions. Dropped file bytes and credentials do not travel. See [[import-and-export|Import and Export]] for everything that can be exported and imported.
+Right-click a dashboard row for **Save…** and pick the format in the Save panel: **Strict OpenBB Workspace** writes the plain OpenBB app shape; **BDOBB Workspace** also preserves custom names and ordinary table state in validated extensions, plus a v4 profile when analytical models, linked cards or other v4 card state need it; importing that file restores them. Dropped file bytes and credentials do not travel. See [[import-and-export|Import and Export]] for everything that can be exported and imported.
 
 ## When a widget type isn't natively rendered
 

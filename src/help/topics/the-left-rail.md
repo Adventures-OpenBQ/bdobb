@@ -38,8 +38,10 @@ shortcuts** on Workspaces, the badges go to the first nine workspace rows
 instead, never to both. The badge sits where the fixed rows' icons sit, so
 it is still visible when the rail is collapsed.
 
-Dashboards past the ninth, and folder rows, show nothing at all while the rail
-is collapsed. They are still clickable, and pointing at the rail expands it.
+Dashboards past the ninth show the first character of their name in the
+badge's place while the rail is collapsed, and folder rows show only their
+`▸`/`▾`. They are still clickable, and pointing at the rail — or moving
+keyboard focus into it — expands it.
 
 Folders show `▸` when closed and `▾` when open. Clicking a folder row opens or
 closes it; it does not select anything.
