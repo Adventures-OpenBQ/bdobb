@@ -7,6 +7,7 @@ import { fixture } from './compileFixtures';
 import { exportCompatibleApp, importApps } from '../appsJson';
 import { persistedCard, remapWidgetReferences } from '../widgetData/persistence';
 import { compileStatement } from './compile';
+import { statementSnapshot } from './persistence';
 import type { Dashboard, DashboardCard } from '../types';
 function compatible(dashboard: Dashboard) { const result = exportCompatibleApp(dashboard); if (!result.ok) throw new Error(result.issue.message); return result.value; }
 const card = ():DashboardCard => ({id:'owner',widgetId:'prices',backendId:'backend',params:{},layout:{x:0,y:0,w:10,h:10},tableDefinition:{table:{},search:'',analytical:fixture().statement},tableSelection:{kind:'none'}});
@@ -90,4 +91,17 @@ it('portable interchange preserves chart field mappings, statement bindings and 
  expect(reopened[0].tableSelection).toEqual({kind:'explicit',ids:[]});
  expect(reopened[1].linkedChart).toEqual(chart.linkedChart);
  expect(reopened[1].linkedSource?.sourceWidgetId).toBe(reopened[0].id);
+});
+it('line placement round-trips through the snapshot and dashboard import', () => {
+ const source = card(); const statement = source.tableDefinition!.analytical as StatementIntent;
+ const [, expenses, profit] = statement.template.sections; const gross = profit.lineIds[0];
+ statement.overrides.lineSection = { [gross]: expenses.id };
+ statement.overrides.lineOrder[expenses.id] = [gross, ...expenses.lineIds];
+ expect(statementSnapshot(statement)).toEqual(statement);
+ const dashboard: Dashboard = { id: 'd', name: 'Placement', tabs: [{ id: 'tab', name: 'Main', cards: [source] }], groups: [] };
+ const exported = JSON.stringify(compatible(dashboard));
+ expect(importApps([JSON.parse(exported)], []).dashboards[0].tabs[0].cards[0].tableDefinition).toEqual(source.tableDefinition);
+ const placement = JSON.stringify({ [gross]: expenses.id });
+ expect(exported).toContain(placement);
+ expect(() => importApps([JSON.parse(exported.replace(placement, JSON.stringify({ [gross]: 'unknown' })))], [])).toThrow(/Unknown or unowned reference/);
 });

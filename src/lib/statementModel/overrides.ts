@@ -10,6 +10,13 @@ export function resetStatementOverrides(intent: StatementIntent, id?: string): S
   else {
     delete next.overrides.labels[id];
     delete next.overrides.lineOrder[id];
+    const target = next.overrides.lineSection?.[id], home = next.template.sections.find(s => s.lineIds.includes(id))?.id;
+    if (target !== undefined && target !== home) {
+      // The line returns to the end of its home section's local order, mirroring a move.
+      if (next.overrides.lineOrder[target]) next.overrides.lineOrder[target] = next.overrides.lineOrder[target].filter(line => line !== id);
+      if (home && next.overrides.lineOrder[home]) next.overrides.lineOrder[home].push(id);
+    }
+    delete next.overrides.lineSection?.[id];
     next.overrides.hiddenIds = next.overrides.hiddenIds.filter(value => value !== id);
     const formulaId=next.template.lines.find(line=>line.id===id)?.formula?.id;
     next.overrides.formulas = next.overrides.formulas.filter(f => f.id !== id && f.id !== formulaId);
