@@ -49,7 +49,8 @@ Its controls sit above the plot and save as you change them:
 - **Series from** — **Columns** (one series per measure) or **Rows** (one
   series per row); not offered for Pie.
 
-Pie and 100% stacked refuse negative values and zero totals with a message
+Pie draws one measure; with more than one ticked it reads *Pie shows one measure —
+choose one*. Pie and 100% stacked refuse negative values and zero totals with a message
 instead of drawing; values that are missing are listed under the chart.
 
 Until a category and at least one measure are chosen it reads *Choose chart
