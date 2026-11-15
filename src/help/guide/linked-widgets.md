@@ -32,7 +32,7 @@ Its controls sit above the plot and save as you change them:
 - **Display** — **Grouped**, **Stacked** or **100% stacked**; offered for Columns and Bars.
 - **Series from** — **Columns** (one series per measure) or **Rows** (one series per row); not offered for Pie.
 
-Pie and 100% stacked refuse negative values and zero totals with a message instead of drawing; values that are missing are listed under the chart.
+Pie draws one measure; with more than one ticked it reads "Pie shows one measure — choose one". Pie and 100% stacked refuse negative values and zero totals with a message instead of drawing; values that are missing are listed under the chart.
 
 Until a category and at least one measure are chosen it reads *Choose chart fields: select a category and numeric measures.* When a chosen field disappears from the source it reads *Field … is unavailable. Repair chart fields.* When the source's current scope is successfully empty, for example after a filter leaves no rows, the chart clears its previous figure and reads *No selected series match the current filter.* Partial or sample source data keeps its coverage warnings under the chart.
 
