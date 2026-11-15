@@ -88,7 +88,7 @@ export type WidgetDataset = {
 };
 export type LinkedSource = { kind: "widget"; sourceWidgetId: string };
 export type LinkedChartSettings = {
-  type: "bar" | "column" | "line" | "pie";
+  type: "bar" | "column" | "line" | "pie" | "waterfall";
   category?: string;
   measures: string[];
   display: "grouped" | "stacked" | "percent";
