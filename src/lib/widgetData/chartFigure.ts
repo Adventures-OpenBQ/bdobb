@@ -18,8 +18,10 @@ function rowNames(rows: DatasetRows, labels: string[]): string[] {
     for (const label of labels)
         count.set(label, (count.get(label) ?? 0) + 1);
     const names = rows.map((row, index) => count.get(labels[index])! > 1 ? [labels[index], ...(row.groupPath ?? []).map(m => `${m.field}: ${m.label ?? m.value}`)].join(' — ') : labels[index]);
-    const seen = new Map<string, number>();
-    return names.map(name => { const n = (seen.get(name) ?? 0) + 1; seen.set(name, n); return n > 1 ? `${name} (${n})` : name; });
+    const used = new Set<string>();
+    return names.map(name => { let out = name, n = 1; // a real label may equal a generated suffix
+        while (used.has(out)) out = `${name} (${++n})`;
+        used.add(out); return out; });
 }
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
 export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): LinkedFigureResult {
@@ -31,7 +33,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     const category = settings.category;
     const ids = dataset.rows.map(r => r.id);
     const labels = dataset.rows.map(r => String(r.values[category] ?? ''));
-    const measures: { id: string; name: string; colorKey: string; values: (number | null)[]; text: string[] }[] = [];
+    const measures: { id: string; name: string; colorKey: string; aggregation?: string; values: (number | null)[]; text: string[] }[] = [];
     for (const id of settings.measures) {
         const column = columns.get(id);
         if (!column)
@@ -54,7 +56,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         const name = [...split.map(member => String(member.label ?? member.value ?? '')), column.label].join(' — ');
         const colorKey = split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id;
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
-        measures.push({ id, name, colorKey, values, text });
+        measures.push({ id, name, colorKey, aggregation: column.aggregation, values, text });
     }
     const pie = settings.type === 'pie';
     if (pie && measures.length > 1)
@@ -74,7 +76,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
                 name: names[r],
                 colorKey: JSON.stringify([pivotValueKey(row.values[category]), ...(row.groupPath ?? []).map(m => [m.categoryId ?? m.field, m.memberKey ?? pivotValueKey(m.value)])]),
                 values,
-                text: measures.map((m, i) => [...hoverHead, `${escape(m.name)}: ${values[i] ?? 'Missing'}`].join('<br>')),
+                text: measures.map((m, i) => [...hoverHead, `${escape(m.name)}${m.aggregation ? ` (${m.aggregation})` : ''}: ${values[i] ?? 'Missing'}`].join('<br>')),
             };
         });
     } else {
