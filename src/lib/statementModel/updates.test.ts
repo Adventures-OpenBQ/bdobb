@@ -107,6 +107,7 @@ describe('line placement', () => {
   expect(reset.overrides.lineSection?.[gross]).toBeUndefined();
   expect(reset.overrides.lineOrder[expenses.id]).toEqual(expenses.lineIds);
   expect(reset.overrides.lineOrder[profit.id]).toContain(gross);
+  expect(reset.overrides).not.toHaveProperty('lineSection');
   expect(resetStatementOverrides(statement).overrides).not.toHaveProperty('lineSection');
  });
 });

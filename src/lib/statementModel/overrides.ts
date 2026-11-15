@@ -17,6 +17,7 @@ export function resetStatementOverrides(intent: StatementIntent, id?: string): S
       if (home && next.overrides.lineOrder[home]) next.overrides.lineOrder[home].push(id);
     }
     delete next.overrides.lineSection?.[id];
+    if (next.overrides.lineSection && !Object.keys(next.overrides.lineSection).length) delete next.overrides.lineSection;
     next.overrides.hiddenIds = next.overrides.hiddenIds.filter(value => value !== id);
     const formulaId=next.template.lines.find(line=>line.id===id)?.formula?.id;
     next.overrides.formulas = next.overrides.formulas.filter(f => f.id !== id && f.id !== formulaId);
