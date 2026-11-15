@@ -1,6 +1,5 @@
 name: Extended pivot qualification
-# Schedule activates only once this workflow is present on the default branch.
-# Keep this full candidate SHA explicit; bump deliberately after review.
+# Manual runs only: each run names a full reviewed candidate SHA.
 on:
   workflow_dispatch:
     inputs:
@@ -12,8 +11,6 @@ on:
         description: Reproducible additional integer trace seed
         default: '20261103'
         type: string
-  schedule:
-    - cron: '17 6 * * 1'
 permissions:
   contents: read
 concurrency:
@@ -24,8 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      # Schedule always checks out this exact reviewed candidate, not default HEAD.
-      CANDIDATE_SHA: ${{ inputs.candidate_sha || 'cfc27c836b0ebc77505af39361820f8e44b50a94' }}
+      CANDIDATE_SHA: ${{ inputs.candidate_sha }}
       TRACE_SEED: ${{ inputs.trace_seed || '20261103' }}
     steps:
       - name: Validate literal inputs before checkout
