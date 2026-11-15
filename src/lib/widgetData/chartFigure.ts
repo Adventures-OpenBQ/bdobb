@@ -108,7 +108,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     const margin = { l: 48, r: 12, t: 12, b: 80 };
     if (pie) {
         const present = series.filter(s => s.values[0] !== null);
-        const trace = { type: 'pie', labels: present.map(s => s.name), values: present.map(s => s.values[0]), marker: { colors: present.map(s => color(s.colorKey)) }, text: present.map(s => s.text[0]), hovertemplate: '%{text}<extra></extra>', sort: false };
+        const trace = { type: 'pie', labels: present.map(s => s.name), values: present.map(s => s.values[0]), marker: { colors: present.map(s => color(s.colorKey)) }, text: present.map(s => s.text[0]), hovertemplate: '%{text}<extra></extra>', textinfo: 'percent', sort: false };
         return { ok: true, revision, notes, figure: { data: [trace], layout: { uirevision: revision, margin, showlegend: true, legend, ...frame } } };
     }
     const horizontal = settings.type === 'bar';
