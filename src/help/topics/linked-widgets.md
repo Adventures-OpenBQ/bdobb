@@ -41,10 +41,16 @@ card, so one source can feed several differently arranged tables. See
 Its controls sit above the plot and save as you change them:
 
 - **Chart type** — **Columns (vertical)** (the default), **Bars
-  (horizontal)** or **Lines**.
+  (horizontal)**, **Lines** or **Pie**.
 - **Category** — the column along the axis.
 - **Measures** — a checkbox for each numeric column.
-- **Display** — **Grouped** or **Stacked**; not offered for Lines.
+- **Display** — **Grouped**, **Stacked** or **100% stacked**; offered for
+  Columns and Bars.
+- **Series from** — **Columns** (one series per measure) or **Rows** (one
+  series per row); not offered for Pie.
+
+Pie and 100% stacked refuse negative values and zero totals with a message
+instead of drawing; values that are missing are listed under the chart.
 
 Until a category and at least one measure are chosen it reads *Choose chart
 fields: select a category and numeric measures.* When a chosen field
