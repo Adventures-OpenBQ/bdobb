@@ -203,6 +203,6 @@ it('a real label equal to a generated suffix still gets a unique pie name', () =
 });
 
 it('names a measure by its split path and label, the way the legend does', () => {
-    expect(measureName({ id: 'v', label: 'Value' })).toBe('Value');
-    expect(measureName({ id: 'v', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }, { field: 'company', value: 'AMD' }] })).toBe('FY2024 — AMD — Value');
+    expect(measureName({ label: 'Value' })).toBe('Value');
+    expect(measureName({ label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }, { field: 'company', value: 'AMD' }] })).toBe('FY2024 — AMD — Value');
 });
