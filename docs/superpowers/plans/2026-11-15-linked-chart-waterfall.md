@@ -16,7 +16,7 @@
 - House header on every new file: `// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.` / `// SPDX-License-Identifier: AGPL-3.0-only`.
 - No new dependencies. Help pages edited by hand; never run `help:sync`.
 - Gates: `pnpm install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm test:run`, `pnpm scrub`, `pnpm test:web`.
-- Wasm must be this line's own build: `PIVOT_WASM_BINDGEN=/Users/artcashin/Developer/openbq-bdobb-v4-fold/.pivot-tools/bin/wasm-bindgen pnpm -s pivot:build` before `test:run`; never copy another worktree's `src/lib/tableExecution/rust/generated/`.
+- Wasm must be this line's own build: `pnpm -s pivot:build` with `PIVOT_WASM_BINDGEN` pointing at a local wasm-bindgen before `test:run`; never copy another worktree's `src/lib/tableExecution/rust/generated/`.
 - Existing statements, dashboards and chart types must give byte-identical results (absent `lineSection`, non-waterfall types).
 - Commit trailer: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
