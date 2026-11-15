@@ -150,7 +150,7 @@ it('percent sets barnorm, a percent axis and the share in the hover', () => {
 });
 it('pie builds one pie trace over the rows of one measure and refuses more than one', () => {
   const f = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
-  expect(f.data).toEqual([expect.objectContaining({ type: 'pie', labels: ['cash', 'inventory'], values: [30, 10], sort: false })]);
+  expect(f.data).toEqual([expect.objectContaining({ type: 'pie', labels: ['cash', 'inventory'], values: [30, 10], sort: false, textinfo: 'percent' })]);
   expect(refused({ type: 'pie', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped' }, years)).toBe('Pie shows one measure — choose one');
   // Plotly merges equal pie labels, so duplicates must already be unique
   expect(figure({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['Cost', 1, 1], ['Cost', 2, 2]])).data[0]).toMatchObject({ labels: ['Cost', 'Cost (2)'], values: [1, 2] });
