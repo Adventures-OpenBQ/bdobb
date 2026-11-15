@@ -90,8 +90,9 @@ export type WidgetDataset = {
 };
 export type LinkedSource = { kind: "widget"; sourceWidgetId: string };
 export type LinkedChartSettings = {
-  type: "bar" | "column" | "line";
+  type: "bar" | "column" | "line" | "pie";
   category?: string;
   measures: string[];
-  display: "grouped" | "stacked";
+  display: "grouped" | "stacked" | "percent";
+  seriesFrom?: "columns" | "rows"; // absent means "columns"
 };
