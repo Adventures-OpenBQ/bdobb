@@ -82,3 +82,122 @@ it('places a horizontal company legend below the plot with room for fiscal-year 
 it('keeps multiline financial details in hover rather than printing them inside bars', () => {
     expect(figure().data[0]).toMatchObject({ textposition: 'none', hovertemplate: '%{text}<extra></extra>' });
 });
+
+// Pinned on pre-Rows code: existing cards must keep byte-identical figures.
+const pin = (s: LinkedChartSettings) => JSON.stringify(figure(s));
+it('existing grouped column cards give byte-identical figures', () => {
+    expect(pin(settings)).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing stacked bar cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'bar', display: 'stacked' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":[10,20],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":[null,30],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"bar\\",\\"label\\",[\\"a\\",\\"b\\"],\\"stacked\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"stack","yaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing line cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'line' })).toMatchInlineSnapshot(`"{"data":[{"type":"scatter","name":"Revenue","x":["r1","r2"],"y":[10,20],"mode":"lines+markers","connectgaps":false,"line":{"color":"#ef8354"},"marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"scatter","name":"Cost","x":["r1","r2"],"y":[null,30],"mode":"lines+markers","connectgaps":false,"line":{"color":"#71c7a1"},"marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"line\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing explicit columns cards give byte-identical figures', () => {
+    expect(pin({ ...settings, seriesFrom: 'columns' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+
+const years: WidgetDataset = { ...dataset,
+  columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'fy24', label: 'FY2024', dtype: 'number' }, { id: 'fy25', label: 'FY2025', dtype: 'number' }],
+  rows: [{ id: 'cash', values: { item: 'cash', fy24: 10, fy25: 30 } }, { id: 'inv', values: { item: 'inventory', fy24: 30, fy25: 10 } }] };
+const rows: LinkedChartSettings = { type: 'column', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped', seriesFrom: 'rows' };
+
+it('rows mode builds one trace per row with the measure columns as x', () => {
+  const f = figure(rows, years);
+  expect(f.data).toHaveLength(2);
+  expect(f.data[0]).toMatchObject({ type: 'bar', name: 'cash', x: ['fy24', 'fy25'], y: [10, 30] });
+  expect(f.layout.xaxis).toMatchObject({ tickvals: ['fy24', 'fy25'], ticktext: ['FY2024', 'FY2025'] });
+  const text = (f.data[0] as { text: string[] }).text[1];
+  expect(text).toContain('cash'); expect(text).toContain('FY2025'); expect(text).toContain('30');
+  expect(figure({ ...rows, type: 'bar' }, years).data[0]).toMatchObject({ orientation: 'h', x: [10, 30], y: ['fy24', 'fy25'] });
+  expect(figure({ ...rows, type: 'line' }, years).data[0]).toMatchObject({ type: 'scatter', x: ['fy24', 'fy25'] });
+});
+it('rows mode labels a split measure position with its split path', () => {
+  const split = { ...years, columns: [years.columns[0], { ...years.columns[1], splitPath: [{ field: 'Symbol', value: 'AMD' }] }] };
+  expect(figure({ ...rows, measures: ['fy24'] }, split).layout.xaxis).toMatchObject({ ticktext: ['AMD — FY2024'] });
+});
+it('rows mode keeps duplicate category values as separate, disambiguated series', () => {
+  const d = { ...years, rows: [
+    { id: 'a', values: { item: 'Revenue', fy24: 1 }, groupPath: [{ field: 'Segment', value: 'cloud', label: 'Cloud' }] },
+    { id: 'b', values: { item: 'Revenue', fy24: 2 }, groupPath: [{ field: 'Segment', value: 'devices', label: 'Devices' }] },
+    { id: 'c', values: { item: 'Cost', fy24: 3 } }, { id: 'd', values: { item: 'Cost', fy24: 4 } }] };
+  const f = figure({ ...rows, measures: ['fy24'] }, d);
+  expect(f.data.map(t => (t as { name: string }).name)).toEqual(['Revenue — Segment: Cloud', 'Revenue — Segment: Devices', 'Cost', 'Cost (2)']);
+  expect((f.data[2] as { marker: unknown }).marker).toEqual((f.data[3] as { marker: unknown }).marker);
+});
+it('an item keeps its colour by identity, whatever the row order or measure set', () => {
+  const a = figure(rows, years), b = figure({ ...rows, measures: ['fy25'] }, { ...years, rows: [...years.rows].reverse() });
+  expect((b.data[1] as { marker: unknown }).marker).toEqual((a.data[0] as { marker: unknown }).marker);
+});
+it('rows mode changes the revision; columns mode keeps it', () => {
+  expect(figure(rows, years).layout.uirevision).not.toBe(figure({ ...rows, seriesFrom: undefined }, years).layout.uirevision);
+  expect(figure({ ...settings, seriesFrom: 'columns' }).layout.uirevision).toBe(figure().layout.uirevision);
+});
+it('success carries an empty notes list for plain charts', () => {
+  const r = buildLinkedFigure(dataset, settings, 'dark');
+  expect(r.ok && r.notes).toEqual([]);
+});
+
+const refused = (s: LinkedChartSettings, d: WidgetDataset) => { const r = buildLinkedFigure(d, s, 'dark'); expect(r).toMatchObject({ ok: false, refused: true }); return (r as { message: string }).message; };
+const withRows = (vals: [string, number | null, number | null][]) => ({ ...years, rows: vals.map(([item, fy24, fy25], i) => ({ id: `r${i}`, values: { item, fy24, fy25 } })) });
+
+it('percent sets barnorm, a percent axis and the share in the hover', () => {
+  const f = figure({ ...rows, display: 'percent' }, years);
+  expect(f.layout).toMatchObject({ barmode: 'stack', barnorm: 'percent', yaxis: { ticksuffix: '%' } });
+  expect((f.data[0] as { text: string[] }).text[0]).toMatch(/10[\s\S]*25\.0%/); // cash FY2024: 10 of 40
+  expect(figure({ ...settings, type: 'bar', display: 'percent' }).layout).toMatchObject({ barnorm: 'percent', xaxis: { ticksuffix: '%' } });
+});
+it('pie builds one pie trace over the rows of one measure and refuses more than one', () => {
+  const f = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect(f.data).toEqual([expect.objectContaining({ type: 'pie', labels: ['cash', 'inventory'], values: [30, 10], sort: false, textinfo: 'percent' })]);
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped' }, years)).toBe('Pie shows one measure — choose one');
+  // Plotly merges equal pie labels, so duplicates must already be unique
+  expect(figure({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['Cost', 1, 1], ['Cost', 2, 2]])).data[0]).toMatchObject({ labels: ['Cost', 'Cost (2)'], values: [1, 2] });
+});
+it('a pie slice has the colour of the same row in a rows chart', () => {
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect((pie.data[0] as { marker: { colors: string[] } }).marker.colors[0]).toEqual((figure(rows, years).data[0] as { marker: { color: string } }).marker.color);
+});
+it('pie and percent refuse negative values, listing at most five', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 10, 5], ['treasury_stock', 2, -4]]))).toBe("Can't show shares of negative values: treasury_stock (FY2025).");
+  const many = withRows(Array.from({ length: 7 }, (_, i) => [`neg${i}`, -1, 1] as [string, number, number]));
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, many)).toBe("Can't show shares of negative values: neg0 (FY2024), neg1 (FY2024), neg2 (FY2024), neg3 (FY2024), neg4 (FY2024), and 2 more.");
+});
+it('pie and percent refuse a zero total, naming the year or measure', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 0, 5], ['inventory', 0, 5]]))).toBe("Can't show shares of a zero total: FY2024.");
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['cash', 0, 1]]))).toBe("Can't show shares of a zero total: FY2024.");
+});
+it('missing values are left out and listed, and the chart still draws', () => {
+  const r = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark');
+  expect(r).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'] });
+  const pie = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, 'dark');
+  expect(pie).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'], figure: { data: [{ labels: ['cash'], values: [10] }] } });
+});
+it('an all-missing stack is listed as missing, not refused as a zero total', () => {
+  expect(buildLinkedFigure(withRows([['cash', null, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark')).toMatchObject({ ok: true, notes: ['Missing: cash (FY2024), inventory (FY2024)'] });
+});
+it('grouped, stacked and line charts keep negatives and give no notes', () => {
+  const d = withRows([['cash', 10, null], ['treasury_stock', -4, 1]]);
+  for (const display of ['grouped', 'stacked'] as const) expect(buildLinkedFigure(d, { ...rows, display }, 'dark')).toMatchObject({ ok: true, notes: [] });
+});
+it('leftover fields from another type still draw', () => {
+  const line = figure({ ...rows, type: 'line', display: 'percent' }, withRows([['cash', -1, 2]]));
+  expect(line.data[0]).toMatchObject({ type: 'scatter' }); expect(line.layout).not.toHaveProperty('barnorm');
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'percent', seriesFrom: 'rows' }, years);
+  expect(pie.data[0]).toMatchObject({ type: 'pie', labels: ['cash', 'inventory'] });
+});
+
+const agg = (vals: [string, number][]): WidgetDataset => ({ ...dataset, columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }], rows: vals.map(([item, a], i) => ({ id: `r${i}`, values: { item, a } })) });
+it('rows and pie hover carry the measure aggregation, like columns hover', () => {
+  const d = agg([['cash', 1], ['inventory', 2]]);
+  const text = (f: ReturnType<typeof figure>) => (f.data[0] as { text: string[] }).text[0];
+  expect(text(figure({ type: 'column', category: 'item', measures: ['a'], display: 'grouped', seriesFrom: 'rows' }, d))).toContain('Revenue (sum): 1');
+  expect(text(figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d))).toContain('Revenue (sum): 1');
+});
+it('a real label equal to a generated suffix still gets a unique pie name', () => {
+  const d = agg([['Revenue', 1], ['Revenue', 2], ['Revenue (2)', 3]]);
+  const labels = (figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d).data[0] as { labels: string[] }).labels;
+  expect(new Set(labels).size).toBe(3);
+  expect(labels.slice(0, 2)).toEqual(['Revenue', 'Revenue (2)']);
+});
