@@ -41,17 +41,31 @@ card, so one source can feed several differently arranged tables. See
 Its controls sit above the plot and save as you change them:
 
 - **Chart type** — **Columns (vertical)** (the default), **Bars
-  (horizontal)**, **Lines** or **Pie**.
+  (horizontal)**, **Lines**, **Pie** or **Waterfall**.
 - **Category** — the column along the axis.
 - **Measures** — a checkbox for each numeric column.
 - **Display** — **Grouped**, **Stacked** or **100% stacked**; offered for
   Columns and Bars.
 - **Series from** — **Columns** (one series per measure) or **Rows** (one
-  series per row); not offered for Pie.
+  series per row); not offered for Pie or Waterfall.
 
 Pie draws one measure; with more than one ticked it reads *Pie shows one measure —
 choose one*. Pie and 100% stacked refuse negative values and zero totals with a message
 instead of drawing; values that are missing are listed under the chart.
+
+Waterfall walks an income statement from revenue to net income, one coloured
+walk per year, side by side. It needs a Statement income table with period
+columns; a balance sheet, cash flow or plain table reads *Waterfall needs an
+income statement table*, and a measure that is not a period reads *Waterfall
+needs period columns*. Lines in the Income section go up and lines in the
+Expenses section go down (*Expenses shown as decreases.*). Profit lines are
+drawn at their reported value, with an **Other** step before a subtotal the
+shown lines do not add up to. Discontinued operations are ordinary steps and
+`calculated_gross_profit` shows as "(calculated)". EBITDA is not part of the
+walk; ticking it reads *EBITDA isn't part of the walk — untick it*. To put
+gross and operating profit in the walk, move each into the Expenses section
+right after its costs (see Statement models in Tables). Display and Series from
+are not offered.
 
 Until a category and at least one measure are chosen it reads *Choose chart
 fields: select a category and numeric measures.* When a chosen field

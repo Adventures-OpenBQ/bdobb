@@ -12,7 +12,7 @@ import type { PlotlyFigure } from '../../lib/chartShapes';
 /** A type change drops the settings the new type cannot use. */
 function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type']): LinkedChartSettings {
     const next = { ...settings, type, display: settings.display === 'percent' && type !== 'column' && type !== 'bar' ? 'stacked' as const : settings.display };
-    if (type === 'pie')
+    if (type === 'pie' || type === 'waterfall')
         delete next.seriesFrom;
     return next;
 }
@@ -132,11 +132,11 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     return <div className="linked-chart-renderer" data-delivered-revision={delivered?.revision}>
     {!viewer ? <div className="chart-controls">
-      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type']))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option></select></label>
+      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type']))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="waterfall">Waterfall</option></select></label>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => !c.dtype || c.dtype === 'number').map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}
-      {settings.type !== 'pie' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}
+      {settings.type !== 'pie' && settings.type !== 'waterfall' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}
     </div> : null}
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}

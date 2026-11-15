@@ -68,6 +68,7 @@ it('v4 round-trips every new linked chart value, in any combination', () => {
     { type: 'pie', display: 'grouped', category: 'region', measures: ['revenue'] },
     { type: 'column', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' },
     { type: 'pie', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // leftover combination still imports
+    { type: 'waterfall', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // any valid display/seriesFrom imports
     { type: 'line', display: 'percent', measures: ['revenue'], seriesFrom: 'columns' },
   ];
   for (const linkedChart of cases) {

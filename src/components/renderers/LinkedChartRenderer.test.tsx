@@ -257,6 +257,28 @@ it('offers 100% stacked and series-from only for the types that use them', async
     render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
     expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
     expect(screen.getByRole('option', { name: 'Pie' })).toHaveValue('pie');
+    cleanup();
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'waterfall' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
+    expect(screen.getByRole('option', { name: 'Waterfall' })).toHaveValue('waterfall');
+    cleanup(); store.disposeDashboard('d');
+});
+it('switching to waterfall drops series-from and 100% stacked', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer {...withSettings(store, { display: 'percent', seriesFrom: 'rows' }, commit)}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'waterfall' } });
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+    expect(commit.mock.lastCall![0]).toMatchObject({ type: 'waterfall', display: 'stacked' }); expect(commit.mock.lastCall![0]).not.toHaveProperty('seriesFrom');
+    cleanup(); store.disposeDashboard('d');
+});
+it('a waterfall refusal clears a drawn chart and shows a status line, not an alert', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }]);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    await screen.findByTestId('figure');
+    rerender(<LinkedChartRenderer {...withSettings(store, { type: 'waterfall' })}/>);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.getByText('Waterfall needs an income statement table')).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull(); expect(screen.queryByText(/stale/)).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
 it('commits new values and resets fields the new type cannot use', async () => {

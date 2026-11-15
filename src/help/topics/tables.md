@@ -297,6 +297,10 @@ badges distinguish local settings from template defaults.
 Resetting overrides preserves source mappings and Page selections. Renaming or
 reordering does not rebind a formula. Formula overrides keep their stable formula
 ID and explicit AST references.
+Each line has a **Section** select and **Move up** / **Move down**
+buttons. Use Section to show a line in another section, for example a
+profit subtotal inside Expenses so a waterfall can draw it; **Reset line**
+puts it back in its home section.
 
 The embedded snapshot is pinned and read-only. There is no newer bundled release
 currently. **Explicit template update** accepts a supplied validated snapshot for
