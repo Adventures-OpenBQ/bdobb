@@ -82,3 +82,59 @@ it('places a horizontal company legend below the plot with room for fiscal-year 
 it('keeps multiline financial details in hover rather than printing them inside bars', () => {
     expect(figure().data[0]).toMatchObject({ textposition: 'none', hovertemplate: '%{text}<extra></extra>' });
 });
+
+// Pinned on pre-Rows code: existing cards must keep byte-identical figures.
+const pin = (s: LinkedChartSettings) => JSON.stringify(figure(s));
+it('existing grouped column cards give byte-identical figures', () => {
+    expect(pin(settings)).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing stacked bar cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'bar', display: 'stacked' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":[10,20],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":[null,30],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"bar\\",\\"label\\",[\\"a\\",\\"b\\"],\\"stacked\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"stack","yaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing line cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'line' })).toMatchInlineSnapshot(`"{"data":[{"type":"scatter","name":"Revenue","x":["r1","r2"],"y":[10,20],"mode":"lines+markers","connectgaps":false,"line":{"color":"#ef8354"},"marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"scatter","name":"Cost","x":["r1","r2"],"y":[null,30],"mode":"lines+markers","connectgaps":false,"line":{"color":"#71c7a1"},"marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"line\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing explicit columns cards give byte-identical figures', () => {
+    expect(pin({ ...settings, seriesFrom: 'columns' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+
+const years: WidgetDataset = { ...dataset,
+  columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'fy24', label: 'FY2024', dtype: 'number' }, { id: 'fy25', label: 'FY2025', dtype: 'number' }],
+  rows: [{ id: 'cash', values: { item: 'cash', fy24: 10, fy25: 30 } }, { id: 'inv', values: { item: 'inventory', fy24: 30, fy25: 10 } }] };
+const rows: LinkedChartSettings = { type: 'column', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped', seriesFrom: 'rows' };
+
+it('rows mode builds one trace per row with the measure columns as x', () => {
+  const f = figure(rows, years);
+  expect(f.data).toHaveLength(2);
+  expect(f.data[0]).toMatchObject({ type: 'bar', name: 'cash', x: ['fy24', 'fy25'], y: [10, 30] });
+  expect(f.layout.xaxis).toMatchObject({ tickvals: ['fy24', 'fy25'], ticktext: ['FY2024', 'FY2025'] });
+  const text = (f.data[0] as { text: string[] }).text[1];
+  expect(text).toContain('cash'); expect(text).toContain('FY2025'); expect(text).toContain('30');
+  expect(figure({ ...rows, type: 'bar' }, years).data[0]).toMatchObject({ orientation: 'h', x: [10, 30], y: ['fy24', 'fy25'] });
+  expect(figure({ ...rows, type: 'line' }, years).data[0]).toMatchObject({ type: 'scatter', x: ['fy24', 'fy25'] });
+});
+it('rows mode labels a split measure position with its split path', () => {
+  const split = { ...years, columns: [years.columns[0], { ...years.columns[1], splitPath: [{ field: 'Symbol', value: 'AMD' }] }] };
+  expect(figure({ ...rows, measures: ['fy24'] }, split).layout.xaxis).toMatchObject({ ticktext: ['AMD — FY2024'] });
+});
+it('rows mode keeps duplicate category values as separate, disambiguated series', () => {
+  const d = { ...years, rows: [
+    { id: 'a', values: { item: 'Revenue', fy24: 1 }, groupPath: [{ field: 'Segment', value: 'cloud', label: 'Cloud' }] },
+    { id: 'b', values: { item: 'Revenue', fy24: 2 }, groupPath: [{ field: 'Segment', value: 'devices', label: 'Devices' }] },
+    { id: 'c', values: { item: 'Cost', fy24: 3 } }, { id: 'd', values: { item: 'Cost', fy24: 4 } }] };
+  const f = figure({ ...rows, measures: ['fy24'] }, d);
+  expect(f.data.map(t => (t as { name: string }).name)).toEqual(['Revenue — Segment: Cloud', 'Revenue — Segment: Devices', 'Cost', 'Cost (2)']);
+  expect((f.data[2] as { marker: unknown }).marker).toEqual((f.data[3] as { marker: unknown }).marker);
+});
+it('an item keeps its colour by identity, whatever the row order or measure set', () => {
+  const a = figure(rows, years), b = figure({ ...rows, measures: ['fy25'] }, { ...years, rows: [...years.rows].reverse() });
+  expect((b.data[1] as { marker: unknown }).marker).toEqual((a.data[0] as { marker: unknown }).marker);
+});
+it('rows mode changes the revision; columns mode keeps it', () => {
+  expect(figure(rows, years).layout.uirevision).not.toBe(figure({ ...rows, seriesFrom: undefined }, years).layout.uirevision);
+  expect(figure({ ...settings, seriesFrom: 'columns' }).layout.uirevision).toBe(figure().layout.uirevision);
+});
+it('success carries an empty notes list for plain charts', () => {
+  const r = buildLinkedFigure(dataset, settings, 'dark');
+  expect(r.ok && r.notes).toEqual([]);
+});
