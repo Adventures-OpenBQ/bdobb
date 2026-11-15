@@ -271,15 +271,22 @@ export function LayoutEditor({
     // A series edit staged in the Series pane but not Updated is applied too
     // (hand check 2026-11-14). With panel changes it is folded into the one
     // pair-write -- written separately, the pair-write's series would undo it.
-    const edit = pendingEdit.current?.() ?? null;
-    if (dirty) {
-      const out = edit === null ? draft : applyOps(ops, panels, series.map((s) => (s.id === edit.id ? edit : s)));
-      onCommitPanels(out.panels, out.series);
-    } else if (edit !== null) {
-      onApplySeries?.(edit);
-    }
+    const staged = withStagedEdit();
+    write(staged);
     onClose();
   };
+
+  /** The draft with the Series pane's staged edit folded in, and that edit (null when none). */
+  function withStagedEdit(): { edit: Series | null; out: { panels: PanelDef[]; series: Series[] } } {
+    const edit = pendingEdit.current?.() ?? null;
+    return { edit, out: edit === null ? draft : applyOps(ops, panels, series.map((s) => (s.id === edit.id ? edit : s))) };
+  }
+
+  /** OK's write: the pair-write for a dirty draft, else the staged edit alone, else nothing. */
+  function write({ edit, out }: ReturnType<typeof withStagedEdit>): void {
+    if (dirty) onCommitPanels(out.panels, out.series);
+    else if (edit !== null) onApplySeries?.(edit);
+  }
 
   // Save as macro: snapshot the DRAFT (D8) under the typed name. An existing
   // name asks again first (D5); a failed write is reported and the dialog
@@ -292,7 +299,9 @@ export function LayoutEditor({
       setSaving({ ...saving, confirm: true });
       return;
     }
-    const ok = await onSaveLayout(layoutFromCard(name, saving.note, draft.panels, draft.series));
+    // The staged series edit is part of what the user sees, so the macro carries it.
+    const staged = withStagedEdit();
+    const ok = await onSaveLayout(layoutFromCard(name, saving.note, staged.out.panels, staged.out.series));
     if (ok) {
       setSaving(null);
       // R1 (spec 2026-09-25, J8): "Apply on close" saves the macro AND applies
@@ -301,7 +310,7 @@ export function LayoutEditor({
       // draft is written to the chart, a clean one writes nothing (Review
       // Focus 1). Unchecked (the default) leaves the chart and the editor
       // exactly as before -- the opt-in that keeps D8's current path unchanged.
-      if (saving.apply) { if (dirty) onCommitPanels(draft.panels, draft.series); onClose(); }
+      if (saving.apply) { write(staged); onClose(); }
     } else setSaving({ ...saving, confirm: false, error: "could not save this macro. It has not been added." });
   };
 
@@ -560,18 +569,19 @@ export function LayoutEditor({
             <button type="button" role="tab" aria-selected={tab === "series"} onClick={() => setTab("series")}>Series<span aria-hidden="true">{draft.series.filter((s) => s.panel === at + 1).length}</span></button>
             <button type="button" role="tab" aria-selected={tab === "panels"} onClick={() => setTab("panels")}>Dimensions</button>
           </div>
-          {tab === "series" ? (
-            <div role="tabpanel" aria-label="Series">
-              {dirty && <p className="chart-layout-note">Panel changes apply on OK; these panels are what the chart is drawing now.</p>}
-              {/* Master-detail (2026-09-26): the Series pane is scoped to the
-                  selected panel. The function form is handed the selected panel
-                  number (1-based) so it can filter its list and default its
-                  "+ Add series" to that panel; a plain node ignores it. `at` is
-                  the clamped selection, so a stale index never names a panel the
-                  draft no longer has. */}
-              {typeof seriesTab === "function" ? seriesTab(at + 1, pendingEdit) : seriesTab}
-            </div>
-          ) : (
+          {/* Hidden rather than unmounted while Dimensions shows, so an edit
+              staged in the Series pane survives the visit (hand check 2026-11-14). */}
+          <div role="tabpanel" aria-label="Series" hidden={tab !== "series"}>
+            {dirty && <p className="chart-layout-note">Panel changes apply on OK; these panels are what the chart is drawing now.</p>}
+            {/* Master-detail (2026-09-26): the Series pane is scoped to the
+                selected panel. The function form is handed the selected panel
+                number (1-based) so it can filter its list and default its
+                "+ Add series" to that panel; a plain node ignores it. `at` is
+                the clamped selection, so a stale index never names a panel the
+                draft no longer has. */}
+            {typeof seriesTab === "function" ? seriesTab(at + 1, pendingEdit) : seriesTab}
+          </div>
+          {tab === "panels" && (
             <div role="tabpanel" aria-label="Dimensions">
               {/* The Panels detail opens with a section heading (spec 2026-09-25,
                   J5, reference 06), above the reorder note. */}
