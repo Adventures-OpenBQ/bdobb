@@ -187,3 +187,17 @@ it('leftover fields from another type still draw', () => {
   const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'percent', seriesFrom: 'rows' }, years);
   expect(pie.data[0]).toMatchObject({ type: 'pie', labels: ['cash', 'inventory'] });
 });
+
+const agg = (vals: [string, number][]): WidgetDataset => ({ ...dataset, columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }], rows: vals.map(([item, a], i) => ({ id: `r${i}`, values: { item, a } })) });
+it('rows and pie hover carry the measure aggregation, like columns hover', () => {
+  const d = agg([['cash', 1], ['inventory', 2]]);
+  const text = (f: ReturnType<typeof figure>) => (f.data[0] as { text: string[] }).text[0];
+  expect(text(figure({ type: 'column', category: 'item', measures: ['a'], display: 'grouped', seriesFrom: 'rows' }, d))).toContain('Revenue (sum): 1');
+  expect(text(figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d))).toContain('Revenue (sum): 1');
+});
+it('a real label equal to a generated suffix still gets a unique pie name', () => {
+  const d = agg([['Revenue', 1], ['Revenue', 2], ['Revenue (2)', 3]]);
+  const labels = (figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d).data[0] as { labels: string[] }).labels;
+  expect(new Set(labels).size).toBe(3);
+  expect(labels.slice(0, 2)).toEqual(['Revenue', 'Revenue (2)']);
+});
