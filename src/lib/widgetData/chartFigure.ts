@@ -56,7 +56,11 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
         measures.push({ id, name, colorKey, values, text });
     }
-    const fromRows = settings.seriesFrom === 'rows' && settings.type !== 'pie';
+    const pie = settings.type === 'pie';
+    if (pie && measures.length > 1)
+        return { ok: false, refused: true, message: 'Pie shows one measure — choose one' };
+    // Pie always uses the Rows layout with its one measure as the only position.
+    const fromRows = pie || settings.seriesFrom === 'rows';
     // The series-by-position matrix: Columns mode has a series per measure over row positions; Rows mode transposes it.
     let positions: string[], ticks: string[], series: { name: string; colorKey: string; values: (number | null)[]; text: string[] }[];
     if (fromRows) {
@@ -78,13 +82,43 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         ticks = labels;
         series = measures;
     }
+    const notes: string[] = [];
+    if (pie || (settings.display === 'percent' && settings.type !== 'line')) {
+        // Cells in table-row order, then measure order, whichever way the series run.
+        const cells = dataset.rows.flatMap((_, r) => measures.map((_, m) => fromRows ? [r, m] : [m, r]));
+        const item = ([s, p]: number[]) => `${series[s].name} (${ticks[p]})`;
+        const negative = cells.filter(([s, p]) => series[s].values[p]! < 0);
+        if (negative.length)
+            return { ok: false, refused: true, message: `Can't show shares of negative values: ${list(negative.map(item))}.` };
+        const totals = positions.map((_, p) => series.reduce((sum, s) => sum + (s.values[p] ?? 0), 0));
+        const zero = positions.flatMap((_, p) => totals[p] === 0 && series.some(s => s.values[p] !== null) ? [ticks[p]] : []);
+        if (zero.length)
+            return { ok: false, refused: true, message: `Can't show shares of a zero total: ${list(zero)}.` };
+        const missing = cells.filter(([s, p]) => series[s].values[p] === null);
+        if (missing.length)
+            notes.push(`Missing: ${list(missing.map(item))}`);
+        series = series.map(s => ({ ...s, text: s.text.map((t, p) => s.values[p] === null ? t : `${t}<br>Share: ${(s.values[p]! / totals[p] * 100).toFixed(1)}%`) }));
+    }
+    const revision = JSON.stringify([settings.type, settings.category, settings.measures, settings.display, ...(fromRows ? ['rows'] : [])]);
+    const background = theme === 'dark' ? '#1e242e' : '#ffffff';
+    const frame = { paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } };
+    const legend = { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' };
+    const margin = { l: 48, r: 12, t: 12, b: 80 };
+    if (pie) {
+        const present = series.filter(s => s.values[0] !== null);
+        const trace = { type: 'pie', labels: present.map(s => s.name), values: present.map(s => s.values[0]), marker: { colors: present.map(s => color(s.colorKey)) }, text: present.map(s => s.text[0]), hovertemplate: '%{text}<extra></extra>', sort: false };
+        return { ok: true, revision, notes, figure: { data: [trace], layout: { uirevision: revision, margin, showlegend: true, legend, ...frame } } };
+    }
     const horizontal = settings.type === 'bar';
     const traces = series.map(({ name, colorKey, values, text }) => {
         const seriesColor = color(colorKey);
         return { type: settings.type === 'line' ? 'scatter' : 'bar', name, x: horizontal ? values : positions, y: horizontal ? positions : values, ...(settings.type === 'line' ? { mode: 'lines+markers', connectgaps: false, line: { color: seriesColor } } : { orientation: horizontal ? 'h' : 'v', textposition: 'none' }), marker: { color: seriesColor }, text, hovertemplate: '%{text}<extra></extra>' };
     });
-    const revision = JSON.stringify([settings.type, settings.category, settings.measures, settings.display, ...(fromRows ? ['rows'] : [])]);
+    const percent = settings.display === 'percent' && settings.type !== 'line';
     const axis = { type: 'category', categoryorder: 'array', categoryarray: positions, tickmode: 'array', tickvals: positions, ticktext: ticks };
-    const background = theme === 'dark' ? '#1e242e' : '#ffffff';
-    return { ok: true, revision, notes: [], figure: { data: traces, layout: { uirevision: revision, margin: { l: 48, r: 12, t: 12, b: 80 }, barmode: settings.display === 'stacked' ? 'stack' : 'group', [settings.type === 'bar' ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' }, paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } } } };
+    return { ok: true, revision, notes, figure: { data: traces, layout: { uirevision: revision, margin, barmode: settings.display === 'stacked' || percent ? 'stack' : 'group', ...(percent ? { barnorm: 'percent', [horizontal ? 'xaxis' : 'yaxis']: { ticksuffix: '%' } } : {}), [horizontal ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend, ...frame } } };
+}
+/** At most five items, then how many more. */
+function list(items: string[]): string {
+    return items.length > 5 ? `${items.slice(0, 5).join(', ')}, and ${items.length - 5} more` : items.join(', ');
 }
