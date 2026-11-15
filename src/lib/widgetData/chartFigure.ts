@@ -3,7 +3,7 @@
 
 import { pivotValueKey } from '../pivotKeys';
 import type { PlotlyFigure } from '../chartShapes';
-import type { WidgetDataset, LinkedChartSettings, DatasetColumn } from './types';
+import type { DatasetColumn, WidgetDataset, LinkedChartSettings, DatasetColumn } from './types';
 import { buildWaterfall } from './waterfallFigure';
 const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
 export function color(id: string) { let hash = 0; for (const c of id)
@@ -23,6 +23,10 @@ function rowNames(rows: DatasetRows, labels: string[]): string[] {
     return names.map(name => { let out = name, n = 1; // a real label may equal a generated suffix
         while (used.has(out)) out = `${name} (${++n})`;
         used.add(out); return out; });
+}
+/** A measure's series name: its split path labels, then its label. */
+export function measureName(column: Pick<DatasetColumn, 'label' | 'splitPath'>): string {
+    return [...(column.splitPath ?? []).map(member => String(member.label ?? member.value ?? '')), column.label].join(' — ');
 }
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
 export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): LinkedFigureResult {
@@ -54,7 +58,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
             values.push(n);
         }
         const split = column.splitPath ?? [];
-        const name = [...split.map(member => String(member.label ?? member.value ?? '')), column.label].join(' — ');
+        const name = measureName(column);
         const colorKey = split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id;
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
         measures.push({ id, name, colorKey, column, aggregation: column.aggregation, values, text });

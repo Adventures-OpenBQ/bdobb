@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { buildLinkedFigure } from './chartFigure';
+import { buildLinkedFigure, measureName } from './chartFigure';
 import type { WidgetDataset, LinkedChartSettings } from './types';
 const settings: LinkedChartSettings = { type: 'column', category: 'label', measures: ['a', 'b'], display: 'grouped' };
 const dataset: WidgetDataset = { rows: [{ id: 'r1', values: { label: 'Same', a: 10, b: null }, groupPath: [{ field: 'region', value: 'US' }] }, { id: 'r2', values: { label: 'Same', a: 20, b: 30 } }], columns: [{ id: 'label', label: 'Label', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }, { id: 'b', label: 'Cost', dtype: 'number' }], resultRevision: 1, outputRevision: 1, provenance: { sourceWidgetId: 'source' }, completeness: { kind: 'complete', warnings: [] }, freshness: { availability: 'available', stale: false } };
@@ -200,4 +200,9 @@ it('a real label equal to a generated suffix still gets a unique pie name', () =
   const labels = (figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d).data[0] as { labels: string[] }).labels;
   expect(new Set(labels).size).toBe(3);
   expect(labels.slice(0, 2)).toEqual(['Revenue', 'Revenue (2)']);
+});
+
+it('names a measure by its split path and label, the way the legend does', () => {
+    expect(measureName({ id: 'v', label: 'Value' })).toBe('Value');
+    expect(measureName({ id: 'v', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }, { field: 'company', value: 'AMD' }] })).toBe('FY2024 — AMD — Value');
 });

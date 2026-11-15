@@ -339,3 +339,5 @@ it('rows mode gives duplicate category values disambiguated names', async () => 
     expect(f.data).toHaveLength(1600); expect(f.data[0].name).toBe('A'); expect(f.data[1].name).toBe('A (2)');
     cleanup(); store.disposeDashboard('d');
 });
+
+it('labels split measures with their period, as the legend names them', async () => { const store = await setup({ columns: [{ id: 'region', label: 'region' }, { id: 'revenue', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }] }] }); render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={vi.fn(async () => true)}/>); expect(await screen.findByLabelText('FY2024 — Value')).toBeTruthy(); });
