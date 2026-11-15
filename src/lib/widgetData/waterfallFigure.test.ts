@@ -14,11 +14,11 @@ const item = (template: string, name: string, section = 'Income'): DatasetRow['g
     ];
 };
 const period = (year: string): DatasetColumn => ({ id: year, label: 'Value', dtype: 'number', splitPath: [{ field: 'Period', categoryId: 'statement/income/1.0.0/category/period', memberKey: JSON.stringify(['s', year]), value: year, label: year }] });
-/** Lines as [name, value per year]; the label is the line name. */
-function walk(lines: [string, ...(number | null)[]][], years = ['FY2023'], template = 'income') {
+/** Lines as [name, value per year]; the label defaults to the line name. */
+function walk(lines: [string, ...(number | null)[]][], years = ['FY2023'], template = 'income', labels = lines.map(l => l[0])) {
     const rows: DatasetRow[] = lines.map(([name, ...values]) => ({ id: name, values: { item: name, ...Object.fromEntries(years.map((y, i) => [y, values[i]])) }, groupPath: item(template, name) }));
     const measures = years.map((y, i) => ({ id: y, name: `${y} — Value`, colorKey: y, column: period(y), values: lines.map(l => l[i + 1] as number | null) }));
-    return buildWaterfall(rows, lines.map(l => l[0]), measures);
+    return buildWaterfall(rows, labels, measures);
 }
 type Trace = { type: string; name: string; x: string[]; measure: string[]; y: number[]; text: string[] };
 function ok(result: ReturnType<typeof walk>) { if (!result.ok) throw new Error(result.message); return { ...result, traces: result.data as Trace[], xaxis: result.xaxis as { type: string; tickvals: string[]; ticktext: string[] } }; }
@@ -74,11 +74,11 @@ it('ticks calculated gross profit as calculated and refuses EBITDA', () => {
     expect(walk([['revenue', 100], ['ebitda', 40]])).toEqual({ ok: false, refused: true, message: "EBITDA isn't part of the walk — untick it" });
 });
 
-it('skips a missing step and a missing subtotal, and notes them', () => {
-    const { traces, notes } = ok(walk([['revenue', 100, 100], ['cost_of_revenue', 60, null], ['gross_profit', null, 100], ['net_income', 30, 100]], ['FY2023', 'FY2024']));
+it('skips a missing step and a missing subtotal, and notes them by their shown label', () => {
+    const { traces, notes } = ok(walk([['revenue', 100, 100], ['cost_of_revenue', 60, null], ['gross_profit', null, 100], ['net_income', 30, 100]], ['FY2023', 'FY2024'], 'income', ['Revenue', 'Cost of revenue', 'Gross profit', 'Net income']));
     expect(traces[0]).toMatchObject({ measure: ['relative', 'relative', 'relative', 'relative', 'absolute'], y: [100, -60, 0, -10, 30] });
     expect(traces[1]).toMatchObject({ y: [100, 0, 100, 0, 100] });
-    expect(notes).toEqual(['Expenses shown as decreases.', 'Missing: cost_of_revenue (FY2024), gross_profit (FY2023)']);
+    expect(notes).toEqual(['Expenses shown as decreases.', 'Missing: Cost of revenue (FY2024), Gross profit (FY2023)']);
 });
 
 it('refuses non-income tables and non-period measures', () => {

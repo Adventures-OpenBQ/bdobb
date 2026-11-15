@@ -203,6 +203,11 @@ it('sectionPickerUsesOverrideLabelsAndHomeChoiceDropsTheKey',async()=>{
  expect(picker().value).toBe(profitSection.id);
  expect(await apply()).toSatisfy((saved:StatementIntent)=>!('lineSection' in saved.overrides));
 });
+it('sectionPickerListsSectionsInTheUsersSectionOrder',async()=>{
+ const raw=structuredClone(statement);raw.overrides.sectionOrder=statement.template.sections.map(s=>s.id).reverse();
+ await applied({raw});
+ expect(within(picker()).getAllByRole('option').map(o=>o.textContent)).toEqual(statement.template.sections.map(s=>s.label).reverse());
+});
 it('moveUpSwapsWithPreviousLineAndStopsAtTheFirst',async()=>{
  const apply=await applied();
  expect(screen.getByRole('button',{name:'Move gross_profit up'})).toBeDisabled();

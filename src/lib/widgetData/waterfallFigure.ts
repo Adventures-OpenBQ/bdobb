@@ -37,7 +37,7 @@ const signed = (n: number) => `${n >= 0 ? '+' : ''}${n}`;
 export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: Measure[]): { ok: true; data: object[]; xaxis: object; notes: string[] } | { ok: false; refused: true; message: string } {
     // shortcut: rows without a role (e.g. section header rows) are left off the walk; a table with none is refused.
     const roles = rows.map(walkRole);
-    if (!roles.some(Boolean) || roles.some(r => r && r.templateId !== 'income'))
+    if (!roles.some(Boolean))
         return refuse('Waterfall needs an income statement table');
     if (roles.some(r => r?.role === 'ebitda'))
         return refuse("EBITDA isn't part of the walk — untick it");
@@ -62,7 +62,7 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
                 push(`other:${r}`, 'Other', m => { running[m] += gaps[m]; return { measure: 'relative', y: gaps[m], text: ['Other', escape(names[m]), 'Not in the lines shown', `Step: ${signed(gaps[m])}`, `Running total: ${running[m]}`].join('<br>') }; });
             push(row.id, role.role === 'calculated' ? `${labels[r]} (calculated)` : labels[r], m => {
                 const v = measures[m].values[r];
-                if (v === null) { missing.push(`${role.line} (${names[m]})`); return { measure: 'relative', y: 0, text: [label, escape(names[m]), 'Value: Missing', `Running total: ${running[m]}`].join('<br>') }; }
+                if (v === null) { missing.push(`${labels[r]} (${names[m]})`); return { measure: 'relative', y: 0, text: [label, escape(names[m]), 'Value: Missing', `Running total: ${running[m]}`].join('<br>') }; }
                 running[m] = v;
                 return { measure: 'absolute', y: v, text: [label, escape(names[m]), `Value: ${v}`, `Running total: ${v}`].join('<br>') };
             });
@@ -70,7 +70,7 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
         }
         push(row.id, labels[r], m => {
             const v = measures[m].values[r];
-            if (v === null) missing.push(`${role.line} (${names[m]})`);
+            if (v === null) missing.push(`${labels[r]} (${names[m]})`);
             const step = v === null ? 0 : role.role === 'cost' ? -v : v;
             running[m] += step;
             return { measure: 'relative', y: step, text: [label, escape(names[m]), `Value: ${v ?? 'Missing'}`, `Step: ${signed(step)}`, `Running total: ${running[m]}`].join('<br>') };

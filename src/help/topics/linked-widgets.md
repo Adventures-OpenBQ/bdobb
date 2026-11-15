@@ -57,13 +57,18 @@ Waterfall walks an income statement from revenue to net income, one coloured
 walk per year, side by side. It needs a Statement income table with period
 columns; a balance sheet, cash flow or plain table reads *Waterfall needs an
 income statement table*, and a measure that is not a period reads *Waterfall
-needs period columns*. Which way a line steps depends on its original section (Income up, Expenses down), wherever you show it; moving a line only changes its position in the walk (*Expenses shown as decreases.*). Profit lines are
-drawn at their reported value, with an **Other** step before a subtotal the
-shown lines do not add up to. Discontinued operations are ordinary steps and
-`calculated_gross_profit` shows as "(calculated)". EBITDA is not part of the walk: while its row is among the rows the table shows, the chart reads *EBITDA isn't part of the walk — untick it*, so untick or filter that row out of the table. Rows with no value for a year are listed under the chart as *Missing: …*. To put
-gross and operating profit in the walk, move each into the Expenses section
-right after its costs (see Statement models in Tables). Display and Series from
-are not offered.
+needs period columns*. Which way a line steps depends on its original section
+(Income up, Expenses down), wherever you show it; moving a line only changes its
+position in the walk (*Expenses shown as decreases.*). Profit lines are drawn at
+their reported value, with an **Other** step before a subtotal the shown lines
+do not add up to. Discontinued operations are ordinary steps and
+`calculated_gross_profit` shows as "(calculated)". EBITDA is not part of the
+walk: while its row is among the rows the table shows, the chart reads *EBITDA
+isn't part of the walk — untick it*, so untick or filter that row out of the
+table. Rows with no value for a year are listed under the chart as *Missing: …*.
+To put gross and operating profit in the walk, move each into the Expenses
+section right after its costs (see Statement models in Tables). Display and
+Series from are not offered.
 
 Until a category and at least one measure are chosen it reads *Choose chart
 fields: select a category and numeric measures.* When a chosen field
