@@ -138,3 +138,52 @@ it('success carries an empty notes list for plain charts', () => {
   const r = buildLinkedFigure(dataset, settings, 'dark');
   expect(r.ok && r.notes).toEqual([]);
 });
+
+const refused = (s: LinkedChartSettings, d: WidgetDataset) => { const r = buildLinkedFigure(d, s, 'dark'); expect(r).toMatchObject({ ok: false, refused: true }); return (r as { message: string }).message; };
+const withRows = (vals: [string, number | null, number | null][]) => ({ ...years, rows: vals.map(([item, fy24, fy25], i) => ({ id: `r${i}`, values: { item, fy24, fy25 } })) });
+
+it('percent sets barnorm, a percent axis and the share in the hover', () => {
+  const f = figure({ ...rows, display: 'percent' }, years);
+  expect(f.layout).toMatchObject({ barmode: 'stack', barnorm: 'percent', yaxis: { ticksuffix: '%' } });
+  expect((f.data[0] as { text: string[] }).text[0]).toMatch(/10[\s\S]*25\.0%/); // cash FY2024: 10 of 40
+  expect(figure({ ...settings, type: 'bar', display: 'percent' }).layout).toMatchObject({ barnorm: 'percent', xaxis: { ticksuffix: '%' } });
+});
+it('pie builds one pie trace over the rows of one measure and refuses more than one', () => {
+  const f = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect(f.data).toEqual([expect.objectContaining({ type: 'pie', labels: ['cash', 'inventory'], values: [30, 10], sort: false })]);
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped' }, years)).toBe('Pie shows one measure — choose one');
+  // Plotly merges equal pie labels, so duplicates must already be unique
+  expect(figure({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['Cost', 1, 1], ['Cost', 2, 2]])).data[0]).toMatchObject({ labels: ['Cost', 'Cost (2)'], values: [1, 2] });
+});
+it('a pie slice has the colour of the same row in a rows chart', () => {
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect((pie.data[0] as { marker: { colors: string[] } }).marker.colors[0]).toEqual((figure(rows, years).data[0] as { marker: { color: string } }).marker.color);
+});
+it('pie and percent refuse negative values, listing at most five', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 10, 5], ['treasury_stock', 2, -4]]))).toBe("Can't show shares of negative values: treasury_stock (FY2025).");
+  const many = withRows(Array.from({ length: 7 }, (_, i) => [`neg${i}`, -1, 1] as [string, number, number]));
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, many)).toBe("Can't show shares of negative values: neg0 (FY2024), neg1 (FY2024), neg2 (FY2024), neg3 (FY2024), neg4 (FY2024), and 2 more.");
+});
+it('pie and percent refuse a zero total, naming the year or measure', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 0, 5], ['inventory', 0, 5]]))).toBe("Can't show shares of a zero total: FY2024.");
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['cash', 0, 1]]))).toBe("Can't show shares of a zero total: FY2024.");
+});
+it('missing values are left out and listed, and the chart still draws', () => {
+  const r = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark');
+  expect(r).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'] });
+  const pie = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, 'dark');
+  expect(pie).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'], figure: { data: [{ labels: ['cash'], values: [10] }] } });
+});
+it('an all-missing stack is listed as missing, not refused as a zero total', () => {
+  expect(buildLinkedFigure(withRows([['cash', null, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark')).toMatchObject({ ok: true, notes: ['Missing: cash (FY2024), inventory (FY2024)'] });
+});
+it('grouped, stacked and line charts keep negatives and give no notes', () => {
+  const d = withRows([['cash', 10, null], ['treasury_stock', -4, 1]]);
+  for (const display of ['grouped', 'stacked'] as const) expect(buildLinkedFigure(d, { ...rows, display }, 'dark')).toMatchObject({ ok: true, notes: [] });
+});
+it('leftover fields from another type still draw', () => {
+  const line = figure({ ...rows, type: 'line', display: 'percent' }, withRows([['cash', -1, 2]]));
+  expect(line.data[0]).toMatchObject({ type: 'scatter' }); expect(line.layout).not.toHaveProperty('barnorm');
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'percent', seriesFrom: 'rows' }, years);
+  expect(pie.data[0]).toMatchObject({ type: 'pie', labels: ['cash', 'inventory'] });
+});
