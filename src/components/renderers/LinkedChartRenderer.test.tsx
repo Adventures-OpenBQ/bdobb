@@ -240,3 +240,74 @@ it('missing_series_marks_old_figure_stale and repairing settings restores curren
     expect(screen.queryByText(/stale/)).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
+async function setupRows(rows: { region: string; revenue: number | null; cost?: number }[]) {
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, columns: [...input.columns, { id: 'cost', label: 'Cost', dtype: 'number' as const }], rows: rows.map((r, i) => ({ id: `r${i}`, values: { cost: 1, ...r } })) } }) }) });
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d'); return store;
+}
+const withSettings = (store: Awaited<ReturnType<typeof setup>>, s: object, commit = vi.fn(async (_: unknown) => true)) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...settings, ...s } }, refreshKey: 0, store, onSettingsChange: commit });
+it('offers 100% stacked and series-from only for the types that use them', async () => {
+    const store = await setup();
+    const opts = () => [...screen.getByLabelText('Display').querySelectorAll('option')].map(o => o.value);
+    for (const type of ['column', 'bar']) {
+        const { unmount } = render(<LinkedChartRenderer {...withSettings(store, { type })}/>);
+        expect(opts()).toEqual(['grouped', 'stacked', 'percent']);
+        expect(screen.getByRole('option', { name: '100% stacked' })).toHaveValue('percent');
+        expect(screen.getByLabelText('Series from')).toBeTruthy();
+        unmount();
+    }
+    const line = render(<LinkedChartRenderer {...withSettings(store, { type: 'line' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.getByLabelText('Series from')).toBeTruthy(); line.unmount();
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
+    expect(screen.getByRole('option', { name: 'Pie' })).toHaveValue('pie');
+    cleanup(); store.disposeDashboard('d');
+});
+it('commits new values and resets fields the new type cannot use', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer {...withSettings(store, { display: 'percent', seriesFrom: 'rows' }, commit)}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'line' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, type: 'line', display: 'stacked', seriesFrom: 'rows' }));
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'pie' } });
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(2));
+    expect(commit.mock.lastCall![0]).toMatchObject({ type: 'pie', display: 'stacked' }); expect(commit.mock.lastCall![0]).not.toHaveProperty('seriesFrom');
+    cleanup(); const c2 = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer {...withSettings(store, {}, c2)}/>);
+    fireEvent.change(screen.getByLabelText('Display'), { target: { value: 'percent' } });
+    await waitFor(() => expect(c2).toHaveBeenLastCalledWith({ ...settings, display: 'percent' }));
+    fireEvent.change(screen.getByLabelText('Series from'), { target: { value: 'rows' } });
+    await waitFor(() => expect(c2).toHaveBeenLastCalledWith({ ...settings, seriesFrom: 'rows' }));
+    cleanup(); store.disposeDashboard('d');
+});
+it('a refusal clears a drawn chart and shows a status line, not an alert', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'treasury_stock', revenue: -5 }]);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    await screen.findByTestId('figure');
+    rerender(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.getByText(/^Can't show shares of negative values: treasury_stock/)).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull(); expect(screen.queryByText(/stale/)).toBeNull();
+    rerender(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    await screen.findByTestId('figure'); expect(screen.queryByText(/^Can't show shares/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('pie with two measures says choose one as a status line', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie', measures: ['revenue', 'cost'] })}/>);
+    expect(await screen.findByText('Pie shows one measure — choose one')).toHaveAttribute('role', 'status');
+    expect(screen.queryByTestId('figure')).toBeNull(); expect(screen.queryByRole('alert')).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('missing values are listed under a drawn share chart', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'inventory', revenue: null }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    await screen.findByTestId('figure'); expect(screen.getByText(/^Missing: inventory/)).toBeTruthy();
+    cleanup(); store.disposeDashboard('d');
+});
+it('rows mode gives duplicate category values disambiguated names', async () => {
+    const store = await setup();
+    render(<LinkedChartRenderer {...withSettings(store, { seriesFrom: 'rows' })}/>);
+    await screen.findByTestId('figure'); const f = JSON.parse(screen.getByTestId('figure').textContent!);
+    expect(f.data).toHaveLength(1600); expect(f.data[0].name).toBe('A'); expect(f.data[1].name).toBe('A (2)');
+    cleanup(); store.disposeDashboard('d');
+});
