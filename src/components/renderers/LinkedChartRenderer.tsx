@@ -105,8 +105,10 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             }
             setCompleted({ identity, dataset, settings: structuredClone(settings), renderedSettings, revision: JSON.stringify(revision) });
             setError(undefined);
-        }).catch(e => { if (!controller.signal.aborted && version === generation.current)
-            setError(`Could not load chart: ${e instanceof Error ? e.message : String(e)}`); });
+        }).catch(e => { if (!controller.signal.aborted && version === generation.current) {
+            setRefused(undefined);
+            setError(`Could not load chart: ${e instanceof Error ? e.message : String(e)}`);
+        } });
         return () => controller.abort();
         // Status-only failure transitions keep the completed schema, dataset and mapping together.
         // eslint-disable-next-line react-hooks/exhaustive-deps

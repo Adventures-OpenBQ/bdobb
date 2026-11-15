@@ -291,6 +291,16 @@ it('a refusal clears a drawn chart and shows a status line, not an alert', async
     await screen.findByTestId('figure'); expect(screen.queryByText(/^Can't show shares/)).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
+it('a failed fetch after a refusal shows the load error, not the old refusal', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'treasury_stock', revenue: -5 }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    expect(await screen.findByText(/^Can't show shares of negative values/)).toBeTruthy();
+    store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
+    await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'cash' }, { kind: 'none' }); await store.settled('d'); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
+    expect(screen.queryByText(/^Can't show shares/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
 it('pie with two measures says choose one as a status line', async () => {
     const store = await setupRows([{ region: 'cash', revenue: 10 }]);
     render(<LinkedChartRenderer {...withSettings(store, { type: 'pie', measures: ['revenue', 'cost'] })}/>);
