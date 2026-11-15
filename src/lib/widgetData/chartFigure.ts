@@ -8,23 +8,30 @@ const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'
 function color(id: string) { let hash = 0; for (const c of id)
     hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0; return COLORS[hash % COLORS.length]; }
 function escape(value: unknown) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+export type LinkedFigureResult =
+    | { ok: true; figure: PlotlyFigure; revision: string; notes: string[] }
+    | { ok: false; message: string; refused?: true };
+type DatasetRows = WidgetDataset['rows'];
+/** Legend names for Rows mode: the label, disambiguated by group path and then by row order when it repeats. */
+function rowNames(rows: DatasetRows, labels: string[]): string[] {
+    const count = new Map<string, number>();
+    for (const label of labels)
+        count.set(label, (count.get(label) ?? 0) + 1);
+    const names = rows.map((row, index) => count.get(labels[index])! > 1 ? [labels[index], ...(row.groupPath ?? []).map(m => `${m.field}: ${m.label ?? m.value}`)].join(' — ') : labels[index]);
+    const seen = new Map<string, number>();
+    return names.map(name => { const n = (seen.get(name) ?? 0) + 1; seen.set(name, n); return n > 1 ? `${name} (${n})` : name; });
+}
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
-export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): {
-    ok: true;
-    figure: PlotlyFigure;
-    revision: string;
-} | {
-    ok: false;
-    message: string;
-} {
+export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): LinkedFigureResult {
     const columns = new Map(dataset.columns.map(c => [c.id, c]));
     if (!settings.category || !columns.has(settings.category))
         return { ok: false, message: 'Choose an available category field.' };
     if (!settings.measures.length)
         return { ok: false, message: 'Choose chart fields: select one or more numeric measures.' };
-    const traces: unknown[] = [];
+    const category = settings.category;
     const ids = dataset.rows.map(r => r.id);
-    const labels = dataset.rows.map(r => String(r.values[settings.category!] ?? ''));
+    const labels = dataset.rows.map(r => String(r.values[category] ?? ''));
+    const measures: { id: string; name: string; colorKey: string; values: (number | null)[]; text: string[] }[] = [];
     for (const id of settings.measures) {
         const column = columns.get(id);
         if (!column)
@@ -45,13 +52,39 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         }
         const split = column.splitPath ?? [];
         const name = [...split.map(member => String(member.label ?? member.value ?? '')), column.label].join(' — ');
-        const seriesColor = color(split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id);
-        const horizontal = settings.type === 'bar';
+        const colorKey = split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id;
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
-        traces.push({ type: settings.type === 'line' ? 'scatter' : 'bar', name, x: horizontal ? values : ids, y: horizontal ? ids : values, ...(settings.type === 'line' ? { mode: 'lines+markers', connectgaps: false, line: { color: seriesColor } } : { orientation: horizontal ? 'h' : 'v', textposition: 'none' }), marker: { color: seriesColor }, text, hovertemplate: '%{text}<extra></extra>' });
+        measures.push({ id, name, colorKey, values, text });
     }
-    const revision = JSON.stringify([settings.type, settings.category, settings.measures, settings.display]);
-    const axis = { type: 'category', categoryorder: 'array', categoryarray: ids, tickmode: 'array', tickvals: ids, ticktext: labels };
+    const fromRows = settings.seriesFrom === 'rows' && settings.type !== 'pie';
+    // The series-by-position matrix: Columns mode has a series per measure over row positions; Rows mode transposes it.
+    let positions: string[], ticks: string[], series: { name: string; colorKey: string; values: (number | null)[]; text: string[] }[];
+    if (fromRows) {
+        const names = rowNames(dataset.rows, labels);
+        positions = measures.map(m => m.id);
+        ticks = measures.map(m => m.name);
+        series = dataset.rows.map((row, r) => {
+            const values = measures.map(m => m.values[r]);
+            const hoverHead = [escape(names[r]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`)];
+            return {
+                name: names[r],
+                colorKey: JSON.stringify([pivotValueKey(row.values[category]), ...(row.groupPath ?? []).map(m => [m.categoryId ?? m.field, m.memberKey ?? pivotValueKey(m.value)])]),
+                values,
+                text: measures.map((m, i) => [...hoverHead, `${escape(m.name)}: ${values[i] ?? 'Missing'}`].join('<br>')),
+            };
+        });
+    } else {
+        positions = ids;
+        ticks = labels;
+        series = measures;
+    }
+    const horizontal = settings.type === 'bar';
+    const traces = series.map(({ name, colorKey, values, text }) => {
+        const seriesColor = color(colorKey);
+        return { type: settings.type === 'line' ? 'scatter' : 'bar', name, x: horizontal ? values : positions, y: horizontal ? positions : values, ...(settings.type === 'line' ? { mode: 'lines+markers', connectgaps: false, line: { color: seriesColor } } : { orientation: horizontal ? 'h' : 'v', textposition: 'none' }), marker: { color: seriesColor }, text, hovertemplate: '%{text}<extra></extra>' };
+    });
+    const revision = JSON.stringify([settings.type, settings.category, settings.measures, settings.display, ...(fromRows ? ['rows'] : [])]);
+    const axis = { type: 'category', categoryorder: 'array', categoryarray: positions, tickmode: 'array', tickvals: positions, ticktext: ticks };
     const background = theme === 'dark' ? '#1e242e' : '#ffffff';
-    return { ok: true, revision, figure: { data: traces, layout: { uirevision: revision, margin: { l: 48, r: 12, t: 12, b: 80 }, barmode: settings.display === 'stacked' ? 'stack' : 'group', [settings.type === 'bar' ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' }, paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } } } };
+    return { ok: true, revision, notes: [], figure: { data: traces, layout: { uirevision: revision, margin: { l: 48, r: 12, t: 12, b: 80 }, barmode: settings.display === 'stacked' ? 'stack' : 'group', [settings.type === 'bar' ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' }, paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } } } };
 }
