@@ -1,10 +1,11 @@
-# Source for the proposed v11.0.0 AGPL edition
+# Source for BDOBB v11.0.0
 
 Base repository: Adventures-OpenBQ/bdobb
-Baseline: public v10 main 0281a7580c0a44a25736c62358f223a389fb8008; exact candidate revision is recorded in source-offer.json.
+The source identity and preparation commit are recorded in source-offer.json;
+SOURCE-MANIFEST.json identifies the complete release tree.
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
-This source tree includes the proposed AGPL migration, revision-specific Help
+This source tree includes the revision-specific Help
 source link, exact lockfiles, necessary build scripts, original artwork and
 vendored source where present. It is NOT the unchanged source of the old
 Apache binary. Build any new AGPL binary from this complete edition tree.
@@ -22,9 +23,9 @@ Also download the shared package archive `dependency-pack-a1b2ab0d108e6dbb7044.t
 SHA-256: `64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941`.
 Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
 
-This public URL and the application's Help source URL are prepared targets,
-not a claim that anything has been uploaded. For local review use the sibling
-catalogue's download links. Its dependency manifest identifies each package,
+Release assets are published separately from preparation of this tree. Verify
+the assets are accessible and their SHA-256 values match before distribution.
+The dependency pack's manifest identifies each package,
 original location, lockfile integrity and release coverage. Original npm .tgz
 and Cargo .crate distributions are provided separately to avoid duplicating
 the same dependency bytes in every application's source archive. Extract those
@@ -33,6 +34,17 @@ packages contain src/, and the Rust crates contain their source. The pack's
 copyleft-source report records source-member checks. Do not replace upstream
 licenses with AGPL. Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
+
+Also download the rustls security-update supplement:
+
+- File: `rustls-0.23.46.crate`
+- SHA-256: `48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf`
+- URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-rustls-0.23.46-48e13bd8c0e9/rustls-0.23.46.crate
+
+The existing dependency pack retains the older rustls distribution for its
+historical releases. This tree's Cargo lockfile selects 0.23.46; the supplement
+provides those exact upstream source bytes. All other dependency lockfiles match
+the earlier v11 preparation. Keep original license texts and vendored patches.
 
 ## Build the application
 
@@ -66,12 +78,11 @@ The supplied source offer is version-specific. A modified downstream build
 must offer its OWN corresponding source rather than reusing this edition's
 link. Regenerate source identity/offer/archive after modifying covered source.
 
-## Paired calendar walkup
+## Release scope
 
-Client PR #69: 53c9c33924cecdd8b5673641770cacd51ef1e26a
-Provider PR #16: f9e3908155601108df957cf55e61b8c5b4e4f501
-Exact paired provider commit: e7bb14d5546eca3218111b7930471d5965ac7496
-
-The catalogue contains all 71 calendars. Coverage/disagreement limits in docs/calendars/release-v4-evidence.md remain applicable. These sources supersede earlier archive offers for this changed edition; original Apache tags stay intact.
-
-Documentation copyright patch v10.0.0, based on published source commit e0692e2ddfbbc52eec40ab9dfed1d292a60b7c55. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.
+The tree includes the v11 TemporalDB client, retained-result paging, managed-table
+integration, startup discovery notices and native rustls security update. The
+backend and TemporalDB are separately deployed services with their own sources
+and terms. This archive contains no signing secrets, provider credentials or
+user portfolio records. A source archive alone does not qualify desktop signing,
+notarization or every provider/data workflow.
