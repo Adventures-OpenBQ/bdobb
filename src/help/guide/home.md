@@ -75,6 +75,7 @@ If you have used the original BDOBB, the shape is familiar and the details are n
 - [[kdb-tick-cache|kdb+ Tick Cache]] — the `live` profile's `openbq-kdb` and live-grid's tick recorder: bring-your-own q, the spool, the seam, the Delta Lake store and the tick widgets
 - [[temporaldb-queries|TemporalDB Shared Queries]] — the query widget, the shared library, temporal context, execution receipts, exports and Rita's MCP tools
 - [[temporaldb-explorer|TemporalDB Explorer]] — the catalog, the schema and coverage inspector, Dataset and SQL query building, Validate, Save, Run and Open as query widget
+- [[temporaldb-odp-field-to-widget|From an ODP Field to a Widget]] — a walkthrough from a provider field to a dashboard widget: the field-name table, building and running the query, opening it as a widget, the SQL variant and the Rita route
 - [[tailscale-networking|Tailscale Networking]] — Serve-only ingress, key-maint's Tailscale Service, and the sharp edges
 - [[web-preview|Web Preview]] — the GitHub-gated Vercel preview of the dashboard grid, what it can reach (the News relay included), and what resets
 

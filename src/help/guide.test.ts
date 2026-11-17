@@ -14,8 +14,8 @@ describe("the help guide", () => {
     const slugs = GUIDE_SECTIONS.flatMap((s) => s.pages.map((p) => p.slug));
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(slugs).toEqual(GUIDE_PAGES.map((p) => p.slug));
-    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate. v10 adds the kdb+ Tick Cache page; v11 adds TemporalDB Shared Queries. v11 also adds the TemporalDB Explorer, and v4's Linked Widgets page is carried forward.
-    expect(GUIDE_PAGES).toHaveLength(48);
+    // Added v4 Calendar and v5 Workspace/Statement pages, v6's three Rita/AI pages, v7's two iPad pages, and v8's News and Locked and Pinned Widgets pages, are deliberate. v10 adds the kdb+ Tick Cache page; v11 adds TemporalDB Shared Queries. v11 also adds the TemporalDB Explorer and the ODP field to widget walkthrough, and v4's Linked Widgets page is carried forward.
+    expect(GUIDE_PAGES).toHaveLength(49);
   });
 
   it("gives every page a title from its own H1, with the frontmatter gone", () => {
