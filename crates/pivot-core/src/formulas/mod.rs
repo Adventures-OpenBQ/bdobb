@@ -186,7 +186,9 @@ pub struct CompiledModel {
 pub struct EvaluatedRows {
     pub rows: Vec<DatasetRow>,
     pub columns: Vec<Column>,
+    /// Absent row entries are empty state when there are no authored source formulas.
     pub formula_cells: BTreeMap<String, BTreeMap<String, CellResult>>,
+    /// Authored source formulas retain row entries, including blocked evaluations.
     pub source_dependencies: BTreeMap<String, BTreeMap<String, Vec<String>>>,
     pub errors: BTreeMap<String, BTreeMap<String, ModelError>>,
 }
