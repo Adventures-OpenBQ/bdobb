@@ -74,3 +74,20 @@ it('refuses cyclic and excessively deep optional envelopes without losing the or
  const cards=importApps([{name:'Unsafe',tabs:{one:{layout:[{i:'raw',tableDefinition:cyclic},{i:'raw',tableDefinition:{table:{},search:'',analytical:deep}}]}}}],[]).dashboards[0].tabs[0].cards;
  expect(cards).toHaveLength(2);cards.forEach(c=>expect(c.tableDefinition).toBeUndefined());
 });
+it('pinned template version change is inspectable and requests repair rather than rebinding old identities',()=>{
+ const source=card();const statement=source.tableDefinition!.analytical as StatementIntent;
+ statement.template={...statement.template,version:'2.0.0'};
+ const reopened=JSON.parse(JSON.stringify(persistedCard(source)));
+ expect(reopened.tableDefinition.analytical.template.version).toBe('2.0.0');
+ expect(()=>compileStatement(reopened.tableDefinition.analytical,fixture().source.columns)).toThrow(/Invalid owned line/);
+});
+it('portable interchange preserves chart field mappings, statement bindings and durable explicit empty selection',()=>{
+ const owner=card();owner.tableSelection={kind:'explicit',ids:[]};
+ const chart:DashboardCard={...card(),id:'chart',widgetId:'linked_chart',linkedSource:{kind:'widget',sourceWidgetId:'owner'},linkedChart:{type:'column',category:'line',measures:['FY2024/value'],display:'grouped'}};
+ const d:Dashboard={id:'d',name:'Pinned',tabs:[{id:'t',name:'Main',cards:[owner,chart]}]};
+ const reopened=importApps(JSON.parse(JSON.stringify([compatible(d)])),[]).dashboards[0].tabs[0].cards;
+ expect(reopened[0].tableDefinition).toEqual(owner.tableDefinition);
+ expect(reopened[0].tableSelection).toEqual({kind:'explicit',ids:[]});
+ expect(reopened[1].linkedChart).toEqual(chart.linkedChart);
+ expect(reopened[1].linkedSource?.sourceWidgetId).toBe(reopened[0].id);
+});

@@ -1,0 +1,130 @@
+{
+  "format": 1,
+  "mappingVersion": "sec-statements/1.0.0",
+  "numericPolicy": {
+    "id": "decimal-source-binary64/1",
+    "integers": "Safe integers must match exactly; refuse unsafe integers.",
+    "fractional": "Preserve source Decimal strings; conversion must round-trip to the same decimal value. No computed fractional cases or blanket tolerance."
+  },
+  "companies": [
+    {
+      "symbol": "NVDA",
+      "company": "CIK:0001045810",
+      "accession": "0001045810-25-000023",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581025000023/nvda-20250126_htm.xml",
+        "sha256": "c85f41184ee3b0a78c56564bf77804988757d6e002c16be558d01b53a0ad2845"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2023-01-30",
+          "end": "2024-01-28"
+        },
+        {
+          "year": 2025,
+          "start": "2024-01-29",
+          "end": "2025-01-26"
+        }
+      ]
+    },
+    {
+      "symbol": "AMD",
+      "company": "CIK:0000002488",
+      "accession": "0000002488-25-000012",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248825000012/amd-20241228_htm.xml",
+        "sha256": "712b8a06cbb849e4fc4c78102986dbb25806cce5e3c2bbc0464da4d63ee516f4"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2023-12-31",
+          "end": "2024-12-28"
+        }
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "company": "CIK:0001018724",
+      "accession": "0001018724-25-000004",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872425000004/amzn-20241231_htm.xml",
+        "sha256": "0392736fc6a26fc654020f3d3ea5e493cb633c298b717a5b523ad5b4e2f8c4de"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        }
+      ]
+    },
+    {
+      "symbol": "GOOG",
+      "company": "CIK:0001652044",
+      "accession": "0001652044-25-000014",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204425000014/goog-20241231_htm.xml",
+        "sha256": "3847c7f5416ff6055de7bb2370934f9d6f3cafec50c310631ef9f96bd8d764a3"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        }
+      ]
+    },
+    {
+      "symbol": "META",
+      "company": "CIK:0001326801",
+      "accession": "0001326801-25-000017",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1326801/000132680125000017/meta-20241231_htm.xml",
+        "sha256": "ca45f4ccdc53c40392cb594fb82929c6b5b0601140a453fb4b48c2a4ab941abb"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        }
+      ]
+    },
+    {
+      "symbol": "TSLA",
+      "company": "CIK:0001318605",
+      "accession": "0001628280-25-003063",
+      "source": {
+        "url": "https://www.sec.gov/Archives/edgar/data/1318605/000162828025003063/tsla-20241231_htm.xml",
+        "sha256": "79bc3ec6ff49c990acd9c186a0fb8c3fd5aebc76cd80a9e1b570b2c8d16ac114"
+      },
+      "reportPeriods": [
+        {
+          "year": 2024,
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "rows": 98,
+    "expectedCells": 110
+  },
+  "files": [
+    {
+      "path": "reference.json",
+      "sha256": "2150b68091055b48bc781889c4cdf4483f6fe6ce3925672bd474cd3d1bfeb492"
+    },
+    {
+      "path": "expected.json",
+      "sha256": "6636f94a4aef20bf452bcdd9d92df7d13f9b247ceadf6251ff682088a7e0bdaa"
+    },
+    {
+      "path": "trace.json",
+      "sha256": "5dee2217f891248b0b2671db3a17e9c6d63331e9b827e172f412610f0ca328fb"
+    }
+  ]
+}
