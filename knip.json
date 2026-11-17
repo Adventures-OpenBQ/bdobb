@@ -6,7 +6,9 @@
     "deploy/reference-demo/vercel/build.mjs",
     "deploy/table-service/*.mjs",
     "e2e/**/*.{ts,tsx,mjs}",
-    "playwright.*.config.ts"
+    "playwright.*.config.ts",
+    "scripts/pivot-qualification/**/*.{ts,mjs}",
+    "scripts/sort-reuse-benchmark/*.mjs"
   ],
   "ignore": [
     "LICENSES/**",

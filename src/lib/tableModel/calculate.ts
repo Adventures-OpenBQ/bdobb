@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import {sortDisplay,sourceDisplayValue,groupDisplayValue,type DisplayOrderEntry,type DisplaySortKey} from './displaySort';
 
 import type { AnalyticalExecutionDescriptor } from './executionDescriptor';
 import { sliceCategories } from './scopes';
@@ -20,7 +21,7 @@ import { evaluateSourceFormulas } from './formulaEvaluation';
 import { eligiblePool, activePage, categoryFacets, type EligiblePool, type MemberFacet } from './facets';
 import { calculateTotals, temporalContext, type CalculatedTotals } from './totals';
 import { qualifyGroups, type CalculatedGroup } from './resultFilters';
-import { pivotTable, compareSorted, KEY_SEP, LABEL_FIELD } from '../pivotTable';
+import { pivotTable, KEY_SEP, LABEL_FIELD } from '../pivotTable';
 import { prepareCategoryPivot } from './categories';
 import { groupIdentity } from '../widgetData/identity';
 import type { CellResult, ModelError, ModelWarning } from './types';
@@ -60,6 +61,7 @@ export function compileAnalyticalModel(raw: unknown, context?: CompilationContex
     return { execution: context?.execution, graph, symbols, categories, columns, fiscal: context?.fiscal ?? {}, validation, model };
 }
 export type CalculatedTable = {
+    displayOrder?:Map<object,DisplayOrderEntry>;
     paramDiagnostics: ParamDiagnostic[];
     groupResolutions: Record<string,GroupResolution>;
     compiled: AnalyticalModel;
@@ -112,6 +114,7 @@ export function calculateTable(input: {
     table: TableCardState;
     search: string;
     runtimeParams?: RuntimeParams;
+    captureDisplayOrder?:number;
     context?: Omit<CompilationContext, 'columns'> & {
         temporalContext?: CalculationScope['temporalContext'];
     };
@@ -223,28 +226,16 @@ export function calculateTable(input: {
     const sourceById = new Map(surviving.map(row => [row.id, row]));
     const sourceBindings = new Map(model.measures.map(measure => [measure.id, measure.sourceFieldId]));
     const structuralCategories = new Set([...model.layout.rows, ...model.layout.columns]);
-    const sortForDisplay = <T>(items: T[], valueOf: (item: T, id: string) => unknown): void => {
-        if (!input.table.sorting?.length) return;
-        items.sort((a, b) => {
-            for (const sort of input.table.sorting!) {
-                const comparison = compareSorted(valueOf(a, sort.id), valueOf(b, sort.id), sort.desc);
-                if (comparison) return comparison;
-            }
-            return 0;
-        });
-    };
-    const sourceSortValue = (row: DatasetRow, id: string, useMeasureBindings: boolean): unknown => {
-        const original = sourceById.get(row.id)!;
-        // A structural category ID wins over a same-ID Data measure, as in pivotTable.
-        const field = useMeasureBindings && !structuralCategories.has(id) ? sourceBindings.get(id) ?? id : id;
-        return Object.hasOwn(original.values, field) ? original.values[field] : undefined;
-    };
+    const sortForDisplay=<T>(items:T[],valueOf:(item:T,id:string)=>unknown):void=>sortDisplay(items,input.table.sorting,valueOf);
+    const sourceSortValue=(row:DatasetRow,id:string,useMeasureBindings:boolean):unknown=>sourceDisplayValue(row,id,useMeasureBindings,sourceById,sourceBindings,structuralCategories);
     const totals: CalculatedTotals = enabled && (!execution || model.subtotals.grandTotal) ? calculateTotals(recordIds, pool, compiled, contextFor(surviving)) : {
         empty: true, scope: { sourceRecordIds: recordIds, categoryConstraints: new Map(), temporalContext: {} },
         formulas: { cells: new Map(), metadata: new Map(), measureCells: new Map(), measureMetadata: new Map(), scopeErrors: [], warnings: [], formats: new Map(), empty: true },
         measures: { cells: new Map(), metadata: new Map() },
     };
     const facets = Object.fromEntries(model.categories.map(c => [c.id, categoryFacets(evaluated, constraints, c.id)]));
+    const displayOrder=input.captureDisplayOrder?new Map<object,DisplayOrderEntry>():undefined;let orderRefused=false;
+    const capture=(value:object,index:number,groupKey?:DisplaySortKey)=>{if(!displayOrder||orderRefused)return;if(!displayOrder.has(value)&&displayOrder.size>=input.captureDisplayOrder!){displayOrder.clear();orderRefused=true;return;}displayOrder.set(value,{index,...(groupKey?{groupKey}:{})});};
     const groups: LogicalGroup[] = [];
     const rows: DatasetRow[] = [];
     const eligibleRows: DatasetRow[] = [];
@@ -262,6 +253,7 @@ export function calculateTable(input: {
                     Object.defineProperty(values, id, { value: '#ERROR', enumerable: true });
             rows.push({ ...row, values, ...(Object.keys(cellErrors).length ? { cellErrors } : {}) });
         }
+        if(displayOrder)rows.forEach((row,i)=>capture(row,i));
         sortForDisplay(rows, (row, id) => sourceSortValue(row, id, false));
         eligibleRows.push(...rows);
     }
@@ -412,14 +404,7 @@ export function calculateTable(input: {
             }
             const visit = (nodes: LogicalGroup[]) => {
                 if(execution)nodes.sort((a,b)=>{const aa=a.rows[0].groupPath!.at(-1)!,bb=b.rows[0].groupPath!.at(-1)!;const order=execution.memberOrders[aa.categoryId!]??[];return order.indexOf(aa.memberKey!)-order.indexOf(bb.memberKey!);});
-                sortForDisplay(nodes, (node, id) => {
-                    const key = groupSortKeys.get(node.id)!;
-                    if (id === LABEL_FIELD) return key.value;
-                    // Deeper, ancestor and split category sorts cannot read aggregate cells.
-                    if (structuralCategories.has(id)) return id === key.categoryId ? key.value : undefined;
-                    const values = node.rows[0].values;
-                    return Object.hasOwn(values, id) ? values[id] : undefined;
-                });
+                sortForDisplay(nodes,(node,id)=>groupDisplayValue(node,id,groupSortKeys.get(node.id)!,structuralCategories));
                 if(execution && filters.length) for(let i=nodes.length-1;i>=0;i--) if(nodes[i].rows[0].groupPath!.length<model.layout.rows.length && !nodes[i].children.length)nodes.splice(i,1);
                 for (const node of nodes) {
                     rows.push(node.rows[0]);
@@ -433,6 +418,7 @@ export function calculateTable(input: {
                     }
                 }
             };
+            if(displayOrder){const captureGroups=(nodes:LogicalGroup[])=>nodes.forEach((node,i)=>{capture(node,i,groupSortKeys.get(node.id));if(node.children.length)captureGroups(node.children);else node.rows.slice(1).forEach((row,i)=>capture(row,i));});captureGroups(groups);}
             rows.length = 0;
             visit(groups);
         }
@@ -451,5 +437,5 @@ export function calculateTable(input: {
     columns = columns.filter(column => !hidden.has(column.id));
     const rank = (id: string) => { const index = order.indexOf(id); return index < 0 ? order.length : index; };
     columns.sort((a, b) => rank(a.id) - rank(b.id));
-    return { paramDiagnostics, groupResolutions, compiled, pool, recordIds, groups, rows, columns, totals, totalCells, facets, errors, warnings, complete: (!execution || errors.length===0) && sourceQualificationErrors.length === 0 && renderComplete && requiredErrors.length === 0 && page.errors.length === 0 && scopeErrors(pool, totals.scope).length === 0 && qualification.complete && requiredValid && !errors.some(e => e.code === 'missing-reference' || e.code === 'invalid-date' || e.code === 'fiscal-context'), selectionNamespace, eligibleRows, provenance: { ...input.source.provenance, ...(grouped ? { inputMayContainAggregates: true } : {}) } };
+    return { ...(!orderRefused&&displayOrder?{displayOrder}:{}),paramDiagnostics, groupResolutions, compiled, pool, recordIds, groups, rows, columns, totals, totalCells, facets, errors, warnings, complete: (!execution || errors.length===0) && sourceQualificationErrors.length === 0 && renderComplete && requiredErrors.length === 0 && page.errors.length === 0 && scopeErrors(pool, totals.scope).length === 0 && qualification.complete && requiredValid && !errors.some(e => e.code === 'missing-reference' || e.code === 'invalid-date' || e.code === 'fiscal-context'), selectionNamespace, eligibleRows, provenance: { ...input.source.provenance, ...(grouped ? { inputMayContainAggregates: true } : {}) } };
 }
