@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "cb37353b1d103495ac3e62c711b801eb55e65fbc",
-  "sourceId": "e7b1e9576c0a5ecc4e23cb63191a5aaf900f9e6c88cb0df74f02bb23774cfd82",
+  "baseCommit": "eda098f5d6f0de71867ff626d4f30ebec78813c6",
+  "sourceId": "bc2e85a5f5bf2a72d915cf0abd6d32344ba0cba6a786e4e5b28041d947f61495",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21265,8 +21265,8 @@
       "path": "e2e/params.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 5245,
-      "sha256": "32ef3f56c189e61908523afc1909b57ab6dc4a65f448aec50437a9e2b584dd8a"
+      "size": 6633,
+      "sha256": "787c6e8d3e193462f538d832e9919bebc0a6824bb09a1a5f44850321cd3af191"
     },
     {
       "path": "e2e/parity.spec.ts",
@@ -22344,7 +22344,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "64ecb4a58194f2d859259217d59379b01339302af2815579c203b6e608c32c67"
+      "sha256": "838e0cc8d72ecb5a7c2bfe999a1a89e5587e2ffb32172578b27dc53a117ce3e0"
     },
     {
       "path": "source_bundle.py",
@@ -22763,15 +22763,15 @@
       "path": "src/components/ParamControls.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 77462,
-      "sha256": "17df189a0904087212dfba6ed3e5fc8fa50101132e1412cd21679a56621392bb"
+      "size": 78724,
+      "sha256": "15319dc30a6d718e38008184c9ddd03e4ea1e2742e8c924a4622830023ecb782"
     },
     {
       "path": "src/components/ParamControls.tsx",
       "type": "file",
       "mode": 420,
-      "size": 32702,
-      "sha256": "581713e883142550fe1fd13a168c1e31183171e556e8f03de753c1f63b317ec0"
+      "size": 33428,
+      "sha256": "91cdc4c939a93a867d670f53684836c86dc24638ba893dc79b61985668ee0b9e"
     },
     {
       "path": "src/components/ParamInput.tsx",
@@ -22945,8 +22945,8 @@
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 117675,
-      "sha256": "00d90d671aa537a13197096123c51054c590afc3dfc12d91fd23ab7aab59e9e7"
+      "size": 117767,
+      "sha256": "21a721f2d98391395f8ddd2b72eb70c7f4fb4a9ab7825bcb357072405bb786f8"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -24002,8 +24002,8 @@
       "path": "src/components/renderers/QueryDataRenderer.pin.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 3146,
-      "sha256": "5f742247774d19ba6d5a70b7a7d909de69511263478f6db6e691589e2985e1d9"
+      "size": 3263,
+      "sha256": "f1860851638bfd418c15b589d6d10d6e98bd9ad5bbffb1430eeb08c04fa7172b"
     },
     {
       "path": "src/components/renderers/QueryDataRenderer.receipt.test.tsx",
@@ -24898,8 +24898,8 @@
       "path": "src/help/guide/home.md",
       "type": "file",
       "mode": 420,
-      "size": 12809,
-      "sha256": "9b5d564927eb58fe6b9dcc3a17ace1b2edf0b55daed626a71ac79bf3b5460e7e"
+      "size": 13052,
+      "sha256": "9c5c16943d332a4f953ebf48d2355db9dcd0b0f7053f8065d669d45ba8ffc69c"
     },
     {
       "path": "src/help/guide/html-and-iframe-widgets.md",
@@ -25077,6 +25077,13 @@
       "sha256": "c40b8bf9e5783c6184e692ec97d055da57df0ca125b870915ae45d808490fd4a"
     },
     {
+      "path": "src/help/guide/temporaldb-odp-field-to-widget.md",
+      "type": "file",
+      "mode": 420,
+      "size": 5167,
+      "sha256": "fe5ae46f853f50d9af70ea74eb7bc46add134b14cf26ee1695a9cfe57d1beb07"
+    },
+    {
       "path": "src/help/guide/temporaldb-queries.md",
       "type": "file",
       "mode": 420,
@@ -25129,8 +25136,8 @@
       "path": "src/help/guide.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 25794,
-      "sha256": "b3f5a0fe851284c823edc15d6550eb03c768942298d63b0051d40be3c57f2802"
+      "size": 25834,
+      "sha256": "f2c03896e239acfa3be2d5c7dcfd72e1ab5b435ae54d378f9773d343b738cd01"
     },
     {
       "path": "src/help/guide.ts",
@@ -25696,8 +25703,8 @@
       "path": "src/help/topics/card-parameters.md",
       "type": "file",
       "mode": 420,
-      "size": 24493,
-      "sha256": "8e73b9e09935f158343a98a885cc4ca2e136ae8658681dbcf044ae1cadd51872"
+      "size": 24747,
+      "sha256": "49d7813207a9b9840726472e095a0c71451c4ea0ea7fa4fe44e0d1f331d3d5a9"
     },
     {
       "path": "src/help/topics/charts.md",
@@ -29658,8 +29665,8 @@
       "path": "src/lib/temporal/bindings.acquisition.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 948,
-      "sha256": "d4f793291e10221799b78000632452abaff5f61bd7d5df25c4b7492478233a85"
+      "size": 1107,
+      "sha256": "ab191628e9747a822ee5cfdd129967772a1df0e9e2bf5d66b8d6de399f3dfe59"
     },
     {
       "path": "src/lib/temporal/bindings.ts",
@@ -29826,8 +29833,8 @@
       "path": "src/lib/temporal/runs.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 4213,
-      "sha256": "70854befa75a85c335f47ef755f7c28051cc71a41dd47aa63b6b20c217f6a0c3"
+      "size": 4372,
+      "sha256": "f3de46435f8a04f44887fde6746d8220ce6a75d8b4287486c00d60a2ad1476ec"
     },
     {
       "path": "src/lib/temporal/runs.ts",
@@ -29903,8 +29910,8 @@
       "path": "src/lib/types.ts",
       "type": "file",
       "mode": 420,
-      "size": 36551,
-      "sha256": "e38ca44eda9e5165ba249196478c11dc130db76840a6b17eef203866df990431"
+      "size": 36880,
+      "sha256": "d830bd38f6f59723db19a3f450259f2170bbbb18602c2973b5847627e6358527"
     },
     {
       "path": "src/lib/udf.test.ts",
@@ -30071,15 +30078,15 @@
       "path": "src/lib/widgetsJson.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 56273,
-      "sha256": "7f3cb6837f6567bf53954c849fcf2c07209993fdff705a2500e9606096b1cea1"
+      "size": 57630,
+      "sha256": "8a38571d516a7c7aceb9a10e49d340b60d6ab0f4aa8b4fb75da8e1f0d145aaf0"
     },
     {
       "path": "src/lib/widgetsJson.ts",
       "type": "file",
       "mode": 420,
-      "size": 31430,
-      "sha256": "d9c911c3a2e295c3e91d454fc90ad54fbe791262cb6d0c223909cfad32f80bc8"
+      "size": 32014,
+      "sha256": "a52494b21c5ac0357d5698015ae3b585dcb60eae7e2398a60fea163d75d7bfb6"
     },
     {
       "path": "src/lib/windowTheme.test.ts",
@@ -30610,8 +30617,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 162226,
-      "sha256": "539dae16a8a0ddc1f9e05e8f57acda4d717ce00af05bf8bcddf309b3ddc6b16d"
+      "size": 162647,
+      "sha256": "c45468c7af4fe93678d062dc7aca4416567d9ffe0c4a9c2af30e79fdaab292bd"
     },
     {
       "path": "src/test/fakeSocket.ts",
