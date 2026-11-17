@@ -18,8 +18,8 @@ const env = {
   SSRM_ROUTES_JSON: JSON.stringify(routes),
 };
 
-test("the vendored SSRM route list is 23 valid routes the web config accepts", () => {
-  assert.equal(routes.length, 23);
+test("the vendored SSRM route list is 41 valid routes the web config accepts", () => {
+  assert.equal(routes.length, 41);
   assert.ok(validSsrmRoutes(routes));
   assert.deepEqual(readConfig(env).ssrmRoutes, routes);
 });
