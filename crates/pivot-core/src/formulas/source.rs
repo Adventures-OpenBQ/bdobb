@@ -443,10 +443,14 @@ pub fn evaluate_source(rows: &[DatasetRow], model: &CompiledModel) -> EvaluatedR
         if !errors.is_empty() {
             result.errors.insert(row.id.clone(), errors);
         }
-        result.formula_cells.insert(row.id.clone(), cells);
-        result
-            .source_dependencies
-            .insert(row.id.clone(), dependencies);
+        // No source formulas means no per-row formula state; incoming errors remain above.
+        // With authored formulas, retain row entries even if evaluation was blocked.
+        if !sources.is_empty() {
+            result.formula_cells.insert(row.id.clone(), cells);
+            result
+                .source_dependencies
+                .insert(row.id.clone(), dependencies);
+        }
         result.rows.push(row);
     }
     for source in sources {
