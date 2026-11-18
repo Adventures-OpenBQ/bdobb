@@ -13,10 +13,11 @@ import scatter from "plotly.js/lib/scatter";
 import heatmap from "plotly.js/lib/heatmap";
 import treemap from "plotly.js/lib/treemap";
 import pie from "plotly.js/lib/pie";
+import surface from "plotly.js/lib/surface";
 import type { Data } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
-const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, treemap, pie];
+const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, treemap, pie, surface];
 
 Plotly.register(REGISTERED_TRACES);
 

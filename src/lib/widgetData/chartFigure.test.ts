@@ -201,3 +201,51 @@ it('a real label equal to a generated suffix still gets a unique pie name', () =
   expect(new Set(labels).size).toBe(3);
   expect(labels.slice(0, 2)).toEqual(['Revenue', 'Revenue (2)']);
 });
+
+// The CFTC FX implied-vol table: a row per strike, a vol column per expiry, pair and date on every row.
+const volColumns = [{ id: 'strike', label: 'Strike', dtype: 'number' as const }, { id: 'vol_1m', label: '1M', dtype: 'number' as const }, { id: 'vol_3m', label: '3M', dtype: 'number' as const }, { id: 'pair', label: 'Pair', dtype: 'text' as const }, { id: 'date', label: 'Date', dtype: 'text' as const }];
+const volRow = (id: string, pair: string, strike: number, m1: number | null, m3: number) => ({ id, values: { strike, vol_1m: m1, vol_3m: m3, pair, date: '2026-11-17' } });
+const vol: WidgetDataset = { ...dataset, columns: volColumns, rows: [volRow('r1', 'EURUSD', 1.05, 7.1, 7.4), volRow('r2', 'EURUSD', 1.1, null, 7.0), volRow('r3', 'USDJPY', 150, 9.2, 9.5), volRow('r4', 'USDJPY', 155, 8.8, 9.1)] };
+const surface: LinkedChartSettings = { type: 'surface', category: 'strike', measures: ['vol_1m', 'vol_3m'], display: 'grouped' };
+it('draws one surface per pair/date: x strike, y expiry, z vol, each in its own titled scene on a shared colour scale', () => {
+    const f = figure(surface, vol);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'surface', scene: 'scene', coloraxis: 'coloraxis', x: [1.05, 1.1], y: [0, 1], z: [[7.1, null], [7.4, 7.0]], text: [['Strike: 1.05<br>1M: 7.1', 'Strike: 1.1<br>1M: Missing'], ['Strike: 1.05<br>3M: 7.4', 'Strike: 1.1<br>3M: 7']] }),
+        expect.objectContaining({ type: 'surface', scene: 'scene2', x: [150, 155], z: [[9.2, 8.8], [9.5, 9.1]] }),
+    ]);
+    expect(f.layout.scene).toMatchObject({ domain: { x: [0, 0.5] }, yaxis: { tickvals: [0, 1], ticktext: ['1M', '3M'] } });
+    expect(f.layout.scene2).toMatchObject({ domain: { x: [0.5, 1] } });
+    expect((f.layout.annotations as { text: string }[]).map(a => a.text)).toEqual(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+});
+it('draws a single untitled surface when the rows carry no pair or date', () => {
+    const bare = { ...vol, columns: volColumns.slice(0, 3), rows: vol.rows.slice(0, 2) };
+    const f = figure(surface, bare);
+    expect(f.data).toHaveLength(1);
+    expect(f.layout.annotations).toEqual([]);
+    const text = { ...bare, columns: [{ id: 'strike', label: 'Strike', dtype: 'text' as const }, ...volColumns.slice(1, 3)], rows: bare.rows.map((r, i) => ({ ...r, values: { ...r.values, strike: ['25D put', 'ATM'][i] } })) };
+    const t = figure(surface, text);
+    expect(t.data[0]).toMatchObject({ x: [0, 1] });
+    expect(t.layout.scene).toMatchObject({ xaxis: { tickvals: [0, 1], ticktext: ['25D put', 'ATM'] } });
+});
+it('refuses a surface it cannot mesh or that would split into too many plots', () => {
+    const thin = { ...vol, rows: vol.rows.slice(0, 3) };
+    expect(buildLinkedFigure(thin, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+    const many = { ...vol, rows: Array.from({ length: 14 }, (_, i) => volRow(`r${i}`, `P${i >> 1}`, i, 1, 2)) };
+    expect(buildLinkedFigure(many, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface draws at most 6 plots — the rows hold 7 pair/date combinations.' });
+});
+it('draws a Surface with one measure ticked as a line per pair/date, not a surface', () => {
+    const f = figure({ ...surface, measures: ['vol_3m'] }, vol);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [1.05, 1.1], y: [7.4, 7.0] }),
+        expect.objectContaining({ type: 'scatter', xaxis: 'x2', yaxis: 'y2', x: [150, 155], y: [9.5, 9.1] }),
+    ]);
+    expect(f.layout.xaxis).toMatchObject({ anchor: 'y', title: { text: 'Strike' } });
+    expect(f.layout.yaxis).toMatchObject({ title: { text: '3M' } });
+    expect((f.layout.annotations as { text: string }[]).map(a => a.text)).toEqual(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+    expect(f.layout.scene).toBeUndefined();
+});
+it('runs the surface measure axis in source column order, whatever order the measures were ticked in', () => {
+    const f = figure({ ...surface, measures: ['vol_3m', 'vol_1m'] }, vol);
+    expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: ['1M', '3M'] } });
+    expect(f.data[0]).toMatchObject({ z: [[7.1, null], [7.4, 7.0]] });
+});

@@ -83,7 +83,7 @@ export function extras(value: unknown, path: string): Extras {
   }
   if (value.linkedChart !== undefined) {
     const c = value.linkedChart;
-    if (!isRecord(c) || !['bar', 'column', 'line', 'pie'].includes(c.type as string) || (c.category !== undefined && typeof c.category !== 'string') || !strings(c.measures) || !['grouped', 'stacked', 'percent'].includes(c.display as string) || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string))) extensionError(path, 'Invalid linked chart.');
+    if (!isRecord(c) || !['bar', 'column', 'line', 'pie', 'surface'].includes(c.type as string) || (c.category !== undefined && typeof c.category !== 'string') || !strings(c.measures) || !['grouped', 'stacked', 'percent'].includes(c.display as string) || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string))) extensionError(path, 'Invalid linked chart.');
   }
   if (value.calendar !== undefined) {
     const c = value.calendar;

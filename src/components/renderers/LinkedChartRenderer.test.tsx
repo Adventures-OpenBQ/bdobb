@@ -91,6 +91,7 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
     expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -261,6 +262,10 @@ it('offers 100% stacked and series-from only for the types that use them', async
     render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
     expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
     expect(screen.getByRole('option', { name: 'Pie' })).toHaveValue('pie');
+    cleanup();
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'surface' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
+    expect(screen.getByRole('option', { name: 'Surface (3-D)' })).toHaveValue('surface');
     cleanup(); store.disposeDashboard('d');
 });
 it('commits new values and resets fields the new type cannot use', async () => {
@@ -319,5 +324,44 @@ it('rows mode gives duplicate category values disambiguated names', async () => 
     render(<LinkedChartRenderer {...withSettings(store, { seriesFrom: 'rows' })}/>);
     await screen.findByTestId('figure'); const f = JSON.parse(screen.getByTestId('figure').textContent!);
     expect(f.data).toHaveLength(1600); expect(f.data[0].name).toBe('A'); expect(f.data[1].name).toBe('A (2)');
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('picking Surface with no fields chosen takes them from the source chartDataType hints, and never overwrites a choice', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    const hints = [{ field: 'region', chartDataType: 'category' as const }, { field: 'revenue', chartDataType: 'series' as const }, { field: 'gone', chartDataType: 'series' as const }, { field: 'note', chartDataType: 'excluded' as const }];
+    render(<LinkedChartRenderer {...withSettings(store, { category: undefined, measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: 'region', measures: ['revenue'] })));
+    cleanup(); commit.mockClear();
+    render(<LinkedChartRenderer {...withSettings(store, { measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: settings.category, measures: [] })));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('lists the measures in source column order in a checklist that publishes once, in that order', async () => {
+    const store = await setupRows([{ region: 'A', revenue: 1, cost: 2 }, { region: 'B', revenue: 3, cost: 4 }]); const commit = vi.fn(async (_: unknown) => true);
+    const labels = () => [...screen.getByRole('dialog', { name: 'Measures' }).querySelectorAll('.opts label')].map(l => l.textContent);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, { measures: ['cost'] }, commit)}/>);
+    await screen.findByTestId('figure');
+    // Unticked Revenue keeps its place ahead of Cost; the button says what is chosen.
+    expect(screen.getByRole('button', { name: 'Measures: Cost' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(labels()).toEqual(['Revenue', 'Cost']);
+    expect(screen.getByRole('checkbox', { name: 'Cost' })).toBeChecked(); expect(screen.getByRole('checkbox', { name: 'Revenue' })).not.toBeChecked();
+    // Ticking does not publish; Apply publishes once, in listed order whatever order the boxes were ticked in.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Revenue' }));
+    expect(commit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+    expect(commit.mock.lastCall![0]).toMatchObject({ measures: ['revenue', 'cost'] });
+    expect(screen.queryByRole('dialog', { name: 'Measures' })).toBeNull();
+    rerender(<LinkedChartRenderer {...withSettings(store, { measures: ['revenue', 'cost'] }, commit)}/>);
+    expect(screen.getByRole('button', { name: 'Measures: All (2)' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ })); fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => expect(commit.mock.lastCall![0]).toMatchObject({ measures: [] }));
     cleanup(); store.disposeDashboard('d');
 });
