@@ -226,6 +226,8 @@ function pivotSurface(dataset: WidgetDataset, settings: LinkedChartSettings, the
     for (const [title, group] of groups) {
         const rows = group.filter(r => heights.some(c => finite(r.values[c.id]) !== null));
         const cols = heights.filter(c => rows.some(r => finite(r.values[c.id]) !== null));
+        if (!cols.length)
+            continue; // none of the ticked expiries has data for this underlying
         if (rows.length < 2)
             return { ok: false, refused: true, message: 'Surface needs at least two rows per plot.' };
         const members = rows.map(r => r.groupPath?.[depth - 1]);
@@ -256,6 +258,8 @@ function pivotSurface(dataset: WidgetDataset, settings: LinkedChartSettings, the
             z: cols.map(c => rows.map(r => finite(r.values[c.id]))),
             text: cols.map((c, e) => rows.map((r, k) => [escape(rowTicks[k]), escape(colTicks[e]), `${escape(c.label)}: ${finite(r.values[c.id]) ?? 'Missing'}`].join('<br>'))) });
     }
+    if (!plots.length)
+        return { ok: false, refused: true, message: 'Surface needs at least two rows per plot.' };
     const groupColumn = dataset.columns.find(c => c.id === LABEL_FIELD);
     const revision = JSON.stringify(['surface', 'pivot', height, spaceRowsBy ?? null, spaceColumnsBy ?? null, measures]);
     return surfaceFigure(plots, escape(groupColumn ? groupColumn.label.split(' › ').at(-1) : ''), revision, theme);
