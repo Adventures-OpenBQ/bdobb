@@ -161,15 +161,24 @@ Choose what is fetched with each Chain card's own **Parameters**: on the FX tab 
 
 **Placeholder vols.** Yahoo fills `implied_volatility` with 0.00001 where it has no usable quote. The stock report's **Quote** checklist (under **Category filters** in its **Pivot** drawer) keeps only *quoted*, so those rows never pull a thin cell's median down.
 
-**Side.** Each Chain card shows a **Side** button, ticked to *OTM call* and *OTM put* to start; tick *ITM call* or *ITM put* as well, or untick one, and **Apply**. *OTM call* and *OTM put* together are the out-of-the-money surface; *OTM call* alone is the call wing, *OTM put* alone the put wing, and all four together pools calls and puts in each cell. The CFTC widget prices only options out of the money against the forward, so on the FX tab the ITM members, measured against spot, are nearly empty.
+**Side.** Each Chain card shows a **Side** button, ticked for OTM to start. Tick the members for the surface you want, then **Apply**:
+
+| Choice | Tick |
+|---|---|
+| OTM | *OTM call* and *OTM put* (the default) |
+| CALL | *OTM call* and *ITM call* |
+| PUT | *OTM put* and *ITM put* |
+| AVG | all four: *OTM call*, *ITM call*, *OTM put* and *ITM put* |
+
+The CFTC widget prices only options out of the money against the forward, so on the FX tab the ITM members, measured against spot, are nearly empty, and CALL and PUT come out close to the OTM call and put wings.
 
 **Strikes and tenors kept.** The FX report's **Strike** checklist lists the 23 members of both grids and its **Tenor** checklist the nine tenors, so rows outside every bucket never reach the report or the chart. One pair uses only one grid, so the Strike checklist always lists members the data lacks, and the Surface card's status line says so, for EURUSD *Strike = -200, 200, -300… is not in this data.* A report date that lacks a tenor gets the same kind of warning for Tenor. They are expected.
 
 **Choosing what is drawn.**
 
-- **Surfaces**: every underlying served is drawn, up to six. Each widget serves one pair or one symbol per request, so each tab opens on one surface. To choose, open the report's **Pivot** drawer, **Category filters**, pick **Underlying** and tick the ones to keep, then **Apply checklist**.
+- **Surfaces**: every underlying served is drawn. With more than six, the whole chart is refused (*Surface draws at most 6 plots …*) rather than drawing the first six. Each widget serves one pair or one symbol per request, so each tab opens on one surface. To choose, open the report's **Pivot** drawer, **Category filters**, pick **Underlying** and tick the ones to keep, then **Apply checklist**.
 - **Strikes**: select rows in the report, and the surface draws only those strikes. Press **Clear selection** to see them all again.
-- **Expiries**: untick one under the Surface card's **Measures**, which lists the expiries (FX: tenors) of the chosen Height; none ticked draws every one. On the FX tab, the Tenor checklist removes one from the report too.
+- **Expiries**: the Surface card's **Measures** lists the expiries (FX: tenors) of the chosen Height. It opens with none ticked, which draws every one, so press **All** first, then untick the expiry to leave out and **Apply**. On the FX tab, the Tenor checklist removes one from the report too.
 
 An expiry one underlying lacks is dropped from that underlying's surface only, as is a row or column with no Height value.
 

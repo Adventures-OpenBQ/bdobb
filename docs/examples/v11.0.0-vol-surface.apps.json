@@ -1,7 +1,7 @@
 [
   {
     "name": "Vol Surface",
-    "description": "Implied-vol surfaces from two long option chains: CFTC FX options (the CFTC FX Implied Volatility (Options) widget; the wide CFTC FX vol widget is a separate card) and yfinance stock-option chains. Each tab: the chain, a linked pivot report and a linked Surface per underlying. Cells are medians with no outlier trim; vols are decimal fractions (0.054 is 5.4%). Opens in BDOBB 11.0.0 or later.",
+    "description": "Implied-vol surfaces from two long option chains: CFTC FX options (the CFTC FX Implied Volatility (Options) widget; the wide CFTC FX vol widget is a separate widget) and yfinance stock-option chains. Each tab: the chain, a linked pivot report and a linked Surface per underlying. Cells are medians with no outlier trim; vols are decimal fractions (0.054 is 5.4%). Opens in BDOBB 11.0.0 or later.",
     "img": "",
     "img_dark": "",
     "img_light": "",
