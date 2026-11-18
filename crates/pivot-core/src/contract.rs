@@ -227,6 +227,9 @@ pub struct Category {
     pub fiscal_binding: Option<FiscalBinding>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub legacy_bucket: Option<LegacyBucket>,
+    /// Orders members by this field or source formula; the label still comes from `source_field_id`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort_field_id: Option<String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transform {
@@ -372,6 +375,16 @@ pub enum FormulaFunction {
     Last,
     #[serde(rename = "IF")]
     If,
+    #[serde(rename = "LN")]
+    Ln,
+    #[serde(rename = "SQRT")]
+    Sqrt,
+}
+impl FormulaFunction {
+    /// Aggregate functions take a source-scope argument; IF, LN and SQRT stay in the caller's scope.
+    pub fn is_aggregate(self) -> bool {
+        !matches!(self, Self::If | Self::Ln | Self::Sqrt)
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

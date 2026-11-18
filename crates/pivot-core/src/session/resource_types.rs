@@ -42,7 +42,7 @@ impl HeapBytes for crate::contract::Expanded {
 }
 struct_heap!(crate::contract::Measure; id,source_field_id,aggregation,custom_label);
 struct_heap!(crate::contract::TableModel; schema_version,enabled,params,categories,measures,formulas,layout,checklists,result_filters,subtotals,legacy_pivot);
-struct_heap!(crate::contract::Category; id,name,source_field_id,transform,fiscal_binding,legacy_bucket);
+struct_heap!(crate::contract::Category; id,name,source_field_id,transform,fiscal_binding,legacy_bucket,sort_field_id);
 struct_heap!(crate::contract::FiscalBinding; company_field_id,date_field_id,metadata_key,period_kind,period_start_field_id,period_end_field_id,fiscal_year_field_id,fiscal_quarter_field_id);
 struct_heap!(crate::contract::Formula; id,name,scope,expression,ast,format);
 impl HeapBytes for crate::contract::FormulaAst {
@@ -174,7 +174,7 @@ struct_heap!(crate::analytical::LogicalGroup; id,path,rows,children);
 struct_heap!(crate::analytical::CalculatedView; diagnostics,top_level_count,model_warnings,model_warning_count,compiled,pool,record_ids,groups,rows,columns,totals,calculated_totals,eligible_rows,errors,warnings,complete,provenance,completeness,freshness,selection,selection_namespace);
 struct_heap!(crate::analytical::CalculatedTotals; scope,formulas);
 struct_heap!(crate::categories::CategoryMember; category_id,key,label,value,period,fiscal);
-struct_heap!(crate::categories::CategoryMetadata; id,name,source_field_id,transform,recipe,bucket,periodicity);
+struct_heap!(crate::categories::CategoryMetadata; id,name,source_field_id,transform,recipe,bucket,periodicity,sort_field_id);
 struct_heap!(crate::categories::CategorizedRows; evaluated,members,categories,warnings);
 struct_heap!(crate::fiscal::FiscalContext; companies,metadata,overrides);
 struct_heap!(crate::fiscal::FiscalCompanyContext; year_end_month,calendar,source,periods);

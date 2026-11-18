@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { bucketKey, bucketLabel, detectPeriodicity, expectedCount } from "./periodicity";
-import type { CategoryMetadata } from "./tableModel/categories";
+import { categorySortKey, type CategoryMetadata } from "./tableModel/categories";
 import { resolveMeasures } from "./tableModel/measureMigration";
 import { measureLabel } from "./tableModel/measures";
 import type { PivotMeasure } from "./types";
@@ -204,7 +204,8 @@ export function pivotTable(input: PivotInput): PivotResult | null {
       if (group) group.rows.push(row);
       else groups.set(key, { key, raw, rows: [row] });
     }
-    return [...groups.values()].sort((a, b) => compareValues(a.raw, b.raw));
+    const sorted = input.categoryMetadata?.get(field)?.sortFieldId === undefined ? undefined : categorySortKey(field);
+    return [...groups.values()].sort((a, b) => (sorted === undefined ? 0 : compareValues(read(a.rows[0], sorted), read(b.rows[0], sorted))) || compareValues(a.raw, b.raw));
   };
 
   // Detected once per bucketed date field, over ALL the rows: a group's own

@@ -1,0 +1,1976 @@
+[
+  {
+    "name": "Vol Surface",
+    "description": "Implied-vol surfaces from two long option chains: CFTC FX options (the CFTC FX Implied Volatility (Options) widget; the wide CFTC FX vol widget is a separate widget) and yfinance stock-option chains. Each tab: the chain, a linked pivot report and a linked Surface per underlying. Cells are medians with no outlier trim; vols are decimal fractions (0.054 is 5.4%). Opens in BDOBB 11.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "fx": {
+        "id": "fx",
+        "name": "FX options (CFTC)",
+        "layout": [
+          {
+            "i": "cftc_fx_implied_vol_long_custom_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 8,
+            "state": {
+              "params": {
+                "pair": "EURUSD"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Chain"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_table",
+            "x": 0,
+            "y": 8,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Report"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Surface"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "stock": {
+        "id": "stock",
+        "name": "Stock options (yfinance)",
+        "layout": [
+          {
+            "i": "yfinance_options_chains_long_yfinance_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 8,
+            "state": {
+              "params": {
+                "symbol": "AAPL"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Chain"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_table",
+            "x": 0,
+            "y": 8,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Report"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 22,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {},
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Surface"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [],
+    "prompts": [],
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "fx",
+            "stock"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "fx",
+            "index": 0,
+            "extras": {
+              "tableDefinition": {
+                "table": {},
+                "search": "",
+                "analytical": {
+                  "schemaVersion": 1,
+                  "params": {
+                    "promotePage": true,
+                    "filters": [
+                      {
+                        "id": "side",
+                        "categoryId": "side_cat",
+                        "label": "Side",
+                        "multiSelect": true
+                      }
+                    ]
+                  },
+                  "categories": [
+                    {
+                      "id": "side_cat",
+                      "name": "Side",
+                      "sourceFieldId": "side",
+                      "transform": "native"
+                    }
+                  ],
+                  "measures": [],
+                  "formulas": [
+                    {
+                      "id": "log_moneyness",
+                      "name": "log_moneyness",
+                      "scope": "source",
+                      "expression": "LN(strike / underlying_price)",
+                      "ast": {
+                        "kind": "call",
+                        "function": "LN",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "/",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "strike"
+                            },
+                            "right": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "underlying_price"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "tenor_months",
+                      "name": "tenor_months",
+                      "scope": "source",
+                      "expression": "IF(dte <= 2, null, IF(dte <= 9, 0.25, IF(dte <= 20, 0.5, IF(dte <= 45, 1, IF(dte <= 75, 2, IF(dte <= 110, 3, IF(dte <= 200, 6, IF(dte <= 290, 9, IF(dte <= 400, 12, IF(dte <= 800, 24, null))))))))))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "<=",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "dte"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 2
+                            }
+                          },
+                          {
+                            "kind": "literal",
+                            "value": null
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": "<=",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "dte"
+                                },
+                                "right": {
+                                  "kind": "literal",
+                                  "value": 9
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": 0.25
+                              },
+                              {
+                                "kind": "call",
+                                "function": "IF",
+                                "args": [
+                                  {
+                                    "kind": "binary",
+                                    "operator": "<=",
+                                    "left": {
+                                      "kind": "reference",
+                                      "target": "field",
+                                      "id": "dte"
+                                    },
+                                    "right": {
+                                      "kind": "literal",
+                                      "value": 20
+                                    }
+                                  },
+                                  {
+                                    "kind": "literal",
+                                    "value": 0.5
+                                  },
+                                  {
+                                    "kind": "call",
+                                    "function": "IF",
+                                    "args": [
+                                      {
+                                        "kind": "binary",
+                                        "operator": "<=",
+                                        "left": {
+                                          "kind": "reference",
+                                          "target": "field",
+                                          "id": "dte"
+                                        },
+                                        "right": {
+                                          "kind": "literal",
+                                          "value": 45
+                                        }
+                                      },
+                                      {
+                                        "kind": "literal",
+                                        "value": 1
+                                      },
+                                      {
+                                        "kind": "call",
+                                        "function": "IF",
+                                        "args": [
+                                          {
+                                            "kind": "binary",
+                                            "operator": "<=",
+                                            "left": {
+                                              "kind": "reference",
+                                              "target": "field",
+                                              "id": "dte"
+                                            },
+                                            "right": {
+                                              "kind": "literal",
+                                              "value": 75
+                                            }
+                                          },
+                                          {
+                                            "kind": "literal",
+                                            "value": 2
+                                          },
+                                          {
+                                            "kind": "call",
+                                            "function": "IF",
+                                            "args": [
+                                              {
+                                                "kind": "binary",
+                                                "operator": "<=",
+                                                "left": {
+                                                  "kind": "reference",
+                                                  "target": "field",
+                                                  "id": "dte"
+                                                },
+                                                "right": {
+                                                  "kind": "literal",
+                                                  "value": 110
+                                                }
+                                              },
+                                              {
+                                                "kind": "literal",
+                                                "value": 3
+                                              },
+                                              {
+                                                "kind": "call",
+                                                "function": "IF",
+                                                "args": [
+                                                  {
+                                                    "kind": "binary",
+                                                    "operator": "<=",
+                                                    "left": {
+                                                      "kind": "reference",
+                                                      "target": "field",
+                                                      "id": "dte"
+                                                    },
+                                                    "right": {
+                                                      "kind": "literal",
+                                                      "value": 200
+                                                    }
+                                                  },
+                                                  {
+                                                    "kind": "literal",
+                                                    "value": 6
+                                                  },
+                                                  {
+                                                    "kind": "call",
+                                                    "function": "IF",
+                                                    "args": [
+                                                      {
+                                                        "kind": "binary",
+                                                        "operator": "<=",
+                                                        "left": {
+                                                          "kind": "reference",
+                                                          "target": "field",
+                                                          "id": "dte"
+                                                        },
+                                                        "right": {
+                                                          "kind": "literal",
+                                                          "value": 290
+                                                        }
+                                                      },
+                                                      {
+                                                        "kind": "literal",
+                                                        "value": 9
+                                                      },
+                                                      {
+                                                        "kind": "call",
+                                                        "function": "IF",
+                                                        "args": [
+                                                          {
+                                                            "kind": "binary",
+                                                            "operator": "<=",
+                                                            "left": {
+                                                              "kind": "reference",
+                                                              "target": "field",
+                                                              "id": "dte"
+                                                            },
+                                                            "right": {
+                                                              "kind": "literal",
+                                                              "value": 400
+                                                            }
+                                                          },
+                                                          {
+                                                            "kind": "literal",
+                                                            "value": 12
+                                                          },
+                                                          {
+                                                            "kind": "call",
+                                                            "function": "IF",
+                                                            "args": [
+                                                              {
+                                                                "kind": "binary",
+                                                                "operator": "<=",
+                                                                "left": {
+                                                                  "kind": "reference",
+                                                                  "target": "field",
+                                                                  "id": "dte"
+                                                                },
+                                                                "right": {
+                                                                  "kind": "literal",
+                                                                  "value": 800
+                                                                }
+                                                              },
+                                                              {
+                                                                "kind": "literal",
+                                                                "value": 24
+                                                              },
+                                                              {
+                                                                "kind": "literal",
+                                                                "value": null
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "tenor",
+                      "name": "tenor",
+                      "scope": "source",
+                      "expression": "IF(dte <= 2, null, IF(dte <= 9, \"1W\", IF(dte <= 20, \"2W\", IF(dte <= 45, \"1M\", IF(dte <= 75, \"2M\", IF(dte <= 110, \"3M\", IF(dte <= 200, \"6M\", IF(dte <= 290, \"9M\", IF(dte <= 400, \"1Y\", IF(dte <= 800, \"2Y\", null))))))))))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "<=",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "dte"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 2
+                            }
+                          },
+                          {
+                            "kind": "literal",
+                            "value": null
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": "<=",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "dte"
+                                },
+                                "right": {
+                                  "kind": "literal",
+                                  "value": 9
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "1W"
+                              },
+                              {
+                                "kind": "call",
+                                "function": "IF",
+                                "args": [
+                                  {
+                                    "kind": "binary",
+                                    "operator": "<=",
+                                    "left": {
+                                      "kind": "reference",
+                                      "target": "field",
+                                      "id": "dte"
+                                    },
+                                    "right": {
+                                      "kind": "literal",
+                                      "value": 20
+                                    }
+                                  },
+                                  {
+                                    "kind": "literal",
+                                    "value": "2W"
+                                  },
+                                  {
+                                    "kind": "call",
+                                    "function": "IF",
+                                    "args": [
+                                      {
+                                        "kind": "binary",
+                                        "operator": "<=",
+                                        "left": {
+                                          "kind": "reference",
+                                          "target": "field",
+                                          "id": "dte"
+                                        },
+                                        "right": {
+                                          "kind": "literal",
+                                          "value": 45
+                                        }
+                                      },
+                                      {
+                                        "kind": "literal",
+                                        "value": "1M"
+                                      },
+                                      {
+                                        "kind": "call",
+                                        "function": "IF",
+                                        "args": [
+                                          {
+                                            "kind": "binary",
+                                            "operator": "<=",
+                                            "left": {
+                                              "kind": "reference",
+                                              "target": "field",
+                                              "id": "dte"
+                                            },
+                                            "right": {
+                                              "kind": "literal",
+                                              "value": 75
+                                            }
+                                          },
+                                          {
+                                            "kind": "literal",
+                                            "value": "2M"
+                                          },
+                                          {
+                                            "kind": "call",
+                                            "function": "IF",
+                                            "args": [
+                                              {
+                                                "kind": "binary",
+                                                "operator": "<=",
+                                                "left": {
+                                                  "kind": "reference",
+                                                  "target": "field",
+                                                  "id": "dte"
+                                                },
+                                                "right": {
+                                                  "kind": "literal",
+                                                  "value": 110
+                                                }
+                                              },
+                                              {
+                                                "kind": "literal",
+                                                "value": "3M"
+                                              },
+                                              {
+                                                "kind": "call",
+                                                "function": "IF",
+                                                "args": [
+                                                  {
+                                                    "kind": "binary",
+                                                    "operator": "<=",
+                                                    "left": {
+                                                      "kind": "reference",
+                                                      "target": "field",
+                                                      "id": "dte"
+                                                    },
+                                                    "right": {
+                                                      "kind": "literal",
+                                                      "value": 200
+                                                    }
+                                                  },
+                                                  {
+                                                    "kind": "literal",
+                                                    "value": "6M"
+                                                  },
+                                                  {
+                                                    "kind": "call",
+                                                    "function": "IF",
+                                                    "args": [
+                                                      {
+                                                        "kind": "binary",
+                                                        "operator": "<=",
+                                                        "left": {
+                                                          "kind": "reference",
+                                                          "target": "field",
+                                                          "id": "dte"
+                                                        },
+                                                        "right": {
+                                                          "kind": "literal",
+                                                          "value": 290
+                                                        }
+                                                      },
+                                                      {
+                                                        "kind": "literal",
+                                                        "value": "9M"
+                                                      },
+                                                      {
+                                                        "kind": "call",
+                                                        "function": "IF",
+                                                        "args": [
+                                                          {
+                                                            "kind": "binary",
+                                                            "operator": "<=",
+                                                            "left": {
+                                                              "kind": "reference",
+                                                              "target": "field",
+                                                              "id": "dte"
+                                                            },
+                                                            "right": {
+                                                              "kind": "literal",
+                                                              "value": 400
+                                                            }
+                                                          },
+                                                          {
+                                                            "kind": "literal",
+                                                            "value": "1Y"
+                                                          },
+                                                          {
+                                                            "kind": "call",
+                                                            "function": "IF",
+                                                            "args": [
+                                                              {
+                                                                "kind": "binary",
+                                                                "operator": "<=",
+                                                                "left": {
+                                                                  "kind": "reference",
+                                                                  "target": "field",
+                                                                  "id": "dte"
+                                                                },
+                                                                "right": {
+                                                                  "kind": "literal",
+                                                                  "value": 800
+                                                                }
+                                                              },
+                                                              {
+                                                                "kind": "literal",
+                                                                "value": "2Y"
+                                                              },
+                                                              {
+                                                                "kind": "literal",
+                                                                "value": null
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "root_t",
+                      "name": "root_t",
+                      "scope": "source",
+                      "expression": "IF(tenor_months = null, null, SQRT(tenor_months / 12))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "=",
+                            "left": {
+                              "kind": "reference",
+                              "target": "formula",
+                              "id": "tenor_months"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": null
+                            }
+                          },
+                          {
+                            "kind": "literal",
+                            "value": null
+                          },
+                          {
+                            "kind": "call",
+                            "function": "SQRT",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": "/",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "formula",
+                                  "id": "tenor_months"
+                                },
+                                "right": {
+                                  "kind": "literal",
+                                  "value": 12
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "strike_points",
+                      "name": "strike_points",
+                      "scope": "source",
+                      "expression": "(strike - underlying_price) * pip",
+                      "ast": {
+                        "kind": "binary",
+                        "operator": "*",
+                        "left": {
+                          "kind": "binary",
+                          "operator": "-",
+                          "left": {
+                            "kind": "reference",
+                            "target": "field",
+                            "id": "strike"
+                          },
+                          "right": {
+                            "kind": "reference",
+                            "target": "field",
+                            "id": "underlying_price"
+                          }
+                        },
+                        "right": {
+                          "kind": "reference",
+                          "target": "field",
+                          "id": "pip"
+                        }
+                      }
+                    },
+                    {
+                      "id": "strike_distance",
+                      "name": "strike_distance",
+                      "scope": "source",
+                      "expression": "IF(strike_points < 0, -strike_points, strike_points)",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "<",
+                            "left": {
+                              "kind": "reference",
+                              "target": "formula",
+                              "id": "strike_points"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 0
+                            }
+                          },
+                          {
+                            "kind": "unary",
+                            "operator": "-",
+                            "operand": {
+                              "kind": "reference",
+                              "target": "formula",
+                              "id": "strike_points"
+                            }
+                          },
+                          {
+                            "kind": "reference",
+                            "target": "formula",
+                            "id": "strike_points"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "strike_bp",
+                      "name": "strike_bp",
+                      "scope": "source",
+                      "expression": "(strike / underlying_price - 1) * 10000",
+                      "ast": {
+                        "kind": "binary",
+                        "operator": "*",
+                        "left": {
+                          "kind": "binary",
+                          "operator": "-",
+                          "left": {
+                            "kind": "binary",
+                            "operator": "/",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "strike"
+                            },
+                            "right": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "underlying_price"
+                            }
+                          },
+                          "right": {
+                            "kind": "literal",
+                            "value": 1
+                          }
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": 10000
+                        }
+                      }
+                    },
+                    {
+                      "id": "bp_distance",
+                      "name": "bp_distance",
+                      "scope": "source",
+                      "expression": "IF(strike_bp < 0, -strike_bp, strike_bp)",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "<",
+                            "left": {
+                              "kind": "reference",
+                              "target": "formula",
+                              "id": "strike_bp"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 0
+                            }
+                          },
+                          {
+                            "kind": "unary",
+                            "operator": "-",
+                            "operand": {
+                              "kind": "reference",
+                              "target": "formula",
+                              "id": "strike_bp"
+                            }
+                          },
+                          {
+                            "kind": "reference",
+                            "target": "formula",
+                            "id": "strike_bp"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "strike_bucket",
+                      "name": "strike_bucket",
+                      "scope": "source",
+                      "expression": "IF(ndf, IF(bp_distance > 1750, null, IF(strike_bp < 0, -1, 1) * IF(bp_distance < 25, 0, IF(bp_distance < 75, 50, IF(bp_distance < 150, 100, IF(bp_distance < 250, 200, IF(bp_distance < 400, 300, IF(bp_distance < 625, 500, IF(bp_distance < 875, 750, IF(bp_distance < 1250, 1000, 1500))))))))), IF(strike_distance > 1250, null, IF(strike_points < 0, -1, 1) * IF(strike_distance < 12.5, 0, IF(strike_distance < 37.5, 25, IF(strike_distance < 75, 50, IF(strike_distance < 125, 100, IF(strike_distance < 200, 150, IF(strike_distance < 375, 250, IF(strike_distance < 750, 500, 1000)))))))))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "reference",
+                            "target": "field",
+                            "id": "ndf"
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": ">",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "formula",
+                                  "id": "bp_distance"
+                                },
+                                "right": {
+                                  "kind": "literal",
+                                  "value": 1750
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": null
+                              },
+                              {
+                                "kind": "binary",
+                                "operator": "*",
+                                "left": {
+                                  "kind": "call",
+                                  "function": "IF",
+                                  "args": [
+                                    {
+                                      "kind": "binary",
+                                      "operator": "<",
+                                      "left": {
+                                        "kind": "reference",
+                                        "target": "formula",
+                                        "id": "strike_bp"
+                                      },
+                                      "right": {
+                                        "kind": "literal",
+                                        "value": 0
+                                      }
+                                    },
+                                    {
+                                      "kind": "unary",
+                                      "operator": "-",
+                                      "operand": {
+                                        "kind": "literal",
+                                        "value": 1
+                                      }
+                                    },
+                                    {
+                                      "kind": "literal",
+                                      "value": 1
+                                    }
+                                  ]
+                                },
+                                "right": {
+                                  "kind": "call",
+                                  "function": "IF",
+                                  "args": [
+                                    {
+                                      "kind": "binary",
+                                      "operator": "<",
+                                      "left": {
+                                        "kind": "reference",
+                                        "target": "formula",
+                                        "id": "bp_distance"
+                                      },
+                                      "right": {
+                                        "kind": "literal",
+                                        "value": 25
+                                      }
+                                    },
+                                    {
+                                      "kind": "literal",
+                                      "value": 0
+                                    },
+                                    {
+                                      "kind": "call",
+                                      "function": "IF",
+                                      "args": [
+                                        {
+                                          "kind": "binary",
+                                          "operator": "<",
+                                          "left": {
+                                            "kind": "reference",
+                                            "target": "formula",
+                                            "id": "bp_distance"
+                                          },
+                                          "right": {
+                                            "kind": "literal",
+                                            "value": 75
+                                          }
+                                        },
+                                        {
+                                          "kind": "literal",
+                                          "value": 50
+                                        },
+                                        {
+                                          "kind": "call",
+                                          "function": "IF",
+                                          "args": [
+                                            {
+                                              "kind": "binary",
+                                              "operator": "<",
+                                              "left": {
+                                                "kind": "reference",
+                                                "target": "formula",
+                                                "id": "bp_distance"
+                                              },
+                                              "right": {
+                                                "kind": "literal",
+                                                "value": 150
+                                              }
+                                            },
+                                            {
+                                              "kind": "literal",
+                                              "value": 100
+                                            },
+                                            {
+                                              "kind": "call",
+                                              "function": "IF",
+                                              "args": [
+                                                {
+                                                  "kind": "binary",
+                                                  "operator": "<",
+                                                  "left": {
+                                                    "kind": "reference",
+                                                    "target": "formula",
+                                                    "id": "bp_distance"
+                                                  },
+                                                  "right": {
+                                                    "kind": "literal",
+                                                    "value": 250
+                                                  }
+                                                },
+                                                {
+                                                  "kind": "literal",
+                                                  "value": 200
+                                                },
+                                                {
+                                                  "kind": "call",
+                                                  "function": "IF",
+                                                  "args": [
+                                                    {
+                                                      "kind": "binary",
+                                                      "operator": "<",
+                                                      "left": {
+                                                        "kind": "reference",
+                                                        "target": "formula",
+                                                        "id": "bp_distance"
+                                                      },
+                                                      "right": {
+                                                        "kind": "literal",
+                                                        "value": 400
+                                                      }
+                                                    },
+                                                    {
+                                                      "kind": "literal",
+                                                      "value": 300
+                                                    },
+                                                    {
+                                                      "kind": "call",
+                                                      "function": "IF",
+                                                      "args": [
+                                                        {
+                                                          "kind": "binary",
+                                                          "operator": "<",
+                                                          "left": {
+                                                            "kind": "reference",
+                                                            "target": "formula",
+                                                            "id": "bp_distance"
+                                                          },
+                                                          "right": {
+                                                            "kind": "literal",
+                                                            "value": 625
+                                                          }
+                                                        },
+                                                        {
+                                                          "kind": "literal",
+                                                          "value": 500
+                                                        },
+                                                        {
+                                                          "kind": "call",
+                                                          "function": "IF",
+                                                          "args": [
+                                                            {
+                                                              "kind": "binary",
+                                                              "operator": "<",
+                                                              "left": {
+                                                                "kind": "reference",
+                                                                "target": "formula",
+                                                                "id": "bp_distance"
+                                                              },
+                                                              "right": {
+                                                                "kind": "literal",
+                                                                "value": 875
+                                                              }
+                                                            },
+                                                            {
+                                                              "kind": "literal",
+                                                              "value": 750
+                                                            },
+                                                            {
+                                                              "kind": "call",
+                                                              "function": "IF",
+                                                              "args": [
+                                                                {
+                                                                  "kind": "binary",
+                                                                  "operator": "<",
+                                                                  "left": {
+                                                                    "kind": "reference",
+                                                                    "target": "formula",
+                                                                    "id": "bp_distance"
+                                                                  },
+                                                                  "right": {
+                                                                    "kind": "literal",
+                                                                    "value": 1250
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "kind": "literal",
+                                                                  "value": 1000
+                                                                },
+                                                                {
+                                                                  "kind": "literal",
+                                                                  "value": 1500
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": ">",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "formula",
+                                  "id": "strike_distance"
+                                },
+                                "right": {
+                                  "kind": "literal",
+                                  "value": 1250
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": null
+                              },
+                              {
+                                "kind": "binary",
+                                "operator": "*",
+                                "left": {
+                                  "kind": "call",
+                                  "function": "IF",
+                                  "args": [
+                                    {
+                                      "kind": "binary",
+                                      "operator": "<",
+                                      "left": {
+                                        "kind": "reference",
+                                        "target": "formula",
+                                        "id": "strike_points"
+                                      },
+                                      "right": {
+                                        "kind": "literal",
+                                        "value": 0
+                                      }
+                                    },
+                                    {
+                                      "kind": "unary",
+                                      "operator": "-",
+                                      "operand": {
+                                        "kind": "literal",
+                                        "value": 1
+                                      }
+                                    },
+                                    {
+                                      "kind": "literal",
+                                      "value": 1
+                                    }
+                                  ]
+                                },
+                                "right": {
+                                  "kind": "call",
+                                  "function": "IF",
+                                  "args": [
+                                    {
+                                      "kind": "binary",
+                                      "operator": "<",
+                                      "left": {
+                                        "kind": "reference",
+                                        "target": "formula",
+                                        "id": "strike_distance"
+                                      },
+                                      "right": {
+                                        "kind": "literal",
+                                        "value": 12.5
+                                      }
+                                    },
+                                    {
+                                      "kind": "literal",
+                                      "value": 0
+                                    },
+                                    {
+                                      "kind": "call",
+                                      "function": "IF",
+                                      "args": [
+                                        {
+                                          "kind": "binary",
+                                          "operator": "<",
+                                          "left": {
+                                            "kind": "reference",
+                                            "target": "formula",
+                                            "id": "strike_distance"
+                                          },
+                                          "right": {
+                                            "kind": "literal",
+                                            "value": 37.5
+                                          }
+                                        },
+                                        {
+                                          "kind": "literal",
+                                          "value": 25
+                                        },
+                                        {
+                                          "kind": "call",
+                                          "function": "IF",
+                                          "args": [
+                                            {
+                                              "kind": "binary",
+                                              "operator": "<",
+                                              "left": {
+                                                "kind": "reference",
+                                                "target": "formula",
+                                                "id": "strike_distance"
+                                              },
+                                              "right": {
+                                                "kind": "literal",
+                                                "value": 75
+                                              }
+                                            },
+                                            {
+                                              "kind": "literal",
+                                              "value": 50
+                                            },
+                                            {
+                                              "kind": "call",
+                                              "function": "IF",
+                                              "args": [
+                                                {
+                                                  "kind": "binary",
+                                                  "operator": "<",
+                                                  "left": {
+                                                    "kind": "reference",
+                                                    "target": "formula",
+                                                    "id": "strike_distance"
+                                                  },
+                                                  "right": {
+                                                    "kind": "literal",
+                                                    "value": 125
+                                                  }
+                                                },
+                                                {
+                                                  "kind": "literal",
+                                                  "value": 100
+                                                },
+                                                {
+                                                  "kind": "call",
+                                                  "function": "IF",
+                                                  "args": [
+                                                    {
+                                                      "kind": "binary",
+                                                      "operator": "<",
+                                                      "left": {
+                                                        "kind": "reference",
+                                                        "target": "formula",
+                                                        "id": "strike_distance"
+                                                      },
+                                                      "right": {
+                                                        "kind": "literal",
+                                                        "value": 200
+                                                      }
+                                                    },
+                                                    {
+                                                      "kind": "literal",
+                                                      "value": 150
+                                                    },
+                                                    {
+                                                      "kind": "call",
+                                                      "function": "IF",
+                                                      "args": [
+                                                        {
+                                                          "kind": "binary",
+                                                          "operator": "<",
+                                                          "left": {
+                                                            "kind": "reference",
+                                                            "target": "formula",
+                                                            "id": "strike_distance"
+                                                          },
+                                                          "right": {
+                                                            "kind": "literal",
+                                                            "value": 375
+                                                          }
+                                                        },
+                                                        {
+                                                          "kind": "literal",
+                                                          "value": 250
+                                                        },
+                                                        {
+                                                          "kind": "call",
+                                                          "function": "IF",
+                                                          "args": [
+                                                            {
+                                                              "kind": "binary",
+                                                              "operator": "<",
+                                                              "left": {
+                                                                "kind": "reference",
+                                                                "target": "formula",
+                                                                "id": "strike_distance"
+                                                              },
+                                                              "right": {
+                                                                "kind": "literal",
+                                                                "value": 750
+                                                              }
+                                                            },
+                                                            {
+                                                              "kind": "literal",
+                                                              "value": 500
+                                                            },
+                                                            {
+                                                              "kind": "literal",
+                                                              "value": 1000
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "side",
+                      "name": "side",
+                      "scope": "source",
+                      "expression": "IF(option_type = \"call\", IF(strike >= underlying_price, \"OTM call\", \"ITM call\"), IF(strike < underlying_price, \"OTM put\", \"ITM put\"))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "=",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "option_type"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": "call"
+                            }
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": ">=",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "strike"
+                                },
+                                "right": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "underlying_price"
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "OTM call"
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "ITM call"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": "<",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "strike"
+                                },
+                                "right": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "underlying_price"
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "OTM put"
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "ITM put"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "layout": {
+                    "rows": [],
+                    "columns": [],
+                    "values": []
+                  },
+                  "checklists": [
+                    {
+                      "categoryId": "side_cat",
+                      "memberKeys": [
+                        "[\"string\",\"OTM call\"]",
+                        "[\"string\",\"OTM put\"]"
+                      ]
+                    }
+                  ],
+                  "resultFilters": [],
+                  "subtotals": {
+                    "grandTotal": false,
+                    "groups": false
+                  },
+                  "enabled": false
+                }
+              }
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "fx",
+            "index": 1,
+            "extras": {
+              "tableDefinition": {
+                "table": {},
+                "search": "",
+                "analytical": {
+                  "schemaVersion": 1,
+                  "params": {
+                    "promotePage": true,
+                    "filters": []
+                  },
+                  "categories": [
+                    {
+                      "id": "underlying",
+                      "name": "Underlying",
+                      "sourceFieldId": "underlying_symbol",
+                      "transform": "native"
+                    },
+                    {
+                      "id": "strike_cat",
+                      "name": "Strike",
+                      "sourceFieldId": "strike_bucket",
+                      "transform": "native"
+                    },
+                    {
+                      "id": "expiry",
+                      "name": "Tenor",
+                      "sourceFieldId": "tenor",
+                      "transform": "native",
+                      "sortFieldId": "tenor_months"
+                    }
+                  ],
+                  "measures": [
+                    {
+                      "id": "iv",
+                      "sourceFieldId": "implied_volatility",
+                      "aggregation": "median"
+                    },
+                    {
+                      "id": "n",
+                      "sourceFieldId": "implied_volatility",
+                      "aggregation": "count"
+                    },
+                    {
+                      "id": "lm",
+                      "sourceFieldId": "log_moneyness",
+                      "aggregation": "mean"
+                    },
+                    {
+                      "id": "rt",
+                      "sourceFieldId": "root_t",
+                      "aggregation": "mean"
+                    }
+                  ],
+                  "formulas": [],
+                  "layout": {
+                    "rows": [
+                      "underlying",
+                      "strike_cat"
+                    ],
+                    "columns": [
+                      "expiry"
+                    ],
+                    "values": [
+                      "iv",
+                      "n",
+                      "lm",
+                      "rt"
+                    ]
+                  },
+                  "checklists": [
+                    {
+                      "categoryId": "strike_cat",
+                      "memberKeys": [
+                        "[\"number\",0]",
+                        "[\"number\",-25]",
+                        "[\"number\",25]",
+                        "[\"number\",-50]",
+                        "[\"number\",50]",
+                        "[\"number\",-100]",
+                        "[\"number\",100]",
+                        "[\"number\",-150]",
+                        "[\"number\",150]",
+                        "[\"number\",-200]",
+                        "[\"number\",200]",
+                        "[\"number\",-250]",
+                        "[\"number\",250]",
+                        "[\"number\",-300]",
+                        "[\"number\",300]",
+                        "[\"number\",-500]",
+                        "[\"number\",500]",
+                        "[\"number\",-750]",
+                        "[\"number\",750]",
+                        "[\"number\",-1000]",
+                        "[\"number\",1000]",
+                        "[\"number\",-1500]",
+                        "[\"number\",1500]"
+                      ]
+                    },
+                    {
+                      "categoryId": "expiry",
+                      "memberKeys": [
+                        "[\"string\",\"1W\"]",
+                        "[\"string\",\"2W\"]",
+                        "[\"string\",\"1M\"]",
+                        "[\"string\",\"2M\"]",
+                        "[\"string\",\"3M\"]",
+                        "[\"string\",\"6M\"]",
+                        "[\"string\",\"9M\"]",
+                        "[\"string\",\"1Y\"]",
+                        "[\"string\",\"2Y\"]"
+                      ]
+                    }
+                  ],
+                  "resultFilters": [],
+                  "subtotals": {
+                    "grandTotal": false,
+                    "groups": false
+                  },
+                  "enabled": true
+                }
+              },
+              "tableSelection": {
+                "kind": "none"
+              },
+              "sourceRef": "c0"
+            }
+          },
+          {
+            "ref": "c2",
+            "tab": "fx",
+            "index": 2,
+            "extras": {
+              "linkedChart": {
+                "type": "surface",
+                "measures": [],
+                "display": "grouped",
+                "height": "iv",
+                "spaceRowsBy": "lm",
+                "spaceColumnsBy": "rt"
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "stock",
+            "index": 0,
+            "extras": {
+              "tableDefinition": {
+                "table": {},
+                "search": "",
+                "analytical": {
+                  "schemaVersion": 1,
+                  "params": {
+                    "promotePage": true,
+                    "filters": [
+                      {
+                        "id": "side",
+                        "categoryId": "side_cat",
+                        "label": "Side",
+                        "multiSelect": true
+                      }
+                    ]
+                  },
+                  "categories": [
+                    {
+                      "id": "side_cat",
+                      "name": "Side",
+                      "sourceFieldId": "side",
+                      "transform": "native"
+                    }
+                  ],
+                  "measures": [],
+                  "formulas": [
+                    {
+                      "id": "log_moneyness",
+                      "name": "log_moneyness",
+                      "scope": "source",
+                      "expression": "LN(strike / underlying_price)",
+                      "ast": {
+                        "kind": "call",
+                        "function": "LN",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "/",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "strike"
+                            },
+                            "right": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "underlying_price"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "root_t",
+                      "name": "root_t",
+                      "scope": "source",
+                      "expression": "SQRT(dte / 365)",
+                      "ast": {
+                        "kind": "call",
+                        "function": "SQRT",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "/",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "dte"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 365
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "side",
+                      "name": "side",
+                      "scope": "source",
+                      "expression": "IF(option_type = \"call\", IF(strike >= underlying_price, \"OTM call\", \"ITM call\"), IF(strike < underlying_price, \"OTM put\", \"ITM put\"))",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": "=",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "option_type"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": "call"
+                            }
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": ">=",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "strike"
+                                },
+                                "right": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "underlying_price"
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "OTM call"
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "ITM call"
+                              }
+                            ]
+                          },
+                          {
+                            "kind": "call",
+                            "function": "IF",
+                            "args": [
+                              {
+                                "kind": "binary",
+                                "operator": "<",
+                                "left": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "strike"
+                                },
+                                "right": {
+                                  "kind": "reference",
+                                  "target": "field",
+                                  "id": "underlying_price"
+                                }
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "OTM put"
+                              },
+                              {
+                                "kind": "literal",
+                                "value": "ITM put"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "id": "quoted",
+                      "name": "quoted",
+                      "scope": "source",
+                      "expression": "IF(implied_volatility > 0.0001, \"quoted\", \"no quote\")",
+                      "ast": {
+                        "kind": "call",
+                        "function": "IF",
+                        "args": [
+                          {
+                            "kind": "binary",
+                            "operator": ">",
+                            "left": {
+                              "kind": "reference",
+                              "target": "field",
+                              "id": "implied_volatility"
+                            },
+                            "right": {
+                              "kind": "literal",
+                              "value": 0.0001
+                            }
+                          },
+                          {
+                            "kind": "literal",
+                            "value": "quoted"
+                          },
+                          {
+                            "kind": "literal",
+                            "value": "no quote"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "layout": {
+                    "rows": [],
+                    "columns": [],
+                    "values": []
+                  },
+                  "checklists": [
+                    {
+                      "categoryId": "side_cat",
+                      "memberKeys": [
+                        "[\"string\",\"OTM call\"]",
+                        "[\"string\",\"OTM put\"]"
+                      ]
+                    }
+                  ],
+                  "resultFilters": [],
+                  "subtotals": {
+                    "grandTotal": false,
+                    "groups": false
+                  },
+                  "enabled": false
+                }
+              }
+            }
+          },
+          {
+            "ref": "c4",
+            "tab": "stock",
+            "index": 1,
+            "extras": {
+              "tableDefinition": {
+                "table": {},
+                "search": "",
+                "analytical": {
+                  "schemaVersion": 1,
+                  "params": {
+                    "promotePage": true,
+                    "filters": []
+                  },
+                  "categories": [
+                    {
+                      "id": "underlying",
+                      "name": "Underlying",
+                      "sourceFieldId": "underlying_symbol",
+                      "transform": "native"
+                    },
+                    {
+                      "id": "strike_cat",
+                      "name": "Strike",
+                      "sourceFieldId": "strike",
+                      "transform": "native"
+                    },
+                    {
+                      "id": "expiry",
+                      "name": "Expiry",
+                      "sourceFieldId": "expiration",
+                      "transform": "native"
+                    },
+                    {
+                      "id": "quote_cat",
+                      "name": "Quote",
+                      "sourceFieldId": "quoted",
+                      "transform": "native"
+                    }
+                  ],
+                  "measures": [
+                    {
+                      "id": "iv",
+                      "sourceFieldId": "implied_volatility",
+                      "aggregation": "median"
+                    },
+                    {
+                      "id": "n",
+                      "sourceFieldId": "implied_volatility",
+                      "aggregation": "count"
+                    },
+                    {
+                      "id": "lm",
+                      "sourceFieldId": "log_moneyness",
+                      "aggregation": "mean"
+                    },
+                    {
+                      "id": "rt",
+                      "sourceFieldId": "root_t",
+                      "aggregation": "mean"
+                    }
+                  ],
+                  "formulas": [],
+                  "layout": {
+                    "rows": [
+                      "underlying",
+                      "strike_cat"
+                    ],
+                    "columns": [
+                      "expiry"
+                    ],
+                    "values": [
+                      "iv",
+                      "n",
+                      "lm",
+                      "rt"
+                    ]
+                  },
+                  "checklists": [
+                    {
+                      "categoryId": "quote_cat",
+                      "memberKeys": [
+                        "[\"string\",\"quoted\"]"
+                      ]
+                    }
+                  ],
+                  "resultFilters": [],
+                  "subtotals": {
+                    "grandTotal": false,
+                    "groups": false
+                  },
+                  "enabled": true
+                }
+              },
+              "tableSelection": {
+                "kind": "none"
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c5",
+            "tab": "stock",
+            "index": 2,
+            "extras": {
+              "linkedChart": {
+                "type": "surface",
+                "measures": [],
+                "display": "grouped",
+                "height": "iv",
+                "spaceRowsBy": "lm",
+                "spaceColumnsBy": "rt"
+              },
+              "sourceRef": "c4"
+            }
+          }
+        ]
+      }
+    }
+  }
+]

@@ -653,6 +653,7 @@ fn runtime_preview_budget_preserves_early_entries() {
             transform: Transform::Native,
             fiscal_binding: None,
             legacy_bucket: None,
+            sort_field_id: None,
         })
         .collect();
     raw.params.filters = raw

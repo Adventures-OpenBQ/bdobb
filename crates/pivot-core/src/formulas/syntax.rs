@@ -397,6 +397,8 @@ impl Parser<'_> {
                                     "FIRST" => FormulaFunction::First,
                                     "LAST" => FormulaFunction::Last,
                                     "IF" => FormulaFunction::If,
+                                    "LN" => FormulaFunction::Ln,
+                                    "SQRT" => FormulaFunction::Sqrt,
                                     _ => return Err(self.error("Unknown formula function.")),
                                 };
                                 self.position += 1;

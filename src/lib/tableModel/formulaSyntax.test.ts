@@ -65,6 +65,15 @@ describe('formula syntax', () => {
   });
 });
 
+describe('scalar math functions', () => {
+  it('parses LN and SQRT as one-argument scalar calls', () => {
+    expect(parseFormula('LN(strike / underlying_price)').ast).toMatchObject({ kind: 'call', function: 'LN' });
+    expect(parseFormula('SQRT(dte / 365)').ast).toMatchObject({ kind: 'call', function: 'SQRT' });
+    expect(parseFormula('LN(1, 2)').diagnostics[0].message).toBe('Invalid function argument count.');
+    expect(validateFormulaAst({ kind: 'call', function: 'SQRT', args: [{ kind: 'literal', value: 4 }] }).diagnostics).toEqual([]);
+  });
+});
+
 describe('imported AST validation', () => {
   it('validates arity, operators, targets, and finite scalar types', () => {
     for (const ast of [{ kind: 'call', function: 'IF', args: [literal(1)] }, { kind: 'call', function: 'EVAL', args: [] }, { kind: 'literal', value: Infinity }, { kind: 'reference', target: 'window', id: 'x' }, { kind: 'binary', operator: '**', left: literal(2), right: literal(3) }]) {

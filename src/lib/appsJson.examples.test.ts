@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
+import type { TableModelV1 } from "./tableModel/types";
+import { pivotValueKey } from "./pivotKeys";
 
 /**
  * Every file under docs/examples is served to users: `pnpm apps:sync` writes
@@ -73,6 +75,7 @@ describe("docs/examples", () => {
     "v8.0.0-pinned.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
+    "v11.0.0-vol-surface.apps.json",
     "v5-financial-demo/apps.json",
   ];
   it("ships every known example file, and no file the list does not name", () => {
@@ -296,6 +299,72 @@ describe("docs/examples", () => {
     expect(live.cards[0].params).toEqual({ symbol: "AAPL,MSFT,NVDA,TSLA,BTC-USD,ETH-USD,EURUSD" });
     expect(live.cards.map((c) => c.params.interval)).toEqual([undefined, undefined, undefined, "1m", "1d", undefined]);
     expect(live.cards[5].params).toEqual({});
+  });
+
+  // The Vol Surface example: the CFTC FX long widget and yfinance's long chain,
+  // each feeding a linked pivot report and a linked Surface. The formula text
+  // is the plan's Global Constraints text, verbatim.
+  it("Vol Surface: each tab is a chain, a linked report and a linked Surface", () => {
+    const { apps, ids } = load("v11.0.0-vol-surface.apps.json");
+    expect(apps.map((a) => a.name)).toEqual(["Vol Surface"]);
+    const { dashboards, cards, unresolved } = importApps(apps, [...new Set(ids)].map(widget));
+    expect(unresolved).toBe(0);
+    expect(cards).toBe(6);
+    const [fx, stock] = dashboards[0].tabs;
+    expect([fx.name, stock.name]).toEqual(["FX options (CFTC)", "Stock options (yfinance)"]);
+    expect([fx, stock].map((t) => t.cards[0].widgetId)).toEqual(["cftc_fx_implied_vol_long_custom_obb", "yfinance_options_chains_long_yfinance_obb"]);
+    expect(new Set(ids)).toEqual(new Set(["cftc_fx_implied_vol_long_custom_obb", "yfinance_options_chains_long_yfinance_obb", LINKED_TABLE_ID, LINKED_CHART_ID]));
+    expect(fx.cards[0].params).toEqual({ pair: "EURUSD" });
+    expect(stock.cards[0].params).toEqual({ symbol: "AAPL" });
+
+    const cascade = (labels: string[]) =>
+      "IF(dte <= 2, null, " + [9, 20, 45, 75, 110, 200, 290, 400, 800].map((cut, i) => `IF(dte <= ${cut}, ${labels[i]}, `).join("") + "null" + ")".repeat(10);
+    const side = 'IF(option_type = "call", IF(strike >= underlying_price, "OTM call", "ITM call"), IF(strike < underlying_price, "OTM put", "ITM put"))';
+    const fxFormulas = {
+      log_moneyness: "LN(strike / underlying_price)",
+      tenor_months: cascade(["0.25", "0.5", "1", "2", "3", "6", "9", "12", "24"]),
+      tenor: cascade(["1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y"].map((t) => `"${t}"`)),
+      root_t: "IF(tenor_months = null, null, SQRT(tenor_months / 12))",
+      strike_points: "(strike - underlying_price) * pip",
+      strike_distance: "IF(strike_points < 0, -strike_points, strike_points)",
+      strike_bp: "(strike / underlying_price - 1) * 10000",
+      bp_distance: "IF(strike_bp < 0, -strike_bp, strike_bp)",
+      strike_bucket: "IF(ndf, IF(bp_distance > 1750, null, IF(strike_bp < 0, -1, 1) * IF(bp_distance < 25, 0, IF(bp_distance < 75, 50, IF(bp_distance < 150, 100, IF(bp_distance < 250, 200, IF(bp_distance < 400, 300, IF(bp_distance < 625, 500, IF(bp_distance < 875, 750, IF(bp_distance < 1250, 1000, 1500))))))))), IF(strike_distance > 1250, null, IF(strike_points < 0, -1, 1) * IF(strike_distance < 12.5, 0, IF(strike_distance < 37.5, 25, IF(strike_distance < 75, 50, IF(strike_distance < 125, 100, IF(strike_distance < 200, 150, IF(strike_distance < 375, 250, IF(strike_distance < 750, 500, 1000)))))))))",
+      side,
+    };
+    const stockFormulas = { log_moneyness: "LN(strike / underlying_price)", root_t: "SQRT(dte / 365)", side, quoted: 'IF(implied_volatility > 0.0001, "quoted", "no quote")' };
+
+    for (const [tab, formulas] of [[fx, fxFormulas], [stock, stockFormulas]] as const) {
+      const [chain, report, chart] = tab.cards;
+      expect([chain.widgetId, report.widgetId, chart.widgetId]).toEqual([tab.cards[0].widgetId, LINKED_TABLE_ID, LINKED_CHART_ID]);
+      expect(report.linkedSource).toEqual({ kind: "widget", sourceWidgetId: chain.id });
+      expect(chart.linkedSource).toEqual({ kind: "widget", sourceWidgetId: report.id });
+      const chainModel = chain.tableDefinition!.analytical as TableModelV1;
+      const reportModel = report.tableDefinition!.analytical as TableModelV1;
+      expect(chainModel.enabled).toBe(false);
+      expect(Object.fromEntries(chainModel.formulas.map((f) => [f.id, f.expression]))).toEqual(formulas);
+      expect(chainModel.categories.find((c) => c.id === "side_cat")?.sourceFieldId).toBe("side");
+      expect(chainModel.checklists).toEqual([{ categoryId: "side_cat", memberKeys: [pivotValueKey("OTM call"), pivotValueKey("OTM put")] }]);
+      for (const model of [chainModel, reportModel]) expect(model.params.filters.every((f) => f.categoryId === "side_cat")).toBe(true);
+      expect(chainModel.params.filters.map((f) => f.categoryId)).toEqual(["side_cat"]);
+      expect(reportModel.layout).toEqual({ rows: ["underlying", "strike_cat"], columns: ["expiry"], values: ["iv", "n", "lm", "rt"] });
+      expect(reportModel.measures.find((m) => m.id === "iv")).toMatchObject({ sourceFieldId: "implied_volatility", aggregation: "median" });
+      expect(reportModel.subtotals).toEqual({ grandTotal: false, groups: false });
+      expect(reportModel.checklists.some((l) => l.categoryId === "underlying")).toBe(false);
+      expect(chart.linkedChart).toEqual({ type: "surface", measures: [], display: "grouped", height: "iv", spaceRowsBy: "lm", spaceColumnsBy: "rt" });
+    }
+    const fxReport = fx.cards[1].tableDefinition!.analytical as TableModelV1;
+    expect(fxReport.categories.find((c) => c.id === "expiry")).toMatchObject({ sourceFieldId: "tenor", sortFieldId: "tenor_months" });
+    expect(fxReport.categories.find((c) => c.id === "strike_cat")?.sourceFieldId).toBe("strike_bucket");
+    const grid = [0, 25, 50, 100, 150, 200, 250, 300, 500, 750, 1000, 1500].flatMap((k) => (k ? [-k, k] : [0]));
+    expect(fxReport.checklists).toEqual([
+      { categoryId: "strike_cat", memberKeys: grid.map(pivotValueKey) },
+      { categoryId: "expiry", memberKeys: ["1W", "2W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y"].map(pivotValueKey) },
+    ]);
+    const stockReport = stock.cards[1].tableDefinition!.analytical as TableModelV1;
+    expect(stockReport.categories.find((c) => c.id === "quote_cat")?.sourceFieldId).toBe("quoted");
+    expect(stockReport.checklists).toEqual([{ categoryId: "quote_cat", memberKeys: [pivotValueKey("quoted")] }]);
+    expect(apps[0].description).toContain("BDOBB 11.0.0 or later");
   });
 
   // Every example says which BDOBB it needs, in words a reader sees in the

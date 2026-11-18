@@ -80,3 +80,6 @@ it("requires direct apply for changes because apply already validates and previe
   expect(rules).toContain("do not precede it with a separate preview call");
   expect(rules).toContain("apply transaction already validates");
 });
+it("tells agents the formula functions the engines support, LN and SQRT included", () => {
+  expect(capabilitiesFor(undefined, columns, "authoring").formula.functions).toEqual(expect.arrayContaining(["IF", "LN", "SQRT"]));
+});
