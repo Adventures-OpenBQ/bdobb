@@ -136,6 +136,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         }
         const offered = view.ready.chartColumns ?? view.ready.columns;
         const available = new Map(offered.map(c => [c.id, c]));
+        const present = new Set(view.ready.columns.map(c => c.id));
         setNoMatches(false);
         let request: string[], renderedSettings = settings;
         if (settings.type === 'surface' && isPivoted(offered)) {
@@ -148,7 +149,14 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             }
             setError(undefined);
             // Ticked expiries the source no longer offers are simply not drawn.
-            request = [LABEL_FIELD, ...offered.filter(c => c.measureId !== undefined && ids.includes(c.measureId)).map(c => c.id)];
+            const requested = offered.filter(c => c.measureId !== undefined && ids.includes(c.measureId) && present.has(c.id));
+            if (!requested.some(c => c.measureId === settings.height)) {
+                setCompleted(undefined);
+                setRefused(undefined);
+                setNoMatches(true);
+                return;
+            }
+            request = [LABEL_FIELD, ...requested.map(c => c.id)];
         } else {
             const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));
             if (missing) {
@@ -162,7 +170,6 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
                 return;
             }
             setError(undefined);
-            const present = new Set(view.ready.columns.map(c => c.id));
             renderedSettings = { ...settings, measures: settings.measures.filter(id => present.has(id)) };
             if (!renderedSettings.measures.length) {
                 setCompleted(undefined);
