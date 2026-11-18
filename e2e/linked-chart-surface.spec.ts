@@ -47,8 +47,12 @@ test('picking Surface on an empty chart takes its fields from the source widget 
   await expect(card.getByLabel('Category').getByRole('option', { name: 'strike', exact: true })).toBeAttached();
   await card.getByLabel('Chart type').selectOption('surface');
   await expect(card.getByLabel('Category')).toHaveValue('strike');
-  for (const field of expiries) await expect(card.getByRole('checkbox', { name: field, exact: true })).toBeChecked();
-  for (const field of ['strike_offset', 'num_options']) await expect(card.getByRole('checkbox', { name: field, exact: true })).not.toBeChecked();
+  await expect(card.getByRole('button', { name: `Measures: ${expiries.length} of ${expiries.length + 3}` })).toBeVisible();
+  await card.getByRole('button', { name: /^Measures/ }).click();
+  const list = page.getByRole('dialog', { name: 'Measures', exact: true });
+  for (const field of expiries) await expect(list.getByRole('checkbox', { name: field, exact: true })).toBeChecked();
+  for (const field of ['strike', 'strike_offset', 'num_options']) await expect(list.getByRole('checkbox', { name: field, exact: true })).not.toBeChecked();
+  await page.keyboard.press('Escape');
   await expect(card.locator('.linked-chart-plot .annotation-text')).toHaveText(['EURUSD — 2026-11-17']);
   await expect.poll(() => zRanges(page)).toEqual([[7, 11]]);
 });
@@ -70,16 +74,24 @@ test('filtering the source to one pair redraws a single surface, and one ticked 
   await expect(titles).toHaveText(['EURUSD — 2026-11-17']);
   await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(1);
   await expect.poll(() => zRanges(page)).toEqual([[7, 11]]);
-  // Unticking and re-ticking an expiry keeps the list and the surface's expiry axis in the table's column order.
-  const listed = card.locator('fieldset label');
-  await card.getByRole('checkbox', { name: 'vol_1m', exact: true }).uncheck();
-  await expect(card.getByRole('checkbox', { name: 'vol_1m', exact: true })).not.toBeChecked();
-  await expect(listed).toHaveText(['pair', 'date', 'strike', ...expiries]);
-  await card.getByRole('checkbox', { name: 'vol_1m', exact: true }).check();
+  // Unticking and re-ticking an expiry keeps the checklist and the surface's expiry axis in the table's column order.
+  const measures = card.getByRole('button', { name: /^Measures/ });
+  const list = page.getByRole('dialog', { name: 'Measures', exact: true });
+  const apply = list.getByRole('button', { name: 'Apply', exact: true });
+  await measures.click();
+  await list.getByRole('checkbox', { name: 'vol_1m', exact: true }).uncheck();
+  await apply.click();
+  await expect(measures).toHaveAccessibleName('Measures: vol_1w, vol_3m, vol_1y');
+  await measures.click();
+  await expect(list.locator('.opts label')).toHaveText(['pair', 'date', 'strike', ...expiries]);
+  await list.getByRole('checkbox', { name: 'vol_1m', exact: true }).check();
+  await apply.click();
   await expect.poll(() => page.evaluate(() => (document.querySelector('.linked-chart-plot .js-plotly-plot') as unknown as { layout: { scene: { yaxis: { ticktext: string[] } } } }).layout.scene.yaxis.ticktext)).toEqual(expiries);
-  await expect(listed).toHaveText(['pair', 'date', 'strike', ...expiries]);
   // One expiry left ticked: the smile as a line, no 3-D scene.
-  for (const field of expiries.slice(1)) await card.getByRole('checkbox', { name: field, exact: true }).uncheck();
+  await measures.click();
+  for (const field of expiries.slice(1)) await list.getByRole('checkbox', { name: field, exact: true }).uncheck();
+  await apply.click();
+  await expect(measures).toHaveAccessibleName(`Measures: ${expiries[0]}`);
   await expect(card.locator('.linked-chart-plot .scatterlayer .trace')).toHaveCount(1);
   await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(0);
   await expect(titles).toHaveText(['EURUSD — 2026-11-17']);

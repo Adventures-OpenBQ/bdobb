@@ -91,6 +91,7 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
     expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -341,15 +342,26 @@ it('picking Surface with no fields chosen takes them from the source chartDataTy
     cleanup(); store.disposeDashboard('d');
 });
 
-it('keeps the Measures list in source column order when a measure is unticked', async () => {
-    const store = await setupRows([{ region: 'A', revenue: 1, cost: 2 }, { region: 'B', revenue: 3, cost: 4 }]);
-    const labels = () => [...screen.getByRole('group', { name: 'Measures' }).querySelectorAll('label')].map(l => l.textContent);
-    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, { measures: ['revenue', 'cost'] })}/>);
+it('lists the measures in source column order in a checklist that publishes once, in that order', async () => {
+    const store = await setupRows([{ region: 'A', revenue: 1, cost: 2 }, { region: 'B', revenue: 3, cost: 4 }]); const commit = vi.fn(async (_: unknown) => true);
+    const labels = () => [...screen.getByRole('dialog', { name: 'Measures' }).querySelectorAll('.opts label')].map(l => l.textContent);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, { measures: ['cost'] }, commit)}/>);
     await screen.findByTestId('figure');
-    const before = labels();
-    rerender(<LinkedChartRenderer {...withSettings(store, { measures: ['cost'] })}/>);
-    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).data).toHaveLength(1));
-    expect(labels()).toEqual(before);
-    expect(before.indexOf('Revenue')).toBeLessThan(before.indexOf('Cost'));
+    // Unticked Revenue keeps its place ahead of Cost; the button says what is chosen.
+    expect(screen.getByRole('button', { name: 'Measures: Cost' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(labels()).toEqual(['Revenue', 'Cost']);
+    expect(screen.getByRole('checkbox', { name: 'Cost' })).toBeChecked(); expect(screen.getByRole('checkbox', { name: 'Revenue' })).not.toBeChecked();
+    // Ticking does not publish; Apply publishes once, in listed order whatever order the boxes were ticked in.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Revenue' }));
+    expect(commit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+    expect(commit.mock.lastCall![0]).toMatchObject({ measures: ['revenue', 'cost'] });
+    expect(screen.queryByRole('dialog', { name: 'Measures' })).toBeNull();
+    rerender(<LinkedChartRenderer {...withSettings(store, { measures: ['revenue', 'cost'] }, commit)}/>);
+    expect(screen.getByRole('button', { name: 'Measures: All (2)' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ })); fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => expect(commit.mock.lastCall![0]).toMatchObject({ measures: [] }));
     cleanup(); store.disposeDashboard('d');
 });

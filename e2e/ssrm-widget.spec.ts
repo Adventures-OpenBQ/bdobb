@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import {test,expect} from '@playwright/test';
-import {seedApp,dashboardSeed,read} from './fixtures';
+import {seedApp,dashboardSeed,read,tickChartMeasures} from './fixtures';
 // @ts-expect-error JavaScript qualification harness has no public TypeScript API.
 import {startNativeHarness} from '../scripts/ssrm-native-harness.mjs';
 test('authenticated native upload, full consumers, refresh, saved reopen and errors',async({page,context},info)=>{
@@ -45,7 +45,7 @@ test('authenticated native upload, full consumers, refresh, saved reopen and err
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked table'}).click();
   await expect.poll(()=>page.evaluate(async()=>{const p='/src/stores/tableExecutionStore.ts',d='/src/stores/dashboardStore.ts';const ds=(await import(d)).useDashboardStore.getState();const child=ds.dashboards[0].tabs[0].cards.find((c:{linkedSource?:unknown})=>c.linkedSource);return child&&(await import(p)).tableExecutionStore.readView('d1',child.id).ready?.topLevelCount;})).toBe(1204);
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked chart'}).click();
-  await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');await page.getByRole('checkbox',{name:'revenue',exact:true}).check();
+  await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');await tickChartMeasures(page,page,'revenue');
   await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(1204);
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Export ▸'}).click();await page.getByRole('menuitem',{name:'CSV',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>window.__bdobb!.list!().find(p=>p.startsWith('exports/')&&p.endsWith('.csv')))).toBeTruthy();
