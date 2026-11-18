@@ -195,8 +195,11 @@ function surfaceFigure(plots: Plot[], axisLabel: string, revision: string, theme
         scenes[scene] = { domain: { x: [g / plots.length, (g + 1) / plots.length] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...ticked(p.x, p.xTicks) }, yaxis: { title: { text: '' }, ...ticked(p.y, p.yTicks) }, zaxis: { title: { text: '' } } };
         return { type: 'surface', scene, name: p.title, coloraxis: 'coloraxis', x: p.x, y: p.y, z: p.z, text: p.text, hovertemplate: '%{text}<extra></extra>' };
     });
+    // Plotly's mesh draws only cells in a complete 2-by-2 block of finite cells, so only those set the shared colour range.
+    const drawn = plots.filter(p => p.z.length > 1).flatMap(p => p.z.flatMap((col, c) => col.flatMap((v, r) => v !== null && [[c - 1, r - 1], [c - 1, r], [c, r - 1], [c, r]].some(([c0, r0]) => [0, 1].every(dc => [0, 1].every(dr => p.z[c0 + dc]?.[r0 + dr] != null))) ? [v] : [])));
+    const coloraxis = { colorscale: 'Viridis', ...(drawn.length ? { cmin: Math.min(...drawn), cmax: Math.max(...drawn) } : {}) };
     // A line beside the scenes needs the 2-D margins for its tick labels.
-    return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes, ...(Object.keys(axes).length ? { margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, plot_bgcolor: background, ...axes } : {}) } } };
+    return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis, annotations: titles, paper_bgcolor: background, font, ...scenes, ...(Object.keys(axes).length ? { margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, plot_bgcolor: background, ...axes } : {}) } } };
 }
 export function isPivoted(columns: readonly DatasetColumn[]): boolean { return columns.some(c => !!c.splitPath?.length); }
 /** One entry per distinct report value (measureId) among split columns, in column order. */
