@@ -10,6 +10,7 @@ import {
   findKeyMaintWidget,
   needsKey,
   normalizeProvider,
+  OPTIONAL_KEY_PROVIDERS,
   pickProbeWidget,
   probeResult,
   probeTone,
@@ -217,6 +218,12 @@ async function refreshOnce(set: SetState, get: GetState): Promise<void> {
   const tasks: Array<() => Promise<void>> = [];
 
   for (const [provider, own] of byProvider) {
+    // Works without its key, so a probe cannot tell whether one is set: read
+    // as keyless, and left out of `probe` so the Library draws no tone.
+    if (OPTIONAL_KEY_PROVIDERS.has(provider)) {
+      status[provider] = "keyed";
+      continue;
+    }
     probe[provider] = "grey";
     // Absent from key-maint's registry means no credential is required.
     if (!needsKey(provider)) {
