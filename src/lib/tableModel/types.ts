@@ -33,6 +33,8 @@ export type CategoryDef = {
   fiscalBinding?: FiscalBinding;
   /** Maintained legacy recipe; not new authoring vocabulary. */
   legacyBucket?: 'week' | 'month';
+  /** orders members by this field or source formula; the label still comes from `sourceFieldId` */
+  sortFieldId?: string;
 };
 export type MemberSelector = { categoryId: string; memberKey: string };
 /** Bound IDs only. Parsing, name binding, scope and cycle checking belong to Task 3. */

@@ -44,6 +44,7 @@ export function boundedPlainData(raw: unknown): boolean {
 function category(value: unknown): value is CategoryDef {
   if (!object(value) || !id(value.id) || !id(value.name) || !id(value.sourceFieldId) || !oneOf(value.transform, ['native', 'Y', 'Q', 'M', 'FY', 'FQ'])) return false;
   if (value.legacyBucket !== undefined && (value.transform !== 'native' || !oneOf(value.legacyBucket, ['week', 'month']))) return false;
+  if (value.sortFieldId !== undefined && !id(value.sortFieldId)) return false;
   if (value.fiscalBinding === undefined) return true; // Missing context becomes a typed calculation error in Task 2.
   const binding = value.fiscalBinding;
   return object(binding) && id(binding.companyFieldId) && (binding.periodKind === undefined || oneOf(binding.periodKind, ['FY', 'FQ'])) && ['dateFieldId', 'metadataKey', 'periodStartFieldId', 'periodEndFieldId', 'fiscalYearFieldId', 'fiscalQuarterFieldId'].every(key => binding[key] === undefined || id(binding[key]));

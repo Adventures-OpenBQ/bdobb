@@ -192,6 +192,9 @@ pub struct Category {
     pub fiscal_binding: Option<FiscalBinding>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub legacy_bucket: Option<LegacyBucket>,
+    /// Orders members by this field or source formula; the label still comes from `source_field_id`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort_field_id: Option<String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transform {
