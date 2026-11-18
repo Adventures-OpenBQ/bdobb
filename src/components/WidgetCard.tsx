@@ -1863,6 +1863,15 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   const view = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
   useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, card.linkedSource?.sourceWidgetId]);
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
+  const widgets = useWidgetRegistryStore(s => s.widgets);
+  // The widget at the head of the source chain declares the chartDataType hints a linked chart can start from.
+  const hints = useMemo(() => {
+    const cards = dashboard?.tabs.flatMap(t => t.cards) ?? [];
+    const seen = new Set<string>();
+    let root: DashboardCard | undefined = card;
+    while (root?.linkedSource && !seen.has(root.id)) { seen.add(root.id); const id: string = root.linkedSource.sourceWidgetId; root = cards.find(c => c.id === id); }
+    return root && widgets.find(w => w.id === root.widgetId && w.backendId === root.backendId)?.table?.columns;
+  }, [dashboard, card, widgets]);
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
   const unavailable = view.status === 'unavailable' || !dashboard || !card.linkedSource
@@ -1872,7 +1881,7 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
     {!unavailable && view.stale ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && card.linkedChart && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
-      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
+      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} hints={hints || undefined} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;
   return card.linkedChart ? <div className="linked-chart-card">{content}</div> : content;
