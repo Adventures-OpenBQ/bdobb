@@ -414,6 +414,28 @@ it('a Surface on a pivoted source offers Height and spacing values and requests 
     cleanup(); store.disposeDashboard('d');
 });
 
+it('changing Height clears the ticked expiries; changing a spacing value keeps them', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }, { id: 'peak', sourceFieldId: 'revenue', aggregation: 'max' as const }] };
+    const data = { ...input, rows: [{ id: 'amd', values: { region: '2024', team: 'AMD', revenue: 100 } }, { id: 'avgo', values: { region: '2024', team: 'AVGO', revenue: 200 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const ticked = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const settings = { type: 'surface' as const, measures: ticked, display: 'grouped' as const, height: 'sales', spaceRowsBy: 'peak' };
+    const commit = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer dashboardId="d" card={{ ...chart, linkedChart: settings }} refreshKey={0} store={store} onSettingsChange={commit}/>);
+    await screen.findByLabelText('Height');
+    fireEvent.change(screen.getByLabelText('Space rows by'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ type: 'surface', measures: ticked, display: 'grouped', height: 'sales' }));
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: 'peak' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, height: 'peak', measures: [] }));
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ type: 'surface', measures: [], display: 'grouped', spaceRowsBy: 'peak' }));
+    cleanup(); store.disposeDashboard('d');
+});
+
 it('a Surface on a report whose checklist hides a column member requests only the columns the report offers', async () => {
     const { LABEL_FIELD } = await import('../../lib/pivotTable');
     const { pivotValueKey } = await import('../../lib/pivotKeys');

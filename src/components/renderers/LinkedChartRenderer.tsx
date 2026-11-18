@@ -230,8 +230,8 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const fields = order.map(id => byId.get(id)!);
     const pivoted = settings.type === 'surface' && isPivoted(offered);
     const values = reportValues(fields);
-    // A report value: empty deletes the key.
-    const valueSelect = (key: 'height' | 'spaceRowsBy' | 'spaceColumnsBy', name: string, lead: string) => <label>{name}<select aria-label={name} disabled={saving} value={settings[key] ?? ''} onChange={e => { const next = { ...settings, [key]: e.target.value }; if (!e.target.value)
+    // A report value: empty deletes the key. A new Height clears the ticked expiries, which belong to the old one (none ticked = all).
+    const valueSelect = (key: 'height' | 'spaceRowsBy' | 'spaceColumnsBy', name: string, lead: string) => <label>{name}<select aria-label={name} disabled={saving} value={settings[key] ?? ''} onChange={e => { const next = { ...settings, [key]: e.target.value }; if (key === 'height') next.measures = []; if (!e.target.value)
         delete next[key]; void commit(next); }}><option value="">{lead}</option>{settings[key] && !values.some(v => v.id === settings[key]) ? <option value={settings[key]}>{settings[key]} (unavailable)</option> : null}{values.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></label>;
     return <div className="linked-chart-renderer" data-delivered-revision={delivered?.revision}>
     {!viewer ? <div className="chart-controls">
