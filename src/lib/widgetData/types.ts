@@ -93,4 +93,8 @@ export type LinkedChartSettings = {
   measures: string[];
   display: "grouped" | "stacked" | "percent";
   seriesFrom?: "columns" | "rows"; // absent means "columns"
+  /** Surface on a pivoted source: report value ids (`measureId`). */
+  height?: string;
+  spaceRowsBy?: string;
+  spaceColumnsBy?: string;
 };

@@ -62,6 +62,9 @@ it('v4 accepts omitted optional chart fields and refuses malformed chart/calenda
     Object.assign((bad.extensions!.bdobb as { cards: Array<{ extras: object }> }).cards[0].extras, invalid);
     expect(() => importApps([bad], [])).toThrow(/Invalid|Unknown/);
   }
+  const bad = structuredClone(exported.value);
+  Object.assign((bad.extensions!.bdobb as { cards: Array<{ extras: object }> }).cards[0].extras, { linkedChart: { type: 'surface', display: 'grouped', measures: [], spaceRowsBy: 3 } });
+  expect(() => importApps([bad], [])).toThrow('Invalid linked chart.');
 });
 it('v4 round-trips every new linked chart value, in any combination', () => {
   const cases: LinkedChartSettings[] = [
@@ -70,6 +73,7 @@ it('v4 round-trips every new linked chart value, in any combination', () => {
     { type: 'pie', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // leftover combination still imports
     { type: 'waterfall', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // any valid display/seriesFrom imports
     { type: 'line', display: 'percent', measures: ['revenue'], seriesFrom: 'columns' },
+    { type: 'surface', display: 'grouped', measures: [], height: 'iv', spaceRowsBy: 'lm', spaceColumnsBy: 'rt' },
   ];
   for (const linkedChart of cases) {
     const exported = exportCompatibleApp({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [card({ linkedChart, paramsOpen: true })] }] });
