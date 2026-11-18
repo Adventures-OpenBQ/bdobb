@@ -316,7 +316,8 @@ it('draws only the ticked expiry columns; none ticked draws all', () => {
     const f = figure({ ...ps, measures: [cell(D[2], 'iv'), cell(D[0], 'iv')] }, report);
     expect(f.data[0]).toMatchObject({ y: [RT[0], RT[2]], z: [[0.21, 0.2, 0.22], [0.23, 0.22, 0.24]] });
     expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: [D[0], D[2]] } });
-    expect(f.data[1]).toMatchObject({ y: [RT[0]], z: [[0.3, 0.29, 0.31]] });
+    expect(f.data[1]).toMatchObject({ type: 'scatter', y: [0.3, 0.29, 0.31] }); // BBB is left with one expiry: a line (ruling I1)
+    expect(f.layout.yaxis).toMatchObject({ title: { text: D[0] } });
     expect((figure(ps, report).data[0] as { y: number[] }).y).toEqual(RT);
 });
 it('draws a pivoted surface with one ticked expiry as a line', () => {
@@ -327,6 +328,23 @@ it('draws a pivoted surface with one ticked expiry as a line', () => {
     ]);
     expect(f.layout.xaxis).toMatchObject({ title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['90', '100', '110'] });
     expect(f.layout.scene).toBeUndefined();
+});
+it('draws a plot left with one expiry as a line beside the other plots\' surfaces', () => {
+    const f = figure({ ...ps, measures: [cell(D[1], 'iv'), cell(D[2], 'iv')] }, report);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'surface', scene: 'scene', coloraxis: 'coloraxis', y: RT.slice(1), z: [[0.22, 0.21, 0.23], [0.23, 0.22, 0.24]] }),
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [-0.105, 0, 0.095], y: [0.31, 0.3, 0.32] }),
+    ]);
+    expect(f.data[1]).not.toHaveProperty('coloraxis');
+    // The line keeps the all-lines colour for its expiry.
+    const allLines = figure({ ...ps, measures: [cell(D[1], 'iv')] }, report);
+    expect((f.data[1] as { line: unknown }).line).toEqual((allLines.data[1] as { line: unknown }).line);
+    expect(f.layout.scene).toMatchObject({ domain: { x: [0, 0.5] }, yaxis: { ticktext: D.slice(1) } });
+    expect(f.layout.xaxis).toMatchObject({ domain: [0.54, 1], anchor: 'y', title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['45', '50', '55'] });
+    expect(f.layout.yaxis).toMatchObject({ anchor: 'x', title: { text: D[1] } });
+    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis' });
+    expect(f.layout.scene2).toBeUndefined();
+    expect(titlesOf(f)).toEqual(['AAA', 'BBB']);
 });
 it('draws one surface when the report holds one outer member', () => {
     const f = figure(ps, { ...report, rows: report.rows.slice(3) });
