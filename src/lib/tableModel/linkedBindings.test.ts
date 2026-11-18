@@ -45,3 +45,10 @@ it('retains malformed local source identities without blocking independent linke
   expect(result.definition.analytical).toEqual(analytical);
   expect(() => validateLinkedBindings(definition, input.columns.filter(c => c.id !== 'revenue'))).toThrow(/revenue/);
 });
+it('reports a category sort field missing from the parent instead of silently ordering by member', () => {
+  const analytical = model();
+  analytical.categories = [{ id: 'c', name: 'Region', sourceFieldId: 'region', transform: 'native', sortFieldId: 'team' }];
+  const definition = { table: {}, search: '', analytical };
+  expect(() => validateLinkedBindings(definition, input.columns)).not.toThrow();
+  expect(() => validateLinkedBindings(definition, input.columns.filter(c => c.id !== 'team'))).toThrow(/Missing linked source field: team/);
+});
