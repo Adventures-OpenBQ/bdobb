@@ -149,31 +149,36 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
 }
 /** One plot of a Surface: x by row, y by column, z[column][row]. */
 type Plot = { title: string; x: number[]; xTicks?: string[]; y: number[]; yTicks: string[]; colorKeys: string[]; z: (number | null)[][]; text: string[][] };
-/** Plots side by side, titled, on one colour scale: a line each when every plot has one column, else 3-D scenes. */
+/** Plots side by side, titled: a plot with one column draws as a line, the others as 3-D scenes on one colour scale. */
 function surfaceFigure(plots: Plot[], axisLabel: string, revision: string, theme: 'light' | 'dark'): LinkedFigureResult {
     const background = theme === 'dark' ? '#1e242e' : '#ffffff';
     const titles = plots.flatMap(({ title }, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / plots.length, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
     const font = { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' };
     // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by position.
     const ticked = (vals: number[], text?: string[]) => text ? { tickmode: 'array', tickvals: vals, ticktext: text } : {};
+    // A plot with one column draws as a line in its own slot g, on its own 2-D axes numbered by line.
+    const axes: Record<string, unknown> = {};
+    const line = (p: Plot, g: number) => {
+        const k = Object.keys(axes).length / 2, n = k ? String(k + 1) : '', lineColor = color(p.colorKeys[0]);
+        axes[`xaxis${n}`] = { domain: [g / plots.length + (g ? 0.04 : 0), (g + 1) / plots.length - (g < plots.length - 1 ? 0.04 : 0)], anchor: `y${n}`, title: { text: axisLabel }, ...ticked(p.x, p.xTicks) };
+        axes[`yaxis${n}`] = { anchor: `x${n}`, title: { text: k ? '' : escape(p.yTicks[0]) } };
+        return { type: 'scatter', mode: 'lines+markers', connectgaps: false, xaxis: `x${n}`, yaxis: `y${n}`, x: p.x, y: p.z[0], line: { color: lineColor }, marker: { color: lineColor }, text: p.text[0], hovertemplate: '%{text}<extra></extra>' };
+    };
     if (plots.every(p => p.z.length === 1)) {
         // One measure has no second axis to mesh over: each plot draws as a line across the category.
-        const axes: Record<string, unknown> = {};
-        const lines = plots.map((p, g) => {
-            const n = g ? String(g + 1) : '', lineColor = color(p.colorKeys[0]);
-            axes[`xaxis${n}`] = { domain: [g / plots.length + (g ? 0.04 : 0), (g + 1) / plots.length - (g < plots.length - 1 ? 0.04 : 0)], anchor: `y${n}`, title: { text: axisLabel }, ...ticked(p.x, p.xTicks) };
-            axes[`yaxis${n}`] = { anchor: `x${n}`, title: { text: g ? '' : escape(p.yTicks[0]) } };
-            return { type: 'scatter', mode: 'lines+markers', connectgaps: false, xaxis: `x${n}`, yaxis: `y${n}`, x: p.x, y: p.z[0], line: { color: lineColor }, marker: { color: lineColor }, text: p.text[0], hovertemplate: '%{text}<extra></extra>' };
-        });
+        const lines = plots.map(line);
         return { ok: true, revision, notes: [], figure: { data: lines, layout: { uirevision: revision, margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, annotations: titles, paper_bgcolor: background, plot_bgcolor: background, font, ...axes } } };
     }
     const scenes: Record<string, unknown> = {};
     const data = plots.map((p, g) => {
+        if (p.z.length === 1)
+            return line(p, g);
         const scene = g ? `scene${g + 1}` : 'scene';
         scenes[scene] = { domain: { x: [g / plots.length, (g + 1) / plots.length] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...ticked(p.x, p.xTicks) }, yaxis: { title: { text: '' }, ...ticked(p.y, p.yTicks) }, zaxis: { title: { text: '' } } };
         return { type: 'surface', scene, name: p.title, coloraxis: 'coloraxis', x: p.x, y: p.y, z: p.z, text: p.text, hovertemplate: '%{text}<extra></extra>' };
     });
-    return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes } } };
+    // A line beside the scenes needs the 2-D margins for its tick labels.
+    return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes, ...(Object.keys(axes).length ? { margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, plot_bgcolor: background, ...axes } : {}) } } };
 }
 export function isPivoted(columns: readonly DatasetColumn[]): boolean { return columns.some(c => !!c.splitPath?.length); }
 /** One entry per distinct report value (measureId) among split columns, in column order. */
