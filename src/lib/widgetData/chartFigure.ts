@@ -17,6 +17,7 @@ type DatasetRows = WidgetDataset['rows'];
 // shortcut: a Surface splits on these two field ids only (the FX vol table's), make it a setting when another source needs a different split.
 export const SURFACE_SPLIT = ['pair', 'date'];
 const MAX_SURFACES = 6;
+const MAX_TICKS = 10;
 /** Legend names for Rows mode: the label, disambiguated by group path and then by row order when it repeats. */
 function rowNames(rows: DatasetRows, labels: string[]): string[] {
     const count = new Map<string, number>();
@@ -166,7 +167,13 @@ function surfaceFigure(plots: Plot[], axisLabel: string, revision: string, theme
     const titles = plots.flatMap(({ title }, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / plots.length, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
     const font = { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' };
     // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by position.
-    const ticked = (vals: number[], text?: string[]) => text ? { tickmode: 'array', tickvals: vals, ticktext: text } : {};
+    // At most MAX_TICKS labels, evenly across the members with the first and last always shown; every member is still plotted.
+    const ticked = (vals: number[], text?: string[]) => {
+        if (!text)
+            return {};
+        const keep = vals.length <= MAX_TICKS ? vals.map((_, i) => i) : Array.from({ length: MAX_TICKS }, (_, i) => Math.round(i * (vals.length - 1) / (MAX_TICKS - 1)));
+        return { tickmode: 'array', tickvals: keep.map(i => vals[i]), ticktext: keep.map(i => text[i]) };
+    };
     // A plot with one column draws as a line in its own slot g, on its own 2-D axes numbered by line.
     const axes: Record<string, unknown> = {};
     const line = (p: Plot, g: number) => {

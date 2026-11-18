@@ -378,3 +378,25 @@ it('lists report values, expiry columns and whether a source is pivoted', () => 
     expect(reportValues(report.columns)).toEqual([{ id: 'iv', label: VALUE_LABEL.iv }, { id: 'lm', label: VALUE_LABEL.lm }, { id: 'rt', label: VALUE_LABEL.rt }]);
     expect(expiryColumns(report.columns, 'iv').map(c => c.id)).toEqual(D.map(d => cell(d, 'iv')));
 });
+// A text or spaced axis labels at most ten positions, evenly across the members and always the first and last; every member is still plotted.
+const wide = (n: number) => ({ ...report, rows: Array.from({ length: n }, (_, i) => reportRow('AAA', 100 + i, i / 100, [0.2 + i / 1000, 0.21 + i / 1000, 0.22 + i / 1000])) });
+it('thins the tick labels of a long axis to ten, keeping every point plotted and hoverable', () => {
+    const f = figure(ps, wide(129));
+    const scene = f.layout.scene as { xaxis: { tickvals: number[]; ticktext: string[] } };
+    expect(scene.xaxis.tickvals).toHaveLength(10);
+    expect(scene.xaxis.ticktext).toEqual(['100', '114', '128', '143', '157', '171', '185', '200', '214', '228']);
+    expect(scene.xaxis.tickvals[0]).toBe(0); expect(scene.xaxis.tickvals[9]).toBe(1.28);
+    expect((f.data[0] as { x: number[] }).x).toHaveLength(129);
+    expect((f.data[0] as { text: string[][] }).text[0]).toHaveLength(129);
+    expect((f.layout.scene as { yaxis: { ticktext: string[] } }).yaxis.ticktext).toEqual(D);
+});
+it('thins the category axis of a one-expiry line panel and leaves ten or fewer labels alone', () => {
+    const line = figure({ ...ps, measures: [cell(D[1], 'iv')] }, wide(129));
+    expect((line.layout.xaxis as { ticktext: string[] }).ticktext).toHaveLength(10);
+    expect((line.data[0] as { x: number[] }).x).toHaveLength(129);
+    const ten = figure(ps, wide(10)).layout.scene as { xaxis: { ticktext: string[] } };
+    expect(ten.xaxis.ticktext).toHaveLength(10);
+    const eleven = figure(ps, wide(11)).layout.scene as { xaxis: { ticktext: string[] } };
+    expect(eleven.xaxis.ticktext).toHaveLength(10);
+    expect(eleven.xaxis.ticktext[0]).toBe('100'); expect(eleven.xaxis.ticktext[9]).toBe('110');
+});
