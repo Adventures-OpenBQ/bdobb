@@ -12,11 +12,12 @@ import candlestick from "plotly.js/lib/candlestick";
 import scatter from "plotly.js/lib/scatter";
 import heatmap from "plotly.js/lib/heatmap";
 import pie from "plotly.js/lib/pie";
+import surface from "plotly.js/lib/surface";
 import waterfall from "plotly.js/lib/waterfall";
 import type { Data } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
-const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, waterfall];
+const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, waterfall, surface];
 
 Plotly.register(REGISTERED_TRACES);
 

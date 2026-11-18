@@ -13,6 +13,9 @@ export type LinkedFigureResult =
     | { ok: true; figure: PlotlyFigure; revision: string; notes: string[] }
     | { ok: false; message: string; refused?: true };
 type DatasetRows = WidgetDataset['rows'];
+// shortcut: a Surface splits on these two field ids only (the FX vol table's), make it a setting when another source needs a different split.
+export const SURFACE_SPLIT = ['pair', 'date'];
+const MAX_SURFACES = 6;
 /** Legend names for Rows mode: the label, disambiguated by group path and then by row order when it repeats. */
 function rowNames(rows: DatasetRows, labels: string[]): string[] {
     const count = new Map<string, number>();
@@ -62,6 +65,30 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         const colorKey = split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id;
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
         measures.push({ id, name, colorKey, column, aggregation: column.aggregation, values, text });
+    }
+    if (settings.type === 'surface') {
+        // x = category, y = measure, z = value: one plot per pair/date present in the rows, on one shared colour scale.
+        const split = SURFACE_SPLIT.filter(id => id !== category && columns.has(id));
+        const groups = new Map<string, number[]>();
+        dataset.rows.forEach((row, r) => { const key = split.map(id => String(row.values[id] ?? '')).join(' — '); groups.set(key, [...(groups.get(key) ?? []), r]); });
+        if (groups.size > MAX_SURFACES)
+            return { ok: false, refused: true, message: `Surface draws at most ${MAX_SURFACES} plots — the rows hold ${groups.size} ${split.join('/')} combinations.` };
+        if (measures.length < 2 || [...groups.values()].some(rows => rows.length < 2))
+            return { ok: false, refused: true, message: 'Surface needs at least two measures and two rows per plot.' };
+        const numeric = dataset.rows.every(row => typeof row.values[category] === 'number');
+        const revision = JSON.stringify([settings.type, settings.category, settings.measures]);
+        const background = theme === 'dark' ? '#1e242e' : '#ffffff';
+        const axisLabel = escape(columns.get(category)!.label);
+        // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by index.
+        const ticked = (text: string[]) => ({ tickmode: 'array', tickvals: text.map((_, i) => i), ticktext: text });
+        const scenes: Record<string, unknown> = {};
+        const data = [...groups].map(([title, rows], g) => {
+            const scene = g ? `scene${g + 1}` : 'scene';
+            scenes[scene] = { domain: { x: [g / groups.size, (g + 1) / groups.size] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...(numeric ? {} : ticked(rows.map(r => labels[r]))) }, yaxis: { title: { text: '' }, ...ticked(measures.map(m => m.name)) }, zaxis: { title: { text: '' } } };
+            return { type: 'surface', scene, name: title, coloraxis: 'coloraxis', x: rows.map((r, i) => numeric ? dataset.rows[r].values[category] : i), y: measures.map((_, i) => i), z: measures.map(m => rows.map(r => m.values[r])), text: measures.map(m => rows.map(r => `${axisLabel}: ${escape(labels[r])}<br>${escape(m.name)}: ${m.values[r] ?? 'Missing'}`)), hovertemplate: '%{text}<extra></extra>' };
+        });
+        const annotations = [...groups.keys()].flatMap((title, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / groups.size, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
+        return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations, paper_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' }, ...scenes } } };
     }
     const pie = settings.type === 'pie';
     if (pie && measures.length > 1)

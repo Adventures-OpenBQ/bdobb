@@ -24,6 +24,7 @@ vi.mock("plotly.js/lib/bar", () => ({ default: { name: "bar" } }));
 vi.mock("plotly.js/lib/heatmap", () => ({ default: { name: "heatmap" } }));
 vi.mock("plotly.js/lib/pie", () => ({ default: { name: "pie" } }));
 vi.mock("plotly.js/lib/waterfall", () => ({ default: { name: "waterfall" } }));
+vi.mock("plotly.js/lib/surface", () => ({ default: { name: "surface" } }));
 
 import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
@@ -44,6 +45,9 @@ describe("REGISTERED_TRACE_TYPES", () => {
 
   it("registers waterfall so the linked chart's Waterfall type renders", () => {
     expect(REGISTERED_TRACE_TYPES.has("waterfall")).toBe(true);
+  });
+  it("registers surface so the linked chart's Surface type renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(true);
   });
 });
 

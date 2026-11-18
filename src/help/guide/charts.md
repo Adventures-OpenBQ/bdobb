@@ -28,7 +28,7 @@ With no date-shaped column, the x-axis is the one non-numeric column if there is
 
 "Numeric" means every non-null value in those first five rows is a number. A mostly-text column with one stray number does not qualify, and a bare year like `2026` is not date-shaped and will not become an x-axis. If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar and heatmap traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, waterfall and surface traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
 
 Two other chart widget types render here as well. A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or Vega-Lite specification instead of a Plotly figure; the app translates the common cases — line, area, bar, column and scatter — into the same bundled Plotly, so they draw as ordinary chart cards rather than raw JSON. A spec that uses something the translation does not cover falls back to the card's **Raw** view.
 
