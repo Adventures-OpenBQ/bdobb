@@ -3,7 +3,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { isDiscoveryRequest, MOCK_URL, read, seedApp, seedCards } from './fixtures';
+import { isDiscoveryRequest, MOCK_URL, read, seedApp, seedCards, tickChartMeasures } from './fixtures';
 
 test('file pivot duplicate measures survive linked table chart and reopening saved files', async ({ page, context }) => {
   await seedCards(page, []);
@@ -52,8 +52,7 @@ test('file pivot duplicate measures survive linked table chart and reopening sav
   await page.getByRole('menuitem', { name: 'Create linked chart', exact: true }).click();
   const chart = page.locator('.linked-chart-renderer');
   await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'Region' });
-  await chart.getByRole('checkbox', { name: 'Volume — Average', exact: true }).check();
-  await chart.getByRole('checkbox', { name: 'Volume — Total', exact: true }).check();
+  await tickChartMeasures(page, chart, 'Volume — Average', 'Volume — Total');
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { name: string; y: number[] }[] }).data.map(t => ({ name: t.name, y: t.y })))).toEqual([
     { name: 'Volume — Average', y: [15, 90] }, { name: 'Volume — Total', y: [30, 90] },
@@ -132,7 +131,7 @@ for (const theme of ['dark', 'light']) {
     await page.getByRole('menuitem', { name: 'Create linked chart', exact: true }).click();
     const chart = page.locator('.linked-chart-renderer');
     await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'Sector' });
-    await chart.getByRole('checkbox', { name: 'Revenue', exact: true }).check();
+    await tickChartMeasures(page, chart, 'Revenue');
     await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
     await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y)).toEqual([80, 20, 40, 70, 35]);
     expect(acquisitionRequests).toEqual([]);
@@ -332,7 +331,7 @@ test('report Year Quarter page and level filters recompute ratio totals while Bu
   await page.getByRole('menuitem', { name: 'Create linked chart', exact: true }).click();
   const chart = page.locator('.linked-chart-renderer');
   await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'Year › Quarter' });
-  await chart.getByRole('checkbox', { name: 'Margin', exact: true }).check();
+  await tickChartMeasures(page, chart, 'Margin');
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y)).toEqual([0.75]);
   const model = JSON.parse((await read(page, 'dashboards/d1.json'))!).tabs[0].cards[0].tableDefinition.analytical;
@@ -365,7 +364,7 @@ test('unloaded Select all feeds complete chart output through the library source
   await page.keyboard.press('Escape');
   const chart = page.locator('.linked-chart-renderer');
   await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'Sector' });
-  await chart.getByRole('checkbox', { name: 'Revenue', exact: true }).check();
+  await tickChartMeasures(page, chart, 'Revenue');
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y.length)).toBe(1200);
   expect(await chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y.at(-1))).toBe(1199);

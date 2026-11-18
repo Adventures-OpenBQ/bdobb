@@ -28,7 +28,7 @@ Its controls sit above the plot and save as you change them:
 
 - **Chart type** — **Columns (vertical)** (the default), **Bars (horizontal)**, **Lines**, **Pie**, **Waterfall** or **Surface (3-D)**.
 - **Category** — the column along the axis.
-- **Measures** — a checkbox for each numeric column.
+- **Measures** — a button showing what is chosen; it opens a checklist of the numeric columns with **All**, **Clear** and **Apply**. The chart redraws once, on Apply, and the measures keep the source table's column order.
 - **Display** — **Grouped**, **Stacked** or **100% stacked**; offered for Columns and Bars.
 - **Series from** — **Columns** (one series per measure) or **Rows** (one series per row); not offered for Pie, Waterfall or Surface.
 
