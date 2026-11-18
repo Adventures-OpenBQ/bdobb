@@ -80,6 +80,8 @@ const SERVED = {
   // OpenBB Workspace's Analysis Dashboard on the openbq-eodhd extension's ids
   // (eodhd_equity_*_eodhd_obb). Needs EODHD_API_KEY.
   "v9.0.0-openbb-workspace-analysis": true,
+  // openbq-api's cftc_fx_implied_vol_long_custom_obb and yfinance_options_chains_long_yfinance_obb.
+  "v11.0.0-vol-surface": true,
 };
 
 const LOGO_PATH = "/openbq/bdobb-logo.svg";
