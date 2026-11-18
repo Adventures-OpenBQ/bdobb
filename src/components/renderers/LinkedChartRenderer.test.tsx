@@ -436,6 +436,38 @@ it('changing Height clears the ticked expiries; changing a spacing value keeps t
     cleanup(); store.disposeDashboard('d');
 });
 
+it('on a pivoted Surface, All saves "every expiry the report offers" (an empty list) and an empty list reads and ticks as all', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: ['2024', '2025'].flatMap((region, r) => ['AMD', 'AVGO'].map((team, t) => ({ id: region + team, values: { region, team, revenue: 100 * (r + 1) + t } }))) };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const [amd] = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const base = { type: 'surface' as const, display: 'grouped' as const, height: 'sales' };
+    const commit = vi.fn(async (_: unknown) => true);
+    const props = (measures: string[]) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...base, measures } }, refreshKey: 0, store, onSettingsChange: commit });
+    const { rerender } = render(<LinkedChartRenderer {...props([])}/>);
+    // No explicit list: every expiry is drawn, so the button and the checklist say all.
+    expect(await screen.findByRole('button', { name: 'Measures: All (2)' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(screen.getAllByRole('checkbox').map(b => (b as HTMLInputElement).checked)).toEqual([true, true]);
+    // All does not freeze the current ids; unticking one and Apply still saves an explicit list.
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [] }));
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'AVGO' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [amd] }));
+    rerender(<LinkedChartRenderer {...props([amd])}/>);
+    expect(screen.getByRole('button', { name: 'Measures: AMD' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [] }));
+    cleanup(); store.disposeDashboard('d');
+});
+
 it('a Surface on a report whose checklist hides a column member requests only the columns the report offers', async () => {
     const { LABEL_FIELD } = await import('../../lib/pivotTable');
     const { pivotValueKey } = await import('../../lib/pivotKeys');

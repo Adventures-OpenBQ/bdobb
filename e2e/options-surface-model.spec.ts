@@ -291,7 +291,8 @@ test('stock: one surface per underlying, spaced by ln(K/S) and √T; checklist, 
   const list = page.getByRole('dialog', { name: 'Measures', exact: true });
   await measures.click();
   await expect(list.locator('.opts label')).toHaveText(chrono);
-  // An empty `measures` draws every expiry but shows no box ticked: tick All first, then untick one.
+  // An empty `measures` draws every expiry and shows every box ticked; All keeps it empty so rolling expiries are never left out.
+  await expect(list.getByRole('checkbox', { checked: true })).toHaveCount(chrono.length);
   await list.getByRole('button', { name: 'All', exact: true }).click();
   await measures.click();
   await list.getByRole('checkbox', { name: '2027-03-19', exact: true }).uncheck();
