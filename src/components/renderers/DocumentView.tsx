@@ -1,9 +1,11 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
 import { fetchDocumentBytes } from "../../lib/dataClient";
 import type { Document } from "../../lib/documents";
+import { safeUrl } from "../../lib/safeUrl";
 import { ErrorState } from "./ErrorState";
 import { PdfView } from "./PdfView";
 
@@ -34,6 +36,9 @@ export function DocumentView({ doc }: { doc: Document }) {
  * as a base64 one. Not framed: WebKit will not render a pdf inside a
  * sandboxed iframe, and an unsandboxed one would hand a foreign page full
  * frame privileges. Retry repeats the download.
+ *
+ * Some hosts serve a document to a browser and refuse the app (S&P answers
+ * 403), so a failed download also offers the link to the system browser.
  */
 /** A document is bigger than a widget payload; still finite. */
 const DOCUMENT_TIMEOUT_MS = 30_000;
@@ -64,6 +69,17 @@ function LinkedPdf({ url, filename }: { url: string; filename: string }) {
   }, [url, filename, attempt]);
 
   if (state === null) return <p className="empty-state">Loading…</p>;
-  if ("error" in state) return <ErrorState message={state.error} onRetry={() => setAttempt((n) => n + 1)} />;
+  if ("error" in state) {
+    const safe = safeUrl(url);
+    return (
+      <ErrorState message={state.error} onRetry={() => setAttempt((n) => n + 1)}>
+        {safe !== null && (
+          <button type="button" onClick={() => void openUrl(safe)}>
+            Open externally ↗
+          </button>
+        )}
+      </ErrorState>
+    );
+  }
   return <PdfView bytes={state.bytes} filename={filename} />;
 }
