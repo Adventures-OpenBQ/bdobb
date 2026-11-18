@@ -2,18 +2,30 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { DashboardCard } from '../../lib/types';
+import type { ColumnSpec, DashboardCard } from '../../lib/types';
 import type { LinkedChartSettings, WidgetDataset } from '../../lib/widgetData/types';
 import { buildLinkedFigure, SURFACE_SPLIT } from '../../lib/widgetData/chartFigure';
 import { tableExecutionStore } from '../../stores/tableExecutionStore';
 import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
-/** A type change drops the settings the new type cannot use. */
-function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type']): LinkedChartSettings {
+/**
+ * A type change drops the settings the new type cannot use. Picking Surface with no fields chosen takes them from
+ * the source widget's chartDataType hints (the first time or category column, every series column), where offered.
+ */
+function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type'], hints: ColumnSpec[] = [], offered: ReadonlySet<string> = new Set()): LinkedChartSettings {
     const next = { ...settings, type, display: settings.display === 'percent' && type !== 'column' && type !== 'bar' ? 'stacked' as const : settings.display };
     if (type === 'pie' || type === 'surface')
         delete next.seriesFrom;
+    if (type === 'surface' && !next.category && !next.measures.length) {
+        const typed = hints.filter(c => offered.has(c.field));
+        const axis = typed.find(c => c.chartDataType === 'time') ?? typed.find(c => c.chartDataType === 'category');
+        const series = typed.filter(c => c.chartDataType === 'series').map(c => c.field);
+        if (axis && series.length) {
+            next.category = axis.field;
+            next.measures = series;
+        }
+    }
     return next;
 }
 type Completed = {
@@ -23,12 +35,14 @@ type Completed = {
     renderedSettings: LinkedChartSettings;
     revision: string;
 };
-export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = false, store = tableExecutionStore, onSettingsChange }: {
+export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = false, store = tableExecutionStore, hints, onSettingsChange }: {
     dashboardId: string;
     card: DashboardCard;
     refreshKey: number;
     viewer?: boolean;
     store?: typeof tableExecutionStore;
+    /** The source widget's columnsDefs, for their chartDataType. */
+    hints?: ColumnSpec[];
     onSettingsChange: (settings: LinkedChartSettings) => Promise<boolean>;
 }) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
@@ -133,7 +147,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     return <div className="linked-chart-renderer" data-delivered-revision={delivered?.revision}>
     {!viewer ? <div className="chart-controls">
-      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type']))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="surface">Surface (3-D)</option></select></label>
+      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type'], hints, new Set(fields.map(c => c.id))))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="surface">Surface (3-D)</option></select></label>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => !c.dtype || c.dtype === 'number').map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}

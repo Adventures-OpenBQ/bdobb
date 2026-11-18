@@ -325,3 +325,18 @@ it('rows mode gives duplicate category values disambiguated names', async () => 
     expect(f.data).toHaveLength(1600); expect(f.data[0].name).toBe('A'); expect(f.data[1].name).toBe('A (2)');
     cleanup(); store.disposeDashboard('d');
 });
+
+it('picking Surface with no fields chosen takes them from the source chartDataType hints, and never overwrites a choice', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    const hints = [{ field: 'region', chartDataType: 'category' as const }, { field: 'revenue', chartDataType: 'series' as const }, { field: 'gone', chartDataType: 'series' as const }, { field: 'note', chartDataType: 'excluded' as const }];
+    render(<LinkedChartRenderer {...withSettings(store, { category: undefined, measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: 'region', measures: ['revenue'] })));
+    cleanup(); commit.mockClear();
+    render(<LinkedChartRenderer {...withSettings(store, { measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: settings.category, measures: [] })));
+    cleanup(); store.disposeDashboard('d');
+});
