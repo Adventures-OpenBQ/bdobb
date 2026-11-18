@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { pivotValueKey } from '../pivotKeys';
+import { LABEL_FIELD } from '../pivotTable';
 import type { PlotlyFigure } from '../chartShapes';
-import type { WidgetDataset, LinkedChartSettings } from './types';
+import type { DatasetColumn, DatasetGroupMember, WidgetDataset, LinkedChartSettings } from './types';
 const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
 function color(id: string) { let hash = 0; for (const c of id)
     hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0; return COLORS[hash % COLORS.length]; }
@@ -28,6 +29,8 @@ function rowNames(rows: DatasetRows, labels: string[]): string[] {
 }
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
 export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): LinkedFigureResult {
+    if (settings.type === 'surface' && isPivoted(dataset.columns))
+        return pivotSurface(dataset, settings, theme);
     const columns = new Map(dataset.columns.map(c => [c.id, c]));
     if (!settings.category || !columns.has(settings.category))
         return { ok: false, message: 'Choose an available category field.' };
@@ -75,30 +78,12 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
             return { ok: false, refused: true, message: 'Surface needs at least two rows per plot.' };
         const numeric = dataset.rows.every(row => typeof row.values[category] === 'number');
         const revision = JSON.stringify([settings.type, settings.category, settings.measures]);
-        const background = theme === 'dark' ? '#1e242e' : '#ffffff';
         const axisLabel = escape(columns.get(category)!.label);
-        const titles = [...groups.keys()].flatMap((title, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / groups.size, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
-        const font = { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' };
-        if (measures.length === 1) {
-            // One measure has no second axis to mesh over: each pair/date draws as a line across the category.
-            const [m] = measures, axes: Record<string, unknown> = {};
-            const lines = [...groups.values()].map((rows, g) => {
-                const n = g ? String(g + 1) : '';
-                axes[`xaxis${n}`] = { domain: [g / groups.size + (g ? 0.04 : 0), (g + 1) / groups.size - (g < groups.size - 1 ? 0.04 : 0)], anchor: `y${n}`, title: { text: axisLabel }, ...(numeric ? {} : { type: 'category' }) };
-                axes[`yaxis${n}`] = { anchor: `x${n}`, title: { text: g ? '' : escape(m.name) } };
-                return { type: 'scatter', mode: 'lines+markers', connectgaps: false, xaxis: `x${n}`, yaxis: `y${n}`, x: rows.map(r => numeric ? dataset.rows[r].values[category] : labels[r]), y: rows.map(r => m.values[r]), line: { color: color(m.colorKey) }, marker: { color: color(m.colorKey) }, text: rows.map(r => m.text[r]), hovertemplate: '%{text}<extra></extra>' };
-            });
-            return { ok: true, revision, notes: [], figure: { data: lines, layout: { uirevision: revision, margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, annotations: titles, paper_bgcolor: background, plot_bgcolor: background, font, ...axes } } };
-        }
-        // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by index.
-        const ticked = (text: string[]) => ({ tickmode: 'array', tickvals: text.map((_, i) => i), ticktext: text });
-        const scenes: Record<string, unknown> = {};
-        const data = [...groups].map(([title, rows], g) => {
-            const scene = g ? `scene${g + 1}` : 'scene';
-            scenes[scene] = { domain: { x: [g / groups.size, (g + 1) / groups.size] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...(numeric ? {} : ticked(rows.map(r => labels[r]))) }, yaxis: { title: { text: '' }, ...ticked(measures.map(m => m.name)) }, zaxis: { title: { text: '' } } };
-            return { type: 'surface', scene, name: title, coloraxis: 'coloraxis', x: rows.map((r, i) => numeric ? dataset.rows[r].values[category] : i), y: measures.map((_, i) => i), z: measures.map(m => rows.map(r => m.values[r])), text: measures.map(m => rows.map(r => `${axisLabel}: ${escape(labels[r])}<br>${escape(m.name)}: ${m.values[r] ?? 'Missing'}`)), hovertemplate: '%{text}<extra></extra>' };
-        });
-        return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes } } };
+        // A line keeps the full hover; a surface cell names the category and the measure.
+        const plots = [...groups].map(([title, rows]): Plot => ({ title, x: rows.map((r, i) => numeric ? dataset.rows[r].values[category] as number : i), xTicks: numeric ? undefined : rows.map(r => labels[r]),
+            y: measures.map((_, i) => i), yTicks: measures.map(m => m.name), colorKeys: measures.map(m => m.colorKey), z: measures.map(m => rows.map(r => m.values[r])),
+            text: measures.map(m => rows.map(r => measures.length === 1 ? m.text[r] : `${axisLabel}: ${escape(labels[r])}<br>${escape(m.name)}: ${m.values[r] ?? 'Missing'}`)) }));
+        return surfaceFigure(plots, axisLabel, revision, theme);
     }
     const pie = settings.type === 'pie';
     if (pie && measures.length > 1)
@@ -161,6 +146,108 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     const percent = settings.display === 'percent' && settings.type !== 'line';
     const axis = { type: 'category', categoryorder: 'array', categoryarray: positions, tickmode: 'array', tickvals: positions, ticktext: ticks };
     return { ok: true, revision, notes, figure: { data: traces, layout: { uirevision: revision, margin, barmode: settings.display === 'stacked' || percent ? 'stack' : 'group', ...(percent ? { barnorm: 'percent', [horizontal ? 'xaxis' : 'yaxis']: { ticksuffix: '%' } } : {}), [horizontal ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend, ...frame } } };
+}
+/** One plot of a Surface: x by row, y by column, z[column][row]. */
+type Plot = { title: string; x: number[]; xTicks?: string[]; y: number[]; yTicks: string[]; colorKeys: string[]; z: (number | null)[][]; text: string[][] };
+/** Plots side by side, titled, on one colour scale: a line each when every plot has one column, else 3-D scenes. */
+function surfaceFigure(plots: Plot[], axisLabel: string, revision: string, theme: 'light' | 'dark'): LinkedFigureResult {
+    const background = theme === 'dark' ? '#1e242e' : '#ffffff';
+    const titles = plots.flatMap(({ title }, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / plots.length, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
+    const font = { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' };
+    // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by position.
+    const ticked = (vals: number[], text?: string[]) => text ? { tickmode: 'array', tickvals: vals, ticktext: text } : {};
+    if (plots.every(p => p.z.length === 1)) {
+        // One measure has no second axis to mesh over: each plot draws as a line across the category.
+        const axes: Record<string, unknown> = {};
+        const lines = plots.map((p, g) => {
+            const n = g ? String(g + 1) : '', lineColor = color(p.colorKeys[0]);
+            axes[`xaxis${n}`] = { domain: [g / plots.length + (g ? 0.04 : 0), (g + 1) / plots.length - (g < plots.length - 1 ? 0.04 : 0)], anchor: `y${n}`, title: { text: axisLabel }, ...ticked(p.x, p.xTicks) };
+            axes[`yaxis${n}`] = { anchor: `x${n}`, title: { text: g ? '' : escape(p.yTicks[0]) } };
+            return { type: 'scatter', mode: 'lines+markers', connectgaps: false, xaxis: `x${n}`, yaxis: `y${n}`, x: p.x, y: p.z[0], line: { color: lineColor }, marker: { color: lineColor }, text: p.text[0], hovertemplate: '%{text}<extra></extra>' };
+        });
+        return { ok: true, revision, notes: [], figure: { data: lines, layout: { uirevision: revision, margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, annotations: titles, paper_bgcolor: background, plot_bgcolor: background, font, ...axes } } };
+    }
+    const scenes: Record<string, unknown> = {};
+    const data = plots.map((p, g) => {
+        const scene = g ? `scene${g + 1}` : 'scene';
+        scenes[scene] = { domain: { x: [g / plots.length, (g + 1) / plots.length] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...ticked(p.x, p.xTicks) }, yaxis: { title: { text: '' }, ...ticked(p.y, p.yTicks) }, zaxis: { title: { text: '' } } };
+        return { type: 'surface', scene, name: p.title, coloraxis: 'coloraxis', x: p.x, y: p.y, z: p.z, text: p.text, hovertemplate: '%{text}<extra></extra>' };
+    });
+    return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes } } };
+}
+export function isPivoted(columns: readonly DatasetColumn[]): boolean { return columns.some(c => !!c.splitPath?.length); }
+/** One entry per distinct report value (measureId) among split columns, in column order. */
+export function reportValues(columns: readonly DatasetColumn[]): { id: string; label: string }[] {
+    const seen = new Map<string, string>();
+    for (const c of columns)
+        if (c.splitPath?.length && c.measureId !== undefined && !seen.has(c.measureId)) seen.set(c.measureId, c.label);
+    return [...seen].map(([id, label]) => ({ id, label }));
+}
+/** The split columns of one report value, in column order. */
+export function expiryColumns(columns: readonly DatasetColumn[], height: string): DatasetColumn[] { return columns.filter(c => c.splitPath?.length && c.measureId === height); }
+const memberText = (m: DatasetGroupMember) => m.label ?? String(m.value);
+const finite = (v: unknown) => typeof v === 'number' && Number.isFinite(v) ? v : null;
+const firstFinite = (vals: unknown[]) => vals.map(finite).find(v => v !== null) ?? null;
+const splitKey = (c: DatasetColumn) => JSON.stringify(c.splitPath!.map(m => m.memberKey ?? pivotValueKey(m.value)));
+/** A pivot report: one surface per outer row group, Strike rows by Height's split (expiry) columns; `measures` picks expiries, empty is all. */
+function pivotSurface(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): LinkedFigureResult {
+    const values = reportValues(dataset.columns);
+    const { height, spaceRowsBy, spaceColumnsBy, measures } = settings;
+    if (!height)
+        return { ok: false, message: 'Choose chart fields: select a value for Height.' };
+    for (const id of [height, spaceRowsBy, spaceColumnsBy])
+        if (id !== undefined && !values.some(v => v.id === id))
+            return { ok: false, message: `Field ${id} is unavailable. Repair chart fields.` };
+    const label = (id: string) => values.find(v => v.id === id)!.label;
+    const heights = expiryColumns(dataset.columns, height).filter(c => !measures.length || measures.includes(c.id));
+    const depth = Math.max(0, ...dataset.rows.map(r => r.groupPath?.length ?? 0));
+    const leaf = dataset.rows.filter(r => (r.groupPath?.length ?? 0) === depth);
+    if (leaf.some(r => heights.some(c => r.values[c.id] != null && finite(r.values[c.id]) === null)))
+        return { ok: false, message: `Value ${label(height)} contains non-numeric or unsafe values.` };
+    const groups = new Map<string, DatasetRows>();
+    for (const row of leaf) {
+        const key = (row.groupPath ?? []).slice(0, -1).map(memberText).join(' — ');
+        groups.set(key, [...(groups.get(key) ?? []), row]);
+    }
+    if (groups.size > MAX_SURFACES)
+        return { ok: false, refused: true, message: `Surface draws at most ${MAX_SURFACES} plots — the rows hold ${groups.size} ${(leaf[0].groupPath ?? []).slice(0, -1).map(m => m.field).join('/')} combinations.` };
+    const plots: Plot[] = [];
+    for (const [title, group] of groups) {
+        const rows = group.filter(r => heights.some(c => finite(r.values[c.id]) !== null));
+        const cols = heights.filter(c => rows.some(r => finite(r.values[c.id]) !== null));
+        if (rows.length < 2)
+            return { ok: false, refused: true, message: 'Surface needs at least two rows per plot.' };
+        const members = rows.map(r => r.groupPath?.[depth - 1]);
+        const rowTicks = members.map(m => m ? memberText(m) : '');
+        const colTicks = cols.map(c => c.splitPath!.map(memberText).join(' — '));
+        let x = rows.map((_, i) => i), xTicks: string[] | undefined = rowTicks;
+        if (spaceRowsBy) {
+            const along = expiryColumns(dataset.columns, spaceRowsBy);
+            const at = rows.map(r => firstFinite(along.map(c => r.values[c.id])));
+            const empty = at.indexOf(null);
+            if (empty >= 0)
+                return { ok: false, refused: true, message: `Can't space rows by ${label(spaceRowsBy)}: ${rowTicks[empty]} has no value.` };
+            x = at as number[];
+        } else if (members.every(m => typeof m?.value === 'number')) {
+            x = members.map(m => m!.value as number);
+            xTicks = undefined;
+        }
+        let y = cols.map((_, i) => i);
+        if (spaceColumnsBy) {
+            const down = expiryColumns(dataset.columns, spaceColumnsBy);
+            const at = cols.map(c => { const match = down.find(d => splitKey(d) === splitKey(c)); return match ? firstFinite(rows.map(r => r.values[match.id])) : null; });
+            const empty = at.indexOf(null);
+            if (empty >= 0)
+                return { ok: false, refused: true, message: `Can't space columns by ${label(spaceColumnsBy)}: ${colTicks[empty]} has no value.` };
+            y = at as number[];
+        }
+        plots.push({ title, x, xTicks, y, yTicks: colTicks, colorKeys: cols.map(c => JSON.stringify(c.splitPath!.map(m => [m.categoryId ?? m.field, m.memberKey ?? pivotValueKey(m.value)]))),
+            z: cols.map(c => rows.map(r => finite(r.values[c.id]))),
+            text: cols.map((c, e) => rows.map((r, k) => [escape(rowTicks[k]), escape(colTicks[e]), `${escape(c.label)}: ${finite(r.values[c.id]) ?? 'Missing'}`].join('<br>'))) });
+    }
+    const groupColumn = dataset.columns.find(c => c.id === LABEL_FIELD);
+    const revision = JSON.stringify(['surface', 'pivot', height, spaceRowsBy ?? null, spaceColumnsBy ?? null, measures]);
+    return surfaceFigure(plots, escape(groupColumn ? groupColumn.label.split(' › ').at(-1) : ''), revision, theme);
 }
 /** At most five items, then how many more. */
 function list(items: string[]): string {

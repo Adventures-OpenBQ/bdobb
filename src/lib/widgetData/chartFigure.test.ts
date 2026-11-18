@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { buildLinkedFigure } from './chartFigure';
+import { buildLinkedFigure, expiryColumns, isPivoted, reportValues } from './chartFigure';
 import type { WidgetDataset, LinkedChartSettings } from './types';
 const settings: LinkedChartSettings = { type: 'column', category: 'label', measures: ['a', 'b'], display: 'grouped' };
 const dataset: WidgetDataset = { rows: [{ id: 'r1', values: { label: 'Same', a: 10, b: null }, groupPath: [{ field: 'region', value: 'US' }] }, { id: 'r2', values: { label: 'Same', a: 20, b: 30 } }], columns: [{ id: 'label', label: 'Label', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }, { id: 'b', label: 'Cost', dtype: 'number' }], resultRevision: 1, outputRevision: 1, provenance: { sourceWidgetId: 'source' }, completeness: { kind: 'complete', warnings: [] }, freshness: { availability: 'available', stale: false } };
@@ -248,4 +248,104 @@ it('runs the surface measure axis in source column order, whatever order the mea
     const f = figure({ ...surface, measures: ['vol_3m', 'vol_1m'] }, vol);
     expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: ['1M', '3M'] } });
     expect(f.data[0]).toMatchObject({ z: [[7.1, null], [7.4, 7.0]] });
+});
+
+// The pivot report's recorded shape: rows underlying › strike, a column per expiry and report value, members with a value and no label.
+const D = ['2026-12-18', '2027-01-15', '2027-03-19'];
+const RT = [0.2, 0.3, 0.5];
+const VALUE_LABEL = { iv: 'implied_volatility — Median', lm: 'log_moneyness — Average', rt: 'root_t — Average' };
+const memberKey = (v: string | number) => JSON.stringify([typeof v === 'number' ? 'number' : 'string', v]);
+const cell = (d: string, m: string) => `${memberKey(d)}\u001f${m}`;
+const reportColumns = [{ id: '\u001egroup', label: 'underlying › Strike', dtype: 'text' as const }, ...D.flatMap(d => (['iv', 'lm', 'rt'] as const).map(m => ({ id: cell(d, m), label: VALUE_LABEL[m], dtype: 'number' as const, measureId: m, splitPath: [{ field: 'expiry', categoryId: 'expiry', sourceBindingId: 'expiration', transform: 'native' as const, memberKey: memberKey(d), value: d }] })))];
+const reportRow = (u: string, k: number | string, lm: number, iv: (number | string | null)[]) => ({ id: `${u}/${k}`,
+    groupPath: [{ field: 'underlying', categoryId: 'underlying', memberKey: memberKey(u), value: u }, { field: 'strike_cat', categoryId: 'strike_cat', memberKey: memberKey(k), value: k }],
+    values: { '\u001egroup': String(k), ...Object.fromEntries(D.flatMap((d, e) => [[cell(d, 'iv'), iv[e]], [cell(d, 'lm'), iv[e] === null ? null : lm], [cell(d, 'rt'), iv[e] === null ? null : RT[e]]])) } });
+const reportRows = [reportRow('AAA', 90, -0.105, [0.21, 0.22, 0.23]), reportRow('AAA', 100, 0, [0.2, 0.21, 0.22]), reportRow('AAA', 110, 0.095, [0.22, 0.23, 0.24]),
+    reportRow('BBB', 45, -0.105, [0.3, 0.31, null]), reportRow('BBB', 50, 0, [0.29, 0.3, null]), reportRow('BBB', 55, 0.095, [0.31, 0.32, null])];
+const report: WidgetDataset = { ...dataset, columns: reportColumns, rows: reportRows };
+const ps: LinkedChartSettings = { type: 'surface', measures: [], display: 'grouped', height: 'iv', spaceRowsBy: 'lm', spaceColumnsBy: 'rt' };
+const withCells = (edit: (id: string, values: Record<string, unknown>) => void): WidgetDataset => ({ ...report, rows: report.rows.map(r => { const values = { ...r.values }; edit(r.id, values); return { ...r, values } as typeof r; }) });
+const titlesOf = (f: ReturnType<typeof figure>) => (f.layout.annotations as { text: string }[]).map(a => a.text);
+it('draws one surface per outer row group, spaced by the report values and labelled by members', () => {
+    const f = figure(ps, report);
+    expect(f.data.map(t => (t as { type: string }).type)).toEqual(['surface', 'surface']);
+    expect(titlesOf(f)).toEqual(['AAA', 'BBB']);
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT, z: [[0.21, 0.2, 0.22], [0.22, 0.21, 0.23], [0.23, 0.22, 0.24]] });
+    expect((f.data[0] as { text: string[][] }).text[0][0]).toBe('90<br>2026-12-18<br>implied_volatility — Median: 0.21');
+    expect(f.layout.scene).toMatchObject({ xaxis: { title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['90', '100', '110'] }, yaxis: { tickvals: RT, ticktext: D } });
+});
+it('takes the first non-empty cell along the row or column for spacing', () => {
+    const f = figure(ps, withCells((id, v) => { if (id === 'AAA/90') { v[cell(D[0], 'lm')] = null; v[cell(D[0], 'rt')] = null; } }));
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT });
+});
+it('drops an expiry one underlying lacks', () => {
+    const f = figure(ps, report);
+    expect(f.data[1]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT.slice(0, 2), z: [[0.3, 0.29, 0.31], [0.31, 0.3, 0.32]] });
+    expect(f.layout.scene2).toMatchObject({ yaxis: { ticktext: D.slice(0, 2) } });
+});
+it('refuses a row whose spacing value is empty everywhere', () => {
+    const rows = withCells((id, v) => { if (id === 'AAA/100') for (const d of D) v[cell(d, 'lm')] = null; });
+    expect(buildLinkedFigure(rows, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: "Can't space rows by log_moneyness — Average: 100 has no value." });
+    const columns = withCells((_, v) => { v[cell(D[1], 'rt')] = null; });
+    expect(buildLinkedFigure(columns, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: "Can't space columns by root_t — Average: 2027-01-15 has no value." });
+});
+it('with no spacing chosen, numeric rows sit at their own value and columns are evenly spaced', () => {
+    const f = figure({ ...ps, spaceRowsBy: undefined, spaceColumnsBy: undefined }, report);
+    expect(f.data[0]).toMatchObject({ x: [90, 100, 110], y: [0, 1, 2] });
+    expect((f.layout.scene as { xaxis: { tickvals?: unknown } }).xaxis.tickvals).toBeUndefined();
+    expect(f.layout.scene).toMatchObject({ yaxis: { tickvals: [0, 1, 2], ticktext: D } });
+});
+it('spaces text rows evenly', () => {
+    const text = { ...report, rows: [reportRow('AAA', '25D put', -0.1, [0.21, 0.22, 0.23]), reportRow('AAA', 'ATM', 0, [0.2, 0.21, 0.22])] };
+    const f = figure({ ...ps, spaceRowsBy: undefined }, text);
+    expect(f.data[0]).toMatchObject({ x: [0, 1] });
+    expect(f.layout.scene).toMatchObject({ xaxis: { tickvals: [0, 1], ticktext: ['25D put', 'ATM'] } });
+});
+it('draws only the ticked expiry columns; none ticked draws all', () => {
+    const f = figure({ ...ps, measures: [cell(D[2], 'iv'), cell(D[0], 'iv')] }, report);
+    expect(f.data[0]).toMatchObject({ y: [RT[0], RT[2]], z: [[0.21, 0.2, 0.22], [0.23, 0.22, 0.24]] });
+    expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: [D[0], D[2]] } });
+    expect(f.data[1]).toMatchObject({ y: [RT[0]], z: [[0.3, 0.29, 0.31]] });
+    expect((figure(ps, report).data[0] as { y: number[] }).y).toEqual(RT);
+});
+it('draws a pivoted surface with one ticked expiry as a line', () => {
+    const f = figure({ ...ps, measures: [cell(D[1], 'iv')] }, report);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [-0.105, 0, 0.095], y: [0.22, 0.21, 0.23] }),
+        expect.objectContaining({ type: 'scatter', xaxis: 'x2', yaxis: 'y2', y: [0.31, 0.3, 0.32] }),
+    ]);
+    expect(f.layout.xaxis).toMatchObject({ title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['90', '100', '110'] });
+    expect(f.layout.scene).toBeUndefined();
+});
+it('draws one surface when the report holds one outer member', () => {
+    const f = figure(ps, { ...report, rows: report.rows.slice(3) });
+    expect(f.data).toHaveLength(1);
+    expect(titlesOf(f)).toEqual(['BBB']);
+});
+it('draws only the selected strike rows', () => {
+    const f = figure(ps, { ...report, rows: [report.rows[0], report.rows[2]] });
+    expect(f.data).toHaveLength(1);
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0.095] });
+});
+it('refuses more than six outer groups', () => {
+    const many = { ...report, rows: Array.from({ length: 14 }, (_, i) => reportRow(`U${i >> 1}`, i, i, [0.2, 0.2, 0.2])) };
+    expect(buildLinkedFigure(many, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface draws at most 6 plots — the rows hold 7 underlying combinations.' });
+});
+it('refuses a non-numeric height cell', () => {
+    const bad = withCells((id, v) => { if (id === 'AAA/90') v[cell(D[0], 'iv')] = '#ERROR'; });
+    expect(buildLinkedFigure(bad, ps, 'dark')).toMatchObject({ ok: false, message: 'Value implied_volatility — Median contains non-numeric or unsafe values.' });
+});
+it('falls back when the source is not pivoted', () => {
+    expect(buildLinkedFigure(vol, ps, 'dark')).toMatchObject({ ok: false, message: 'Choose an available category field.' });
+});
+it('asks for Height', () => {
+    expect(buildLinkedFigure(report, { ...ps, height: undefined }, 'dark')).toMatchObject({ ok: false, message: 'Choose chart fields: select a value for Height.' });
+    expect(buildLinkedFigure(report, { ...ps, height: 'zz' }, 'dark')).toMatchObject({ ok: false, message: 'Field zz is unavailable. Repair chart fields.' });
+    expect(buildLinkedFigure(report, { ...ps, spaceRowsBy: 'qq' }, 'dark')).toMatchObject({ ok: false, message: 'Field qq is unavailable. Repair chart fields.' });
+});
+it('lists report values, expiry columns and whether a source is pivoted', () => {
+    expect(isPivoted(report.columns)).toBe(true);
+    expect(isPivoted(vol.columns)).toBe(false);
+    expect(reportValues(report.columns)).toEqual([{ id: 'iv', label: VALUE_LABEL.iv }, { id: 'lm', label: VALUE_LABEL.lm }, { id: 'rt', label: VALUE_LABEL.rt }]);
+    expect(expiryColumns(report.columns, 'iv').map(c => c.id)).toEqual(D.map(d => cell(d, 'iv')));
 });
