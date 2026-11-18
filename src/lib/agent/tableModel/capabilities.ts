@@ -42,8 +42,8 @@ export function capabilitiesFor(model: TableModelV1 | undefined, columns: readon
     category_transforms: CATEGORY_TRANSFORMS.map(transform => ({ transform, requires_fiscal_binding: transform === "FY" || transform === "FQ" })),
     aggregations_by_field: Object.fromEntries(eligibility.map(([id, e]) => [id, [...e.operators]])) as Record<string, string[]>,
     chronology: eligibility[0]?.[1].chronology ?? false,
-    // 'IF' and unary +/- are the literal FormulaAst members (types.ts); formulaSyntax holds no runtime list for them.
-    formula: { functions: [...AGG_NAMES, "IF"], binary_operators: [...FORMULA_BINARY_OPERATORS], unary_operators: ["+", "-"], scopes: [...SCOPES], binding_targets: ["field", "formula", "measure"] },
+    // 'IF', 'LN', 'SQRT' and unary +/- are the literal FormulaAst members (types.ts); formulaSyntax holds no runtime list for them.
+    formula: { functions: [...AGG_NAMES, "IF", "LN", "SQRT"], binary_operators: [...FORMULA_BINARY_OPERATORS], unary_operators: ["+", "-"], scopes: [...SCOPES], binding_targets: ["field", "formula", "measure"] },
     filters: [
       { stage: "source" as "source" | "result", operation: "checklist.set", meaning: "restricts which source observations every calculation uses", predicates: undefined as string[] | undefined },
       { stage: "result" as "source" | "result", operation: "result_filter.add", meaning: "decides which calculated groups are presented", predicates: [...RESULT_PREDICATES] as string[] | undefined },
