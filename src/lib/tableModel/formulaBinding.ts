@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { PivotMeasure } from '../types';
 import type { FormulaAst, FormulaDef, CategoryDef } from './types';
-import { validateSyntaxAst, type SyntaxAst, type FormulaDiagnostic } from './formulaSyntax';
+import { isAggregateFunction, validateSyntaxAst, type SyntaxAst, type FormulaDiagnostic } from './formulaSyntax';
 import { tokenFor } from './formulaTokens';
 export type FormulaScope = FormulaDef['scope'];
 export type ModelSymbols = {
@@ -85,7 +85,7 @@ export function bindFormula(ast: SyntaxAst | FormulaAst, symbols: ModelSymbols, 
         return left && right ? { ...node, left, right } : undefined;
       }
       case 'call': {
-        const aggregate = node.function !== 'IF';
+        const aggregate = isAggregateFunction(node.function);
         if (aggregate && context === 'source') issue('scope', 'Aggregate calls are allowed only at aggregate scope.');
         const args = node.args.map(arg => visit(arg, aggregate ? 'source' : context));
         return args.every((arg): arg is FormulaAst => arg !== undefined) ? { ...node, args } : undefined;

@@ -3,6 +3,7 @@ import {groupDomainPage} from './groupDomain';
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { AggName } from '../types';
 import type { FormulaAst } from '../tableModel/types';
+import { isAggregateFunction } from '../tableModel/formulaSyntax';
 import type { CalculatedView, DefinitionInspection, InspectionCounts, InspectionPage, InspectionRequest, PeriodInspection, WarningInspection } from './types';
 import { filterKindFor } from '../tableFiltering';
 import { ExecutionProtocolError } from './validation';
@@ -42,7 +43,7 @@ export function inspectionPage(view: CalculatedView, request: InspectionRequest)
         }
         case 'unary': pending.push({node:node.operand,direct});break;
         case 'binary': pending.push({node:node.right,direct},{node:node.left,direct});break;
-        case 'call': if(node.function!=='IF') operators.add(node.function);for(const arg of [...node.args].reverse())pending.push({node:arg,direct});break;
+        case 'call': if(isAggregateFunction(node.function)) operators.add(node.function);for(const arg of [...node.args].reverse())pending.push({node:arg,direct});break;
         case 'member': if(direct)node.selectors.forEach(selector=>references.add(selector.categoryId));pending.push({node:node.value,direct});break;
       }
     }

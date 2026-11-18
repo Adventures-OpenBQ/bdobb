@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import { AGG_NAMES } from '../types';
+import { AGG_NAMES, type AggName } from '../types';
 import type { FormulaAst, MemberSelector } from './types';
 
 export type FormulaDiagnostic = {
@@ -24,8 +24,11 @@ export type ParseResult = { ast?: SyntaxAst; diagnostics: FormulaDiagnostic[] };
 export type AstValidation = { ast?: FormulaAst; diagnostics: FormulaDiagnostic[] };
 const encoder = new TextEncoder();
 const binaryOperators = ['+', '-', '*', '/', '=', '!=', '<', '<=', '>', '>='];
-const functions: readonly string[] = [...AGG_NAMES, 'IF'];
-const functionNames = new Map<string, Extract<FormulaAst, { kind: 'call' }>['function']>([...AGG_NAMES.map(fn => [fn.toUpperCase(), fn] as const), ['IF', 'IF']]);
+const functions: readonly string[] = [...AGG_NAMES, 'IF', 'LN', 'SQRT'];
+const functionNames = new Map<string, Extract<FormulaAst, { kind: 'call' }>['function']>([...AGG_NAMES.map(fn => [fn.toUpperCase(), fn] as const), ['IF', 'IF'], ['LN', 'LN'], ['SQRT', 'SQRT']]);
+/** True only for the aggregation functions; IF, LN and SQRT are scalar and keep their arguments' scope. */
+export function isAggregateFunction(fn: Extract<FormulaAst, { kind: 'call' }>['function']): fn is AggName { return (AGG_NAMES as readonly string[]).includes(fn); }
+
 class FormulaFailure extends Error {
   constructor(readonly diagnostic: FormulaDiagnostic) { super(diagnostic.message); }
 }

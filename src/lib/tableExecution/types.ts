@@ -116,7 +116,7 @@ export type ProviderCapabilities = {
   readonly protocolVersions: readonly number[];
   readonly definitionVersions: readonly number[];
   readonly aggregations: readonly AggName[];
-  readonly formulaFunctions: readonly (AggName | 'IF')[];
+  readonly formulaFunctions: readonly (AggName | 'IF' | 'LN' | 'SQRT')[];
   readonly fiscal: boolean;
   readonly inspection: boolean;
   readonly selection: boolean;

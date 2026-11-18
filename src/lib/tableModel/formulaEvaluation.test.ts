@@ -24,6 +24,14 @@ describe('source formula evaluation', () => {
     expect(result.formulaCells.get('a')?.get('lazy')).toEqual({ ok: true, value: 7 });
     for (const [id, code] of [['badIf', 'invalid-type'], ['zero', 'division-by-zero'], ['overflow', 'nonfinite']]) expect(result.formulaCells.get('a')?.get(id)).toMatchObject({ ok: false, error: { code } });
   });
+  it('evaluates LN and SQRT in source scope; non-finite results and text are errors', () => {
+    const call = (fn: 'LN' | 'SQRT', v: FormulaAst): FormulaAst => ({ kind: 'call', function: fn, args: [v] });
+    const defs = [formula('ln', call('LN', literal(Math.E))), formula('sq', call('SQRT', literal(4))), formula('ln0', call('LN', literal(0))), formula('sqneg', call('SQRT', literal(-1))), formula('text', call('LN', { kind: 'literal', value: 'x' }))];
+    const cells = evaluateSourceFormulas([{ id: 'a', values: {} }], context(defs)).formulaCells.get('a')!;
+    expect(cells.get('ln')).toEqual({ ok: true, value: 1 });
+    expect(cells.get('sq')).toEqual({ ok: true, value: 2 });
+    for (const [id, code] of [['ln0', 'nonfinite'], ['sqneg', 'nonfinite'], ['text', 'invalid-type']]) expect(cells.get(id)).toMatchObject({ ok: false, error: { code } });
+  });
   it('requires external validation but keeps raw rows and independent valid imported formulas', () => {
     const broken = formula('broken', { kind: 'reference', target: 'formula', id: 'broken' });
     const model = context([broken, profit]);

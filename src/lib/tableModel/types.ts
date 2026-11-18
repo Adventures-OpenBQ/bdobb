@@ -41,7 +41,7 @@ export type FormulaAst =
   | { kind: 'reference'; target: 'field' | 'formula' | 'measure'; id: string }
   | { kind: 'unary'; operator: '+' | '-'; operand: FormulaAst }
   | { kind: 'binary'; operator: '+' | '-' | '*' | '/' | '=' | '!=' | '<' | '<=' | '>' | '>='; left: FormulaAst; right: FormulaAst }
-  | { kind: 'call'; function: AggName | 'IF'; args: FormulaAst[] }
+  | { kind: 'call'; function: AggName | 'IF' | 'LN' | 'SQRT'; args: FormulaAst[] }
   | { kind: 'member'; value: FormulaAst; selectors: MemberSelector[] };
 export type FormulaDef = {
   id: string;
