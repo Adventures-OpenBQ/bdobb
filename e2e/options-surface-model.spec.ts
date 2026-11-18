@@ -49,12 +49,14 @@ const tenors = ['1W', '2W', '1M', '2M', '3M', '6M', '9M', '1Y', '2Y'];
 const fxFormulas = formulas(fxFields, [
   ['tenor_months', cascade([0.25, 0.5, 1, 2, 3, 6, 9, 12, 24])],
   ['tenor', cascade(tenors)],
+  ['root_t', 'IF(tenor_months = null, null, SQRT(tenor_months / 12))'],
   ['strike_points', '(strike - underlying_price) * pip'],
   ['strike_distance', 'IF(strike_points < 0, -strike_points, strike_points)'],
   ['strike_bucket', 'IF(strike_distance > 1250, null, IF(strike_points < 0, -1, 1) * IF(strike_distance < 12.5, 0, IF(strike_distance < 37.5, 25, IF(strike_distance < 75, 50, IF(strike_distance < 125, 100, IF(strike_distance < 200, 150, IF(strike_distance < 375, 250, IF(strike_distance < 750, 500, 1000))))))))'],
 ]);
 const stockFormulas = formulas(stockFields, [
-  ['mny', 'strike / underlying_price'], // stand-in until LN exists
+  ['log_moneyness', 'LN(strike / underlying_price)'],
+  ['root_t', 'SQRT(dte / 365)'],
   ['quoted', 'IF(implied_volatility > 0.0001, "quoted", "no quote")'],
   ['side', 'IF(option_type = "call", IF(strike >= underlying_price, "OTM call", "ITM call"), IF(strike < underlying_price, "OTM put", "ITM put"))'],
 ]);
@@ -98,9 +100,9 @@ test('stock chain: formulas, side checklist, pivot output and date order reach t
     params: { promotePage: true, filters: [{ id: 'side', categoryId: 'side_cat', label: 'Side', multiSelect: true }] },
     checklists: [{ categoryId: 'side_cat', memberKeys: [pivotValueKey('OTM call'), pivotValueKey('OTM put')] }] };
   const report = { ...modelBase, enabled: true, categories: [category('underlying', 'underlying_symbol'), category('strike_cat', 'strike', 'Strike'), category('expiry', 'expiration')],
-    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('mn', 'mny', 'mean')],
-    layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'mn'] } };
-  await seedApp(page, seed(chainFile, stockCsv, [source(chainFile, chain), linkedTable(report), linkedChart('probe', 'Probe', 'chain', { category: 'strike', measures: ['mny'] }, 22), linkedChart('follower', 'Follower', 'report', {}, 34)]));
+    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('lm', 'log_moneyness', 'mean'), measure('rt', 'root_t', 'mean')],
+    layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'lm', 'rt'] } };
+  await seedApp(page, seed(chainFile, stockCsv, [source(chainFile, chain), linkedTable(report), linkedChart('probe', 'Probe', 'chain', { category: 'strike', measures: ['log_moneyness'] }, 22), linkedChart('follower', 'Follower', 'report', {}, 34)]));
 
   const out = await snapshot(page, 'report');
   const iv = out.columns.filter(c => c.measureId === 'iv');
@@ -108,7 +110,8 @@ test('stock chain: formulas, side checklist, pivot output and date order reach t
   const leaf = (u: string, k: number) => out.rows.find(r => r.groupPath?.length === 2 && r.groupPath[0].value === u && r.groupPath[1].value === k)!;
   expect(iv.every(c => c.splitPath?.length === 1)).toBe(true);                                                          // (c)
   expect(iv.map(c => String(c.splitPath![0].label ?? c.splitPath![0].value))).toEqual(['2026-12-18', '2027-01-15', '2027-03-19']); // (d)
-  expect(leaf('AAA', 110).values[col('mn').id]).toBeCloseTo(1.1);                  // (a)
+  expect(leaf('AAA', 110).values[col('lm').id]).toBeCloseTo(0.0953, 4);            // (a) LN(110 / 100)
+  expect(leaf('AAA', 110).values[col('rt').id]).toBeCloseTo(Math.sqrt(29 / 365), 6); // SQRT(dte / 365) at the first expiry
   expect(leaf('AAA', 90).values[iv[0].id]).toBeCloseTo(0.21);   // (b) OTM: put only
   expect(leaf('AAA', 110).values[iv[0].id]).toBeCloseTo(0.23);  // (b) OTM: call only
   expect(Number(leaf('AAA', 90).values[out.columns.find(c => c.measureId === 'n' && c.splitPath![0].memberKey === iv[0].splitPath![0].memberKey)!.id])).toBe(1); // pivot counts are emitted as strings
@@ -149,8 +152,8 @@ test('fx chain without option_type: bucket formulas give null outside the grid a
   const grid = [-1000, -500, -250, -150, -100, -50, -25, 0, 25, 50, 100, 150, 250, 500, 1000];
   const report = { ...modelBase, enabled: true, categories: [category('strike_cat', 'strike_bucket', 'Strike'), category('expiry', 'tenor')],
     checklists: [{ categoryId: 'expiry', memberKeys: tenors.map(pivotValueKey) }, { categoryId: 'strike_cat', memberKeys: grid.map(pivotValueKey) }],
-    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count')],
-    layout: { rows: ['strike_cat'], columns: ['expiry'], values: ['iv', 'n'] } };
+    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('rt', 'root_t', 'mean')],
+    layout: { rows: ['strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'rt'] } };
   await seedApp(page, seed(fxFile, fxCsv, [source(fxFile, chain), linkedTable(report)]));
 
   const out = await snapshot(page, 'report');
@@ -162,6 +165,7 @@ test('fx chain without option_type: bucket formulas give null outside the grid a
   const zero = out.rows.find(r => r.groupPath?.[0].value === 0)!;
   expect(Number(zero.values[split('iv', '1M').id])).toBeCloseTo(0.091, 9);
   expect(Number(zero.values[split('n', '1M').id])).toBe(3);
+  expect(Number(zero.values[split('rt', '1M').id])).toBeCloseTo(Math.sqrt(1 / 12), 6);
 });
 
 test("report's own checklists: the outer category picks the underlyings, a non-layout category drops placeholder vols (g)(h)", async ({ page }) => {
@@ -172,8 +176,8 @@ test("report's own checklists: the outer category picks the underlyings, a non-l
     checklists: [{ categoryId: 'side_cat', memberKeys: [pivotValueKey('OTM call'), pivotValueKey('OTM put')] }] };
   const quoteList = { categoryId: 'quote_cat', memberKeys: [pivotValueKey('quoted')] };
   const report = { ...modelBase, enabled: true, categories: [category('underlying', 'underlying_symbol'), category('strike_cat', 'strike', 'Strike'), category('expiry', 'expiration'), category('quote_cat', 'quoted', 'Quoted')],
-    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('mn', 'mny', 'mean')],
-    layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'mn'] }, checklists: [quoteList] };
+    measures: [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('lm', 'log_moneyness', 'mean'), measure('rt', 'root_t', 'mean')],
+    layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'lm', 'rt'] }, checklists: [quoteList] };
   await seedApp(page, seed(chainFile, csv, [source(chainFile, chain), linkedTable(report), linkedChart('follower', 'Follower', 'report', {}, 22)]));
 
   const out = await snapshot(page, 'report');

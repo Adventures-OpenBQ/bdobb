@@ -264,7 +264,7 @@ Budget with a source filter or checklist makes a Budget comparison unavailable;
 it does not fetch missing records or treat them as zero.
 
 Formulas support numeric/string/boolean literals, arithmetic, comparisons,
-SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Use the
+SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT, IF, LN and SQRT. Use the
 reference picker to insert bracketed fields, measures, formulas and comparison
 members. Source-row formulas operate on individual records; aggregate formulas
 need bound measure instances or explicit aggregations. Expressions are bounded
