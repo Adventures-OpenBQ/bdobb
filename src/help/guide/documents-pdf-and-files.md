@@ -21,7 +21,7 @@ The toolbar, left to right: the filename (hover it for the full one), a **page b
 
 Text can be selected and copied. Links inside the document work: an internal one scrolls to its page, an external one opens in your browser. There is no outline sidebar, no thumbnails, no print, no download. The viewer is pdf.js.
 
-**A PDF sent as a link.** A backend may answer with the address of a PDF instead of the file itself. The card downloads it and shows it in the same viewer. None of the backend's credentials go with that download, it gives up after 30 seconds, and leaving the card cancels it. A host that refuses reads as the filename and the HTTP status, for example *Sample.pdf: HTTP 403*, with **Retry**. The PDF is not framed: WebKit will not draw a PDF inside a sandboxed frame.
+**A PDF sent as a link.** A backend may answer with the address of a PDF instead of the file itself. The card downloads it and shows it in the same viewer. None of the backend's credentials go with that download, it gives up after 30 seconds, and leaving the card cancels it. A host that refuses reads as the filename and the HTTP status, for example *Sample.pdf: HTTP 403*, with **Retry** and **Open externally ↗**. Some hosts serve a document to a browser and refuse the app; **Open externally ↗** opens the address in your browser. The PDF is not framed: WebKit will not draw a PDF inside a sandboxed frame.
 
 **A refresh keeps your place.** Every fetch decodes the document again, but a card that refetches — on a timer, from **Refresh**, or with `⌘R` — compares what came back with what it already had, and when the bytes are identical it keeps the viewer exactly as it is. You stay on the page you were reading instead of being sent back to page 1 by a document that did not change.
 
