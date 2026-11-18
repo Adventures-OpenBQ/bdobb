@@ -31,6 +31,9 @@ const fetchDocumentBytes = vi.hoisted(() =>
 );
 vi.mock("../../lib/dataClient", () => ({ fetchDocumentBytes }));
 
+const openUrl = vi.hoisted(() => vi.fn<(url: string) => Promise<void>>(() => Promise.resolve()));
+vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl }));
+
 import { PdfRenderer } from "./PdfRenderer";
 
 /** "hi" as base64 — two decoded bytes, which the stub above reports. */
@@ -97,6 +100,18 @@ describe("PdfRenderer", () => {
       />,
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("Sample.pdf: HTTP 403");
+  });
+
+  it("offers a linked document that failed to download to the system browser", async () => {
+    fetchDocumentBytes.mockRejectedValueOnce(new Error("HTTP 403"));
+    render(
+      <PdfRenderer
+        data={{ url: "https://example.com/sample.pdf", data_format: { data_type: "pdf", filename: "Sample.pdf" } }}
+        onRetry={vi.fn()}
+      />,
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "Open externally ↗" }));
+    expect(openUrl).toHaveBeenCalledWith("https://example.com/sample.pdf");
   });
 
   it("takes the first document when the payload is a list", () => {
