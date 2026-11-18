@@ -23,6 +23,7 @@ vi.mock("plotly.js/lib/scatter", () => ({ default: { name: "scatter" } }));
 vi.mock("plotly.js/lib/bar", () => ({ default: { name: "bar" } }));
 vi.mock("plotly.js/lib/heatmap", () => ({ default: { name: "heatmap" } }));
 vi.mock("plotly.js/lib/treemap", () => ({ default: { name: "treemap" } }));
+vi.mock("plotly.js/lib/pie", () => ({ default: { name: "pie" } }));
 
 import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
@@ -39,6 +40,10 @@ describe("REGISTERED_TRACE_TYPES", () => {
 
   it("registers treemap so the live-grid sector map renders", () => {
     expect(REGISTERED_TRACE_TYPES.has("treemap")).toBe(true);
+  });
+
+  it("registers pie so the linked chart's Pie type renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("pie")).toBe(true);
   });
 });
 
