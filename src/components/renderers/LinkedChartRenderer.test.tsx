@@ -261,6 +261,10 @@ it('offers 100% stacked and series-from only for the types that use them', async
     render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
     expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
     expect(screen.getByRole('option', { name: 'Pie' })).toHaveValue('pie');
+    cleanup();
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'surface' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
+    expect(screen.getByRole('option', { name: 'Surface (3-D)' })).toHaveValue('surface');
     cleanup(); store.disposeDashboard('d');
 });
 it('commits new values and resets fields the new type cannot use', async () => {

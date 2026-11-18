@@ -41,8 +41,8 @@ x-axis.
 
 If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar, heatmap and treemap
-traces. A ready-made
+The bundled Plotly draws scatter, candlestick, bar, heatmap, treemap, pie and
+surface traces. A ready-made
 figure asking for anything else says so and names the trace type it wanted.
 
 ## Linked charts
