@@ -397,3 +397,29 @@ it('a Surface on a pivoted source offers Height and spacing values and requests 
     await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, type: 'line' }));
     cleanup(); store.disposeDashboard('d');
 });
+
+it('a Surface on a report whose checklist hides a column member requests only the columns the report offers', async () => {
+    const { LABEL_FIELD } = await import('../../lib/pivotTable');
+    const { pivotValueKey } = await import('../../lib/pivotKeys');
+    const analytical = { schemaVersion: 1, enabled: true, params: { promotePage: true, filters: [] }, formulas: [], resultFilters: [], subtotals: { grandTotal: false, groups: false },
+        categories: [{ id: 'region_cat', name: 'Region', sourceFieldId: 'region', transform: 'native' }, { id: 'team_cat', name: 'Team', sourceFieldId: 'team', transform: 'native' }],
+        measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' }],
+        layout: { rows: ['region_cat'], columns: ['team_cat'], values: ['sales'] },
+        checklists: [{ categoryId: 'team_cat', memberKeys: [pivotValueKey('AMD'), pivotValueKey('AVGO')] }] };
+    const data = { ...input, rows: ['2024', '2025'].flatMap((region, r) => ['AMD', 'AVGO', 'NVDA'].map((team, t) => ({ id: `${region}${team}`, values: { region, team, revenue: 100 * (r + 1) + t } }))) };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: {}, search: '', analytical } as never, { kind: 'none' }); await store.settled('d'); });
+    const ready = store.readView('d', 's').ready!;
+    const sales = ready.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    expect(sales).toHaveLength(2);
+    expect(ready.chartColumns!.filter(c => c.measureId === 'sales')).toHaveLength(3);
+    const request = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+    render(<LinkedChartRenderer dashboardId="d" card={{ ...chart, linkedChart: { type: 'surface', measures: [], display: 'grouped', height: 'sales' } }} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await screen.findByTestId('figure');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(request.mock.calls.at(-1)![1]).toEqual([LABEL_FIELD, ...sales]);
+    cleanup(); store.disposeDashboard('d');
+});
