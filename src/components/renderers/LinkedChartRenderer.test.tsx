@@ -365,3 +365,35 @@ it('lists the measures in source column order in a checklist that publishes once
     await waitFor(() => expect(commit.mock.lastCall![0]).toMatchObject({ measures: [] }));
     cleanup(); store.disposeDashboard('d');
 });
+
+it('a Surface on a pivoted source offers Height and spacing values and requests the label plus their columns', async () => {
+    const { LABEL_FIELD } = await import('../../lib/pivotTable');
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: [{ id: 'amd', values: { region: '2024', team: 'AMD', revenue: 100 } }, { id: 'avgo', values: { region: '2024', team: 'AVGO', revenue: 200 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const sales = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const surface = { type: 'surface' as const, measures: [], display: 'grouped' as const };
+    const commit = vi.fn(async (_: unknown) => true);
+    const props = (s: object) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...surface, ...s } }, refreshKey: 0, store, onSettingsChange: commit });
+    const { rerender } = render(<LinkedChartRenderer {...props({})}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Choose chart fields: select a value for Height.');
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    expect([...(screen.getByLabelText('Space rows by') as HTMLSelectElement).options].map(o => [o.value, o.text])).toEqual([['', 'Default'], ['sales', expect.any(String)]]);
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: 'sales' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, height: 'sales' }));
+    const e = store.readExecutor('d', 's')!; const request = vi.spyOn(e, 'chartData');
+    rerender(<LinkedChartRenderer {...props({ height: 'sales', spaceRowsBy: 'sales' })}/>);
+    await waitFor(() => expect(request).toHaveBeenCalled());
+    expect(request.mock.calls.at(-1)![1]).toEqual([LABEL_FIELD, ...sales]);
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(screen.getAllByRole('checkbox').map(b => b.parentElement!.textContent)).toEqual(['AMD', 'AVGO']);
+    fireEvent.change(screen.getByLabelText('Space rows by'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, height: 'sales' }));
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'line' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, type: 'line' }));
+    cleanup(); store.disposeDashboard('d');
+});
