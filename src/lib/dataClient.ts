@@ -131,8 +131,8 @@ function isLeadingLocSegment(segment: unknown): boolean {
 /**
  * The OpenBB API server (`openbb-api`, FastAPI; the openbq-api service in
  * openbq-docker) answers every failure with `{"detail": ...}` — a
- * string for OpenBBError/unexpected errors, an array of `{loc, msg}` for 422
- * validation. Render it after the status so the card names the problem
+ * string for OpenBBError/unexpected errors, an array of `{loc, msg}` (or a
+ * single one) for 422 validation. Render it after the status so the card names the problem
  * instead of just the number; cap it so a stack trace cannot flood the card.
  */
 export function describeHttpError(status: number, body: string): string {
@@ -147,8 +147,9 @@ export function describeHttpError(status: number, body: string): string {
   let text: string | undefined;
   if (typeof detail === "string") {
     text = detail;
-  } else if (Array.isArray(detail)) {
-    const parts = detail.flatMap((item) => {
+  } else if (typeof detail === "object" && detail !== null) {
+    // openbb-core answers a missing provider input with ONE { loc, msg } object, not a list.
+    const parts = (Array.isArray(detail) ? detail : [detail]).flatMap((item) => {
       // The API server also answers with a bare list of strings (e.g. its JSON
       // serialiser rejecting a NaN), not only pydantic's { loc, msg } items.
       if (typeof item === "string") return [item];

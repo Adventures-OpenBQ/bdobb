@@ -198,6 +198,13 @@ describe("describeHttpError", () => {
     );
   });
 
+  it("names the field of a single-object 422 detail", () => {
+    const body = JSON.stringify({
+      detail: { type: "missing", loc: ["rssd_id"], msg: "Field required", input: {} },
+    });
+    expect(describeHttpError(422, body)).toBe("HTTP 422: rssd_id — Field required");
+  });
+
   it("keeps plain-string items in a detail array", () => {
     const body = JSON.stringify({
       detail: ["Out of range float values are not JSON compliant: nan"],
