@@ -283,6 +283,13 @@ it('drops an expiry one underlying lacks', () => {
     expect(f.data[1]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT.slice(0, 2), z: [[0.3, 0.29, 0.31], [0.31, 0.3, 0.32]] });
     expect(f.layout.scene2).toMatchObject({ yaxis: { ticktext: D.slice(0, 2) } });
 });
+it('drops an underlying whose ticked expiries all lack data, and refuses when no plot remains', () => {
+    const f = figure({ ...ps, measures: [cell(D[2], 'iv')] }, report);
+    expect(titlesOf(f)).toEqual(['AAA']);
+    expect(f.data).toHaveLength(1);
+    expect(buildLinkedFigure({ ...report, rows: report.rows.slice(3) }, { ...ps, measures: [cell(D[2], 'iv')] }, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+    expect(buildLinkedFigure(report, { ...ps, measures: ['stale'] }, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+});
 it('refuses a row whose spacing value is empty everywhere', () => {
     const rows = withCells((id, v) => { if (id === 'AAA/100') for (const d of D) v[cell(d, 'lm')] = null; });
     expect(buildLinkedFigure(rows, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: "Can't space rows by log_moneyness — Average: 100 has no value." });
