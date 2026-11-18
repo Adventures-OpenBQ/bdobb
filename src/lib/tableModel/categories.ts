@@ -21,6 +21,7 @@ export type CategoryMetadata = {
   recipe: string;
   bucket: Bucket;
   periodicity: Periodicity;
+  sortFieldId?: string;
 };
 export type CategorizedRows = {
   rows: DatasetRow[];
@@ -40,6 +41,8 @@ export function categoryBucket(definition: CategoryDef): Bucket {
   return definition.legacyBucket ?? (definition.transform === 'Y' ? 'year' : definition.transform === 'Q' ? 'quarter' : definition.transform === 'M' ? 'month' : 'native');
 }
 const read = (row: DatasetRow, field: string): unknown => Object.hasOwn(row.values, field) ? row.values[field] : undefined;
+/** Row key carrying a category's sort value beside its member. */
+export const categorySortKey = (categoryId: string): string => `\x1esort\x1e${categoryId}`;
 
 /** `columns` supply a declared display key (`metadata.cellField`, the hoverCard cellField) for object cells. */
 export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[], fiscal: FiscalContext, columns: readonly DatasetColumn[] = []): CategorizedRows {
@@ -66,7 +69,7 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
   for (const definition of definitions) {
     const bucket = categoryBucket(definition);
     const periodicity = detectPeriodicity(rows.map(row => read(row, definition.sourceFieldId)));
-    categories.set(definition.id, { id: definition.id, name: definition.name, sourceFieldId: definition.sourceFieldId, transform: definition.transform, recipe: definition.transform === 'FY' || definition.transform === 'FQ' ? JSON.stringify([categoryRecipe(definition), fiscalContextRecipe(definition.fiscalBinding, fiscal)]) : categoryRecipe(definition), bucket, periodicity });
+    categories.set(definition.id, { id: definition.id, name: definition.name, sourceFieldId: definition.sourceFieldId, transform: definition.transform, recipe: definition.transform === 'FY' || definition.transform === 'FQ' ? JSON.stringify([categoryRecipe(definition), fiscalContextRecipe(definition.fiscalBinding, fiscal)]) : categoryRecipe(definition), bucket, periodicity, ...(definition.sortFieldId === undefined ? {} : { sortFieldId: definition.sortFieldId }) });
     if (straddles(periodicity, bucket)) warnings.push({ code: 'approximate-period', categoryId: definition.id, message: 'Weekly observations assigned to calendar buckets may straddle period boundaries; summing them is approximate.' });
   }
   const output = rows.map(row => {
@@ -131,6 +134,7 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
       rowMembers.set(id, member);
       if (member.ok) {
         additions.push([id, member.value.value]);
+        if (definition.sortFieldId !== undefined && read(row, definition.sortFieldId) !== undefined) additions.push([categorySortKey(id), read(row, definition.sortFieldId)]);
         if (member.value.fiscal) {
           const periods = fiscalPeriods.get(id) ?? [];
           periods.push(member.value.fiscal); fiscalPeriods.set(id, periods);

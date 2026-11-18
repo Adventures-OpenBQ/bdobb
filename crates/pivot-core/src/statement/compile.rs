@@ -201,6 +201,7 @@ pub fn compile_statement(
             transform,
             fiscal_binding,
             legacy_bucket: None,
+            sort_field_id: None,
         };
     let model = TableModel {
         schema_version: 1,

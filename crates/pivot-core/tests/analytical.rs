@@ -591,3 +591,78 @@ fn incoming_field_errors_block_aggregates_without_authored_source_formulas() {
     );
     assert_eq!(serde_json::to_value(&input).unwrap(), before);
 }
+
+#[test]
+fn sort_field_orders_members_like_typescript() {
+    let num = |n: f64| WireValue::F64(WireNumber::Finite(n));
+    let split = |sort: Option<&str>| {
+        let (_, mut input, mut d, runtime) = fixture("ratio-source-scope");
+        input.rows = [("1M", 1., 30.), ("1W", 0.25, 7.), ("3M", 3., 90.)]
+            .iter()
+            .enumerate()
+            .map(|(i, (tenor, months, dte))| {
+                let mut row = input.rows[0].clone();
+                row.id = format!("r{i}");
+                row.values
+                    .insert("tenor".into(), WireValue::String((*tenor).into()));
+                row.values.insert("tenor_months".into(), num(*months));
+                row.values.insert("dte".into(), num(*dte));
+                row
+            })
+            .collect();
+        for id in ["tenor", "tenor_months", "dte"] {
+            let mut column = input.columns[0].clone();
+            column.id = id.into();
+            column.label = id.into();
+            input.columns.push(column);
+        }
+        let a = d
+            .definition
+            .analytical
+            .as_mut()
+            .unwrap()
+            .table_mut()
+            .unwrap();
+        let mut days = a.formulas[0].clone();
+        days.id = "days".into();
+        days.name = "days".into();
+        days.scope = FormulaScope::Source;
+        days.ast = FormulaAst::Reference {
+            target: ReferenceTarget::Field,
+            id: "dte".into(),
+        };
+        a.formulas.push(days);
+        a.categories = vec![Category {
+            id: "expiry".into(),
+            name: "Expiry".into(),
+            source_field_id: "tenor".into(),
+            transform: Transform::Native,
+            fiscal_binding: None,
+            legacy_bucket: None,
+            sort_field_id: sort.map(Into::into),
+        }];
+        a.layout.rows.clear();
+        a.layout.columns = vec!["expiry".into()];
+        refresh_recipe(&mut d);
+        let view = calculate_view(&input, &d, &SelectionSpec::None, &runtime, &Host).unwrap();
+        view.columns
+            .iter()
+            .filter_map(|c| c.split_path.as_ref())
+            .map(|p| text(&p[0].value).to_string())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(split(None), ["1M", "1W", "3M"]);
+    assert_eq!(split(Some("tenor_months")), ["1W", "1M", "3M"]);
+    assert_eq!(split(Some("days")), ["1W", "1M", "3M"]);
+
+    let (_, _, d, _) = fixture("ratio-source-scope");
+    let mut raw = serde_json::to_value(d.definition.analytical.as_ref().unwrap()).unwrap();
+    raw["categories"][0]["sortFieldId"] = "".into();
+    let mut wire: WireDefinition = serde_json::from_str(
+        r#"{"protocolVersion":1,"locale":"en-US","definition":{"table":{},"search":""}}"#,
+    )
+    .unwrap();
+    wire.definition.analytical = Some(serde_json::from_value(raw).unwrap());
+    let refused = pivot_core::validation::validate_definition(&wire).unwrap_err();
+    assert_eq!(refused.path.as_deref(), Some("categories.sortFieldId"));
+}

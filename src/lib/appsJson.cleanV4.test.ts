@@ -135,3 +135,10 @@ it('a Workspace-synced card with a v4 field still exports in the BDOBB format', 
     expect(exportCompatibleApp(dashboard)).toMatchObject({ ok: true });
   }
 });
+it('v4 round-trips a category sort field unchanged', () => {
+  const analytical = { ...migratePivot({ enabled: true, grouping: [], split: [] }), categories: [{ id: 'expiry', name: 'Expiry', sourceFieldId: 'tenor', transform: 'native' as const, sortFieldId: 'tenor_months' }], layout: { rows: [], columns: ['expiry'], values: [] } };
+  const d: Dashboard = { id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [card({ tableDefinition: { table: {}, search: '', analytical } })] }] };
+  const exported = exportCompatibleApp(d);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  expect(importApps([JSON.parse(JSON.stringify(exported.value))], []).dashboards[0].tabs[0].cards[0].tableDefinition?.analytical).toEqual(analytical);
+});
