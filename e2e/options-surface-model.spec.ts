@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { defaultSeed, read, seedApp } from './fixtures';
+import { MOCK_URL, defaultSeed, read, seedApp } from './fixtures';
 import { pivotValueKey } from '../src/lib/pivotKeys';
 import { parseFormula } from '../src/lib/tableModel/formulaSyntax';
 import { bindFormula } from '../src/lib/tableModel/formulaBinding';
@@ -207,4 +207,149 @@ test("report's own checklists: the outer category picks the underlyings, a non-l
   await expect.poll(async () => leafKeys(await snapshot(page, 'report'))).toEqual(all);
   await expect.poll(async () => leafKeys(await received(page, 'follower'))).toEqual(all);
   expect((await saved()).find(l => l.categoryId === 'underlying')?.memberKeys.sort()).toEqual([pivotValueKey('AAA'), pivotValueKey('BBB')]);
+});
+
+// Widget-shaped rows: the two long widgets' real ids, parameters and field order, served through a mocked backend.
+const yfFields = ['symbol', 'contract_symbol', 'expiration', 'option_type', 'strike', 'last_trade_date', 'change', 'change_percent', 'currency', 'contract_size', 'last_price', 'bid', 'ask', 'volume', 'open_interest', 'implied_volatility', 'in_the_money', 'underlying_symbol', 'eod_date', 'underlying_price', 'dte'];
+const yfRow = (symbol: string, spot: number, expiration: string, type: string, strike: number, iv: number) => ({
+  symbol, contract_symbol: `${symbol}${expiration.slice(2).replaceAll('-', '')}${type[0].toUpperCase()}${String(strike * 1000).padStart(8, '0')}`, expiration, option_type: type, strike,
+  last_trade_date: '2026-11-19T15:00:00Z', change: 0, change_percent: 0, currency: 'USD', contract_size: 'REGULAR', last_price: 1, bid: 1, ask: 1, volume: 10, open_interest: 100,
+  implied_volatility: iv, in_the_money: type === 'call' ? strike < spot : strike > spot, underlying_symbol: symbol, eod_date: '2026-11-19', underlying_price: spot, dte: dteOf[expiration] });
+const yfRows = (symbol: string, spot: number, strikes: number[], expiries: string[]) => expiries.flatMap(expiration => strikes.flatMap(strike => {
+  const put = Number((0.2 + 0.001 * Math.abs(strike - spot) + 0.01 * chrono.indexOf(expiration)).toFixed(4));
+  return [yfRow(symbol, spot, expiration, 'put', strike, put), yfRow(symbol, spot, expiration, 'call', strike, Number((put + 0.02).toFixed(4)))];
+}));
+const yfinanceRows = [...yfRows('AAA', 100, [90, 100, 110], ['2027-03-19', '2026-12-18', '2027-01-15']), ...yfRows('BBB', 50, [45, 50, 55], ['2026-12-18', '2027-01-15']), yfRow('AAA', 100, '2026-12-18', 'put', 90, 0.00001)];
+
+const fxLongFields = ['underlying_symbol', 'eod_date', 'underlying_price', 'expiration', 'dte', 'strike', 'option_type', 'implied_volatility', 'pip', 'ndf'];
+const fxPairs: [pair: string, spot: number, ndf: boolean, strikes: number[]][] = [['EURUSD', 1.1, false, [1.095, 1.1, 1.1025, 1.105, 1.25]], ['USDBRL', 5.0, true, [4.95, 5.0, 5.03, 5.13, 6.0]]];
+const fxRows = fxPairs.flatMap(([pair, spot, ndf, strikes]) => [1, 7, 30, 90, 900].flatMap((dte, tenorIndex) => strikes.flatMap(strike => {
+  const put = Number((0.08 + 0.01 * tenorIndex).toFixed(4));
+  return [['call', Number((put + 0.002).toFixed(4))], ['put', put]].map(([option_type, implied_volatility]) =>
+    ({ underlying_symbol: pair, eod_date: '2026-11-19', underlying_price: spot, expiration: addDays(dte), dte, strike, option_type, implied_volatility, pip: 10000, ndf }));
+})));
+
+const sideFormula = stockFormulas.find(f => f.id === 'side')!.expression;
+const fxLongFormulas = formulas(fxLongFields, [
+  ['tenor_months', cascade([0.25, 0.5, 1, 2, 3, 6, 9, 12, 24])],
+  ['tenor', cascade(tenors)],
+  ['root_t', 'IF(tenor_months = null, null, SQRT(tenor_months / 12))'],
+  ['strike_points', '(strike - underlying_price) * pip'],
+  ['strike_distance', 'IF(strike_points < 0, -strike_points, strike_points)'],
+  ['strike_bp', '(strike / underlying_price - 1) * 10000'],
+  ['bp_distance', 'IF(strike_bp < 0, -strike_bp, strike_bp)'],
+  ['strike_bucket', 'IF(ndf, IF(bp_distance > 1750, null, IF(strike_bp < 0, -1, 1) * IF(bp_distance < 25, 0, IF(bp_distance < 75, 50, IF(bp_distance < 150, 100, IF(bp_distance < 250, 200, IF(bp_distance < 400, 300, IF(bp_distance < 625, 500, IF(bp_distance < 875, 750, IF(bp_distance < 1250, 1000, 1500))))))))), IF(strike_distance > 1250, null, IF(strike_points < 0, -1, 1) * IF(strike_distance < 12.5, 0, IF(strike_distance < 37.5, 25, IF(strike_distance < 75, 50, IF(strike_distance < 125, 100, IF(strike_distance < 200, 150, IF(strike_distance < 375, 250, IF(strike_distance < 750, 500, 1000)))))))))'],
+  ['log_moneyness', 'LN(strike / underlying_price)'],
+  ['side', sideFormula],
+]);
+
+const widget = (name: string, endpoint: string, category: string, params: unknown[], fields: string[]) => ({ name, description: '', endpoint, type: 'table', category, gridData: { w: 40, h: 8 }, params, data: { table: { columnsDefs: fields.map(field => ({ field })) } } });
+const mockWidget = async (page: Page, id: string, def: { endpoint: string }, rows: unknown[]) => {
+  await page.route(`${MOCK_URL}/widgets.json`, async route => { const response = await route.fetch(); await route.fulfill({ response, json: { ...await response.json(), [id]: def } }); });
+  await page.route(`${MOCK_URL}/${def.endpoint}*`, route => route.fulfill({ json: rows, headers: { 'access-control-allow-origin': '*' } }));
+};
+const sideChecked = { promotePage: true, filters: [{ id: 'side', categoryId: 'side_cat', label: 'Side', multiSelect: true }] };
+const otm = [{ categoryId: 'side_cat', memberKeys: [pivotValueKey('OTM call'), pivotValueKey('OTM put')] }];
+const reportMeasures = [measure('iv', 'implied_volatility', 'median'), measure('n', 'implied_volatility', 'count'), measure('lm', 'log_moneyness', 'mean'), measure('rt', 'root_t', 'mean')];
+const surfaceChart = { type: 'surface', measures: [], display: 'grouped', height: 'iv', spaceRowsBy: 'lm', spaceColumnsBy: 'rt' };
+const chainCardOf = (widgetId: string, analytical: unknown, params = {}) => card('chain', 'Chain', { widgetId, backendId: 'b1', params, layout: at(0, 8), tableDefinition: { table: {}, search: '', analytical } });
+const layoutAt = (chart: Locator, path: string) => chart.locator('.linked-chart-plot .js-plotly-plot').evaluate((el, path) => path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], (el as unknown as { layout: unknown }).layout), path);
+const rounded = async (value: Promise<unknown>) => (await value as number[]).map(v => Math.round(v * 1000) / 1000 + 0);
+// The z range each scene resolved, to three places (vols here are fractions, so whole-number rounding would hide a change).
+const zRanges = (page: Page) => page.evaluate(() => Object.entries((document.querySelector('.linked-chart-plot .js-plotly-plot') as unknown as { _fullLayout: Record<string, { _scene: { fullSceneLayout: { zaxis: { range: number[] } } } }> })._fullLayout)
+  .filter(([key]) => /^scene\d*$/.test(key)).map(([, scene]) => scene._scene.fullSceneLayout.zaxis.range.map(v => Math.round(v * 1000) / 1000)));
+
+test('stock: one surface per underlying, spaced by ln(K/S) and √T; checklist, selection and Measures narrow it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 1100 });
+  const id = 'yfinance_options_chains_long_yfinance_obb';
+  const def = widget('Chains Long', 'api/v1/yfinance/options/chains_long', 'Yfinance', [{ paramName: 'symbol', label: 'Symbol', type: 'text', value: 'AAA', optional: false }, { paramName: 'provider', type: 'text', value: 'yfinance', show: false }], yfFields);
+  await mockWidget(page, id, def, yfinanceRows);
+  const chain = { ...modelBase, enabled: false, formulas: stockFormulas, categories: [category('side_cat', 'side', 'Side')], params: sideChecked, checklists: otm };
+  const report = { ...modelBase, enabled: true, categories: [category('underlying', 'underlying_symbol'), category('strike_cat', 'strike', 'Strike'), category('expiry', 'expiration'), category('quote_cat', 'quoted', 'Quoted')],
+    measures: reportMeasures, layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'lm', 'rt'] }, checklists: [{ categoryId: 'quote_cat', memberKeys: [pivotValueKey('quoted')] }] };
+  await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [chainCardOf(id, chain, { symbol: 'AAA' }), linkedTable(report), linkedChart('surface', 'Surface', 'report', surfaceChart, 22)] }] }) });
+
+  const chart = cardOf(page, 'Surface');
+  const canvases = chart.locator('.linked-chart-plot canvas');
+  const titles = chart.locator('.linked-chart-plot .annotation-text');
+  await expect(canvases).toHaveCount(2);
+  await expect(titles).toHaveText(['AAA', 'BBB']);
+  await expect(chart.getByRole('alert')).toHaveCount(0);
+  await expect.poll(() => layoutAt(chart, 'scene.xaxis.ticktext')).toEqual(['90', '100', '110']);
+  expect(await rounded(layoutAt(chart, 'scene.xaxis.tickvals'))).toEqual([-0.105, 0, 0.095]);
+  expect(await layoutAt(chart, 'scene.yaxis.ticktext')).toEqual(chrono);
+  expect(await layoutAt(chart, 'scene2.yaxis.ticktext')).toHaveLength(2);
+  console.log('stock status line:', JSON.stringify(await chart.locator('.linked-chart-status').innerText()));
+
+  const out = await snapshot(page, 'report');
+  const iv0 = out.columns.find(c => c.measureId === 'iv')!;
+  expect(out.rows.find(r => r.groupPath?.length === 2 && r.groupPath[0].value === 'AAA' && r.groupPath[1].value === 90)!.values[iv0.id]).toBeCloseTo(0.21); // placeholder excluded
+
+  for (const name of ['Height', 'Space rows by', 'Space columns by']) await expect(chart.getByLabel(name, { exact: true })).toBeVisible();
+  await expect(chart.getByLabel('Category', { exact: true })).toHaveCount(0);
+  const measures = chart.getByRole('button', { name: /^Measures/ });
+  const list = page.getByRole('dialog', { name: 'Measures', exact: true });
+  await measures.click();
+  await expect(list.locator('.opts label')).toHaveText(chrono);
+  // An empty `measures` draws every expiry but shows no box ticked: tick All first, then untick one.
+  await list.getByRole('button', { name: 'All', exact: true }).click();
+  await measures.click();
+  await list.getByRole('checkbox', { name: '2027-03-19', exact: true }).uncheck();
+  await list.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect.poll(() => layoutAt(chart, 'scene.yaxis.ticktext')).toEqual(['2026-12-18', '2027-01-15']);
+
+  const reportCard = cardOf(page, 'Report');
+  await reportCard.getByRole('button', { name: 'Pivot', exact: true }).click();
+  await reportCard.getByRole('tab', { name: 'Category filters', exact: true }).click();
+  await reportCard.getByRole('combobox', { name: 'Checklist category', exact: true }).selectOption('underlying');
+  await reportCard.getByRole('checkbox', { name: /^AAA \(/ }).uncheck();
+  await reportCard.getByRole('button', { name: 'Apply checklist', exact: true }).click();
+  await expect(titles).toHaveText(['BBB']);
+  await expect(canvases).toHaveCount(1);
+  await reportCard.getByRole('checkbox', { name: /^AAA \(/ }).check();
+  await reportCard.getByRole('button', { name: 'Apply checklist', exact: true }).click();
+  await expect(titles).toHaveText(['AAA', 'BBB']);
+  await expect(canvases).toHaveCount(2);
+
+  await reportCard.locator('.pivot-drawer-panel:not([hidden])').getByRole('button', { name: 'Done', exact: true }).click(); // the open drawer covers the table
+  await reportCard.getByRole('button', { name: 'Expand AAA', exact: true }).click();
+  // Rows are numbered in view order: with AAA expanded, 2 is AAA/90 and 4 is AAA/110.
+  await reportCard.getByRole('checkbox', { name: 'Select row 2', exact: true }).click();
+  await reportCard.getByRole('checkbox', { name: 'Select row 4', exact: true }).click();
+  await expect(canvases).toHaveCount(1);
+  await expect(titles).toHaveText(['AAA']);
+  await expect.poll(() => layoutAt(chart, 'scene.xaxis.ticktext')).toEqual(['90', '110']);
+  await reportCard.getByRole('button', { name: 'Clear selection', exact: true }).click();
+  await expect(canvases).toHaveCount(2);
+
+  const before = await zRanges(page);
+  await cardOf(page, 'Chain').getByRole('button', { name: /^Side:/ }).click();
+  const popup = page.getByRole('dialog', { name: 'Side values' });
+  await popup.getByLabel('OTM put', { exact: true }).uncheck();
+  await popup.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect.poll(() => zRanges(page)).not.toEqual(before);
+});
+
+test('fx: tenor sorted by tenor_months, strikes snapped by ndf, Side on', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 1100 });
+  const id = 'cftc_fx_implied_vol_long_custom_obb';
+  const pairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'USDCAD', 'EURGBP', 'USDBRL', 'USDKRW', 'USDINR', 'USDTWD', 'USDCOP'];
+  const def = widget('FX Implied Volatility (Options)', 'api/v1/cftc/fx_implied_vol_long', 'CFTC', [{ paramName: 'pair', label: 'Pair', type: 'text', value: 'EURUSD', options: pairs.map(value => ({ label: value, value })) }, { paramName: 'date', label: 'Date', type: 'date' }], fxLongFields);
+  await mockWidget(page, id, def, fxRows);
+  const chain = { ...modelBase, enabled: false, formulas: fxLongFormulas, categories: [category('side_cat', 'side', 'Side')], params: sideChecked, checklists: otm };
+  const strikeGrid = [0, 25, 50, 100, 150, 200, 250, 300, 500, 750, 1000, 1500].flatMap(k => k ? [-k, k] : [0]);
+  const report = { ...modelBase, enabled: true, categories: [category('underlying', 'underlying_symbol'), category('strike_cat', 'strike_bucket', 'Strike'), { ...category('expiry', 'tenor'), sortFieldId: 'tenor_months' }],
+    measures: reportMeasures, layout: { rows: ['underlying', 'strike_cat'], columns: ['expiry'], values: ['iv', 'n', 'lm', 'rt'] },
+    checklists: [{ categoryId: 'strike_cat', memberKeys: strikeGrid.map(pivotValueKey) }, { categoryId: 'expiry', memberKeys: tenors.map(pivotValueKey) }] };
+  await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [chainCardOf(id, chain), linkedTable(report), linkedChart('surface', 'Surface', 'report', surfaceChart, 22)] }] }) });
+
+  const chart = cardOf(page, 'Surface');
+  await expect(chart.locator('.linked-chart-plot canvas')).toHaveCount(2);
+  await expect(chart.locator('.linked-chart-plot .annotation-text')).toHaveText(['EURUSD', 'USDBRL']);
+  await expect(chart.getByRole('alert')).toHaveCount(0);
+  await expect.poll(() => layoutAt(chart, 'scene.yaxis.ticktext')).toEqual(['1W', '1M', '3M']);
+  expect(await rounded(layoutAt(chart, 'scene.yaxis.tickvals'))).toEqual([0.144, 0.289, 0.5]);
+  expect(await layoutAt(chart, 'scene.xaxis.ticktext')).toEqual(['-50', '0', '25', '50']);
+  expect(await layoutAt(chart, 'scene2.xaxis.ticktext')).toEqual(['-100', '0', '50', '300']);
+  console.log('fx status line:', JSON.stringify(await chart.locator('.linked-chart-status').innerText()));
 });
