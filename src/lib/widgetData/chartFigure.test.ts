@@ -338,7 +338,7 @@ it('draws a plot left with one expiry as a line beside the other plots\' surface
     expect(f.layout.scene).toMatchObject({ domain: { x: [0, 0.5] }, yaxis: { ticktext: D.slice(1) } });
     expect(f.layout.xaxis).toMatchObject({ domain: [0.54, 1], anchor: 'y', title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['45', '50', '55'] });
     expect(f.layout.yaxis).toMatchObject({ anchor: 'x', title: { text: D[1] } });
-    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis' });
+    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 0.21, cmax: 0.24 }); // the surface's own cells; the line is off the scale
     expect(f.layout.scene2).toBeUndefined();
     expect(titlesOf(f)).toEqual(['AAA', 'BBB']);
 });
@@ -395,4 +395,17 @@ it('thins the category axis of a one-expiry line panel and leaves ten or fewer l
     const eleven = figure(ps, wide(11)).layout.scene as { xaxis: { ticktext: string[] } };
     expect(eleven.xaxis.ticktext).toHaveLength(10);
     expect(eleven.xaxis.ticktext[0]).toBe('100'); expect(eleven.xaxis.ticktext[9]).toBe('110');
+});
+// The colour range follows the cells the mesh draws: those in at least one complete 2-by-2 block of finite cells, across every 3-D plot.
+it('sets the colour range from drawn cells only, across all 3-D plots, keeping lone cells in the data and hover', () => {
+    const lone = withCells((id, v) => { if (id === 'AAA/110') { v[cell(D[1], 'iv')] = null; v[cell(D[2], 'iv')] = 0.9; } if (id === 'AAA/100') v[cell(D[2], 'iv')] = null; });
+    const f = figure(ps, lone);
+    // AAA: only its first two expiries over the first two strikes form a block (0.20-0.22); BBB's whole 3-by-2 grid is drawn (0.29-0.32); the lone 0.9 is not.
+    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 0.2, cmax: 0.32 });
+    expect((f.data[0] as { z: (number | null)[][] }).z[2]).toEqual([0.23, null, 0.9]);
+    expect((f.data[0] as { text: string[][] }).text[2][2]).toContain('0.9');
+});
+it('FX surfaces: a plot short of any complete block stays off the colour range, and with no drawn cell the scale stays automatic', () => {
+    expect(figure(surface, vol).layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 8.8, cmax: 9.5 });
+    expect(figure(surface, { ...vol, rows: vol.rows.slice(0, 2) }).layout.coloraxis).toEqual({ colorscale: 'Viridis' });
 });
