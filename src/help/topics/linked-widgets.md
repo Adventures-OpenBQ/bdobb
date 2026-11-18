@@ -74,8 +74,9 @@ Surface draws a 3-D surface with the category along one axis, the ticked measure
 along the other and their values as the height — a volatility surface from a table
 with a row per strike and a column per expiry. When the source's rows carry `pair`
 and `date` fields it draws one surface for each pair and date, side by side and
-titled, on one colour scale; more than six reads *Surface draws at most 6 plots*. It
-needs at least two measures and two rows per plot. Drag to rotate; missing values are
+titled, on one colour scale; more than six reads *Surface draws at most 6 plots*. With
+one measure ticked it draws that measure as a line across the category for each pair
+and date instead. It needs at least two rows per plot. Drag to rotate; missing values are
 gaps in the surface. Picking Surface on a chart with no category or measures chosen
 fills them in from the source widget's `chartDataType` hints when it declares any: the
 first `time` or `category` column as the category, every `series` column as a measure.

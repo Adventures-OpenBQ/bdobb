@@ -68,17 +68,33 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     }
     if (settings.type === 'surface') {
         // x = category, y = measure, z = value: one plot per pair/date present in the rows, on one shared colour scale.
+        // The measure axis runs in the source's column order (expiries in term order), not the order the boxes were ticked.
+        const position = new Map(dataset.columns.map((c, i) => [c.id, i]));
+        measures.sort((a, b) => position.get(a.id)! - position.get(b.id)!);
         const split = SURFACE_SPLIT.filter(id => id !== category && columns.has(id));
         const groups = new Map<string, number[]>();
         dataset.rows.forEach((row, r) => { const key = split.map(id => String(row.values[id] ?? '')).join(' — '); groups.set(key, [...(groups.get(key) ?? []), r]); });
         if (groups.size > MAX_SURFACES)
             return { ok: false, refused: true, message: `Surface draws at most ${MAX_SURFACES} plots — the rows hold ${groups.size} ${split.join('/')} combinations.` };
-        if (measures.length < 2 || [...groups.values()].some(rows => rows.length < 2))
-            return { ok: false, refused: true, message: 'Surface needs at least two measures and two rows per plot.' };
+        if ([...groups.values()].some(rows => rows.length < 2))
+            return { ok: false, refused: true, message: 'Surface needs at least two rows per plot.' };
         const numeric = dataset.rows.every(row => typeof row.values[category] === 'number');
         const revision = JSON.stringify([settings.type, settings.category, settings.measures]);
         const background = theme === 'dark' ? '#1e242e' : '#ffffff';
         const axisLabel = escape(columns.get(category)!.label);
+        const titles = [...groups.keys()].flatMap((title, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / groups.size, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
+        const font = { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' };
+        if (measures.length === 1) {
+            // One measure has no second axis to mesh over: each pair/date draws as a line across the category.
+            const [m] = measures, axes: Record<string, unknown> = {};
+            const lines = [...groups.values()].map((rows, g) => {
+                const n = g ? String(g + 1) : '';
+                axes[`xaxis${n}`] = { domain: [g / groups.size + (g ? 0.04 : 0), (g + 1) / groups.size - (g < groups.size - 1 ? 0.04 : 0)], anchor: `y${n}`, title: { text: axisLabel }, ...(numeric ? {} : { type: 'category' }) };
+                axes[`yaxis${n}`] = { anchor: `x${n}`, title: { text: g ? '' : escape(m.name) } };
+                return { type: 'scatter', mode: 'lines+markers', connectgaps: false, xaxis: `x${n}`, yaxis: `y${n}`, x: rows.map(r => numeric ? dataset.rows[r].values[category] : labels[r]), y: rows.map(r => m.values[r]), line: { color: color(m.colorKey) }, marker: { color: color(m.colorKey) }, text: rows.map(r => m.text[r]), hovertemplate: '%{text}<extra></extra>' };
+            });
+            return { ok: true, revision, notes: [], figure: { data: lines, layout: { uirevision: revision, margin: { l: 56, r: 12, t: 28, b: 48 }, showlegend: false, annotations: titles, paper_bgcolor: background, plot_bgcolor: background, font, ...axes } } };
+        }
         // Positions, not names: this bundle's 3-D scene does not mesh a surface over a string axis, so text axes are ticked by index.
         const ticked = (text: string[]) => ({ tickmode: 'array', tickvals: text.map((_, i) => i), ticktext: text });
         const scenes: Record<string, unknown> = {};
@@ -87,8 +103,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
             scenes[scene] = { domain: { x: [g / groups.size, (g + 1) / groups.size] }, bgcolor: background, xaxis: { title: { text: axisLabel }, ...(numeric ? {} : ticked(rows.map(r => labels[r]))) }, yaxis: { title: { text: '' }, ...ticked(measures.map(m => m.name)) }, zaxis: { title: { text: '' } } };
             return { type: 'surface', scene, name: title, coloraxis: 'coloraxis', x: rows.map((r, i) => numeric ? dataset.rows[r].values[category] : i), y: measures.map((_, i) => i), z: measures.map(m => rows.map(r => m.values[r])), text: measures.map(m => rows.map(r => `${axisLabel}: ${escape(labels[r])}<br>${escape(m.name)}: ${m.values[r] ?? 'Missing'}`)), hovertemplate: '%{text}<extra></extra>' };
         });
-        const annotations = [...groups.keys()].flatMap((title, g) => title ? [{ text: escape(title), xref: 'paper', yref: 'paper', x: (g + 0.5) / groups.size, y: 1, xanchor: 'center', yanchor: 'bottom', showarrow: false }] : []);
-        return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations, paper_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' }, ...scenes } } };
+        return { ok: true, revision, notes: [], figure: { data, layout: { uirevision: revision, margin: { l: 0, r: 0, t: 28, b: 0 }, coloraxis: { colorscale: 'Viridis' }, annotations: titles, paper_bgcolor: background, font, ...scenes } } };
     }
     const pie = settings.type === 'pie';
     if (pie && measures.length > 1)

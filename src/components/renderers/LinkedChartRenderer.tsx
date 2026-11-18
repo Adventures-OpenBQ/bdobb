@@ -143,7 +143,13 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         setSaving(false);
     } }
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
-    const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
+    // Listed in the source's column order, so a measure keeps its place (expiries stay in term order) when it is unticked and ticked again.
+    // A delivered column the source no longer offers stays next to the column it followed.
+    const offered = view.ready?.chartColumns ?? view.ready?.columns ?? [];
+    const byId = new Map([...columns, ...offered].map(c => [c.id, c]));
+    const order = offered.map(c => c.id);
+    columns.forEach((c, i) => { if (!order.includes(c.id)) order.splice(order.indexOf(columns[i - 1]?.id) + 1, 0, c.id); });
+    const fields = order.map(id => byId.get(id)!);
     return <div className="linked-chart-renderer" data-delivered-revision={delivered?.revision}>
     {!viewer ? <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type'], hints, new Set(fields.map(c => c.id))))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="waterfall">Waterfall</option><option value="surface">Surface (3-D)</option></select></label>
