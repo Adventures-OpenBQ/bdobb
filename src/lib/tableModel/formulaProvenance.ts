@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Shared stable draft provenance; no member-domain proof or UI state.
-import {astChildren, parseFormula, type SyntaxAst} from './formulaSyntax';
+import {astChildren, isAggregateFunction, parseFormula, type SyntaxAst} from './formulaSyntax';
 import type {FormulaAst, FormulaDef, MemberSelector} from './types';
 export type Reference = Extract<FormulaAst, {kind:'reference'}>;
 export type DraftBindings = Map<string, Reference>;
@@ -28,7 +28,7 @@ export function rememberFormulaBindings(formula: FormulaDef | undefined): DraftB
             visit(s.operand, b.operand, scope);
         if (s.kind === 'call' && b.kind === 'call')
             s.args.forEach((a, i) => { if (b.args[i])
-                visit(a, b.args[i], s.function === 'IF' ? scope : 'source'); });
+                visit(a, b.args[i], !isAggregateFunction(s.function) ? scope : 'source'); });
         if (s.kind === 'member' && b.kind === 'member')
             visit(s.value, b.value, scope);
     };
@@ -72,7 +72,7 @@ export function applyBindings(ast: SyntaxAst, bindings: DraftBindings, members: 
         case 'name': return bindings.get(`${scope}\0${ast.name}`) ?? bindings.get(ast.name) ?? ast;
         case 'unary': return { ...ast, operand: applyBindings(ast.operand, bindings, members, scope) };
         case 'binary': return { ...ast, left: applyBindings(ast.left, bindings, members, scope), right: applyBindings(ast.right, bindings, members, scope) };
-        case 'call': return { ...ast, args: ast.args.map(a => applyBindings(a, bindings, members, ast.function === 'IF' ? scope : 'source')) };
+        case 'call': return { ...ast, args: ast.args.map(a => applyBindings(a, bindings, members, !isAggregateFunction(ast.function) ? scope : 'source')) };
         case 'member': return { ...ast, value: applyBindings(ast.value, bindings, members, scope), selectors: ast.selectors.map(selector => 'categoryName' in selector ? members.get(JSON.stringify([selector.categoryName, selector.value])) ?? selector : selector) };
         default: return ast;
     }
