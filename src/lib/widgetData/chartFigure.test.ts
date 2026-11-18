@@ -228,8 +228,24 @@ it('draws a single untitled surface when the rows carry no pair or date', () => 
     expect(t.layout.scene).toMatchObject({ xaxis: { tickvals: [0, 1], ticktext: ['25D put', 'ATM'] } });
 });
 it('refuses a surface it cannot mesh or that would split into too many plots', () => {
-    const one = buildLinkedFigure(vol, { ...surface, measures: ['vol_3m'] }, 'dark');
-    expect(one).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two measures and two rows per plot.' });
+    const thin = { ...vol, rows: vol.rows.slice(0, 3) };
+    expect(buildLinkedFigure(thin, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
     const many = { ...vol, rows: Array.from({ length: 14 }, (_, i) => volRow(`r${i}`, `P${i >> 1}`, i, 1, 2)) };
     expect(buildLinkedFigure(many, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface draws at most 6 plots — the rows hold 7 pair/date combinations.' });
+});
+it('draws a Surface with one measure ticked as a line per pair/date, not a surface', () => {
+    const f = figure({ ...surface, measures: ['vol_3m'] }, vol);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [1.05, 1.1], y: [7.4, 7.0] }),
+        expect.objectContaining({ type: 'scatter', xaxis: 'x2', yaxis: 'y2', x: [150, 155], y: [9.5, 9.1] }),
+    ]);
+    expect(f.layout.xaxis).toMatchObject({ anchor: 'y', title: { text: 'Strike' } });
+    expect(f.layout.yaxis).toMatchObject({ title: { text: '3M' } });
+    expect((f.layout.annotations as { text: string }[]).map(a => a.text)).toEqual(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+    expect(f.layout.scene).toBeUndefined();
+});
+it('runs the surface measure axis in source column order, whatever order the measures were ticked in', () => {
+    const f = figure({ ...surface, measures: ['vol_3m', 'vol_1m'] }, vol);
+    expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: ['1M', '3M'] } });
+    expect(f.data[0]).toMatchObject({ z: [[7.1, null], [7.4, 7.0]] });
 });

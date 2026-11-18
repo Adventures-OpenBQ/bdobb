@@ -52,3 +52,36 @@ test('picking Surface on an empty chart takes its fields from the source widget 
   await expect(card.locator('.linked-chart-plot .annotation-text')).toHaveText(['EURUSD — 2026-11-17']);
   await expect.poll(() => zRanges(page)).toEqual([[7, 11]]);
 });
+
+test('filtering the source to one pair redraws a single surface, and one ticked expiry draws a line', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  // The source table promotes Pair to a header parameter, the way a Pivot category filter does.
+  const model = { schemaVersion: 1, enabled: false, params: { promotePage: true, filters: [{ id: 'p', categoryId: 'cat', label: 'Pair', multiSelect: true }] }, categories: [{ id: 'cat', name: 'Pair', sourceFieldId: 'pair', transform: 'native' }], measures: [], formulas: [], layout: { rows: [], columns: [], values: [] }, checklists: [], resultFilters: [], subtotals: { grandTotal: false, groups: false } };
+  const source = { ...table, tableDefinition: { table: {}, search: '', analytical: model } };
+  await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [source, chart] }] }), [`files/${file}`]: csv });
+  const card = page.locator('.widget-card').filter({ has: page.locator('header').getByText('Vol surface', { exact: true }) });
+  const titles = card.locator('.linked-chart-plot .annotation-text');
+  await expect(titles).toHaveText(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+  const root = page.locator('.widget-card').filter({ has: page.locator('header').getByText('FX vol', { exact: true }) });
+  await root.getByRole('button', { name: 'Pair: All' }).click();
+  const popup = page.getByRole('dialog', { name: 'Pair values' });
+  await popup.getByLabel('USDJPY').uncheck();
+  await popup.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(titles).toHaveText(['EURUSD — 2026-11-17']);
+  await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(1);
+  await expect.poll(() => zRanges(page)).toEqual([[7, 11]]);
+  // Unticking and re-ticking an expiry keeps the list and the surface's expiry axis in the table's column order.
+  const listed = card.locator('fieldset label');
+  await card.getByRole('checkbox', { name: 'vol_1m', exact: true }).uncheck();
+  await expect(card.getByRole('checkbox', { name: 'vol_1m', exact: true })).not.toBeChecked();
+  await expect(listed).toHaveText(['pair', 'date', 'strike', ...expiries]);
+  await card.getByRole('checkbox', { name: 'vol_1m', exact: true }).check();
+  await expect.poll(() => page.evaluate(() => (document.querySelector('.linked-chart-plot .js-plotly-plot') as unknown as { layout: { scene: { yaxis: { ticktext: string[] } } } }).layout.scene.yaxis.ticktext)).toEqual(expiries);
+  await expect(listed).toHaveText(['pair', 'date', 'strike', ...expiries]);
+  // One expiry left ticked: the smile as a line, no 3-D scene.
+  for (const field of expiries.slice(1)) await card.getByRole('checkbox', { name: field, exact: true }).uncheck();
+  await expect(card.locator('.linked-chart-plot .scatterlayer .trace')).toHaveCount(1);
+  await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(0);
+  await expect(titles).toHaveText(['EURUSD — 2026-11-17']);
+  await expect(card.getByRole('alert')).toHaveCount(0);
+});

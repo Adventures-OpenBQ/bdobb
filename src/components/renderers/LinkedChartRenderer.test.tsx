@@ -340,3 +340,16 @@ it('picking Surface with no fields chosen takes them from the source chartDataTy
     await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: settings.category, measures: [] })));
     cleanup(); store.disposeDashboard('d');
 });
+
+it('keeps the Measures list in source column order when a measure is unticked', async () => {
+    const store = await setupRows([{ region: 'A', revenue: 1, cost: 2 }, { region: 'B', revenue: 3, cost: 4 }]);
+    const labels = () => [...screen.getByRole('group', { name: 'Measures' }).querySelectorAll('label')].map(l => l.textContent);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, { measures: ['revenue', 'cost'] })}/>);
+    await screen.findByTestId('figure');
+    const before = labels();
+    rerender(<LinkedChartRenderer {...withSettings(store, { measures: ['cost'] })}/>);
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).data).toHaveLength(1));
+    expect(labels()).toEqual(before);
+    expect(before.indexOf('Revenue')).toBeLessThan(before.indexOf('Cost'));
+    cleanup(); store.disposeDashboard('d');
+});
