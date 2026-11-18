@@ -308,7 +308,7 @@ pub(crate) fn function_aggregation(function: FormulaFunction) -> Option<Aggregat
         FormulaFunction::UniqueCount => Aggregation::UniqueCount,
         FormulaFunction::First => Aggregation::First,
         FormulaFunction::Last => Aggregation::Last,
-        FormulaFunction::If => return None,
+        FormulaFunction::If | FormulaFunction::Ln | FormulaFunction::Sqrt => return None,
     })
 }
 

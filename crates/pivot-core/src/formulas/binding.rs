@@ -268,7 +268,7 @@ impl Binder<'_> {
                 })
             }
             SyntaxAst::Call { function, args } => {
-                let aggregate = *function != FormulaFunction::If;
+                let aggregate = function.is_aggregate();
                 if aggregate && scope == FormulaScope::Source {
                     self.issue(
                         "scope",
@@ -490,10 +490,10 @@ fn remember(
                 remember(
                     s,
                     b,
-                    if *function == FormulaFunction::If {
-                        scope
-                    } else {
+                    if function.is_aggregate() {
                         FormulaScope::Source
+                    } else {
+                        scope
                     },
                     bindings,
                     members,
@@ -578,10 +578,10 @@ fn apply(
                 .map(|a| {
                     apply(
                         a,
-                        if function == FormulaFunction::If {
-                            scope
-                        } else {
+                        if function.is_aggregate() {
                             FormulaScope::Source
+                        } else {
+                            scope
                         },
                         bindings,
                         members,

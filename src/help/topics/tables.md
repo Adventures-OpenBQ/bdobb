@@ -207,7 +207,7 @@ Budget with a source filter or checklist makes a Budget comparison unavailable;
 it does not fetch missing records or treat them as zero.
 
 Formulas support numeric/string/boolean literals, arithmetic, comparisons,
-SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF, in any
+SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT, IF, LN and SQRT, in any
 letter case (`first(...)` and `FIRST(...)` are the same). IF takes three
 arguments, the others one. Strings are double-quoted; `true`, `false` and
 `null` are lower case. Use the

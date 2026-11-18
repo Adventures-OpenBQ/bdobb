@@ -263,6 +263,30 @@ pub fn evaluate_expression(
                 ),
             }
         }
+        FormulaAst::Call {
+            function: function @ (FormulaFunction::Ln | FormulaFunction::Sqrt),
+            args,
+        } => match numeric(run(&args[0], resolver), row, definition_id) {
+            Ok(n) => {
+                let value = if *function == FormulaFunction::Ln {
+                    n.ln()
+                } else {
+                    n.sqrt()
+                };
+                if value.is_finite() {
+                    CellResult::Value(number(value))
+                } else {
+                    fail(
+                        "nonfinite",
+                        "Calculation result must be finite.",
+                        row,
+                        definition_id,
+                        vec![],
+                    )
+                }
+            }
+            Err(e) => e,
+        },
         FormulaAst::Call { .. } => fail(
             "scope",
             "Aggregate calls require aggregate scope.",
