@@ -178,7 +178,7 @@ The CFTC widget prices only options out of the money against the forward, so on 
 
 - **Surfaces**: every underlying served is drawn. With more than six, the whole chart is refused (*Surface draws at most 6 plots …*) rather than drawing the first six. Each widget serves one pair or one symbol per request, so each tab opens on one surface. To choose, open the report's **Pivot** drawer, **Category filters**, pick **Underlying** and tick the ones to keep, then **Apply checklist**.
 - **Strikes**: select rows in the report, and the surface draws only those strikes. Press **Clear selection** to see them all again.
-- **Expiries**: the Surface card's **Measures** lists the expiries (FX: tenors) of the chosen Height. It opens with none ticked, which draws every one, so press **All** first, then untick the expiry to leave out and **Apply**. On the FX tab, the Tenor checklist removes one from the report too.
+- **Expiries**: the Surface card's **Measures** lists the expiries (FX: tenors) of the chosen Height. It opens with every expiry ticked, so untick the expiry to leave out and **Apply**; **All** puts every expiry back, including ones the report gains later. On the FX tab, the Tenor checklist removes one from the report too.
 
 An expiry one underlying lacks is dropped from that underlying's surface only, as is a row or column with no Height value.
 
