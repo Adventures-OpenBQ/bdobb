@@ -223,8 +223,8 @@ it.each(['bullet', 'waterfall'] as const)('announces a failed %s relink once and
     const recovered = await screen.findByTestId('chart-plot');
     expect(screen.getByText(/^Source B ·/)).toBeVisible();
     expect(screen.queryByRole('alert')).toBeNull();
-    const [node, figure, revisionB] = plot.mock.lastCall!;
-    expect(node).toBe(recovered);
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(recovered));
+    const [, figure, revisionB] = plot.mock.lastCall!;
     expect(revisionB).not.toBe(revisionA);
     expect(figure.data[0]).toMatchObject(type === 'bullet'
       ? { type: 'indicator', value: 150 } : { type: 'waterfall', y: expect.arrayContaining([150]) });
@@ -428,7 +428,7 @@ it('revalidates exposure mode against the linked snapshot without acquiring anot
   const recipe = riskRecipes[3];
   const a = await riskSource(recipe, 'A');
   const snapshot = snapshotFor(recipe, 'A');
-  const rows = [...snapshot.rows, { symbol: 'A', sector: 'Utilities', weight: .3, fund_symbol: 'A' }];
+  const rows = [...snapshot.rows, { symbol: 'A', sector: 'Utilities', weight: .3, fund_symbol: 'A' }].map(row => ({ ...row, country: 'Canada' }));
   await fs.writeFile('files/' + a.params.file, new TextEncoder().encode(JSON.stringify({ ...snapshot, rows })));
   installDashboard(riskDashboard([a, riskChart(recipe)]));
   const reads = vi.spyOn(fs, 'readFile');

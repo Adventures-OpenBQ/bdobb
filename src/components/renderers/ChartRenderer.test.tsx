@@ -351,3 +351,29 @@ it('releases vertical drag only for a touch-scroll plot on a coarse pointer', ()
   rerender(<ChartRenderer data={data} scrollHeight={800}/>);
   expect(figureFromLastCall()).toEqual(data);
 });
+
+it('removes a failed draw, bounds the local alert and recovers on a new figure', async () => {
+  const { rerender } = render(<ChartRenderer data={ohlc}/>);
+  const node = screen.getByTestId('chart-plot');
+  renderPlot.mockRejectedValueOnce(new Error('bad coordinate ' + 'x'.repeat(1200)));
+  rerender(<ChartRenderer data={[...ohlc]}/>);
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent(/bad coordinate/);
+  expect(alert.textContent!.length).toBeLessThan(600);
+  expect(purgePlot).toHaveBeenCalledWith(node);
+  expect(node).not.toBeVisible();
+  rerender(<ChartRenderer data={[...ohlc]}/>);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByTestId('chart-plot')).toBeVisible();
+});
+
+it('ignores a superseded draw rejection after the next revision renders', async () => {
+  let reject!: (error: Error) => void;
+  renderPlot.mockReturnValueOnce(new Promise<void>((_, fail) => { reject = fail; }));
+  const { rerender } = render(<ChartRenderer data={ohlc} uirevision="old"/>);
+  rerender(<ChartRenderer data={ohlc} uirevision="new"/>);
+  await act(async () => reject(new Error('superseded')));
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(purgePlot).not.toHaveBeenCalled();
+  expect(logError).not.toHaveBeenCalledWith('chart render failed: superseded');
+});

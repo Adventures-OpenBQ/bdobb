@@ -46,7 +46,7 @@ Choose **Small multiples** and select up to twelve symbols in panel order. Every
 
 **ETF holdings Pareto** ranks delivered constituents by reported weight of fund assets. The bars show individual weights and the line accumulates the displayed holdings on the same scale. The chart shows at most 50 and separately reports the count and weight of all distinct holdings delivered to it. Transport scope and provider holdings coverage appear separately. Filtering the source changes the rows in the calculation.
 
-**ETF exposure** draws a stem and dot for each reported sector or geographic category, including zero weights. Hover a dot for its percentage of equity exposure. Scroll inside a long list to reach every category. The source must establish one fund, the matching exposure kind and the weight basis. To switch from sectors to regions, use **Card menu → Choose source**, map the new category field, select the corresponding **Exposure mode** and apply.
+**ETF exposure** draws a stem and dot for each reported sector or geographic category, including zero weights. Hover a dot for its percentage of equity exposure. Scroll inside a long list to reach every category. The source must establish one fund, the matching exposure kind and the weight basis. To switch from sectors to regions, use **Card menu → Choose source**, select the corresponding **Exposure mode**, check its category field and apply.
 
 ## Zoom, pan and reset
 

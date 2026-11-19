@@ -22,6 +22,12 @@ const validTime = (value: unknown): value is number => typeof value === 'number'
 const timestamp = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && calendarDate(value)
   ? Date.parse(value) : NaN;
 
+function eodhdFund(symbol: string | undefined, exchange: unknown) {
+  if (!symbol || symbol.includes('.')) return symbol;
+  const venue = fundOf(exchange ?? 'US');
+  return venue && symbol + '.' + venue;
+}
+
 function route(acquisition?: BackendEtfAcquisition) {
   if (!acquisition) return;
   const match = /^\/?(?:api\/v1\/)?(eodhd\/)?etf\/(holdings|sectors|countries)\/?$/.exec(acquisition.endpoint);
@@ -37,10 +43,13 @@ function conflicts(record: Record<string, unknown> | undefined, names: string[],
   return Object.entries(record ?? {}).some(([key, value]) => names.includes(key.toLowerCase()) && !valid(value));
 }
 
-function acquisitionIssue(dataset: WidgetDataset, evidence: EtfEvidence): string | undefined {
+function acquisitionIssue(dataset: WidgetDataset, evidence: EtfEvidence, requestedSymbol?: string): string | undefined {
   // Holdings identify the constituent in symbol. The exposure routes repeat the queried fund.
   const fundFields = ['fund_symbol', 'fundsymbol', 'etf_symbol', 'etfsymbol', 'fund_ticker', 'etf_ticker', 'fund'];
-  const sameFund = (v: unknown) => fundOf(v) === evidence.fund;
+  const sameFund = (v: unknown) => {
+    const symbol = fundOf(v);
+    return symbol === evidence.fund || (symbol !== undefined && symbol === requestedSymbol);
+  };
   if (conflicts(dataset.provenance.parameters, ['symbol', 'ticker'], sameFund))
     return 'The acquired request parameters and ETF receipt must identify one fund.';
   if (evidence.kind !== 'holdings') fundFields.push('symbol', 'ticker');
@@ -56,6 +65,8 @@ function acquisitionIssue(dataset: WidgetDataset, evidence: EtfEvidence): string
   ];
   const weights = dataset.columns.filter(c => (c.sourceFieldId ?? c.id).toLowerCase() === 'weight');
   if (!weights.length) return 'The acquired ETF source needs an original fractional weight field.';
+  if (weights.some(column => column.format?.formatterFn === 'percent'))
+    return 'The acquired ETF weight formatter declares percentage points. Use original fractional weights.';
   for (const check of checks) {
     if (conflicts(dataset.provenance.parameters, check.names, check.valid)) return check.issue;
     for (const column of dataset.columns) {
@@ -86,12 +97,15 @@ export function etfAcquisitionProvenance(dataset: WidgetDataset, acquisition?: B
   const kind = kindFromRoute ?? receipt?.etf_kind;
   const requestFund = fundOf(acquisition?.parameters.symbol);
   const receiptFund = fundOf(receipt?.fund_symbol);
-  const fund = kindFromRoute ? requestFund : receiptFund;
-  if (!isKind(kind) || !fund || (acquisition?.parameters.symbol !== undefined && requestFund !== fund) ||
+  // EODHD fetches a bare ticker on the requested exchange (US by default).
+  // Exposure rows may echo that bare request, whereas holding symbols name constituents.
+  const fund = kindFromRoute ? eodhdFund(requestFund, acquisition?.parameters.exchange) : receiptFund;
+  if (!isKind(kind) || !fund || (!kindFromRoute && acquisition?.parameters.symbol !== undefined && requestFund !== fund) ||
       (kindFromRoute && acquisition?.parameters.provider !== undefined && acquisition.parameters.provider !== 'eodhd'))
     return invalid('Choose an ETF source acquired for one fund and a compatible exposure kind.');
   const basis = basisFor(kind);
-  if (receipt && (receiptFund !== fund || receipt.etf_kind !== kind || receipt.weight_basis !== basis))
+  const receiptMatchesFund = receiptFund === fund || (kindFromRoute && receiptFund === requestFund);
+  if (receipt && (!receiptMatchesFund || receipt.etf_kind !== kind || receipt.weight_basis !== basis))
     return invalid('The ETF receipt must establish the same fund, exposure kind and weight basis as the acquisition.');
   const coverage = receipt?.holdings_coverage ?? 'unknown';
   const asOf = receipt?.as_of;
@@ -106,8 +120,14 @@ export function etfAcquisitionProvenance(dataset: WidgetDataset, acquisition?: B
     sourceWidgetId: provenance.sourceWidgetId, acquiredRowCount: rows.length,
     ...(receiptTime !== undefined && acquisition && receiptTime !== acquisition.retrievedAt ? { acquiredAt: acquisition.retrievedAt } : {}),
     ...(asOf !== undefined ? { asOf } : {}), ...(retrievedAt !== undefined ? { retrievedAt } : {}) };
-  const issue = acquisitionIssue(dataset, evidence);
+  const issue = acquisitionIssue(dataset, evidence, kindFromRoute ? requestFund : undefined);
   return withEvidence(issue ? { ...evidence, issue } : evidence);
+}
+
+// Presentation may narrow an ETF acquisition without changing the number of delivered rows.
+export function etfPresentationProvenance(provenance: DatasetProvenance, filtered: boolean): DatasetProvenance {
+  if (!filtered || provenance.metadata?.etfEvidence === undefined) return provenance;
+  return { ...provenance, metadata: { ...provenance.metadata, etfSourceFiltered: true } };
 }
 
 function validEvidence(value: unknown): value is EtfEvidence {
@@ -136,7 +156,7 @@ export function readEtfEvidence(dataset: WidgetDataset, expected: EtfEvidence['k
       || completeness.acquiredRowCount !== evidence.acquiredRowCount || rows.length > evidence.acquiredRowCount)
     return refuse('The ETF source lineage or acquired row count is unavailable.');
   const notes = [`Transport coverage is ${completeness.kind}. Provider holdings coverage is ${evidence.holdingsCoverage}.`];
-  if (rows.length < evidence.acquiredRowCount) notes.push(`Filtered source delivered ${rows.length} of ${evidence.acquiredRowCount} acquired rows.`);
+  if (provenance.metadata?.etfSourceFiltered === true || rows.length < evidence.acquiredRowCount) notes.push(`Filtered source delivered ${rows.length} of ${evidence.acquiredRowCount} acquired rows.`);
   else notes.push(`${rows.length} acquired row${rows.length === 1 ? '' : 's'} delivered.`);
   notes.push(evidence.asOf ? `Snapshot as of ${evidence.asOf}.` : expected === 'holdings' ? 'Holdings as-of date not supplied.' : 'Snapshot as-of date not supplied.');
   if (evidence.retrievedAt !== undefined) notes.push(`Snapshot retrieved ${new Date(evidence.retrievedAt).toISOString()}.`);

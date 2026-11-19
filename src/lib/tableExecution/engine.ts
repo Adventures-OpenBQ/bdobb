@@ -6,7 +6,7 @@ import type { StatementIntent } from '../statementModel/types';
 import { statementPresentation } from '../statementPresentation';
 import { unpivotDatasetWithDescriptors } from '../tableModel/unpivot';
 import { estimateProvenance } from '../widgetData/chartRecipes/estimateEvidence';
-import { etfAcquisitionProvenance } from '../widgetData/chartRecipes/etfEvidence';
+import { etfAcquisitionProvenance, etfPresentationProvenance } from '../widgetData/chartRecipes/etfEvidence';
 import { priceAcquisitionProvenance } from '../widgetData/chartRecipes/priceEvidence';
 import { validateRuntimeParams, runtimeMatches, type RuntimeParams } from './runtimeParams';
 import { countColumn, countValues } from './counts';
@@ -215,7 +215,7 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
     },
     diagnostics: [...(input.diagnostics ?? []), ...pivotFoldWarnings(config).map(message => ({ code: 'LEGACY_FOLDS', message, severity: 'warning' as const }))],
     completeness: input.completeness,
-    provenance: { ...input.provenance, ...(result?.ok ? { inputMayContainAggregates: true } : {}) },
+    provenance: { ...etfPresentationProvenance(input.provenance, !!search || !!state.columnFilters?.length), ...(result?.ok ? { inputMayContainAggregates: true } : {}) },
   };
   // Reconciliation uses the unfiltered source hierarchy, never delivery blocks or
   // filtered survivors. The private second calculation cannot recursively reconcile.

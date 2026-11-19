@@ -105,3 +105,25 @@ it('recognizes an explicit fractional unit without changing any weight', () => {
   expect(readEtfEvidence(source, 'holdings').ok).toBe(true);
   expect(source.rows[0].values.weight).toBe(.5);
 });
+
+it.each([
+  [{ symbol: 'demo' }, 'DEMO.US'],
+  [{ symbol: 'demo', exchange: 'lse' }, 'DEMO.LSE'],
+  [{ symbol: 'demo.lse', exchange: 'US' }, 'DEMO.LSE'],
+] as const)('qualifies the known instrument from %o and accepts provider exposure echoes', (params, fund) => {
+  for (const [route, kind] of [['holdings', 'holdings'], ['sectors', 'sector'], ['countries', 'region']] as const) {
+    const receipt = { fund_symbol: fund, etf_kind: kind, weight_basis: kind === 'holdings' ? 'fund-assets' : 'equity-exposure' };
+    expect(readEtfEvidence(raw('/eodhd/etf/' + route, params, receipt), kind)).toMatchObject({ ok: true, evidence: { fund } });
+    expect(readEtfEvidence(raw('/eodhd/etf/' + route, params, { ...receipt, fund_symbol: 'DEMO.TO' }), kind).ok).toBe(false);
+  }
+  expect(readEtfEvidence(raw('/snapshot', {}, { ...receipt, fund_symbol: 'DEMO' }), 'holdings')).toMatchObject({ ok: true, evidence: { fund: 'DEMO' } });
+});
+
+it('distinguishes two exchanges for the same ticker and checks qualified exposure echoes', () => {
+  const data = (exchange: string, echo: string) => datasetFromRows([{ symbol: echo, sector: 'Energy', weight: .5 }], 'source', 1, 'backend',
+    undefined, [], undefined, { endpoint: '/eodhd/etf/sectors', parameters: { symbol: 'demo', exchange }, retrievedAt: 3000 });
+  expect(readEtfEvidence(data('US', 'demo.us'), 'sector')).toMatchObject({ ok: true, evidence: { fund: 'DEMO.US' } });
+  expect(readEtfEvidence(data('LSE', 'demo.lse'), 'sector')).toMatchObject({ ok: true, evidence: { fund: 'DEMO.LSE' } });
+  expect(readEtfEvidence(data('LSE', 'demo.us'), 'sector').ok).toBe(false);
+  expect(readEtfEvidence(data('LSE', 'other'), 'sector').ok).toBe(false);
+});

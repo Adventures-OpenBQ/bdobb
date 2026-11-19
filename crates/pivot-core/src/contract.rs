@@ -811,6 +811,16 @@ pub struct Provenance {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ValueRecord>,
 }
+impl Provenance {
+    /// Retain presentation scope separately from the original acquisition certification.
+    pub(crate) fn mark_filtered_etf(&mut self, filtered: bool) {
+        if let Some(metadata) = self.metadata.as_mut() {
+            if filtered && metadata.contains_key("etfEvidence") {
+                metadata.insert("etfSourceFiltered".into(), WireValue::Bool(true));
+            }
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ModelWarning {

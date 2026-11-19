@@ -82,7 +82,12 @@ it('matches ETF bindings by the field origin after renaming', () => {
 
   const exposure = { version: 1, kind: 'etf-exposure', fields: { category: 'bucket', weight: 'allocation' }, mode: 'sector' } as const;
   for (const [sourceFieldId, mode] of [['sector', 'sector'], ['country', 'region'], ['region', 'region']] as const) {
-    expect(savedBindingIssue({ ...exposure, mode }, [{ id: 'bucket', label: 'Bucket', dtype: 'text', sourceFieldId }, weight])).toBeUndefined();
+    const columns = [{ id: 'bucket', label: 'Bucket', dtype: 'text' as const, sourceFieldId }, weight];
+    expect(savedBindingIssue({ ...exposure, mode }, columns)).toBeUndefined();
+    const wrongMode = { ...exposure, mode: mode === 'sector' ? 'region' : 'sector' };
+    const imported = decodeRecipeOptions(wrongMode, 'etf-exposure');
+    expect(imported.ok).toBe(true);
+    if (imported.ok) expect(savedBindingIssue(imported.options, columns)).toMatch(/cannot supply exposure category/i);
   }
 });
 

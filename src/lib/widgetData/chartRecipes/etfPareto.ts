@@ -58,6 +58,8 @@ export function buildEtfPareto(dataset: WidgetDataset, options: ParetoOptions, c
     const weight = read(row, fields.weight);
     if (typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0 || weight > 1)
       return refuse('Each delivered holding weight must be a finite fraction in [0, 1] without a cell error.');
+    if (fields.label && Object.hasOwn(row.cellErrors ?? {}, fields.label))
+      return refuse('The selected holding label has a cell error. Repair the label or remove its binding.');
     const previous = holdings.get(id);
     if (previous) {
       if (previous.weight !== weight) return refuse('A delivered holding ID has conflicting weights.');

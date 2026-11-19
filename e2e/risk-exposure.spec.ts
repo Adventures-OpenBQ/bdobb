@@ -52,7 +52,6 @@ test('renders four financial questions with original units, panel order and cove
   });
   await expect(card(page, distribution)).toContainText('N = 7 daily returns for ALDER');
   await expect(card(page, distribution)).toContainText('2 known price gap(s)');
-  await expect(await hoverMark(page, histogram, histogram.locator('.barlayer .point path').last())).toContainText(/25%\].*3 observations/);
 
   const multiples = plot(page, panels);
   const series = await multiples.evaluate(el => (el as Graph)._fullData.map(t => ({ name: t.name, x: t.x, y: t.y })));
@@ -67,6 +66,9 @@ test('renders four financial questions with original units, panel order and cove
   });
   expect(ranges).toEqual([ranges[0], ranges[0], ranges[0]]);
   await expect(card(page, panels)).toContainText('Shared baseline 100 on 2026-03-03');
+  const panelPoint = multiples.locator('.scatterlayer .trace').first().locator('.points .point').nth(2);
+  await expect(await hoverMark(page, multiples, panelPoint)).toContainText(/Index .*Baseline 100 on 2026-03-03/);
+  await expect(await hoverMark(page, histogram, histogram.locator('.barlayer .point path').last())).toContainText(/25%\].*Count 3/);
   const holdings = plot(page, pareto);
   const [bars, line] = await holdings.evaluate(el => (el as Graph)._fullData.map(t => t.y));
   expect(bars).toHaveLength(50);
@@ -150,21 +152,23 @@ test('draws the entire extreme count-one bin and hovers its original return', as
   const area = (await graph.locator('.nsewdrag').boundingBox())!;
   expect(bar.x).toBeGreaterThanOrEqual(area.x - 1);
   expect(bar.x + bar.width).toBeLessThanOrEqual(area.x + area.width + 1);
-  await expect(await hoverMark(page, graph, last)).toContainText(/1\.7976931348623157E310%\].*1 observations/);
+  await expect(await hoverMark(page, graph, last)).toContainText(/1\.7976931348623157E310%\].*Count 1/);
   await graph.screenshot({ path: info.outputPath('extreme-bin.png') });
 });
 
 async function linkRegions(page: Page) {
   const widget = card(page, exposure);
   await widget.getByLabel('Exposure mode').selectOption('region');
-  await apply(widget);
-  await expect(widget).toContainText('Choose an ETF source with the requested exposure kind.');
-  await expect(plot(page, exposure)).toHaveCount(0);
+  await expect(widget.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+  await expect(widget).toContainText('Choose a presented exposure category field.');
+  await expect(plot(page, exposure)).toContainText('sector exposure');
   await widget.getByRole('button', { name: 'Card menu' }).click();
   await page.getByRole('menuitem', { name: 'Choose source' }).click();
   const dialog = page.getByRole('dialog', { name: 'Choose source' });
   await dialog.getByLabel('Source table').selectOption({ label: 'Region weights — Risk and exposure' });
   await dialog.getByRole('button', { name: 'Choose source' }).click();
+  await expect(plot(page, exposure)).toHaveCount(0);
+  await widget.getByLabel('Exposure mode').selectOption('region');
   await widget.getByLabel('Exposure category').selectOption('country');
   await apply(widget);
   await expect(plot(page, exposure)).toContainText('geographic exposure');
@@ -208,6 +212,9 @@ test('repairs the exposure source, filters holdings and reacquires a saved works
   await ready(reopened);
   expect(new Set(acquisitions)).toEqual(new Set(['prices', 'holdings', 'sectors', 'regions']));
   await expect(card(reopened, distribution).getByLabel('Bins')).toHaveValue('7');
+  const reopenedCounts = await plot(reopened, distribution).evaluate(el => (el as Graph)._fullData[0].y.map(Number));
+  expect(reopenedCounts).toHaveLength(7);
+  expect(reopenedCounts.reduce((sum, count) => sum + count, 0)).toBe(7);
   await expect(card(reopened, exposure).getByLabel('Exposure mode')).toHaveValue('region');
   await expect(card(reopened, exposure).getByLabel('Exposure category')).toHaveValue('country');
   expect(await plot(reopened, exposure).evaluate(el => (el as Graph)._fullData[1].x[0])).toBe(.18);
@@ -217,13 +224,48 @@ test('repairs the exposure source, filters holdings and reacquires a saved works
   await expect(plot(reopened, pareto)).toHaveCount(1);
 });
 
-test('scrolls every region and reaches its zero-weight marker on a narrow touch card', async ({ browser }, info) => {
+async function swipeToBottom(page: Page, viewport: Locator, graph: Locator) {
+  await viewport.scrollIntoViewIfNeeded();
+  const touch = await page.context().newCDPSession(page);
+  const top = (await viewport.boundingBox())!;
+  for (let i = 0; i < 12 && await viewport.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop > 2); i++) {
+    const surfaces = await graph.locator('.nsewdrag').evaluateAll(elements => elements.map(el => {
+      const { left, top, right, bottom } = el.getBoundingClientRect();
+      return { left, top, right, bottom };
+    }));
+    const visible = surfaces.map(rect => ({ x: (rect.left + rect.right) / 2, start: Math.min(rect.bottom, top.y + top.height) - 4,
+      end: Math.max(rect.top, top.y) + 4 })).sort((a, b) => (b.start - b.end) - (a.start - a.end))[0];
+    expect(visible.start - visible.end).toBeGreaterThan(15);
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: visible.x, y: visible.start }] });
+    for (let j = 1; j <= 8; j++) {
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: visible.x, y: visible.start - (visible.start - visible.end) * j / 8 }] });
+    }
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+  await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThanOrEqual(2);
+  await touch.detach();
+}
+
+test('scrolls to the final watchlist panel and zero-weight region and inspects both on touch cards', async ({ browser }, info) => {
   const context = await browser.newContext({ baseURL: 'http://localhost:' + (process.env.BDOBB_BROWSER_PORT ?? 4173),
     hasTouch: true, isMobile: true, viewport: { width: 880, height: 980 } });
   try {
     const page = await context.newPage();
     await importRisk(page);
     await ready(page);
+    await page.setViewportSize({ width: 600, height: 980 });
+    const panelsPlot = plot(page, panels);
+    const panelViewport = card(page, panels).locator('.chart-scroll-viewport');
+    await expect.poll(() => panelsPlot.evaluate(el => (el as Graph)._fullLayout.grid.columns)).toBe(1);
+    expect(await panelViewport.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(100);
+    await swipeToBottom(page, panelViewport, panelsPlot);
+    const point = panelsPlot.locator('.scatterlayer').last().locator('.points .point').nth(2);
+    await expect(point).toBeInViewport();
+    const box = (await point.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(panelsPlot.locator('.hoverlayer')).toContainText(/BIRCH.*Baseline 100 on 2026-03-03/);
+    await card(page, panels).screenshot({ path: info.outputPath('narrow-panels.png') });
+    await page.setViewportSize({ width: 880, height: 980 });
     await linkRegions(page);
     const widget = card(page, exposure);
     const graph = plot(page, exposure);
@@ -233,19 +275,7 @@ test('scrolls every region and reaches its zero-weight marker on a narrow touch 
     const viewport = widget.locator('.chart-scroll-viewport');
     const bounds = await viewport.evaluate(el => [el.clientHeight, el.scrollHeight]);
     expect(bounds[1]).toBeGreaterThan(bounds[0]);
-    await viewport.scrollIntoViewIfNeeded();
-    const top = (await viewport.boundingBox())!;
-    const touch = await context.newCDPSession(page);
-    const x = top.x + top.width * .8;
-    for (let i = 0; i < 8 && await viewport.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop > 2); i++) {
-      const start = top.y + top.height * .85;
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: start }] });
-      for (let j = 1; j <= 8; j++) {
-        await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: start - top.height * .68 * j / 8 }] });
-      }
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    }
-    await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThanOrEqual(2);
+    await swipeToBottom(page, viewport, graph);
     const points = graph.locator('.scatterlayer .trace').last().locator('.points .point');
     await expect(points).toHaveCount(expected.length);
     await expect(points.last()).toBeInViewport();

@@ -196,3 +196,23 @@ it('keeps the question revision on a refresh of the same fund', () => {
   expect(refresher.revision).toBe(original.revision);
   expect(refresher.figure.layout.uirevision).toBe(original.revision);
 });
+
+it('refuses errors in an explicitly bound label even on duplicate rows', () => {
+  const data = holdings([.5, .5]);
+  data.rows[1].values.symbol = 'H0';
+  data.rows[1].cellErrors = { name: { code: 'fixture', message: 'broken' } };
+  expect(buildEtfPareto(data, options, context)).toMatchObject({ ok: false, message: expect.stringMatching(/label.*cell error/i) });
+  const unbound = { ...options, fields: { holding: 'symbol', weight: 'weight' } };
+  expect(plotted(buildEtfPareto(data, unbound, context)).bars.customdata[0][0]).toBe('H0');
+});
+
+it('changes the Pareto fund title and revision when a bare ticker changes exchange', () => {
+  const chart = (exchange: string) => buildEtfPareto(datasetFromRows(
+    [{ symbol: 'HOLDING', name: 'Holding', weight: .5 }], 'source', 1, 'backend', undefined, [], undefined,
+    { endpoint: '/eodhd/etf/holdings', parameters: { symbol: 'DEMO', exchange }, retrievedAt: 3000 }), options, context);
+  const london = chart('LSE'), us = chart('US');
+  if (!london.ok || !us.ok) throw new Error('Expected both acquisitions to draw');
+  expect(london.revision).not.toBe(us.revision);
+  expect(london.figure.layout.title).toMatchObject({ text: expect.stringContaining('DEMO.LSE') });
+  expect(us.figure.layout.title).toMatchObject({ text: expect.stringContaining('DEMO.US') });
+});

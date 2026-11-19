@@ -178,3 +178,16 @@ it('retains a long category list and reserves plot height for every delivered ro
   expect(stems.x).toHaveLength(195);
   expect(figure.layout.height).toBe(2420);
 });
+
+it.each([sector, region])('binds only the $mode dimension in a mixed snapshot', options => {
+  const data = exposure(options, [['Example', .5]]);
+  data.columns = [{ id: 'industry', sourceFieldId: 'sector', label: 'Industry' },
+    { id: 'place', sourceFieldId: 'country', label: 'Place' }, { id: 'weight', label: 'Weight' }];
+  data.rows[0].values = { industry: 'Industrials', place: 'Canada', weight: .5 };
+  for (const category of ['industry', 'place']) {
+    const result = buildEtfExposure(data, { ...options, fields: { ...options.fields, category } }, context);
+    if ((options.mode === 'sector') === (category === 'industry')) {
+      expect(plotted(result).dots.y).toEqual([category === 'industry' ? 'Industrials' : 'Canada']);
+    } else expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/category/i) });
+  }
+});

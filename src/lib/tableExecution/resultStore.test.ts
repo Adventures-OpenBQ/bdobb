@@ -353,3 +353,60 @@ describe.each(['typescript', 'rust'] as const)('%s direct ETF registration', eng
     } finally { executor.dispose(); }
   });
 });
+
+describe.each(['typescript', 'rust'] as const)('%s ETF linked presentation', engine => {
+  it.each(['percent', 'normalizedPercent'] as const)('retains the acquired %s unit and the all-matching filter', async format => {
+    const { ProviderBoundary } = await import('../../test/tableProviderBoundary');
+    const { createTableProvider } = await import('./rust/providerFactory');
+    const { readEtfEvidence } = await import('../widgetData/chartRecipes/etfEvidence');
+    const { beginSubset, appendSubset, commitSubset } = await import('./subsetTransfer');
+    const open = (id: string) => createTableProvider(id, engine, {
+      workerFactory: () => new ProviderBoundary(engine === 'rust' ? 'rust.worker' : 'table.worker') as unknown as Worker,
+    });
+    const parent = open('source'), child = open('child');
+    const childRevision = { ...revision, widgetId: 'child' };
+    const signal = new AbortController().signal;
+    const source = { ...input, rows: [{ id: '1', values: { symbol: 'HOLDING', weight: .5 } }],
+      columns: [{ id: 'symbol', label: 'Symbol' }, { id: 'weight', label: 'Reported weight', format: { formatterFn: format } }],
+      completeness: { ...input.completeness, acquiredRowCount: 1 }, provenance: { sourceWidgetId: 'source',
+        receipt: { fund_symbol: 'A', etf_kind: 'holdings', weight_basis: 'fund-assets' } } };
+    try {
+      await parent.registerInput(source, 1, signal);
+      await parent.applyModel({ table: { columnFilters: [{ id: 'symbol', value: 'HOLD' }] }, search: '' }, { kind: 'none' }, revision, signal);
+      const direct = await parent.chartData(revision, ['symbol', 'weight'], signal);
+      let transfer: ReturnType<typeof beginSubset> | undefined;
+      for await (const block of parent.presented(revision, signal)) {
+        transfer ??= beginSubset(block.transferId, revision);
+        appendSubset(transfer, block);
+      }
+      if (!transfer) throw new Error('Missing linked subset');
+      const subset = commitSubset(transfer);
+      subset.columns[1].format = { formatterFn: format === 'percent' ? 'normalizedPercent' : 'percent' }; // downstream display preference
+      await child.registerInput(subset, 1, signal);
+      await child.applyModel({ table: {}, search: '' }, { kind: 'none' }, childRevision, signal);
+      for (const chart of [direct, await child.chartData(childRevision, ['symbol', 'weight'], signal)]) {
+        expect(chart.rows.map(r => r.values.weight)).toEqual([.5]);
+        expect(readEtfEvidence(chart, 'holdings')).toMatchObject(format === 'percent'
+          ? { ok: false, message: expect.stringMatching(/fraction/i) }
+          : { ok: true, notes: expect.arrayContaining(['Filtered source delivered 1 of 1 acquired rows.']) });
+      }
+      if (format === 'normalizedPercent') {
+        const cleared = { ...revision, model: 2, output: 2 };
+        await parent.applyModel({ table: {}, search: '' }, { kind: 'none' }, cleared, signal);
+        expect(readEtfEvidence(await parent.chartData(cleared, ['symbol'], signal), 'holdings')).toMatchObject({
+          ok: true, notes: expect.arrayContaining(['1 acquired row delivered.']),
+        });
+        const checked = { ...revision, model: 3, output: 3 };
+        const analytical = { schemaVersion: 1, enabled: false, params: { promotePage: false, filters: [] },
+          categories: [{ id: 'category', name: 'Holding', sourceFieldId: 'symbol', transform: 'native' }],
+          measures: [], formulas: [], layout: { rows: [], columns: [], values: [] },
+          checklists: [{ categoryId: 'category', memberKeys: ['["string","HOLDING"]'] }], resultFilters: [],
+          subtotals: { groups: false, grandTotal: false } } as const;
+        await parent.applyModel({ table: {}, search: '', analytical }, { kind: 'none' }, checked, signal);
+        expect(readEtfEvidence(await parent.chartData(checked, ['symbol'], signal), 'holdings')).toMatchObject({
+          ok: true, notes: expect.arrayContaining(['Filtered source delivered 1 of 1 acquired rows.']),
+        });
+      }
+    } finally { parent.dispose(); child.dispose(); }
+  });
+});

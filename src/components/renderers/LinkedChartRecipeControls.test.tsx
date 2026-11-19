@@ -107,3 +107,14 @@ it('keeps an unavailable imported Pareto holding field visible for repair', () =
   fireEvent.click(apply);
   expect(save).toHaveBeenCalledWith({ version: 1, kind: 'etf-pareto', fields: { holding: 'ticker', weight: 'weight' } });
 });
+
+it('offers only the category dimension for the selected exposure mode', () => {
+  const columns = ['sector', 'country', 'weight'].map(sourceFieldId => ({ id: 'alias-' + sourceFieldId, sourceFieldId, label: sourceFieldId }));
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind="etf-exposure" columns={columns} loadSymbols={loadSymbols} disabled={false} onApply={save}/>);
+  expect(screen.queryByRole('option', { name: 'country' })).toBeNull();
+  fireEvent.change(screen.getByLabelText('Exposure mode'), { target: { value: 'region' } });
+  expect((screen.getByLabelText('Exposure category') as HTMLSelectElement).options).toHaveLength(2);
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ mode: 'region', fields: { category: 'alias-country', weight: 'alias-weight' } }));
+});

@@ -118,7 +118,7 @@ export function buildReturnDistribution(
           formatBoundary(bin.left), formatBoundary(bin.right), index === distribution.length - 1 ? ']' : ')',
           bin.count / samples.length,
         ]),
-        hovertemplate: `[%{customdata[0]}, %{customdata[1]}%{customdata[2]}<br>%{y} observations (%{customdata[3]:.${context.maxDecimals}%})<extra>%{fullData.name}</extra>`,
+        hovertemplate: `[%{customdata[0]}, %{customdata[1]}%{customdata[2]}<br>Count %{y} (%{customdata[3]:.${context.maxDecimals}%})<extra>%{fullData.name}</extra>`,
       }],
       layout: {
         ...themedLayout(context.theme), uirevision: revision, bargap: 0, showlegend: false,

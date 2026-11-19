@@ -9,6 +9,7 @@ import type { DatasetColumn } from '../../lib/widgetData/types';
 
 type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
+type Mode = 'sector' | 'region';
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 
 export const recipeLabels: Record<Kind, string> = {
@@ -18,16 +19,17 @@ export const recipeLabels: Record<Kind, string> = {
   'etf-pareto': 'ETF holdings Pareto', 'etf-exposure': 'ETF exposure',
 };
 
-function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric) {
-  return bindingRoles(kind, metric).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
+function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
+  return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
 export function recipeAvailability(kind: Kind, columns: DatasetColumn[]): string | null {
   const missing = missingRoles(kind, columns, 'eps');
+  if (kind === 'etf-exposure' && !missingRoles(kind, columns, 'eps', 'region').length) return null;
   if (!missing.length || (kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length)) return null;
   return 'Present raw fields for ' + missing.join(', ') + '.';
 }
-function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[]): Record<string, string> {
-  return Object.fromEntries(bindingRoles(kind, metric).flatMap(role => {
+function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[], mode?: Mode): Record<string, string> {
+  return Object.fromEntries(bindingRoles(kind, metric, mode).flatMap(role => {
     const available = bindingCandidates(role, columns);
     const named = available.find(c => role.names.includes((c.sourceFieldId ?? c.id).toLowerCase()));
     const column = named ?? (role.date && available.length === 1 ? available[0] : undefined);
@@ -41,20 +43,17 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
 }) {
   const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
     : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
-  const [fields, setFields] = useState<Record<string, string>>(() => saved ? { ...saved.fields } : defaults(kind, metric, columns));
+  const [mode, setMode] = useState<Mode>(() => saved?.kind === 'etf-exposure' ? saved.mode
+    : kind === 'etf-exposure' && missingRoles(kind, columns, metric).length && !missingRoles(kind, columns, metric, 'region').length ? 'region' : 'sector');
+  const [fields, setFields] = useState<Record<string, string>>(() => saved ? { ...saved.fields } : defaults(kind, metric, columns, mode));
   const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
   const [bins, setBins] = useState(String(saved?.kind === 'return-distribution' ? saved.bins : 30));
-  const [mode, setMode] = useState<'sector' | 'region'>(() => {
-    if (saved?.kind === 'etf-exposure') return saved.mode;
-    const category = columns.find(c => c.id === fields.category);
-    return /^(country|region)$/i.test(category?.sourceFieldId ?? category?.id ?? '') ? 'region' : 'sector';
-  });
   const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
   const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
   const needsSymbols = singleSymbol || multipleSymbols;
-  const roleList = bindingRoles(kind, metric);
+  const roleList = bindingRoles(kind, metric, mode);
   const fieldIssue = roleList.find(role => (
     !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
   ));
@@ -113,7 +112,11 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
         onChange={e => setSymbols(e.target.checked ? [...symbols, s] : symbols.filter(v => v !== s))}/>{s}</label>)}
     </fieldset>}
     {kind === 'return-distribution' && <label>Bins<input type="number" min="5" max="100" step="1" value={bins} onChange={e => setBins(e.target.value)}/></label>}
-    {kind === 'etf-exposure' && <label>Exposure mode<select value={mode} onChange={e => setMode(e.target.value === 'region' ? 'region' : 'sector')}>
+    {kind === 'etf-exposure' && <label>Exposure mode<select value={mode} onChange={e => {
+      const next = e.target.value === 'region' ? 'region' : 'sector';
+      setMode(next);
+      setFields({ ...fields, category: defaults(kind, metric, columns, next).category ?? '' });
+    }}>
       <option value="sector">Sector</option><option value="region">Region</option>
     </select></label>}
     {kind === 'correlation' && <><label>Lookback<input type="number" min="3" value={lookback} onChange={e => setLookback(e.target.value)}/></label>

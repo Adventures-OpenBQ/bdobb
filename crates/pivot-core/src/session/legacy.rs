@@ -652,6 +652,10 @@ pub(crate) fn prepare(
         chart_columns = Some(output.clone());
     }
     let mut provenance = input.provenance.clone();
+    provenance.mark_filtered_etf(
+        !d.definition.search.is_empty()
+            || state.column_filters.as_ref().is_some_and(|f| !f.is_empty()),
+    );
     if result.is_some() {
         provenance.input_may_contain_aggregates = Some(true)
     }

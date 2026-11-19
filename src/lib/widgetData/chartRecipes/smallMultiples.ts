@@ -96,7 +96,7 @@ export function buildSmallMultiples(
       type: 'scatter', mode: 'lines+markers', uid: `small-multiples-${id}`, name: escape(symbol),
       xaxis: `x${suffix}`, yaxis: `y${suffix}`, x: interval.map(({ date }) => date), y, connectgaps: false,
       line: { color: color(symbol) },
-      hovertemplate: '%{x|%Y-%m-%d}<br>Index %{y}<extra>%{fullData.name}</extra>',
+      hovertemplate: `%{x|%Y-%m-%d}<br>Index %{y}<br>Baseline ${BASE} on ${baseline}<extra>%{fullData.name}</extra>`,
     });
   }
 

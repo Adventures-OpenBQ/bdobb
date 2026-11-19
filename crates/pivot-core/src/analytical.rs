@@ -360,6 +360,14 @@ pub fn calculate_view(
         selection: selection.clone(),
         selection_namespace: None,
     };
+    let constraints = &view.pool.constraints;
+    view.provenance.mark_filtered_etf(
+        !constraints.search.is_empty()
+            || !constraints.filters.is_empty()
+            || !constraints.checklists.is_empty()
+            || view.pool.page.is_some()
+            || !active.result_filters.is_empty(),
+    );
     if let Some(presentation) = presentation {
         view.provenance
             .metadata

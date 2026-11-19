@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/chartShapes";
 import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
@@ -125,17 +125,31 @@ export function ChartRenderer({
   // goes away (i.e. on unmount).
   const scrolling = scrollHeight !== undefined;
   const coarseScroll = useMediaQuery(scrolling && touchScroll ? "(pointer: coarse)" : null) === true;
+  const draw = useMemo(() => ({
+    figure: coarseScroll && drawable ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable,
+    id: Symbol(), uirevision, scrolling,
+  }), [drawable, uirevision, scrolling, coarseScroll]);
+  const [failure, setFailure] = useState<{ id: symbol; message: string }>();
   useEffect(() => {
     const el = node.current;
-    if (!el || !drawable) return;
-    // Plotly cancels native touch movement while a drag mode is active.
-    const figure = coarseScroll ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable;
-    renderPlot(el, figure, uirevision).catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err);
-      void logError(`chart render failed: ${message}`);
-    });
-  }, [drawable, uirevision, scrolling, coarseScroll]);
+    const figure = draw.figure;
+    if (!el || !figure) return;
+    let active = true;
+    const render = async () => {
+      try {
+        await renderPlot(el, figure, draw.uirevision);
+      } catch (err) {
+        if (!active || node.current !== el) return;
+        const message = (err instanceof Error ? err.message : String(err)).slice(0, 400);
+        void logError(`chart render failed: ${message}`);
+        setFailure({ id: draw.id, message });
+      }
+    };
+    void render();
+    return () => { active = false; };
+  }, [draw]);
 
+  if (failure?.id === draw.id) return <p role="alert">Chart could not be drawn. {failure.message}</p>;
   if (!figure) return <p className="empty-state">Nothing chartable in this payload.</p>;
   if (unregisteredType !== null) {
     return (

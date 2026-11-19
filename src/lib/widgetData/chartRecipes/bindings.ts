@@ -8,7 +8,7 @@ type Role = { key: string; label: string; names: string[]; optional?: boolean; n
 export const adjustedPriceRole: Role = { key: 'price', label: 'Adjusted price', names: ['adjusted_close', 'adj_close', 'adjusted_price'], numeric: true };
 const dateRole = { key: 'date', label: 'Observation date', names: ['date', 'trading_date', 'observation_date'], date: true };
 const weightRole: Role = { key: 'weight', label: 'Reported weight', names: ['weight'], numeric: true };
-export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue'): Role[] {
+export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue', mode: 'sector' | 'region' = 'sector'): Role[] {
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
   if (kind === 'estimate-range') return [
@@ -26,7 +26,7 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     weightRole,
   ];
   if (kind === 'etf-exposure') return [
-    { key: 'category', label: 'Exposure category', names: ['sector', 'country', 'region'] },
+    { key: 'category', label: 'Exposure category', names: mode === 'sector' ? ['sector'] : ['country', 'region'] },
     weightRole,
   ];
   return [dateRole, adjustedPriceRole,
@@ -62,7 +62,7 @@ export function bindingCandidates(role: Role, columns: DatasetColumn[]): Dataset
 /** Check saved roles against the current presentation before either projection or execution. */
 export function savedBindingIssue(options: RecipeOptions, columns: DatasetColumn[], rows?: DatasetRow[]): string | undefined {
   const fields: Record<string, string | undefined> = options.fields;
-  for (const role of bindingRoles(options.kind, options.kind === 'estimate-range' ? options.metric : 'eps')) {
+  for (const role of bindingRoles(options.kind, options.kind === 'estimate-range' ? options.metric : 'eps', options.kind === 'etf-exposure' ? options.mode : undefined)) {
     const id = fields[role.key];
     if (id === undefined) continue;
     const column = columns.find(c => c.id === id);
