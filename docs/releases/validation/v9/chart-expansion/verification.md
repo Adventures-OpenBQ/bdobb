@@ -6,7 +6,7 @@ The local candidate rendered all seven charts in Chromium and restored them from
 
 | Repository | Product base | Tested candidate |
 | --- | --- | --- |
-| BDOBB | `a96b96195619e0c66f416bb8fb929bb8dac18cd7` | `006dbd5f7ec7c5cf226f6bc09bd5c74294e27480` |
+| BDOBB | `a96b96195619e0c66f416bb8fb929bb8dac18cd7` | `a92582c773985e330791edc11665f5c71c9a9e29` |
 | openbq-docker | `159e0db6c8209cf21c2e940e3845ad9561ba90a5` | `18b916dc70d241e88d34d398eb071ef2153ede15` |
 | openbq-eodhd | `5341fbf5031f6e65e6ee74eaf62fd56b069ba38c` | `0cfe6da4d7bd589423eb8831f7374a78e24547f6` |
 
@@ -30,7 +30,7 @@ The following commands ran individually and in order on arm64 macOS, using Node 
 | `pnpm install --frozen-lockfile` | 0 | Lockfile up to date. pnpm reported ignored dependency install scripts. |
 | `pnpm typecheck` | 0 | TypeScript passed. |
 | `pnpm lint` | 0 | ESLint passed. |
-| `pnpm test:run` | 0 | 9,169 passed, 47 skipped. Seven opt-in integration files cover live Rita, agent, login and backend services. |
+| `pnpm test:run` | 0 | 9,171 passed, 47 skipped. Seven opt-in integration files cover live Rita, agent, login and backend services. |
 | `pnpm scrub` | 0 | Both public-content and license-header checks were clean. |
 | `pnpm test:web` | 0 | 57 passed, including the guarded query route. |
 | `pnpm build` | 0 | Production assets and source maps emitted. Vite reported its chunk-size advisory. |
@@ -45,9 +45,9 @@ Totals include every regular file under `dist`, including source maps. Both buil
 | Output | Base | Candidate | Change |
 | --- | ---: | ---: | ---: |
 | Files | 128 | 130 | +2 |
-| Total bytes | 45,921,262 | 46,762,944 | +841,682 |
-| JavaScript bytes | 7,626,953 | 7,799,414 | +172,461 |
-| Source map bytes | 27,723,098 | 28,392,319 | +669,221 |
+| Total bytes | 45,921,262 | 46,763,246 | +841,984 |
+| JavaScript bytes | 7,626,953 | 7,799,462 | +172,509 |
+| Source map bytes | 27,723,098 | 28,392,573 | +669,475 |
 
 The recipe worker is 41,167 bytes, plus a 167,820-byte source map. Comparing `src/lib/plotly.ts` to the product base shows three additional trace modules, `pie`, `indicator` and `waterfall`. The five new recipes reuse scatter or heatmap. Package and lockfile diffs against the product base are empty.
 
@@ -67,7 +67,7 @@ Import the [native dashboard](../../../../examples/v9-chart-expansion.apps.json)
 
 The same run filtered and removed the price source, observed stale, paged and recovered states, changed correlation lookback, and reopened the native export in a separate page. [Stale completed chart](screenshots/stale.png) and [paged acquisition refusal](screenshots/refusal.png) show the two distinct states. All 16 checked-in captures were reviewed. Browser and companion fixtures use deterministic data in the existing test transport. The browser gate covers Chromium desktop and touch emulation.
 
-The explicit acquisition envelope uses the local JSON table decoder for ordinary backend tables. Complete or bounded evidence arrives with the rows. The adapter tests exercise TypeScript and Rust worker projections, including refusal of explicitly paged envelopes. The live SSRM executor keeps its paged contract. An episode-9 catalogue sync in a temporary directory emitted the same 16-app output before and after this change (SHA-256 `2078bfeb26e109a32cd3be1e5bcc238826150c92e509c0bc60123a699425c9ed`). The checked-in Docker catalogue has its pre-existing separate digest and has no packaging diff.
+The explicit acquisition envelope uses the local JSON table decoder for ordinary backend tables. Complete or bounded evidence arrives with the rows. The adapter tests exercise TypeScript and Rust worker projections, including refusal of explicitly paged envelopes. For a dotted table selector such as `results.rows`, an HTTP regression exercises the actual backend adapter and yield curve. A paged envelope produces the acquisition refusal, while a plain nested array retains its original extraction and numeric tenor. The live SSRM executor keeps its paged contract. An episode-9 catalogue sync in a temporary directory emitted the same 16-app output before and after this change (SHA-256 `2078bfeb26e109a32cd3be1e5bcc238826150c92e509c0bc60123a699425c9ed`). The checked-in Docker catalogue has its pre-existing separate digest and has no packaging diff.
 
 ## Provider and Docker gates
 
