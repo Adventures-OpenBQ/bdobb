@@ -419,6 +419,20 @@ Run `pnpm exec vitest run src/lib/widgetData/chartRecipes/workerClient.test.ts s
 
 Use `git add -- <explicit changed paths from this task>` after inspecting status, then `git commit -m "feat(charts): expose worker-backed linked financial recipes"`. Do not stage the whole worktree.
 
+### Task 12: Preserve already-shipped provider v9.0.1 baseline fixes (execute after Task 9, before Task 10)
+
+**Repository:** openbq-eodhd
+
+**Files:** Restore the released diffs in `openbq_eodhd/models/_client.py`, `calendar.py`, `dividend_yield.py`, `pyproject.toml`, `tests/test_client.py`, `tests/test_calendar.py`, `tests/test_phase3_market.py`.
+
+**Interfaces:** Retain the guarded reported-quarter port and inclusive threshold fix. The canonical provider execution branch was initially based on local `5341fbf`; Docker already pins released `59603cc` (`v9.0.1`). Preserve that released baseline before vendoring, not a release/version downgrade.
+
+- [ ] **Step 1: Read the exact released delta** `git diff 5341fbf 59603cc -- <listed paths>`. Carry the released tests first; pin token redaction (plain and URL-encoded errors, suppressed secret-bearing exception chains), request-limit/upstream error mapping, split-only trailing dividend yield and busy-day calendar paging.
+- [ ] **Step 2: Run RED:** `python -m pytest tests/test_client.py tests/test_calendar.py tests/test_phase3_market.py -q`; confirm the released regression cases fail against the older baseline, without live calls.
+- [ ] **Step 3: Port the released production delta** without overwriting the guarded earnings files. Keep `9.0.1` and its declared test dependency; no tag or publication. Record released donor commits in the report.
+- [ ] **Step 4: Run GREEN** focused command, full provider `python -m pytest tests -q`, Ruff on changed paths and `git diff --check`. Use the prepared Task 1 environment and no real API keys.
+- [ ] **Step 5: Commit** only listed paths with `fix(eodhd): preserve shipped v9.0.1 baseline fixes`; independent review before Task 10.
+
 ### Task 10: Package the paired v9 stack, examples and final verification
 
 **Repository:** openbq-docker plus bdobb
