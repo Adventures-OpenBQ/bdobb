@@ -37,3 +37,7 @@ The independently read canonical root tree and Docker vendor tree both resolve t
 ## Controller disposition
 
 The duplicate source-error notice is accepted as a nonblocking presentation follow-up. The application clears the previous source's chart correctly. No Critical or Important finding remains open. The original complete review and the scoped fix review were independent of the implementation agents. All changes remain on the local candidate branches.
+
+## Source-error follow-up
+
+BDOBB `d423622ce6892ce330d1065e01392674fc606122` resolves the duplicate alert for bullet and waterfall cards. The card displays the source diagnostic once. The chart renderer still displays chart-read, field-validation, refusal and save diagnostics. The regression uses the actual Choose source and Refresh actions to verify the single alert, the removal of the old plot and recovery with a distinct source revision. See [follow-up verification](verification.md#source-error-follow-up).

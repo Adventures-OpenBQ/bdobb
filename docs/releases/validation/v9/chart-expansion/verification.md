@@ -93,3 +93,15 @@ The image test containers used `--network none`, a read-only checkout at `/revie
 The independent whole-branch reviewer approved the consolidated fix wave with no open Critical or Important findings. [Per-finding dispositions](review.md) and [execution rulings with their costs](rulings.md) are preserved beside this record. A duplicate source-error notice on failed bullet/waterfall relinking is the one accepted nonblocking follow-up.
 
 A controller-run full verification on the reviewed code returned 9,190 BDOBB tests passed with 47 opt-in skips and 511 provider tests passed with one optional ArcticDB skip. All 118 packaged file hashes and the canonical/vendor Git tree were independently rechecked. The code and image pins above remain unchanged by this documentation handoff.
+
+## Source-error follow-up
+
+BDOBB `d423622ce6892ce330d1065e01392674fc606122` keeps the source failure alert in `LinkedCardBody`. A WidgetCard regression reproduced two alerts for the same failed relink before the fix. Both bullet and waterfall now display one alert, keep the old source's plot cleared while the new source is pending or blocked, and redraw with the recovered source's data and revision after Refresh. Separate renderer tests exercise chart-read and settings-save errors and a stale financial recipe after a failed refresh.
+
+| Command | Exit | Observation |
+| --- | ---: | --- |
+| `pnpm test:run src/components/WidgetCard.linked.test.tsx -t 'announces a failed'` | 1 before fix, 0 after fix | Both cases failed on duplicate alerts, then passed. |
+| `pnpm test:run src/components/WidgetCard.linked.test.tsx src/components/renderers/LinkedChartRenderer.test.tsx src/stores/tableExecutionStore.test.ts` | 0 | 160 passed. |
+| `pnpm typecheck` | 0 | TypeScript passed. |
+| `pnpm lint` | 0 | ESLint passed. |
+| `pnpm test:run` | 0 | 9,194 passed, 47 opt-in skips. Existing React `act(...)` warnings appeared in unrelated tests. |
