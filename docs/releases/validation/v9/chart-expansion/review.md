@@ -41,3 +41,5 @@ The duplicate source-error notice is accepted as a nonblocking presentation foll
 ## Source-error follow-up
 
 BDOBB `d423622ce6892ce330d1065e01392674fc606122` resolves the duplicate alert for bullet and waterfall cards. The card displays the source diagnostic once. The chart renderer still displays chart-read, field-validation, refusal and save diagnostics. The regression uses the actual Choose source and Refresh actions to verify the single alert, the removal of the old plot and recovery with a distinct source revision. See [follow-up verification](verification.md#source-error-follow-up).
+
+On 2026-11-19, the independent reviewer marked the follow-up **ready to merge**, with no Critical, Important or Minor findings. The reviewer inspected BDOBB `ec05ae7aeab197b8a8629e149418223ce8437785` through `d423622ce6892ce330d1065e01392674fc606122`. The review confirmed that the card owns the source alert and that the renderer still displays its chart-read and settings-save errors. The reviewer inspected the recorded failing and passing regression runs, affected and full Vitest runs, TypeScript and ESLint logs.

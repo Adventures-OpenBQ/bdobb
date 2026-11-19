@@ -105,3 +105,5 @@ BDOBB `d423622ce6892ce330d1065e01392674fc606122` keeps the source failure alert 
 | `pnpm typecheck` | 0 | TypeScript passed. |
 | `pnpm lint` | 0 | ESLint passed. |
 | `pnpm test:run` | 0 | 9,194 passed, 47 opt-in skips. Existing React `act(...)` warnings appeared in unrelated tests. |
+
+The independent follow-up review found the pinned BDOBB code ready to merge with no Critical, Important or Minor findings. The reviewer checked the code and the saved command logs. The relink regression exercised the card and worker in jsdom with a Plotly rendering stub. See the [independent verdict](review.md#source-error-follow-up).

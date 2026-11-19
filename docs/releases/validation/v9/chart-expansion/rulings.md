@@ -54,3 +54,4 @@ These are the chronological execution rulings from the project ledger. Each incl
 
 26. **Defer the duplicate error notice on a failed bullet/waterfall relink.** Cost if wrong: users receive a repeated visible or assertive notice; the old chart still clears correctly.
 
+**2026-11-19 follow-up to ruling 26.** BDOBB `d423622ce6892ce330d1065e01392674fc606122` closes the deferral. Failed bullet and waterfall relinks announce the source error once. The independent reviewer marked the fix ready to merge. See the [independent verdict](review.md#source-error-follow-up).
