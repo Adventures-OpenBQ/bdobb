@@ -1,8 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: async () => {}, purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter']) }));
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall']) }));
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
   const { useState } = await import('react');
@@ -23,7 +23,11 @@ import { TableExecutionRuntime } from './TableExecutionRuntime';
 import { createWorkerHandler } from '../lib/tableExecution/table.worker';
 import type { ExecutionRequest } from '../lib/tableExecution/types';
 import { saveLocalFile } from '../lib/localFiles';
-import { writeFile } from '@tauri-apps/plugin-fs';
+import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
+import { pivotValueKey } from '../lib/pivotKeys';
+import { renderPlot } from '../lib/plotly';
+import { fixture as incomeFixture } from '../lib/statementModel/compileFixtures';
+import * as fs from '@tauri-apps/plugin-fs';
 class Boundary {
   static failChild = false;
   onmessage: ((e: MessageEvent) => void) | null = null;
@@ -98,7 +102,7 @@ it.each(['missing field', 'execution failure', 'parent missing field'] as const)
   expect(screen.getByRole('button', { name: 'Pivot' })).toBeTruthy();
   expect(screen.getByText('Showing completed data (stale).')).toBeTruthy();
   expect(screen.queryByText('Source unavailable')).toBeNull();
-  await writeFile(`files/${file}`, new TextEncoder().encode('region,revenue,gone\nA,15,yes\nB,95,yes\n'));
+  await fs.writeFile(`files/${file}`, new TextEncoder().encode('region,revenue,gone\nA,15,yes\nB,95,yes\n'));
   fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
   await waitFor(() => expect(container.querySelector('tbody')?.textContent).toContain('95'));
   expect(tableExecutionStore.readView('d', 'child').status).toBe('ready');
@@ -150,4 +154,75 @@ it('keeps the chart presentation branch and completed metadata during recoverabl
   expect(screen.getByText('Showing completed data (stale).')).toBeTruthy();
   expect(screen.getByRole('alert').textContent).toContain('Missing source field');
   expect(screen.queryByText('Source unavailable')).toBeNull();
+});
+
+it.each(['bullet', 'waterfall'] as const)('announces a failed %s relink once and redraws on recovery', async type => {
+  vi.stubGlobal('Worker', Boundary);
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const { statement, ids } = incomeFixture();
+  const mapping = type === 'bullet'
+    ? { category: 'fiscal_period', measures: ['eps_actual'], period: 'Q2' }
+    : { category: LABEL_FIELD, measures: [`${pivotValueKey('FY2025')}${KEY_SEP}${ids.value}`] };
+  const root = async (id: string, value: number) => {
+    const csv = type === 'bullet'
+      ? `fiscal_period,period_ending,eps_actual\nQ2,2025-06-30,${value}\n`
+      : `symbol,period,date,year,start,end,revenue,cost_of_revenue\nACME,FY,2025-12-31,2025,2025-01-01,2025-12-31,${value},60\n`;
+    const file = await saveLocalFile(new File([csv], 'source.csv'));
+    return { ...source, id, title: id, params: { file },
+      ...(type === 'waterfall' ? { tableDefinition: { table: {}, search: '', analytical: statement } } : {}) };
+  };
+  const a = await root('A', 100);
+  const b = await root('B', 150);
+  const chart = card({ id: 'chart', widgetId: 'linked_chart', backendId: 'builtin',
+    linkedSource: { kind: 'widget', sourceWidgetId: a.id }, linkedChart: { ...mapping, type, display: 'grouped' } });
+  useDashboardStore.setState(s => ({ dashboards: s.dashboards.map(d => ({ ...d, tabs: [{ ...d.tabs[0], cards: [a, b, chart] }] })) }));
+  // Follow persisted card changes as DashboardGrid does.
+  function LinkedCard() {
+    const current = useDashboardStore(s => s.dashboards[0].tabs[0].cards.find(c => c.id === chart.id)!);
+    return <WidgetCard card={current} onRemove={() => {}} />;
+  }
+  let rejectRead!: (error: Error) => void;
+  const heldRead = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRead = reject; });
+  const readFile = fs.readFile;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) =>
+    path === `files/${b.params.file}` ? heldRead : readFile(path, options));
+  const diagnostic = 'Source B: File read failed';
+  const plot = vi.mocked(renderPlot);
+  try {
+    render(<><TableExecutionRuntime /><LinkedCard /></>);
+    const first = await screen.findByTestId('chart-plot');
+    expect(screen.getByText(/^Source A ·/)).toBeVisible();
+    const revisionA = plot.mock.lastCall?.[2];
+
+    fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
+    const dialog = within(screen.getByRole('dialog', { name: 'Choose source' }));
+    fireEvent.change(dialog.getByLabelText('Source table'), { target: { value: b.id } });
+    fireEvent.click(dialog.getByRole('button', { name: 'Choose source' }));
+    expect(await screen.findByText('Loading source B…')).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(first).not.toBeInTheDocument();
+
+    await act(async () => {
+      rejectRead(new Error('File read failed'));
+      await tableExecutionStore.settled('d');
+    });
+    expect(tableExecutionStore.readView('d', chart.id)).toMatchObject({ status: 'blocked', error: diagnostic });
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText('Loading source B…')).toBeNull();
+    expect(screen.getAllByRole('alert').map(alert => alert.textContent)).toEqual([diagnostic]);
+    expect(screen.getByText(diagnostic)).toBeVisible();
+
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    const recovered = await screen.findByTestId('chart-plot');
+    expect(screen.getByText(/^Source B ·/)).toBeVisible();
+    expect(screen.queryByRole('alert')).toBeNull();
+    const [node, figure, revisionB] = plot.mock.lastCall!;
+    expect(node).toBe(recovered);
+    expect(revisionB).not.toBe(revisionA);
+    expect(figure.data[0]).toMatchObject(type === 'bullet'
+      ? { type: 'indicator', value: 150 } : { type: 'waterfall', y: expect.arrayContaining([150]) });
+  } finally {
+    read.mockRestore();
+  }
 });

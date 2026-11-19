@@ -289,6 +289,27 @@ it('bullet lists only *_actual metrics, offers the delivered quarters, and commi
 
 const quarterOptions = () => [...screen.getByLabelText('Quarter').querySelectorAll('option')].map(o => o.textContent);
 
+it('keeps a bullet settings-save error visible alongside a failed chart read', async () => {
+    const { store, card } = await bulletSetup();
+    try {
+        render(<LinkedChartRenderer dashboardId="d" card={card} refreshKey={0} store={store} onSettingsChange={async () => false}/>);
+        const figure = await screen.findByTestId('figure');
+        fireEvent.change(screen.getByLabelText('Quarter'), { target: { value: 'Q1' } });
+        expect(await screen.findByRole('alert')).toHaveTextContent('Chart settings could not be saved.');
+
+        vi.spyOn(store.readExecutor('d', 's')!, 'chartData').mockRejectedValueOnce(new Error('Chart data unavailable'));
+        await act(async () => {
+            store.updateDefinition('d', 's', { table: {}, search: 'Q2' }, { kind: 'none' });
+            await store.settled('d');
+        });
+        expect(await screen.findByText('Could not load chart: Chart data unavailable')).toBeVisible();
+        expect(screen.getAllByRole('alert').map(alert => alert.textContent)).toEqual([
+            'Chart settings could not be saved.', 'Could not load chart: Chart data unavailable',
+        ]);
+        expect(screen.getByTestId('figure')).toBe(figure);
+    } finally { cleanup(); store.disposeDashboard('d'); }
+});
+
 it('keeps replacement quarters after refusing a saved quarter that is unavailable', async () => {
     const { store, card } = await bulletSetup();
     const props = { dashboardId: 'd', card, refreshKey: 0, store, onSettingsChange: async () => true };
@@ -466,6 +487,18 @@ it('retains only a stale same-question success on transport failure; a refusal c
     await change(['unrelated']);
     expect(await screen.findByText(/fully loaded/)).toBeTruthy();
     expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+it('shows financial recipe source failures alongside the stale completed chart', async () => {
+  const { store, props, acquire, factory } = await setupCurve();
+  try {
+    render(<LinkedChartRenderer {...props}/>);
+    const figure = await screen.findByTestId('figure');
+    acquire.mockRejectedValue(new Error('Source acquisition failed'));
+    await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Source s: Source acquisition failed');
+    expect(screen.getByText(/updating chart.*stale/i)).toBeVisible();
+    expect(screen.getByTestId('figure')).toBe(figure);
   } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
 });
 it('fences late results when the source disappears or the saved recipe changes', async () => {
@@ -663,7 +696,8 @@ it.each(['bullet', 'waterfall'] as const)('fences %s on a pending or failed reli
     await waitFor(() => expect(rejectRead).toBeDefined());
     await act(async () => { rejectRead!(new Error('B acquisition failed')); await store.settled('d'); });
     expect(screen.queryByTestId('figure')).toBeNull();
-    expect(screen.getByText(/B acquisition failed/)).toBeVisible();
+    expect(store.readView('d', 'c')).toMatchObject({ status: 'blocked', error: 'Source B: B acquisition failed' });
+    expect(screen.queryByText('Loading source B…')).toBeNull();
     hold = false;
     await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
     const second = JSON.parse((await screen.findByTestId('figure')).textContent!);
