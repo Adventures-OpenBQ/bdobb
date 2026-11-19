@@ -6,17 +6,17 @@ The local candidate rendered all seven charts in Chromium and restored them from
 
 | Repository | Product base | Tested candidate |
 | --- | --- | --- |
-| BDOBB | `a96b96195619e0c66f416bb8fb929bb8dac18cd7` | `a92582c773985e330791edc11665f5c71c9a9e29` |
-| openbq-docker | `159e0db6c8209cf21c2e940e3845ad9561ba90a5` | `18b916dc70d241e88d34d398eb071ef2153ede15` |
-| openbq-eodhd | `5341fbf5031f6e65e6ee74eaf62fd56b069ba38c` | `0cfe6da4d7bd589423eb8831f7374a78e24547f6` |
+| BDOBB | `a96b96195619e0c66f416bb8fb929bb8dac18cd7` | `27b4a56bff6fe3fbc7d57bcde42f0741c73f0eff` |
+| openbq-docker | `159e0db6c8209cf21c2e940e3845ad9561ba90a5` | `f1ff723e66ece8bf404a8211716a62591d464581` |
+| openbq-eodhd | `5341fbf5031f6e65e6ee74eaf62fd56b069ba38c` | `349f2de40773cf2e1d9e2993ebabf3184871c07d` |
 
-The BDOBB packaging change starts at `1ae04481fb6ec6cd2ca0ce4a04c3a366c4947519`. The provider includes guarded estimates, its inclusive 10% threshold and the shipped v9.0.1 error, redaction, calendar and dividend-yield fixes. The only change after `a3afdca9f7d7b42c7cc6cdf8d58eec0bdaca4dfa` normalizes an inert test placeholder for the SDK and Docker's public-content scan. Package version is 9.0.1. The separate existing provider tag `v9.0.1` resolves to `59603cc1957b01af98b75be257520b0f48a637fc`.
+The BDOBB packaging change starts at `1ae04481fb6ec6cd2ca0ce4a04c3a366c4947519`. The provider includes guarded estimates, its inclusive 10% threshold and the shipped v9.0.1 error, redaction, calendar and dividend-yield fixes. The reviewed provider also preserves reported quarters when an optional analyst count is nonfinite. Its tests use an inert SDK placeholder. Package version is 9.0.1. The separate existing provider tag `v9.0.1` resolves to `59603cc1957b01af98b75be257520b0f48a637fc`.
 
-Docker's `v9/eodhd/source.json` records the exact provider commit and SHA-256 digests for all 118 tracked files. The vendored directory and canonical commit have the same Git tree, `6e6928137464a9068f5bde6c2ff342233230c31a`. There are zero packaging edits in this tree. Run these commands in the respective repositories to verify the identity.
+Docker's `v9/eodhd/source.json` records the exact provider commit and SHA-256 digests for all 118 tracked files. The vendored directory and canonical commit have the same Git tree, `60e1d3f87747bf2eff1830748d6a6bcd581a3911`. There are zero packaging edits in this tree. Run these commands in the respective repositories to verify the identity.
 
 ```sh
-git -C "$DOCKER_REPO" rev-parse 18b916dc70d241e88d34d398eb071ef2153ede15:v9/eodhd/source
-git -C "$PROVIDER_REPO" rev-parse '0cfe6da4d7bd589423eb8831f7374a78e24547f6^{tree}'
+git -C "$DOCKER_REPO" rev-parse f1ff723e66ece8bf404a8211716a62591d464581:v9/eodhd/source
+git -C "$PROVIDER_REPO" rev-parse '349f2de40773cf2e1d9e2993ebabf3184871c07d^{tree}'
 ```
 
 The public web preview retains its published v9 Docker pin `d81131133fbdf850db8f854ae5c08d1c496d0dd7` and vendored policy SHA-256 `9bb645fcc139e399f36a03fd53521a21942c92884d0253c9d7d35705a6876361`. The existing policy accepted the exact candidate earnings-vs-estimates URL, including its symbol and provider query. The web security test asserts this and the image checks verify the corresponding endpoint and widget.
@@ -30,7 +30,7 @@ The following commands ran individually and in order on arm64 macOS, using Node 
 | `pnpm install --frozen-lockfile` | 0 | Lockfile up to date. pnpm reported ignored dependency install scripts. |
 | `pnpm typecheck` | 0 | TypeScript passed. |
 | `pnpm lint` | 0 | ESLint passed. |
-| `pnpm test:run` | 0 | 9,171 passed, 47 skipped. Seven opt-in integration files cover live Rita, agent, login and backend services. |
+| `pnpm test:run` | 0 | 9,190 passed, 47 skipped. Seven opt-in integration files cover live Rita, agent, login and backend services. |
 | `pnpm scrub` | 0 | Both public-content and license-header checks were clean. |
 | `pnpm test:web` | 0 | 57 passed, including the guarded query route. |
 | `pnpm build` | 0 | Production assets and source maps emitted. Vite reported its chunk-size advisory. |
@@ -45,11 +45,11 @@ Totals include every regular file under `dist`, including source maps. Both buil
 | Output | Base | Candidate | Change |
 | --- | ---: | ---: | ---: |
 | Files | 128 | 130 | +2 |
-| Total bytes | 45,921,262 | 46,763,246 | +841,984 |
-| JavaScript bytes | 7,626,953 | 7,799,462 | +172,509 |
-| Source map bytes | 27,723,098 | 28,392,573 | +669,475 |
+| Total bytes | 45,921,262 | 46,767,826 | +846,564 |
+| JavaScript bytes | 7,626,953 | 7,801,530 | +174,577 |
+| Source map bytes | 27,723,098 | 28,395,085 | +671,987 |
 
-The recipe worker is 41,167 bytes, plus a 167,820-byte source map. Comparing `src/lib/plotly.ts` to the product base shows three additional trace modules, `pie`, `indicator` and `waterfall`. The five new recipes reuse scatter or heatmap. Package and lockfile diffs against the product base are empty.
+The recipe worker is 34,367 bytes, plus a 145,300-byte source map. Comparing `src/lib/plotly.ts` to the product base shows three additional trace modules, `pie`, `indicator` and `waterfall`. The five new recipes reuse scatter or heatmap. Package and lockfile diffs against the product base are empty.
 
 ## Browser and fixture evidence
 
@@ -67,21 +67,23 @@ Import the [native dashboard](../../../../examples/v9-chart-expansion.apps.json)
 
 The same run filtered and removed the price source, observed stale, paged and recovered states, changed correlation lookback, and reopened the native export in a separate page. [Stale completed chart](screenshots/stale.png) and [paged acquisition refusal](screenshots/refusal.png) show the two distinct states. All 16 checked-in captures were reviewed. Browser and companion fixtures use deterministic data in the existing test transport. The browser gate covers Chromium desktop and touch emulation.
 
-The explicit acquisition envelope uses the local JSON table decoder for ordinary backend tables. Complete or bounded evidence arrives with the rows. The adapter tests exercise TypeScript and Rust worker projections, including refusal of explicitly paged envelopes. For a dotted table selector such as `results.rows`, an HTTP regression exercises the actual backend adapter and yield curve. A paged envelope produces the acquisition refusal, while a plain nested array retains its original extraction and numeric tenor. The live SSRM executor keeps its paged contract. An episode-9 catalogue sync in a temporary directory emitted the same 16-app output before and after this change (SHA-256 `2078bfeb26e109a32cd3be1e5bcc238826150c92e509c0bc60123a699425c9ed`). The checked-in Docker catalogue has its pre-existing separate digest and has no packaging diff.
+The explicit acquisition envelope uses the local JSON table decoder for ordinary backend tables. Complete or bounded evidence arrives with the rows. The adapter tests exercise TypeScript and Rust worker projections, including refusal of explicitly paged envelopes. For a dotted table selector such as `results.rows`, an HTTP regression exercises the actual backend adapter and yield curve. The receipt and rows survive selection, fiscal relabelling on either tab and date-bound parameter resolution. Paged snapshots refuse yield history. Ordinary results arrays keep their table rows and have unknown history coverage. Chromium verified the yield chart refuses a bare array and recovers on receipt of a bounded snapshot. The live SSRM executor keeps its paged contract. An episode-9 catalogue sync in a temporary directory emitted the same 16-app output before and after this change (SHA-256 `2078bfeb26e109a32cd3be1e5bcc238826150c92e509c0bc60123a699425c9ed`). The checked-in Docker catalogue has its pre-existing separate digest and has no packaging diff.
+
+Both local table engines preserve estimate comparison checks through a linked table. Hiding an inconsistent or partially missing currency leaves a repair message. Projected rows carry only requested cells. A canonical feed can omit a currency column. The estimate-range control and worker bind the fiscal period end through its source field. A multi-row bullet requires one instrument and unambiguous quarter keys. The renderer respects withheld and missing provider bands, including the recorded consensus fallback. A pending or failed relink clears the old bullet or waterfall, and a successful relink draws the new source with a distinct Plotly revision.
 
 ## Provider and Docker gates
 
-The prepared provider environment used Python 3.12.13, OpenBB Core 2.0.1 and the standard routers. A Python socket audit hook blocked network access. Provider credentials were unset. The local Docker 29.9.3 build produced Linux/arm64 image `sha256:20cb92c77bf6067093d9043186050e4a0b50c025df5b8e8bd8884622d483238c` with the locked 2.0.1 core/platform API and 9.0.1 extension.
+The prepared provider environment used Python 3.12.13, OpenBB Core 2.0.1 and the standard routers. A Python socket audit hook blocked network access. Provider credentials were unset. The local Docker 29.9.3 build produced Linux/arm64 image `sha256:7eb8decbad0e1afb68e940b755c4899e23fa8adcac62a2ac7754e032eb7630cc` with the locked 2.0.1 core/platform API and 9.0.1 extension.
 
 | Command | Exit | Observation |
 | --- | ---: | --- |
-| `python -m pytest tests -q` in provider | 0 | 508 passed, one optional ArcticDB integration skipped, one upstream aiohttp deprecation. |
-| `ruff check tests/test_fundamentals_cache.py` in provider | 0 | Canonical test-only edit passed. |
+| `python -m pytest tests -q` in provider | 0 | 511 passed, one optional ArcticDB integration skipped, one upstream aiohttp deprecation. |
+| `ruff check openbq_eodhd/models/estimates.py tests/test_earnings_vs_estimates.py` in provider | 0 | Canonical helper and route tests passed. |
 | `python3 scripts/check-public.py` in Docker | 0 | Public-content scan passed, including the vendored tests. |
-| `docker build --target v3 --progress=plain --iidfile /tmp/chart-task10-final-image .` | 0 | Local image built with no image tag. |
+| `docker build --target v3 --progress=plain --iidfile /tmp/chart-final-fix-image .` | 0 | Local image built with no image tag. |
 | `python -m pytest -p no:cacheprovider v9/eodhd/tests/test_stack.py v9/eodhd/tests/test_source_pin.py tests/test_images.py -q` in image | 0 | 20 passed, four subtests passed, one upstream deprecation. |
 | `python v9/eodhd/verify.py` in image | 0 | Nine stack checks passed. Verified 53 mirrors, their widget routes, the EODHD app, a stubbed price query and authenticated app loading. |
-| Offline HTTP query using FastAPI TestClient in image | 0 | HTTP 200. The recorded provider fixture yielded no_estimate for 2025-06-30, ok for 2026-06-30, and withheld for 2026-09-30, with both withheld averages null. |
+| Offline HTTP query using FastAPI TestClient in image | 0 | HTTP 200. The recorded provider fixture yielded no_estimate for 2025-06-30, ok for 2026-06-30, and withheld for 2026-09-30, with both withheld averages null. The approved quarter retained EPS average 1.8924 and returned null for its two malformed optional analyst counts. |
 | `git diff --check` and `git diff --cached --check` | 0 | Scoped changes passed whitespace checks. |
 
-The image test containers used `--network none`, a read-only checkout at `/review`, and the prepared pure-Python pytest modules at `/pytest` for the focused suite. The HTTP probe stubbed only the provider's two upstream fundamentals reads, using the canonical test's recorded inputs. Validation did not use live provider accounts or NAS deployment.
+The image test containers used `--network none`, a read-only checkout at `/review`, and the prepared pure-Python pytest modules at `/pytest` for the focused suite. The HTTP probe stubbed only the provider's two upstream fundamentals reads, using the canonical test’s recorded inputs and nonfinite analyst counts for the approved quarter. An inert placeholder satisfied local router credential validation. Validation did not use live provider accounts or NAS deployment.
