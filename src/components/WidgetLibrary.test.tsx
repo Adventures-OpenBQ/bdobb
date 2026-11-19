@@ -987,6 +987,21 @@ describe("WidgetLibrary", () => {
       expect(badge).toHaveAttribute("title", "yFinance");
     });
 
+    it("stays neutral for a provider whose key is optional and that nothing has tested", () => {
+      // The start-up probe never calls CFTC or EconDB, so there is no entry.
+      useProviderKeysStore.setState({ probe: { fred: "green" } });
+      const badge = only(["CFTC"]);
+      expect(badge).not.toHaveAttribute("data-tone");
+      expect(badge).toHaveAttribute("title", "CFTC");
+    });
+
+    it("tones an optional-key provider when key-maint has tested it", () => {
+      useProviderKeysStore.setState({ probe: { cftc: "green" } });
+      const badge = only(["CFTC"]);
+      expect(badge).toHaveAttribute("data-tone", "green");
+      expect(badge).toHaveAttribute("title", "CFTC: key accepted");
+    });
+
     it("tones a multi-source widget by its keyed providers, ignoring the keyless ones", () => {
       useProviderKeysStore.setState({ probe: { fred: "amber" } });
       const badge = only(["yFinance", "FRED"]);
