@@ -1,0 +1,34 @@
+{
+  "risk_demo_prices": {
+    "name": "Daily adjusted prices",
+    "description": "Fictional risk and ETF example.",
+    "type": "table",
+    "endpoint": "prices.json",
+    "params": [],
+    "refetchInterval": false
+  },
+  "risk_demo_holdings": {
+    "name": "Fund holdings",
+    "description": "Fictional risk and ETF example.",
+    "type": "table",
+    "endpoint": "holdings.json",
+    "params": [],
+    "refetchInterval": false
+  },
+  "risk_demo_sectors": {
+    "name": "Sector weights",
+    "description": "Fictional risk and ETF example.",
+    "type": "table",
+    "endpoint": "sectors.json",
+    "params": [],
+    "refetchInterval": false
+  },
+  "risk_demo_regions": {
+    "name": "Region weights",
+    "description": "Fictional risk and ETF example.",
+    "type": "table",
+    "endpoint": "regions.json",
+    "params": [],
+    "refetchInterval": false
+  }
+}

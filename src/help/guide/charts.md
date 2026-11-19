@@ -36,6 +36,18 @@ The reference backend's **TradingView Chart** (`advanced_charting`) is drawn wit
 
 Create a **linked chart** from a table’s card menu or the Widget Library’s source dialog. You can chart the presented categories and measures, or choose a financial chart for adjusted prices, observed yields, guarded quarterly estimates or a pinned income statement. The controls, source requirements and meaning of blank observations are in [[linked-widgets|Linked Widgets]].
 
+## Daily returns and watchlist panels
+
+Choose **Return distribution**, bind the presented date and adjusted price, choose a symbol, and apply. Select 5–100 bins. Each count represents a finite return between adjacent usable daily prices. A flat price contributes a zero return. A missing or nonpositive price interrupts the sequence. Hover a bar for its bounds, observation count and share of the sample. The last bin includes its upper bound. Constant returns share one centered bin.
+
+Choose **Small multiples** and select up to twelve symbols in panel order. Every series starts at 100 on the first shared positive price date and ends at the earliest last delivered date among those symbols. The panels share date and index scales. Broken lines mark known gaps. Resizing the card wraps panels into one, two or three columns. Both daily charts require documented complete or bounded daily prices and show the acquisition window.
+
+## ETF concentration and exposure
+
+**ETF holdings Pareto** ranks delivered constituents by reported weight of fund assets. The bars show individual weights and the line accumulates the displayed holdings on the same scale. The chart shows at most 50 and separately reports the count and weight of all distinct holdings delivered to it. Transport scope and provider holdings coverage appear separately. Filtering the source changes the rows in the calculation.
+
+**ETF exposure** draws a stem and dot for each reported sector or geographic category, including zero weights. Hover a dot for its percentage of equity exposure. Scroll inside a long list to reach every category. The source must establish one fund, the matching exposure kind and the weight basis. To switch from sectors to regions, use **Card menu → Choose source**, map the new category field, select the corresponding **Exposure mode** and apply.
+
 ## Zoom, pan and reset
 
 There is no chart toolbar — the mode bar is off.

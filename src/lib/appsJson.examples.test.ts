@@ -71,6 +71,7 @@ describe("docs/examples", () => {
     "v8.0.0-news.apps.json",
     "v8.0.0-pinned.apps.json",
     "v9-chart-expansion.apps.json",
+    "v9-risk-exposure.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -78,6 +79,27 @@ describe("docs/examples", () => {
   it("ships every known example file, and no file the list does not name", () => {
     expect(files).toEqual(expect.arrayContaining(KNOWN));
     expect([...files].sort()).toEqual([...KNOWN].sort());
+  });
+
+  it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {
+    const { apps } = load("v9-risk-exposure.apps.json");
+    const sources = ["prices", "holdings", "sectors", "regions"].map(name => widget("risk_demo_" + name));
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...sources]);
+    expect(imported.unresolved).toBe(0);
+    const cards = imported.dashboards[0].tabs[0].cards;
+    expect(cards).toHaveLength(8);
+    const prices = { date: "date", price: "adjusted_close", symbol: "symbol" };
+    const questions = [
+      { kind: "return-distribution", fields: prices, symbol: "ALDER", bins: 5 },
+      { kind: "small-multiples", fields: prices, symbols: ["CEDAR", "ALDER", "BIRCH"] },
+      { kind: "etf-pareto", fields: { holding: "symbol", label: "name", weight: "weight" } },
+      { kind: "etf-exposure", fields: { category: "sector", weight: "weight" }, mode: "sector" },
+    ];
+    const charts = cards.filter(card => card.widgetId === LINKED_CHART_ID);
+    expect(charts.map(card => card.linkedChart?.recipe)).toEqual(questions.map(q => ({ version: 1, ...q })));
+    expect(charts.map(card => cards.find(source => source.id === card.linkedSource?.sourceWidgetId)?.widgetId))
+      .toEqual(["risk_demo_prices", "risk_demo_prices", "risk_demo_holdings", "risk_demo_sectors"]);
+    expect(cards.filter(card => !card.linkedSource).map(card => card.widgetId)).toEqual(sources.map(source => source.id));
   });
 
   // The Demo providers cards are openbq-docker's widget ids (its /widgets.json

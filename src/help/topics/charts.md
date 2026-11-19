@@ -52,6 +52,10 @@ controls pick **Chart type** (Columns, Bars or Lines), a **Category**, the
 **Measures** to plot and, for columns and bars, **Display** as Grouped or
 Stacked. See Tables for what output it receives.
 
+For **Return distribution**, select adjusted daily prices, one symbol and 5–100 bins. Hover a bar for its interval, count and share. **Small multiples** compares up to twelve selected symbols from a shared base of 100. Gaps break both calculations. Both charts require complete or bounded daily history.
+
+**ETF holdings Pareto** compares individual and cumulative weight of fund assets for up to 50 delivered holdings. Read the delivered weight and provider coverage beneath the controls. **ETF exposure** shows the reported weight of equity exposure for every delivered sector or region. Scroll the plot to reach the last category. Use **Card menu → Choose source** to change tables, choose the matching exposure mode and category, then **Apply chart settings**.
+
 ## Highcharts, Vega-Lite and TradingView
 
 A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or
