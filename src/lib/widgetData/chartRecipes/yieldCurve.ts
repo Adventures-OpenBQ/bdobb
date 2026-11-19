@@ -25,24 +25,6 @@ function requestedDates(provenance: DatasetProvenance): string[] {
   return dates.every(date => calendarDate(date) === date) ? dates : [];
 }
 
-function resolutionNotes(requests: string[], observed: string[]): string[] {
-  // YieldCurve returns the latest observation at or before each supplied date.
-  // The actual dates are authoritative and remain the names of the series.
-  const resolved = new Map<string, string[]>();
-  let index = 0;
-  for (const request of requests) {
-    while (index < observed.length && observed[index] <= request) index++;
-    const date = observed[index - 1];
-    if (date && date !== request) {
-      const group = resolved.get(date) ?? [];
-      group.push(request);
-      resolved.set(date, group);
-    }
-  }
-  const resolutions = Array.from(resolved, ([date, requested]) => `${list(requested)} → ${date}`);
-  return resolutions.length ? [`As-of requests resolved to observed dates: ${list(resolutions)}.`] : [];
-}
-
 export function buildYieldCurve(
   dataset: WidgetDataset,
   options: Extract<RecipeOptions, { kind: 'yield-curve' }>,
@@ -93,7 +75,7 @@ export function buildYieldCurve(
     const rates = grid.map(months => curve.get(months) ?? null);
     gaps += rates.filter(rate => rate === null).length;
     return {
-      type: 'scatter', mode: 'lines+markers', name: date,
+      uid: `yield-curve-${date}`, type: 'scatter', mode: 'lines+markers', name: date,
       x: grid, y: rates, connectgaps: false,
       line: { color: color(date) },
       text: rates.map((rate, index) => `${labels[index]}: ${formatCell(rate, fields.rate, precision, undefined, { formatterFn: 'normalizedPercent' })}`),
@@ -104,11 +86,8 @@ export function buildYieldCurve(
   notes.push(`Plotted observation dates: ${list(dates)}.`);
 
   const requests = requestedDates(dataset.provenance);
-  const acquired = dataset.completeness.acquiredRowCount;
-  if (!invalidDates && (acquired === dataset.rows.length || acquired === undefined && !dataset.provenance.presentation)) {
-    const latestRequest = requests[requests.length - 1];
-    if (latestRequest && observed.every(date => date <= latestRequest)) notes.push(...resolutionNotes(requests, observed));
-  }
+  // A request can resolve to a date for which the provider emits no rows.
+  if (requests.length) notes.push(`Requested as-of dates: ${list(requests)}.`);
 
   const window = acquiredWindow(dataset.provenance);
   const revision = JSON.stringify([

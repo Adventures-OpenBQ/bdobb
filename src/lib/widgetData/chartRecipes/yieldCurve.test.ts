@@ -26,7 +26,7 @@ describe('buildYieldCurve', () => {
     expect(result.figure.layout.yaxis).toMatchObject({ tickformat: '.2%' });
   });
 
-  it('labels distinct observation dates and explains weekend requests resolving to one date', () => {
+  it('labels distinct observation dates and lists the weekend requests separately', () => {
     const dataset = source([row('month_1', .03), row('month_1', .03), row('month_1', .04, monday)]);
     dataset.provenance.parameters = { date: '2026-01-10, 2026-01-11,2026-01-12' };
     const result = buildYieldCurve(dataset, options, context);
@@ -35,8 +35,42 @@ describe('buildYieldCurve', () => {
       expect.objectContaining({ name: friday, y: [.03] }),
       expect.objectContaining({ name: monday, y: [.04] }),
     ]);
-    expect(result.notes.join(' ')).toMatch(/2026-01-10.*2026-01-11.*2026-01-09/s);
+    expect(result.notes).toContain('Requested as-of dates: 2026-01-10, 2026-01-11, 2026-01-12.');
+    expect(result.notes).toContain('Plotted observation dates: 2026-01-09, 2026-01-12.');
     expect(result.notes.join(' ')).toContain('1 identical duplicate');
+  });
+
+  it('does not pair a request with an earlier reported date when its own curve emitted no rows', () => {
+    const thursday = '2026-01-08';
+    // Friday had only a nonstandard four-month tenor, so the provider emits
+    // Thursday's curve and no rows for the Saturday request.
+    const dataset = source([row('year_10', .04, thursday)]);
+    dataset.provenance.receipt = { date: '2026-01-08,2026-01-10' };
+    const result = buildYieldCurve(dataset, options, context);
+    if (!result.ok) throw new Error(result.message);
+    expect(result.figure.data).toEqual([expect.objectContaining({ name: thursday })]);
+    expect(result.notes).toEqual([
+      'Plotted observation dates: 2026-01-08.',
+      'Requested as-of dates: 2026-01-08, 2026-01-10.',
+    ]);
+  });
+
+  it('keeps a curve UID when a refresh inserts or removes an earlier observation date', () => {
+    const earlier = row('month_1', .03);
+    const later = row('month_1', .04, monday);
+    const initial = buildYieldCurve(source([later]), options, context);
+    const inserted = buildYieldCurve(source([earlier, later]), options, context);
+    const removed = buildYieldCurve(source([earlier]), options, context);
+    if (!initial.ok || !inserted.ok || !removed.ok) throw new Error('Expected three valid figures');
+    expect(inserted.revision).toBe(initial.revision);
+    expect(removed.revision).toBe(initial.revision);
+    const first = initial.figure.data[0] as { uid: string };
+    const traces = inserted.figure.data as { uid: string }[];
+    expect(first.uid).toEqual(expect.any(String));
+    expect(traces).toHaveLength(2);
+    expect(traces[0].uid).not.toBe(traces[1].uid);
+    expect(traces[1].uid).toBe(first.uid);
+    expect(removed.figure.data[0]).toMatchObject({ uid: traces[0].uid });
   });
 
   it('preserves missing grid tenors as gaps and counts unknown maturities', () => {

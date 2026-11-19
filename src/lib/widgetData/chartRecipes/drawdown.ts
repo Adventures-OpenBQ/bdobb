@@ -61,17 +61,18 @@ export function buildDrawdown(
       peak = Math.max(peak, price);
       return price / peak - 1;
     });
-    const hasGaps = drawdowns.includes(null);
+    // Plotly also uses UIDs in CSS class names, so encode arbitrary symbols.
+    const id = `drawdown-${Array.from(symbol, char => char.codePointAt(0)!.toString(16)).join('-')}`;
     const line = {
-      type: 'scatter', mode: 'lines+markers', name: escape(symbol), legendgroup: symbol,
-      x: dates, y: drawdowns, fill: hasGaps ? 'none' : 'tozeroy', connectgaps: false,
+      uid: `${id}-line`, type: 'scatter', mode: 'lines+markers', name: escape(symbol), legendgroup: symbol,
+      x: dates, y: drawdowns, connectgaps: false,
       line: { color: color(symbol) },
       text: drawdowns.map(value => formatCell(value, fields.price, context.maxDecimals, undefined, { formatterFn: 'normalizedPercent' })),
       hovertemplate: '%{x|%Y-%m-%d}<br>%{text}<extra>%{fullData.name}</extra>',
     };
-    if (!hasGaps) return [line];
     const fill = {
-      type: 'scatter', mode: 'none', fill: 'toself', connectgaps: false, fillcolor: line.line.color, opacity: 0.5,
+      uid: `${id}-fill`, type: 'scatter', mode: 'none', fill: 'toself',
+      connectgaps: false, fillcolor: line.line.color, opacity: 0.5,
       legendgroup: symbol, showlegend: false, hoverinfo: 'skip',
       ...fillRuns(dates, drawdowns),
     };

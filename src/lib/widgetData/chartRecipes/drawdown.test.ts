@@ -17,12 +17,15 @@ describe('buildDrawdown', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    const trace = result.figure.data[0] as { y: number[] };
-    expect(result.figure.data).toEqual([expect.objectContaining({
-      type: 'scatter', fill: 'tozeroy', connectgaps: false,
-      x: ['2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08'],
-      text: ['0 %', '-20 %', '0 %', '-25 %'],
-    })]);
+    expect(result.figure.data).toEqual([
+      expect.objectContaining({ type: 'scatter', fill: 'toself', connectgaps: false, showlegend: false }),
+      expect.objectContaining({
+        type: 'scatter', name: 'A', connectgaps: false,
+        x: ['2026-01-05', '2026-01-06', '2026-01-07', '2026-01-08'],
+        text: ['0 %', '-20 %', '0 %', '-25 %'],
+      }),
+    ]);
+    const trace = result.figure.data[1] as { y: number[] };
     expect(trace.y).toHaveLength(4);
     [0, -.2, 0, -.25].forEach((value, i) => expect(trace.y[i]).toBeCloseTo(value));
     expect(result.figure.layout.title).toEqual(expect.objectContaining({ text: 'Drawdown from peak in loaded history' }));
@@ -58,11 +61,37 @@ describe('buildDrawdown', () => {
     ]);
   });
 
+  it('keeps a stable line and fill per symbol when a refresh introduces a gap', () => {
+    const rows = [row(5, 100), row(6, 85), row(7, 80), row(5, 50, 'B'), row(6, 40, 'B'), row(7, 38, 'B')];
+    const options = { ...drawdownOptions, symbols: ['A', 'B'] };
+    const initial = buildDrawdown(priceDataset(rows), options, context);
+    rows[1] = row(6, null);
+    const refreshed = buildDrawdown(priceDataset(rows), options, context);
+    if (!initial.ok || !refreshed.ok) throw new Error('Expected both figures to be valid');
+    expect(refreshed.revision).toBe(initial.revision);
+    type Trace = { uid: string; legendgroup: string; showlegend?: boolean; mode: string };
+    const roles = (data: unknown[]) => (data as Trace[]).map(({ uid, legendgroup, showlegend, mode }) => ({
+      uid, legendgroup, role: mode === 'none' ? 'fill' : 'line', legend: showlegend !== false,
+    }));
+    const before = roles(initial.figure.data);
+    expect(before).toEqual([
+      { uid: expect.any(String), legendgroup: 'A', role: 'fill', legend: false },
+      { uid: expect.any(String), legendgroup: 'A', role: 'line', legend: true },
+      { uid: expect.any(String), legendgroup: 'B', role: 'fill', legend: false },
+      { uid: expect.any(String), legendgroup: 'B', role: 'line', legend: true },
+    ]);
+    expect(new Set(before.map(trace => trace.uid)).size).toBe(4);
+    expect(roles(refreshed.figure.data)).toEqual(before);
+  });
+
   it('names omitted selections and refuses when no selected symbol survives', () => {
     const dataset = priceDataset([row(5, 100), row(5, 90), row(5, 25, 'B'), row(5, null, 'C')]);
     const result = buildDrawdown(dataset, { ...drawdownOptions, symbols: ['A', 'B', 'C'] }, context);
     if (!result.ok) throw new Error(result.message);
-    expect(result.figure.data).toEqual([expect.objectContaining({ name: 'B', y: [0] })]);
+    expect(result.figure.data).toEqual([
+      expect.objectContaining({ legendgroup: 'B', showlegend: false }),
+      expect.objectContaining({ name: 'B', y: [0] }),
+    ]);
     expect(result.notes.join(' ')).toMatch(/Conflicting duplicate prices.*A/s);
     expect(result.notes.join(' ')).toMatch(/C.*no valid/i);
     expect(buildDrawdown(dataset, drawdownOptions, context)).toMatchObject({
@@ -89,10 +118,10 @@ describe('buildDrawdown', () => {
     if (!result.ok || !refresh.ok || !newWindow.ok || !newSelection.ok) throw new Error('Expected four valid figures');
     expect(refresh.revision).toBe(result.revision);
     expect(refresh.figure.layout.uirevision).toBe(result.revision);
-    expect(refresh.figure.data).toEqual([expect.objectContaining({ y: [0, expect.closeTo(-.2), -.25] })]);
+    expect(refresh.figure.data[1]).toMatchObject({ y: [0, expect.closeTo(-.2), -.25] });
     expect(newWindow.revision).not.toBe(result.revision);
     expect(newSelection.revision).not.toBe(result.revision);
     const traces = newSelection.figure.data as { name: string; line: { color: string } }[];
-    expect(traces.find(trace => trace.name === 'A')?.line.color).toBe((result.figure.data[0] as typeof traces[number]).line.color);
+    expect(traces.find(trace => trace.name === 'A')?.line.color).toBe((result.figure.data[1] as typeof traces[number]).line.color);
   });
 });
