@@ -102,6 +102,20 @@ describe('buildMonthlyReturns', () => {
     expect(result.notes.join(' ')).toMatch(/incomplete/i);
   });
 
+  it.each(['2025', '2019'])('reports an incomplete current month for an acquisition ending in December %s', year => {
+    const dataset = priceDataset([
+      row(`${year}-11-29`, 100), row(`${year}-12-31`, 110),
+    ], `${year}-11-01`, `${year}-12-31`);
+    const result = buildMonthlyReturns(dataset, options, { ...context, today: '2026-01-01' });
+    const trace = heatmap(result);
+    expect(trace.y).toEqual([year]);
+    expect(trace.z[0][11]).toBeCloseTo(.1, 12);
+    if (!result.ok) throw new Error(result.message);
+    expect(result.notes).toEqual(expect.arrayContaining([
+      expect.stringMatching(/current month.*2026-01.*incomplete.*outside.*acqui/i),
+    ]));
+  });
+
   it('honors the extra day of February in a leap year', () => {
     const rows = [row('2024-01-31', 100), row('2024-02-28', 90)];
     const complete = heatmap(buildMonthlyReturns(priceDataset(rows, '2024-01-01', '2024-02-29'), options, context));

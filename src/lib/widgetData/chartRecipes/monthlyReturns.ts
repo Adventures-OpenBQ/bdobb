@@ -93,6 +93,8 @@ export function buildMonthlyReturns(
   if (!completed) notes.push('No completed months have a usable return.');
   if (missing) notes.push(`${missing} completed month(s) have missing or unusable returns.`);
   if (incomplete) notes.push(`${incomplete} incomplete month(s) are blank.`);
+  if (Math.floor(currentMonth / 12) > lastYear)
+    notes.push(`The current month (${context.today.slice(0, 7)}) is incomplete and falls outside the acquisition, which ends ${scope.end}.`);
 
   const revision = JSON.stringify([
     dataset.provenance.sourceWidgetId, options.kind, options.version,
