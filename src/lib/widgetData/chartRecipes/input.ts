@@ -3,7 +3,7 @@
 
 import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
-import { acquiredWindow, calendarDate, dailyScope, identityColumns, observationSymbol, priceDimensionIssue, symbolList, type PriceScope } from './priceEvidence';
+import { acquiredWindow, calendarDate, dailyScope, observationSymbol, priceIdentityFields, priceDimensionIssue, symbolList, type PriceScope } from './priceEvidence';
 import { requiredRecipeFields } from './settings';
 import type { PriceBindings, RecipeOptions } from './types';
 
@@ -42,10 +42,12 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
     return 'Bind the adjusted-price field.';
   const metadata = dataset.provenance.metadata;
   if (typeof metadata?.priceDimensionIssue === 'string') return metadata.priceDimensionIssue;
-  if (('kind' in dataset && dataset.kind === 'chartData' || dataset.provenance.presentation) && metadata?.priceDimensionsChecked !== true)
+  const verifiedIdentities = metadata?.priceSymbolFields;
+  if (('kind' in dataset && dataset.kind === 'chartData' || dataset.provenance.presentation)
+    && (metadata?.priceDimensionsChecked !== true || !Array.isArray(verifiedIdentities)))
     return 'The projected source cannot verify price units and instrument identity. Use a documented daily snapshot.';
-  const canonical = metadata?.priceSymbolField ?? identityColumns.find(id => dataset.columns.some(c => c.id === id));
-  if (fields.symbol && canonical && fields.symbol !== canonical) return 'Bind the source symbol field to preserve instrument identity.';
+  const identities = Array.isArray(verifiedIdentities) ? verifiedIdentities : priceIdentityFields(dataset.columns.map(c => c.id));
+  if (fields.symbol && identities.length && !identities.includes(fields.symbol)) return 'Bind the source symbol field to preserve instrument identity.';
   if (!fields.symbol && symbolList(dataset.provenance)?.length !== 1) return 'Bind a symbol field or use an acquisition with one unambiguous symbol.';
   return priceDimensionIssue(dataset, fields.price) ?? null;
 }
@@ -65,7 +67,8 @@ function omittedPoints(dataset: WidgetDataset, fields: PriceBindings): [string, 
   const evidence = dataset.provenance.metadata?.priceOmissions;
   if (count === undefined || count < dataset.rows.length || !isRecord(evidence)
     || evidence.acquired !== count || evidence.delivered !== dataset.rows.length || evidence.dateField !== fields.date
-    || evidence.symbolField !== (fields.symbol ?? null) || !Array.isArray(evidence.points)
+    || !Array.isArray(evidence.symbolFields) || (fields.symbol ? !evidence.symbolFields.includes(fields.symbol) : evidence.symbolFields.length !== 0)
+    || !Array.isArray(evidence.points)
     || evidence.points.length > count - dataset.rows.length) return null;
   const points: [string, string][] = [];
   for (const point of evidence.points) {

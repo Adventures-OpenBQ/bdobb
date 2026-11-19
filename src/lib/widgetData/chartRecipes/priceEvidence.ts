@@ -16,9 +16,9 @@ export function calendarDate(value: unknown): string | null {
 
 /** A receipt and the parameters attached to the same acquired payload must agree. */
 function fact(provenance: DatasetProvenance, key: string): unknown {
-  const requested = provenance.parameters?.[key], received = provenance.receipt?.[key];
-  if (requested !== undefined && received !== undefined && requested !== received) return null;
-  return received === undefined ? requested : received;
+  const values = [provenance.parameters, provenance.receipt].flatMap(record =>
+    Object.entries(record ?? {}).filter(([name]) => name.toLowerCase() === key).map(([, value]) => value));
+  return values.every(value => value === values[0]) ? values[0] : null;
 }
 export function acquiredWindow(provenance: DatasetProvenance) {
   const start = fact(provenance, 'start_date'), end = fact(provenance, 'end_date');
@@ -41,43 +41,60 @@ export function symbolList(provenance: DatasetProvenance): string[] | undefined 
   return symbols.every(Boolean) ? [...new Set(symbols)] : [];
 }
 
-export const identityColumns = ['symbol', 'ticker'] as const;
-export const venueColumn = 'exchange';
-export const unitColumns = ['currency', 'unit'] as const;
+function namedFields(ids: string[], ...names: string[]): string[] {
+  return ids.filter(id => names.includes(id.toLowerCase()));
+}
+export function priceIdentityFields(ids: string[]): string[] {
+  return namedFields(ids, 'symbol', 'ticker');
+}
 
-/** Verify source dimensions while they are available. A projected chart needs only the verdict. */
+/** Verify all observed aliases of each declared dimension against the full acquisition. */
 export function priceDimensionIssue(dataset: WidgetDataset, priceField?: string): string | undefined {
   const { rows, columns, provenance } = dataset;
-  if (columns.some(c => c.id === 'interval') && rows.some(row => row.values.interval !== '1d'))
+  const ids = columns.map(c => c.id);
+  const intervals = namedFields(ids, 'interval');
+  if (rows.some(row => intervals.some(id => row.values[id] !== '1d')))
     return 'The observations and acquisition must agree on a daily interval.';
-  const identities = identityColumns.filter(id => columns.some(c => c.id === id));
+  const identities = priceIdentityFields(ids);
   const symbols = symbolList(provenance);
   if (symbols?.length === 0) return 'Repair conflicting or ambiguous acquisition symbols.';
   const allowed = symbols && new Set(symbols);
   const venues = new Map<string, string>();
-  const hasVenue = columns.some(c => c.id === venueColumn);
+  const exchangeFields = namedFields(ids, 'exchange');
   for (const row of rows) {
     const symbol = identities.length ? observationSymbol(row.values[identities[0]])
       : symbols?.length === 1 ? symbols[0] : undefined;
     if (identities.length && (!symbol || (allowed && !allowed.has(symbol))
       || identities.some(id => observationSymbol(row.values[id]) !== symbol))) return 'Repair mixed or missing price symbol identities.';
-    if (hasVenue) {
-      const exchange = row.values[venueColumn];
+    for (const id of exchangeFields) {
+      const exchange = row.values[id];
       if (!symbol || typeof exchange !== 'string' || !exchange.trim() || (venues.has(symbol) && venues.get(symbol) !== exchange))
         return 'Repair conflicting or missing exchange identity for a price symbol.';
       venues.set(symbol, exchange);
     }
   }
-  const price = columns.find(c => c.id === priceField);
-  for (const id of unitColumns) {
+  const metadata = columns.find(c => c.id === priceField)?.metadata ?? {};
+  for (const dimension of ['currency', 'unit']) {
     const units = new Set<unknown>();
-    const declared = fact(provenance, id);
+    const declared = fact(provenance, dimension);
     if (declared !== undefined) units.add(declared);
-    if (price?.metadata?.[id] !== undefined) units.add(price.metadata[id]);
-    if (columns.some(c => c.id === id)) for (const row of rows) units.add(row.values[id]);
+    for (const id of namedFields(Object.keys(metadata), dimension)) units.add(metadata[id]);
+    for (const id of namedFields(ids, dimension)) for (const row of rows) units.add(row.values[id]);
     if (units.size > 1 || [...units].some(v => typeof v !== 'string' || !v.trim()))
-      return `Repair mixed or missing price ${id} values.`;
+      return `Repair mixed or missing price ${dimension} values.`;
   }
+}
+
+/** Only raw acquired rows can certify dimensions that a later table projection may omit. */
+export function priceAcquisitionProvenance(dataset: WidgetDataset): DatasetProvenance {
+  const { provenance, completeness } = dataset;
+  if ((!provenance.receipt && !provenance.parameters) || !dailyScope(provenance) || provenance.presentation || provenance.lineage?.length || provenance.inputMayContainAggregates
+    || ('kind' in dataset && dataset.kind === 'chartData') || completeness.acquiredRowCount !== dataset.rows.length
+    || completeness.kind !== 'complete' && completeness.kind !== 'bounded') return provenance;
+  const issue = priceDimensionIssue(dataset, 'adjusted_close');
+  const priceSymbolFields = priceIdentityFields(dataset.columns.map(c => c.id));
+  return { ...provenance, metadata: { ...provenance.metadata, priceDimensionsChecked: true, priceSymbolFields,
+    ...(issue ? { priceDimensionIssue: issue } : {}) } };
 }
 
 /** Omitted coordinates carry no prices. Emit them only for requested, presented dimensions. */
@@ -85,9 +102,12 @@ export function priceOmissionEvidence(
   dataset: Pick<WidgetDataset, 'provenance' | 'completeness'>, universe: DatasetRow[], presented: DatasetRow[], fields: string[],
 ): DatasetProvenance {
   const { provenance, completeness } = dataset;
-  if (!dailyScope(provenance) || provenance.inputMayContainAggregates || !fields.includes('date')
-    || !fields.includes('adjusted_close') || completeness.acquiredRowCount !== universe.length || universe.length <= presented.length) return provenance;
-  const symbolField = identityColumns.find(id => fields.includes(id));
+  const dates = namedFields(fields, 'date');
+  if (!dailyScope(provenance) || provenance.inputMayContainAggregates || dates.length !== 1
+    || !namedFields(fields, 'adjusted_close').length || completeness.acquiredRowCount !== universe.length || universe.length <= presented.length) return provenance;
+  const dateField = dates[0];
+  const symbolFields = priceIdentityFields(fields);
+  const symbolField = symbolFields[0];
   const symbols = symbolList(provenance);
   const single = symbols?.length === 1 ? symbols[0] : undefined;
   if (!symbolField && !single) return provenance;
@@ -99,11 +119,11 @@ export function priceOmissionEvidence(
     const symbol = symbolFor(row);
     if (!symbol) return provenance;
     if (!visibleSymbols.has(symbol)) continue;
-    const date = calendarDate(row.values.date);
+    const date = calendarDate(row.values[dateField]);
     if (!date) return provenance;
     omitted.push([symbol, date]);
   }
   return { ...provenance, metadata: { ...provenance.metadata, priceOmissions: {
-    acquired: universe.length, delivered: presented.length, dateField: 'date', symbolField: symbolField ?? null, points: omitted,
+    acquired: universe.length, delivered: presented.length, dateField, symbolFields, points: omitted,
   } } };
 }

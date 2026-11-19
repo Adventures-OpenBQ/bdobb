@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { dailyScope, identityColumns, priceOmissionEvidence, unitColumns, venueColumn } from '../widgetData/chartRecipes/priceEvidence';
+import { priceOmissionEvidence } from '../widgetData/chartRecipes/priceEvidence';
 import { filterKindFor } from '../tableFiltering';
 import { inspectionPage, inspectionCounts } from './inspection';
 import { selectionSummary } from './selection';
@@ -75,12 +75,7 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
     chartData(requestId, requested, fields) {
       const envelope = context(requestId, requested);
       if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
-      let provenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
-      if (dailyScope(provenance) && provenance.metadata?.priceDimensionsChecked !== true && !provenance.presentation && !provenance.lineage?.length) {
-        const unverified = [...identityColumns, ...unitColumns, venueColumn, 'interval'].find(id => view.inputColumns.some(c => c.id === id) && !fields.includes(id));
-        provenance = { ...provenance, metadata: { ...provenance.metadata, priceDimensionsChecked: !unverified,
-          ...(unverified ? { priceDimensionIssue: `Present the source ${unverified} field or import a verified daily snapshot.` } : {}) } };
-      }
+      const provenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
       return structuredClone({ ...envelope, kind: 'chartData', columns: view.columns.filter(c => fields.includes(c.id)), rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
     },
     presented(requestId, requested, transferId, batchSize = 500, ignoreSelection = false) {

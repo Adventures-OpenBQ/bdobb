@@ -223,3 +223,53 @@ it('retains an omitted date when symbol labels differ only in surrounding spaces
     ok: true, series: [{ symbol: 'A', points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }],
   });
 });
+
+const dailyReceipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
+const dailySnapshot = (rows: Record<string, unknown>[]) =>
+  new TextEncoder().encode(JSON.stringify({ rows, receipt: dailyReceipt, completeness: 'bounded' }));
+
+async function priceProjection(source: typeof input | Uint8Array, search: string, fields: string[]) {
+  const { ProviderBoundary } = await import('../../test/tableProviderBoundary');
+  const { createTableProvider } = await import('./rust/providerFactory');
+  const executor = createTableProvider('source', 'typescript', { workerFactory: () => new ProviderBoundary('table.worker') as unknown as Worker });
+  const signal = new AbortController().signal;
+  try {
+    if ('rows' in source) await executor.registerInput(source, 1, signal);
+    else await executor.importFile('prices.json', source.slice(), 1, signal);
+    await executor.applyModel({ table: {}, search }, { kind: 'none' }, revision, signal);
+    return await executor.chartData(revision, fields, signal);
+  } finally { executor.dispose(); }
+}
+
+it.each([
+  ['currency', { currency: 'USD', Currency: 'USD' }, { currency: 'USD', Currency: 'EUR' }],
+  ['currency case', { Currency: 'USD' }, { Currency: 'EUR' }],
+  ['unit', { UNIT: 'dollars' }, { UNIT: 'cents' }],
+  ['symbol alias', { Ticker: 'A' }, { Ticker: 'B' }],
+  ['venue', { Exchange: 'XNYS', EXCHANGE: 'XNYS' }, { Exchange: 'XNYS', EXCHANGE: 'XLON' }],
+  ['interval', { Interval: '1d' }, { Interval: '1wk' }],
+] as const)('refuses a snapshot with conflicting %s declarations after field projection', async (_dimension, first, second) => {
+  const data = dailySnapshot([first, second].map((extra, i) => ({
+    symbol: 'A', date: '2026-01-0' + (2 + i), adjusted_close: 10 + i, ...extra,
+  })));
+  expect(preparePrices(await priceProjection(data, '', Object.values(priceFields)), priceFields)).toMatchObject({ ok: false, refused: true });
+});
+
+it('checks units across the acquisition before a filtered raw chart can claim comparable prices', async () => {
+  const data = priceDataset(['USD', 'EUR', 'USD'].map((currency, i) => ({
+    symbol: 'A', date: '2026-01-0' + (2 + i), adjusted_close: 10 + i, currency, tag: i === 1 ? 'omit' : 'show',
+  })));
+  const projected = await priceProjection(data, 'show', [...Object.values(priceFields), 'currency']);
+  expect(projected.rows.map(row => row.values.currency)).toEqual(['USD', 'USD']);
+  expect(preparePrices(projected, priceFields)).toMatchObject({ ok: false, refused: true });
+});
+
+it.each(['symbol', 'Ticker', 'SYMBOL'])('binds the verified %s alias even when a different alias is first in the snapshot', async symbol => {
+  const data = dailySnapshot([10, 11, 12].map((adjusted_close, i) => ({
+    ticker: 'A', symbol: 'A', Ticker: 'A', SYMBOL: 'A', date: '2026-01-0' + (2 + i), adjusted_close, tag: i === 1 ? 'omit' : 'show',
+  })));
+  const fields = { ...priceFields, symbol };
+  const expected = { ok: true, series: [{ symbol: 'A', points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }] };
+  expect(preparePrices(await priceProjection(data, 'show', Object.values(fields)), fields)).toMatchObject(expected);
+  expect(preparePrices(await priceProjection(data, 'show', ['ticker', ...Object.values(fields)]), fields)).toMatchObject(expected);
+});

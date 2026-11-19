@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { isRecord } from './isRecord';
-import { priceDimensionIssue } from './widgetData/chartRecipes/priceEvidence';
+import { priceAcquisitionProvenance } from './widgetData/chartRecipes/priceEvidence';
 import { tableRows } from "./tableRowValues";
 import { identifyRows } from "./widgetData/identity";
 import type { Row } from "./tableColumns";
@@ -168,11 +168,7 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
         delete dataset.completeness.totalRowCount;
         delete dataset.completeness.totalRowCountKind;
       }
-      if (receipt.interval) {
-        const issue = priceDimensionIssue(dataset, 'adjusted_close');
-        const identity = dataset.columns.find(c => c.id === 'symbol' || c.id === 'ticker')?.id;
-        dataset.provenance.metadata = { priceDimensionsChecked: true, ...(identity ? { priceSymbolField: identity } : {}), ...(issue ? { priceDimensionIssue: issue } : {}) };
-      }
+      dataset.provenance = priceAcquisitionProvenance(dataset);
     }
     if (fiscal?.asReported) dataset.diagnostics = [{ ...FISCAL_AS_REPORTED }];
   } catch { throw new Error('Could not parse local table'); }
