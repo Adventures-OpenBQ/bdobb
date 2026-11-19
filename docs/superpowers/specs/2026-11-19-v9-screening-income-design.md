@@ -1,6 +1,6 @@
 # V9 screening and income charts: bubble regression, dividend steps and Sankey
 
-Date: 2026-11-19. Status: three-chart scope approved in chat; written design awaiting approval.
+Date: 2026-11-19. Status: written design approved in chat; implementation planning authorized on 2026-11-19.
 
 ## Intent and approved scope
 
@@ -186,4 +186,4 @@ Run the existing BDOBB shipping gates (typecheck, lint, full unit suite, scrub, 
 - [EODHD statement glossary](https://eodhd.com/financial-academy/financial-faq/fundamentals-glossary-common-stock) and [fundamentals structure](https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds): issuer-specific aggregate-expense conventions and statement-owned reporting currency.
 - [Plotly scatter](https://plotly.com/javascript/reference/scatter/) and [Sankey](https://plotly.com/javascript/reference/sankey/); implementation must use the installed version's supported attributes, not assume the current website's newer features exist locally.
 
-An independent builder check raised four material questions about overlapping expenses, dividend pre-normalization continuity/coverage, screener date-cohort semantics and statement currency/period completeness. The author resolved them in the revised contracts above without expanding the three-chart scope. The scoped readiness recheck returned "nothing important left" on 2026-11-19. This is design readiness, not implementation verification or user approval. This document must be approved before writing the implementation plan or product code.
+An independent builder check raised four material questions about overlapping expenses, dividend pre-normalization continuity/coverage, screener date-cohort semantics and statement currency/period completeness. The author resolved them in the revised contracts above without expanding the three-chart scope. The scoped readiness recheck returned "nothing important left" on 2026-11-19. This is design readiness, not implementation verification or user approval. The user approved this written design on 2026-11-19 and requested the implementation plan. Product implementation awaits review of that plan.
