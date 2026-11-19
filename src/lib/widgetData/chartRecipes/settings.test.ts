@@ -86,6 +86,28 @@ it('matches ETF bindings by the field origin after renaming', () => {
   }
 });
 
+it.each(['AMD,AVGO', ' AMD '])('rejects noncanonical return distribution symbol %j', symbol => {
+  const histogram = { version: 1, kind: 'return-distribution', fields: priceFields, bins: 30, symbol };
+  expect(decodeRecipeOptions(histogram, histogram.kind).ok).toBe(false);
+});
+
+it.each([
+  { symbols: ['AMD,AVGO'] },
+  { symbols: [' AMD '] },
+  { symbols: ['AMD', ' AMD '] },
+  { symbols: ['AMD', 'AMD'] },
+])('rejects small multiples selection $symbols without distinct observation symbols', ({ symbols }) => {
+  const multiples = { version: 1, kind: 'small-multiples', fields: priceFields, symbols };
+  expect(decodeRecipeOptions(multiples, multiples.kind).ok).toBe(false);
+});
+
+it('preserves first-batch recipe symbol validation', () => {
+  const legacyMonthly = { ...monthly, symbol: 'AMD,AVGO' };
+  const legacyCorrelation = { ...correlation, symbols: ['AMD', ' AMD '] };
+  expect(decodeRecipeOptions(legacyMonthly, legacyMonthly.kind)).toEqual({ ok: true, options: legacyMonthly });
+  expect(decodeRecipeOptions(legacyCorrelation, legacyCorrelation.kind)).toEqual({ ok: true, options: legacyCorrelation });
+});
+
 it('refuses missing, nonnumeric, grouped and calculated ETF weight fields', () => {
   const exposure = { version: 1, kind: 'etf-exposure', fields: { category: 'sector', weight: 'allocation' }, mode: 'sector' } as const;
   const category: DatasetColumn = { id: 'sector', label: 'Sector', dtype: 'text' };

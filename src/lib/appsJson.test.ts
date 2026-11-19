@@ -696,6 +696,7 @@ describe("planAppsImport", () => {
     for (const [options, refusal] of [
       [{ ...recipe, bins: undefined }, /bins/i],
       [{ ...recipe, bins: 101 }, /bins/i],
+      [{ ...recipe, symbol: "AMD,AVGO" }, /symbol/i],
       [{ ...recipe, coverage: "complete" }, /coverage/i],
       [{ ...recipe, fields: { date: "date", price: "date" } }, /distinct/i],
     ] as const) {

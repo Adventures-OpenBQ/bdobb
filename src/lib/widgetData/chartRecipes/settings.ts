@@ -3,6 +3,7 @@
 
 import { isRecord } from '../../isRecord';
 import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
+import { observationSymbol } from './priceEvidence';
 import type { RecipeOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
@@ -40,13 +41,17 @@ function nonblankString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function distinctSymbols(value: unknown, maximum = Infinity): boolean {
+function canonicalObservationSymbol(value: unknown): value is string {
+  return typeof value === 'string' && observationSymbol(value) === value;
+}
+
+function distinctSymbols(value: unknown, maximum = Infinity, isSymbol = nonblankString): boolean {
   if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype
     || value.length < 1 || value.length > maximum || Reflect.ownKeys(value).length !== value.length + 1) return false;
   const seen = new Set<string>();
   for (let i = 0; i < value.length; i++) {
     const item = Object.getOwnPropertyDescriptor(value, i);
-    if (!item?.enumerable || !('value' in item) || !nonblankString(item.value) || seen.has(item.value)) return false;
+    if (!item?.enumerable || !('value' in item) || !isSymbol(item.value) || seen.has(item.value)) return false;
     seen.add(item.value);
   }
   return true;
@@ -108,14 +113,15 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
       break;
     }
     case 'return-distribution': {
-      if (!nonblankString(value.symbol)) return invalid('Select one symbol for return distribution.');
+      if (!canonicalObservationSymbol(value.symbol)) return invalid('Select one source symbol for return distribution.');
       const { bins } = value;
       if (typeof bins !== 'number' || !Number.isInteger(bins) || bins < 5 || bins > 100)
         return invalid('Set return distribution bins to an integer between 5 and 100.');
       break;
     }
     case 'small-multiples':
-      if (!distinctSymbols(value.symbols, 12)) return invalid('Select 1 to 12 distinct symbols for small multiples.');
+      if (!distinctSymbols(value.symbols, 12, canonicalObservationSymbol))
+        return invalid('Select 1 to 12 distinct source symbols for small multiples.');
       break;
     case 'etf-exposure':
       if (value.mode !== 'sector' && value.mode !== 'region') return invalid('Choose sector or region for ETF exposure.');
