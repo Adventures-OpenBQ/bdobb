@@ -214,3 +214,13 @@ it('dispatches bullet to the bullet figure', () => {
     const r = buildLinkedFigure(d, { type: 'bullet', category: 'label', measures: ['x_actual'], display: 'grouped', period: 'FQ1' }, 'light', 0);
     expect(r.ok && r.figure.data[0]).toMatchObject({ type: 'indicator', value: 1.5 });
 });
+
+it('refuses recipe types on the synchronous path even if legacy fields are valid', () => {
+    const correlation: LinkedChartSettings = {
+        ...settings, type: 'correlation',
+        recipe: { version: 1, kind: 'correlation', fields: { date: 'date', price: 'adjusted_close' }, symbols: ['AMD'], lookback: 252, minOverlap: 60 },
+    };
+    expect(buildLinkedFigure(dataset, correlation, 'dark')).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/worker/i) });
+    expect(buildLinkedFigure(dataset, { ...correlation, recipe: undefined }, 'dark')).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/recipe options/i) });
+    expect(buildLinkedFigure(dataset, { ...settings, type: 'future-chart' } as unknown as LinkedChartSettings, 'dark')).toMatchObject({ ok: false, refused: true });
+});

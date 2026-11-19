@@ -137,3 +137,57 @@ it('a Workspace-synced card with a v4 field still exports in the BDOBB format', 
     expect(exportCompatibleApp(dashboard)).toMatchObject({ ok: true });
   }
 });
+
+const correlationSettings: LinkedChartSettings = {
+  type: 'correlation', display: 'grouped', measures: [],
+  recipe: {
+    version: 1, kind: 'correlation', fields: { date: 'date', price: 'adjusted_close', symbol: 'ticker' },
+    symbols: ['AMD', 'AVGO'], lookback: 252, minOverlap: 60,
+  },
+};
+
+it('recipe_options_round_trip preserves correlation settings and the remapped source', () => {
+  const producer = card({ id: 'prices-source', widgetId: 'prices' });
+  const linked = card({ id: 'chart', widgetId: 'linked_chart', linkedSource: { kind: 'widget', sourceWidgetId: producer.id }, linkedChart: correlationSettings });
+  const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [producer, linked] }] });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const [source, chart] = importApps(JSON.parse(JSON.stringify([exported.value])), []).dashboards[0].tabs[0].cards;
+  expect(chart.linkedSource).toEqual({ kind: 'widget', sourceWidgetId: source.id });
+  expect(chart.linkedChart).toEqual(correlationSettings);
+});
+
+it.each([
+  [{ version: 2 }, /version 1/i],
+  [{ kind: 'drawdown' }, /kind.*match/i],
+  [{ lookback: 10.5 }, /lookback.*integer/i],
+  [{ minOverlap: 253 }, /minOverlap.*lookback/i],
+  [{ fields: { date: 'date', price: '' } }, /price.*binding/i],
+  [{ plotly: { data: [] } }, /unsupported.*option/i],
+  [{ calculate: () => 0 }, /finite acyclic JSON/i],
+])('v4 import refuses malformed recipe options %j', (update, message) => {
+  const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const { cards } = exported.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  Object.assign(cards[0].extras, { linkedChart: { ...correlationSettings, recipe: { ...correlationSettings.recipe, ...update } } });
+  expect(() => importApps([exported.value], [])).toThrow(message);
+});
+
+it.each([
+  [{ ...correlationSettings, recipe: undefined }, /version 1.*recipe options/i],
+  [{ ...correlationSettings, type: 'line' }, /recipe options.*type/i],
+])('v4 import refuses incompatible recipe and chart type pairings', (linkedChart, message) => {
+  const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const { cards } = exported.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  Object.assign(cards[0].extras, { linkedChart });
+  expect(() => importApps([exported.value], [])).toThrow(message);
+});
+
+it('v4 import refuses options declared as accessors without invoking them', () => {
+  const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const { cards } = exported.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  const recipe = { ...correlationSettings.recipe, get lookback(): number { throw new Error('Option accessor ran'); } };
+  Object.assign(cards[0].extras, { linkedChart: { ...correlationSettings, recipe } });
+  expect(() => importApps([exported.value], [])).toThrow(/lookback.*expected JSON data/i);
+});

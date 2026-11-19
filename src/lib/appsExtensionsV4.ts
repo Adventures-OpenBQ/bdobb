@@ -8,6 +8,7 @@ import { isRecord } from './isRecord';
 import { reservedPivotName } from './paramGroups';
 import { AGG_NAMES, BUCKETS } from './types';
 import type { Dashboard, DashboardCard, PivotConfig } from './types';
+import { decodeRecipeOptions, isLegacyLinkedChartType, isRecipeType } from './widgetData/chartRecipes/settings';
 
 type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
   view?: 'calendar';
@@ -30,8 +31,11 @@ function checkedJson(value: unknown, path: string, depth = 0, seen = new Set<obj
   if (typeof value !== 'object' || value === null || seen.has(value)) extensionError(path, 'Expected finite acyclic JSON.');
   if (!Array.isArray(value) && (!isRecord(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))) extensionError(path, 'Expected plain JSON.');
   seen.add(value);
-  for (const [key, child] of Object.entries(value)) {
+  for (const key of Object.keys(value)) {
     if (['__proto__', 'constructor', 'prototype'].includes(key)) extensionError(path, 'Unsafe extension key.');
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !('value' in descriptor)) extensionError(`${path}.${key}`, 'Expected JSON data.');
+    const child: unknown = descriptor.value;
     if (child === undefined && !Array.isArray(value)) continue; // JSON omits optional object fields.
     checkedJson(child, `${path}.${key}`, depth + 1, seen);
   }
@@ -83,7 +87,17 @@ export function extras(value: unknown, path: string): Extras {
   }
   if (value.linkedChart !== undefined) {
     const c = value.linkedChart;
-    if (!isRecord(c) || !['bar', 'column', 'line', 'pie', 'bullet', 'waterfall'].includes(c.type as string) || (c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string') || !strings(c.measures) || !['grouped', 'stacked', 'percent'].includes(c.display as string) || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string))) extensionError(path, 'Invalid linked chart.');
+    const chartPath = `${path}.linkedChart`;
+    if (!isRecord(c) || typeof c.type !== 'string' || (!isLegacyLinkedChartType(c.type) && !isRecipeType(c.type)))
+      extensionError(chartPath, 'Invalid linked chart type. Choose a supported chart type.');
+    if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
+      || !strings(c.measures) || !['grouped', 'stacked', 'percent'].includes(c.display as string)
+      || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string)))
+      extensionError(chartPath, 'Invalid linked chart settings.');
+    if (isRecipeType(c.type) || c.recipe !== undefined) {
+      const recipe = decodeRecipeOptions(c.recipe, c.type);
+      if (!recipe.ok) extensionError(`${chartPath}.recipe`, recipe.message);
+    }
   }
   if (value.calendar !== undefined) {
     const c = value.calendar;

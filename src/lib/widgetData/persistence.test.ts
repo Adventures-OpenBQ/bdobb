@@ -37,3 +37,15 @@ it('persists the new linked chart values unchanged', () => {
   const bullet: DashboardCard['linkedChart'] = { type: 'bullet', display: 'grouped', category: 'fiscal_period', measures: ['eps_actual'], period: 'FQ3 2026' };
   expect(persistedCard({ ...child, linkedChart: bullet }).linkedChart).toEqual(bullet);
 });
+
+it('copies and persists versioned recipe options along with the remapped source', () => {
+  const linkedChart: NonNullable<DashboardCard['linkedChart']> = {
+    type: 'monthly-returns', display: 'grouped', measures: [],
+    recipe: { version: 1, kind: 'monthly-returns', fields: { date: 'date', price: 'adjusted_close' }, symbol: 'AMD' },
+  };
+  const copy = remapWidgetReferences({ ...child, linkedChart }, new Map([['child', 'chart-copy'], ['source', 'source-copy']]));
+  expect(copy.linkedChart?.recipe).not.toBe(linkedChart.recipe);
+  expect(JSON.parse(JSON.stringify(persistedCard(copy)))).toMatchObject({
+    id: 'chart-copy', linkedSource: { kind: 'widget', sourceWidgetId: 'source-copy' }, linkedChart,
+  });
+});
