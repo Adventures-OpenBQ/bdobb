@@ -9,7 +9,7 @@ import { buildPresenceIndex, presenceOf } from "../lib/libraryPresence";
 import { logError } from "../lib/logger";
 import { clampLogName } from "../lib/logNames";
 import { resolveSymbolOverride } from "../lib/params";
-import { needsKey, normalizeProvider, worstTone, type ProbeTone } from "../lib/providerKeys";
+import { needsKey, normalizeProvider, OPTIONAL_KEY_PROVIDERS, worstTone, type ProbeTone } from "../lib/providerKeys";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useFoldersStore } from "../stores/foldersStore";
@@ -56,13 +56,15 @@ const TONE_MEANING: Record<ProbeTone, string> = {
 
 /**
  * A provider outside key-maint's registry needs no credential, so there is
- * nothing to probe and nothing to colour — it stays the neutral badge.
+ * nothing to probe and nothing to colour — it stays the neutral badge. So
+ * does one whose key is optional, unless key-maint has tested that key.
  * Everything else is grey until a probe result for it lands.
  */
 function toneOf(provider: string, probe: Record<string, ProbeTone>): ProbeTone | null {
   if (!needsKey(provider)) return null;
   const key = normalizeProvider(provider);
-  return Object.hasOwn(probe, key) ? probe[key] : "grey";
+  if (Object.hasOwn(probe, key)) return probe[key];
+  return OPTIONAL_KEY_PROVIDERS.has(key) ? null : "grey";
 }
 
 /**
