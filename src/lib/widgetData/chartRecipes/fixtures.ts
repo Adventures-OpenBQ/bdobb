@@ -8,6 +8,12 @@ import type { RecipeOptions } from './types';
 export const priceFields = { date: 'date', price: 'adjusted_close', symbol: 'symbol' };
 export const drawdownOptions = { version: 1, kind: 'drawdown', fields: priceFields, symbols: ['A'] } satisfies RecipeOptions;
 
+export function dailyPriceRows(prices: (number | null)[], symbol = 'A') {
+  return prices.map((adjusted_close, index) => ({
+    date: `2026-01-${String(index + 1).padStart(2, '0')}`, adjusted_close, symbol,
+  }));
+}
+
 export function priceDataset(rows: Row[], start = '2026-01-01', end = '2026-01-31') {
   const dataset = datasetFromRows(structuredClone(rows), 'source', 1, 'localFile');
   dataset.provenance.receipt = { interval: '1d', start_date: start, end_date: end };
