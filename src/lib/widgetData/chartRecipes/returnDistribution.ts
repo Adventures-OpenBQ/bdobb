@@ -8,7 +8,7 @@ import { dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
 import { decodeRecipeOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 
-type Bin = { left: number; right: number; center: number; width: number; count: number };
+type Bin = { left: number; right: number; count: number };
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17 });
 const scientificPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17, notation: 'scientific' });
 
@@ -30,15 +30,15 @@ function histogram(samples: { value: number }[], count: number): Bin[] | string 
     const left = min - halfWidth, right = min + halfWidth;
     if (!Number.isFinite(left) || left >= min || !Number.isFinite(right) || right <= min)
       return 'The constant return is too large to draw a finite centered bin.';
-    return [{ left, right, center: min, width: 2 * halfWidth, count: samples.length }];
+    return [{ left, right, count: samples.length }];
   }
 
   const width = (max - min) / count;
   const edges = Array.from({ length: count + 1 }, (_, i) => i === count ? max : min + width * i);
   const bins: Bin[] = Array.from({ length: count }, (_, i) => ({
-    left: edges[i], right: edges[i + 1], center: min + width * (i + 0.5), width, count: 0,
+    left: edges[i], right: edges[i + 1], count: 0,
   }));
-  if (bins.some(({ left, center, right }) => !(left < center && center < right)))
+  if (bins.some(({ left, right }) => left >= right))
     return 'The return range is too narrow for distinct bin boundaries at this precision. Choose fewer bins or a wider source return range.';
 
   for (const { value } of samples) {
@@ -83,19 +83,37 @@ export function buildReturnDistribution(
   notes.unshift(`N = ${samples.length} daily returns for ${symbol} from ${samples[0].date} to ${samples[samples.length - 1].date}.`);
   notes.push(`Acquisition window ${scope.start} to ${scope.end}.`,
     'Unreported provider gaps cannot always be distinguished from market holidays.');
-  if (distribution.length === 1) notes.push(`Constant daily return of ${formatBoundary(distribution[0].center)}.`);
+  if (distribution.length === 1) notes.push(`Constant daily return of ${formatBoundary(samples[0].value)}.`);
 
   const revision = JSON.stringify([
     dataset.provenance.sourceWidgetId, options.kind, options.version, fields.date, fields.price,
     fields.symbol ?? null, symbol, bins, scope.start, scope.end,
   ]);
+  const first = distribution[0].left;
+  const last = distribution[distribution.length - 1].right;
+  // Plotly drops extrema at FP_SAFE (Number.MAX_VALUE * 1e-4). Leave room for
+  // axis padding and use exact binary scaling for exceptional magnitudes.
+  const scale = Math.max(Math.abs(first), Math.abs(last)) >= 1e300 ? 2 ** 512 : 1;
+  const axis = {
+    type: 'linear', title: { text: 'Daily return' }, automargin: true,
+    uirevision: JSON.stringify([revision, scale]), tickformat: `.${context.maxDecimals}%`,
+  };
+  let xaxis: Record<string, unknown> = axis;
+  if (scale !== 1) {
+    const stride = Math.ceil(distribution.length / 3);
+    const tickEdges = [first, ...distribution.filter((_, i) => (i + 1) % stride === 0 || i === distribution.length - 1)
+      .map(bin => bin.right)];
+    xaxis = { ...axis, tickmode: 'array', tickvals: tickEdges.map(edge => edge / scale), ticktext: tickEdges.map(formatBoundary) };
+  }
   return {
     ok: true, revision, notes,
     figure: {
       data: [{
         type: 'bar', uid: 'return-distribution', name: escape(symbol), marker: { color: color(symbol) },
-        x: distribution.map(bin => bin.center), y: distribution.map(bin => bin.count),
-        width: distribution.map(bin => bin.width),
+        // Plot from the same edges used for counting. An interval can have two
+        // distinct edges even when its midpoint rounds to one of them.
+        x: distribution.map(bin => bin.left / scale), y: distribution.map(bin => bin.count),
+        offset: 0, width: distribution.map(bin => (bin.right - bin.left) / scale),
         customdata: distribution.map((bin, index) => [
           formatBoundary(bin.left), formatBoundary(bin.right), index === distribution.length - 1 ? ']' : ')',
           bin.count / samples.length,
@@ -105,7 +123,7 @@ export function buildReturnDistribution(
       layout: {
         ...themedLayout(context.theme), uirevision: revision, bargap: 0, showlegend: false,
         title: { text: 'Daily return distribution' }, margin: { l: 60, r: 12, t: 44, b: 48 },
-        xaxis: { type: 'linear', title: { text: 'Daily return' }, tickformat: `.${context.maxDecimals}%`, automargin: true },
+        xaxis,
         yaxis: { type: 'linear', title: { text: 'Observation count' }, rangemode: 'tozero', automargin: true },
       },
     },
