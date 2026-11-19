@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isRecord } from '../../isRecord';
 import type { DatasetProvenance, DatasetRow, WidgetDataset } from '../types';
 
 export type PriceScope = { start: string; end: string; interval: '1d' };
@@ -48,8 +49,8 @@ export function priceIdentityFields(ids: string[]): string[] {
   return namedFields(ids, 'symbol', 'ticker');
 }
 
-/** Verify all observed aliases of each declared dimension against the full acquisition. */
-export function priceDimensionIssue(dataset: WidgetDataset, priceField?: string): string | undefined {
+/** Verify every observed identity alias against the full acquisition. */
+function priceIdentityIssue(dataset: WidgetDataset): string | undefined {
   const { rows, columns, provenance } = dataset;
   const ids = columns.map(c => c.id);
   const intervals = namedFields(ids, 'interval');
@@ -73,16 +74,33 @@ export function priceDimensionIssue(dataset: WidgetDataset, priceField?: string)
       venues.set(symbol, exchange);
     }
   }
+}
+
+/** The acquisition supplies currency/unit even when a chart projects those columns away. */
+function priceUnits(dataset: WidgetDataset, priceField?: string): Record<string, string> | string {
+  const { rows, columns, provenance } = dataset;
+  const ids = columns.map(c => c.id);
   const metadata = columns.find(c => c.id === priceField)?.metadata ?? {};
+  const acquired = provenance.metadata?.acquiredPriceUnits;
+  const result: Record<string, string> = {};
   for (const dimension of ['currency', 'unit']) {
     const units = new Set<unknown>();
     const declared = fact(provenance, dimension);
     if (declared !== undefined) units.add(declared);
+    if (isRecord(acquired) && Object.hasOwn(acquired, dimension)) units.add(acquired[dimension]);
     for (const id of namedFields(Object.keys(metadata), dimension)) units.add(metadata[id]);
     for (const id of namedFields(ids, dimension)) for (const row of rows) units.add(row.values[id]);
-    if (units.size > 1 || [...units].some(v => typeof v !== 'string' || !v.trim()))
-      return `Repair mixed or missing price ${dimension} values.`;
+    if (!units.size) continue;
+    const [value] = units;
+    if (units.size !== 1 || typeof value !== 'string' || !value.trim()) return `Repair mixed or missing price ${dimension} values.`;
+    result[dimension] = value;
   }
+  return result;
+}
+
+export function priceDimensionIssue(dataset: WidgetDataset, priceField: string): string | undefined {
+  const units = priceUnits(dataset, priceField);
+  return priceIdentityIssue(dataset) ?? (typeof units === 'string' ? units : undefined);
 }
 
 /** Only raw acquired rows can certify dimensions that a later table projection may omit. */
@@ -91,10 +109,11 @@ export function priceAcquisitionProvenance(dataset: WidgetDataset): DatasetProve
   if ((!provenance.receipt && !provenance.parameters) || !dailyScope(provenance) || provenance.presentation || provenance.lineage?.length || provenance.inputMayContainAggregates
     || ('kind' in dataset && dataset.kind === 'chartData') || completeness.acquiredRowCount !== dataset.rows.length
     || completeness.kind !== 'complete' && completeness.kind !== 'bounded') return provenance;
-  const issue = priceDimensionIssue(dataset, 'adjusted_close');
+  const units = priceUnits(dataset);
+  const issue = priceIdentityIssue(dataset) ?? (typeof units === 'string' ? units : undefined);
   const priceSymbolFields = priceIdentityFields(dataset.columns.map(c => c.id));
   return { ...provenance, metadata: { ...provenance.metadata, priceDimensionsChecked: true, priceSymbolFields,
-    ...(issue ? { priceDimensionIssue: issue } : {}) } };
+    acquiredPriceUnits: typeof units === 'string' ? {} : units, ...(issue ? { priceDimensionIssue: issue } : {}) } };
 }
 
 /** Omitted coordinates carry no prices. Emit them only for requested, presented dimensions. */

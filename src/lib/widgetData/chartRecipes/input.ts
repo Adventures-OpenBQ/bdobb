@@ -44,7 +44,7 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
   if (typeof metadata?.priceDimensionIssue === 'string') return metadata.priceDimensionIssue;
   const verifiedIdentities = metadata?.priceSymbolFields;
   if (('kind' in dataset && dataset.kind === 'chartData' || dataset.provenance.presentation)
-    && (metadata?.priceDimensionsChecked !== true || !Array.isArray(verifiedIdentities)))
+    && (metadata?.priceDimensionsChecked !== true || !Array.isArray(verifiedIdentities) || !isRecord(metadata.acquiredPriceUnits)))
     return 'The projected source cannot verify price units and instrument identity. Use a documented daily snapshot.';
   const identities = Array.isArray(verifiedIdentities) ? verifiedIdentities : priceIdentityFields(dataset.columns.map(c => c.id));
   if (fields.symbol && identities.length && !identities.includes(fields.symbol)) return 'Bind the source symbol field to preserve instrument identity.';

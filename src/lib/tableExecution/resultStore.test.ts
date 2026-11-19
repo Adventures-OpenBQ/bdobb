@@ -273,3 +273,26 @@ it.each(['symbol', 'Ticker', 'SYMBOL'])('binds the verified %s alias even when a
   expect(preparePrices(await priceProjection(data, 'show', Object.values(fields)), fields)).toMatchObject(expected);
   expect(preparePrices(await priceProjection(data, 'show', ['ticker', ...Object.values(fields)]), fields)).toMatchObject(expected);
 });
+
+it.each([
+  ['Adjusted_Close', 'Currency', 'USD', 'currency', 'EUR'],
+  ['adjusted_price_after_splits', 'UNIT', 'dollars', 'Unit', 'cents'],
+])('compares %s metadata with the acquired units after row dimensions are projected away', async (price, rowField, observed, metadataField, declared) => {
+  const data = priceDataset([{ date: '2026-01-02', symbol: 'A', [price]: 100, [rowField]: observed }]);
+  data.columns.find(c => c.id === price)!.metadata = { [metadataField]: declared };
+  const fields = { ...priceFields, price };
+  expect(preparePrices(data, fields)).toMatchObject({ ok: false, refused: true });
+  const projected = await priceProjection(data, '', Object.values(fields));
+  expect(projected.columns.map(c => c.id)).not.toContain(rowField);
+  expect(preparePrices(projected, fields)).toMatchObject({ ok: false, refused: true });
+});
+
+it('validates only the bound price column against the acquired currency', async () => {
+  const data = priceDataset([{ date: '2026-01-02', symbol: 'A', adjusted_close: 90, split_adjusted: 100, Currency: 'USD' }]);
+  data.columns.find(c => c.id === 'adjusted_close')!.metadata = { currency: 'EUR' };
+  data.columns.find(c => c.id === 'split_adjusted')!.metadata = { currency: 'USD' };
+  const fields = { ...priceFields, price: 'split_adjusted' };
+  const expected = { ok: true, series: [{ symbol: 'A', points: [{ date: '2026-01-02', price: 100 }] }] };
+  expect(preparePrices(data, fields)).toMatchObject(expected);
+  expect(preparePrices(await priceProjection(data, '', Object.values(fields)), fields)).toMatchObject(expected);
+});
