@@ -1,6 +1,6 @@
 # v9 chart expansion: price analytics, estimates, bullet and waterfall
 
-Date: 2026-11-19. Status: design proposed for approval; not an implementation authorization.
+Date: 2026-11-19. Status: approved by the user on 2026-11-19; implementation plan requested, execution method not yet chosen.
 Repositories: Adventures-OpenBQ/bdobb and Adventures-OpenBQ/openbq-eodhd.
 Integration dependency: Adventures-OpenBQ/openbq-docker, which packages the v9 provider and serves its widget catalogue.
 
@@ -156,4 +156,4 @@ The builder may settle exact module names, option keys, worker message plumbing,
 
 ## Design review
 
-Independent builder check completed 2026-11-19. The reviewer requested an unambiguous correlation window; the design now specifies a common end, a shared union-date lookback and pairwise matching within it. On rereview: "nothing important left". User approval of this written document is still required before the implementation plan.
+Independent builder check completed 2026-11-19. The reviewer requested an unambiguous correlation window; the design now specifies a common end, a shared union-date lookback and pairwise matching within it. On rereview: "nothing important left". User approved this written design in chat on 2026-11-19 and requested the implementation plan.
