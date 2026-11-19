@@ -50,14 +50,38 @@ it('sends a revenue line shown under Expenses up', () => {
     expect(result.ok && (result.data[0] as Trace).y).toEqual([100]);
 });
 
-it('inserts Other for the gap before a subtotal, and none without a gap or for float noise', () => {
+it('inserts Other only where a gap precedes a subtotal', () => {
     const gap = ok(walk([['revenue', 100], ['cost_of_revenue', 60], ['research_and_development_expense', 20], ['operating_income', 15]]));
     expect(gap.traces[0]).toMatchObject({ x: ['revenue', 'cost_of_revenue', 'research_and_development_expense', 'other:3', 'operating_income'], measure: ['relative', 'relative', 'relative', 'relative', 'absolute'], y: [100, -60, -20, -5, 15] });
     expect(gap.xaxis.ticktext[3]).toBe('Other');
     expect(gap.traces[0].text[3]).toContain('Not in the lines shown');
     expect(ok(walk([['revenue', 100], ['cost_of_revenue', 60], ['gross_profit', 40]])).traces[0].x).not.toContain('other:2');
-    // Review Focus 3: running sum 100.0000001 against reported 100 draws no Other.
-    expect(ok(walk([['revenue', 100.0000001], ['gross_profit', 100]])).traces[0].x).toEqual(['revenue', 'gross_profit']);
+});
+
+it('does not hide a $100 discrepancy against a $1T reported subtotal', () => {
+    const { traces, xaxis } = ok(walk([['revenue', 1_000_000_000_100], ['gross_profit', 1_000_000_000_000]]));
+    expect(xaxis.ticktext).toEqual(['revenue', 'Other', 'gross_profit']);
+    expect(traces[0]).toMatchObject({ measure: ['relative', 'relative', 'absolute'], y: [1_000_000_000_100, -100, 1_000_000_000_000] });
+    expect(traces[0].text[1]).toContain('Step: -100');
+});
+
+it('preserves a one-unit residual even when machine precision reaches that scale', () => {
+    const { traces, xaxis } = ok(walk([['revenue', 5_000_000_000_000_001], ['gross_profit', 5_000_000_000_000_000]]));
+    expect(xaxis.ticktext).toContain('Other');
+    expect(traces[0].y[1]).toBe(-1);
+});
+
+it('keeps an explicit decimal residual that exceeds binary rounding error', () => {
+    const { traces, xaxis } = ok(walk([['revenue', 100.0000001], ['gross_profit', 100]]));
+    expect(xaxis.ticktext).toContain('Other');
+    expect(traces[0].y[1]).toBeCloseTo(-0.0000001, 13);
+});
+
+it('omits Other for binary rounding in decimal sums, including after cancellation', () => {
+    const totals = ok(walk([['revenue', 0.1], ['discontinued_operations', 0.2], ['gross_profit', 0.3]]));
+    expect(totals.xaxis.ticktext).toEqual(['revenue', 'discontinued_operations', 'gross_profit']);
+    const cancelled = ok(walk([['revenue', 0.1], ['discontinued_operations', 0.2], ['cost_of_revenue', 0.3], ['net_income', 0]]));
+    expect(cancelled.xaxis.ticktext).toEqual(['revenue', 'discontinued_operations', 'cost_of_revenue', 'net_income']);
 });
 
 it('draws one trace per year on shared positions; a year without a gap has Other at zero', () => {

@@ -287,13 +287,64 @@ it('bullet lists only *_actual metrics, offers the delivered quarters, and commi
     cleanup(); store.disposeDashboard('d');
 });
 
-it('a saved quarter the table no longer delivers is shown as unavailable', async () => {
+const quarterOptions = () => [...screen.getByLabelText('Quarter').querySelectorAll('option')].map(o => o.textContent);
+
+it('keeps replacement quarters after refusing a saved quarter that is unavailable', async () => {
     const { store, card } = await bulletSetup();
-    render(<LinkedChartRenderer dashboardId="d" card={{ ...card, linkedChart: { ...bulletSettings, period: 'Q9' } }} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    const props = { dashboardId: 'd', card, refreshKey: 0, store, onSettingsChange: async () => true };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    await screen.findByTestId('figure');
+
+    rerender(<LinkedChartRenderer {...props} card={{ ...card, linkedChart: { ...bulletSettings, period: 'Q9' } }}/>);
     await screen.findByText('Quarter Q9 is not in the linked table.');
-    const select = screen.getByLabelText('Quarter') as HTMLSelectElement;
-    expect([...select.querySelectorAll('option')].map(o => o.textContent)).toEqual(['Latest', 'Q9 (unavailable)']);
-    expect(select.value).toBe('Q9');
+    expect(screen.queryByTestId('figure')).toBeNull();
+    expect(quarterOptions()).toEqual(['Latest', 'Q9 (unavailable)', 'Q1', 'Q2']);
+    expect(screen.getByLabelText('Quarter')).toHaveValue('Q9');
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('lets the user recover by choosing a quarter when the linked table hides period ending', async () => {
+    const { store, card } = await bulletSetup(['period_ending']);
+    const onSettingsChange = vi.fn(async () => true);
+    const props = { dashboardId: 'd', card, refreshKey: 0, store, onSettingsChange };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    await screen.findByText('Choose a quarter.');
+    expect(screen.queryByTestId('figure')).toBeNull();
+    expect(quarterOptions()).toEqual(['Latest', 'Q1', 'Q2']);
+
+    fireEvent.change(screen.getByLabelText('Quarter'), { target: { value: 'Q2' } });
+    await waitFor(() => expect(onSettingsChange).toHaveBeenCalledWith({ ...bulletSettings, period: 'Q2' }));
+    rerender(<LinkedChartRenderer {...props} card={{ ...card, linkedChart: { ...bulletSettings, period: 'Q2' } }}/>);
+    const figure = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(figure.data[0]).toMatchObject({ type: 'indicator', value: 1.3456 });
+    expect(figure.data[0].gauge).not.toHaveProperty('threshold');
+    expect(screen.queryByText('Choose a quarter.')).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('keeps quarter choices from the current table when an older chart request resolves last', async () => {
+    const { store, card } = await bulletSetup(['period_ending']);
+    const executor = store.readExecutor('d', 's')!;
+    const chartData = executor.chartData.bind(executor);
+    let releaseOld: (() => void) | undefined;
+    executor.chartData = async (...args) => {
+        const result = await chartData(...args);
+        if (releaseOld) return result;
+        return new Promise<ChartResult>(resolve => { releaseOld = () => resolve(result); });
+    };
+    render(<LinkedChartRenderer dashboardId="d" card={card} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await waitFor(() => expect(releaseOld).toBeDefined());
+
+    await act(async () => {
+        store.updateDefinition('d', 's', { table: { hidden: ['period_ending'] }, search: 'Q2' }, { kind: 'none' });
+        await store.settled('d');
+    });
+    await screen.findByText('Choose a quarter.');
+    expect(quarterOptions()).toEqual(['Latest', 'Q2']);
+
+    await act(async () => releaseOld!());
+    expect(quarterOptions()).toEqual(['Latest', 'Q2']);
+    expect(screen.queryByTestId('figure')).toBeNull();
     cleanup(); store.disposeDashboard('d');
 });
 

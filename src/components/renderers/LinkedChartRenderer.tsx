@@ -45,7 +45,9 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const identity = JSON.stringify([dashboardId, card.id]);
     const mapping = JSON.stringify(settings);
     const active = JSON.stringify(view.sourceRevision);
+    const quarterScope = JSON.stringify([identity, source, active, settings.category]);
     const [completed, setCompleted] = useState<Completed>();
+    const [quarterChoices, setQuarterChoices] = useState<{ scope: string; values: string[] }>();
     const [error, setError] = useState<string>();
     const [refused, setRefused] = useState<string>();
     const [noMatches, setNoMatches] = useState(false);
@@ -72,7 +74,8 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             setError(`Field ${missing} is unavailable. Repair chart fields.`);
             return;
         }
-        if (!settings.category || !settings.measures.length) {
+        const category = settings.category;
+        if (!category || !settings.measures.length) {
             setRefused(undefined);
             setError('Choose chart fields: select a category and numeric measures.');
             return;
@@ -86,10 +89,14 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             setNoMatches(true);
             return;
         }
-        const ids = [settings.category, ...renderedSettings.measures, ...(settings.type === 'bullet' ? bulletRequestIds(renderedSettings.measures, present) : [])];
+        const ids = [category, ...renderedSettings.measures, ...(settings.type === 'bullet' ? bulletRequestIds(renderedSettings.measures, present) : [])];
         void executor.chartData(revision, [...new Set(ids)], controller.signal).then(dataset => {
             if (controller.signal.aborted || version !== generation.current || JSON.stringify(dataset.revision) !== JSON.stringify(revision))
                 return;
+            if (settings.type === 'bullet') {
+                const values = [...new Set(dataset.rows.map(row => String(row.values[category] ?? '')).filter(Boolean))];
+                setQuarterChoices({ scope: quarterScope, values });
+            }
             const result = buildLinkedFigure(dataset, renderedSettings, theme, maxDecimals);
             if (!result.ok && result.refused) {
                 setCompleted(undefined);
@@ -130,7 +137,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     } }
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
-    const quarters = settings.category ? [...new Set((delivered?.dataset.rows ?? []).map(r => String(r.values[settings.category!] ?? '')).filter(Boolean))] : [];
+    const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
     return <div className="linked-chart-renderer">
     {!viewer ? <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => { const next = withType(settings, e.target.value as LinkedChartSettings['type']); void commit(next.type === 'bullet' && !next.category && fields.some(c => c.id === 'fiscal_period') ? { ...next, category: 'fiscal_period' } : next); }}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="bullet">Bullet</option><option value="waterfall">Waterfall</option></select></label>

@@ -46,6 +46,7 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
         return refuse('Waterfall needs period columns');
     const names = years.map(y => String(y!.label ?? y!.value));
     const running = measures.map(() => 0);
+    const magnitude = measures.map(() => 0);
     const keys: string[] = [], ticks: string[] = [], missing: string[] = [];
     const points = measures.map(() => ({ measure: [] as string[], y: [] as number[], text: [] as string[] }));
     const push = (key: string, tick: string, each: (m: number) => { measure: 'relative' | 'absolute'; y: number; text: string }) => {
@@ -57,13 +58,22 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
         if (!role) return;
         const label = escape(labels[r]);
         if (role.role === 'subtotal' || role.role === 'calculated') {
-            const gaps = measures.map((m, i) => { const v = m.values[r]; return v === null || Math.abs(v - running[i]) <= 1e-9 * Math.max(1, Math.abs(v)) ? 0 : v - running[i]; });
+            const gaps = measures.map((m, i) => {
+                const reported = m.values[r];
+                if (reported === null) return 0;
+                const gap = reported - running[i];
+                // Scale by the terms that were added, including ones that cancelled out.
+                // A whole-unit residual always gets an Other step.
+                const rounding = Number.EPSILON * Math.max(Math.abs(reported), magnitude[i]);
+                return Math.abs(gap) < 1 && Math.abs(gap) <= rounding ? 0 : gap;
+            });
             if (gaps.some(g => g !== 0))
                 push(`other:${r}`, 'Other', m => { running[m] += gaps[m]; return { measure: 'relative', y: gaps[m], text: ['Other', escape(names[m]), 'Not in the lines shown', `Step: ${signed(gaps[m])}`, `Running total: ${running[m]}`].join('<br>') }; });
             push(row.id, role.role === 'calculated' ? `${labels[r]} (calculated)` : labels[r], m => {
                 const v = measures[m].values[r];
                 if (v === null) { missing.push(`${labels[r]} (${names[m]})`); return { measure: 'relative', y: 0, text: [label, escape(names[m]), 'Value: Missing', `Running total: ${running[m]}`].join('<br>') }; }
                 running[m] = v;
+                magnitude[m] = Math.abs(v);
                 return { measure: 'absolute', y: v, text: [label, escape(names[m]), `Value: ${v}`, `Running total: ${v}`].join('<br>') };
             });
             return;
@@ -73,6 +83,7 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
             if (v === null) missing.push(`${labels[r]} (${names[m]})`);
             const step = v === null ? 0 : role.role === 'cost' ? -v : v;
             running[m] += step;
+            magnitude[m] += Math.abs(step);
             return { measure: 'relative', y: step, text: [label, escape(names[m]), `Value: ${v ?? 'Missing'}`, `Step: ${signed(step)}`, `Running total: ${running[m]}`].join('<br>') };
         });
     });
