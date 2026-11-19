@@ -10,7 +10,7 @@ type Axis = { range: [number, number] | [string, string]; domain: [number, numbe
 type Trace = { x: (string | number)[]; y: (string | number | null)[]; name: string; width: number[] };
 type Graph = HTMLElement & {
   _fullData: Trace[];
-  _fullLayout: { paper_bgcolor: string; xaxis: Axis; xaxis2: Axis; xaxis3: Axis;
+  _fullLayout: { dragmode: string | false; paper_bgcolor: string; xaxis: Axis; xaxis2: Axis; xaxis3: Axis;
     yaxis: Axis; yaxis2: Axis; yaxis3: Axis; grid: { columns: number } };
 };
 
@@ -265,6 +265,38 @@ test('scrolls to the final watchlist panel and zero-weight region and inspects b
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     await expect(panelsPlot.locator('.hoverlayer')).toContainText(/BIRCH.*Baseline 100 on 2026-03-03/);
     await card(page, panels).screenshot({ path: info.outputPath('narrow-panels.png') });
+    // Reflow the same watchlist across the overflow boundary before changing any chart settings.
+    await page.setViewportSize({ width: 1600, height: 1080 });
+    const remaining = () => panelViewport.evaluate(el => el.scrollHeight - el.clientHeight);
+    await expect.poll(remaining).toBe(0);
+    await expect.poll(() => panelsPlot.evaluate(el => (el as Graph)._fullLayout.dragmode)).toBe('zoom');
+    await page.setViewportSize({ width: 600, height: 980 });
+    await expect.poll(remaining).toBeGreaterThan(100);
+    await expect.poll(() => panelsPlot.evaluate(el => (el as Graph)._fullLayout.dragmode)).toBe(false);
+
+    await page.setViewportSize({ width: 1100, height: 1080 });
+    const watchlist = card(page, panels);
+    for (const symbol of ['ALDER', 'BIRCH']) await watchlist.getByLabel(symbol, { exact: true }).uncheck();
+    await apply(watchlist);
+    await expect.poll(() => panelsPlot.evaluate(el => (el as Graph)._fullData.map(t => t.name))).toEqual(['CEDAR']);
+    await expect.poll(remaining).toBe(0);
+    const displayedDates = () => panelsPlot.evaluate(el => (el as Graph)._fullLayout.xaxis.range);
+    const before = await displayedDates();
+    const surface = panelsPlot.locator('.nsewdrag');
+    await surface.scrollIntoViewIfNeeded();
+    const rect = (await surface.boundingBox())!;
+    const touch = await context.newCDPSession(page);
+    for (let step = 0; step <= 8; step++) {
+      const x = rect.x + rect.width * (.2 + .55 * step / 8);
+      const y = rect.y + rect.height * (.2 + .55 * step / 8);
+      await touch.send('Input.dispatchTouchEvent', { type: step ? 'touchMove' : 'touchStart', touchPoints: [{ x, y }] });
+    }
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await touch.detach();
+    await expect.poll(async () => {
+      const [start, end] = await displayedDates();
+      return start > before[0] && end < before[1];
+    }).toBe(true);
     await page.setViewportSize({ width: 880, height: 980 });
     await linkRegions(page);
     const widget = card(page, exposure);

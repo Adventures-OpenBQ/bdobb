@@ -377,3 +377,26 @@ it('ignores a superseded draw rejection after the next revision renders', async 
   expect(purgePlot).not.toHaveBeenCalled();
   expect(logError).not.toHaveBeenCalledWith('chart render failed: superseded');
 });
+
+it('releases coarse watchlist drags only while its viewport overflows and restores zoom on resize', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const data = { data: [{ type: 'scatter' }], layout: { dragmode: 'zoom' } };
+  render(<ChartRenderer data={data} scrollHeight={280} touchScroll="overflow"/>);
+  const viewport = screen.getByTestId('chart-plot').parentElement!;
+  let available = 568;
+  Object.defineProperties(viewport, {
+    clientHeight: { get: () => available }, scrollHeight: { get: () => Math.max(available, 280) },
+  });
+  const resize = () => act(() => {
+    for (const observer of ResizeObserverStub.instances.filter(o => !o.disconnected))
+      observer.callback(sizeEntry(450, available), observer as unknown as ResizeObserver);
+  });
+  resize();
+  expect(figureFromLastCall()).toEqual(data);
+  available = 220;
+  resize();
+  expect(figureFromLastCall()).toMatchObject({ layout: { dragmode: false } });
+  available = 280;
+  resize();
+  expect(figureFromLastCall()).toEqual(data);
+});

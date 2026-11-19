@@ -58,7 +58,7 @@ export function ChartRenderer({
   data: unknown;
   uirevision?: string;
   scrollHeight?: number;
-  touchScroll?: boolean;
+  touchScroll?: boolean | 'overflow';
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -124,7 +124,20 @@ export function ChartRenderer({
   // only ever purged in attachNode's cleanup above, when the node itself
   // goes away (i.e. on unmount).
   const scrolling = scrollHeight !== undefined;
-  const coarseScroll = useMediaQuery(scrolling && touchScroll ? "(pointer: coarse)" : null) === true;
+  const coarsePointer = useMediaQuery(scrolling && touchScroll ? "(pointer: coarse)" : null) === true;
+  const measureOverflow = coarsePointer && touchScroll === 'overflow';
+  const [overflows, setOverflows] = useState(false);
+  const observeViewport = useCallback((viewport: HTMLDivElement | null) => {
+    if (!viewport || !measureOverflow) return;
+    const measure = () => setOverflows(viewport.scrollHeight > viewport.clientHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    // Plot height changes when the watchlist reflows, even if its viewport stays the same size.
+    if (viewport.firstElementChild) observer.observe(viewport.firstElementChild);
+    return () => observer.disconnect();
+  }, [measureOverflow]);
+  const coarseScroll = coarsePointer && (touchScroll === true || overflows);
   const draw = useMemo(() => ({
     figure: coarseScroll && drawable ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable,
     id: Symbol(), uirevision, scrolling,
@@ -160,6 +173,6 @@ export function ChartRenderer({
   }
   const plot = <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>;
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
-  return scrolling ? <div className="chart-scroll-viewport"
+  return scrolling ? <div className="chart-scroll-viewport" ref={observeViewport}
     onTouchEnd={coarseScroll ? event => event.preventDefault() : undefined}>{plot}</div> : plot;
 }
