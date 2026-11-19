@@ -1,7 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it } from 'vitest';
 import { StatementPanel, type StatementPanelProps } from './StatementPanel';
 import { fixture } from '../../../lib/statementModel/compileFixtures';
@@ -165,4 +166,105 @@ it('updates fiscal kind when explicit bounds were mapped without an initial kind
  fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}));
  await waitFor(()=>expect(received).toBeDefined());
  expect(received?.bindings.fiscal.periodKind).toBe('FQ');
+});
+
+function applied(extra:Partial<StatementPanelProps>={}) {
+ let saved:StatementIntent|undefined;
+ render(<StatementPanel {...props({onCommit:async candidate=>{saved=candidate;return true;},...extra})}/>);
+ return async()=>{
+  fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}));
+  await waitFor(()=>expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeEnabled());
+  fireEvent.click(screen.getByRole('button',{name:'Apply Statement model'}));
+  await waitFor(()=>expect(saved).toBeDefined());
+  return saved!;
+ };
+}
+const [,expensesSection,profitSection]=statement.template.sections;
+const gross=statement.template.lines.find(l=>l.label==='gross_profit')!.id;
+const picker=()=>screen.getByLabelText('Section gross_profit') as HTMLSelectElement;
+const row=(label:string)=>screen.getByLabelText(`Label ${label}`).closest('.statement-line') as HTMLElement;
+it('moves the line once and saves both affected section orders',async()=>{
+ const raw=structuredClone(statement);raw.overrides.lineOrder[profitSection.id]=[...profitSection.lineIds].reverse();
+ const apply=applied({raw});
+ expect(within(screen.getByRole('region',{name:'Profit'})).getByLabelText('Label gross_profit')).toBeVisible();
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ expect(within(screen.getByRole('region',{name:'Expenses'})).getByLabelText('Label gross_profit')).toBeVisible();
+ expect(within(screen.getByRole('region',{name:'Profit'})).queryByLabelText('Label gross_profit')).toBeNull();
+ const saved=await apply();
+ expect(saved.overrides.lineSection).toEqual({[gross]:expensesSection.id});
+ expect(saved.overrides.lineOrder[expensesSection.id]).toEqual([...expensesSection.lineIds,gross]);
+ expect(saved.overrides.lineOrder[profitSection.id]).toEqual([...profitSection.lineIds].reverse().filter(id=>id!==gross));
+});
+it('uses local section labels and clears placement when a line returns home',async()=>{
+ const apply=applied();
+ fireEvent.change(screen.getByLabelText('Section label Expenses'),{target:{value:'Costs'}});
+ expect(within(picker()).getByRole('option',{name:'Costs'})).toBeVisible();
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ fireEvent.change(picker(),{target:{value:profitSection.id}});
+ expect(picker().value).toBe(profitSection.id);
+ expect(await apply()).toSatisfy((saved:StatementIntent)=>!('lineSection' in saved.overrides));
+});
+it("lists picker options in the user's section order",async()=>{
+ const raw=structuredClone(statement);raw.overrides.sectionOrder=statement.template.sections.map(s=>s.id).reverse();
+ applied({raw});
+ expect(within(picker()).getAllByRole('option').map(o=>o.textContent)).toEqual(statement.template.sections.map(s=>s.label).reverse());
+});
+it('moves lines in both directions and disables controls at the ends',async()=>{
+ const apply=applied();
+ expect(screen.getByRole('button',{name:'Move gross_profit up'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Move Calculated gross profit down'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'Move operating_income up'}));
+ expect(screen.getByRole('button',{name:'Move operating_income up'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('button',{name:'Move Calculated gross profit up'}));
+ expect(screen.getByRole('button',{name:'Move Calculated gross profit down'})).toBeEnabled();
+ fireEvent.click(screen.getByRole('button',{name:'Move Calculated gross profit down'}));
+ expect(screen.getByRole('button',{name:'Move Calculated gross profit down'})).toBeDisabled();
+ const saved=await apply();
+ expect(saved.overrides.lineOrder[profitSection.id]).toEqual([profitSection.lineIds[1],gross,...profitSection.lineIds.slice(2)]);
+});
+it('returns a moved line home when reset',async()=>{
+ const apply=applied();
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ fireEvent.click(within(row('gross_profit')).getByRole('button',{name:'Reset line'}));
+ expect(within(screen.getByRole('region',{name:'Profit'})).getByLabelText('Label gross_profit')).toBeVisible();
+ expect(picker().value).toBe(profitSection.id);
+ expect(await apply()).toSatisfy((saved:StatementIntent)=>!('lineSection' in saved.overrides));
+});
+
+it('keeps monetary bindings and formula identities when their lines move',async()=>{
+ const apply=applied();
+ const incomeSection=statement.template.sections[0];
+ const formulaLine=statement.template.lines.find(line=>line.formula)!;
+ const costId=statement.bindings.mappings.find(mapping=>mapping.sourceFieldId==='cost_of_revenue')!.lineId;
+ fireEvent.change(screen.getByLabelText('Section cost_of_revenue'),{target:{value:incomeSection.id}});
+ fireEvent.change(screen.getByLabelText('Section Calculated gross profit'),{target:{value:expensesSection.id}});
+ const saved=await apply();
+ expect(saved.overrides.lineSection).toEqual({[costId]:incomeSection.id,[formulaLine.id]:expensesSection.id});
+ expect(saved.bindings).toEqual(statement.bindings);
+ expect(saved.template).toEqual(statement.template);
+});
+
+it('shows section visibility inheritance after a line moves',()=>{
+ render(<StatementPanel {...props()}/>);
+ fireEvent.click(screen.getByLabelText('Visible section Expenses'));
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ expect(within(row('gross_profit')).getByText('Hidden by section')).toBeVisible();
+ expect(screen.getByLabelText('Visible gross_profit')).toBeDisabled();
+ expect(screen.getByLabelText('Visible gross_profit')).not.toBeChecked();
+ fireEvent.change(picker(),{target:{value:profitSection.id}});
+ expect(screen.getByLabelText('Visible gross_profit')).toBeEnabled();
+ expect(screen.getByLabelText('Visible gross_profit')).toBeChecked();
+});
+
+it('prevents read-only viewers from moving or reordering lines',async()=>{
+ render(<StatementPanel {...props({readonly:true})}/>);
+ const user=userEvent.setup();
+ expect(picker()).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Move operating_income up'})).toBeDisabled();
+ expect(screen.getByRole('button',{name:'Move gross_profit down'})).toBeDisabled();
+ await user.selectOptions(picker(),expensesSection.id);
+ await user.click(screen.getByRole('button',{name:'Move gross_profit down'}));
+ expect(picker()).toHaveValue(profitSection.id);
+ const lines=within(screen.getByRole('region',{name:'Profit'})).getAllByRole('textbox',{name:/^Label /});
+ expect(lines[0]).toHaveAccessibleName('Label gross_profit');
 });

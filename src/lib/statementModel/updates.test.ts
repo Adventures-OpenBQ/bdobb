@@ -71,3 +71,57 @@ it('retains detached semantic before and after defaults, mappings and order even
  const comparison=structuredClone(preview.changes);preview.next.template.lines[0].label='Later edit';next.lines[0].label='External edit';
  expect(preview.changes).toEqual(comparison);expect(statement).toEqual(old);
 });
+
+describe('line placement', () => {
+ const moved = () => {
+  const f = fixture(); const [, expenses] = f.statement.template.sections; const gross = f.ids.line('gross_profit');
+  f.statement.overrides.lineSection = { [gross]: expenses.id };
+  f.statement.overrides.lineOrder[expenses.id] = [gross, ...expenses.lineIds];
+  return { ...f, expenses, gross };
+ };
+ const updated = (id: string) => id.replace('/1.0.0/', '/2.0.0/');
+ it('maps line placement ids across versions', () => {
+  const { statement, expenses, gross } = moved();
+  const preview = previewStatementUpdate(statement, future(statement.template));
+  expect(preview.conflicts).toEqual([]);
+  expect(preview.next.overrides.lineSection).toEqual({ [updated(gross)]: updated(expenses.id) });
+  expect(preview.next.overrides.lineOrder[updated(expenses.id)][0]).toBe(updated(gross));
+ });
+ it('refuses a placement whose line or section left the snapshot', () => {
+  const reason = 'Section membership changed; resolve the local line placement.';
+  const a = moved(); const lineGone = future(a.statement.template);
+  lineGone.lines = lineGone.lines.filter(l => !l.id.endsWith('/line/gross_profit'));
+  lineGone.sections.forEach(s => s.lineIds = s.lineIds.filter(id => !id.endsWith('/line/gross_profit')));
+  expect(previewStatementUpdate(a.statement, lineGone).conflicts).toContainEqual({ id: a.gross, reason });
+  const b = moved(); delete b.statement.overrides.lineOrder[b.expenses.id]; const sectionGone = future(b.statement.template);
+  const dropped = new Set(sectionGone.sections[1].lineIds); sectionGone.sections.splice(1, 1);
+  sectionGone.lines = sectionGone.lines.filter(l => !dropped.has(l.id));
+  sectionGone.lines.forEach(l => { if (l.formula) { l.formula.ast = { kind: 'literal', value: 1 }; l.formula.expression = '1'; } });
+  expect(previewStatementUpdate(b.statement, sectionGone).conflicts).toContainEqual({ id: updated(b.gross), reason });
+ });
+ it('resets section presentation while keeping the placed line and its overrides', () => {
+  const { statement, expenses, gross } = moved();
+  const profit = statement.template.sections[2];
+  statement.overrides.labels = { [expenses.id]: 'Costs', [gross]: 'Local gross profit' };
+  statement.overrides.sectionOrder = statement.template.sections.map(s => s.id).reverse();
+  statement.overrides.hiddenIds = [expenses.id, gross];
+  const reset = resetStatementOverrides(statement, expenses.id);
+  expect(reset.overrides.labels).toEqual({ [gross]: 'Local gross profit' });
+  expect(reset.overrides.hiddenIds).toEqual([gross]);
+  expect(reset.overrides.sectionOrder).toBeUndefined();
+  expect(reset.overrides.lineOrder[expenses.id]).toBeUndefined();
+  expect(reset.overrides.lineSection).toEqual({ [gross]: expenses.id });
+  expect(profit.lineIds).toContain(gross);
+ });
+ it('resets a moved line and clears placement on full reset', () => {
+  const { statement, expenses, gross } = moved();
+  const profit = statement.template.sections[2];
+  statement.overrides.lineOrder[profit.id] = profit.lineIds.filter(id => id !== gross).reverse();
+  const reset = resetStatementOverrides(statement, gross);
+  expect(reset.overrides.lineSection?.[gross]).toBeUndefined();
+  expect(reset.overrides.lineOrder[expenses.id]).toEqual(expenses.lineIds);
+  expect(reset.overrides.lineOrder[profit.id]).toContain(gross);
+  expect(reset.overrides).not.toHaveProperty('lineSection');
+  expect(resetStatementOverrides(statement).overrides).not.toHaveProperty('lineSection');
+ });
+});

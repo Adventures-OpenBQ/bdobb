@@ -6,6 +6,8 @@ import { previewStatementUpdate } from './updates';
 import { expect, it } from 'vitest';
 import { calculateView } from '../tableExecution/engine';
 import { fixture } from './compileFixtures';
+import { compileStatement } from './compile';
+import { projectStatementDataset, readStatementPresentation } from '../statementPresentation';
 const run = (f: ReturnType<typeof fixture>) => calculateView(f.source, {
     table: {}, search: '', analytical: f.statement
 }, {
@@ -176,6 +178,12 @@ it('long source binds item and value without unpivot and rejects unknown item id
     expect(view.logicalRows.find(r => r.groupPath?.at(-1)?.memberKey === JSON.stringify(['string', f.ids.line('calculated_gross_profit')]))?.values[col.id]).toBe(40);
     expect(view.analytical?.compiled.execution?.sourceColumnsByRowId).toBeUndefined();
     expect(view.logicalRows.filter(r => r.groupPath?.length === 2)).toHaveLength(3);
+    const expenses = f.statement.template.sections[1].id;
+    f.statement.overrides.lineSection = { [f.ids.line('revenue')]: expenses };
+    const moved = run(f);
+    const movedRow = (id: string) => moved.logicalRows.find(r => r.groupPath?.at(-1)?.memberKey === JSON.stringify(['string', f.ids.line(id)]));
+    expect(movedRow('revenue')?.groupPath?.[0].memberKey).toBe(JSON.stringify(['string', expenses]));
+    expect(movedRow('calculated_gross_profit')?.values[col.id]).toBe(40);
     f.source.rows[0].values = {
         ...f.source.rows[0].values, item: 'unknown'
     };
@@ -291,4 +299,45 @@ it('executes authored item checklists before and after an explicit update withou
     assertRevenue(run(f));
     expect(original.checklists[0].memberKeys).toEqual([f.ids.line('revenue')]);
     expect(f.statement.checklists.slice(1).map(s=>s.memberKeys)).toEqual(original.checklists.slice(1).map(s=>s.memberKeys));
+});
+
+const leafIds = (view: ReturnType<typeof run>) => view.logicalRows.filter(r => r.groupPath?.length === 2).map(r => JSON.parse(r.groupPath!.at(-1)!.memberKey!)[1] as string);
+const withGrossProfit = () => {
+    const f = fixture();
+    f.statement.bindings.mappings.push({ sourceFieldId: 'gross_profit', lineId: f.ids.line('gross_profit') });
+    f.source.columns.push({ id: 'gross_profit', label: 'gross_profit' });
+    f.source.rows[0].values.gross_profit = 40;
+    return f;
+};
+it('a moved line takes its displayed section, row order and section member', () => {
+    const f = withGrossProfit();
+    const [, expenses, profit] = f.statement.template.sections;
+    const gross = f.ids.line('gross_profit');
+    f.statement.overrides.lineSection = { [gross]: expenses.id };
+    f.statement.overrides.lineOrder[expenses.id] = [expenses.lineIds[0], gross, ...expenses.lineIds.slice(1)];
+    expect(compileStatement(f.statement, f.source.columns).sectionByLine[gross]).toBe(expenses.id);
+    const view = run(f);
+    expect(leafIds(view)).toEqual(['revenue', 'cost_of_revenue', 'gross_profit', 'calculated_gross_profit'].map(f.ids.line));
+    expect(view.logicalRows.find(r => r.groupPath?.at(-1)?.memberKey === JSON.stringify(['string', gross]))?.groupPath?.[0].memberKey).toBe(JSON.stringify(['string', expenses.id]));
+    const descriptor = readStatementPresentation(view.provenance.metadata?.statementPresentation);
+    const projected = projectStatementDataset({ ...f.source, columns: view.columns, rows: view.presentedRows }, descriptor);
+    expect(projected.sections.find(section => section.id === expenses.id)?.items.map(item => item.field))
+        .toEqual(['cost_of_revenue', 'gross_profit'].map(f.ids.line));
+    expect(projected.rows).toContainEqual({ Section: 'Expenses', 'Line item': 'gross_profit', FY2025: 40 });
+    // Hiding the moved line's home section hides only lines still displayed there.
+    f.statement.overrides.hiddenIds = [profit.id];
+    expect(leafIds(run(f))).toEqual(['revenue', 'cost_of_revenue', 'gross_profit'].map(f.ids.line));
+    f.statement.overrides.hiddenIds = [expenses.id];
+    expect(leafIds(run(f))).toEqual(['revenue', 'calculated_gross_profit'].map(f.ids.line));
+});
+it('formula selectors resolve a moved input under its displayed section', () => {
+    const f = fixture();
+    f.statement.overrides.lineSection = { [f.ids.line('revenue')]: f.statement.template.sections[1].id };
+    const view = run(f);
+    const col = view.columns.find(c => c.measureId === f.ids.value)!;
+    expect(view.logicalRows.find(r => r.groupPath?.at(-1)?.memberKey === JSON.stringify(['string', f.ids.line('calculated_gross_profit')]))?.values[col.id]).toBe(40);
+});
+it('without line placement the compiled statement is unchanged', () => {
+    const f = withGrossProfit();
+    expect(compileStatement(f.statement, f.source.columns)).toMatchSnapshot();
 });

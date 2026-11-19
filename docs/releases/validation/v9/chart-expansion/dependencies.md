@@ -30,8 +30,18 @@ The BDOBB port starts from v9 product commit `a96b96195619e0c66f416bb8fb929bb8da
 | --- | --- |
 | `1ae6f008dd77d026612d3d9f14fa9243ef26727c` | `src/lib/widgetData/waterfallFigure.ts`, typed income statement figure dispatch, partial waterfall registration and reconciliation tests. |
 | `4d76cffb183986a71b3439a2a5d7966058ee640f` | Linked renderer controls, waterfall setting cleanup, dashboard import validation and tests. |
-| `78219efe111d10faa53368abc3acf7bb7d0d5589` | Missing notes use presented line labels. The two-period statement compilation test from `src/lib/widgetData/waterfallStatement.test.ts` is included in `waterfallFigure.test.ts`. |
+| `78219efe111d10faa53368abc3acf7bb7d0d5589` | Missing notes use presented line labels. The two-period compilation and moved-expense regressions are in `src/lib/widgetData/waterfallStatement.test.ts`. |
 
-The v9 statement model already provides the required IDs and income template through `src/lib/statementModel/{types,catalog,taxonomy,compile}.ts`. The chart determines sign from each line's home template section. The test suite checks that rule with a different presented section, so the v4 statement editing commits `9d8786df66e9fa80839b6b651ad4782a920b6c1a` and `60a59b1caae30725cfad2ca19ef0f8668690acc3` are unnecessary for rendering. The port also leaves the donor-only pivot qualification changes out of the chart integration.
+The waterfall determines sign from each line's home template section. The port leaves the donor-only pivot qualification changes out of the chart integration.
 
 The waterfall settings/import rules combine with the composition and bullet rules. A waterfall always uses statement lines as positions and period columns as series. Bullet reads its estimate values only from presented columns. All trace modules are registered individually in `src/lib/plotly.ts`.
+
+## Statement editor
+
+| Donor commit | Paths and behavior carried |
+| --- | --- |
+| `9d8786df66e9fa80839b6b651ad4782a920b6c1a` | `src/lib/statementModel` derives displayed membership from saved line placement, validates it, compiles it and preserves it through updates and resets. |
+| `60a59b1caae30725cfad2ca19ef0f8668690acc3` | `StatementPanel.tsx` adds the section picker and line Move up control. |
+| `78219efe111d10faa53368abc3acf7bb7d0d5589` | Picker options follow the user's section order. The compiled waterfall test covers a cost line displayed in Income that still steps down. |
+
+V9 also uses displayed membership for Statement presentation metadata and export. Section reset restores section settings while retaining per-line placements. Line reset returns the line to its home section, and full reset clears every placement.
