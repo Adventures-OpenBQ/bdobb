@@ -224,6 +224,14 @@ test('repairs the exposure source, filters holdings and reacquires a saved works
   await expect(plot(reopened, pareto)).toHaveCount(1);
 });
 
+// Read the screen coordinate after native scroll momentum and responsive grid motion settle.
+async function tapVisibleMarker(page: Page, marker: Locator, xFraction = .5) {
+  await expect(marker).toBeInViewport();
+  await marker.scrollIntoViewIfNeeded(); // Playwright waits for a stable element.
+  const box = (await marker.boundingBox())!;
+  await page.touchscreen.tap(box.x + box.width * xFraction, box.y + box.height / 2);
+}
+
 async function swipeToBottom(page: Page, viewport: Locator, graph: Locator) {
   await viewport.scrollIntoViewIfNeeded();
   const touch = await page.context().newCDPSession(page);
@@ -260,9 +268,7 @@ test('scrolls to the final watchlist panel and zero-weight region and inspects b
     expect(await panelViewport.evaluate(el => el.scrollHeight - el.clientHeight)).toBeGreaterThan(100);
     await swipeToBottom(page, panelViewport, panelsPlot);
     const point = panelsPlot.locator('.scatterlayer').last().locator('.points .point').nth(2);
-    await expect(point).toBeInViewport();
-    const box = (await point.boundingBox())!;
-    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await tapVisibleMarker(page, point);
     await expect(panelsPlot.locator('.hoverlayer')).toContainText(/BIRCH.*Baseline 100 on 2026-03-03/);
     await card(page, panels).screenshot({ path: info.outputPath('narrow-panels.png') });
     // Reflow the same watchlist across the overflow boundary before changing any chart settings.
@@ -310,10 +316,8 @@ test('scrolls to the final watchlist panel and zero-weight region and inspects b
     await swipeToBottom(page, viewport, graph);
     const points = graph.locator('.scatterlayer .trace').last().locator('.points .point');
     await expect(points).toHaveCount(expected.length);
-    await expect(points.last()).toBeInViewport();
-    const marker = (await points.last().boundingBox())!;
     // The zero marker straddles the axis. Tap the half inside the plot.
-    await page.touchscreen.tap(marker.x + marker.width * .75, marker.y + marker.height / 2);
+    await tapVisibleMarker(page, points.last(), .75);
     await expect(graph.locator('.hoverlayer')).toContainText(expected.at(-1)!.country + 'Reported weight 0%');
     await widget.screenshot({ path: info.outputPath('narrow-region.png') });
   } finally {
