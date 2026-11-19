@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { DatasetColumn } from '../types';
+import type { DatasetColumn, DatasetRow } from '../types';
 import type { RecipeOptions } from './types';
 
 type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean };
@@ -22,13 +22,25 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
   return [dateRole, adjustedPriceRole,
     { key: 'symbol', label: 'Symbol field', names: ['symbol', 'ticker'], optional: true }];
 }
-export function acceptsBinding(role: Role, c: DatasetColumn): boolean {
+export function acceptsBinding(role: Role, c: DatasetColumn, rows?: DatasetRow[]): boolean {
   if (c.analytical || c.measureId || c.aggregation || c.splitPath?.length) return false;
   if (role.date && (c.dtype === 'date' || c.dtype === 'dateString')) return true;
   if (c.dtype && (role.numeric ? c.dtype !== 'number' : !['text', 'date', 'dateString'].includes(c.dtype))) return false;
   if (role.key === 'price') {
     if ([c.id, c.sourceFieldId].some(id => id && /^(?:open|high|low|close|unadjusted_close|volume|rate|yield|(?:eps|revenue)(?:_.*)?)$/i.test(id))) return false;
     if (c.dtype === 'number') return true; // An explicit choice can identify a custom adjusted-price series.
+    // Raw snapshots reach pure builders before the table executor infers column types.
+    // Use delivered values for an explicit custom binding only when the column is numeric.
+    if (!c.dtype && rows && !role.names.includes((c.sourceFieldId ?? c.id).toLowerCase())) {
+      let observed = false;
+      for (const row of rows) {
+        const value = row.values[c.id];
+        if (value == null) continue;
+        if (typeof value !== 'number' || !Number.isFinite(value)) return false;
+        observed = true;
+      }
+      return observed;
+    }
   }
   return role.names.includes((c.sourceFieldId ?? c.id).toLowerCase());
 }
@@ -38,13 +50,13 @@ export function bindingCandidates(role: Role, columns: DatasetColumn[]): Dataset
 }
 
 /** Check saved roles against the current presentation before either projection or execution. */
-export function savedBindingIssue(options: RecipeOptions, columns: DatasetColumn[]): string | undefined {
+export function savedBindingIssue(options: RecipeOptions, columns: DatasetColumn[], rows?: DatasetRow[]): string | undefined {
   const fields: Record<string, string | undefined> = options.fields;
   for (const role of bindingRoles(options.kind, options.kind === 'estimate-range' ? options.metric : 'eps')) {
     const id = fields[role.key];
     if (id === undefined) continue;
     const column = columns.find(c => c.id === id);
     if (!column) return `Field ${id} is unavailable. Repair chart fields.`;
-    if (!acceptsBinding(role, column)) return `Field ${id} cannot supply ${role.label.toLowerCase()}. Repair chart fields.`;
+    if (!acceptsBinding(role, column, rows)) return `Field ${id} cannot supply ${role.label.toLowerCase()}. Repair chart fields.`;
   }
 }

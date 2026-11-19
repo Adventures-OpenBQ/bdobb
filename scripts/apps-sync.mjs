@@ -2,7 +2,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 /**
- * Writes every BDOBB example dashboard into openbq-docker's one combined
+ * Writes the stack-served BDOBB example dashboards into openbq-docker's one combined
  * examples/bdobb/apps.json, which its API image serves on /apps.json next to
  * the provider apps (the lanes hook appends it to the built catalog).
  *
@@ -35,6 +35,8 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SERVED = {
+  // Imported with its separate static fixture connection; those four ids are local to the example.
+  "v9-chart-expansion": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,
@@ -98,7 +100,7 @@ for (const rel of found) {
   const episode = /^v(\d+)[.-]/.exec(name);
   if (!episode) throw new Error(`docs/examples/${rel}: no leading vN episode in its name`);
   seen.add(name);
-  if (Number(episode[1]) > EPISODE) continue;
+  if (!SERVED[name] || Number(episode[1]) > EPISODE) continue;
   for (const app of JSON.parse(readFileSync(join(SRC, rel), "utf8"))) {
     apps.push({ ...app, img: LOGO_PATH, img_dark: logoUri, img_light: logoUri });
   }

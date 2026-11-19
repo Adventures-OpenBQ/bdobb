@@ -281,10 +281,10 @@ it.each([
   const data = priceDataset([{ date: '2026-01-02', symbol: 'A', [price]: 100, [rowField]: observed }]);
   data.columns.find(c => c.id === price)!.metadata = { [metadataField]: declared };
   const fields = { ...priceFields, price };
-  expect(preparePrices(data, fields)).toMatchObject({ ok: false, refused: true });
+  expect(preparePrices(data, fields)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/mixed or missing price (currency|unit)/) });
   const projected = await priceProjection(data, '', Object.values(fields));
   expect(projected.columns.map(c => c.id)).not.toContain(rowField);
-  expect(preparePrices(projected, fields)).toMatchObject({ ok: false, refused: true });
+  expect(preparePrices(projected, fields)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/mixed or missing price (currency|unit)/) });
 });
 
 it('validates only the bound price column against the acquired currency', async () => {

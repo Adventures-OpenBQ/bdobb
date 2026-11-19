@@ -38,7 +38,7 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
   if (issue) return issue;
   if (!dailyScope(dataset.provenance)) return 'Choose a source with documented daily interval and acquisition dates.';
   const price = dataset.columns.find(c => c.id === fields.price)!;
-  if (!acceptsBinding(adjustedPriceRole, price)) return 'Choose a raw adjusted-price observation.';
+  if (!acceptsBinding(adjustedPriceRole, price, dataset.rows)) return 'Choose a raw adjusted-price observation.';
   const metadata = dataset.provenance.metadata;
   if (typeof metadata?.priceDimensionIssue === 'string') return metadata.priceDimensionIssue;
   const verifiedIdentities = metadata?.priceSymbolFields;

@@ -50,7 +50,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     return { ok: false, refused: true, message: 'Supply a valid chart context with theme, precision and a YYYY-MM-DD calendar date.' };
 
   const recipe = decoded.options;
-  const issue = savedBindingIssue(recipe, dataset.columns);
+  const issue = savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);

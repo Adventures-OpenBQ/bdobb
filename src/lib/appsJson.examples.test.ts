@@ -9,8 +9,8 @@ import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
 
 /**
- * Every file under docs/examples is served to users: `pnpm apps:sync` writes
- * them all into openbq-docker's one combined examples/bdobb/apps.json (SERVED
+ * For stack-backed examples, `pnpm apps:sync` writes
+ * the manifests into openbq-docker's one combined examples/bdobb/apps.json (SERVED
  * in scripts/apps-sync.mjs), served at the API's /apps.json and opened from
  * the rail's Apps catalogue. So each one is parsed and imported
  * here exactly as opening it would, against a registry that serves every
@@ -19,7 +19,7 @@ import type { WidgetDef } from "./types";
  */
 const dir = resolve(process.cwd(), "docs/examples");
 // REVIEW (user ruling 2026-10-14): was the top-level *.apps.json only. Every
-// example under docs/examples is served (scripts/apps-sync.mjs scans them all),
+// example under docs/examples is distributed (scripts/apps-sync.mjs scans them all),
 // so a <dir>/apps.json example -- v5-financial-demo -- is read here too, and
 // every it.each below covers it.
 const files = [
@@ -70,6 +70,7 @@ describe("docs/examples", () => {
     "v7.0.0-touch.apps.json",
     "v8.0.0-news.apps.json",
     "v8.0.0-pinned.apps.json",
+    "v9-chart-expansion.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",

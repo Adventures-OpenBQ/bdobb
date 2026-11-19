@@ -11,7 +11,7 @@ import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
-import { datasetFromRows } from "../lib/localTableData";
+import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
 import { LOCAL_TABLE_ID } from '../lib/builtins';
@@ -115,13 +115,14 @@ export function backendTableSource(card: DashboardCard): SourceAdapter {
     await entry.ready;
     // The card's own fetch failed: its children must not keep the previous rows.
     if (entry.data instanceof Error) throw entry.data;
-    if (!fitsTableWorker(entry.data)) throw new Error('This table is too large for the table engine');
+    const parsed = parseTableSnapshot(entry.data);
+    if (!fitsTableWorker(parsed.data)) throw new Error('This table is too large for the table engine');
     const spec = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table;
     // Copied: datasetFromRows fills absent keys, and these rows are also on screen.
-    const rows = (tableRows(entry.data) ?? []).map(row => ({ ...row }));
+    const rows = (tableRows(parsed.data) ?? []).map(row => ({ ...row }));
     // The provider's aggregation hint rides as column metadata, so a linked table's input keeps it for Rita's describe_table (V9-P2).
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}), ...(c.hint ? { metadata: { aggregationHint: c.hint } } : {}) })) : [];
-    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns) };
+    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot) };
   } };
 }
 /** Only this store owns acquisition and activation; UI caches consume exact active revisions. */

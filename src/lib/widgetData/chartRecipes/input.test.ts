@@ -156,3 +156,17 @@ it.each(['eps_low', 'revenue_avg', 'rate'])('refuses a saved adjusted-price bind
   delete price.sourceFieldId;
   expect(preparePrices(data, options.fields)).toMatchObject({ ok: true });
 });
+
+it('uses delivered numeric observations for an explicitly bound untyped adjusted-price field', async () => {
+  const { runRecipe } = await import('./run');
+  const data = priceDataset([{ date: '2026-01-02', symbol: 'A', split_adjusted: 12 }]);
+  const options = { ...drawdownOptions, fields: { ...priceFields, price: 'split_adjusted' } };
+  const context = { theme: 'dark' as const, today: '2026-02-01', maxDecimals: 2 };
+  const price = data.columns.find(c => c.id === 'split_adjusted')!;
+  expect(runRecipe(data, options, context)).toMatchObject({ ok: true });
+  price.sourceFieldId = 'volume';
+  expect(runRecipe(data, options, context)).toMatchObject(refusal);
+  delete price.sourceFieldId;
+  data.rows.push({ id: 'text', values: { date: '2026-01-03', symbol: 'A', split_adjusted: '13' } });
+  expect(runRecipe(data, options, context)).toMatchObject(refusal);
+});

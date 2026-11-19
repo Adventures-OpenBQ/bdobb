@@ -28,13 +28,13 @@ With no date-shaped column, the x-axis is the one non-numeric column if there is
 
 "Numeric" means every non-null value in those first five rows is a number. A mostly-text column with one stray number does not qualify, and a bare year like `2026` is not date-shaped and will not become an x-axis. If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar and heatmap traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator and waterfall traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
 
 Two other chart widget types render here as well. A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or Vega-Lite specification instead of a Plotly figure; the app translates the common cases — line, area, bar, column and scatter — into the same bundled Plotly, so they draw as ordinary chart cards rather than raw JSON. A spec that uses something the translation does not cover falls back to the card's **Raw** view.
 
 The reference backend's **TradingView Chart** (`advanced_charting`) is drawn with TradingView's open-source lightweight-charts library rather than Plotly: daily candles for the widget's default symbol over the last year, with volume bars in the bottom fifth, in the colours the widget declares. It refreshes on the widget's own update interval and follows the light/dark theme. The mouse wheel over it scrolls the card rather than zooming the chart; drag to pan. A **Rendered by TradingView** line under the chart links to the library's page. Drawing tools, indicators, symbol search and resolution — the features of TradingView's full charting library — are not supported.
 
-A **linked chart**, created from a table's card menu or the Widget Library's source dialog, draws that table's output rather than a widget payload. Its controls pick **Chart type** (Columns, Bars or Lines), a **Category**, the **Measures** to plot and, for columns and bars, **Display** as Grouped or Stacked. See [[tables|Tables]] for what output it receives.
+Create a **linked chart** from a table’s card menu or the Widget Library’s source dialog. You can chart the presented categories and measures, or choose a financial chart for adjusted prices, observed yields, guarded quarterly estimates or a pinned income statement. The controls, source requirements and meaning of blank observations are in [[linked-widgets|Linked Widgets]].
 
 ## Zoom, pan and reset
 

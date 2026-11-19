@@ -32,8 +32,8 @@ export async function dataFromBytes(name: string, bytes: Uint8Array): Promise<un
 type Snapshot = { receipt: Record<string, string>; completeness: WidgetDataset['completeness']['kind'] };
 type ParsedTable = { data: unknown; formats?: NonNullable<DatasetRow['cellFormats']>[]; snapshot?: Snapshot };
 
-function parseJsonTable(bytes: Uint8Array): ParsedTable {
-  const data: unknown = JSON.parse(new TextDecoder().decode(bytes));
+/** An explicit acquisition receipt travels with the delivered rows. */
+export function parseTableSnapshot(data: unknown): ParsedTable {
   if (!isRecord(data) || !Object.hasOwn(data, 'receipt')) return { data };
   const { rows, receipt, completeness } = data;
   const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
@@ -46,7 +46,7 @@ function parseJsonTable(bytes: Uint8Array): ParsedTable {
 }
 
 async function parsedFromBytes(name: string, bytes: Uint8Array): Promise<ParsedTable> {
-  if (extensionOf(name) === "json") return parseJsonTable(bytes);
+  if (extensionOf(name) === "json") return parseTableSnapshot(JSON.parse(new TextDecoder().decode(bytes)));
   await assertInflatesWithin(bytes, WORKBOOK_MAX_INFLATED_BYTES);
   const XLSX = await import("xlsx");
   const book = XLSX.read(bytes, { type: "array", cellNF: true });
@@ -159,17 +159,7 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
     if (!rows) throw new Error();
     const fiscal = yearEnds ? correctStatementRows(rows, '', yearEnds, [], true) : undefined;
     if (fiscal) rows = fiscal.rows;
-    dataset = datasetFromRows(rows, widgetId, inputRevision, 'localFile', parsed.formats);
-    if (parsed.snapshot) {
-      const { receipt, completeness } = parsed.snapshot;
-      dataset.provenance.receipt = receipt;
-      dataset.completeness.kind = completeness;
-      if (completeness !== 'complete') {
-        delete dataset.completeness.totalRowCount;
-        delete dataset.completeness.totalRowCountKind;
-      }
-      dataset.provenance = priceAcquisitionProvenance(dataset);
-    }
+    dataset = datasetFromRows(rows, widgetId, inputRevision, 'localFile', parsed.formats, [], parsed.snapshot);
     if (fiscal?.asReported) dataset.diagnostics = [{ ...FISCAL_AS_REPORTED }];
   } catch { throw new Error('Could not parse local table'); }
   return dataset;
@@ -181,7 +171,7 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
  * labels; fields it leaves out follow in row order.
  */
 export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: number, sourceKind: string,
-  formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = []): WidgetDataset {
+  formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot): WidgetDataset {
   const fields = [...new Set(rows.flatMap(row => Object.keys(row)))];
   // SheetJS leaves a blank cell out of its row and JSON rows may omit a key;
   // the engine reads an absent key as an unavailable field, so a file column
@@ -189,7 +179,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
   for (const row of rows) for (const field of fields) if (!Object.hasOwn(row, field))
     Object.defineProperty(row, field, {value:null, enumerable:true, writable:true, configurable:true});
   const declared = columns.filter(c => fields.includes(c.id)), named = new Set(declared.map(c => c.id));
-  return {
+  const dataset: WidgetDataset = {
     rows: identifyRows(rows).map((row,index) => ({...row, ...(formats?.[index] && Object.keys(formats[index]).length ? {cellFormats:formats[index]} : {})})),
     columns: [...declared, ...fields.filter(id => !named.has(id)).map(id => ({ id, label: id }))],
     resultRevision: inputRevision, outputRevision: inputRevision,
@@ -197,4 +187,15 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     completeness: { kind: 'complete', warnings: [], acquiredRowCount: rows.length, totalRowCount: rows.length, totalRowCountKind: 'exact' },
     freshness: { availability: 'available', stale: false },
   };
+  if (snapshot) {
+    const { receipt, completeness } = snapshot;
+    dataset.provenance.receipt = receipt;
+    dataset.completeness.kind = completeness;
+    if (completeness !== 'complete') {
+      delete dataset.completeness.totalRowCount;
+      delete dataset.completeness.totalRowCountKind;
+    }
+    dataset.provenance = priceAcquisitionProvenance(dataset);
+  }
+  return dataset;
 }

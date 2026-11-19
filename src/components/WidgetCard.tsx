@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isTableSnapshotEnvelope } from "../lib/tableRowValues";
 import { filterDateContext } from "../lib/dateFilters";
 import { calendarOf } from "../lib/calendar";
 import { CalendarRenderer } from "./renderers/CalendarRenderer";
@@ -416,8 +417,10 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
-  const fiscalRows = useStatementRows(widget, backend, query, rawData);
+  const envelope = widget?.type === "table" && isTableSnapshotEnvelope(rawData) ? rawData : undefined;
+  const fiscalRows = useStatementRows(widget, backend, query, envelope ? envelope.rows : rawData);
   const data = fiscalRows.data;
+  const acquired = useMemo(() => envelope ? { ...envelope, rows: data } : data, [envelope, data]);
   // Rows the table runtime holds (local, managed, linked) carry the same "as reported" mark as a diagnostic.
   const fiscalNote = fiscalRows.asReported || !!executionView.ready?.diagnostics.some((d) => d.code === FISCAL_AS_REPORTED.code);
   const localFiscal = widget?.type === "local_table" && (fiscalNote || !!card.params.fiscalYearEndBackend);
@@ -502,8 +505,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   useEffect(() => {
     if (!dashboardId || !backendTable) return;
     if (failed) tableExecutionStore.setBackendRows(dashboardId, card.id, new Error(error ?? "Request failed"));
-    else if (status === "ready" && data !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, data);
-  }, [dashboardId, backendTable, card.id, data, status, failed, error]);
+    else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired);
+  }, [dashboardId, backendTable, card.id, acquired, status, failed, error]);
 
   const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: card.linkedSource }), [widget, data, card.linkedSource]);
 

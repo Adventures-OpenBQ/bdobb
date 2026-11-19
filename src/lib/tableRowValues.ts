@@ -7,3 +7,8 @@ export type Row = Record<string, unknown>;
 export function tableRows(data: unknown): Row[] | null {
   return Array.isArray(data) && data.every(isRecord) ? data : null;
 }
+
+/** Identify an explicit acquisition envelope before a widget selects or transforms its rows. */
+export function isTableSnapshotEnvelope(data: unknown): data is Record<string, unknown> {
+  return isRecord(data) && ['rows', 'completeness', 'receipt'].every(key => Object.hasOwn(data, key));
+}

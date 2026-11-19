@@ -68,6 +68,15 @@ export function buildYieldCurve(
 
   const grid = [...new Set(dates.flatMap(date => [...curves.get(date)!.keys()]))].sort((a, b) => a - b);
   const labels = grid.map(months => months < 12 ? `${months}M` : `${months / 12}Y`);
+  // Keep both endpoints. Closely spaced short tenors still have their own marker and hover label.
+  const span = grid[grid.length - 1] - grid[0];
+  const minSpacing = span / 7;
+  const tickvals = [grid[0]];
+  for (const months of grid.slice(1, -1)) {
+    if (months - tickvals[tickvals.length - 1] >= minSpacing && grid[grid.length - 1] - months >= minSpacing)
+      tickvals.push(months);
+  }
+  if (grid.length > 1) tickvals.push(grid[grid.length - 1]);
   const precision = dataset.columns.find(column => column.id === fields.rate)?.format?.decimalPlaces ?? context.maxDecimals;
   let gaps = 0;
   const data = dates.map(date => {
@@ -102,7 +111,7 @@ export function buildYieldCurve(
         ...themedLayout(context.theme), uirevision: revision, showlegend: true,
         title: { text: 'Yield curve by observation date' },
         margin: { l: 68, r: 12, t: 44, b: 58 },
-        xaxis: { title: { text: 'Maturity' }, type: 'linear', tickmode: 'array', tickvals: grid, ticktext: labels, automargin: true },
+        xaxis: { title: { text: 'Maturity' }, type: 'linear', tickmode: 'array', tickvals, ticktext: tickvals.map(months => labels[grid.indexOf(months)]), automargin: true },
         yaxis: { tickformat: `.${precision}%`, title: { text: 'Yield' } },
       },
     },

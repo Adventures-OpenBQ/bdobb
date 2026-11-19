@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { calendarIdsOf, sendParams, type WireContext } from "./params";
@@ -502,6 +503,8 @@ export async function fetchWidgetData(
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
+  // The table card separates the rows for presentation and passes the receipt to the executor.
+  if (widget.type === "table" && widget.dataKey === "rows" && isTableSnapshotEnvelope(payload)) return payload;
   return extractData(payload, widget.dataKey);
 }
 

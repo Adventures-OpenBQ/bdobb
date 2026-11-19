@@ -230,8 +230,9 @@ export function buildEstimateRange(dataset: WidgetDataset, options: Options, con
         margin: { l: 100, r: 12, t: 44, b: 58 },
         xaxis: { type: 'linear', title: { text: metricName }, automargin: true },
         yaxis: {
-          type: 'category', categoryorder: 'array', categoryarray: dates, autorange: 'reversed',
-          autorangeoptions: { include: [dates[0], dates[dates.length - 1]] },
+          type: 'category', categoryorder: 'array', categoryarray: dates,
+          // Autorange measures the plotted points, leaving trailing withheld quarters outside the SVG.
+          range: [dates.length - 0.5, -0.5],
           tickmode: 'array', tickvals: dates, ticktext: quarters.map(quarter => escape(quarter.label)), automargin: true,
         },
       },

@@ -319,6 +319,13 @@ describe("fetchWidgetData over real HTTP", () => {
     expect(server.requests.filter((r) => r.path === "/equity/price")).toHaveLength(0);
   });
 
+  it("keeps a declared snapshot receipt when a table selects its rows", async () => {
+    const envelope = { completeness: "paged", receipt: { interval: "1d" }, rows: [{ adjusted_close: 9 }] };
+    server = await startMockServer({ "/equity/price": envelope });
+    const b = { ...backend, baseUrl: server.url };
+    expect(await fetchWidgetData(b, widget({ type: "table", dataKey: "rows" }), {})).toEqual(envelope);
+  });
+
   it("hands a keys-type widget the whole envelope even when it declares a dataKey", async () => {
     // key-maint's widgets.json declares data.dataKey: "rows" on the keys
     // panel; the renderer needs `tier` from the envelope, so unwrapping it

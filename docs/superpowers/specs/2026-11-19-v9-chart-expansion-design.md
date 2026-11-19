@@ -146,7 +146,7 @@ The builder may settle exact module names, option keys, worker message plumbing,
 ## Evidence and related designs
 
 - User's scope approval in this chat, 2026-11-19.
-- Reference PDF: `/Users/artcashin/Downloads/BDOBB-chart-suggestions.pdf`, read in full during analysis.
+- Reference PDF: `BDOBB-chart-suggestions.pdf`, read in full during analysis.
 - BDOBB release/v9 `src/lib/plotly.ts`, verified via GitHub during analysis; local remote snapshot `a96b9619`.
 - BDOBB linked composition design: `2026-11-14-linked-chart-composition-design.md`.
 - BDOBB bullet design: `2026-11-15-linked-chart-bullet-estimates-design.md`; inspected implementation `baf9ed7d`.

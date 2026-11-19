@@ -4,6 +4,8 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { backendTableSource, createTableExecutionStore } from './tableExecutionStore';
 import { useWidgetRegistryStore } from './widgetRegistryStore';
+import { preparePrices } from '../lib/widgetData/chartRecipes/input';
+import { priceFields } from '../lib/widgetData/chartRecipes/fixtures';
 import { WORKER_MAX_CELLS } from '../lib/tableExecution/eligibility';
 import { createTableProvider } from '../lib/tableExecution/rust/providerFactory';
 import { providerHandler } from '../test/tableProviderBoundary';
@@ -928,6 +930,30 @@ it('runs a backend table on the worker from the rows its card fetched', async ()
     await store.settled('d');
     expect(store.readView('d', 'bt').error).toBe('HTTP 404');
     expect(store.readView('d', 'child').error).toBe('Source bt: HTTP 404');
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+  }
+});
+
+it.each(['bounded', 'paged'] as const)('preserves the explicit %s receipt from a backend table through chart projection', async completeness => {
+  useWidgetRegistryStore.setState({ widgets: [{ id: 'prices', backendId: 'b1', type: 'table', name: 'Prices', endpoint: '', params: [] } as never] });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker), source: backendTableSource });
+  const bt = { ...card('bt'), widgetId: 'prices', backendId: 'b1', params: {} };
+  try {
+    store.syncDashboard(dashboard([bt]));
+    store.ensureTable('d', 'bt');
+    const receipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
+    store.setBackendRows('d', 'bt', { completeness, receipt, rows: [
+      { symbol: 'A', date: '2026-01-02', adjusted_close: 100 },
+      { symbol: 'A', date: '2026-01-05', adjusted_close: 90 },
+    ] });
+    await store.settled('d');
+    const revision = store.readView('d', 'bt').active!;
+    const dataset = await store.readExecutor('d', 'bt')!.chartData(revision, Object.values(priceFields), new AbortController().signal);
+    expect(dataset.provenance.receipt).toEqual(receipt);
+    expect(dataset.completeness.kind).toBe(completeness);
+    expect(preparePrices(dataset, priceFields).ok).toBe(completeness === 'bounded');
   } finally {
     store.disposeDashboard('d');
     useWidgetRegistryStore.setState({ widgets: [] });
