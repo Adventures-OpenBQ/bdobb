@@ -1,6 +1,6 @@
 # V9 next chart batch: risk and ETF exposure
 
-Date: 2026-11-19. Status: written design approved by the user in chat; implementation planning authorized.
+Date: 2026-11-19. Status: approved and implemented locally with subagents; independent final review complete.
 
 ## Intent and scope
 
@@ -127,3 +127,8 @@ Evidence inspected for this design: the complete five-page reference PDF; the fi
 ## Builder check
 
 An independent software-engineer builder check completed on 2026-11-19 and returned "nothing important left". It checked whether consequential choices remained unanswered before implementation planning. This is a design-readiness check, not implementation verification. The user subsequently approved this written design and requested the implementation plan. Implementation has not been authorized by that planning request.
+
+
+## Implementation acceptance
+
+The user approved implementation in chat after approving the plan. All four chart families are implemented on the local follow-up branch, with the reviewed fixes and recorded limitations. [Verification](../../releases/validation/v9/risk-exposure/verification.md) and [independent review](../../releases/validation/v9/risk-exposure/review.md) are the acceptance record. This does not publish or merge the follow-up.

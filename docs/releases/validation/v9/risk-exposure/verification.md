@@ -55,3 +55,10 @@ The first-batch build used product commit `0ee0bdba8020d5a61a991af0ca7f4b093a443
 | Source map bytes | 28,395,000 | 28,537,770 | +142,770 |
 
 The recipe worker accounts for 51,200 bytes of JavaScript and a 210,654-byte map in the candidate. The diff against the first-batch product was empty for the package manifest, lockfile and Plotly trace registration. The four recipes draw with the existing bar and scatter modules.
+
+
+## Final independent handoff
+
+The final independent re-review approved the overflow-dependent touch correction. All eleven original findings and the introduced fitting-watchlist regression are addressed; no new findings remain. See [review and disposition](review.md#final-independent-confirmation) and [implementation rulings](rulings.md). The controller re-ran `pnpm test:web` at documentation head `09a7122d6946f1afc6efeb3b7c50ed89317178c2`: 57 passed, zero failed or skipped, exit 0. That head differs from shipping-tested `2a0e55edb6a0e8f3eefa3d60c2052b1a553deac9` only in review/verification/rulings and one screenshot. Subsequent handoff changes are documentation only.
+
+Local branch: `codex/v9-risk-exposure`, retained in its isolated worktree. No follow-up branch push, original PR update, merge or deployment was performed.

@@ -113,3 +113,25 @@ This local re-review changes no product files, index entries or branch state.
 Product commit `5a4403e68fcb9841df1db5038fcc06012d918a1b` measures the actual watchlist viewport and plot. The observer rechecks vertical overflow when either element resizes. Fitting watchlists retain their authored touch drag mode. Overflowing coarse-pointer watchlists release vertical dragging to scroll. The existing fixed-axis exposure policy continues to support vertical scrolling and marker inspection.
 
 The new unit regression exercises a 280-pixel plot at viewport heights of 568, 220 and 280 pixels. The Chromium regression resizes the same three-symbol watchlist from overflowing to fitting and back. It then zooms a fitting single CEDAR panel at 1100 × 1080 with a finger drag, verifying that both date bounds move inward. [Verification record](verification.md)
+
+
+## Final independent confirmation
+
+# Final independent re-review of watchlist touch zoom
+
+**ADDRESSED. Ready to merge.** The fitting watchlist supports finger-drag zoom again. An overflowing watchlist supports vertical swiping and marker inspection. I found no new Critical, Important or Minor issues in this correction.
+
+I reviewed the eight-file diff from `7f89bcda24204dbcaff53838ed0a5298c8173794` through `09a7122d6946f1afc6efeb3b7c50ed89317178c2`. In `src/components/renderers/ChartRenderer.tsx:130`, the watchlist measures actual viewport overflow on attachment and observes the viewport and its inner plot. This covers both a resized card and a reflowed plot. The observer disconnects on cleanup. Both the Plotly drag-mode override and touch-end handling follow the measured state on coarse pointers. Exposure retains its existing fixed-axis touch behavior through the separate opt-in at `src/components/renderers/LinkedChartRenderer.tsx:350`.
+
+The Chromium regression reproduces the original single-CEDAR case at 1100 × 1080, verifies zero vertical overflow, sends a real finger drag inside the subplot and checks that both displayed date bounds move inward. The same browser scenario measures the three-panel card across both overflow transitions, scrolls to BIRCH, taps its marker and inspects the zero-weight exposure marker. The marker stability check follows an in-viewport assertion and preserves the actual touchscreen tap and tooltip assertions. See `e2e/risk-exposure.spec.ts:277` and `e2e/risk-exposure.spec.ts:304`.
+
+The production fix is `5a4403e68fcb9841df1db5038fcc06012d918a1b`. I confirmed the tested commit `2a0e55edb6a0e8f3eefa3d60c2052b1a553deac9` changes only the browser test after that fix. The reviewed head adds verification documents and one refreshed screenshot. The recorded unit and browser regressions failed before the correction. I inspected the passing logs for 71 focused tests, three consecutive focused Chromium runs, all nine integrated Chromium cases, 9,367 unit passes with 47 opt-in skips and 57 web passes. The shipping record reports successful typecheck, lint and build, and the final content/header scrub is clean. The scoped whitespace check passed.
+
+**Limits.** I used the instrumented Chromium results and did not rerun passing suites. Physical touch hardware, native Tauri and Safari remain unverified. The eleven findings addressed in the preceding review were outside this final interaction check. The product checkout, index and branch were unchanged by this review.
+
+
+## Current disposition
+
+All five original Important findings and six Minor findings are addressed. The introduced fitting-touch-watchlist regression is also addressed. The final independent reviewer approved the correction with no new findings. Review is an independent local agent assessment, not a GitHub approval or merge. Provider and Docker code remain unchanged.
+
+The controller accepts the recorded review limits: live vendor availability/entitlements, physical devices/Safari/native Tauri touch, opt-in services, explicitly excluded analytical features and deployment remain outside this acceptance. None is represented as verified. Baseline React diagnostics remain attributed existing warnings.
