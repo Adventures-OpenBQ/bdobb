@@ -17,8 +17,7 @@ vi.mock("../../lib/plotly", () => ({
   renderPlot: (n: HTMLElement, f: unknown, u?: unknown) => renderPlot(n, f, u),
   purgePlot: (n: HTMLElement) => purgePlot(n),
   resizePlot: (n: HTMLElement) => resizePlot(n),
-  // Mirrors the real module's derivation: only what chartShapes can produce.
-  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar"]),
+  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall"]),
 }));
 
 const logError = vi.fn((_message: string) => Promise.resolve());
@@ -80,10 +79,6 @@ function figureFromLastCall() {
 
 describe("ChartRenderer", () => {
   it("draws a native figure payload as-is", async () => {
-    // Was `type: "bar"`. The fixture was switched to a registered type
-    // ("scatter") so this test exercises the draw-as-is path; refusal of an
-    // unregistered trace type is covered separately by "refuses a native
-    // figure with an unregistered trace type" using `pie`.
     const native = { data: [{ type: "scatter", x: [1], y: [2] }], layout: { title: "t" } };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).toHaveBeenCalledTimes(1);
@@ -104,11 +99,11 @@ describe("ChartRenderer", () => {
   });
 
   it("refuses a native figure with an unregistered trace type", () => {
-    const native = { data: [{ type: "pie", x: [1], y: [2] }], layout: {} };
+    const native = { data: [{ type: "surface", z: [[1, 2], [3, 4]] }], layout: {} };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).not.toHaveBeenCalled();
     expect(screen.getByText(/does not include/i)).toBeInTheDocument();
-    expect(screen.getByText(/pie/)).toBeInTheDocument();
+    expect(screen.getByText(/surface/)).toBeInTheDocument();
   });
 
   it("draws a native figure trace that omits `type`, since plotly defaults it to scatter", () => {
@@ -122,14 +117,14 @@ describe("ChartRenderer", () => {
     const native = {
       data: [
         { type: "scatter", x: [1], y: [2] },
-        { type: "pie", x: [1], y: [2] },
+        { type: "surface", z: [[1, 2], [3, 4]] },
       ],
       layout: {},
     };
     render(<ChartRenderer data={native} />);
     expect(renderPlot).not.toHaveBeenCalled();
     expect(screen.getByText(/does not include/i)).toBeInTheDocument();
-    expect(screen.getByText(/pie/)).toBeInTheDocument();
+    expect(screen.getByText(/surface/)).toBeInTheDocument();
   });
 
   it("converts rows carrying a time column into a figure", () => {

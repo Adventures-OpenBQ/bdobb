@@ -5,10 +5,23 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import type { DashboardCard } from '../../lib/types';
 import type { LinkedChartSettings, WidgetDataset } from '../../lib/widgetData/types';
 import { buildLinkedFigure } from '../../lib/widgetData/chartFigure';
+import { bulletRequestIds } from '../../lib/widgetData/bulletFigure';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { tableExecutionStore } from '../../stores/tableExecutionStore';
 import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
+/** A type change drops the settings the new type cannot use. */
+function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type']): LinkedChartSettings {
+    const next = { ...settings, type, display: settings.display === 'percent' && type !== 'column' && type !== 'bar' ? 'stacked' as const : settings.display };
+    if (type === 'pie' || type === 'bullet' || type === 'waterfall')
+        delete next.seriesFrom;
+    if (type === 'bullet')
+        next.display = 'grouped';
+    else
+        delete next.period;
+    return next;
+}
 type Completed = {
     identity: string;
     dataset: WidgetDataset;
@@ -26,6 +39,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
 }) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
+    const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
     const settings = card.linkedChart!;
     const source = card.linkedSource?.sourceWidgetId;
     const identity = JSON.stringify([dashboardId, card.id]);
@@ -33,6 +47,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const active = JSON.stringify(view.sourceRevision);
     const [completed, setCompleted] = useState<Completed>();
     const [error, setError] = useState<string>();
+    const [refused, setRefused] = useState<string>();
     const [noMatches, setNoMatches] = useState(false);
     const [saveError, setSaveError] = useState<string>();
     const [saving, setSaving] = useState(false);
@@ -53,10 +68,12 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         setNoMatches(false);
         const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));
         if (missing) {
+            setRefused(undefined);
             setError(`Field ${missing} is unavailable. Repair chart fields.`);
             return;
         }
         if (!settings.category || !settings.measures.length) {
+            setRefused(undefined);
             setError('Choose chart fields: select a category and numeric measures.');
             return;
         }
@@ -65,28 +82,40 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         const renderedSettings = { ...settings, measures: settings.measures.filter(id => present.has(id)) };
         if (!renderedSettings.measures.length) {
             setCompleted(undefined);
+            setRefused(undefined);
             setNoMatches(true);
             return;
         }
-        void executor.chartData(revision, [...new Set([settings.category, ...renderedSettings.measures])], controller.signal).then(dataset => {
+        const ids = [settings.category, ...renderedSettings.measures, ...(settings.type === 'bullet' ? bulletRequestIds(renderedSettings.measures, present) : [])];
+        void executor.chartData(revision, [...new Set(ids)], controller.signal).then(dataset => {
             if (controller.signal.aborted || version !== generation.current || JSON.stringify(dataset.revision) !== JSON.stringify(revision))
                 return;
-            const result = buildLinkedFigure(dataset, renderedSettings, theme);
+            const result = buildLinkedFigure(dataset, renderedSettings, theme, maxDecimals);
+            if (!result.ok && result.refused) {
+                setCompleted(undefined);
+                setError(undefined);
+                setRefused(result.message);
+                return;
+            }
+            setRefused(undefined);
             if (!result.ok) {
                 setError(result.message);
                 return;
             }
             setCompleted({ identity, dataset, settings: structuredClone(settings), renderedSettings, revision: JSON.stringify(revision) });
             setError(undefined);
-        }).catch(e => { if (!controller.signal.aborted && version === generation.current)
-            setError(`Could not load chart: ${e instanceof Error ? e.message : String(e)}`); });
+        }).catch(e => { if (!controller.signal.aborted && version === generation.current) {
+            setRefused(undefined);
+            setError(`Could not load chart: ${e instanceof Error ? e.message : String(e)}`);
+        } });
         return () => controller.abort();
         // Status-only failure transitions keep the completed schema, dataset and mapping together.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [store, dashboardId, card.id, source, mapping, active, view.ready]);
     const delivered = completed?.identity === identity ? completed : undefined;
-    const figure = useMemo((): PlotlyFigure | undefined => { if (!delivered)
-        return; const result = buildLinkedFigure(delivered.dataset, delivered.renderedSettings, theme); return result.ok ? result.figure : undefined; }, [delivered, theme]);
+    const built = useMemo(() => delivered ? buildLinkedFigure(delivered.dataset, delivered.renderedSettings, theme, maxDecimals) : undefined, [delivered, theme, maxDecimals]);
+    const figure: PlotlyFigure | undefined = built?.ok ? built.figure : undefined;
+    const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
     async function commit(next: LinkedChartSettings) { setSaving(true); try {
         if (!await onSettingsChange(next))
@@ -101,20 +130,24 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     } }
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
+    const quarters = settings.category ? [...new Set((delivered?.dataset.rows ?? []).map(r => String(r.values[settings.category!] ?? '')).filter(Boolean))] : [];
     return <div className="linked-chart-renderer">
     {!viewer ? <div className="chart-controls">
-      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit({ ...settings, type: e.target.value as LinkedChartSettings['type'] })}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option></select></label>
+      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => { const next = withType(settings, e.target.value as LinkedChartSettings['type']); void commit(next.type === 'bullet' && !next.category && fields.some(c => c.id === 'fiscal_period') ? { ...next, category: 'fiscal_period' } : next); }}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="bullet">Bullet</option><option value="waterfall">Waterfall</option></select></label>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
-      <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => !c.dtype || c.dtype === 'number').map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
-      {settings.type !== 'line' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option></select></label> : null}
+      <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
+      {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
+      {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}
+      {settings.type !== 'pie' && settings.type !== 'bullet' && settings.type !== 'waterfall' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}
     </div> : null}
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {lagging ? <p role="status">Updating chart — showing completed data (stale).</p> : null}
     {noMatches ? <p role="status">No selected series match the current filter.</p> : null}
-    {!figure && !error && !noMatches ? <p role="status">{view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
-    {delivered ? <div role="status">{delivered.dataset.completeness.kind !== 'complete' ? <p>{delivered.dataset.completeness.kind} data</p> : null}{[...delivered.dataset.completeness.warnings, ...(delivered.dataset.diagnostics ?? []).map(d => d.message), ...(delivered.dataset.freshness.diagnostics ?? [])].map((warning, i) => <p key={i}>{warning}</p>)}{delivered.dataset.provenance.sample ? <p>{delivered.dataset.provenance.sample}</p> : null}</div> : null}
+    {refused ? <p role="status">{refused}</p> : null}
+    {!figure && !error && !noMatches && !refused ? <p role="status">{view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
+    {delivered ? <div role="status">{delivered.dataset.completeness.kind !== 'complete' ? <p>{delivered.dataset.completeness.kind} data</p> : null}{[...delivered.dataset.completeness.warnings, ...(delivered.dataset.diagnostics ?? []).map(d => d.message), ...(delivered.dataset.freshness.diagnostics ?? [])].map((warning, i) => <p key={i}>{warning}</p>)}{notes.map((note, i) => <p key={`n${i}`}>{note}</p>)}{delivered.dataset.provenance.sample ? <p>{delivered.dataset.provenance.sample}</p> : null}</div> : null}
     </div>
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;

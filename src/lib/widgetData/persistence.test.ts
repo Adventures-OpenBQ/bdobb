@@ -31,3 +31,9 @@ it('keeps server extensions, unknown keys included, as owned plain data through 
   expect(copy.extensions).toEqual(extensions);
   expect(copy.extensions?.workspace?.widget).not.toBe((synced.extensions as typeof extensions).workspace.widget);
 });
+it('persists the new linked chart values unchanged', () => {
+  const linkedChart: DashboardCard['linkedChart'] = { type: 'pie', category: 'item', measures: ['fy2025'], display: 'percent', seriesFrom: 'rows' };
+  expect(persistedCard({ ...child, linkedChart }).linkedChart).toEqual(linkedChart);
+  const bullet: DashboardCard['linkedChart'] = { type: 'bullet', display: 'grouped', category: 'fiscal_period', measures: ['eps_actual'], period: 'FQ3 2026' };
+  expect(persistedCard({ ...child, linkedChart: bullet }).linkedChart).toEqual(bullet);
+});

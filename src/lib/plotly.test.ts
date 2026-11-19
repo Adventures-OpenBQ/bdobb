@@ -22,18 +22,19 @@ vi.mock("plotly.js/lib/candlestick", () => ({ default: { name: "candlestick" } }
 vi.mock("plotly.js/lib/scatter", () => ({ default: { name: "scatter" } }));
 vi.mock("plotly.js/lib/bar", () => ({ default: { name: "bar" } }));
 vi.mock("plotly.js/lib/heatmap", () => ({ default: { name: "heatmap" } }));
+vi.mock("plotly.js/lib/pie", () => ({ default: { name: "pie" } }));
+vi.mock("plotly.js/lib/indicator", () => ({ default: { name: "indicator" } }));
+vi.mock("plotly.js/lib/waterfall", () => ({ default: { name: "waterfall" } }));
 
 import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
 describe("REGISTERED_TRACE_TYPES", () => {
-  it("includes every trace chartShapes can produce", () => {
-    expect(REGISTERED_TRACE_TYPES.has("scatter")).toBe(true);
-    expect(REGISTERED_TRACE_TYPES.has("candlestick")).toBe(true);
-    expect(REGISTERED_TRACE_TYPES.has("bar")).toBe(true);
+  it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall"])("includes the registered %s trace", (type) => {
+    expect(REGISTERED_TRACE_TYPES.has(type)).toBe(true);
   });
 
-  it("registers heatmap so the reference heatmap widgets render", () => {
-    expect(REGISTERED_TRACE_TYPES.has("heatmap")).toBe(true);
+  it("excludes unsupported trace types", () => {
+    expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(false);
   });
 });
 
@@ -77,5 +78,21 @@ describe("renderPlot's uirevision", () => {
     await renderPlot(document.createElement("div"), { data: [], layout: { uirevision: "backend" } }, "card-1");
     const layout = react.mock.calls[react.mock.calls.length - 1][2];
     expect(layout.uirevision).toBe("backend");
+  });
+});
+
+describe("renderPlot and indicator traces", () => {
+  it("purges before drawing indicators, whose in-place update stacks new bands over the bar", async () => {
+    purge.mockClear();
+    const node = document.createElement("div");
+    await renderPlot(node, { data: [{ type: "indicator" }], layout: {} });
+    expect(purge).toHaveBeenCalledWith(node);
+    expect(purge.mock.invocationCallOrder[0]).toBeLessThan(react.mock.invocationCallOrder.at(-1)!);
+  });
+
+  it("keeps the in-place update (and the user's zoom) for every other trace", async () => {
+    purge.mockClear();
+    await renderPlot(document.createElement("div"), { data: [{ type: "bar" }], layout: {} });
+    expect(purge).not.toHaveBeenCalled();
   });
 });

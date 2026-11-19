@@ -1,20 +1,19 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The custom partial bundle. plotly.js in full is roughly 4.7MB minified
-// against an app bundle of a few hundred KB; registering only the traces the
-// app can actually produce keeps that to a fraction. chartShapes emits exactly
-// three trace types, and THIS FILE IS THE ONLY PLACE the list lives — widening
-// it later is one edit here.
+// Register the traces supported by BDOBB and use that same list for native figure validation.
 import Plotly from "plotly.js/lib/core";
 import bar from "plotly.js/lib/bar";
 import candlestick from "plotly.js/lib/candlestick";
 import scatter from "plotly.js/lib/scatter";
 import heatmap from "plotly.js/lib/heatmap";
+import pie from "plotly.js/lib/pie";
+import indicator from "plotly.js/lib/indicator";
+import waterfall from "plotly.js/lib/waterfall";
 import type { Data } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
-const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap];
+const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall];
 
 Plotly.register(REGISTERED_TRACES);
 
@@ -54,6 +53,11 @@ export function renderPlot(node: HTMLElement, figure: PlotlyFigure, uirevision?:
   // chartShapes deliberately types figure.data as unknown[] (it's the producer
   // of both native and built figures); the real element shape is Plotly's own
   // Data union, asserted here at the one seam where the two types meet.
+  // Plotly.react appends an indicator's new gauge steps after its bar and threshold, drawing
+  // the band over them; bullets have no zoom to keep, so they are drawn fresh.
+  if (figure.data.some(t => typeof t === "object" && t !== null && "type" in t && t.type === "indicator")) {
+    Plotly.purge(node);
+  }
   return Plotly.react(node, figure.data as Data[], layout, CONFIG) as unknown as Promise<void>;
 }
 
