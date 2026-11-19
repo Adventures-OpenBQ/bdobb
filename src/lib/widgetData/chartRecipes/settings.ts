@@ -103,6 +103,15 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
   return { ok: true, options: value as RecipeOptions };
 }
 
+/** A null result represents legacy settings with no recipe declaration. */
+export function decodeLinkedChartRecipe(settings: object, chartType: string): RecipeOptionsResult | null {
+  const descriptor = Object.getOwnPropertyDescriptor(settings, 'recipe');
+  if (descriptor && (!descriptor.enumerable || !('value' in descriptor)))
+    return invalid('Declare recipe options as enumerable JSON data.');
+  const value: unknown = descriptor?.value;
+  return isRecipeType(chartType) || value !== undefined ? decodeRecipeOptions(value, chartType) : null;
+}
+
 export function validateRecipeOptions(value: unknown, chartType: string): RecipeOptions | null {
   const result = decodeRecipeOptions(value, chartType);
   return result.ok ? result.options : null;

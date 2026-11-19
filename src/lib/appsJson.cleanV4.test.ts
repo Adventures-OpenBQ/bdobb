@@ -191,3 +191,59 @@ it('v4 import refuses options declared as accessors without invoking them', () =
   Object.assign(cards[0].extras, { linkedChart: { ...correlationSettings, recipe } });
   expect(() => importApps([exported.value], [])).toThrow(/lookback.*expected JSON data/i);
 });
+
+it('round-trips a binding-only recipe with omitted legacy measures', () => {
+  const template = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!template.ok) throw new Error(template.issue.message);
+  const { cards } = template.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  const { measures: _, ...bindingOnly } = correlationSettings;
+  Object.assign(cards[0].extras, { linkedChart: bindingOnly });
+  const imported = importApps([template.value], []).dashboards[0];
+  expect(imported.tabs[0].cards[0].linkedChart).toEqual(correlationSettings);
+  expect(Object.hasOwn(bindingOnly, 'measures')).toBe(false);
+
+  const exported = exportCompatibleApp(imported);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const reopened = importApps(JSON.parse(JSON.stringify([exported.value])), []).dashboards[0];
+  expect(reopened.tabs[0].cards[0].linkedChart).toEqual(correlationSettings);
+});
+
+it.each([
+  { type: 'line', display: 'grouped' },
+  { ...correlationSettings, measures: [19] },
+  { ...correlationSettings, measures: null },
+])('still requires valid legacy measures when supplied or used by a legacy chart', linkedChart => {
+  const template = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!template.ok) throw new Error(template.issue.message);
+  const { cards } = template.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  Object.assign(cards[0].extras, { linkedChart });
+  expect(() => importApps([template.value], [])).toThrow(/invalid linked chart settings/i);
+});
+
+it('v4 import refuses a non-enumerable recipe getter without invoking it', () => {
+  const template = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ paramsOpen: true })] }] });
+  if (!template.ok) throw new Error(template.issue.message);
+  const { cards } = template.value.extensions!.bdobb as { cards: Array<{ extras: object }> };
+  let reads = 0;
+  const linkedChart = Object.defineProperty({ ...correlationSettings }, 'recipe', {
+    enumerable: false,
+    get() { reads++; return correlationSettings.recipe; },
+  });
+  Object.assign(cards[0].extras, { linkedChart });
+  let failure: unknown;
+  try {
+    importApps([template.value], []);
+  } catch (error) {
+    failure = error;
+  }
+  expect(reads).toBe(0);
+  expect(failure).toMatchObject({ message: expect.stringMatching(/recipe options.*enumerable JSON data/i) });
+});
+
+it('v4 export refuses a hidden recipe property that would be lost when cloned', () => {
+  const linkedChart = Object.defineProperty({ ...correlationSettings }, 'recipe', {
+    enumerable: false, value: correlationSettings.recipe,
+  });
+  const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ linkedChart })] }] });
+  expect(exported).toMatchObject({ ok: false, issue: { message: expect.stringMatching(/recipe options.*enumerable JSON data/i) } });
+});

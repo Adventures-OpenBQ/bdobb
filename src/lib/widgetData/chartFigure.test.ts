@@ -224,3 +224,17 @@ it('refuses recipe types on the synchronous path even if legacy fields are valid
     expect(buildLinkedFigure(dataset, { ...correlation, recipe: undefined }, 'dark')).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/recipe options/i) });
     expect(buildLinkedFigure(dataset, { ...settings, type: 'future-chart' } as unknown as LinkedChartSettings, 'dark')).toMatchObject({ ok: false, refused: true });
 });
+
+it.each(['correlation', 'column'] as const)('refuses a hidden recipe getter for %s without reading the property', type => {
+    let reads = 0;
+    const hidden = Object.defineProperty({ ...settings, type }, 'recipe', {
+        enumerable: false,
+        get() {
+            reads++;
+            return { version: 1, kind: 'correlation', fields: { date: 'date', price: 'adjusted_close' }, symbols: ['AMD'], lookback: 252, minOverlap: 60 };
+        },
+    });
+    const result = buildLinkedFigure(dataset, hidden, 'dark');
+    expect(reads).toBe(0);
+    expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/recipe options.*enumerable JSON data/i) });
+});

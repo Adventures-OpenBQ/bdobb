@@ -8,7 +8,7 @@ import { isRecord } from './isRecord';
 import { reservedPivotName } from './paramGroups';
 import { AGG_NAMES, BUCKETS } from './types';
 import type { Dashboard, DashboardCard, PivotConfig } from './types';
-import { decodeRecipeOptions, isLegacyLinkedChartType, isRecipeType } from './widgetData/chartRecipes/settings';
+import { decodeLinkedChartRecipe, isLegacyLinkedChartType, isRecipeType } from './widgetData/chartRecipes/settings';
 
 type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
   view?: 'calendar';
@@ -85,19 +85,20 @@ export function extras(value: unknown, path: string): Extras {
     if (isRecord(s)) keys(s, ['kind', 'ids', 'excludedIds'], `${path}.tableSelection`);
     if (!isRecord(s) || !['none', 'explicit', 'allMatching'].includes(s.kind as string) || (s.kind === 'explicit' && !strings(s.ids)) || (s.kind === 'allMatching' && !strings(s.excludedIds))) extensionError(path, 'Invalid symbolic selection.');
   }
+  let chartWithoutMeasures: Record<string, unknown> | undefined;
   if (value.linkedChart !== undefined) {
     const c = value.linkedChart;
     const chartPath = `${path}.linkedChart`;
     if (!isRecord(c) || typeof c.type !== 'string' || (!isLegacyLinkedChartType(c.type) && !isRecipeType(c.type)))
       extensionError(chartPath, 'Invalid linked chart type. Choose a supported chart type.');
+    const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
     if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
-      || !strings(c.measures) || !['grouped', 'stacked', 'percent'].includes(c.display as string)
+      || (!needsMeasuresDefault && !strings(c.measures)) || !['grouped', 'stacked', 'percent'].includes(c.display as string)
       || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string)))
       extensionError(chartPath, 'Invalid linked chart settings.');
-    if (isRecipeType(c.type) || c.recipe !== undefined) {
-      const recipe = decodeRecipeOptions(c.recipe, c.type);
-      if (!recipe.ok) extensionError(`${chartPath}.recipe`, recipe.message);
-    }
+    const recipe = decodeLinkedChartRecipe(c, c.type);
+    if (recipe && !recipe.ok) extensionError(`${chartPath}.recipe`, recipe.message);
+    if (needsMeasuresDefault) chartWithoutMeasures = c;
   }
   if (value.calendar !== undefined) {
     const c = value.calendar;
@@ -113,7 +114,10 @@ export function extras(value: unknown, path: string): Extras {
   }
   if (value.pivot !== undefined) pivot(value.pivot, `${path}.pivot`);
   if (value.pivotBindings !== undefined && (!Array.isArray(value.pivotBindings) || value.pivotBindings.some(b => !isRecord(b) || typeof b.group !== 'string' || typeof b.paramName !== 'string' || !reservedPivotName(b.paramName)))) extensionError(path, 'Invalid Pivot binding.');
-  return structuredClone(value) as Extras;
+  const normalized = chartWithoutMeasures
+    ? { ...value, linkedChart: { ...chartWithoutMeasures, measures: [] } }
+    : value;
+  return structuredClone(normalized) as Extras;
 }
 export function needsV4(dashboard: Dashboard): boolean {
   return dashboard.tabs.some(tab => tab.cards.some(card => EXTRA_FIELDS.some(k => card[k] !== undefined) || card.linkedSource !== undefined || card.view === 'calendar' || card.table?.pivot !== undefined || card.bindings?.some(b => reservedPivotName(b.paramName))));

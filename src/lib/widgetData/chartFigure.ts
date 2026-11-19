@@ -6,7 +6,7 @@ import type { PlotlyFigure } from '../chartShapes';
 import type { WidgetDataset, LinkedChartSettings, DatasetColumn } from './types';
 import { buildBulletFigure } from './bulletFigure';
 import { buildWaterfall } from './waterfallFigure';
-import { decodeRecipeOptions, isLegacyLinkedChartType, isRecipeType } from './chartRecipes/settings';
+import { decodeLinkedChartRecipe, isLegacyLinkedChartType } from './chartRecipes/settings';
 const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
 export function color(id: string) { let hash = 0; for (const c of id)
     hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0; return COLORS[hash % COLORS.length]; }
@@ -28,10 +28,9 @@ function rowNames(rows: DatasetRows, labels: string[]): string[] {
 }
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
 export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark', maxDecimals = 2): LinkedFigureResult {
-    if (isRecipeType(settings.type) || settings.recipe !== undefined) {
-        const recipe = decodeRecipeOptions(settings.recipe, settings.type);
+    const recipe = decodeLinkedChartRecipe(settings, settings.type);
+    if (recipe)
         return { ok: false, refused: true, message: recipe.ok ? 'Render this financial recipe with the linked chart worker.' : recipe.message };
-    }
     if (!isLegacyLinkedChartType(settings.type))
         return { ok: false, refused: true, message: 'Choose a supported linked chart type.' };
     if (settings.type === 'bullet')
