@@ -219,7 +219,7 @@ test('repairs the exposure source, filters holdings and reacquires a saved works
 
 test('scrolls every region and reaches its zero-weight marker on a narrow touch card', async ({ browser }, info) => {
   const context = await browser.newContext({ baseURL: 'http://localhost:' + (process.env.BDOBB_BROWSER_PORT ?? 4173),
-    hasTouch: true, isMobile: true, viewport: { width: 880, height: 850 } });
+    hasTouch: true, isMobile: true, viewport: { width: 880, height: 980 } });
   try {
     const page = await context.newPage();
     await importRisk(page);

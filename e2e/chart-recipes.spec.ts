@@ -138,7 +138,10 @@ test('source refresh preserves legend selections and handles refused, stale and 
 
   overrides.set('prices.json', { body: '{}', status: 503 });
   await refresh(source);
-  await expect(card(page, 'Drawdown')).toContainText('showing completed data (stale)');
+  const staleCard = card(page, 'Drawdown');
+  await expect(staleCard.getByRole('status').filter({ hasText: /showing completed data \(stale\)/i })).toHaveText(['Showing completed data (stale).']);
+  await expect(staleCard.getByRole('alert')).toHaveText(/^Source .+: HTTP 503$/);
+  await expect(draw).toHaveCount(1);
   await card(page, 'Drawdown').screenshot({ path: info.outputPath('stale.png') });
   overrides.set('prices.json', { body: JSON.stringify({ ...prices, completeness: 'paged' }) });
   await refresh(source);
