@@ -1,6 +1,6 @@
 # V9 next chart batch: risk and ETF exposure
 
-Date: 2026-11-19. Status: scope approved in chat; written design awaiting approval.
+Date: 2026-11-19. Status: written design approved by the user in chat; implementation planning authorized.
 
 ## Intent and scope
 
@@ -126,4 +126,4 @@ Evidence inspected for this design: the complete five-page reference PDF; the fi
 
 ## Builder check
 
-An independent software-engineer builder check completed on 2026-11-19 and returned "nothing important left". It checked whether consequential choices remained unanswered before implementation planning. This is a design-readiness check, not implementation verification. Scope approval does not yet approve the proposed defaults or authorize implementation.
+An independent software-engineer builder check completed on 2026-11-19 and returned "nothing important left". It checked whether consequential choices remained unanswered before implementation planning. This is a design-readiness check, not implementation verification. The user subsequently approved this written design and requested the implementation plan. Implementation has not been authorized by that planning request.
