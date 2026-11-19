@@ -9,6 +9,7 @@ import {
   classifyProbe,
   needsKey,
   normalizeProvider,
+  OPTIONAL_KEY_PROVIDERS,
   pickProbeWidget,
   type KeyStatus,
 } from "../lib/providerKeys";
@@ -105,6 +106,12 @@ export const useProviderKeysStore = create<State>((set, get) => ({
     const tasks: Array<() => Promise<void>> = [];
 
     for (const [provider, own] of byProvider) {
+      // Works without its key, so a probe cannot tell whether one is set:
+      // read as keyless.
+      if (OPTIONAL_KEY_PROVIDERS.has(provider)) {
+        status[provider] = "keyed";
+        continue;
+      }
       // Absent from key-maint's registry means no credential is required.
       if (!needsKey(provider)) {
         status[provider] = "keyed";
