@@ -3,7 +3,7 @@
 
 import { themedLayout } from '../../chartShapes';
 import { formatCell } from '../../format';
-import { color, escape, list } from '../chartFigure';
+import { color, escape, list } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
 import { preparePrices } from './input';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';

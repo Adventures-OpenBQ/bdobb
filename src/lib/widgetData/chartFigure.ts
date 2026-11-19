@@ -7,10 +7,7 @@ import type { WidgetDataset, LinkedChartSettings, DatasetColumn } from './types'
 import { buildBulletFigure } from './bulletFigure';
 import { buildWaterfall } from './waterfallFigure';
 import { decodeLinkedChartRecipe, isLegacyLinkedChartType } from './chartRecipes/settings';
-const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
-export function color(id: string) { let hash = 0; for (const c of id)
-    hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0; return COLORS[hash % COLORS.length]; }
-export function escape(value: unknown) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+import { color, escape, list } from './figureHelpers';
 export type LinkedFigureResult =
     | { ok: true; figure: PlotlyFigure; revision: string; notes: string[] }
     | { ok: false; message: string; refused?: true };
@@ -22,9 +19,17 @@ function rowNames(rows: DatasetRows, labels: string[]): string[] {
         count.set(label, (count.get(label) ?? 0) + 1);
     const names = rows.map((row, index) => count.get(labels[index])! > 1 ? [labels[index], ...(row.groupPath ?? []).map(m => `${m.field}: ${m.label ?? m.value}`)].join(' — ') : labels[index]);
     const used = new Set<string>();
-    return names.map(name => { let out = name, n = 1; // a real label may equal a generated suffix
-        while (used.has(out)) out = `${name} (${++n})`;
-        used.add(out); return out; });
+    const nextSuffix = new Map<string, number>();
+    return names.map(name => {
+        let out = name;
+        if (used.has(out)) {
+            let suffix = nextSuffix.get(name) ?? 2;
+            do { out = `${name} (${suffix++})`; } while (used.has(out));
+            nextSuffix.set(name, suffix);
+        }
+        used.add(out);
+        return out;
+    });
 }
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
 export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark', maxDecimals = 2): LinkedFigureResult {
@@ -135,8 +140,4 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     const percent = settings.display === 'percent' && settings.type !== 'line';
     const axis = { type: 'category', categoryorder: 'array', categoryarray: positions, tickmode: 'array', tickvals: positions, ticktext: ticks };
     return { ok: true, revision, notes, figure: { data: traces, layout: { uirevision: revision, margin, barmode: settings.display === 'stacked' || percent ? 'stack' : 'group', ...(percent ? { barnorm: 'percent', [horizontal ? 'xaxis' : 'yaxis']: { ticksuffix: '%' } } : {}), [horizontal ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend, ...frame } } };
-}
-/** At most five items, then how many more. */
-export function list(items: string[]): string {
-    return items.length > 5 ? `${items.slice(0, 5).join(', ')}, and ${items.length - 5} more` : items.join(', ');
 }

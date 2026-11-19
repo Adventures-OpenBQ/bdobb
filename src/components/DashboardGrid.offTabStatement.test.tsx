@@ -27,10 +27,11 @@ import { Boundary } from "../test/tableWorkerBoundary";
 afterEach(() => __resetStatementYearEndsForTests());
 
 /** The last rows handed to the table runtime for the source card. */
-async function handed(sourceTab: "a" | "b") {
+async function handed(sourceTab: "a" | "b", snapshot = false) {
   vi.stubGlobal("Worker", Boundary);
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
-  const s = await startMockServer({ "/income": [{ symbol: "AAPL", period_ending: "2025-12-27", fiscal_period: "Q4", fiscal_year: 2025, revenue: 1 }] });
+  const rows = [{ symbol: "AAPL", period_ending: "2025-12-27", fiscal_period: "Q4", fiscal_year: 2025, revenue: 1 }];
+  const s = await startMockServer({ "/income": snapshot ? { rows, receipt: { symbol: "AAPL" }, completeness: "complete" } : rows });
   const spy = vi.spyOn(tableExecutionStore, "setBackendRows");
   const view = render(<></>);
   try {
@@ -62,4 +63,12 @@ describe("off-tab backend statement source", () => {
     expect(offTab.last).toEqual(onTab.last);
     expect(offTab.notes).toBe(onTab.notes);
   });
+});
+
+it("retains the selected snapshot receipt beside corrected fiscal rows on either tab", async () => {
+  const on = await handed("a", true);
+  const off = await handed("b", true);
+  expect(on.last).toMatchObject({ rows: [{ fiscal_period: "FQ1", fiscal_year: "FY2026" }],
+    receipt: { symbol: "AAPL" }, completeness: "complete" });
+  expect(off.last).toEqual(on.last);
 });

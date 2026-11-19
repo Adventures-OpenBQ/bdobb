@@ -94,6 +94,14 @@ test('source refresh preserves legend selections and handles refused, stale and 
   await expect.poll(() => traces(curve)).toHaveLength(2);
   expect(await traces(curve)).toContainEqual(['2026-03-31', 'legendonly']);
 
+  overrides.set('curves.json', { body: JSON.stringify(curves.rows) });
+  await refresh('Treasury observations');
+  await expect(card(page, 'Yield curve')).toContainText('The source must be fully loaded. Acquisition is unknown.');
+  await expect(curve).toHaveCount(0);
+  overrides.delete('curves.json');
+  await refresh('Treasury observations');
+  await expect.poll(() => traces(curve)).toHaveLength(2);
+
   const draw = plot(page, 'Drawdown'), source = 'Daily adjusted prices';
   const xRange = () => draw.evaluate(e => (e as Graph)._fullLayout.xaxis.range);
   const fullRange = await xRange();
@@ -154,7 +162,10 @@ test('edits chart and Statement settings and reopens the native export', async (
   await importExample(page);
   await allPlots(page);
   const bullet = card(page, 'Earnings versus estimates');
+  await bullet.getByLabel('Quarter').selectOption('FQ1 2025');
+  await expect(bullet).toContainText('No estimate range was supplied.');
   await bullet.getByLabel('Quarter').selectOption('FQ4 2025');
+  await expect(bullet).toContainText('Estimate range withheld.');
   await expect(bullet).toContainText('vs consensus');
   await expect.poll(() => plot(page, 'Earnings versus estimates').evaluate(e => (e as Graph)._fullData[0].value)).toBe(1.3);
   await bullet.getByLabel('Quarter').selectOption('FQ3 2025');

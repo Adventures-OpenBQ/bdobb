@@ -3,14 +3,19 @@
 
 import { abbreviation, formatCell } from '../format';
 import type { LinkedFigureResult } from './chartFigure';
-import type { DatasetRow, LinkedChartSettings, WidgetDataset } from './types';
+import { estimateProjectionIssue, fiscalKey, instrument, read, sourceName, symbolFields, text } from './chartRecipes/estimateEvidence';
+import { calendarDate } from './chartRecipes/priceEvidence';
+import type { DatasetColumn, DatasetRow, LinkedChartSettings, WidgetDataset } from './types';
 
 const SIBLINGS = ['low', 'avg', 'high', 'consensus'];
 const metricOf = (id: string) => id.slice(0, -'_actual'.length);
 
 /** The sibling ids the linked table presents for these `*_actual` metrics; a hidden column is never requested. */
-export function bulletRequestIds(actualIds: string[], presented: Set<string>): string[] {
-    const wanted = [...actualIds.filter(id => id.endsWith('_actual')).flatMap(id => SIBLINGS.map(s => `${metricOf(id)}_${s}`)), 'period_ending', 'band_note'];
+export function bulletRequestIds(actualIds: string[], columns: readonly DatasetColumn[]): string[] {
+    const presented = new Set(columns.map(c => c.id));
+    const forRole = (name: string) => columns.filter(c => sourceName(c) === name).map(c => c.id);
+    const wanted = [...actualIds.filter(id => id.endsWith('_actual')).flatMap(id => SIBLINGS.map(s => `${metricOf(id)}_${s}`)),
+        ...forRole('period_ending'), ...forRole('fiscal_period'), ...forRole('band_note'), ...forRole('band_status'), ...symbolFields(columns).map(c => c.id)];
     return [...new Set(wanted)].filter(id => presented.has(id));
 }
 
@@ -35,16 +40,33 @@ export function buildBulletFigure(dataset: WidgetDataset, settings: LinkedChartS
     }
     if (dataset.rows.some(r => r.groupPath?.length))
         return { ok: false, refused: true, message: 'Bullet needs one row per quarter — ungroup the table.' };
-    // Quarters are ordered by period_ending only, never by row order (the table may be re-sorted or filtered).
-    const ending = (r: DatasetRow) => { const v = r.values.period_ending; return columns.has('period_ending') && v != null ? String(v) : null; };
+    const forRole = (name: string) => dataset.columns.find(c => sourceName(c) === name)?.id;
+    const guard = forRole('band_status');
+    const identityIssue = estimateProjectionIssue(dataset) ?? instrument(dataset, Boolean(guard) || dataset.rows.length > 1).issue;
+    if (identityIssue) return { ok: false, refused: true, message: identityIssue };
+    const endField = forRole('period_ending');
+    const ending = (r: DatasetRow) => calendarDate(read(r, endField));
+    const fiscalField = forRole('fiscal_period');
+    const seenQuarters = new Set<string>();
+    const seenDates = new Set<string>();
+    if (endField) for (const r of dataset.rows) {
+        const date = ending(r);
+        if (!date || seenDates.has(date)) return { ok: false, refused: true, message: 'Present one row per quarter with a unique, valid period end.' };
+        seenDates.add(date);
+        const key = fiscalKey(text(read(r, fiscalField)));
+        if (key && seenQuarters.has(key)) return { ok: false, refused: true, message: 'Choose one period end per fiscal quarter.' };
+        if (key) seenQuarters.add(key);
+    }
     const latest = (rs: DatasetRow[]) => rs.reduce<DatasetRow | undefined>((best, r) => best && ending(best)! >= ending(r)! ? best : r, undefined);
     let row: DatasetRow | undefined;
     if (settings.period !== undefined) {
-        row = dataset.rows.find(r => String(r.values[category] ?? '') === settings.period);
+        const matches = dataset.rows.filter(r => String(read(r, category) ?? '') === settings.period);
+        if (matches.length > 1) return { ok: false, refused: true, message: 'Choose a category that uniquely identifies each quarter.' };
+        row = matches[0];
         if (!row)
             return { ok: false, refused: true, message: `Quarter ${settings.period} is not in the linked table.` };
     } else {
-        row = latest(dataset.rows.filter(r => ending(r) !== null));
+        row = endField ? latest(dataset.rows) : undefined;
         if (!row)
             return { ok: false, refused: true, message: 'Choose a quarter.' };
     }
@@ -57,8 +79,13 @@ export function buildBulletFigure(dataset: WidgetDataset, settings: LinkedChartS
     const notes: string[] = [];
     if (!previous)
         notes.push('No previous quarter in the linked table, so no reference line.');
-    const bandNote = row.values.band_note;
-    if (columns.has('band_note') && typeof bandNote === 'string' && bandNote)
+    const status = read(row, guard);
+    const showTrend = guard === undefined || status === 'ok';
+    if (status === 'ok') notes.push('Provider estimate range check passed (ok).');
+    if (!showTrend) notes.push(status === 'withheld' ? 'Estimate range withheld.' : status === 'no_estimate'
+        ? 'No estimate range was supplied.' : 'Estimate range unavailable because the provider status is missing or unrecognized.');
+    const bandNote = read(row, forRole('band_note'));
+    if (typeof bandNote === 'string' && bandNote)
         notes.push(bandNote);
     const n = settings.measures.length;
     const traces: unknown[] = [], annotations: unknown[] = [];
@@ -67,7 +94,7 @@ export function buildBulletFigure(dataset: WidgetDataset, settings: LinkedChartS
         const m = metricOf(id);
         const [low, avg, high, consensus] = SIBLINGS.map(s => {
             const sibling = `${m}_${s}`;
-            return columns.has(sibling) ? number(row, sibling) : null;
+            return (showTrend || s === 'consensus') && columns.has(sibling) ? number(row, sibling) : null;
         });
         const actual = number(row, id), prior = number(previous, id);
         if (actual === null)

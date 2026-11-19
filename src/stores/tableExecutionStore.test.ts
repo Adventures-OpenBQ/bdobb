@@ -960,6 +960,43 @@ it.each(['bounded', 'paged'] as const)('preserves the explicit %s receipt from a
   }
 });
 
+it('carries estimate safety checks across a linked table without transferring hidden cells', async () => {
+  const { buildBulletFigure, bulletRequestIds } = await import('../lib/widgetData/bulletFigure');
+  const { runRecipe } = await import('../lib/widgetData/chartRecipes/run');
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker), source: backendTableSource });
+  useWidgetRegistryStore.setState({ widgets: [{ id: 'estimate-test', backendId: 'b1', type: 'table', name: 'Estimates', endpoint: '', params: [] } as never] });
+  const root = { ...card('estimates'), backendId: 'b1', widgetId: 'estimate-test' };
+  const child = card('presented-estimates', root.id);
+  try {
+    store.syncDashboard(dashboard([root, child]));
+    store.ensureTable('d', child.id);
+    store.setBackendRows('d', root.id, [
+      { symbol: 'A', currency: 'USD', period_ending: '2026-03-31', band_status: 'ok', eps_actual: 2, eps_low: 1, eps_avg: 2, eps_high: 3 },
+      { symbol: 'A', currency: 'EUR', period_ending: '2026-06-30', band_status: 'withheld', eps_actual: 4, eps_low: 1, eps_avg: 2, eps_high: 3 },
+    ]);
+    await store.settled('d');
+    const hide = async (field: string) => {
+      store.updateDefinition('d', root.id, { table: { hidden: [field] }, search: '' }, { kind: 'none' });
+      await store.settled('d');
+      const current = store.readView('d', child.id);
+      const ready = current.ready!;
+      const fields = ready.columns.map(c => c.id);
+      expect(fields).not.toContain(field);
+      return store.readExecutor('d', child.id)!.chartData(current.active!, fields, new AbortController().signal);
+    };
+    const noCurrency = await hide('currency');
+    expect(noCurrency.rows[0].values).not.toHaveProperty('currency');
+    expect(JSON.stringify(noCurrency.provenance.metadata)).not.toMatch(/USD|EUR/);
+    expect(runRecipe(noCurrency, { kind: 'estimate-range', version: 1, metric: 'eps',
+      fields: { periodEnd: 'period_ending', status: 'band_status', low: 'eps_low', average: 'eps_avg', high: 'eps_high' } },
+    { theme: 'light', maxDecimals: 2, today: '2026-11-19' })).toMatchObject({ ok: false, message: expect.stringMatching(/currency/i) });
+    const hiddenGuard = await hide('band_status');
+    expect(bulletRequestIds(['eps_actual'], hiddenGuard.columns)).not.toContain('band_status');
+    expect(buildBulletFigure(hiddenGuard, { type: 'bullet', category: 'period_ending', display: 'grouped', measures: ['eps_actual'] }, 'light', 2))
+      .toMatchObject({ ok: false, message: expect.stringContaining('band_status') });
+  } finally { store.disposeDashboard('d'); useWidgetRegistryStore.setState({ widgets: [] }); }
+});
+
 // V9-P2: a column's widgets.json aggregation hint reaches a linked table's input, where Rita's table-model tools read it.
 it('carries a backend column aggregation hint into a linked table input as metadata', async () => {
   const hint = { time: 'sum', frequencies: ['quarter', 'annual'], entity: 'require_selection', status: 'conditional', ruleset: 'eodhd-1' };

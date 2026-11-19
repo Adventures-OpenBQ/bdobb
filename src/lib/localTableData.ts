@@ -1,9 +1,10 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { isRecord } from './isRecord';
+import { estimateProvenance } from './widgetData/chartRecipes/estimateEvidence';
 import { priceAcquisitionProvenance } from './widgetData/chartRecipes/priceEvidence';
-import { tableRows } from "./tableRowValues";
+import { parseTableSnapshot, tableRows, type Snapshot } from "./tableRowValues";
+export { parseTableSnapshot } from "./tableRowValues";
 import { identifyRows } from "./widgetData/identity";
 import type { Row } from "./tableColumns";
 import type { DatasetColumn, DatasetRow, WidgetDataset } from "./widgetData/types";
@@ -29,21 +30,7 @@ const extensionOf = (name: string) => {
 export async function dataFromBytes(name: string, bytes: Uint8Array): Promise<unknown> {
   return (await parsedFromBytes(name, bytes)).data;
 }
-type Snapshot = { receipt: Record<string, string>; completeness: WidgetDataset['completeness']['kind'] };
 type ParsedTable = { data: unknown; formats?: NonNullable<DatasetRow['cellFormats']>[]; snapshot?: Snapshot };
-
-/** An explicit acquisition receipt travels with the delivered rows. */
-export function parseTableSnapshot(data: unknown): ParsedTable {
-  if (!isRecord(data) || !Object.hasOwn(data, 'receipt')) return { data };
-  const { rows, receipt, completeness } = data;
-  const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
-  const kind = kinds.find(k => k === completeness);
-  const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date'];
-  if (!kind || !tableRows(rows) || !isRecord(receipt) || Object.keys(data).some(k => !['rows', 'receipt', 'completeness'].includes(k))
-    || !Object.entries(receipt).every(([k, v]) => keys.includes(k) && typeof v === 'string' && v.trim() && v.length <= 4096))
-    throw new Error('Invalid table snapshot');
-  return { data: rows, snapshot: { receipt: receipt as Record<string, string>, completeness: kind } };
-}
 
 async function parsedFromBytes(name: string, bytes: Uint8Array): Promise<ParsedTable> {
   if (extensionOf(name) === "json") return parseTableSnapshot(JSON.parse(new TextDecoder().decode(bytes)));
@@ -184,18 +171,19 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     columns: [...declared, ...fields.filter(id => !named.has(id)).map(id => ({ id, label: id }))],
     resultRevision: inputRevision, outputRevision: inputRevision,
     provenance: { sourceWidgetId: widgetId, sourceKind },
-    completeness: { kind: 'complete', warnings: [], acquiredRowCount: rows.length, totalRowCount: rows.length, totalRowCountKind: 'exact' },
+    completeness: { kind: snapshot?.completeness ?? (sourceKind === 'localFile' ? 'complete' : 'unknown'),
+      warnings: [], acquiredRowCount: rows.length },
     freshness: { availability: 'available', stale: false },
   };
   if (snapshot) {
-    const { receipt, completeness } = snapshot;
-    dataset.provenance.receipt = receipt;
-    dataset.completeness.kind = completeness;
-    if (completeness !== 'complete') {
-      delete dataset.completeness.totalRowCount;
-      delete dataset.completeness.totalRowCountKind;
-    }
+    const { receipt } = snapshot;
+    if (receipt) dataset.provenance.receipt = receipt;
     dataset.provenance = priceAcquisitionProvenance(dataset);
+  }
+  dataset.provenance = estimateProvenance(dataset);
+  if (dataset.completeness.kind === 'complete') {
+    dataset.completeness.totalRowCount = rows.length;
+    dataset.completeness.totalRowCountKind = 'exact';
   }
   return dataset;
 }

@@ -3,10 +3,11 @@
 
 import { themedLayout } from '../../chartShapes';
 import { formatCell } from '../../format';
-import { color, escape } from '../chartFigure';
-import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
+import { color, escape, list } from '../figureHelpers';
+import type { DatasetRow, WidgetDataset } from '../types';
 import { recipeEligibility } from './input';
-import { acquiredWindow, calendarDate, observationSymbol } from './priceEvidence';
+import { acquiredWindow, calendarDate } from './priceEvidence';
+import { estimateProjectionIssue, estimateRangeIdentityFields, fiscalKey, instrument, read, sourceName, text, unitValues } from './estimateEvidence';
 import { requiredRecipeFields } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 
@@ -22,57 +23,6 @@ type Quarter = {
 };
 
 const refuse = (message: string): RecipeResult => ({ ok: false, refused: true, message });
-const columnNames = (column: DatasetColumn) => [column.id, column.sourceFieldId ?? ''].map(name => name.toLowerCase());
-const hasName = (column: DatasetColumn, ...names: string[]) => columnNames(column).some(name => names.includes(name));
-const sourceName = (column: DatasetColumn) => (column.sourceFieldId ?? column.id).toLowerCase();
-const read = (row: DatasetRow, field: string | undefined): unknown =>
-  field !== undefined && !Object.hasOwn(row.cellErrors ?? {}, field) && Object.hasOwn(row.values, field)
-    ? row.values[field] : undefined;
-const text = (value: unknown) => typeof value === 'string' ? value.trim() || undefined : undefined;
-
-/** Request dimension evidence only from columns that the linked table presents. */
-export function estimateRangeIdentityFields(columns: readonly DatasetColumn[]): string[] {
-  return columns.filter(column => hasName(column, 'symbol', 'ticker', 'currency', 'unit')).map(column => column.id);
-}
-
-function namedValues(record: Record<string, unknown> | undefined, ...names: string[]) {
-  return Object.entries(record ?? {}).filter(([name]) => names.includes(name.toLowerCase())).map(([, value]) => value);
-}
-
-function instrument(dataset: WidgetDataset) {
-  const { columns, rows, provenance } = dataset;
-  const symbols = new Set<string | undefined>();
-  const fields = columns.filter(column => hasName(column, 'symbol', 'ticker'));
-  for (const record of [provenance.parameters, provenance.receipt])
-    for (const value of namedValues(record, 'symbol', 'ticker')) symbols.add(observationSymbol(value)?.toUpperCase());
-  for (const column of fields)
-    for (const row of rows) symbols.add(observationSymbol(read(row, column.id))?.toUpperCase());
-  if (symbols.size > 1 || symbols.has(undefined)) return { issue: 'Choose one instrument with consistent symbol evidence.' };
-  const [symbol] = symbols;
-  if (symbol === undefined && (('kind' in dataset && dataset.kind === 'chartData') || provenance.presentation))
-    return { issue: 'Present a single symbol or use a source acquired for a single symbol.' };
-  return { symbol };
-}
-
-function unitValues(dataset: WidgetDataset, bound: DatasetColumn[], dimension: 'currency' | 'unit') {
-  const { provenance, rows, columns } = dataset;
-  const values = [
-    ...namedValues(provenance.receipt, dimension),
-    ...namedValues(provenance.parameters, dimension),
-    ...bound.flatMap(column => namedValues(column.metadata, dimension)),
-    ...columns.filter(column => hasName(column, dimension)).flatMap(column => rows.map(row => read(row, column.id))),
-  ];
-  return new Set(values.filter(value => value != null).map(value => text(value)?.toLowerCase()));
-}
-
-/** Preserve the provider label and compare the identity across supported fiscal label spellings. */
-function fiscalKey(label: string | undefined) {
-  if (!label) return undefined;
-  const provider = /^FQ([1-4])\s+(\d{4})$/i.exec(label);
-  if (provider) return `${provider[2]}-Q${provider[1]}`;
-  return /^(?:FY\s*)?(\d{4}-Q[1-4])$/i.exec(label)?.[1].toUpperCase();
-}
-
 function band(row: DatasetRow, fields: Options['fields']): Pick<Quarter, 'range' | 'issue'> {
   const status = read(row, fields.status);
   if (status === 'withheld') return { range: null, issue: 'Estimate range withheld.' };
@@ -92,14 +42,14 @@ function periodName(quarter: Quarter) {
   return quarter.fiscalKey ? `${quarter.label} (${quarter.date})` : quarter.date;
 }
 
-function noteStatus(quarter: Quarter, notes: string[]) {
+function noteStatus(quarter: Quarter, addNote: (message: string) => void) {
   const name = periodName(quarter);
-  if (!quarter.fiscalKey) notes.push(`${name} — Fiscal quarter unavailable. The label is its period end.`);
+  if (!quarter.fiscalKey) addNote(`${name} — Fiscal quarter unavailable. The label is its period end.`);
   if (quarter.issue || quarter.providerNote)
-    notes.push(`${name} — ${[quarter.issue, quarter.providerNote].filter(Boolean).join(' ')}`);
+    addNote(`${name} — ${[quarter.issue, quarter.providerNote].filter(Boolean).join(' ')}`);
 }
 
-function collectQuarters(rows: DatasetRow[], fields: Options['fields'], notes: string[]) {
+function collectQuarters(rows: DatasetRow[], fields: Options['fields'], addNote: (message: string) => void) {
   const byDate = new Map<string, Quarter>();
   const datesByFiscal = new Map<string, Set<string>>();
   const conflicts = new Set<string>();
@@ -107,11 +57,11 @@ function collectQuarters(rows: DatasetRow[], fields: Options['fields'], notes: s
     const date = calendarDate(read(row, fields.periodEnd));
     const fiscal = text(read(row, fields.fiscalPeriod));
     if (!date) {
-      notes.push(`${fiscal ?? 'Reported-quarter row'} has no valid period end.`);
+      addNote(`${fiscal ?? 'Reported-quarter row'} has no valid period end.`);
       continue;
     }
     if (fiscal && /^(?:FY\s*)?\d{4}$|\b(?:annual|yearly|ttm|ltm)\b/i.test(fiscal)) {
-      notes.push(`${fiscal} (${date}) is an annual or non-quarter period and was omitted.`);
+      addNote(`${fiscal} (${date}) is an annual or non-quarter period and was omitted.`);
       continue;
     }
     const key = fiscalKey(fiscal);
@@ -129,21 +79,21 @@ function collectQuarters(rows: DatasetRow[], fields: Options['fields'], notes: s
     // Duplicate identity is evaluated against the selected metric and its guard.
     else if (prior.fiscalKey === key && prior.issue === quarter.issue && prior.providerNote === quarter.providerNote
       && String(prior.range) === String(quarter.range)) {
-      notes.push(`Collapsed an identical duplicate estimate period for ${periodName(prior)}.`);
+      addNote(`Collapsed an identical duplicate estimate period for ${periodName(prior)}.`);
     } else {
       conflicts.add(date);
-      noteStatus(quarter, notes);
+      noteStatus(quarter, addNote);
     }
   }
   for (const date of [...conflicts].sort())
-    notes.push(`Conflicting estimate rows for ${periodName(byDate.get(date)!)} were omitted.`);
+    addNote(`Conflicting estimate rows for ${periodName(byDate.get(date)!)} were omitted.`);
   for (const [key, dates] of datesByFiscal) {
     if (dates.size < 2) continue;
-    notes.push(`Conflicting period ends for fiscal quarter ${key} (${[...dates].sort().join(', ')}) were omitted.`);
+    addNote(`Conflicting period ends for fiscal quarter ${key} (${list([...dates].sort())}) were omitted.`);
     for (const date of dates) conflicts.add(date);
   }
   const quarters = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
-  for (const quarter of quarters) noteStatus(quarter, notes);
+  for (const quarter of quarters) noteStatus(quarter, addNote);
   return quarters.filter(quarter => !conflicts.has(quarter.date));
 }
 
@@ -168,15 +118,24 @@ export function buildEstimateRange(dataset: WidgetDataset, options: Options, con
   if (bound.some((column, index) => sourceName(column).replace(/_average$/, '_avg') !== canonicalFields[index]))
     return refuse(`Bind the provider low, average and high fields for ${metricName}.`);
 
-  const identity = instrument(dataset);
+  if (!['period_ending', 'period_end'].includes(sourceName(columns.get(fields.periodEnd)!)))
+    return refuse('Bind the provider fiscal period end field.');
+  const identity = instrument(dataset, Boolean(('kind' in dataset && dataset.kind === 'chartData') || dataset.provenance.presentation));
   if (identity.issue) return refuse(identity.issue);
+  const projectionIssue = estimateProjectionIssue(dataset, metric);
+  if (projectionIssue) return refuse(projectionIssue);
   const currency = unitValues(dataset, bound, 'currency');
   const unit = unitValues(dataset, bound, 'unit');
   if ([currency, unit].some(values => values.size > 1 || values.has(undefined)))
     return refuse('Choose estimate ranges with consistent currency and units.');
 
   const notes: string[] = [];
-  const quarters = collectQuarters(dataset.rows, fields, notes);
+  let additional = 0;
+  const quarters = collectQuarters(dataset.rows, fields, message => {
+    if (notes.length === 5) additional++;
+    else notes.push(message.length <= 500 ? message : message.slice(0, 500) + '… See the source table for the full note.');
+  });
+  if (additional) notes.push(`${additional} more diagnostics. See the source table for individual quarters and provider notes.`);
   const endpoints: { x: (number | null)[]; y: (string | null)[]; customdata: (string[] | null)[] } = {
     x: [], y: [], customdata: [],
   };

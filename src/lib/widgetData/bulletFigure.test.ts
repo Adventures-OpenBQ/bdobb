@@ -177,8 +177,37 @@ describe('buildBulletFigure', () => {
 
 describe('bulletRequestIds', () => {
     it('returns only presented siblings', () => {
-        const presented = new Set(['fiscal_period', 'eps_actual', 'eps_low', 'eps_avg', 'eps_consensus', 'revenue_actual', 'revenue_high', 'band_note', 'symbol']);
-        expect(bulletRequestIds(['eps_actual', 'revenue_actual'], presented)).toEqual(['eps_low', 'eps_avg', 'eps_consensus', 'revenue_high', 'band_note']);
-        expect(bulletRequestIds(['eps_actual'], new Set(columns.map(c => c.id)))).toEqual(['eps_low', 'eps_avg', 'eps_high', 'eps_consensus', 'period_ending', 'band_note']);
+        const presented = new Set(['fiscal_period', 'eps_actual', 'eps_low', 'eps_avg', 'eps_consensus', 'revenue_actual', 'revenue_high', 'fiscal_period', 'band_note', 'symbol']);
+        expect(bulletRequestIds(['eps_actual', 'revenue_actual'], columns.filter(c => presented.has(c.id)))).toEqual(['eps_low', 'eps_avg', 'eps_consensus', 'revenue_high', 'fiscal_period', 'band_note', 'symbol']);
+        expect(bulletRequestIds(['eps_actual'], columns)).toEqual(['eps_low', 'eps_avg', 'eps_high', 'eps_consensus', 'period_ending', 'fiscal_period', 'band_note', 'band_status', 'symbol']);
     });
+});
+
+it('refuses cross-instrument actuals and ambiguous quarter identities before selecting a reference', () => {
+    expect(refusal({}, withRow('q2', { symbol: 'SECOND' })).message).toMatch(/instrument|symbol/i);
+    expect(refusal({}, { rows: [...rows, { ...rows[0], id: 'another', values: { ...rows[0].values, eps_actual: 42 } }] }).message).toMatch(/quarter/i);
+    expect(refusal({}, withRow('q2', { fiscal_period: 'FQ3 2026' })).message).toMatch(/quarter/i);
+});
+
+it('honors a presented guard despite numeric residue and explains no_estimate', () => {
+    const denied = build({}, withRow('q3', { band_status: 'withheld', band_note: 'Guard failed.' }));
+    expect(denied.traces[0].gauge.steps).toHaveLength(1);
+    expect(denied.traces[0].gauge.steps[0].color).toBe('#8a94a6');
+    expect(denied.annotations[0].text).toContain('vs consensus');
+    expect(denied.notes.join(' ')).toMatch(/withheld/i);
+    expect(denied.notes).toContain('Guard failed.');
+    expect(build({ period: 'FQ2 2026' }).notes.join(' ')).toMatch(/no estimate/i);
+});
+
+it('requires a source-bound symbol for a multi-quarter legacy comparison and supports a single unguarded row', () => {
+    const legacy = { columns: columns.filter(c => !['symbol', 'band_status', 'band_note'].includes(c.id)) };
+    expect(refusal({}, legacy).message).toMatch(/single symbol/);
+    expect(build({}, { ...legacy, rows: [rows[1]] }).traces[0].gauge.steps).toHaveLength(2);
+    const acquired = { ...legacy, provenance: { sourceWidgetId: 'source', receipt: { symbol: 'AAPL' } } };
+    expect(build({}, acquired).traces[0].gauge.threshold?.value).toBe(2.01);
+});
+
+it('refuses a latest-period comparison when two dates claim the same fiscal quarter', () => {
+    const ambiguous = withRow('q3', { fiscal_period: 'FY2026-Q4' });
+    expect(refusal({ period: undefined, category: 'period_ending' }, ambiguous).message).toMatch(/quarter/i);
 });

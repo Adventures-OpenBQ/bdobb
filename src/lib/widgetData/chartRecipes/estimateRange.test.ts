@@ -2,8 +2,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from 'vitest';
+import { calculateView } from '../../tableExecution/engine';
+import { createResultStore } from '../../tableExecution/resultStore';
+import { bindingCandidates, bindingRoles } from './bindings';
+import { runRecipe } from './run';
 import { datasetFromRows } from '../../localTableData';
-import { buildEstimateRange, estimateRangeIdentityFields } from './estimateRange';
+import { buildEstimateRange } from './estimateRange';
+import { estimateRangeIdentityFields } from './estimateEvidence';
 import type { RecipeOptions, RecipeResult } from './types';
 
 const context = { theme: 'dark', maxDecimals: 2, today: '2026-11-19' } as const;
@@ -266,4 +271,35 @@ describe('buildEstimateRange', () => {
     expect(refreshed.figure.layout.uirevision).toBe(initial.revision);
     expect(otherMetric.revision).not.toBe(initial.revision);
   });
+});
+
+it.each([['USD', 'EUR', ['currency']], ['USD', null, []], ['USD', null, ['currency']]] as const)(
+  'preserves conflicting or missing declared currency through chart projection (%s, %s, %j)', (first, second, hidden) => {
+    const dataset = source([{ ...row(), currency: first }, { ...row(q3, 'FQ3 2026'), currency: second }]);
+    const revision = { widgetId: 'estimates', input: 1, model: 1, output: 1 };
+    const store = createResultStore(calculateView(dataset, { table: { hidden: [...hidden] }, search: '' }, { kind: 'none' }), revision);
+    const ready = store.ready('ready', revision);
+    const fields = [...Object.values(eps.fields), ...estimateRangeIdentityFields(ready.columns)];
+    const projected = store.chartData('chart', revision, fields);
+    if (hidden.length) expect(projected.rows[0].values).not.toHaveProperty('currency');
+    expect(runRecipe(projected, eps, context)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/currency/i) });
+  });
+
+it('offers and executes only a fiscal period-end source role, including a renamed field', () => {
+  const dataset = source([{ ...row(), report_date: '2026-11-01', cutoff: q4 }]);
+  Object.assign(dataset.columns.find(c => c.id === 'cutoff')!, { sourceFieldId: 'period_ending', dtype: 'date' });
+  dataset.columns.find(c => c.id === 'report_date')!.dtype = 'date';
+  const role = bindingRoles('estimate-range', 'eps').find(r => r.key === 'periodEnd')!;
+  expect(bindingCandidates(role, dataset.columns).map(c => c.id)).toEqual(['period_ending', 'cutoff']);
+  const bind = (id: string) => runRecipe(dataset, { ...eps, fields: { ...eps.fields, periodEnd: id } }, context);
+  expect(bind('report_date')).toMatchObject({ ok: false, refused: true });
+  expect(bind('cutoff')).toMatchObject({ ok: true });
+});
+
+it('bounds repeated estimate diagnostics and counts additional rows in figures and refusals', () => {
+  const bad = Array.from({ length: 20 }, (_, i) => ({ ...row(), period_ending: 'missing', fiscal_period: 'bad-' + i }));
+  const result = chart(buildEstimateRange(source([...bad, row()]), eps, context));
+  expect(result.notes.length).toBeLessThanOrEqual(6);
+  expect(result.notes.join(' ')).toMatch(/15 more.*source table/i);
+  expect(buildEstimateRange(source(bad), eps, context)).toMatchObject({ ok: false, message: expect.stringMatching(/15 more.*source table/i) });
 });

@@ -417,10 +417,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
-  const envelope = widget?.type === "table" && isTableSnapshotEnvelope(rawData) ? rawData : undefined;
-  const fiscalRows = useStatementRows(widget, backend, query, envelope ? envelope.rows : rawData);
-  const data = fiscalRows.data;
-  const acquired = useMemo(() => envelope ? { ...envelope, rows: data } : data, [envelope, data]);
+  const fiscalRows = useStatementRows(widget, backend, query, rawData);
+  const acquired = fiscalRows.data;
+  const data = widget?.type === "table" && isTableSnapshotEnvelope(acquired) ? acquired.rows : acquired;
   // Rows the table runtime holds (local, managed, linked) carry the same "as reported" mark as a diagnostic.
   const fiscalNote = fiscalRows.asReported || !!executionView.ready?.diagnostics.some((d) => d.code === FISCAL_AS_REPORTED.code);
   const localFiscal = widget?.type === "local_table" && (fiscalNote || !!card.params.fiscalYearEndBackend);

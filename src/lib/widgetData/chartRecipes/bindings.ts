@@ -11,7 +11,7 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
   if (kind === 'estimate-range') return [
-    { key: 'periodEnd', label: 'Period end', names: ['period_ending', 'period_end'], date: true },
+    { key: 'periodEnd', label: 'Period end', names: ['period_ending', 'period_end'] },
     { key: 'fiscalPeriod', label: 'Fiscal period', names: ['fiscal_period'], optional: true },
     { key: 'status', label: 'Band status', names: ['band_status'] },
     { key: 'note', label: 'Band note', names: ['band_note'], optional: true },

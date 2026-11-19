@@ -326,9 +326,10 @@ describe("fetchWidgetData over real HTTP", () => {
     expect(await fetchWidgetData(b, widget({ type: "table", dataKey: "rows" }), {})).toEqual(envelope);
   });
 
-  it.each(["paged", "plain"] as const)("uses the %s yield-curve scope when a table selects results.rows", async kind => {
+  it.each(["paged", "plain", "unreceipted-page", "unreceipted-complete", "complete", "bounded"] as const)("uses the %s yield-curve scope when a table selects results.rows", async kind => {
     const rows = [{ date: "2026-01-09", maturity: "year_2", rate: 0.03 }];
-    const results = kind === "paged" ? { rows, receipt: {}, completeness: "paged" } : { rows };
+    const results = kind === "plain" ? { rows } : kind.startsWith("unreceipted") ? { rows, completeness: kind === "unreceipted-page" ? "paged" : "complete" }
+      : { rows, completeness: kind, receipt: { start_date: "2026-01-01", end_date: "2026-01-31" } };
     server = await startMockServer({ "/equity/price": { results } });
     const selected = await fetchWidgetData({ ...backend, baseUrl: server.url }, widget({ type: "table", dataKey: "results.rows" }), {});
     const { tableExecutionStore, backendTableSource } = await import("../stores/tableExecutionStore");
@@ -343,10 +344,13 @@ describe("fetchWidgetData over real HTTP", () => {
       const recipe = buildYieldCurve(acquired.dataset, {
         version: 1, kind: "yield-curve", fields: { date: "date", maturity: "maturity", rate: "rate" },
       }, { theme: "light", maxDecimals: 2, today: "2026-02-01" });
-      expect(recipe).toMatchObject(kind === "paged"
-        ? { ok: false, refused: true, message: expect.stringContaining("paged") }
-        : { ok: true, figure: { data: [{ x: [24], y: [0.03] }] } });
-      expect(selected).toEqual(kind === "paged" ? results : rows);
+      const eligible = kind === "complete" || kind === "bounded";
+      expect(acquired.dataset.rows.map(row => row.values)).toEqual(rows);
+      expect(recipe).toMatchObject(eligible ? { ok: true, figure: { data: [{ x: [24], y: [0.03] }] } }
+        : { ok: false, refused: true, message: expect.stringContaining(kind === "plain" || kind === "unreceipted-complete" ? "unknown" : "paged") });
+      if (!eligible) expect(acquired.dataset.completeness.totalRowCount).toBeUndefined();
+      if (kind.startsWith("unreceipted")) expect(acquired.dataset.provenance.receipt).toBeUndefined();
+      if (kind === "plain") expect(selected).toEqual(rows);
     } finally {
       tableExecutionStore.disposeDashboard(dashboard.id);
     }

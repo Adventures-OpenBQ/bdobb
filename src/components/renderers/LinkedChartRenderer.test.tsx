@@ -263,7 +263,7 @@ const bulletColumns = [['fiscal_period', 'text'], ['period_ending', 'date'], ['e
 const quarter = (fiscal_period: string, period_ending: string, eps: number) => ({ id: fiscal_period, values: { fiscal_period, period_ending, eps_actual: eps, eps_low: eps - 0.1, eps_avg: eps - 0.02, eps_high: eps + 0.1, eps_consensus: eps - 0.03, revenue_actual: eps * 1000, revenue_low: eps * 900 } });
 const bulletSettings = { type: 'bullet' as const, category: 'fiscal_period', measures: ['eps_actual'], display: 'grouped' as const };
 async function bulletSetup(hidden: string[] = []) {
-    const data = { ...input, columns: bulletColumns, rows: [quarter('Q1', '2026-03-31', 1.2345), quarter('Q2', '2026-06-30', 1.3456)] };
+    const data = { ...input, provenance: { ...input.provenance, receipt: { symbol: 'ALDER' } }, columns: bulletColumns, rows: [quarter('Q1', '2026-03-31', 1.2345), quarter('Q2', '2026-06-30', 1.3456)] };
     const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
     const card = { ...chart, linkedChart: bulletSettings };
     store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, card] }] } as Dashboard);
@@ -632,4 +632,42 @@ it('accepts equivalent revision fields received in a different property order fo
     await waitFor(() => expect(screen.getByRole('button', { name: /apply/i })).toBeEnabled());
     expect(screen.getByLabelText('A')).toBeChecked();
   } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each(['bullet', 'waterfall'] as const)('fences %s on a pending or failed relink and redraws for the new source', async type => {
+  const wf = type === 'waterfall';
+  const mapping = wf ? { ...settings, type, category: 'item', measures: ['year'] } : bulletSettings;
+  const dataset = wf ? { ...input, columns: [{ id: 'item', label: 'Item' }, { id: 'year', label: 'Year',
+    splitPath: [{ field: 'Period', categoryId: 'statement/income/1.0.0/category/period', value: 'FY2026' }] }],
+    rows: [{ id: 'income', values: { item: 'Revenue', year: 100 }, groupPath: [{ field: 'Item',
+      categoryId: 'statement/income/1.0.0/category/item', value: 'statement/income/1.0.0/line/revenue' }] }] }
+    : { ...input, columns: bulletColumns, rows: [quarter('Q2', '2026-06-30', 1.3456)] };
+  let rejectRead: ((error: Error) => void) | undefined;
+  let hold = true;
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker),
+    source: source => ({ acquire: async () => {
+      if (source.id === 'B' && hold) await new Promise<void>((_, reject) => { rejectRead = reject; });
+      return { kind: 'dataset', dataset };
+    } }) });
+  const root = (id: string) => ({ ...chart, id, widgetId: 'local_table', params: { file: id }, linkedChart: undefined, linkedSource: undefined });
+  const linked = (sourceWidgetId: string) => ({ ...chart, linkedChart: mapping, linkedSource: { kind: 'widget' as const, sourceWidgetId } });
+  const sync = (source: string) => store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [root('A'), root('B'), linked(source)] }] } as Dashboard);
+  const props = { store, dashboardId: 'd', refreshKey: 0, onSettingsChange: async () => true };
+  try {
+    sync('A'); store.ensureTable('d', 'c');
+    const { rerender } = render(<LinkedChartRenderer {...props} card={linked('A')}/>);
+    const first = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    act(() => { sync('B'); store.ensureTable('d', 'c'); });
+    rerender(<LinkedChartRenderer {...props} card={linked('B')}/>);
+    expect(screen.queryByTestId('figure')).toBeNull();
+    await waitFor(() => expect(rejectRead).toBeDefined());
+    await act(async () => { rejectRead!(new Error('B acquisition failed')); await store.settled('d'); });
+    expect(screen.queryByTestId('figure')).toBeNull();
+    expect(screen.getByText(/B acquisition failed/)).toBeVisible();
+    hold = false;
+    await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
+    const second = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(second.layout.uirevision).not.toEqual(first.layout.uirevision);
+    expect(screen.getByText(/Source B.*available/)).toBeVisible();
+  } finally { cleanup(); store.disposeDashboard('d'); }
 });

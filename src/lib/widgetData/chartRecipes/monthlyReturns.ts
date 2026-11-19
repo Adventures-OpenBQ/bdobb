@@ -3,7 +3,7 @@
 
 import { themedLayout } from '../../chartShapes';
 import { formatCell } from '../../format';
-import { escape } from '../chartFigure';
+import { escape } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
 import { preparePrices, type PriceSeries } from './input';
 import { calendarDate } from './priceEvidence';

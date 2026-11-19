@@ -16,7 +16,7 @@ import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/table
 import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
-import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateRange';
+import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
@@ -33,19 +33,27 @@ type Completed = {
     renderedSettings: LinkedChartSettings;
     revision: string;
 };
-export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = false, store = tableExecutionStore, onSettingsChange }: {
+type LinkedChartProps = {
     dashboardId: string;
     card: DashboardCard;
     refreshKey: number;
     viewer?: boolean;
     store?: typeof tableExecutionStore;
     onSettingsChange: (settings: LinkedChartSettings) => Promise<boolean>;
-}) {
+};
+export function LinkedChartRenderer(props: LinkedChartProps) {
+    const type = props.card.linkedChart?.type;
+    const source = type === 'bullet' || type === 'waterfall' ? props.card.linkedSource?.sourceWidgetId : undefined;
+    return <LinkedChartView key={JSON.stringify([props.dashboardId, props.card.id, source])} {...props}/>;
+}
+
+function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, store = tableExecutionStore, onSettingsChange }: LinkedChartProps) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
     const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
     const settings = card.linkedChart!;
     const source = card.linkedSource?.sourceWidgetId;
+    const carried = settings.type === 'bullet' || settings.type === 'waterfall';
     const identity = JSON.stringify([dashboardId, card.id]);
     const recipe = decodeLinkedChartRecipe(settings, settings.type);
     const mapping = recipe ? JSON.stringify([settings.type, recipe]) : JSON.stringify(settings);
@@ -127,7 +135,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             setNoMatches(true);
             return;
         }
-        const ids = [category, ...renderedSettings.measures, ...(settings.type === 'bullet' ? bulletRequestIds(renderedSettings.measures, present) : [])];
+        const ids = [category, ...renderedSettings.measures, ...(settings.type === 'bullet' ? bulletRequestIds(renderedSettings.measures, view.ready.columns) : [])];
         void executor.chartData(revision, [...new Set(ids)], controller.signal).then(dataset => {
             if (controller.signal.aborted || version !== generation.current || JSON.stringify(dataset.revision) !== JSON.stringify(revision))
                 return;
@@ -159,7 +167,10 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     }, [store, dashboardId, card.id, source, mapping, active, view.ready, legacy]);
     const delivered = legacy && completed?.identity === identity ? completed : undefined;
     const built = useMemo(() => delivered ? buildLinkedFigure(delivered.dataset, delivered.renderedSettings, theme, maxDecimals) : undefined, [delivered, theme, maxDecimals]);
-    const figure: PlotlyFigure | undefined = built?.ok ? built.figure : undefined;
+    const figure = useMemo<PlotlyFigure | undefined>(() => {
+        if (!built?.ok) return undefined;
+        return carried ? { ...built.figure, layout: { ...built.figure.layout, uirevision: JSON.stringify([source, built.revision]) } } : built.figure;
+    }, [built, carried, source]);
     const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
     async function commit(next: LinkedChartSettings) {
@@ -209,12 +220,12 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}
     {!financial && recipe && !recipe.ok && <p role="status">{recipe.message}</p>}
-    {legacy && error ? <p role="alert">{error}</p> : null}
+    {legacy && (error || (carried && view.error)) ? <p role="alert">{error ?? view.error}</p> : null}
     {lagging ? <p role="status">Updating chart — showing completed data (stale).</p> : null}
     {legacy && noMatches ? <p role="status">No selected series match the current filter.</p> : null}
     {legacy && refused ? <p role="status">{refused}</p> : null}
-    {legacy && !figure && !error && !noMatches && !refused ? <p role="status">{view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
-    {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes}/> : null}
+    {legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused ? <p role="status">{carried && source && (view.sourceRevision?.widgetId !== source || view.status === 'pending' || view.status === 'updating') ? `Loading source ${source}…` : view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
+    {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
     {financial && editing === settings.type && (recipe?.ok
       ? <FinancialChart key={editScope} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>

@@ -5,6 +5,7 @@ import { compileStatement, StatementCompilationError } from '../statementModel/c
 import type { StatementIntent } from '../statementModel/types';
 import { statementPresentation } from '../statementPresentation';
 import { unpivotDatasetWithDescriptors } from '../tableModel/unpivot';
+import { estimateProvenance } from '../widgetData/chartRecipes/estimateEvidence';
 import { priceAcquisitionProvenance } from '../widgetData/chartRecipes/priceEvidence';
 import { validateRuntimeParams, runtimeMatches, type RuntimeParams } from './runtimeParams';
 import { countColumn, countValues } from './counts';
@@ -34,7 +35,7 @@ function member(key: string, field: string, bucket: DatasetGroupMember['bucket']
 }
 /** Calculate once from the complete acquired input, never from delivery blocks. */
 export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
-  return calculate({ ...input, provenance: priceAcquisitionProvenance(input) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
+  return calculate({ ...input, provenance: estimateProvenance({ ...input, provenance: priceAcquisitionProvenance(input) }) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
 }
 function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
   input = structuredClone(input);

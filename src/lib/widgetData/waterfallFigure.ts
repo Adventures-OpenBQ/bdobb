@@ -3,7 +3,7 @@
 
 import { statementTemplate } from '../statementModel/catalog';
 import { statementOwnedIds } from '../statementModel/types';
-import { color, escape, list } from './chartFigure';
+import { color, escape, list } from './figureHelpers';
 import type { DatasetColumn, DatasetRow } from './types';
 
 export type WalkRole = 'step' | 'cost' | 'subtotal' | 'calculated' | 'ebitda';
