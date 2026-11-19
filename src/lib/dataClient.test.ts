@@ -25,7 +25,7 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import { useSettingsStore } from "../stores/settingsStore";
 import { DEFAULT_SETTINGS } from "./settingsFile";
 import type { AuthLocation, BackendConfig, WidgetDef } from "./types";
-import { backend as makeBackend, widget as makeWidget } from "../test/fixtures";
+import { backend as makeBackend, card as makeCard, widget as makeWidget } from "../test/fixtures";
 import cmes from "./calendars/vendor/conformance/CMES-2026-01.json";
 import { bundledCalendar } from "./calendar";
 import { clearCalendarBundles } from "./calendars/bundles";
@@ -324,6 +324,32 @@ describe("fetchWidgetData over real HTTP", () => {
     server = await startMockServer({ "/equity/price": envelope });
     const b = { ...backend, baseUrl: server.url };
     expect(await fetchWidgetData(b, widget({ type: "table", dataKey: "rows" }), {})).toEqual(envelope);
+  });
+
+  it.each(["paged", "plain"] as const)("uses the %s yield-curve scope when a table selects results.rows", async kind => {
+    const rows = [{ date: "2026-01-09", maturity: "year_2", rate: 0.03 }];
+    const results = kind === "paged" ? { rows, receipt: {}, completeness: "paged" } : { rows };
+    server = await startMockServer({ "/equity/price": { results } });
+    const selected = await fetchWidgetData({ ...backend, baseUrl: server.url }, widget({ type: "table", dataKey: "results.rows" }), {});
+    const { tableExecutionStore, backendTableSource } = await import("../stores/tableExecutionStore");
+    const { buildYieldCurve } = await import("./widgetData/chartRecipes/yieldCurve");
+    const card = makeCard({ id: "yield-source" });
+    const dashboard = { id: "yield-example", name: "Example", tabs: [{ id: "tab", name: "Tab", cards: [card] }] };
+    tableExecutionStore.syncDashboard(dashboard);
+    try {
+      tableExecutionStore.setBackendRows(dashboard.id, card.id, selected);
+      const acquired = await backendTableSource(card).acquire(new AbortController().signal);
+      if (acquired.kind !== "dataset") throw new Error("Expected a backend dataset");
+      const recipe = buildYieldCurve(acquired.dataset, {
+        version: 1, kind: "yield-curve", fields: { date: "date", maturity: "maturity", rate: "rate" },
+      }, { theme: "light", maxDecimals: 2, today: "2026-02-01" });
+      expect(recipe).toMatchObject(kind === "paged"
+        ? { ok: false, refused: true, message: expect.stringContaining("paged") }
+        : { ok: true, figure: { data: [{ x: [24], y: [0.03] }] } });
+      expect(selected).toEqual(kind === "paged" ? results : rows);
+    } finally {
+      tableExecutionStore.disposeDashboard(dashboard.id);
+    }
   });
 
   it("hands a keys-type widget the whole envelope even when it declares a dataKey", async () => {

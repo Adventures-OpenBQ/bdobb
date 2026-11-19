@@ -499,4 +499,4 @@ Before claiming completion, use verification-before-completion, request a whole-
 
 ## Execution handoff
 
-The local implementation and task-level reviews are recorded in the verification ledger. Whole-branch independent review follows the packaging handoff.
+The verification ledger records the local candidate pins and product checks. The controller tracks task-level review findings in the execution reports. Whole-branch independent review follows the packaging handoff.

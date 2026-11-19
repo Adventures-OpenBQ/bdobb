@@ -138,14 +138,17 @@ export function createManagedTableRequest(backend: BackendConfig): typeof global
 }
 
 /** Walks a dotted dataKey; an unresolvable key yields the whole payload. */
-export function extractData(payload: unknown, dataKey?: string): unknown {
+export function extractData(payload: unknown, dataKey?: string, preserveTableSnapshot = false): unknown {
   if (!dataKey) return payload;
 
   let current: unknown = payload;
-  for (const segment of dataKey.split(".")) {
+  const segments = dataKey.split(".");
+  for (const [index, segment] of segments.entries()) {
     if (typeof current !== "object" || current === null) return payload;
     const next = (current as Record<string, unknown>)[segment];
     if (next === undefined) return payload;
+    // A table can select the rows of an explicit acquisition envelope at any depth.
+    if (preserveTableSnapshot && segment === "rows" && index === segments.length - 1 && isTableSnapshotEnvelope(current)) return current;
     current = next;
   }
   return current;
@@ -503,9 +506,7 @@ export async function fetchWidgetData(
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
-  // The table card separates the rows for presentation and passes the receipt to the executor.
-  if (widget.type === "table" && widget.dataKey === "rows" && isTableSnapshotEnvelope(payload)) return payload;
-  return extractData(payload, widget.dataKey);
+  return extractData(payload, widget.dataKey, widget.type === "table");
 }
 
 /**
