@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { datasetFromBytes } from './localTableData';
+import { dataFromBytes, datasetFromBytes } from './localTableData';
 it('normalizes literal column IDs and complete local provenance', async () => {
   const result = await datasetFromBytes('data.json', new TextEncoder().encode('[{"a.b":10},{"a.b":20}]'), 'widget', 4);
   expect(result.columns).toEqual([{ id: 'a.b', label: 'a.b' }]);
@@ -45,4 +45,30 @@ it('relabels statement rows from the given year ends before rows are identified'
   expect(plain.rows.map(r => r.values.fiscal_period)).toEqual(['Q2', 'FY', 'Q2']);
   expect(plain.diagnostics).toEqual([{ code: 'FISCAL_AS_REPORTED', severity: 'info', message: 'Fiscal labels as reported' }]);
   expect((await datasetFromBytes('s.csv', bytes, 'widget', 1)).diagnostics).toBeUndefined();
+});
+
+it('keeps explicit acquisition status and requests out of the price rows when importing a snapshot', async () => {
+  const rows = [{ date: '2026-01-02', adjusted_close: 100 }];
+  const receipt = { start_date: '2026-01-01', end_date: '2026-01-31', interval: '1d', symbol: 'A' };
+  for (const completeness of ['complete', 'bounded', 'paged', 'sample', 'unknown', 'partial']) {
+    const bytes = new TextEncoder().encode(JSON.stringify({ rows, receipt, completeness }));
+    const file = await datasetFromBytes('history.json', bytes, 'widget', 1);
+    expect(await dataFromBytes('history.json', bytes)).toEqual(rows);
+    expect(file.rows.map(row => row.values)).toEqual(rows);
+    expect(file.provenance.receipt).toEqual(receipt);
+    expect(file.completeness.kind).toBe(completeness);
+  }
+});
+
+it('refuses a malformed snapshot or an undeclared receipt field', async () => {
+  const rows = [{ symbol: 'A', adjusted_close: 100 }];
+  for (const value of [
+    { rows, receipt: {}, completeness: 'invented' },
+    { rows, receipt: { interval: {} }, completeness: 'bounded' },
+    { rows, receipt: { token: 'unused' }, completeness: 'bounded' },
+    { rows, receipt: {}, completeness: 'complete', extra: true },
+  ]) {
+    const bytes = new TextEncoder().encode(JSON.stringify(value));
+    await expect(datasetFromBytes('invalid.json', bytes, 'widget', 1)).rejects.toThrow('Could not parse local table');
+  }
 });

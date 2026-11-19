@@ -1,6 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isRecord } from './isRecord';
+import { priceDimensionIssue } from './widgetData/chartRecipes/priceEvidence';
 import { tableRows } from "./tableRowValues";
 import { identifyRows } from "./widgetData/identity";
 import type { Row } from "./tableColumns";
@@ -27,8 +29,24 @@ const extensionOf = (name: string) => {
 export async function dataFromBytes(name: string, bytes: Uint8Array): Promise<unknown> {
   return (await parsedFromBytes(name, bytes)).data;
 }
-async function parsedFromBytes(name: string, bytes: Uint8Array): Promise<{data: unknown; formats?: NonNullable<DatasetRow['cellFormats']>[]}> {
-  if (extensionOf(name) === "json") return {data:JSON.parse(new TextDecoder().decode(bytes))};
+type Snapshot = { receipt: Record<string, string>; completeness: WidgetDataset['completeness']['kind'] };
+type ParsedTable = { data: unknown; formats?: NonNullable<DatasetRow['cellFormats']>[]; snapshot?: Snapshot };
+
+function parseJsonTable(bytes: Uint8Array): ParsedTable {
+  const data: unknown = JSON.parse(new TextDecoder().decode(bytes));
+  if (!isRecord(data) || !Object.hasOwn(data, 'receipt')) return { data };
+  const { rows, receipt, completeness } = data;
+  const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
+  const kind = kinds.find(k => k === completeness);
+  const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date'];
+  if (!kind || !tableRows(rows) || !isRecord(receipt) || Object.keys(data).some(k => !['rows', 'receipt', 'completeness'].includes(k))
+    || !Object.entries(receipt).every(([k, v]) => keys.includes(k) && typeof v === 'string' && v.trim() && v.length <= 4096))
+    throw new Error('Invalid table snapshot');
+  return { data: rows, snapshot: { receipt: receipt as Record<string, string>, completeness: kind } };
+}
+
+async function parsedFromBytes(name: string, bytes: Uint8Array): Promise<ParsedTable> {
+  if (extensionOf(name) === "json") return parseJsonTable(bytes);
   await assertInflatesWithin(bytes, WORKBOOK_MAX_INFLATED_BYTES);
   const XLSX = await import("xlsx");
   const book = XLSX.read(bytes, { type: "array", cellNF: true });
@@ -142,6 +160,20 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
     const fiscal = yearEnds ? correctStatementRows(rows, '', yearEnds, [], true) : undefined;
     if (fiscal) rows = fiscal.rows;
     dataset = datasetFromRows(rows, widgetId, inputRevision, 'localFile', parsed.formats);
+    if (parsed.snapshot) {
+      const { receipt, completeness } = parsed.snapshot;
+      dataset.provenance.receipt = receipt;
+      dataset.completeness.kind = completeness;
+      if (completeness !== 'complete') {
+        delete dataset.completeness.totalRowCount;
+        delete dataset.completeness.totalRowCountKind;
+      }
+      if (receipt.interval) {
+        const issue = priceDimensionIssue(dataset, 'adjusted_close');
+        const identity = dataset.columns.find(c => c.id === 'symbol' || c.id === 'ticker')?.id;
+        dataset.provenance.metadata = { priceDimensionsChecked: true, ...(identity ? { priceSymbolField: identity } : {}), ...(issue ? { priceDimensionIssue: issue } : {}) };
+      }
+    }
     if (fiscal?.asReported) dataset.diagnostics = [{ ...FISCAL_AS_REPORTED }];
   } catch { throw new Error('Could not parse local table'); }
   return dataset;

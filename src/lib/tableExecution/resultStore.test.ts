@@ -3,6 +3,9 @@
 
 import { compileAnalyticalModel } from '../tableModel/calculate';
 import { it, expect } from 'vitest';
+import { datasetFromBytes } from '../localTableData';
+import { preparePrices } from '../widgetData/chartRecipes/input';
+import { priceDataset, priceFields } from '../widgetData/chartRecipes/fixtures';
 import { toggleGroupSelection } from '../widgetData/tableOutput';
 import { calculateView } from './engine';
 import { createResultStore } from './resultStore';
@@ -165,4 +168,58 @@ it('incoming producer formula columns remain raw inputs while local source outpu
  const analytical={schemaVersion:1 as const,params:{promotePage:true,filters:[]},enabled:true,categories:[],measures:[],formulas:[{id:'local',name:'Local',scope:'source' as const,expression:'[Upstream ratio]+1',ast:{kind:'binary' as const,operator:'+' as const,left:{kind:'reference' as const,target:'field' as const,id:'incoming'},right:{kind:'literal' as const,value:1}}}],layout:{rows:[],columns:[], values: []},checklists:[],resultFilters:[],subtotals:{grandTotal:true,groups:false}};
  const store=createResultStore(calculateView(source,{table:{},search:'',analytical},{kind:'none'}),revision);const ready=store.ready('r',revision);
  expect(ready.inspection.inputColumns).toEqual(source.columns);expect(ready.columns.map(c=>c.id)).toContain('local');expect(compileAnalyticalModel(analytical,{columns:ready.inspection.inputColumns}).graph.diagnostics).toEqual([]);expect(store.inspect('i',revision,{collection:'definitions',definitionId:'local',offset:0,limit:1}).rows[0]).toMatchObject({sourceFilterKind:'number'});
+});
+
+it('preserves a JSON snapshot receipt and filtered dates across chart projection, without excluded values', async () => {
+  const receipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
+  const rows = [100, 123456789, 121].map((adjusted_close, i) => ({
+    symbol: 'A', date: '2026-01-0' + (i + 2), adjusted_close, tag: i === 1 ? 'exclude' : 'include', currency: 'USD',
+  }));
+  const snapshot = (data: typeof rows) => datasetFromBytes('daily.json', new TextEncoder().encode(JSON.stringify({ rows: data, receipt, completeness: 'bounded' })), 'source', 1);
+  const read = (data: typeof input, search = '') => {
+    const store = createResultStore(calculateView(data, { table: {}, search }, { kind: 'none' }), revision);
+    return store.chartData('c', revision, Object.values(priceFields));
+  };
+  const dataset = await snapshot(rows);
+  const result = read(dataset, 'include');
+  expect(result.rows).toHaveLength(2);
+  expect(result.provenance.receipt).toEqual(receipt);
+  expect(result.completeness.kind).toBe('bounded');
+  expect(JSON.stringify(result)).not.toContain('123456789');
+  expect(preparePrices(result, priceFields)).toMatchObject({ ok: true, series: [{ symbol: 'A', points: [
+    { date: '2026-01-02', price: 100 }, { date: '2026-01-03', price: null }, { date: '2026-01-04', price: 121 },
+  ] }] });
+  const mixed = await snapshot(rows.map((row, i) => ({ ...row, currency: i === 1 ? 'EUR' : 'USD' })));
+  expect(preparePrices(read(mixed), priceFields)).toMatchObject({ ok: false, refused: true });
+});
+
+it.each(['typescript', 'rust'] as const)('%s imports an evidenced daily file through its production executor and handles a missing date', async engine => {
+  const { ProviderBoundary } = await import('../../test/tableProviderBoundary');
+  const { createTableProvider } = await import('./rust/providerFactory');
+  const workerFactory = () => new ProviderBoundary(engine === 'rust' ? 'rust.worker' : 'table.worker') as unknown as Worker;
+  const executor = createTableProvider('source', engine, { workerFactory });
+  const signal = new AbortController().signal;
+  const rows = [10, 11, 12].map((adjusted_close, i) => ({ symbol: 'A', date: '2026-01-0' + (i + 2), adjusted_close, tag: i === 1 ? 'exclude' : 'include' }));
+  const receipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
+  try {
+    await executor.importFile('prices.json', new TextEncoder().encode(JSON.stringify({ rows, receipt, completeness: 'bounded' })), 1, signal);
+    await executor.applyModel({ table: {}, search: '' }, { kind: 'none' }, revision, signal);
+    const all = preparePrices(await executor.chartData(revision, Object.values(priceFields), signal), priceFields);
+    expect(all).toMatchObject({ ok: true, scope: { start: '2026-01-01', end: '2026-01-31' } });
+    const filtered = { ...revision, model: 2, output: 2 };
+    await executor.applyModel({ table: {}, search: 'include' }, { kind: 'none' }, filtered, signal);
+    const reduced = preparePrices(await executor.chartData(filtered, Object.values(priceFields), signal), priceFields);
+    if (engine === 'rust') expect(reduced).toMatchObject({ ok: false, refused: true });
+    else expect(reduced).toMatchObject({ ok: true, series: [{ points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }] });
+  } finally { executor.dispose(); }
+});
+
+it('retains an omitted date when symbol labels differ only in surrounding spaces', () => {
+  const data = priceDataset(['A', ' A ', 'A'].map((symbol, i) => ({
+    symbol, date: '2026-01-0' + (2 + i), adjusted_close: 10 + i, tag: i === 1 ? 'omit' : 'show',
+  })));
+  const store = createResultStore(calculateView(data, { table: {}, search: 'show' }, { kind: 'none' }), revision);
+  expect(preparePrices(store.chartData('c', revision, Object.values(priceFields)), priceFields)).toMatchObject({
+    ok: true, series: [{ symbol: 'A', points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }],
+  });
 });

@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { dailyScope, identityColumns, priceOmissionEvidence, unitColumns, venueColumn } from '../widgetData/chartRecipes/priceEvidence';
 import { filterKindFor } from '../tableFiltering';
 import { inspectionPage, inspectionCounts } from './inspection';
 import { selectionSummary } from './selection';
@@ -71,8 +72,17 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
       throw new ExecutionProtocolError('INVALID_REQUEST', `Unknown facet ${categoryId}`); return structuredClone({ ...envelope, ...facet, kind: 'facets', categoryId }); },
     inspect(requestId, requested, request) { return structuredClone({ ...context(requestId, requested), ...inspectionPage(view, request), kind: 'inspect' }); },
     totals(requestId, requested) { return structuredClone({ ...context(requestId, requested), ...view.totals, kind: 'totals' }); },
-    chartData(requestId, requested, fields) { const envelope = context(requestId, requested); if (fields.some(f => !view.columns.some(c => c.id === f)))
-      throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field'); return structuredClone({ ...envelope, kind: 'chartData', columns: view.columns.filter(c => fields.includes(c.id)), rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance: view.provenance, freshness: view.freshness }); },
+    chartData(requestId, requested, fields) {
+      const envelope = context(requestId, requested);
+      if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
+      let provenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
+      if (dailyScope(provenance) && provenance.metadata?.priceDimensionsChecked !== true && !provenance.presentation && !provenance.lineage?.length) {
+        const unverified = [...identityColumns, ...unitColumns, venueColumn, 'interval'].find(id => view.inputColumns.some(c => c.id === id) && !fields.includes(id));
+        provenance = { ...provenance, metadata: { ...provenance.metadata, priceDimensionsChecked: !unverified,
+          ...(unverified ? { priceDimensionIssue: `Present the source ${unverified} field or import a verified daily snapshot.` } : {}) } };
+      }
+      return structuredClone({ ...envelope, kind: 'chartData', columns: view.columns.filter(c => fields.includes(c.id)), rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
+    },
     presented(requestId, requested, transferId, batchSize = 500, ignoreSelection = false) {
       const envelope = context(requestId, requested);
       if (!transferId || !Number.isSafeInteger(batchSize) || batchSize < 1)
