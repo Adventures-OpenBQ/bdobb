@@ -62,9 +62,12 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
                 const reported = m.values[r];
                 if (reported === null) return 0;
                 const gap = reported - running[i];
-                // Scale by the terms that were added, including ones that cancelled out.
+                // Cap cancellation noise at the original tolerance for the reported subtotal.
+                const rounding = Math.min(
+                    Number.EPSILON * Math.max(Math.abs(reported), magnitude[i]),
+                    1e-9 * Math.max(1, Math.abs(reported)),
+                );
                 // A whole-unit residual always gets an Other step.
-                const rounding = Number.EPSILON * Math.max(Math.abs(reported), magnitude[i]);
                 return Math.abs(gap) < 1 && Math.abs(gap) <= rounding ? 0 : gap;
             });
             if (gaps.some(g => g !== 0))

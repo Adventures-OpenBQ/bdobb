@@ -77,6 +77,20 @@ it('keeps an explicit decimal residual that exceeds binary rounding error', () =
     expect(traces[0].y[1]).toBeCloseTo(-0.0000001, 13);
 });
 
+it('keeps a one-cent residual after large, exactly cancelling steps', () => {
+    const { traces, xaxis } = ok(walk([
+        ['revenue', 25_000_000_000_000],
+        ['cost_of_revenue', 25_000_000_000_000],
+        ['gross_profit', 0.01],
+    ]));
+    expect(xaxis.ticktext).toEqual(['revenue', 'cost_of_revenue', 'Other', 'gross_profit']);
+    expect(traces[0]).toMatchObject({
+        measure: ['relative', 'relative', 'relative', 'absolute'],
+        y: [25_000_000_000_000, -25_000_000_000_000, 0.01, 0.01],
+    });
+    expect(traces[0].text[2]).toContain('Step: +0.01');
+});
+
 it('omits Other for binary rounding in decimal sums, including after cancellation', () => {
     const totals = ok(walk([['revenue', 0.1], ['discontinued_operations', 0.2], ['gross_profit', 0.3]]));
     expect(totals.xaxis.ticktext).toEqual(['revenue', 'discontinued_operations', 'gross_profit']);
