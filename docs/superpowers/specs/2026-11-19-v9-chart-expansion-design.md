@@ -157,3 +157,7 @@ The builder may settle exact module names, option keys, worker message plumbing,
 ## Design review
 
 Independent builder check completed 2026-11-19. The reviewer requested an unambiguous correlation window; the design now specifies a common end, a shared union-date lookback and pairwise matching within it. On rereview: "nothing important left". User approved this written design in chat on 2026-11-19 and requested the implementation plan.
+
+## Approved scope amendment: statement editing parity
+
+On 2026-11-19 the user explicitly chose to include the missing v4 statement-editing controls. Carry durable `lineSection` overrides, a per-line Section selector and Move line up/down controls, including displayed-section ordering, compiler/validation/template-update/reset behavior and persistence. Preserve line/formula identities and monetary bindings; moving an expense changes presentation, not its waterfall role. Section choices follow user display order and inherited visibility follows the target section. Use reviewed donor changes `9d8786df`, `60a59b1c` and the editor/compiled-waterfall regression portions of `78219efe`. Existing v9 protections such as label limits remain. Add a separate implementation/review gate (Task 11, executed after Task 2); all other chart scope remains unchanged.

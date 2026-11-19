@@ -145,6 +145,27 @@ Run `pnpm exec vitest run src/lib/widgetData/chartFigure.test.ts src/lib/widgetD
 
 Use `git add -- <explicit changed paths from this task>` after inspecting status, then `git commit -m "feat(v9): integrate linked bullet and statement waterfall"`. Do not stage the whole worktree.
 
+### Task 11: Carry missing v4 statement-editing controls (approved amendment; execute after Task 2)
+
+**Repository:** bdobb
+
+**Files:** Create `src/lib/statementModel/placement.ts`, `placement.test.ts`; modify `src/lib/statementModel/{types,compile,validation,overrides,updates}.ts` and their existing tests plus `persistence.test.ts` and snapshots; modify `src/components/renderers/table-model/StatementPanel.tsx` and its test; create `src/lib/widgetData/waterfallStatement.test.ts`; update `docs/releases/validation/v9/chart-expansion/dependencies.md`.
+
+**Interfaces:** Extend `StatementOverrides` with optional `lineSection: Record<lineId, sectionId>`; preserve donor `displayedSections(template, overrides)` API. Compile displayed placement while retaining original statement-owned line identity used by waterfall. New UI Section selector moves lines between sections, Move up complements existing Move down. Dependencies: reviewed Task 2; donors `9d8786df`, `60a59b1c`, editor/integration regression hunks from `78219efe`.
+
+- [ ] **Step 1: Carry tests before production changes.** Pin persistence, validation, reset-one/reset-section/reset-all and template-update conflict behavior for lineSection. Assert section picker follows user section order; moving appends once to target, removes old displayed placement, and returning home clears redundant override. Assert line/formula IDs and monetary bindings remain unchanged; hidden target inheritance works; both up/down buttons respect bounds; read-only viewers cannot change placement. Include compiled-waterfall regression: moved expense retains decrease role.
+
+```ts
+expect(saved.overrides.lineSection[lineId]).toBe(targetSectionId);
+expect(movedLine.id).toBe(originalLine.id);
+expect(expenseWaterfallStep).toBeLessThan(0);
+```
+
+- [ ] **Step 2: Run RED.** `pnpm exec vitest run src/lib/statementModel src/components/renderers/table-model/StatementPanel.test.tsx src/lib/widgetData/waterfallStatement.test.ts`; expect missing placement support to fail, not toolchain/import setup.
+- [ ] **Step 3: Port minimal donor production changes.** Preserve current v9 validation/security limits and APIs; no unrelated v4 editor refactor. Carry display placement, compilation, validation, template update and reset semantics together, avoiding UI-only state that cannot survive save/import.
+- [ ] **Step 4: Verify GREEN.** Rerun the focused command, `pnpm typecheck`, `pnpm lint`, then full `pnpm test:run` once; inspect diff and `git diff --check`. Document any preexisting warning by name.
+- [ ] **Step 5: Commit scoped paths** with `feat(statement): carry section placement and line ordering controls`, then independent task review before Task 3.
+
 ### Task 3: Define persisted recipe options and field validation
 
 **Repository:** bdobb
