@@ -335,3 +335,19 @@ it('sizes only a scoped scroll plot and reconciles its height without purging it
   unmount();
   expect(purgePlot).toHaveBeenCalledWith(node);
 });
+
+it('releases vertical drag only for a touch-scroll plot on a coarse pointer', () => {
+  let coarse = false;
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query === '(pointer: coarse)' && coarse, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  }));
+  const data = { data: [{ type: 'scatter' }], layout: { dragmode: 'zoom' } };
+  const { rerender } = render(<ChartRenderer data={data} scrollHeight={800} touchScroll/>);
+  expect(figureFromLastCall()).toEqual(data);
+  coarse = true;
+  rerender(<ChartRenderer data={data} scrollHeight={800} touchScroll/>);
+  expect(figureFromLastCall()).toMatchObject({ layout: { dragmode: false } });
+  expect(data.layout.dragmode).toBe('zoom');
+  rerender(<ChartRenderer data={data} scrollHeight={800}/>);
+  expect(figureFromLastCall()).toEqual(data);
+});

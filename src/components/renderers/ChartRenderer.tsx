@@ -6,6 +6,7 @@ import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/
 import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
 import { purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot } from "../../lib/plotly";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 
 // A native openbb-charting figure is drawn exactly as it arrives, whatever
@@ -52,10 +53,12 @@ export function ChartRenderer({
   columns,
   chartType,
   scrollHeight,
+  touchScroll = false,
 }: {
   data: unknown;
   uirevision?: string;
   scrollHeight?: number;
+  touchScroll?: boolean;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -121,14 +124,17 @@ export function ChartRenderer({
   // only ever purged in attachNode's cleanup above, when the node itself
   // goes away (i.e. on unmount).
   const scrolling = scrollHeight !== undefined;
+  const coarseScroll = useMediaQuery(scrolling && touchScroll ? "(pointer: coarse)" : null) === true;
   useEffect(() => {
     const el = node.current;
     if (!el || !drawable) return;
-    renderPlot(el, drawable, uirevision).catch((err: unknown) => {
+    // Plotly cancels native touch movement while a drag mode is active.
+    const figure = coarseScroll ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable;
+    renderPlot(el, figure, uirevision).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       void logError(`chart render failed: ${message}`);
     });
-  }, [drawable, uirevision, scrolling]);
+  }, [drawable, uirevision, scrolling, coarseScroll]);
 
   if (!figure) return <p className="empty-state">Nothing chartable in this payload.</p>;
   if (unregisteredType !== null) {
@@ -139,5 +145,7 @@ export function ChartRenderer({
     );
   }
   const plot = <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>;
-  return scrolling ? <div className="chart-scroll-viewport">{plot}</div> : plot;
+  // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
+  return scrolling ? <div className="chart-scroll-viewport"
+    onTouchEnd={coarseScroll ? event => event.preventDefault() : undefined}>{plot}</div> : plot;
 }

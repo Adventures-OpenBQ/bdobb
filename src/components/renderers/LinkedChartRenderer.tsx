@@ -347,5 +347,5 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     {completed && <DatasetStatus dataset={completed.data} source={source} notes={completed.result.ok ? completed.result.notes : []}/>}
   </div>
   {completed?.result.ok && <div className="linked-chart-plot" ref={observePlot}><ChartRenderer data={completed.result.figure}
-    scrollHeight={recipePlotHeight(options.kind, completed.result.figure)} uirevision={completed.result.revision}/></div>}</>;
+    touchScroll={options.kind === 'etf-exposure'} scrollHeight={recipePlotHeight(options.kind, completed.result.figure)} uirevision={completed.result.revision}/></div>}</>;
 }
