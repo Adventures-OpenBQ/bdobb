@@ -196,6 +196,56 @@ describe('buildEstimateRange', () => {
     });
   });
 
+  it('requires the provider band status when a projection omits the actual guard', () => {
+    const dataset = { ...source([{ ...row(), band_status: 'withheld', quality_status: 'ok' }]), kind: 'chartData' };
+    dataset.columns = dataset.columns.filter(column => column.id !== 'band_status');
+    delete dataset.rows[0].values.band_status;
+    const options = { ...eps, fields: { ...eps.fields, status: 'quality_status' } };
+
+    expect(buildEstimateRange(dataset, options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/provider.*band_status/i),
+    });
+  });
+
+  it('refuses an unrelated finite field in the estimate bounds', () => {
+    const dataset = source([{ ...row(), volume: -3 }]);
+    const options = { ...eps, fields: { ...eps.fields, low: 'volume' } };
+
+    expect(buildEstimateRange(dataset, options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/low.*EPS/i),
+    });
+  });
+
+  it('uses source identity ahead of the presented field name', () => {
+    const dataset = source([row()]);
+    dataset.columns.find(column => column.id === 'band_status')!.sourceFieldId = 'quality_status';
+
+    expect(buildEstimateRange(dataset, eps, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/provider.*band_status/i),
+    });
+
+    dataset.columns.find(column => column.id === 'band_status')!.sourceFieldId = 'band_status';
+    dataset.columns.find(column => column.id === 'eps_low')!.sourceFieldId = 'volume';
+    expect(buildEstimateRange(dataset, eps, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/low.*EPS/i),
+    });
+  });
+
+  it('accepts renamed fields backed by the provider guard and bound identities', () => {
+    const values = {
+      symbol: 'AAPL', period_ending: q4, fiscal_period: 'FQ4 2026', band_note: null,
+      guard: 'ok', lower: -2, midpoint: -1, upper: .5,
+    };
+    const dataset = source([values]);
+    const aliases: Record<string, string> = { guard: 'band_status', lower: 'eps_low', midpoint: 'EPS_AVERAGE', upper: 'eps_high' };
+    for (const column of dataset.columns) if (aliases[column.id]) column.sourceFieldId = aliases[column.id];
+    const options = { ...eps, fields: { ...eps.fields, status: 'guard', low: 'lower', average: 'midpoint', high: 'upper' } };
+
+    const { figure } = chart(buildEstimateRange(dataset, options, context));
+    expect(figure.data[0]).toMatchObject({ x: [-2, .5], y: [q4, q4] });
+    expect(figure.data[1]).toMatchObject({ x: [-1], y: [q4] });
+  });
+
   it('checks cell errors without discarding another valid reported quarter', () => {
     const dataset = source([row(), row(q3, 'FQ3 2026')]);
     dataset.rows[0].cellErrors = { eps_avg: { code: 'VALUE_ERROR', message: 'Invalid value' } };

@@ -24,6 +24,7 @@ type Quarter = {
 const refuse = (message: string): RecipeResult => ({ ok: false, refused: true, message });
 const columnNames = (column: DatasetColumn) => [column.id, column.sourceFieldId ?? ''].map(name => name.toLowerCase());
 const hasName = (column: DatasetColumn, ...names: string[]) => columnNames(column).some(name => names.includes(name));
+const sourceName = (column: DatasetColumn) => (column.sourceFieldId ?? column.id).toLowerCase();
 const read = (row: DatasetRow, field: string | undefined): unknown =>
   field !== undefined && !Object.hasOwn(row.cellErrors ?? {}, field) && Object.hasOwn(row.values, field)
     ? row.values[field] : undefined;
@@ -157,15 +158,15 @@ export function buildEstimateRange(dataset: WidgetDataset, options: Options, con
   const rawIds = [...requiredRecipeFields(options), ...estimateRangeIdentityFields(dataset.columns)];
   if (rawIds.some(id => columns.get(id)?.analytical))
     return refuse('Use raw guarded estimate fields without analytical transformations.');
+  if (sourceName(columns.get(fields.status)!) !== 'band_status')
+    return refuse('Bind the provider band_status field.');
+
   const metricName = metric === 'eps' ? 'EPS' : 'Revenue';
   const valueFields = [fields.low, fields.average, fields.high];
   const bound = valueFields.map(id => columns.get(id)!);
   const canonicalFields = [`${metric}_low`, `${metric}_avg`, `${metric}_high`];
-  for (const [index, column] of bound.entries()) {
-    if (columnNames(column).some(name => /^(?:eps|revenue)_(?:low|avg|average|high|actual|consensus|analysts|growth.*)$/.test(name)
-      && name.replace(/_average$/, '_avg') !== canonicalFields[index]))
-      return refuse(`Choose matching low, average and high bindings for ${metricName}.`);
-  }
+  if (bound.some((column, index) => sourceName(column).replace(/_average$/, '_avg') !== canonicalFields[index]))
+    return refuse(`Bind the provider low, average and high fields for ${metricName}.`);
 
   const identity = instrument(dataset);
   if (identity.issue) return refuse(identity.issue);
