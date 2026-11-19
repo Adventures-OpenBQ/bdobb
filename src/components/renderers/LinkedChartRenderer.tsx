@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { DashboardCard } from '../../lib/types';
 import type { LinkedChartSettings, WidgetDataset } from '../../lib/widgetData/types';
 import { buildLinkedFigure } from '../../lib/widgetData/chartFigure';
@@ -11,17 +11,16 @@ import { tableExecutionStore } from '../../stores/tableExecutionStore';
 import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
-/** A type change drops the settings the new type cannot use. */
-function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type']): LinkedChartSettings {
-    const next = { ...settings, type, display: settings.display === 'percent' && type !== 'column' && type !== 'bar' ? 'stacked' as const : settings.display };
-    if (type === 'pie' || type === 'bullet' || type === 'waterfall')
-        delete next.seriesFrom;
-    if (type === 'bullet')
-        next.display = 'grouped';
-    else
-        delete next.period;
-    return next;
-}
+import type { ViewState } from '../../stores/tableExecutionStore';
+import type { LocalWorkerExecutor, ChartResult } from '../../lib/tableExecution/types';
+import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
+import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
+import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateRange';
+import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
+import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
+import { todayLocal } from '../../lib/calendarView';
+import { LinkedChartRecipeControls, recipeAvailability, recipeLabels } from './LinkedChartRecipeControls';
+
 type Completed = {
     identity: string;
     dataset: WidgetDataset;
@@ -43,7 +42,37 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const settings = card.linkedChart!;
     const source = card.linkedSource?.sourceWidgetId;
     const identity = JSON.stringify([dashboardId, card.id]);
-    const mapping = JSON.stringify(settings);
+    const recipe = decodeLinkedChartRecipe(settings, settings.type);
+    const mapping = recipe ? JSON.stringify([settings.type, recipe]) : JSON.stringify(settings);
+    const editScope = JSON.stringify([identity, source, mapping]);
+    const [draft, setDraft] = useState<{ scope: string; kind: RecipeOptions['kind'] }>();
+    const editing = !viewer && draft?.scope === editScope ? draft.kind : settings.type;
+    const financial = isRecipeType(editing);
+    const legacy = !financial && !recipe;
+    const executor = source ? store.readExecutor(dashboardId, source) : undefined;
+    const presented = view.ready?.columns ?? [];
+    const loadSymbols = useCallback(async (field: string | undefined, signal: AbortSignal) => {
+        const revision = view.sourceRevision;
+        if (!executor || !revision || revision.widgetId !== source || !view.ready || !['ready', 'empty'].includes(view.status))
+            throw new Error('Wait for the selected source table to finish loading.');
+        if (field && !view.ready.columns.some(c => c.id === field)) throw new Error('Repair the unavailable symbol field.');
+        const data = await executor.chartData(revision, field ? [field] : [], signal);
+        signal.throwIfAborted();
+        if (JSON.stringify(data.revision) !== JSON.stringify(revision)) throw new Error('Source changed. Reload the symbol choices.');
+        const evidence = data.provenance.metadata;
+        if (typeof evidence?.priceDimensionIssue === 'string') throw new Error(evidence.priceDimensionIssue);
+        if (evidence?.priceDimensionsChecked !== true) throw new Error('The source cannot verify its price symbol identity. Use a documented daily snapshot.');
+        if (!field) {
+            const declared = symbolList(data.provenance);
+            return declared?.length === 1 ? declared : [];
+        }
+        const symbols = new Set<string>();
+        for (const row of data.rows) {
+            const symbol = !row.cellErrors?.[field] && observationSymbol(row.values[field]);
+            if (symbol) symbols.add(symbol);
+        }
+        return [...symbols].sort();
+    }, [executor, source, view.ready, view.sourceRevision, view.status]);
     const active = JSON.stringify(view.sourceRevision);
     const quarterScope = JSON.stringify([identity, source, active, settings.category]);
     const [completed, setCompleted] = useState<Completed>();
@@ -61,6 +90,10 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     } }, [refreshKey, dashboardId, card.id, store]);
     useEffect(() => {
         const version = ++generation.current;
+        if (!legacy) {
+            setCompleted(undefined); setError(undefined); setRefused(undefined); setNoMatches(false);
+            return;
+        }
         const controller = new AbortController();
         const revision = view.sourceRevision;
         const executor = source ? store.readExecutor(dashboardId, source) : undefined;
@@ -118,16 +151,20 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         return () => controller.abort();
         // Status-only failure transitions keep the completed schema, dataset and mapping together.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [store, dashboardId, card.id, source, mapping, active, view.ready]);
-    const delivered = completed?.identity === identity ? completed : undefined;
+    }, [store, dashboardId, card.id, source, mapping, active, view.ready, legacy]);
+    const delivered = legacy && completed?.identity === identity ? completed : undefined;
     const built = useMemo(() => delivered ? buildLinkedFigure(delivered.dataset, delivered.renderedSettings, theme, maxDecimals) : undefined, [delivered, theme, maxDecimals]);
     const figure: PlotlyFigure | undefined = built?.ok ? built.figure : undefined;
     const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
-    async function commit(next: LinkedChartSettings) { setSaving(true); try {
+    async function commit(next: LinkedChartSettings) {
+        if (viewer || saving) return;
+        setSaving(true); try {
+        const validated = decodeLinkedChartRecipe(next, next.type);
+        if (validated && !validated.ok) throw new Error(validated.message);
         if (!await onSettingsChange(next))
             throw new Error('Chart settings could not be saved.');
-        setSaveError(undefined);
+        setSaveError(undefined); setDraft(undefined);
     }
     catch (e) {
         setSaveError(e instanceof Error ? e.message : String(e));
@@ -140,22 +177,139 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
     return <div className="linked-chart-renderer">
     {!viewer ? <div className="chart-controls">
-      <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => { const next = withType(settings, e.target.value as LinkedChartSettings['type']); void commit(next.type === 'bullet' && !next.category && fields.some(c => c.id === 'fiscal_period') ? { ...next, category: 'fiscal_period' } : next); }}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="bullet">Bullet</option><option value="waterfall">Waterfall</option></select></label>
+      <label>Chart type<select aria-label="Chart type" disabled={saving} value={editing} onChange={e => {
+        const type = e.target.value as LinkedChartSettings['type'];
+        if (isRecipeType(type)) {
+          if (!recipeAvailability(type, presented)) setDraft({ scope: editScope, kind: type });
+          return;
+        }
+        if (type === settings.type) { setDraft(undefined); return; }
+        const next = withRecipeType(settings, type);
+        void commit(type === 'bullet' && !next.category && fields.some(c => c.id === 'fiscal_period') ? { ...next, category: 'fiscal_period' } : next);
+      }}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="bullet">Bullet</option><option value="waterfall">Waterfall</option>
+      {Object.entries(recipeLabels).map(([kind, label]) => {
+        const issue = recipeAvailability(kind as RecipeOptions['kind'], presented);
+        return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
+      })}</select></label>
+      {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
+        columns={presented} loadSymbols={loadSymbols} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}
       {settings.type !== 'pie' && settings.type !== 'bullet' && settings.type !== 'waterfall' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}
+      </>}
     </div> : null}
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}
-    {error ? <p role="alert">{error}</p> : null}
+    {!financial && recipe && !recipe.ok && <p role="status">{recipe.message}</p>}
+    {legacy && error ? <p role="alert">{error}</p> : null}
     {lagging ? <p role="status">Updating chart — showing completed data (stale).</p> : null}
-    {noMatches ? <p role="status">No selected series match the current filter.</p> : null}
-    {refused ? <p role="status">{refused}</p> : null}
-    {!figure && !error && !noMatches && !refused ? <p role="status">{view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
-    {delivered ? <div role="status">{delivered.dataset.completeness.kind !== 'complete' ? <p>{delivered.dataset.completeness.kind} data</p> : null}{[...delivered.dataset.completeness.warnings, ...(delivered.dataset.diagnostics ?? []).map(d => d.message), ...(delivered.dataset.freshness.diagnostics ?? [])].map((warning, i) => <p key={i}>{warning}</p>)}{notes.map((note, i) => <p key={`n${i}`}>{note}</p>)}{delivered.dataset.provenance.sample ? <p>{delivered.dataset.provenance.sample}</p> : null}</div> : null}
+    {legacy && noMatches ? <p role="status">No selected series match the current filter.</p> : null}
+    {legacy && refused ? <p role="status">{refused}</p> : null}
+    {legacy && !figure && !error && !noMatches && !refused ? <p role="status">{view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
+    {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes}/> : null}
     </div>
+    {financial && editing === settings.type && (recipe?.ok
+      ? <FinancialChart key={editScope} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>
+      : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;
+}
+
+function DatasetStatus({ dataset, notes, source }: { dataset: WidgetDataset; notes: string[]; source?: string }) {
+  const bounds = acquiredWindow(dataset.provenance);
+  const { freshness, completeness } = dataset;
+  return <div role="status">
+    {source && <p>Source {source} · {dataset.rows.length} presented {dataset.rows.length === 1 ? 'row' : 'rows'} · {freshness.availability}{freshness.stale ? ' (stale)' : ''}
+      {freshness.lastSuccessAt !== undefined && ' · Last success ' + new Date(freshness.lastSuccessAt).toLocaleString()}
+      {bounds && ' · Acquisition ' + bounds.start + ' to ' + bounds.end}</p>}
+    {completeness.kind !== 'complete' && <p>{completeness.kind} data</p>}
+    {[...completeness.warnings, ...(dataset.diagnostics ?? []).map(d => d.message), ...(freshness.diagnostics ?? []), ...notes].map((text, i) => <p key={i}>{text}</p>)}
+    {freshness.error && <p>{freshness.error}</p>}
+    {dataset.provenance.sample && <p>{dataset.provenance.sample}</p>}
+  </div>;
+}
+
+type FinancialProps = {
+  view: ViewState; source?: string; executor?: LocalWorkerExecutor; options: RecipeOptions;
+  theme: 'dark' | 'light'; maxDecimals: number;
+};
+function FinancialChart(props: FinancialProps) {
+  const { source, view, executor, options } = props;
+  if (!source || view.status === 'unavailable' || !executor)
+    return <p role="status">{view.error ?? 'Select an available source table.'}</p>;
+  if (!view.sourceRevision || !view.ready || view.sourceRevision.widgetId !== source)
+    return <p role="status">{view.error ?? 'Loading source table…'}</p>;
+  const missing = requiredRecipeFields(options).find(id => !view.ready!.columns.some(c => c.id === id));
+  if (missing) return <p role="alert">Field {missing} is unavailable. Repair chart fields.</p>;
+  const completeness = view.ready.completeness.kind;
+  if (options.kind !== 'estimate-range' && completeness !== 'complete' && completeness !== 'bounded')
+    return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
+  return <WorkerChart {...props} source={source} executor={executor} ready={view.ready} revision={view.sourceRevision}/>;
+}
+
+/** Mounted for one saved question. Keep its last completed figure through a transient refresh failure. */
+function WorkerChart({ view, source, executor, ready, revision, options, theme, maxDecimals }: FinancialProps & {
+  source: string; executor: LocalWorkerExecutor; ready: NonNullable<ViewState['ready']>; revision: NonNullable<ViewState['sourceRevision']>;
+}) {
+  const worker = useRef<ReturnType<typeof createRecipeWorker> | undefined>(undefined);
+  useEffect(() => {
+    worker.current = createRecipeWorker();
+    return () => { worker.current?.dispose(); worker.current = undefined; };
+  }, [worker]);
+  const [loaded, setLoaded] = useState<{ ready: typeof ready; data: ChartResult }>();
+  const [completed, setCompleted] = useState<{ data: ChartResult; result: RecipeResult; context: string }>();
+  const [readError, setReadError] = useState<string>();
+  const [workerError, setWorkerError] = useState<string>();
+  const today = todayLocal();
+  const context = JSON.stringify([theme, maxDecimals, today]);
+  const mapping = JSON.stringify(options);
+  const active = JSON.stringify(revision);
+  const available = view.status === 'ready' || view.status === 'empty';
+  useEffect(() => {
+    if (!available) return;
+    const controller = new AbortController();
+    const fields = requiredRecipeFields(options);
+    if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
+    setReadError(undefined);
+    void executor.chartData(revision, [...new Set(fields)], controller.signal).then(data => {
+      if (controller.signal.aborted) return;
+      if (JSON.stringify(data.revision) !== active || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
+        throw new Error('The selected source revision changed. Refresh the chart.');
+      setLoaded({ ready, data });
+    }).catch(error => { if (!controller.signal.aborted) setReadError(error instanceof Error ? error.message : String(error)); });
+    return () => controller.abort();
+    // The serialized options and revision describe the requested snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [available, executor, ready, active, mapping]);
+  const current = available && loaded?.ready === ready && JSON.stringify(loaded.data.revision) === active ? loaded.data : undefined;
+  useEffect(() => {
+    if (!current || !worker.current) return;
+    const controller = new AbortController();
+    setWorkerError(undefined);
+    void worker.current.run(current, options, { theme, maxDecimals, today }, controller.signal).then(result => {
+      if (controller.signal.aborted) return;
+      // Two linked tables can present different scopes of one root acquisition.
+      if (result.ok) {
+        const revision = JSON.stringify([source, result.revision]);
+        const figure = { ...result.figure, layout: { ...result.figure.layout, uirevision: revision } };
+        setCompleted({ data: current, result: { ...result, figure, revision }, context });
+      } else setCompleted({ data: current, result, context });
+    }).catch(error => { if (!controller.signal.aborted) setWorkerError(error instanceof Error ? error.message : String(error)); });
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worker, current, mapping, context, source]);
+  const error = readError ?? workerError ?? view.error;
+  const stale = completed?.result.ok && (!available || view.stale || completed.data !== current || completed.context !== context || error);
+  return <><div className="linked-chart-status">
+    {error && <p role="alert">{error}</p>}
+    {stale && <p role="status">Updating chart — showing completed data (stale).</p>}
+    {!completed && !error && <p role="status">Calculating chart…</p>}
+    {completed && !completed.result.ok && <p role={completed.result.refused ? 'status' : 'alert'}>{completed.result.message}</p>}
+    {completed && <DatasetStatus dataset={completed.data} source={source} notes={completed.result.ok ? completed.result.notes : []}/>}
+  </div>
+  {completed?.result.ok && <div className="linked-chart-plot"><ChartRenderer data={completed.result.figure}
+    uirevision={completed.result.revision}/></div>}</>;
 }

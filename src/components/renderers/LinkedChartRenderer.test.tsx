@@ -395,3 +395,200 @@ it('redraws the bullet when the decimal-places setting changes', async () => {
     act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } }));
     cleanup(); store.disposeDashboard('d');
 });
+
+it('offers five financial recipes and explains missing fields on an incompatible table', async () => {
+  const store = await setup();
+  render(<LinkedChartRenderer {...withSettings(store, {})}/>);
+  for (const kind of ['drawdown', 'yield-curve', 'estimate-range', 'monthly-returns', 'correlation'])
+    expect(screen.getByLabelText('Chart type').querySelector(`option[value="${kind}"]`)).toBeDisabled();
+  expect(screen.getByLabelText('Chart type').querySelector('option[value=drawdown]')).toHaveTextContent(/adjusted.price/i);
+  cleanup(); store.disposeDashboard('d');
+});
+
+const curve = { version: 1, kind: 'yield-curve', fields: { date: 'date', maturity: 'maturity', rate: 'rate' } } as const;
+async function setupCurve() {
+  const { datasetFromRows } = await import('../../lib/localTableData');
+  const data = datasetFromRows([{ date: '2026-01-02', maturity: 'year_10', rate: .04 }], 's', 1, 'localFile');
+  data.provenance.receipt = { start_date: '2026-01-01', end_date: '2026-01-31' };
+  const acquire = vi.fn(async () => ({ kind: 'dataset' as const, dataset: data }));
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire }) });
+  const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined };
+  store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+  store.ensureTable('d', 'c'); await store.settled('d');
+  const { runRecipe } = await import('../../lib/widgetData/chartRecipes/run');
+  const run = vi.fn(async (...[dataset, options, context]: Parameters<typeof runRecipe>) => runRecipe(dataset, options, context));
+  const worker = await import('../../lib/widgetData/chartRecipes/workerClient');
+  const factory = vi.spyOn(worker, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
+  const props = { ...withSettings(store, { type: curve.kind, recipe: curve, category: undefined, measures: [] }), viewer: true };
+  const read = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+  const change = async (hidden?: string[]) => act(async () => { store.updateDefinition('d', 's', { table: { hidden }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+  return { store, run, props, change, factory, read, acquire };
+}
+it('runs worker-only financial charts without legacy measures, preserves refresh zoom, clears hidden binding and limits source reads', async () => {
+  const { store, props, run, change, factory, read, acquire } = await setupCurve();
+  try {
+    render(<LinkedChartRenderer {...props}/>);
+    const first = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(screen.queryByLabelText('Chart type')).toBeNull();
+    expect(read.mock.calls[0][1]).toEqual(['date', 'maturity', 'rate']);
+    expect(screen.getByText(/^Source s ·/)).toHaveTextContent(/2026-01-01.*2026-01-31/);
+    expect(run).toHaveBeenCalledTimes(1);
+    const original = useSettingsStore.getState().settings;
+    try {
+      act(() => useSettingsStore.setState({ settings: { ...original, theme: 'light', maxDecimalPlaces: 5 } }));
+      await waitFor(() => expect(run.mock.calls.at(-1)![2]).toMatchObject({ theme: 'light', maxDecimals: 5 }));
+      expect(read).toHaveBeenCalledTimes(1);
+    } finally { act(() => useSettingsStore.setState({ settings: original })); }
+    await change([]);
+    await waitFor(() => expect(read.mock.calls.length).toBeGreaterThan(1));
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).layout.uirevision).toBe(first.layout.uirevision);
+    const reads = read.mock.calls.length;
+    await change(['rate']);
+    expect(await screen.findByText(/rate.*repair/i)).toBeTruthy();
+    expect(screen.queryByTestId('figure')).toBeNull();
+    expect(read).toHaveBeenCalledTimes(reads);
+    expect(acquire).toHaveBeenCalledTimes(1);
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+it('retains only a stale same-question success on transport failure; a refusal clears the chart', async () => {
+  const { store, props, change, factory, run, read } = await setupCurve();
+  try {
+    render(<LinkedChartRenderer {...props}/>);
+    await screen.findByTestId('figure');
+    read.mockRejectedValueOnce(new Error('snapshot offline'));
+    await change([]);
+    expect(await screen.findByText(/snapshot offline/)).toBeTruthy();
+    expect(screen.getByText(/stale/i)).toBeTruthy();
+    expect(screen.getByTestId('figure')).toBeTruthy();
+    run.mockResolvedValueOnce({ ok: false, refused: true, message: 'The source must be fully loaded.' });
+    await change(['unrelated']);
+    expect(await screen.findByText(/fully loaded/)).toBeTruthy();
+    expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+it('fences late results when the source disappears or the saved recipe changes', async () => {
+  const { store, props, run, factory } = await setupCurve();
+  try {
+    let release!: () => void;
+    const impl = run.getMockImplementation()!;
+    run.mockImplementationOnce(async (...args) => {
+      const result = await impl(...args);
+      await new Promise<void>(resolve => { release = resolve; });
+      return result;
+    });
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    await waitFor(() => expect(release).toBeDefined());
+    rerender(<LinkedChartRenderer {...props} card={{ ...props.card, linkedSource: undefined }}/>);
+    await act(async () => release());
+    expect(screen.queryByTestId('figure')).toBeNull();
+    rerender(<LinkedChartRenderer {...props}/>);
+    await screen.findByTestId('figure');
+    rerender(<LinkedChartRenderer {...props} card={{ ...props.card, linkedChart: { ...props.card.linkedChart, type: 'monthly-returns', recipe: undefined } }}/>);
+    expect(screen.queryByTestId('figure')).toBeNull();
+    expect(await screen.findByText(/version 1 recipe/)).toBeTruthy();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('persists an estimate-range form once, requests only presented identity evidence, and resets zoom for a metric change', async () => {
+  const { datasetFromRows } = await import('../../lib/localTableData');
+  const { runRecipe } = await import('../../lib/widgetData/chartRecipes/run');
+  const worker = await import('../../lib/widgetData/chartRecipes/workerClient');
+  const factory = vi.spyOn(worker, 'createRecipeWorker').mockReturnValue({ run: async (...[data, opts, ctx]) => runRecipe(data, opts, ctx), dispose: vi.fn() });
+  const data = datasetFromRows([{ period_ending: '2026-06-27', band_status: 'ok', eps_low: 1, eps_avg: 2, eps_high: 3,
+    revenue_low: 10, revenue_avg: 20, revenue_high: 30, TICKER: 'A', Currency: 'USD', unit: 'shares' }], 's', 1, 'localFile');
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker),
+    source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+  try {
+    store.syncDashboard({ id: 'd', tabs: [{ id: 't', cards: [{ ...chart, id: 's', widgetId: 'local_table', linkedChart: undefined, linkedSource: undefined, table: { hidden: ['unit'] } }, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    const read = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+    const save = vi.fn(async (_settings: import('../../lib/widgetData/types').LinkedChartSettings) => true);
+    const props = { dashboardId: 'd', card: chart, store, refreshKey: 0, onSettingsChange: save };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'estimate-range' } });
+    expect(save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    const eps = save.mock.calls[0][0];
+    rerender(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: eps }}/>);
+    const first = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(read.mock.lastCall![1]).toEqual(['period_ending', 'band_status', 'eps_low', 'eps_avg', 'eps_high', 'TICKER', 'Currency']);
+    fireEvent.change(screen.getByLabelText('Metric'), { target: { value: 'revenue' } });
+    fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+    rerender(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: save.mock.calls[1][0] }}/>);
+    const second = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(second.layout.uirevision).not.toBe(first.layout.uirevision);
+    expect(second.data[0].x).toEqual([10, 30]);
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('qualifies the Plotly layout question by the selected source when two tables share an acquisition', async () => {
+  const { store, props, factory } = await setupCurve();
+  try {
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    const first = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    const parent = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined };
+    const child = { ...chart, id: 'subset', widgetId: 'linked_table', linkedChart: undefined };
+    const next = { ...props.card, linkedSource: { kind: 'widget' as const, sourceWidgetId: 'subset' } };
+    await act(async () => {
+      store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [parent, child, next] }] } as Dashboard);
+      store.ensureTable('d', 'c'); await store.settled('d');
+    });
+    rerender(<LinkedChartRenderer {...props} card={next}/>);
+    const second = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(second.layout.uirevision).not.toBe(first.layout.uirevision);
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('ignores a late worker success after switching to another question', async () => {
+  const { store, props, run, factory } = await setupCurve();
+  let release!: () => void;
+  try {
+    const calculate = run.getMockImplementation()!;
+    run.mockImplementationOnce(async (...args) => {
+      const result = await calculate(...args);
+      await new Promise<void>(resolve => { release = resolve; });
+      return result;
+    });
+    const { rerender } = render(<LinkedChartRenderer {...props}/>);
+    await waitFor(() => expect(release).toBeDefined());
+    rerender(<LinkedChartRenderer {...props} card={{ ...props.card, linkedChart: { ...props.card.linkedChart,
+      recipe: { ...curve, fields: { ...curve.fields, rate: 'missing' } } } }}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/missing.*repair/i);
+    await act(async () => release());
+    expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('refuses a contradicted provenance symbol without requesting a hidden symbol column', async () => {
+  const { priceDataset } = await import('../../lib/widgetData/chartRecipes/fixtures');
+  const data = priceDataset([{ date: '2026-01-03', adjusted_close: 2, symbol: 'CONFLICT' }]);
+  data.provenance.receipt!.symbol = 'DECLARED';
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker),
+    source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+  try {
+    store.syncDashboard({ id: 'd', tabs: [{ id: 't', cards: [{ ...chart, id: 's', widgetId: 'local_table', linkedSource: undefined,
+      linkedChart: undefined, table: { hidden: ['symbol'] } }, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    const read = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+    render(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'monthly-returns' } });
+    expect(await screen.findByText(/repair mixed or missing price symbol identities/i)).toBeTruthy();
+    expect(screen.queryByRole('option', { name: 'DECLARED' })).toBeNull();
+    expect(read.mock.calls.map(call => call[1])).toEqual([[]]);
+  } finally { cleanup(); store.disposeDashboard('d'); }
+});
+
+it('rejects a malformed legacy recipe declaration before reading fields or executing an accessor', async () => {
+  const store = await setup();
+  try {
+    const read = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+    const get = vi.fn(() => { throw new Error('Unexpected recipe execution'); });
+    const invalid = Object.defineProperty({ ...settings }, 'recipe', { enumerable: true, get });
+    render(<LinkedChartRenderer {...withSettings(store, {})} viewer card={{ ...chart, linkedChart: invalid }}/>);
+    expect(await screen.findByText(/declare recipe options as enumerable json data/i)).toBeTruthy();
+    expect(get).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalled();
+  } finally { cleanup(); store.disposeDashboard('d'); }
+});
