@@ -25,3 +25,7 @@ These controller decisions governed implementation and validation. They are repr
 11. Task8 may correct touch-only ETF exposure drag capture after real touch Chromium RED — Plotly prevents vertical scrolling inside tall dot plot — narrow coarse/touch-input setting must preserve desktop/other recipe zoom and marker hover/tap, add regression/browser evidence. No global Plotly config change.
 
 12. incompatible unsaved exposure-mode draft disables Apply and retains last applied chart; actual imported/applied mismatch refuses and clears — mode-specific field controls prevent creating invalid settings — cost: source repair example flow must relink and bind before applying Region; runtime/import refusal still tested.
+
+13. extend the tested tall-plot touch-scroll policy to small multiples after final review reproduced blocked lower panels — prioritize one-finger vertical scrolling and marker inspection while preserving desktop zoom/reflow — cost: direct touch drag-to-zoom is unavailable on those scrolling coarse-pointer plots.
+
+14. correct this load-bearing interaction regression before handoff, with the same fix implementer and a narrowly scoped follow-up — direct task completion requires retaining working no-overflow zoom, so parking would knowingly ship a broken path despite the nominal one-wave cap — cost one additional narrow verification/re-review pass. Policy: small multiples suppress touch drag only during actual overflow and re-evaluate on resize; exposure retains its fixed-axis scroll policy.

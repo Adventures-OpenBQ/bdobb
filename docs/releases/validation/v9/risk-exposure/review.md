@@ -63,3 +63,53 @@ The independent assessment above describes commit `fe0ed64f`. The implementer ad
 | Minor 4 · Histogram copy | Hover uses count-neutral wording. Chromium inspects both a count of one at the largest finite boundary and a count of three at the ordinary final boundary. |
 | Minor 5 · Fixture setup | The example explains copying the fixture directory, starting the server on the destination machine at port 17910 and validating the loopback connection there. |
 | Minor 6 · Reopened bins | The native reimport test reads the reopened nonconstant Plotly trace, asserts seven bins and sums their counts to seven observations. |
+
+# Independent re-review of the consolidated fixes
+
+**Ready to merge with one further fix.** All five original Important findings and all six Minor findings are addressed. The small-multiple touch fix introduces one Important regression on a coarse-pointer card whose panels already fit.
+
+I reviewed the 38 changed files from `fe0ed64f4d28cfea15f91744b05c9800b7ea5400` through `7f89bcda24204dbcaff53838ed0a5298c8173794`, including the 121,687-byte package in bounded chunks. I used the original independent findings as acceptance criteria and the controller’s rulings on unsaved mode changes and touch scrolling.
+
+## Original findings
+
+| Finding | Verdict | Evidence |
+| --- | --- | --- |
+| Important 1 · Exchange-aware fund identity | ADDRESSED | Recognized EODHD routes qualify bare symbols with the requested exchange or default US, preserve qualified symbols, check receipts against the acquired instrument and accept the provider’s request echo on exposure rows. Receipt-only snapshots retain their declared identity. The tests exercise conflicting qualifications, holding IDs and distinct US/LSE titles and chart revisions. See `src/lib/widgetData/chartRecipes/etfEvidence.ts:102`. |
+| Important 2 · Exposure dimension | ADDRESSED | Sector and geographic roles use different origin-field allowlists in controls, saved binding checks and the worker. Tests cover both wrong-mode bindings after renaming. The browser verifies Apply stays disabled for an incompatible draft, the applied figure remains visible and relinking clears it before the repaired figure draws. See `src/lib/widgetData/chartRecipes/bindings.ts:29`. |
+| Important 3 · Acquired percentage-point formatter | ADDRESSED | Raw certification refuses the percentage-point formatter. TS and Rust parent/child tests retain the refusal after a downstream override and accept originally fractional weights after a downstream display change. The numeric value stays 0.5 in both transfers. See `src/lib/widgetData/chartRecipes/etfEvidence.ts:69`. |
+| Important 4 · Scrolling an overflowing watchlist by touch | ADDRESSED | Chromium swipes starting inside the subplot surfaces reach the last BIRCH panel at 600 pixels wide, and a tap reveals its baseline. The desktop zoom/reflow test still passes. The new fitting-card regression is recorded below. See `e2e/risk-exposure.spec.ts:261`. |
+| Important 5 · Plotly draw errors | ADDRESSED | The active failure has a bounded, visible local alert. Detaching its plot triggers cleanup. A new figure recovers, and an obsolete draw rejection cannot replace the active figure or emit a misleading error. The component tests cover removal, recovery and late rejection. See `src/components/renderers/ChartRenderer.tsx:152`. |
+| Minor 1 · Shared baseline in hover | ADDRESSED | The tooltip includes index 100 and the shared date. Desktop hover and mobile tap read the actual rendered text. See `src/lib/widgetData/chartRecipes/smallMultiples.ts:99`. |
+| Minor 2 · Active filter that matches all rows | ADDRESSED | The TS and Rust presentation paths carry the ETF filter flag through a linked subset independently of raw acquisition certification. The parity cases check a matching filter, a matching checklist and clearing the filter. See `src/lib/widgetData/chartRecipes/etfEvidence.ts:128`. |
+| Minor 3 · Explicitly bound holding label error | ADDRESSED | A bound label with a cell error refuses before duplicate collapse. Omitting the optional binding still permits the ID fallback. See `src/lib/widgetData/chartRecipes/etfPareto.ts:61`. |
+| Minor 4 · Singular histogram count | ADDRESSED | Count-neutral hover works for one and three observations, including the upper extreme. See `src/lib/widgetData/chartRecipes/returnDistribution.ts:121`. |
+| Minor 5 · Second-machine example setup | ADDRESSED | The example now explains copying the fixtures, serving them on the destination at port 17910 and validating the destination’s loopback connection. See `docs/examples/v9-risk-exposure/README.md:16`. |
+| Minor 6 · Bins after native reimport | ADDRESSED | Chromium reads the reopened trace and verifies seven bins with seven total observations. See `e2e/risk-exposure.spec.ts:215`. |
+
+## New breakage in the fix diff
+
+**Important · A fitting watchlist loses touch zoom.** `src/components/renderers/LinkedChartRenderer.tsx:350` opts every watchlist into touch scrolling. At `src/components/renderers/ChartRenderer.tsx:127`, defining a scroll height is enough to disable the Plotly drag mode on a coarse pointer. This also affects a single panel or a wide one-row grid that has no vertical overflow to scroll. The shared Plotly configuration hides the mode bar. For these cards, the user loses direct zoom with no corresponding scrolling benefit.
+
+I ran one comparative Chromium mobile-emulation scenario in a disposable archive at each revision. It imported the supplied dashboard with the supported one-symbol CEDAR selection and increased the watchlist card height to 32 grid units, then dispatched a finger drag inside the plot at a 1100 × 1080 viewport. Both revisions measured a 568-pixel client height and a 568-pixel scroll height. On `fe0ed64f`, drag mode was zoom and the displayed March 2–16 interval narrowed to March 4–11. On `7f89bcda`, drag mode was false and the same gesture left the interval at March 2–16. Both probe processes completed and printed the measured values.
+
+For watchlists, disable direct drag only when the scroll viewport actually overflows vertically. Re-evaluate when the card or figure changes height. Keep the existing overflow swipe/tap and desktop assertions, then verify the fitting coarse-pointer chart still zooms. The explicitly accepted tradeoff for an overflowing watchlist stands.
+
+**Critical and Minor new findings.** None.
+
+## Shipping evidence and limits
+
+I verified that tested product commit `9019093b0596ecada2d923380a02af38ed450adf` and reviewed evidence head `7f89bcda24204dbcaff53838ed0a5298c8173794` differ only in verification documents and screenshots. The existing logs record 9,366 unit passes with 47 opt-in skips, 57 web passes, nine Chromium passes and successful pinned Wasm initialization. The shipping record reports all seven gates passed. I independently checked the scoped whitespace diff and the clean checkout. I ran only the one named browser comparison across the two revisions.
+
+## Declined to judge
+
+- Unchanged first-batch and whole-branch behavior was already covered by the original independent review. This pass assessed the fix diff.
+- Physical touch devices, Safari and native Tauri gesture handling were outside the recorded browser environments. The new finding reproduces in Chromium mobile emulation.
+- Live provider entitlements, opt-in integrations and Docker deployments were outside this fix wave. It changes no provider or Docker files.
+
+This local re-review changes no product files, index entries or branch state.
+
+## Fitting watchlist correction
+
+Product commit `5a4403e68fcb9841df1db5038fcc06012d918a1b` measures the actual watchlist viewport and plot. The observer rechecks vertical overflow when either element resizes. Fitting watchlists retain their authored touch drag mode. Overflowing coarse-pointer watchlists release vertical dragging to scroll. The existing fixed-axis exposure policy continues to support vertical scrolling and marker inspection.
+
+The new unit regression exercises a 280-pixel plot at viewport heights of 568, 220 and 280 pixels. The Chromium regression resizes the same three-symbol watchlist from overflowing to fitting and back. It then zooms a fitting single CEDAR panel at 1100 × 1080 with a finger drag, verifying that both date bounds move inward. [Verification record](verification.md)
