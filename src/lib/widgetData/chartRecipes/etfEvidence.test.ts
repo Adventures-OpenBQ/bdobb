@@ -83,3 +83,25 @@ it('requires a linked presentation to retain the producer revision that delivere
   const lineage = [{ widgetId: 'source', resultRevision: 3, outputRevision: 4 }];
   expect(readEtfEvidence({ ...data, provenance: { ...data.provenance, presentation, lineage } }, 'holdings').ok).toBe(true);
 });
+
+it('checks acquired parameter declarations without treating them as a receipt', () => {
+  const source = datasetFromRows([{ symbol: 'HOLDING.US', weight: .5 }], 'source', 1, 'backend');
+  const certify = (parameters: Record<string, string>, documented: boolean) => {
+    const dataset = { ...source, provenance: { ...source.provenance, parameters, ...(documented ? { receipt } : {}) } };
+    return readEtfEvidence({ ...dataset, provenance: etfAcquisitionProvenance(dataset) }, 'holdings');
+  };
+  expect(certify({ symbol: 'fund_a.us' }, true).ok).toBe(true);
+  expect(certify({ symbol: 'FUND_A.US', ...receipt }, false).ok).toBe(false);
+  const invalidDeclarations: Record<string, string>[] = [
+    { symbol: 'FUND_A.US', Symbol: 'FUND_B.US' }, { symbol: 'FUND_A.US,FUND_B.US' },
+    { fund_symbol: 'FUND_B.US' }, { etf_kind: 'region' }, { weight_basis: 'equity-exposure' }, { unit: 'percent' },
+  ];
+  for (const invalid of invalidDeclarations) expect(certify(invalid, true).ok).toBe(false);
+});
+
+it('recognizes an explicit fractional unit without changing any weight', () => {
+  const source = datasetFromRows([{ symbol: 'HOLDING', weight: .5 }], 'source', 1, 'localFile', undefined,
+    [{ id: 'weight', label: 'Weight', metadata: { unit: 'fraction' } }], { receipt: { ...receipt, unit: 'fraction' }, completeness: 'paged' });
+  expect(readEtfEvidence(source, 'holdings').ok).toBe(true);
+  expect(source.rows[0].values.weight).toBe(.5);
+});

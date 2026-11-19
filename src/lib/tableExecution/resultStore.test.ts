@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { compileAnalyticalModel } from '../tableModel/calculate';
-import { it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { datasetFromBytes } from '../localTableData';
 import { preparePrices } from '../widgetData/chartRecipes/input';
 import { priceDataset, priceFields } from '../widgetData/chartRecipes/fixtures';
@@ -324,4 +324,32 @@ it('retains hidden ETF safety failures through two projections', async () => {
     const conflictingProjection = await project(bad);
     expect(readEtfEvidence(conflictingProjection, 'holdings').ok).toBe(false);
   }
+});
+
+describe.each(['typescript', 'rust'] as const)('%s direct ETF registration', engine => {
+  it.each([
+    ['conflicting request fund', { symbol: 'B' }, undefined, undefined],
+    ['percentage-point weight column', {}, undefined, 'percentage points'],
+    ['percentage-point snapshot', {}, 'percentage points', undefined],
+  ] as const)('retains the refusal for %s after hiding the weight', async (_case, parameters, receiptUnit, columnUnit) => {
+    const { ProviderBoundary } = await import('../../test/tableProviderBoundary');
+    const { createTableProvider } = await import('./rust/providerFactory');
+    const { readEtfEvidence } = await import('../widgetData/chartRecipes/etfEvidence');
+    const executor = createTableProvider('source', engine, {
+      workerFactory: () => new ProviderBoundary(engine === 'rust' ? 'rust.worker' : 'table.worker') as unknown as Worker,
+    });
+    const data = { ...input, rows: [{ id: 'keep', values: { symbol: 'HOLDING', weight: .5 } }],
+      columns: [{ id: 'symbol', label: 'Holding' }, { id: 'weight', label: 'Weight', ...(columnUnit ? { metadata: { unit: columnUnit } } : {}) }],
+      provenance: { sourceWidgetId: 'source', parameters, receipt: { fund_symbol: 'A', etf_kind: 'holdings',
+        weight_basis: 'fund-assets', ...(receiptUnit ? { unit: receiptUnit } : {}) } },
+      completeness: { ...input.completeness, acquiredRowCount: 1 } };
+    const signal = new AbortController().signal;
+    try {
+      await executor.registerInput(data, 1, signal);
+      await executor.applyModel({ table: { hidden: ['weight'] }, search: '' }, { kind: 'none' }, revision, signal);
+      const chart = await executor.chartData(revision, ['symbol'], signal);
+      expect(chart.rows.map(row => row.values)).toEqual([{ symbol: 'HOLDING' }]);
+      expect(readEtfEvidence(chart, 'holdings')).toMatchObject({ ok: false, message: expect.stringMatching(/fund|fraction/i) });
+    } finally { executor.dispose(); }
+  });
 });

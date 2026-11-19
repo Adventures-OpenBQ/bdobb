@@ -33,22 +33,35 @@ const aggregate = (dataset: WidgetDataset) => dataset.provenance.inputMayContain
   dataset.rows.some(row => row.groupPath !== undefined) ||
   dataset.columns.some(c => c.aggregation || c.measureId || c.splitPath?.length || c.analytical?.scope === 'aggregate');
 
-function rowIssue(dataset: WidgetDataset, evidence: EtfEvidence): string | undefined {
+function conflicts(record: Record<string, unknown> | undefined, names: string[], valid: (value: unknown) => boolean) {
+  return Object.entries(record ?? {}).some(([key, value]) => names.includes(key.toLowerCase()) && !valid(value));
+}
+
+function acquisitionIssue(dataset: WidgetDataset, evidence: EtfEvidence): string | undefined {
   // Holdings identify the constituent in symbol. The exposure routes repeat the queried fund.
   const fundFields = ['fund_symbol', 'fundsymbol', 'etf_symbol', 'etfsymbol', 'fund_ticker', 'etf_ticker', 'fund'];
+  const sameFund = (v: unknown) => fundOf(v) === evidence.fund;
+  if (conflicts(dataset.provenance.parameters, ['symbol', 'ticker'], sameFund))
+    return 'The acquired request parameters and ETF receipt must identify one fund.';
   if (evidence.kind !== 'holdings') fundFields.push('symbol', 'ticker');
+  const weightUnit = { names: ['unit', 'weight_unit'], valid: (v: unknown) =>
+    typeof v === 'string' && ['fraction', 'fractional', 'ratio'].includes(v.trim().toLowerCase()),
+    issue: 'The acquired ETF weight unit must express a fraction.' };
+  if (conflicts(dataset.provenance.receipt, weightUnit.names, weightUnit.valid)) return weightUnit.issue;
   const checks = [
-    { names: fundFields, valid: (v: unknown) => fundOf(v) === evidence.fund, issue: 'The acquired rows contain inconsistent ETF fund identity.' },
+    weightUnit,
+    { names: fundFields, valid: sameFund, issue: 'The acquired rows contain inconsistent ETF fund identity.' },
     { names: ['weight_basis', 'weightbasis', 'basis'], valid: (v: unknown) => v === evidence.basis, issue: 'The acquired rows contain inconsistent ETF weight basis.' },
     { names: ['etf_kind', 'etfkind', 'exposure_kind'], valid: (v: unknown) => v === evidence.kind, issue: 'The acquired rows contain inconsistent ETF exposure kinds.' },
   ];
   const weights = dataset.columns.filter(c => (c.sourceFieldId ?? c.id).toLowerCase() === 'weight');
   if (!weights.length) return 'The acquired ETF source needs an original fractional weight field.';
-  for (const column of dataset.columns) {
-    const names = [column.id.toLowerCase(), column.sourceFieldId?.toLowerCase()];
-    for (const check of checks) {
+  for (const check of checks) {
+    if (conflicts(dataset.provenance.parameters, check.names, check.valid)) return check.issue;
+    for (const column of dataset.columns) {
+      const names = [column.id.toLowerCase(), column.sourceFieldId?.toLowerCase()];
       if (check.names.some(name => names.includes(name)) && dataset.rows.some(row => !check.valid(read(row, column.id)))) return check.issue;
-      if (weights.includes(column) && Object.entries(column.metadata ?? {}).some(([key, value]) => check.names.includes(key.toLowerCase()) && !check.valid(value))) return check.issue;
+      if (weights.includes(column) && conflicts(column.metadata, check.names, check.valid)) return check.issue;
     }
   }
   if (weights.some(c => c.analytical || c.measureId || c.aggregation || c.splitPath?.length || (c.dtype && c.dtype !== 'number')
@@ -93,7 +106,7 @@ export function etfAcquisitionProvenance(dataset: WidgetDataset, acquisition?: B
     sourceWidgetId: provenance.sourceWidgetId, acquiredRowCount: rows.length,
     ...(receiptTime !== undefined && acquisition && receiptTime !== acquisition.retrievedAt ? { acquiredAt: acquisition.retrievedAt } : {}),
     ...(asOf !== undefined ? { asOf } : {}), ...(retrievedAt !== undefined ? { retrievedAt } : {}) };
-  const issue = rowIssue(dataset, evidence);
+  const issue = acquisitionIssue(dataset, evidence);
   return withEvidence(issue ? { ...evidence, issue } : evidence);
 }
 
