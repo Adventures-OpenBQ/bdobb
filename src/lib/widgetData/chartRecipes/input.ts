@@ -4,6 +4,7 @@
 import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
 import { acquiredWindow, calendarDate, dailyScope, observationSymbol, priceIdentityFields, priceDimensionIssue, symbolList, type PriceScope } from './priceEvidence';
+import { acceptsBinding, adjustedPriceRole } from './bindings';
 import { requiredRecipeFields } from './settings';
 import type { PriceBindings, RecipeOptions } from './types';
 
@@ -37,9 +38,7 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
   if (issue) return issue;
   if (!dailyScope(dataset.provenance)) return 'Choose a source with documented daily interval and acquisition dates.';
   const price = dataset.columns.find(c => c.id === fields.price)!;
-  if (price.analytical) return 'Choose a raw adjusted-price observation before formulas or category transforms.';
-  if ([price.id, price.sourceFieldId].some(id => id !== undefined && /^(?:open|high|low|close|unadjusted_close|volume)$/i.test(id)))
-    return 'Bind the adjusted-price field.';
+  if (!acceptsBinding(adjustedPriceRole, price)) return 'Choose a raw adjusted-price observation.';
   const metadata = dataset.provenance.metadata;
   if (typeof metadata?.priceDimensionIssue === 'string') return metadata.priceDimensionIssue;
   const verifiedIdentities = metadata?.priceSymbolFields;

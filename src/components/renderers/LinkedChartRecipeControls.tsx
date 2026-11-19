@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useEffect, useState } from 'react';
+import { bindingRoles, bindingCandidates } from '../../lib/widgetData/chartRecipes/bindings';
 import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
 import type { RecipeOptions } from '../../lib/widgetData/chartRecipes/types';
 import type { DatasetColumn } from '../../lib/widgetData/types';
@@ -15,37 +16,8 @@ export const recipeLabels = {
   'monthly-returns': 'Monthly returns', correlation: 'Correlation',
 } satisfies Record<Kind, string>;
 
-type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean };
-const dateRole = { key: 'date', label: 'Observation date', names: ['date', 'trading_date', 'observation_date'], date: true };
-function roles(kind: Kind, metric: Metric): Role[] {
-  if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
-    { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
-  if (kind === 'estimate-range') return [
-    { key: 'periodEnd', label: 'Period end', names: ['period_ending', 'period_end'], date: true },
-    { key: 'fiscalPeriod', label: 'Fiscal period', names: ['fiscal_period'], optional: true },
-    { key: 'status', label: 'Band status', names: ['band_status'] },
-    { key: 'note', label: 'Band note', names: ['band_note'], optional: true },
-    { key: 'low', label: 'Low', names: [metric + '_low'], numeric: true },
-    { key: 'average', label: 'Average', names: [metric + '_avg', metric + '_average'], numeric: true },
-    { key: 'high', label: 'High', names: [metric + '_high'], numeric: true },
-  ];
-  return [dateRole, { key: 'price', label: 'Adjusted price', names: ['adjusted_close', 'adj_close', 'adjusted_price'], numeric: true },
-    { key: 'symbol', label: 'Symbol field', names: ['symbol', 'ticker'], optional: true }];
-}
-function candidates(role: Role, columns: DatasetColumn[]) {
-  return columns.filter(c => {
-    if (c.analytical || c.measureId || c.aggregation || c.splitPath?.length) return false;
-    if (role.date && (c.dtype === 'date' || c.dtype === 'dateString')) return true;
-    if (c.dtype && (role.numeric ? c.dtype !== 'number' : !['text', 'date', 'dateString'].includes(c.dtype))) return false;
-    if (role.key === 'price') {
-      if ([c.id, c.sourceFieldId].some(id => id && /^(?:open|high|low|close|unadjusted_close|volume|rate|yield|(?:eps|revenue)(?:_.*)?)$/i.test(id))) return false;
-      if (c.dtype === 'number') return true; // An explicit choice can identify a custom adjusted-price series.
-    }
-    return role.names.includes((c.sourceFieldId ?? c.id).toLowerCase());
-  });
-}
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric) {
-  return roles(kind, metric).filter(r => !r.optional && !candidates(r, columns).length).map(r => r.label.toLowerCase());
+  return bindingRoles(kind, metric).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
 export function recipeAvailability(kind: Kind, columns: DatasetColumn[]): string | null {
   const missing = missingRoles(kind, columns, 'eps');
@@ -53,8 +25,8 @@ export function recipeAvailability(kind: Kind, columns: DatasetColumn[]): string
   return 'Present raw fields for ' + missing.join(', ') + '.';
 }
 function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[]): Record<string, string> {
-  return Object.fromEntries(roles(kind, metric).flatMap(role => {
-    const available = candidates(role, columns);
+  return Object.fromEntries(bindingRoles(kind, metric).flatMap(role => {
+    const available = bindingCandidates(role, columns);
     const named = available.find(c => role.names.includes((c.sourceFieldId ?? c.id).toLowerCase()));
     const column = named ?? (role.date && available.length === 1 ? available[0] : undefined);
     return column ? [[role.key, column.id]] : [];
@@ -72,9 +44,9 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
   const needsSymbols = kind === 'monthly-returns' || kind === 'drawdown' || kind === 'correlation';
-  const roleList = roles(kind, metric);
+  const roleList = bindingRoles(kind, metric);
   const fieldIssue = roleList.find(role => (
-    !fields[role.key] ? !role.optional : !candidates(role, columns).some(c => c.id === fields[role.key])
+    !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
   ));
   const fieldsReady = !fieldIssue;
   const symbolField = fields.symbol;
@@ -107,7 +79,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
       setFields({ ...fields, low: binding.low ?? '', average: binding.average ?? '', high: binding.high ?? '' });
     }}>{(['eps', 'revenue'] as const).map(m => <option key={m} value={m} disabled={!!missingRoles(kind, columns, m).length}>{m === 'eps' ? 'EPS' : 'Revenue'}</option>)}</select></label>}
     {roleList.map(role => {
-      const available = candidates(role, columns);
+      const available = bindingCandidates(role, columns);
       const value = fields[role.key] ?? '';
       return <label key={role.key}>{role.label}<select value={value} onChange={e => {
         const next = { ...fields };

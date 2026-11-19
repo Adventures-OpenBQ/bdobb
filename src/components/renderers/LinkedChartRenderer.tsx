@@ -12,14 +12,19 @@ import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
-import type { LocalWorkerExecutor, ChartResult } from '../../lib/tableExecution/types';
+import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
 import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
+import { savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateRange';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
 import { LinkedChartRecipeControls, recipeAvailability, recipeLabels } from './LinkedChartRecipeControls';
+
+function revisionKey({ widgetId, input, model, output }: Revision) {
+    return JSON.stringify([widgetId, input, model, output]);
+}
 
 type Completed = {
     identity: string;
@@ -58,7 +63,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         if (field && !view.ready.columns.some(c => c.id === field)) throw new Error('Repair the unavailable symbol field.');
         const data = await executor.chartData(revision, field ? [field] : [], signal);
         signal.throwIfAborted();
-        if (JSON.stringify(data.revision) !== JSON.stringify(revision)) throw new Error('Source changed. Reload the symbol choices.');
+        if (revisionKey(data.revision) !== revisionKey(revision)) throw new Error('Source changed. Reload the symbol choices.');
         const evidence = data.provenance.metadata;
         if (typeof evidence?.priceDimensionIssue === 'string') throw new Error(evidence.priceDimensionIssue);
         if (evidence?.priceDimensionsChecked !== true) throw new Error('The source cannot verify its price symbol identity. Use a documented daily snapshot.');
@@ -242,8 +247,8 @@ function FinancialChart(props: FinancialProps) {
     return <p role="status">{view.error ?? 'Select an available source table.'}</p>;
   if (!view.sourceRevision || !view.ready || view.sourceRevision.widgetId !== source)
     return <p role="status">{view.error ?? 'Loading source table…'}</p>;
-  const missing = requiredRecipeFields(options).find(id => !view.ready!.columns.some(c => c.id === id));
-  if (missing) return <p role="alert">Field {missing} is unavailable. Repair chart fields.</p>;
+  const issue = savedBindingIssue(options, view.ready.columns);
+  if (issue) return <p role="alert">{issue}</p>;
   const completeness = view.ready.completeness.kind;
   if (options.kind !== 'estimate-range' && completeness !== 'complete' && completeness !== 'bounded')
     return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
@@ -266,7 +271,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const today = todayLocal();
   const context = JSON.stringify([theme, maxDecimals, today]);
   const mapping = JSON.stringify(options);
-  const active = JSON.stringify(revision);
+  const active = revisionKey(revision);
   const available = view.status === 'ready' || view.status === 'empty';
   useEffect(() => {
     if (!available) return;
@@ -276,7 +281,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     setReadError(undefined);
     void executor.chartData(revision, [...new Set(fields)], controller.signal).then(data => {
       if (controller.signal.aborted) return;
-      if (JSON.stringify(data.revision) !== active || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
+      if (revisionKey(data.revision) !== active || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
         throw new Error('The selected source revision changed. Refresh the chart.');
       setLoaded({ ready, data });
     }).catch(error => { if (!controller.signal.aborted) setReadError(error instanceof Error ? error.message : String(error)); });
@@ -284,7 +289,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     // The serialized options and revision describe the requested snapshot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [available, executor, ready, active, mapping]);
-  const current = available && loaded?.ready === ready && JSON.stringify(loaded.data.revision) === active ? loaded.data : undefined;
+  const current = available && loaded?.ready === ready && revisionKey(loaded.data.revision) === active ? loaded.data : undefined;
   useEffect(() => {
     if (!current || !worker.current) return;
     const controller = new AbortController();

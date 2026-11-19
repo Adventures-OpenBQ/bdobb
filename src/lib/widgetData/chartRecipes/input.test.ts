@@ -143,3 +143,16 @@ it('requires inclusive calendar-date acquisition bounds and refuses contradictor
   const weekly = priceDataset([{ date: '2026-01-02', symbol: 'A', adjusted_close: 100, interval: '1wk' }]);
   expect(preparePrices(weekly, priceFields)).toMatchObject(refusal);
 });
+
+it.each(['eps_low', 'revenue_avg', 'rate'])('refuses a saved adjusted-price binding whose provider role is %s', async sourceFieldId => {
+  const { runRecipe } = await import('./run');
+  const data = priceDataset([{ date: '2026-01-02', symbol: 'A', px: 12 }]);
+  const price = data.columns.find(c => c.id === 'px')!;
+  price.sourceFieldId = sourceFieldId;
+  price.dtype = 'number';
+  const options = { ...drawdownOptions, fields: { ...priceFields, price: 'px' } };
+  expect(preparePrices(data, options.fields)).toMatchObject(refusal);
+  expect(runRecipe(data, options, { theme: 'dark', today: '2026-02-01', maxDecimals: 2 })).toMatchObject(refusal);
+  delete price.sourceFieldId;
+  expect(preparePrices(data, options.fields)).toMatchObject({ ok: true });
+});
