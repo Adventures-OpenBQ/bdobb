@@ -499,4 +499,4 @@ Before claiming completion, use verification-before-completion, request a whole-
 
 ## Execution handoff
 
-The verification ledger records the local candidate pins and product checks. The controller tracks task-level review findings in the execution reports. Whole-branch independent review follows the packaging handoff.
+The verification ledger records the local candidate pins and product checks. The controller tracks task-level review findings in the execution reports. Whole-branch independent review and the scoped fix review are complete with no open Critical or Important findings. Durable per-finding dispositions are in `docs/releases/validation/v9/chart-expansion/review.md`; execution rulings are in its sibling `rulings.md`. The candidate stays local and unmerged as scoped.

@@ -1,6 +1,6 @@
 # V9 financial chart expansion verification
 
-The local candidate rendered all seven charts in Chromium and restored them from a BDOBB Workspace export. The packaged estimates route returned its three guard states in an offline HTTP query. This record covers the implementation tested on 2026-11-19. Independent review follows the packaging handoff.
+The local candidate rendered all seven charts in Chromium and restored them from a BDOBB Workspace export. The packaged estimates route returned its three guard states in an offline HTTP query. This record covers the implementation tested on 2026-11-19. Independent whole-branch review is complete; all eight Important and four original Minor findings are addressed. See the [review outcome](review.md).
 
 ## Repository pins
 
@@ -87,3 +87,9 @@ The prepared provider environment used Python 3.12.13, OpenBB Core 2.0.1 and the
 | `git diff --check` and `git diff --cached --check` | 0 | Scoped changes passed whitespace checks. |
 
 The image test containers used `--network none`, a read-only checkout at `/review`, and the prepared pure-Python pytest modules at `/pytest` for the focused suite. The HTTP probe stubbed only the provider's two upstream fundamentals reads, using the canonical test’s recorded inputs and nonfinite analyst counts for the approved quarter. An inert placeholder satisfied local router credential validation. Validation did not use live provider accounts or NAS deployment.
+
+## Review and handoff
+
+The independent whole-branch reviewer approved the consolidated fix wave with no open Critical or Important findings. [Per-finding dispositions](review.md) and [execution rulings with their costs](rulings.md) are preserved beside this record. A duplicate source-error notice on failed bullet/waterfall relinking is the one accepted nonblocking follow-up.
+
+A controller-run full verification on the reviewed code returned 9,190 BDOBB tests passed with 47 opt-in skips and 511 provider tests passed with one optional ArcticDB skip. All 118 packaged file hashes and the canonical/vendor Git tree were independently rechecked. The code and image pins above remain unchanged by this documentation handoff.
