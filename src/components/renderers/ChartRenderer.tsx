@@ -51,9 +51,11 @@ export function ChartRenderer({
   uirevision = "chart",
   columns,
   chartType,
+  scrollHeight,
 }: {
   data: unknown;
   uirevision?: string;
+  scrollHeight?: number;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -118,6 +120,7 @@ export function ChartRenderer({
   // the user's zoom/pan and defeating the point of Plotly.react. The plot is
   // only ever purged in attachNode's cleanup above, when the node itself
   // goes away (i.e. on unmount).
+  const scrolling = scrollHeight !== undefined;
   useEffect(() => {
     const el = node.current;
     if (!el || !drawable) return;
@@ -125,7 +128,7 @@ export function ChartRenderer({
       const message = err instanceof Error ? err.message : String(err);
       void logError(`chart render failed: ${message}`);
     });
-  }, [drawable, uirevision]);
+  }, [drawable, uirevision, scrolling]);
 
   if (!figure) return <p className="empty-state">Nothing chartable in this payload.</p>;
   if (unregisteredType !== null) {
@@ -135,5 +138,6 @@ export function ChartRenderer({
       </p>
     );
   }
-  return <div className="chart-plot" ref={attachNode} data-testid="chart-plot" />;
+  const plot = <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>;
+  return scrolling ? <div className="chart-scroll-viewport">{plot}</div> : plot;
 }

@@ -1,0 +1,24 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { PlotlyFigure } from '../../chartShapes';
+import type { RecipeOptions } from './types';
+
+export function smallMultiplesGrid(width: number, count: number): { columns: number; rows: number; height: number } {
+  const columns = Math.min(count, width < 640 ? 1 : width < 960 ? 2 : 3);
+  const rows = columns === 0 ? 0 : Math.ceil(count / columns);
+  return { columns, rows, height: rows * 220 + 60 };
+}
+
+export function nextMultiplesWidth(current: number, measured: number, panels: number): number {
+  if (!Number.isFinite(measured) || measured <= 0) return current;
+  const width = Math.min(measured, 10_000);
+  return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
+}
+
+/** Only figures produced by these two recipe builders can opt into a scrolling plot. */
+export function recipePlotHeight(kind: RecipeOptions['kind'], figure: PlotlyFigure): number | undefined {
+  if (kind !== 'small-multiples' && kind !== 'etf-exposure') return;
+  const height = figure.layout.height;
+  return typeof height === 'number' && Number.isFinite(height) && height > 0 ? height : undefined;
+}

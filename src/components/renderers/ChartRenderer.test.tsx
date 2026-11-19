@@ -317,3 +317,21 @@ describe("ChartRenderer", () => {
     expect(figureFromLastCall().data).toEqual([{ type: "bar", name: "tvl", x: ["ETH"], y: [1] }]);
   });
 });
+
+it('sizes only a scoped scroll plot and reconciles its height without purging it', () => {
+  const data = { data: [{ type: 'scatter' }], layout: { height: 9999 } };
+  const { rerender, container, unmount } = render(<ChartRenderer data={data}/>);
+  expect(screen.getByTestId('chart-plot').parentElement).toBe(container);
+  expect(screen.getByTestId('chart-plot').style.height).toBe('');
+  rerender(<ChartRenderer data={data} scrollHeight={940}/>);
+  const node = screen.getByTestId('chart-plot');
+  expect(node.parentElement).toHaveClass('chart-scroll-viewport');
+  expect(node.style.height).toBe('940px');
+  const purgeCount = purgePlot.mock.calls.length;
+  rerender(<ChartRenderer data={data} scrollHeight={500}/>);
+  expect(screen.getByTestId('chart-plot')).toBe(node);
+  expect(node.style.height).toBe('500px');
+  expect(purgePlot).toHaveBeenCalledTimes(purgeCount);
+  unmount();
+  expect(purgePlot).toHaveBeenCalledWith(node);
+});

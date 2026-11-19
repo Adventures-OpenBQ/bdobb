@@ -9,16 +9,12 @@ import { calendarDate, observationSymbol, symbolList } from './priceEvidence';
 import { prepareSelectedPrices } from './priceSamples';
 import { decodeRecipeOptions } from './settings';
 import type { PriceBindings, RecipeContext, RecipeOptions, RecipeResult } from './types';
+import { smallMultiplesGrid } from './viewport';
+export { smallMultiplesGrid } from './viewport';
 
 const BASE = 100;
 // Plotly clamps linear axis ranges to FP_SAFE and may drop an extreme at the limit.
 const MAX_DISPLAYABLE_INDEX = Number.MAX_VALUE * 1e-4;
-
-export function smallMultiplesGrid(width: number, count: number): { columns: number; rows: number; height: number } {
-  const columns = Math.min(count, width < 640 ? 1 : width < 960 ? 2 : 3);
-  const rows = columns === 0 ? 0 : Math.ceil(count / columns);
-  return { columns, rows, height: rows * 220 + 60 };
-}
 
 function commonEndDate(dataset: WidgetDataset, fields: PriceBindings, symbols: string[]): string {
   const latest = new Map(symbols.map(symbol => [symbol, '']));

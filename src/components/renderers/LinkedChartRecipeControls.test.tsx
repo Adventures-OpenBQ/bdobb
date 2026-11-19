@@ -49,3 +49,61 @@ it('accepts an explicitly identified custom numeric adjusted-price field without
   fireEvent.click(screen.getByRole('button', { name: /apply/i }));
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ fields: { date: 'date', symbol: 'symbol', price: 'px' } }));
 });
+
+it('requires one distribution symbol and accepts integer bins from 5 through 100', async () => {
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind="return-distribution" columns={columns} loadSymbols={loadSymbols} disabled={false} onApply={save}/>);
+  const bins = screen.getByRole('spinbutton', { name: 'Bins' });
+  expect(bins).toHaveValue(30);
+  await screen.findByRole('option', { name: 'B' });
+  const apply = screen.getByRole('button', { name: /apply/i });
+  expect(apply).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'B' } });
+  for (const value of [4, 5.5, 101, 5, 100]) {
+    fireEvent.change(bins, { target: { value: String(value) } });
+    if ([5, 100].includes(value)) {
+      fireEvent.click(apply);
+      expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ symbol: 'B', bins: value }));
+    } else expect(apply).toBeDisabled();
+  }
+});
+
+it('saves 1–12 small-multiple symbols in selection order', async () => {
+  const values = Array.from({ length: 13 }, (_, i) => 'S' + i);
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind="small-multiples" columns={columns} loadSymbols={async () => values} disabled={false} onApply={save}/>);
+  const apply = screen.getByRole('button', { name: /apply/i });
+  expect(apply).toBeDisabled();
+  const reversed = [...values].reverse();
+  for (const symbol of reversed) fireEvent.click(await screen.findByLabelText(symbol));
+  expect(apply).toBeDisabled();
+  fireEvent.click(screen.getByLabelText('S0'));
+  fireEvent.click(apply);
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ symbols: reversed.slice(0, 12) }));
+});
+
+it('offers exposure modes and saves only presented bindings and mode', () => {
+  const save = vi.fn();
+  const load = vi.fn();
+  render(<LinkedChartRecipeControls kind="etf-exposure" columns={['country', 'weight'].map(id => ({ id, label: id }))}
+    loadSymbols={load} disabled={false} onApply={save}/>);
+  expect(screen.getByLabelText('Exposure mode')).toHaveValue('region');
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith({ version: 1, kind: 'etf-exposure', mode: 'region', fields: { category: 'country', weight: 'weight' } });
+  expect(load).not.toHaveBeenCalled();
+  expect(screen.queryByLabelText(/weight basis|fund symbol/i)).toBeNull();
+});
+
+it('keeps an unavailable imported Pareto holding field visible for repair', () => {
+  const save = vi.fn();
+  render(<LinkedChartRecipeControls kind="etf-pareto" columns={['ticker', 'weight'].map(id => ({ id, label: id }))}
+    saved={{ version: 1, kind: 'etf-pareto', fields: { holding: 'old', weight: 'weight' } }}
+    loadSymbols={loadSymbols} disabled={false} onApply={save}/>);
+  expect(screen.getByRole('group', { name: 'ETF holdings Pareto settings' })).toBeVisible();
+  expect(screen.getByRole('option', { name: 'old (unavailable)' })).toBeVisible();
+  const apply = screen.getByRole('button', { name: /apply/i });
+  expect(apply).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Holding', { exact: true }), { target: { value: 'ticker' } });
+  fireEvent.click(apply);
+  expect(save).toHaveBeenCalledWith({ version: 1, kind: 'etf-pareto', fields: { holding: 'ticker', weight: 'weight' } });
+});

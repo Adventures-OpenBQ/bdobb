@@ -25,6 +25,13 @@ const estimateOptions = {
   fields: { periodEnd: 'period_ending', status: 'band_status', low: 'eps_low', average: 'eps_avg', high: 'eps_high' },
 } satisfies RecipeOptions;
 
+function etf(kind: 'holdings' | 'sector') {
+  return datasetFromRows([{ symbol: 'ABC', sector: 'Utilities', weight: .25 }], 'fund', 1, 'localFile', undefined, [], {
+    completeness: 'unknown', receipt: { fund_symbol: kind === 'sector' ? 'ABC' : 'FUND', etf_kind: kind,
+      weight_basis: kind === 'holdings' ? 'fund-assets' : 'equity-exposure' },
+  });
+}
+
 const cases: [RecipeOptions, WidgetDataset, unknown][] = [
   [drawdownOptions, prices, expect.objectContaining({ type: 'scatter', y: [0, 0, -.1, 0, 0].map(value => expect.closeTo(value, 12)) })],
   [{ version: 1, kind: 'yield-curve', fields: { date: 'date', maturity: 'maturity', rate: 'rate' } }, rates,
@@ -35,6 +42,14 @@ const cases: [RecipeOptions, WidgetDataset, unknown][] = [
   })],
   [{ version: 1, kind: 'correlation', fields: priceFields, symbols: ['A'], lookback: 252, minOverlap: 3 }, prices,
     expect.objectContaining({ type: 'heatmap', z: [[1]] })],
+  [{ version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'A', bins: 30 }, prices,
+    expect.objectContaining({ type: 'bar', uid: 'return-distribution' })],
+  [{ version: 1, kind: 'small-multiples', fields: priceFields, symbols: ['A'] }, prices,
+    expect.objectContaining({ type: 'scatter', name: 'A', xaxis: 'x' })],
+  [{ version: 1, kind: 'etf-pareto', fields: { holding: 'symbol', weight: 'weight' } }, etf('holdings'),
+    expect.objectContaining({ type: 'bar', y: [.25] })],
+  [{ version: 1, kind: 'etf-exposure', mode: 'sector', fields: { category: 'sector', weight: 'weight' } }, etf('sector'),
+    expect.objectContaining({ type: 'scatter', mode: 'markers', x: [.25], y: ['Utilities'] })],
 ];
 
 describe('runRecipe', () => {
@@ -73,13 +88,6 @@ describe('runRecipe', () => {
   it.each([undefined, 0.5, 900, 10_000])('accepts optional viewport width %s without changing the existing result', viewportWidth => {
     const sized = { ...context, viewportWidth };
     expect(runRecipe(prices, drawdownOptions, sized)).toEqual(runRecipe(prices, drawdownOptions, context));
-  });
-
-  it('refuses a valid recipe whose builder is unavailable', () => {
-    const options = { version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'A', bins: 30 } as const;
-    expect(runRecipe(prices, options, context)).toMatchObject({
-      ok: false, refused: true, message: expect.stringMatching(/unsupported recipe/i),
-    });
   });
 
   it('returns an actionable refusal for a malformed chart dataset', () => {

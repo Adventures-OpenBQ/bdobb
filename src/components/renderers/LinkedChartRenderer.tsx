@@ -18,6 +18,7 @@ import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipe
 import { savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
+import { nextMultiplesWidth, recipePlotHeight } from '../../lib/widgetData/chartRecipes/viewport';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
 import { LinkedChartRecipeControls, recipeAvailability, recipeLabels } from './LinkedChartRecipeControls';
@@ -38,6 +39,7 @@ type LinkedChartProps = {
     card: DashboardCard;
     refreshKey: number;
     viewer?: boolean;
+    parentReportsSourceStatus?: boolean;
     store?: typeof tableExecutionStore;
     onSettingsChange: (settings: LinkedChartSettings) => Promise<boolean>;
 };
@@ -47,7 +49,7 @@ export function LinkedChartRenderer(props: LinkedChartProps) {
     return <LinkedChartView key={JSON.stringify([props.dashboardId, props.card.id, source])} {...props}/>;
 }
 
-function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, store = tableExecutionStore, onSettingsChange }: LinkedChartProps) {
+function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, onSettingsChange }: LinkedChartProps) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
     const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
@@ -228,7 +230,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, store 
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
     {financial && editing === settings.type && (recipe?.ok
-      ? <FinancialChart key={editScope} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>
+      ? <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>
       : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;
@@ -250,24 +252,25 @@ function DatasetStatus({ dataset, notes, source }: { dataset: WidgetDataset; not
 
 type FinancialProps = {
   view: ViewState; source?: string; executor?: LocalWorkerExecutor; options: RecipeOptions;
-  theme: 'dark' | 'light'; maxDecimals: number;
+  theme: 'dark' | 'light'; maxDecimals: number; parentReportsSourceStatus: boolean;
 };
 function FinancialChart(props: FinancialProps) {
   const { source, view, executor, options } = props;
-  if (!source || view.status === 'unavailable' || !executor)
-    return <p role="status">{view.error ?? 'Select an available source table.'}</p>;
-  if (!view.sourceRevision || !view.ready || view.sourceRevision.widgetId !== source)
-    return <p role="status">{view.error ?? 'Loading source table…'}</p>;
+  if (!source || view.status === 'unavailable' || !executor || !view.sourceRevision || !view.ready || view.sourceRevision.widgetId !== source) {
+    if (view.error) return props.parentReportsSourceStatus ? null : <p role="alert">{view.error}</p>;
+    return <p role="status">{source ? `Loading source ${source}…` : 'Select an available source table.'}</p>;
+  }
   const issue = savedBindingIssue(options, view.ready.columns);
   if (issue) return <p role="alert">{issue}</p>;
   const completeness = view.ready.completeness.kind;
-  if (options.kind !== 'estimate-range' && completeness !== 'complete' && completeness !== 'bounded')
+  if (options.kind !== 'estimate-range' && options.kind !== 'etf-pareto' && options.kind !== 'etf-exposure'
+      && completeness !== 'complete' && completeness !== 'bounded')
     return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
   return <WorkerChart {...props} source={source} executor={executor} ready={view.ready} revision={view.sourceRevision}/>;
 }
 
 /** Mounted for one saved question. Keep its last completed figure through a transient refresh failure. */
-function WorkerChart({ view, source, executor, ready, revision, options, theme, maxDecimals }: FinancialProps & {
+function WorkerChart({ view, source, executor, ready, revision, options, theme, maxDecimals, parentReportsSourceStatus }: FinancialProps & {
   source: string; executor: LocalWorkerExecutor; ready: NonNullable<ViewState['ready']>; revision: NonNullable<ViewState['sourceRevision']>;
 }) {
   const worker = useRef<ReturnType<typeof createRecipeWorker> | undefined>(undefined);
@@ -280,7 +283,19 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const [readError, setReadError] = useState<string>();
   const [workerError, setWorkerError] = useState<string>();
   const today = todayLocal();
-  const context = JSON.stringify([theme, maxDecimals, today]);
+  const [width, setWidth] = useState(900);
+  const panels = options.kind === 'small-multiples' ? options.symbols.length : 0;
+  const observePlot = useCallback((element: HTMLDivElement | null) => {
+    if (!element || panels < 2) return;
+    const observer = new ResizeObserver(entries => {
+      const box = entries[0]?.contentRect;
+      if (box) setWidth(current => nextMultiplesWidth(current, box.width, panels));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [panels]);
+  const viewportWidth = panels ? width : undefined;
+  const context = JSON.stringify([theme, maxDecimals, today, viewportWidth]);
   const mapping = JSON.stringify(options);
   const active = revisionKey(revision);
   const available = view.status === 'ready' || view.status === 'empty';
@@ -305,7 +320,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     if (!current || !worker.current) return;
     const controller = new AbortController();
     setWorkerError(undefined);
-    void worker.current.run(current, options, { theme, maxDecimals, today }, controller.signal).then(result => {
+    void worker.current.run(current, options, { theme, maxDecimals, today, ...(viewportWidth === undefined ? {} : { viewportWidth }) }, controller.signal).then(result => {
       if (controller.signal.aborted) return;
       // Two linked tables can present different scopes of one root acquisition.
       if (result.ok) {
@@ -317,15 +332,20 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worker, current, mapping, context, source]);
-  const error = readError ?? workerError ?? view.error;
+  const error = readError ?? workerError ?? (parentReportsSourceStatus ? undefined : view.error);
   const stale = completed?.result.ok && (!available || view.stale || completed.data !== current || completed.context !== context || error);
   return <><div className="linked-chart-status">
     {error && <p role="alert">{error}</p>}
-    {stale && <p role="status">Updating chart — showing completed data (stale).</p>}
-    {!completed && !error && <p role="status">Calculating chart…</p>}
+    {stale && !(parentReportsSourceStatus && view.stale) && <p role="status">Updating chart — showing completed data (stale).</p>}
+    {!completed && !error && !view.error && <p role="status">Calculating chart…</p>}
     {completed && !completed.result.ok && <p role={completed.result.refused ? 'status' : 'alert'}>{completed.result.message}</p>}
+    {completed?.result.ok && options.kind === 'small-multiples' && <>
+      <p>{panels} {panels === 1 ? 'panel' : 'panels'} · {options.symbols.join(', ')}</p>
+      {completed.data.completeness.acquiredRowCount !== undefined && completed.data.rows.length < completed.data.completeness.acquiredRowCount &&
+        <p>Filtered source delivered {completed.data.rows.length} of {completed.data.completeness.acquiredRowCount} acquired rows.</p>}
+    </>}
     {completed && <DatasetStatus dataset={completed.data} source={source} notes={completed.result.ok ? completed.result.notes : []}/>}
   </div>
-  {completed?.result.ok && <div className="linked-chart-plot"><ChartRenderer data={completed.result.figure}
-    uirevision={completed.result.revision}/></div>}</>;
+  {completed?.result.ok && <div className="linked-chart-plot" ref={observePlot}><ChartRenderer data={completed.result.figure}
+    scrollHeight={recipePlotHeight(options.kind, completed.result.figure)} uirevision={completed.result.revision}/></div>}</>;
 }

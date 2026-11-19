@@ -11,6 +11,10 @@ import { buildMonthlyReturns } from './monthlyReturns';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
+import { buildEtfExposure } from './etfExposure';
+import { buildEtfPareto } from './etfPareto';
+import { buildReturnDistribution } from './returnDistribution';
+import { buildSmallMultiples } from './smallMultiples';
 import { buildYieldCurve } from './yieldCurve';
 
 // Column precision and app settings use a range supported by Intl.NumberFormat across our clients.
@@ -61,6 +65,9 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'estimate-range': return buildEstimateRange(dataset, recipe, context);
     case 'monthly-returns': return buildMonthlyReturns(dataset, recipe, context);
     case 'correlation': return buildCorrelation(dataset, recipe, context);
+    case 'return-distribution': return buildReturnDistribution(dataset, recipe, context);
+    case 'small-multiples': return buildSmallMultiples(dataset, recipe, context);
+    case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
+    case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
   }
-  return { ok: false, refused: true, message: 'Unsupported recipe. Choose a supported chart type.' };
 }

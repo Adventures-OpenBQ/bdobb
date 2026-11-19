@@ -17,7 +17,7 @@ import { useDashboardStore } from '../stores/dashboardStore';
 import { useWidgetRegistryStore } from '../stores/widgetRegistryStore';
 import { __reset } from '../test/memfs';
 import { __resetJsonStoreForTests } from '../lib/jsonStore';
-import { card } from '../test/fixtures';
+import { card, widget } from '../test/fixtures';
 import { tableExecutionStore } from '../stores/tableExecutionStore';
 import { TableExecutionRuntime } from './TableExecutionRuntime';
 import { createWorkerHandler } from '../lib/tableExecution/table.worker';
@@ -25,6 +25,12 @@ import type { ExecutionRequest } from '../lib/tableExecution/types';
 import { saveLocalFile } from '../lib/localFiles';
 import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
 import { pivotValueKey } from '../lib/pivotKeys';
+import type { Dashboard, DashboardCard } from '../lib/types';
+import { exportCompatibleApp, importApps } from '../lib/appsJson';
+import type { RecipeOptions } from '../lib/widgetData/chartRecipes/types';
+import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
+import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
+import { runRecipe } from '../lib/widgetData/chartRecipes/run';
 import { renderPlot } from '../lib/plotly';
 import { fixture as incomeFixture } from '../lib/statementModel/compileFixtures';
 import * as fs from '@tauri-apps/plugin-fs';
@@ -225,4 +231,226 @@ it.each(['bullet', 'waterfall'] as const)('announces a failed %s relink once and
   } finally {
     read.mockRestore();
   }
+});
+
+const riskRecipes = [
+  { version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'A', bins: 5 },
+  { version: 1, kind: 'small-multiples', fields: priceFields, symbols: ['A'] },
+  { version: 1, kind: 'etf-pareto', fields: { holding: 'symbol', weight: 'weight' } },
+  { version: 1, kind: 'etf-exposure', mode: 'sector', fields: { category: 'sector', weight: 'weight' } },
+] satisfies RecipeOptions[];
+
+function snapshotFor(recipe: RecipeOptions, sourceId: string, conflict = false) {
+  const first = sourceId === 'A';
+  if (recipe.kind === 'etf-pareto' || recipe.kind === 'etf-exposure') {
+    const holdings = recipe.kind === 'etf-pareto';
+    return { completeness: 'unknown', receipt: { fund_symbol: sourceId, etf_kind: holdings ? 'holdings' : 'sector',
+      weight_basis: holdings ? 'fund-assets' : 'equity-exposure' },
+    rows: [{ symbol: holdings ? 'Constituent ' + sourceId : sourceId, sector: 'Sector ' + sourceId,
+      weight: first ? .2 : .4, fund_symbol: conflict ? 'CONFLICT' : sourceId }] };
+  }
+  return { completeness: 'bounded', receipt: { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-04' },
+    rows: dailyPriceRows(first ? [10, 20, 10, 20] : [10, 30, 15, 45]).map((r, i) =>
+      ({ ...r, currency: conflict && i === 1 ? 'EUR' : 'USD' })) };
+}
+
+async function riskSource(recipe: RecipeOptions, id: string) {
+  const file = await saveLocalFile(new File([JSON.stringify(snapshotFor(recipe, id))], 'snapshot.json'));
+  return { ...source, id, title: id, params: { file } };
+}
+function riskChart(recipe: RecipeOptions) {
+  return card({ id: 'chart', widgetId: 'linked_chart', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' },
+    linkedChart: { type: recipe.kind, recipe, measures: [], display: 'grouped' } });
+}
+function installDashboard(dashboard: Dashboard) {
+  useDashboardStore.setState({ dashboards: [dashboard], activeId: dashboard.id, activeTabId: dashboard.tabs[0].id });
+}
+function riskDashboard(cards: DashboardCard[]) {
+  return { id: 'd', name: 'Analysis', tabs: [{ id: 't', name: 'Main', cards }] };
+}
+function LiveRiskChart() {
+  const current = useDashboardStore(s => s.dashboards[0].tabs[0].cards.find(c => c.widgetId === 'linked_chart')!);
+  return <><TableExecutionRuntime /><WidgetCard card={current} onRemove={() => {}} /></>;
+}
+function riskRuntime() {
+  vi.stubGlobal('Worker', Boundary);
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const run = vi.fn(async (...args: Parameters<typeof runRecipe>) => runRecipe(...args));
+  const factory = vi.spyOn(recipeWorkers, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
+  return { run, factory };
+}
+async function chooseRiskSource(id: string) {
+  fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
+  const dialog = within(screen.getByRole('dialog', { name: 'Choose source' }));
+  fireEvent.change(dialog.getByLabelText('Source table'), { target: { value: id } });
+  fireEvent.click(dialog.getByRole('button', { name: 'Choose source' }));
+  await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards.at(-1)?.linkedSource?.sourceWidgetId).toBe(id));
+}
+it.each(riskRecipes)('fences $kind across a failed relink, late calculation and same-source failure', async recipe => {
+  const { run, factory } = riskRuntime();
+  const a = await riskSource(recipe, 'A'), b = await riskSource(recipe, 'B');
+  installDashboard(riskDashboard([a, b, riskChart(recipe)]));
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, opts) => path === 'files/' + b.params.file ? held : readFile(path, opts));
+  try {
+    render(<LiveRiskChart/>);
+    const first = await screen.findByTestId('chart-plot');
+    const plot = vi.mocked(renderPlot);
+    const figureA = plot.mock.lastCall![1];
+    const tall = recipe.kind === 'small-multiples' || recipe.kind === 'etf-exposure';
+    expect(first.style.height).toBe(tall ? figureA.layout.height + 'px' : '');
+    expect(first.parentElement?.classList.contains('chart-scroll-viewport')).toBe(tall);
+    expect(screen.getByLabelText('Chart type')).toHaveValue(recipe.kind);
+    expect(screen.getByText(/^Source A ·/)).toBeVisible();
+    let release!: () => void;
+    run.mockImplementationOnce(async (...args) => {
+      const result = runRecipe(...args);
+      await new Promise<void>(resolve => { release = resolve; });
+      return result;
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(release).toBeDefined());
+
+    await chooseRiskSource('B');
+    expect(await screen.findByText('Loading source B…')).toBeVisible();
+    expect(first).not.toBeInTheDocument();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    const diagnostic = 'Source B: File read failed';
+    expect(screen.getAllByText(diagnostic)).toHaveLength(1);
+    expect(screen.getAllByRole('alert').map(n => n.textContent)).toEqual([diagnostic]);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    const second = await screen.findByTestId('chart-plot');
+    const figureB = plot.mock.lastCall![1];
+    expect(screen.getByText(/^Source B ·/)).toBeVisible();
+    expect(screen.queryByRole('alert')).toBeNull();
+    const expectedTrace = {
+      'return-distribution': { type: 'bar', x: [-.5, 0, .5, 1, 1.5], y: [1, 0, 0, 0, 2] },
+      'small-multiples': { type: 'scatter', y: [100, 300, 150, 450] },
+      'etf-pareto': { type: 'bar', x: ['holding:Constituent B'], y: [.4] },
+      'etf-exposure': { type: 'scatter', mode: 'markers', x: [.4], y: ['Sector B'] },
+    }[recipe.kind];
+    expect(figureB.data).toContainEqual(expect.objectContaining(expectedTrace));
+    expect(figureB.data).not.toEqual(figureA.data);
+    expect(figureB.layout.uirevision).not.toEqual(figureA.layout.uirevision);
+    const count = plot.mock.calls.length;
+    await act(async () => release());
+    expect(plot).toHaveBeenCalledTimes(count);
+    expect(plot.mock.lastCall![0]).toBe(second);
+
+    read.mockImplementation((path, opts) => path === 'files/' + b.params.file ? Promise.reject(new Error('File read failed')) : readFile(path, opts));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByText('Showing completed data (stale).');
+    expect(screen.getAllByRole('alert').map(n => n.textContent)).toEqual([diagnostic]);
+    expect(screen.getAllByText(/showing completed data \(stale\)/i)).toHaveLength(1);
+    expect(screen.getByTestId('chart-plot')).toBe(second);
+  } finally { read.mockRestore(); factory.mockRestore(); }
+});
+
+it.each([riskRecipes[0], riskRecipes[2]])('reopens $kind settings and rechecks hidden acquisition conflicts before plotting', async recipe => {
+  const { run, factory } = riskRuntime();
+  const def = widget({ id: 'snapshot', name: 'Acquired snapshot' });
+  useWidgetRegistryStore.setState(s => ({ widgets: [...s.widgets, def] }));
+  const root = card({ id: 'A', widgetId: def.id, backendId: def.backendId });
+  const hidden = recipe.kind === 'etf-pareto' ? 'fund_symbol' : 'currency';
+  const dashboard = riskDashboard([{ ...root, table: { hidden: [hidden] } }, riskChart(recipe)]);
+  let activeId = dashboard.id;
+  try {
+    installDashboard(dashboard);
+    tableExecutionStore.setBackendRows(activeId, root.id, snapshotFor(recipe, 'A'));
+    const initial = render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    const exported = exportCompatibleApp(dashboard);
+    if (!exported.ok) throw new Error(exported.issue.message);
+    const serialized = JSON.stringify([exported.value]);
+    expect(serialized).not.toMatch(/etfEvidence|priceDimensionsChecked|acquiredRowCount|viewportWidth|weight_basis/);
+    initial.unmount();
+    tableExecutionStore.disposeDashboard(activeId);
+    const imported = importApps(JSON.parse(serialized), useWidgetRegistryStore.getState().widgets).dashboards[0];
+    expect(imported.tabs[0].cards.find(c => c.linkedChart)?.linkedChart?.recipe).toEqual(recipe);
+    const source = imported.tabs[0].cards.find(c => c.widgetId === def.id)!;
+    expect(source.table?.hidden).toEqual([hidden]);
+    installDashboard(imported);
+    activeId = imported.id;
+    tableExecutionStore.setBackendRows(activeId, source.id, snapshotFor(recipe, 'A', true));
+    render(<LiveRiskChart/>);
+    const problem = recipe.kind === 'etf-pareto' ? /inconsistent ETF fund identity/i : /currenc/i;
+    await waitFor(() => expect(screen.getAllByText(problem).length).toBeGreaterThan(0));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(tableExecutionStore.readView(activeId, source.id).ready!.columns.map(c => c.id)).not.toContain(hidden);
+    expect(run.mock.lastCall![0].rows.every(row => !(hidden in row.values))).toBe(true);
+    await act(async () => {
+      tableExecutionStore.setBackendRows(activeId, source.id, snapshotFor(recipe, 'A'));
+      await tableExecutionStore.settled(activeId);
+    });
+    await screen.findByTestId('chart-plot');
+    expect(screen.queryByText(problem)).toBeNull();
+  } finally { cleanup(); tableExecutionStore.disposeDashboard(activeId); factory.mockRestore(); }
+});
+
+it('announces chart-read, worker and settings-save errors from a mounted financial card', async () => {
+  const { run, factory } = riskRuntime();
+  const recipe = riskRecipes[2];
+  const a = await riskSource(recipe, 'A');
+  installDashboard(riskDashboard([a, riskChart(recipe)]));
+  const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings').mockRejectedValue(new Error('settings write failed'));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    fireEvent.click(screen.getByRole('button', { name: /apply chart settings/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('settings write failed');
+    const executor = tableExecutionStore.readExecutor('d', a.id)!;
+    vi.spyOn(executor, 'chartData').mockRejectedValueOnce(new Error('chart read failed'));
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: { hidden: ['sector'] }, search: '' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    expect(await screen.findByText('chart read failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getByText('settings write failed')).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBeVisible();
+    run.mockRejectedValueOnce(new Error('chart worker failed'));
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: '' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    expect(await screen.findByText('chart worker failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getByText('settings write failed')).toBeVisible();
+  } finally { save.mockRestore(); factory.mockRestore(); }
+});
+
+it('revalidates exposure mode against the linked snapshot without acquiring another source', async () => {
+  const { factory } = riskRuntime();
+  const recipe = riskRecipes[3];
+  const a = await riskSource(recipe, 'A');
+  const snapshot = snapshotFor(recipe, 'A');
+  const rows = [...snapshot.rows, { symbol: 'A', sector: 'Utilities', weight: .3, fund_symbol: 'A' }];
+  await fs.writeFile('files/' + a.params.file, new TextEncoder().encode(JSON.stringify({ ...snapshot, rows })));
+  installDashboard(riskDashboard([a, riskChart(recipe)]));
+  const reads = vi.spyOn(fs, 'readFile');
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    expect(screen.getByText(/transport coverage is unknown/i)).toBeVisible();
+    expect(screen.getByText(/snapshot as-of date not supplied/i)).toBeVisible();
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: 'Utilities' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    expect(await screen.findByText('Filtered source delivered 1 of 2 acquired rows.')).toBeVisible();
+    const snapshotReads = () => reads.mock.calls.filter(([path]) => path === 'files/' + a.params.file).length;
+    const before = snapshotReads();
+    fireEvent.change(screen.getByLabelText('Exposure mode'), { target: { value: 'region' } });
+    fireEvent.click(screen.getByRole('button', { name: /apply chart settings/i }));
+    expect(await screen.findByText(/choose an ETF source with the requested exposure kind/i)).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(snapshotReads()).toBe(before);
+    expect(fetch).not.toHaveBeenCalled();
+  } finally { reads.mockRestore(); factory.mockRestore(); }
 });

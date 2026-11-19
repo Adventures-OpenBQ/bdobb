@@ -705,3 +705,45 @@ it.each(['bullet', 'waterfall'] as const)('fences %s on a pending or failed reli
     expect(screen.getByText(/Source B.*available/)).toBeVisible();
   } finally { cleanup(); store.disposeDashboard('d'); }
 });
+
+it('reflows small multiples only when the panel grid changes, retaining zoom and the acquired snapshot', async () => {
+  const { priceDataset, priceFields, dailyPriceRows } = await import('../../lib/widgetData/chartRecipes/fixtures');
+  const symbols = ['A', 'B', 'C'];
+  const rows = symbols.flatMap(s => dailyPriceRows([10, 11, 12], s).map((r, i) => ({ ...r, scope: i < 2 ? 'included' : 'omitted' })));
+  const { store, props, run, acquire, read, factory } = await setupCurve(priceDataset(rows));
+  const sizes = new Map<Element, (width: number) => void>();
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private notify: ResizeObserverCallback) {}
+    observe(el: Element) {
+      sizes.set(el, width => this.notify([{ contentRect: { width } }] as ResizeObserverEntry[], this as unknown as ResizeObserver));
+    }
+    disconnect() {}
+  });
+  try {
+    const recipe = { version: 1, kind: 'small-multiples', symbols, fields: priceFields } as const;
+    const { container } = render(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: { ...settings, type: recipe.kind, recipe } }}/>);
+    const initial = JSON.parse((await screen.findByTestId('figure')).textContent!);
+    expect(initial.layout.grid.columns).toBe(2);
+    expect(screen.getByText('3 panels · A, B, C')).toBeVisible();
+    const observe = sizes.get(container.querySelector('.linked-chart-plot')!);
+    expect(observe).toBeDefined();
+    const runs = run.mock.calls.length;
+    act(() => { observe!(850); observe!(800); });
+    expect(run).toHaveBeenCalledTimes(runs);
+    act(() => observe!(470));
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).layout.grid.columns).toBe(1));
+    act(() => { observe!(500); observe!(550); });
+    expect(run).toHaveBeenCalledTimes(runs + 1);
+    act(() => observe!(1000));
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).layout.grid.columns).toBe(3));
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).layout.uirevision).toBe(initial.layout.uirevision);
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(acquire).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      store.updateDefinition('d', 's', { table: {}, search: 'included' }, { kind: 'none' });
+      await store.settled('d');
+    });
+    expect(await screen.findByText('Filtered source delivered 6 of 9 acquired rows.')).toBeVisible();
+    expect(screen.getByTestId('figure')).toBeVisible();
+  } finally { cleanup(); vi.unstubAllGlobals(); factory.mockRestore(); store.disposeDashboard('d'); }
+});

@@ -72,3 +72,23 @@ it('runs the actual worker entry and posts a structured-cloneable chart with its
   expect(reply.result.notes).toContain('Presented observation dates: 2026-01-02 to 2026-01-02.');
   expect(reply).toMatchObject({ ...identity, result: { ok: true, figure: { data: expect.arrayContaining([expect.objectContaining({ y: [0] })]) } } });
 });
+
+it('sends layout width in context and fences a superseded arrangement of the same source revision', async () => {
+  const ports: Port[] = [];
+  const client = createRecipeWorker(() => { const port = new Port(); ports.push(port); return port as unknown as Worker; });
+  const options = { ...drawdownOptions, kind: 'small-multiples' } as const;
+  const run = (viewportWidth: number) => client.run(dataset, options, { ...context, viewportWidth }, new AbortController().signal);
+  const cancelled = expect(run(500)).rejects.toMatchObject({ name: 'AbortError' });
+  const current = run(1000);
+  const first = ports[0].postMessage.mock.calls[0][0];
+  const second = ports[1].postMessage.mock.calls[0][0];
+  expect(first.options).toEqual(second.options);
+  expect(first.identity).toEqual({ ...second.identity, requestId: first.identity.requestId });
+  expect(first.identity.requestId).not.toBe(second.identity.requestId);
+  expect(second.context.viewportWidth).toBe(1000);
+  ports[1].reply(second);
+  ports[0].reply(first);
+  await cancelled;
+  await expect(current).resolves.toMatchObject({ message: 'current' });
+  client.dispose();
+});

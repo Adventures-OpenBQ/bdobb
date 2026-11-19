@@ -11,9 +11,11 @@ type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 
-export const recipeLabels: Partial<Record<Kind, string>> = {
+export const recipeLabels: Record<Kind, string> = {
   drawdown: 'Drawdown', 'yield-curve': 'Yield curve', 'estimate-range': 'Estimate range',
   'monthly-returns': 'Monthly returns', correlation: 'Correlation',
+  'return-distribution': 'Return distribution', 'small-multiples': 'Small multiples',
+  'etf-pareto': 'ETF holdings Pareto', 'etf-exposure': 'ETF exposure',
 };
 
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric) {
@@ -40,10 +42,18 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
   const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
     : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
   const [fields, setFields] = useState<Record<string, string>>(() => saved ? { ...saved.fields } : defaults(kind, metric, columns));
-  const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved?.kind === 'monthly-returns' ? [saved.symbol] : []);
+  const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
-  const needsSymbols = kind === 'monthly-returns' || kind === 'drawdown' || kind === 'correlation';
+  const [bins, setBins] = useState(String(saved?.kind === 'return-distribution' ? saved.bins : 30));
+  const [mode, setMode] = useState<'sector' | 'region'>(() => {
+    if (saved?.kind === 'etf-exposure') return saved.mode;
+    const category = columns.find(c => c.id === fields.category);
+    return /^(country|region)$/i.test(category?.sourceFieldId ?? category?.id ?? '') ? 'region' : 'sector';
+  });
+  const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
+  const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
+  const needsSymbols = singleSymbol || multipleSymbols;
   const roleList = bindingRoles(kind, metric);
   const fieldIssue = roleList.find(role => (
     !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
@@ -66,12 +76,14 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
     (!current.values.length ? 'No identified symbols in the presented source. Bind a symbol field or document a single acquisition symbol.' :
       symbols.some(symbol => !current.values.includes(symbol)) ? 'Repair the unavailable symbol selection.' : undefined));
   const candidate = { version: 1, kind, fields, ...(kind === 'estimate-range' ? { metric } : {}),
-    ...(kind === 'monthly-returns' ? { symbol: symbols[0] } : {}),
-    ...(kind === 'correlation' || kind === 'drawdown' ? { symbols } : {}),
+    ...(singleSymbol ? { symbol: symbols[0] } : {}),
+    ...(multipleSymbols ? { symbols } : {}),
+    ...(kind === 'return-distribution' ? { bins: Number(bins) } : {}),
+    ...(kind === 'etf-exposure' ? { mode } : {}),
     ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
   const decoded = decodeRecipeOptions(candidate, kind);
   const problem = fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.' : choiceIssue || (!decoded.ok && decoded.message);
-  return <fieldset disabled={disabled}><legend>{recipeLabels[kind] ?? kind} settings</legend>
+  return <fieldset disabled={disabled}><legend>{recipeLabels[kind]} settings</legend>
     {kind === 'estimate-range' && <label>Metric<select value={metric} onChange={e => {
       const next = e.target.value === 'revenue' ? 'revenue' : 'eps';
       setMetric(next);
@@ -92,14 +104,18 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
         {available.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
       </select></label>;
     })}
-    {kind === 'monthly-returns' && <label>Symbol<select value={symbols[0] ?? ''} onChange={e => setSymbols(e.target.value ? [e.target.value] : [])}>
+    {singleSymbol && <label>Symbol<select value={symbols[0] ?? ''} onChange={e => setSymbols(e.target.value ? [e.target.value] : [])}>
       <option value="">Choose symbol</option>
       {[...new Set([...symbols, ...(current?.values ?? [])])].map(s => <option key={s} value={s}>{s}</option>)}
     </select></label>}
-    {(kind === 'drawdown' || kind === 'correlation') && <fieldset><legend>Symbols</legend>
+    {multipleSymbols && <fieldset><legend>Symbols</legend>
       {[...new Set([...symbols, ...(current?.values ?? [])])].map(s => <label key={s}><input type="checkbox" checked={symbols.includes(s)}
         onChange={e => setSymbols(e.target.checked ? [...symbols, s] : symbols.filter(v => v !== s))}/>{s}</label>)}
     </fieldset>}
+    {kind === 'return-distribution' && <label>Bins<input type="number" min="5" max="100" step="1" value={bins} onChange={e => setBins(e.target.value)}/></label>}
+    {kind === 'etf-exposure' && <label>Exposure mode<select value={mode} onChange={e => setMode(e.target.value === 'region' ? 'region' : 'sector')}>
+      <option value="sector">Sector</option><option value="region">Region</option>
+    </select></label>}
     {kind === 'correlation' && <><label>Lookback<input type="number" min="3" value={lookback} onChange={e => setLookback(e.target.value)}/></label>
       <label>Minimum overlap<input type="number" min="3" max={lookback} value={overlap} onChange={e => setOverlap(e.target.value)}/></label></>}
     {problem && <p role="status">{problem}</p>}
