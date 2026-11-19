@@ -3,8 +3,13 @@
 
 import type { StatementIntent } from './types';
 import { statementSnapshot } from './persistence';
-/** Omit id to reset all local settings. Source bindings and selection are preserved. */
+/** Reset overrides and return a validated intent. */
 export function resetStatementOverrides(intent: StatementIntent, id?: string): StatementIntent {
+  return statementSnapshot(resetStatementDraftOverrides(intent, id));
+}
+
+/** Reset a local editor draft while the user may still be editing its source bindings. */
+export function resetStatementDraftOverrides(intent: StatementIntent, id?: string): StatementIntent {
   const next = structuredClone(intent);
   if (id === undefined) next.overrides = {labels:{},lineOrder:{},hiddenIds:[],formulas:[]};
   else {
@@ -23,5 +28,5 @@ export function resetStatementOverrides(intent: StatementIntent, id?: string): S
     next.overrides.formulas = next.overrides.formulas.filter(f => f.id !== id && f.id !== formulaId);
     if (next.template.sections.some(s=>s.id===id)) delete next.overrides.sectionOrder;
   }
-  return statementSnapshot(next);
+  return next;
 }

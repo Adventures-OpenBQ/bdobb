@@ -231,6 +231,35 @@ it('returns a moved line home when reset',async()=>{
  expect(await apply()).toSatisfy((saved:StatementIntent)=>!('lineSection' in saved.overrides));
 });
 
+it('returns a moved line home before a new draft has source bindings',async()=>{
+ render(<StatementPanel {...props({raw:undefined})}/>);
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ expect(picker()).toHaveValue(expensesSection.id);
+ fireEvent.click(within(row('gross_profit')).getByRole('button',{name:'Reset line'}));
+ expect(within(screen.getByRole('region',{name:'Profit'})).getByLabelText('Label gross_profit')).toBeVisible();
+ expect(picker()).toHaveValue(profitSection.id);
+ fireEvent.click(screen.getByRole('button',{name:'Calculate preview'}));
+ expect(await screen.findByRole('alert')).toHaveTextContent('Invalid explicit source bindings.');
+ expect(screen.getByRole('button',{name:'Apply Statement model'})).toBeDisabled();
+});
+
+it('resets section and then all overrides with an unfinished binding edit',()=>{
+ render(<StatementPanel {...props()}/>);
+ fireEvent.change(picker(),{target:{value:expensesSection.id}});
+ const label=screen.getByLabelText('Section label Expenses');
+ fireEvent.change(label,{target:{value:'Costs'}});
+ const company=screen.getByRole('combobox',{name:'Company'});
+ fireEvent.change(company,{target:{value:''}});
+
+ const expenses=within(screen.getByRole('region',{name:'Expenses'}));
+ fireEvent.click(expenses.getByRole('button',{name:'Reset section'}));
+ expect(label).toHaveValue('Expenses');
+ expect(picker()).toHaveValue(expensesSection.id);
+ fireEvent.click(screen.getByRole('button',{name:'Reset all overrides'}));
+ expect(picker()).toHaveValue(profitSection.id);
+ expect(company).toHaveValue('');
+});
+
 it('keeps monetary bindings and formula identities when their lines move',async()=>{
  const apply=applied();
  const incomeSection=statement.template.sections[0];

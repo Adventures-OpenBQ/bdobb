@@ -17,6 +17,13 @@ describe('local Statement changes', () => {
   expect(reset.bindings).toEqual(statement.bindings); expect(reset.page).toEqual(statement.page);
   expect(reset.overrides).toEqual({labels:{},lineOrder:{},hiddenIds:[],formulas:[]});
  });
+ it('refuses to return a persisted intent with an invalid binding after reset', () => {
+  const { statement, ids } = fixture();
+  statement.overrides.labels[ids.line('revenue')] = 'Sales';
+  statement.bindings.companyFieldId = '';
+  expect(() => resetStatementOverrides(statement, ids.line('revenue'))).toThrow(/Invalid explicit source bindings/);
+  expect(statement.overrides.labels[ids.line('revenue')]).toBe('Sales');
+ });
  it('maps all stable semantic references across version prefixes without consulting display labels', () => {
   const { statement, ids } = fixture(); const next = future(statement.template);
   statement.overrides.labels[ids.line('revenue')] = 'Sales';
