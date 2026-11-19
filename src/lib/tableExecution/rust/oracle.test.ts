@@ -166,3 +166,19 @@ describe('reviewed Pivot baseline oracle', () => {
     });
   }
 });
+
+it('certifies raw Rust registrations before hiding an invalid ETF weight', async () => {
+  const { realRustRuntime } = await import('../../../test/tableProviderBoundary');
+  const { input, revision } = await import('../fixtures');
+  const runtime = await realRustRuntime();
+  const session = runtime.open_session({ protocolVersion: 1, locale: 'en-US' });
+  const data = { ...input, rows: [{ id: 'keep', values: { symbol: 'KEEP', weight: .25 } }, { id: 'drop', values: { symbol: 'DROP', weight: -1 } }],
+    columns: ['symbol', 'weight'].map(id => ({ id, label: id })), completeness: { ...input.completeness, acquiredRowCount: 2 },
+    provenance: { sourceWidgetId: 'source', receipt: { fund_symbol: 'FUND_A.US', etf_kind: 'holdings', weight_basis: 'fund-assets' } } };
+  try {
+    runtime.dispatch(session, { kind: 'registerInput', requestId: 'register', revision, inputRevision: 1, input: data });
+    runtime.dispatch(session, { kind: 'applyModel', requestId: 'apply', revision, definition: { search: 'KEEP', table: {} }, selection: { kind: 'none' } });
+    const chart = runtime.dispatch(session, { kind: 'chartData', requestId: 'chart', revision, fields: ['symbol', 'weight'] });
+    expect(chart).toMatchObject({ rows: [{ values: { symbol: 'KEEP', weight: .25 } }], provenance: { metadata: { etfEvidence: { issue: expect.stringMatching(/weight/i) } } } });
+  } finally { runtime.close_session(session); }
+});

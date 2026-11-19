@@ -1342,3 +1342,41 @@ it.each(['linked_table', 'linked_chart'])('ordinary external %s IDs still fetch 
   expect(result.current.data).toEqual([{ close: 42 }]);
   expect(server.requests).toHaveLength(1);
 });
+
+it('keeps ETF evidence bound to the completed request', async () => {
+  const path = '/api/v1/eodhd/etf/holdings';
+  const server = await serve({ [path]: (url: URL) => ({
+    __status: 200, __delayMs: 120, __body: { results: [{ requested: url.searchParams.get('symbol') }] },
+  }) });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path + '?private=query', dataKey: 'results' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, { symbol, token: 'private-param' }, true), {
+    initialProps: { symbol: 'FUND_A.US' },
+  });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({ symbol: 'FUND_B.US' });
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.data).toEqual([{ requested: 'FUND_A.US' }]);
+  expect(result.current.acquisition).toEqual({
+    endpoint: path, parameters: { symbol: 'FUND_A.US' }, retrievedAt: expect.any(Number),
+  });
+  act(() => result.current.run());
+  await waitFor(() => expect(result.current.data).toEqual([{ requested: 'FUND_B.US' }]));
+  expect(result.current.acquisition?.parameters.symbol).toBe('FUND_B.US');
+  rerender({ symbol: 'FUND_C.US' });
+  expect(result.current.acquisition?.parameters.symbol).toBe('FUND_B.US');
+});
+
+it('excludes a query credential using the symbol key and clears acquisition on failure', async () => {
+  const path = '/eodhd/etf/holdings';
+  let failing = false;
+  const server = await serve({ [path]: () => failing ? { __status: 500 } : [] });
+  useBackendsStore.setState({ backends: [backend({ baseUrl: server.url, authLocation: 'query', headerName: 'symbol', headerValue: 'private-key' })] });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path + '?private=token' })] });
+  const { result } = renderHook(() => useWidgetData(card, { symbol: 'FUND_A.US', exchange: 'US', provider: 'eodhd' }));
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.acquisition).toEqual({ endpoint: path, retrievedAt: expect.any(Number), parameters: { exchange: 'US', provider: 'eodhd' } });
+  failing = true;
+  act(() => result.current.retry());
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.acquisition).toBeUndefined();
+});

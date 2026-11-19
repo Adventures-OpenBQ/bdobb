@@ -22,7 +22,8 @@ export function parseTableSnapshot(data: unknown): { data: unknown; snapshot?: S
   const { rows, receipt, completeness } = data;
   const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
   const kind = kinds.find(k => k === completeness);
-  const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date'];
+  const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date',
+    'fund_symbol', 'etf_kind', 'weight_basis', 'holdings_coverage', 'as_of', 'retrieved_at'];
   if (!Object.hasOwn(data, 'receipt') && tableRows(rows)) {
     // An explicit negative scope is meaningful on its own. An affirmative one needs its receipt.
     const scope = kind && kind !== 'complete' && kind !== 'bounded' ? kind : 'unknown';

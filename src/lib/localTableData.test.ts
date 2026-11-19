@@ -72,3 +72,14 @@ it('refuses a malformed snapshot or an undeclared receipt field', async () => {
     await expect(datasetFromBytes('invalid.json', bytes, 'widget', 1)).rejects.toThrow('Could not parse local table');
   }
 });
+
+it('rebuilds ETF evidence from each opened snapshot and refuses saved evidence injection', async () => {
+  const receipt = { fund_symbol: 'FUND_A.US', etf_kind: 'sector', weight_basis: 'equity-exposure', as_of: '2026-09-30', holdings_coverage: 'partial', retrieved_at: '2026-11-19T12:00:00Z' };
+  const snapshot = { receipt, rows: [{ sector: 'Energy', weight: .14 }], completeness: 'unknown' };
+  const open = (value: unknown) => datasetFromBytes('sectors.json', new TextEncoder().encode(JSON.stringify(value)), 'fund', 1);
+  const first = await open(snapshot);
+  expect(first.provenance.metadata?.etfEvidence).toMatchObject({ fund: receipt.fund_symbol, holdingsCoverage: 'partial', asOf: '2026-09-30', retrievedAt: Date.parse(receipt.retrieved_at) });
+  expect((await open({ ...snapshot, receipt: { ...receipt, fund_symbol: 'FUND_B.US' } })).provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_B.US' });
+  await expect(open({ ...snapshot, metadata: first.provenance.metadata })).rejects.toThrow('Could not parse local table');
+  await expect(open({ ...snapshot, receipt: { ...receipt, token: 'extra' } })).rejects.toThrow('Could not parse local table');
+});

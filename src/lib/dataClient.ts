@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { BackendEtfAcquisition } from "./widgetData/chartRecipes/etfEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
@@ -479,6 +480,7 @@ export async function fetchWidgetData(
   // an agent fetch has no card context to resolve, so it passes `undefined`.
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
+  onAcquisition?: (acquisition: BackendEtfAcquisition) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -498,9 +500,22 @@ export async function fetchWidgetData(
     );
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
-  const payload = await request("GET", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), undefined, {
+  const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  const payload = await request("GET", requestUrl, authHeaders(backend), undefined, {
     signal,
   });
+  if (widget.type === "table" && onAcquisition) {
+    // Read the actual wire question, including any endpoint defaults. Never retain URL
+    // credentials, arbitrary query values or a credential placed under an identity key.
+    const url = new URL(requestUrl);
+    const parameters: Record<string, string> = {};
+    for (const key of ["symbol", "exchange", "provider"]) {
+      if (backend.authLocation === "query" && backend.headerName === key && backend.headerValue) continue;
+      const values = url.searchParams.getAll(key);
+      if (values.length) parameters[key] = values.join(",");
+    }
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt: Date.now() });
+  }
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own

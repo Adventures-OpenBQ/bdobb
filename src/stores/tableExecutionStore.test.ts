@@ -5,6 +5,11 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { backendTableSource, createTableExecutionStore } from './tableExecutionStore';
 import { useWidgetRegistryStore } from './widgetRegistryStore';
 import { preparePrices } from '../lib/widgetData/chartRecipes/input';
+import { fetchWidgetData } from '../lib/dataClient';
+import { backend, widget } from '../test/fixtures';
+import { startMockServer } from '../test/mockServer';
+import { readEtfEvidence, type BackendEtfAcquisition } from '../lib/widgetData/chartRecipes/etfEvidence';
+vi.mock('@tauri-apps/plugin-http', () => ({ fetch: globalThis.fetch }));
 import { priceFields } from '../lib/widgetData/chartRecipes/fixtures';
 import { WORKER_MAX_CELLS } from '../lib/tableExecution/eligibility';
 import { createTableProvider } from '../lib/tableExecution/rust/providerFactory';
@@ -957,6 +962,54 @@ it.each(['bounded', 'paged'] as const)('preserves the explicit %s receipt from a
   } finally {
     store.disposeDashboard('d');
     useWidgetRegistryStore.setState({ widgets: [] });
+  }
+});
+
+it('delivers the acquired dotted HTTP ETF payload through a second table', async () => {
+  const path = '/api/v1/eodhd/etf/holdings';
+  const rows = [{ symbol: 'HOLDING.US', weight: .125 }, { symbol: 'OTHER.US', weight: 0 }];
+  const receipt = { fund_symbol: 'FUND_A.US', etf_kind: 'holdings', weight_basis: 'fund-assets' };
+  const server = await startMockServer({ [path]: { results: { rows, receipt, completeness: 'paged' } } });
+  const definition = widget({ id: 'holdings', endpoint: path, dataKey: 'results.rows' });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker), source: backendTableSource });
+  const source = { ...card('etf-root'), widgetId: definition.id, backendId: definition.backendId, params: { symbol: 'FUND_B.US' } };
+  const child = card('etf-child', source.id);
+  try {
+    useWidgetRegistryStore.setState({ widgets: [definition] });
+    store.syncDashboard(dashboard([source, child]));
+    let acquisition: BackendEtfAcquisition | undefined;
+    const data = await fetchWidgetData(backend({ baseUrl: server.url }), definition, { symbol: 'FUND_A.US', token: 'private' },
+      undefined, undefined, undefined, evidence => { acquisition = evidence; });
+    expect(acquisition?.parameters).toEqual({ symbol: 'FUND_A.US' });
+    store.setBackendRows('d', source.id, data, acquisition);
+    store.ensureTable('d', child.id);
+    await store.settled('d');
+    const signal = new AbortController().signal;
+    const raw = await backendTableSource(source).acquire(signal);
+    if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+    const projected = await store.readExecutor('d', child.id)!.chartData(store.readView('d', child.id).active!, ['symbol', 'weight'], signal);
+    expect(projected.provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_A.US', basis: 'fund-assets' });
+    expect(projected.provenance.metadata?.etfEvidence).toEqual(raw.dataset.provenance.metadata?.etfEvidence);
+    expect(readEtfEvidence(projected, 'holdings').ok).toBe(true);
+    expect(projected.rows.map(r => r.values)).toEqual(rows);
+    expect(projected.completeness.kind).toBe('paged');
+    store.updateDefinition('d', source.id, { search: 'HOLDING.US', table: { hidden: ['fund_symbol', 'weight_basis'] } }, { kind: 'none' });
+    for (const conflict of [{ fund_symbol: 'FUND_B.US' }, { weight_basis: 'equity-exposure' }, { weight: -1 }]) {
+      const explicit = { fund_symbol: 'FUND_A.US', weight_basis: 'fund-assets' };
+      store.setBackendRows('d', source.id, { completeness: 'paged', receipt, rows: [
+        { ...rows[0], ...explicit }, { ...rows[1], ...explicit, ...conflict },
+      ] }, acquisition);
+      await store.settled('d');
+      const view = store.readView('d', child.id);
+      const chart = await store.readExecutor('d', child.id)!.chartData(view.active!, ['symbol', 'weight'], signal);
+      expect(chart.rows.map(r => r.values)).toEqual([rows[0]]);
+      expect(readEtfEvidence(chart, 'holdings').ok).toBe(false);
+    }
+
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+    await server.close();
   }
 });
 

@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { etfAcquisitionProvenance } from '../../widgetData/chartRecipes/etfEvidence';
 import { estimateProvenance } from '../../widgetData/chartRecipes/estimateEvidence';
 import type { ExecutionRequest, ExecutionResponse, TableDefinition, Revision } from '../types';
 import { ExecutionProtocolError, validateExecutionRequest, validateExecutionResponse } from '../validation';
@@ -16,7 +17,8 @@ const dataset = (value:WidgetDataset) => {
  // cannot preserve shared keys; distinct equal objects and nested aliases work.
  const seen=new WeakSet<object>();
  for(const row of value.rows){if(seen.has(row.values))throw new ExecutionProtocolError('INVALID_REQUEST','Unsupported input representation: shared top-level row.values object identity; clone values per row');seen.add(row.values);}
- return {...value,columns:value.columns.map(column),provenance:provenance(estimateProvenance(value)),rows:value.rows.map(row=>({...row,values:record(row.values),...(row.groupPath!==undefined?{groupPath:members(row.groupPath)}:{})}))};
+ const certified = { ...value, provenance: etfAcquisitionProvenance(value) };
+ return {...value,columns:value.columns.map(column),provenance:provenance(estimateProvenance(certified)),rows:value.rows.map(row=>({...row,values:record(row.values),...(row.groupPath!==undefined?{groupPath:members(row.groupPath)}:{})}))};
 };
 const definition = (value:TableDefinition,locale:string) => ({
  protocolVersion:PIVOT_PROTOCOL_VERSION,locale,

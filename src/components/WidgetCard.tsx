@@ -413,7 +413,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data: rawData, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale } =
+  const { status, data: rawData, acquisition, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale } =
     useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
@@ -504,8 +504,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   useEffect(() => {
     if (!dashboardId || !backendTable) return;
     if (failed) tableExecutionStore.setBackendRows(dashboardId, card.id, new Error(error ?? "Request failed"));
-    else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired);
-  }, [dashboardId, backendTable, card.id, acquired, status, failed, error]);
+    else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired, acquisition);
+  }, [dashboardId, backendTable, card.id, acquired, acquisition, status, failed, error]);
 
   const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: card.linkedSource }), [widget, data, card.linkedSource]);
 

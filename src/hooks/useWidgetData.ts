@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { BackendEtfAcquisition } from "../lib/widgetData/chartRecipes/etfEvidence";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
@@ -138,7 +139,7 @@ export function useWidgetData(
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
   const [status, setStatus] = useState<Status>("unresolved");
-  const [data, setData] = useState<unknown>(null);
+  const [{ data, acquisition }, setPayload] = useState<{ data: unknown; acquisition?: BackendEtfAcquisition }>({ data: null });
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
   const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(undefined);
   // OBBject warnings from the last successful fetch (e.g. a truncated result).
@@ -412,7 +413,7 @@ export function useWidgetData(
   useEffect(() => {
     if (linked) {
       setStatus("ready");
-      setData(null);
+      setPayload({ data: null });
       setError(undefined);
       return;
     }
@@ -436,7 +437,7 @@ export function useWidgetData(
     // Settings notice. See fetchesData.
     if (!fetchesData(widget)) {
       setStatus("ready");
-      setData(null);
+      setPayload({ data: null });
       setError(undefined);
       return;
     }
@@ -444,7 +445,7 @@ export function useWidgetData(
     const missing = missingRequiredParams(widget, fetchParams);
     if (missing.length > 0) {
       setStatus("incomplete");
-      setData(null);
+      setPayload({ data: null });
       setError(`Enter ${missing.join(", ")} to load this widget.`);
       return;
     }
@@ -463,7 +464,7 @@ export function useWidgetData(
     // question's rows up under the new parameters for the whole round trip.
     if (lastKeyRef.current !== key) {
       lastKeyRef.current = key;
-      setData(null);
+      setPayload({ data: null });
       setHeldBounds(undefined);
       // `bounds` is still the cleared rows' -- this render computed it before
       // the clear. Sending now would ask the new question with the old data's
@@ -613,18 +614,19 @@ export function useWidgetData(
 
       try {
         let received: string[] = [];
+        let completedAcquisition: BackendEtfAcquisition | undefined;
         const result = await fetchWidgetData(backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; });
+        }, undefined, (w) => { received = w; }, (context) => { completedAcquisition = context; });
         if (cancelled) return;
         setWarnings(received);
-        setData(result);
+        setPayload({ data: result, acquisition: completedAcquisition });
         if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
-        setFetchedAt(Date.now());
+        setFetchedAt(completedAcquisition?.retrievedAt ?? Date.now());
         setError(undefined);
         setStatus("ready");
         armAfterCompletion();
@@ -787,6 +789,7 @@ export function useWidgetData(
   return {
     status,
     data,
+    acquisition: status === "error" ? undefined : acquisition,
     error,
     warnings,
     retry,

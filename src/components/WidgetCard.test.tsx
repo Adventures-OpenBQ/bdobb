@@ -5319,9 +5319,10 @@ describe("WidgetCard locked", () => {
 // ruling 2026-10-07). It still needs the Pivot button to change its pivot.
 describe("a backend table on the table worker", () => {
   beforeEach(() => { worker.fits = true; return () => { worker.fits = false; }; });
+  const acquisition = { endpoint: '/eodhd/etf/holdings', parameters: { symbol: 'FUND_A.US' }, retrievedAt: 2000 };
   function setUp(data: unknown) {
     register({ type: "table", table: { columns: [{ field: "asset", headerName: "Asset" }] } });
-    useWidgetData.mockReturnValue({ status: "ready", data, retry: vi.fn(), attempt: 0 });
+    useWidgetData.mockReturnValue({ status: "ready", data, acquisition, retry: vi.fn(), attempt: 0 });
     useDashboardStore.setState({
       dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [card] }] }],
       activeId: "d1",
@@ -5338,7 +5339,7 @@ describe("a backend table on the table worker", () => {
     const table = screen.getByTestId("local-table");
     expect(table).toHaveAttribute("data-runtime", card.id);
     expect(table).toHaveAttribute("data-spec", "yes");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data);
+    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, acquisition);
     // The worker's drawer replaces the in-thread panel's button.
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-widget", card.id);
     handOver.mockRestore();
@@ -5353,7 +5354,7 @@ describe("a backend table on the table worker", () => {
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.queryByTestId("local-table")).toBeNull();
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-pivot", "off");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data);
+    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, acquisition);
     handOver.mockRestore();
   });
 

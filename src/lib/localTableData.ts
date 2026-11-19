@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { etfAcquisitionProvenance, type BackendEtfAcquisition } from './widgetData/chartRecipes/etfEvidence';
 import { estimateProvenance } from './widgetData/chartRecipes/estimateEvidence';
 import { priceAcquisitionProvenance } from './widgetData/chartRecipes/priceEvidence';
 import { parseTableSnapshot, tableRows, type Snapshot } from "./tableRowValues";
@@ -158,7 +159,7 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
  * labels; fields it leaves out follow in row order.
  */
 export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: number, sourceKind: string,
-  formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot): WidgetDataset {
+  formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot, acquisition?: BackendEtfAcquisition): WidgetDataset {
   const fields = [...new Set(rows.flatMap(row => Object.keys(row)))];
   // SheetJS leaves a blank cell out of its row and JSON rows may omit a key;
   // the engine reads an absent key as an unavailable field, so a file column
@@ -180,6 +181,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     if (receipt) dataset.provenance.receipt = receipt;
     dataset.provenance = priceAcquisitionProvenance(dataset);
   }
+  dataset.provenance = etfAcquisitionProvenance(dataset, acquisition);
   dataset.provenance = estimateProvenance(dataset);
   if (dataset.completeness.kind === 'complete') {
     dataset.completeness.totalRowCount = rows.length;

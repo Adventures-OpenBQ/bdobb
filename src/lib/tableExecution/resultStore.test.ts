@@ -296,3 +296,32 @@ it('validates only the bound price column against the acquired currency', async 
   expect(preparePrices(data, fields)).toMatchObject(expected);
   expect(preparePrices(await priceProjection(data, '', Object.values(fields)), fields)).toMatchObject(expected);
 });
+
+it('retains hidden ETF safety failures through two projections', async () => {
+  const { readEtfEvidence } = await import('../widgetData/chartRecipes/etfEvidence');
+  const { beginSubset, appendSubset, commitSubset } = await import('./subsetTransfer');
+  const project = async (bad: Record<string, unknown> = {}) => {
+    const common = { fund_symbol: 'FUND_A.US', weight_basis: 'fund-assets' };
+    const rows = [{ ...common, symbol: 'HOLDING.US', weight: .25, tag: 'keep' },
+      { ...common, symbol: 'OMITTED.US', weight: .12345678, tag: 'omit', ...bad }];
+    const receipt = { ...common, etf_kind: 'holdings' };
+    const raw = await datasetFromBytes('holdings.json', new TextEncoder().encode(JSON.stringify({ rows, receipt, completeness: 'paged' })), 'source', 1);
+    const table = { hidden: ['fund_symbol', 'weight_basis', 'tag'] };
+    const parent = createResultStore(calculateView(raw, { table, search: 'HOLDING.US' }, { kind: 'none' }), revision);
+    const transfer = beginSubset('transfer', revision);
+    for (const block of parent.presented('linked', revision, 'transfer')) appendSubset(transfer, block);
+    const child = calculateView(commitSubset(transfer), { table: {}, search: '' }, { kind: 'none' });
+    const projected = createResultStore(child, { ...revision, widgetId: 'child' }).chartData('chart', { ...revision, widgetId: 'child' }, ['symbol', 'weight']);
+    expect(projected.rows.map(r => r.values)).toEqual([{ symbol: 'HOLDING.US', weight: .25 }]);
+    expect(JSON.stringify(projected.provenance)).not.toContain('0.12345678');
+    return projected;
+  };
+  const projected = await project();
+  expect(projected.provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_A.US', basis: 'fund-assets' });
+  expect(projected.completeness.kind).toBe('paged');
+  expect(readEtfEvidence(projected, 'holdings')).toMatchObject({ ok: true, notes: expect.arrayContaining([expect.stringMatching(/filtered source/i)]) });
+  for (const bad of [{ fund_symbol: 'FUND_B.US' }, { weight_basis: 'equity-exposure' }, { weight: null }, { weight: 2 }]) {
+    const conflictingProjection = await project(bad);
+    expect(readEtfEvidence(conflictingProjection, 'holdings').ok).toBe(false);
+  }
+});

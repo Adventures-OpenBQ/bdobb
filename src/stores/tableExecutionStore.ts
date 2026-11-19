@@ -11,6 +11,7 @@ import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
+import type { BackendEtfAcquisition } from "../lib/widgetData/chartRecipes/etfEvidence";
 import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
@@ -89,7 +90,7 @@ export type ExecutionDependencies = {
  * The rows each backend table card fetched, handed over by its WidgetCard so
  * the worker never fetches a second time. `ready` settles on the first rows.
  */
-const backendRows = new Map<string, { data?: unknown; ready: Promise<void>; resolve: () => void }>();
+const backendRows = new Map<string, { data?: unknown; acquisition?: BackendEtfAcquisition; ready: Promise<void>; resolve: () => void }>();
 function rowsEntry(id: string) {
   let entry = backendRows.get(id);
   if (!entry) {
@@ -122,7 +123,7 @@ export function backendTableSource(card: DashboardCard): SourceAdapter {
     const rows = (tableRows(parsed.data) ?? []).map(row => ({ ...row }));
     // The provider's aggregation hint rides as column metadata, so a linked table's input keeps it for Rita's describe_table (V9-P2).
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}), ...(c.hint ? { metadata: { aggregationHint: c.hint } } : {}) })) : [];
-    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot) };
+    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot, entry.acquisition) };
   } };
 }
 /** Only this store owns acquisition and activation; UI caches consume exact active revisions. */
@@ -566,11 +567,12 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           void ensure(dashboard.id, card.id);
     },
     /** A backend table card's newly fetched rows; a change re-acquires the table. */
-    setBackendRows(d: string, id: string, data: unknown) {
+    setBackendRows(d: string, id: string, data: unknown, acquisition?: BackendEtfAcquisition) {
       const entry = rowsEntry(id);
-      if (entry.data === data) return;
+      if (entry.data === data && entry.acquisition === acquisition) return;
       const replaced = 'data' in entry;
       entry.data = data;
+      entry.acquisition = data instanceof Error ? undefined : acquisition;
       entry.resolve();
       const runtime = dashboards.get(d), node = runtime?.nodes.get(id);
       // A node that failed on the previous rows (too large, fetch error) retries on new ones.
