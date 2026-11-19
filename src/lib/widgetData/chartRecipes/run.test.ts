@@ -64,6 +64,24 @@ describe('runRecipe', () => {
     });
   });
 
+  it.each([0, -1, 10_001, Infinity, NaN, '900', null])('refuses invalid viewport width %s', viewportWidth => {
+    expect(runRecipe(prices, drawdownOptions, { ...context, viewportWidth } as RecipeContext)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/viewport width/i),
+    });
+  });
+
+  it.each([undefined, 0.5, 900, 10_000])('accepts optional viewport width %s without changing the existing result', viewportWidth => {
+    const sized = { ...context, viewportWidth };
+    expect(runRecipe(prices, drawdownOptions, sized)).toEqual(runRecipe(prices, drawdownOptions, context));
+  });
+
+  it('refuses a valid recipe whose builder is unavailable', () => {
+    const options = { version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'A', bins: 30 } as const;
+    expect(runRecipe(prices, options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/unsupported recipe/i),
+    });
+  });
+
   it('returns an actionable refusal for a malformed chart dataset', () => {
     expect(runRecipe({ ...prices, rows: [null] } as unknown as WidgetDataset, drawdownOptions, context))
       .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/dataset|table/i) });

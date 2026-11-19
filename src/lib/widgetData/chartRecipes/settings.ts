@@ -6,7 +6,7 @@ import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
 import type { RecipeOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
-type RecipeShape = { options: readonly string[]; required: readonly string[]; optional?: readonly string[] };
+type RecipeShape = { options: readonly string[]; required: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
 const priceFields = { required: ['date', 'price'], optional: ['symbol'] };
 const recipeShapes: Record<RecipeKind, RecipeShape> = {
   drawdown: { options: ['symbols'], ...priceFields },
@@ -14,6 +14,10 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'estimate-range': { options: ['metric'], required: ['periodEnd', 'status', 'low', 'average', 'high'], optional: ['fiscalPeriod', 'note'] },
   'monthly-returns': { options: ['symbol'], ...priceFields },
   correlation: { options: ['symbols', 'lookback', 'minOverlap'], ...priceFields },
+  'return-distribution': { options: ['symbol', 'bins'], ...priceFields, distinctBindings: true },
+  'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
+  'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
+  'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
 };
 
 export function isRecipeType(type: unknown): type is RecipeKind {
@@ -77,6 +81,10 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
     if (Object.hasOwn(fields, name) && fields[name] !== undefined && !nonblankString(fields[name]))
       return invalid(`Choose a nonempty field ID for the "${name}" recipe binding or omit it.`);
   }
+  if (shape.distinctBindings) {
+    const bound = Object.values(fields).filter(id => id !== undefined);
+    if (new Set(bound).size !== bound.length) return invalid('Choose distinct fields for the recipe bindings.');
+  }
 
   if (shape.options.some(key => !Object.hasOwn(value, key)))
     return invalid(`Supply the required ${chartType} recipe options (${shape.options.join(', ')}).`);
@@ -99,6 +107,19 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
         return invalid('Set correlation minOverlap to an integer between 3 and lookback.');
       break;
     }
+    case 'return-distribution': {
+      if (!nonblankString(value.symbol)) return invalid('Select one symbol for return distribution.');
+      const { bins } = value;
+      if (typeof bins !== 'number' || !Number.isInteger(bins) || bins < 5 || bins > 100)
+        return invalid('Set return distribution bins to an integer between 5 and 100.');
+      break;
+    }
+    case 'small-multiples':
+      if (!distinctSymbols(value.symbols, 12)) return invalid('Select 1 to 12 distinct symbols for small multiples.');
+      break;
+    case 'etf-exposure':
+      if (value.mode !== 'sector' && value.mode !== 'region') return invalid('Choose sector or region for ETF exposure.');
+      break;
   }
   return { ok: true, options: value as RecipeOptions };
 }

@@ -11,10 +11,10 @@ type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 
-export const recipeLabels = {
+export const recipeLabels: Partial<Record<Kind, string>> = {
   drawdown: 'Drawdown', 'yield-curve': 'Yield curve', 'estimate-range': 'Estimate range',
   'monthly-returns': 'Monthly returns', correlation: 'Correlation',
-} satisfies Record<Kind, string>;
+};
 
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric) {
   return bindingRoles(kind, metric).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
@@ -71,7 +71,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
     ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
   const decoded = decodeRecipeOptions(candidate, kind);
   const problem = fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.' : choiceIssue || (!decoded.ok && decoded.message);
-  return <fieldset disabled={disabled}><legend>{recipeLabels[kind]} settings</legend>
+  return <fieldset disabled={disabled}><legend>{recipeLabels[kind] ?? kind} settings</legend>
     {kind === 'estimate-range' && <label>Metric<select value={metric} onChange={e => {
       const next = e.target.value === 'revenue' ? 'revenue' : 'eps';
       setMetric(next);

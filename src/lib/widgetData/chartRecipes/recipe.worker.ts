@@ -9,8 +9,8 @@ self.onmessage = ({ data }: MessageEvent<RecipeRequest>) => {
   const { identity, dataset, options, context } = data;
   try {
     const result = runRecipe(dataset, options, context);
-    if (result.ok) {
-      const dateField = options.kind === 'estimate-range' ? options.fields.periodEnd : options.fields.date;
+    if (result.ok && ('periodEnd' in options.fields || 'date' in options.fields)) {
+      const dateField = 'periodEnd' in options.fields ? options.fields.periodEnd : options.fields.date;
       let first: string | undefined, last: string | undefined;
       for (const row of dataset.rows) {
         const date = !row.cellErrors?.[dateField] && calendarDate(row.values[dateField]);

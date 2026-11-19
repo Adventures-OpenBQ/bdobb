@@ -7,6 +7,7 @@ import type { RecipeOptions } from './types';
 type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean };
 export const adjustedPriceRole: Role = { key: 'price', label: 'Adjusted price', names: ['adjusted_close', 'adj_close', 'adjusted_price'], numeric: true };
 const dateRole = { key: 'date', label: 'Observation date', names: ['date', 'trading_date', 'observation_date'], date: true };
+const weightRole: Role = { key: 'weight', label: 'Reported weight', names: ['weight'], numeric: true };
 export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue'): Role[] {
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
@@ -18,6 +19,15 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     { key: 'low', label: 'Low', names: [metric + '_low'], numeric: true },
     { key: 'average', label: 'Average', names: [metric + '_avg', metric + '_average'], numeric: true },
     { key: 'high', label: 'High', names: [metric + '_high'], numeric: true },
+  ];
+  if (kind === 'etf-pareto') return [
+    { key: 'holding', label: 'Holding', names: ['symbol', 'ticker', 'holding_id'] },
+    { key: 'label', label: 'Holding label', names: ['name', 'label', 'holding_name'], optional: true },
+    weightRole,
+  ];
+  if (kind === 'etf-exposure') return [
+    { key: 'category', label: 'Exposure category', names: ['sector', 'country', 'region'] },
+    weightRole,
   ];
   return [dateRole, adjustedPriceRole,
     { key: 'symbol', label: 'Symbol field', names: ['symbol', 'ticker'], optional: true }];

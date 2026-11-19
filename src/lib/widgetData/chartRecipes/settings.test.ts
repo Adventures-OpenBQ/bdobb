@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import type { LinkedChartSettings } from '../types';
-import { requiredRecipeFields, validateRecipeOptions, withRecipeType } from './settings';
+import type { DatasetColumn, LinkedChartSettings } from '../types';
+import { savedBindingIssue } from './bindings';
+import { decodeRecipeOptions, requiredRecipeFields, validateRecipeOptions, withRecipeType } from './settings';
 import type { RecipeOptions } from './types';
 
 const priceFields = { date: 'trade_date', price: 'adjusted_close', symbol: 'ticker' };
@@ -16,6 +17,91 @@ const estimate = {
   version: 1, kind: 'estimate-range', metric: 'eps',
   fields: { periodEnd: 'period_end', fiscalPeriod: 'fiscal_period', status: 'band_status', note: 'band_status', low: 'eps_low', average: 'eps_average', high: 'eps_high' },
 } satisfies RecipeOptions;
+
+it('validates four risk recipe contracts without accepting certification', () => {
+  const hist = { version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'AMD', bins: 30 } as const;
+  const multiples = { version: 1, kind: 'small-multiples', fields: priceFields, symbols: ['AMD'] } as const;
+  const pareto = { version: 1, kind: 'etf-pareto', fields: { holding: 'holding', weight: 'weight' } } as const;
+  const exposure = { version: 1, kind: 'etf-exposure', fields: { category: 'region', weight: 'weight' }, mode: 'region' } as const;
+
+  expect(decodeRecipeOptions(hist, 'return-distribution').ok).toBe(true);
+  expect(decodeRecipeOptions({ ...hist, bins: 4 }, hist.kind).ok).toBe(false);
+  for (const bins of [101, 30.5, NaN, undefined]) {
+    expect(decodeRecipeOptions({ ...hist, bins }, hist.kind).ok).toBe(false);
+  }
+  for (const bins of [5, 100]) {
+    expect(decodeRecipeOptions({ ...hist, bins }, hist.kind).ok).toBe(true);
+  }
+  expect(decodeRecipeOptions({ ...hist, symbol: ['AMD'] }, hist.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...hist, version: 2 }, hist.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...hist, viewportWidth: 800 }, hist.kind).ok).toBe(false);
+
+  const ordered = ['MSFT', 'AMD', 'NVDA', 'AVGO', 'ORCL', 'AMZN', 'AAPL', 'IBM', 'ADBE', 'CSCO', 'CRM', 'META'];
+  for (const symbols of [['AMD'], ordered]) {
+    const options = { ...multiples, symbols };
+    expect(decodeRecipeOptions(options, multiples.kind)).toEqual({ ok: true, options });
+  }
+  for (const symbols of [[], [...ordered, 'TSLA'], ['AMD', 'AMD']]) {
+    expect(decodeRecipeOptions({ ...multiples, symbols }, multiples.kind).ok).toBe(false);
+  }
+
+  expect(decodeRecipeOptions(pareto, pareto.kind).ok).toBe(true);
+  expect(requiredRecipeFields(pareto)).toEqual(['holding', 'weight']);
+  const labeled = { ...pareto, fields: { ...pareto.fields, label: 'name' } };
+  expect(decodeRecipeOptions(labeled, pareto.kind).ok).toBe(true);
+  expect(requiredRecipeFields(labeled)).toEqual(['holding', 'weight', 'name']);
+  expect(decodeRecipeOptions({ ...pareto, fund: 'FORGED' }, pareto.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...pareto, coverage: 'complete' }, pareto.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...pareto, cap: 10 }, pareto.kind).ok).toBe(false);
+
+  expect(decodeRecipeOptions(exposure, exposure.kind).ok).toBe(true);
+  expect(decodeRecipeOptions({ ...exposure, mode: 'sector', fields: { ...exposure.fields, category: 'sector' } }, exposure.kind).ok).toBe(true);
+  expect(decodeRecipeOptions({ ...exposure, mode: 'country' }, exposure.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...exposure, normalize: true }, exposure.kind).ok).toBe(false);
+  expect(decodeRecipeOptions({ ...exposure, fields: { ...exposure.fields, fund: 'fund' } }, exposure.kind).ok).toBe(false);
+
+  for (const recipe of [
+    { ...hist, fields: { ...hist.fields, price: hist.fields.date } },
+    { ...multiples, fields: { ...multiples.fields, symbol: multiples.fields.date } },
+    { ...pareto, fields: { ...pareto.fields, label: pareto.fields.holding } },
+    { ...exposure, fields: { ...exposure.fields, weight: exposure.fields.category } },
+  ]) {
+    expect(decodeRecipeOptions(recipe, recipe.kind)).toMatchObject({ ok: false, message: expect.stringMatching(/distinct/i) });
+  }
+});
+
+it('matches ETF bindings by the field origin after renaming', () => {
+  const weight = { id: 'allocation', label: 'Allocation', sourceFieldId: 'weight', dtype: 'number' } as const;
+  const label = { id: 'security', label: 'Security', sourceFieldId: 'name', dtype: 'text' } as const;
+  const pareto = { version: 1, kind: 'etf-pareto', fields: { holding: 'asset', weight: 'allocation', label: 'security' } } as const;
+  for (const sourceFieldId of ['symbol', 'ticker', 'holding_id']) {
+    expect(savedBindingIssue(pareto, [{ id: 'asset', label: 'Asset', dtype: 'text', sourceFieldId }, weight, label])).toBeUndefined();
+  }
+  expect(savedBindingIssue(pareto, [{ id: 'asset', label: 'Asset', dtype: 'text', sourceFieldId: 'name' }, weight, label]))
+    .toEqual(expect.stringMatching(/cannot supply/i));
+
+  const exposure = { version: 1, kind: 'etf-exposure', fields: { category: 'bucket', weight: 'allocation' }, mode: 'sector' } as const;
+  for (const [sourceFieldId, mode] of [['sector', 'sector'], ['country', 'region'], ['region', 'region']] as const) {
+    expect(savedBindingIssue({ ...exposure, mode }, [{ id: 'bucket', label: 'Bucket', dtype: 'text', sourceFieldId }, weight])).toBeUndefined();
+  }
+});
+
+it('refuses missing, nonnumeric, grouped and calculated ETF weight fields', () => {
+  const exposure = { version: 1, kind: 'etf-exposure', fields: { category: 'sector', weight: 'allocation' }, mode: 'sector' } as const;
+  const category: DatasetColumn = { id: 'sector', label: 'Sector', dtype: 'text' };
+  const weight: DatasetColumn = { id: 'allocation', label: 'Allocation', dtype: 'number', sourceFieldId: 'weight' };
+  expect(savedBindingIssue(exposure, [category])).toEqual(expect.stringMatching(/unavailable/i));
+  for (const update of [
+    { dtype: 'text' },
+    { sourceFieldId: 'market_value' },
+    { measureId: 'weight' },
+    { aggregation: 'sum' },
+    { splitPath: [{ field: 'region', value: 'US' }] },
+    { analytical: { kind: 'formula', definitionId: 'formula', name: 'Weight' } },
+  ] satisfies Partial<DatasetColumn>[]) {
+    expect(savedBindingIssue(exposure, [category, { ...weight, ...update }])).toEqual(expect.stringMatching(/cannot supply/i));
+  }
+});
 
 it('requires version 1 and the recipe kind that matches the chart type', () => {
   expect(validateRecipeOptions({ version: 2, kind: 'correlation' }, 'correlation')).toBeNull();

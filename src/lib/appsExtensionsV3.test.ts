@@ -9,6 +9,7 @@ import { encodeV3CardExtension } from "./appsExtensionsV3";
 import { saveDashboard, loadDashboards } from "./dashboardsFile";
 import { __reset, __list } from "../test/memfs";
 import { __resetJsonStoreForTests } from "./jsonStore";
+import type { RecipeOptions } from "./widgetData/chartRecipes/types";
 
 const table: TableCardState = {
   sorting: [{ id: "close", desc: true }],
@@ -122,6 +123,36 @@ describe("compatible v3 exports", () => {
     expect(JSON.stringify(input)).toBe(before);
     expect(appsJson.exportApp(input)).not.toHaveProperty("extensions");
   });
+});
+
+it("round trips risk recipe cards and remaps their source through a compatible app export", async () => {
+  const recipes: RecipeOptions[] = [
+    { version: 1, kind: "return-distribution", fields: { date: "date", price: "adjusted_close" }, symbol: "AMD", bins: 30 },
+    { version: 1, kind: "small-multiples", fields: { date: "date", price: "adjusted_close", symbol: "ticker" }, symbols: ["NVDA", "AMD"] },
+    { version: 1, kind: "etf-pareto", fields: { holding: "ticker", weight: "weight" } },
+    { version: 1, kind: "etf-exposure", fields: { category: "region", weight: "weight" }, mode: "region" },
+  ];
+  const input = dashboard();
+  const [tab] = input.tabs;
+  for (const recipe of recipes) {
+    tab.cards.push(card({
+      id: recipe.kind, widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+      linkedChart: { type: recipe.kind, display: "grouped", measures: [], recipe },
+    }));
+  }
+
+  const exported = appsJson.exportCompatibleApp(input);
+  expect(exported).toMatchObject({ ok: true, value: { extensions: { bdobb: { profile: "v4" } } } });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const restored = importApps(JSON.parse(JSON.stringify([exported.value])), []).dashboards[0];
+  await saveDashboard(restored);
+  const [producer, ...charts] = (await loadDashboards())[0].tabs[0].cards;
+  for (const [index, chart] of charts.entries()) {
+    const recipe = recipes[index];
+    expect(chart.linkedSource).toEqual({ kind: "widget", sourceWidgetId: producer.id });
+    expect(chart.linkedChart).toEqual({ type: recipe.kind, display: "grouped", measures: [], recipe });
+  }
+  expect(charts).toHaveLength(4);
 });
 
 it("refuses later card state rather than dropping it from a v3 export", () => {

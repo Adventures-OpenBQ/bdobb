@@ -10,9 +10,13 @@ export type RecipeOptions =
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
   | { version: 1; kind: 'estimate-range'; fields: { periodEnd: string; fiscalPeriod?: string; status: string; note?: string; low: string; average: string; high: string }; metric: 'eps' | 'revenue' }
   | { version: 1; kind: 'monthly-returns'; fields: PriceBindings; symbol: string }
-  | { version: 1; kind: 'correlation'; fields: PriceBindings; symbols: string[]; lookback: number; minOverlap: number };
+  | { version: 1; kind: 'correlation'; fields: PriceBindings; symbols: string[]; lookback: number; minOverlap: number }
+  | { version: 1; kind: 'return-distribution'; fields: PriceBindings; symbol: string; bins: number }
+  | { version: 1; kind: 'small-multiples'; fields: PriceBindings; symbols: string[] }
+  | { version: 1; kind: 'etf-pareto'; fields: { holding: string; label?: string; weight: string } }
+  | { version: 1; kind: 'etf-exposure'; fields: { category: string; weight: string }; mode: 'sector' | 'region' };
 
-export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string };
+export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeResult = LinkedFigureResult;

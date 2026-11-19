@@ -48,6 +48,9 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     return { ok: false, refused: true, message: 'Reload the source table to supply a valid chart dataset.' };
   if (!hasRecipeContext(context))
     return { ok: false, refused: true, message: 'Supply a valid chart context with theme, precision and a YYYY-MM-DD calendar date.' };
+  const { viewportWidth } = context;
+  if (viewportWidth !== undefined && (!Number.isFinite(viewportWidth) || viewportWidth <= 0 || viewportWidth > 10_000))
+    return { ok: false, refused: true, message: 'Supply a viewport width greater than 0 and at most 10,000.' };
 
   const recipe = decoded.options;
   const issue = savedBindingIssue(recipe, dataset.columns, dataset.rows);
@@ -59,4 +62,5 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'monthly-returns': return buildMonthlyReturns(dataset, recipe, context);
     case 'correlation': return buildCorrelation(dataset, recipe, context);
   }
+  return { ok: false, refused: true, message: 'Unsupported recipe. Choose a supported chart type.' };
 }

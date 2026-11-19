@@ -4,6 +4,8 @@
 import { expect, it } from 'vitest';
 import { remapWidgetReferences, persistedCard } from './persistence';
 import type { DashboardCard } from '../types';
+import { decodeLinkedChartRecipe } from './chartRecipes/settings';
+import type { RecipeOptions } from './chartRecipes/types';
 const source: DashboardCard = { id: 'source', widgetId: 'local_table', backendId: 'builtin', params: { file: 'import.csv' }, layout: { x: 0, y: 0, w: 2, h: 2 } };
 const child: DashboardCard = { ...source, id: 'child', widgetId: 'linked_table', linkedSource: { kind: 'widget', sourceWidgetId: 'source' }, tableSelection: { kind: 'explicit', ids: ['r0'] }, linkedChart: { type: 'line', category: 'date', measures: ['close'], display: 'grouped' } };
 it('remaps all dashboard owners and links without mutating settings or native file references', () => {
@@ -47,5 +49,19 @@ it('copies and persists versioned recipe options along with the remapped source'
   expect(copy.linkedChart?.recipe).not.toBe(linkedChart.recipe);
   expect(JSON.parse(JSON.stringify(persistedCard(copy)))).toMatchObject({
     id: 'chart-copy', linkedSource: { kind: 'widget', sourceWidgetId: 'source-copy' }, linkedChart,
+  });
+});
+
+it('reopens copied small multiples with the authored symbol order', () => {
+  const recipe = {
+    version: 1, kind: 'small-multiples', fields: { date: 'date', price: 'adjusted_close', symbol: 'ticker' }, symbols: ['NVDA', 'AMD'],
+  } satisfies RecipeOptions;
+  const linkedChart: NonNullable<DashboardCard['linkedChart']> = { type: recipe.kind, display: 'grouped', measures: [], recipe };
+  const copy = remapWidgetReferences({ ...child, linkedChart }, new Map([['child', 'chart-copy'], ['source', 'source-copy']]));
+  const reloaded = JSON.parse(JSON.stringify(persistedCard(copy)));
+  expect(reloaded.linkedSource).toEqual({ kind: 'widget', sourceWidgetId: 'source-copy' });
+  expect(reloaded.linkedChart).toEqual(linkedChart);
+  expect(decodeLinkedChartRecipe(reloaded.linkedChart, reloaded.linkedChart.type)).toEqual({
+    ok: true, options: linkedChart.recipe,
   });
 });
