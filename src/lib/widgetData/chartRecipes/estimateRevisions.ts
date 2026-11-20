@@ -12,8 +12,11 @@ import { acquiredColumnOrigin } from './financialEvidence';
 import { metricVintageKey } from './metricEvidence';
 import { linearAxisTicks } from './overlayDisplay';
 import { decodeEstimateRevisionsOptions, estimateRevisionFieldOrigins } from './settings';
-import type { EstimateRevisionsOptions, RecipeContext, RecipeRefusal, RecipeRequestOptions, RecipeResult } from './types';
-import { axisPixels, drawableValues, estimateRevisionMinPlotHeight, estimateRevisionMinPlotWidth, valueRange, type Range } from './viewport';
+import type { EstimateRevisionsOptions, EstimateRevisionsSurface, RecipeContext, RecipeRefusal, RecipeRequestOptions, RecipeResult } from './types';
+import {
+  axisPixels, drawableValues, estimateRevisionMinPlotHeight, estimateRevisionMinPlotWidth,
+  maxRecipeViewportDimension, valueRange, type Range,
+} from './viewport';
 
 type Issuer = EstimateVintageSource['issuers'][number];
 type Vintage = EstimateVintageSource['vintages'][number];
@@ -270,7 +273,7 @@ function changeText(change: Change, unit: string) {
   return { signedAbsolute, signedPercent };
 }
 
-function observationText(data: EstimateRevisionData, series: Series, observation: Observation, vintage: Vintage) {
+function observationLines(data: EstimateRevisionData, series: Series, observation: Observation, vintage: Vintage) {
   const metric = data.metric === 'eps' ? 'EPS' : 'revenue';
   const { value, rank, change } = observation;
   const original = value === null ? 'Consensus unavailable' : `Consensus ${value} ${series.unitLabel}`;
@@ -285,12 +288,33 @@ function observationText(data: EstimateRevisionData, series: Series, observation
     const { signedAbsolute, signedPercent } = changeText(change, series.unitLabel);
     if (rank !== null) {
       // One compact row group per issuer lets Plotly keep coincident ranks inspectable together.
-      return [`${series.issuer.issuer} · rank ${rank} of ${data.series.length}`, original, `${signedAbsolute} · ${signedPercent}`]
-        .map(escape).join('<br>');
+      return [`${series.issuer.issuer} · rank ${rank} of ${data.series.length}`, original, `${signedAbsolute} · ${signedPercent}`];
     }
     lines.push(`Change from ${change.fromVintage}  ${signedAbsolute}`, `Percentage  ${signedPercent}`);
   }
-  return lines.map(escape).join('<br>');
+  return lines;
+}
+
+const hoverFontSize = 11;
+const bumpHoverFont = { family: 'monospace', size: hoverFontSize };
+
+function minimumDrawingSurface(data: EstimateRevisionData, margin: { l: number; r: number },
+  hover: readonly string[][][]): EstimateRevisionsSurface {
+  // The full UTC labels are horizontal, on equally spaced positions. Reserve an
+  // extra gap beside each 60 px label plus room for the axis title at two pins.
+  const width = Math.max(estimateRevisionMinPlotWidth(data.vintages.length),
+    margin.l + margin.r + Math.max(150, 68 * data.vintages.length));
+  if (!data.universe) return { width, height: estimateRevisionMinPlotHeight };
+
+  let longestLine = 27; // UTC instant in the unified hover title.
+  for (const series of hover) for (const observation of series) for (const line of observation)
+    longestLine = Math.max(longestLine, line.length);
+
+  // Plotly's unified hover uses a legend with a marker gutter and three text
+  // rows per issuer. Reserve space for all entries, including coincident ranks.
+  const hoverWidth = 44 + Math.ceil(longestLine * 7.2);
+  const hoverHeight = 28 + data.series.length * 54;
+  return { width: Math.max(width, hoverWidth), height: Math.max(estimateRevisionMinPlotHeight, hoverHeight) };
 }
 
 function questionRevision(dataset: WidgetDataset, options: EstimateRevisionsOptions, data: EstimateRevisionData) {
@@ -310,11 +334,6 @@ export function buildEstimateRevisions(dataset: WidgetDataset, options: RecipeRe
   if (!result.ok) return result;
   const { value: data, notes } = result;
   const { vintages } = data;
-  const { viewportWidth = Math.max(640, estimateRevisionMinPlotWidth(vintages.length)), viewportHeight = 360 } = context;
-  const minWidth = estimateRevisionMinPlotWidth(vintages.length);
-  if (viewportWidth < minWidth || viewportHeight < estimateRevisionMinPlotHeight)
-    return refuse(`Increase the drawing area to at least ${minWidth} × ${estimateRevisionMinPlotHeight} pixels so the acquired vintages remain visible.`);
-
   const isBump = data.universe !== null;
   const valueObservations = data.series[0].observations;
   const values = valueObservations.flatMap(o => o.value === null ? [] : [o.value]);
@@ -323,6 +342,16 @@ export function buildEstimateRevisions(dataset: WidgetDataset, options: RecipeRe
   if (!range) return refuse(linearIssue);
   const ticks = isBump ? undefined : linearAxisTicks(range);
   const margin = { l: ticks?.margin ?? 60, r: 26, t: isBump ? 94 : 37, b: 75, pad: 0, autoexpand: false };
+  const hover = data.series.map(series => series.observations.map((observation, index) =>
+    (isBump ? observation.rank : observation.value) === null ? [] : observationLines(data, series, observation, vintages[index])));
+  const estimateRevisionsSurface = minimumDrawingSurface(data, margin, hover);
+  const { width, height: minHeight } = estimateRevisionsSurface;
+  if (width > maxRecipeViewportDimension || minHeight > maxRecipeViewportDimension)
+    return refuse('This comparison exceeds the 10,000 px drawing limit. Select fewer acquired vintages or a smaller, independently verified universe.');
+  const { viewportWidth = Math.max(640, width), viewportHeight = Math.max(360, minHeight) } = context;
+  if (viewportWidth < width || viewportHeight < minHeight)
+    return { ...refuse(`Increase the drawing area to at least ${width} × ${minHeight} pixels to make the vintage labels and observations readable.`),
+      estimateRevisionsSurface };
   if (!isBump) {
     const height = viewportHeight - margin.t - margin.b;
     const pixel = axisPixels(range, height, true);
@@ -344,21 +373,21 @@ export function buildEstimateRevisions(dataset: WidgetDataset, options: RecipeRe
     return { type: 'scatter', mode: 'lines+markers', name: escape(label), uid: label, x,
       y: series.observations.map(o => isBump ? o.rank : o.value), connectgaps: false,
       marker: { color: shade, size: 8 }, line: { color: shade, width: 2, simplify: false, dash: rankLineStyles[index % rankLineStyles.length] },
-      ids: vintages.map(v => v.id), text: series.observations.map((o, index) => observationText(data, series, o, vintages[index])),
+      ids: vintages.map(v => v.id), text: hover[index].map(lines => lines.map(escape).join('<br>')),
       hovertemplate: '%{text}<extra></extra>',
     };
   });
   return {
-    ok: true, estimateRevisions: data, notes, revision,
+    ok: true, estimateRevisions: data, estimateRevisionsSurface, notes, revision,
     figure: { data: traces, layout: {
       ...themedLayout(context.theme), uirevision: revision, margin, hovermode: isBump ? 'x unified' : 'closest',
-      hoverlabel: { align: 'left', font: { size: 11 } },
+      hoverlabel: { align: 'left', font: isBump ? bumpHoverFont : { size: hoverFontSize } },
       showlegend: isBump, legend: { orientation: 'h', x: .5, xref: 'container', xanchor: 'center', y: 1 - 42 / viewportHeight,
         yref: 'container', yanchor: 'top', maxheight: 48,
         font: { size: 10 }, itemclick: false, itemdoubleclick: false },
       title: { text: summary, x: .5, xanchor: 'center', y: 1 - 18 / viewportHeight, yref: 'container', yanchor: 'top', font: { size: 12 } },
       xaxis: { type: 'category', range: [-.5, vintages.length - .5], categoryorder: 'array', categoryarray: x,
-        tickmode: 'array', tickvals: x, ticktext: vintageLabels, unifiedhovertitle: { text: '%{x}' },
+        tickmode: 'array', tickvals: x, ticktext: vintageLabels, tickangle: 0, unifiedhovertitle: { text: '%{x}' },
         automargin: false, zeroline: false, tickfont: { size: 10 },
         title: { text: 'Recorded vintages (equally spaced)', font: { size: 11 }, standoff: 8 } },
       yaxis: { type: 'linear', range, automargin: false, zeroline: false, tickfont: { family: 'monospace', size: 11 },

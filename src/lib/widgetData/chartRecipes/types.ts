@@ -95,13 +95,17 @@ export type RecipeRequestOptions = RecipeOptions | EstimateRevisionsOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
+export type EstimateRevisionsSurface = { width: number; height: number };
+
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;
-export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & {
+export type RecipeResult = ((Extract<LinkedFigureResult, { ok: true }> & {
   daySummaries?: NewsCalendarDay[];
   etfHierarchy?: EtfHierarchy;
   overlay?: OverlaySeriesPair;
   estimateRevisions?: EstimateRevisionData;
   returnSummary?: ReturnSummaryDetails;
   ownershipSnapshot?: OwnershipSnapshotDetails;
-}) | RecipeRefusal;
+}) | RecipeRefusal) & {
+  estimateRevisionsSurface?: EstimateRevisionsSurface;
+};

@@ -25,6 +25,7 @@ import { buildReturnDistribution } from './returnDistribution';
 import { buildReturnSummary } from './returnSummary';
 import { buildSmallMultiples } from './smallMultiples';
 import { buildYieldCurve } from './yieldCurve';
+import { maxRecipeViewportDimension } from './viewport';
 
 // Column precision and app settings use a range supported by Intl.NumberFormat across our clients.
 function validPrecision(value: unknown): boolean {
@@ -62,7 +63,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
     return { ok: false, refused: true, message: 'Supply a valid chart context with theme, precision and a YYYY-MM-DD calendar date.' };
   const { viewportWidth, viewportHeight } = context;
   for (const [dimension, size] of [['width', viewportWidth], ['height', viewportHeight]] as const) {
-    if (size !== undefined && (!Number.isFinite(size) || size <= 0 || size > 10_000)) {
+    if (size !== undefined && (!Number.isFinite(size) || size <= 0 || size > maxRecipeViewportDimension)) {
       return { ok: false, refused: true, message: `Supply a viewport ${dimension} greater than 0 and at most 10,000.` };
     }
   }

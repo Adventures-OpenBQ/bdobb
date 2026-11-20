@@ -16,9 +16,10 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
   return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
 }
 
+export const maxRecipeViewportDimension = 10_000;
 export const estimateRevisionMinPlotHeight = 230;
 
-/** Reserve room for the full UTC labels on each ordinal vintage position. */
+/** Baseline drawing width before accounting for precise ticks and consolidated hover. */
 export function estimateRevisionMinPlotWidth(vintages: number): number {
   return Math.max(320, 130 + 60 * vintages);
 }

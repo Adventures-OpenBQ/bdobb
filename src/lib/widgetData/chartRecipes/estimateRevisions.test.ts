@@ -267,3 +267,44 @@ it('keeps the semantic question across refresh and resizing, and changes it for 
   const alfaOnly = plotted(runRecipe(present(multi, multi.rows.filter(r => r.values.issuer === alfa)), options, context));
   expect(betaOnly.revision).not.toBe(alfaOnly.revision);
 });
+
+function tiedCohort(count: number) {
+  return snapshot(Array.from({ length: count }, (_, index) => {
+    const issuer = `RANK${String(index).padStart(3, '0')}.US`, baseline = 10 + index;
+    return original.map((row, position) => ({ ...row, issuer, entity_ref: 'recorded/entity/' + issuer,
+      basis_ref: 'recorded/shares/' + issuer, value: baseline * [1, 3, 2][position] }));
+  }).flat());
+}
+
+it('requires enough measured space to inspect all six issuers in one tied column', async () => {
+  const dataset = await acquire(tiedCohort(6));
+  const small = runRecipe(dataset, bump, { ...context, viewportWidth: 320, viewportHeight: 230 });
+  expect(small).toMatchObject({ ok: false, refused: true,
+    estimateRevisionsSurface: { width: 320, height: expect.any(Number) } });
+  const minimum = small.estimateRevisionsSurface!;
+  expect(minimum.height).toBeGreaterThan(302);
+  const full = plotted(runRecipe(dataset, bump, { ...context, viewportWidth: minimum.width, viewportHeight: minimum.height }));
+  expect(full.estimateRevisionsSurface).toEqual(minimum);
+  expect(full.estimateRevisions?.series.map(s => s.observations[2].rank)).toEqual([1, 1, 1, 1, 1, 1]);
+});
+
+it('reserves enough horizontal room for all UTC ticks after precise value labels widen the left margin', async () => {
+  const dataset = await acquire(oneIssuer([1e200, 1.0000000002e200, 1.0000000005e200]));
+  const small = runRecipe(dataset, path, { ...context, viewportWidth: 320, viewportHeight: 230 });
+  expect(small).toMatchObject({ ok: false, refused: true,
+    estimateRevisionsSurface: { width: expect.any(Number), height: 230 } });
+  const minimum = small.estimateRevisionsSurface!;
+  expect(minimum.width).toBeGreaterThan(320);
+  const full = plotted(runRecipe(dataset, path, { ...context, viewportWidth: minimum.width, viewportHeight: minimum.height }));
+  expect(full.estimateRevisionsSurface).toEqual(minimum);
+  expect(full.figure.layout.xaxis).toMatchObject({ tickangle: 0 });
+});
+
+it('refuses a measured surface beyond the supported drawing limit without returning an impossible size hint', async () => {
+  const source = await acquire(tiedCohort(200));
+  expect(compared(compareEstimateVintages(source, bump)).series.map(s => s.observations[2].rank)).toEqual(Array(200).fill(1));
+  expect(runRecipe(source, bump, context)).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/exceeds.*10,000.*drawing limit/i),
+  });
+  expect(runRecipe(source, bump, context).estimateRevisionsSurface).toBeUndefined();
+});
