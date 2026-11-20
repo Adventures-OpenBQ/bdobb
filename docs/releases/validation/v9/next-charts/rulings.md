@@ -56,3 +56,7 @@ Ruling: I2 is real and load-bearing: Rita and a remounted Run-button source must
 ## Rita reads the source's last Run
 
 The user authorized the I2 follow-up on November 20. A context-shared backend Run-button table supplies the same committed question to the visible source, the off-tab source runner and Rita. The observer checks the existing dashboard/card/producer ownership and the resolved wire. An explicit agent override applies to that agent query alone. Independent review of the correction is pending. [Verification](verification.md)
+
+## Final follow-up acceptance
+
+The user authorized continuing after the prior single-wave limit. The I2 follow-up was independently accepted, followed by independent final readiness approval. Prior finalization holds are historical and superseded by that approval. Retain the pre-existing unpinned-import Rita refusal as an availability Minor: a card-affecting save pins the backend; no wrong rows or agent GET occurs before pinning. Retain the news hover as an unresolved browser-validation qualification, not a repaired defect. All five previously accepted product Minors remain disclosed. The source-readiness, account/device/service limitations and unresolved external catalog recovery decisions remain unchanged.

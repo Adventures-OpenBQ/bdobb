@@ -1,6 +1,6 @@
 # Next-chart review record
 
-**The Parameters amendment and tab-handoff fix I1 received independent acceptance. The I2 correction in `4e6c50c0` awaits independent review.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review covered the common acquisition ownership, linked Parameters amendment and installed Docker pair at the heads recorded below.
+**Final independent release-readiness review approved publication. Zero Critical and zero Important findings remain.** The Rita last-Run follow-up resolves I2 for sources with configured/pinned origins. The pre-pin import refusal, news hover validation qualification and five earlier product Minors remain nonblocking and explicitly recorded.
 
 | Family | Findings resolved during family reviews | Accepted client source / builder / integration |
 |---|---|---|
@@ -72,3 +72,10 @@ The [whole-branch review](independent-whole-branch-review.md) covered client `02
 ## Rita source follow-up
 
 The authorized follow-up reproduced I2 through the chat store's SSE tool round trip and real HTTP. AAPL was the last Run, TSLA was a draft, and the agent received TSLA between two AAPL source GETs. At `4e6c50c0` all three GETs request AAPL and return AAPL rows. An explicit NVDA read leaves the following agent query on AAPL. A deliberate TSLA Run then moves both readers to TSLA. The correction awaits independent review. [Verification](verification.md)
+
+
+## Accepted final follow-up and publication gate
+
+The [Rita task review](independent-rita-source-review.md) accepted product `4e6c50c0`, evidence head `d812f8f3`: I2 addressed, spec compliant and task quality approved. The [final independent release-readiness review](independent-release-readiness-review.md) then approved the three existing PR updates with zero Critical/Important findings. Both the mounted/off-tab handoff I1 and idle Rita I2 are closed for compatible configured/pinned backend origins. Explicit agent overrides leave the source card's last Run unchanged.
+
+A pre-existing temporary import limitation remains: if a backend connects after import while the card retains its unresolved origin, Rita refuses the read until a card-affecting save pins that backend. It returns no wrong rows. The unresolved news hover first-pass qualification and five earlier product Minors retain their dispositions. Earlier withheld-sign-off sections describe the historical gates and are superseded by this acceptance. This is independent local agent review, not GitHub reviewer approval, remote CI, merge or deployment.
