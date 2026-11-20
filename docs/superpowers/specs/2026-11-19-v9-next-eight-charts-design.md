@@ -1,10 +1,10 @@
 # Next eight chart families: proposed specifications
 
-Date: 2026-11-19. Status: **Draft specifications requested; independent builder check complete; awaiting user review.**
+Date: 2026-11-19. Status: **Draft specifications requested; independent builder check complete; user approved for planning on 2026-11-19.**
 
 ## Scope and purpose
 
-Combine the three recommendations (news-sentiment calendar, return box/violin, ownership snapshot) with the five remaining candidates (dual-axis overlays, estimate-revision slope/bump, market-map treemap, ETF composition sunburst, KPI cards/gauges). Each row is one family, not a promise that every variant can ship with today's data. Box and violin are one family; slope, time-path and bump are one family. These specifications do not authorize implementation, implementation plans, subscription changes, historical snapshot collection, PR publication or deployment.
+Combine the three recommendations (news-sentiment calendar, return box/violin, ownership snapshot) with the five remaining candidates (dual-axis overlays, estimate-revision slope/bump, market-map treemap, ETF composition sunburst, KPI cards/gauges). Each row is one family, not a promise that every variant can ship with today's data. Box and violin are one family; slope, time-path and bump are one family. The user has authorized implementation planning for all eight. Product implementation, subscription changes, historical snapshot collection, PR publication and deployment remain unauthorized.
 
 The approved bubble/dividend/Sankey project continues separately. Its branch status and verification do not establish readiness for any new family. User requested specifications on 2026-11-19; all defaults, order and constraints below are proposed by the author.
 
@@ -48,7 +48,7 @@ ETF overlap UpSet and active-weight comparisons require look-through/benchmark w
 
 Each family specification names its own admission, calculation, refusal, rendering and acceptance requirements. Before planning a family, resolve any declared readiness gate with authoritative source evidence and representative captures; fixtures alone do not prove live availability. Implementation plans must pin option types, source contracts, exact algorithms/modules, affected tests, real browser scenarios, baseline/candidate bundle bytes, canonical/vendor pins and independent review.
 
-A fresh builder check will assess whether these drafts are concrete enough for scoping and identify unresolved product decisions. User review then selects the first implementation group and approves the relevant written designs. No new chart work starts merely because these files exist.
+A fresh builder check will assess whether these drafts are concrete enough for scoping and identify unresolved product decisions. The user approved the written designs for planning; review of the resulting plans selects the first implementation group before product work begins. No new chart work starts merely because these files exist.
 
 ## Evidence inspected
 
@@ -63,3 +63,5 @@ Snapshot views (ETF, market map, ownership, KPI) default to follow the latest co
 The initial independent builder check raised seven substantive questions. The drafts now propose explicit answers for selection/refresh, delivered-sample market maps, overlay series and share basis, aggregate-weight tolerances, revision-ranking eligibility, return-window endpoints and the first KPI metric/reference set. These choices remain proposals for user review; the independent recheck assesses whether they are specific enough to plan, not whether live data prerequisites have been satisfied.
 
 Independent builder check completed on 2026-11-19. Seven initial questions and three follow-up contract inconsistencies were addressed; the scoped recheck confirmed the drafts are ready for user review. This is specification readiness, not evidence that missing source capabilities exist or approval to implement.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.

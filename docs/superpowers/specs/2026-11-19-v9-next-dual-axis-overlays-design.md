@@ -1,8 +1,8 @@
 # Dual-axis historical overlays specification
 
-Date: 2026-11-19. Status: **Draft proposal for user review; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
 
-The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults below are author proposals, not prior user decisions. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
+The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
 ## Question and initial closed recipes
 Show **Adjusted closing price and reported diluted EPS** for one issuer, or **CPI and ten-year Treasury yield** for one explicit market/economy series pair. These are two named questions, not an arbitrary metric/axis editor. Each axis names its own unit and scale. Overlay proximity is not a correlation estimate or causal claim.
@@ -25,3 +25,5 @@ Test missing report dates, fiscal versus report date, different calendars/freque
 The equity overlay initially supports actual fiscal-quarter (FQ) diluted EPS only, with verified matching issuer/listing, reporting/quote currency and current split-adjusted share basis. No annual, TTM, basic EPS or ADR conversion fallback. If HistoricalEps does not prove diluted/current-share basis, it is not eligible merely because it has an eps_actual field. A currently acquired restated value may appear at its original announcement coordinate only with an explicit **currently restated; not historical as-known** label and retrieval vintage; original-vintage backtesting remains excluded. Conflicting versions within a snapshot refuse rather than invent a revision sequence.
 
 The macro overlay initially names US CPI for all urban consumers, all items, seasonally adjusted, index basis 1982–84=100, versus the US nominal ten-year constant-maturity Treasury yield. These descriptive series definitions are proposed scope; exact authoritative series identifiers, endpoint support and yield units must be pinned before implementation planning. There is no arbitrary country/index/real-yield selector in this first slice. If either precise series is unavailable, return for scope review rather than substitute another CPI/yield.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.

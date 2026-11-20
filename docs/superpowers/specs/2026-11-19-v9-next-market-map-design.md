@@ -1,8 +1,8 @@
 # Market-map treemap specification
 
-Date: 2026-11-19. Status: **Draft proposal for user review; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
 
-The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults below are author proposals, not prior user decisions. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
+The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
 ## Question and default
 What is the composition and delivered daily performance of a named equity universe? Use a sector→listing treemap; area is verified index weight for the named index mode, color is normalized one-session price change. A separate delivered-sample market-cap mode may use common-denomination capitalization, but its title must not claim S&P 500 membership or index weights.
@@ -27,3 +27,5 @@ A delivered-sample capitalization map may ship independently before named-index 
 Named-index weights require their own membership/weight as-of date, displayed separately from the completed price session. The initial contract requires a weight snapshot valid for that session, with explicit evidence of validity; older weights do not silently roll forward. For complete weight roots require total fraction 1 within declared source rounding bounds, capped at 1e-4 (one basis point); absent declared rounding use cancellation tolerance 1e-12. Excess or shortfall outside that bound refuses complete mode. Root labels retain original totals and any admitted rounding discrepancy; no data normalization.
 
 For a partial index snapshot, reject positive observed weights totaling more than 1 beyond the same declared-rounding bound (or 1e-12 without precision evidence). Partial coverage cannot justify an impossible over-100% net-weight root. This bound does not apply to market-cap mode, whose common-denomination areas are absolute monetary values rather than index weights.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.

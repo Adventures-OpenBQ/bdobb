@@ -1,8 +1,8 @@
 # KPI cards and gauges specification
 
-Date: 2026-11-19. Status: **Draft proposal for user review; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
 
-The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults below are author proposals, not prior user decisions. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
+The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
 ## Question and reuse
 Display one explicitly selected, acquired numeric metric with units, issuer/series identity and as-of/vintage; add a gauge only when an explicit meaningful range or target is supplied. Reuse and extend MetricRenderer for ordinary headline values rather than create a competing metric-card system. Plotly indicator is already registered for bullet charts; do not add a new module/vendor for this family.
@@ -25,3 +25,5 @@ Test one-row versus ambiguous many-row input, true zero/missing/cell error/nonfi
 Limit linked presets initially to verified last price, market capitalization, dividend yield, trailing P/E, trailing EPS and trailing revenue, using the canonical source fields price, market_cap, dividend_yield, pe_ratio, eps_ttm and revenue_ttm. A field name is a candidate, never proof of units/identity/period. No generic arbitrary numeric-field preset or user formula in the first slice. The existing generic MetricRenderer payload contract remains compatible.
 
 Reference choices are another explicitly selected acquired observation of the **same metric** or a clearly labeled user-entered target in its verified units. Same-metric comparisons require stable issuer/listing/class, unit/currency, and adjustment basis. EPS/revenue references initially compare different acquired vintages of the identical reporting period/basis; prior fiscal-period and analyst-target joins are excluded. Price/market-cap/yield/P-E observation-date comparisons retain both dates and any available measurement-vintage caveat. The user target is an assumption, never an acquired consensus. No automatic previous-row delta or implied favorable direction.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.

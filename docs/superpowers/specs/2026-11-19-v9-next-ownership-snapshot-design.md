@@ -1,8 +1,8 @@
 # Ownership snapshot and waffle specification
 
-Date: 2026-11-19. Status: **Draft proposal for user review; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
 
-The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults below are author proposals, not prior user decisions. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
+The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
 ## Question and honest view modes
 What ownership and float measures does one acquired issuer snapshot report? Default to separate labeled bars for insider ownership, institutional ownership and free float. These are independent measures, not a partition of the same shares. Show units, source date and retrieval time. This family includes the PDF's waffle only when a source explicitly certifies mutually exclusive exhaustive buckets with a common denominator.
@@ -21,3 +21,5 @@ Persist issuer and bars/waffle choice, not partition certification. Use existing
 ## Proposed partition rounding limit
 
 For an otherwise independently certified exhaustive waffle partition, accept only total-rounding error bounded by the sum of acquired per-category rounding bounds and capped at 0.01 percentage point. Without declared rounding precision use 1e-10 percentage point for cancellation only. Show exact original percentages and the total discrepancy. Largest-remainder allocation fills the 100 visual cells as an explicitly approximate display; it does not rewrite the source shares or manufacture a remainder category. Totals outside tolerance refuse waffle. Independent bars remain available when their own units/identities are valid.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.

@@ -1,8 +1,8 @@
 # News-sentiment calendar specification
 
-Date: 2026-11-19. Status: **Draft proposal for user review; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
 
-The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults below are author proposals, not prior user decisions. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
+The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
 ## Question and presentation
 How did the sentiment of delivered company news vary by calendar day? One qualified instrument, daily calendar cells, neutral midpoint at zero, fixed polarity color domain [-1,1]. Show article count and scored count in each day's accessible summary. A missing day is distinct from a day with scored mean zero. Default to the acquired interval, capped to the latest 12 calendar months for readable display; the selector only narrows returned dates.
@@ -17,3 +17,5 @@ The initial view is explicitly **Delivered news sentiment**, not all news. Persi
 
 ## Acceptance and readiness
 Test midnight UTC boundaries, leap day/year crossing, mean [-1,1], true zero, all-unscored, duplicate/conflicting articles, missing dates, hidden invalid facts, paged disclosure, multitag article counts, and actual cell hover/tap in light/dark/narrow layouts. A successful acquired empty interval needs truthful zero-delivery wording; errors stay errors. Readiness: existing provider has sentiment objects, but typed polarity, stable identity and pre-drop acquisition evidence need verification. No claim of exhaustive news coverage.
+
+The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
