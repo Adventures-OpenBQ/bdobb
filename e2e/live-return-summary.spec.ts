@@ -288,7 +288,8 @@ for (const pinned of [false, true]) {
     const ritaUrl = 'http://127.0.0.1:17917';
     let round = 0;
     let override: Record<string, string> | undefined;
-    let lastTool: unknown;
+    type RitaMessage = { role: string; function?: string; data?: { items?: { content: string }[] }[] };
+    let lastTool: RitaMessage | undefined;
     await page.route(ritaUrl + '/**', async route => {
       const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Methods': 'POST, GET, OPTIONS' };
@@ -297,7 +298,7 @@ for (const pinned of [false, true]) {
         await route.fulfill({ headers, json: {} });
         return;
       }
-      const { messages } = request.postDataJSON() as { messages: Array<{ role: string }> };
+      const { messages } = request.postDataJSON() as { messages: RitaMessage[] };
       const firstRound = round++ % 2 === 0;
       if (!firstRound) lastTool = messages.filter(message => message.role === 'tool').at(-1);
       const event = firstRound ? 'copilotFunctionCall' : 'copilotMessageChunk';
@@ -325,20 +326,34 @@ for (const pinned of [false, true]) {
     await pane.hover();
     await pane.getByRole('button', { name: 'Lock' }).click();
     let turn = 0;
-    async function ask(start: string, input?: Record<string, string>) {
+    async function ask(start: string, firstPrices: { symbol?: string; adjusted_close: number }[], input?: Record<string, string>) {
       override = input;
       lastTool = undefined;
       const textbox = pane.getByRole('textbox', { name: 'Message Rita' });
       await textbox.fill('Read the historical source ' + (++turn));
+      const before = acquisitions.length;
       await textbox.press('Enter');
       await expect(pane.getByText('Fixture read ' + turn + '.', { exact: true })).toBeVisible();
-      expect(lastTool).toMatchObject({ role: 'tool', data: [{ items: [{ content: expect.any(String) }] }] });
-      expect(acquisitions.at(-1)?.searchParams.get('start_date')).toBe(start);
-      expect(acquisitions.at(-1)?.searchParams.get('symbol')).toBe(input?.symbol ?? fixedQuery.symbol);
+      expect(acquisitions.slice(before).map(url => Object.fromEntries(url.searchParams))).toEqual([
+        { ...fixedQuery, start_date: start, symbol: input?.symbol ?? fixedQuery.symbol },
+      ]);
+      expect(lastTool).toMatchObject({
+        role: 'tool', function: 'get_widget_data',
+        data: [{ items: [{ content: expect.any(String), data_format: { data_type: 'object', parse_as: 'table' }, citable: true }] }],
+      });
+      const rows = JSON.parse(lastTool!.data![0].items![0].content) as { symbol?: string; date: string; adjusted_close: number }[];
+      expect(rows).toEqual(expect.any(Array));
+      const deliveredListings = [...new Set(rows.map(row => row.symbol))];
+      expect(deliveredListings).toEqual(firstPrices.map(price => price.symbol));
+      for (const price of firstPrices) {
+        expect(rows.find(row => row.symbol === price.symbol)).toMatchObject({ ...price, date: start });
+      }
     }
-    await ask('2026-10-12');
-    await ask('2026-10-15', { start_date: '2026-10-15', symbol: 'AAPL.US' });
-    await ask('2026-10-12');
+    const originalPrices = [{ symbol: 'AAPL.US', adjusted_close: 100 }, { symbol: 'MCD.US', adjusted_close: 100 }];
+    await ask('2026-10-12', originalPrices);
+    // A single-listing response binds its identity in the request and has no symbol column.
+    await ask('2026-10-15', [{ adjusted_close: 124 }], { start_date: '2026-10-15', symbol: 'AAPL.US' });
+    await ask('2026-10-12', originalPrices);
     await pane.getByRole('button', { name: 'Lock' }).click();
     await tab(page, 'Prices');
     await source.getByRole('button', { name: 'Run', exact: true }).click();
@@ -346,6 +361,6 @@ for (const pinned of [false, true]) {
     await expect(listings(graph)).toHaveText([/MCD\.US.*N = 27/, /AAPL\.US.*N = 27/]);
     await expect(widget.getByText(scope, { exact: true })).toBeVisible();
     await pane.hover();
-    await ask('2026-10-13');
+    await ask('2026-10-13', [{ symbol: 'AAPL.US', adjusted_close: 108 }, { symbol: 'MCD.US', adjusted_close: 105 }]);
   });
 }
