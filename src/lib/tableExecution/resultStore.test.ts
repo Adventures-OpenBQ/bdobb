@@ -3,7 +3,7 @@
 
 import { compileAnalyticalModel } from '../tableModel/calculate';
 import { describe, it, expect } from 'vitest';
-import { datasetFromBytes } from '../localTableData';
+import { datasetFromBytes, datasetFromRows } from '../localTableData';
 import { preparePrices } from '../widgetData/chartRecipes/input';
 import { priceDataset, priceFields } from '../widgetData/chartRecipes/fixtures';
 import { toggleGroupSelection } from '../widgetData/tableOutput';
@@ -209,8 +209,7 @@ it.each(['typescript', 'rust'] as const)('%s imports an evidenced daily file thr
     const filtered = { ...revision, model: 2, output: 2 };
     await executor.applyModel({ table: {}, search: 'include' }, { kind: 'none' }, filtered, signal);
     const reduced = preparePrices(await executor.chartData(filtered, Object.values(priceFields), signal), priceFields);
-    if (engine === 'rust') expect(reduced).toMatchObject({ ok: false, refused: true });
-    else expect(reduced).toMatchObject({ ok: true, series: [{ points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }] });
+    expect(reduced).toMatchObject({ ok: true, series: [{ points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }] });
   } finally { executor.dispose(); }
 });
 
@@ -222,6 +221,12 @@ it('retains an omitted date when symbol labels differ only in surrounding spaces
   expect(preparePrices(store.chartData('c', revision, Object.values(priceFields)), priceFields)).toMatchObject({
     ok: true, series: [{ symbol: 'A', points: [{ price: 10 }, { date: '2026-01-03', price: null }, { price: 12 }] }],
   });
+});
+
+it('keeps provenance unchanged when projecting a filtered non-price table', () => {
+  const data = datasetFromRows([{ symbol: 'A', kind: 'keep' }, { symbol: 'B', kind: 'omit' }], 'source', 1, 'localFile');
+  const store = createResultStore(calculateView(data, { table: {}, search: 'keep' }, { kind: 'none' }), revision);
+  expect(store.chartData('c', revision, ['symbol']).provenance).toEqual(data.provenance);
 });
 
 const dailyReceipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };

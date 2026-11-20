@@ -3,7 +3,7 @@
 
 import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
-import { acquiredWindow, calendarDate, dailyScope, observationSymbol, priceIdentityFields, priceDimensionIssue, symbolList, type PriceScope } from './priceEvidence';
+import { acquiredWindow, dailyScope, indexPriceObservations, priceIdentityFields, priceDimensionIssue, readPriceOmissions, symbolList, type PriceScope } from './priceEvidence';
 import { acceptsBinding, adjustedPriceRole } from './bindings';
 import { requiredRecipeFields } from './settings';
 import type { PriceBindings, RecipeOptions } from './types';
@@ -45,7 +45,7 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
   if (('kind' in dataset && dataset.kind === 'chartData' || dataset.provenance.presentation)
     && (metadata?.priceDimensionsChecked !== true || !Array.isArray(verifiedIdentities) || !isRecord(metadata.acquiredPriceUnits)))
     return 'The projected source cannot verify price units and instrument identity. Use a documented daily snapshot.';
-  const identities = Array.isArray(verifiedIdentities) ? verifiedIdentities : priceIdentityFields(dataset.columns.map(c => c.id));
+  const identities = Array.isArray(verifiedIdentities) ? verifiedIdentities : priceIdentityFields(dataset.columns);
   if (fields.symbol && identities.length && !identities.includes(fields.symbol)) return 'Bind the source symbol field to preserve instrument identity.';
   if (!fields.symbol && symbolList(dataset.provenance)?.length !== 1) return 'Bind a symbol field or use an acquisition with one unambiguous symbol.';
   return priceDimensionIssue(dataset, fields.price) ?? null;
@@ -63,20 +63,11 @@ function omittedPoints(dataset: WidgetDataset, fields: PriceBindings): [string, 
   if (count === dataset.rows.length) return [];
   const projected = 'kind' in dataset && dataset.kind === 'chartData' || dataset.provenance.presentation || dataset.provenance.lineage?.length;
   if (count === undefined && !projected) return [];
-  const evidence = dataset.provenance.metadata?.priceOmissions;
-  if (count === undefined || count < dataset.rows.length || !isRecord(evidence)
-    || evidence.acquired !== count || evidence.delivered !== dataset.rows.length || evidence.dateField !== fields.date
-    || !Array.isArray(evidence.symbolFields) || (fields.symbol ? !evidence.symbolFields.includes(fields.symbol) : evidence.symbolFields.length !== 0)
-    || !Array.isArray(evidence.points)
-    || evidence.points.length > count - dataset.rows.length) return null;
-  const points: [string, string][] = [];
-  for (const point of evidence.points) {
-    if (!Array.isArray(point) || point.length !== 2 || typeof point[0] !== 'string' || !point[0]) return null;
-    const date = calendarDate(point[1]);
-    if (!date) return null;
-    points.push([point[0], date]);
-  }
-  return points;
+  if (count === undefined || count < dataset.rows.length) return null;
+  const evidence = readPriceOmissions(dataset.provenance, count, dataset.rows.length);
+  if (!evidence || evidence.dateField !== fields.date
+    || (fields.symbol && !evidence.symbolFields.includes(fields.symbol))) return null;
+  return evidence.points;
 }
 
 export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices {
@@ -86,28 +77,17 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
   const omitted = omittedPoints(dataset, fields);
   if (!omitted) return refuse('The source omits observations without sufficient continuity evidence. Use the fully loaded, unfiltered source.');
   const symbols = symbolList(dataset.provenance);
-  const allowed = symbols && new Set(symbols);
-  const prices = new Map<string, Map<string, number | null>>();
-  const conflicts = new Set<string>();
-  let duplicates = 0;
-  for (const { values, cellErrors } of dataset.rows) {
-    const symbol = observationSymbol(fields.symbol ? values[fields.symbol] : symbols?.[0]);
-    if (!symbol) return refuse('Each price observation needs one identified symbol.');
-    if (allowed && !allowed.has(symbol)) return refuse('Source and observation symbols disagree.');
-    const date = calendarDate(values[fields.date]);
-    if (!date || date < scope.start || date > scope.end) return refuse('Repair missing, invalid or out-of-window trading dates.');
-    const rawPrice = values[fields.price];
-    const price = !cellErrors?.[fields.price] && typeof rawPrice === 'number' && Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : null;
-    let daily = prices.get(symbol);
-    if (!daily) { daily = new Map(); prices.set(symbol, daily); }
-    if (!daily.has(date)) daily.set(date, price);
-    else if (daily.get(date) !== price) conflicts.add(symbol);
-    else duplicates++;
+  const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
+  if (typeof indexed === 'string') return refuse(indexed);
+  const { prices, conflicts, duplicates } = indexed;
+  const acquiredConflicts = dataset.provenance.metadata?.priceDuplicateConflicts;
+  if (Array.isArray(acquiredConflicts)) {
+    for (const conflict of acquiredConflicts) {
+      if (Array.isArray(conflict) && conflict.length === 3 && conflict[0] === fields.date && conflict[1] === fields.price
+        && typeof conflict[2] === 'string') conflicts.add(conflict[2]);
+    }
   }
-  for (const [symbol, date] of omitted) {
-    if (!prices.has(symbol) || date < scope.start || date > scope.end) return refuse('Repair inconsistent omitted-observation evidence.');
-    prices.get(symbol)!.set(date, null);
-  }
+  for (const [symbol, date] of omitted) prices.get(symbol)?.set(date, null);
   const notes: string[] = [];
   if (duplicates) notes.push(`Collapsed ${duplicates} identical duplicate price observation(s).`);
   if (omitted.length) notes.push(`Preserved gaps for ${omitted.length} excluded price observation(s).`);

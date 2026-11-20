@@ -77,7 +77,7 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
     chartData(requestId, requested, fields) {
       const envelope = context(requestId, requested);
       if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
-      const priceProvenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
+      const priceProvenance = priceOmissionEvidence({ ...view, columns: view.inputColumns }, view.selectionIdentityRows, view.presentedRows, fields);
       const columns = view.columns.filter(c => fields.includes(c.id));
       const financial = financialProjectionProvenance(priceProvenance, view.presentedRows, columns);
       const provenance = projectChartSources(chartPresentationProvenance(financial, view.selection.kind !== 'none'), columns, view.presentedRows);
@@ -89,7 +89,8 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
         throw new ExecutionProtocolError('INVALID_REQUEST', 'Transfer ID and positive safe batch size required');
       const fields = view.columns.map(c => c.id);
       const rows = projection(ignoreSelection ? eligiblePresentedRows(view) : view.presentedRows, fields);
-      const financial = financialProjectionProvenance(view.provenance, rows, view.columns);
+      const priceProvenance = priceOmissionEvidence({ ...view, columns: view.inputColumns }, view.selectionIdentityRows, rows, fields);
+      const financial = financialProjectionProvenance(priceProvenance, rows, view.columns);
       const provenance = projectChartSources(chartPresentationProvenance(financial, !ignoreSelection && view.selection.kind !== 'none'), view.columns, rows);
       return (function* () { for (let offset = 0, sequence = 0; offset < Math.max(1, rows.length); offset += batchSize, sequence++)
         yield structuredClone({ ...envelope, kind: 'subset' as const, transferId, sequence, ...(sequence === 0 ? { columns: view.columns, provenance: { ...provenance, presentation: { scope: 'presented' as const, rowCount: rows.length, revision } }, freshness: view.freshness } : {}), rows: rows.slice(offset, offset + batchSize), final: offset + batchSize >= rows.length }); })();

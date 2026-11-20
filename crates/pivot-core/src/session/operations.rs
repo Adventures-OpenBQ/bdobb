@@ -280,6 +280,11 @@ impl Session {
                     .cloned()
                     .collect();
                 let mut provenance = v.provenance.clone();
+                provenance.project_price_omissions(
+                    &self.input(&q.revision)?.rows,
+                    rows.iter(),
+                    &columns,
+                );
                 provenance.project_financial_evidence(&rows, &columns);
                 provenance.mark_chart_filtered(!matches!(v.selection, SelectionSpec::None));
                 provenance.project_chart_sources(|| rows.iter(), &columns);

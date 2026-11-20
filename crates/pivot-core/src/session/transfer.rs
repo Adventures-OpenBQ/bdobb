@@ -50,8 +50,10 @@ impl Session {
                 return Err(problem("RESOURCE_LIMIT", "Export batch budget exceeded"));
             }
         }
-        let provenance = (sequence == 0).then(|| {
+        let provenance = if sequence == 0 {
+            let source = self.input(&q.revision)?;
             let mut provenance = v.provenance.clone();
+            provenance.project_price_omissions(&source.rows, presented_rows(), &v.columns);
             provenance.project_financial_evidence(presented_rows(), &v.columns);
             provenance.mark_chart_filtered(!t.ignore_selection && !matches!(v.selection, SelectionSpec::None));
             provenance.project_chart_sources(presented_rows, &v.columns);
@@ -60,8 +62,10 @@ impl Session {
                 row_count: count as u64,
                 revision: q.revision.clone(),
             });
-            provenance
-        });
+            Some(provenance)
+        } else {
+            None
+        };
         let final_batch = end >= count;
         let batch = SubsetBatch {
             transfer_id: id.into(),

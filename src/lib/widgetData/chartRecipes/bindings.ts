@@ -4,12 +4,13 @@
 import { statementOwnedIds } from '../../statementModel/types';
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate } from './financialEvidence';
+import { adjustedPriceOrigins, priceDateOrigins } from './priceEvidence';
 import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
 import type { RecipeOptions } from './types';
 
 type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean; strictOrigin?: true };
-export const adjustedPriceRole: Role = { key: 'price', label: 'Adjusted price', names: ['adjusted_close', 'adj_close', 'adjusted_price'], numeric: true };
-const dateRole = { key: 'date', label: 'Observation date', names: ['date', 'trading_date', 'observation_date'], date: true };
+export const adjustedPriceRole: Role = { key: 'price', label: 'Adjusted price', names: adjustedPriceOrigins, numeric: true };
+const dateRole = { key: 'date', label: 'Observation date', names: priceDateOrigins, date: true };
 const weightRole: Role = { key: 'weight', label: 'Reported weight', names: ['weight'], numeric: true };
 const incomeIds = statementOwnedIds({ id: 'income', version: '1.0.0' });
 

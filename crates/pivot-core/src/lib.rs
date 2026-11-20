@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //! Portable Pivot contracts and legacy execution. No browser, UI, acquisition, or thread dependency.
 mod chart_sources;
+mod price_evidence;
 pub mod contract;
 pub mod validation;
 pub const PROTOCOL_VERSION: u32 = 1;
