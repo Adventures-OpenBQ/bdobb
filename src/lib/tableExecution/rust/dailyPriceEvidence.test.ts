@@ -8,7 +8,8 @@ import { ProviderBoundary } from '../../../test/tableProviderBoundary';
 import { readChartSourceProjection } from '../../widgetData/chartRecipes/chartSourceContracts';
 import { readLiveDailyPriceSource } from '../../widgetData/chartRecipes/dailyPriceEvidence';
 import { admitReturnSummary } from '../../widgetData/chartRecipes/priceSamples';
-import type { PriceBindings } from '../../widgetData/chartRecipes/types';
+import { runRecipe } from '../../widgetData/chartRecipes/run';
+import type { PriceBindings, ReturnSummaryOptions } from '../../widgetData/chartRecipes/types';
 import type { WidgetDataset } from '../../widgetData/types';
 import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
 import type { LocalWorkerExecutor, Revision } from '../types';
@@ -66,6 +67,40 @@ async function linkedSubset(executor: LocalWorkerExecutor, revision: Revision) {
 }
 
 describe.each(engines)('%s daily-price evidence', (_, make) => {
+  it.each([
+    ['close', 'box'], ['close', 'violin'],
+    ['revenue_adjusted', 'box'], ['revenue_adjusted', 'violin'],
+  ] as const)('runs live returns with the %s alias in the %s view', async (price, view) => {
+    const priceRows = Array.from({ length: 21 }, (_, index) => ({
+      date: `2026-01-${String(index + 1).padStart(2, '0')}`,
+      adjusted_close: 100 + (index % 5) * 10,
+    }));
+    const input = liveDailyPriceDataset(priceRows, [symbol]);
+    const fields = { ...singleFields, price };
+    aliasColumns(input, fields);
+    const executor = make('root');
+    const revision: Revision = { widgetId: 'root', input: 1, model: 1, output: 1 };
+    try {
+      await executor.registerInput(input, 1, signal);
+      await executor.applyModel({ search: '', table: {} }, { kind: 'none' }, revision, signal);
+      const chart = await executor.chartData(revision, Object.values(fields), signal);
+      expect(chart.columns.find(column => column.id === price)?.sourceFieldId).toBe('adjusted_close');
+      const admitted = admitReturnSummary(chart, fields, [symbol], own);
+      if (!admitted.ok) throw new Error(admitted.message);
+      const context = { theme: 'light', today: '2026-01-31', maxDecimals: 2 } as const;
+      const options = { version: 1, kind: 'return-summary', fields, symbols: [symbol], view, window: own } satisfies ReturnSummaryOptions;
+      const result = runRecipe(chart, options, context);
+      if (!result.ok) throw new Error(result.message);
+      const samples = result.returnSummary?.series[0].samples;
+      expect(result.returnSummary?.view).toBe(view);
+      expect(samples).toEqual(admitted.value.series[0].samples);
+      expect(samples).toHaveLength(20);
+      expect(runRecipe({ ...chart, provenance: { ...chart.provenance, metadata: undefined } }, options, context)).toMatchObject({
+        ok: false, refused: true, message: expect.stringContaining(`Field ${price} cannot supply adjusted price`),
+      });
+    } finally { executor.dispose(); }
+  });
+
   it.each([false, true])('retains raw and projected omissions through a linked grandchild (multiple listings: %s)', async multiple => {
     const selected = multiple ? [peer, symbol] : [symbol];
     const fields: PriceBindings = multiple ? multiFields : singleFields;

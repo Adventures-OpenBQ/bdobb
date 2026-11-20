@@ -74,11 +74,11 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   if (recipe.kind === 'market-map') return buildMarketMap(dataset, recipe, context);
   if (recipe.kind === 'estimate-revisions') return buildEstimateRevisions(dataset, recipe, context);
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
-  // A counted empty live history can have no columns. Return admission reports its missing observations.
-  const emptyLiveReturn = recipe.kind === 'return-summary' && dataset.rows.length === 0 && readLiveDailyPriceSource(dataset);
-  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst' || emptyLiveReturn
+  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
-  if (issue) return { ok: false, refused: true, message: issue };
+  // Qualified live returns bind against acquired field origins. Their admission also handles empty acquisitions.
+  if (issue && !(recipe.kind === 'return-summary' && readLiveDailyPriceSource(dataset)))
+    return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);
     case 'yield-curve': return buildYieldCurve(dataset, recipe, context);

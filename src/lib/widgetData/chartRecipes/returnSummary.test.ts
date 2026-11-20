@@ -425,3 +425,17 @@ it.each(['box', 'violin'] as const)('reports insufficient observed prices for a 
     ok: false, refused: true, message: expect.stringMatching(/field .* unavailable/i),
   });
 });
+
+it('retains local snapshot binding validation for an adjusted price displayed as close', async () => {
+  const data = await source();
+  const adjusted = data.columns.find(column => column.id === 'adjusted_close')!;
+  adjusted.sourceFieldId = adjusted.id;
+  adjusted.id = 'close';
+  for (const row of data.rows) {
+    row.values.close = row.values.adjusted_close;
+    delete row.values.adjusted_close;
+  }
+  expect(runRecipe(data, { ...options, fields: { ...priceFields, price: 'close' } }, context)).toMatchObject({
+    ok: false, refused: true, message: expect.stringContaining('Field close cannot supply adjusted price'),
+  });
+});
