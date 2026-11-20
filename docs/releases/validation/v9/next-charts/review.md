@@ -1,6 +1,6 @@
 # Next-chart review record
 
-**The final whole-branch review found one Important issue. Its correction awaits scoped independent re-review.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review covered the common acquisition ownership, linked Parameters amendment and installed Docker pair at the heads recorded below.
+**Parameters amendment independently accepted. Final chart sign-off withheld: the tab-handoff finding I1 is addressed, but scoped independent review found one new Important issue I2 in Rita’s unmounted-source lookup.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review covered the common acquisition ownership, linked Parameters amendment and installed Docker pair at the heads recorded below.
 
 | Family | Findings resolved during family reviews | Accepted client source / builder / integration |
 |---|---|---|
@@ -63,3 +63,7 @@ The independent re-review at `9ff0c4ba` accepted all three corrections. It found
 The scoped Parameters review accepted the fractional touch correction at `9bafd2f4` with no new findings. The subsequent independent whole-branch review covered BDOBB `9bafd2f4c6ae9044da70a1a1604326a3686365c9`, EODHD `f8f0166603f0b59f3f879b704b23582bd893e67d` and Docker `a0efab23ab2be34b4a3b15e5641aa39d3a42df59`. It found one new Important issue (I1), zero Critical and zero additional new Minor findings. Its probe on a two-tab workspace recorded a TSLA GET and displayed 33.25× from a TSLA edit the user had never run.
 
 BDOBB `e16783c6781646befb875934defc8aed4023241d` carries the last committed backend question across the visible card and headless source runner. Real HTTP regressions exercise navigation in both directions, the resolved wire, fiscal and calendar holds, stale completions, an un-run revert, explicit Run, source replacement and disposal. Independent scoped re-review of this correction is pending. The prior chart readiness and recorded Minor dispositions continue to apply.
+
+## Final independent outcome
+
+The [whole-branch review](independent-whole-branch-review.md) covered client `0283dce2..9bafd2f4`, canonical provider `6f9f1cb2..f8f01666` and Docker `0e843db5..a0efab23`. Its one Important tab-transfer finding was fixed in product `e16783c6`, evidence head `8d7ea55d`. The [scoped final review](independent-final-fix-review.md) accepted I1 but reproduced I2: while no source hook is mounted, Rita get_widget_data without overrides can fetch the un-run TSLA draft while a remounted source uses committed AAPL. This is a real load-bearing observer-consistency gap; the local candidate has no final sign-off. Parameters UI and its independent gates remain accepted. No further fix wave, push, deployment or SDD cleanup was performed. The remaining correction needs a follow-up task under the final-review process.

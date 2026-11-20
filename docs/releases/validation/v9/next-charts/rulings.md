@@ -47,3 +47,7 @@ Touch overflow compares the retained drawing and the viewport in rounded CSS pix
 A Run-button table keeps its committed question while the same dashboard and source card pass between the visible card and the headless runner. A normal mount refresh can repeat the committed GET. Calendar-relative values still require Run when their resolved wire moves. A pending fiscal lookup can adopt its landed year end only if the original intent still matches. A changed Run retires the previous request before the replacement can issue a GET.
 
 A genuinely different backend producer uses the existing first-acquisition policy for its own inputs. Removing or repurposing the source card, or disposing the dashboard, retires the saved question. These boundaries keep a fresh source usable and prevent a tab switch from spending a request on an un-run edit. [Verification](verification.md)
+
+## Final residual finding
+
+Ruling: I2 is real and load-bearing: Rita and a remounted Run-button source must agree on the committed question unless the agent explicitly overrides parameters. Do not waive the discrepancy or call the candidate finalized. The Superpowers final-review contract permits one fix wave and one scoped re-review, both consumed; retain all work and evidence for a follow-up correction. Cost if wrong: finalization is delayed for an observer path; proceeding instead risks issuer-mismatched agent data.
