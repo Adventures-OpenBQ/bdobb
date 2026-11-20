@@ -9,6 +9,7 @@ import { buildCorrelation } from './correlation';
 import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
 import { buildEstimateRange } from './estimateRange';
+import { buildIncomeSankey } from './incomeSankey';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
@@ -72,7 +73,6 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
     case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
     case 'dividend-steps': return buildDividendSteps(dataset, recipe, context);
-    case 'income-sankey':
-      return { ok: false, refused: true, message: 'This chart recipe is unavailable in this build.' };
+    case 'income-sankey': return buildIncomeSankey(dataset, recipe, context);
   }
 }

@@ -3,6 +3,7 @@
 
 import { statementTemplate } from '../statementModel/catalog';
 import { statementOwnedIds } from '../statementModel/types';
+import { statementRoundingTolerance } from './statementPrecision';
 import { color, escape, list } from './figureHelpers';
 import type { DatasetColumn, DatasetRow } from './types';
 
@@ -62,11 +63,7 @@ export function buildWaterfall(rows: DatasetRow[], labels: string[], measures: M
                 const reported = m.values[r];
                 if (reported === null) return 0;
                 const gap = reported - running[i];
-                // Cap cancellation noise at the original tolerance for the reported subtotal.
-                const rounding = Math.min(
-                    Number.EPSILON * Math.max(Math.abs(reported), magnitude[i]),
-                    1e-9 * Math.max(1, Math.abs(reported)),
-                );
+                const rounding = statementRoundingTolerance(reported, magnitude[i]);
                 // A whole-unit residual always gets an Other step.
                 return Math.abs(gap) < 1 && Math.abs(gap) <= rounding ? 0 : gap;
             });
