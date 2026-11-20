@@ -1,6 +1,6 @@
 # Ownership snapshot and waffle specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -22,4 +22,4 @@ Persist issuer and bars/waffle choice, not partition certification. Use existing
 
 For an otherwise independently certified exhaustive waffle partition, accept only total-rounding error bounded by the sum of acquired per-category rounding bounds and capped at 0.01 percentage point. Without declared rounding precision use 1e-10 percentage point for cancellation only. Show exact original percentages and the total discrepancy. Largest-remainder allocation fills the 100 visual cells as an explicitly approximate display; it does not rewrite the source shares or manufacture a remainder category. Totals outside tolerance refuse waffle. Independent bars remain available when their own units/identities are valid.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

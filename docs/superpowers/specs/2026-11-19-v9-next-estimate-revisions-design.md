@@ -1,6 +1,6 @@
 # Estimate-revision slope and bump charts specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -24,4 +24,4 @@ Reuse scatter lines/markers, original consensus units and explicit vintage/targe
 
 When a future verified source enables bump mode, rank **percentage consensus revision from one explicit common baseline batch**, not nominal cross-issuer EPS or revenue levels. All members must have strictly positive baselines, the identical actual target fiscal start/end/kind, the same baseline and current snapshot batch, and stable declared universe membership. No fuzzy observation-time window or issuer-specific fiscal mapping. One missing/ineligible member makes that entire rank column unavailable; do not rank a changing subset. Percentage revisions use the same metric and within-issuer currency/share basis at both vintages. Competition ranks handle ties. Slope/time-path remains usable for negative baselines via absolute signed changes; bump stays disabled without these stronger facts.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

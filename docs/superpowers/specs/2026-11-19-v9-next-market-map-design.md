@@ -1,6 +1,6 @@
 # Market-map treemap specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -28,4 +28,4 @@ Named-index weights require their own membership/weight as-of date, displayed se
 
 For a partial index snapshot, reject positive observed weights totaling more than 1 beyond the same declared-rounding bound (or 1e-12 without precision evidence). Partial coverage cannot justify an impossible over-100% net-weight root. This bound does not apply to market-cap mode, whose common-denomination areas are absolute monetary values rather than index weights.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

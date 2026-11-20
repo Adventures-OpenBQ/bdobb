@@ -4,7 +4,7 @@ Date: 2026-11-19. Status: **Draft specifications requested; independent builder 
 
 ## Scope and purpose
 
-Combine the three recommendations (news-sentiment calendar, return box/violin, ownership snapshot) with the five remaining candidates (dual-axis overlays, estimate-revision slope/bump, market-map treemap, ETF composition sunburst, KPI cards/gauges). Each row is one family, not a promise that every variant can ship with today's data. Box and violin are one family; slope, time-path and bump are one family. The user has authorized implementation planning for all eight. Product implementation, subscription changes, historical snapshot collection, PR publication and deployment remain unauthorized.
+Combine the three recommendations (news-sentiment calendar, return box/violin, ownership snapshot) with the five remaining candidates (dual-axis overlays, estimate-revision slope/bump, market-map treemap, ETF composition sunburst, KPI cards/gauges). Each row is one family, not a promise that every variant can ship with today's data. Box and violin are one family; slope, time-path and bump are one family. The user has authorized implementation planning for all eight. The user subsequently approved product implementation with subagents and final independent review. Subscription changes, historical snapshot collection, PR publication and deployment remain unauthorized.
 
 The approved bubble/dividend/Sankey project continues separately. Its branch status and verification do not establish readiness for any new family. User requested specifications on 2026-11-19; all defaults, order and constraints below are proposed by the author.
 
@@ -64,4 +64,4 @@ The initial independent builder check raised seven substantive questions. The dr
 
 Independent builder check completed on 2026-11-19. Seven initial questions and three follow-up contract inconsistencies were addressed; the scoped recheck confirmed the drafts are ready for user review. This is specification readiness, not evidence that missing source capabilities exist or approval to implement.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

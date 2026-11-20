@@ -1,6 +1,6 @@
 # ETF composition sunburst specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -24,4 +24,4 @@ Test partial holdings and honest root labels, incompatible sector-feed basis ref
 
 This is an unlevered, long-only fund-assets composition view. Reject a delivered positive-weight total above 1 beyond source rounding; leveraged/gross-exposure totals need a separate design, even if nonnegative. An explicitly complete root must total 1 within the sum of independently declared rounding bounds capped at 1e-4 fraction; when no rounding precision is declared use 1e-12 cancellation tolerance. A complete root outside that bound refuses. Partial/unknown roots below 1 remain delivered-only roots, not complete compositions. Preserve original totals and disclose admitted rounding; no correction to leaf values, normalization or artificial cash wedge.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

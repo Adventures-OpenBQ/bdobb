@@ -1,6 +1,6 @@
 # News-sentiment calendar specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -18,4 +18,4 @@ The initial view is explicitly **Delivered news sentiment**, not all news. Persi
 ## Acceptance and readiness
 Test midnight UTC boundaries, leap day/year crossing, mean [-1,1], true zero, all-unscored, duplicate/conflicting articles, missing dates, hidden invalid facts, paged disclosure, multitag article counts, and actual cell hover/tap in light/dark/narrow layouts. A successful acquired empty interval needs truthful zero-delivery wording; errors stay errors. Readiness: existing provider has sentiment objects, but typed polarity, stable identity and pre-drop acquisition evidence need verification. No claim of exhaustive news coverage.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

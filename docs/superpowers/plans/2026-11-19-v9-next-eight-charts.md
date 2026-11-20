@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Planning only is currently authorized for these eight. Finish the existing bubble/dividend/Sankey plan and final independent review before beginning this implementation sequence.
+- The user approved all eight plans for subagent execution with independent final review on 2026-11-19. The previous three-chart implementation and review are complete; this sequence may proceed.
 - No hidden source acquisitions, implicit joins, FX, assumed entitlements, historical snapshot collector, metric store or look-through project. Existing source evidence and legacy routes remain compatible.
 - Sources own data and explicit preparation; workers own exact financial definitions and figures; settings cannot certify runtime data. Unknown prerequisites refuse honestly.
 - Raw unsafe facts survive filtering, aliases, both engines and linked descendants. No source repair can recertify a surviving subset. No hidden numeric values recover removed components.
@@ -62,7 +62,7 @@ New wire envelope: `AnnotatedResult.metadata.chart_sources = {version:1, receipt
 - Export `projectChartSources(provenance: DatasetProvenance, columns: readonly DatasetColumn[], rows: readonly DatasetRow[]): DatasetProvenance`; import DatasetColumn and DatasetRow from `widgetData/types.ts`. Preserve acquired flags/counts, add only declared coordinate omissions and active-filter facts, never upgrade coverage. Family adapters add projection rules when introduced; recalculation clears presentation-specific proof.
 - Runtime storage is `provenance.metadata.chartSources`; it is not serialized with settings. A trusted local JSON snapshot can add top-level `chart_sources` under the strict local-file parser. Remote snapshot-shaped rows cannot bypass completed-request validation. Family validators are introduced with their tests in each Task1; unknown kinds are rejected, not passed through as opaque positive proof.
 
-### Shared Task 1: Evidence plumbing and compatibility boundary
+### Task 1: Shared Evidence plumbing and compatibility boundary
 
 **Files:** Shared map above; tests `src/lib/dataClient.test.ts`, `src/lib/localTableData.test.ts`, `src/stores/tableExecutionStore.test.ts`, new `src/lib/tableExecution/rust/chartSources.test.ts`; provider `tests/test_chart_sources.py`.
 
@@ -74,7 +74,7 @@ New wire envelope: `AnnotatedResult.metadata.chart_sources = {version:1, receipt
 - [ ] Run those tests, affected local table/engine suites and the real compiled Rust boundary tests. When native code changes run `pnpm pivot:build`, `pnpm pivot:test`, typecheck and packaging verification. Expect legacy behavior and both-engine grandchild invariants to pass. Run a focused actual worker clone test rejecting executable/tampered options.
 - [ ] Commit scoped plumbing as `feat: add source-bound next-chart evidence channel`. Independent task review must approve spec and quality before family decoders build on it. Record source contract additions and exact exported interfaces in the execution ledger.
 
-### Shared Task 2: Paired shipping verification and independent final review
+### Task 2: Shared Paired shipping verification and independent final review
 
 Run after each selected delivery group, not before its family plans. Do not repeat unchanged whole suites between every edit; rerun affected tests after fixes and final shipping gates on the actual final group candidate.
 
@@ -92,4 +92,4 @@ Run after each selected delivery group, not before its family plans. Do not repe
 
 Checked all eight family specs against their individual plans: source gates/units/identity Task1; exact statistics/hierarchy/figure Task2; controls/persistence/lifecycle/real browser Task3; common transport and final packaging here. Each Review Focus hazard has an owning test. No source contract is declared verified merely by writing this plan. KPI uses its own typed metric result and existing metric renderer rather than widening the existing figure result union. Partial hierarchy scopes, versioned options, explicit pins, actual source prerequisites and legacy preservation are covered.
 
-User review of this plan set is required before new implementation. Preserve the user's established subagent execution and independent final review preference. Approval of these plans would not authorize subscriptions, new snapshot automations, publication, merge or deployment.
+The user approved this plan set for implementation on 2026-11-19. Preserve the established subagent execution and independent final review preference. Approval of these plans would not authorize subscriptions, new snapshot automations, publication, merge or deployment.

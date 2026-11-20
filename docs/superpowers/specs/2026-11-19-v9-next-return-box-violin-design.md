@@ -1,6 +1,6 @@
 # Return box and violin plots specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -23,4 +23,4 @@ Test R7 quantiles, whisker boundary equality, outliers retained, N=4/5 and 19/20
 
 Common window means common inclusive date bounds, not an intersection of trading-session pairs. Default bounds are the overlap of the selected acquired histories; within them each listing retains its own legitimate market sessions and gaps, with per-listing N and dates shown. Both price endpoints of an admitted return must lie inside the selected bounds; a first in-window close with its prior close outside the window contributes no return. No hidden predecessor is read, and no outside-window return is imported. An empty overlap or too-small resulting sample requests a wider or different selection.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

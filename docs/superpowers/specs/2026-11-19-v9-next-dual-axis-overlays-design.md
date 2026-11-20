@@ -1,6 +1,6 @@
 # Dual-axis historical overlays specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -26,4 +26,4 @@ The equity overlay initially supports actual fiscal-quarter (FQ) diluted EPS onl
 
 The macro overlay initially names US CPI for all urban consumers, all items, seasonally adjusted, index basis 1982–84=100, versus the US nominal ten-year constant-maturity Treasury yield. These descriptive series definitions are proposed scope; exact authoritative series identifiers, endpoint support and yield units must be pinned before implementation planning. There is no arbitrary country/index/real-yield selector in this first slice. If either precise series is unavailable, return for scope review rather than substitute another CPI/yield.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.

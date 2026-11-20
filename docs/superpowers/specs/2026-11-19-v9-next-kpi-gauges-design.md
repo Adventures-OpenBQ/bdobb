@@ -1,6 +1,6 @@
 # KPI cards and gauges specification
 
-Date: 2026-11-19. Status: **User approved for implementation planning on 2026-11-19; not implementation authorization.**
+Date: 2026-11-19. Status: **User approved specification, plan and subagent implementation on 2026-11-19; final independent review required.**
 
 The user requested combining the three suggested families with the five other remaining candidates. Definitions and defaults were proposed by the author and approved by the user for implementation planning on 2026-11-19. Read the [common roadmap](2026-11-19-v9-next-eight-charts-design.md) with this specification. Existing approved three-chart implementation remains separate.
 
@@ -26,4 +26,4 @@ Limit linked presets initially to verified last price, market capitalization, di
 
 Reference choices are another explicitly selected acquired observation of the **same metric** or a clearly labeled user-entered target in its verified units. Same-metric comparisons require stable issuer/listing/class, unit/currency, and adjustment basis. EPS/revenue references initially compare different acquired vintages of the identical reporting period/basis; prior fiscal-period and analyst-target joins are excluded. Price/market-cap/yield/P-E observation-date comparisons retain both dates and any available measurement-vintage caveat. The user target is an assumption, never an acquired consensus. No automatic previous-row delta or implied favorable direction.
 
-The user approved this specification for implementation planning on 2026-11-19. Product implementation awaits review of the plan set.
+The user approved this specification for implementation planning on 2026-11-19. The user approved the plan set for subagent implementation and independent final review on 2026-11-19.
