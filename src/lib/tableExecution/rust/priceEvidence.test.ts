@@ -3,7 +3,7 @@
 
 import { expect, it } from 'vitest';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
-import { datasetFromBytes } from '../../localTableData';
+import { datasetFromBytes, datasetFromRows, parseTableSnapshot } from '../../localTableData';
 import { dailyPriceRows } from '../../widgetData/chartRecipes/fixtures';
 import { admitReturnSummary, prepareSelectedPrices } from '../../widgetData/chartRecipes/priceSamples';
 import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
@@ -23,13 +23,22 @@ const rows = dailyPriceRows([100, 200, 765432.12345, 400, 800, 1600, 3200, 6400,
 type Variants = 'safe' | 'conflicting duplicate' | 'instrument alias conflict' | 'out-of-window date';
 const receipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
 
-async function linkedChart(make: (id: string) => LocalWorkerExecutor, variant: Variants) {
+async function linkedChart(
+  make: (id: string) => LocalWorkerExecutor, variant: Variants,
+  { origin = 'localFile', exactTotal }: { origin?: 'localFile' | 'backend'; exactTotal?: number } = {},
+) {
   const inputRows = structuredClone(rows);
   if (variant === 'conflicting duplicate') inputRows[2].date = inputRows[1].date;
   if (variant === 'instrument alias conflict') inputRows[2].ticker = 'BBB.US';
   if (variant === 'out-of-window date') inputRows[2].date = '2025-12-31';
-  const bytes = new TextEncoder().encode(JSON.stringify({ rows: inputRows, receipt, completeness: 'bounded' }));
-  let input = await datasetFromBytes('prices.json', bytes, 'root', 1);
+  const envelope = { rows: inputRows, receipt, completeness: 'bounded' };
+  const bytes = new TextEncoder().encode(JSON.stringify(envelope));
+  const { snapshot } = parseTableSnapshot(envelope);
+  let input = origin === 'localFile' ? await datasetFromBytes('prices.json', bytes, 'root', 1)
+    : datasetFromRows(inputRows, 'root', 1, origin, undefined, [], snapshot);
+  if (exactTotal !== undefined) {
+    input.completeness = { ...input.completeness, totalRowCountKind: 'exact', totalRowCount: exactTotal };
+  }
   for (const [origin, alias] of [['date', fields.date], ['adjusted_close', fields.price], ['ticker', fields.symbol]]) {
     input.columns = input.columns.map(column => column.id === origin ? { ...column, id: alias, sourceFieldId: origin } : column);
     for (const row of input.rows) {
@@ -61,9 +70,10 @@ async function linkedChart(make: (id: string) => LocalWorkerExecutor, variant: V
 }
 
 it.each(engines)('%s accumulates coordinate-only omissions without joining across filtered gaps', async (_, make) => {
-  const chart = await linkedChart(make, 'safe');
+  const chart = await linkedChart(make, 'safe', { exactTotal: 12 });
   expect(chart.provenance.lineage).toHaveLength(2);
-  expect(chart.completeness.acquiredRowCount).toBe(10);
+  expect(chart.provenance.sourceKind).toBe('localFile');
+  expect(chart.completeness).toMatchObject({ acquiredRowCount: 10, totalRowCount: 12, totalRowCountKind: 'exact' });
   expect(chart.provenance.metadata?.priceOmissions).toMatchObject({
     acquired: 10, delivered: 7, dateField: 'session', symbolFields: ['listing'],
     points: [['AAA.US', '2026-01-03'], ['BBB.US', '2026-01-10'], ['AAA.US', '2026-01-09']],
@@ -76,6 +86,22 @@ it.each(engines)('%s accumulates coordinate-only omissions without joining acros
     samples: [2, 5, 6, 7, 8].map(day => ({ date: `2026-01-0${day}`, value: 1 })),
     gapCount: 2, excludedOpportunities: 3,
   });
+});
+
+it.each(engines)('%s retains backend origin and refuses legacy receipt evidence at the linked grandchild', async (_, make) => {
+  const chart = await linkedChart(make, 'safe', { origin: 'backend' });
+  expect(chart.provenance.lineage).toHaveLength(2);
+  expect(chart.provenance.sourceKind).toBe('backend');
+  expect(prepareSelectedPrices(chart, fields, ['AAA.US']).ok).toBe(true);
+  expect(admitReturnSummary(chart, fields, ['AAA.US'], { mode: 'own' }))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/local.*snapshot/i) });
+});
+
+it.each(engines)('%s refuses a linked exact total smaller than the acquired count', async (_, make) => {
+  const chart = await linkedChart(make, 'safe', { exactTotal: 3 });
+  expect(chart.completeness).toMatchObject({ acquiredRowCount: 10, totalRowCount: 3, totalRowCountKind: 'exact' });
+  expect(admitReturnSummary(chart, fields, ['AAA.US'], { mode: 'own' }))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/row counts.*continuity/i) });
 });
 
 it.each(engines)('%s retains a hidden duplicate conflict, alias conflict and invalid date through linked recalculation', async (_, make) => {

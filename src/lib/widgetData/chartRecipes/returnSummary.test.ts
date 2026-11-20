@@ -9,7 +9,7 @@ import { startMockServer } from '../../../test/mockServer';
 import { backend, widget } from '../../../test/fixtures';
 import type { BackendAcquisition } from './financialEvidence';
 import { dailyPriceRows, priceFields } from './fixtures';
-import { admitReturnSummary } from './priceSamples';
+import { admitReturnSummary, dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
 
 vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: (...args: Parameters<typeof fetch>) => fetch(...args),
@@ -96,6 +96,23 @@ it('refuses contradictory daily evidence and altered acquisition counts', async 
   expect(admitReturnSummary(deficient, priceFields, ['AAA.US'], own).ok).toBe(false);
 });
 
+it.each([3, -1, '7', 7.5, Number.MAX_SAFE_INTEGER + 1, NaN, Infinity, undefined])(
+  'refuses a bounded seven-row acquisition with exact total %s', async total => {
+    const data = await source(daily.slice(0, 7));
+    data.completeness = { ...data.completeness, totalRowCountKind: 'exact', totalRowCount: total as number };
+    expect(admitReturnSummary(data, priceFields, ['AAA.US'], own))
+      .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/row counts.*continuity/i) });
+  },
+);
+
+it.each([['bounded', 7, true], ['bounded', 8, true], ['complete', 7, true], ['complete', 8, false]] as const)(
+  'checks %s seven-row acquisition against exact total %i', async (completeness, totalRowCount, allowed) => {
+    const data = await source(daily.slice(0, 7), receipt, completeness);
+    data.completeness = { ...data.completeness, totalRowCountKind: 'exact', totalRowCount };
+    expect(admitReturnSummary(data, priceFields, ['AAA.US'], own).ok).toBe(allowed);
+  },
+);
+
 it('keeps the closed snapshot parser and rejects positive receipt-free metadata', async () => {
   await expect(source(daily, { ...receipt, adjusted: 'yes' })).rejects.toThrow('Could not parse local table');
   const { data, snapshot } = parseTableSnapshot({ rows: daily, completeness: 'bounded' });
@@ -139,6 +156,30 @@ it('preserves the legacy fetched rows and refuses a request flag without acquire
       expect(admitReturnSummary(acquired, { date: 'date', price: 'adjusted_close' }, ['AAA.US'], own))
         .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/acquisition receipt/i) });
     }
+  } finally { await server.close(); }
+});
+
+it('refuses a remote snapshot-shaped legacy response while admitting the same documented local snapshot', async () => {
+  const endpoint = '/api/v1/eodhd/equity/price/historical';
+  const envelope = { rows: daily.slice(0, 7), receipt, completeness: 'bounded' };
+  const server = await startMockServer({ [endpoint]: { results: envelope } });
+  try {
+    const result = await fetchWidgetData(backend({ baseUrl: server.url }), widget({ type: 'table', endpoint, dataKey: 'results.rows' }), {
+      ...receipt, symbol: 'AAA.US', provider: 'eodhd',
+    });
+    expect(result).toEqual(envelope);
+    const { data, snapshot } = parseTableSnapshot(result);
+    const remote = datasetFromRows(data as typeof daily, 'prices', 1, 'backend', undefined, [], snapshot);
+    const prepared = prepareSelectedPrices(remote, priceFields, ['AAA.US']);
+    if (!prepared.ok) throw new Error(prepared.message);
+    expect(dailyReturnSamples(prepared.series[0]).samples).toHaveLength(6);
+    expect(admitReturnSummary(remote, priceFields, ['AAA.US'], own))
+      .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/local.*snapshot/i) });
+
+    const local = await source(envelope.rows);
+    const admitted = admitReturnSummary(local, priceFields, ['AAA.US'], own);
+    if (!admitted.ok) throw new Error(admitted.message);
+    expect(admitted.value.series[0].samples).toHaveLength(6);
   } finally { await server.close(); }
 });
 

@@ -66,8 +66,8 @@ export function admitReturnSummary(
   if (!symbols.length || symbols.length > 12 || new Set(symbols).size !== symbols.length || !symbols.every(qualifiedSymbol)) {
     return refuse('Choose 1 to 12 distinct qualified listings from the acquired price history.');
   }
-  if (!dailyScope({ ...dataset.provenance, parameters: undefined })) {
-    return refuse('Choose a source with an acquisition receipt documenting its daily interval and dates.');
+  if (dataset.provenance.sourceKind !== 'localFile' || !dailyScope({ ...dataset.provenance, parameters: undefined })) {
+    return refuse('Choose a local adjusted-price snapshot with an acquisition receipt documenting its daily interval and dates.');
   }
   if (!priceBasisFields(dataset.columns).includes(fields.price)) {
     return refuse('Choose a source-documented adjusted-price field.');
@@ -80,7 +80,8 @@ export function admitReturnSummary(
   }
   const { acquiredRowCount, totalRowCount, totalRowCountKind, kind } = dataset.completeness;
   if (acquiredRowCount === undefined || !Number.isSafeInteger(acquiredRowCount) || acquiredRowCount < dataset.rows.length
-    || (kind === 'complete' && totalRowCountKind === 'exact' && totalRowCount !== acquiredRowCount)) {
+    || (totalRowCountKind === 'exact' && (typeof totalRowCount !== 'number' || !Number.isSafeInteger(totalRowCount)
+      || totalRowCount < acquiredRowCount || (kind === 'complete' && totalRowCount !== acquiredRowCount)))) {
     return refuse('The source row counts do not prove continuity. Reload the fully acquired price history.');
   }
 
