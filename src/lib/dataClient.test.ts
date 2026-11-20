@@ -332,14 +332,14 @@ describe("fetchWidgetData over real HTTP", () => {
       : { rows, completeness: kind, receipt: { start_date: "2026-01-01", end_date: "2026-01-31" } };
     server = await startMockServer({ "/equity/price": { results } });
     const selected = await fetchWidgetData({ ...backend, baseUrl: server.url }, widget({ type: "table", dataKey: "results.rows" }), {});
-    const { tableExecutionStore, backendTableSource } = await import("../stores/tableExecutionStore");
+    const { tableExecutionStore } = await import("../stores/tableExecutionStore");
     const { buildYieldCurve } = await import("./widgetData/chartRecipes/yieldCurve");
     const card = makeCard({ id: "yield-source" });
     const dashboard = { id: "yield-example", name: "Example", tabs: [{ id: "tab", name: "Tab", cards: [card] }] };
     tableExecutionStore.syncDashboard(dashboard);
     try {
-      tableExecutionStore.setBackendRows(dashboard.id, card.id, selected);
-      const acquired = await backendTableSource(card).acquire(new AbortController().signal);
+      tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest(dashboard.id, card), selected);
+      const acquired = await tableExecutionStore.backendSource(dashboard.id, card).acquire(new AbortController().signal);
       if (acquired.kind !== "dataset") throw new Error("Expected a backend dataset");
       const recipe = buildYieldCurve(acquired.dataset, {
         version: 1, kind: "yield-curve", fields: { date: "date", maturity: "maturity", rate: "rate" },

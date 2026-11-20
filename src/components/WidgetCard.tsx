@@ -416,8 +416,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data: rawData, acquisition, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale } =
-    useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange);
+  const backendTable = isBackendTable(card);
+  const { status, data: rawData, acquisition, completedRequest, error, warnings, retry, attempt, run, stale, intervalMs, completedAt, stalePastInterval, dataStale } =
+    useWidgetData(card, query, widget?.runButton, fiscalYearEnd, hold, exchange, backendTable ? dashboard : undefined);
   // Statement fiscal relabelling (useStatementRows says why). Named `fiscalRows`:
   // `fiscal` above is the card's own FY-ends lookup.
   const fiscalRows = useStatementRows(widget, backend, query, rawData);
@@ -495,7 +496,6 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // it like a local file (Pivot drawer, linked tables) -- unless the payload is
   // past the worker's ceiling. SSRM tables are other widget types and never
   // get here. The rest pivot in-thread with TableRenderer's own panel.
-  const backendTable = isBackendTable(card);
   // Memoised: the table's date filters start from these rows, recomputed per payload.
   const backendRows = useMemo(() => (backendTable ? tableRows(data) ?? undefined : undefined), [backendTable, data]);
   const workerTable = isWorkerTableProducer(card) && (!backendTable || fitsTableWorker(data));
@@ -506,10 +506,10 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // A retry's "loading" keeps whichever was handed over last.
   const failed = status === "error" || status === "incomplete";
   useEffect(() => {
-    if (!dashboardId || !backendTable) return;
-    if (failed) tableExecutionStore.setBackendRows(dashboardId, card.id, new Error(error ?? "Request failed"));
-    else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired, acquisition);
-  }, [dashboardId, backendTable, card.id, acquired, acquisition, status, failed, error]);
+    if (!completedRequest || !backendTable) return;
+    if (failed) tableExecutionStore.setBackendRows(completedRequest, new Error(error ?? "Request failed"));
+    else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(completedRequest, acquired, acquisition);
+  }, [completedRequest, backendTable, acquired, acquisition, status, failed, error]);
 
   const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: linkedMetric ? undefined : card.linkedSource }), [widget, data, card.linkedSource, linkedMetric]);
 
@@ -2244,14 +2244,16 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   // share their array while the persisted dashboard supplies the current configuration.
   const ancestry = useWidgetRegistryStore(useShallow(() =>
     dashboard && sourceId ? linkedSourceAncestry(dashboard, card.id, sourceId) : undefined));
+  const rootId = presentation ? ancestry?.at(-1) : undefined;
+  const wireRevision = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.backendWireRevision(dashboardId, rootId));
   const sourceAcquisitionKey = useMemo(() => {
     if (!presentation || !dashboard || !ancestry) return;
     const cards = new Map(dashboard.tabs.flatMap(tab => tab.cards).map(source => [source.id, source]));
-    return JSON.stringify(ancestry.map(id => [id, acquisitionConfiguration(cards.get(id)!)]), (_, value) =>
+    return JSON.stringify([wireRevision, ancestry.map(id => [id, acquisitionConfiguration(cards.get(id)!, dashboard)])], (_, value) =>
       value && typeof value === 'object' && !Array.isArray(value)
         ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0))
         : value);
-  }, [presentation, dashboard, ancestry]);
+  }, [presentation, dashboard, ancestry, wireRevision]);
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
   const unavailable = view.status === 'unavailable' || !ancestry;

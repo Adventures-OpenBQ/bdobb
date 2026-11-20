@@ -5319,10 +5319,11 @@ describe("WidgetCard locked", () => {
 // ruling 2026-10-07). It still needs the Pivot button to change its pivot.
 describe("a backend table on the table worker", () => {
   beforeEach(() => { worker.fits = true; return () => { worker.fits = false; }; });
+  const completedRequest = { dashboardId: "d1", cardId: card.id };
   const acquisition = { endpoint: '/eodhd/etf/holdings', parameters: { symbol: 'FUND_A.US' }, retrievedAt: 2000 };
   function setUp(data: unknown) {
     register({ type: "table", table: { columns: [{ field: "asset", headerName: "Asset" }] } });
-    useWidgetData.mockReturnValue({ status: "ready", data, acquisition, retry: vi.fn(), attempt: 0 });
+    useWidgetData.mockReturnValue({ status: "ready", data, acquisition, completedRequest, retry: vi.fn(), attempt: 0 });
     useDashboardStore.setState({
       dashboards: [{ id: "d1", name: "D", tabs: [{ id: "t1", name: "Main", cards: [card] }] }],
       activeId: "d1",
@@ -5339,7 +5340,7 @@ describe("a backend table on the table worker", () => {
     const table = screen.getByTestId("local-table");
     expect(table).toHaveAttribute("data-runtime", card.id);
     expect(table).toHaveAttribute("data-spec", "yes");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, acquisition);
+    expect(handOver).toHaveBeenCalledWith(completedRequest, data, acquisition);
     // The worker's drawer replaces the in-thread panel's button.
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-widget", card.id);
     handOver.mockRestore();
@@ -5354,7 +5355,7 @@ describe("a backend table on the table worker", () => {
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.queryByTestId("local-table")).toBeNull();
     expect(screen.getByRole("button", { name: "Pivot" })).toHaveAttribute("data-pivot", "off");
-    expect(handOver).toHaveBeenCalledWith("d1", card.id, data, acquisition);
+    expect(handOver).toHaveBeenCalledWith(completedRequest, data, acquisition);
     handOver.mockRestore();
   });
 
@@ -5362,10 +5363,10 @@ describe("a backend table on the table worker", () => {
     const { tableExecutionStore } = await import("../stores/tableExecutionStore");
     const handOver = vi.spyOn(tableExecutionStore, "setBackendRows").mockImplementation(() => {});
     setUp([{ asset: "AAA", volume: 100 }]);
-    useWidgetData.mockReturnValue({ status, data: [{ asset: "OLD" }], error: "HTTP 404", retry: vi.fn(), attempt: 0 });
+    useWidgetData.mockReturnValue({ status, completedRequest, data: [{ asset: "OLD" }], error: "HTTP 404", retry: vi.fn(), attempt: 0 });
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(handOver).toHaveBeenCalledTimes(1);
-    expect(handOver.mock.calls[0][2]).toEqual(new Error("HTTP 404"));
+    expect(handOver.mock.calls[0][1]).toEqual(new Error("HTTP 404"));
     handOver.mockRestore();
   });
 });

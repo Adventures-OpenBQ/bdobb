@@ -11,7 +11,8 @@ import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
 import { dataBounds } from "../lib/dataBounds";
 import { isPeriodType, namesBounds } from "../lib/dateExpressions";
-import type { DashboardCard, WidgetDef } from "../lib/types";
+import type { Dashboard, DashboardCard, WidgetDef } from "../lib/types";
+import { tableExecutionStore, type BackendRequest } from "../stores/tableExecutionStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -101,6 +102,7 @@ export function useWidgetData(
   calendars?: TradingCalendars & { intent?: string },
   /** v5.4.0: the dashboard's exchange, carried into every wireParams this hook runs. */
   exchange?: string,
+  backendTableDashboard?: Dashboard,
 ) {
   // The explicit descriptor owns acquisition, even when imported card metadata
   // still names a backend widget. Derived cards only signal their runtime here.
@@ -138,6 +140,8 @@ export function useWidgetData(
   const resolved = useResolvedTheme();
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
+  const tableDashboardId = backendTableDashboard?.id;
+  const [completedRequest, setCompletedRequest] = useState<BackendRequest>();
   const [status, setStatus] = useState<Status>("unresolved");
   const [{ data, acquisition }, setPayload] = useState<{ data: unknown; acquisition?: BackendAcquisition }>({ data: null });
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
@@ -442,8 +446,13 @@ export function useWidgetData(
       return;
     }
 
+    // Capture the owner in this fetch closure. A later render can see the previous
+    // payload while its new parameters are waiting to send or complete.
+    const beginRequest = () => backendTableDashboard && (!runButton || !stale)
+      ? tableExecutionStore.beginBackendRequest(backendTableDashboard.id, card, backendTableDashboard) : undefined;
     const missing = missingRequiredParams(widget, fetchParams);
     if (missing.length > 0) {
+      setCompletedRequest(beginRequest());
       setStatus("incomplete");
       setPayload({ data: null });
       setError(`Enter ${missing.join(", ")} to load this widget.`);
@@ -520,6 +529,7 @@ export function useWidgetData(
       armedWireRef.current = live;
     }
 
+    const request = beginRequest();
     let cancelled = false;
     /** The one timer this card ever has in flight. */
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -604,6 +614,7 @@ export function useWidgetData(
       if (!backend) {
         if (cancelled) return;
         setStatus("error");
+        setCompletedRequest(request);
         setError("Backend not configured");
         // Deliberately NOT armed: no request was ever issued, and a card
         // naming a backend that does not exist cannot be fixed by asking
@@ -621,8 +632,10 @@ export function useWidgetData(
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; }, (context) => { completedAcquisition = context; });
+        }, undefined, (w) => { received = w; }, (context) => { completedAcquisition = context; },
+          request ? (url, headers) => tableExecutionStore.identifyBackendRequest(request, url, headers, widget.dataKey) : undefined);
         if (cancelled) return;
+        setCompletedRequest(request);
         setWarnings(received);
         setPayload({ data: result, acquisition: completedAcquisition });
         if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
@@ -632,6 +645,7 @@ export function useWidgetData(
         armAfterCompletion();
       } catch (err) {
         if (cancelled) return;
+        setCompletedRequest(request);
         const message = err instanceof Error ? err.message : String(err);
         setError(message);
         setWarnings([]);
@@ -681,6 +695,7 @@ export function useWidgetData(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     linked,
+    tableDashboardId,
     widget,
     backend,
     backendStatus,
@@ -789,6 +804,7 @@ export function useWidgetData(
   return {
     status,
     data,
+    completedRequest,
     acquisition: status === "error" ? undefined : acquisition,
     error,
     warnings,

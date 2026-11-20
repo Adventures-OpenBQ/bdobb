@@ -48,10 +48,10 @@ async function handed(sourceTab: "a" | "b", snapshot = false) {
       : [{ id: "a", name: "A", cards: [child] }, { id: "b", name: "B", cards: [source] }];
     useDashboardStore.setState({ dashboards: [{ id: "d1", name: "Main", tabs }], activeId: "d1", activeTabId: "a" });
     view.rerender(<><TableExecutionRuntime /><DashboardGrid onOpenLibrary={() => {}} /></>);
-    await waitFor(() => expect(spy.mock.calls.some((c) => c[1] === "src")).toBe(true));
+    await waitFor(() => expect(spy.mock.calls.some((c) => c[0].cardId === "src")).toBe(true));
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
-    const calls = spy.mock.calls.filter((c) => c[1] === "src");
-    return { acquisition: calls.at(-1)?.[3], last: calls.at(-1)?.[2] as Array<Record<string, unknown>>, notes: view.queryAllByText("Fiscal labels as reported").length };
+    const calls = spy.mock.calls.filter((c) => c[0].cardId === "src");
+    return { acquisition: calls.at(-1)?.[2], last: calls.at(-1)?.[1] as Array<Record<string, unknown>>, notes: view.queryAllByText("Fiscal labels as reported").length };
   } finally { view.unmount(); spy.mockRestore(); tableExecutionStore.disposeDashboard("d1"); vi.unstubAllGlobals(); await s.close(); }
 }
 
@@ -100,7 +100,7 @@ it('fences a late matched off-tab acquisition after source replacement and clear
       {id:'a',name:'A',cards:[child]}, {id:'b',name:'B',cards:[root]},
     ]}], activeId:'off-chart',activeTabId:'a' });
   };
-  const latest = () => handoff.mock.calls.filter(call => call[1] === 'chart-root').at(-1);
+  const latest = () => handoff.mock.calls.filter(call => call[0].cardId === 'chart-root').at(-1);
   const view = render(<></>);
   try {
     useBackendsStore.setState({backends:[backend({baseUrl:server.url})],statuses:{b1:'online'}});
@@ -111,19 +111,19 @@ it('fences a late matched off-tab acquisition after source replacement and clear
     })]}));
     question('A');
     view.rerender(<><TableExecutionRuntime /><DashboardGrid onOpenLibrary={() => {}} /></>);
-    await waitFor(() => expect(latest()?.[3]?.chartSources).toEqual({metric:sourceReceipt}));
+    await waitFor(() => expect(latest()?.[2]?.chartSources).toEqual({metric:sourceReceipt}));
     act(() => question('B'));
-    await waitFor(() => expect(latest()?.[2]).toEqual([{id:'B'}]));
+    await waitFor(() => expect(latest()?.[1]).toEqual([{id:'B'}]));
     act(() => question('A'));
     await waitFor(() => expect(matchedRequests).toBe(2));
     act(() => question('C'));
-    await waitFor(() => expect(latest()?.[2]).toEqual([{id:'C'}]));
+    await waitFor(() => expect(latest()?.[1]).toEqual([{id:'C'}]));
     await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); });
-    expect(latest()?.[2]).toEqual([{id:'C'}]);
-    expect(latest()?.[3]?.chartSources).toBeUndefined();
+    expect(latest()?.[1]).toEqual([{id:'C'}]);
+    expect(latest()?.[2]?.chartSources).toBeUndefined();
     act(() => question('error'));
-    await waitFor(() => expect(latest()?.[2]).toBeInstanceOf(Error));
-    expect(latest()?.[3]).toBeUndefined();
+    await waitFor(() => expect(latest()?.[1]).toBeInstanceOf(Error));
+    expect(latest()?.[2]).toBeUndefined();
   } finally {
     view.unmount();
     handoff.mockRestore();

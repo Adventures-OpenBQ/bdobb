@@ -475,7 +475,7 @@ it.each([riskRecipes[0], riskRecipes[2]])('reopens $kind settings and rechecks h
   let activeId = dashboard.id;
   try {
     installDashboard(dashboard);
-    tableExecutionStore.setBackendRows(activeId, root.id, snapshotFor(recipe, 'A'));
+    tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest(activeId, root), snapshotFor(recipe, 'A'));
     const initial = render(<LiveRiskChart/>);
     await screen.findByTestId('chart-plot');
     const exported = exportCompatibleApp(dashboard);
@@ -490,7 +490,7 @@ it.each([riskRecipes[0], riskRecipes[2]])('reopens $kind settings and rechecks h
     expect(source.table?.hidden).toEqual([hidden]);
     installDashboard(imported);
     activeId = imported.id;
-    tableExecutionStore.setBackendRows(activeId, source.id, snapshotFor(recipe, 'A', true));
+    tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest(activeId, source), snapshotFor(recipe, 'A', true));
     render(<LiveRiskChart/>);
     const problem = recipe.kind === 'etf-pareto' ? /inconsistent ETF fund identity/i : /currenc/i;
     await waitFor(() => expect(screen.getAllByText(problem, { selector: 'p' }).length).toBeGreaterThan(0));
@@ -498,7 +498,7 @@ it.each([riskRecipes[0], riskRecipes[2]])('reopens $kind settings and rechecks h
     expect(tableExecutionStore.readView(activeId, source.id).ready!.columns.map(c => c.id)).not.toContain(hidden);
     expect(run.mock.lastCall![0].rows.every(row => !(hidden in row.values))).toBe(true);
     await act(async () => {
-      tableExecutionStore.setBackendRows(activeId, source.id, snapshotFor(recipe, 'A'));
+      tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest(activeId, source), snapshotFor(recipe, 'A'));
       await tableExecutionStore.settled(activeId);
     });
     await screen.findByTestId('chart-plot');
@@ -709,7 +709,7 @@ it.each([
   const chart = { ...riskChart(screeningRecipes[0]), linkedChart };
   const acquired = backendFinancialResponse({ results: rows, extra: { results_metadata: { chart_evidence: receipt } } }, url);
   installDashboard(riskDashboard([root, chart]));
-  tableExecutionStore.setBackendRows('d', root.id, rows, { endpoint: url.pathname, parameters: Object.fromEntries(url.searchParams),
+  tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest('d', root), rows, { endpoint: url.pathname, parameters: Object.fromEntries(url.searchParams),
     retrievedAt: Date.parse(screenerEvidence.retrieved_at), financialEvidence: acquired?.evidence });
   try {
     render(<LiveRiskChart/>);

@@ -485,6 +485,7 @@ export async function fetchWidgetData(
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
   onAcquisition?: (acquisition: BackendAcquisition) => void,
+  onRequest?: (url: string, headers: Record<string, string>) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -505,8 +506,10 @@ export async function fetchWidgetData(
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
   const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  const headers = authHeaders(backend);
+  onRequest?.(requestUrl, headers);
   let responseUrl: string | undefined;
-  const payload = await request("GET", requestUrl, authHeaders(backend), undefined, {
+  const payload = await request("GET", requestUrl, headers, undefined, {
     signal, onResponseUrl: value => { responseUrl = value; },
   });
   const table = widget.type === "table";
