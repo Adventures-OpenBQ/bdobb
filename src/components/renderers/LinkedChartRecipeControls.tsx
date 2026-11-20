@@ -155,9 +155,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const minimumPlotWidth = returnSummaryPlotWidth(symbols.length);
   const returnProbe = useRef<HTMLDivElement>(null);
   const [returnMeasurement, setReturnMeasurement] = useState<DrawingSurface & { minimumPlotWidth: number }>();
-  const measureReturn = useCallback((size: DrawingSurface) => {
-    const width = Math.min(size.width, 10_000);
-    const height = Math.min(size.height, 10_000);
+  const measureReturn = useCallback(({ width, height }: DrawingSurface) => {
     setReturnMeasurement(previous => previous?.width === width && previous.height === height && previous.minimumPlotWidth === minimumPlotWidth
       ? previous : { width, height, minimumPlotWidth });
   }, [minimumPlotWidth]);
@@ -362,7 +360,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
           if (!surface) return;
           const size = readDrawingSurface(surface);
           if (size.width <= 0 || size.height <= 0) return;
-          if (Math.min(size.width, 10_000) !== returnSize?.width || Math.min(size.height, 10_000) !== returnSize?.height) {
+          if (size.width !== returnSize?.width || size.height !== returnSize?.height) {
             measureReturn(size);
             return;
           }

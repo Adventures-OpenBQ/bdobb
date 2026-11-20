@@ -69,25 +69,35 @@ export type AxisTickFormatter = (range: readonly [number, number]) => TickLabels
 /** Keep native zoom/pan while relabeling an affine coordinate range in original units. */
 export function followPlotYAxisTicks(
   node: HTMLElement, formatter: AxisTickFormatter, initial: TickLabels & { range: readonly number[] },
+  onError: (error: unknown) => void,
 ): () => void {
   type LiveGraph = PlotlyHTMLElement & {
     _fullLayout?: { yaxis?: TickLabels & { range: [number, number] } };
     removeListener?: (type: string, listener: () => void) => void;
   };
   const graph = node as LiveGraph;
-  function update() {
-    const axis = graph._fullLayout?.yaxis;
-    if (!axis?.range || !axis.range.every(Number.isFinite)) return;
-    const [low, high] = axis.range;
-    const labels = low === initial.range[0] && high === initial.range[1] ? initial : formatter(axis.range);
-    if (axis.tickvals?.length === labels.tickvals.length && axis.ticktext?.length === labels.ticktext.length
-      && labels.tickvals.every((value, i) => axis.tickvals[i] === value && axis.ticktext[i] === labels.ticktext[i])) return;
-    void Plotly.relayout(node, { 'yaxis.tickvals': labels.tickvals, 'yaxis.ticktext': labels.ticktext } as Partial<PlotlyHTMLElement['layout']>)
-      .catch(() => { /* A detached plot may finish a relayout after purge. */ });
+  let following = true;
+  async function update() {
+    if (!following) return;
+    try {
+      const axis = graph._fullLayout?.yaxis;
+      if (!axis?.range || !axis.range.every(Number.isFinite)) return;
+      const [low, high] = axis.range;
+      const labels = low === initial.range[0] && high === initial.range[1] ? initial : formatter(axis.range);
+      if (axis.tickvals?.length === labels.tickvals.length && axis.ticktext?.length === labels.ticktext.length
+        && labels.tickvals.every((value, i) => axis.tickvals[i] === value && axis.ticktext[i] === labels.ticktext[i])) return;
+      await Plotly.relayout(node, { 'yaxis.tickvals': labels.tickvals, 'yaxis.ticktext': labels.ticktext } as Partial<PlotlyHTMLElement['layout']>);
+    } catch (error) {
+      if (following) onError(error);
+    }
   }
   graph.on('plotly_relayout', update);
-  update();
-  return () => graph.removeListener?.('plotly_relayout', update);
+  void update();
+  return () => {
+    if (!following) return;
+    following = false;
+    graph.removeListener?.('plotly_relayout', update);
+  };
 }
 
 export function purgePlot(node: HTMLElement): void {

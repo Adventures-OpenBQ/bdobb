@@ -220,7 +220,7 @@ async function saveWorkspace(page: Page) {
   await page.getByRole('menuitem', { name: 'BDOBB Workspace', exact: true }).click();
 }
 
-test('exports authored pins after detaching the local asset, and reacquires with explicit repair on a new page', async ({ page, context }) => {
+test('exports authored pins after detaching the local asset, and reacquires with explicit repair on a new page', async ({ page, context, baseURL }) => {
   await prepareReturns(page, normal);
   const widget = card(page, returnChart);
   await expect(boxes(plot(page, returnChart))).toHaveCount(2);
@@ -243,6 +243,15 @@ test('exports authored pins after detaching the local asset, and reacquires with
     ...returnRecipe, window: { mode: 'common', start: '2026-01-01', end: '2026-01-21' },
   });
   const fresh = await context.newPage();
+  const appOrigin = new URL(baseURL!).origin;
+  const dataRequests: string[] = [];
+  fresh.on('request', request => {
+    const url = new URL(request.url());
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+    const appAsset = url.origin === appOrigin && /\/pivot_wasm_bg(?:-[\w-]+)?\.wasm$/.test(url.pathname);
+    if (!appAsset && (url.origin !== appOrigin || url.pathname.startsWith('/api/')
+      || ['xhr', 'fetch'].includes(request.resourceType()))) dataRequests.push(request.method() + ' ' + request.url());
+  });
   await seedApp(fresh, { ...dashboardSeed([]), 'backends.json': '[]' });
   await dropFile(fresh, 'saved.apps.json', text);
   await fresh.getByRole('tab', { name: 'Returns', exact: true }).last().click();
@@ -262,4 +271,5 @@ test('exports authored pins after detaching the local asset, and reacquires with
   await apply(reopened).click();
   await expect(boxes(graph)).toHaveCount(2);
   await expect(graph.locator('.xtick text')).toHaveText([/ZZZ\.US.*N = 15/, /AAA\.US.*N = 15/]);
+  expect(dataRequests).toEqual([]);
 });

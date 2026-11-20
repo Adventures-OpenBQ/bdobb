@@ -404,9 +404,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const [newsWidth, setNewsWidth] = useState<number>();
   const returns = options.kind === 'return-summary';
   const [returnSize, setReturnSize] = useState<DrawingSurface>();
-  const measureReturn = useCallback((size: DrawingSurface) => {
-    const width = Math.min(size.width, 10_000);
-    const height = Math.min(size.height, 10_000);
+  const measureReturn = useCallback(({ width, height }: DrawingSurface) => {
     setReturnSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
   }, []);
   const measureSankey = useCallback((width: number) => setWidth(Math.min(width, 10_000)), []);

@@ -14,10 +14,14 @@ const renderPlot = vi.fn((_node: HTMLElement, _figure: unknown, _uirevision?: un
 );
 const purgePlot = vi.fn();
 const resizePlot = vi.fn();
+const followPlotYAxisTicks = vi.fn<(
+  node: HTMLElement, formatter: unknown, initial: unknown, onError?: (error: unknown) => void,
+) => () => void>();
 vi.mock("../../lib/plotly", () => ({
   renderPlot: (n: HTMLElement, f: unknown, u?: unknown) => renderPlot(n, f, u),
   purgePlot: (n: HTMLElement) => purgePlot(n),
   resizePlot: (n: HTMLElement) => resizePlot(n),
+  followPlotYAxisTicks: (...args: Parameters<typeof followPlotYAxisTicks>) => followPlotYAxisTicks(...args),
   REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey"]),
 }));
 
@@ -58,6 +62,7 @@ beforeEach(() => {
   renderPlot.mockClear();
   purgePlot.mockClear();
   resizePlot.mockClear();
+  followPlotYAxisTicks.mockReset().mockReturnValue(() => {});
   logError.mockClear();
   ResizeObserverStub.instances = [];
   vi.stubGlobal("ResizeObserver", ResizeObserverStub);
@@ -445,4 +450,30 @@ it('keeps a plot intact when Strict Mode reattaches the same newly drawable node
   await act(async () => {});
   expect(purgePlot).not.toHaveBeenCalled();
   expect(screen.getByTestId('chart-plot').parentElement).toBe(viewport);
+});
+
+
+it('reports the current mounted tick failure as a chart-local draw error', async () => {
+  const axis = { range: [0, 2], tickvals: [1], ticktext: ['10%'] };
+  const figure = { data: [{ type: 'scatter' }], layout: { yaxis: axis } };
+  const format = () => ({ tickvals: [.5], ticktext: ['5%'] });
+  const { rerender, unmount } = render(<ChartRenderer data={figure} formatYAxisTicks={format}/>);
+  const node = screen.getByTestId('chart-plot');
+  await waitFor(() => expect(followPlotYAxisTicks).toHaveBeenCalledTimes(1));
+  const firstError = followPlotYAxisTicks.mock.calls[0][3];
+
+  rerender(<ChartRenderer data={{ ...figure }} formatYAxisTicks={format}/>);
+  await waitFor(() => expect(followPlotYAxisTicks).toHaveBeenCalledTimes(2));
+  await act(async () => firstError?.(new Error('obsolete zoom failed')));
+  expect(screen.getByTestId('chart-plot')).toBe(node);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(logError).not.toHaveBeenCalled();
+
+  const currentError = followPlotYAxisTicks.mock.calls[1][3];
+  await act(async () => currentError?.(new Error('current zoom failed')));
+  expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be drawn. current zoom failed');
+  expect(node).not.toBeInTheDocument();
+  unmount();
+  await act(async () => currentError?.(new Error('detached zoom failed')));
+  expect(logError.mock.calls).toEqual([['chart render failed: current zoom failed']]);
 });

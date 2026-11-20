@@ -246,6 +246,14 @@ export function ChartRenderer({
     const axis = formatYAxisTicks
       ? figure.layout.yaxis as { range?: number[]; tickvals?: number[]; ticktext?: string[] } | undefined
       : undefined;
+    const failDraw = (error: unknown) => {
+      if (!active || node.current !== el || !el.isConnected) return;
+      active = false;
+      stopFollowingTicks?.();
+      const message = (error instanceof Error ? error.message : String(error)).slice(0, 400);
+      void logError(`chart render failed: ${message}`);
+      setFailure({ id: draw.id, message });
+    };
     const render = async () => {
       try {
         // Measured worker figures can be redrawn both for viewport changes and
@@ -254,14 +262,10 @@ export function ChartRenderer({
         await renderPlot(el, chart, draw.uirevision);
         if (active && node.current === el && formatYAxisTicks && axis?.range && axis.tickvals && axis.ticktext) {
           const initial = { range: axis.range, tickvals: axis.tickvals, ticktext: axis.ticktext };
-          stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, initial);
+          stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, initial, failDraw);
+          if (!active) stopFollowingTicks();
         }
-      } catch (err) {
-        if (!active || node.current !== el) return;
-        const message = (err instanceof Error ? err.message : String(err)).slice(0, 400);
-        void logError(`chart render failed: ${message}`);
-        setFailure({ id: draw.id, message });
-      }
+      } catch (error) { failDraw(error); }
     };
     void render();
     return () => { active = false; stopFollowingTicks?.(); };

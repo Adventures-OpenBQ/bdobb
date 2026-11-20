@@ -361,12 +361,15 @@ function riskRuntime() {
     async (dataset, options, context) => runRecipe(dataset, options, context),
   );
   const factory = vi.spyOn(recipeWorkers, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
-  function resize(next: number, nextHeight = measuredHeight) {
+  function setSize(next: number, nextHeight = measuredHeight) {
     measured = next;
     measuredHeight = nextHeight;
+  }
+  function resize(next: number, nextHeight = measuredHeight) {
+    setSize(next, nextHeight);
     for (const notify of resizeListeners) notify([]);
   }
-  return { run, factory, resize };
+  return { run, factory, resize, setSize };
 }
 async function chooseRiskSource(id: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
@@ -1151,5 +1154,63 @@ it('keeps applied return details through a refused pinned draft and clears inval
     expect(displayed).not.toBeInTheDocument();
     expect(detail).not.toBeInTheDocument();
     expect(screen.getByText(/unsupported recipe option "viewportHeight"/i)).toBeVisible();
+  } finally { factory.mockRestore(); }
+});
+
+
+it('requires exact worker admission when Apply sees a newly oversized return draft surface', async () => {
+  const { run, factory, resize, setSize } = riskRuntime();
+  const root = await acquiredSource(returnOptions, 'A');
+  const linkedChart = { type: 'column' as const, category: 'date', measures: ['adjusted_close'], display: 'grouped' as const };
+  installDashboard(riskDashboard([root, { ...riskChart(returnOptions), linkedChart }]));
+  setSize(10_000);
+  try {
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'A.US' }));
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+
+    // The click precedes the observer's next notification.
+    setSize(10_000.5);
+    fireEvent.click(apply);
+    expect(apply).toBeDisabled();
+    expect(await screen.findByText(/viewport width greater than 0 and at most 10,000/)).toBeVisible();
+    act(() => resize(10_010));
+    await waitFor(() => expect(run.mock.lastCall?.[2].viewportWidth).toBe(10_010));
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+
+    act(() => resize(999));
+    await waitFor(() => expect(apply).toBeEnabled());
+    expect(run.mock.calls.map(([, , { viewportWidth }]) => viewportWidth)).toEqual([10_000, 10_000.5, 10_010, 999]);
+  } finally { factory.mockRestore(); }
+});
+
+it('refuses an oversized applied return height and recovers with the same question', async () => {
+  const { run, factory, resize } = riskRuntime();
+  const root = await acquiredSource(returnOptions, 'A');
+  installDashboard(riskDashboard([root, riskChart(returnOptions)]));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    const revision = vi.mocked(renderPlot).mock.lastCall?.[2];
+    expect(revision).toBeDefined();
+
+    act(() => resize(900, 10_001));
+    const viewportError = /viewport height greater than 0 and at most 10,000/;
+    await waitFor(() => expect(screen.getAllByText(viewportError)).toHaveLength(2));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    act(() => resize(900, 10_002));
+    await waitFor(() => expect(run.mock.calls.filter(([, , { viewportHeight }]) => viewportHeight === 10_002)).toHaveLength(2));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(returnOptions);
+
+    act(() => resize(900, 480));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall?.[2]).toBe(revision);
   } finally { factory.mockRestore(); }
 });

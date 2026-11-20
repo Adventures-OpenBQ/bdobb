@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { EventEmitter } from "node:events";
 import { describe, expect, it, vi } from "vitest";
 
 // The real plotly.js/lib/core cannot run under jsdom (see ChartRenderer.test.tsx
@@ -8,15 +9,16 @@ import { describe, expect, it, vi } from "vitest";
 // this file's own CONFIG object still runs for real, which is the part under test.
 // vi.hoisted is required: vi.mock factories are hoisted above normal top-level
 // code, so a plain const here would be referenced before initialization.
-const { react, register, purge, resize } = vi.hoisted(() => ({
+const { react, register, purge, resize, relayout } = vi.hoisted(() => ({
   react: vi.fn().mockResolvedValue(undefined),
   register: vi.fn(),
   purge: vi.fn(),
   resize: vi.fn(),
+  relayout: vi.fn(),
 }));
 
 vi.mock("plotly.js/lib/core", () => ({
-  default: { register, react, purge, Plots: { resize } },
+  default: { register, react, purge, relayout, Plots: { resize } },
 }));
 vi.mock("plotly.js/lib/candlestick", () => ({ default: { name: "candlestick" } }));
 vi.mock("plotly.js/lib/scatter", () => ({ default: { name: "scatter" } }));
@@ -28,7 +30,7 @@ vi.mock("plotly.js/lib/waterfall", () => ({ default: { name: "waterfall" } }));
 vi.mock("plotly.js/lib/box", () => ({ default: { name: "box" } }));
 vi.mock("plotly.js/lib/sankey", () => ({ default: { name: "sankey" } }));
 
-import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
+import { followPlotYAxisTicks, REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
 describe("REGISTERED_TRACE_TYPES", () => {
   it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey", "box"])("includes the registered %s trace", (type) => {
@@ -97,5 +99,53 @@ describe("renderPlot and indicator traces", () => {
     purge.mockClear();
     await renderPlot(document.createElement("div"), { data: [{ type: "bar" }], layout: {} });
     expect(purge).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("live y-axis tick failures", () => {
+  const initial = { range: [0, 2], tickvals: [1], ticktext: ["10%"] };
+  const labels = () => ({ tickvals: [.5], ticktext: ["5%"] });
+  function tickGraph() {
+    const events = new EventEmitter();
+    const axis = { ...initial };
+    const graph = Object.assign(document.createElement("div"), {
+      _fullLayout: { yaxis: axis }, on: events.on.bind(events), removeListener: events.removeListener.bind(events),
+    });
+    return { graph, zoom: () => {
+      axis.range = [.2, .8];
+      events.emit("plotly_relayout");
+    } };
+  }
+
+  it.each(["formatter", "relayout"] as const)("reports a synchronous %s failure during a later zoom", (operation) => {
+    const { graph, zoom } = tickGraph();
+    const error = new Error(operation + " failed");
+    const fail = () => { throw error; };
+    const onError = vi.fn();
+    if (operation === "relayout") relayout.mockImplementationOnce(fail);
+    const stop = followPlotYAxisTicks(graph, operation === "formatter" ? fail : labels, initial, onError);
+    try {
+      expect(zoom).not.toThrow();
+      expect(onError.mock.calls).toEqual([[error]]);
+    } finally { stop(); }
+  });
+
+  it.each(["current", "retired"] as const)("handles deferred Plotly rejection for a %s tick listener", async (lifetime) => {
+    const { graph, zoom } = tickGraph();
+    const error = new Error("Plotly ticks could not be laid out");
+    let reject!: (reason: Error) => void;
+    const request = new Promise((_, fail) => { reject = fail; });
+    relayout.mockReturnValueOnce(request);
+    const onError = vi.fn();
+    const stop = followPlotYAxisTicks(graph, labels, initial, onError);
+    zoom();
+    if (lifetime === "retired") stop();
+    reject(error);
+    await request.catch(() => {});
+    if (lifetime === "current") {
+      expect(onError.mock.calls).toEqual([[error]]);
+      stop();
+    } else expect(onError).not.toHaveBeenCalled();
   });
 });
