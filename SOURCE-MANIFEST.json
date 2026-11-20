@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "1c513df3a392b8b4e01de069f5fd89dfba2d79b7",
-  "sourceId": "569b3bebb9c162ccc755100edaba404f77798c813d99f92d829d4c6014385e20",
+  "baseCommit": "f130f1d31834858e83f70f164a16326a4c63b2f4",
+  "sourceId": "5f60cc21a5329b8fbd05ffc5975b7cf09ebbe60e0a5243675f3ab75ecea66114",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "f9dcdd531b1c5be084ed81d2449127021bf705a4fa108071d36bf1b567f63b34"
+      "sha256": "b6ddd0a937355ed3a890b29eb8615161e5e728b204867c0ced646e153e6e6b8f"
     },
     {
       "path": "source_bundle.py",
@@ -8763,8 +8763,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 73874,
-      "sha256": "07a1f5f3129bf3dd00dafb75314fd23f56ca9b57e2fe8e8f30c4d7432fb35cf3"
+      "size": 74199,
+      "sha256": "51c857fca82fbc304757db38fb80d800ff59d04418bb21fe6db91711272e6153"
     },
     {
       "path": "src/test/fakeSocket.ts",
