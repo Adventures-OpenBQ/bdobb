@@ -6,7 +6,7 @@ import { memfs, openRail, seedApp } from "./fixtures";
 const reference = process.env.OPENBQ_REFERENCE_URL;
 test.skip(!reference, "Opt-in: requires the pinned, separately running reference backend.");
 
-test("reference Apps, grouped company controls and unsupported analytical imports", async ({ page, request }) => {
+test("reference Apps, grouped company controls and unsupported analytical imports", async ({ page, request }, info) => {
   test.setTimeout(90_000);
   const manifest = await request.get(`${reference}/apps.json`);
   expect(manifest.ok()).toBe(true);
@@ -38,7 +38,7 @@ test("reference Apps, grouped company controls and unsupported analytical import
   await expect(page.locator(".widget-card table").first()).toBeVisible();
   await page.getByLabel("Manufacturer", {exact: true}).first().selectOption("TSLA");
   await expect.poll(() => companyRequests.filter((v) => v === "TSLA").length).toBeGreaterThanOrEqual(2);
-  await page.screenshot({path: "e2e-results/reference-grouping-tesla.png", fullPage: true});
+  await page.screenshot({path: info.outputPath("reference-grouping-tesla.png"), fullPage: true});
   const analytical = apps.find((a) => a.name.includes("Pivot"));
   if (analytical) {
     const filesBefore = await memfs(page).list();

@@ -43,5 +43,9 @@ for(const theme of ["dark","light"] as const)test(`${theme} real FX surface rema
  test.setTimeout(90_000);const calls:string[]=[];await passThrough(page,calls);
  const seed=files({id:"fx-live",name:"FX surface",tabs:[{id:"chart",name:"FX surface",cards:[{...linked("live-source"),layout:{x:0,y:0,w:40,h:20}}]},{id:"source",name:"Source table",cards:[source("live-source")]}]});seed["settings.json"]=JSON.stringify({theme,collapseWidgetControls:false,minimizeButton:true});await seedApp(page,seed);
  const plot=await readyPlot(page);await expect.poll(()=>plot.evaluate(el=>(el as unknown as {_fullLayout:{paper_bgcolor:string}})._fullLayout.paper_bgcolor)).toBe(theme==="dark"?"#1e242e":"#ffffff");await chart(page).screenshot({path:info.outputPath(`fx-surface-${theme}.png`)});
+ // Plotly's turntable initializer writes a 500ms future camera keyframe.
+ // Gestures before that transition finishes are discarded by its controller.
+ // Wait for the real controller timeline, not an arbitrary screenshot delay.
+ await expect.poll(()=>plot.evaluate(el=>(el as unknown as {_fullLayout:{scene:{_scene:{camera:{view:{lastT:()=>number}}}}}})._fullLayout.scene._scene.camera.view.lastT()<=performance.now())).toBe(true);
  const camera=()=>plot.evaluate(el=>JSON.stringify((el as unknown as {_fullLayout:{scene:{_scene:{getCamera:()=>unknown}}}})._fullLayout.scene._scene.getCamera()));const before=await camera();const box=(await plot.boundingBox())!;await page.mouse.move(box.x+box.width*.35,box.y+box.height*.55);await page.mouse.down();await page.mouse.move(box.x+box.width*.35+70,box.y+box.height*.55+30,{steps:12});await page.mouse.up();await expect.poll(camera).not.toBe(before);await page.unrouteAll({behavior:"ignoreErrors"});
 });
