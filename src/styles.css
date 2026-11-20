@@ -686,6 +686,16 @@ body {
    they did as the bar's own children. */
 .tab-bar-tabs { display: flex; align-items: center; gap: 4px; }
 
+/* Long dashboards scroll their tabs, not the dashboard and its cards. Keep
+   the actions outside that scroll box so Refresh/Add stay in view. */
+.dashboard-area > .tab-bar > .tab-bar-tabs {
+  min-width: 0;
+  overflow-x: auto;
+  flex: 0 1 auto;
+}
+.dashboard-area > .tab-bar > .tab-bar-tabs > .tab-bar-tab { flex: 0 0 auto; }
+.dashboard-area > .tab-bar > button { flex-shrink: 0; }
+
 .tab-bar-tab { display: flex; align-items: center; }
 
 /* The same two affordances .rail-item already has one level up: a grab
