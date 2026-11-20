@@ -132,3 +132,63 @@ it('does not grant positive proof to ambiguous or duplicate financial coordinate
   const other = { ...revisedEps, vintage: first.vintage.replace('Z', '.000000+00:00') };
   expect(parseMetricSource({ ...metricReceipt, metrics: { eps_ttm: { ...first, additional_observations: [other] } } })).toBeUndefined();
 });
+
+it.each([
+  ['2025-10-01', '2026-10-01', false], ['2023-03-01', '2024-02-28', false], ['2024-02-29', '2025-02-27', false],
+  ['2023-03-01', '2024-02-29', true], ['2024-02-29', '2025-02-28', true],
+  ['2025-10-01', '2026-09-29', true], ['2025-10-01', '2026-10-06', true],
+] as const)('checks the actual calendar or week year %s through %s', (period_start, period_end, valid) => {
+  const period = { period_start, period_end };
+  const entry = { ...metricReceipt.metrics.eps_ttm, ...period, additional_observations: [{ ...revisedEps, ...period }] };
+  const receipt = { ...metricReceipt, metrics: { eps_ttm: entry } };
+  const acquired = local(receipt, metricRows.map(row => ({ ...row, ...period })));
+  expect(!!acquired).toBe(valid);
+  const source = parseMetricSource(acquired?.metric);
+  expect(!!source && metricReferencesComparable(source, 'eps_ttm', 'revised-report', 'first-report')).toBe(valid);
+});
+
+it.each([
+  ['share_class', '76.544'], ['share_class', '1e+3'], ['share_class', 'Unknown'], ['share_class', 'not_available'],
+  ['basis_reference', 'UNKNOWN'], ['basis_reference', 'NA'], ['listing', '76.544'], ['issuer', '76.544'],
+] as const)('refuses a matched pair with %s=%s during capture and comparison', (field, value) => {
+  const receipt = structuredClone(metricReceipt);
+  const rows = metricRows.map(row => ({ ...row, [field]: value }));
+  if (field === 'basis_reference') {
+    receipt.metrics.eps_ttm.basis_reference = value;
+    receipt.metrics.eps_ttm.additional_observations[0].basis_reference = value;
+  } else receipt[field] = value;
+  expect(local(receipt, rows)).toBeUndefined();
+  expect(parseMetricSource(receipt)).toBeUndefined();
+  const altered = structuredClone(parseMetricSource(metricReceipt)!);
+  if (field === 'basis_reference') {
+    altered.metrics.eps_ttm!.basis_reference = value;
+    altered.metrics.eps_ttm!.additional_observations[0].basis_reference = value;
+  } else altered[field] = value;
+  expect(metricReferencesComparable(altered, 'eps_ttm', 'first-report', 'revised-report')).toBe(false);
+});
+
+it.each([null, 'A', '1A', 'Class-1'])('keeps a standalone class %s and requires a known class for references', share_class => {
+  const acquired = local({ ...metricReceipt, share_class }, metricRows.map(row => ({ ...row, share_class })));
+  const source = parseMetricSource(acquired?.metric);
+  expect(source).toBeDefined();
+  expect(metricReferencesComparable(source!, 'eps_ttm', 'first-report', 'revised-report')).toBe(share_class !== null);
+});
+
+it.each([['metrics', 'eodhd-key-metrics'], ['ratios', 'eodhd-financial-ratios']])(
+  'cross-checks optional observation facts on the completed %s wide row', (route, origin) => {
+    const context = { endpoint: '/api/v1/eodhd/equity/fundamental/' + route, selector: 'results',
+      parameters: { chart_source: 'true', symbol: 'AAPL' }, retrievedAt: 1 };
+    const receipt = { ...liveMetricReceipt, origin };
+    const capture = (change: Record<string, unknown>) => {
+      const rows = [{ ...liveMetricRows[0], ...change }];
+      return captureChartSources(context, { results: rows, extra: { results_metadata: { chart_sources: { version: 1, receipts: [receipt] } } } }, rows);
+    };
+    expect(capture({ as_of_unknown: true, period_kind: 'TTM', period_start: null, period_end: null,
+      adjustment_basis: null, reporting_basis: null, basis_reference: null, currency: 'USD', fiscal_period: 'TTM', period_ending: '2026-09-30' }))
+      .toEqual({ metric: receipt });
+    for (const delta of [{ as_of_unknown: false }, { period_kind: 'FY' }, { adjustment_basis: 'as-traded' },
+      { reporting_basis: 'IFRS' }, { basis_reference: 'basis-A' }, { period_start: '2025-10-01' }, { period_end: '2026-09-30' },
+      { vintage: '2026-11-19T13:00:00Z' }, { unit_kind: 'money' }, { unit: { kind: 'money' } }, { observation_id: 'other' },
+      { metric: 'eps_ttm' }, { origin: 'price' }])
+      expect(capture(delta)).toBeUndefined();
+  });

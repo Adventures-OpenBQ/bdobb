@@ -31,10 +31,18 @@ export type MetricSource = ChartSourceReceipt & {
 const receiptKeys = ['version', 'kind', 'origin', 'issuer', 'listing', 'share_class', 'retrieved_at',
   'raw_count', 'normalized_count', 'delivered_count', 'diagnostics', 'unsafe', 'metrics'];
 const observationKeys = ['observation_id', 'vintage', 'origin', 'unit', 'as_of', 'as_of_unknown', 'period_start', 'period_end',
-  'period_kind', 'adjustment_basis', 'reporting_basis', 'basis_reference'];
+  'period_kind', 'adjustment_basis', 'reporting_basis', 'basis_reference'] as const;
 const firstKeys = [...observationKeys, 'additional_observations'];
 const isPreset = (value: string): value is MetricPreset => Object.hasOwn(contract, value);
-const identifier = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:+-]{0,127}$/.test(value);
+const missingIds = new Set([
+  'unknown', 'unk', 'na', 'none', 'null', 'nil', 'nan', 'inf', 'infinity', 'undefined',
+  'unavailable', 'missing', 'unspecified', 'undisclosed', 'unreported', 'notavailable',
+  'notapplicable', 'notprovided', 'notspecified', 'notreported',
+]);
+const bareAmount = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/;
+const knownId = (value: string) => !bareAmount.test(value) && !missingIds.has(value.toLowerCase().replace(/[^a-z0-9]/g, ''));
+const qualifiedId = (value: unknown): value is string => qualifiedSymbol(value) && knownId(value);
+const identifier = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9_.:+-]{0,127}$/.test(value) && knownId(value);
 const coordinateId = (value: unknown): value is string => identifier(value) && /^[A-Za-z]/.test(value);
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const reported = (metric: MetricPreset) => metric === 'eps_ttm' || metric === 'revenue_ttm';
@@ -82,8 +90,13 @@ function validObservation(value: unknown, metric: MetricPreset, first: boolean):
     if (value.period_kind !== 'TTM' || !isoDate(value.period_start) || !isoDate(value.period_end)
       || value.period_end > (typeof value.as_of === 'string' ? value.as_of : value.vintage).slice(0, 10)
       || value.adjustment_basis === null || !['US-GAAP', 'IFRS', 'local-GAAP'].some(basis => value.reporting_basis === basis)) return false;
-    const days = 1 + (Date.parse(value.period_end) - Date.parse(value.period_start)) / 86400000;
-    return [364, 365, 366, 371].includes(days);
+    const start = Date.parse(value.period_start);
+    const exclusiveEnd = Date.parse(value.period_end) + 86400000;
+    const days = (exclusiveEnd - start) / 86400000;
+    // The exclusive anniversary of a February 29 start rolls to March 1.
+    const anniversary = new Date(start);
+    anniversary.setUTCFullYear(anniversary.getUTCFullYear() + 1);
+    return exclusiveEnd === anniversary.getTime() || days === 364 || days === 371;
   }
   return value.period_kind === (headline(metric) ? 'TTM' : null)
     && value.period_start === null && value.period_end === null && value.reporting_basis === null;
@@ -92,7 +105,7 @@ function validObservation(value: unknown, metric: MetricPreset, first: boolean):
 export function parseMetricSource(value: unknown): MetricSource | undefined {
   if (!exact(value, receiptKeys) || value.kind !== 'metric' || value.version !== 1
     || !['acquired-snapshot', 'eodhd-key-metrics', 'eodhd-financial-ratios'].some(o => o === value.origin)
-    || !qualifiedSymbol(value.issuer) || !qualifiedSymbol(value.listing) || (value.share_class !== null && !identifier(value.share_class))
+    || !qualifiedId(value.issuer) || !qualifiedId(value.listing) || (value.share_class !== null && !identifier(value.share_class))
     || !utcTimestamp(value.retrieved_at) || !count(value.raw_count) || !count(value.normalized_count) || !count(value.delivered_count)
     || value.raw_count < value.normalized_count || value.normalized_count !== value.delivered_count || !value.delivered_count
     || !isChartSourceRecord(value.metrics) || !Object.keys(value.metrics).length || !exact(value.unsafe, unsafeKeys)
@@ -135,14 +148,15 @@ export function metricObservations(source: MetricSource, metric: MetricPreset): 
 }
 
 export function metricReferencesComparable(source: MetricSource, metric: MetricPreset, id: string, referenceId: string): boolean {
-  if (source.share_class === null || source.diagnostics.length || id === referenceId) return false;
+  if (!qualifiedId(source.issuer) || !qualifiedId(source.listing) || !identifier(source.share_class)
+    || source.diagnostics.length || id === referenceId) return false;
   const observations = metricObservations(source, metric);
   const current = observations.find(obs => obs.observation_id === id);
   const reference = observations.find(obs => obs.observation_id === referenceId);
   if (!current || !reference || current.unit.kind !== reference.unit.kind
     || ('currency' in current.unit && (!('currency' in reference.unit) || current.unit.currency !== reference.unit.currency))
     || !current.adjustment_basis || current.adjustment_basis !== reference.adjustment_basis
-    || !current.basis_reference || current.basis_reference !== reference.basis_reference) return false;
+    || !coordinateId(current.basis_reference) || current.basis_reference !== reference.basis_reference) return false;
   if (!reported(metric)) return current.as_of !== null && reference.as_of !== null;
   return metricVintageKey(current.vintage) !== metricVintageKey(reference.vintage) && current.period_start === reference.period_start
     && current.period_end === reference.period_end && current.reporting_basis === reference.reporting_basis;
@@ -155,8 +169,12 @@ function rowsAgree(source: MetricSource, rows: readonly Record<string, unknown>[
     const [row] = rows;
     return row.symbol === source.listing && row.metric_vintage === source.retrieved_at
       && (row.issuer === undefined || row.issuer === source.issuer) && (row.listing === undefined || row.listing === source.listing)
-      && (row.share_class === undefined || row.share_class === null) && (row.as_of === undefined || row.as_of === null)
-      && Object.keys(source.metrics).every(metric => validValue(row[metric]));
+      && (row.share_class === undefined || row.share_class === null)
+      && Object.values(source.metrics).every(obs => validValue(row[obs.origin])
+        && (!Object.hasOwn(row, 'metric') || row.metric === obs.origin)
+        && (!Object.hasOwn(row, 'unit_kind') || row.unit_kind === obs.unit.kind)
+        && observationKeys.every(key => !Object.hasOwn(row, key)
+          || (key === 'unit' ? validUnit(row.unit, obs.origin) : row[key] === obs[key])));
   }
   const remaining = new Map<string, MetricObservation>();
   for (const metric of Object.keys(source.metrics).filter(isPreset))
