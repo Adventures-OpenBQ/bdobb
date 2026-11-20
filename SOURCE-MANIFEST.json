@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "ccc8adb916dee91a233df9c0b8425e58a3cb60fb",
-  "sourceId": "45513cf41ba1cb1f494e6f44f04d98060dd2077fc52fcd4edff240a58d15aa88",
+  "baseCommit": "8f9482981d3d181115ceb293058b4fc63d51f51d",
+  "sourceId": "4d54f8f4f9d011d4d694e3fb3f651391060052dac395745605e01b3e143b8b0b",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -11403,7 +11403,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "036bbf9c4aa608c4680c486e005d737a44ba79b1b85e75363797350631bbfcc5"
+      "sha256": "166db901883db7e359fcd4649619aa39ba6d7d4d959bd02e93b444b1b0db8282"
     },
     {
       "path": "source_bundle.py",
@@ -11794,8 +11794,8 @@
       "path": "src/components/ParamControls.tsx",
       "type": "file",
       "mode": 420,
-      "size": 33396,
-      "sha256": "a75ab37aee634ad4d389a371a95311c3bbb179d503c70ef813deaab92faa4d2f"
+      "size": 33571,
+      "sha256": "d05ffd5e42ea7500baa8b073b489d576b2bd3d1368e0824bdf22ef9f380ee0f0"
     },
     {
       "path": "src/components/ParamInput.tsx",
@@ -11962,15 +11962,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 199083,
-      "sha256": "98abcc9d800a6a37e5d9d08f2eee38fe2dfd669a982c84fb98d6927b07188a35"
+      "size": 200691,
+      "sha256": "1b028e0289291e392be431c0a7c45b687625e3b6f61c2ed5f5834c6a440f3d9b"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 96151,
-      "sha256": "7ae934ebc40c0ff26dc0debbf68c58c472fc27710de933668fcc725e835092f1"
+      "size": 96318,
+      "sha256": "44056bb18afdd621ded422789ee877f89dcc969f0162676f1e9c566fe8da0215"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -17506,8 +17506,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 110796,
-      "sha256": "0e90e4745568ce11526c166d41f1a1de278ec23dd600a9d9ba87d1138d2b860d"
+      "size": 111121,
+      "sha256": "59ec38b2a59d25bb5eeb2c4d89be718f87747ff605477b04de7bac28ce78fa1f"
     },
     {
       "path": "src/test/fakeSocket.ts",
