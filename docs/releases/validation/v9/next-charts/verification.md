@@ -24,7 +24,7 @@ The app checks a local file's declarations and consistency. It cannot independen
 | Client baseline | `0283dce2bb45afdfc2e6c422a4f77f4b70bb8c48` |
 | Prior isolated archive-reproducer repair | `73154c8082a78d78c79f3be799ca195f0a7142b6` |
 | Reviewed family group before paired source fix | `0c43dd6178f87e72ff1f521af68b0490966c02e7` |
-| Tested client | `9080d6626f42ab06c8d507eaed59b5c4c15ea583` |
+| Tested client | `dc97414184f803af7e4ba6e5742a10e2478e8ebb` |
 | Provider baseline | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | Canonical provider | `f8f0166603f0b59f3f879b704b23582bd893e67d`, distribution 9.0.1 |
 | Canonical root / Docker vendor tree | `aad6d9c74450cfc5ae9f7fa38c4697b85f58e93c`, 149 tracked paths |
@@ -51,18 +51,20 @@ The vendor copy came from `git archive` of the canonical commit. The checked Git
 | Gate on the tested product | Result |
 |---|---|
 | `pnpm typecheck`, `pnpm lint`, `pnpm scrub` | All passed. |
-| `pnpm test:run` | 543 files passed, seven opt-in files skipped. 10,128 tests passed, 47 skipped. |
+| `pnpm test:run` | 543 files passed, seven opt-in files skipped. 10,135 tests passed, 47 skipped. |
 | `pnpm test:web` | 57 passed. The authentication error diagnostic belongs to an intentional invalid-authentication test. |
 | `pnpm pivot:build`, `pnpm pivot:verify` | Rust 1.98.1, wasm-bindgen 0.2.128. Compiled release WASM passed emitted-module protocol negotiation. Verification passed. |
 | `pnpm pivot:test`, `pnpm test:pivot:packaging` | 199 core tests, one WASM native test, 19 wire codec tests and three packaging cases passed. Packaging includes rejection of intentionally stale or missing artifacts. |
 | `PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap` | Production build passed, 3,982 modules transformed. Vite reported mixed static/dynamic imports for logger and dashboardStore and the existing large-chunk advisory. |
-| Chromium, TypeScript | All **88/88** passed on a single worker and controlled server, zero skips or retries. All eight families plus geometry, teardown, and affected earlier chart families. |
+| Chromium, TypeScript | **86/88** passed in the controlled sweep. Two theme assertions dereferenced a retired layout during redraw. Both passed on an explicit two-case rerun after the test-only correction. The sweep and rerun had zero automatic retries or skips. All eight families, geometry, teardown and affected earlier families were exercised. |
 | Chromium, compiled Rust | All **45/45** family integration cases passed, zero skips or retries. |
 | Installed metadata to client | **1/1** passed with 14 installed HTTP responses. Five generated widgets advertised the flag, selected `results`, and delivered exactly five qualifying receipts across four families. Plain and unstamped-cache responses yielded no client proof. |
 
 At `9080d662`, the backend handoff regression suite passed 744 tests across nine files. Real local HTTP responses exercised a mounted source, an off-tab source, a group-bound symbol and a replacement backend origin. Each case started with AAPL's P/E of 19.875, held the new request, and checked that the old number cleared before the replacement response supplied 33.25. A subsequent refresh of that same request retained 33.25 with a stale label. Late successes and failures from the prior request could not restore 19.875. An unsubmitted form draft reused the registered input without another GET.
 
-The installed-wire reproduction captured method, path and decoded query from HTTPX on all 14 responses. Its Chromium route handler checked all three before supplying an envelope. Deliberately dropping `chart_source=true` failed at the query assertion. A shell test ran two private directories concurrently and covered existing data, symlinks, a symlinked parent and cleanup on success and failure. [Reproduction instructions](reproduce/README.md)
+At `dc974141`, 751 affected tests across nine files passed. The 10 HTTP parent cases include missing Scope on mounted and off-tab replacement origins, a selector-only refusal before GET, editing and reverting a Run-button source without a second GET, a refresh while an off-tab draft is un-run, and a header-case-only refresh. The runtime also tested a pending producer before GET and the different semantics of HTTP field names, values and cookie names. The completed AAPL 19.875× cleared on incompatible refusal, returned on a zero-GET draft revert and remained labeled stale after a genuinely compatible refresh failure.
+
+The installed-wire reproduction at the first correction captured method, path and decoded query from HTTPX on all 14 responses. Its Chromium route handler checked all three before supplying an envelope. Deliberately dropping `chart_source=true` failed at the query assertion. A shell test ran two private directories concurrently and covered existing data, symlinks, a symlinked parent and cleanup on success and failure. [Reproduction instructions](reproduce/README.md)
 
 The earlier File parent regression suite reproduced seven old-acquisition displays and passed all 145 parent/renderer cases after the shared correction. The full unit run emitted the existing React act and jsdom canvas diagnostics. Chromium covered actual pointer and emulated touch events, fitting zoom, bounded overflow, original values, missing pins, re-selection, teardown and late-work fencing. Physical hardware and native app interaction remain unverified. [Scoped review record](review.md)
 
@@ -78,9 +80,9 @@ Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript fil
 
 | JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
 |---|---:|---:|---:|
-| HelpDialog | 732,146 / 246,573 | 750,445 / 252,776 | 18,299 / 6,203 |
+| HelpDialog | 732,146 / 246,573 | 750,445 / 252,775 | 18,299 / 6,202 |
 | MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,438 | 0 / 0 |
-| index | 3,515,697 / 1,136,886 | 3,737,920 / 1,209,378 | 222,223 / 72,492 |
+| index | 3,515,697 / 1,136,886 | 3,738,717 / 1,209,336 | 223,020 / 72,450 |
 | kpi.worker | 0 / 0 | 57,604 / 18,478 | 57,604 / 18,478 |
 | lightweight-charts.production | 180,254 / 57,062 | 180,254 / 57,062 | 0 / 0 |
 | module | 77,311 / 27,623 | 77,311 / 27,623 | 0 / 0 |
@@ -93,7 +95,7 @@ Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript fil
 | table.worker | 274,519 / 86,350 | 322,028 / 100,556 | 47,509 / 14,206 |
 | xlsx 1 | 499,905 / 161,705 | 499,905 / 161,705 | 0 / 0 |
 | xlsx 2 | 499,909 / 161,707 | 499,909 / 161,707 | 0 / 0 |
-| Total | 8,041,112 / 2,519,860 | 8,577,791 / 2,694,929 | 536,679 / 175,069 |
+| Total | 8,041,112 / 2,519,860 | 8,578,588 / 2,694,886 | 537,476 / 175,026 |
 
 The build added the existing Plotly package's box, sunburst and treemap registrations. The isolated production registration deltas for box and sunburst were **14,405 / 5,811** and **40,999 / 14,956** raw/gzip bytes respectively. Treemap's isolated registered-trace bundle delta was **23,547 / 7,577** bytes. Its standalone entry including shared dependencies was **766,659 / 262,526** bytes. These isolated numbers measure different builds and do not add directly to the final main chunk. Violin density uses scatter and worker calculations. There is no full Plotly bundle or version change.
 
