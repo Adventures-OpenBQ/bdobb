@@ -31,7 +31,8 @@ type Job = MeasuredRecipeJob<DualAxisOverlayOptions>;
 type Pair = DualAxisOverlayOptions['recipe'];
 type Fields = Partial<DualAxisOverlayOptions['fields']>;
 
-export function overlayInputFields(columns: DatasetColumn[], options: DualAxisOverlayOptions) {
+export function overlayInputFields(columns: DatasetColumn[], options?: DualAxisOverlayOptions) {
+  if (!options) return [];
   const fields = columns.map(column => ({ id: column.id, origin: acquiredColumnOrigin(column) }));
   const ids = new Set(fields.filter(field => field.origin === 'release_ref' || field.origin === 'session_timing').map(field => field.id));
   for (const role of roles) {

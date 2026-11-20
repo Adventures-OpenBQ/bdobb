@@ -88,10 +88,11 @@ export type RecipeOptions =
   | ReturnSummaryOptions
   | OwnershipSnapshotOptions
   | EtfSunburstOptions
-  | DualAxisOverlayOptions;
+  | DualAxisOverlayOptions
+  | EstimateRevisionsOptions;
 
 /** Closed recipe options accepted by the worker boundary. */
-export type RecipeRequestOptions = RecipeOptions | EstimateRevisionsOptions;
+export type RecipeRequestOptions = RecipeOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 

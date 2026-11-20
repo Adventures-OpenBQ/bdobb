@@ -2507,6 +2507,28 @@ body {
 .dual-axis-overlay-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
 .dual-axis-overlay-details:not([open]) { flex-shrink: 0; }
 .dual-axis-overlay-details h4, .dual-axis-overlay-details p, .dual-axis-overlay-details ul { margin: 4px 0; }
+.linked-chart-renderer--revisions { position: relative; --revision-plot-share: 58%; }
+.linked-chart-renderer--revisions .chart-controls { flex-shrink: 0; max-height: 32%; }
+.linked-chart-renderer--revisions .chart-controls > label { width: min(100%, 320px); white-space: nowrap; }
+.linked-chart-renderer--revisions .chart-controls > label > select { flex: 1; min-width: 0; }
+.linked-chart-plot--revisions { flex: 0 0 var(--revision-plot-share); margin-top: auto; }
+.estimate-revisions-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--revision-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.estimate-revisions-settings { flex: 0 0 100%; min-width: 0; }
+.estimate-revisions-settings summary, .estimate-revisions-details summary { cursor: pointer; }
+.linked-chart-renderer .estimate-revisions-controls { max-width: 100%; border: 0; padding: 2px 0; }
+.estimate-revisions-controls label { max-width: 100%; overflow-wrap: anywhere; }
+.estimate-revisions-controls select { min-width: 0; max-width: 100%; }
+.estimate-revisions-controls p { flex: 1 0 100%; margin: 2px 0; }
+.estimate-revisions-controls .estimate-revisions-pins { flex-direction: column; width: 100%; overflow-wrap: anywhere; }
+.estimate-revisions-details { flex: 0 1 auto; max-height: 24%; overflow: auto; padding: 4px 6px; overflow-wrap: anywhere; }
+.estimate-revisions-details:not([open]) { flex-shrink: 0; }
+.estimate-revisions-details h4, .estimate-revisions-details p, .estimate-revisions-details ul { margin: 4px 0; }
 .chart-surface-placeholder { visibility: hidden; }
 .chart-scroll-viewport--wide { overflow-x: auto; }
 .chart-scroll-viewport--wide.chart-scroll-viewport--touch-scroll { touch-action: pan-x pan-y pinch-zoom; }

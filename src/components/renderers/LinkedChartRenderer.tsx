@@ -11,12 +11,13 @@ import { tableExecutionStore } from '../../stores/tableExecutionStore';
 import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer, type DrawingSurface } from './ChartRenderer';
 import { DualAxisOverlayControls, LinkedDualAxisOverlay, overlayInputFields } from './LinkedDualAxisOverlay';
+import { EstimateRevisionsControls, LinkedEstimateRevisions, estimateRevisionInputFields } from './LinkedEstimateRevisions';
 import { useMeasuredRecipeJob } from './useMeasuredRecipe';
 import { EtfSunburstControls, LinkedEtfSunburst, useEtfSunburstJob } from './LinkedEtfSunburst';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
-import type { DualAxisOverlayOptions, EtfSunburstOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { DualAxisOverlayOptions, EstimateRevisionsOptions, EtfSunburstOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
@@ -169,7 +170,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const etfChart = settings.type === 'etf-sunburst';
     const overlayForm = editing === 'dual-axis-overlay';
     const overlayChart = settings.type === 'dual-axis-overlay';
+    const revisionsForm = editing === 'estimate-revisions';
+    const revisionsChart = settings.type === 'estimate-revisions';
     const acquiredScope = JSON.stringify([editScope, sourceAncestry]);
+    const revisionsScope = JSON.stringify([identity, source, sourceAncestry]);
     const readAcquiredSource = useCallback(() => {
         if (readCurrentSource) return readCurrentSource();
         const current = store.readView(dashboardId, card.id);
@@ -180,6 +184,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         view, executor, source, readAcquiredSource);
     const overlayJob = useMeasuredRecipeJob((overlayChart || overlayForm) && readAcquiredSource().sourceCurrent,
         view, executor, source, readAcquiredSource, overlayInputFields, 'prepared overlay');
+    const revisionsJob = useMeasuredRecipeJob<EstimateRevisionsOptions>(
+        (revisionsChart || revisionsForm) && readAcquiredSource().sourceCurrent, view, executor, source, readAcquiredSource,
+        estimateRevisionInputFields, 'estimate history');
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
@@ -313,7 +320,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
-        const sourceLabel = next.type === 'dual-axis-overlay' ? 'prepared overlay' : 'ETF holdings';
+        const sourceLabel = next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : 'ETF holdings';
         const sourceChanged = `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
         if (guard && !guard()) throw new Error(sourceChanged);
         const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
@@ -341,7 +348,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
         void commit({ ...withRecipeType(settings, options.kind), recipe: options }, canSave);
     }
-    function applyOverlay(options: DualAxisOverlayOptions, current: () => boolean) {
+    function applyClosedRecipe(options: DualAxisOverlayOptions | EstimateRevisionsOptions, current: () => boolean) {
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
         void commit({ type: options.kind, measures: [], display: 'grouped', recipe: options }, canSave);
     }
@@ -354,7 +361,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
       + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
       + (etfForm || etfChart ? ' linked-chart-renderer--etf' : '')
-      + (overlayForm || overlayChart ? ' linked-chart-renderer--overlay' : '')}>
+      + (overlayForm || overlayChart ? ' linked-chart-renderer--overlay' : '')
+      + (revisionsForm || revisionsChart ? ' linked-chart-renderer--revisions' : '')}>
     {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
       className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
     {!viewer ? <div className="chart-controls">
@@ -372,9 +380,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {overlayForm ? <DualAxisOverlayControls key={acquiredScope} job={overlayJob} context={measuredDraftContext}
+      {revisionsForm ? <EstimateRevisionsControls key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
+        disabled={saving} saved={recipe?.ok && recipe.options.kind === 'estimate-revisions' ? recipe.options : undefined}
+        onApply={applyClosedRecipe}/> : overlayForm ? <DualAxisOverlayControls key={acquiredScope} job={overlayJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'dual-axis-overlay' ? recipe.options : undefined}
-        onApply={applyOverlay}/> : etfForm ? <EtfSunburstControls key={acquiredScope} job={etfJob} context={measuredDraftContext}
+        onApply={applyClosedRecipe}/> : etfForm ? <EtfSunburstControls key={acquiredScope} job={etfJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'etf-sunburst' ? recipe.options : undefined}
         onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls key={editScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
@@ -409,7 +419,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         : recipe.options.kind === 'dual-axis-overlay'
           ? <LinkedDualAxisOverlay key={acquiredScope} view={view} job={overlayJob} options={recipe.options}
               context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
-          : <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
+          : recipe.options.kind === 'estimate-revisions'
+            ? <LinkedEstimateRevisions key={revisionsScope} view={view} job={revisionsJob} options={recipe.options}
+                context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+            : <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
       : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;

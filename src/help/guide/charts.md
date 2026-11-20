@@ -80,6 +80,18 @@ Open **Overlay observations** for original values, units and dates. Zoom when th
 
 An attached local file triggers `MISSING_LOCAL_ASSET` when saving a portable Workspace. Relink the chart to an empty local table, remove the dropped file card and export. After import, drop the matching file and use **Choose source** to attach it.
 
+## Estimate revisions
+
+Drop a verified local JSON history of independently recorded consensus estimates, then use **Choose source** to link that table to a linked chart. Choose **Estimate revisions**, the acquired consensus EPS or revenue metric and the exact fiscal target. **Slope** uses two pinned vintages. **Time path** uses at least three. Filter or select one issuer in the source table. Apply after the selected bindings and pins pass the chart check.
+
+The fiscal target dates identify the reporting period. The separately labeled UTC observation times and batch IDs identify when consensus was recorded. Each position represents one recorded vintage at equal spacing. A restatement recorded in a later batch appears at that later observation time. Hover or tap, or open **Estimate revision observations** for original values, signed absolute changes and eligible percentage changes. A zero or negative reference estimate gives an unavailable percentage. Missing, omitted and errored cells leave gaps.
+
+**Bump** requires a verified complete and stable issuer universe with sufficiently comparable baseline and current batches. Pin the exact declared baseline and current vintage IDs. Each later column ranks percentage change from the same positive baseline, with tied competition ranks. If any member is missing an eligible reading, its entire comparison column is unavailable.
+
+All live revision views remain unavailable. The live analyst estimates route reports fiscal targets and relative changes without independent observation vintages. The chart uses the recorded history already attached to the source table.
+
+For a portable Workspace, relink to an empty local table and remove the dropped file card before saving. An attached file triggers `MISSING_LOCAL_ASSET`. Drop and relink the recorded file after import. Reacquire a missing saved pin or explicitly replace it with an available vintage.
+
 ## Linked metric
 
 From a source table’s **Card menu**, choose **Create linked metric**, then select a KPI preset and its original numeric field. **Follow latest acquired** uses the newest eligible vintage. To keep one observation, choose it explicitly. If that pin disappears, reacquire it or choose another available observation. Apply saves the question after checking the source.

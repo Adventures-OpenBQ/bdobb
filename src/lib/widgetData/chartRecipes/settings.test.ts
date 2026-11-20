@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { revisionSlope } from '../../../test/fixtures/estimateRevisions';
 import { expect, it } from 'vitest';
 import type { DatasetColumn, LinkedChartSettings } from '../types';
 import { bubblePriceDates, savedBindingIssue } from './bindings';
@@ -310,4 +311,15 @@ it('offers the latest valid presented price date first and ignores errored cells
   ], 'source', 1, 'localFile');
   source.rows[4].cellErrors = { day: { code: 'invalid-date', message: 'Invalid source cell' } };
   expect(bubblePriceDates(source, 'day')).toEqual(['2026-08-31', '2026-08-28']);
+});
+
+it('only decodes metric, view, fiscal target, pins and the six acquired estimate bindings', () => {
+  expect(decodeRecipeOptions(revisionSlope, revisionSlope.kind)).toEqual({ ok: true, options: revisionSlope });
+  for (const options of [
+    { ...revisionSlope, version: 2 }, { ...revisionSlope, issuer: 'ALFA.US' },
+    { ...revisionSlope, target: { ...revisionSlope.target, vintage: 'snap-a' } },
+    { ...revisionSlope, fields: { ...revisionSlope.fields, batch: 'batch' } },
+    { ...revisionSlope, view: 'path' }, { ...revisionSlope, vintages: ['snap-a', 'snap-a'] },
+    { ...revisionSlope, estimateRevisionsSurface: { width: 320, height: 352 } },
+  ]) expect(decodeRecipeOptions(options, revisionSlope.kind)).toMatchObject({ ok: false });
 });

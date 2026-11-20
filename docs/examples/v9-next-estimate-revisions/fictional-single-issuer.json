@@ -1,0 +1,152 @@
+{
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "estimate-vintages",
+        "origin": "acquired-snapshot",
+        "retrieved_at": "2026-11-14T16:00:00Z",
+        "metric": "eps",
+        "target": {
+          "start": "2027-01-01",
+          "end": "2027-03-31",
+          "kind": "FQ"
+        },
+        "vintages": [
+          {
+            "id": "snap-a",
+            "observed_at": "2026-11-11T16:00:00.123456Z",
+            "batch": "batch-a"
+          },
+          {
+            "id": "snap-b",
+            "observed_at": "2026-11-12T16:00:00.123456Z",
+            "batch": "batch-b"
+          },
+          {
+            "id": "snap-c",
+            "observed_at": "2026-11-13T16:00:00.123456Z",
+            "batch": "batch-c"
+          }
+        ],
+        "inputs": [
+          {
+            "batch": "batch-a",
+            "reference": "example/recorded/snap-a",
+            "universe_id": null,
+            "members": null
+          },
+          {
+            "batch": "batch-b",
+            "reference": "example/recorded/snap-b",
+            "universe_id": null,
+            "members": null
+          },
+          {
+            "batch": "batch-c",
+            "reference": "example/recorded/snap-c",
+            "universe_id": null,
+            "members": null
+          }
+        ],
+        "issuers": [
+          {
+            "issuer": "ALFA.US",
+            "entity_ref": "example/entity/ALFA.US",
+            "unit": "money-per-share",
+            "currency": "USD",
+            "basis": "current-split-adjusted-share",
+            "basis_ref": "example/current-shares/ALFA.US"
+          }
+        ],
+        "universe": {
+          "status": "unknown"
+        },
+        "coordinates": [
+          {
+            "issuer": "ALFA.US",
+            "vintage": "snap-a"
+          },
+          {
+            "issuer": "ALFA.US",
+            "vintage": "snap-b"
+          },
+          {
+            "issuer": "ALFA.US",
+            "vintage": "snap-c"
+          }
+        ],
+        "raw_count": 3,
+        "normalized_count": 3,
+        "delivered_count": 3,
+        "exact_repeats": 0,
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "vintage_conflict": false,
+          "target_conflict": false,
+          "unit_conflict": false,
+          "duplicate_conflict": false
+        }
+      }
+    ]
+  },
+  "rows": [
+    {
+      "issuer": "ALFA.US",
+      "entity_ref": "example/entity/ALFA.US",
+      "unit": "money-per-share",
+      "currency": "USD",
+      "basis": "current-split-adjusted-share",
+      "basis_ref": "example/current-shares/ALFA.US",
+      "vintage": "snap-a",
+      "observed_at": "2026-11-11T16:00:00.123456Z",
+      "batch": "batch-a",
+      "input_ref": "example/recorded/snap-a",
+      "source_contract": "independently-recorded-consensus-mean",
+      "metric": "eps",
+      "target_start": "2027-01-01",
+      "target_end": "2027-03-31",
+      "target_kind": "FQ",
+      "value": 1
+    },
+    {
+      "issuer": "ALFA.US",
+      "entity_ref": "example/entity/ALFA.US",
+      "unit": "money-per-share",
+      "currency": "USD",
+      "basis": "current-split-adjusted-share",
+      "basis_ref": "example/current-shares/ALFA.US",
+      "vintage": "snap-b",
+      "observed_at": "2026-11-12T16:00:00.123456Z",
+      "batch": "batch-b",
+      "input_ref": "example/recorded/snap-b",
+      "source_contract": "independently-recorded-consensus-mean",
+      "metric": "eps",
+      "target_start": "2027-01-01",
+      "target_end": "2027-03-31",
+      "target_kind": "FQ",
+      "value": null
+    },
+    {
+      "issuer": "ALFA.US",
+      "entity_ref": "example/entity/ALFA.US",
+      "unit": "money-per-share",
+      "currency": "USD",
+      "basis": "current-split-adjusted-share",
+      "basis_ref": "example/current-shares/ALFA.US",
+      "vintage": "snap-c",
+      "observed_at": "2026-11-13T16:00:00.123456Z",
+      "batch": "batch-c",
+      "input_ref": "example/recorded/snap-c",
+      "source_contract": "independently-recorded-consensus-mean",
+      "metric": "eps",
+      "target_start": "2027-01-01",
+      "target_end": "2027-03-31",
+      "target_kind": "FQ",
+      "value": 1.2
+    }
+  ]
+}

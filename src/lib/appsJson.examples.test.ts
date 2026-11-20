@@ -86,6 +86,7 @@ describe("docs/examples", () => {
     "v9-next-kpi-gauges.apps.json",
     "v9-next-etf-sunburst.apps.json",
     "v9-next-dual-axis-overlays.apps.json",
+    "v9-next-estimate-revisions.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -272,6 +273,27 @@ describe("docs/examples", () => {
         left: { unitLabel: i === 0 ? "USD/share" : "1982–84 = 100" },
         right: { unitLabel: i === 0 ? "USD/share" : "%" },
       } });
+    }
+  });
+
+  it("v9-next-estimate-revisions imports only pinned questions and compares the acquired examples", async () => {
+    const name = "v9-next-estimate-revisions";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Slope", "Time path", "Bump"]);
+    for (const [index, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const options = chart.linkedChart?.recipe;
+      if (options?.kind !== "estimate-revisions") throw new Error("Missing imported estimate revision recipe.");
+      const file = index === 2 ? "fictional-universe.json" : "fictional-single-issuer.json";
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      expect(runRecipe(dataset, options, { theme: "light", maxDecimals: 2, today: "2026-11-20" })).toMatchObject({
+        ok: true, estimateRevisions: { view: ["slope", "path", "bump"][index], target: { start: "2027-01-01", end: "2027-03-31", kind: "FQ" } },
+      });
     }
   });
 

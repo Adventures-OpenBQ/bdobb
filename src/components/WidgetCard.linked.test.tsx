@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, followPlotYAxisTicks: () => () => {}, followPlotZoom: () => () => {}, restorePlotZoom: async () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst']) }));
+import { revisionBump, revisionDenseValues, revisionHistory, revisionSlope, revisionTieValues } from '../test/fixtures/estimateRevisions';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
@@ -2081,5 +2082,266 @@ it('retains an omitted optional overlay binding and fences pending drafts and qu
     expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
     expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(macro);
     expect(screen.getByTestId('chart-plot')).toBe(original);
+  } finally { releaseSave(); pendingSave.mockRestore(); factory.mockRestore(); }
+});
+
+async function estimateHistorySource(id: string, content: unknown) {
+  const file = await saveLocalFile(new File([JSON.stringify(content)], id + '.json'));
+  return card({ id, widgetId: 'local_table', backendId: 'builtin', params: { file } });
+}
+const revisionSettings = () => screen.getByText('Estimate revision settings', { exact: true });
+const revisionApply = () => screen.getByRole('button', { name: 'Apply chart settings' });
+const vintage = (name: RegExp) => screen.getByRole('checkbox', { name });
+
+it('requires estimate vintage evidence, protects the applied question from an incompatible draft and clears invalid saved settings', async () => {
+  const { factory } = riskRuntime();
+  const sample = revisionHistory([[0, null, 12]], { unknown: true });
+  const ordinary = await estimateHistorySource('A', sample.rows), recorded = await estimateHistorySource('B', sample);
+  const linked = riskChart(revisionSlope);
+  installDashboard(riskDashboard([ordinary, recorded, linked]));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/Load a verified local history/i)).toBeVisible();
+    fireEvent.click(revisionSettings());
+    expect(revisionApply()).toBeDisabled();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await chooseRiskSource('B');
+    const plot = await screen.findByTestId('chart-plot');
+    fireEvent.click(revisionSettings());
+    const view = screen.getByLabelText('Revision view');
+    expect(view).toHaveValue('slope');
+    expect(within(view).getByRole('option', { name: /Bump/ })).toBeDisabled();
+    fireEvent.change(view, { target: { value: 'path' } });
+    expect(screen.getByText(/at least three acquired vintages/i)).toBeVisible();
+    expect(revisionApply()).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    const invalid = { ...linked.linkedChart!, recipe: { ...revisionSlope, version: 2 } as unknown as RecipeOptions };
+    act(() => useDashboardStore.setState({ dashboards: [riskDashboard([ordinary, recorded,
+      { ...linked, linkedSource: { kind: 'widget', sourceWidgetId: 'B' }, linkedChart: invalid }])] }));
+    expect(await screen.findByText(/Supply plain version 1 recipe options/i)).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('remeasures applied revision sizing once, discards obsolete sizing and allows the current source to resize without a new question', async () => {
+  const { factory, run, resize, setSize } = riskRuntime();
+  setSize(320, 230);
+  const a = await estimateHistorySource('A', revisionHistory(revisionTieValues));
+  const b = await estimateHistorySource('B', revisionHistory([[10, 15, 20], [20, 30, 40]]));
+  const plot = vi.mocked(renderPlot);
+  let release!: () => void;
+  run.mockImplementationOnce(async (data, options, context) => {
+    const result = runRecipe(data, options, context);
+    await new Promise<void>(done => { release = done; });
+    return result;
+  });
+  installDashboard(riskDashboard([a, b, riskChart(revisionBump)]));
+  try {
+    const { container } = render(<LiveRiskChart/>);
+    const drawing = () => container.querySelector<HTMLElement>('.linked-chart-plot--revisions .chart-plot')!;
+    await waitFor(() => expect(release).toBeDefined());
+    await chooseRiskSource('B');
+    await screen.findByTestId('chart-plot');
+    const question = plot.mock.lastCall![2];
+    await act(async () => release());
+    expect(drawing().style.height).toBe('230px');
+    expect(run).toHaveBeenCalledTimes(2);
+    await chooseRiskSource('A');
+    await waitFor(() => expect(drawing().style.height).toBe('352px'));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    act(() => resize(320, 230));
+    expect(run).toHaveBeenCalledTimes(3);
+    act(() => resize(320, 352));
+    await screen.findByTestId('chart-plot');
+    expect(plot.mock.lastCall![2]).not.toBe(question);
+    const current = plot.mock.lastCall![2];
+    act(() => resize(403.5, 390));
+    await waitFor(() => expect(plot.mock.lastCall![1].layout.width).toBe(404));
+    expect(plot.mock.lastCall![2]).toBe(current);
+    expect(drawing().style.height).toBe('352px');
+  } finally { factory.mockRestore(); }
+});
+
+it('accepts draft sizing only for the current pins and waits for a successful worker at the measured size', async () => {
+  const { factory, run, resize, setSize } = riskRuntime();
+  setSize(325, 230);
+  const a = await estimateHistorySource('A', revisionHistory([revisionDenseValues]));
+  installDashboard(riskDashboard([a, riskChart(revisionSlope)]));
+  try {
+    const { container } = render(<LiveRiskChart/>);
+    const probe = () => container.querySelector<HTMLElement>('.estimate-revisions-draft-probe .chart-plot')!;
+    const applied = await screen.findByTestId('chart-plot');
+    fireEvent.click(revisionSettings());
+    let releaseDraft!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      const result = runRecipe(data, options, context);
+      await new Promise<void>(done => { releaseDraft = done; });
+      return result;
+    });
+    fireEvent.change(screen.getByLabelText('Revision view'), { target: { value: 'path' } });
+    fireEvent.click(vintage(/snap-b/));
+    await waitFor(() => expect(releaseDraft).toBeDefined());
+    fireEvent.click(vintage(/snap-b/));
+    await act(async () => releaseDraft());
+    expect(probe().style.minWidth).toBe('320px');
+    expect(revisionApply()).toBeDisabled();
+    fireEvent.click(vintage(/snap-b/));
+    await waitFor(() => expect(probe().style.minWidth).toBe('379px'));
+    expect(revisionApply()).toBeDisabled();
+    const before = run.mock.calls.length;
+    act(() => resize(325, 230));
+    expect(run).toHaveBeenCalledTimes(before);
+    act(() => resize(379, 230));
+    await waitFor(() => expect(revisionApply()).toBeEnabled());
+    expect(screen.getByTestId('chart-plot')).toBe(applied);
+    expect(probe().style.minWidth).toBe('379px');
+  } finally { factory.mockRestore(); }
+});
+
+it('fences recursive estimate revision relinks before runtime sync, then keeps only same-chain stale output', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await estimateHistorySource('A', revisionHistory([[10, null, 12]])), b = await estimateHistorySource('B', revisionHistory([[20, null, 24]]));
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const chart = { ...riskChart(revisionSlope), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, b, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const pathB = 'files/' + b.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === pathB ? held : readFile(path, options));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    sync.mockImplementation(() => {});
+    const previousJobs = run.mock.calls.length;
+    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/uses acquired USD\/share/i)).toBeNull();
+    expect(run).toHaveBeenCalledTimes(previousJobs);
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall?.[1].data[0]).toMatchObject({ y: [20, 24] });
+    let rejectRefresh!: (error: Error) => void;
+    const refresh = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+    read.mockImplementation((path, options) => path === pathB ? refresh : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getByText(/uses acquired USD\/share/i)).toBeVisible();
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it('drops an estimate revision chart from the outgoing ready revision and ignores its late draw or worker failure', async () => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await estimateHistorySource('A', revisionHistory([[10, null, 12]])), b = await estimateHistorySource('B', revisionHistory([[20, null, 24]]));
+  installDashboard(riskDashboard([a, b, riskChart(revisionSlope)]));
+  const plot = vi.mocked(renderPlot);
+  let rejectDraw!: (error: Error) => void;
+  plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    let release!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      const result = runRecipe(data, options, context);
+      await new Promise<void>(done => { release = done; });
+      return result;
+    });
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: 'ALFA.US' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/uses acquired USD\/share/i)).toBeNull();
+    await act(async () => release());
+    let rejectWorker!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, reject) => { rejectWorker = reject; }));
+    act(() => resize(498.5, 379.5));
+    await waitFor(() => expect(rejectWorker).toBeDefined());
+    plot.mockRejectedValueOnce(new Error('Current revision draw failed'));
+    await chooseRiskSource('B');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Current revision draw failed');
+    await act(async () => {
+      rejectDraw(new Error('Obsolete draw'));
+      rejectWorker(new Error('Obsolete calculation'));
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText(/Obsolete/i)).toBeNull();
+    run.mockRejectedValueOnce(new Error('Current revision calculation failed'));
+    act(() => resize(483.5, 364.5));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Current revision calculation failed');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+
+it.each([[0, 4, 5], [3, 4, null]])('disables bump with an ineligible declared endpoint %j', async (...values) => {
+  const { factory } = riskRuntime();
+  const local = await estimateHistorySource('A', revisionHistory([values]));
+  installDashboard(riskDashboard([local, riskChart(revisionSlope)]));
+  try {
+    render(<LiveRiskChart/>);
+    fireEvent.click(revisionSettings());
+    expect(await within(screen.getByLabelText('Consensus value')).findByRole('option', { name: 'value' })).toBeEnabled();
+    expect(screen.getByRole('option', { name: /Bump/ })).toBeDisabled();
+  } finally { factory.mockRestore(); }
+});
+
+it('discards sizing from a relinked estimate draft and rechecks the drawing size before a queued Apply', async () => {
+  const { factory, run, setSize } = riskRuntime();
+  setSize(325, 230);
+  const a = await estimateHistorySource('A', revisionHistory([revisionDenseValues]));
+  const b = await estimateHistorySource('B', revisionHistory([[10, 11, 12]]));
+  installDashboard(riskDashboard([a, b, riskChart(revisionSlope)]));
+  let releaseSave!: () => void;
+  const heldSave = new Promise<void>(done => { releaseSave = done; });
+  const write = fs.writeTextFile;
+  const pendingSave = vi.spyOn(fs, 'writeTextFile').mockImplementation(async (path, data, options) => {
+    if (data.includes('Held revisions workspace')) await heldSave;
+    return write(path, data, options);
+  });
+  try {
+    const { container } = render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    fireEvent.click(revisionSettings());
+    let releaseDraft!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      const result = runRecipe(data, options, context);
+      await new Promise<void>(done => { releaseDraft = done; });
+      return result;
+    });
+    fireEvent.change(screen.getByLabelText('Revision view'), { target: { value: 'path' } });
+    fireEvent.click(vintage(/snap-b/));
+    await waitFor(() => expect(releaseDraft).toBeDefined());
+    await chooseRiskSource('B');
+    await screen.findByTestId('chart-plot');
+    fireEvent.click(revisionSettings());
+    fireEvent.change(screen.getByLabelText('Revision view'), { target: { value: 'path' } });
+    fireEvent.click(vintage(/snap-b/));
+    await waitFor(() => expect(revisionApply()).toBeEnabled());
+    await act(async () => releaseDraft());
+    expect(container.querySelector<HTMLElement>('.estimate-revisions-draft-probe .chart-plot')!.style.minWidth).toBe('320px');
+    expect(revisionApply()).toBeEnabled();
+
+    const saving = useDashboardStore.getState().renameDashboard('d', 'Held revisions workspace');
+    await waitFor(() => expect(pendingSave.mock.calls.some(([, data]) => data.includes('Held revisions workspace'))).toBe(true));
+    fireEvent.click(revisionApply());
+    setSize(345, 230);
+    await act(async () => { releaseSave(); await saving; });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/estimate history source or drawing size changed/i);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards.at(-1)?.linkedChart?.recipe).toEqual(revisionSlope);
   } finally { releaseSave(); pendingSave.mockRestore(); factory.mockRestore(); }
 });

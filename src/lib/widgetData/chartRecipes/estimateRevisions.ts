@@ -7,7 +7,8 @@ import type { DatasetColumn, WidgetDataset } from '../types';
 import { roundedRatio, scaledInteger } from './binary64';
 import { readChartSource, readChartSourceProjection, type ChartBuildResult } from './chartSourceContracts';
 import { read } from './estimateEvidence';
-import { estimateVintageAdapter, parseEstimateVintageSource, type EstimateVintageSource } from './estimateVintageEvidence';
+import { estimateChangeText, type EstimateRevisionChange } from './estimateRevisionsDisplay';
+import { estimateVintageAdapter, estimateVintageSourceIssue, parseEstimateVintageSource, type EstimateVintageSource } from './estimateVintageEvidence';
 import { acquiredColumnOrigin } from './financialEvidence';
 import { metricVintageKey } from './metricEvidence';
 import { linearAxisTicks } from './overlayDisplay';
@@ -24,14 +25,7 @@ type CompleteUniverse = Extract<EstimateVintageSource['universe'], { status: 'co
 type Reading =
   | { state: 'value'; value: number }
   | { state: 'missing' | 'omitted' | 'cell-error'; value: null };
-type Change = {
-  fromVintage: string;
-  absolute: number | null;
-  percent: number | null;
-  absoluteUnavailable?: 'out-of-range';
-  percentUnavailable?: 'nonpositive-baseline' | 'out-of-range';
-};
-type Observation = Reading & { vintage: string; change: Change | null; rank: number | null };
+type Observation = Reading & { vintage: string; change: EstimateRevisionChange | null; rank: number | null };
 type Series = { issuer: Issuer; unitLabel: string; observations: Observation[] };
 type RankColumn =
   | { vintage: string; status: 'available' }
@@ -49,7 +43,6 @@ export type EstimateRevisionData = {
 };
 
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
-const sourceIssue = 'Load a verified local history of independently recorded consensus snapshots. Fiscal target dates and live estimate rows do not establish vintages.';
 const bindingIssue = 'Present the six distinct, unambiguous physical estimate fields and repair the chart bindings.';
 const factsIssue = 'The visible rows disagree with the acquired estimate history. Repair the source or field bindings.';
 const hazards = {
@@ -129,9 +122,9 @@ function orderedPins(source: EstimateVintageSource, pins: readonly string[]) {
     .map(({ id, observed_at, batch }) => ({ id, observed_at, batch }));
 }
 
-function changeBetween(current: number, earlier: number, fromVintage: string, binary: DataView): Change {
+function changeBetween(current: number, earlier: number, fromVintage: string, binary: DataView): EstimateRevisionChange {
   const difference = current - earlier;
-  const change: Change = { fromVintage, absolute: Number.isFinite(difference) ? difference : null, percent: null };
+  const change: EstimateRevisionChange = { fromVintage, absolute: Number.isFinite(difference) ? difference : null, percent: null };
   if (change.absolute === null) change.absoluteUnavailable = 'out-of-range';
   if (earlier <= 0) change.percentUnavailable = 'nonpositive-baseline';
   else {
@@ -211,7 +204,7 @@ export function compareEstimateVintages(dataset: WidgetDataset, options: Estimat
   const source = readChartSource(provenance, 'estimate-vintages', parseEstimateVintageSource);
   const projection = readChartSourceProjection(provenance, 'estimate-vintages');
   if (!source || !projection || (provenance.receipt !== undefined && !estimateVintageAdapter.legacyReceiptAgrees?.(source, provenance.receipt)))
-    return refuse(sourceIssue);
+    return refuse(estimateVintageSourceIssue);
   const unsafe = Object.entries(hazards).filter(([flag]) => source.unsafe[flag]).map(([, text]) => text);
   if (unsafe.length) return refuse(`The estimate acquisition reports ${unsafe.join(', ')}. Repair the source.`);
   if (source.metric !== metric || source.target.start !== target.start || source.target.end !== target.end || source.target.kind !== target.kind)
@@ -260,19 +253,6 @@ export function compareEstimateVintages(dataset: WidgetDataset, options: Estimat
   return { ok: true, value, notes: estimateNotes(value, source) };
 }
 
-const ordinaryPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 15, signDisplay: 'exceptZero', useGrouping: false });
-const scientificPercent = new Intl.NumberFormat('en-US', { style: 'percent', notation: 'scientific', maximumSignificantDigits: 15, signDisplay: 'exceptZero' });
-
-function changeText(change: Change, unit: string) {
-  const absolute = change.absolute;
-  const signedAbsolute = absolute === null ? 'unavailable (outside numeric range)' : `${absolute > 0 ? '+' : ''}${absolute} ${unit}`;
-  const percent = change.percent;
-  const signedPercent = percent === null
-    ? change.percentUnavailable === 'nonpositive-baseline' ? 'unavailable (earlier estimate is zero or negative)' : 'unavailable (outside numeric range)'
-    : `${(Math.abs(percent) >= 1000 ? scientificPercent : ordinaryPercent).format(percent)} (fraction ${percent})`;
-  return { signedAbsolute, signedPercent };
-}
-
 function observationLines(data: EstimateRevisionData, series: Series, observation: Observation, vintage: Vintage) {
   const metric = data.metric === 'eps' ? 'EPS' : 'revenue';
   const { value, rank, change } = observation;
@@ -285,7 +265,7 @@ function observationLines(data: EstimateRevisionData, series: Series, observatio
     original,
   ];
   if (change) {
-    const { signedAbsolute, signedPercent } = changeText(change, series.unitLabel);
+    const { signedAbsolute, signedPercent } = estimateChangeText(change, series.unitLabel);
     if (rank !== null) {
       // One compact row group per issuer lets Plotly keep coincident ranks inspectable together.
       return [`${series.issuer.issuer} · rank ${rank} of ${data.series.length}`, original, `${signedAbsolute} · ${signedPercent}`];

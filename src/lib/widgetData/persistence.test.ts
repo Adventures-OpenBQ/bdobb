@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { revisionSlope } from '../../test/fixtures/estimateRevisions';
 import { expect, it } from 'vitest';
 import { remapWidgetReferences, persistedCard } from './persistence';
 import type { DashboardCard } from '../types';
@@ -133,4 +134,12 @@ it('persists only the closed dual-axis overlay settings', () => {
   expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(authored);
   const invalid = { ...recipe, version: 2 } as unknown as RecipeOptions;
   expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: invalid } }).linkedChart?.recipe).toBeUndefined();
+});
+
+it('keeps original revision pins in native settings and drops runtime state', () => {
+  const settings = { type: revisionSlope.kind, measures: [], display: 'grouped' as const, recipe: revisionSlope };
+  const injected = { ...settings, figure: { data: [] }, chart_sources: {}, estimateRevisionsSurface: { height: 352, width: 320 } };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(settings);
+  const invalid = { ...injected, recipe: { ...revisionSlope, issuer: 'ALFA.US' } };
+  expect(persistedCard({ ...child, linkedChart: invalid }).linkedChart).toEqual({ ...settings, recipe: undefined });
 });

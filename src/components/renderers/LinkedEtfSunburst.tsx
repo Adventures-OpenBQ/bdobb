@@ -29,7 +29,8 @@ const acquiredOrigins = new Set(['symbol', 'sector', 'weight', 'fund_symbol', 's
   'weight_basis', 'weight_unit', 'unit', 'basis', 'etf_kind', 'as_of', 'holdings_coverage']);
 const recipeRoles = Object.keys(roles) as (keyof typeof roles)[];
 
-function etfInputFields(columns: DatasetColumn[], options: EtfSunburstOptions) {
+function etfInputFields(columns: DatasetColumn[], options?: EtfSunburstOptions) {
+  if (!options) return [];
   const acquiredFields = columns.filter(column => acquiredOrigins.has(acquiredColumnOrigin(column) ?? '')).map(column => column.id);
   const available = new Set(columns.map(column => column.id));
   return [...new Set([...acquiredFields, ...Object.values(options.fields).filter(id => available.has(id))])];

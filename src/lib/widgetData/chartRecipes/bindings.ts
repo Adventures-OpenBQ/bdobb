@@ -5,6 +5,7 @@ import { statementOwnedIds } from '../../statementModel/types';
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate } from './financialEvidence';
 import { ownershipBarRoles, type OwnershipSource } from './ownershipEvidence';
+import { estimateRevisionFieldOrigins } from './settings';
 import { adjustedPriceOrigins, priceDateOrigins } from './priceEvidence';
 import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
 import type { RecipeOptions } from './types';
@@ -51,6 +52,13 @@ export function ownershipInputFields(columns: readonly DatasetColumn[]): string[
   return columns.filter(column => coordinates.some(field => acquiredColumnOrigin(column) === field)).map(column => column.id);
 }
 
+export const estimateRevisionFieldLabels = {
+  issuer: 'Qualified issuer', vintage: 'Vintage identifier', targetStart: 'Fiscal target start',
+  targetEnd: 'Fiscal target end', targetKind: 'Fiscal period kind', value: 'Consensus value',
+} as const;
+
+const estimateRevisionRoles = Object.keys(estimateRevisionFieldOrigins) as (keyof typeof estimateRevisionFieldOrigins)[];
+
 export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue', mode: 'sector' | 'region' = 'sector'): Role[] {
   if (kind === 'bubble-regression') return [
     acquiredRole('symbol', 'Qualified listing', 'symbol'),
@@ -80,6 +88,8 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     { ...adjustedPriceRole, strictOrigin: 'ignore-case' },
     { key: 'symbol', label: 'Qualified listing field', names: ['symbol', 'ticker'], optional: true, strictOrigin: 'ignore-case' },
   ];
+  if (kind === 'estimate-revisions') return estimateRevisionRoles.map(role =>
+    acquiredRole(role, estimateRevisionFieldLabels[role], estimateRevisionFieldOrigins[role], role === 'value' ? 'numeric' : undefined));
   if (kind === 'income-sankey' || kind === 'ownership-snapshot' || kind === 'dual-axis-overlay') return [];
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];

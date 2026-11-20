@@ -4,7 +4,7 @@
 import type { DashboardCard } from '../types';
 import { isLinkedMetricCard } from '../builtins';
 import { decodeLinkedKpiOptions } from './kpi/settings';
-import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, LINKED_CHART_FIELDS } from './chartRecipes/settings';
+import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isRecipeOnlyLinkedChartType, LINKED_CHART_FIELDS } from './chartRecipes/settings';
 
 const DROP = Symbol('drop');
 
@@ -53,7 +53,7 @@ function persistedExtensions(extensions: unknown): DashboardCard['extensions'] {
 function persistedChart(chart: DashboardCard['linkedChart']): DashboardCard['linkedChart'] {
   if (!chart || !isAcquiredFinancialRecipeType(chart.type)) return chart;
   const validated = decodeLinkedChartRecipe(chart, chart.type);
-  if (chart.type === 'dual-axis-overlay') {
+  if (isRecipeOnlyLinkedChartType(chart.type)) {
     return { type: chart.type, display: 'grouped', measures: [],
       ...(validated?.ok && { recipe: plainData(validated.options, []) as typeof validated.options }) };
   }

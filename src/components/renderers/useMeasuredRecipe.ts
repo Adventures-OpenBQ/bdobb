@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ChartResult, LocalWorkerExecutor, Revision } from '../../lib/tableExecution/types';
 import type { DatasetColumn } from '../../lib/widgetData/types';
-import type { RecipeContext, RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
+import type { EstimateRevisionsSurface, RecipeContext, RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import { readDrawingSurface, type DrawingSurface } from './ChartRenderer';
@@ -34,7 +34,7 @@ export type MeasuredRecipeJob<T> = {
 /** A draft and its applied calculation share the same presented producer revision. */
 export function useMeasuredRecipeJob<T extends RecipeOptions>(
   sourceCurrent: boolean, view: ViewState, executor: LocalWorkerExecutor | undefined, sourceId: string | undefined,
-  readCurrent: () => SourceState, inputFields: (columns: DatasetColumn[], options: T) => string[], sourceLabel: string,
+  readCurrent: () => SourceState, inputFields: (columns: DatasetColumn[], options?: T) => string[], sourceLabel: string,
 ): MeasuredRecipeJob<T> | undefined {
   const { ready, sourceRevision: revision } = view;
   return useMemo(() => {
@@ -50,7 +50,7 @@ export function useMeasuredRecipeJob<T extends RecipeOptions>(
       current, ready, revision, columns,
       async load(signal, options) {
         if (!current()) throw new Error(`The ${sourceLabel} source changed. Reload the selected source.`);
-        const result = await executor.chartData(revision, options ? inputFields(columns, options) : [], signal);
+        const result = await executor.chartData(revision, inputFields(columns, options), signal);
         signal.throwIfAborted();
         if (!sameRecipeRevision(result.revision, revision) || result.resultRevision !== revision.model || result.outputRevision !== revision.output)
           throw new Error(`The ${sourceLabel} source revision changed. Reload the selected source.`);
@@ -61,7 +61,8 @@ export function useMeasuredRecipeJob<T extends RecipeOptions>(
 }
 
 type Measured = { box: DrawingSurface; context: RecipeContext };
-type Request<T> = { job: MeasuredRecipeJob<T>; options: T; measured: Measured };
+type Sequence<T> = { job: MeasuredRecipeJob<T>; options: T };
+type Request<T> = Sequence<T> & { measured: Measured };
 
 export function useMeasuredRecipeSurface(context: RecipeContext) {
   const element = useRef<HTMLDivElement>(null);
@@ -85,7 +86,8 @@ export function useMeasuredRecipe<T extends RecipeOptions>(job: MeasuredRecipeJo
     worker.current = client;
     return () => { worker.current = null; client.dispose(); };
   }, []);
-  const request = useMemo(() => job && options && measured ? { job, options, measured } : undefined, [job, options, measured]);
+  const sequence = useMemo(() => job && options ? { job, options } : undefined, [job, options]);
+  const request = useMemo(() => sequence && measured ? { ...sequence, measured } : undefined, [sequence, measured]);
   const committedRequest = useRef<typeof request>(undefined);
   useLayoutEffect(() => {
     committedRequest.current = request;
@@ -94,18 +96,27 @@ export function useMeasuredRecipe<T extends RecipeOptions>(job: MeasuredRecipeJo
   const current = useCallback(() => Boolean(request && committedRequest.current === request
     && request.job.current() && matches(request.measured.box)), [request, matches]);
   const [completed, setCompleted] = useState<{ request: Request<T>; result: RecipeResult }>();
+  // A sizing reply belongs to the calculation, while each reply still has to
+  // arrive for the exact current measurement. Remeasuring must retain the hint.
+  const [sizing, setSizing] = useState<{ sequence: Sequence<T>; minimum: EstimateRevisionsSurface }>();
   useEffect(() => {
     const client = worker.current;
-    if (!request || !client) return;
+    if (!request || !sequence || !client) return;
+    const activeSequence = sequence;
     const { job, options, measured } = request;
     const controller = new AbortController(), { signal } = controller;
     function finish(result: RecipeResult) {
-      if (!signal.aborted && current() && request) setCompleted({ request, result });
+      if (signal.aborted || !current() || !request) return;
+      const minimum = result.estimateRevisionsSurface;
+      if (options.kind === 'estimate-revisions' && minimum)
+        setSizing({ sequence: activeSequence, minimum });
+      setCompleted({ request, result });
     }
     void job.load(signal, options).then(data => {
       if (!signal.aborted && current()) return client.run(data, options, measured.context, signal).then(finish);
     }).catch(error => finish({ ok: false, message: recipeErrorText(error) }));
     return () => controller.abort();
-  }, [request, current]);
-  return { completed, current, checked: request && completed?.request === request ? completed.result : undefined };
+  }, [sequence, request, current]);
+  return { completed, current, checked: request && completed?.request === request ? completed.result : undefined,
+    minimum: sizing?.sequence === sequence ? sizing?.minimum : undefined };
 }

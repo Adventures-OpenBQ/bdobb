@@ -6,6 +6,8 @@ import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 import { isChartCurrency, metricVintageKey } from './metricEvidence';
 import { isOverlayReference as reference, isSupportedOverlayQuarter } from './overlayEvidence';
 
+export const estimateVintageSourceIssue = 'Load a verified local history of independently recorded consensus snapshots. Fiscal target dates and live estimate rows do not establish vintages.';
+
 const flags = ['identity_conflict', 'vintage_conflict', 'target_conflict', 'unit_conflict', 'duplicate_conflict'] as const;
 type Flag = typeof flags[number];
 type Target = { start: string; end: string; kind: 'FQ' | 'FY' };

@@ -2244,7 +2244,8 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   const unavailable = view.status === 'unavailable' || !ancestry;
   const content = <>
     {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
-    {!unavailable && view.stale && !metric && card.linkedChart?.type !== 'etf-sunburst' && card.linkedChart?.type !== 'dual-axis-overlay' ? <p role="status">Showing completed data (stale).</p> : null}
+    {!unavailable && view.stale && !metric && card.linkedChart?.type !== 'etf-sunburst' && card.linkedChart?.type !== 'dual-axis-overlay'
+      && card.linkedChart?.type !== 'estimate-revisions' ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
       : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, ancestry])}

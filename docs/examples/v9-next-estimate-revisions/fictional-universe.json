@@ -1,0 +1,86 @@
+{
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "estimate-vintages",
+        "origin": "acquired-snapshot",
+        "retrieved_at": "2026-11-14T16:00:00Z",
+        "metric": "eps",
+        "target": {"start": "2027-01-01", "end": "2027-03-31", "kind": "FQ"},
+        "vintages": [
+          {"id": "snap-a", "observed_at": "2026-11-11T16:00:00.123456Z", "batch": "batch-a"},
+          {"id": "snap-b", "observed_at": "2026-11-12T16:00:00.123456Z", "batch": "batch-b"},
+          {"id": "snap-c", "observed_at": "2026-11-13T16:00:00.123456Z", "batch": "batch-c"}
+        ],
+        "inputs": [
+          {
+            "batch": "batch-a",
+            "reference": "example/recorded/snap-a",
+            "universe_id": "example/universe",
+            "members": [
+              "ALFA.US",
+              "BETA.CA"
+            ]
+          },
+          {
+            "batch": "batch-b",
+            "reference": "example/recorded/snap-b",
+            "universe_id": "example/universe",
+            "members": [
+              "ALFA.US",
+              "BETA.CA"
+            ]
+          },
+          {
+            "batch": "batch-c",
+            "reference": "example/recorded/snap-c",
+            "universe_id": "example/universe",
+            "members": [
+              "ALFA.US",
+              "BETA.CA"
+            ]
+          }
+        ],
+        "issuers": [
+          {"issuer": "ALFA.US", "entity_ref": "example/entity/ALFA.US", "unit": "money-per-share", "currency": "USD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/ALFA.US"},
+          {"issuer": "BETA.CA", "entity_ref": "example/entity/BETA.CA", "unit": "money-per-share", "currency": "CAD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/BETA.CA"}
+        ],
+        "universe": {
+          "status": "complete",
+          "id": "example/universe",
+          "members": [
+            "ALFA.US",
+            "BETA.CA"
+          ],
+          "baseline_batch": "batch-a",
+          "current_batch": "batch-c"
+        },
+        "coordinates": [
+          {"issuer": "ALFA.US", "vintage": "snap-a"},
+          {"issuer": "BETA.CA", "vintage": "snap-a"},
+          {"issuer": "ALFA.US", "vintage": "snap-b"},
+          {"issuer": "BETA.CA", "vintage": "snap-b"},
+          {"issuer": "ALFA.US", "vintage": "snap-c"},
+          {"issuer": "BETA.CA", "vintage": "snap-c"}
+        ],
+        "raw_count": 6,
+        "normalized_count": 6,
+        "delivered_count": 6,
+        "exact_repeats": 0,
+        "diagnostics": [],
+        "unsafe": {"identity_conflict": false, "vintage_conflict": false, "target_conflict": false, "unit_conflict": false, "duplicate_conflict": false}
+      }
+    ]
+  },
+  "rows": [
+    {"issuer": "ALFA.US", "entity_ref": "example/entity/ALFA.US", "unit": "money-per-share", "currency": "USD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/ALFA.US", "vintage": "snap-a", "observed_at": "2026-11-11T16:00:00.123456Z", "batch": "batch-a", "input_ref": "example/recorded/snap-a", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": 1},
+    {"issuer": "BETA.CA", "entity_ref": "example/entity/BETA.CA", "unit": "money-per-share", "currency": "CAD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/BETA.CA", "vintage": "snap-a", "observed_at": "2026-11-11T16:00:00.123456Z", "batch": "batch-a", "input_ref": "example/recorded/snap-a", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": 2},
+    {"issuer": "ALFA.US", "entity_ref": "example/entity/ALFA.US", "unit": "money-per-share", "currency": "USD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/ALFA.US", "vintage": "snap-b", "observed_at": "2026-11-12T16:00:00.123456Z", "batch": "batch-b", "input_ref": "example/recorded/snap-b", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": null},
+    {"issuer": "BETA.CA", "entity_ref": "example/entity/BETA.CA", "unit": "money-per-share", "currency": "CAD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/BETA.CA", "vintage": "snap-b", "observed_at": "2026-11-12T16:00:00.123456Z", "batch": "batch-b", "input_ref": "example/recorded/snap-b", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": 2.67543},
+    {"issuer": "ALFA.US", "entity_ref": "example/entity/ALFA.US", "unit": "money-per-share", "currency": "USD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/ALFA.US", "vintage": "snap-c", "observed_at": "2026-11-13T16:00:00.123456Z", "batch": "batch-c", "input_ref": "example/recorded/snap-c", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": 1.2},
+    {"issuer": "BETA.CA", "entity_ref": "example/entity/BETA.CA", "unit": "money-per-share", "currency": "CAD", "basis": "current-split-adjusted-share", "basis_ref": "example/current-shares/BETA.CA", "vintage": "snap-c", "observed_at": "2026-11-13T16:00:00.123456Z", "batch": "batch-c", "input_ref": "example/recorded/snap-c", "source_contract": "independently-recorded-consensus-mean", "metric": "eps", "target_start": "2027-01-01", "target_end": "2027-03-31", "target_kind": "FQ", "value": 2.4}
+  ]
+}

@@ -239,7 +239,7 @@ it('numerical_limits reports unsupported change magnitudes, preserves exact extr
 it('accepts closed worker options only and rejects incomplete, executable or unstated comparison choices', async () => {
   const source = await acquire(oneIssuer([10, 11, 12]));
   expect(decodeRecipeRequestOptions(options)).toEqual({ ok: true, options });
-  expect(decodeRecipeOptions(options, 'estimate-revisions')).toMatchObject({ ok: false });
+  expect(decodeRecipeOptions(options, 'estimate-revisions')).toEqual({ ok: true, options });
   for (const settings of [
     { ...options, version: 2 }, { ...options, view: 'chart' }, { ...options, metric: 'price' },
     { ...options, vintages: ['snap-a', 'snap-a'] }, { ...options, vintages: ['snap-a'] },

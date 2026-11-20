@@ -10,7 +10,7 @@ import { decodeLinkedKpiOptions } from './widgetData/kpi/settings';
 import { reservedPivotName } from './paramGroups';
 import { AGG_NAMES, BUCKETS } from './types';
 import type { Dashboard, DashboardCard, PivotConfig } from './types';
-import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isLegacyLinkedChartType, isRecipeType, LINKED_CHART_FIELDS, OVERLAY_LINKED_CHART_FIELDS } from './widgetData/chartRecipes/settings';
+import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isLegacyLinkedChartType, isRecipeOnlyLinkedChartType, isRecipeType, LINKED_CHART_FIELDS, RECIPE_ONLY_LINKED_CHART_FIELDS } from './widgetData/chartRecipes/settings';
 
 type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'linkedMetric' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
   view?: 'calendar';
@@ -93,10 +93,12 @@ export function extras(value: unknown, path: string): Extras {
     const chartPath = `${path}.linkedChart`;
     if (!isRecord(c) || typeof c.type !== 'string' || (!isLegacyLinkedChartType(c.type) && !isRecipeType(c.type)))
       extensionError(chartPath, 'Invalid linked chart type. Choose a supported chart type.');
-    if (c.type === 'dual-axis-overlay') {
-      keys(c, OVERLAY_LINKED_CHART_FIELDS, chartPath);
+    if (isRecipeOnlyLinkedChartType(c.type)) {
+      keys(c, RECIPE_ONLY_LINKED_CHART_FIELDS, chartPath);
       if (c.display !== 'grouped' || (c.measures !== undefined && (!Array.isArray(c.measures) || c.measures.length)))
-        extensionError(chartPath, 'Dual-axis overlays use only the two measures defined by the selected recipe.');
+        extensionError(chartPath, c.type === 'dual-axis-overlay'
+          ? 'Dual-axis overlays use only the two measures defined by the selected recipe.'
+          : 'Estimate revisions use only the fields defined by the selected recipe.');
     } else if (isAcquiredFinancialRecipeType(c.type)) keys(c, LINKED_CHART_FIELDS, chartPath);
     const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
     if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
