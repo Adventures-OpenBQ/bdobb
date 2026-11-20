@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyProbe,
   needsKey,
+  OPTIONAL_KEY_PROVIDERS,
   normalizeProvider,
   pickProbeWidget,
   probeTone,
@@ -43,6 +44,13 @@ describe("REGISTRY_PROVIDERS", () => {
     expect(REGISTRY_PROVIDERS.has("alpaca")).toBe(true);
     expect(REGISTRY_PROVIDERS.has("fmp")).toBe(true);
     expect(REGISTRY_PROVIDERS.has("eodhd")).toBe(true);
+  });
+});
+
+describe("OPTIONAL_KEY_PROVIDERS", () => {
+  it("names the registry providers the stack reports as auth: optional", () => {
+    expect([...OPTIONAL_KEY_PROVIDERS].sort()).toEqual(["cftc", "econdb"]);
+    for (const p of OPTIONAL_KEY_PROVIDERS) expect(REGISTRY_PROVIDERS.has(p)).toBe(true);
   });
 });
 
