@@ -40,15 +40,18 @@ it.each(engines)('%s hidden_bad_row_survives_second_link', async (_, make) => {
       { symbol: 'KEEP.US', exchange: 'US', last_day_data_date: '2026-08-28', currency_symbol: '$' },
       { symbol: 'DROP.TO', exchange: 'TO', last_day_data_date: '2026-08-28', currency_symbol: 'CAD' },
     ];
-    const chart_evidence = { ...screenerEvidence, raw_count: 2, normalized_count: 2, delivered_count: 2, diagnostics: ['mixed_denomination'],
-      cohorts: [{ ...screenerEvidence.cohorts[0], raw_count: 2, denominations: ['CAD', 'USD'] }] };
+    const chart_evidence = { ...screenerEvidence, raw_count: 3, normalized_count: 2, delivered_count: 2,
+      diagnostics: ['mixed_denomination', 'unassignable_identity'],
+      unsafe: { ...screenerEvidence.unsafe, unassignable_identity: true },
+      cohorts: [{ ...screenerEvidence.cohorts[0], raw_count: 3, denominations: ['CAD', 'USD'] }] };
     const first = await edited(root, 'root', snapshot(rows, chart_evidence), 'KEEP');
     const second = await edited(child, 'child', await subset(root, first));
     const third = await edited(grandchild, 'grandchild', await subset(child, second));
     const chart = await grandchild.chartData(third, ['symbol'], signal);
     expect(chart.rows.map(row => row.values)).toEqual([{ symbol: 'KEEP.US' }]);
     expect(chart.provenance.metadata).toMatchObject({ financialSourceFiltered: true, financialEvidence: {
-      raw_count: 2, delivered_count: 2, cohorts: [{ denominations: ['CAD', 'USD'], raw_count: 2 }],
+      raw_count: 3, normalized_count: 2, delivered_count: 2, unsafe: { unassignable_identity: true },
+      cohorts: [{ denominations: ['CAD', 'USD'], raw_count: 3 }],
     } });
     expect(chart.provenance.lineage).toHaveLength(2);
   } finally {

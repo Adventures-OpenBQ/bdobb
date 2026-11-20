@@ -35,7 +35,7 @@ export async function dataFromBytes(name: string, bytes: Uint8Array): Promise<un
 type ParsedTable = { data: unknown; formats?: NonNullable<DatasetRow['cellFormats']>[]; snapshot?: Snapshot };
 
 async function parsedFromBytes(name: string, bytes: Uint8Array): Promise<ParsedTable> {
-  if (extensionOf(name) === "json") return parseTableSnapshot(JSON.parse(new TextDecoder().decode(bytes)));
+  if (extensionOf(name) === "json") return parseTableSnapshot(JSON.parse(new TextDecoder().decode(bytes)), 'local-file');
   await assertInflatesWithin(bytes, WORKBOOK_MAX_INFLATED_BYTES);
   const XLSX = await import("xlsx");
   const book = XLSX.read(bytes, { type: "array", cellNF: true });
@@ -183,7 +183,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     dataset.provenance = priceAcquisitionProvenance(dataset);
   }
   dataset.provenance = etfAcquisitionProvenance(dataset, acquisition);
-  const evidence = parseFinancialEvidence(acquisition?.financialEvidence ?? snapshot?.financialEvidence);
+  const evidence = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
   if (evidence && financialRowsAgree(evidence, rows))
     dataset.provenance = { ...dataset.provenance, metadata: { ...dataset.provenance.metadata, financialEvidence: structuredClone(evidence) } };
   dataset.provenance = estimateProvenance(dataset);

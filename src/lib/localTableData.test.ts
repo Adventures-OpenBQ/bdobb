@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { dataFromBytes, datasetFromBytes } from './localTableData';
+import { dataFromBytes, datasetFromBytes, datasetFromRows, parseTableSnapshot } from './localTableData';
 it('normalizes literal column IDs and complete local provenance', async () => {
   const result = await datasetFromBytes('data.json', new TextEncoder().encode('[{"a.b":10},{"a.b":20}]'), 'widget', 4);
   expect(result.columns).toEqual([{ id: 'a.b', label: 'a.b' }]);
@@ -82,4 +82,20 @@ it('rebuilds ETF evidence from each opened snapshot and refuses saved evidence i
   expect((await open({ ...snapshot, receipt: { ...receipt, fund_symbol: 'FUND_B.US' } })).provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_B.US' });
   await expect(open({ ...snapshot, metadata: first.provenance.metadata })).rejects.toThrow('Could not parse local table');
   await expect(open({ ...snapshot, receipt: { ...receipt, token: 'extra' } })).rejects.toThrow('Could not parse local table');
+});
+
+
+it('acquires the explicit financial snapshot from local bytes and requires backend receipt context', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const { readFinancialEvidence } = await import('./widgetData/chartRecipes/financialEvidence');
+  const wire = { rows: [dividendRow], completeness: 'bounded', chart_evidence: dividendEvidence };
+  const file = await datasetFromBytes('dividend.json', new TextEncoder().encode(JSON.stringify(wire)), 'local', 1);
+  expect(readFinancialEvidence(file.provenance)).toEqual(dividendEvidence);
+  const backend = datasetFromRows(wire.rows, 'backend', 1, 'backend', undefined, [], {
+    completeness: 'bounded', financialEvidence: readFinancialEvidence(file.provenance),
+  });
+  expect(readFinancialEvidence(backend.provenance)).toBeUndefined();
+  const selected = parseTableSnapshot({ ...wire, chart_evidence: { invented: true } });
+  expect(selected.data).toEqual([dividendRow]);
+  expect(selected.snapshot).toEqual({ completeness: 'unknown' });
 });

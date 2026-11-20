@@ -8,6 +8,8 @@ import { preparePrices } from '../lib/widgetData/chartRecipes/input';
 import { fetchWidgetData } from '../lib/dataClient';
 import { backend, widget } from '../test/fixtures';
 import { startMockServer } from '../test/mockServer';
+import { readFinancialEvidence, type BackendAcquisition } from '../lib/widgetData/chartRecipes/financialEvidence';
+import { dividendEvidence, dividendRow } from '../test/fixtures/financialEvidence';
 import { readEtfEvidence, type BackendEtfAcquisition } from '../lib/widgetData/chartRecipes/etfEvidence';
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: globalThis.fetch }));
 import { priceFields } from '../lib/widgetData/chartRecipes/fixtures';
@@ -1006,6 +1008,40 @@ it('delivers the acquired dotted HTTP ETF payload through a second table', async
       expect(readEtfEvidence(chart, 'holdings').ok).toBe(false);
     }
 
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+    await server.close();
+  }
+});
+
+it.each([
+  ['/api/v1/eodhd/equity/fundamental/dividends', 'false', false],
+  ['/api/v1/unrelated', 'true', false],
+  ['/api/v1/eodhd/equity/fundamental/dividends', 'true', true],
+] as const)('binds financial certification to the completed backend acquisition at %s (chart_source=%s)', async (path, chart_source, certified) => {
+  const rows = [dividendRow];
+  const server = await startMockServer({ [path]: {
+    results: { rows, completeness: 'bounded', chart_evidence: dividendEvidence },
+    extra: { results_metadata: { chart_evidence: dividendEvidence } },
+  } });
+  const definition = widget({ id: 'dividends', endpoint: path, dataKey: 'results.rows' });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker), source: backendTableSource });
+  const source = { ...card('dividend-root'), widgetId: definition.id, backendId: definition.backendId };
+  try {
+    useWidgetRegistryStore.setState({ widgets: [definition] });
+    store.syncDashboard(dashboard([source]));
+    let acquisition: BackendAcquisition | undefined;
+    const params = { chart_source, symbol: 'SHEL.LSE', start_date: '2026-01-01', end_date: '2026-06-30' };
+    const data = await fetchWidgetData(backend({ baseUrl: server.url }), definition, params,
+      undefined, undefined, undefined, completed => { acquisition = completed; });
+    expect(acquisition?.financialEvidence).toEqual(certified ? dividendEvidence : undefined);
+    store.setBackendRows('d', source.id, data, acquisition);
+    const raw = await backendTableSource(source).acquire(new AbortController().signal);
+    if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+    expect(raw.dataset.rows.map(row => row.values)).toEqual(rows);
+    expect(readFinancialEvidence(raw.dataset.provenance)).toEqual(certified ? dividendEvidence : undefined);
+    expect(raw.dataset.completeness.kind).toBe('unknown');
   } finally {
     store.disposeDashboard('d');
     useWidgetRegistryStore.setState({ widgets: [] });

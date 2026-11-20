@@ -21,16 +21,17 @@ export type Snapshot = {
   completeness: WidgetDataset['completeness']['kind'];
 };
 
-/** An explicit acquisition receipt travels with the delivered rows. */
-export function parseTableSnapshot(data: unknown): { data: unknown; snapshot?: Snapshot } {
-  if (!isRecord(data) || (!Object.hasOwn(data, 'receipt') && !Object.hasOwn(data, 'chart_evidence') && !isTableSnapshotEnvelope(data))) return { data };
+/** Only the local file boundary can recognize financial evidence inside a snapshot. */
+export function parseTableSnapshot(data: unknown, source: 'backend' | 'local-file' = 'backend'): { data: unknown; snapshot?: Snapshot } {
+  if (!isRecord(data)) return { data };
+  const legacy = Object.hasOwn(data, 'receipt');
+  const financial = source === 'local-file' && Object.hasOwn(data, 'chart_evidence');
+  if (!legacy && !financial && !isTableSnapshotEnvelope(data)) return { data };
   const { rows, receipt, completeness } = data;
   const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
   const kind = kinds.find(k => k === completeness);
   const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date',
     'fund_symbol', 'etf_kind', 'weight_basis', 'holdings_coverage', 'as_of', 'retrieved_at'];
-  const financial = Object.hasOwn(data, 'chart_evidence');
-  const legacy = Object.hasOwn(data, 'receipt');
   const records = tableRows(rows);
   if (!legacy && !financial && records) {
     // An explicit negative scope is meaningful on its own. An affirmative one needs its receipt.

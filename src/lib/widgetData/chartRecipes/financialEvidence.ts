@@ -163,9 +163,19 @@ export type FinancialEvidence = ScreenerFinancialEvidence | DividendFinancialEvi
 export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence };
 
 function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
-  const { cohorts, raw_count, unsafe } = evidence;
+  const { cohorts, raw_count, normalized_count, unsafe } = evidence;
   const dated = cohorts.reduce((total, cohort) => total + cohort.raw_count, 0);
-  return (unsafe.unassignable_date ? dated < raw_count : dated === raw_count)
+  const diagnostics = new Set<string>(evidence.diagnostics);
+  const safetyFacts = {
+    ...unsafe,
+    unknown_denomination: cohorts.some(cohort => cohort.unknown_denomination),
+    mixed_denomination: cohorts.some(cohort => cohort.denominations.length > 1),
+    screener_duplicate_conflict: cohorts.some(cohort => cohort.conflicting_duplicates),
+    screener_exact_duplicate: cohorts.some(cohort => cohort.exact_duplicate_count > 0),
+  };
+  return (normalized_count === raw_count || unsafe.unassignable_identity)
+    && (unsafe.unassignable_date ? dated < raw_count : dated === raw_count)
+    && Object.entries(safetyFacts).every(([code, fact]) => diagnostics.has(code) === fact)
     && unique(cohorts.map(cohort => cohort.price_date))
     && cohorts.every(cohort => cohort.raw_count > cohort.exact_duplicate_count
       && cohort.denominations.length <= cohort.raw_count && unique(cohort.denominations)

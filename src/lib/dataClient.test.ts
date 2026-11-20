@@ -1316,3 +1316,30 @@ it('dotted_selector_retains_envelope_evidence', async () => {
     await server.close();
   }
 });
+
+
+it.each([
+  [4, []],
+  [4, ['unassignable_identity']],
+  [3, ['unassignable_identity']],
+  [3, ['unit_conflict']],
+  [3, ['mixed_denomination']],
+] as const)('withholds a request-bound screener receipt with inconsistent cohort facts (raw_count=%d, diagnostics=%j)', async (raw_count, diagnostics) => {
+  const { screenerEvidence } = await import('../test/fixtures/financialEvidence');
+  const rows = ['FIRST.US', 'SECOND.US', 'THIRD.US'].map(symbol => ({
+    symbol, exchange: 'US', currency_symbol: '$', last_day_data_date: '2026-08-28',
+  }));
+  const chart_evidence = { ...screenerEvidence, raw_count, normalized_count: 3, delivered_count: 3, diagnostics,
+    cohorts: [{ ...screenerEvidence.cohorts[0], raw_count }] };
+  const path = '/api/v1/eodhd/equity/screener';
+  const server = await startMockServer({ [path]: { results: rows, extra: { results_metadata: { chart_evidence } } } });
+  try {
+    const context = vi.fn();
+    const b = { ...backend, baseUrl: server.url };
+    const w = widget({ type: 'table', endpoint: path, dataKey: 'results' });
+    expect(await fetchWidgetData(b, w, { chart_source: 'true', exchange: 'us' }, undefined, undefined, undefined, context)).toEqual(rows);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+  } finally {
+    await server.close();
+  }
+});
