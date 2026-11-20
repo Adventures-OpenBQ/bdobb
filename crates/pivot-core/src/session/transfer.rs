@@ -52,7 +52,7 @@ impl Session {
         }
         let provenance = (sequence == 0).then(|| {
             let mut provenance = v.provenance.clone();
-            provenance.project_financial_evidence(presented_rows(), &fields);
+            provenance.project_financial_evidence(presented_rows(), &v.columns);
             provenance.presentation = Some(PresentationProvenance {
                 scope: PresentedScope::Presented,
                 row_count: count as u64,

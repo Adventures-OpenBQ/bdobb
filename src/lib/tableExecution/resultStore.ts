@@ -77,8 +77,9 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
       const envelope = context(requestId, requested);
       if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
       const priceProvenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
-      const provenance = financialProjectionProvenance(priceProvenance, view.presentedRows, fields);
-      return structuredClone({ ...envelope, kind: 'chartData', columns: view.columns.filter(c => fields.includes(c.id)), rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
+      const columns = view.columns.filter(c => fields.includes(c.id));
+      const provenance = financialProjectionProvenance(priceProvenance, view.presentedRows, columns);
+      return structuredClone({ ...envelope, kind: 'chartData', columns, rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
     },
     presented(requestId, requested, transferId, batchSize = 500, ignoreSelection = false) {
       const envelope = context(requestId, requested);
@@ -86,7 +87,7 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
         throw new ExecutionProtocolError('INVALID_REQUEST', 'Transfer ID and positive safe batch size required');
       const fields = view.columns.map(c => c.id);
       const rows = projection(ignoreSelection ? eligiblePresentedRows(view) : view.presentedRows, fields);
-      const provenance = financialProjectionProvenance(view.provenance, rows, fields);
+      const provenance = financialProjectionProvenance(view.provenance, rows, view.columns);
       return (function* () { for (let offset = 0, sequence = 0; offset < Math.max(1, rows.length); offset += batchSize, sequence++)
         yield structuredClone({ ...envelope, kind: 'subset' as const, transferId, sequence, ...(sequence === 0 ? { columns: view.columns, provenance: { ...provenance, presentation: { scope: 'presented' as const, rowCount: rows.length, revision } }, freshness: view.freshness } : {}), rows: rows.slice(offset, offset + batchSize), final: offset + batchSize >= rows.length }); })();
     },

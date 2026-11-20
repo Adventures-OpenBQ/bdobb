@@ -273,16 +273,17 @@ impl Session {
                     return Err(problem("INVALID_REQUEST", "Unknown chart field"));
                 }
                 let rows = project(selection::presented(v, &v.selection), fields);
+                let columns: Vec<_> = v
+                    .columns
+                    .iter()
+                    .filter(|c| fields.contains(&c.id))
+                    .cloned()
+                    .collect();
                 let mut provenance = v.provenance.clone();
-                provenance.project_financial_evidence(&rows, fields);
+                provenance.project_financial_evidence(&rows, &columns);
                 let dataset = SourceDataset {
                     rows,
-                    columns: v
-                        .columns
-                        .iter()
-                        .filter(|c| fields.contains(&c.id))
-                        .cloned()
-                        .collect(),
+                    columns,
                     result_revision: q.revision.model,
                     output_revision: q.revision.output,
                     provenance,

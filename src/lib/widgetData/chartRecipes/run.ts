@@ -6,6 +6,7 @@ import type { WidgetDataset } from '../types';
 import { savedBindingIssue } from './bindings';
 import { buildBubbleRegression } from './bubbleRegression';
 import { buildCorrelation } from './correlation';
+import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
 import { buildEstimateRange } from './estimateRange';
 import { buildMonthlyReturns } from './monthlyReturns';
@@ -57,7 +58,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     return { ok: false, refused: true, message: 'Supply a viewport width greater than 0 and at most 10,000.' };
 
   const recipe = decoded.options;
-  const issue = savedBindingIssue(recipe, dataset.columns, dataset.rows);
+  const issue = recipe.kind === 'dividend-steps' ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);
@@ -70,7 +71,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
     case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
-    case 'dividend-steps':
+    case 'dividend-steps': return buildDividendSteps(dataset, recipe, context);
     case 'income-sankey':
       return { ok: false, refused: true, message: 'This chart recipe is unavailable in this build.' };
   }

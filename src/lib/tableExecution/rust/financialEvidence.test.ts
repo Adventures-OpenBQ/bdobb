@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 import { dividendEvidence, dividendRow, incomeEvidence, incomeRow, screenerEvidence } from '../../../test/fixtures/financialEvidence';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
 import { datasetFromBytes } from '../../localTableData';
+import { runRecipe } from '../../widgetData/chartRecipes/run';
 import { createRustExecutor } from './runtime';
 import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
 import { createWorkerExecutor } from '../workerClient';
@@ -73,6 +74,36 @@ it.each(engines)('%s retains only the coordinate of a removed trailing dividend'
     expect(JSON.stringify(chart.provenance)).not.toContain('0.7');
   } finally {
     [root, child, grandchild].forEach(worker => worker.dispose());
+  }
+});
+
+it.each(engines)('%s preserves an aliased raw ex-date through chart projection and a linked input', async (_, make) => {
+  const [root, child] = ['root', 'child'].map(make);
+  const date = '2026-02-12', trailing = '2026-05-10';
+  try {
+    const rows = [dividendRow, { ...dividendRow, ex_dividend_date: trailing, amount: .7, frequency: 'DROP' }];
+    const chart_evidence = { ...dividendEvidence, raw_count: 2, normalized_count: 2, delivered_count: 2, event_dates: [date, trailing] };
+    const source = await datasetFromBytes('dividends.json', snapshot(rows, chart_evidence), 'root', 1);
+    source.columns = source.columns.map(column => column.id === 'ex_dividend_date'
+      ? { ...column, id: 'ex_date_alias', sourceFieldId: 'ex_dividend_date' } : column);
+    for (const row of source.rows) {
+      row.values.ex_date_alias = row.values.ex_dividend_date;
+      delete row.values.ex_dividend_date;
+    }
+    const first = await edited(root, 'root', source, 'Special');
+    const second = await edited(child, 'child', await subset(root, first));
+    const chart = await child.chartData(second, ['ex_date_alias', 'amount', 'currency'], signal);
+    expect(chart.rows.map(row => row.values)).toEqual([{ ex_date_alias: date, amount: .2, currency: 'GBP' }]);
+    expect(chart.provenance.metadata?.financialOmittedEventDates).toEqual([trailing]);
+    const result = runRecipe(chart, { kind: 'dividend-steps', version: 1, instrument: 'SHEL.LSE',
+      fields: { date: 'ex_date_alias', amount: 'amount', currency: 'currency' } },
+    { today: '2026-06-01', theme: 'light', maxDecimals: 2 });
+    expect(result).toMatchObject({ ok: true, figure: { data: [
+      expect.objectContaining({ mode: 'lines', x: [date, trailing], y: [.2, .2] }),
+      expect.objectContaining({ mode: 'markers', x: [date], y: [.2] }),
+    ] } });
+  } finally {
+    [root, child].forEach(worker => worker.dispose());
   }
 });
 

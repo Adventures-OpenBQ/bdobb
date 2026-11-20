@@ -262,16 +262,17 @@ export function financialPresentationProvenance(provenance: DatasetProvenance, f
     ? { ...provenance, metadata: { ...provenance.metadata, financialSourceFiltered: true } } : provenance;
 }
 
-export function financialProjectionProvenance(provenance: DatasetProvenance, rows: readonly DatasetRow[], fields: readonly string[]): DatasetProvenance {
+export function financialProjectionProvenance(provenance: DatasetProvenance, rows: readonly DatasetRow[], columns: readonly DatasetColumn[]): DatasetProvenance {
   const evidence = readFinancialEvidence(provenance);
   if (evidence?.kind !== 'dividends') return provenance;
-  const field = 'ex_dividend_date';
-  const coordinates = !provenance.inputMayContainAggregates && fields.includes(field)
-    ? rows.flatMap(row => {
+  const coordinates: string[] = [];
+  if (!provenance.inputMayContainAggregates) {
+    const aliases = columns.filter(column => acquiredColumnOrigin(column) === 'ex_dividend_date').map(column => column.id);
+    if (aliases.length) for (const row of rows) for (const field of aliases) {
       const day = row.values[field];
-      return isoDate(day) && !row.cellErrors?.[field] ? [day] : [];
-    })
-    : [];
+      if (isoDate(day) && !row.cellErrors?.[field]) coordinates.push(day);
+    }
+  }
   const projected = projectFinancialEvidence(evidence, coordinates);
   return projected.kind === 'dividends' && projected.omitted_event_dates?.length
     ? { ...provenance, metadata: { ...provenance.metadata, financialOmittedEventDates: projected.omitted_event_dates } } : provenance;

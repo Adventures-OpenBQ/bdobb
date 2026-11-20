@@ -831,7 +831,7 @@ impl Provenance {
     pub(crate) fn project_financial_evidence<'a>(
         &mut self,
         rows: impl IntoIterator<Item = &'a DatasetRow>,
-        fields: &[String],
+        columns: &[DatasetColumn],
     ) {
         let Some(metadata) = self.metadata.as_mut() else {
             return;
@@ -851,24 +851,34 @@ impl Provenance {
         let Some(WireValue::Array(events)) = fact("event_dates") else {
             return;
         };
-        const DATE: &str = "ex_dividend_date";
         let mut visible = BTreeSet::new();
-        if self.input_may_contain_aggregates != Some(true)
-            && fields.iter().any(|field| field == DATE)
-        {
-            visible.extend(rows.into_iter().filter_map(|row| {
-                match row.values.get(DATE) {
-                    Some(WireValue::String(date))
-                        if !row
-                            .cell_errors
-                            .as_ref()
-                            .is_some_and(|errors| errors.contains_key(DATE)) =>
-                    {
-                        Some(date.as_str())
+        if self.input_may_contain_aggregates != Some(true) {
+            let aliases: Vec<_> = columns
+                .iter()
+                .filter(|column| {
+                    column.source_field_id.as_deref().unwrap_or(&column.id) == "ex_dividend_date"
+                        && column.analytical.is_none()
+                        && column.measure_id.is_none()
+                        && column.aggregation.is_none()
+                        && column.split_path.as_ref().is_none_or(Vec::is_empty)
+                })
+                .map(|column| &column.id)
+                .collect();
+            if !aliases.is_empty() {
+                for row in rows {
+                    for field in &aliases {
+                        if let Some(WireValue::String(date)) = row.values.get(*field) {
+                            if !row
+                                .cell_errors
+                                .as_ref()
+                                .is_some_and(|errors| errors.contains_key(*field))
+                            {
+                                visible.insert(date.as_str());
+                            }
+                        }
                     }
-                    _ => None,
                 }
-            }));
+            }
         }
         if let Some(WireValue::Array(previous)) = metadata.get("financialOmittedEventDates") {
             for date in previous {

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { afterEach, expect, it, vi } from 'vitest';
-import { screenerEvidence } from '../../../test/fixtures/financialEvidence';
+import { dividendEvidence, dividendRow, emptyDividendEvidence, screenerEvidence } from '../../../test/fixtures/financialEvidence';
 import { datasetFromRows } from '../../localTableData';
 import { createRecipeWorker, type RecipeRequest } from './workerClient';
 import { drawdownOptions, priceDataset } from './fixtures';
@@ -97,6 +97,33 @@ it('dispatches the bubble recipe through the actual worker without the legacy ob
     figure: { data: [expect.objectContaining({ mode: 'markers', x: [0], y: [.02] })] } } });
   expect(reply.result.notes.join(' ')).toMatch(/Price-data date 2026-08-28/);
   expect(reply.result.notes.join(' ')).not.toMatch(/Presented observation dates/);
+});
+
+it('dispatches verified dividends through the actual worker, including a covered empty refresh', async () => {
+  const scope = { onmessage: undefined as ((event: { data: RecipeRequest }) => void) | undefined, postMessage: vi.fn() };
+  vi.stubGlobal('self', scope);
+  vi.resetModules();
+  await import('./recipe.worker');
+  const identity = { requestId: 12, sourceWidgetId: 'dividends', resultRevision: 1, outputRevision: 1 };
+  const send = (rows: typeof dividendRow[], receipt: unknown) => {
+    const source = datasetFromRows(rows, 'dividends', 1, 'localFile', undefined, [], {
+      completeness: 'bounded', financialEvidence: parseFinancialEvidence(receipt),
+    });
+    scope.onmessage!({ data: structuredClone({
+      identity, dataset: source, context: { ...context, today: '2026-02-12' },
+      options: { kind: 'dividend-steps', version: 1, instrument: 'SHEL.LSE',
+        fields: { date: 'ex_dividend_date', amount: 'amount', currency: 'currency', frequency: 'frequency' } },
+    } satisfies RecipeRequest) });
+    return structuredClone(scope.postMessage.mock.lastCall![0]);
+  };
+  const history = send([dividendRow], dividendEvidence);
+  expect(history).toMatchObject({ ...identity, result: { ok: true,
+    figure: { data: [expect.objectContaining({ mode: 'markers', x: ['2026-02-12'], y: [.2] })] } } });
+  expect(history.result.notes.join(' ')).toMatch(/observed.*2026-02-12/i);
+  expect(history.result.notes.join(' ')).not.toMatch(/Presented observation dates/);
+  const empty = send([], emptyDividendEvidence);
+  expect(empty).toMatchObject({ ...identity, result: { ok: true, figure: { data: [] } } });
+  expect(empty.result.notes.join(' ')).toMatch(/no dividend events were supplied.*2026-01-01.*2026-06-30/i);
 });
 
 it('sends layout width in context and fences a superseded arrangement of the same source revision', async () => {
