@@ -11,6 +11,7 @@ import { selectEffective, useSettingsStore } from "./settingsStore";
 import { useWorkspaceStore } from "./workspaceStore";
 
 const realQueueUpload = useWorkspaceStore.getState().queueUpload;
+const realSave = useSettingsStore.getState().save;
 const entry = { mode: "login" as const, connection: { id: "ws1", name: "Work", baseUrl: "https://workspace.example" }, username: "alice", userId: "11111111-1111-4111-8111-111111111111", token: "synthetic-session", displaySettings: {}, state: "signed-in" as const };
 
 beforeEach(() => {
@@ -18,7 +19,7 @@ beforeEach(() => {
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
-  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, draft: null });
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, draft: null, save: realSave });
 });
 
 describe("useSettingsStore", () => {
