@@ -295,6 +295,9 @@ pub fn validate_definition(raw: &WireDefinition) -> Result<ValidatedDefinition, 
             if category.legacy_bucket.is_some() && category.transform != Transform::Native {
                 return Err(invalid("categories.legacyBucket"));
             }
+            if let Some(sort) = &category.sort_field_id {
+                required(sort, "categories.sortFieldId")?;
+            }
             if let Some(binding) = &category.fiscal_binding {
                 required(
                     &binding.company_field_id,

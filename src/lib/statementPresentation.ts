@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { StatementIntent } from './statementModel/types';
+import { displayedSections } from './statementModel/placement';
 import type { WidgetDataset } from './widgetData/types';
 import { uniqueHeaders } from './transpose';
 import { SECTION_COLUMN, ITEM_COLUMN, exportRows, statementRows, type StatementRows, type StatementItem } from './statementRows';
@@ -41,9 +42,10 @@ export function readStatementPresentation(raw: unknown): StatementPresentation {
 
 /** Called only after the producing worker has validated and compiled this intent. */
 export function statementPresentation(intent: StatementIntent, layout: { rows: string[]; columns: string[]; values: string[] }): StatementPresentation {
+  const displayed = displayedSections(intent.template, intent.overrides);
   const sectionOrder = intent.overrides.sectionOrder ?? intent.template.sections.map(section => section.id);
   const sections = [...sectionOrder, ...intent.template.sections.map(section => section.id).filter(id => !sectionOrder.includes(id))].map(id => {
-    const section = intent.template.sections.find(section => section.id === id)!;
+    const section = displayed.find(section => section.id === id)!;
     const order = intent.overrides.lineOrder[id] ?? section.lineIds;
     return { id, label: intent.overrides.labels[id] ?? section.label, lines: [...order, ...section.lineIds.filter(id => !order.includes(id))].map(id => {
       const line = intent.template.lines.find(line => line.id === id)!;

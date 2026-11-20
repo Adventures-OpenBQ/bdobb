@@ -4,7 +4,7 @@ Base repository: Adventures-OpenBQ/bdobb
 Base commit: 30df41cae3e9bb232e21251e5858d4e77219b13e
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
-This source tree includes the proposed AGPL migration, revision-specific Help
+This source tree includes the AGPL edition, revision-specific Help
 source link, exact lockfiles, necessary build scripts, original artwork and
 vendored source where present. It is NOT the unchanged source of the old
 Apache binary. Build any new AGPL binary from this complete edition tree.
@@ -14,24 +14,30 @@ Apache binary. Build any new AGPL binary from this complete edition tree.
 Run `python3 -B verify-source.py` immediately after extraction, before creating
 node_modules, Git state or generated build output. SOURCE-MANIFEST.json lists
 the exact files and source identity. The external catalogue supplies the SHA-256
-of the compressed archive. The original tag and commit have not been moved.
+of the compressed archive. The release tag is updated only after qualification. Historical source offers and receipts are retained.
 
 ## Matching dependency distributions and license evidence
 
 Also download the shared package archive `dependency-pack-a1b2ab0d108e6dbb7044.tar.gz`.
 SHA-256: `64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941`.
-Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
+Published public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
 
-This public URL and the application's Help source URL are prepared targets,
-not a claim that anything has been uploaded. For local review use the sibling
-catalogue's download links. Its dependency manifest identifies each package,
-original location, lockfile integrity and release coverage. Original npm .tgz
-and Cargo .crate distributions are provided separately to avoid duplicating
-the same dependency bytes in every application's source archive. Extract those
-archives to inspect or reuse their source. MPL-covered published BlockNote
-packages contain src/, and the Rust crates contain their source. The pack's
-copyleft-source report records source-member checks. Do not replace upstream
-licenses with AGPL. Recovered evidence and standard terms are reproduced in
+Also download the published supplement `dependency-supplement-8ee464578a28d424dd26.tar.gz`.
+SHA-256: `f91d0b7e758f23883cf63777288ba488baca4558adf2d2ede23c2061465f3831`.
+URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-8ee464578a28/dependency-supplement-8ee464578a28d424dd26.tar.gz
+
+Both archives are required. DEPENDENCY-SOURCES.json identifies their immutable
+archive and manifest hashes. DEPENDENCY-COVERAGE.json records this V5 assembly's
+exact tracked lockfiles and package identities, including development, optional
+and platform-specific entries. The release walk verifies selected original npm
+.tgz and Cargo .crate bytes against both archive hashes and lockfile integrities.
+Local/path packages are supplied by this application source archive.
+
+Original package notices and licenses remain in their distributions. MPL-covered
+published BlockNote packages include src/, and Rust crates include their source.
+The base pack's source-member and license-evidence reports retain their scope;
+this is not a blanket preferred-source claim for every generated JS asset.
+Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
 
 ## Build the application
@@ -72,6 +78,6 @@ Client PR #69: 53c9c33924cecdd8b5673641770cacd51ef1e26a
 Provider PR #16: f9e3908155601108df957cf55e61b8c5b4e4f501
 Exact paired provider commit: 45e3b41a31b2903db3a56c31fc7b289d6fda1892
 
-The catalogue contains all 71 calendars. Coverage/disagreement limits in docs/calendars/release-v4-evidence.md remain applicable. These sources supersede earlier archive offers for this changed edition; original Apache tags stay intact.
+The catalogue contains all 71 calendars. Coverage/disagreement limits in docs/calendars/release-v4-evidence.md remain applicable. These sources supersede earlier archive offers for this changed edition; historical source offers remain available.
 
 Documentation copyright patch v6.0.0, based on published source commit da6f6be42803976932ce9d4395950db6d8e00ec9. The software remains AGPL-3.0-only; DOCUMENTATION_TERMS.md preserves existing permissions and Corresponding Source rights.

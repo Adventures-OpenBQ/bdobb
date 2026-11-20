@@ -1,7 +1,7 @@
 [
   {
     "name": "Demo providers",
-    "description": "One card per data provider that answers on the openbq-docker v3 stack without a sign-up of your own. BLS, CFTC, EconDB and Nasdaq need no key; EIA and Congress.gov use the providers' public demo keys from credentials.demo.env, and a key of your own in credentials.env takes their place. Demo keys are rate-limited, so answers can vary between runs.",
+    "description": "Demo cards for the openbq-docker v3 stack. EIA uses the public key from credentials.demo.env unless you supply your own. Congress 119 bills use keyless bulk data; BLS, CFTC and Nasdaq need no key. EconDB attempts a temporary token, but may refuse access: supply your own key or skip that card. Demo quotas and upstream availability vary.",
     "img": "",
     "img_dark": "",
     "img_light": "",
@@ -17,7 +17,9 @@
             "y": 0,
             "w": 20,
             "h": 12,
-            "state": { "params": {} }
+            "state": {
+              "params": {}
+            }
           },
           {
             "i": "uscongress_bills_congress_gov_obb",
@@ -25,7 +27,11 @@
             "y": 0,
             "w": 20,
             "h": 12,
-            "state": { "params": { "congress": "119" } }
+            "state": {
+              "params": {
+                "congress": "119"
+              }
+            }
           },
           {
             "i": "bls_search_bls_obb",
@@ -33,7 +39,12 @@
             "y": 12,
             "w": 20,
             "h": 12,
-            "state": { "params": { "category": "cpi", "query": "CUUR0000SA0" } }
+            "state": {
+              "params": {
+                "category": "cpi",
+                "query": "CUUR0000SA0"
+              }
+            }
           },
           {
             "i": "cftc_cot_cftc_obb",
@@ -41,7 +52,12 @@
             "y": 12,
             "w": 20,
             "h": 12,
-            "state": { "params": { "code": "067651", "start_date": "2025-01-01" } }
+            "state": {
+              "params": {
+                "code": "067651",
+                "start_date": "2025-01-01"
+              }
+            }
           },
           {
             "i": "econdb_economy_indicators_econdb_obb",
@@ -49,7 +65,12 @@
             "y": 24,
             "w": 20,
             "h": 12,
-            "state": { "params": { "symbol": "RGDP", "country": "US" } }
+            "state": {
+              "params": {
+                "symbol": "RGDP",
+                "country": "US"
+              }
+            }
           },
           {
             "i": "nasdaq_equity_fundamental_historical_eps_nasdaq_obb",
@@ -57,7 +78,11 @@
             "y": 24,
             "w": 20,
             "h": 12,
-            "state": { "params": { "symbol": "IBM" } }
+            "state": {
+              "params": {
+                "symbol": "IBM"
+              }
+            }
           },
           {
             "i": "videos_video_custom_obb",
@@ -65,7 +90,11 @@
             "y": 36,
             "w": 20,
             "h": 12,
-            "state": { "params": { "video_name": "OpenBB Workspace Demo" } }
+            "state": {
+              "params": {
+                "video_name": "OpenBB Workspace Demo"
+              }
+            }
           }
         ]
       }

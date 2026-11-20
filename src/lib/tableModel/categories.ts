@@ -21,6 +21,7 @@ export type CategoryMetadata = {
   recipe: string;
   bucket: Bucket;
   periodicity: Periodicity;
+  sortFieldId?: string;
 };
 export type CategorizedRows = {
   rows: DatasetRow[];
@@ -40,9 +41,23 @@ export function categoryBucket(definition: CategoryDef): Bucket {
   return definition.legacyBucket ?? (definition.transform === 'Y' ? 'year' : definition.transform === 'Q' ? 'quarter' : definition.transform === 'M' ? 'month' : 'native');
 }
 const read = (row: DatasetRow, field: string): unknown => Object.hasOwn(row.values, field) ? row.values[field] : undefined;
+/** Row key carrying a category's sort value beside its member. */
+export const categorySortKey = (categoryId: string): string => `\x1esort\x1e${categoryId}`;
 
 /** `columns` supply a declared display key (`metadata.cellField`, the hoverCard cellField) for object cells. */
 export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[], fiscal: FiscalContext, columns: readonly DatasetColumn[] = []): CategorizedRows {
+  // Reuse calendar boundaries within this calculation, keeping row metadata independently mutable.
+  const boundaryCache = new Map<string, ReturnType<typeof monthBounds>>();
+  const boundaries = (year: number, month: number, length: number) => {
+    const key = `${year}:${month}:${length}`;
+    let value = boundaryCache.get(key);
+    if (!value) {
+      value = monthBounds(year, month, length);
+      // High-cardinality inputs must not grow an unbounded auxiliary cache.
+      if (boundaryCache.size < 256) boundaryCache.set(key, value);
+    }
+    return { ...value };
+  };
   const displayFields = new Map(columns.flatMap(c => typeof c.metadata?.cellField === 'string' ? [[c.id, c.metadata.cellField] as const] : []));
   const members: CategorizedRows['members'] = new Map();
   const errors: CategorizedRows['errors'] = new Map();
@@ -54,7 +69,7 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
   for (const definition of definitions) {
     const bucket = categoryBucket(definition);
     const periodicity = detectPeriodicity(rows.map(row => read(row, definition.sourceFieldId)));
-    categories.set(definition.id, { id: definition.id, name: definition.name, sourceFieldId: definition.sourceFieldId, transform: definition.transform, recipe: definition.transform === 'FY' || definition.transform === 'FQ' ? JSON.stringify([categoryRecipe(definition), fiscalContextRecipe(definition.fiscalBinding, fiscal)]) : categoryRecipe(definition), bucket, periodicity });
+    categories.set(definition.id, { id: definition.id, name: definition.name, sourceFieldId: definition.sourceFieldId, transform: definition.transform, recipe: definition.transform === 'FY' || definition.transform === 'FQ' ? JSON.stringify([categoryRecipe(definition), fiscalContextRecipe(definition.fiscalBinding, fiscal)]) : categoryRecipe(definition), bucket, periodicity, ...(definition.sortFieldId === undefined ? {} : { sortFieldId: definition.sortFieldId }) });
     if (straddles(periodicity, bucket)) warnings.push({ code: 'approximate-period', categoryId: definition.id, message: 'Weekly observations assigned to calendar buckets may straddle period boundaries; summing them is approximate.' });
   }
   const output = rows.map(row => {
@@ -101,9 +116,9 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
             label = bucketLabel(String(value), bucket);
             const year = Number(date.slice(0, 4));
             const month = Number(date.slice(5, 7));
-            if (bucket === 'year') period = monthBounds(year, 1, 12);
-            else if (bucket === 'quarter') period = monthBounds(year, Math.floor((month - 1) / 3) * 3 + 1, 3);
-            else if (bucket === 'month') period = monthBounds(year, month, 1);
+            if (bucket === 'year') period = boundaries(year, 1, 12);
+            else if (bucket === 'quarter') period = boundaries(year, Math.floor((month - 1) / 3) * 3 + 1, 3);
+            else if (bucket === 'month') period = boundaries(year, month, 1);
             else if (bucket === 'week') {
               const monday = new Date(`${date}T00:00:00Z`);
               monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
@@ -119,6 +134,7 @@ export function deriveCategories(rows: DatasetRow[], definitions: CategoryDef[],
       rowMembers.set(id, member);
       if (member.ok) {
         additions.push([id, member.value.value]);
+        if (definition.sortFieldId !== undefined && read(row, definition.sortFieldId) !== undefined) additions.push([categorySortKey(id), read(row, definition.sortFieldId)]);
         if (member.value.fiscal) {
           const periods = fiscalPeriods.get(id) ?? [];
           periods.push(member.value.fiscal); fiscalPeriods.set(id, periods);

@@ -57,6 +57,7 @@ Vercel's Build Output API documents that private files inside a function are not
 
 | Variable | Meaning |
 |---|---|
+| `API_TIMEOUT_MS` | Ordinary API GET deadline, 1000–170000 ms; defaults to 170000 for cold provider acquisition. Local reference requests retain 12000 ms. |
 | `APP_ORIGIN` | One canonical HTTPS origin, without path/query. Configure the intended custom domain at activation. |
 | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | A separate GitHub OAuth app for viewer sign-in, not the Perplexity connector grant. Callback is `APP_ORIGIN/auth/callback/github`. |
 | `AUTH_SECRET` | Independently generated random secret, at least 32 characters. |
@@ -88,7 +89,7 @@ Only these upstream paths are used:
 | `GET /state/<id>`, `PUT`/`DELETE /state/<id>/<file>` | The per-user saved configuration (below). |
 | `/table/**`, registered SSRM `POST`s | The managed table service and standard SSRM routes, with the relayed principal. |
 
-All responses used as data must be JSON; redirects are refused, requests have a 12-second timeout and REST bodies are capped at 2 MiB, except the four root manifests (`/api` and `/ref` `widgets.json`, `apps.json`): those are streamed at up to 16 MiB and gzipped when the browser accepts it, which keeps openbq-api's 5.0 MB catalogue under a Vercel Function's ~4.5 MB response limit. A manifest found over the cap only mid-stream is cut off, never delivered short. Client Cookie, Authorization and arbitrary headers never reach the upstream. Backend errors, redirects, Set-Cookie and authentication challenges are not forwarded to viewers.
+All responses used as data must be JSON; redirects are refused, ordinary API requests have a bounded 170-second default timeout (`API_TIMEOUT_MS`, 1000–170000 ms) for cold provider acquisition; local reference requests retain a 12-second timeout and REST bodies are capped at 2 MiB, except the four root manifests (`/api` and `/ref` `widgets.json`, `apps.json`): those are streamed at up to 16 MiB and gzipped when the browser accepts it, which keeps openbq-api's 5.0 MB catalogue under a Vercel Function's ~4.5 MB response limit. A manifest found over the cap only mid-stream is cut off, never delivered short. Client Cookie, Authorization and arbitrary headers never reach the upstream. Backend errors, redirects, Set-Cookie and authentication challenges are not forwarded to viewers.
 
 Do not repoint the stack's `:443` route or enable Funnel on any other port. An Internet request with no/incorrect machine token fails at the gateway, even if the caller knows its hostname.
 

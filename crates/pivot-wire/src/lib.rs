@@ -15,9 +15,9 @@ pub struct Request {
     /// through a serde_json::Value tree (~17x the wire size for large inputs).
     pub request: Box<RawValue>,
 }
-/// Top-level request fields, each still raw JSON.
-type Fields = BTreeMap<String, Box<RawValue>>;
-fn get<T: DeserializeOwned>(v: &Fields, key: &str) -> Result<T, String> {
+/// Private raw fields borrow the owned envelope until typed decoding finishes.
+type Fields<'a> = BTreeMap<String, &'a RawValue>;
+fn get<T: DeserializeOwned>(v: &Fields<'_>, key: &str) -> Result<T, String> {
     serde_json::from_str(
         v.get(key)
             .ok_or_else(|| format!("Missing request field {key}"))?
@@ -25,7 +25,7 @@ fn get<T: DeserializeOwned>(v: &Fields, key: &str) -> Result<T, String> {
     )
     .map_err(|e| e.to_string())
 }
-fn optional<T: DeserializeOwned>(v: &Fields, key: &str) -> Result<Option<T>, String> {
+fn optional<T: DeserializeOwned>(v: &Fields<'_>, key: &str) -> Result<Option<T>, String> {
     v.get(key)
         .map(|value| serde_json::from_str(value.get()).map_err(|e| e.to_string()))
         .transpose()
@@ -45,12 +45,12 @@ impl Request {
         if self.protocol_version != pivot_core::PROTOCOL_VERSION {
             return Err("Rust request protocol/session mismatch".into());
         }
-        let fields: Fields =
+        let fields: Fields<'_> =
             serde_json::from_str(self.request.get()).map_err(|_| "Invalid request object")?;
         request(&fields)
     }
 }
-fn request(v: &Fields) -> Result<CoreRequest, String> {
+fn request(v: &Fields<'_>) -> Result<CoreRequest, String> {
     let definition = || def(v.get("definition").ok_or("Missing definition")?);
     let kind: String = optional(v, "kind")
         .ok()

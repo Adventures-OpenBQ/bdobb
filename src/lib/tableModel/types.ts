@@ -33,6 +33,8 @@ export type CategoryDef = {
   fiscalBinding?: FiscalBinding;
   /** Maintained legacy recipe; not new authoring vocabulary. */
   legacyBucket?: 'week' | 'month';
+  /** orders members by this field or source formula; the label still comes from `sourceFieldId` */
+  sortFieldId?: string;
 };
 export type MemberSelector = { categoryId: string; memberKey: string };
 /** Bound IDs only. Parsing, name binding, scope and cycle checking belong to Task 3. */
@@ -41,7 +43,7 @@ export type FormulaAst =
   | { kind: 'reference'; target: 'field' | 'formula' | 'measure'; id: string }
   | { kind: 'unary'; operator: '+' | '-'; operand: FormulaAst }
   | { kind: 'binary'; operator: '+' | '-' | '*' | '/' | '=' | '!=' | '<' | '<=' | '>' | '>='; left: FormulaAst; right: FormulaAst }
-  | { kind: 'call'; function: AggName | 'IF'; args: FormulaAst[] }
+  | { kind: 'call'; function: AggName | 'IF' | 'LN' | 'SQRT'; args: FormulaAst[] }
   | { kind: 'member'; value: FormulaAst; selectors: MemberSelector[] };
 export type FormulaDef = {
   id: string;

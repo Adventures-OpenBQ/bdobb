@@ -3,5 +3,14 @@
   "sha256": "64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941",
   "bytes": 643211895,
   "manifest_sha256": "a1b2ab0d108e6dbb704425177cdbe8a9f91e7d0745f5aa4b37a2ffe902a628b0",
-  "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz"
+  "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz",
+  "additionalPacks": [
+    {
+      "filename": "dependency-supplement-8ee464578a28d424dd26.tar.gz",
+      "sha256": "f91d0b7e758f23883cf63777288ba488baca4558adf2d2ede23c2061465f3831",
+      "bytes": 155925978,
+      "manifest_sha256": "8ee464578a28d424dd26b32fa02adcc99c003752b7c9e3e9a3a12d9a1d332b9c",
+      "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-8ee464578a28/dependency-supplement-8ee464578a28d424dd26.tar.gz"
+    }
+  ]
 }

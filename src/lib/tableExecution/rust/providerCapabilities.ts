@@ -13,7 +13,7 @@ export class ProviderContractError extends Error {
 }
 export function refusal(capability:string):never {throw new ProviderContractError({code:'UNSUPPORTED_CAPABILITY',message:`Provider does not support ${capability}`,capability});}
 export function localCapabilities():ProviderCapabilities {
- return freezeCapabilities({protocolVersions:[1],definitionVersions:[1,2],aggregations:AGG_NAMES,formulaFunctions:[...AGG_NAMES,'IF'],fiscal:true,inspection:true,selection:true,identityWitness:true,remoteAcquisition:false,safeExactCountAdmission:true,
+ return freezeCapabilities({protocolVersions:[1],definitionVersions:[1,2],aggregations:AGG_NAMES,formulaFunctions:[...AGG_NAMES,'IF','LN','SQRT'],fiscal:true,inspection:true,selection:true,identityWitness:true,remoteAcquisition:false,safeExactCountAdmission:true,
  features:['grouping','splits','sourceFormulas','aggregateFormulas','memberScope','runtimeParams','checklists','resultFilters','statement','preview','bindFormula','memberDomain','columnProfile','chart','export']});
 }
 export function freezeCapabilities(value:ProviderCapabilities):ProviderCapabilities {

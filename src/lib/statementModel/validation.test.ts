@@ -96,3 +96,28 @@ it('bounds override labels to 4096 UTF-16 units, as presentation does', () => {
   expect(over.value).toBeUndefined();
   expect(over.diagnostics.map(d => d.path)).toContain('overrides.labels');
 });
+
+it('accepts line placement and checks line order against displayed section members', () => {
+  const v = structuredClone(intent());
+  const [, expenses, profit] = v.template.sections;
+  const gross = profit.lineIds[0];
+  v.overrides.lineSection = { [gross]: expenses.id, [v.template.sections[0].lineIds[0]]: v.template.sections[0].id };
+  expect(validateStatementIntent(v).diagnostics).toEqual([]);
+  v.overrides.lineOrder[expenses.id] = [...expenses.lineIds, gross];
+  v.overrides.lineOrder[profit.id] = profit.lineIds.slice(1);
+  expect(validateStatementIntent(v).diagnostics).toEqual([]);
+  const missingMovedIn = structuredClone(v); missingMovedIn.overrides.lineOrder[expenses.id] = [...expenses.lineIds];
+  expect(validateStatementIntent(missingMovedIn).value).toBeUndefined();
+  const keepsMovedOut = structuredClone(v); keepsMovedOut.overrides.lineOrder[profit.id] = [...profit.lineIds];
+  expect(validateStatementIntent(keepsMovedOut).value).toBeUndefined();
+});
+it('refuses line placement with unknown line or section ids', () => {
+  for (const lineSection of [{ unknown: intent().template.sections[0].id }, { [intent().template.lines[0].id]: 'unknown' }, { [intent().template.lines[0].id]: 7 }]) {
+    const v = structuredClone(intent()); Object.assign(v.overrides, { lineSection });
+    const checked = validateStatementIntent(v);
+    expect(checked.value).toBeUndefined();
+    expect(checked.diagnostics.map(d => d.path)).toContain('overrides.lineSection');
+  }
+  const v = structuredClone(intent()); Object.assign(v.overrides, { lineSection: [] });
+  expect(validateStatementIntent(v).value).toBeUndefined();
+});

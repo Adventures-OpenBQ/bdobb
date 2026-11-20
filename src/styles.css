@@ -826,6 +826,16 @@ body {
    they did as the bar's own children. */
 .tab-bar-tabs { display: flex; align-items: center; gap: 4px; }
 
+/* Long dashboards scroll their tabs, not the dashboard and its cards. Keep
+   the actions outside that scroll box so Refresh/Add stay in view. */
+.dashboard-area > .tab-bar > .tab-bar-tabs {
+  min-width: 0;
+  overflow-x: auto;
+  flex: 0 1 auto;
+}
+.dashboard-area > .tab-bar > .tab-bar-tabs > .tab-bar-tab { flex: 0 0 auto; }
+.dashboard-area > .tab-bar > button { flex-shrink: 0; }
+
 .tab-bar-tab { display: flex; align-items: center; }
 
 /* The same two affordances .rail-item already has one level up: a grab
@@ -1494,11 +1504,7 @@ body {
   cursor: default;
 }
 
-/* One row, 38px when nothing wraps: 4px + 20px controls + 4px, plus the
-   hairline. The chips group has a minimum it will not shrink below; when the
-   title and the icons leave it less than that, it wraps to a second line as
-   a group (see .card-chips) and the header grows — the only time it is
-   taller than the Workspace's. */
+/* Header parameters scroll beside the title; actions retain their own space. */
 .card-header {
   display: flex;
   align-items: center;
@@ -1528,11 +1534,20 @@ body {
   font-weight: 600;
 }
 
-/* The parameter chips: the flexible middle of the row, between the fixed-size
-   title and the fixed-size controls. min-width: 0 lets it shrink; the 180px
-   basis is the point past which it wraps to its own line (see .card-header's
-   flex-wrap) instead of squeezing the chips unreadably thin. */
-.card-chips { flex: 1 1 180px; min-width: 0; }
+/* Give the parameter scroller spare width; cap long titles without reserving empty space. */
+.card-header:has(.card-chips:not(.card-chips-hidden)) .card-title { flex: 0 1 auto; max-width: min(30%, 18rem); }
+
+/* A zero basis keeps parameters beside the title and actions instead of
+   moving the whole strip to another line. Native overflow supports trackpads,
+   scrollbars and iPadOS touch panning without intercepting control gestures. */
+.card-chips {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
 /* Collapsed controls (see .card-controls-collapsed below) hide the chips too
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */
@@ -1760,14 +1775,14 @@ body {
 .group-chip .param-badge { padding: 0 5px; border-radius: 8px; font-size: var(--font-size-10); }
 .group-chip-label { white-space: nowrap; }
 
-/* The chips row. Inside .card-chips on the title line; wraps within itself
-   before the group wraps under the title. */
+/* Forms and panels keep their wrapping layout. Title-bar fields use inline
+   layout so only declared row breaks start a new line; max-content measures
+   the widest declared row, which supplies the scroller's full width. */
 .card-params { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
+.card-chips .card-params { display: block; width: max-content; min-width: 100%; white-space: nowrap; padding: 1px 0; }
 
-/* OpenBB's parameter positioning: a full-width, zero-height item between two
-   rows of chips ends the line. Only the title line draws rows. */
 .card-params-break { display: none; }
-.card-chips .card-params-break { display: block; flex-basis: 100%; height: 0; }
+.card-chips .card-params-break { display: block; height: 2px; }
 /* No param on row 0 (the list opens with `[]`): the chips go under the title
    line instead of beside the name. */
 .card-chips-below { flex-basis: 100%; }
@@ -1849,6 +1864,7 @@ body {
    resolution on a second line, and a fixed 20px let that line spill over the
    next wrapped control on a narrow card. */
 .card-chips .param-field {
+  vertical-align: middle; margin-inline-end: 6px;
   min-height: 20px;
   padding: 0 4px;
   border-radius: 4px;
@@ -1867,16 +1883,10 @@ body {
 }
 .card-chips .param-field .period-trigger[data-pressed],
 .card-chips .param-field .period-trigger[aria-expanded="true"] { outline: 1px solid var(--accent); }
-/* On a narrow card the field shrinks (min-width: 0 above) but its control did
-   not: the .param-control wrapper was a block with min-width: auto, an input's
-   automatic minimum is its ~20-character intrinsic width, and a period pill is
-   a button, so .card-header button's flex: 0 0 auto pinned it at its full
-   nowrap label. All ran past the card edge and were clipped (#13). Let them
-   shrink with the field; the pill's label is cut short inside its own box. */
-.card-chips .param-control { display: flex; min-width: 0; }
+/* Fields retain their natural width inside the scroller. */
+.card-chips .param-control { display: flex; }
 .card-chips .param-field input,
-.card-chips .param-field .period-trigger { min-width: 0; flex-shrink: 1; }
-.card-chips .param-field .period-trigger { overflow: hidden; }
+.card-chips .param-field .period-trigger { flex-shrink: 0; }
 .react-aria-DateSegment {
   padding: 0 1px;
   font-variant-numeric: tabular-nums;
@@ -2207,9 +2217,10 @@ body {
 .linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .linked-chart-card > button { align-self: flex-start; flex: 0 0 auto; }
 .linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-.linked-chart-renderer .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
-.linked-chart-renderer .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
-.linked-chart-renderer .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
+:is(.linked-chart-renderer, .card-params-panel) .chart-controls .chart-measures { display: inline-flex; align-items: center; gap: 4px; }
+.card-params-panel .chart-controls { max-height: none; overflow: visible; margin-top: 6px; }
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
@@ -3323,4 +3334,20 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
   font-weight: 600;
   text-align: left;
   cursor: pointer;
+}
+
+/* Vector header controls stay centred without font-glyph baselines or clipping. */
+.card-header button:has(> svg) { display: inline-flex; align-items: center; justify-content: center; padding: 0; min-width: 20px; min-height: 22px; }
+
+/* Numeric title controls reserve digits and native steppers, not text-field width. */
+.card-chips .param-field input[type="number"] {
+  width: 6ch;
+  min-width: 6ch;
+  max-width: 16ch;
+}
+@supports (field-sizing: content) {
+  .card-chips .param-field input[type="number"] {
+    field-sizing: content;
+    width: auto;
+  }
 }

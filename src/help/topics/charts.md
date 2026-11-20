@@ -41,7 +41,7 @@ x-axis.
 
 If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar and heatmap traces. A ready-made
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, waterfall and surface traces. A ready-made
 figure asking for anything else says so and names the trace type it wanted.
 
 ## Highcharts, Vega-Lite and TradingView
@@ -53,8 +53,9 @@ ordinary chart cards. A specification the translation does not cover shows as
 raw JSON.
 
 An `advanced_charting` widget is drawn with TradingView Lightweight Charts
-rather than Plotly: daily candles for the widget's default symbol, with volume
-bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
+rather than Plotly: daily candles when OHLC data is supplied, or a close-price
+line when the feed supplies only closes. The chart uses the widget's default
+symbol, with optional volume bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
 The mouse wheel scrolls the card rather than zooming the chart.
 
 ## Zoom, pan and reset
