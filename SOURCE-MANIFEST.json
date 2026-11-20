@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "9ebec71e99e815f9eb7b63217accb101e2c3eca0",
-  "sourceId": "005757f7498d67cea28825c3c3a4ec6abc721a2e46a26a4f2208016373039340",
+  "baseCommit": "ccc8adb916dee91a233df9c0b8425e58a3cb60fb",
+  "sourceId": "45513cf41ba1cb1f494e6f44f04d98060dd2077fc52fcd4edff240a58d15aa88",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3576,8 +3576,8 @@
       "path": "README.md",
       "type": "file",
       "mode": 420,
-      "size": 1982,
-      "sha256": "d82fe1bce1d56aee7a4d00717bf847bb1722eea89b890793f73c95faf9da304f"
+      "size": 2452,
+      "sha256": "45f4f72b1b30709a27b9c087883976ef7b30b4ca33b02e1cb5245a9da888219c"
     },
     {
       "path": "SOURCE_README.md",
@@ -4675,8 +4675,8 @@
       "path": "deploy/table-service/README.md",
       "type": "file",
       "mode": 420,
-      "size": 5232,
-      "sha256": "33a59596e23bc10f0757e3ff0999e922ee659c1e2fc6222e4fc645e997e4ecbf"
+      "size": 5715,
+      "sha256": "651280254ce3a49f5b532d72e0feedf3f2de986bdfb1455b4dc817e537449e4a"
     },
     {
       "path": "deploy/table-service/healthcheck.mjs",
@@ -4689,8 +4689,8 @@
       "path": "deploy/table-service/runtime-smoke.mjs",
       "type": "file",
       "mode": 420,
-      "size": 7464,
-      "sha256": "cadc51c769f137eab2c5344c73632d8fa48b25c4c180d67af3a1dd400701eb47"
+      "size": 7506,
+      "sha256": "7903a7f2f221f50717facd8168e43b6a35690defd938c7e81da3a511779eaab7"
     },
     {
       "path": "docs/app-icons.md",
@@ -11403,7 +11403,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "b4b98bf7145a327da1a1e0360ba4302e4db627833db8a25c5ed61cc7fc7ba2d5"
+      "sha256": "036bbf9c4aa608c4680c486e005d737a44ba79b1b85e75363797350631bbfcc5"
     },
     {
       "path": "source_bundle.py",
