@@ -31,6 +31,7 @@ type ReturnSeries = Admitted['series'][number] & {
 };
 export type ReturnSummaryDetails = Omit<Admitted, 'series'> & {
   view: ReturnSummaryOptions['view'];
+  observed: boolean;
   series: ReturnSeries[];
   scaledAxis?: ReturnAxisScaling;
 };
@@ -172,6 +173,7 @@ function returnAxis(
   densityGrids: readonly (readonly number[])[],
   context: RecipeContext,
   revision: string,
+  title: string,
 ) {
   const { min, max } = extrema(observations);
   const magnitude = Math.max(Math.abs(min), Math.abs(max));
@@ -207,7 +209,7 @@ function returnAxis(
     coordinate,
     scaling: exceptional ? { origin, scale } : undefined,
     layout: {
-      type: 'linear', title: { text: 'Daily return' }, range, autorange: false, automargin: true,
+      type: 'linear', title: { text: title }, range, autorange: false, automargin: true,
       uirevision: JSON.stringify([revision, origin, scale]),
       ...(manualTicks ? { tickmode: 'array', tickvals: manualTicks.map(coordinate), ticktext: manualTicks.map(returnPercent) }
         : { tickformat: `.${decimals}%` }),
@@ -258,7 +260,7 @@ function boxTraces(summary: ReturnBoxSummary, index: number, symbol: string, coo
 
 function violinTrace(
   estimate: Extract<DensityResult, { ok: true }>, maxDensity: number,
-  index: number, symbol: string, coordinate: (value: number) => number,
+  index: number, symbol: string, coordinate: (value: number) => number, title: string,
 ) {
   const right = estimate.points.map(point => index + maximumHalfWidth * (point.density / maxDensity));
   const left = estimate.points.map(point => index - maximumHalfWidth * (point.density / maxDensity)).reverse();
@@ -268,7 +270,7 @@ function violinTrace(
     line: { color: color(symbol), simplify: false }, hoveron: 'points',
     x: [...right, ...left], y: points.map(point => coordinate(point.value)),
     text: points.map(point => [
-      `<b>${escape(symbol)}</b>`, `Daily return: ${returnLabel(point.value)}`,
+      `<b>${escape(symbol)}</b>`, `${title}: ${returnLabel(point.value)}`,
       `Smoothed density: ${escape(point.density)}`, `Gaussian bandwidth: ${returnLabel(estimate.bandwidth)}`,
     ].join('<br>')),
     hovertemplate: '%{text}<extra></extra>',
@@ -283,6 +285,10 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
   const { fields, symbols, window } = options;
   const admitted = admitReturnSummary(dataset, fields, symbols, window);
   if (!admitted.ok) return admitted;
+  // Admission grants backend authority only to verified observed quote pairs.
+  const observed = dataset.provenance.sourceKind === 'backend';
+  const returnTitle = observed ? 'Observed return' : 'Daily return';
+  const returnsLabel = observed ? 'observed returns' : 'daily returns';
   const observations = admitted.value.series.map(series => series.samples.map(sample => sample.value));
   const notes = [...admitted.notes];
   const series: ReturnSeries[] = [];
@@ -299,7 +305,7 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
     }
     const outlierObservations = source.samples.filter(sample => sample.value < summary.lowerWhisker || sample.value > summary.upperWhisker);
     series.push({ ...source, summary, outlierObservations });
-    notes.push(`${source.symbol} · N = ${source.samples.length} daily returns · ${source.start} to ${source.end} · ${source.excludedOpportunities} excluded opportunities (${source.gapCount} known price gaps, ${source.excludedNonfinite} nonfinite returns).`);
+    notes.push(`${source.symbol} · N = ${source.samples.length} ${returnsLabel} · ${source.start} to ${source.end} · ${source.excludedOpportunities} excluded opportunities (${source.gapCount} known price gaps, ${source.excludedNonfinite} nonfinite returns).`);
     if (summary.iqr === 0) notes.push(`${source.symbol} has zero IQR.`);
   }
 
@@ -337,7 +343,7 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
     ];
   });
   const yaxis = returnAxis(observations, bounds,
-    activeEstimates.map(estimate => estimate.points.map(point => point.value)), context, revision);
+    activeEstimates.map(estimate => estimate.points.map(point => point.value)), context, revision, returnTitle);
   if (!yaxis) return refusal('The selected return range cannot preserve finite, distinct figure geometry. Plot listings separately or choose a different window.');
 
   const maxDensity = extrema(activeEstimates.map(estimate => estimate.points.map(point => point.density))).max;
@@ -350,7 +356,7 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
     const { summary, symbol } = item;
     if (view === 'box') data.push(...boxTraces(summary, index, symbol, coordinate));
     else {
-      const trace = violinTrace(activeEstimates[index], maxDensity, index, symbol, coordinate);
+      const trace = violinTrace(activeEstimates[index], maxDensity, index, symbol, coordinate, returnTitle);
       if (!hasDrawableSpan(trace.x, xRange, minreducedwidth) || !hasDrawableSpan(trace.y, yaxis.layout.range, minreducedheight)) {
         return refusal(`The shared density scale cannot preserve violin geometry for ${symbol} at this plot size. Enlarge the plot or plot listings separately.`);
       }
@@ -364,22 +370,22 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
     const outliers = item.outlierObservations;
     if (outliers.length) data.push({
       ...hover, uid: `return-outliers-${index}`, x: outliers.map(() => index), y: outliers.map(sample => coordinate(sample.value)),
-      text: outliers.map(sample => `<b>${escape(symbol)}</b><br>Outlier · ${escape(sample.date)}<br>Daily return: ${returnLabel(sample.value)}`),
+      text: outliers.map(sample => `<b>${escape(symbol)}</b><br>Outlier · ${escape(sample.date)}<br>${returnTitle}: ${returnLabel(sample.value)}`),
       marker: { size: 8, symbol: 'circle-open', color: color(symbol) },
     });
   }
-  notes.push(`Adjusted-price daily returns · Acquired ${admitted.value.scope.start} to ${admitted.value.scope.end}.`);
-  if (window.mode === 'common') notes.push(`Common inclusive bounds ${window.start} to ${window.end}. Each listing uses its own observed sessions.`);
+  notes.push(`Adjusted-price ${returnsLabel} · Acquired ${admitted.value.scope.start} to ${admitted.value.scope.end}.`);
+  if (window.mode === 'common') notes.push(`Common inclusive bounds ${window.start} to ${window.end}. Each listing uses its own observed ${observed ? 'prices' : 'sessions'}.`);
   if (view === 'violin') notes.push('Gaussian KDE is density smoothing within observed endpoints. Width uses one density scale across listings.');
   return {
-    ok: true, notes, revision, returnSummary: { ...admitted.value, view, series, ...(yaxis.scaling && { scaledAxis: yaxis.scaling }) },
+    ok: true, notes, revision, returnSummary: { ...admitted.value, view, observed, series, ...(yaxis.scaling && { scaledAxis: yaxis.scaling }) },
     figure: {
       data,
       layout: {
         ...themedLayout(context.theme), uirevision: revision, hovermode: 'closest', showlegend: false,
         hoverlabel: { bgcolor: context.theme === 'dark' ? '#202937' : '#ffffff',
           font: { color: context.theme === 'dark' ? '#f1f5f9' : '#152034' } },
-        title: { text: view === 'box' ? 'Daily return boxes' : 'Daily return density' },
+        title: { text: returnTitle + (view === 'box' ? ' boxes' : ' density') },
         margin: { ...plotMargins },
         ...(view === 'violin' ? { minreducedwidth, minreducedheight } : {}),
         xaxis: {
