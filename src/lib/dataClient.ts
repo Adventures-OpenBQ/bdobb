@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { fetch } from "@tauri-apps/plugin-http";
+import { withRequestSlot } from "./requestQueue";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { resolveParams } from "./params";
 import { toOptions } from "./widgetsJson";
@@ -306,50 +307,52 @@ async function request(
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  const hasBody = method !== "GET";
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method,
-      headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
-      ...(hasBody ? { body: JSON.stringify(body) } : {}),
-      connectTimeout: CONNECT_TIMEOUT_MS,
-      ...(signal ? { signal } : {}),
-    });
-  } catch (err) {
-    throw new Error(safeNetworkErrorMessage(url, err));
-  }
-  if (res.status === 204) return null;
-  if (res.status === 404 && allow404) {
-    // Read and discard: a body left unconsumed holds its connection out of
-    // the pool until it is collected, and this 404 is the ORDINARY case for
-    // an optional document — every discovery of a backend serving no
-    // apps.json takes this path. Voided deliberately; the answer is "no
-    // document", whatever the backend chose to say alongside it.
-    void res.text().catch(() => {});
-    return null;
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new HttpError(describeHttpError(res.status, text), res.status, text);
-  }
-  onHeaders?.(res.headers);
-  if (!parse) {
-    // Read to the end even though nothing is parsed: an unread body holds the
-    // connection open, which is why the !res.ok branch above reads it too.
-    await res.text().catch(() => "");
-    return null;
-  }
-  // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
-  // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
-  // only an application/json response is parsed; anything else is read as text
-  // and the renderer decides what it means. A malformed application/json body
-  // still throws here, as before, so a broken data widget stays an error card.
-  // A structured-syntax suffix (application/problem+json, a vendor
-  // application/vnd.x+json) is JSON as well, and media types are
-  // case-insensitive.
-  const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  return withRequestSlot(url, signal, async () => {
+    const hasBody = method !== "GET";
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
+        ...(hasBody ? { body: JSON.stringify(body) } : {}),
+        connectTimeout: CONNECT_TIMEOUT_MS,
+        ...(signal ? { signal } : {}),
+      });
+    } catch (err) {
+      throw new Error(safeNetworkErrorMessage(url, err));
+    }
+    if (res.status === 204) return null;
+    if (res.status === 404 && allow404) {
+      // Read and discard: a body left unconsumed holds its connection out of
+      // the pool until it is collected, and this 404 is the ORDINARY case for
+      // an optional document — every discovery of a backend serving no
+      // apps.json takes this path. Voided deliberately; the answer is "no
+      // document", whatever the backend chose to say alongside it.
+      void res.text().catch(() => {});
+      return null;
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new HttpError(describeHttpError(res.status, text), res.status, text);
+    }
+    onHeaders?.(res.headers);
+    if (!parse) {
+      // Read to the end even though nothing is parsed: an unread body holds the
+      // connection open, which is why the !res.ok branch above reads it too.
+      await res.text().catch(() => "");
+      return null;
+    }
+    // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
+    // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
+    // only an application/json response is parsed; anything else is read as text
+    // and the renderer decides what it means. A malformed application/json body
+    // still throws here, as before, so a broken data widget stays an error card.
+    // A structured-syntax suffix (application/problem+json, a vendor
+    // application/vnd.x+json) is JSON as well, and media types are
+    // case-insensitive.
+    const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  });
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */

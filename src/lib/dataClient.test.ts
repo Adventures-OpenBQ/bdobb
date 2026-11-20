@@ -1158,3 +1158,24 @@ describe("obbjectWarnings", () => {
     expect(obbjectWarnings(null)).toEqual([]);
   });
 });
+
+describe('dashboard bursts through one bounded gateway', () => {
+  it('loads fourteen cards across API/reference paths without overflowing eight upstream slots', async () => {
+    let active=0, peak=0;
+    vi.mocked(pluginFetch).mockImplementation(async (input) => {
+      active++;peak=Math.max(peak,active);
+      const overflow=active>8;
+      await new Promise(resolve=>setTimeout(resolve,5));
+      active--;
+      return new Response(JSON.stringify(overflow?{error:'busy'}:[new URL(String(input)).searchParams.get('n')]),{status:overflow?429:200,headers:{'Content-Type':'application/json'}});
+    });
+    try {
+      const result=await Promise.allSettled(Array.from({length:14},(_,n)=>fetchWidgetData(makeBackend({baseUrl:`https://gateway.example/${n%2?'api':'ref'}`}),widget({endpoint:'data'}),{n:String(n)})));
+      expect(result.filter(r=>r.status==='fulfilled')).toHaveLength(14);
+      expect(peak).toBeLessThanOrEqual(8);
+      expect(result.map(r=>r.status==='fulfilled'?r.value:null)).toEqual(Array.from({length:14},(_,n)=>[String(n)]));
+    } finally {
+      vi.mocked(pluginFetch).mockImplementation((...args)=>globalThis.fetch(...args));
+    }
+  });
+});
