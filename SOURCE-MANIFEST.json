@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "87007cdc489e09469c8d3de5db5051051d81ddf4",
-  "sourceId": "3035bdb3595eb84eb0528d04af39d9e26bbee786663033700d3227d80ca41f54",
+  "baseCommit": "7896707c8372a70db5c26be18fb372b1182d7d69",
+  "sourceId": "3db5a3c4da74be278472a5f8ad6a2c06ebca07705e0e8313fed9cd69cad7d344",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "b568e7c1c3b6d7d4e661e49e2f3976e4ec3070f383f4a4f257750c7848c3a389"
+      "sha256": "d97799e686cd3b6299306b6a5c7c5df81e7fb5a26e8268f0e558c5af36373c1c"
     },
     {
       "path": "source_bundle.py",
@@ -7874,15 +7874,15 @@
       "path": "src/lib/dataClient.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 49247,
-      "sha256": "10fb324b8a3f4614d5b3c1da7c6f1296185dfb5c693d677964eb4777743fbded"
+      "size": 49532,
+      "sha256": "b5279c307ce7b8baedbf003cb248d825b5308971650ba9d9ea0d52e28b35a372"
     },
     {
       "path": "src/lib/dataClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 31244,
-      "sha256": "458194ca418eaafcd7d336e4bda7b64cb49f867b352aa8a219e8831ab4c401d5"
+      "size": 31417,
+      "sha256": "1d50bf53a87c0b36a32d3975e64ef23e3441e9880178563be1980a525c89a307"
     },
     {
       "path": "src/lib/discovery.test.ts",
@@ -8294,15 +8294,15 @@
       "path": "src/lib/providerKeys.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 5629,
-      "sha256": "1d82149cbdea48367c8ebbf466827d8bfad59b4d3f3f719fea1b46ccc5481e39"
+      "size": 5956,
+      "sha256": "f1f380e97f0a84bbc50a27ee343b6e4517fb1222d2e0369f5c58eca49154e9c9"
     },
     {
       "path": "src/lib/providerKeys.ts",
       "type": "file",
       "mode": 420,
-      "size": 6892,
-      "sha256": "8672d9ebc9b97dea6fe8d0feec7619ba4b57beb85250deb3c2b750cc870decd1"
+      "size": 7387,
+      "sha256": "08c764584ad324e7a5467bb4ca34d60a37e098b9bd8f0b312dc9a7b99435cc9c"
     },
     {
       "path": "src/lib/requestQueue.test.ts",
@@ -8700,15 +8700,15 @@
       "path": "src/stores/providerKeysStore.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 7376,
-      "sha256": "f373ac28b360154c23ba5e20778f24f8631d2f1cc3c68eceeabd3790d1bf2539"
+      "size": 9374,
+      "sha256": "762f0ca199ed28b8a919229e95e0ecab522a5559646484076bfd70e87df70204"
     },
     {
       "path": "src/stores/providerKeysStore.ts",
       "type": "file",
       "mode": 420,
-      "size": 5095,
-      "sha256": "82cb550f809a29ee60c29e8165d1cefed42b55834c68dc53220c9b38dd12536e"
+      "size": 5334,
+      "sha256": "0781fec875cf9e40cb7f73fee6543a40cc6b1e23176336c5eafb5f9819fe2f85"
     },
     {
       "path": "src/stores/settingsStore.test.ts",
