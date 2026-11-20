@@ -8,6 +8,7 @@ import { fetchWidgetData } from '../../dataClient';
 import type { BackendAcquisition } from './financialEvidence';
 import { datasetFromBytes, datasetFromRows, parseTableSnapshot } from '../../localTableData';
 import { captureChartSources, chartRequestContext, readChartSource } from './chartSourceContracts';
+import { parseNewsSource } from './newsEvidence';
 
 vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: (...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args),
@@ -150,4 +151,50 @@ it('accepts a successful empty acquired interval and an explicit all-unscored sn
     chart_sources: { version: 1, receipts: [unscored] } });
   expect(onlyUnscored.columns.map(c => c.id)).toContain('polarity');
   expect(onlyUnscored.rows[0].values.polarity).toBeNull();
+});
+
+it.each([
+  ['https://news.example/article?edition=2#section', true],
+  ['HTTP://WWW.EXAMPLE.COM.:8443/story', true],
+  ['http://192.0.2.1/story', true],
+  ['https://[2001:db8::1]:443/story', true],
+  ['https://news.example/crónica', true],
+  ['https://999.999.999.999/article', false],
+  ['http://192.00.2.1/story', false],
+  ['http://0x7f.1/story', false],
+  ['https://news.123/article', false],
+  ['https://news..example/article', false],
+  ['https://-news.example/article', false],
+  ['https://xn--bcher-kva.example/article', false],
+  ['https://[2001:db8:::1]/story', false],
+  ['https://news.example:65536/story', false],
+  ['https://user:pass@news.example/story', false],
+  ['https://news.example/story\u0085', false],
+  ['https://news.example/story\ufeff', false],
+])('matches the provider identity contract for %s', (url, accepted) => {
+  const coordinates = [{ ...newsReceipt.coordinates[0], article_id: url }, ...newsReceipt.coordinates.slice(1)];
+  expect(parseNewsSource({ ...newsReceipt, coordinates })?.coordinates[0].article_id).toBe(accepted ? url : undefined);
+});
+
+it('retains the raw identity failure and valid sibling from a completed HTTP request', async () => {
+  const rows = [newsRows[0]];
+  const receipt = {
+    ...newsReceipt,
+    raw_count: 2, normalized_count: 1, delivered_count: 1,
+    diagnostics: ['invalid_identity'],
+    unsafe: { invalid_identity: true, invalid_timestamp: false, duplicate_conflict: false, unit_conflict: false },
+    coordinates: [newsReceipt.coordinates[0]],
+  };
+  const server = await startMockServer({
+    [mirror]: { results: rows, extra: { results_metadata: { chart_sources: { version: 1, receipts: [receipt] } } } },
+  });
+  try {
+    let complete: BackendAcquisition | undefined;
+    const result = await fetchWidgetData(backend({ baseUrl: server.url }),
+      widget({ type: 'table', endpoint: mirror, dataKey: 'results' }), request.parameters,
+      undefined, undefined, undefined, acquired => { complete = acquired; });
+    expect(result).toEqual(rows);
+    const dataset = datasetFromRows(result as Record<string, unknown>[], 'test', 1, 'backend', undefined, [], undefined, complete);
+    expect(readChartSource(dataset.provenance, 'news', parseNewsSource)).toEqual(receipt);
+  } finally { await server.close(); }
 });

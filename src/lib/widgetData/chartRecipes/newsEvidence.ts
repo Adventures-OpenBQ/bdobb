@@ -51,13 +51,27 @@ function denseList<T>(value: unknown, check: (item: unknown) => item is T): valu
 
 const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const diagnostic = (value: unknown): value is NewsDiagnostic => diagnosticNames.some(name => name === value);
-// eslint-disable-next-line no-control-regex -- Reject characters the URL parser would silently discard.
-const unsafeUrlCharacter = /[\s\x00-\x1f\x7f\\]/;
+// Match the provider's portable authority rules in _news_chart_source.py.
+const articleAuthority = /^https?:\/\/([a-z0-9.-]+|\[[0-9a-f:]+\])(?::([0-9]+))?(?:[/?#]|$)/i;
+const dnsLabel = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const ipv4Octet = /^(?:0|[1-9][0-9]{0,2})$/;
+// eslint-disable-next-line no-control-regex -- Reject control characters and malformed Unicode in exact source identities.
+const unsafeUrlCharacter = /[\x00-\x20\x7f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff\ud800-\udfff\\]/u;
 const articleUrl = (value: unknown): value is string => {
-  if (typeof value !== 'string' || value.length > 4096 || unsafeUrlCharacter.test(value)
-    || !/^https?:\/\/(?:[a-z0-9.-]+|\[[0-9a-f:]+\])(?::[0-9]+)?(?:[/?#]|$)/i.test(value)) return false;
-  try { return new URL(value).hostname !== ''; }
-  catch { return false; }
+  if (typeof value !== 'string' || value.length > 4096 || unsafeUrlCharacter.test(value)) return false;
+  const authority = articleAuthority.exec(value);
+  if (!authority) return false;
+  const [, host, port] = authority;
+  if (port !== undefined && Number(port) > 65535) return false;
+  if (host.startsWith('[')) {
+    try { return new URL('http://' + host).hostname !== ''; }
+    catch { return false; }
+  }
+  const domain = host.endsWith('.') ? host.slice(0, -1) : host;
+  const labels = domain.toLowerCase().split('.');
+  if (/^[a-z]/.test(labels[labels.length - 1]))
+    return domain.length <= 253 && labels.every(label => dnsLabel.test(label) && !label.startsWith('xn--'));
+  return host === domain && labels.length === 4 && labels.every(label => ipv4Octet.test(label) && Number(label) <= 255);
 };
 
 export function newsUtcDay(value: unknown): string | undefined {
