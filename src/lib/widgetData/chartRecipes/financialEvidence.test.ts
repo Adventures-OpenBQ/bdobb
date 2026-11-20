@@ -21,6 +21,8 @@ it.each([screenerEvidence, dividendEvidence, emptyDividendEvidence, clippedDivid
 it.each([
   { ...screenerEvidence, diagnostics: ['invented'] },
   { ...screenerEvidence, normalized_count: 2 },
+  { ...screenerEvidence, raw_count: 2, normalized_count: 2, delivered_count: 1,
+    cohorts: [{ ...screenerEvidence.cohorts[0], raw_count: 2 }] },
   { ...screenerEvidence, cohorts: [{ ...screenerEvidence.cohorts[0], amount: 2 }] },
   { ...dividendEvidence, event_dates: ['2026-02-31'] },
   { ...dividendEvidence, retrieved_at: '2026-02-12T12:00:00+01:00' },

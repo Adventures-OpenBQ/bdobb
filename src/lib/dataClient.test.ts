@@ -1317,19 +1317,19 @@ it('dotted_selector_retains_envelope_evidence', async () => {
   }
 });
 
-
 it.each([
-  [4, []],
-  [4, ['unassignable_identity']],
-  [3, ['unassignable_identity']],
-  [3, ['unit_conflict']],
-  [3, ['mixed_denomination']],
-] as const)('withholds a request-bound screener receipt with inconsistent cohort facts (raw_count=%d, diagnostics=%j)', async (raw_count, diagnostics) => {
+  [4, 3, []],
+  [4, 4, []],
+  [4, 3, ['unassignable_identity']],
+  [3, 3, ['unassignable_identity']],
+  [3, 3, ['unit_conflict']],
+  [3, 3, ['mixed_denomination']],
+] as const)('withholds a request-bound screener receipt with inconsistent cohort facts (raw_count=%d, normalized_count=%d, diagnostics=%j)', async (raw_count, normalized_count, diagnostics) => {
   const { screenerEvidence } = await import('../test/fixtures/financialEvidence');
   const rows = ['FIRST.US', 'SECOND.US', 'THIRD.US'].map(symbol => ({
     symbol, exchange: 'US', currency_symbol: '$', last_day_data_date: '2026-08-28',
   }));
-  const chart_evidence = { ...screenerEvidence, raw_count, normalized_count: 3, delivered_count: 3, diagnostics,
+  const chart_evidence = { ...screenerEvidence, raw_count, normalized_count, delivered_count: 3, diagnostics,
     cohorts: [{ ...screenerEvidence.cohorts[0], raw_count }] };
   const path = '/api/v1/eodhd/equity/screener';
   const server = await startMockServer({ [path]: { results: rows, extra: { results_metadata: { chart_evidence } } } });

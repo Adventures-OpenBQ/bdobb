@@ -163,7 +163,7 @@ export type FinancialEvidence = ScreenerFinancialEvidence | DividendFinancialEvi
 export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence };
 
 function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
-  const { cohorts, raw_count, normalized_count, unsafe } = evidence;
+  const { cohorts, raw_count, normalized_count, delivered_count, unsafe } = evidence;
   const dated = cohorts.reduce((total, cohort) => total + cohort.raw_count, 0);
   const diagnostics = new Set<string>(evidence.diagnostics);
   const safetyFacts = {
@@ -173,7 +173,9 @@ function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
     screener_duplicate_conflict: cohorts.some(cohort => cohort.conflicting_duplicates),
     screener_exact_duplicate: cohorts.some(cohort => cohort.exact_duplicate_count > 0),
   };
-  return (normalized_count === raw_count || unsafe.unassignable_identity)
+  // The v1 screener delivers every normalized record. Only presentation can reduce that list.
+  return normalized_count === delivered_count
+    && (normalized_count === raw_count || unsafe.unassignable_identity)
     && (unsafe.unassignable_date ? dated < raw_count : dated === raw_count)
     && Object.entries(safetyFacts).every(([code, fact]) => diagnostics.has(code) === fact)
     && unique(cohorts.map(cohort => cohort.price_date))
