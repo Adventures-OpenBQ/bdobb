@@ -191,6 +191,20 @@ it('refuses a holding when rounded endpoints move radially and miss the intended
   expect(sectors.etfHierarchy?.holdings[1].value).toBe(weights[1]);
 });
 
+it('admits a narrow holding whose rounded midpoint still lies inside the wedge', () => {
+  const weights = [.14747811893136722, 6.057835021435319e-9, .20252187501079774];
+  const leaves = [
+    { ...holdings[0], weight: weights[0] },
+    { ...holdings[1], sector: holdings[0].sector, weight: weights[1] },
+    { ...holdings[0], symbol: 'OTHER.US', weight: weights[2] },
+  ];
+  const dataset = acquire(leaves, { ...local, raw_count: 3, normalized_count: 3, delivered_count: 3,
+    holding_keys: leaves.map(({ symbol }) => symbol) });
+  const result = requireSuccess(runRecipe(dataset, options, context));
+  expect(result.etfHierarchy?.holdings[1]).toMatchObject({ symbol: 'AAYA.F', value: weights[1] });
+  expect(result.figure.data[0]).toMatchObject({ values: expect.arrayContaining([weights[1]]) });
+});
+
 it('stable_node_ids_disambiguate_equal_labels_and_keep_exact_small_values', () => {
   const tiny = .000001;
   const duplicateLabels = [{ ...holdings[0], sector: 'Sector unavailable' }, { ...holdings[1], weight: tiny },

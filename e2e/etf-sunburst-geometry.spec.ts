@@ -47,8 +47,8 @@ async function draw(page: Page, weights: number[], theme: 'light' | 'dark', dept
   return { result, graph: page.locator('#etf-geometry') };
 }
 
-async function inspect(graph: Locator) {
-  return graph.evaluate(node => {
+async function inspect(graph: Locator, sampleHolding?: string) {
+  return graph.evaluate((node, sampleHolding) => {
     const { cx, cy } = (node as Graph).calcdata[0][0];
     const { x, y } = node.getBoundingClientRect();
     return [...node.querySelectorAll<SVGPathElement>('.sunburstlayer path.surface')].map(path => {
@@ -57,11 +57,22 @@ async function inspect(graph: Locator) {
       const a = (x0 + x1) / 2;
       const point = new DOMPoint(cx + r * Math.cos(a), cy - r * Math.sin(a));
       const { width, height } = path.getBBox();
+      let filledInteriorSamples: number | undefined;
+      if (data.label === sampleHolding) {
+        filledInteriorSamples = 0;
+        for (let ri = 1; ri < 32; ri++) {
+          const r = rpx0 + (rpx1 - rpx0) * ri / 32;
+          for (let ai = 1; ai < 32; ai++) {
+            const angle = x0 + (x1 - x0) * ai / 32;
+            if (path.isPointInFill(new DOMPoint(cx + r * Math.cos(angle), cy - r * Math.sin(angle)))) filledInteriorSamples++;
+          }
+        }
+      }
       return { label: data.label, value: data.v, angle: x1 - x0, data: path.getAttribute('d'),
-        bounds: { width, height }, containsMidpoint: path.isPointInFill(point),
+        bounds: { width, height }, containsMidpoint: path.isPointInFill(point), filledInteriorSamples,
         screen: { x: x + point.x, y: y + point.y } };
     });
-  });
+  }, sampleHolding);
 }
 
 test('real worker and installed Plotly draw 35% delivered holdings and keep original hover through drill', async ({ page }) => {
@@ -175,6 +186,30 @@ test('the real worker refuses a narrow holding whose intended angular fill colla
   const paths = await inspect(sector.graph);
   expect(paths).toHaveLength(2);
   expect(paths.every(slice => slice.angle === 2 * Math.PI && slice.containsMidpoint)).toBe(true);
+});
+
+test('installed Plotly retains the angular fill of a near-resolution holding before and after drill', async ({ page }) => {
+  const weights = [.14747811893136722, 6.057835021435319e-9, .20252187501079774];
+  const { result, graph } = await draw(page, weights, 'light', 2, true);
+  expect(result).toMatchObject({ ok: true, etfHierarchy: {
+    holdings: expect.arrayContaining([expect.objectContaining({ symbol: 'AAYA.F', value: weights[1] })]),
+  } });
+  const overview = await inspect(graph, 'AAYA.F');
+  expect(overview).toHaveLength(5);
+  const technology = overview.find(slice => slice.label === 'Technology')!;
+  await page.mouse.click(technology.screen.x, technology.screen.y);
+  await expect(graph.locator('.sunburstlayer path.surface')).toHaveCount(4);
+  await expect.poll(() => graph.evaluate(node => (node as Graph)._transitioning === true)).toBe(false);
+  const drill = await inspect(graph, 'AAYA.F');
+
+  for (const slices of [overview, drill]) {
+    const holding = slices.find(slice => slice.label === 'AAYA.F')!;
+    expect(holding.value).toBe(weights[1]);
+    expect(holding.angle).toBeCloseTo(2 * Math.PI * weights[1] / .35, 13);
+    expect(holding.containsMidpoint).toBe(true);
+    expect(holding.filledInteriorSamples).toBeGreaterThan(800);
+  }
+  await test.info().attach('retained-angular-fill', { body: JSON.stringify({ overview, drill }), contentType: 'application/json' });
 });
 
 test('real worker refuses a weight that would collapse before calling Plotly', async ({ page }) => {
