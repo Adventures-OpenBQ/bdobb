@@ -7,6 +7,7 @@ import { compileAnalyticalModel } from '../tableModel/calculate';
 import { pivotValueKey } from '../pivotKeys';
 import { validateStatementIntent } from './validation';
 import { displayedSections } from './placement';
+import { proveIncomeBindings } from './incomeChartProof';
 import { statementOwnedIds, type EffectiveStatement, type StatementIntent } from './types';
 import type { AnalyticalExecutionDescriptor } from '../tableModel/executionDescriptor';
 export class StatementCompilationError extends Error {
@@ -151,5 +152,6 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
         throw new StatementCompilationError(checked.validation.diagnostics);
     if (checked.graph.diagnostics.length)
         problem(checked.graph.diagnostics.map(d => d.message).join(' '), 'formulas');
-    return { model, unpivot, memberOrders, linePolicies, templateIdentity: { id: intent.template.id, version: intent.template.version }, execution, sectionField, sectionByLine: Object.fromEntries(sectionByLine) };
+    const incomeBindings = proveIncomeBindings(intent, columns);
+    return { model, unpivot, memberOrders, linePolicies, templateIdentity: { id: intent.template.id, version: intent.template.version }, ...(incomeBindings ? { incomeBindings } : {}), execution, sectionField, sectionByLine: Object.fromEntries(sectionByLine) };
 }

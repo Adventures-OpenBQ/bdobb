@@ -383,6 +383,13 @@ pub fn calculate_view(
         order,
         &mut scope_results,
     )?;
+    use crate::statement::income_chart::{clear_proof, income_chart_proof, PROOF_KEY};
+    clear_proof(&mut view.provenance);
+    if let Some(AnalyticalDefinition::Statement(intent)) = &definition.definition.analytical {
+        if let Some(proof) = income_chart_proof(input, intent, &view) {
+            view.provenance.metadata.get_or_insert_with(Default::default).insert(PROOF_KEY.into(), proof);
+        }
+    }
     for warning in &view.warnings {
         utf16_prefix(&warning.message, 1000)?;
     }

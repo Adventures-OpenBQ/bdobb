@@ -4,6 +4,7 @@
 import { compileStatement, StatementCompilationError } from '../statementModel/compile';
 import type { StatementIntent } from '../statementModel/types';
 import { statementPresentation } from '../statementPresentation';
+import { INCOME_CHART_PROOF, incomeChartProof, withoutIncomeChartProof } from '../statementModel/incomeChartProof';
 import { unpivotDatasetWithDescriptors } from '../tableModel/unpivot';
 import { estimateProvenance } from '../widgetData/chartRecipes/estimateEvidence';
 import { etfAcquisitionProvenance, etfPresentationProvenance } from '../widgetData/chartRecipes/etfEvidence';
@@ -218,7 +219,7 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
     },
     diagnostics: [...(input.diagnostics ?? []), ...pivotFoldWarnings(config).map(message => ({ code: 'LEGACY_FOLDS', message, severity: 'warning' as const }))],
     completeness: input.completeness,
-    provenance: { ...provenance, ...(result?.ok ? { inputMayContainAggregates: true } : {}) },
+    provenance: result?.ok ? { ...withoutIncomeChartProof(provenance), inputMayContainAggregates: true } : provenance,
   };
   // Reconciliation uses the unfiltered source hierarchy, never delivery blocks or
   // filtered survivors. The private second calculation cannot recursively reconcile.
@@ -313,8 +314,12 @@ function calculateAnalyticalView(input: WidgetDataset, definition: TableDefiniti
     source={...source,columns:[...source.columns,{id:effective.sectionField,label:'Section'}],rows:source.rows.map(row=>({...row,values:{...row.values,[effective.sectionField]:effective.sectionByLine[String(row.values[itemField])]}}))};
   }
   const result = calculateTable({source,model:effective?.model??definition.analytical,table:definition.table,search:definition.search,runtimeParams,context:{execution:effective?.execution}});
-  if (effective && statement) result.provenance = { ...result.provenance, metadata: { ...result.provenance.metadata,
-    statementPresentation: statementPresentation(statement, effective.model.layout) } };
+  result.provenance = withoutIncomeChartProof(result.provenance);
+  if (effective && statement) {
+    const proof = effective.incomeBindings && incomeChartProof(input, statement, effective.incomeBindings, result.pool, result.columns);
+    result.provenance = { ...result.provenance, metadata: { ...result.provenance.metadata,
+      statementPresentation: statementPresentation(statement, effective.model.layout), ...(proof ? { [INCOME_CHART_PROOF]: proof } : {}) } };
+  }
   const diagnosticMap = new Map<string, CalculatedView['diagnostics'][number]>();
   for (const error of result.errors) diagnosticMap.set(JSON.stringify([error.code,error.message]),{code:error.code,message:error.message,severity:'error'});
   for (const warning of result.warnings) diagnosticMap.set(JSON.stringify([warning.code,warning.message]),{code:warning.code,message:warning.message,severity:'warning'});

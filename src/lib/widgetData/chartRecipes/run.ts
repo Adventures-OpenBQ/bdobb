@@ -9,7 +9,7 @@ import { buildDrawdown } from './drawdown';
 import { buildEstimateRange } from './estimateRange';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { calendarDate } from './priceEvidence';
-import { decodeRecipeOptions } from './settings';
+import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 import { buildEtfExposure } from './etfExposure';
 import { buildEtfPareto } from './etfPareto';
@@ -45,8 +45,7 @@ function hasRecipeContext(context: unknown): boolean {
 
 /** Pure worker entry point. Builder errors are left to the caller's worker error handling. */
 export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, context: RecipeContext): RecipeResult {
-  const kind: unknown = isRecord(options) ? Object.getOwnPropertyDescriptor(options, 'kind')?.value : undefined;
-  const decoded = decodeRecipeOptions(options, typeof kind === 'string' ? kind : '');
+  const decoded = decodeRecipeRequestOptions(options);
   if (!decoded.ok) return { ok: false, refused: true, message: decoded.message };
   if (!hasChartInputs(dataset))
     return { ok: false, refused: true, message: 'Reload the source table to supply a valid chart dataset.' };
@@ -69,5 +68,9 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'small-multiples': return buildSmallMultiples(dataset, recipe, context);
     case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
+    case 'bubble-regression':
+    case 'dividend-steps':
+    case 'income-sankey':
+      return { ok: false, refused: true, message: 'This chart recipe is unavailable in this build.' };
   }
 }

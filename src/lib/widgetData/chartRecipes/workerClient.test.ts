@@ -92,3 +92,11 @@ it('sends layout width in context and fences a superseded arrangement of the sam
   await expect(current).resolves.toMatchObject({ message: 'current' });
   client.dispose();
 });
+
+it('refuses executable options before a structured clone can invoke the accessor', async () => {
+  const client = createRecipeWorker(() => { throw new Error('Refused options must never reach a worker port'); });
+  const options = { version: 1, kind: 'income-sankey', get periodColumn(): string { throw new Error('Accessor ran'); } } as const;
+  await expect(client.run(dataset, options, context, new AbortController().signal))
+    .resolves.toMatchObject({ ok: false, refused: true });
+  client.dispose();
+});

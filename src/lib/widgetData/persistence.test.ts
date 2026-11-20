@@ -65,3 +65,17 @@ it('reopens copied small multiples with the authored symbol order', () => {
     ok: true, options: linkedChart.recipe,
   });
 });
+
+it('persists a selected income period and refuses injected scale after reopening', () => {
+  const recipe = { version: 1, kind: 'income-sankey', periodColumn: 'period-column' } satisfies RecipeOptions;
+  const linkedChart: NonNullable<DashboardCard['linkedChart']> = { type: recipe.kind, display: 'grouped', measures: [], recipe };
+  const reload = (options: unknown) => JSON.parse(JSON.stringify(persistedCard({
+    ...child, linkedChart: { ...linkedChart, measures: [], recipe: options as RecipeOptions },
+  }))).linkedChart;
+  expect(decodeLinkedChartRecipe(reload(recipe), recipe.kind)).toEqual({ ok: true, options: recipe });
+  const edited = reload({ ...recipe, scale: { status: 'verified', multiplier: 1000 } });
+  expect(decodeLinkedChartRecipe(edited, recipe.kind)).toMatchObject({ ok: false });
+  expect(JSON.stringify(edited)).not.toContain('multiplier');
+  expect(persistedCard({ ...child, linkedChart: { ...linkedChart, chart_evidence: { coverage: 'full-record' } } as typeof linkedChart }).linkedChart)
+    .toEqual(linkedChart);
+});

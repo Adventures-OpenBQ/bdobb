@@ -8,7 +8,7 @@ import { isRecord } from './isRecord';
 import { reservedPivotName } from './paramGroups';
 import { AGG_NAMES, BUCKETS } from './types';
 import type { Dashboard, DashboardCard, PivotConfig } from './types';
-import { decodeLinkedChartRecipe, isLegacyLinkedChartType, isRecipeType } from './widgetData/chartRecipes/settings';
+import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isLegacyLinkedChartType, isRecipeType, LINKED_CHART_FIELDS } from './widgetData/chartRecipes/settings';
 
 type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
   view?: 'calendar';
@@ -91,6 +91,7 @@ export function extras(value: unknown, path: string): Extras {
     const chartPath = `${path}.linkedChart`;
     if (!isRecord(c) || typeof c.type !== 'string' || (!isLegacyLinkedChartType(c.type) && !isRecipeType(c.type)))
       extensionError(chartPath, 'Invalid linked chart type. Choose a supported chart type.');
+    if (isAcquiredFinancialRecipeType(c.type)) keys(c, LINKED_CHART_FIELDS, chartPath);
     const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
     if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
       || (!needsMeasuresDefault && !strings(c.measures)) || !['grouped', 'stacked', 'percent'].includes(c.display as string)

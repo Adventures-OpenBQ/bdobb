@@ -161,6 +161,12 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
  */
 export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: number, sourceKind: string,
   formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot, acquisition?: BackendAcquisition): WidgetDataset {
+  const receipt = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
+  const evidence = receipt && financialRowsAgree(receipt, rows) ? receipt : undefined;
+  if (evidence?.kind === 'income') {
+    // The provider returns period records without repeated issuer and period kind columns.
+    rows = rows.map(row => ({ ...row, symbol: row.symbol ?? evidence.qualified_symbol, period_kind: row.period_kind ?? evidence.period_kind }));
+  }
   const fields = [...new Set(rows.flatMap(row => Object.keys(row)))];
   // SheetJS leaves a blank cell out of its row and JSON rows may omit a key;
   // the engine reads an absent key as an unavailable field, so a file column
@@ -183,8 +189,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     dataset.provenance = priceAcquisitionProvenance(dataset);
   }
   dataset.provenance = etfAcquisitionProvenance(dataset, acquisition);
-  const evidence = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
-  if (evidence && financialRowsAgree(evidence, rows))
+  if (evidence)
     dataset.provenance = { ...dataset.provenance, metadata: { ...dataset.provenance.metadata, financialEvidence: structuredClone(evidence) } };
   dataset.provenance = estimateProvenance(dataset);
   if (dataset.completeness.kind === 'complete') {

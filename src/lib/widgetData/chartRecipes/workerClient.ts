@@ -3,6 +3,7 @@
 
 import type { Revision } from '../../tableExecution/types';
 import type { WidgetDataset } from '../types';
+import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 
 type RecipeIdentity = { requestId: number; sourceWidgetId: string; inputRevision?: number; resultRevision: number; outputRevision: number };
@@ -24,6 +25,8 @@ export function createRecipeWorker(create = () => new Worker(new URL('./recipe.w
       if (disposed) throw new Error('The chart worker was disposed.');
       signal.throwIfAborted();
       cancel?.();
+      const decoded = decodeRecipeRequestOptions(options);
+      if (!decoded.ok) return { ok: false, refused: true, message: decoded.message };
       const worker = port ??= create();
       const identity: RecipeIdentity = {
         requestId: ++sequence, sourceWidgetId: dataset.revision?.widgetId ?? dataset.provenance.sourceWidgetId,
@@ -62,7 +65,7 @@ export function createRecipeWorker(create = () => new Worker(new URL('./recipe.w
         worker.addEventListener('error', error);
         worker.addEventListener('messageerror', unreadable);
         signal.addEventListener('abort', abort, { once: true });
-        try { worker.postMessage({ identity, dataset, options, context } satisfies RecipeRequest); }
+        try { worker.postMessage({ identity, dataset, options: decoded.options, context } satisfies RecipeRequest); }
         catch (cause) { fail(cause); }
       });
     },

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { asRecord } from '../../isRecord';
-import type { DatasetProvenance, DatasetRow } from '../types';
+import type { DatasetColumn, DatasetProvenance, DatasetRow } from '../types';
 import type { BackendEtfAcquisition } from './etfEvidence';
 import { calendarDate } from './priceEvidence';
 
@@ -48,12 +48,12 @@ const finite: Check<number> = (value): value is number => typeof value === 'numb
 const integer: Check<number> = (value): value is number => finite(value) && Number.isSafeInteger(value);
 const count: Check<number> = (value): value is number => integer(value) && value >= 0;
 const positive: Check<number> = (value): value is number => finite(value) && value > 0;
-const isoDate: Check<string> = (value): value is string => text(value) && value.length === 10 && !value.startsWith('0000') && calendarDate(value) === value;
+export const isoDate: Check<string> = (value): value is string => text(value) && value.length === 10 && !value.startsWith('0000') && calendarDate(value) === value;
 const utcTimestamp: Check<string> = (value): value is string => text(value)
   && /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,6})?(?:Z|\+00:00)$/.test(value)
   && isoDate(value.slice(0, 10)) && Number.isFinite(Date.parse(value));
 const currency: Check<string> = (value): value is string => text(value) && /^[A-Z]{3}$/.test(value);
-const qualifiedSymbol: Check<string> = (value): value is string => text(value) && value.length <= 128
+export const qualifiedSymbol: Check<string> = (value): value is string => text(value) && value.length <= 128
   && /^[A-Z0-9^][A-Z0-9^_/-]*(?:\.[A-Z0-9^_/-]+)*\.[A-Z0-9][A-Z0-9_-]*$/.test(value);
 const reference: Check<string> = (value): value is string => text(value) && value.length >= 1 && value.length <= 256;
 const unique = (values: readonly string[]) => new Set(values).size === values.length;
@@ -122,6 +122,12 @@ const dividends = shape({
   event_dates: dates, invalid_amount_dates: dates, duplicate_dates: dates, payment_currencies: list(currency),
 });
 
+/** The canonical acquired field survives an alias, but cannot survive a calculation. */
+export function acquiredColumnOrigin(column: DatasetColumn | undefined): string | undefined {
+  if (!column || column.analytical || column.measureId || column.aggregation || column.splitPath?.length) return undefined;
+  return column.sourceFieldId ?? column.id;
+}
+
 const incomeFieldOrigins = {
   revenue: oneOf('totalRevenue'), cost_of_revenue: oneOf('costOfRevenue'), gross_profit: oneOf('grossProfit'),
   operating_income: oneOf('operatingIncome'), income_before_tax: oneOf('incomeBeforeTax'),
@@ -129,6 +135,7 @@ const incomeFieldOrigins = {
 };
 
 export type IncomeEvidenceField = keyof typeof incomeFieldOrigins;
+export const incomeEvidenceFields = Object.keys(incomeFieldOrigins) as IncomeEvidenceField[];
 const incomeField: Check<IncomeEvidenceField> = (value): value is IncomeEvidenceField =>
   text(value) && Object.hasOwn(incomeFieldOrigins, value);
 const periodKind = oneOf('FY', 'FQ');
@@ -313,7 +320,13 @@ export function financialRowsAgree(evidence: FinancialEvidence, rows: readonly R
   for (const row of rows) {
     const day = row.period_ending;
     const period = isoDate(day) && periods.get(day);
-    if (!period || (delivered.has(day) && !period.identity_conflict)) return false;
+    if (!period || (delivered.has(day) && !period.identity_conflict)
+      || (row.symbol != null && row.symbol !== evidence.qualified_symbol)
+      || (row.period_kind != null && row.period_kind !== evidence.period_kind)
+      || (row.reporting_currency != null && row.reporting_currency !== evidence.reporting_currency && !period.currency_conflict)
+      || (row.scale_multiplier != null && evidence.scale.status === 'verified'
+        && row.scale_multiplier !== evidence.scale.multiplier && !period.scale_conflict && !evidence.unsafe.scale_conflict)
+      || incomeEvidenceFields.some(field => finite(row[field]) !== period.present_fields.includes(field))) return false;
     delivered.add(day);
   }
   return delivered.size === periods.size;

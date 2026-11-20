@@ -3,7 +3,8 @@
 
 import { expect, it } from 'vitest';
 import type { DatasetColumn, LinkedChartSettings } from '../types';
-import { savedBindingIssue } from './bindings';
+import { bubblePriceDates, savedBindingIssue } from './bindings';
+import { datasetFromRows } from '../../localTableData';
 import { decodeRecipeOptions, requiredRecipeFields, validateRecipeOptions, withRecipeType } from './settings';
 import type { RecipeOptions } from './types';
 
@@ -228,4 +229,85 @@ it('retains compatible options while dropping old chart-specific settings', () =
   const legacy: LinkedChartSettings = { type: 'column', display: 'percent', measures: ['adjusted_close'], seriesFrom: 'rows' };
   expect(withRecipeType(legacy, 'column')).toEqual(legacy);
   expect(withRecipeType(legacy, 'correlation')).toEqual({ type: 'correlation', display: 'stacked', measures: ['adjusted_close'] });
+});
+
+const screeningOptions = [
+  { version: 1, kind: 'bubble-regression', priceDate: 'latest', regression: true,
+    fields: { symbol: 'listing', date: 'price_on', dividendYield: 'yield', priceChange: 'change', marketCap: 'cap', exchange: 'venue', currency: 'glyph' } },
+  { version: 1, kind: 'dividend-steps', instrument: 'SHEL.LSE',
+    fields: { date: 'ex', amount: 'adjusted', currency: 'paid_in', frequency: 'distribution_type' } },
+  { version: 1, kind: 'income-sankey', periodColumn: 'fy-2026' },
+] as const;
+
+it.each(screeningOptions)('round trips the closed version 1 $kind options', options => {
+  expect(validateRecipeOptions(JSON.parse(JSON.stringify(options)), options.kind)).toEqual(options);
+});
+
+it.each(screeningOptions)('rejects a different version and injected evidence for $kind', options => {
+  expect(validateRecipeOptions({ ...options, version: 2 }, options.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...options, units: { scale: 1000 } }, options.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...options, coverage: 'full-record' }, options.kind)).toBeNull();
+});
+
+it('requires a genuine price date, a boolean regression choice, and distinct screening roles', () => {
+  const options = screeningOptions[0];
+  expect(validateRecipeOptions({ ...options, priceDate: '2024-02-29' }, options.kind)).not.toBeNull();
+  for (const priceDate of ['2026-02-29', '2024-02-29T00:00:00Z', '0000-01-01', '']) {
+    expect(validateRecipeOptions({ ...options, priceDate }, options.kind)).toBeNull();
+  }
+  expect(validateRecipeOptions({ ...options, regression: 'true' }, options.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...options, fields: { ...options.fields, priceChange: options.fields.dividendYield } }, options.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...options, fields: { ...options.fields, denomination: 'USD' } }, options.kind)).toBeNull();
+});
+
+it('requires a qualified dividend instrument and a single explicit income column', () => {
+  const steps = screeningOptions[1], sankey = screeningOptions[2];
+  expect(validateRecipeOptions({ ...steps, instrument: 'SHEL' }, steps.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...sankey, fields: { periodColumn: 'fy-2026' } }, sankey.kind)).toBeNull();
+  expect(validateRecipeOptions({ ...sankey, periodColumn: ' ' }, sankey.kind)).toBeNull();
+});
+
+it('requires screening origin per role, regardless of column labels and numeric formats', () => {
+  const options = screeningOptions[0];
+  const columns: DatasetColumn[] = [
+    { id: 'listing', label: 'Issuer', sourceFieldId: 'symbol' },
+    { id: 'price_on', label: 'When', dtype: 'dateString', sourceFieldId: 'last_day_data_date' },
+    { id: 'yield', label: 'Yield', dtype: 'number', sourceFieldId: 'dividend_yield' },
+    { id: 'change', label: 'Change', dtype: 'number', sourceFieldId: 'price_change_5d' },
+    { id: 'cap', label: 'Size', dtype: 'number', sourceFieldId: 'market_cap' },
+    { id: 'venue', label: 'Venue', sourceFieldId: 'exchange' },
+    { id: 'glyph', label: 'Currency', sourceFieldId: 'currency_symbol' },
+  ];
+  expect(savedBindingIssue(options, columns)).toBeUndefined();
+  expect(savedBindingIssue(options, columns.filter(column => column.id !== 'venue'))).toMatch(/venue.*unavailable/i);
+  expect(savedBindingIssue(options, columns.map(column => column.id === 'change' ? { ...column, sourceFieldId: 'price_change_1d' } : column)))
+    .toMatch(/change.*cannot supply/i);
+  expect(savedBindingIssue(options, columns.map(column => column.id === 'price_on' ? { ...column, sourceFieldId: 'date' } : column)))
+    .toMatch(/price_on.*cannot supply/i);
+});
+
+it('requires the adjusted amount and ex-date origins in a dividend presentation', () => {
+  const options = screeningOptions[1];
+  const columns: DatasetColumn[] = [
+    { id: 'ex', label: 'Ex date', dtype: 'dateString', sourceFieldId: 'ex_dividend_date' },
+    { id: 'adjusted', label: 'Split-adjusted dividends', dtype: 'number', sourceFieldId: 'unadjusted_amount' },
+    { id: 'paid_in', label: 'Payment currency', sourceFieldId: 'currency' },
+    { id: 'distribution_type', label: 'Type', sourceFieldId: 'frequency' },
+  ];
+  expect(savedBindingIssue(options, columns)).toMatch(/adjusted.*cannot supply/i);
+  expect(savedBindingIssue(options, columns.map(column => column.id === 'adjusted' ? { ...column, sourceFieldId: 'amount' } : column))).toBeUndefined();
+});
+
+it('projects a Sankey using only the selected period column', () => {
+  expect(requiredRecipeFields(screeningOptions[2])).toEqual(['fy-2026']);
+  expect(savedBindingIssue(screeningOptions[2], [])).toMatch(/fy-2026.*unavailable/i);
+  expect(savedBindingIssue(screeningOptions[2], [{ id: 'fy-2026', label: 'FY2026', dtype: 'number' }])).toMatch(/cannot supply.*period/i);
+});
+
+it('offers the latest valid presented price date first and ignores errored cells', () => {
+  const source = datasetFromRows([
+    { day: '2026-08-28' }, { day: '2026-08-31' }, { day: '2026-08-28' }, { day: '2026-09-31' }, { day: '2026-09-01' },
+  ], 'source', 1, 'localFile');
+  source.rows[4].cellErrors = { day: { code: 'invalid-date', message: 'Invalid source cell' } };
+  expect(bubblePriceDates(source, 'day')).toEqual(['2026-08-31', '2026-08-28']);
 });

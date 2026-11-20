@@ -9,7 +9,8 @@ self.onmessage = ({ data }: MessageEvent<RecipeRequest>) => {
   const { identity, dataset, options, context } = data;
   try {
     const result = runRecipe(dataset, options, context);
-    if (result.ok && ('periodEnd' in options.fields || 'date' in options.fields)) {
+    if (result.ok && options.kind !== 'income-sankey' && options.kind !== 'bubble-regression'
+      && options.kind !== 'dividend-steps' && ('periodEnd' in options.fields || 'date' in options.fields)) {
       const dateField = 'periodEnd' in options.fields ? options.fields.periodEnd : options.fields.date;
       let first: string | undefined, last: string | undefined;
       for (const row of dataset.rows) {

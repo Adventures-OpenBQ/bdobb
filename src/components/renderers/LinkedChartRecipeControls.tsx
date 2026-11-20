@@ -12,7 +12,7 @@ type Metric = 'eps' | 'revenue';
 type Mode = 'sector' | 'region';
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 
-export const recipeLabels: Record<Kind, string> = {
+export const recipeLabels: Partial<Record<Kind, string>> = {
   drawdown: 'Drawdown', 'yield-curve': 'Yield curve', 'estimate-range': 'Estimate range',
   'monthly-returns': 'Monthly returns', correlation: 'Correlation',
   'return-distribution': 'Return distribution', 'small-multiples': 'Small multiples',
@@ -45,7 +45,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
     : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
   const [mode, setMode] = useState<Mode>(() => saved?.kind === 'etf-exposure' ? saved.mode
     : kind === 'etf-exposure' && missingRoles(kind, columns, metric).length && !missingRoles(kind, columns, metric, 'region').length ? 'region' : 'sector');
-  const [fields, setFields] = useState<Record<string, string>>(() => saved ? { ...saved.fields } : defaults(kind, metric, columns, mode));
+  const [fields, setFields] = useState<Record<string, string>>(() => saved && 'fields' in saved ? { ...saved.fields } : defaults(kind, metric, columns, mode));
   const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
@@ -82,7 +82,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, d
     ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
   const decoded = decodeRecipeOptions(candidate, kind);
   const problem = fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.' : choiceIssue || (!decoded.ok && decoded.message);
-  return <fieldset disabled={disabled}><legend>{recipeLabels[kind]} settings</legend>
+  return <fieldset disabled={disabled}><legend>{recipeLabels[kind] ?? kind} settings</legend>
     {kind === 'estimate-range' && <label>Metric<select value={metric} onChange={e => {
       const next = e.target.value === 'revenue' ? 'revenue' : 'eps';
       setMetric(next);

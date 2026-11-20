@@ -53,7 +53,7 @@ function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | nul
 
 /** Curves have observation dates and tenors. Reported-quarter ranges have fiscal identity. */
 export function recipeEligibility(dataset: WidgetDataset, options: RecipeOptions): string | null {
-  if ('price' in options.fields) return priceIssue(dataset, options.fields);
+  if ('fields' in options && 'price' in options.fields) return priceIssue(dataset, options.fields);
   return sourceIssue(dataset, requiredRecipeFields(options), options.kind === 'yield-curve');
 }
 

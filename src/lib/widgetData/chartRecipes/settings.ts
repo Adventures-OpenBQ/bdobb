@@ -3,11 +3,12 @@
 
 import { isRecord } from '../../isRecord';
 import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
+import { isoDate, qualifiedSymbol } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
 import type { RecipeOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
-type RecipeShape = { options: readonly string[]; required: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
+type RecipeShape = { options: readonly string[]; required?: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
 const priceFields = { required: ['date', 'price'], optional: ['symbol'] };
 const recipeShapes: Record<RecipeKind, RecipeShape> = {
   drawdown: { options: ['symbols'], ...priceFields },
@@ -19,11 +20,22 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
   'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
+  'bubble-regression': { options: ['priceDate', 'regression'],
+    required: ['symbol', 'date', 'dividendYield', 'priceChange', 'marketCap', 'exchange', 'currency'],
+    optional: ['name', 'sector'], distinctBindings: true },
+  'dividend-steps': { options: ['instrument'], required: ['date', 'amount', 'currency'], optional: ['frequency'], distinctBindings: true },
+  'income-sankey': { options: ['periodColumn'] },
 };
 
 export function isRecipeType(type: unknown): type is RecipeKind {
   return typeof type === 'string' && Object.hasOwn(recipeShapes, type);
 }
+
+export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' {
+  return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey';
+}
+
+export const LINKED_CHART_FIELDS = ['type', 'category', 'measures', 'display', 'seriesFrom', 'period', 'recipe'] as const;
 
 export function isLegacyLinkedChartType(type: unknown): boolean {
   return LEGACY_LINKED_CHART_TYPES.some(legacy => legacy === type);
@@ -69,26 +81,29 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
     return invalid('Recipe kind must match the linked chart type.');
 
   const shape = recipeShapes[chartType];
-  const allowed = ['version', 'kind', 'fields', ...shape.options];
+  const allowed = ['version', 'kind', ...(shape.required ? ['fields'] : []), ...shape.options];
   const extra = Object.keys(value).find(key => !allowed.includes(key));
   if (extra !== undefined) return invalid(`Remove unsupported recipe option "${extra}".`);
 
-  const fields = Object.hasOwn(value, 'fields') ? value.fields : undefined;
-  if (!declarativeRecord(fields)) return invalid('Supply recipe field bindings as a plain object.');
-  const optional = shape.optional ?? [];
-  const extraBinding = Object.keys(fields).find(key => !shape.required.includes(key) && !optional.includes(key));
-  if (extraBinding !== undefined) return invalid(`Remove unsupported recipe binding "${extraBinding}".`);
-  for (const name of shape.required) {
-    if (!Object.hasOwn(fields, name) || !nonblankString(fields[name]))
-      return invalid(`Choose a nonempty field ID for the "${name}" recipe binding.`);
-  }
-  for (const name of optional) {
-    if (Object.hasOwn(fields, name) && fields[name] !== undefined && !nonblankString(fields[name]))
-      return invalid(`Choose a nonempty field ID for the "${name}" recipe binding or omit it.`);
-  }
-  if (shape.distinctBindings) {
-    const bound = Object.values(fields).filter(id => id !== undefined);
-    if (new Set(bound).size !== bound.length) return invalid('Choose distinct fields for the recipe bindings.');
+  const { required } = shape;
+  if (required) {
+    const fields = Object.hasOwn(value, 'fields') ? value.fields : undefined;
+    if (!declarativeRecord(fields)) return invalid('Supply recipe field bindings as a plain object.');
+    const optional = shape.optional ?? [];
+    const extraBinding = Object.keys(fields).find(key => !required.includes(key) && !optional.includes(key));
+    if (extraBinding !== undefined) return invalid(`Remove unsupported recipe binding "${extraBinding}".`);
+    for (const name of required) {
+      if (!Object.hasOwn(fields, name) || !nonblankString(fields[name]))
+        return invalid(`Choose a nonempty field ID for the "${name}" recipe binding.`);
+    }
+    for (const name of optional) {
+      if (Object.hasOwn(fields, name) && fields[name] !== undefined && !nonblankString(fields[name]))
+        return invalid(`Choose a nonempty field ID for the "${name}" recipe binding or omit it.`);
+    }
+    if (shape.distinctBindings) {
+      const bound = Object.values(fields).filter(id => id !== undefined);
+      if (new Set(bound).size !== bound.length) return invalid('Choose distinct fields for the recipe bindings.');
+    }
   }
 
   if (shape.options.some(key => !Object.hasOwn(value, key)))
@@ -123,11 +138,26 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
       if (!distinctSymbols(value.symbols, 12, canonicalObservationSymbol))
         return invalid('Select 1 to 12 distinct source symbols for small multiples.');
       break;
+    case 'bubble-regression':
+      if (value.priceDate !== 'latest' && !isoDate(value.priceDate)) return invalid('Choose latest or a YYYY-MM-DD price-data date.');
+      if (typeof value.regression !== 'boolean') return invalid('Choose whether to show regression.');
+      break;
+    case 'dividend-steps':
+      if (!qualifiedSymbol(value.instrument)) return invalid('Select one fully qualified dividend instrument.');
+      break;
+    case 'income-sankey':
+      if (!nonblankString(value.periodColumn)) return invalid('Choose one presented income statement period column.');
+      break;
     case 'etf-exposure':
       if (value.mode !== 'sector' && value.mode !== 'region') return invalid('Choose sector or region for ETF exposure.');
       break;
   }
   return { ok: true, options: value as RecipeOptions };
+}
+
+export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult {
+  const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
+  return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 
 /** A null result represents legacy settings with no recipe declaration. */
@@ -145,6 +175,7 @@ export function validateRecipeOptions(value: unknown, chartType: string): Recipe
 }
 
 export function requiredRecipeFields(options: RecipeOptions): string[] {
+  if (options.kind === 'income-sankey') return [options.periodColumn];
   const fields: (string | undefined)[] = Object.values(options.fields);
   return [...new Set(fields.filter((field): field is string => field !== undefined))];
 }

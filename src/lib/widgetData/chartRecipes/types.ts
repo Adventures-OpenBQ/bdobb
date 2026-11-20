@@ -5,6 +5,12 @@ import type { LinkedFigureResult } from '../chartFigure';
 
 export type PriceBindings = { date: string; price: string; symbol?: string };
 
+export type BubbleBindings = {
+  symbol: string; date: string; dividendYield: string; priceChange: string; marketCap: string;
+  exchange: string; currency: string; name?: string; sector?: string;
+};
+export type DividendBindings = { date: string; amount: string; currency: string; frequency?: string };
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -14,9 +20,13 @@ export type RecipeOptions =
   | { version: 1; kind: 'return-distribution'; fields: PriceBindings; symbol: string; bins: number }
   | { version: 1; kind: 'small-multiples'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'etf-pareto'; fields: { holding: string; label?: string; weight: string } }
-  | { version: 1; kind: 'etf-exposure'; fields: { category: string; weight: string }; mode: 'sector' | 'region' };
+  | { version: 1; kind: 'etf-exposure'; fields: { category: string; weight: string }; mode: 'sector' | 'region' }
+  | { version: 1; kind: 'bubble-regression'; fields: BubbleBindings; priceDate: string; regression: boolean }
+  | { version: 1; kind: 'dividend-steps'; fields: DividendBindings; instrument: string }
+  | { version: 1; kind: 'income-sankey'; periodColumn: string };
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeResult = LinkedFigureResult;
+export type RecipeRefusal = Extract<RecipeResult, { ok: false }>;

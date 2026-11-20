@@ -5,6 +5,7 @@ use crate::{contract::*, scopes::DeclaredMember};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 mod compile;
+pub(crate) mod income_chart;
 mod policy;
 mod presentation;
 mod unpivot;
@@ -115,6 +116,8 @@ pub struct StatementOverrides {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub section_order: Option<Vec<String>>,
     pub line_order: BTreeMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line_section: Option<BTreeMap<String, String>>,
     pub hidden_ids: Vec<String>,
     pub formulas: Vec<Formula>,
 }
@@ -157,6 +160,38 @@ pub struct EffectiveStatement {
     pub section_field: String,
     pub section_by_line: BTreeMap<String, String>,
 }
+/// Home lines remain in their original order; moved lines follow in template order.
+fn displayed_sections(intent: &StatementIntent) -> Vec<StatementSection> {
+    let Some(placement) = &intent.overrides.line_section else {
+        return intent.template.sections.clone();
+    };
+    let mut sections = intent.template.sections.clone();
+    let mut stayed_home = std::collections::BTreeSet::new();
+    for section in &mut sections {
+        section.line_ids.retain(|line| {
+            let retained = placement
+                .get(line)
+                .is_none_or(|target| target == &section.id);
+            if retained {
+                stayed_home.insert(line.clone());
+            }
+            retained
+        });
+    }
+    for line in &intent.template.lines {
+        if stayed_home.contains(&line.id) {
+            continue;
+        }
+        if let Some(section) = sections
+            .iter_mut()
+            .find(|section| placement.get(&line.id) == Some(&section.id))
+        {
+            section.line_ids.push(line.id.clone());
+        }
+    }
+    sections
+}
+
 pub(crate) fn problem(code: &str, path: &str, message: &str) -> Diagnostic {
     Diagnostic {
         code: code.into(),

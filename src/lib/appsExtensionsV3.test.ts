@@ -274,3 +274,34 @@ describe("a synced card", () => {
     expect(encodeV3CardExtension(synced, "$")).toEqual({ ok: true, value: { schemaVersion: 1, profile: "v3", title: "Mine" } });
   });
 });
+
+it("round trips screening and income recipes through the v4 envelope and refuses fabricated acquisition facts", () => {
+  const recipes = [
+    { version: 1, kind: "bubble-regression", priceDate: "latest", regression: true,
+      fields: { symbol: "symbol", date: "last_day_data_date", dividendYield: "dividend_yield", priceChange: "price_change_5d", marketCap: "market_cap", exchange: "exchange", currency: "currency_symbol" } },
+    { version: 1, kind: "dividend-steps", instrument: "SHEL.LSE", fields: { date: "ex_dividend_date", amount: "amount", currency: "currency" } },
+    { version: 1, kind: "income-sankey", periodColumn: "period-column" },
+  ] satisfies RecipeOptions[];
+  const input = dashboard(), [tab] = input.tabs;
+  for (const recipe of recipes) tab.cards.push(card({ id: recipe.kind, widgetId: "linked_chart",
+    linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, display: "grouped", measures: [], recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  expect(exported).toMatchObject({ ok: true, value: { extensions: { bdobb: { profile: "v4" } } } });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const payload = JSON.parse(JSON.stringify([exported.value]));
+  const [producer, ...charts] = importApps(payload, []).dashboards[0].tabs[0].cards;
+  expect(charts.map(chart => chart.linkedChart?.recipe)).toEqual(recipes);
+  expect(charts.every(chart => chart.linkedSource?.sourceWidgetId === producer.id)).toBe(true);
+  const [income] = payload[0].extensions.bdobb.cards.filter((entry: { extras: { linkedChart?: { type: string } } }) =>
+    entry.extras.linkedChart?.type === "income-sankey");
+  income.extras.linkedChart.recipe.reportingCurrency = "USD";
+  const text = JSON.stringify(payload);
+  expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+
+  delete income.extras.linkedChart.recipe.reportingCurrency;
+  income.extras.linkedChart.financialEvidence = { scale: 1000 };
+  const forgedChart = JSON.stringify(payload);
+  expect(planAppsImport(forgedChart, forgedChart.length, [], []).ok).toBe(false);
+});
