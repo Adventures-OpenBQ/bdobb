@@ -3,7 +3,7 @@
 
 import { pivotValueKey } from '../pivotKeys';
 import type { PlotlyFigure } from '../chartShapes';
-import type { DatasetColumn, WidgetDataset, LinkedChartSettings, DatasetColumn } from './types';
+import type { DatasetColumn, WidgetDataset, LinkedChartSettings } from './types';
 import { buildWaterfall } from './waterfallFigure';
 const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
 export function color(id: string) { let hash = 0; for (const c of id)

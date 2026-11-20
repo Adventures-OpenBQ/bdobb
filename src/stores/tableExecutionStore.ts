@@ -117,7 +117,7 @@ export function backendTableSource(card: DashboardCard): SourceAdapter {
     if (!fitsTableWorker(entry.data)) throw new Error('This table is too large for the table engine');
     const spec = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table;
     // Copied: datasetFromRows fills absent keys, and these rows are also on screen.
-    const rows = (tableRows(entry.data) ?? []).map(row => ({ ...row }));
+    const rows = (tableRows(entry.data, spec) ?? []).map(row => ({ ...row }));
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}) })) : [];
     return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns) };
   } };
