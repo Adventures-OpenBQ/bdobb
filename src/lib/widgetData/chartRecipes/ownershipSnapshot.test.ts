@@ -9,6 +9,7 @@ import { datasetFromBytes, datasetFromRows } from '../../localTableData';
 import type { WidgetDataset } from '../types';
 import { ownershipInputFields } from './bindings';
 import { captureChartSources, projectChartSources } from './chartSourceContracts';
+import type { OwnershipMeasure } from './ownershipEvidence';
 import { allocateWaffle, buildOwnershipSnapshot } from './ownershipSnapshot';
 import { runRecipe } from './run';
 import { decodeRecipeOptions } from './settings';
@@ -26,7 +27,7 @@ const barReceipt = {
   ...acquiredOwnershipPartition, raw_count: 1, normalized_count: 1, delivered_count: 1, bucket_keys: undefined,
   measures: {
     insiders: { unit: 'percent-points', basis: 'shares-outstanding', as_of: null },
-    institutions: { unit: 'fraction', basis: null, as_of: '2026-09-30' },
+    institutions: { unit: 'fraction', basis: null as OwnershipMeasure['basis'], as_of: '2026-09-30' },
     freeFloat: { unit: 'percent-points', basis: 'shares-outstanding', as_of: '2026-08-31' },
   },
   field_origins: bars.fields, partition: { status: 'unavailable' },
@@ -270,4 +271,62 @@ it('accepts only closed versioned options with view-specific distinct fields', (
     { ...bars, fields: { insiders: 'pct', institutions: 'pct' } },
     { ...waffle, fields: { share: 'reported_share' } }, { ...waffle, fields: { ...waffle.fields, insiders: 'raw' } },
   ]) expect(decodeRecipeOptions(invalid, 'ownership-snapshot').ok).toBe(false);
+});
+
+it('changes the waffle revision when the certified partition observation changes', async () => {
+  async function render(source: typeof acquiredOwnershipPartition, revision = 1, width = context.viewportWidth) {
+    const rows = acquiredOwnershipRows.map((row, i) => ({
+      ...row, share_class: source.share_class, as_of: source.partition.as_of,
+      reported_share: revision > 1 ? [30, 70][i] : row.reported_share,
+    }));
+    const input = await load(source, rows);
+    const result = runRecipe({ ...input, resultRevision: revision, outputRevision: revision }, waffle,
+      { ...context, viewportWidth: width });
+    if (!result.ok) throw new Error(result.message);
+    expect(result.figure.layout.uirevision).toBe(result.revision);
+    return result.revision;
+  }
+  const first = await render(acquiredOwnershipPartition);
+  expect(await render({ ...acquiredOwnershipPartition, retrieved_at: '2026-11-21T04:16:46Z' }, 2, 460)).toBe(first);
+  for (const change of [
+    { share_class: 'Class-C' },
+    { partition: { ...acquiredOwnershipPartition.partition, as_of: '2026-10-31' } },
+    { partition: { ...acquiredOwnershipPartition.partition, reference: 'example:another-register' } },
+  ]) {
+    expect(await render({ ...acquiredOwnershipPartition, ...change })).not.toBe(first);
+  }
+});
+
+it('revises bars on selected field dates, denominator basis, class and unknown-date acquisition vintage', async () => {
+  const dimensions = { ...context, viewportWidth: 500, viewportHeight: 280 };
+  async function render(receipt: typeof barReceipt, options: OwnershipSnapshotOptions = bars, refreshed = false) {
+    const row = { ...barRow, share_class: receipt.share_class,
+      ...(refreshed && { institution_fraction: .67, date: '2026-11-21' }) };
+    const input = await load(receipt, [row]);
+    const runtime = refreshed ? { ...input, resultRevision: 2, outputRevision: 3 } : input;
+    const result = runRecipe(runtime, options, refreshed ? dimensions : context);
+    if (!result.ok) throw new Error(result.message);
+    expect(result.figure.layout.uirevision).toBe(result.revision);
+    expect(result.ownershipSnapshot).toMatchObject({ retrievedAt: receipt.retrieved_at });
+    return result.revision;
+  }
+  const first = await render(barReceipt);
+  expect(await render(barReceipt, bars, true)).toBe(first);
+  const equivalentTimestamp = { ...barReceipt, retrieved_at: '2026-11-20T04:16:46.000000+00:00' };
+  expect(await render(equivalentTimestamp, bars, true)).toBe(first);
+  const newVintage = { ...barReceipt, retrieved_at: '2026-11-20T04:16:46.000001Z' };
+  expect(await render(newVintage, bars, true)).not.toBe(first);
+  expect(await render({ ...barReceipt, share_class: 'Class-C' })).not.toBe(first);
+
+  const institutions = { ...bars, fields: { institutions: bars.fields.institutions } };
+  const known = await render(barReceipt, institutions);
+  expect(await render(newVintage, institutions, true)).toBe(known);
+  const differentlyDated = { ...barReceipt.measures.institutions, as_of: '2026-10-31' };
+  const newDate = { ...barReceipt, measures: { ...barReceipt.measures, institutions: differentlyDated } };
+  expect(await render(newDate, institutions)).not.toBe(known);
+  expect(await render(newDate)).not.toBe(first);
+  const newBasis: typeof barReceipt = { ...barReceipt, measures: {
+    ...barReceipt.measures, institutions: { ...barReceipt.measures.institutions, basis: 'shares-outstanding' },
+  } };
+  expect(await render(newBasis, institutions)).not.toBe(known);
 });

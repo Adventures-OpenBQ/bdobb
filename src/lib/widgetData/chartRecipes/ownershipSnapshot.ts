@@ -285,6 +285,18 @@ function drawWaffle(snapshot: OwnershipWaffle & SnapshotIdentity, context: Recip
   };
 }
 
+function observationCoordinates(snapshot: OwnershipSnapshotDetails, origins: Partial<Record<string, string>>) {
+  if (snapshot.view === 'waffle')
+    return [snapshot.asOf, snapshot.denominator, snapshot.reference, origins.bucket, origins.share];
+
+  // Equal UTC timestamp spellings share a revision while time differences below one millisecond still count.
+  const [second, fraction = ''] = snapshot.retrievedAt.replace(/(?:Z|\+00:00)$/, '').split('.');
+  const vintage = `${second}.${fraction.padEnd(6, '0')}Z`;
+  return snapshot.measures.flatMap(({ id, status, unit, basis, asOf }) =>
+    status === 'unbound' || unit === null ? [] : [[id, origins[id], unit, basis,
+      asOf === null ? ['retrieved-at', vintage] : ['as-of', asOf]]]);
+}
+
 export function buildOwnershipSnapshot(dataset: WidgetDataset, options: RecipeOptions, context: RecipeContext): RecipeResult {
   const decoded = decodeRecipeOptions(options, 'ownership-snapshot');
   if (!decoded.ok || options.kind !== 'ownership-snapshot')
@@ -314,8 +326,9 @@ export function buildOwnershipSnapshot(dataset: WidgetDataset, options: RecipeOp
   if (!plot) return refuse(geometryIssue);
 
   const revision = JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, options.issuer,
-    options.view, ...(options.view === 'waffle' ? [options.fields.bucket, options.fields.share]
-      : ownershipBarRoles.map(role => options.fields[role] ?? null))]);
+    options.view, options.view === 'waffle' ? [options.fields.bucket, options.fields.share]
+      : ownershipBarRoles.map(role => options.fields[role] ?? null),
+    source.origin, snapshot.shareClass, observationCoordinates(snapshot, source.field_origins)]);
   const classText = source.share_class === null ? 'Share class unknown' : `Share class ${source.share_class}`;
   const heading = snapshot.view === 'bars' ? 'Independent ownership measures' : 'Certified ownership partition';
   const notes = [`${heading} · ${source.issuer} · ${classText} · Retrieved ${source.retrieved_at}.`];

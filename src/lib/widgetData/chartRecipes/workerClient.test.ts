@@ -3,8 +3,10 @@
 
 import { afterEach, expect, it, vi } from 'vitest';
 import { dividendEvidence, dividendRow, emptyDividendEvidence, screenerEvidence } from '../../../test/fixtures/financialEvidence';
+import { liveOwnershipContext, liveOwnershipReceipt, liveOwnershipRows } from '../../../test/fixtures/ownershipEvidence';
 import { datasetFromRows } from '../../localTableData';
-import { createRecipeWorker, type RecipeRequest } from './workerClient';
+import { captureChartSources } from './chartSourceContracts';
+import { createRecipeWorker, type RecipeReply, type RecipeRequest } from './workerClient';
 import { drawdownOptions, priceDataset } from './fixtures';
 import { parseFinancialEvidence } from './financialEvidence';
 
@@ -163,4 +165,40 @@ it('refuses executable options before a structured clone can invoke the accessor
   await expect(client.run(dataset, options, context, new AbortController().signal))
     .resolves.toMatchObject({ ok: false, refused: true });
   client.dispose();
+});
+
+it('preserves the acquired ownership revision through cached worker replies and advances with a new vintage', async () => {
+  const scope = { onmessage: undefined as ((event: { data: RecipeRequest }) => void) | undefined,
+    postMessage: vi.fn<(reply: RecipeReply) => void>() };
+  vi.stubGlobal('self', scope);
+  vi.resetModules();
+  await import('./recipe.worker');
+
+  const send = (requestId: number, retrieved_at: string) => {
+    const identity = { requestId, sourceWidgetId: 'ownership', resultRevision: requestId, outputRevision: requestId };
+    const receipt = { ...liveOwnershipReceipt, retrieved_at };
+    const rows = [{ ...liveOwnershipRows[0], percent_insiders: requestId, date: '2026-11-19' }];
+    const request = { ...liveOwnershipContext, retrievedAt: requestId };
+    const chartSources = captureChartSources(request, {
+      results: rows, extra: { results_metadata: { chart_sources: { version: 1, receipts: [receipt] } } },
+    }, rows);
+    const source = datasetFromRows(rows, 'ownership', requestId, 'backend', undefined, [], undefined, { ...request, chartSources });
+    scope.onmessage!({ data: structuredClone({
+      identity, dataset: source, context: { ...context, viewportWidth: 360 + 30 * requestId },
+      options: { version: 1, kind: 'ownership-snapshot', issuer: 'AAPL.US', view: 'bars',
+        fields: { insiders: 'percent_insiders', institutions: 'percent_institutions' } },
+    } satisfies RecipeRequest) });
+    const reply = structuredClone(scope.postMessage.mock.lastCall![0]);
+    expect(reply).toMatchObject(identity);
+    if (!('result' in reply)) throw new Error(reply.error);
+    if (!reply.result.ok) throw new Error(reply.result.message);
+    expect(reply.result.figure.layout.uirevision).toBe(reply.result.revision);
+    expect(reply.result.ownershipSnapshot).toMatchObject({ retrievedAt: retrieved_at,
+      measures: [{ asOf: null }, { asOf: null }, { asOf: null }] });
+    return reply.result.revision;
+  };
+
+  const first = send(1, liveOwnershipReceipt.retrieved_at);
+  expect(send(2, liveOwnershipReceipt.retrieved_at)).toBe(first);
+  expect(send(3, '2026-11-20T04:16:46.000001Z')).not.toBe(first);
 });
