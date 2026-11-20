@@ -31,6 +31,7 @@ import type { RecipeOptions } from '../lib/widgetData/chartRecipes/types';
 import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
 import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
 import { runRecipe } from '../lib/widgetData/chartRecipes/run';
+import { backendFinancialResponse, readFinancialEvidence } from '../lib/widgetData/chartRecipes/financialEvidence';
 import { renderPlot } from '../lib/plotly';
 import { fixture as incomeFixture } from '../lib/statementModel/compileFixtures';
 import { intent as statementIntent } from '../lib/statementModel/testFixtures';
@@ -522,6 +523,7 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
   try {
     render(<LiveRiskChart/>);
     const first = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(first));
     const figureA = plot.mock.lastCall![1];
     expect(first.style.height).toBe(recipe.kind === 'income-sankey' ? figureA.layout.height + 'px' : '');
     expect(screen.getByText(/^Source A ·/)).toBeVisible();
@@ -541,6 +543,7 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
     read.mockImplementation(readFile);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     const second = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(second));
     const figureB = plot.mock.lastCall![1];
     expect(screen.getByText(/^Source B ·/)).toBeVisible();
     expect(figureB.data).not.toEqual(figureA.data);
@@ -559,6 +562,8 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
     expect(screen.getAllByRole('alert').map(n => n.textContent)).toEqual([diagnostic]);
     expect(screen.getAllByText(/showing completed data \(stale\)/i)).toHaveLength(1);
     expect(screen.getByTestId('chart-plot')).toBe(second);
+    expect(await screen.findByText(/fix the source or choose another table to load chart choices/i)).toBeVisible();
+    expect(screen.queryByText(/wait for the selected source table/i)).toBeNull();
 
     read.mockImplementation(readFile);
     plot.mockRejectedValueOnce(new Error('current Plotly failure'));
@@ -581,6 +586,7 @@ it('keeps the applied bubble visible through an incompatible draft and clears it
   try {
     render(<LiveRiskChart/>);
     const plot = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall?.[0]).toBe(plot));
     const revision = vi.mocked(renderPlot).mock.lastCall![2];
     const type = screen.getByLabelText('Chart type');
     fireEvent.change(type, { target: { value: 'dividend-steps' } });
@@ -621,6 +627,48 @@ it('keeps the applied bubble visible through an incompatible draft and clears it
   } finally { factory.mockRestore(); }
 });
 
+it.each([
+  ['an absent receipt', undefined, undefined],
+  ['a malformed receipt', { ...screenerEvidence, units: { ...screenerEvidence.units, price_change_5d: 'percentage-point' } }, undefined],
+  ['a dividend receipt', dividendEvidence, 'dividends'],
+] as const)('keeps the applied chart when a screening draft has %s', async (_, receipt, acquiredKind) => {
+  const { factory } = riskRuntime();
+  const rows = [{
+    ...dividendRow, symbol: acquiredKind ? 'SHEL.LSE' : 'A.US', last_day_data_date: '2026-08-28',
+    market_cap: 200, dividend_yield: .02, price_change_5d: .01,
+    exchange: acquiredKind ? 'LSE' : 'US', currency_symbol: acquiredKind ? 'GBP' : '$',
+  }];
+  const url = new URL(acquiredKind
+    ? 'https://example.test/api/v1/eodhd/equity/fundamental/dividends?chart_source=true&symbol=SHEL.LSE&start_date=2026-01-01&end_date=2026-06-30'
+    : 'https://example.test/api/v1/eodhd/equity/screener?chart_source=true&exchange=us');
+  const def = widget({ id: 'screen-fields', name: 'Screening fields', endpoint: url.pathname });
+  useWidgetRegistryStore.setState(s => ({ widgets: [...s.widgets, def] }));
+  const root = card({ id: 'A', widgetId: def.id, backendId: def.backendId });
+  const linkedChart = { type: 'column' as const, category: 'symbol', display: 'grouped' as const, measures: ['market_cap'] };
+  const chart = { ...riskChart(screeningRecipes[0]), linkedChart };
+  const acquired = backendFinancialResponse({ results: rows, extra: { results_metadata: { chart_evidence: receipt } } }, url);
+  installDashboard(riskDashboard([root, chart]));
+  tableExecutionStore.setBackendRows('d', root.id, rows, { endpoint: url.pathname, parameters: Object.fromEntries(url.searchParams),
+    retrievedAt: Date.parse(screenerEvidence.retrieved_at), financialEvidence: acquired?.evidence });
+  try {
+    render(<LiveRiskChart/>);
+    const applied = await screen.findByTestId('chart-plot');
+    const revision = tableExecutionStore.readView('d', 'chart').sourceRevision!;
+    const executor = tableExecutionStore.readExecutor('d', 'A')!;
+    const data = await executor.chartData(revision, ['last_day_data_date'], new AbortController().signal);
+    expect(readFinancialEvidence(data.provenance)?.kind).toBe(acquiredKind);
+
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'bubble-regression' } });
+    expect(await screen.findByText(/acquire screening data with a validated screener receipt/i)).toBeVisible();
+    expect(screen.queryByRole('option', { name: '2026-08-28' })).toBeNull();
+    const apply = screen.getByRole('button', { name: /apply chart/i });
+    expect(apply).toBeDisabled();
+    fireEvent.click(apply);
+    expect(screen.getByTestId('chart-plot')).toBe(applied);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+  } finally { factory.mockRestore(); }
+});
+
 it('projects only presented fiscal periods and defaults Sankey to the newest actual report date', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[2];
@@ -641,7 +689,8 @@ it('projects only presented fiscal periods and defaults Sankey to the newest act
     expect(read.mock.lastCall![1]).toEqual(expect.arrayContaining([incomeColumn(2026), incomeColumn(2025)]));
     expect(read.mock.lastCall![1]).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: /apply chart/i }));
-    await screen.findByTestId('chart-plot');
+    const plot = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall?.[0]).toBe(plot));
     const revision = vi.mocked(renderPlot).mock.lastCall![2];
     fireEvent.change(screen.getByLabelText('Income statement period'), { target: { value: incomeColumn(2025) } });
     expect(vi.mocked(renderPlot).mock.lastCall![2]).toBe(revision);
@@ -696,6 +745,7 @@ it('rebuilds the income flow for measured plot width without changing its questi
   try {
     render(<LiveRiskChart/>);
     const plot = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall?.[0]).toBe(plot));
     const read = vi.spyOn(tableExecutionStore.readExecutor('d', 'A')!, 'chartData');
     const initial = vi.mocked(renderPlot).mock.lastCall![1];
     const resize = sizes.get(plot)!;
@@ -718,7 +768,8 @@ it('requires repairing the dividend instrument after reacquisition and resets th
   installDashboard(riskDashboard([root, riskChart(recipe)]));
   try {
     render(<LiveRiskChart/>);
-    await screen.findByTestId('chart-plot');
+    const plot = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall?.[0]).toBe(plot));
     const revision = vi.mocked(renderPlot).mock.lastCall![2];
     await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
       completeness: 'unknown', rows: [dividendRow], chart_evidence: { ...dividendEvidence, qualified_symbol: 'BP.LSE' },

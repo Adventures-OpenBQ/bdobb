@@ -93,8 +93,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const revision = view.sourceRevision;
         const ready = view.ready;
-        if (!executor || !revision || revision.widgetId !== source || !ready || !['ready', 'empty'].includes(view.status))
-            throw new Error('Wait for the selected source table to finish loading.');
+        if (!executor || !revision || revision.widgetId !== source || !ready || !['ready', 'empty'].includes(view.status)) {
+            const pending = view.status === 'pending' || view.status === 'updating';
+            throw new Error(pending ? 'Wait for the selected source table to finish loading.'
+                : 'Fix the source or choose another table to load chart choices.');
+        }
         const fields = kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [];
         const data = await executor.chartData(revision, fields, signal);
@@ -106,8 +109,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             label: [`${period.kind}${period.fiscalYear ? ' ' + period.fiscalYear : ''}`,
                 period.kind === 'FQ' ? period.fiscalPeriod : null, period.end].filter(Boolean).join(' · '),
         }));
-        if (kind === 'bubble-regression') return dateField ? bubblePriceDates(data, dateField).map(value => ({ value, label: value })) : [];
         const evidence = readFinancialEvidence(data.provenance);
+        if (kind === 'bubble-regression') {
+            if (evidence?.kind !== 'screener') throw new Error('Acquire screening data with a validated screener receipt.');
+            return dateField ? bubblePriceDates(data, dateField).map(value => ({ value, label: value })) : [];
+        }
         return evidence?.kind === 'dividends' ? [{ value: evidence.qualified_symbol, label: evidence.qualified_symbol }] : [];
     }, [executor, source, view.ready, view.sourceRevision, view.status]);
     const active = JSON.stringify(view.sourceRevision);
