@@ -11,6 +11,7 @@ import { buildDrawdown } from './drawdown';
 import { buildEstimateRange } from './estimateRange';
 import { buildIncomeSankey } from './incomeSankey';
 import { buildMonthlyReturns } from './monthlyReturns';
+import { buildNewsCalendar } from './newsCalendar';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
@@ -59,7 +60,8 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     return { ok: false, refused: true, message: 'Supply a viewport width greater than 0 and at most 10,000.' };
 
   const recipe = decoded.options;
-  const issue = recipe.kind === 'dividend-steps' ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
+  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar'
+    ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);
@@ -74,5 +76,6 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
     case 'dividend-steps': return buildDividendSteps(dataset, recipe, context);
     case 'income-sankey': return buildIncomeSankey(dataset, recipe, context);
+    case 'news-sentiment-calendar': return buildNewsCalendar(dataset, recipe, context);
   }
 }

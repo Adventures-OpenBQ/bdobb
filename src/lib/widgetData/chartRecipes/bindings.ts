@@ -46,6 +46,12 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     acquiredRole('currency', 'Payment currency', 'currency'),
     acquiredRole('frequency', 'Distribution type', 'frequency', 'optional'),
   ];
+  if (kind === 'news-sentiment-calendar') return [
+    acquiredRole('timestamp', 'Article timestamp', 'date', 'date'),
+    acquiredRole('articleId', 'Stable article URL', 'url'),
+    acquiredRole('instrument', 'Qualified article listings', 'symbols'),
+    acquiredRole('polarity', 'Article polarity', 'polarity', 'numeric'),
+  ];
   if (kind === 'income-sankey') return [];
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];

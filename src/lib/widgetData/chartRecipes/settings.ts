@@ -25,6 +25,8 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
     optional: ['name', 'sector'], distinctBindings: true },
   'dividend-steps': { options: ['instrument'], required: ['date', 'amount', 'currency'], optional: ['frequency'], distinctBindings: true },
   'income-sankey': { options: ['periodColumn'] },
+  'news-sentiment-calendar': { options: ['instrument', 'window'],
+    required: ['timestamp', 'articleId', 'instrument', 'polarity'], distinctBindings: true },
 };
 
 export function isRecipeType(type: unknown): type is RecipeKind {
@@ -145,6 +147,17 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
     case 'dividend-steps':
       if (!qualifiedSymbol(value.instrument)) return invalid('Select one fully qualified dividend instrument.');
       break;
+    case 'news-sentiment-calendar': {
+      if (!qualifiedSymbol(value.instrument)) return invalid('Select one fully qualified news instrument.');
+      const window = value.window;
+      if (declarativeRecord(window) && Object.hasOwn(window, 'mode')) {
+        if (window.mode === 'latest-12-months' && Object.keys(window).length === 1) break;
+        if (window.mode === 'pinned' && Object.keys(window).length === 3
+          && Object.hasOwn(window, 'start') && Object.hasOwn(window, 'end')
+          && isoDate(window.start) && isoDate(window.end) && window.start <= window.end) break;
+      }
+      return invalid('Choose the latest news window or enter ordered YYYY-MM-DD pinned bounds.');
+    }
     case 'income-sankey':
       if (!nonblankString(value.periodColumn)) return invalid('Choose one presented income statement period column.');
       break;
