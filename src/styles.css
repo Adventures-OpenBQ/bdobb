@@ -1017,11 +1017,12 @@ body {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 6px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--border);
   position: relative;
   z-index: 1;
+  font-size: var(--font-size-12);
 }
 
 /* The drag handle is the title, not the whole card. min-width: 0 lets the
@@ -1876,3 +1877,14 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
   font-size: var(--font-size-12);
 }
 
+
+/* PR #88 compact title strip. Only row zero mounts here; later rows live in
+   the parameter card. Natural control widths scroll instead of growing headers. */
+.card-chips { flex: 1 1 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.card-chips-hidden { display: none; }
+.card-header-spacer { flex: 1; }
+.card-chips .card-params { display: block; width: max-content; min-width: 100%; white-space: nowrap; padding: 1px 0; overflow: visible; }
+.card-chips .param-field { vertical-align: middle; margin-inline-end: 6px; }
+.card-chips .param-field input, .card-chips .param-field select { height: 20px; padding: 0 4px; border: 0; background: transparent; flex-shrink: 0; }
+.card-params-panel { padding: 8px; border-bottom: 1px solid var(--border); flex: none; max-height: 40%; overflow: auto; }
+.card-params-panel-fields { display: flex; flex-wrap: wrap; gap: 8px 12px; }

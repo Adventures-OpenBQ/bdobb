@@ -1,19 +1,18 @@
 # Card parameters
 
-Most widgets take parameters — a symbol, a date range, a provider. The card's
-header carries a control for each visible parameter. There is nothing to open:
-what a card is asking for is always in view.
+Most widgets take parameters — a symbol, a date range, a provider. Only row 0
+appears beside the card title. That strip scrolls horizontally when its controls
+need more room, keeping the dashboard header compact.
 
-The controls sit where OpenBB Workspace puts them. By default they share the
-title bar, after the card's name. A widget can arrange them in rows (OpenBB's
-parameter positioning): its first row still shares the title bar, and each
-further row gets a line of its own under it. A row that is wider than the
-card scrolls sideways rather than wrapping. On a very narrow card, once the
-title-bar row would be squeezed to about one control's width, the card's own
-buttons fold behind the **⌄** chevron, as they do with **Collapse widget
-controls** on, and come back once there is room again. **Run** never folds.
+Use the **▸ Show parameters** button beside the title to open the docked
+parameter card. It contains every visible parameter, including rows 1 and above;
+those rows never add height to the title bar. **▾ Hide parameters** closes it.
+The open state is saved with the dashboard.
 
-![Two cards with their parameter rows](./shots/card-parameters.png)
+With **Collapse widget controls** enabled, the title strip is hidden until you
+open the widget controls. The parameter-card button stays available.
+
+![Compact title controls and the parameter card](./shots/card-parameters.png)
 
 Some parameters are declared hidden by the backend. They never appear here, but
 they are still sent with every request — that is how `provider` rides along on

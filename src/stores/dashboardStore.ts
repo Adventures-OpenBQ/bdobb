@@ -166,6 +166,7 @@ type DashboardState = {
 
 /** The three optional card fields `patchCardField` sets, and what each takes. */
 type CardFieldPatch = {
+  paramsOpen: boolean;
   view: CardView;
   title: string;
   table: Partial<TableCardState>;

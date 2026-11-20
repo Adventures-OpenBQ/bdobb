@@ -17,6 +17,8 @@ import { GroupLink } from "./GroupLink";
 import { ParamInput } from "./ParamInput";
 
 type Props = {
+  /** Header shows only row zero; the parameter card exposes every visible field. */
+  placement?: "header" | "panel" | "observer";
   widget: WidgetDef;
   card: DashboardCard;
   groups: ParamGroup[] | undefined;
@@ -116,6 +118,7 @@ function unofferedValues(
 }
 
 export function ParamControls({
+  placement,
   widget,
   card,
   groups,
@@ -261,6 +264,9 @@ export function ParamControls({
   }, [effectiveKey]);
 
   useEffect(() => {
+    // The always-mounted header controller owns cascades, including deferred rows.
+    // The parameter card displays/edits the same fields without issuing duplicate clears.
+    if (placement === "panel") return;
     const cleared: Record<string, string> = {};
     for (const p of params) {
       const state = optionStates[p.paramName];
@@ -342,7 +348,7 @@ export function ParamControls({
 
   const field = (p: WidgetParam) => {
     const kind = controlKind(p);
-    const id = `${card.id}-${p.paramName}`;
+    const id = `${card.id}-${placement === "panel" ? "panel-" : ""}${p.paramName}`;
     const label = p.label ?? p.paramName;
     const value = shown(p.paramName);
     const typed = isTyped(p.paramName);
@@ -443,6 +449,9 @@ export function ParamControls({
     if (row > 0) byRow.set(row, [...(byRow.get(row) ?? []), p]);
   }
   const below = [...byRow].sort(([a], [b]) => a - b);
+
+  if (placement === "observer") return null;
+  if (placement) return <div className={placement === "header" ? "card-params" : "card-params-panel-fields"}>{params.filter((p) => placement !== "header" || (p.row ?? 0) === 0).map(field)}</div>;
 
   return (
     <>

@@ -243,3 +243,12 @@ describe("a synced card", () => {
     expect(encodeV3CardExtension(synced, "$")).toEqual({ ok: true, value: { schemaVersion: 1, profile: "v3", title: "Mine" } });
   });
 });
+
+it("round-trips the open parameter card through compatible export", () => {
+  const input = importApps(wire(), []).dashboards[0];
+  input.tabs[0].cards[0].paramsOpen = true;
+  const result = appsJson.exportCompatibleApp(input);
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(importApps([result.value], []).dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true);
+});

@@ -261,9 +261,8 @@ const SHOTS = [
   },
   {
     slug: "card-parameters",
-    // v3 draws parameters in the card's title bar: Congress Committees is the
-    // cascading pair (committee's options depend on chamber), Form Table adds a
-    // form in the body. Nothing to open -- the controls are always in view.
+    // Compact row-zero strip plus the docked parameter card. Congress shows
+    // dependent options; Form Table keeps its declared form in the body.
     seed: () => seedWith({
       "dashboards/d1.json": dashboard("d1", "Main", [{
         id: "t1", name: "Main", cards: [
@@ -275,6 +274,8 @@ const SHOTS = [
     prepare: async (page) => {
       // The cascading select only fills once /committees has answered.
       await page.getByLabel("Committee", { exact: true }).waitFor();
+      await page.locator(".widget-card").filter({hasText: "Congress Committees"}).getByRole("button", {name: "Show parameters", exact: true}).click();
+      await page.getByRole("region", {name: "Parameters", exact: true}).waitFor();
     },
     take: async (page) => page.screenshot({ animations: "disabled" }),
   },

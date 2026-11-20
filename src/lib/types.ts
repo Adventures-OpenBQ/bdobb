@@ -379,6 +379,8 @@ export type DashboardCard = {
   view?: CardView;
   /** Collapses the card to just its header bar when true. */
   minimized?: boolean;
+  /** Whether the docked parameter card is open. */
+  paramsOpen?: boolean;
   /**
    * Which of this card's params are bound to which group. By param NAME,
    * not storage key: a form field named `symbol` is stored as

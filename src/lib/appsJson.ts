@@ -642,7 +642,7 @@ export function importApps(
 
         const native = unwrapExtension(decodeV3CardExtension(bdobbNamespace(state ?? {}, "$"), "$.state.extensions.bdobb"));
         if (native) {
-          for (const field of ["title", "view", "minimized", "table"] as const) {
+          for (const field of ["title", "view", "minimized", "paramsOpen", "table"] as const) {
             if (Object.hasOwn(native, field)) Object.assign(card, { [field]: native[field] });
           }
         }

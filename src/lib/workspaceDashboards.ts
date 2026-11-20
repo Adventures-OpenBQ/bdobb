@@ -33,7 +33,7 @@ function applyNative(card: DashboardCard, widget: Rec): void {
   if (ext === undefined) return;
   const { bindings, ...rest } = ext;
   const native = unwrapExtension(decodeV3CardExtension(rest, "$.widgets[].extensions.bdobb"));
-  for (const field of ["title", "minimized", "table"] as const) {
+  for (const field of ["title", "minimized", "paramsOpen", "table"] as const) {
     if (native && Object.hasOwn(native, field)) Object.assign(card, { [field]: native[field] });
   }
   // Workspace's chart toggle is authoritative; a native view applies only while the chart is off.

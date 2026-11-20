@@ -1168,3 +1168,18 @@ describe("nextCrowded", () => {
     expect(nextCrowded(true, 250 + ROW_MIN + UNFOLD_MARGIN, 300, 250)).toBe(false);
   });
 });
+
+it("clears a deferred row's withdrawn selection while the parameter card is closed", async () => {
+  const endpoint = await serveOptions();
+  const applied: ParamEdit[] = [];
+  const deferred = {...cascadeWidget, params: cascadeWidget.params.map(p => p.paramName === "committee" ? {...p, row: 1} : p)};
+  function Header() {
+    const [params, setParams] = useState<Record<string,string>>({chamber: "house", committee: "wm"});
+    return <ParamControls placement="header" widget={deferred} card={{...card, params}} groups={undefined} groupsDisabled={false} effective={params} backend={endpoint} onApply={edit => {applied.push(edit);setParams(edit.cardParams);}} />;
+  }
+  render(<Header />);
+  await waitFor(() => expect(searches("/committees")).toEqual(["?chamber=house"]));
+  expect(screen.queryByLabelText("Committee")).toBeNull();
+  await userEvent.selectOptions(screen.getByLabelText("Chamber"), "senate");
+  await waitFor(() => expect(applied.some(edit => edit.cardParams.committee === "")).toBe(true));
+});

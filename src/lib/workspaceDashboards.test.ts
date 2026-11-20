@@ -172,7 +172,7 @@ describe("toWorkspace round trip", () => {
     const file = JSON.parse(readFileSync(resolve(process.cwd(), "docs/examples/v3.1.0-builtins.apps.json"), "utf8"));
     const [source] = importApps(file, BUILTIN_WIDGETS).dashboards;
     const c = source.tabs[0].cards[0];
-    Object.assign(c, { title: "Pinned", minimized: true, view: "transposed", table: { sorting: [{ id: "a", desc: true }] } });
+    Object.assign(c, { title: "Pinned", minimized: true, paramsOpen: true, view: "transposed", table: { sorting: [{ id: "a", desc: true }] } });
     const back = fromWorkspace(toWorkspace(source, "dashboard", { index: "ffffffff-0000-4000-8000-000000000002", parentId: null }), "dashboard", BUILTIN_WIDGETS);
     const shape = (d: Dashboard) => ({
       name: d.name, groups: d.groups, groupsDisabled: d.groupsDisabled,

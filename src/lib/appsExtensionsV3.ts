@@ -13,7 +13,7 @@ export type ExtensionIssue = {
 };
 export type ExtensionResult<T> = { ok: true; value: T } | { ok: false; issue: ExtensionIssue };
 export type V3AppExtension = { schemaVersion: 1; profile: "v3"; tabOrder: string[]; groupsDisabled?: boolean; groupNames?: Record<string, string> };
-export type V3CardExtension = { schemaVersion: 1; profile: "v3"; title?: string; view?: CardView; minimized?: boolean; table?: TableCardState };
+export type V3CardExtension = { schemaVersion: 1; profile: "v3"; title?: string; view?: CardView; minimized?: boolean; paramsOpen?: boolean; table?: TableCardState };
 export class AppExtensionError extends Error {
   constructor(readonly issue: ExtensionIssue) {
     super(`${issue.code} at ${issue.path}: ${issue.message}`);
@@ -78,7 +78,7 @@ export function decodeV3AppExtension(value: unknown, path: string): ExtensionRes
 export function decodeV3CardExtension(value: unknown, path: string): ExtensionResult<V3CardExtension | undefined> {
   return result(() => {
     if (value === undefined) return undefined;
-    const r = header(value, ["title", "view", "minimized", "table"], path);
+    const r = header(value, ["title", "view", "minimized", "paramsOpen", "table"], path);
     const out: V3CardExtension = { schemaVersion: 1, profile: "v3" };
     if (Object.hasOwn(r, "title")) {
       if (typeof r.title !== "string") extensionError(path, "Title must be string.");
@@ -91,6 +91,10 @@ export function decodeV3CardExtension(value: unknown, path: string): ExtensionRe
     if (Object.hasOwn(r, "minimized")) {
       if (typeof r.minimized !== "boolean") extensionError(path, "Minimized must be boolean.");
       out.minimized = r.minimized;
+    }
+    if (Object.hasOwn(r, "paramsOpen")) {
+      if (typeof r.paramsOpen !== "boolean") extensionError(path, "paramsOpen must be boolean.");
+      out.paramsOpen = r.paramsOpen;
     }
     if (Object.hasOwn(r, "table")) {
       const t = record(r.table, `${path}.table`);
@@ -142,11 +146,11 @@ export function unwrapExtension<T>(decoded: ExtensionResult<T>): T {
 }
 
 export function encodeV3CardExtension(card: DashboardCard, path: string): ExtensionResult<V3CardExtension | undefined> {
-  const allowed = new Set(["id", "widgetId", "backendId", "params", "layout", "title", "view", "minimized", "bindings", "table", "groupIds", "extensions"]);
+  const allowed = new Set(["id", "widgetId", "backendId", "params", "layout", "title", "view", "minimized", "paramsOpen", "bindings", "table", "groupIds", "extensions"]);
   for (const [key, value] of Object.entries(card)) if (value !== undefined && !allowed.has(key)) {
     return { ok: false, issue: { code: "UNSUPPORTED_V3_STATE", path, message: "Card has state outside the v3 profile." } };
   }
   const native: Record<string, unknown> = { schemaVersion: 1, profile: "v3" };
-  for (const field of ["title", "view", "minimized", "table"] as const) if (card[field] !== undefined) native[field] = card[field];
+  for (const field of ["title", "view", "minimized", "paramsOpen", "table"] as const) if (card[field] !== undefined) native[field] = card[field];
   return Object.keys(native).length === 2 ? { ok: true, value: undefined } : decodeV3CardExtension(native, path);
 }

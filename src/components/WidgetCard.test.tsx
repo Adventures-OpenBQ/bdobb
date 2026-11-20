@@ -653,77 +653,16 @@ describe("WidgetCard header controls", () => {
     expect(screen.queryByRole("button", { name: /^Parameters \(/ })).toBeNull();
   });
 
-  it("puts title-bar params beside the title, scrolls them first, and folds the buttons only on a very narrow row", () => {
-    register({
-      params: [
-        { paramName: "symbol", label: "Symbol", type: "text" },
-        { paramName: "start", label: "Start", type: "date", row: 1 },
-      ],
-    });
-    useWidgetData.mockReturnValue({ status: "ready", data: [], retry: vi.fn() });
-    useDashboardStore.setState({
-      dashboards: [
-        {
-          id: "d1",
-          name: "D",
-          tabs: [{ id: "t1", name: "Main", cards: [{ ...card, params: { symbol: "AAPL" } }] }],
-        },
-      ],
-      activeId: "d1",
-      activeTabId: "t1",
-    });
-    let callback: ResizeObserverCallback | undefined;
-    const widths = { row: 400, track: 300 };
-    // This file stubs ResizeObserver for every test; swap in one that hands
-    // back its callback, and put the file's stub back afterwards.
-    const fileStub = globalThis.ResizeObserver;
-    globalThis.ResizeObserver = class {
-      constructor(cb: ResizeObserverCallback) {
-        callback = cb;
-      }
-      observe() {}
-      disconnect() {}
-      unobserve() {}
-    } as unknown as typeof ResizeObserver;
-    const client = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
-      return this.classList.contains("card-params-row0") ? widths.row : 0;
-    });
-    const offset = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
-      return this.classList.contains("card-params-track") ? widths.track : 0;
-    });
-    try {
-      const { container } = render(
-        <WidgetCard card={{ ...card, params: { symbol: "AAPL" } }} onRemove={vi.fn()} />,
-      );
-      expect(container.querySelector("header.card-header-params")).toBeInTheDocument();
-      expect(container.querySelector(".card-params-row0")).toContainElement(screen.getByLabelText("Symbol"));
-      expect(container.querySelector(".card-params-rows")).toContainElement(screen.getByLabelText("Start"));
-      expect(screen.queryByRole("button", { name: "Show widget controls" })).toBeNull();
-
-      // Narrower than the controls: the row scrolls and the buttons stay.
-      act(() => {
-        widths.row = 200;
-        callback?.([], {} as ResizeObserver);
-      });
-      expect(screen.queryByRole("button", { name: "Show widget controls" })).toBeNull();
-
-      // Narrower than about one control: the buttons fold.
-      act(() => {
-        widths.row = 100;
-        callback?.([], {} as ResizeObserver);
-      });
-      expect(screen.getByRole("button", { name: "Show widget controls" })).toBeInTheDocument();
-
-      act(() => {
-        widths.row = 400;
-        callback?.([], {} as ResizeObserver);
-      });
-      expect(screen.queryByRole("button", { name: "Show widget controls" })).toBeNull();
-    } finally {
-      client.mockRestore();
-      offset.mockRestore();
-      globalThis.ResizeObserver = fileStub;
-    }
+  it("keeps only row zero in the compact title and exposes later rows in the parameter card", async () => {
+    register({params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "start", label: "Start", type: "date", row: 1}]});
+    useWidgetData.mockReturnValue({status: "ready", data: [], retry: vi.fn()});
+    useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
+    const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(container.querySelector(".card-chips")).toContainElement(screen.getByLabelText("Symbol"));
+    expect(screen.queryByLabelText("Start")).toBeNull();
+    await userEvent.setup().click(screen.getByRole("button", {name: "Show parameters"}));
+    expect(screen.getByRole("region", {name: "Parameters"})).toContainElement(screen.getByLabelText("Start"));
+    expect(container.querySelector("header")).not.toContainElement(screen.getByLabelText("Start"));
   });
 
   it("hands the hook the group-merged params, not the card's own", () => {

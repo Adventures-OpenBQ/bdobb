@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { confirm, open as openFileDialog, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useWidgetData } from "../hooks/useWidgetData";
@@ -103,7 +103,6 @@ const TYPE_LABELS: Record<string, string> = {
 const DOCUMENT_TYPES = new Set(["pdf", "multi_file_viewer"]);
 
 /** .card-header's gap, in pixels (styles.css). */
-const HEADER_GAP = 8;
 
 /** The three export items. The key doubles as the file extension. */
 type ExportKind = "csv" | "json" | "xlsx";
@@ -160,20 +159,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const maximized = useDashboardStore((s) => s.maximizedCardId === card.id);
   const minimizeButtonEnabled = useSettingsStore((s) => s.settings.minimizeButton);
   const collapseSetting = useSettingsStore((s) => s.settings.collapseWidgetControls);
-  // The title-bar row of parameters reports when it has run out of room; the
-  // buttons then fold behind the chevron as the Collapse widget controls
-  // setting folds them, and come back once the row has room again.
-  const [paramsCrowded, setParamsCrowded] = useState(false);
-  const onCrowdedChange = useCallback((crowded: boolean) => setParamsCrowded(crowded), []);
-  // The width the buttons take while unfolded, measured whenever they are, so
-  // the row unfolds them only once it can spare that width (see buttonsWidth
-  // on ParamControls). .card-controls and its icon strip are display: contents
-  // while unfolded, so their children are the header's own flex items: the
-  // span runs over those (the view toggle as well as the buttons) and adds
-  // one header gap for the space before the first of them.
-  const controlsRef = useRef<HTMLDivElement>(null);
-  const unfoldedWidth = useRef(0);
-  const buttonsWidth = useCallback(() => unfoldedWidth.current, []);
+  const [paramsOpen, setParamsOpen] = useState(card.paramsOpen === true);
+  const toggleParams = () => {
+    const open = !paramsOpen;
+    setParamsOpen(open);
+    void patchCardField(card.id, "paramsOpen", open ? true : null).catch((err) => logError(`failed to save parameter card state: ${err}`));
+  };
   const chartTheme = useSettingsStore((s) => s.settings.theme);
   const minimized = card.minimized ?? false;
 
@@ -333,39 +324,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const tabs = widget ? bodyParams(widget, "tabs") : [];
   const forms = widget ? bodyParams(widget, "form") : [];
   const hasControls = widget ? visibleParams(widget).length > 0 : false;
-  const collapseControls = collapseSetting || (hasControls && !minimized && paramsCrowded);
-  // A header with title-bar parameters gives them the free space, not the title.
-  // The first measurement waits for a frame. Measuring during the card's first
-  // commits forces a style pass between react-grid-layout's two mount renders
-  // (top/left, then transform with a transition), and every card then slides
-  // in from the grid's corner on load.
-  const measuredOnce = useRef(false);
-  useLayoutEffect(() => {
-    const measure = () => {
-      const el = controlsRef.current;
-      if (!el || collapseControls) return;
-      let left = Infinity;
-      let right = -Infinity;
-      const items = [...el.children].flatMap((c) =>
-        c.classList.contains("card-controls-icons") ? [...c.children] : [c],
-      );
-      for (const item of items) {
-        const r = item.getBoundingClientRect();
-        if (r.width === 0) continue;
-        left = Math.min(left, r.left);
-        right = Math.max(right, r.right);
-      }
-      if (right > left) unfoldedWidth.current = right - left + HEADER_GAP;
-    };
-    if (measuredOnce.current) return measure();
-    const frame = requestAnimationFrame(() => {
-      measuredOnce.current = true;
-      measure();
-    });
-    return () => cancelAnimationFrame(frame);
-  });
-  const hasTitleParams =
-    !minimized && widget !== undefined && visibleParams(widget).some((p) => (p.row ?? 0) === 0);
+  const collapseControls = collapseSetting;
+  const hasTitleParams = !minimized && widget !== undefined && visibleParams(widget).some((p) => (p.row ?? 0) === 0);
   const view = card.view;
   /**
    * `view === "transposed"`, but only where it means something. Nothing stops
@@ -1178,7 +1138,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       data-refreshing={status === "loading" && data !== null ? "true" : undefined}
     >
       <header
-        className={hasTitleParams ? "card-header card-header-params" : "card-header"}
+        className="card-header"
         // The header BACKGROUND only. `e.target === e.currentTarget` is the
         // whole guard: .card-controls is `display: contents`, so the only
         // other double-click targets in this row are the title (which
@@ -1225,27 +1185,17 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             {"•"}
           </span>
         ) : null}
-        {/* The controls: row 0 beside the title, as Workspace draws it, and
-            any further rows on lines of their own under it (see
-            .card-params-row0 and .card-params-rows). Inside the header, not
-            after it, so the title stays the grid's drag handle and the
-            header's double-click guard is unchanged — `e.target ===
-            e.currentTarget` is still only the header itself. */}
-        {!minimized && hasControls && widget && dashboard ? (
-          <ParamControls
-            widget={widget}
-            card={card}
-            groups={dashboard.groups}
-            groupsDisabled={groupsDisabled}
-            effective={params}
-            backend={backend}
-            onApply={(edit) => void apply(edit)}
-            onCrowdedChange={onCrowdedChange}
-            buttonsWidth={buttonsWidth}
-          />
+        {hasControls ? (
+          <button type="button" aria-label={paramsOpen ? "Hide parameters" : "Show parameters"} aria-expanded={paramsOpen} onClick={toggleParams}>
+            {paramsOpen ? "▾" : "▸"}
+          </button>
         ) : null}
+        {hasControls && widget && dashboard ? (
+          <div className={`card-chips${!hasTitleParams || (collapseControls && !controlsOpen) ? " card-chips-hidden" : ""}`}>
+            <ParamControls placement={minimized ? "observer" : "header"} widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={(edit) => void apply(edit)} />
+          </div>
+        ) : <div className="card-header-spacer" />}
         <div
-          ref={controlsRef}
           className={
             collapseControls
               ? // Held open while the ⋯ menu is: focus and the pointer move to
@@ -1507,6 +1457,11 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
           </div>
         </div>
       </header>
+      {paramsOpen && !minimized && widget && dashboard ? (
+        <div className="card-params-panel" role="region" aria-label="Parameters">
+          <ParamControls placement="panel" widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={(edit) => void apply(edit)} />
+        </div>
+      ) : null}
       {exportNotice ? (
         <p className="card-notice" role="status">
           {exportNotice}
