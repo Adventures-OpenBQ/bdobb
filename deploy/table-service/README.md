@@ -72,5 +72,11 @@ reservations, 512 MiB worker address-space bounds, 64 MiB retained-result estima
 and a separate 1 MiB export wire cap. These are configurable conservative limits.
 The qualification evidence (the actual 1,205 × 4 and 2,005 × 8 workloads, refusal
 cases and exact paired source) is recorded on the v10 line, where it was measured.
-The pinned image remains unqualified after an apt ENOSPC build failure; successful
-host-backed runtime checks do not replace final image qualification.
+The earlier apt ENOSPC failure is retained as historical evidence. In the V4
+release walk, the image pinned to `1453fa7b4a8928baa106edbe84a9d36f8c260161`
+built successfully with Node 26.10.0 and ICU 78.3. Its Linux release suite passed
+77 tests, and the production image passed authenticated upload, ownership refusal,
+derivation, bounded export and restart/reopen checks with two contained workers.
+These runtime checks do not replace browser paging and large-table qualification;
+those remain separate release gates. The smoke harness must set the canonical
+gateway deadlines explicitly when constructing its configuration directly.
