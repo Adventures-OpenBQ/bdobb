@@ -212,8 +212,9 @@ function marketNotes(map: MarketMapHierarchy): string[] {
 
 const margin = { l: 12, r: 12, t: 78, b: 72, pad: 0, autoexpand: false };
 const packing = 'slice-dice';
-const header = 17;
-const markerPad = { t: header, l: 0, r: 0, b: 0 };
+// The fixed header lets Plotly fit the 11px sector label above its uniform text minimum.
+const headerHeight = 23;
+const markerPad = { t: headerHeight, l: 0, r: 0, b: 0 };
 
 class Tile implements TreemapRectangle {
   x0 = 0;
@@ -239,7 +240,7 @@ function geometryFailure(root: MarketRoot, branches: { sector: MarketSector; lis
     new Tile(sector, depth, listings.map(listing => new Tile(listing, depth + 1)));
   const rootView = new Tile(root, 0, branches.map(branch => tile(branch, 1)));
   for (const view of [rootView, ...branches.map(branch => tile(branch, 0))]) {
-    partition(view, size, { packing, pad: { inner: 0, top: header, left: 0, right: 0, bottom: 0 } });
+    partition(view, size, { packing, pad: { inner: 0, top: headerHeight, left: 0, right: 0, bottom: 0 } });
     let failure: PlotNode | undefined;
     view.eachBefore(rect => {
       // SVG coordinates land in the browser's single-precision path geometry after Plotly adds the plot origin.

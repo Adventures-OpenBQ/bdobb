@@ -49,6 +49,15 @@ async function point(graph: Locator, id: string, dx = 14, dy = 8) {
   return { x: tile.box.x + Math.min(tile.box.width / 2, dx), y: tile.box.y + Math.min(tile.box.height / 2, dy) };
 }
 
+async function expectSectorLabel(graph: Locator, label: string) {
+  const text = view(graph).locator('g.slice text.slicetext').filter({ hasText: label });
+  await expect.poll(() => text.evaluateAll(nodes => {
+    if (nodes.length !== 1) return 0;
+    const { width, height } = nodes[0].getBoundingClientRect();
+    return Math.min(width, height);
+  }), { message: `Rendered size of the ${label} sector label` }).toBeGreaterThan(8);
+}
+
 async function touchDrag(page: Page, start: { x: number; y: number }, end: { x: number; y: number }) {
   const touch = await page.context().newCDPSession(page);
   try {
@@ -100,6 +109,8 @@ test('defaults to monetary area, conserves real tile areas and keeps hierarchy n
   expect(area('BETA.US').area / (area('ALFA.US').area + area('DELTA.US').area)).toBeCloseTo(1, 3);
   expect(area('ALFA.US').fill).toBe('rgb(240, 230, 217)');
   expect(area('BETA.US').fill).toBe('rgb(138, 164, 187)');
+  await expectSectorLabel(graph, 'Technology');
+  await expectSectorLabel(graph, 'Sector unavailable');
   await expect(graph.locator('.colorbar .cbaxis text')).toHaveText(['-1%', '0%', '1%']);
   const hover = await point(graph, leafId('ALFA.US'));
   await page.mouse.move(hover.x, hover.y);
@@ -131,6 +142,8 @@ test('defaults to monetary area, conserves real tile areas and keeps hierarchy n
   await expect(widget.getByText(/Source area exclusions/)).toContainText('1 zero, 1 negative');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect.poll(async () => (await drawing(graph)).theme).toBe('#1e242e');
+  await expectSectorLabel(graph, 'Technology');
+  await expectSectorLabel(graph, 'Sector unavailable');
   await widget.screenshot({ path: info.outputPath('market-cap-dark.png') });
   await page.setViewportSize({ width: 285, height: 1050 });
   await expect.poll(async () => (await drawing(graph)).size[0]).toBe(320);
@@ -144,6 +157,30 @@ test('defaults to monetary area, conserves real tile areas and keeps hierarchy n
   await expect(title(graph)).toContainText('Delivered-sample market cap');
   await expect(widget.getByText('All listing returns are unavailable.')).toBeVisible();
   await expect(graph.locator('.colorbar')).toHaveCount(0);
+  expect(requests).toEqual([]);
+});
+
+test('keeps ordinary sector labels visible on the minimum drawing surface in both themes', async ({ page, baseURL }) => {
+  const requests = dataRequests(page, baseURL!);
+  await page.setViewportSize({ width: 285, height: 800 });
+  await page.emulateMedia({ colorScheme: 'light' });
+  const sample = marketSession();
+  Object.assign(sample.rows[0], { area: 100 });
+  Object.assign(sample.rows[1], { area: 100, sector: 'Banks' });
+  await seedMarket(page, capMap, false, 14);
+  await attachMarket(page, sample);
+  const graph = plot(page, chartName);
+  await expect(title(graph)).toContainText('Delivered-sample market cap');
+  const original = await drawing(graph);
+  expect(original.css).toEqual([320, 260]);
+  expect(original.size).toEqual(original.css);
+  await expectSectorLabel(graph, 'Technology');
+  await expectSectorLabel(graph, 'Banks');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(async () => (await drawing(graph)).theme).toBe('#1e242e');
+  await expectSectorLabel(graph, 'Technology');
+  await expectSectorLabel(graph, 'Banks');
+  expect((await drawing(graph)).question).toBe(original.question);
   expect(requests).toEqual([]);
 });
 
