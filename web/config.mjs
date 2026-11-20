@@ -33,7 +33,10 @@ export function readConfig(env = process.env) {
   const token = env.BACKEND_GATEWAY_TOKEN || null;
   if (Boolean(backend) !== Boolean(token)) throw new Error("BACKEND_GATEWAY_ORIGIN and BACKEND_GATEWAY_TOKEN: set both or neither");
   if (token && !/^[A-Za-z0-9_-]{32,}$/.test(token)) throw new Error("BACKEND_GATEWAY_TOKEN: 32+ base64url characters, nothing else");
+  const apiTimeoutMs = Number(env.API_TIMEOUT_MS ?? 170000);
+  if (!Number.isInteger(apiTimeoutMs) || apiTimeoutMs < 1000 || apiTimeoutMs > 170000) throw new Error("API_TIMEOUT_MS: expected 1000–170000 milliseconds");
   return {
+    apiTimeoutMs,
     origin: origin(env.APP_ORIGIN, "APP_ORIGIN"), allowedIds: new Set(ids), backend, token,
     secret: env.AUTH_SECRET, githubId: env.AUTH_GITHUB_ID, githubSecret: env.AUTH_GITHUB_SECRET,
     epoch: env.SESSION_EPOCH,
