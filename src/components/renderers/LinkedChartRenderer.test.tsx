@@ -11,7 +11,17 @@ import type { Dashboard } from '../../lib/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { DEFAULT_SETTINGS } from '../../lib/settingsFile';
-import { LinkedChartRenderer } from './LinkedChartRenderer';
+import { useState, type ComponentProps } from 'react';
+import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
+
+function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'>) {
+  const [target, setTarget] = useState<HTMLDivElement | null>(null);
+  return <>
+    <div ref={setTarget}/>
+    <Renderer {...props} parametersTarget={target} onOpenParameters={() => {}}/>
+  </>;
+}
+
 vi.mock('./ChartRenderer', () => ({ ChartRenderer: ({ data }: {
         data: unknown;
     }) => <pre data-testid="figure">{JSON.stringify(data)}</pre> }));

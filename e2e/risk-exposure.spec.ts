@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, openParameters } from './fixtures/chart-recipes';
 import { fixture, importRisk, riskNames } from './fixtures/risk-exposure';
 
 type Axis = { range: [number, number] | [string, string]; domain: [number, number] };
@@ -158,12 +158,12 @@ test('draws the entire extreme count-one bin and hovers its original return', as
 
 async function linkRegions(page: Page) {
   const widget = card(page, exposure);
+  await openParameters(widget);
   await widget.getByLabel('Exposure mode').selectOption('region');
   await expect(widget.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
   await expect(widget).toContainText('Choose a presented exposure category field.');
   await expect(plot(page, exposure)).toContainText('sector exposure');
-  await widget.getByRole('button', { name: 'Card menu' }).click();
-  await page.getByRole('menuitem', { name: 'Choose source' }).click();
+  await (await openParameters(widget)).getByRole('button', { name: 'Choose source', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Choose source' });
   await dialog.getByLabel('Source table').selectOption({ label: 'Region weights — Risk and exposure' });
   await dialog.getByRole('button', { name: 'Choose source' }).click();
@@ -178,6 +178,7 @@ test('repairs the exposure source, filters holdings and reacquires a saved works
   const { overrides } = await importRisk(page);
   await ready(page);
   const histogram = card(page, distribution);
+  await openParameters(histogram);
   await histogram.getByLabel('Bins').fill('7');
   await apply(histogram);
   await expect.poll(() => plot(page, distribution).evaluate(el => (el as Graph)._fullData[0].y)).toHaveLength(7);
@@ -282,6 +283,7 @@ test('scrolls to the final watchlist panel and zero-weight region and inspects b
 
     await page.setViewportSize({ width: 1100, height: 1080 });
     const watchlist = card(page, panels);
+    await openParameters(watchlist);
     for (const symbol of ['ALDER', 'BIRCH']) await watchlist.getByLabel(symbol, { exact: true }).uncheck();
     await apply(watchlist);
     await expect.poll(() => panelsPlot.evaluate(el => (el as Graph)._fullData.map(t => t.name))).toEqual(['CEDAR']);

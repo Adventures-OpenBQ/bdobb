@@ -16,6 +16,8 @@ import {
   recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeJob,
   useMeasuredRecipeSurface, type MeasuredRecipeJob,
 } from './useMeasuredRecipe';
+import { createPortal } from 'react-dom';
+import { OpenLinkedParameters } from './LinkedParametersPortal';
 
 const plotWidth = 340;
 const plotHeight = 280;
@@ -43,7 +45,8 @@ export function useEtfSunburstJob(sourceCurrent: boolean, view: ViewState, execu
 
 type Job = MeasuredRecipeJob<EtfSunburstOptions>;
 
-export function EtfSunburstControls({ saved, context, job, disabled, onApply }: {
+export function EtfSunburstControls({ probeTarget, saved, context, job, disabled, onApply }: {
+  probeTarget: HTMLElement | null;
   saved?: EtfSunburstOptions;
   context: RecipeContext;
   job?: Job;
@@ -94,11 +97,10 @@ export function EtfSunburstControls({ saved, context, job, disabled, onApply }: 
   const problem = !currentRead ? undefined : currentRead.error ?? (!source ? (saved ? undefined : sourceProblem)
     : !decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
   const snapshotLabel = acquiredSnapshot === source?.as_of ? `As of ${acquiredSnapshot}` : `Acquired vintage ${acquiredSnapshot}`;
-  return <details className="etf-sunburst-settings" open={!saved}>
-    <summary>ETF sunburst settings</summary>
-    <div className="etf-sunburst-draft-probe" aria-hidden="true" ref={surface.element}>
+  return <>
+    {probeTarget && createPortal(<div className="etf-sunburst-draft-probe" aria-hidden="true" ref={surface.element}>
       <ChartRenderer data={null} scrollHeight={plotHeight} minPlotWidth={plotWidth} onDrawingSurfaceChange={surface.observe}/>
-    </div>
+    </div>, probeTarget)}
     <fieldset className="etf-sunburst-controls" disabled={disabled} aria-label="ETF sunburst settings">
       <label>Fund<select value={listing} onChange={event => setFund(event.target.value)}>
         {!listing && <option value="">Choose acquired holdings</option>}
@@ -127,7 +129,7 @@ export function EtfSunburstControls({ saved, context, job, disabled, onApply }: 
         onApply(candidate, () => job.current() && surface.matches(box));
       }}>Apply chart settings</button>
     </fieldset>
-  </details>;
+  </>;
 }
 
 type Node = EtfHierarchy['root'] | EtfHierarchy['sectors'][number] | EtfHierarchy['holdings'][number] | NonNullable<EtfHierarchy['residual']>;
@@ -157,15 +159,16 @@ function EtfDetails({ hierarchy, level }: { hierarchy: EtfHierarchy; level: stri
   </details>;
 }
 
-export function LinkedEtfSunburst({ view, job, options, sourceId, context, parentReportsSourceStatus }: {
-  view: ViewState; job?: Job; options: EtfSunburstOptions; sourceId?: string; context: RecipeContext; parentReportsSourceStatus: boolean;
+export function LinkedEtfSunburst({ view, job, options, sourceId, context, parentReportsSourceStatus, onOpenParameters }: {
+  view: ViewState; job?: Job; options: EtfSunburstOptions; sourceId?: string; context: RecipeContext; parentReportsSourceStatus: boolean; onOpenParameters?: () => void;
 }) {
   const surface = useMeasuredRecipeSurface(context);
-  const { completed, checked } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
+  const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
   const pending = view.status === 'pending' || view.status === 'updating';
   const retained = completed?.result.ok && view.stale && (pending || view.status === 'blocked' || view.status === 'failed')
     && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained ? completed.result : checked;
+  const result = retained || remeasuring ? completed?.result : checked;
+  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.etfHierarchy ? result : undefined;
   const hierarchy = output?.etfHierarchy;
   const [drill, setDrill] = useState<{ revision: string; id: string }>();
@@ -177,16 +180,16 @@ export function LinkedEtfSunburst({ view, job, options, sourceId, context, paren
     if (revision) setDrill({ revision, id: id === rootId ? '' : id });
   }, [revision, rootId]);
   const drawable = useMemo(() => {
-    if (!output?.figure.data.length || !surface.measured) return;
-    const { width, height } = surface.measured.box;
+    if (!output?.figure.data.length || !drawing) return;
+    const { width, height } = drawing;
     // During a stale refresh keep the last admitted geometry only at its
     // verified dimensions. A new CSS size needs a new current worker result.
-    if (retained && !sameRecipeSurface(surface.measured.box, completed?.request.measured.box)) return;
+    if (retained && !sameRecipeSurface(drawing, completed?.request.measured.box)) return;
     const [trace] = output.figure.data as Record<string, unknown>[];
     return { data: [{ ...trace, level }], layout: {
       ...output.figure.layout, width: Math.round(width), height: Math.round(height), autosize: false,
     } };
-  }, [output, surface.measured, level, retained, completed]);
+  }, [output, drawing, level, retained, completed]);
 
   return <>
     <div className="linked-chart-status">
@@ -195,6 +198,7 @@ export function LinkedEtfSunburst({ view, job, options, sourceId, context, paren
         : sourceId ? `Loading source ${sourceId}…` : 'Select an available source table.'}</p>}
       {view.error && !parentReportsSourceStatus && <p role="alert">{view.error}</p>}
       {result && !result.ok && <p role={result.refused ? 'status' : 'alert'}>{result.message}</p>}
+      {result && !result.ok && <OpenLinkedParameters onOpen={onOpenParameters}/>}
       {hierarchy && <div role="status">
         {hierarchy.asOf === null && <p>Report date unknown · Retrieved {hierarchy.retrievedAt}.</p>}
         {output?.notes.map(note => <p key={note}>{note}</p>)}

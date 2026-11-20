@@ -4,7 +4,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { ReturnSummaryOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dashboardSeed, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 
 export const returnChart = 'Return summaries example';
 export const placeholder = 'Daily price snapshot';
@@ -38,14 +38,7 @@ export async function dropFile(page: Page, filename: string, text: string) {
 }
 
 export async function chooseReturnSource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  const widget = card(page, returnChart);
-  await widget.getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — Returns' });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, returnChart), name + ' — ' + 'Returns');
 }
 
 export async function prepareReturns(page: Page, snapshot?: string, options = returnRecipe, height = chartLayout.h) {

@@ -4,7 +4,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { EstimateRevisionsOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dashboardSeed, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 import { dropFile } from './return-summary';
 
 export const workspace = 'Estimate history fixtures';
@@ -49,13 +49,7 @@ export async function seedRevisions(page: Page, options?: EstimateRevisionsOptio
 }
 
 export async function chooseRevisionSource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  await card(page, chartName).getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — ' + tab });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, chartName), name + ' — ' + tab);
 }
 
 export async function attachRevisions(page: Page, snapshot: unknown, name = sampleName) {

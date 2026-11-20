@@ -165,7 +165,14 @@ it('keeps the chart presentation branch and completed metadata during recoverabl
   const chart = card({ id: 'chart', widgetId: 'linked_chart', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 's' }, linkedChart: { type: 'column', measures: ['revenue'], category: 'region', display: 'grouped' } });
   useDashboardStore.setState(s => ({ dashboards: s.dashboards.map(d => ({ ...d, tabs: [{ ...d.tabs[0], cards: [root, chart] }] })) }));
   render(<><TableExecutionRuntime /><WidgetCard card={chart} onRemove={() => {}} /></>);
-  await screen.findByTestId('chart-plot');
+  const plot = await screen.findByTestId('chart-plot');
+  const parameters = openParameters();
+  expect(parameters.getByLabelText('Chart type')).toHaveValue('column');
+  expect(parameters.getByLabelText('Category')).toHaveValue('region');
+  expect(parameters.getByRole('group', { name: 'Measures' })).toBeVisible();
+  expect(parameters.getByLabelText('Series from')).toHaveValue('columns');
+  fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+  expect(screen.getByTestId('chart-plot')).toBe(plot);
   const ready = tableExecutionStore.readView('d', 'chart').ready;
   await act(async () => {
     tableExecutionStore.updateDefinition('d', 's', { table: { sorting: [{ id: 'gone', desc: false }] }, search: '' }, { kind: 'none' });
@@ -216,7 +223,12 @@ it.each(['bullet', 'waterfall'] as const)('announces a failed %s relink once and
     expect(screen.getByText(/^Source A ·/)).toBeVisible();
     const revisionA = plot.mock.lastCall?.[2];
 
-    fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
+    const parameters = openParameters();
+    expect(parameters.getByLabelText('Chart type')).toHaveValue(type);
+    expect(parameters.getByLabelText('Category')).toHaveValue(mapping.category);
+    expect(parameters.getByRole('group', { name: 'Measures' })).toBeVisible();
+    if (type === 'bullet') expect(parameters.getByLabelText('Quarter')).toHaveValue('Q2');
+    fireEvent.click(parameters.getByRole('button', { name: 'Choose source' }));
     const dialog = within(screen.getByRole('dialog', { name: 'Choose source' }));
     fireEvent.change(dialog.getByLabelText('Source table'), { target: { value: b.id } });
     fireEvent.click(dialog.getByRole('button', { name: 'Choose source' }));
@@ -391,8 +403,143 @@ function riskRuntime() {
   }
   return { run, factory, resize, setSize };
 }
+it('keeps the applied chart and its unsaved draft when the Parameters panel closes', async () => {
+  const { factory } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession());
+  const linked = riskChart(capMap);
+  installDashboard(riskDashboard([a, linked]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const question = vi.mocked(renderPlot).mock.lastCall![2];
+    expect(screen.queryByRole('region', { name: 'Parameters' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Chart type' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Choose source' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show parameters' }));
+    const parameters = screen.getByRole('region', { name: 'Parameters' });
+    expect(within(parameters).getByRole('button', { name: 'Choose source' })).toHaveFocus();
+    expect(within(parameters).getByLabelText('Chart type')).toHaveValue('market-map');
+    const mode = within(parameters).getByLabelText('Completed session');
+    await waitFor(() => expect(within(mode).getByRole('option', { name: '2026-11-13' })).toBeEnabled());
+    fireEvent.change(mode, { target: { value: '2026-11-13' } });
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].paramsOpen).toBe(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    expect(screen.queryByRole('region', { name: 'Parameters' })).toBeNull();
+    expect(mode).not.toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1]).not.toHaveProperty('paramsOpen'));
+    fireEvent.click(screen.getByRole('button', { name: 'Card menu' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Parameters' }));
+    expect(screen.getAllByRole('region', { name: 'Parameters' })).toEqual([parameters]);
+    expect(within(parameters).getByLabelText('Completed session')).toBe(mode);
+    expect(mode).toHaveValue('2026-11-13');
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linked.linkedChart);
+    expect(vi.mocked(renderPlot).mock.lastCall![2]).toBe(question);
+    const apply = within(parameters).getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    const commit = useDashboardStore.getState().commitLinkedChartSettings;
+    let finish!: () => void;
+    const pending = new Promise<void>(resolve => { finish = resolve; });
+    const queued = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings').mockImplementationOnce(async (...args) => {
+      await pending;
+      return commit(...args);
+    });
+    try {
+      fireEvent.click(apply);
+      fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+      await act(async () => finish());
+      expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe)
+        .toEqual({ ...capMap, session: '2026-11-13' });
+      expect(screen.queryByRole('region', { name: 'Parameters' })).toBeNull();
+    } finally { finish(); queued.mockRestore(); }
+  } finally { factory.mockRestore(); }
+});
+
+it('keeps the measured source job and question when toggling Parameters', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession());
+  installDashboard(riskDashboard([a, riskChart(capMap)]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const question = vi.mocked(renderPlot).mock.lastCall![2];
+    const view = tableExecutionStore.readView('d', 'chart');
+    const count = run.mock.calls.length;
+    const read = vi.spyOn(tableExecutionStore.readExecutor('d', a.id)!, 'chartData');
+    try {
+      for (const open of [true, false, true]) {
+        await act(async () => fireEvent.click(screen.getByRole('button', { name: open ? 'Show parameters' : 'Hide parameters' })));
+        expect(screen.getByTestId('chart-plot')).toBe(plot);
+        expect(tableExecutionStore.readView('d', 'chart').sourceRevision).toBe(view.sourceRevision);
+      }
+      expect(read).not.toHaveBeenCalled();
+      expect(run).toHaveBeenCalledTimes(count);
+      expect(vi.mocked(renderPlot).mock.lastCall![2]).toBe(question);
+    } finally { read.mockRestore(); }
+  } finally { factory.mockRestore(); }
+});
+
+it('retains the exact admitted chart while a changed Parameters viewport is checked', async () => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession());
+  installDashboard(riskDashboard([a, riskChart(capMap)]));
+  try {
+    render(<LiveRiskChart/>);
+    const draw = vi.mocked(renderPlot);
+    const plot = await screen.findByTestId('chart-plot');
+    const [node, figure, question] = draw.mock.lastCall!;
+    const details = screen.getByText('Market map details', { exact: true }).closest('details');
+    details!.open = true;
+    let finish!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      await new Promise<void>(resolve => { finish = resolve; });
+      return runRecipe(data, options, context);
+    });
+    openParameters();
+    act(() => resize(640, 320));
+    await waitFor(() => expect(finish).toBeDefined());
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(screen.getByText('Market map details', { exact: true }).closest('details')).toBe(details);
+    expect(details).toHaveAttribute('open');
+    expect(draw.mock.lastCall).toEqual([node, figure, question]);
+    act(() => resize(900, 430));
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(details).toHaveAttribute('open');
+    await act(async () => finish());
+    act(() => resize(640, 320));
+    await waitFor(() => expect(draw.mock.lastCall?.[1].layout.width).toBe(640));
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(draw.mock.lastCall?.[1].layout).toMatchObject({ width: 640, height: 320 });
+    expect(draw.mock.lastCall?.[2]).toBe(question);
+    run.mockResolvedValueOnce({ ok: false, refused: true, message: 'The new geometry cannot be drawn.' });
+    act(() => resize(620, 300));
+    expect(await screen.findByText('The new geometry cannot be drawn.')).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it.each([{ viewer: true }, { locked: true }])('omits linked-chart editing and repair actions in %j mode', async mode => {
+  const { factory } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession());
+  const linked = { ...riskChart(capMap), paramsOpen: true };
+  installDashboard(riskDashboard([a, linked]));
+  try {
+    render(<><TableExecutionRuntime/><WidgetCard card={linked} onRemove={() => {}} {...mode}/></>);
+    expect(await screen.findByTestId('chart-plot')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Parameters' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Chart type' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /parameters|choose source/i })).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+function openParameters() {
+  const show = screen.queryByRole('button', { name: 'Show parameters' });
+  if (show) fireEvent.click(show);
+  return within(screen.getByRole('region', { name: 'Parameters' }));
+}
+
 async function chooseRiskSource(id: string) {
-  fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
+  fireEvent.click(openParameters().getByRole('button', { name: 'Choose source' }));
   const dialog = within(screen.getByRole('dialog', { name: 'Choose source' }));
   fireEvent.change(dialog.getByLabelText('Source table'), { target: { value: id } });
   fireEvent.click(dialog.getByRole('button', { name: 'Choose source' }));
@@ -414,6 +561,7 @@ it.each(riskRecipes)('fences $kind across a failed relink, late calculation and 
     const tall = recipe.kind === 'small-multiples' || recipe.kind === 'etf-exposure';
     expect(first.style.height).toBe(tall ? figureA.layout.height + 'px' : '');
     expect(first.parentElement?.classList.contains('chart-scroll-viewport')).toBe(tall);
+    openParameters();
     expect(screen.getByLabelText('Chart type')).toHaveValue(recipe.kind);
     expect(screen.getByText(/^Source A ·/)).toBeVisible();
     let release!: () => void;
@@ -515,6 +663,7 @@ it('announces chart-read, worker and settings-save errors from a mounted financi
   try {
     render(<LiveRiskChart/>);
     await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.click(screen.getByRole('button', { name: /apply chart settings/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent('settings write failed');
     const executor = tableExecutionStore.readExecutor('d', a.id)!;
@@ -559,6 +708,7 @@ it('revalidates exposure mode against the linked snapshot without acquiring anot
     expect(await screen.findByText('Filtered source delivered 1 of 2 acquired rows.')).toBeVisible();
     const snapshotReads = () => reads.mock.calls.filter(([path]) => path === 'files/' + a.params.file).length;
     const before = snapshotReads();
+    openParameters();
     fireEvent.change(screen.getByLabelText('Exposure mode'), { target: { value: 'region' } });
     fireEvent.click(screen.getByRole('button', { name: /apply chart settings/i }));
     expect(await screen.findByText(/choose an ETF source with the requested exposure kind/i)).toBeVisible();
@@ -649,6 +799,7 @@ it('keeps the applied bubble visible through an incompatible draft and clears it
     const plot = await screen.findByTestId('chart-plot');
     await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall?.[0]).toBe(plot));
     const revision = vi.mocked(renderPlot).mock.lastCall![2];
+    openParameters();
     const type = screen.getByLabelText('Chart type');
     fireEvent.change(type, { target: { value: 'dividend-steps' } });
     expect(await screen.findByText(/acquire dividend data with a qualified instrument receipt/i)).toBeVisible();
@@ -719,6 +870,7 @@ it.each([
     const data = await executor.chartData(revision, ['last_day_data_date'], new AbortController().signal);
     expect(readFinancialEvidence(data.provenance)?.kind).toBe(acquiredKind);
 
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'bubble-regression' } });
     expect(await screen.findByText(/acquire screening data with a validated screener receipt/i)).toBeVisible();
     expect(screen.queryByRole('option', { name: '2026-08-28' })).toBeNull();
@@ -743,6 +895,7 @@ it('projects only presented fiscal periods and defaults Sankey to the newest act
       expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
       return vi.spyOn(executor!, 'chartData');
     });
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'income-sankey' } });
     await screen.findByRole('option', { name: /FY 2025.*2025-06-30/i });
     const period = screen.getByLabelText('Income statement period');
@@ -775,6 +928,7 @@ it.each([
   try {
     render(<LiveRiskChart/>);
     await screen.findByTestId('chart-plot');
+    openParameters();
     const instrument = screen.getByLabelText('Acquired instrument');
     await waitFor(() => expect(instrument).toHaveValue('SHEL.LSE'));
     expect([...within(instrument).getAllByRole('option')].map(option => option.textContent)).toEqual(['Choose instrument', 'SHEL.LSE']);
@@ -838,6 +992,7 @@ it('requires repairing the dividend instrument after reacquisition and resets th
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(await screen.findByText(/choose the acquired instrument BP.LSE/i)).toBeVisible();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
+    openParameters();
     await screen.findByRole('option', { name: 'BP.LSE' });
     const apply = screen.getByRole('button', { name: /apply chart/i });
     expect(apply).toBeDisabled();
@@ -862,6 +1017,7 @@ it('keeps a working chart while a valid dividend receipt requires verified cover
   try {
     render(<LiveRiskChart/>);
     const plot = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'dividend-steps' } });
     await screen.findByRole('option', { name: 'SHEL.LSE' });
     expect(screen.getByRole('button', { name: /apply chart/i })).toBeDisabled();
@@ -881,6 +1037,7 @@ it('applies Dividend steps to a newly linked columnless verified-empty file', as
   installDashboard(riskDashboard([root, chart]));
   try {
     render(<LiveRiskChart/>);
+    openParameters();
     const option = screen.getByRole('option', { name: /Dividend steps/i });
     await waitFor(() => expect(option).toBeEnabled());
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'dividend-steps' } });
@@ -913,6 +1070,7 @@ it('checks the selected screening cohort before applying a draft over a working 
   try {
     render(<LiveRiskChart/>);
     const plot = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'bubble-regression' } });
     expect(await screen.findByText(/2026-08-31.*conflicting duplicate listings/)).toBeVisible();
     const apply = screen.getByRole('button', { name: /apply chart/i });
@@ -939,6 +1097,7 @@ it('checks record coverage for the selected income period before saving its draf
   try {
     render(<LiveRiskChart/>);
     await waitFor(() => expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready'));
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'income-sankey' } });
     expect(await screen.findByText(/complete income statement record/i)).toBeVisible();
     const apply = screen.getByRole('button', { name: /apply chart/i });
@@ -967,6 +1126,7 @@ it('keeps the applied income plot and period when another full record lacks its 
   try {
     render(<LiveRiskChart/>);
     const plot = await screen.findByTestId('chart-plot');
+    openParameters();
     const selector = screen.getByLabelText('Income statement period');
     await screen.findByRole('option', { name: /FY 2025/ });
     fireEvent.change(selector, { target: { value: incomeColumn(2025) } });
@@ -997,6 +1157,7 @@ it('discovers a news calendar draft on a table of unverified article-shaped rows
   try {
     render(<LiveRiskChart/>);
     const applied = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
     await screen.findByRole('group', { name: 'News sentiment calendar settings' });
     expect(await screen.findByText(/acquire CompanyNews with verified article identity/i)).toBeVisible();
@@ -1016,6 +1177,7 @@ it('lets a newly linked chart use a verified columnless empty news acquisition',
   installDashboard(riskDashboard([root, chart]));
   try {
     render(<LiveRiskChart/>);
+    openParameters();
     const type = screen.getByLabelText('Chart type');
     await waitFor(() => expect(within(type).getByRole('option', { name: 'News sentiment calendar' })).toBeEnabled());
     fireEvent.change(type, { target: { value: calendarOptions.kind } });
@@ -1058,6 +1220,7 @@ it.each(['options', 'source revision', 'width'] as const)('fences an obsolete ne
   try {
     render(<LiveRiskChart/>);
     const applied = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
     const apply = screen.getByRole('button', { name: /apply chart settings/i });
     await waitFor(() => expect(requests).toHaveLength(1));
@@ -1103,6 +1266,7 @@ it('discovers a Return summaries draft and requires a documented acquisition bef
     installDashboard(riskDashboard([root, { ...riskChart(returnOptions), linkedChart }]));
     render(<LiveRiskChart/>);
     const displayed = await screen.findByTestId('chart-plot');
+    openParameters();
     expect(screen.getByRole('option', { name: 'Return summaries' })).toBeEnabled();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
     expect(screen.getByLabelText('Return view')).toHaveValue('box');
@@ -1127,6 +1291,7 @@ it.each(['options', 'source revision', 'height'] as const)('fences an obsolete r
   try {
     render(<LiveRiskChart/>);
     const displayed = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
     fireEvent.click(await screen.findByRole('checkbox', { name: 'A.US' }));
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
@@ -1163,6 +1328,7 @@ it('keeps applied return details through a refused pinned draft and clears inval
     render(<LiveRiskChart/>);
     const displayed = await screen.findByTestId('chart-plot');
     const detail = screen.getByText('Return listing details', { exact: true });
+    openParameters();
     fireEvent.change(screen.getByLabelText('Return window'), { target: { value: 'common' } });
     fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-01-06' } });
     expect(await screen.findByText(/at least 5 finite daily returns.*A\.US/i)).toBeVisible();
@@ -1188,6 +1354,7 @@ it('requires exact worker admission when Apply sees a newly oversized return dra
   try {
     render(<LiveRiskChart/>);
     const displayed = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
     fireEvent.click(await screen.findByRole('checkbox', { name: 'A.US' }));
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
@@ -1245,6 +1412,7 @@ it('discovers ownership draft settings but ordinary data cannot enable Apply or 
   try {
     render(<LiveRiskChart/>);
     const applied = await screen.findByTestId('chart-plot');
+    openParameters();
     expect(screen.getByRole('option', { name: 'Ownership snapshot' })).toBeEnabled();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'ownership-snapshot' } });
     expect(screen.getByLabelText('Ownership view')).toHaveValue('bars');
@@ -1269,6 +1437,7 @@ it.each(['field', 'output', 'height'] as const)('admits only the exact ownership
   try {
     render(<LiveRiskChart/>);
     const displayed = await screen.findByTestId('chart-plot');
+    openParameters();
     fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'ownership-snapshot' } });
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
     await waitFor(() => expect(requests).toHaveLength(1));
@@ -1326,6 +1495,8 @@ it('clears invalid applied ownership settings and repairs an unavailable saved i
 
     const pinned = { ...ownershipOptions, issuer: 'MSFT.US' };
     act(() => installDashboard(riskDashboard([root, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: pinned } }])));
+    expect(await screen.findByText(/selected issuer.*unavailable|acquired issuer AAPL\.US/i, { selector: '.linked-chart-status p' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Parameters' }));
     const issuer = screen.getByLabelText('Acquired issuer');
     await waitFor(() => expect(issuer).toHaveValue('MSFT.US'));
     expect(await screen.findByRole('option', { name: 'MSFT.US (unavailable)' })).toBeDisabled();
@@ -1441,6 +1612,21 @@ function kpiCard(linkedMetric = focusedKpi) {
     linkedSource: { kind: 'widget', sourceWidgetId: 'A' } }), linkedMetric };
 }
 
+it('shows missing evidence in a new linked KPI body while Parameters is closed', async () => {
+  const factory = mockKpiWorker();
+  const file = await saveLocalFile(new File([JSON.stringify([{ eps_ttm: 11 }])], 'ordinary.json'));
+  const local = { ...source, id: 'A', params: { file } };
+  installDashboard(riskDashboard([local, { ...kpiCard(), linkedMetric: undefined }]));
+  try {
+    const { container } = render(<LiveKpi/>);
+    const body = within(container.querySelector('.card-body')!);
+    expect(await body.findByText(/acquire a source with verified KPI observation evidence/i)).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Parameters' })).toBeNull();
+    fireEvent.click(body.getByRole('button', { name: 'Open Parameters' }));
+    expect(openParameters().getByRole('button', { name: 'Apply KPI settings' })).toBeDisabled();
+  } finally { factory.mockRestore(); }
+});
+
 it('clears linked KPI settings with an unsupported applied version and never renders their value', async () => {
   const factory = mockKpiWorker();
   const a = await localKpiSource('A', 18.125);
@@ -1545,6 +1731,7 @@ it('clears the prior gauge while a ready revision checks a filtered latest KPI a
     expect(heldOutput).toEqual({ value: undefined, gauge: false, status: 'Calculating linked KPI…' });
     expect(await screen.findByRole('alert')).toHaveTextContent(/latest KPI observation is unavailable in the source presentation/i);
     expect(screen.queryByText('76.544 USD per share', { selector: '.metric-value' })).toBeNull();
+    openParameters();
     expect(screen.getByLabelText('Observation', { exact: true })).toHaveValue('@latest');
     fireEvent.change(screen.getByLabelText('Observation', { exact: true }), { target: { value: 'first-report' } });
     fireEvent.change(screen.getByLabelText('KPI view', { exact: true }), { target: { value: 'card' } });
@@ -1652,7 +1839,7 @@ it('fences KPI drafts across option, geometry and source revision changes before
   try {
     render(<LiveKpi/>);
     const displayed = await screen.findByTestId('chart-plot');
-    fireEvent.click(screen.getByText('KPI settings', { exact: true }));
+    openParameters();
     const rangeMax = screen.getByLabelText('Range maximum');
     const apply = screen.getByRole('button', { name: 'Apply KPI settings' });
     fireEvent.change(rangeMax, { target: { value: '110' } });
@@ -1665,7 +1852,13 @@ it('fences KPI drafts across option, geometry and source revision changes before
     expect(screen.getByTestId('chart-plot')).toBe(displayed);
     await act(async () => requests[1].release());
     expect(apply).toBeEnabled();
-    setSize(295.5, 164);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    setSize(0, 0);
+    expect(apply).not.toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    openParameters();
+    expect(screen.getByLabelText('Range maximum')).toBe(rangeMax);
+    expect(rangeMax).toHaveValue(120);
     fireEvent.click(apply);
     expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
     expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedMetric).toEqual(focusedKpi);
@@ -1712,7 +1905,7 @@ it('requires acquired ETF evidence and clears invalid applied options', async ()
   try {
     render(<LiveRiskChart/>);
     expect(await screen.findByText(/Acquire the fund holdings with verified fractional weights/i)).toBeVisible();
-    fireEvent.click(screen.getByText('ETF sunburst settings', { exact: true }));
+    openParameters();
     expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await chooseRiskSource('B');
@@ -1832,7 +2025,8 @@ it('clears old ETF worker and draw replies on direct relink and reports current 
     expect(screen.queryByText(/Obsolete/i)).toBeNull();
     run.mockRejectedValueOnce(new Error('Current sunburst calculation failed'));
     act(() => resize(483.5, 364.5));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Current sunburst calculation failed');
+    expect(await screen.findByText('Current sunburst calculation failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.queryByText(/Original total fraction 0\.34/i)).toBeNull();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
   } finally { factory.mockRestore(); }
@@ -1845,7 +2039,7 @@ it('fences obsolete ETF draft results and applies only at the exact checked view
   try {
     render(<LiveRiskChart/>);
     const original = await screen.findByTestId('chart-plot');
-    fireEvent.click(screen.getByText('ETF sunburst settings', { exact: true }));
+    openParameters();
     const depth = screen.getByRole('combobox', { name: 'Hierarchy depth' });
     const snapshot = screen.getByRole('combobox', { name: 'Snapshot' });
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
@@ -1911,7 +2105,7 @@ it('requires prepared overlay evidence and clears invalid applied options', asyn
   try {
     render(<LiveRiskChart/>);
     expect(await screen.findByText(/Acquire an explicitly prepared overlay snapshot/i)).toBeVisible();
-    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    openParameters();
     expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await chooseRiskSource('B');
@@ -1935,8 +2129,7 @@ it('keeps the applied overlay on an incompatible draft and fences checked settin
   try {
     render(<LiveRiskChart/>);
     const original = await screen.findByTestId('chart-plot');
-    const settings = screen.getByText('Dual-axis overlay settings', { exact: true });
-    fireEvent.click(settings);
+    openParameters();
     const pair = screen.getByLabelText('Overlay recipe');
     fireEvent.change(pair, { target: { value: 'cpi-ten-year' } });
     expect(await screen.findByText(/recipe certified by this prepared snapshot/i)).toBeVisible();
@@ -1946,7 +2139,7 @@ it('keeps the applied overlay on an incompatible draft and fences checked settin
     act(() => installDashboard(riskDashboard([a, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: repair } }])));
     expect(await screen.findByText(/Repair the overlay bindings/i)).toBeVisible();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
-    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    openParameters();
     fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'value' } });
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
     await waitFor(() => expect(apply).toBeEnabled());
@@ -2052,7 +2245,8 @@ it('drops an overlay from the outgoing ready revision and ignores its late draw 
     expect(screen.queryByText(/Obsolete/i)).toBeNull();
     run.mockRejectedValueOnce(new Error('Current overlay calculation failed'));
     act(() => resize(483.5, 364.5));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Current overlay calculation failed');
+    expect(await screen.findByText('Current overlay calculation failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
   } finally { factory.mockRestore(); }
 });
@@ -2074,7 +2268,7 @@ it('retains an omitted optional overlay binding and fences pending drafts and qu
   try {
     render(<LiveRiskChart/>);
     const original = await screen.findByTestId('chart-plot');
-    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    openParameters();
     const field = screen.getByRole('combobox', { name: 'Release availability' });
     expect(field).toHaveValue('');
     const apply = screen.getByRole('button', { name: 'Apply chart settings' });
@@ -2109,7 +2303,6 @@ async function estimateHistorySource(id: string, content: unknown) {
   const file = await saveLocalFile(new File([JSON.stringify(content)], id + '.json'));
   return card({ id, widgetId: 'local_table', backendId: 'builtin', params: { file } });
 }
-const revisionSettings = () => screen.getByText('Estimate revision settings', { exact: true });
 const revisionApply = () => screen.getByRole('button', { name: 'Apply chart settings' });
 const vintage = (name: RegExp) => screen.getByRole('checkbox', { name });
 
@@ -2122,12 +2315,12 @@ it('requires estimate vintage evidence, protects the applied question from an in
   try {
     render(<LiveRiskChart/>);
     expect(await screen.findByText(/Load a verified local history/i)).toBeVisible();
-    fireEvent.click(revisionSettings());
+    openParameters();
     expect(revisionApply()).toBeDisabled();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await chooseRiskSource('B');
     const plot = await screen.findByTestId('chart-plot');
-    fireEvent.click(revisionSettings());
+    openParameters();
     const view = screen.getByLabelText('Revision view');
     expect(view).toHaveValue('slope');
     expect(within(view).getByRole('option', { name: /Bump/ })).toBeDisabled();
@@ -2191,7 +2384,7 @@ it('accepts draft sizing only for the current pins and waits for a successful wo
     const { container } = render(<LiveRiskChart/>);
     const probe = () => container.querySelector<HTMLElement>('.estimate-revisions-draft-probe .chart-plot')!;
     const applied = await screen.findByTestId('chart-plot');
-    fireEvent.click(revisionSettings());
+    openParameters();
     let releaseDraft!: () => void;
     run.mockImplementationOnce(async (data, options, context) => {
       const result = runRecipe(data, options, context);
@@ -2209,6 +2402,15 @@ it('accepts draft sizing only for the current pins and waits for a successful wo
     await waitFor(() => expect(probe().style.minWidth).toBe('379px'));
     expect(revisionApply()).toBeDisabled();
     const before = run.mock.calls.length;
+    const draftProbe = probe();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    act(() => resize(0, 0));
+    expect(screen.queryByRole('button', { name: 'Apply chart settings' })).toBeNull();
+    expect(run).toHaveBeenCalledTimes(before);
+    openParameters();
+    expect(probe()).toBe(draftProbe);
+    expect(screen.getByLabelText('Revision view')).toHaveValue('path');
+    expect(revisionApply()).toBeDisabled();
     act(() => resize(325, 230));
     expect(run).toHaveBeenCalledTimes(before);
     act(() => resize(379, 230));
@@ -2306,7 +2508,8 @@ it('drops an estimate revision chart from the outgoing ready revision and ignore
     expect(screen.queryByText(/Obsolete/i)).toBeNull();
     run.mockRejectedValueOnce(new Error('Current revision calculation failed'));
     act(() => resize(483.5, 364.5));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Current revision calculation failed');
+    expect(await screen.findByText('Current revision calculation failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
   } finally { factory.mockRestore(); }
 });
@@ -2318,7 +2521,7 @@ it.each([0, -2, null])('disables bump with an ineligible baseline %j', async bas
   installDashboard(riskDashboard([local, riskChart(revisionSlope)]));
   try {
     render(<LiveRiskChart/>);
-    fireEvent.click(revisionSettings());
+    openParameters();
     expect(await within(screen.getByLabelText('Consensus value')).findByRole('option', { name: 'value' })).toBeEnabled();
     expect(screen.getByRole('option', { name: /Bump/ })).toBeDisabled();
   } finally { factory.mockRestore(); }
@@ -2331,6 +2534,7 @@ it('creates a bump chart with a current rank gap after pinning both declared end
   installDashboard(riskDashboard([local, chart]));
   try {
     render(<LiveRiskChart/>);
+    openParameters();
     fireEvent.change(screen.getByRole('combobox', { name: 'Chart type' }), { target: { value: 'estimate-revisions' } });
     expect(await within(screen.getByLabelText('Consensus value')).findByRole('option', { name: 'value' })).toBeEnabled();
     expect(screen.getByRole('option', { name: /Bump/ })).toBeEnabled();
@@ -2368,7 +2572,7 @@ it('discards sizing from a relinked estimate draft and rechecks the drawing size
   try {
     const { container } = render(<LiveRiskChart/>);
     await screen.findByTestId('chart-plot');
-    fireEvent.click(revisionSettings());
+    openParameters();
     let releaseDraft!: () => void;
     run.mockImplementationOnce(async (data, options, context) => {
       const result = runRecipe(data, options, context);
@@ -2380,7 +2584,7 @@ it('discards sizing from a relinked estimate draft and rechecks the drawing size
     await waitFor(() => expect(releaseDraft).toBeDefined());
     await chooseRiskSource('B');
     await screen.findByTestId('chart-plot');
-    fireEvent.click(revisionSettings());
+    openParameters();
     fireEvent.change(screen.getByLabelText('Revision view'), { target: { value: 'path' } });
     fireEvent.click(vintage(/snap-b/));
     await waitFor(() => expect(revisionApply()).toBeEnabled());
@@ -2398,7 +2602,6 @@ it('discards sizing from a relinked estimate draft and rechecks the drawing size
   } finally { releaseSave(); pendingSave.mockRestore(); factory.mockRestore(); }
 });
 
-const marketSettings = () => screen.getByText('Market map settings', { exact: true });
 
 it('requires a prepared market-map receipt and keeps the applied map and details through a pending or refused draft', async () => {
   const { factory, run } = riskRuntime();
@@ -2410,21 +2613,21 @@ it('requires a prepared market-map receipt and keeps the applied map and details
   try {
     render(<LiveRiskChart/>);
     expect(await screen.findByText(/Relink a verified local market-map acquisition/i)).toBeVisible();
-    fireEvent.click(marketSettings());
+    openParameters();
     expect(revisionApply()).toBeDisabled();
     const mode = screen.getByLabelText('Area basis');
     expect(within(mode).getByRole('option', { name: 'Named index weights' })).toBeDisabled();
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await chooseRiskSource('B');
     expect(await screen.findByText(/pinned market-map session is unavailable/i)).toBeVisible();
-    fireEvent.click(marketSettings());
+    openParameters();
     fireEvent.change(screen.getByLabelText('Completed session'), { target: { value: 'latest' } });
     await waitFor(() => expect(revisionApply()).toBeEnabled());
     fireEvent.click(revisionApply());
     const plot = await screen.findByTestId('chart-plot');
     fireEvent.click(screen.getByText('Market map details', { exact: true }));
     expect(await screen.findByRole('table', { name: 'Original listing values' })).toHaveTextContent('98765.4321 USD');
-    fireEvent.click(marketSettings());
+    openParameters();
     let rejectDraft!: (error: Error) => void;
     run.mockImplementationOnce(() => new Promise((_, reject) => { rejectDraft = reject; }));
     fireEvent.change(screen.getByLabelText('Completed session'), { target: { value: '2026-11-13' } });
@@ -2454,7 +2657,7 @@ it('preflights a market-map draft at the exact applied drawing size and discards
   installDashboard(riskDashboard([a, linked]));
   try {
     const { container } = render(<LiveRiskChart/>);
-    fireEvent.click(marketSettings());
+    openParameters();
     const mode = screen.getByLabelText('Area basis');
     await waitFor(() => expect(within(mode).getByRole('option', { name: 'Named index weights' })).toBeEnabled());
     fireEvent.change(mode, { target: { value: 'index-weight' } });
@@ -2583,7 +2786,8 @@ it('drops an market map chart from the outgoing ready revision and ignores its l
     expect(screen.queryByText(/Obsolete/i)).toBeNull();
     run.mockRejectedValueOnce(new Error('Current revision calculation failed'));
     act(() => resize(483.5, 364.5));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Current revision calculation failed');
+    expect(await screen.findByText('Current revision calculation failed')).toHaveAttribute('role', 'alert');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
   } finally { factory.mockRestore(); }
 });

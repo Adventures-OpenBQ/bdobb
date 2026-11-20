@@ -4,13 +4,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { capMap, indexMap, marketSession } from '../src/test/fixtures/marketMap';
 import index from '../src/test/fixtures/marketMapIndex.json' with { type: 'json' };
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dataRequests } from './fixtures/dual-axis-overlay';
 import { openRail, read } from './fixtures';
 import { dropFile } from './fixtures/return-summary';
 import { attachMarket, chartName, chooseMarketSource, liveOrigin, livePath, liveTitle, placeholder, sampleName, seedMarket, tab, workspace } from './fixtures/market-map';
 
-const settings = (widget: Locator) => widget.getByText('Market map settings', { exact: true });
 const applied = (widget: Locator) => widget.getByRole('button', { name: 'Apply chart settings' });
 const facts = (widget: Locator) => widget.getByText('Market map details', { exact: true });
 const nav = (widget: Locator) => widget.getByLabel('Sector view');
@@ -77,6 +76,8 @@ test('defaults to monetary area, conserves real tile areas and keeps hierarchy n
   const requests = dataRequests(page, baseURL!);
   await seedMarket(page);
   const widget = card(page, chartName), graph = plot(page, chartName);
+  await expect(widget.getByLabel('Chart type')).toBeHidden();
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption('market-map');
   await expect(widget.getByLabel('Area basis')).toHaveValue('delivered-cap');
   await expect(widget.getByRole('option', { name: 'Named index weights' })).toHaveAttribute('disabled', '');
@@ -91,6 +92,7 @@ test('defaults to monetary area, conserves real tile areas and keeps hierarchy n
     excluded_areas: { zero: 1, negative: 1, invalid: 0 },
   });
   await attachMarket(page, snapshot);
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption('market-map');
   await expect(widget.getByLabel('Completed session')).toHaveValue('latest');
   await expect(applied(widget)).toBeEnabled();
@@ -210,6 +212,7 @@ test('validates acquired named index area and keeps original tiny values in the 
   await expect(graph.locator('.hoverlayer')).toContainText('fraction 0.9999999');
   await expect(graph.locator('.hoverlayer')).toContainText('fraction -0.1');
   await widget.screenshot({ path: info.outputPath('market-index-tiny.png') });
+  await captureParameters(widget, 'Area basis', file => info.outputPath(file));
   const source = card(page, sampleName);
   await source.getByRole('button', { name: 'Filter rows' }).click();
   await source.getByLabel('Filter listing', { exact: true }).fill('BETA.US');
@@ -322,7 +325,7 @@ test('keeps attached File export refusal, then repairs a source-free pin with a 
     await attachMarket(fresh, marketSession('2026-11-12', '2026-11-11'));
     await expect(widget.getByText(/pinned market-map session is unavailable/i)).toBeVisible();
     await expect(graph).toHaveCount(0);
-    await settings(widget).click();
+    await openParameters(widget);
     await expect(applied(widget)).toBeDisabled();
     await widget.getByLabel('Completed session').selectOption('latest');
     await expect(applied(widget)).toBeEnabled();
@@ -339,7 +342,7 @@ test('the live screener owns its own request and remains unavailable for both ma
   await expect(card(page, liveTitle).getByText('ALFA.US')).toBeVisible();
   const widget = card(page, chartName);
   await expect(widget.getByText(/Relink a verified local market-map acquisition/i)).toBeVisible();
-  await settings(widget).click();
+  await openParameters(widget);
   await expect(widget.getByRole('option', { name: 'Named index weights' })).toHaveAttribute('disabled', '');
   await expect(applied(widget)).toBeDisabled();
   await expect(plot(page, chartName)).toHaveCount(0);

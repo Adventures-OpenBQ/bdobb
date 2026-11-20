@@ -35,6 +35,7 @@ import type { NewsCalendarDay } from '../../lib/widgetData/chartRecipes/newsCale
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
 import { LinkedChartRecipeControls, OwnershipRecipeControls, recipeAvailability, recipeLabels, type SourceChoiceKind } from './LinkedChartRecipeControls';
+import { LinkedParametersPortal, OpenLinkedParameters } from './LinkedParametersPortal';
 
 function revisionKey({ widgetId, input, model, output }: Revision) {
     return JSON.stringify([widgetId, input, model, output]);
@@ -65,6 +66,8 @@ type LinkedChartProps = {
     card: DashboardCard;
     refreshKey: number;
     viewer?: boolean;
+    parametersTarget: HTMLElement | null;
+    onOpenParameters: () => void;
     parentReportsSourceStatus?: boolean;
     store?: typeof tableExecutionStore;
     sourceAncestry?: string[];
@@ -78,7 +81,7 @@ export function LinkedChartRenderer(props: LinkedChartProps) {
     return <LinkedChartView key={JSON.stringify([props.dashboardId, props.card.id, source])} {...props}/>;
 }
 
-function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, sourceAncestry, sourceAcquisitionKey, readCurrentSource, onSettingsChange }: LinkedChartProps) {
+function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parametersTarget, onOpenParameters, parentReportsSourceStatus = false, store = tableExecutionStore, sourceAncestry, sourceAcquisitionKey, readCurrentSource, onSettingsChange }: LinkedChartProps) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
     const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
@@ -86,7 +89,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const source = card.linkedSource?.sourceWidgetId;
     const carried = settings.type === 'bullet' || settings.type === 'waterfall';
     const identity = JSON.stringify([dashboardId, card.id]);
-    const recipe = decodeLinkedChartRecipe(settings, settings.type);
+    const recipe = useMemo(() => decodeLinkedChartRecipe(settings, settings.type), [settings]);
     const mapping = recipe ? JSON.stringify([settings.type, recipe]) : JSON.stringify(settings);
     const editScope = JSON.stringify([identity, source, mapping]);
     const [draft, setDraft] = useState<{ scope: string; kind: RecipeOptions['kind'] }>();
@@ -178,12 +181,13 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const marketForm = editing === 'market-map';
     const marketChart = settings.type === 'market-map';
     const revisionsScope = JSON.stringify([identity, source, sourceAncestry, sourceAcquisitionKey]);
-    const readAcquiredSource = useCallback(() => {
-        if (readCurrentSource) return readCurrentSource();
+    const readFallbackSource = useCallback(() => {
         const current = store.readView(dashboardId, card.id);
         return { view: current, executor: source ? store.readExecutor(dashboardId, source) : undefined,
             sourceCurrent: current.status === 'ready' || current.status === 'empty', card };
-    }, [readCurrentSource, store, dashboardId, card, source]);
+    }, [store, dashboardId, card, source]);
+    // Saving card chrome must not replace the active source-reading job.
+    const readAcquiredSource = readCurrentSource ?? readFallbackSource;
     const etfJob = useEtfSunburstJob((etfChart || etfForm) && readAcquiredSource().sourceCurrent,
         view, executor, source, readAcquiredSource);
     const overlayJob = useMeasuredRecipeJob((overlayChart || overlayForm) && readAcquiredSource().sourceCurrent,
@@ -368,7 +372,12 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const basicAcquiredForm = ownershipForm || returnForm || editing === 'news-sentiment-calendar';
     const awaitingSync = (basicAcquiredChart || basicAcquiredForm) && (view.status === 'ready' || view.status === 'empty')
         && !readAcquiredSource().sourceCurrent;
-    return <div className={'linked-chart-renderer'
+    // Draft probes measure this drawing body even while their settings are hidden.
+    const [probeTarget, setProbeTarget] = useState<HTMLDivElement | null>(null);
+    const openRepair = viewer ? undefined : onOpenParameters;
+    const needsFieldRepair = legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused
+        && view.status !== 'pending' && view.status !== 'updating';
+    return <div ref={setProbeTarget} className={'linked-chart-renderer'
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
       + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
@@ -378,7 +387,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
       + (marketForm || marketChart ? ' linked-chart-renderer--market' : '')}>
     {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
       className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
-    {!viewer ? <div className="chart-controls">
+    {!viewer ? <LinkedParametersPortal target={parametersTarget}><div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={editing} onChange={e => {
         const type = e.target.value as LinkedChartSettings['type'];
         if (isRecipeType(type)) {
@@ -393,18 +402,18 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {basicAcquiredForm && awaitingSync ? null : marketForm ? <MarketMapControls key={acquiredScope} job={marketJob} context={measuredDraftContext}
+      {basicAcquiredForm && awaitingSync ? null : marketForm ? <MarketMapControls probeTarget={probeTarget} key={acquiredScope} job={marketJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'market-map' ? recipe.options : undefined}
-        onApply={applyClosedRecipe}/> : revisionsForm ? <EstimateRevisionsControls key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
+        onApply={applyClosedRecipe}/> : revisionsForm ? <EstimateRevisionsControls probeTarget={probeTarget} key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'estimate-revisions' ? recipe.options : undefined}
-        onApply={applyClosedRecipe}/> : overlayForm ? <DualAxisOverlayControls key={acquiredScope} job={overlayJob} context={measuredDraftContext}
+        onApply={applyClosedRecipe}/> : overlayForm ? <DualAxisOverlayControls probeTarget={probeTarget} key={acquiredScope} job={overlayJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'dual-axis-overlay' ? recipe.options : undefined}
-        onApply={applyClosedRecipe}/> : etfForm ? <EtfSunburstControls key={acquiredScope} job={etfJob} context={measuredDraftContext}
+        onApply={applyClosedRecipe}/> : etfForm ? <EtfSunburstControls probeTarget={probeTarget} key={acquiredScope} job={etfJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'etf-sunburst' ? recipe.options : undefined}
-        onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls key={acquiredScope} columns={presented}
+        onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls probeTarget={probeTarget} key={acquiredScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
+        onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext}
         loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
@@ -417,7 +426,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}
       {settings.type !== 'pie' && settings.type !== 'bullet' && settings.type !== 'waterfall' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}
       </>}
-    </div> : null}
+    </div></LinkedParametersPortal> : null}
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}
     {!isRecipeType(settings.type) && recipe && !recipe.ok && <p role="status">{recipe.message}</p>}
@@ -426,24 +435,26 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     {legacy && noMatches ? <p role="status">No selected series match the current filter.</p> : null}
     {legacy && refused ? <p role="status">{refused}</p> : null}
     {legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused ? <p role="status">{carried && source && (view.sourceRevision?.widgetId !== source || view.status === 'pending' || view.status === 'updating') ? `Loading source ${source}…` : view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
+    {(needsFieldRepair || (legacy && (error || refused) && !figure) || (recipe && !recipe.ok)) &&
+      <OpenLinkedParameters onOpen={openRepair}/>}
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
     {isRecipeType(settings.type) && (recipe?.ok
       ? (recipe.options.kind === 'market-map'
         ? <LinkedMarketMap key={acquiredScope} view={view} job={marketJob} options={recipe.options}
-            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus} onOpenParameters={openRepair}/>
         : recipe.options.kind === 'etf-sunburst'
         ? <LinkedEtfSunburst key={acquiredScope} view={view} job={etfJob} options={recipe.options} sourceId={source}
-            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus} onOpenParameters={openRepair}/>
         : recipe.options.kind === 'dual-axis-overlay'
           ? <LinkedDualAxisOverlay key={acquiredScope} view={view} job={overlayJob} options={recipe.options}
-              context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+              context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus} onOpenParameters={openRepair}/>
           : recipe.options.kind === 'estimate-revisions'
             ? <LinkedEstimateRevisions key={revisionsScope} view={view} job={revisionsJob} options={recipe.options}
-                context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+                context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus} onOpenParameters={openRepair}/>
             : basicAcquiredChart && awaitingSync ? <p role="status">Waiting for the source to synchronize.</p>
-            : <FinancialChart key={basicAcquiredChart ? acquiredScope : editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
-      : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
+            : <FinancialChart key={basicAcquiredChart ? acquiredScope : editScope} parentReportsSourceStatus={parentReportsSourceStatus} onOpenParameters={openRepair} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
+      : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}{!recipe && <> <OpenLinkedParameters onOpen={openRepair}/></>}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;
 }
@@ -464,7 +475,7 @@ function DatasetStatus({ dataset, notes, source, showCompleteness = true }: { da
 
 type FinancialProps = {
   view: ViewState; source?: string; executor?: LocalWorkerExecutor; options: RecipeOptions;
-  theme: 'dark' | 'light'; maxDecimals: number; parentReportsSourceStatus: boolean;
+  theme: 'dark' | 'light'; maxDecimals: number; parentReportsSourceStatus: boolean; onOpenParameters?: () => void;
 };
 function FinancialChart(props: FinancialProps) {
   const { source, view, executor, options } = props;
@@ -474,19 +485,19 @@ function FinancialChart(props: FinancialProps) {
   }
   const emptyAllowed = (options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && view.ready.topLevelCount === 0;
   const issue = emptyAllowed ? undefined : savedBindingIssue(options, view.ready.columns);
-  if (issue) return <p role="alert">{issue}</p>;
+  if (issue) return <><p role="alert">{issue}</p><OpenLinkedParameters onOpen={props.onOpenParameters}/></>;
   const completeness = view.ready.completeness.kind;
   switch (options.kind) {
     case 'drawdown': case 'yield-curve': case 'monthly-returns': case 'correlation':
     case 'return-distribution': case 'small-multiples':
       if (completeness !== 'complete' && completeness !== 'bounded')
-        return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
+        return <><p role="status">The source must be fully loaded. Acquisition is {completeness}.</p><OpenLinkedParameters onOpen={props.onOpenParameters}/></>;
   }
   return <WorkerChart {...props} source={source} executor={executor} ready={view.ready} revision={view.sourceRevision}/>;
 }
 
 /** Mounted for one saved question. Keep its last completed figure through a transient refresh failure. */
-function WorkerChart({ view, source, executor, ready, revision, options, theme, maxDecimals, parentReportsSourceStatus }: FinancialProps & {
+function WorkerChart({ view, source, executor, ready, revision, options, theme, maxDecimals, parentReportsSourceStatus, onOpenParameters }: FinancialProps & {
   source: string; executor: LocalWorkerExecutor; ready: NonNullable<ViewState['ready']>; revision: NonNullable<ViewState['sourceRevision']>;
 }) {
   const worker = useRef<ReturnType<typeof createRecipeWorker> | undefined>(undefined);
@@ -578,6 +589,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
       : stale && !(parentReportsSourceStatus && view.stale) && <p role="status">Updating chart — showing completed data (stale).</p>}
     {!completed && !error && !view.error && <p role="status">Calculating chart…</p>}
     {completed && !completed.result.ok && <p role={completed.result.refused ? 'status' : 'alert'}>{completed.result.message}</p>}
+    {(error || (completed && !completed.result.ok)) && <OpenLinkedParameters onOpen={onOpenParameters}/>}
     {completed?.result.ok && options.kind === 'small-multiples' && <>
       <p>{panels} {panels === 1 ? 'panel' : 'panels'} · {options.symbols.join(', ')}</p>
       {completed.data.completeness.acquiredRowCount !== undefined && completed.data.rows.length < completed.data.completeness.acquiredRowCount &&

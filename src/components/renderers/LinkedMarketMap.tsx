@@ -14,6 +14,8 @@ import type { MarketMapOptions, RecipeContext } from '../../lib/widgetData/chart
 import { marketMapMinPlotHeight, marketMapMinPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import { ChartRenderer } from './ChartRenderer';
 import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
+import { createPortal } from 'react-dom';
+import { OpenLinkedParameters } from './LinkedParametersPortal';
 
 const sourceProblem = 'Relink a verified local market-map acquisition with a completed session and acquired capitalization or index weights.';
 const inputOrigins = new Set<string>([...marketMapFieldOrigins, ...marketMapIdentityFields]);
@@ -27,7 +29,8 @@ export function marketMapInputFields(columns: DatasetColumn[], options?: MarketM
     .map(column => column.id))];
 }
 
-export function MarketMapControls({ saved, context, job, disabled, onApply }: {
+export function MarketMapControls({ probeTarget, saved, context, job, disabled, onApply }: {
+  probeTarget: HTMLElement | null;
   saved?: MarketMapOptions; context: RecipeContext; job?: Job; disabled: boolean;
   onApply: (options: MarketMapOptions, guard: () => boolean) => void;
 }) {
@@ -76,12 +79,11 @@ export function MarketMapControls({ saved, context, job, disabled, onApply }: {
     : source && !decoded.ok ? decoded.message
       : checked && !checked.ok ? checked.message : undefined);
 
-  return <details className="market-map-settings" open={!saved}>
-    <summary>Market map settings</summary>
-    <div className="market-map-draft-probe" aria-hidden="true" ref={surface.element}>
+  return <>
+    {probeTarget && createPortal(<div className="market-map-draft-probe" aria-hidden="true" ref={surface.element}>
       <ChartRenderer data={null} scrollHeight={marketMapMinPlotHeight} minPlotWidth={marketMapMinPlotWidth}
         onDrawingSurfaceChange={surface.observe}/>
-    </div>
+    </div>, probeTarget)}
     <fieldset className="market-map-controls" aria-label="Market map settings" disabled={disabled}>
       <label>Area basis <select value={mode} onChange={event => {
         setMode(event.target.value === 'index-weight' ? 'index-weight' : 'delivered-cap');
@@ -110,7 +112,7 @@ export function MarketMapControls({ saved, context, job, disabled, onApply }: {
         if (candidate && checked?.ok && current()) onApply(candidate, current);
       }}>Apply chart settings</button>
     </fieldset>
-  </details>;
+  </>;
 }
 
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17 });
@@ -143,15 +145,16 @@ function MarketMapDetails({ map, level }: { map: MarketMapHierarchy; level: stri
   </details>;
 }
 
-export function LinkedMarketMap({ view, job, options, context, parentReportsSourceStatus }: {
-  view: ViewState; job?: Job; options: MarketMapOptions; context: RecipeContext; parentReportsSourceStatus: boolean;
+export function LinkedMarketMap({ view, job, options, context, parentReportsSourceStatus, onOpenParameters }: {
+  view: ViewState; job?: Job; options: MarketMapOptions; context: RecipeContext; parentReportsSourceStatus: boolean; onOpenParameters?: () => void;
 }) {
   const surface = useMeasuredRecipeSurface(context);
-  const { completed, checked } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
+  const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
   const retained = completed?.result.ok && completed.request.options === options && view.stale
     && ['pending', 'updating', 'blocked', 'failed'].includes(view.status)
     && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained ? completed.result : checked;
+  const result = retained || remeasuring ? completed?.result : checked;
+  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok ? result : undefined;
   const map = output?.marketMap;
   const revision = output?.revision;
@@ -165,14 +168,14 @@ export function LinkedMarketMap({ view, job, options, context, parentReportsSour
     if (revision && (id === '' || id === root || sectors?.some(node => node.id === id))) setDrill({ revision, id });
   }, [revision, root, sectors]);
   const drawable = useMemo(() => {
-    if (!output || !surface.measured) return;
-    const { box } = surface.measured;
+    if (!output || !drawing) return;
+    const box = drawing;
     if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     const [trace] = output.figure.data as Record<string, unknown>[];
     return { data: [{ ...trace, level }], layout: {
       ...output.figure.layout, width: box.width, height: box.height, autosize: false,
     } };
-  }, [output, surface.measured, level, retained, completed]);
+  }, [output, drawing, level, retained, completed]);
 
   return <>
     <div className="linked-chart-status">
@@ -180,6 +183,7 @@ export function LinkedMarketMap({ view, job, options, context, parentReportsSour
       {!result && !view.error && <p role="status">{job ? 'Calculating market map…' : 'Loading the linked market snapshot…'}</p>}
       {view.error && !parentReportsSourceStatus && <p role="alert">{view.error}</p>}
       {result && !result.ok && <p role={result.refused ? 'status' : 'alert'}>{result.message}</p>}
+      {result && !result.ok && <OpenLinkedParameters onOpen={onOpenParameters}/>}
       {map && <div role="status">
         {output?.notes.map(note => <p key={note}>{note}</p>)}
         {map.mode === 'index-weight' && <p>Acquired weights attested valid for {map.session}.</p>}

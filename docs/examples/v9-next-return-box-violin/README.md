@@ -1,5 +1,7 @@
 # Return summaries
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 Requires BDOBB 9.0.0 or later with the Return summaries chart. The two listings and their adjusted prices are synthetic.
 
 1. Import [the example Workspace](../v9-next-return-box-violin.apps.json).

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import type overlaySnapshots from '../../src/test/fixtures/overlaySnapshots.json';
 import type { DualAxisOverlayOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dashboardSeed, isDiscoveryRequest, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 import { dropFile } from './return-summary';
 
 export const workspace = 'Overlay fixtures';
@@ -54,13 +54,7 @@ export function dataRequests(page: Page, appURL: string) {
 }
 
 export async function chooseOverlaySource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  await card(page, chartName).getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — ' + tab });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, chartName), name + ' — ' + tab);
 }
 
 export async function attachOverlay(page: Page, content: unknown, name = sampleName) {

@@ -60,7 +60,7 @@ export function useMeasuredRecipeJob<T extends RecipeOptions>(
   }, [sourceId, sourceCurrent, ready, revision, executor, readCurrent, inputFields, sourceLabel]);
 }
 
-type Measured = { box: DrawingSurface; context: RecipeContext };
+type Measured = { box: DrawingSurface; context: RecipeContext; baseContext: RecipeContext };
 type Sequence<T> = { job: MeasuredRecipeJob<T>; options: T };
 type Request<T> = Sequence<T> & { measured: Measured };
 
@@ -70,7 +70,9 @@ export function useMeasuredRecipeSurface(context: RecipeContext) {
   const observe = useCallback((size: DrawingSurface) => {
     setBox(previous => sameRecipeSurface(previous, size) ? previous : size);
   }, []);
-  const measured = useMemo(() => box && { box, context: { ...context, viewportWidth: box.width, viewportHeight: box.height } }, [box, context]);
+  const measured = useMemo(() => box && {
+    box, baseContext: context, context: { ...context, viewportWidth: box.width, viewportHeight: box.height },
+  }, [box, context]);
   const matches = useCallback((box: DrawingSurface) => {
     const surface = element.current?.querySelector('.chart-plot');
     return !!surface && sameRecipeSurface(readDrawingSurface(surface), box);
@@ -117,6 +119,12 @@ export function useMeasuredRecipe<T extends RecipeOptions>(job: MeasuredRecipeJo
     }).catch(error => finish({ ok: false, message: recipeErrorText(error) }));
     return () => controller.abort();
   }, [sequence, request, current]);
-  return { completed, current, checked: request && completed?.request === request ? completed.result : undefined,
+  const checked = request && completed?.request === request ? completed.result : undefined;
+  // Applied views can keep an admitted figure at its original size while
+  // the same question is checked at a new size. Draft Apply still uses checked.
+  const remeasuring = !!request && !checked && completed?.result.ok === true
+    && completed.request.job === request.job && completed.request.options === request.options
+    && completed.request.measured.baseContext === request.measured.baseContext;
+  return { completed, current, checked, remeasuring,
     minimum: sizing?.sequence === sequence ? sizing?.minimum : undefined };
 }

@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dropFile } from './fixtures/return-summary';
 import {
   attachPartition, backendOrigin, backendPath, backendPayload, backendTable, bars, chartName, chooseOwnershipSource,
@@ -104,6 +104,8 @@ test('defaults to independently labeled bars and exports a backend question that
   await expect(barsDrawn(graph)).toHaveCount(1);
   const initialRequests = acquisitions.length;
   expect(initialRequests).toBeGreaterThan(0);
+  await captureParameters(widget, 'Chart type', file => info.outputPath('basic-' + file));
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption('ownership-snapshot');
   await expect(widget.getByLabel('Ownership view')).toHaveValue('bars');
   await expect(widget.getByRole('option', { name: 'Waffle' })).toHaveAttribute('disabled', '');
@@ -114,7 +116,13 @@ test('defaults to independently labeled bars and exports a backend question that
   await expect(widget.getByLabel('Free float')).toHaveCount(0);
   await apply(widget).click();
   await expect(barsDrawn(graph)).toHaveCount(2);
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await captureParameters(widget, 'Ownership view', file => info.outputPath(file));
   await expect(graph.locator('.ytick text')).toHaveText([/Insider ownership/, /Institutional\s*ownership/, /Free float.*Unavailable/]);
+  await expect.poll(async () => {
+    const size = await drawing(graph);
+    return Math.abs(size.height - size.canvas[1]);
+  }).toBeLessThan(.5);
   const actual = await drawing(graph);
   expect(actual.probe).toEqual(actual.canvas);
   expect(actual.width).toBeCloseTo(actual.canvas[0], 0);
@@ -169,6 +177,7 @@ test('refuses a remote prepared envelope and preserves one stale parent alert af
   const widget = card(page, chartName), graph = plot(page, chartName);
   await expect(widget).toContainText(/verified field and issuer evidence/i);
   await expect(graph).toHaveCount(0);
+  await openParameters(widget);
   await expect(apply(widget)).toBeDisabled();
   answer = proven;
   await refresh(page);
@@ -216,6 +225,7 @@ test('keeps an applied 100-cell local waffle and exact keyboard values through a
   await expect(values).toContainText('employees · 33.3% reported · 33 of 100 cells');
   await expect(widget).toContainText('100 cells at 1% visual granularity');
   await expect(widget).toContainText('Retrieved 2026-11-20T04:16:46Z');
+  await openParameters(widget);
   await widget.getByLabel('Ownership view').selectOption('bars');
   await expect(widget).toContainText(/acquire independent ownership measures for bars/i);
   await expect(apply(widget)).toBeDisabled();
@@ -343,6 +353,7 @@ test('refuses attached-file export, then exports and repairs an unavailable issu
   const widget = card(fresh, chartName), graph = plot(fresh, chartName);
   await expect(graph).toHaveCount(0);
   await attachPartition(fresh, 'new-ownership-register.json', partition('ANOTHER.US'));
+  await openParameters(widget);
   await expect(widget.getByLabel('Acquired issuer')).toHaveValue('EXAMPLE.US');
   await expect(widget.getByRole('option', { name: 'EXAMPLE.US (unavailable)' })).toHaveAttribute('disabled', '');
   await expect(widget).toContainText(/choose the acquired issuer ANOTHER\.US/i);

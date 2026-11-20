@@ -1,5 +1,7 @@
 # News sentiment calendar example
 
+The calendar opens with Parameters closed. Use **Show parameters** on the card to change the window or review its article fields.
+
 From this directory, start the fictional CompanyNews server with Python 3.
 
 ```sh

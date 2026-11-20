@@ -24,6 +24,8 @@ It has its own sorting, filters, columns and **Pivot** drawer, saved with the ca
 
 ## A linked chart
 
+Use the card’s **Show parameters** chevron to open **Parameters**, where you can choose the source, chart type and settings. Examples open with the panel closed. Closing it keeps the draft and the applied chart.
+
 For Columns, Bars, Lines and Pie, choose a **Category** and one or more **Measures**. Columns and Bars support grouped, stacked and percentage displays. The controls for each financial chart depend on its source.
 
 - **Drawdown** measures the percentage decline from the highest adjusted close seen in the loaded history for each chosen symbol. The area breaks at a missing price.
@@ -38,7 +40,7 @@ For the five recipe charts, select the presented fields and choose **Apply chart
 
 ## Changing or losing the source
 
-**Choose source** — in the `⋯` menu of a linked card, and as a button in its body — opens the same dialog to point it at another table. There is no unlink: to stop following a source, remove the card.
+In a linked chart or metric, open **Parameters** and select **Choose source**. In a linked table, select **Choose source** from its body or `⋯` menu. Both open the source table dialog. To stop following a source, remove the linked card.
 
 While the source is updating, the card keeps showing *Showing completed data (stale).* If the source is removed or stops being eligible, the card reads *Source unavailable* until you choose another.
 

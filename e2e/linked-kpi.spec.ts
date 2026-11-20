@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { isDiscoveryRequest, openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dropFile } from './fixtures/return-summary';
 import {
   attachEps, backendOrigin, backendPath, chooseKpiSource, epsFile, epsGauge, fictionalResponse,
@@ -12,7 +12,6 @@ import {
 
 const apply = (widget: Locator) => widget.getByRole('button', { name: 'Apply KPI settings' });
 const details = (widget: Locator) => widget.getByText('KPI details', { exact: true });
-const edit = (widget: Locator) => widget.getByText('KPI settings', { exact: true });
 const tip = (graph: Locator) => graph.locator('.hoverlayer');
 const value = (widget: Locator) => widget.locator('.metric-value');
 const outline = (graph: Locator) => graph.locator('.gauge-outline rect');
@@ -63,7 +62,9 @@ test('default card selects a certified headline explicitly and imports a fresh a
   const requests = trackDataRequests(page, baseURL!);
   const acquisitions = await prepareKpi(page, { backend: true });
   const widget = card(page, metricName), graph = plot(page, metricName);
-  await expect(widget.getByLabel('KPI preset')).toBeVisible();
+  await expect(widget.getByLabel('KPI preset')).toBeHidden();
+  const parameters = await openParameters(widget);
+  await expect(parameters.getByLabel('KPI preset')).toBeVisible();
   await expect(widget.getByRole('option', { name: 'Trailing dividend yield' })).not.toHaveAttribute('disabled', '');
   const baseline = acquisitions.length;
   expect(baseline).toBeGreaterThan(0);
@@ -105,7 +106,7 @@ test('default card selects a certified headline explicitly and imports a fresh a
   expect(fetched).toHaveLength(baseline);
   expect(importedRequests.filter(request => !isDiscoveryRequest(request))).toEqual(Array(baseline).fill(url));
   const imported = card(fresh, metricName);
-  await edit(imported).click();
+  await openParameters(imported);
   await imported.getByLabel('Reference', { exact: true }).selectOption('user-target');
   await imported.getByLabel('User target', { exact: true }).fill('0.0035');
   await apply(imported).click();
@@ -123,6 +124,7 @@ test('missing evidence disables Apply and an incompatible exact draft keeps the 
   await expect(widget.getByRole('alert')).toContainText('Source source:');
   await dropFile(page, 'ordinary-rows.json', JSON.stringify([{ eps_ttm: 11, issuer: 'EXAMPLE.US' }]));
   await chooseKpiSource(page, 'ordinary-rows.json');
+  await openParameters(widget);
   await expect(widget.getByRole('alert')).toContainText(/verified KPI observation/i);
   await expect(apply(widget)).toBeDisabled();
   await expect(value(widget)).toHaveCount(0);
@@ -139,11 +141,13 @@ test('missing evidence disables Apply and an incompatible exact draft keeps the 
   await expectContrast(graph.locator('.annotation-text').nth(1));
   await expectContrast(tip(graph).locator('.hovertext text').first(), true);
   await widget.screenshot({ path: info.outputPath('kpi-gauge-light.png') });
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await captureParameters(widget, 'Range maximum', file => info.outputPath(file));
   await details(widget).focus();
   await page.keyboard.press('Enter');
   await expect(widget.getByRole('list', { name: 'KPI values and evidence' })).toContainText('2025-10-01 to 2026-09-30');
   await expect(widget.getByRole('list', { name: 'KPI values and evidence' })).toContainText('76.544 USD per share');
-  if (!(await widget.getByLabel('Range minimum').isVisible())) await edit(widget).click();
+  await openParameters(widget);
   await widget.getByLabel('Range minimum').fill('-1e308');
   await widget.getByLabel('Range maximum').fill('1e308');
   await expect(widget).toContainText(/gauge geometry cannot distinguish/i);
@@ -188,6 +192,7 @@ test('local export retains the standard file guard and an imported pin requires 
   await attachEps(fresh, filename, epsFile(0, true));
   await expect(widget.getByRole('alert')).toContainText(/pinned KPI observation is unavailable/i);
   await expect(value(widget)).toHaveCount(0);
+  await openParameters(widget);
   await expect(widget.getByLabel('Observation', { exact: true })).toHaveValue('revised-report');
   await widget.getByLabel('Observation', { exact: true }).selectOption('first-report');
   await widget.getByLabel('Reference', { exact: true }).selectOption('none');

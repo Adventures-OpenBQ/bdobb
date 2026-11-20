@@ -1,6 +1,6 @@
 # Next-chart review record
 
-**Final independent review pending.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review must also cover the subsequent common acquisition-ownership fix and the installed Docker pair.
+**Final independent review pending.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review must also cover the common acquisition-ownership fixes, the linked Parameters amendment and the installed Docker pair.
 
 | Family | Findings resolved during family reviews | Accepted client source / builder / integration |
 |---|---|---|
@@ -43,4 +43,11 @@ Client `dc974141` records the known connection, endpoint, result selector and cr
 
 The independent review at `f8b53b92` found that an explicit Run for another symbol could wait on next year's trading calendar while the previous source remained eligible for reuse. Reverting the draft to AAPL during that hold reactivated December 29 rows even though TSLA was now the committed question. It also found that changing a backend scheme from `http` to `HTTP` discarded a valid stale result on refresh failure.
 
-Client `94e58600` retires the prior backend request when a different explicit Run is armed. The dated parent regression distinguishes edit/revert without Run from edit/revert after Run while the same real calendar response is held. Valid preflight and resolved URLs now share parsed URL semantics. An invalid replacement still fails through the source's normal error path. Scoped independent re-review, the separate Parameters-panel change and whole-group review are pending.
+Client `94e58600` retires the prior backend request when a different explicit Run is armed. The dated parent regression distinguishes edit/revert without Run from edit/revert after Run while the same real calendar response is held. Valid preflight and resolved URLs now share parsed URL semantics. An invalid replacement still fails through the source's normal error path. The scoped independent review of `f8b53b92..ed00fde3` accepted both corrections and found no new source-ownership or worker protocol breakage.
+
+
+## Linked Parameters amendment
+
+The approved baseline is `4669b763`. Regression tests first found visible controls on closed linked chart cards and an empty Parameters region in the viewer. Browser checks also found an applied ETF plot and expanded holdings remounting during a geometry change. The chart now keeps its admitted drawing at the original measured dimensions during a same-source, same-settings recheck. The exact new size still needs worker admission before a redraw or Apply.
+
+The amendment's scoped independent review and the final whole-group review are pending.

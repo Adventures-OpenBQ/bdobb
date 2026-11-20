@@ -1,5 +1,7 @@
 # Market map examples
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 1. Import the [Workspace template](../v9-next-market-map.apps.json).
 2. On **Delivered capitalization**, drop the [fictional capitalization snapshot](fictional-capitalization.json). On **Named index**, drop the [fictional index snapshot](fictional-index.json). Use **Choose source** on each chart to attach the matching dropped table.
 3. Hover or tap a tile to see the original values. Click or tap a sector again to drill. Use **Sector view** and **Home** to navigate with the keyboard. Open **Market map details** to read every original listing, area and return in the current view.

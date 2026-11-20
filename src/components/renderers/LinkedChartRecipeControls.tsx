@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { bindingRoles, bindingCandidates, isIncomePeriodColumn, ownershipBarLabels, ownershipBindingRoles } from '../../lib/widgetData/chartRecipes/bindings';
 import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
@@ -117,12 +118,12 @@ function useAcquiredInput(load: LoadAcquiredInput | undefined) {
 }
 
 export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext,
-  loadReturnListings, loadReturnDraft, returnDraftContext, disabled, onApply }: {
+  loadReturnListings, loadReturnDraft, returnDraftContext, probeTarget, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
   loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadAcquiredInput;
   loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext;
   loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
-  disabled: boolean; onApply: (options: RecipeOptions) => void;
+  probeTarget?: HTMLElement | null; disabled: boolean; onApply: (options: RecipeOptions) => void;
 }) {
   const draftWorker = useRef<DraftWorker | undefined>(undefined);
   useEffect(() => () => { draftWorker.current?.dispose(); draftWorker.current = undefined; }, []);
@@ -322,10 +323,10 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
         onChange={e => setSymbols(e.target.checked ? [...symbols, s] : symbols.filter(v => v !== s))}/>{s}</label>)}
     </fieldset>}
     {returns && <>
-      <div aria-hidden="true" className="return-summary-draft-probe" ref={returnProbe}>
+      {probeTarget && createPortal(<div aria-hidden="true" className="return-summary-draft-probe" ref={returnProbe}>
         <ChartRenderer data={undefined} scrollHeight={returnSummaryPlotHeight} minPlotWidth={minimumPlotWidth}
           onDrawingSurfaceChange={measureReturn}/>
-      </div>
+      </div>, probeTarget)}
       <fieldset className="return-summary-listings"><legend>Acquired listings</legend>
         {[...new Set([...symbols, ...(current?.values ?? [])])].map(symbol => {
           const selected = symbols.includes(symbol);
@@ -356,10 +357,10 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     </select></label>}
     {kind === 'correlation' && <><label>Lookback<input type="number" min="3" value={lookback} onChange={e => setLookback(e.target.value)}/></label>
       <label>Minimum overlap<input type="number" min="3" max={lookback} value={overlap} onChange={e => setOverlap(e.target.value)}/></label></>}
-    {news && roleList.length > 0 && <details className="news-calendar-fields">
-      <summary>Article fields</summary>
-      <div>{bindingInputs}</div>
-    </details>}
+    {news && roleList.length > 0 && <fieldset className="news-calendar-fields">
+      <legend>Article fields</legend>
+      {bindingInputs}
+    </fieldset>}
     {problem && <p role="status">{problem}</p>}
     {announcingDraftCheck && <span className="sr-only" role="status">{news ? 'Checking calendar draft…' : 'Checking return draft…'}</span>}
     <button type="button" disabled={!!problem || checkingDraft} aria-busy={announcingDraftCheck || undefined}
@@ -380,8 +381,8 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   </fieldset>;
 }
 
-export function OwnershipRecipeControls({ saved, columns, loadInput, loadDraft, context, disabled, onApply }: {
-  saved?: OwnershipSnapshotOptions; columns: DatasetColumn[]; loadInput: LoadAcquiredInput;
+export function OwnershipRecipeControls({ probeTarget, saved, columns, loadInput, loadDraft, context, disabled, onApply }: {
+  probeTarget: HTMLElement | null; saved?: OwnershipSnapshotOptions; columns: DatasetColumn[]; loadInput: LoadAcquiredInput;
   loadDraft: LoadDraft<OwnershipSnapshotOptions>; context: RecipeContext;
   disabled: boolean; onApply: (options: OwnershipSnapshotOptions) => void;
 }) {
@@ -429,10 +430,10 @@ export function OwnershipRecipeControls({ saved, columns, loadInput, loadDraft, 
   const issue = problem ?? (!decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
   const checking = !!candidate && !checked;
   return <fieldset disabled={disabled} className="ownership-recipe-controls"><legend>Ownership snapshot settings</legend>
-    <div aria-hidden="true" className="ownership-draft-probe" ref={probe}>
+    {probeTarget && createPortal(<div aria-hidden="true" className="ownership-draft-probe" ref={probe}>
       <ChartRenderer data={undefined} scrollHeight={ownershipPlotHeight} minPlotWidth={minimumWidth}
         onDrawingSurfaceChange={measure}/>
-    </div>
+    </div>, probeTarget)}
     <label>Acquired issuer<select value={issuer} onChange={event => setSelectedIssuer(event.target.value)}>
       {!issuer && <option value="">Awaiting acquired issuer</option>}
       {unavailableIssuer && <option value={issuer} disabled>{issuer} (unavailable)</option>}

@@ -593,6 +593,16 @@ describe("docs/examples", () => {
     expect(dashboards).toHaveLength(apps.length);
   });
 
+  it.each(files.filter(file => file.startsWith("v9-next-")))("%s imports linked presentation Parameters closed", file => {
+    const { apps, ids } = load(file);
+    const registry = [...new Set(ids)].map(id => BUILTIN_WIDGETS.find(builtIn => builtIn.id === id) ?? widget(id));
+    const { dashboards } = importApps(apps, registry);
+    const linked = dashboards.flatMap(dashboard => dashboard.tabs.flatMap(tab => tab.cards))
+      .filter(card => card.widgetId === LINKED_CHART_ID || card.widgetId === LINKED_METRIC_ID);
+    expect(linked.length).toBeGreaterThan(0);
+    for (const card of linked) expect(card).not.toHaveProperty("paramsOpen");
+  });
+
   // N2: a sample dashboard exists for every embedded widget, pinned so a new
   // built-in fails the gate until it has a card in the example. v8: News is a
   // v8 built-in whose state needs the v8 envelope, so its sample is the v8

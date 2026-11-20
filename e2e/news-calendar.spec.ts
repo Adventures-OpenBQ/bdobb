@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { importNews, newsChart, newsManifest, newsPayload, newsTable, newsWorkspace } from './fixtures/news-calendar';
 
 type Axis = { _offset: number; range: number[]; c2p: (coordinate: number) => number };
@@ -47,9 +47,19 @@ test('shows the acquired page, original cell values and keyboard details without
   await ready(graph);
   const initiallyAcquired = acquisitions.length;
   expect(initiallyAcquired).toBeGreaterThan(0);
-  await expect(widget.getByLabel('Chart type')).toHaveValue('news-sentiment-calendar');
+  await captureParameters(widget, 'Acquired instrument', file => info.outputPath(file));
+  await expect(widget.getByLabel('Chart type')).toBeHidden();
+  await expect(widget.getByLabel('Acquired instrument')).toBeHidden();
+  await widget.getByRole('button', { name: 'Show parameters' }).click();
+  const parameters = widget.getByRole('region', { name: 'Parameters' });
+  await expect(parameters.getByRole('button', { name: 'Choose source' })).toBeFocused();
+  await expect(parameters.getByLabel('Chart type')).toHaveValue('news-sentiment-calendar');
+  await expect(parameters.getByRole('group', { name: 'Article fields' })).toBeVisible();
+  const revision = await graph.evaluate(node => (node as Graph)._fullLayout.uirevision);
   await expect(widget.getByLabel('Acquired instrument')).toHaveValue('CANOPY.US');
   await expect(widget.getByLabel('Acquired instrument').locator('option')).toHaveCount(1);
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await ready(graph);
   await expect(widget).toContainText('5 delivered articles · 4 scored in this calendar view.');
   await expect(widget).toContainText('Acquired page limit 10, offset 0');
   await expect(widget).toContainText('Retrieved 2026-11-19T16:00:00Z');
@@ -80,6 +90,7 @@ test('shows the acquired page, original cell values and keyboard details without
   await page.keyboard.press('Enter');
   await expect(widget.getByRole('list', { name: 'Presented article values' })).toContainText('Unscored');
   expect(acquisitions).toHaveLength(initiallyAcquired);
+  expect(await graph.evaluate(node => (node as Graph)._fullLayout.uirevision)).toBe(revision);
 });
 
 test('keeps the applied window through an incompatible draft, then reacquires a pinned export on a new page', async ({ page, context }) => {
@@ -89,11 +100,20 @@ test('keeps the applied window through an incompatible draft, then reacquires a 
   await ready(graph);
   const initiallyAcquired = acquisitions.length;
   expect(initiallyAcquired).toBeGreaterThan(0);
+  await openParameters(widget);
   const windowMode = widget.getByLabel('Calendar window');
   await windowMode.selectOption('pinned');
   const start = widget.getByLabel('Start date');
   const end = widget.getByLabel('End date');
   await start.fill('2024-01-01');
+  const question = await graph.evaluate(node => (node as Graph)._fullLayout.uirevision);
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await expect(start).toBeHidden();
+  await ready(graph);
+  await openParameters(widget);
+  await expect(start).toHaveValue('2024-01-01');
+  expect(await graph.evaluate(node => (node as Graph)._fullLayout.uirevision)).toBe(question);
+  expect(acquisitions).toHaveLength(initiallyAcquired);
   await expect(apply(widget)).toBeDisabled();
   await expect(widget).toContainText('The pinned window is outside the acquired calendar dates.');
   await ready(graph);
@@ -149,6 +169,7 @@ test('keeps the applied window through an incompatible draft, then reacquires a 
   await offset.fill('10');
   await offset.press('Tab');
   await expect(reopenedPlot).toHaveCount(0);
+  await openParameters(reopenedWidget);
   await expect(reopenedWidget.getByLabel('Start date')).toHaveValue('2026-11-15');
   await expect(apply(reopenedWidget)).toBeDisabled();
   await reopenedWidget.getByLabel('Calendar window').selectOption('latest-12-months');
@@ -166,7 +187,9 @@ test('clears a chart applied without the receipt and leaves refresh errors with 
   await importNews(page, newsManifest, () => answer);
   const widget = card(page, newsChart);
   const graph = plot(page, newsChart);
-  await expect(widget).toContainText('Acquire CompanyNews with verified article identity, dates and polarity evidence.');
+  await expect(widget.locator('.card-body')).toContainText('Acquire CompanyNews with verified article identity, dates and polarity evidence.');
+  await expect(widget.getByRole('button', { name: 'Open Parameters', exact: true })).toBeVisible();
+  await openParameters(widget);
   await expect(apply(widget)).toBeDisabled();
   await expect(graph).toHaveCount(0);
   answer = payload;
@@ -255,7 +278,7 @@ test('lets touch scroll a short calendar and still inspect its cells after movin
   try {
     const page = await context.newPage();
     const short = JSON.parse(newsManifest);
-    short[0].tabs['news-calendar'].layout[0].h = 16;
+    short[0].tabs['news-calendar'].layout[0].h = 15;
     await page.emulateMedia({ colorScheme: 'dark' });
     await importNews(page, JSON.stringify(short));
     const widget = card(page, newsChart);
@@ -296,6 +319,7 @@ async function expectDraftRefused(page: Page, reason: string, savedWindow: strin
   const widget = card(page, newsChart);
   const graph = plot(page, newsChart);
   await ready(graph);
+  await openParameters(widget);
   await expect(apply(widget)).toBeEnabled();
   const revision = await graph.evaluate(node => (node as Graph)._fullLayout.uirevision);
   await expect.poll(() => widget.evaluate(node => node.querySelector('.news-calendar-width-probe')!.clientWidth

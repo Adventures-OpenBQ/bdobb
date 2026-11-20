@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dropFile } from './fixtures/return-summary';
 import {
   attachOverlay, chartName, chooseOverlaySource, dataRequests, macroRecipe, placeholder,
@@ -11,7 +11,6 @@ import {
 } from './fixtures/dual-axis-overlay';
 
 const apply = (widget: Locator) => widget.getByRole('button', { name: 'Apply chart settings' });
-const settings = (widget: Locator) => widget.getByText('Dual-axis overlay settings', { exact: true });
 const details = (widget: Locator) => widget.getByText('Overlay observations', { exact: true });
 const hover = (graph: Locator) => graph.locator('.hoverlayer');
 const marker = (graph: Locator, side: number, index = 0) => graph.locator('.scatterlayer .trace').nth(side).locator('.point').nth(index);
@@ -61,11 +60,14 @@ test('offers the two closed recipes and shows both currency axes and original re
   const requests = dataRequests(page, baseURL!);
   await seedOverlay(page);
   const widget = card(page, chartName), graph = plot(page, chartName);
+  await expect(widget.getByLabel('Chart type')).toBeHidden();
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption({ label: 'Dual-axis overlay' });
   const recipe = widget.getByLabel('Overlay recipe');
   await expect(recipe.locator('option')).toHaveText(['Adjusted closing price and reported diluted EPS', 'CPI and ten-year Treasury yield']);
   await expect(apply(widget)).toBeDisabled();
   await attachOverlay(page, prepared['price-eps']);
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption({ label: 'Dual-axis overlay' });
   await expect(recipe).toHaveValue('price-eps');
   await expect(widget.getByRole('combobox', { name: 'Value', exact: true }).locator('option')).toHaveText(['Choose field', 'value']);
@@ -85,7 +87,7 @@ test('offers the two closed recipes and shows both currency axes and original re
   await page.keyboard.press('Enter');
   await expect(widget.getByRole('list', { name: 'Adjusted close original observations' })).toContainText('302.0205 USD/share');
   await expect(widget.getByRole('list', { name: 'Diluted FQ EPS original observations' })).toContainText('currently restated');
-  await settings(widget).click();
+  await openParameters(widget);
   await recipe.selectOption('cpi-ten-year');
   await expect(widget.getByText(/recipe certified by this prepared snapshot/i)).toBeVisible();
   await expect(apply(widget)).toBeDisabled();
@@ -166,7 +168,7 @@ test('carries real x and both y zooms across updated default ranges and resets t
   await expect(widget.getByRole('list', { name: 'US CPI-U original observations' })).toContainText('Omitted from the presentation');
   await attachOverlay(page, prepared['price-eps'], 'price-eps.json');
   await expect(graph).toHaveCount(0);
-  await settings(widget).click();
+  await openParameters(widget);
   await widget.getByLabel('Overlay recipe').selectOption('price-eps');
   await expect(apply(widget)).toBeEnabled();
   await apply(widget).click();
@@ -186,6 +188,10 @@ test('inspects on touch, zooms in a fitting card and scrolls an actual narrow ov
     await attachOverlay(page, prepared['price-eps']);
     const widget = card(page, chartName), graph = plot(page, chartName);
     await expect(graph.locator('.y2title')).toHaveText('Diluted FQ EPS (USD/share)');
+    await captureParameters(widget, 'Overlay recipe', file => info.outputPath(file));
+    await widget.getByRole('button', { name: 'Show parameters' }).tap();
+    await expect(widget.getByRole('region', { name: 'Parameters' })).toBeVisible();
+    await widget.getByRole('button', { name: 'Hide parameters' }).tap();
     const view = widget.locator('.linked-chart-plot--overlay .chart-scroll-viewport');
     await expect(view).not.toHaveClass(/touch-scroll/);
     const eps = await point(marker(graph, 1));
@@ -271,7 +277,7 @@ test('keeps the attached File export guard and reacquires valid evidence in a fr
   await expect(graph).toHaveCount(0);
   await attachOverlay(fresh, prepared['cpi-ten-year'].rows, 'uncertified.json');
   await expect(widget.getByText(/Acquire an explicitly prepared overlay snapshot/i)).toBeVisible();
-  await settings(widget).click();
+  await openParameters(widget);
   await expect(apply(widget)).toBeDisabled();
   await expect(graph).toHaveCount(0);
   await attachOverlay(fresh, prepared['cpi-ten-year']);

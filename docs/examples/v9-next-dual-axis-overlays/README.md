@@ -1,5 +1,7 @@
 # Dual-axis overlay examples
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 1. Import [the Workspace template](../v9-next-dual-axis-overlays.apps.json).
 2. In **Price and EPS**, drop [fictional-price-eps.json](fictional-price-eps.json) and use **Choose source** on the chart to link the dropped table.
 3. In **CPI and Treasury yield**, repeat the process with [fictional-cpi-ten-year.json](fictional-cpi-ten-year.json).

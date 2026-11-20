@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { card, fixture, importExample, names, plot } from './fixtures/chart-recipes';
+import { card, fixture, importExample, names, plot, openParameters } from './fixtures/chart-recipes';
 import { openRail, read } from './fixtures';
 
 type Axis = { _offset: number; range: (string | number)[]; c2p: (v: number) => number; };
@@ -39,6 +39,10 @@ test('native import draws seven charts in both themes and preserves usable missi
   page.on('worker', worker => workers.push(worker.url()));
   await importExample(page);
   await allPlots(page);
+  for (const name of names) {
+    await expect(card(page, name).getByRole('region', { name: 'Parameters' })).toHaveCount(0);
+    await expect(card(page, name).getByLabel('Chart type')).toBeHidden();
+  }
   expect(workers.some(url => url.includes('recipe.worker'))).toBe(true);
   const monthly = plot(page, 'Monthly returns');
   await expect(await heatmapHover(page, monthly, 1, 1)).toContainText('0 %');
@@ -165,6 +169,8 @@ test('edits chart and Statement settings and reopens the native export', async (
   await importExample(page);
   await allPlots(page);
   const bullet = card(page, 'Earnings versus estimates');
+  await expect(bullet.getByLabel('Quarter')).toBeHidden();
+  await openParameters(bullet);
   await bullet.getByLabel('Quarter').selectOption('FQ1 2025');
   await expect(bullet).toContainText('No estimate range was supplied.');
   await bullet.getByLabel('Quarter').selectOption('FQ4 2025');
@@ -180,6 +186,7 @@ test('edits chart and Statement settings and reopens the native export', async (
     return bands.length > 0 && [...bands].every(band => band.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING);
   }))).toBe(true);
   const corr = card(page, 'Daily return correlation');
+  await openParameters(corr);
   await corr.getByLabel('Lookback').fill('25');
   await corr.getByRole('button', { name: 'Apply chart settings' }).click();
   await expect(corr).toContainText('25 of 25 return-date positions');
@@ -204,7 +211,9 @@ test('edits chart and Statement settings and reopens the native export', async (
   const reopened = await context.newPage();
   await importExample(reopened, saved);
   await allPlots(reopened);
-  await expect(card(reopened, 'Daily return correlation').getByLabel('Lookback')).toHaveValue('25');
+  const reopenedParameters = card(reopened, 'Daily return correlation').getByRole('region', { name: 'Parameters' });
+  await expect(reopenedParameters.getByLabel('Lookback')).toBeVisible();
+  await expect(reopenedParameters.getByLabel('Lookback')).toHaveValue('25');
   await expect.poll(() => plot(reopened, 'Income statement bridge').evaluate(e => (e as Graph)._fullData.flatMap(t => t.text ?? []).some(text => text.includes('Cost of revenue') && text.includes('Step: -')))).toBe(true);
 });
 

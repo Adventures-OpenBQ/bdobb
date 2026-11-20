@@ -5,7 +5,7 @@ import { expect, type Page } from '@playwright/test';
 import { acquiredOwnershipPartition, acquiredOwnershipRows, liveOwnershipReceipt, liveOwnershipRows } from '../../src/test/fixtures/ownershipEvidence';
 import type { OwnershipSnapshotOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dashboardSeed, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 import { dropFile } from './return-summary';
 
 export const chartName = 'Ownership snapshot example';
@@ -47,13 +47,7 @@ const builtInSource = { id: 'source', widgetId: 'local_table', backendId: 'built
 const fixtureSource = { id: 'source', widgetId: backendWidget, backendId, params, title: backendTable };
 
 export async function chooseOwnershipSource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  await card(page, chartName).getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — ' + tab });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, chartName), name + ' — ' + tab);
 }
 
 export async function prepareOwnership(page: Page, {

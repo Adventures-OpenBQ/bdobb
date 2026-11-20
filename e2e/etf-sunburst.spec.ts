@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { isDiscoveryRequest, openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dropFile } from './fixtures/return-summary';
 import {
   attachHoldings, backendOrigin, backendPath, chartName, chooseEtfSource, file, placeholder,
@@ -75,6 +75,8 @@ test('chooses the acquired ETF defaults and drills with original financial value
   const requests = dataRequests(page, baseURL!);
   const acquisitions = await prepareEtf(page, { backend: true });
   const widget = card(page, chartName), graph = plot(page, chartName);
+  await expect(widget.getByLabel('Chart type')).toBeHidden();
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption({ label: 'ETF sunburst' });
   await expect(widget.getByRole('combobox', { name: 'Fund', exact: true })).toHaveValue('VTI.US');
   await expect(widget.getByRole('combobox', { name: 'Snapshot', exact: true })).toHaveValue('latest');
@@ -84,6 +86,8 @@ test('chooses the acquired ETF defaults and drills with original financial value
   await expect(apply(widget)).toBeEnabled();
   await apply(widget).click();
   await expect(graph.locator('.gtitle')).toContainText('35% of fund assets');
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await captureParameters(widget, 'Fund', file => info.outputPath(file));
   await expect(widget).toContainText('Acquired coverage: unknown.');
   await expect(widget).toContainText('Report date unknown');
   await expect(widget).toContainText('Acquired vintage 2026-11-20T04:16:45Z');
@@ -138,7 +142,18 @@ test('refuses an unrepresentable draft at real dimensions and keeps the applied 
   await expect(holdings(widget)).toContainText('AAYA.F');
   await expect(holdings(widget)).toContainText('5e-324 fund-assets fraction');
   await expect(holdings(widget)).toContainText('0 fund-assets fraction');
-  await widget.getByText('ETF sunburst settings', { exact: true }).click();
+  const plotted = await graph.elementHandle();
+  await openParameters(widget);
+  await expect.poll(async () => (await drawing(widget)).layout[1]).toBeLessThan(first.layout[1]);
+  const opened = await drawing(widget);
+  expect(opened.layout).toEqual(opened.css.map(Math.round));
+  expect(opened.revision).toBe(first.revision);
+  expect(await graph.evaluate((element, previous) => element === previous, plotted)).toBe(true);
+  await expect(holdings(widget)).toContainText('5e-324');
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await expect.poll(async () => (await drawing(widget)).layout).toEqual(first.layout);
+  await expect(holdings(widget)).toContainText('5e-324');
+  await openParameters(widget);
   await widget.getByLabel('Hierarchy depth').selectOption('2');
   await expect(widget).toContainText(/geometry.*5e-324/i);
   await expect(apply(widget)).toBeDisabled();
@@ -177,7 +192,7 @@ test('retains the local asset guard, then imports a source-free pin and repairs 
   await expect(importedGraph).toHaveCount(0);
   await attachHoldings(fresh, snapshot({ date: '2026-10-31' }));
   await expect(imported).toContainText('The pinned ETF snapshot is unavailable');
-  await imported.getByText('ETF sunburst settings', { exact: true }).click();
+  await openParameters(imported);
   await expect(imported.getByRole('combobox', { name: 'Snapshot', exact: true })).toHaveValue('2026-09-30');
   await expect(importedGraph).toHaveCount(0);
   await imported.getByRole('combobox', { name: 'Snapshot', exact: true }).selectOption('2026-10-31');

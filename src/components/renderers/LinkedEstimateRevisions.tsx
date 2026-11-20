@@ -18,6 +18,8 @@ import { estimateRevisionMinPlotHeight, estimateRevisionMinPlotWidth } from '../
 import type { DatasetColumn } from '../../lib/widgetData/types';
 import { ChartRenderer } from './ChartRenderer';
 import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
+import { createPortal } from 'react-dom';
+import { OpenLinkedParameters } from './LinkedParametersPortal';
 
 type Job = MeasuredRecipeJob<EstimateRevisionsOptions>;
 type Metric = EstimateRevisionsOptions['metric'];
@@ -88,7 +90,8 @@ function estimateSurface(pinCount: number, hint?: EstimateRevisionsSurface) {
   };
 }
 
-export function EstimateRevisionsControls({ job, saved, context, disabled, onApply }: {
+export function EstimateRevisionsControls({ probeTarget, job, saved, context, disabled, onApply }: {
+  probeTarget: HTMLElement | null;
   job?: Job; saved?: EstimateRevisionsOptions; context: RecipeContext; disabled: boolean;
   onApply: (options: EstimateRevisionsOptions, guard: () => boolean) => void;
 }) {
@@ -138,11 +141,10 @@ export function EstimateRevisionsControls({ job, saved, context, disabled, onApp
   const toggleVintage = (id: string, checked: boolean) => setVintages(checked
     ? [...(vintages ?? []), id]
     : (vintages ?? []).filter(vintage => vintage !== id));
-  return <details className="estimate-revisions-settings" open={!saved}>
-    <summary>Estimate revision settings</summary>
-    <div className="estimate-revisions-draft-probe" aria-hidden="true" ref={surface.element}>
+  return <>
+    {probeTarget && createPortal(<div className="estimate-revisions-draft-probe" aria-hidden="true" ref={surface.element}>
       <ChartRenderer data={null} {...estimateSurface(vintages?.length ?? 0, minimum)} onDrawingSurfaceChange={surface.observe}/>
-    </div>
+    </div>, probeTarget)}
     <fieldset className="estimate-revisions-controls" aria-label="Estimate revision settings" disabled={disabled}>
       <label>Metric<select value={metric} onChange={event => setMetric(event.target.value as Metric | '')}>
         <option value="">Choose metric</option>
@@ -183,7 +185,7 @@ export function EstimateRevisionsControls({ job, saved, context, disabled, onApp
         if (canApply && candidate) onApply(candidate, current);
       }}>Apply chart settings</button>
     </fieldset>
-  </details>;
+  </>;
 }
 
 const unavailableReading = {
@@ -223,32 +225,34 @@ function EstimateObservations({ data }: { data: EstimateRevisionData }) {
   </details>;
 }
 
-export function LinkedEstimateRevisions({ view, job, options, context, parentReportsSourceStatus }: {
-  view: ViewState; job?: Job; options: EstimateRevisionsOptions; context: RecipeContext; parentReportsSourceStatus: boolean;
+export function LinkedEstimateRevisions({ view, job, options, context, parentReportsSourceStatus, onOpenParameters }: {
+  view: ViewState; job?: Job; options: EstimateRevisionsOptions; context: RecipeContext; parentReportsSourceStatus: boolean; onOpenParameters?: () => void;
 }) {
   const surface = useMeasuredRecipeSurface(context);
-  const { completed, checked, minimum } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
+  const { completed, checked, remeasuring, minimum } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
   const retained = completed?.result.ok && completed.request.options === options && view.stale
     && (view.status === 'pending' || view.status === 'updating' || view.status === 'blocked' || view.status === 'failed')
     && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained ? completed.result : checked;
+  const result = retained || remeasuring ? completed?.result : checked;
+  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.estimateRevisions ? result : undefined;
   const hint = retained ? output?.estimateRevisionsSurface : minimum;
   const resizing = result && !result.ok && result.estimateRevisionsSurface;
   const drawable = useMemo(() => {
-    if (!output || !surface.measured) return;
-    const { box } = surface.measured;
+    if (!output || !drawing) return;
+    const box = drawing;
     if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     return { ...output.figure, layout: {
       ...output.figure.layout, width: Math.round(box.width), height: Math.round(box.height), autosize: false,
     } };
-  }, [output, surface.measured, retained, completed]);
+  }, [output, drawing, retained, completed]);
   return <>
     <div className="linked-chart-status">
       {retained && <p role="status">Showing completed data (stale).</p>}
       {(!result || resizing) && !view.error && <p role="status">{job ? 'Calculating estimate revisions…' : 'Loading the linked estimate history…'}</p>}
       {view.error && !parentReportsSourceStatus && <p role="alert">{view.error}</p>}
       {result && !result.ok && !resizing && <p role={result.refused ? 'status' : 'alert'}>{result.message}</p>}
+      {result && !result.ok && !resizing && <OpenLinkedParameters onOpen={onOpenParameters}/>}
       {output && <div role="status">{output.notes.map(note => <p key={note}>{note}</p>)}</div>}
     </div>
     {output?.estimateRevisions && <EstimateObservations data={output.estimateRevisions}/>}

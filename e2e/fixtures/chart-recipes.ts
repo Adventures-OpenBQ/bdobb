@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { defaultSeed, openRail, seedApp } from '../fixtures';
 
@@ -14,6 +14,44 @@ export function fixture(name: string) {
 }
 export const card = (page: Page, name: string) => page.locator('.widget-card').filter({ has: page.locator('.card-title', { hasText: name }) });
 export const plot = (page: Page, name: string) => card(page, name).locator('.js-plotly-plot');
+
+export async function openParameters(widget: Locator) {
+  const show = widget.getByRole('button', { name: 'Show parameters', exact: true });
+  if (await show.isVisible()) await show.click();
+  const panel = widget.getByRole('region', { name: 'Parameters', exact: true });
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
+export async function chooseLinkedSource(page: Page, widget: Locator, label: string) {
+  await page.mouse.move(360, 200);
+  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
+  const closed = await widget.getByRole('button', { name: 'Show parameters', exact: true }).isVisible();
+  const parameters = await openParameters(widget);
+  await parameters.getByRole('button', { name: 'Choose source', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Choose source' });
+  await dialog.getByLabel('Source table').selectOption({ label });
+  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  if (closed) await widget.getByRole('button', { name: 'Hide parameters', exact: true }).click();
+}
+
+export async function captureParameters(widget: Locator, field: string, outputPath: (filename: string) => string) {
+  const graph = widget.locator('.card-body .js-plotly-plot');
+  await expect(graph).toBeVisible();
+  await expect(widget.getByRole('region', { name: 'Parameters' })).toHaveCount(0);
+  const control = (scope: Locator) => scope.getByRole('combobox', { name: field, exact: true })
+    .or(scope.getByRole('spinbutton', { name: field, exact: true }));
+  await expect(control(widget)).toBeHidden();
+  await widget.screenshot({ path: outputPath('parameters-closed.png') });
+  const panel = await openParameters(widget);
+  await expect(panel.getByRole('button', { name: 'Choose source', exact: true })).toBeFocused();
+  await expect(control(panel)).toBeVisible();
+  await expect(graph).toBeVisible();
+  await widget.screenshot({ path: outputPath('parameters-open.png') });
+  await widget.getByRole('button', { name: 'Hide parameters', exact: true }).click();
+  await expect(graph).toBeVisible();
+}
 
 export async function importExample(page: Page, manifest = example) {
   const overrides = new Map<string, { body: string; status?: number; }>();

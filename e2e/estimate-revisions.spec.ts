@@ -4,7 +4,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { revisionBump, revisionDenseValues, revisionHistory, revisionPath, revisionSlope, revisionTieValues } from '../src/test/fixtures/estimateRevisions';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { dataRequests } from './fixtures/dual-axis-overlay';
 import {
   attachRevisions, chartName, chooseRevisionSource, liveOrigin, livePath, liveTitle, placeholder, sampleName, seedRevisions, tab, workspace,
@@ -12,7 +12,6 @@ import {
 import { dropFile } from './fixtures/return-summary';
 
 const apply = (widget: Locator) => widget.getByRole('button', { name: 'Apply chart settings' });
-const settings = (widget: Locator) => widget.getByText('Estimate revision settings', { exact: true });
 const details = (widget: Locator) => widget.getByText('Estimate revision observations', { exact: true });
 const marker = (graph: Locator, index: number) => graph.locator('.scatterlayer .trace').first().locator('.point').nth(index);
 const pin = (widget: Locator, id: string) => widget.getByRole('checkbox', { name: new RegExp(id) });
@@ -60,6 +59,8 @@ test('offers explicit pins, repairs source scope and draws original slope and pa
   const requests = dataRequests(page, baseURL!);
   await seedRevisions(page);
   const widget = card(page, chartName), graph = plot(page, chartName);
+  await expect(widget.getByLabel('Chart type')).toBeHidden();
+  await openParameters(widget);
   const chartType = widget.getByLabel('Chart type');
   await expect(chartType.locator('option[value="estimate-revisions"]')).toHaveCount(1);
   await chartType.selectOption('estimate-revisions');
@@ -99,7 +100,7 @@ test('offers explicit pins, repairs source scope and draws original slope and pa
   await page.keyboard.press('Enter');
   await expect(widget.getByRole('list', { name: 'Original estimates for snap-a' })).toContainText('Consensus 0 USD/share');
   await expect(widget.getByRole('list', { name: 'Original estimates for snap-c' })).toContainText('unavailable (earlier estimate is zero or negative)');
-  await settings(widget).click();
+  await openParameters(widget);
   await widget.getByLabel('Revision view').selectOption('path');
   await expect(widget.getByText(/Select at least three acquired vintages/i)).toBeVisible();
   await expect(apply(widget)).toBeDisabled();
@@ -139,10 +140,12 @@ test('converges to exact measured dense-tick and six-member surfaces with full t
   expect(tickBoxes[0].right).toBeLessThan(tickBoxes[1].left);
   expect(tickBoxes[1].right).toBeLessThan(tickBoxes[2].left);
   await widget.screenshot({ path: info.outputPath('revisions-dense-narrow.png') });
+  await captureParameters(widget, 'Revision view', file => info.outputPath(file));
+  expect((await drawing(graph)).surface).toEqual([379, 230]);
 
   await attachRevisions(page, revisionHistory(revisionTieValues));
   await expect(graph).toHaveCount(0);
-  await settings(widget).click();
+  await openParameters(widget);
   await widget.getByLabel('Revision view').selectOption('bump');
   await expect(apply(widget)).toBeEnabled();
   const probe = widget.locator('.estimate-revisions-draft-probe .chart-plot');
@@ -150,6 +153,8 @@ test('converges to exact measured dense-tick and six-member surfaces with full t
   await expect(probe).toHaveCSS('height', '352px');
   await apply(widget).click();
   await expect(graph.locator('.ytitle')).toHaveText('Percentage revision rank');
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
+  await marker(graph, 0).scrollIntoViewIfNeeded();
   const geometry = await drawing(graph);
   expect(geometry.size).toEqual([320, 352]);
   expect(geometry.surface).toEqual(geometry.size);
@@ -187,6 +192,7 @@ test('new and saved Bump show the same unavailable current column with prior ran
   await seedRevisions(page);
   await attachRevisions(page, history);
   const widget = card(page, chartName);
+  await openParameters(widget);
   await widget.getByLabel('Chart type').selectOption('estimate-revisions');
   const view = widget.getByLabel('Revision view');
   await expect(view.locator('option[value="bump"]')).not.toHaveAttribute('disabled', '');
@@ -298,7 +304,7 @@ test('honors File export refusal and repairs missing pinned history only after f
     await attachRevisions(fresh, revisionHistory([[10, 11, 12]], { unknown: true, missing: 'snap-c' }));
     await expect(widget.getByText(/A pinned acquired vintage is unavailable/i)).toBeVisible();
     await expect(graph).toHaveCount(0);
-    await settings(widget).click();
+    await openParameters(widget);
     await expect(apply(widget)).toBeDisabled();
     await pin(widget, 'snap-c').click();
     await expect(pin(widget, 'snap-c')).toHaveCount(0);
@@ -317,7 +323,7 @@ test('refuses legacy live fiscal targets and relative estimate fields without ac
   const widget = card(page, chartName);
   await expect(card(page, liveTitle).getByText('2027-03-31')).toBeVisible();
   await expect(widget.getByText(/Fiscal target dates and live estimate rows do not establish vintages/i)).toBeVisible();
-  await settings(widget).click();
+  await openParameters(widget);
   await expect(widget.getByRole('option', { name: /Bump/ })).toHaveAttribute('disabled', '');
   await widget.getByLabel('Revision view').selectOption('path');
   await expect(apply(widget)).toBeDisabled();

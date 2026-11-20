@@ -24,7 +24,7 @@ The app checks a local file's declarations and consistency. It cannot independen
 | Client baseline | `0283dce2bb45afdfc2e6c422a4f77f4b70bb8c48` |
 | Prior isolated archive-reproducer repair | `73154c8082a78d78c79f3be799ca195f0a7142b6` |
 | Reviewed family group before paired source fix | `0c43dd6178f87e72ff1f521af68b0490966c02e7` |
-| Client used for the full unit, build, bundle and Chromium gates | `dc97414184f803af7e4ba6e5742a10e2478e8ebb`, two Chromium theme polls corrected at `ef23229b` |
+| Earlier full-client run before the Parameters amendment | `dc97414184f803af7e4ba6e5742a10e2478e8ebb`, two Chromium theme polls corrected at `ef23229b` |
 | Subsequent focused backend correction | `94e5860093d34c02d3445cc429a7c38f433d66d0` |
 | Provider baseline | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | Canonical provider | `f8f0166603f0b59f3f879b704b23582bd893e67d`, distribution 9.0.1 |
@@ -65,7 +65,7 @@ At `9080d662`, the backend handoff regression suite passed 744 tests across nine
 
 At `dc974141`, 751 affected tests across nine files passed. The 10 HTTP parent cases include missing Scope on mounted and off-tab replacement origins, a selector-only refusal before GET, editing and reverting a Run-button source without a second GET, a refresh while an off-tab draft is un-run, and a header-case-only refresh. The runtime also tested a pending producer before GET and the different semantics of HTTP field names, values and cookie names. The completed AAPL 19.875× cleared on incompatible refusal, returned on a zero-GET draft revert and remained labeled stale after a genuinely compatible refresh failure.
 
-The focused correction at `94e58600` passed 775 affected tests in ten files, including 14 production HTTP parent cases. Typecheck, lint and scrub passed. The calendar case acquired December 29 AAPL rows, then held the real XNYS 2027 calendar response on January 6. Reverting a draft preserved the prior committed rows. After an explicit TSLA Run, reverting that draft could no longer reactivate AAPL during the hold, and the financial GET count remained one. Releasing the calendar for the committed TSLA question returned January 5 rows on the second GET. This test inspected producer rows and matching status. Separate tests confirmed that equivalent URL spellings preserve a failed refresh's stale value and that invalid addresses produce a source error. The full-client counts and emitted bundle sizes in this record precede this narrow correction.
+The focused correction at `94e58600` passed 775 affected tests in ten files, including 14 production HTTP parent cases. Typecheck, lint and scrub passed. The calendar case acquired December 29 AAPL rows, then held the real XNYS 2027 calendar response on January 6. Reverting a draft preserved the prior committed rows. After an explicit TSLA Run, reverting that draft could no longer reactivate AAPL during the hold, and the financial GET count remained one. Releasing the calendar for the committed TSLA question returned January 5 rows on the second GET. This test inspected producer rows and matching status. Separate tests confirmed that equivalent URL spellings preserve a failed refresh's stale value and that invalid addresses produce a source error. The earlier full-client table above predates the narrow correction. The Parameters candidate below includes it.
 
 The installed-wire reproduction at the first correction captured method, path and decoded query from HTTPX on all 14 responses. Its Chromium route handler checked all three before supplying an envelope. Deliberately dropping `chart_source=true` failed at the query assertion. A shell test ran two private directories concurrently and covered existing data, symlinks, a symlinked parent and cleanup on success and failure. [Reproduction instructions](reproduce/README.md)
 
@@ -75,17 +75,33 @@ The four portable worker probes passed at the original paired product head. The 
 
 The saved captures show the original return-density hover, per-day news score, individual waffle and ETF touch hovers, the extreme finite KPI gauge, the overlay's reported and availability facts, the revision cohort and the original index fraction on a narrow surface. Exact details remain accessible within scrollable surfaces. The browser tests also examine real SVG areas, bounds and text, and inspect gesture outcomes. [Geometry and installed-pair reproduction](reproduce/README.md)
 
-The native compilation, Rust core and packaging counts come from the original paired product gate. The backend correction changed the client request handoff. The final runs included the production WASM verification step, both table engines' runtime tests and compiled-Rust Chromium.
+The native compilation, Rust core and packaging counts come from the original paired product gate. The backend correction changed the client request handoff. The full-client runs include the production WASM verification step and browser execution with the compiled Rust engine.
+
+## Linked Parameters candidate
+
+Implementation baseline `4669b763`. The existing panel contains the linked chart and KPI settings and source picker. The eight portable manifests import with the panel closed. Opening a card shows a single Parameters region, moves focus into it and retains the same chart question and acquired data. The existing native flag persists an open panel. The source-picker case for linked tables and the ordinary parameter form still use their established controls.
+
+| Gate | Result |
+|---|---|
+| `pnpm typecheck`, `pnpm lint`, `pnpm scrub` | Passed. |
+| `pnpm test:run` | 10,153 passed and 47 opt-in tests skipped in 543 passing and seven skipped files. The full run emitted existing React act and jsdom canvas diagnostics. |
+| `pnpm test:web` | 57 passed with the intentional invalid-authentication diagnostic. |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap` | Passed with 3,983 modules. Vite emitted its existing mixed static/dynamic imports for logger and dashboardStore and its 500 kB chunk advisory. |
+| Chromium with the TypeScript engine | 86 of 88 passed in the controlled sweep. The news and return hover assertions ran with the panel reducing the visible surface. Both passed focused reruns after test-only changes that close Parameters before hovering and wait for the return drawing height. The added ownership capture also passed after waiting for its exact remeasured height. |
+| Chromium with the compiled Rust engine | 45 of 45 family cases passed in one sweep with zero skips or retries. |
+| Eight example imports and catalog exclusion | All linked presentation cards in the eight templates import closed. Scratch generation emitted 16 stack-served apps and excluded all eight next-chart example apps. |
+
+The unit and browser regressions cover draft retention, an unchanged source request count and question revision, repair when closed and current measurement before Apply. ETF opened at a smaller measured height and closed at its original height while retaining the same Plotly element and expanded holdings. The narrower revision case kept its exact 379 by 230 drawing after the toggle and rechecked the 320 by 352 rank surface. React keeps the editor mounted through panel toggles. The body keeps the measurement probes, source and chart status, original values and runtime chart navigation. The inspected light, dark and narrow captures show the panel closed and open across all eight families. The touch-only Sankey fixture uses a shorter card to preserve real plot overflow and the original swipe and tap checks after the control relocation. Provider and Docker qualification uses the prior accepted heads.
 
 ## Bundle cost
 
-Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline is the original eight-chart project baseline, before its archive-only fix.
+Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The Parameters candidate contains 15 assets. The Parameters change adds 2,991 raw and 1,192 gzip bytes relative to the previous measured paired candidate.
 
 | JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
 |---|---:|---:|---:|
-| HelpDialog | 732,146 / 246,573 | 750,445 / 252,775 | 18,299 / 6,202 |
+| HelpDialog | 732,146 / 246,573 | 751,263 / 253,051 | 19,117 / 6,478 |
 | MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,438 | 0 / 0 |
-| index | 3,515,697 / 1,136,886 | 3,738,717 / 1,209,336 | 223,020 / 72,450 |
+| index | 3,515,697 / 1,136,886 | 3,740,890 / 1,210,252 | 225,193 / 73,366 |
 | kpi.worker | 0 / 0 | 57,604 / 18,478 | 57,604 / 18,478 |
 | lightweight-charts.production | 180,254 / 57,062 | 180,254 / 57,062 | 0 / 0 |
 | module | 77,311 / 27,623 | 77,311 / 27,623 | 0 / 0 |
@@ -98,7 +114,7 @@ Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript fil
 | table.worker | 274,519 / 86,350 | 322,028 / 100,556 | 47,509 / 14,206 |
 | xlsx 1 | 499,905 / 161,705 | 499,905 / 161,705 | 0 / 0 |
 | xlsx 2 | 499,909 / 161,707 | 499,909 / 161,707 | 0 / 0 |
-| Total | 8,041,112 / 2,519,860 | 8,578,588 / 2,694,886 | 537,476 / 175,026 |
+| Total | 8,041,112 / 2,519,860 | 8,581,579 / 2,696,078 | 540,467 / 176,218 |
 
 The build added the existing Plotly package's box, sunburst and treemap registrations. The isolated production registration deltas for box and sunburst were **14,405 / 5,811** and **40,999 / 14,956** raw/gzip bytes respectively. Treemap's isolated registered-trace bundle delta was **23,547 / 7,577** bytes. Its standalone entry including shared dependencies was **766,659 / 262,526** bytes. These isolated numbers measure different builds and do not add directly to the final main chunk. Violin density uses scatter and worker calculations. There is no full Plotly bundle or version change.
 

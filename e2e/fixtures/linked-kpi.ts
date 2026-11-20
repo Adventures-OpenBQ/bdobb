@@ -5,7 +5,7 @@ import { expect, type Page } from '@playwright/test';
 import { liveMetricReceipt, liveMetricRows, metricReceipt, metricRows } from '../../src/test/fixtures/metricEvidence';
 import type { LinkedKpiOptions } from '../../src/lib/widgetData/kpi/types';
 import { dashboardSeed, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 import { dropFile } from './return-summary';
 
 export const workspace = 'KPI fixtures';
@@ -83,13 +83,7 @@ export async function prepareKpi(page: Page, {
 }
 
 export async function chooseKpiSource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  await card(page, metricName).getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — ' + pageTab });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, metricName), name + ' — ' + pageTab);
 }
 
 export async function attachEps(page: Page, name = filename, snapshot = epsFile()) {

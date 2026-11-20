@@ -1,5 +1,7 @@
 # Ownership snapshot
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 Requires BDOBB 9.0.0 or later with the **Ownership snapshot** linked chart. Both files describe a fictional issuer. Each tab starts with an empty source card.
 
 1. Import [the workspace template](../v9-next-ownership-snapshot.apps.json).

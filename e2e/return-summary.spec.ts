@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { dashboardSeed, openRail, read, seedApp } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
 import { chooseReturnSource, closes, dropFile, placeholder, prepareReturns, returnChart, returnRecipe, returnSnapshot, sampleName, workspace } from './fixtures/return-summary';
 
 type Axis = { _offset: number; range: number[]; tickvals?: number[]; c2p: (coordinate: number) => number };
@@ -58,11 +58,17 @@ test('uses an acquired box with original outliers and keyboard listing details',
   await prepareReturns(page, returnSnapshot({ 'ZZZ.US': [16, 4, 1, 1, 1, 1, 1, 1, 1] }), boxOptions);
   const widget = card(page, returnChart);
   const graph = plot(page, returnChart);
-  await expect(widget.getByLabel('Return view')).toHaveValue('box');
+  await captureParameters(widget, 'Return view', file => info.outputPath(file));
+  const parameters = await openParameters(widget);
+  await expect(parameters.getByLabel('Return view')).toHaveValue('box');
+  await widget.getByRole('button', { name: 'Hide parameters' }).click();
   await expect(boxes(graph)).toHaveCount(1);
+  await expect.poll(() => graph.evaluate(node => Math.abs((node as Graph)._fullLayout.height - node.getBoundingClientRect().height))).toBeLessThan(.51);
+  await boxes(graph).scrollIntoViewIfNeeded();
   const median = await point(graph, 0, 0);
   await page.mouse.move(median.x, median.y);
   await expect(tooltip(graph)).toContainText('Q1: -18.75% (-0.1875)');
+  await graph.locator('.scatterlayer path.point').last().scrollIntoViewIfNeeded();
   const outlier = await point(graph, 0, -.75);
   await page.mouse.move(outlier.x, outlier.y);
   await expect(tooltip(graph)).toContainText('Outlier');
@@ -75,6 +81,7 @@ test('uses an acquired box with original outliers and keyboard listing details',
   await page.keyboard.press('Enter');
   await expect(widget.getByRole('list', { name: 'Outlier observations' }).getByRole('listitem')).toHaveCount(2);
   await expect(widget.getByRole('list', { name: 'Outlier observations' })).toContainText('2026-01-03 · -75% (-0.75)');
+  await openParameters(widget);
   await widget.getByLabel('Return view').selectOption('violin');
   await expect(apply(widget)).toBeEnabled();
   await apply(widget).click();
@@ -89,6 +96,7 @@ test('uses the same drawing dimensions to validate a draft and draws shared dens
   await expect(boxes(graph)).toHaveCount(2);
   const originalRevision = await graph.evaluate(node => (node as Graph)._fullLayout.uirevision);
   await expect(graph.locator('.xtick text')).toHaveText([/ZZZ\.US.*N = 20/, /AAA\.US.*N = 20/]);
+  await openParameters(widget);
   await widget.getByLabel('Return view').selectOption('violin');
   await widget.getByLabel('Return window').selectOption('common');
   await expect(widget.getByLabel('Start date')).toHaveValue('2026-01-01');
@@ -132,6 +140,7 @@ test('a worker geometry refusal keeps the applied box details and candidate orde
   await expect(boxes(graph)).toHaveCount(2);
   await widget.getByText('Return listing details', { exact: true }).click();
   await widget.getByRole('combobox', { name: 'Return listing', exact: true }).selectOption('AAA.US');
+  await openParameters(widget);
   await widget.getByLabel('Return view').selectOption('violin');
   await expect(widget).toContainText('The shared density scale cannot preserve violin geometry');
   await expect(apply(widget)).toBeDisabled();
@@ -224,6 +233,7 @@ test('exports authored pins after detaching the local asset, and reacquires with
   await prepareReturns(page, normal);
   const widget = card(page, returnChart);
   await expect(boxes(plot(page, returnChart))).toHaveCount(2);
+  await openParameters(widget);
   await widget.getByLabel('Return window').selectOption('common');
   await expect(widget.getByLabel('End date')).toHaveValue('2026-01-21');
   await apply(widget).click();
@@ -257,6 +267,7 @@ test('exports authored pins after detaching the local asset, and reacquires with
   await fresh.getByRole('tab', { name: 'Returns', exact: true }).last().click();
   const reopened = card(fresh, returnChart), graph = plot(fresh, returnChart);
   await expect(graph).toHaveCount(0);
+  await openParameters(reopened);
   await expect(reopened.getByLabel('End date')).toHaveValue('2026-01-21');
   const shorter = returnSnapshot({ 'ZZZ.US': closes(.125).slice(5), 'AAA.US': closes(.0625).slice(5) });
   const replacement = JSON.stringify({ ...JSON.parse(shorter), receipt: { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-16' } });
@@ -265,6 +276,7 @@ test('exports authored pins after detaching the local asset, and reacquires with
   await expect(reopened).toContainText(/inclusive common window within the acquired daily date bounds/);
   await expect(graph).toHaveCount(0);
   await expect(apply(reopened)).toBeDisabled();
+  await openParameters(reopened);
   await expect(reopened.getByLabel('End date')).toHaveValue('2026-01-21');
   await reopened.getByLabel('End date').fill('2026-01-16');
   await expect(apply(reopened)).toBeEnabled();

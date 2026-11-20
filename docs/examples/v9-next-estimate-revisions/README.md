@@ -1,5 +1,7 @@
 # Estimate revision examples
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 1. Import the [Workspace template](../v9-next-estimate-revisions.apps.json).
 2. On **Slope** or **Time path**, drop [the fictional single-issuer history](fictional-single-issuer.json). Use **Choose source** to attach the dropped table to the chart.
 3. On **Bump**, drop [the fictional two-issuer universe](fictional-universe.json) and attach it to the chart.

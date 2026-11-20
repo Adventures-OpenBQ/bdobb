@@ -17,6 +17,8 @@ import type { DatasetColumn } from '../../lib/widgetData/types';
 import { ChartRenderer } from './ChartRenderer';
 import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe,
   useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
+import { createPortal } from 'react-dom';
+import { OpenLinkedParameters } from './LinkedParametersPortal';
 
 const pairs = {
   'price-eps': 'Adjusted closing price and reported diluted EPS',
@@ -63,7 +65,8 @@ function useOverlaySource(job: Job | undefined) {
   return read?.job === job ? read : undefined;
 }
 
-export function DualAxisOverlayControls({ job, saved, context, disabled, onApply }: {
+export function DualAxisOverlayControls({ probeTarget, job, saved, context, disabled, onApply }: {
+  probeTarget: HTMLElement | null;
   job?: Job;
   saved?: DualAxisOverlayOptions;
   context: RecipeContext;
@@ -97,12 +100,11 @@ export function DualAxisOverlayControls({ job, saved, context, disabled, onApply
   const checking = !!job && compatible && changed && !!candidate && !checked;
   const issue = read?.error ?? (read && changed && (!read.source ? overlaySourceIssue : !compatible ? overlayPairIssue
     : !decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined));
-  return <details className="dual-axis-overlay-settings" open={!saved}>
-    <summary>Dual-axis overlay settings</summary>
-    <div className="dual-axis-overlay-draft-probe" aria-hidden="true" ref={surface.element}>
+  return <>
+    {probeTarget && createPortal(<div className="dual-axis-overlay-draft-probe" aria-hidden="true" ref={surface.element}>
       <ChartRenderer data={null} scrollHeight={dualAxisOverlayMinPlotHeight} minPlotWidth={dualAxisOverlayMinPlotWidth}
         onDrawingSurfaceChange={surface.observe}/>
-    </div>
+    </div>, probeTarget)}
     <fieldset className="dual-axis-overlay-controls" aria-label="Dual-axis overlay settings" disabled={disabled}>
       <label>Overlay recipe<select value={pair} onChange={event => {
         setPair(event.target.value as Pair);
@@ -122,7 +124,7 @@ export function DualAxisOverlayControls({ job, saved, context, disabled, onApply
         if (canApply && candidate) onApply(candidate, current);
       }}>Apply chart settings</button>
     </fieldset>
-  </details>;
+  </>;
 }
 
 function OverlayObservations({ pair }: { pair: OverlaySeriesPair }) {
@@ -151,34 +153,36 @@ function OverlayObservations({ pair }: { pair: OverlaySeriesPair }) {
   </details>;
 }
 
-export function LinkedDualAxisOverlay({ view, job, options, context, parentReportsSourceStatus }: {
-  view: ViewState; job?: Job; options: DualAxisOverlayOptions; context: RecipeContext; parentReportsSourceStatus: boolean;
+export function LinkedDualAxisOverlay({ view, job, options, context, parentReportsSourceStatus, onOpenParameters }: {
+  view: ViewState; job?: Job; options: DualAxisOverlayOptions; context: RecipeContext; parentReportsSourceStatus: boolean; onOpenParameters?: () => void;
 }) {
   const surface = useMeasuredRecipeSurface(context);
-  const { completed, checked } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
+  const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
   const pending = view.status === 'pending' || view.status === 'updating';
   const retained = completed?.result.ok && view.stale && (pending || view.status === 'blocked' || view.status === 'failed')
     && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained ? completed.result : checked;
+  const result = retained || remeasuring ? completed?.result : checked;
+  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.overlay ? result : undefined;
   const pair = output?.overlay;
   const leftUnit = pair?.left.fact.unit, rightUnit = pair?.right.fact.unit;
   const formatLeft = useCallback((range: readonly [number, number]) => overlayAxisTicks(range, leftUnit!), [leftUnit]);
   const formatRight = useCallback((range: readonly [number, number]) => overlayAxisTicks(range, rightUnit!), [rightUnit]);
   const drawable = useMemo(() => {
-    if (!output || !surface.measured) return;
-    const { box } = surface.measured;
+    if (!output || !drawing) return;
+    const box = drawing;
     if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     return { ...output.figure, layout: {
       ...output.figure.layout, width: Math.round(box.width), height: Math.round(box.height), autosize: false,
     } };
-  }, [output, surface.measured, retained, completed]);
+  }, [output, drawing, retained, completed]);
   return <>
     <div className="linked-chart-status">
       {retained && <p role="status">Showing completed data (stale).</p>}
       {!result && !view.error && <p role="status">{job ? 'Calculating dual-axis overlay…' : 'Loading the linked overlay source…'}</p>}
       {view.error && !parentReportsSourceStatus && <p role="alert">{view.error}</p>}
       {result && !result.ok && <p role={result.refused ? 'status' : 'alert'}>{result.message}</p>}
+      {result && !result.ok && <OpenLinkedParameters onOpen={onOpenParameters}/>}
       {output && <div role="status">{output.notes.map(note => <p key={note}>{note}</p>)}</div>}
     </div>
     {pair && <OverlayObservations pair={pair}/>}

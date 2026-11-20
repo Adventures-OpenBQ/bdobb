@@ -15,6 +15,7 @@ import { StatementWorkerView } from "./renderers/StatementWorkerView";
 import type { StatementSnapshot } from "../lib/statementExecution";
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
 import { LinkedKpiRenderer } from "./renderers/LinkedKpiRenderer";
+import { LinkedParametersPortal, OpenLinkedParameters } from "./renderers/LinkedParametersPortal";
 import type { LinkedPresentation } from "../lib/widgetData/types";
 import { type ComponentProps, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog } from "@tauri-apps/plugin-dialog";
@@ -320,6 +321,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const paramsRef = useRef<HTMLDivElement | null>(null);
+  const [parametersTarget, setParametersTarget] = useState<HTMLDivElement | null>(null);
+  const linkedParamsRef = useCallback((element: HTMLDivElement | null) => {
+    paramsRef.current = element;
+    setParametersTarget(element);
+  }, []);
 
   /**
    * The ⋯ toggle, kept so the menu can hang from it. The menu is portalled
@@ -464,6 +470,9 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // ruling 2026-09-30). A run-button card's ▶ always runs, so it stays.
   // Drawn while the widget is still resolving, as before.
   const linkedMetric = isLinkedMetricCard(card);
+  const linkedPresentation = linkedMetric || (!!card.linkedSource && !!card.linkedChart);
+  const hasLinkedParameters = linkedPresentation && !!dashboard && !readOnly;
+  const hasParameters = hasLinkedParameters || (!linkedPresentation && hasControls && !locked);
   const refreshable = !!card.linkedSource || widget === undefined || fetchesData(widget) || SELF_REFRESHING_TYPES.has(widget.type);
   const view = card.view;
   /**
@@ -1035,7 +1044,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         const collapsed = folded.includes(section) ? folded.filter(name => name !== section) : [...folded, section];
         void patchCardField(card.id, "statement", collapsed.length ? { collapsed } : null).catch(() => setExportNotice("Could not save Statement sections."));
       }} />;
-    if ((card.linkedSource || linkedMetric) && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
+    if ((card.linkedSource || linkedMetric) && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={readOnly}
+      parametersTarget={parametersTarget} onOpenParameters={() => setParamsOpen(true)} />;
 
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {
       return <p className="empty-state">Waiting for widget…</p>;
@@ -1461,6 +1471,13 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         }
       : null;
 
+  // Keep one portal target for a linked editor's lifetime, including when the
+  // panel is hidden. Ordinary controls keep their existing mount behavior.
+  const linkedParametersPanel = hasLinkedParameters ? (
+    <div className="card-params-panel card-linked-params" role="region" aria-label="Parameters"
+      hidden={!paramsOpen || minimized} ref={linkedParamsRef} />
+  ) : null;
+
   function toggleMenu(e: React.MouseEvent<HTMLButtonElement>) {
     setExportAnchor(e.currentTarget);
     setExportNotice(null);
@@ -1534,7 +1551,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                         )}
                       </>
                     ) : null}
-                    {hasControls && !locked ? (
+                    {hasParameters ? (
                       <button
                         type="button"
                         role="menuitem"
@@ -1633,7 +1650,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                       <button type="button" role="menuitem" onClick={() => void createLinked('metric')}>Create linked metric</button>
                       <button type="button" role="menuitem" onClick={() => void createLinked('table')}>Create linked table</button>
                     </> : null}
-                    {!readOnly && card.linkedSource ? <button type="button" role="menuitem" onClick={() => { setExportOpen(false); setChooseSource(true); }}>Choose source</button> : null}
+                    {!readOnly && card.linkedSource && !linkedPresentation ? <button type="button" role="menuitem" onClick={() => { setExportOpen(false); setChooseSource(true); }}>Choose source</button> : null}
                     {canShare ? (
                       <button
                         type="button"
@@ -1862,7 +1879,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         {/* v5.5.1 (user ruling 2026-09-30): the Parameters panel's own
             toggle, on every card with parameters. ▸ is closed, ▾ is open;
             the state is saved on the card (see paramsOpen). */}
-        {hasControls && !minimized && !locked ? (
+        {hasParameters && !minimized ? (
           <button
             type="button"
             className="card-params-chevron"
@@ -2033,7 +2050,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             .card-params-panel). A child of <header>, after .card-controls,
             on a line of its own under the bar (the header wraps). Docked,
             not floating, since v5.5.1 -- see paramsOpen. */}
-        {paramsOpen && !minimized && controlProps ? (
+        {linkedPresentation ? linkedParametersPanel : paramsOpen && !minimized && controlProps ? (
           <div className="card-params-panel" role="region" aria-label="Parameters" ref={paramsRef}>
             <ParamControls
               {...controlProps}
@@ -2102,11 +2119,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           opens from its menu (paramsOpen), placed here because a rail has no
           header to hang it under. No "Display on title bar": there is no
           title bar. */}
-      {railChrome && paramsOpen && !minimized && controlProps ? (
+      {railChrome && (linkedPresentation ? linkedParametersPanel : paramsOpen && !minimized && controlProps ? (
         <div className="card-params-panel card-rail-params" role="region" aria-label="Parameters" ref={paramsRef}>
           <ParamControls {...controlProps} idPrefix="rail-" />
         </div>
-      ) : null}
+      ) : null)}
       {feedsOpen ? (
         <NewsFeedsDialog
           state={card.news}
@@ -2212,9 +2229,10 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 }
 
 /** Linked presentations share the dashboard runtime status and source repair action. */
-function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer }: {
+function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer, parametersTarget, onOpenParameters }: {
   dashboardId: string; card: DashboardCard; refreshKey: number; filterRow: boolean;
   onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean;
+  parametersTarget: HTMLElement | null; onOpenParameters: () => void;
 }) {
   const view = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
   const metric = isLinkedMetricCard(card);
@@ -2257,19 +2275,24 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
   const unavailable = view.status === 'unavailable' || !ancestry;
+  const sourcePicker = !viewer ? <button type="button" onClick={chooseSource}>Choose source</button> : null;
   const content = <>
-    {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
+    {presentation ? <LinkedParametersPortal target={parametersTarget}>{sourcePicker}</LinkedParametersPortal> : sourcePicker}
     {!unavailable && view.stale && !metric && card.linkedChart?.type !== 'etf-sunburst' && card.linkedChart?.type !== 'dual-axis-overlay'
       && card.linkedChart?.type !== 'estimate-revisions' && card.linkedChart?.type !== 'market-map'
       && card.linkedChart?.type !== 'news-sentiment-calendar' && card.linkedChart?.type !== 'return-summary' && card.linkedChart?.type !== 'ownership-snapshot' ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
-    {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
+    {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p>
+      {presentation && !viewer && <OpenLinkedParameters onOpen={onOpenParameters}/>}
+    </div>
       : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, sourceAcquisitionKey])}
         sourceId={sourceId} executor={executor} view={view} persisted={card.linkedMetric} viewer={viewer}
         readCurrent={readLinkedSource} sourceCurrent={readLinkedSource().sourceCurrent}
+        parametersTarget={parametersTarget} onOpenParameters={onOpenParameters}
         onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedMetricSettings(dashboardId, card.id, settings, guard)} />
       : card.linkedChart ? <LinkedChartRenderer parentReportsSourceStatus dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer}
         sourceAncestry={ancestry} sourceAcquisitionKey={sourceAcquisitionKey} readCurrentSource={readLinkedSource}
+        parametersTarget={parametersTarget} onOpenParameters={onOpenParameters}
         onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings, guard)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;

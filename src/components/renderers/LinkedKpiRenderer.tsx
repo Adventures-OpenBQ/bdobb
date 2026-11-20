@@ -14,6 +14,7 @@ import type { ViewState } from '../../stores/tableExecutionStore';
 import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
 import { LinkedKpiControls, decodeKpiDraft, kpiDraft } from './LinkedKpiControls';
 import { MetricRenderer } from './MetricRenderer';
+import { LinkedParametersPortal, OpenLinkedParameters } from './LinkedParametersPortal';
 
 const KPI_GAUGE_DRAW_HEIGHT = 164;
 const acquireMessage = 'Acquire a source with verified KPI observation evidence.';
@@ -25,6 +26,8 @@ type Props = {
   view: ViewState;
   persisted?: LinkedKpiOptions;
   viewer: boolean;
+  parametersTarget: HTMLElement | null;
+  onOpenParameters: () => void;
   sourceCurrent: boolean;
   readCurrent: () => { view: ViewState; executor?: LocalWorkerExecutor; card?: DashboardCard; sourceCurrent: boolean };
   onSettingsChange: (options: LinkedKpiOptions, guard: () => boolean) => Promise<boolean>;
@@ -157,14 +160,15 @@ type AppliedState = { key: string; job: NonNullable<SourceJob>; result: KpiResul
 type EditorProps = {
   job: SourceJob;
   settings?: LinkedKpiOptions;
-  needsRepair: boolean;
+  parametersTarget: HTMLElement | null;
+  needsPreset: boolean;
   appliedProblem?: string;
   draftSurface?: DrawingSurface;
   surface: () => DrawingSurface | undefined;
   onSettingsChange: Props['onSettingsChange'];
 };
 
-function KpiEditor({ job, settings, needsRepair, appliedProblem, draftSurface, surface, onSettingsChange }: EditorProps) {
+function KpiEditor({ job, settings, parametersTarget, needsPreset, appliedProblem, draftSurface, surface, onSettingsChange }: EditorProps) {
   const worker = useKpiWorker();
   const [draft, setDraft] = useState(() => kpiDraft(settings));
   const [saving, setSaving] = useState(false);
@@ -207,9 +211,9 @@ function KpiEditor({ job, settings, needsRepair, appliedProblem, draftSurface, s
   }, [worker, job, candidate, changed, choices, supported, width, height]);
 
   const canApply = !!job && !!choices && !!changed && supported && checked?.ok === true;
-  let hint: string | undefined;
-  if (job && source?.job === job && !choices) hint = source.error ?? acquireMessage;
-  else if (choices && draft.metric && !decoded.ok) hint = decoded.message;
+  const sourceProblem = job && source?.job === job && !choices ? source.error ?? acquireMessage : undefined;
+  let hint = sourceProblem;
+  if (choices && draft.metric && !decoded.ok) hint = decoded.message;
   else if (changed && choices && !supported) hint = 'The KPI drawing surface is too small. Resize the card and try again.';
   else if (changed && choices && !checked) hint = 'Checking KPI settings…';
   else if (checked && !checked.ok) hint = checked.message;
@@ -230,16 +234,18 @@ function KpiEditor({ job, settings, needsRepair, appliedProblem, draftSurface, s
     finally { setSaving(false); }
   }
 
-  return <details className="linked-kpi-settings" open={needsRepair || !settings}>
-    <summary>KPI settings</summary>
-    <LinkedKpiControls draft={draft} setDraft={setDraft} columns={job?.columns ?? []} choices={choices}
-      canApply={canApply} saving={saving} message={hint === appliedProblem ? undefined : hint} onSubmit={event => void apply(event)}/>
+  return <>
+    <LinkedParametersPortal target={parametersTarget}>
+      <LinkedKpiControls draft={draft} setDraft={setDraft} columns={job?.columns ?? []} choices={choices}
+        canApply={canApply} saving={saving} message={hint === appliedProblem ? undefined : hint} onSubmit={event => void apply(event)}/>
+    </LinkedParametersPortal>
+    {needsPreset ? <p role="status">{sourceProblem ?? 'Choose a verified KPI preset in Parameters.'}</p> : null}
     {saveProblem ? <p role="alert">{saveProblem}</p> : null}
-  </details>;
+  </>;
 }
 
 export function LinkedKpiRenderer(props: Props) {
-  const { sourceId, persisted, view, viewer, onSettingsChange } = props;
+  const { sourceId, persisted, view, viewer, parametersTarget, onOpenParameters, onSettingsChange } = props;
   const decoded = useMemo(() => persisted === undefined ? undefined : decodeLinkedKpiOptions(persisted), [persisted]);
   const settings = decoded?.ok ? decoded.options : undefined;
   const key = settingsKey(persisted);
@@ -273,20 +279,23 @@ export function LinkedKpiRenderer(props: Props) {
     && applied.job.ready === view.ready && revisionIs(applied.job.revision, view.sourceRevision);
   const result = applied?.key === key && (applied.job === job || retainCompleted) ? applied.result : undefined;
   const problem = decoded && !decoded.ok ? decoded.message : result && !result.ok ? result.message : undefined;
+  const needsPreset = !decoded && !pending && !view.error;
   return <section className="linked-kpi-renderer" aria-label="Linked KPI">
     {!viewer ? <>
       <div className="linked-kpi-surface-probe" ref={probe} aria-hidden="true">
         <ChartRenderer data={null} scrollHeight={KPI_GAUGE_DRAW_HEIGHT}
           minPlotWidth={KPI_GAUGE_MIN_DRAW_WIDTH} onDrawingSurfaceChange={observeSurface}/>
       </div>
-      <KpiEditor key={key} job={job} settings={settings} needsRepair={!!problem} appliedProblem={problem} draftSurface={draftSurface}
+      <KpiEditor key={key} job={job} settings={settings} parametersTarget={parametersTarget} needsPreset={needsPreset}
+        appliedProblem={problem} draftSurface={draftSurface}
         surface={readSurface} onSettingsChange={onSettingsChange}/>
     </> : null}
     {problem ? <p role="alert">{problem}</p> : null}
     {retainCompleted ? <p role="status">Showing completed data (stale).</p> : null}
     {pending && !result?.ok ? <p role="status">Loading source {sourceId}…</p> : null}
     {job && settings && !result && !problem ? <p role="status">Calculating linked KPI…</p> : null}
-    {viewer && !decoded && !pending && !view.error ? <p>Choose a verified KPI preset in edit mode.</p> : null}
+    {viewer && needsPreset ? <p>Choose a verified KPI preset in edit mode.</p> : null}
+    {!viewer && (needsPreset || problem) && <OpenLinkedParameters onOpen={onOpenParameters}/>}
     {result?.ok ? <KpiOutput result={result} observeSurface={observeSurface}/> : null}
   </section>;
 }

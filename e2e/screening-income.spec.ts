@@ -3,8 +3,8 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot } from './fixtures/chart-recipes';
-import { importScreening, screeningNames, screeningPaths, screeningPayload, screeningSources,
+import { card, plot, openParameters } from './fixtures/chart-recipes';
+import { importScreening, screeningExample, screeningNames, screeningPaths, screeningPayload, screeningSources,
   screeningTab, screeningWorkspace } from './fixtures/screening-income';
 
 const [bubble, dividends, income] = screeningNames;
@@ -130,6 +130,7 @@ test('reads delivered scope and original values from rendered bubbles, steps and
 
   const div = card(page, dividends);
   const divGraph = plot(page, dividends);
+  await openParameters(div);
   await expect(div.getByLabel('Acquired instrument')).toHaveValue('CANOPY.US');
   await expect(div).toContainText('CANOPY.US · GBP payment currency · Split-adjusted to current-share terms.');
   await expect(div).toContainText('Verified acquired window 2026-01-01 to 2026-06-30 inclusive.');
@@ -222,15 +223,13 @@ test('keeps hidden screening conflicts and dividend gaps, refuses unknown eviden
   await ready(page);
 
   const widget = card(page, dividends);
-  await widget.getByRole('button', { name: 'Card menu' }).click();
-  await page.getByRole('menuitem', { name: 'Choose source' }).click();
+  await (await openParameters(widget)).getByRole('button', { name: 'Choose source', exact: true }).click();
   let dialog = page.getByRole('dialog', { name: 'Choose source' });
   await dialog.getByLabel('Source table').selectOption({ label: screenSource + ' — ' + screeningTab });
   await dialog.getByRole('button', { name: 'Choose source' }).click();
   await expect(plot(page, dividends)).toHaveCount(0);
   await expect(widget.getByLabel('Chart type').locator('option[value="dividend-steps"]')).toHaveAttribute('disabled', '');
-  await widget.getByRole('button', { name: 'Card menu' }).click();
-  await page.getByRole('menuitem', { name: 'Choose source' }).click();
+  await (await openParameters(widget)).getByRole('button', { name: 'Choose source', exact: true }).click();
   dialog = page.getByRole('dialog', { name: 'Choose source' });
   await dialog.getByLabel('Source table').selectOption({ label: dividendSource + ' — ' + screeningTab });
   await dialog.getByRole('button', { name: 'Choose source' }).click();
@@ -243,6 +242,7 @@ test('applies a new price date and fiscal period, then exports settings and reac
   await importScreening(page);
   await ready(page);
   const screen = card(page, bubble);
+  await openParameters(screen);
   await screen.getByLabel('Price date').selectOption('2026-08-28');
   await screen.getByLabel('Show regression').uncheck();
   await expect(screen).toContainText('Unweighted OLS, N = 4');
@@ -251,6 +251,7 @@ test('applies a new price date and fiscal period, then exports settings and reac
   await expect(markers(plot(page, bubble))).toHaveCount(3);
   await expect(screen).not.toContainText('Unweighted OLS');
   const sunk = card(page, income);
+  await openParameters(sunk);
   await sunk.getByLabel('Income statement period').selectOption({ label: 'FY 2025 · 2025-06-30' });
   await expect(sunk).toContainText('FY 2026 ended 2026-06-30');
   await apply(sunk);
@@ -305,7 +306,9 @@ test('taps Sankey nodes and links, scrolls from a fixed node and zooms fitting p
   try {
     const page = await context.newPage();
     await page.emulateMedia({ colorScheme: 'dark' });
-    await importScreening(page);
+    const short = JSON.parse(screeningExample);
+    short[0].tabs['screening-income'].layout[2].h = 24;
+    await importScreening(page, JSON.stringify(short));
     await ready(page);
     await page.setViewportSize({ width: 390, height: 1100 });
     // Keep the actual import notice below the card in the captured viewport.
@@ -441,6 +444,7 @@ test('keeps the ten-node applied Sankey when another full record lacks net incom
   await importScreening(page, undefined, new Map([[incomePath, payload]]));
   const widget = card(page, income);
   const graph = plot(page, income);
+  await openParameters(widget);
   const period = widget.getByLabel('Income statement period');
   const button = widget.getByRole('button', { name: 'Apply chart settings' });
   const repair = 'Present a finite, source-verified Net income anchor for the selected period.';

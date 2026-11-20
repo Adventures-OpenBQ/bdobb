@@ -13,7 +13,7 @@ The two echoes are not pictured here; the quarter, date-time and Relative-tab sh
 
 ## Linked table and Linked chart
 
-*A table, or a chart, using another table in this dashboard.* Picking either in the library does not add a card at once: a dialog asks for the **Source table** — any table on this dashboard whose table the app computes itself — and its button, **Create linked table** or **Create linked chart**, adds the card. With no such table it reads *No eligible table sources in this dashboard.* Neither can be double-clicked or dragged in the library. The same two items are on a source table's **⋯** menu, and a linked card's **⋯** menu has **Choose source** to repoint it (see [[widget-cards|Widget Cards]] and [[linked-widgets|Linked Widgets]]).
+*A table, or a chart, using another table in this dashboard.* Picking either in the library does not add a card at once: a dialog asks for the **Source table** — any table on this dashboard whose table the app computes itself — and its button, **Create linked table** or **Create linked chart**, adds the card. With no such table it reads *No eligible table sources in this dashboard.* Neither can be double-clicked or dragged in the library. The same two items are on a source table's **⋯** menu, and a linked table’s **⋯** menu has **Choose source**. For linked charts and metrics, **Choose source** is in **Parameters** (see [[widget-cards|Widget Cards]] and [[linked-widgets|Linked Widgets]]).
 
 ## Note
 

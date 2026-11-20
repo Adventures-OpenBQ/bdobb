@@ -48,8 +48,7 @@ wanted.
 
 ## Linked charts
 
-A chart created from a table's card menu draws that table's output. Its
-controls pick **Chart type** (Columns, Bars or Lines), a **Category**, the
+A chart created from a table's card menu draws that table's output. Open **Parameters** with the card’s **Show parameters** chevron. The panel holds **Choose source** and the linked chart or KPI controls. Its basic chart controls include **Chart type** (Columns, Bars or Lines), a **Category**, the
 **Measures** to plot and, for columns and bars, **Display** as Grouped or
 Stacked. See Tables for what output it receives.
 
@@ -57,7 +56,7 @@ For **Return distribution**, select adjusted daily prices, one symbol and 5–10
 
 **Return summaries** compares up to twelve qualified listings from a documented local daily adjusted-price snapshot. Boxes show R7 quartiles, observed whiskers and outliers. Violin uses Gaussian density smoothing on the same returns and a shared scale. Hover, tap, or open **Return listing details** for original returns, dates and counts. Use **Common inclusive dates** to compare within explicit bounds. After importing a source-free template, drop the snapshot and select it with **Choose source**.
 
-**ETF holdings Pareto** compares individual and cumulative weight of fund assets for up to 50 delivered holdings. Read the delivered weight and provider coverage beneath the controls. **ETF exposure** shows the reported weight of equity exposure for every delivered sector or region. Scroll the plot to reach the last category. Use **Card menu → Choose source** to change tables, choose the matching exposure mode and category, then **Apply chart settings**.
+**ETF holdings Pareto** compares individual and cumulative weight of fund assets for up to 50 delivered holdings. Read the delivered weight and provider coverage beneath the controls. **ETF exposure** shows the reported weight of equity exposure for every delivered sector or region. Scroll the plot to reach the last category. Use **Show parameters → Choose source** to change tables, choose the matching exposure mode and category, then **Apply chart settings**.
 
 **Screening bubble** compares dividend yield and five-day price change for one price-data date. Area represents market cap. **Show regression** fits the usable presented rows of the delivered page. Read the sample size, acquisition scope and retrieval time in the card.
 

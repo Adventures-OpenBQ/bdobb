@@ -1,5 +1,7 @@
 # KPI cards and gauges
 
+The KPI cards open with Parameters closed. Use **Show parameters** on each linked metric to choose its source or edit the saved settings.
+
 Open [KPI fixtures](../v9-next-kpi-gauges.apps.json) as a BDOBB Workspace. Drop [fictional-observations.json](fictional-observations.json) to acquire the fictional data as a local table. On each linked metric, use **Choose source** to replace the empty **KPI snapshot source** with the dropped table. The six saved presets use the original numeric fields in the file.
 
 The cards cover last price, market capitalization, trailing dividend yield, trailing P/E, trailing diluted EPS and trailing revenue. The EPS gauge has a labeled user range of 0 to 8 USD per share. Its two acquired vintages report the same actual TTM period, reporting standard and diluted basis, with original values of 4.546 and 4.2 USD per share. Open **KPI details** or hover or tap the gauge value to inspect the source values and dates. The displayed fraction of 0.428% comes from an acquired value of 0.00428.

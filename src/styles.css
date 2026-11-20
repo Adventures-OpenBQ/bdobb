@@ -2427,27 +2427,32 @@ body {
 .tv-chart-plot { flex: 1; min-height: 0; }
 .tv-credit { align-self: flex-end; padding: 2px 4px 0; font-size: var(--font-size-11); color: var(--text-muted); }
 
-/* Linked chart controls and notices share the card's bounded plot space. */
+/* The linked Parameters form stays mounted while the panel is closed. */
+.widget-card:has(.card-linked-params) { container-type: size; }
+.card-linked-params { min-width: 0; max-height: min(12rem, 35cqh); overflow: auto; }
+.card-linked-params[hidden] { display: none; }
+.widget-card:has(.card-linked-params:not([hidden])) .linked-parameters-repair { display: none; }
+.card-linked-params > button { margin-bottom: 6px; }
+.card-linked-params .chart-controls { display: flex; flex-wrap: wrap; align-items: start; gap: 6px; }
+.card-linked-params .chart-controls label { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; }
+.card-linked-params .chart-controls > label { max-width: min(100%, 28rem); }
+.card-linked-params .chart-controls label:has(> select) { white-space: nowrap; }
+.card-linked-params .chart-controls :is(select, input) { min-width: 0; max-width: 100%; }
+.card-linked-params .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; max-width: 100%; margin: 0; }
+.card-linked-params .chart-controls > fieldset:is(.etf-sunburst-controls, .dual-axis-overlay-controls, .estimate-revisions-controls, .market-map-controls) {
+  flex: 0 0 100%;
+  border: 0;
+  padding: 2px 0;
+}
 .linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.linked-chart-card > button { align-self: flex-start; flex: 0 0 auto; }
 .linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-.linked-chart-renderer .chart-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; flex: 0 1 auto; max-height: 40%; overflow: auto; }
-.linked-chart-renderer .chart-controls label { display: inline-flex; align-items: center; gap: 4px; }
-.linked-chart-renderer .chart-controls fieldset { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; margin: 0; }
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
 /* Match the news plot viewport's stable scrollbar gutter without occupying card height. */
 .news-calendar-width-probe { flex: 0 0 0; height: 0; visibility: hidden; }
-.linked-chart-renderer--news .chart-controls > label,
-.linked-chart-renderer--ownership .chart-controls > label,
-.linked-chart-renderer--return .chart-controls > label { width: min(100%, 320px); }
-.linked-chart-renderer--news .chart-controls > label > select,
-.linked-chart-renderer--ownership .chart-controls > label > select,
-.linked-chart-renderer--return .chart-controls > label > select { flex: 1; min-width: 0; }
-.news-calendar-fields { flex: 1 0 100%; }
-.news-calendar-fields > div { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; }
-.news-calendar-fields summary, .news-calendar-details summary { cursor: pointer; }
+.news-calendar-fields { flex-basis: 100%; }
+.news-calendar-details summary { cursor: pointer; }
 .linked-chart-renderer--news .linked-chart-status { max-height: 33%; }
 .news-calendar-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
 .news-calendar-day-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
@@ -2463,9 +2468,6 @@ body {
   pointer-events: none;
 }
 .linked-chart-renderer--etf { position: relative; --etf-plot-share: 58%; }
-.linked-chart-renderer--etf .chart-controls { flex-shrink: 0; max-height: 27%; }
-.linked-chart-renderer--etf .chart-controls > label { width: min(100%, 340px); white-space: nowrap; }
-.linked-chart-renderer--etf .chart-controls > label > select { flex: 1; min-width: 0; }
 .linked-chart-plot--etf { flex: 0 0 var(--etf-plot-share); margin-top: auto; }
 .etf-sunburst-draft-probe {
   position: absolute;
@@ -2474,9 +2476,6 @@ body {
   visibility: hidden;
   pointer-events: none;
 }
-.etf-sunburst-settings { flex: 0 0 100%; min-width: 0; }
-.etf-sunburst-settings summary { cursor: pointer; }
-.linked-chart-renderer .etf-sunburst-controls { max-width: 100%; border: 0; padding: 2px 0; }
 .etf-sunburst-controls label { max-width: 100%; }
 .etf-sunburst-controls select { min-width: 0; }
 .etf-sunburst-controls p { flex: 1 0 100%; margin: 2px 0; }
@@ -2487,9 +2486,6 @@ body {
 .etf-sunburst-details summary { cursor: pointer; }
 .etf-sunburst-details p, .etf-sunburst-details ul { margin: 4px 0; }
 .linked-chart-renderer--overlay { position: relative; --overlay-plot-share: 58%; }
-.linked-chart-renderer--overlay .chart-controls { flex-shrink: 0; max-height: 27%; }
-.linked-chart-renderer--overlay .chart-controls > label { width: min(100%, 320px); white-space: nowrap; }
-.linked-chart-renderer--overlay .chart-controls > label > select { flex: 1; min-width: 0; }
 .linked-chart-plot--overlay { flex: 0 0 var(--overlay-plot-share); margin-top: auto; }
 .dual-axis-overlay-draft-probe {
   position: absolute;
@@ -2498,9 +2494,7 @@ body {
   visibility: hidden;
   pointer-events: none;
 }
-.dual-axis-overlay-settings { flex: 0 0 100%; min-width: 0; }
-.dual-axis-overlay-settings summary, .dual-axis-overlay-details summary { cursor: pointer; }
-.linked-chart-renderer .dual-axis-overlay-controls { max-width: 100%; border: 0; padding: 2px 0; }
+.dual-axis-overlay-details summary { cursor: pointer; }
 .dual-axis-overlay-controls label { max-width: 100%; }
 .dual-axis-overlay-controls select { min-width: 0; max-width: 100%; }
 .dual-axis-overlay-controls p { flex: 1 0 100%; margin: 2px 0; }
@@ -2508,9 +2502,6 @@ body {
 .dual-axis-overlay-details:not([open]) { flex-shrink: 0; }
 .dual-axis-overlay-details h4, .dual-axis-overlay-details p, .dual-axis-overlay-details ul { margin: 4px 0; }
 .linked-chart-renderer--revisions { position: relative; --revision-plot-share: 58%; }
-.linked-chart-renderer--revisions .chart-controls { flex-shrink: 0; max-height: 32%; }
-.linked-chart-renderer--revisions .chart-controls > label { width: min(100%, 320px); white-space: nowrap; }
-.linked-chart-renderer--revisions .chart-controls > label > select { flex: 1; min-width: 0; }
 .linked-chart-plot--revisions { flex: 0 0 var(--revision-plot-share); margin-top: auto; }
 .estimate-revisions-draft-probe {
   position: absolute;
@@ -2519,9 +2510,7 @@ body {
   visibility: hidden;
   pointer-events: none;
 }
-.estimate-revisions-settings { flex: 0 0 100%; min-width: 0; }
-.estimate-revisions-settings summary, .estimate-revisions-details summary { cursor: pointer; }
-.linked-chart-renderer .estimate-revisions-controls { max-width: 100%; border: 0; padding: 2px 0; }
+.estimate-revisions-details summary { cursor: pointer; }
 .estimate-revisions-controls label { max-width: 100%; overflow-wrap: anywhere; }
 .estimate-revisions-controls select { min-width: 0; max-width: 100%; }
 .estimate-revisions-controls p { flex: 1 0 100%; margin: 2px 0; }
@@ -2530,9 +2519,6 @@ body {
 .estimate-revisions-details:not([open]) { flex-shrink: 0; }
 .estimate-revisions-details h4, .estimate-revisions-details p, .estimate-revisions-details ul { margin: 4px 0; }
 .linked-chart-renderer--market { position: relative; --market-plot-share: 58%; }
-.linked-chart-renderer--market .chart-controls { flex-shrink: 0; max-height: 32%; }
-.linked-chart-renderer--market .chart-controls > label { width: min(100%, 320px); white-space: nowrap; }
-.linked-chart-renderer--market .chart-controls > label > select { flex: 1; min-width: 0; }
 .linked-chart-plot--market { flex: 0 0 var(--market-plot-share); margin-top: auto; }
 .market-map-draft-probe {
   position: absolute;
@@ -2541,9 +2527,7 @@ body {
   visibility: hidden;
   pointer-events: none;
 }
-.market-map-settings { flex: 0 0 100%; min-width: 0; }
-.market-map-settings summary, .market-map-details summary { cursor: pointer; }
-.linked-chart-renderer .market-map-controls { max-width: 100%; border: 0; padding: 2px 0; }
+.market-map-details summary { cursor: pointer; }
 .market-map-controls label { max-width: 100%; }
 .market-map-controls select { min-width: 0; max-width: 100%; }
 .market-map-controls p { flex: 1 0 100%; margin: 2px 0; }
@@ -2556,7 +2540,7 @@ body {
 .chart-surface-placeholder { visibility: hidden; }
 .chart-scroll-viewport--wide { overflow-x: auto; }
 .chart-scroll-viewport--wide.chart-scroll-viewport--touch-scroll { touch-action: pan-x pan-y pinch-zoom; }
-.linked-chart-renderer .return-summary-listings { flex-basis: 100%; }
+.card-linked-params .return-summary-listings { flex-basis: 100%; }
 .return-summary-details, .ownership-snapshot-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
 .return-summary-details:not([open]), .ownership-snapshot-details:not([open]) { flex-shrink: 0; }
 .return-summary-details summary, .ownership-snapshot-details summary { cursor: pointer; }
@@ -3892,8 +3876,8 @@ body {
 .linked-kpi-renderer { position: relative; min-width: 0; container-type: inline-size; }
 .linked-kpi-renderer .metric { height: auto; padding: 8px 0; }
 .linked-kpi-renderer .metric-value { font-size: clamp(var(--font-size-16), 8cqi, var(--font-size-28)); }
-.linked-kpi-settings, .linked-kpi-details { margin-block: 6px; }
-.linked-kpi-settings summary, .linked-kpi-details summary { cursor: pointer; }
+.linked-kpi-details { margin-block: 6px; }
+.linked-kpi-details summary { cursor: pointer; }
 .linked-kpi-controls fieldset { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; margin: 0 0 6px; border: 0; min-width: 0; }
 .linked-kpi-controls label { display: flex; flex-direction: column; min-width: 0; max-width: 100%; gap: 2px; }
 .linked-kpi-controls input, .linked-kpi-controls select { max-width: 100%; }

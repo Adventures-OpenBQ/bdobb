@@ -1,5 +1,7 @@
 # ETF sunburst example
 
+The charts open with Parameters closed. Use the card’s **Show parameters** chevron to choose a source or edit the chart.
+
 1. Import [the Workspace template](../v9-next-etf-sunburst.apps.json).
 2. Drop [fictional-holdings.json](fictional-holdings.json) into the dashboard.
 3. On **ETF composition**, use **Choose source** and select the dropped local table.

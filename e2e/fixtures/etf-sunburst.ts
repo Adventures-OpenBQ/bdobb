@@ -5,7 +5,7 @@ import { expect, type Page } from '@playwright/test';
 import type { EtfSunburstOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { live, local, rows, stamp } from '../../src/test/fixtures/etfHierarchyEvidence';
 import { dashboardSeed, seedApp } from '../fixtures';
-import { card } from './chart-recipes';
+import { card, chooseLinkedSource } from './chart-recipes';
 import { dropFile } from './return-summary';
 
 export const chartName = 'ETF composition';
@@ -73,13 +73,7 @@ export async function prepareEtf(page: Page, { backend = false, options, empty =
 }
 
 export async function chooseEtfSource(page: Page, name: string) {
-  await page.mouse.move(360, 200);
-  await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');
-  await card(page, chartName).getByRole('button', { name: 'Choose source', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Choose source' });
-  await dialog.getByLabel('Source table').selectOption({ label: name + ' — ' + tab });
-  await dialog.getByRole('button', { name: 'Choose source', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
+  await chooseLinkedSource(page, card(page, chartName), name + ' — ' + tab);
 }
 
 export async function attachHoldings(page: Page, content: unknown = snapshot(), name = file) {

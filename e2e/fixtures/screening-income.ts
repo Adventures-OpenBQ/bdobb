@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dashboardSeed, openRail, seedApp } from '../fixtures';
 
 const directory = 'docs/examples/v9-screening-income';
+export const screeningExample = readFileSync(directory + '.apps.json', 'utf8');
 const origin = 'http://127.0.0.1:17911';
 const prefix = '/api/v1/eodhd/equity/';
 export const screeningTab = 'Screening and income';
@@ -15,7 +16,7 @@ export const screeningSources = ['US screener page', 'Canopy dividends', 'Canopy
 export const screeningPaths = [prefix + 'screener', prefix + 'fundamental/dividends', prefix + 'fundamental/income'] as const;
 export const screeningPayload = (path: string) => JSON.parse(readFileSync(directory + path, 'utf8'));
 
-export async function importScreening(page: Page, manifest = readFileSync(directory + '.apps.json', 'utf8'),
+export async function importScreening(page: Page, manifest = screeningExample,
   overrides = new Map<string, unknown>()) {
   const acquisitions: URL[] = [];
   await page.route(origin + '/**', route => {
