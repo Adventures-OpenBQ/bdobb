@@ -101,6 +101,24 @@ export function followPlotYAxisTicks(
   };
 }
 
+/** Keep mouse/touch drill and the keyboard sector selector in the same view. */
+export function followSunburstLevel(node: HTMLElement, onLevel: (id: string) => void): () => void {
+  type Click = { nextLevel?: string };
+  type Listener = (event: Click) => false | undefined;
+  const graph = node as HTMLElement & {
+    on: (event: 'plotly_sunburstclick', listener: Listener) => void;
+    removeListener: (event: 'plotly_sunburstclick', listener: Listener) => void;
+  };
+  const select: Listener = event => {
+    if (typeof event.nextLevel !== 'string') return;
+    onLevel(event.nextLevel);
+    // The same checked trace redraws at the new level through Plotly.react.
+    return false;
+  };
+  graph.on('plotly_sunburstclick', select);
+  return () => graph.removeListener('plotly_sunburstclick', select);
+}
+
 export function purgePlot(node: HTMLElement): void {
   Plotly.purge(node);
 }

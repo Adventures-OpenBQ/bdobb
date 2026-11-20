@@ -248,7 +248,7 @@ type DashboardState = {
   ) => Promise<string | null>;
   addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: LinkedPresentation }) => Promise<string | null>;
   commitLinkedMetricSettings: (dashboardId: string, cardId: string, settings: LinkedKpiOptions, guard: () => boolean) => Promise<boolean>;
-  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings) => Promise<boolean>;
+  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
   replaceLinkedSource: (cardId: string, sourceWidgetId: string) => Promise<boolean>;
   removeCard: (cardId: string) => Promise<void>;
   /**
@@ -1230,10 +1230,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       return id;
     }),
 
-    commitLinkedChartSettings: async (dashboardId, cardId, settings) => {
+    commitLinkedChartSettings: async (dashboardId, cardId, settings, guard) => {
       const captured = structuredClone(settings);
       return lifecycle(async () => {
-        if (refuse("commitLinkedChartSettings")) return false;
+        if (refuse("commitLinkedChartSettings") || (guard && !guard())) return false;
         const dashboard = get().dashboards.find(d => d.id === dashboardId);
         const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
         if (!dashboard || removing.has(dashboardId) || !card?.linkedSource || !card.linkedChart) return false;

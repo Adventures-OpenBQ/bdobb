@@ -9,6 +9,7 @@ import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
 import { datasetFromBytes } from "./localTableData";
 import { buildKpiSnapshot } from "./widgetData/kpi/build";
+import { buildEtfHierarchy } from "./widgetData/chartRecipes/etfSunburst";
 import { runRecipe } from "./widgetData/chartRecipes/run";
 import { normalizeWidgets } from "./widgetsJson";
 import { captureChartSources, chartRequestContext } from "./widgetData/chartRecipes/chartSourceContracts";
@@ -83,6 +84,7 @@ describe("docs/examples", () => {
     "v9-next-return-box-violin.apps.json",
     "v9-next-ownership-snapshot.apps.json",
     "v9-next-kpi-gauges.apps.json",
+    "v9-next-etf-sunburst.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -227,6 +229,26 @@ describe("docs/examples", () => {
         snapshot: { reference: { kind: "observation", value: 4.2 }, observation: { reporting_basis: "US-GAAP", period_start: "2025-10-01" } },
       });
     }
+  });
+
+  it("v9-next-etf-sunburst imports a source-free question and admits the supplied local holdings", async () => {
+    const name = "v9-next-etf-sunburst", file = "fictional-holdings.json";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(source.params).toEqual({});
+    const recipe = chart.linkedChart?.recipe;
+    if (recipe?.kind !== "etf-sunburst") throw new Error("Missing imported ETF recipe.");
+    expect(recipe).toMatchObject({ fund: "CANOPY.US", depth: 2, snapshot: "latest" });
+    const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+    const admitted = buildEtfHierarchy(dataset, recipe);
+    expect(admitted).toMatchObject({ ok: true, value: { scope: "delivered", acquiredCount: 4, deliveredWeight: .35,
+      holdings: expect.arrayContaining([
+        expect.objectContaining({ symbol: "CEDAR.US", value: .000001 }),
+        expect.objectContaining({ symbol: "WILLOW.US", value: 0 }),
+      ]) } });
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {

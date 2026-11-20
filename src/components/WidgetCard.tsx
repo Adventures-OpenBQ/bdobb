@@ -2224,7 +2224,7 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
     if (metric && previousRefresh.current !== refreshKey) tableExecutionStore.refresh(dashboardId, card.id);
     previousRefresh.current = refreshKey;
   }, [metric, refreshKey, dashboardId, card.id]);
-  const readKpiSource = useCallback(() => {
+  const readLinkedSource = useCallback(() => {
     const cards = useDashboardStore.getState().dashboards.find(d => d.id === dashboardId)?.tabs.flatMap(t => t.cards) ?? [];
     const currentView = tableExecutionStore.readView(dashboardId, card.id);
     return {
@@ -2244,14 +2244,16 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   const unavailable = view.status === 'unavailable' || !ancestry;
   const content = <>
     {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
-    {!unavailable && view.stale && !metric ? <p role="status">Showing completed data (stale).</p> : null}
+    {!unavailable && view.stale && !metric && card.linkedChart?.type !== 'etf-sunburst' ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
       : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, ancestry])}
         sourceId={sourceId} executor={executor} view={view} persisted={card.linkedMetric} viewer={viewer}
-        readCurrent={readKpiSource} sourceCurrent={readKpiSource().sourceCurrent}
+        readCurrent={readLinkedSource} sourceCurrent={readLinkedSource().sourceCurrent}
         onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedMetricSettings(dashboardId, card.id, settings, guard)} />
-      : card.linkedChart ? <LinkedChartRenderer parentReportsSourceStatus dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
+      : card.linkedChart ? <LinkedChartRenderer parentReportsSourceStatus dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer}
+        sourceAncestry={ancestry} readCurrentSource={readLinkedSource}
+        onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings, guard)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;
   return card.linkedChart || metric ? <div className="linked-chart-card">{content}</div> : content;

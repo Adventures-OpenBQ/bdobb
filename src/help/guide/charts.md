@@ -28,7 +28,7 @@ With no date-shaped column, the x-axis is the one non-numeric column if there is
 
 "Numeric" means every non-null value in those first five rows is a number. A mostly-text column with one stray number does not qualify, and a bare year like `2026` is not date-shaped and will not become an x-axis. If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator, waterfall, Sankey and box traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator, waterfall, Sankey, box and sunburst traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
 
 Two other chart widget types render here as well. A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or Vega-Lite specification instead of a Plotly figure; the app translates the common cases — line, area, bar, column and scatter — into the same bundled Plotly, so they draw as ordinary chart cards rather than raw JSON. A spec that uses something the translation does not cover falls back to the card's **Raw** view.
 
@@ -57,6 +57,16 @@ Link a table with acquired ownership evidence, then choose **Ownership snapshot*
 The opted-in EODHD ShareStatistics route can verify insider and institutional percentages for US primary common stock. Use `chart_source=true` on the table, selecting `results`, and include `provider=eodhd` on the shared route. Field dates, share class and basis can remain unknown. Direct free float and the data for **Waffle** require separate acquired evidence. Waffle uses 100 squares for an exclusive, exhaustive partition with a common outstanding-shares denominator, one class and one measurement date. Its details give exact bucket values, including buckets with zero cells, and the chart reports any admitted rounding discrepancy.
 
 After importing the source-free example, drop the separate file and use **Choose source**. If the saved issuer is unavailable, attach the intended source or explicitly select the newly acquired issuer and apply. Saving a workspace with an attached file reports `MISSING_LOCAL_ASSET`. For a portable settings file, relink to an empty source card, remove the dropped table and save. Reattach the file after import.
+
+## ETF sunburst
+
+Create a linked chart from an acquired ETF holdings table and choose **ETF sunburst**. Bind the original holding, sector and fractional fund-weight fields. Choose **Sectors** or **Sectors and holdings**, then select **Apply chart settings**. **Latest acquired** follows the holdings source. To keep one observation, choose its report date or acquisition vintage explicitly. If that pin disappears, reattach its snapshot or choose an available snapshot and apply.
+
+Click a sector to drill. On a touch screen, tap once to inspect a wedge and tap it again to drill. Use **Sector view** and **Home** to browse with the keyboard or reach a subpixel wedge. Hover, tap or open **ETF holdings details** to read the original fund weight and the separate share of delivered holdings. Zero weights stay in the details. Unclassified holdings stay in **Sector unavailable**. The card reports the visible weight and the acquired coverage. Filtering discloses omitted holdings and leaves excluded weight unknown.
+
+The opted-in EODHD holdings endpoint uses `chart_source=true`, a qualified US ETF symbol and the `results` selection. Its acquisition vintage dates the fetch. The live report date, completeness and missing weight remain unknown. Report-dated or complete snapshots require compatible acquired holdings evidence. Use a documented local holdings snapshot to try those choices.
+
+For a portable Workspace, relink to an empty local table and remove the dropped file card before saving. An attached file triggers `MISSING_LOCAL_ASSET`. After import, drop the original holdings file and choose it as the source.
 
 ## Linked metric
 

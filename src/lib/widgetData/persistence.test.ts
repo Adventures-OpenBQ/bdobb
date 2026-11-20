@@ -103,6 +103,18 @@ it('persists the ownership question and strips runtime evidence, resolved coordi
   expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
 });
 
+it('keeps the ETF authored snapshot selection and drops computed output from native persistence', () => {
+  const recipe = { version: 1, kind: 'etf-sunburst', fund: 'VTI.US', snapshot: 'latest', depth: 2,
+    fields: { holding: 'symbol', sector: 'sector', weight: 'weight' } } satisfies RecipeOptions;
+  const authored = { type: recipe.kind, recipe, display: 'grouped', measures: [] } as const;
+  const settings = { ...authored, measures: [] };
+  const injected = { ...settings, chart_sources: { receipts: ['injected'] }, etfHierarchy: { holdings: [] },
+    resolvedSnapshot: '2026-09-30', viewportHeight: 460 };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(settings);
+  const unsupported = { ...recipe, version: 2 } as unknown as RecipeOptions;
+  expect(persistedCard({ ...child, linkedChart: { ...settings, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
+});
+
 it('keeps only closed linked KPI settings on built-in metric cards', () => {
   const metric = { ...source, id: 'metric', widgetId: 'linked_metric', linkedSource: { kind: 'widget', sourceWidgetId: 'source' } } as const;
   const linkedMetric = { version: 1, metric: 'dividend_yield', valueField: 'acquired_yield', observation: { mode: 'latest' }, view: 'card' } as const;

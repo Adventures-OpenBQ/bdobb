@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box']) }));
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst']) }));
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
@@ -27,7 +27,7 @@ import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
 import { pivotValueKey } from '../lib/pivotKeys';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { exportCompatibleApp, importApps } from '../lib/appsJson';
-import type { OwnershipSnapshotOptions, RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
+import type { EtfSunburstOptions, OwnershipSnapshotOptions, RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
 import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
 import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
 import { runRecipe } from '../lib/widgetData/chartRecipes/run';
@@ -44,6 +44,7 @@ import { buildKpiSnapshot } from '../lib/widgetData/kpi/build';
 import type { LinkedKpiOptions } from '../lib/widgetData/kpi/types';
 import * as kpiWorkers from '../lib/widgetData/kpi/workerClient';
 import { metricReceipt, metricRows } from '../test/fixtures/metricEvidence';
+import { local as etfReceipt, rows as etfRows } from '../test/fixtures/etfHierarchyEvidence';
 class Boundary {
   static failChild = false;
   onmessage: ((e: MessageEvent) => void) | null = null;
@@ -1672,4 +1673,201 @@ it('fences KPI drafts across option, geometry and source revision changes before
     await waitFor(() => expect(requests).toHaveLength(5));
     await act(async () => requests[4].release());
   } finally { factory.mockRestore(); recipeFactory.mockRestore(); }
+});
+
+const etfOptions: EtfSunburstOptions = {
+  version: 1, kind: 'etf-sunburst', fund: 'VTI.US', depth: 2, snapshot: 'latest',
+  fields: { holding: 'symbol', sector: 'sector', weight: 'weight' },
+};
+async function etfSource(id: string, weight: number, withEvidence = true) {
+  // One positive holding plus one zero. This uses the real builder's full
+  // circles, which do not need a native partial-path fill check in jsdom.
+  const rows = [{ ...etfRows[0], weight }, { ...etfRows[1], weight: 0 }];
+  const content = { rows, completeness: 'partial',
+    ...(withEvidence && { chart_sources: { version: 1, receipts: [etfReceipt] } }) };
+  const file = await saveLocalFile(new File([JSON.stringify(content)], id + '.json'));
+  return card({ id, widgetId: 'local_table', backendId: 'builtin', params: { file } });
+}
+
+it('requires acquired ETF evidence and clears invalid applied options', async () => {
+  const { factory } = riskRuntime();
+  const ordinary = await etfSource('A', .27, false);
+  const certified = await etfSource('B', .34);
+  const chart = riskChart(etfOptions);
+  installDashboard(riskDashboard([ordinary, certified, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/Acquire the fund holdings with verified fractional weights/i)).toBeVisible();
+    fireEvent.click(screen.getByText('ETF sunburst settings', { exact: true }));
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await chooseRiskSource('B');
+    expect(await screen.findByText(/Original total fraction 0\.34/i)).toBeVisible();
+    await screen.findByTestId('chart-plot');
+    const invalid = { ...chart.linkedChart!, recipe: { ...etfOptions, version: 2 } as unknown as EtfSunburstOptions };
+    act(() => installDashboard(riskDashboard([ordinary, certified, { ...chart, linkedSource: { kind: 'widget', sourceWidgetId: 'B' }, linkedChart: invalid }])));
+    expect(await screen.findByText(/plain version 1 recipe options/i)).toBeVisible();
+    expect(screen.queryByText(/Original total fraction 0\.34/i)).toBeNull();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('clears ETF output while a ready filtered producer waits for its exact worker job', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await etfSource('A', .27);
+  installDashboard(riskDashboard([a, riskChart(etfOptions)]));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/2 of 2 acquired/i)).toBeVisible();
+    await screen.findByTestId('chart-plot');
+    let release!: () => void;
+    run.mockImplementationOnce(async (dataset, options, context) => {
+      const result = runRecipe(dataset, options, context);
+      await new Promise<void>(done => { release = done; });
+      return result;
+    });
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: 'keep this' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(tableExecutionStore.readView('d', 'chart')).toMatchObject({ status: 'ready', stale: false });
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/2 of 2 acquired/i)).toBeNull();
+    expect(screen.queryByText('Showing completed data (stale).')).toBeNull();
+    await act(async () => release());
+    expect(await screen.findByText(/1 of 2 acquired.*excluded weight unavailable/i)).toBeVisible();
+    await screen.findByTestId('chart-plot');
+  } finally { factory.mockRestore(); }
+});
+
+it('fences ETF jobs and results before recursive relinks synchronize and keeps only same-chain stale output', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await etfSource('A', .27), b = await etfSource('B', .34);
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const chart = { ...riskChart(etfOptions), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, b, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const pathB = 'files/' + b.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === pathB ? held : readFile(path, options));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/Original total fraction 0\.27/i)).toBeVisible();
+    await screen.findByTestId('chart-plot');
+    sync.mockImplementation(() => {});
+    const previousJobs = run.mock.calls.length;
+    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/Original total fraction 0\.27/i)).toBeNull();
+    expect(run).toHaveBeenCalledTimes(previousJobs);
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText(/Original total fraction 0\.34/i)).toBeVisible();
+    await screen.findByTestId('chart-plot');
+    let rejectRefresh!: (error: Error) => void;
+    const refresh = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+    read.mockImplementation((path, options) => path === pathB ? refresh : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    expect(screen.getByText(/Original total fraction 0\.34/i)).toBeVisible();
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getByText(/Original total fraction 0\.34/i)).toBeVisible();
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it('clears old ETF worker and draw replies on direct relink and reports current draw failure locally', async () => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await etfSource('A', .27), b = await etfSource('B', .34);
+  const plot = vi.mocked(renderPlot);
+  let rejectDraw!: (error: Error) => void;
+  plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
+  installDashboard(riskDashboard([a, b, riskChart(etfOptions)]));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    let rejectWorker!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, reject) => { rejectWorker = reject; }));
+    act(() => resize(498.5, 379.5));
+    await waitFor(() => expect(rejectWorker).toBeDefined());
+    plot.mockRejectedValueOnce(new Error('Current sunburst draw failed'));
+    await chooseRiskSource('B');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Current sunburst draw failed');
+    expect(screen.getByText(/Original total fraction 0\.34/i)).toBeVisible();
+    await act(async () => {
+      rejectDraw(new Error('Obsolete draw'));
+      rejectWorker(new Error('Obsolete calculation'));
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText(/Obsolete/i)).toBeNull();
+    run.mockRejectedValueOnce(new Error('Current sunburst calculation failed'));
+    act(() => resize(483.5, 364.5));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Current sunburst calculation failed');
+    expect(screen.queryByText(/Original total fraction 0\.34/i)).toBeNull();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('fences obsolete ETF draft results and applies only at the exact checked viewport', async () => {
+  const { factory, run, setSize, resize } = riskRuntime();
+  const a = await etfSource('A', .27);
+  installDashboard(riskDashboard([a, riskChart(etfOptions)]));
+  try {
+    render(<LiveRiskChart/>);
+    const original = await screen.findByTestId('chart-plot');
+    fireEvent.click(screen.getByText('ETF sunburst settings', { exact: true }));
+    const depth = screen.getByRole('combobox', { name: 'Hierarchy depth' });
+    const snapshot = screen.getByRole('combobox', { name: 'Snapshot' });
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    const held: { signal: AbortSignal; release: () => void; width?: number }[] = [];
+    run.mockImplementation(async (data, options, context, signal) => {
+      const result = runRecipe(data, options, context);
+      if (options.kind === 'etf-sunburst' && options.depth === 1)
+        await new Promise<void>(release => held.push({ signal, release, width: context.viewportWidth }));
+      return result;
+    });
+    fireEvent.change(depth, { target: { value: '1' } });
+    await waitFor(() => expect(held).toHaveLength(1));
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(original);
+    expect(screen.getByText(/Original total fraction 0\.27/i)).toBeVisible();
+    fireEvent.change(snapshot, { target: { value: etfReceipt.snapshot } });
+    await waitFor(() => expect(held).toHaveLength(2));
+    expect(held[0].signal.aborted).toBe(true);
+    await act(async () => held[0].release());
+    expect(apply).toBeDisabled();
+    await act(async () => held[1].release());
+    expect(apply).toBeEnabled();
+    setSize(10000.5);
+    fireEvent.click(apply);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(etfOptions);
+    act(() => resize(10000.5));
+    await waitFor(() => expect(held).toHaveLength(3));
+    expect(held[2].width).toBe(10000.5);
+    await act(async () => held[2].release());
+    expect(apply).toBeDisabled();
+    act(() => resize(540.5));
+    await waitFor(() => expect(held).toHaveLength(4));
+    expect(held[3].width).toBe(540.5);
+    await act(async () => held[3].release());
+    fireEvent.click(apply);
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe)
+      .toEqual({ ...etfOptions, depth: 1, snapshot: etfReceipt.snapshot }));
+    await waitFor(() => expect(held).toHaveLength(5));
+    await act(async () => held[4].release());
+    await screen.findByTestId('chart-plot');
+  } finally { factory.mockRestore(); }
 });

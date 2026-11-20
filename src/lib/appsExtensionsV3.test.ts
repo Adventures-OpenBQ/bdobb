@@ -400,6 +400,36 @@ it("roundtrips ownership choices and refuses runtime data, unknown keys and vers
   })).toEqual(hostile.map(() => false));
 });
 
+it("roundtrips only authored ETF sunburst options in a v4 workspace", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: "etf-sunburst", version: 1, fund: "VTI.US", depth: 2, snapshot: "2026-09-30",
+    fields: { holding: "listing", sector: "industry_sector", weight: "asset_fraction" } } satisfies RecipeOptions;
+  const chart = card({ id: "holdings-chart", widgetId: "linked_chart",
+    linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, sunburst] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(sunburst.linkedChart?.recipe).toEqual(recipe);
+  expect(sunburst.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const invalid of [
+    { etfHierarchy: { holdings: [] } }, { viewportHeight: 440 }, { chart_sources: {} },
+    { recipe: { ...recipe, version: 2 } }, { recipe: { ...recipe, resolvedSnapshot: "2026-09-30" } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, snapshot: "snapshot" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, invalid);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(invalid)).toBe(false);
+    Object.assign(chart.linkedChart!, invalid);
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(invalid)).toBe(false);
+    chart.linkedChart = { type: recipe.kind, measures: [], display: "grouped", recipe };
+  }
+});
+
 const kpiOptions = {
   version: 1, metric: 'eps_ttm', valueField: 'eps_ttm', observation: { mode: 'pinned', id: 'revised-report' },
   view: 'gauge', range: { min: 0, max: 100, label: 'Planning range' },

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/chartShapes";
 import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
-import { followPlotYAxisTicks, purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot, type AxisTickFormatter } from "../../lib/plotly";
+import { followSunburstLevel, followPlotYAxisTicks, purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot, type AxisTickFormatter } from "../../lib/plotly";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 
@@ -49,10 +49,11 @@ export function readDrawingSurface(surface: Element): DrawingSurface {
 }
 
 // These installed traces expose the inspection text through mouse hover.
-function inspectPlotTaps(plot: HTMLDivElement, kind: 'sankey' | 'annotation') {
+function inspectPlotTaps(plot: HTMLDivElement, kind: 'sankey' | 'annotation' | 'sunburst') {
   const targetFor = (event: TouchEvent) => {
     if (!(event.target instanceof Element)) return null;
     if (kind === 'sankey') return event.target.closest('.sankey-node, .sankey-link');
+    if (kind === 'sunburst') return event.target.closest('.sunburstlayer g.slice');
     return event.target.closest('.annotation-text-g') ? event.target : null;
   };
   let start: { target: Element; touch: Touch; time: number } | undefined;
@@ -78,7 +79,11 @@ function inspectPlotTaps(plot: HTMLDivElement, kind: 'sankey' | 'annotation') {
     if (!tap || !target || !event.cancelable) return;
     event.preventDefault();
     const mouse = { bubbles: true, clientX: touch.clientX, clientY: touch.clientY };
-    if (hovered && hovered !== target) hovered.dispatchEvent(new MouseEvent('mouseout', mouse));
+    if (kind === 'sunburst' && hovered === target) {
+      target.dispatchEvent(new MouseEvent('click', mouse));
+      return;
+    }
+    if (hovered && hovered !== target && plot.contains(hovered)) hovered.dispatchEvent(new MouseEvent('mouseout', mouse));
     target.dispatchEvent(new MouseEvent('mouseover', mouse));
     target.dispatchEvent(new MouseEvent('mousemove', mouse));
     hovered = target;
@@ -115,6 +120,7 @@ export function ChartRenderer({
   minPlotWidth,
   onDrawingSurfaceChange,
   formatYAxisTicks,
+  onSunburstLevelChange,
 }: {
   data: unknown;
   uirevision?: string;
@@ -130,6 +136,7 @@ export function ChartRenderer({
   /** Measure the actual drawing surface after minimum dimensions and scrollbar gutters. */
   onDrawingSurfaceChange?: (size: DrawingSurface) => void;
   formatYAxisTicks?: AxisTickFormatter;
+  onSunburstLevelChange?: (id: string) => void;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -167,11 +174,13 @@ export function ChartRenderer({
   // detects a double-click by counting two clicks within a delay on the SAME
   // drag layer, so an unconditional resize between the two clicks discards the
   // count and "double-click to reset zoom" silently stops working.
+  const inspectSunburstOnTouch = !!onSunburstLevelChange;
   const attachNode = useCallback((el: HTMLDivElement | null) => {
     node.current = el;
     if (!el) return;
     const stopInspecting = inspectSankeyOnTouch ? inspectPlotTaps(el, 'sankey')
-      : inspectAnnotationsOnTouch ? inspectPlotTaps(el, 'annotation') : undefined;
+      : inspectAnnotationsOnTouch ? inspectPlotTaps(el, 'annotation')
+        : inspectSunburstOnTouch ? inspectPlotTaps(el, 'sunburst') : undefined;
     let last = { w: 0, h: 0 };
     const observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect;
@@ -193,7 +202,7 @@ export function ChartRenderer({
       // React can immediately reattach the same node, including during a draw.
       queueMicrotask(() => { if (node.current !== el) purgePlot(el); });
     };
-  }, [inspectSankeyOnTouch, inspectAnnotationsOnTouch, onPlotWidthChange]);
+  }, [inspectSankeyOnTouch, inspectAnnotationsOnTouch, inspectSunburstOnTouch, onPlotWidthChange]);
 
   // Reconciles the existing plot in place via Plotly.react (renderPlot)
   // rather than purging and redrawing on every new `data`/`drawable`
@@ -249,6 +258,7 @@ export function ChartRenderer({
     if (!el || !figure) return;
     let active = true;
     let stopFollowingTicks: (() => void) | undefined;
+    let stopFollowingLevel: (() => void) | undefined;
     const axis = formatYAxisTicks
       ? figure.layout.yaxis as { range?: number[]; tickvals?: number[]; ticktext?: string[] } | undefined
       : undefined;
@@ -256,6 +266,7 @@ export function ChartRenderer({
       if (!active || node.current !== el || !el.isConnected) return;
       active = false;
       stopFollowingTicks?.();
+      stopFollowingLevel?.();
       const message = (error instanceof Error ? error.message : String(error)).slice(0, 400);
       void logError(`chart render failed: ${message}`);
       setFailure({ id: draw.id, message });
@@ -266,6 +277,9 @@ export function ChartRenderer({
         // touch mode. Plotly mutates nested ranges during gestures and react.
         const chart = onDrawingSurfaceChange ? { ...figure, layout: structuredClone(figure.layout) } : figure;
         await renderPlot(el, chart, draw.uirevision);
+        if (active && node.current === el && onSunburstLevelChange) {
+          stopFollowingLevel = followSunburstLevel(el, onSunburstLevelChange);
+        }
         if (active && node.current === el && formatYAxisTicks && axis?.range && axis.tickvals && axis.ticktext) {
           const initial = { range: axis.range, tickvals: axis.tickvals, ticktext: axis.ticktext };
           stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, initial, failDraw);
@@ -274,8 +288,8 @@ export function ChartRenderer({
       } catch (error) { failDraw(error); }
     };
     void render();
-    return () => { active = false; stopFollowingTicks?.(); };
-  }, [draw, formatYAxisTicks, onDrawingSurfaceChange]);
+    return () => { active = false; stopFollowingTicks?.(); stopFollowingLevel?.(); };
+  }, [draw, formatYAxisTicks, onDrawingSurfaceChange, onSunburstLevelChange]);
 
   const problem = failure?.id === draw.id ? <p role="alert">Chart could not be drawn. {failure.message}</p>
     : !figure ? (measured ? null : <p className="empty-state">Nothing chartable in this payload.</p>)
@@ -293,5 +307,5 @@ export function ChartRenderer({
     + (minPlotWidth ? ' chart-scroll-viewport--wide' : '');
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
   return <>{onDrawingSurfaceChange && problem}<div className={viewportClass} ref={observeViewport}
-    onTouchEnd={coarseScroll && !inspectSankeyOnTouch && !inspectAnnotationsOnTouch ? event => event.preventDefault() : undefined}>{plot}</div></>;
+    onTouchEnd={coarseScroll && !inspectSankeyOnTouch && !inspectAnnotationsOnTouch && !inspectSunburstOnTouch ? event => event.preventDefault() : undefined}>{plot}</div></>;
 }

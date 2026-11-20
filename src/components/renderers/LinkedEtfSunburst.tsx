@@ -1,0 +1,290 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChartResult, LocalWorkerExecutor, Revision } from '../../lib/tableExecution/types';
+import type { ViewState } from '../../stores/tableExecutionStore';
+import { readChartSource, readChartSourceProjection } from '../../lib/widgetData/chartRecipes/chartSourceContracts';
+import { etfSnapshotKey, parseEtfHierarchySource } from '../../lib/widgetData/chartRecipes/etfHierarchyEvidence';
+import type { EtfHierarchy } from '../../lib/widgetData/chartRecipes/etfSunburst';
+import { acquiredColumnOrigin } from '../../lib/widgetData/chartRecipes/financialEvidence';
+import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
+import type { EtfSunburstOptions, RecipeContext, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
+import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
+import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
+
+const plotWidth = 340;
+const plotHeight = 280;
+const sourceProblem = 'Acquire the fund holdings with verified fractional weights on a common fund-assets basis.';
+const roles = {
+  holding: ['symbol', 'Holding'],
+  sector: ['sector', 'Sector'],
+  weight: ['weight', 'Fund weight'],
+} as const;
+const acquiredOrigins = new Set(['symbol', 'sector', 'weight', 'fund_symbol', 'snapshot',
+  'weight_basis', 'weight_unit', 'unit', 'basis', 'etf_kind', 'as_of', 'holdings_coverage']);
+const recipeRoles = Object.keys(roles) as (keyof typeof roles)[];
+
+function sameRevision(left: Revision | undefined, right: Revision) {
+  return left?.widgetId === right.widgetId && left.input === right.input
+    && left.model === right.model && left.output === right.output;
+}
+
+function sameSurface(left: DrawingSurface | undefined, right: DrawingSurface | undefined) {
+  return left?.width === right?.width && left?.height === right?.height;
+}
+
+function errorText(error: unknown) {
+  return (error instanceof Error ? error.message : String(error)).slice(0, 400);
+}
+
+type SourceState = {
+  view: ViewState;
+  executor?: LocalWorkerExecutor;
+  sourceCurrent: boolean;
+};
+
+/** Both evaluations read the exact same producer revision and projected columns. */
+export function useEtfSunburstJob(sourceCurrent: boolean, view: ViewState, executor: LocalWorkerExecutor | undefined,
+  sourceId: string | undefined, readCurrent: () => SourceState) {
+  const { ready, sourceRevision: revision } = view;
+  return useMemo(() => {
+    if (!sourceCurrent || !executor || !ready || !revision || revision.widgetId !== sourceId) return;
+    const columns = ready.columns;
+    const acquiredFields = columns.filter(column => acquiredOrigins.has(acquiredColumnOrigin(column) ?? '')).map(column => column.id);
+    const available = new Set(columns.map(column => column.id));
+    const active = revision;
+    function current() {
+      const current = readCurrent();
+      return current.sourceCurrent && current.executor === executor && current.view.ready === ready
+        && sameRevision(current.view.sourceRevision, active);
+    }
+    return {
+      current, ready, revision, columns,
+      async load(signal: AbortSignal, options?: EtfSunburstOptions): Promise<ChartResult> {
+        const fields = options ? [...new Set([...acquiredFields, ...Object.values(options.fields).filter(id => available.has(id))])] : [];
+        if (!current()) throw new Error('The ETF holdings source changed. Reload the selected source.');
+        const result = await executor.chartData(revision, fields, signal);
+        signal.throwIfAborted();
+        if (!sameRevision(result.revision, revision) || result.resultRevision !== revision.model || result.outputRevision !== revision.output)
+          throw new Error('The ETF holdings source revision changed. Reload the selected source.');
+        return result;
+      },
+    };
+  }, [sourceId, sourceCurrent, ready, revision, executor, readCurrent]);
+}
+type Job = NonNullable<ReturnType<typeof useEtfSunburstJob>>;
+type Measured = { box: DrawingSurface; context: RecipeContext };
+type Completed = { request: { job: Job; options: EtfSunburstOptions; measured: Measured }; result: RecipeResult };
+
+function useEtfSurface(context: RecipeContext) {
+  const element = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<DrawingSurface>();
+  const observe = useCallback((size: DrawingSurface) => {
+    setBox(previous => sameSurface(previous, size) ? previous : size);
+  }, []);
+  const measured = useMemo(() => box && { box, context: { ...context, viewportWidth: box.width, viewportHeight: box.height } }, [box, context]);
+  const matches = useCallback((box: DrawingSurface) => {
+    const surface = element.current?.querySelector('.chart-plot');
+    return !!surface && sameSurface(readDrawingSurface(surface), box);
+  }, []);
+  return { element, measured, observe, matches };
+}
+
+function useEtfCalculation(job: Job | undefined, options: EtfSunburstOptions | undefined,
+  measured: Measured | undefined, matches: (box: DrawingSurface) => boolean) {
+  const worker = useRef<ReturnType<typeof createRecipeWorker> | null>(null);
+  useEffect(() => {
+    const client = createRecipeWorker();
+    worker.current = client;
+    return () => { worker.current = null; client.dispose(); };
+  }, []);
+  const request = useMemo(() => job && options && measured ? { job, options, measured } : undefined, [job, options, measured]);
+  const [completed, setCompleted] = useState<Completed>();
+  useEffect(() => {
+    const client = worker.current;
+    if (!request || !client) return;
+    const { job, options, measured } = request;
+    const controller = new AbortController(), { signal } = controller;
+    function current() { return !signal.aborted && job.current() && matches(measured.box); }
+    function finish(result: RecipeResult) { if (current() && request) setCompleted({ request, result }); }
+    void job.load(signal, options).then(data => {
+      if (current()) return client.run(data, options, measured.context, signal).then(finish);
+    }).catch(error => finish({ ok: false, message: errorText(error) }));
+    return () => controller.abort();
+  }, [request, matches]);
+  return { completed, checked: request && completed?.request === request ? completed.result : undefined };
+}
+
+export function EtfSunburstControls({ saved, context, job, disabled, onApply }: {
+  saved?: EtfSunburstOptions;
+  context: RecipeContext;
+  job?: Job;
+  disabled: boolean;
+  onApply: (options: EtfSunburstOptions, guard: () => boolean) => void;
+}) {
+  const surface = useEtfSurface(context);
+  const [fund, setFund] = useState(saved?.fund);
+  const [snapshot, setSnapshot] = useState(saved?.snapshot ?? 'latest');
+  const [depth, setDepth] = useState(saved?.depth ?? 2);
+  const [edited, setEdited] = useState<Partial<EtfSunburstOptions['fields']>>(saved?.fields ?? {});
+  const [read, setRead] = useState<{ job: Job; source?: ReturnType<typeof parseEtfHierarchySource>; error?: string }>();
+  useEffect(() => {
+    if (!job) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    void job.load(signal).then(dataset => {
+      const { provenance } = dataset;
+      const source = readChartSourceProjection(provenance, 'etf-hierarchy')
+        ? readChartSource(provenance, 'etf-hierarchy', parseEtfHierarchySource) : undefined;
+      if (!signal.aborted && job.current()) setRead({ job, source });
+    }).catch(error => { if (!signal.aborted && job.current()) setRead({ job, error: errorText(error) }); });
+    return () => controller.abort();
+  }, [job]);
+
+  const currentRead = job && read?.job === job ? read : undefined;
+  const source = currentRead?.source;
+  const listing = fund ?? source?.fund ?? '';
+  const acquiredSnapshot = source?.snapshot;
+  const matchesPin = acquiredSnapshot !== undefined && etfSnapshotKey(acquiredSnapshot) === etfSnapshotKey(snapshot);
+  const snapshotValue = matchesPin ? snapshot : acquiredSnapshot;
+  const fields = useMemo(() => recipeRoles.map(role => {
+    const [origin, label] = roles[role];
+    const candidates = job?.columns.filter(column => acquiredColumnOrigin(column) === origin) ?? [];
+    const selected = edited[role] ?? (candidates.length === 1 ? candidates[0].id : '');
+    return { role, label, candidates, selected };
+  }), [job, edited]);
+  const decoded = useMemo(() => decodeRecipeOptions({
+    kind: 'etf-sunburst', version: 1, fund: listing, snapshot, depth,
+    fields: Object.fromEntries(fields.map(({ role, selected }) => [role, selected])),
+  }, 'etf-sunburst'), [listing, snapshot, depth, fields]);
+  const candidate = decoded.ok && decoded.options.kind === 'etf-sunburst' ? decoded.options : undefined;
+  const changed = Boolean(candidate && (!saved || candidate.fund !== saved.fund || candidate.snapshot !== saved.snapshot
+    || candidate.depth !== saved.depth || recipeRoles.some(role => candidate.fields[role] !== saved.fields[role])));
+  const { checked } = useEtfCalculation(job, source && changed ? candidate : undefined, surface.measured, surface.matches);
+  const checking = !!job && !!source && changed && !checked;
+  const canApply = checked?.ok === true;
+  const problem = !currentRead ? undefined : currentRead.error ?? (!source ? (saved ? undefined : sourceProblem)
+    : !decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
+  const snapshotLabel = acquiredSnapshot === source?.as_of ? `As of ${acquiredSnapshot}` : `Acquired vintage ${acquiredSnapshot}`;
+  return <details className="etf-sunburst-settings" open={!saved}>
+    <summary>ETF sunburst settings</summary>
+    <div className="etf-sunburst-draft-probe" aria-hidden="true" ref={surface.element}>
+      <ChartRenderer data={null} scrollHeight={plotHeight} minPlotWidth={plotWidth} onDrawingSurfaceChange={surface.observe}/>
+    </div>
+    <fieldset className="etf-sunburst-controls" disabled={disabled} aria-label="ETF sunburst settings">
+      <label>Fund<select value={listing} onChange={event => setFund(event.target.value)}>
+        {!listing && <option value="">Choose acquired holdings</option>}
+        {listing && listing !== source?.fund && <option value={listing} disabled>{listing} (unavailable)</option>}
+        {source && <option value={source.fund}>{source.fund}</option>}
+      </select></label>
+      <label>Snapshot<select value={snapshot} onChange={event => setSnapshot(event.target.value)}>
+        <option value="latest">Latest acquired</option>
+        {snapshot !== 'latest' && !matchesPin && <option value={snapshot} disabled>{snapshot} (unavailable)</option>}
+        {snapshotValue && <option value={snapshotValue}>{snapshotLabel}</option>}
+      </select></label>
+      <label>Hierarchy depth<select value={depth} onChange={event => setDepth(event.target.value === '1' ? 1 : 2)}>
+        <option value="1">Sectors</option><option value="2">Sectors and holdings</option>
+      </select></label>
+      {fields.map(({ role, label, candidates, selected }) => <label key={role}>{label}
+        <select value={selected} onChange={event => setEdited({ ...edited, [role]: event.target.value })}>
+          <option value="">Choose field</option>
+          {selected && !candidates.some(column => column.id === selected) && <option value={selected} disabled>{selected} (unavailable)</option>}
+          {candidates.map(column => <option value={column.id} key={column.id}>{column.label}</option>)}
+        </select></label>)}
+      {problem && <p role="status">{problem}</p>}
+      {checking && <span className="sr-only" role="status">Checking ETF sunburst settings…</span>}
+      <button type="button" disabled={!canApply} aria-busy={checking || undefined} onClick={() => {
+        if (!canApply || !job || !candidate || !surface.measured) return;
+        const { box } = surface.measured;
+        onApply(candidate, () => job.current() && surface.matches(box));
+      }}>Apply chart settings</button>
+    </fieldset>
+  </details>;
+}
+
+type Node = EtfHierarchy['root'] | EtfHierarchy['sectors'][number] | EtfHierarchy['holdings'][number] | NonNullable<EtfHierarchy['residual']>;
+const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17 });
+const scientificPercent = new Intl.NumberFormat('en-US', { style: 'percent', notation: 'scientific', maximumSignificantDigits: 17 });
+const percentage = (value: number) => (value > 0 && value < 1e-6 ? scientificPercent : percent).format(value);
+
+function originalWeight({ value, deliveredShare }: Node) {
+  return `${value} fund-assets fraction · ${percentage(value)} of fund assets${deliveredShare === null
+    ? '' : ` · ${percentage(deliveredShare)} of delivered holdings (${deliveredShare} share)`}`;
+}
+
+function EtfDetails({ hierarchy, level }: { hierarchy: EtfHierarchy; level: string }) {
+  const { root, sectors, holdings, residual } = hierarchy;
+  const visibleHoldings = level ? holdings.filter(holding => holding.parentId === level) : holdings;
+  const visibleSectors = level ? sectors.filter(sector => sector.id === level) : [...sectors, ...(residual ? [residual] : [])];
+  return <details className="etf-sunburst-details">
+    <summary>ETF holdings details</summary>
+    <p>{root.label} · {originalWeight(root)}</p>
+    <ul aria-label="Original sector weights">
+      {visibleSectors.map(node => <li key={node.id}>{node.label} · {originalWeight(node)}
+        {node.kind === 'residual' && ` · Source ${node.reference}`}</li>)}
+    </ul>
+    <ul aria-label="Original holding weights">
+      {visibleHoldings.map(node => <li key={node.id}>{node.symbol} · {node.sector ?? 'Sector unavailable'} · {originalWeight(node)}</li>)}
+    </ul>
+  </details>;
+}
+
+export function LinkedEtfSunburst({ view, job, options, sourceId, context, parentReportsSourceStatus }: {
+  view: ViewState; job?: Job; options: EtfSunburstOptions; sourceId?: string; context: RecipeContext; parentReportsSourceStatus: boolean;
+}) {
+  const surface = useEtfSurface(context);
+  const { completed, checked } = useEtfCalculation(job, options, surface.measured, surface.matches);
+  const pending = view.status === 'pending' || view.status === 'updating';
+  const retained = completed?.result.ok && view.stale && (pending || view.status === 'blocked' || view.status === 'failed')
+    && completed.request.job.ready === view.ready && sameRevision(view.sourceRevision, completed.request.job.revision);
+  const result = retained ? completed.result : checked;
+  const output = result?.ok && result.etfHierarchy ? result : undefined;
+  const hierarchy = output?.etfHierarchy;
+  const [drill, setDrill] = useState<{ revision: string; id: string }>();
+  const sectors = options.depth === 2 && hierarchy ? hierarchy.sectors.filter(node => node.value > 0) : [];
+  const level = drill?.revision === output?.revision && sectors.some(sector => sector.id === drill?.id) ? drill!.id : '';
+  const revision = output?.revision;
+  const rootId = hierarchy?.root.id;
+  const navigate = useCallback((id: string) => {
+    if (revision) setDrill({ revision, id: id === rootId ? '' : id });
+  }, [revision, rootId]);
+  const drawable = useMemo(() => {
+    if (!output?.figure.data.length || !surface.measured) return;
+    const { width, height } = surface.measured.box;
+    // During a stale refresh keep the last admitted geometry only at its
+    // verified dimensions. A new CSS size needs a new current worker result.
+    if (retained && !sameSurface(surface.measured.box, completed?.request.measured.box)) return;
+    const [trace] = output.figure.data as Record<string, unknown>[];
+    return { data: [{ ...trace, level }], layout: {
+      ...output.figure.layout, width: Math.round(width), height: Math.round(height), autosize: false,
+    } };
+  }, [output, surface.measured, level, retained, completed]);
+
+  return <>
+    <div className="linked-chart-status">
+      {retained && <p role="status">Showing completed data (stale).</p>}
+      {!result && !view.error && <p role="status">{job ? 'Calculating ETF sunburst…'
+        : sourceId ? `Loading source ${sourceId}…` : 'Select an available source table.'}</p>}
+      {view.error && !parentReportsSourceStatus && <p role="alert">{view.error}</p>}
+      {result && !result.ok && <p role={result.refused ? 'status' : 'alert'}>{result.message}</p>}
+      {hierarchy && <div role="status">
+        {hierarchy.asOf === null && <p>Report date unknown · Retrieved {hierarchy.retrievedAt}.</p>}
+        {output?.notes.map(note => <p key={note}>{note}</p>)}
+        {!hierarchy.root.value && <p>All visible holdings have zero weight.</p>}
+      </div>}
+    </div>
+    {sectors.length > 0 && <div className="etf-sunburst-navigation">
+      <button type="button" onClick={() => navigate('')}>Home</button>
+      <label>Sector view <select value={level} onChange={event => navigate(event.target.value)}>
+        <option value="">Fund overview</option>
+        {sectors.map(sector => <option value={sector.id} key={sector.id}>{sector.label}</option>)}
+      </select></label>
+    </div>}
+    {hierarchy && <EtfDetails hierarchy={hierarchy} level={level}/>}
+    <div className="linked-chart-plot linked-chart-plot--etf" ref={surface.element}>
+      <ChartRenderer data={drawable} uirevision={revision} scrollHeight={plotHeight} minPlotWidth={plotWidth}
+        onDrawingSurfaceChange={surface.observe} touchScroll="overflow" onSunburstLevelChange={navigate}/>
+    </div>
+  </>;
+}

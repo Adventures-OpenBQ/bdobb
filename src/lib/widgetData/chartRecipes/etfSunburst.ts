@@ -7,7 +7,7 @@ import { color, escape } from '../figureHelpers';
 import type { DatasetColumn, WidgetDataset } from '../types';
 import { readChartSource, readChartSourceProjection, type ChartBuildResult } from './chartSourceContracts';
 import { read } from './estimateEvidence';
-import { etfHierarchyAdapter, parseEtfHierarchySource, type EtfHierarchySource } from './etfHierarchyEvidence';
+import { etfHierarchyAdapter, parseEtfHierarchySource, etfSnapshotKey, type EtfHierarchySource } from './etfHierarchyEvidence';
 import { acquiredColumnOrigin } from './financialEvidence';
 import { decodeRecipeOptions } from './settings';
 import type { EtfSunburstOptions, RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
@@ -56,12 +56,6 @@ function sum(values: readonly number[]): number {
   return total;
 }
 
-function snapshotKey(value: string): string {
-  if (value.length === 10) return value;
-  const [second, fraction = ''] = value.replace(/(?:Z|\+00:00)$/, '').split('.');
-  return `${second}.${fraction.padEnd(6, '0')}Z`;
-}
-
 function physicalColumn(columns: readonly DatasetColumn[], origin: string): DatasetColumn | undefined {
   const matches = columns.filter(column => acquiredColumnOrigin(column) === origin);
   if (matches.length === 1 && columns.filter(column => column.id === matches[0].id).length === 1) return matches[0];
@@ -98,7 +92,7 @@ export function buildEtfHierarchy(dataset: WidgetDataset, options: EtfSunburstOp
   const unsafe = Object.entries(hazards).filter(([flag]) => source.unsafe[flag]).map(([, label]) => label);
   if (unsafe.length) return refuse(`The ETF acquisition reports ${unsafe.join(', ')}. Repair the source.`);
   if (options.fund !== source.fund) return refuse(`Choose the acquired fund ${source.fund} or relink its holdings source.`);
-  if (options.snapshot !== 'latest' && snapshotKey(options.snapshot) !== snapshotKey(source.snapshot))
+  if (options.snapshot !== 'latest' && etfSnapshotKey(options.snapshot) !== etfSnapshotKey(source.snapshot))
     return refuse('The pinned ETF snapshot is unavailable. Choose the acquired snapshot or follow latest.');
   if (provenance.inputMayContainAggregates || rows.some(row => row.groupPath !== undefined) ||
     columns.some(column => column.aggregation || column.measureId || column.splitPath?.length || column.analytical?.scope === 'aggregate'))
@@ -303,7 +297,7 @@ export function buildEtfSunburst(dataset: WidgetDataset, options: RecipeOptions,
   const { value, notes } = built;
   const { root, sectors, holdings, residual } = value;
   const revision = JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, options.fund, options.depth,
-    options.snapshot === 'latest' ? 'latest' : snapshotKey(options.snapshot), snapshotKey(value.snapshot), value.asOf,
+    options.snapshot === 'latest' ? 'latest' : etfSnapshotKey(options.snapshot), etfSnapshotKey(value.snapshot), value.asOf,
     options.fields.holding, options.fields.sector, options.fields.weight]);
 
   const children = new Map<string, PlotNode[]>();

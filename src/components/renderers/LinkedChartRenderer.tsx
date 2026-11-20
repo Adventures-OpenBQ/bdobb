@@ -10,10 +10,11 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { tableExecutionStore } from '../../stores/tableExecutionStore';
 import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer, type DrawingSurface } from './ChartRenderer';
+import { EtfSunburstControls, LinkedEtfSunburst, useEtfSunburstJob } from './LinkedEtfSunburst';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
-import type { NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { EtfSunburstOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
@@ -62,7 +63,9 @@ type LinkedChartProps = {
     viewer?: boolean;
     parentReportsSourceStatus?: boolean;
     store?: typeof tableExecutionStore;
-    onSettingsChange: (settings: LinkedChartSettings) => Promise<boolean>;
+    sourceAncestry?: string[];
+    readCurrentSource?: () => { view: ViewState; executor?: LocalWorkerExecutor; sourceCurrent: boolean; card?: DashboardCard };
+    onSettingsChange: (settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
 };
 export function LinkedChartRenderer(props: LinkedChartProps) {
     const type = props.card.linkedChart?.type;
@@ -70,7 +73,7 @@ export function LinkedChartRenderer(props: LinkedChartProps) {
     return <LinkedChartView key={JSON.stringify([props.dashboardId, props.card.id, source])} {...props}/>;
 }
 
-function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, onSettingsChange }: LinkedChartProps) {
+function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, sourceAncestry, readCurrentSource, onSettingsChange }: LinkedChartProps) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
     const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
@@ -160,6 +163,17 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const newsDraftContext = useMemo<RecipeContext | undefined>(() => draftWidth === undefined
         ? undefined : { theme, maxDecimals, today, viewportWidth: draftWidth }, [theme, maxDecimals, today, draftWidth]);
     const measuredDraftContext = useMemo<RecipeContext>(() => ({ theme, maxDecimals, today }), [theme, maxDecimals, today]);
+    const etfForm = editing === 'etf-sunburst';
+    const etfChart = settings.type === 'etf-sunburst';
+    const etfScope = JSON.stringify([editScope, sourceAncestry]);
+    const readEtfSource = useCallback(() => {
+        if (readCurrentSource) return readCurrentSource();
+        const current = store.readView(dashboardId, card.id);
+        return { view: current, executor: source ? store.readExecutor(dashboardId, source) : undefined,
+            sourceCurrent: current.status === 'ready' || current.status === 'empty', card };
+    }, [readCurrentSource, store, dashboardId, card, source]);
+    const etfJob = useEtfSunburstJob((etfChart || etfForm) && readEtfSource().sourceCurrent,
+        view, executor, source, readEtfSource);
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
@@ -288,13 +302,15 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     }, [built, carried, source]);
     const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
-    async function commit(next: LinkedChartSettings) {
+    async function commit(next: LinkedChartSettings, guard?: () => boolean) {
         if (viewer || saving) return;
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
-        if (!await onSettingsChange(next))
-            throw new Error('Chart settings could not be saved.');
+        if (guard && !guard()) throw new Error('The ETF holdings source or drawing size changed. Review the settings and try again.');
+        const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
+        if (!committed) throw new Error(guard ? 'The ETF holdings source or drawing size changed. Review the settings and try again.'
+            : 'Chart settings could not be saved.');
         setSaveError(undefined); setDraft(undefined);
     }
     catch (e) {
@@ -314,6 +330,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             || !['ready', 'empty'].includes(current.status)) return;
         void commit({ ...withRecipeType(settings, options.kind), recipe: options });
     }
+    function applyEtf(options: EtfSunburstOptions, current: () => boolean) {
+        const canSave = () => current() && JSON.stringify(readEtfSource().card?.linkedChart) === JSON.stringify(settings);
+        void commit({ ...withRecipeType(settings, options.kind), recipe: options }, canSave);
+    }
     const ownershipForm = editing === 'ownership-snapshot';
     const ownershipChart = settings.type === 'ownership-snapshot';
     const returnForm = editing === 'return-summary';
@@ -321,7 +341,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     return <div className={'linked-chart-renderer'
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
-      + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')}>
+      + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
+      + (etfForm || etfChart ? ' linked-chart-renderer--etf' : '')}>
     {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
       className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
     {!viewer ? <div className="chart-controls">
@@ -339,7 +360,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {ownershipForm ? <OwnershipRecipeControls key={editScope} columns={presented}
+      {etfForm ? <EtfSunburstControls key={etfScope} job={etfJob} context={measuredDraftContext}
+        disabled={saving} saved={recipe?.ok && recipe.options.kind === 'etf-sunburst' ? recipe.options : undefined}
+        onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls key={editScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={applyOwnership}/> : financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
@@ -366,7 +389,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
     {isRecipeType(settings.type) && (recipe?.ok
-      ? <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>
+      ? (recipe.options.kind === 'etf-sunburst'
+        ? <LinkedEtfSunburst key={etfScope} view={view} job={etfJob} options={recipe.options} sourceId={source}
+            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+        : <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
       : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;

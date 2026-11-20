@@ -35,6 +35,13 @@ const reference = (v: unknown): v is string => typeof v === 'string'
 const fraction = (v: unknown, max: number): v is number => typeof v === 'number' && v >= 0 && v <= max;
 const stampKey = (v: string) => v.slice(0, 19) + (v.match(/\.(\d+)/)?.[1] ?? '').padEnd(6, '0');
 
+/** Preserve the supplied date or all six places of the acquired UTC vintage. */
+export function etfSnapshotKey(value: string): string {
+  if (value.length === 10) return value;
+  const [second, fraction = ''] = value.replace(/(?:Z|\+00:00)$/, '').split('.');
+  return `${second}.${fraction.padEnd(6, '0')}Z`;
+}
+
 function validMass(value: unknown): value is Missing {
   return (exact(value, ['status']) && value.status === 'unknown')
     || (exact(value, ['status', 'fraction', 'reference']) && value.status === 'verified'
