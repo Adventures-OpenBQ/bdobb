@@ -1,0 +1,40 @@
+name: V4 managed table AMD64 qualification
+on:
+  push:
+    branches: [codex/v4-table-amd64-qualification]
+permissions:
+  contents: read
+concurrency:
+  group: v4-table-amd64-qualification
+  cancel-in-progress: false
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 1453fa7b4a8928baa106edbe84a9d36f8c260161
+          path: input-source
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: Adventures-OpenBQ/openbq-docker
+          ref: 7730cc0ca5422d1c38fdac9f33cab950576bb01b
+          path: backend
+          persist-credentials: false
+      - name: Prepare the exact recipe source
+        run: node backend/table-service/prepare-source.mjs input-source table-context
+      - name: Build and qualify actual AMD64 images
+        run: python3 scripts/qualify-v4-table-amd64-ci.py
+      - name: Preserve qualification receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v4-table-amd64-${{ github.run_id }}
+          path: qualification-evidence/
+          retention-days: 14
+          if-no-files-found: error
