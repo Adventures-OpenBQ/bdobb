@@ -80,8 +80,10 @@ it.each(engines)('%s uses the installed calculated gross profit only with its pr
   expect(resolveIncomeSankeyInput(data, options)).toMatchObject({
     ok: true, anchors: { gross_profit: { value: 60, origin: { kind: 'calculated', formulaId: ids.formula('calculated_gross_profit') } } },
   });
+  expect(incomeSankeyPeriodChoices(data)[0].issue).toBeUndefined();
   fixture.model.overrides.hiddenIds = [ids.line('cost_of_revenue')];
   const hidden = await present(make, fixture);
+  expect(incomeSankeyPeriodChoices(hidden.data)[0].issue).toMatch(/gross profit/i);
   expect(resolveIncomeSankeyInput(hidden.data, hidden.options)).toMatchObject({ ok: false, refused: true });
 });
 
@@ -91,6 +93,7 @@ it.each(engines)('%s edited_gross_profit_formula_refuses', async (_, make) => {
     const original = model.template.lines.find(line => line.id === ids.line('calculated_gross_profit'))!.formula!;
     model.overrides.formulas = [{ ...original, ast: { kind: 'literal', value: 60 } }];
   }));
+  expect(incomeSankeyPeriodChoices(data)[0].issue).toMatch(/gross profit/i);
   expect(resolveIncomeSankeyInput(data, options)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/gross profit/i) });
 });
 
@@ -120,6 +123,7 @@ it.each(engines)('%s leaves filtered optional lines unavailable without recoveri
   }));
   const result = resolveIncomeSankeyInput(data, options);
   expect(result).toMatchObject({ ok: true, components: {}, notes: [expect.stringMatching(/cost of revenue/i), expect.stringMatching(/income tax expense/i)] });
+  expect(incomeSankeyPeriodChoices(data)[0].issue).toBeUndefined();
   if (result.ok) expect(result.components).toEqual({});
 });
 
@@ -127,6 +131,7 @@ it.each(engines)('%s rejects a required anchor hidden from a fully acquired peri
   const { data, options } = await present(make, await snapshot(model => {
     model.overrides.hiddenIds = [ids.line('gross_profit')];
   }));
+  expect(incomeSankeyPeriodChoices(data)[0].issue).toMatch(/gross profit/i);
   expect(resolveIncomeSankeyInput(data, options)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/gross profit/i) });
 });
 

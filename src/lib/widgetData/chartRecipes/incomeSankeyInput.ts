@@ -51,22 +51,27 @@ function readProof(dataset: WidgetDataset, evidence: IncomeFinancialEvidence): I
   return raw as IncomeChartProof;
 }
 
-function periodChoices(dataset: WidgetDataset, evidence: IncomeFinancialEvidence, proof: IncomeChartProof): IncomeSankeyPeriod[] {
+function periodChoices(dataset: WidgetDataset, evidence: IncomeFinancialEvidence, proof: IncomeChartProof) {
   const acquired = new Map(evidence.periods.map(period => [period.period_end, period]));
   const periods = new Map(proof.periods.map(period => [period.columnId, period.periodEnd]));
   return dataset.columns.flatMap(column => {
     const period = acquired.get(periods.get(column.id) ?? '');
     if (!period || !isIncomePeriodColumn(column) || column.splitPath?.[0].transform !== evidence.period_kind) return [];
-    return [{ columnId: column.id, end: period.period_end, kind: period.period_kind, fiscalYear: period.fiscal_year, fiscalPeriod: period.fiscal_period }];
-  }).sort((left, right) => right.end.localeCompare(left.end));
+    return [{ column, acquired: period, period: { columnId: column.id, end: period.period_end, kind: period.period_kind,
+      fiscalYear: period.fiscal_year, fiscalPeriod: period.fiscal_period } }];
+  }).sort((left, right) => right.period.end.localeCompare(left.period.end));
 }
 
 /** Newest first, ordered by acquired report dates rather than the display's fiscal labels. */
-export function incomeSankeyPeriodChoices(dataset: WidgetDataset): IncomeSankeyPeriod[] {
+export function incomeSankeyPeriodChoices(dataset: WidgetDataset): (IncomeSankeyPeriod & { issue?: string })[] {
   const evidence = readFinancialEvidence(dataset.provenance);
   if (evidence?.kind !== 'income') return [];
   const proof = readProof(dataset, evidence);
-  return proof ? periodChoices(dataset, evidence, proof) : [];
+  if (!proof) return [];
+  return periodChoices(dataset, evidence, proof).map(choice => {
+    const lines = resolvePeriodLines(dataset, evidence, proof, choice);
+    return lines.ok ? choice.period : { ...choice.period, issue: lines.message };
+  });
 }
 
 export function resolveIncomeSankeyInput(
@@ -84,9 +89,23 @@ export function resolveIncomeSankeyInput(
 
   const proof = readProof(dataset, evidence);
   if (!proof) return refuse('Use a compiler-validated income statement with canonical source fields.');
-  const period = periodChoices(dataset, evidence, proof).find(choice => choice.columnId === options.periodColumn);
-  if (!period) return refuse('Select a fiscal period column backed by one actual acquired report date.');
-  const acquired = evidence.periods.find(report => report.period_end === period.end)!;
+  const choice = periodChoices(dataset, evidence, proof).find(choice => choice.period.columnId === options.periodColumn);
+  if (!choice) return refuse('Select a fiscal period column backed by one actual acquired report date.');
+  const lines = resolvePeriodLines(dataset, evidence, proof, choice);
+  if (!lines.ok) return lines;
+  const { period } = choice;
+  const issuer = evidence.qualified_symbol;
+  const { currency, scale } = units;
+  return { ...lines, issuer, currency, scale, period, evidence,
+    revision: JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, options.periodColumn,
+      issuer, period.kind, period.end, currency, scale.multiplier]) };
+}
+
+/** Resolve exactly the same compiler-proven anchors for a draft period and for worker execution. */
+function resolvePeriodLines(
+  dataset: WidgetDataset, evidence: IncomeFinancialEvidence, proof: IncomeChartProof,
+  { acquired, column }: ReturnType<typeof periodChoices>[number],
+) {
   const periodIssue = incomePeriodIssue(acquired);
   if (periodIssue) return refuse(periodIssue);
 
@@ -96,7 +115,7 @@ export function resolveIncomeSankeyInput(
     const descriptor = readStatementPresentation(dataset.provenance.metadata?.statementPresentation);
     if (descriptor.itemCategoryId !== item || descriptor.periodCategoryId !== periodId || descriptor.valueMeasureId !== value)
       return refuse('Use a compiler-validated income statement presentation.');
-    presented = projectStatementDataset({ ...dataset, columns: dataset.columns.filter(column => column.id === options.periodColumn) }, descriptor);
+    presented = projectStatementDataset({ ...dataset, columns: [column] }, descriptor);
   } catch {
     return refuse('Reload the income statement to restore valid presented line origins.');
   }
@@ -144,9 +163,5 @@ export function resolveIncomeSankeyInput(
   const components = { ...(cost_of_revenue ? { cost_of_revenue } : {}), ...(income_tax_expense ? { income_tax_expense } : {}) };
   const notes = (Object.keys(componentLabels) as IncomeComponent[]).flatMap(field => components[field]
     ? [] : [`${componentLabels[field]} is unavailable in the presented period. Reconciliation includes lines not shown.`]);
-  const issuer = evidence.qualified_symbol;
-  const { currency, scale } = units;
-  return { ok: true, issuer, currency, scale, period, anchors: anchors as IncomeSankeyInput['anchors'], components, notes, evidence,
-    revision: JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, options.periodColumn,
-      issuer, period.kind, period.end, currency, scale.multiplier]) };
+  return { ok: true as const, anchors: anchors as IncomeSankeyInput['anchors'], components, notes };
 }

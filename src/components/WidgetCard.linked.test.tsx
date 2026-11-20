@@ -887,3 +887,39 @@ it('checks record coverage for the selected income period before saving its draf
     expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
   } finally { factory.mockRestore(); }
 });
+
+it('keeps the applied income plot and period when another full record lacks its net-income anchor', async () => {
+  const { factory } = riskRuntime();
+  const recipe = screeningRecipes[2];
+  const root = await screeningSource(recipe, 'A');
+  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const evidence = snapshot.chart_evidence;
+  if (!('periods' in evidence)) throw new Error('Expected income evidence');
+  const omitAnchor = async (index: number) => {
+    Object.assign(snapshot.rows[index], { net_income: null });
+    const period = evidence.periods[index];
+    period.present_fields = period.present_fields.filter(field => field !== 'net_income');
+    await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify(snapshot)));
+  };
+  await omitAnchor(1);
+  installDashboard(riskDashboard([root, riskChart(recipe)]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const selector = screen.getByLabelText('Income statement period');
+    await screen.findByRole('option', { name: /FY 2025/ });
+    fireEvent.change(selector, { target: { value: incomeColumn(2025) } });
+    const apply = screen.getByRole('button', { name: /apply chart/i });
+    expect(apply).toBeDisabled();
+    const repair = /finite, source-verified Net income anchor/;
+    expect(screen.getByText(repair)).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(recipe);
+    fireEvent.change(selector, { target: { value: incomeColumn(2026) } });
+    expect(apply).toBeEnabled();
+    await omitAnchor(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(screen.queryByTestId('chart-plot')).toBeNull());
+    expect(screen.getAllByText(repair).length).toBeGreaterThan(0);
+  } finally { factory.mockRestore(); }
+});

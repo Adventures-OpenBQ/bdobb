@@ -429,3 +429,40 @@ test('keeps the narrow fractional regression sample and fitted endpoints inside 
     if (width === 780) await graph.screenshot({ path: info.outputPath('narrow-span-regression.png') });
   }
 });
+
+test('keeps the ten-node applied Sankey when another full record lacks net income', async ({ page }, info) => {
+  const payload = screeningPayload(incomePath);
+  function omitAnchor(index: number) {
+    payload.results[index].net_income = null;
+    const period = payload.extra.results_metadata.chart_evidence.periods[index];
+    period.present_fields = period.present_fields.filter((field: string) => field !== 'net_income');
+  }
+  omitAnchor(1);
+  await importScreening(page, undefined, new Map([[incomePath, payload]]));
+  const widget = card(page, income);
+  const graph = plot(page, income);
+  const period = widget.getByLabel('Income statement period');
+  const button = widget.getByRole('button', { name: 'Apply chart settings' });
+  const repair = 'Present a finite, source-verified Net income anchor for the selected period.';
+  await expect(nodes(graph)).toHaveCount(10);
+  const applied = await period.inputValue();
+  await period.selectOption({ label: 'FY 2025 · 2025-06-30' });
+  await expect(button).toBeDisabled();
+  await expect(widget).toContainText(repair);
+  await expect(widget).toContainText('FY 2026 ended 2026-06-30');
+  await expect(nodes(graph)).toHaveCount(10);
+  const saved = await page.evaluate(() => window.__bdobb!.list!()
+    .filter(path => path.startsWith('dashboards/')).flatMap(path => {
+      const dashboard = JSON.parse(window.__bdobb!.read!(path)!);
+      return dashboard.tabs.flatMap((tab: { cards: { linkedChart?: { recipe?: { kind: string; periodColumn: string } } }[] }) =>
+        tab.cards.flatMap(c => c.linkedChart?.recipe?.kind === 'income-sankey' ? [c.linkedChart.recipe.periodColumn] : []));
+    }));
+  expect(saved).toEqual([applied]);
+  await widget.screenshot({ path: info.outputPath('income-ineligible-draft.png') });
+  await period.selectOption(applied);
+  await expect(button).toBeEnabled();
+  omitAnchor(0);
+  await refresh(page, incomeSource);
+  await expect(graph).toHaveCount(0);
+  await expect(widget).toContainText(repair);
+});

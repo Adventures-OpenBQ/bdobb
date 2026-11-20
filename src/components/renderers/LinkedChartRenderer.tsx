@@ -17,7 +17,7 @@ import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartReci
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
-import { admitDividendWindow, admitIncomeUnits, cohortIssue, incomePeriodIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
+import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
@@ -110,9 +110,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             if (evidence?.kind !== 'income') return [];
             const units = admitIncomeUnits(evidence);
             if (!units.ok) throw new Error(units.message);
-            const periods = new Map(evidence.periods.map(period => [period.period_end, period]));
             return incomeSankeyPeriodChoices(data).map(period => ({
-                value: period.columnId, issue: incomePeriodIssue(periods.get(period.end)!),
+                value: period.columnId, issue: period.issue,
                 label: [`${period.kind}${period.fiscalYear ? ' ' + period.fiscalYear : ''}`,
                     period.kind === 'FQ' ? period.fiscalPeriod : null, period.end].filter(Boolean).join(' · '),
             }));
