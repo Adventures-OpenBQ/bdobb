@@ -35,7 +35,7 @@ export function fileRailBadge(
   // The hook's message, which describeHttpError has already made safe: no URL
   // and no credential reaches this tooltip.
   if (state.status === "error") return { text: "!", title: state.error };
-  const available = state.options.length;
+  const available = new Set(state.options.map(option => option.value)).size;
   // A cached param change goes ready→ready with no loading render between,
   // and the checked set is cleared by an effect one render later; clamp so
   // that frame never shows an impossible fraction like 3/2.
@@ -82,7 +82,16 @@ export function MultiFileRenderer({ widget, backend, params, refreshKey }: Props
   );
   const optionStates = useParamOptions(backend, selectorWidget, params);
   const state = selector ? optionStates[selector.paramName] : undefined;
-  const options: ParamOption[] = state?.status === "ready" ? state.options : [];
+  // A document is identified by its URL. Providers can repeat the same file
+  // under several meeting entries; one checkbox and one POST value suffice.
+  const options: ParamOption[] = useMemo(() => {
+    const seen = new Set<string>();
+    return state?.status === "ready" ? state.options.filter(option => {
+      if (seen.has(option.value)) return false;
+      seen.add(option.value);
+      return true;
+    }) : [];
+  }, [state]);
 
   const [checked, setChecked] = useState<string[]>([]);
   const [documents, setDocuments] = useState<Document[] | null>(null);
