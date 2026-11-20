@@ -1888,3 +1888,12 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
 .card-chips .param-field input, .card-chips .param-field select { height: 20px; padding: 0 4px; border: 0; background: transparent; flex-shrink: 0; }
 .card-params-panel { padding: 8px; border-bottom: 1px solid var(--border); flex: none; max-height: 40%; overflow: auto; }
 .card-params-panel-fields { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+
+/* Linked surface selectors live in the card body; the compact header stays one row. */
+.linked-surface { display:flex; flex-direction:column; width:100%; height:100%; min-height:0; }
+.linked-surface-controls { display:flex; flex-wrap:wrap; align-items:start; gap:8px; padding:8px; }
+.linked-surface-controls > label { display:flex; flex-direction:column; gap:4px; }
+.linked-surface-controls select { max-width:240px; }
+.linked-surface-controls fieldset { display:flex; flex-wrap:wrap; gap:8px; border:0; padding:0; margin:0; }
+.linked-surface-controls fieldset label { display:flex; align-items:center; gap:4px; }
+.linked-surface > .chart-plot { flex:1; min-height:120px; height:auto; }

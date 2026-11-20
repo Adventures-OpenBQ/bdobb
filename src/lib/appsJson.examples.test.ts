@@ -50,6 +50,7 @@ describe("docs/examples", () => {
   // unchanged, and the list must now name every example file, so a new one is
   // added here too.
   const KNOWN = [
+    "v3.0.0-fx-linked-surface.apps.json",
     "v3.1.0-builtins.apps.json",
     "v3.1.0-demo-providers.apps.json",
     "v3.2.0-video-library.apps.json",
@@ -139,4 +140,10 @@ describe("docs/examples", () => {
     }
     expect(present.has("param_echo")).toBe(true);
   });
+});
+
+it("FX example links its chart to the real CFTC table with schema series hints",()=>{
+ const {apps,ids}=load("v3.0.0-fx-linked-surface.apps.json");expect(ids).toEqual(["cftc_fx_implied_vol_cftc_obb","linked_chart"]);
+ const d=importApps(apps,[...new Set(ids)].map(widget)).dashboards[0];const [source,chart]=d.tabs[0].cards;
+ expect(chart.linkedSource).toEqual({kind:"widget",sourceWidgetId:source.id});expect(chart.linkedChart).toMatchObject({type:"surface",category:"strike",display:"grouped"});expect(chart.linkedChart!.measures.length).toBeGreaterThan(1);expect(source.params).toMatchObject({pair:"EURUSD",basis:"empirical",provider:"cftc"});
 });

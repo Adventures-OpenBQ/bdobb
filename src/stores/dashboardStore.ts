@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 import { pinResolvedBackends } from "../lib/appsJson";
-import { BUILTIN_BACKEND_ID, LOCAL_TABLE_ID } from "../lib/builtins";
+import { BUILTIN_BACKEND_ID, LOCAL_TABLE_ID, LINKED_CHART_ID } from "../lib/builtins";
 import {
   deleteDashboard as deleteDashboardFile,
   loadDashboards,
@@ -19,6 +19,8 @@ import type {
   Dashboard,
   DashboardCard,
   DashboardTab,
+  LinkedChartSettings,
+  LinkedSource,
   TableCardState,
   WidgetDef,
 } from "../lib/types";
@@ -122,6 +124,7 @@ type DashboardState = {
   removeTab: (tabId: string) => Promise<void>;
   /** Scoped to the active dashboard via mutateActive, like the rest of the tab CRUD. */
   reorderTabs: (orderedIds: string[]) => Promise<void>;
+  addLinkedSurface: (sourceCardId: string, settings: LinkedChartSettings) => Promise<string | null>;
   addCard: (
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
@@ -166,6 +169,8 @@ type DashboardState = {
 
 /** The three optional card fields `patchCardField` sets, and what each takes. */
 type CardFieldPatch = {
+  linkedSource: LinkedSource;
+  linkedChart: LinkedChartSettings;
   paramsOpen: boolean;
   view: CardView;
   title: string;
@@ -494,7 +499,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             ...c,
             id: cardIdMap.get(c.id)!,
             ...(c.linkedSource ? {linkedSource: {...c.linkedSource, sourceWidgetId: cardIdMap.get(c.linkedSource.sourceWidgetId) ?? c.linkedSource.sourceWidgetId}} : {}),
-            ...(c.linkedChart ? {linkedChart: {...c.linkedChart, measures: [...c.linkedChart.measures]}} : {}),
+            ...(c.linkedChart ? {linkedChart: structuredClone(c.linkedChart)} : {}),
             params: { ...c.params },
             layout: { ...c.layout },
             bindings: c.bindings?.map((b) => ({
@@ -756,6 +761,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             .filter((t): t is DashboardTab => t !== undefined),
         };
       });
+    },
+
+    addLinkedSurface: async (sourceCardId, settings) => {
+      if (refuse("addLinkedSurface")) return null;
+      const dashboard = get().dashboards.find(d => d.id === get().activeId);
+      const tab = dashboard?.tabs.find(t => t.cards.some(c => c.id === sourceCardId));
+      const source = tab?.cards.find(c => c.id === sourceCardId);
+      if (!dashboard || !tab || !source || useWidgetRegistryStore.getState().find(source.backendId, source.widgetId)?.type !== "table") return null;
+      const id = crypto.randomUUID();
+      const updated = await mutateDashboard(dashboard.id, d => ({...d,tabs:d.tabs.map(t => t.id !== tab.id ? t : {...t,cards:[...t.cards,{
+        id,widgetId:LINKED_CHART_ID,backendId:BUILTIN_BACKEND_ID,params:{},layout:{x:0,y:nextY(t.cards),w:24,h:18},
+        linkedSource:{kind:"widget",sourceWidgetId:sourceCardId},linkedChart:{...settings,measures:[...settings.measures]},
+      }]})}));
+      return updated ? id : null;
     },
 
     addCardTo: async (dashboardId, tabId, widget, paramsOverride) => {

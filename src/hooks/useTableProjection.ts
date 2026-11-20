@@ -73,8 +73,19 @@ export function useTableProjection(data: unknown, spec: TableSpec|undefined, sta
   const definitions=useMemo(()=>columns.map(c=>projectionColumn(c,filterKindFor(c,rows),sorting)),[columns,rows,sorting]);
   const table=useReactTable({data:rows,columns:definitions,state:{sorting,columnFilters},getCoreRowModel:getCoreRowModel(),getFilteredRowModel:getFilteredRowModel(),getSortedRowModel:getSortedRowModel()});
   const projected=table.getRowModel().rows;
-  return useMemo(()=>({
-    rows:projected.map(row=>Object.fromEntries(columns.map(c=>[c.field,row.getValue(c.field)]))),
-    columns:columns.map(c=>({id:c.field,label:c.header,dtype:filterKindFor(c,rows),chartDataType:spec?.columns.find(h=>h.field===c.field)?.chartDataType})),
-  }),[projected,columns,rows,spec]);
+  return useMemo(()=>{
+    const published:SurfaceDataset["columns"]=columns.map(c=>({id:c.field,label:c.header,dtype:filterKindFor(c,rows),chartDataType:spec?.columns.find(h=>h.field===c.field)?.chartDataType}));
+    // OmitNone responses can omit a whole tenor. Its declared schema still
+    // exists: keep that axis as missing values rather than inventing zeroes
+    // or hiding a valid surface. Visible table columns remain unchanged.
+    if(enabled)for(const hint of spec?.columns??[]){
+      if((hint.chartDataType==="series" || hint.chartDataType==="category") && !published.some(c=>c.id===hint.field)){
+        published.push({id:hint.field,label:hint.headerName??hint.field,dtype:hint.cellDataType==="number"?"number":undefined,chartDataType:hint.chartDataType});
+      }
+    }
+    // Preserve schema order for expiry axes, including wholly absent tenors.
+    const rank=new Map((spec?.columns??[]).map((c,i)=>[c.field,i]));
+    published.sort((a,b)=>(rank.get(a.id)??Infinity)-(rank.get(b.id)??Infinity));
+    return {rows:projected.map(row=>Object.fromEntries(columns.map(c=>[c.field,row.getValue(c.field)]))),columns:published};
+  },[projected,columns,rows,spec,enabled]);
 }

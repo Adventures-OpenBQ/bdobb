@@ -3,6 +3,7 @@
 import {renderHook} from "@testing-library/react";
 import {describe,expect,it} from "vitest";
 import type {TableSpec} from "../lib/types";
+import {buildLinkedSurface} from "../lib/linkedSurface";
 import {useTableProjection} from "./useTableProjection";
 describe("linked source uses the table's actual projection",()=>{
   it("keeps complete filtered/sorted rows rather than a virtualized window",()=>{
@@ -30,4 +31,11 @@ describe("linked source uses the table's actual projection",()=>{
     const {result}=renderHook(()=>useTableProjection([{n:1}],undefined,undefined,false));
     expect(result.current.rows).toEqual([]);expect(result.current.columns).toEqual([]);
   });
+});
+it("retains schema-declared absent tenors as null gaps without adding visible table columns",()=>{
+ const rows=[{strike:90,vol_1m:5},{strike:100,vol_1m:6}];
+ const spec:TableSpec={columns:[{field:"strike",cellDataType:"number",chartDataType:"category"},{field:"vol_1m",headerName:"1M",cellDataType:"number",chartDataType:"series"},{field:"vol_2y",headerName:"2Y",cellDataType:"number",chartDataType:"series"}]};
+ const {result}=renderHook(()=>useTableProjection(rows,spec,undefined,true));
+ expect(result.current.columns.find(c=>c.id==="vol_2y")).toMatchObject({label:"2Y",dtype:"number",chartDataType:"series"});
+ const surface=buildLinkedSurface(result.current,{type:"surface",category:"strike",measures:["vol_1m","vol_2y"]},"dark");expect(surface.ok).toBe(true);if(surface.ok)expect(surface.figure.data[0].z).toEqual([[5,6],[null,null]]);
 });

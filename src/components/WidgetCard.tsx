@@ -4,6 +4,9 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { confirm, open as openFileDialog, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { useLinkedSourcePublication } from "../hooks/useLinkedSourcePublication";
+import { linkedSourceKey, useLinkedSourcesStore } from "../stores/linkedSourcesStore";
+import { LinkedSurfaceRenderer } from "./renderers/LinkedSurfaceRenderer";
 import { useWidgetData } from "../hooks/useWidgetData";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
@@ -63,6 +66,8 @@ type Props = {
   onRemove: () => void;
   /** The "Open in new window" window: no Remove, no Minimize. */
   viewer?: boolean;
+  /** Inactive-tab source controller; retains acquisition and parameter logic without a renderer. */
+  headless?: boolean;
 };
 
 /**
@@ -91,6 +96,7 @@ const TYPE_LABELS: Record<string, string> = {
   pdf: "PDF",
   multi_file_viewer: "Files",
   local_table: "Table",
+  linked_chart: "Surface",
 };
 
 /**
@@ -136,7 +142,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
 
-export function WidgetCard({ card, onRemove, viewer = false }: Props) {
+export function WidgetCard({ card, onRemove, viewer = false, headless = false }: Props) {
   const widget = useWidgetRegistryStore((s) => s.find(card.backendId, card.widgetId));
   // ParamControls fetches this card's optionsEndpoint param options, so it
   // needs the BackendConfig the card is bound to. useWidgetData resolves the
@@ -313,11 +319,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // `widget` is undefined for the first renders of every card, so this is
   // false until discovery resolves it — which is exactly the render on which
   // the hook arms its first fetch.
-  const { status, data, error, warnings, retry, attempt, run, stale, intervalMs, dataStale } = useWidgetData(
-    card,
-    query,
-    widget?.runButton,
-  );
+  const acquisition = useWidgetData(card, query, widget?.runButton);
+  const { status, data, error, warnings, attempt, run, stale, intervalMs, dataStale } = acquisition;
+  const linkedPublication = useLinkedSourcesStore(s => card.linkedSource && dashboard ? s.sources.get(linkedSourceKey(dashboard.id, card.linkedSource.sourceWidgetId))?.publication : undefined);
+  const retry = widget?.type === "linked_chart" ? (linkedPublication?.refresh ?? acquisition.retry) : acquisition.retry;
+  const referenced = widget?.type === "table" && (dashboard?.tabs.some(t => t.cards.some(c => c.linkedSource?.sourceWidgetId === card.id)) ?? false);
+  useLinkedSourcePublication({dashboardId:dashboard?.id??"",cardId:card.id,title:card.title??widget?.name??card.widgetId,enabled:referenced,acquisition,spec:widget?.table,tableState:card.table});
 
   // Declared controls that render in the BODY rather than in the header row:
   // tabs are meant to be seen, and a form is the card's main verb.
@@ -389,7 +396,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // move a .md file in or out of the note. hasPayload keeps its exact meaning
   // ("this card has a fetched payload"); this is the menu's gate, not export's.
   const isMarkdownNote = widget?.type === "markdown_editor";
-  const hasMenu = hasPayload || isMarkdownNote;
+  const hasMenu = hasPayload || isMarkdownNote || widget?.type === "linked_chart";
   /**
    * The transposed view's rows and their column order, computed once for the
    * body and the Export menu. null when the payload has nothing to turn on
@@ -775,6 +782,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   }
 
   function body() {
+    if (widget?.type === "linked_chart" && dashboard) return <LinkedSurfaceRenderer dashboardId={dashboard.id} card={card} viewer={viewer} />;
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {
       return <p className="empty-state">Waiting for widget…</p>;
     }
@@ -1128,6 +1136,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     </button>
   );
 
+  if (headless) return hasControls && widget && dashboard ? <ParamControls placement="observer" widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={edit => void apply(edit)} /> : null;
+
   return (
     <article
       className="widget-card"
@@ -1258,6 +1268,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                 onPointerEnter={stampTitle}
                 onFocus={stampTitle}
                 onClick={retry}
+                disabled={widget?.type === "linked_chart" && !linkedPublication?.refresh}
               >
                 Refresh
               </button>
@@ -1296,6 +1307,13 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                     onClose={() => setExportOpen(false)}
                     layoutKey={`${exportSubOpen} ${columnsSubOpen}`}
                   >
+                    {widget?.type === "table" && !viewer ? <button type="button" role="menuitem" onClick={() => {
+                      setExportOpen(false);
+                      const category = widget.table?.columns.find(c => c.chartDataType === "category")?.field ?? menuColumns.find(c => c.field.toLowerCase() === "strike")?.field ?? menuColumns[0]?.field;
+                      const hinted = widget.table?.columns.filter(c => c.chartDataType === "series").map(c => c.field) ?? [];
+                      const measures = hinted.length ? hinted : menuColumns.filter(c => c.field !== category && (c.cellDataType === "number" || (tableRows(data) ?? []).some(r => typeof r[c.field] === "number"))).map(c => c.field);
+                      void useDashboardStore.getState().addLinkedSurface(card.id,{type:"surface",display:"grouped",category,measures:measures.length<=64?measures:[]}).catch(err => logError(`failed to create linked surface: ${err}`));
+                    }}>Create linked surface</button> : null}
                     <button
                       type="button"
                       role="menuitem"

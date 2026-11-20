@@ -67,7 +67,7 @@ The mouse wheel scrolls the card rather than zooming the chart.
 
 ## Zoom, pan and reset
 
-There is no chart toolbar — the mode bar is off.
+There is no chart toolbar — the mode bar is off. For two-dimensional charts:
 
 - **Zoom** by dragging a rectangle over the plot.
 - **Pan** by shift-dragging.
@@ -79,7 +79,7 @@ The double-click window is a generous 600 milliseconds, measured from the first
 press, because the whole gesture has to finish inside it. Miss it and nothing
 happens at all — you never get half a reset.
 
-Refreshing a chart's data reconciles the existing plot in place, so **a refresh
+Refreshing an ordinary chart's data reconciles the existing plot in place, so **a refresh
 keeps your zoom and pan**. Resizing the card redraws only when the box really
 changed size.
 
@@ -89,6 +89,33 @@ from a provider keeps the colours the provider chose.
 Candlestick charts deliberately have Plotly's range slider turned off: it would
 eat about 15% of the card and pin the y-axis, which would make the y-range
 unzoomable and therefore unresettable.
+
+## Linked surfaces
+
+Open a table card’s **⋯** menu and choose **Create linked surface**. The new
+card shares that table’s rows. Its **Source table**, **Category** and
+**Measures** controls stay in the card body.
+
+For the keyless CFTC FX widget, Strike is the category and the declared tenors
+are the measures. Open **Apps ▸ FX linked surface** for a ready-made example.
+Missing observations remain gaps, including a tenor with no observations.
+One selected measure is shown as a line. Drag a 3D surface to rotate it.
+
+![A linked CFTC FX volatility surface with observed values and gaps](./shots/linked-surface.png)
+
+Sorting and filtering the source table changes the chart’s complete scope.
+The source remains live in Raw view, when minimized, and on another tab.
+**Refresh** on the linked card refreshes its source. Loading, errors and an
+empty source scope are shown explicitly.
+
+If a source or selected field disappears, choose another source or remove the
+unavailable measure. **Reset chart fields** selects available category/series
+fields again. The chart supports up to six pair/date plots, with at least two
+rows per plot; reduce the source scope if it exceeds that limit.
+
+Choose **BDOBB Workspace** when saving the dashboard to preserve the linked
+source and field choices. Dashboard copies and compatible imports keep their
+charts attached to their own source cards.
 
 ---
 

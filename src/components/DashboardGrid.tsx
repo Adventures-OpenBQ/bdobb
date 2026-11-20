@@ -11,6 +11,7 @@ import {
 } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { TabBar } from "./TabBar";
+import { InactiveLinkedSources } from "./InactiveLinkedSources";
 import { WidgetCard } from "./WidgetCard";
 
 const GridLayout = WidthProvider(RGL);
@@ -78,6 +79,7 @@ export function DashboardGrid({
 
   return (
     <>
+      <InactiveLinkedSources dashboard={dashboard} activeTabId={activeTabId} viewer={viewer} />
       <TabBar onOpenLibrary={onOpenLibrary} viewer={viewer} />
       <GridLayout
         className={cornerDragHandles ? "dashboard-grid dashboard-grid-corner-handles" : "dashboard-grid"}

@@ -19,6 +19,7 @@ export const BUILTIN_BACKEND_ID = "builtin";
  * deletes the card's stored file, and the library that hides the widget.
  */
 export const LOCAL_TABLE_ID = "local_table";
+export const LINKED_CHART_ID = "linked_chart";
 
 /**
  * The RSS built-in's default item count. Named because RssRenderer falls back
@@ -36,6 +37,7 @@ const base: Pick<WidgetDef, "backendId" | "category" | "subCategory" | "endpoint
 };
 
 export const BUILTIN_WIDGETS: WidgetDef[] = [
+  {...base,id:LINKED_CHART_ID,name:"Linked surface",description:"A volatility surface linked to an existing table card.",type:LINKED_CHART_ID,gridData:{w:24,h:18},params:[]},
   {
     ...base,
     id: "note",

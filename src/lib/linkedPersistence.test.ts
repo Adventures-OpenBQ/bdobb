@@ -57,3 +57,7 @@ it("persists local source intent without replacing its local identities",async()
  expect(restored.tabs[1].cards[0].linkedSource?.sourceWidgetId).toBe(restored.tabs[0].cards[1].id);
  expect(restored.tabs[1].cards[0].linkedChart).toEqual(settings);
 });
+it("can copy a dashboard with malformed legacy chart settings for explicit repair",async()=>{
+ const d=fixture();d.tabs[1].cards[0].linkedChart=JSON.parse('{"type":"surface","display":"grouped","measures":null}');useDashboardStore.setState({dashboards:[d]});
+ await expect(useDashboardStore.getState().duplicateDashboard(d.id)).resolves.not.toBeNull();
+});

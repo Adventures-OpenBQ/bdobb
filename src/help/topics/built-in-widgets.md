@@ -1,8 +1,8 @@
 # Built-in widgets
 
-Six widgets need no backend at all. They are listed in the library under the
-**Built-in** category, and because they have no provider they appear under
-**All providers** but under no particular one.
+Built-in cards are listed in the library under the **Built-in** category.
+They appear under **All providers** and have no provider of their own.
+Linked surfaces use a table from a connected data backend.
 
 ![Five of the built-in widgets on one tab](./shots/built-in-widgets.png)
 
@@ -100,6 +100,13 @@ It shows the values it would send, exactly as a request would carry them, with
 labelled as a `symbol`, so it can join a symbol group from any other widget,
 its Date joins any date group, and its Year joins a `year` group.
 
+
+## Linked surface
+
+Choose a source table and its category/measure fields in the card body, or
+create the card from a table’s **⋯ ▸ Create linked surface** action. Its rows
+follow the source table’s filters and sorting. See Quick Help’s Charts topic and
+the backend’s **FX linked surface** example.
 
 ---
 

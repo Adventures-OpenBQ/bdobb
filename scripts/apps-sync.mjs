@@ -35,6 +35,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SERVED = {
+  "v3.0.0-fx-linked-surface": true,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,

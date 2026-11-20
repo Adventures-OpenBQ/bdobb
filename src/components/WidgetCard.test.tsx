@@ -157,6 +157,8 @@ vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 
 import { confirm, open, save } from "@tauri-apps/plugin-dialog";
 
+import {BUILTIN_WIDGETS} from "../lib/builtins";
+import {InactiveLinkedSources} from "./InactiveLinkedSources";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { __failPath, __read, __readBytes, __reset, __seed, __writes } from "../test/memfs";
 import { __resetLoggerForTests, logInfo } from "../lib/logger";
@@ -169,6 +171,7 @@ import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { WidgetCard } from "./WidgetCard";
+import {acquireLinkedSource,linkedSourceKey,useLinkedSourcesStore} from "../stores/linkedSourcesStore";
 
 // vi.restoreAllMocks() does not undo a setState-installed mock, so real actions are
 // captured once at module load and reinstated before every test.
@@ -201,6 +204,7 @@ beforeEach(() => {
     maximizedCardId: null,
     viewer: false,
   });
+  useLinkedSourcesStore.setState({sources:new Map()});
   useWidgetData.mockReset();
   postForm.mockReset();
   postForm.mockResolvedValue(undefined);
@@ -3796,5 +3800,36 @@ describe("advanced_charting", () => {
     // The data===null gate below the early returns must not claim this card.
     expect(screen.queryByText("No data for these parameters.")).toBeNull();
     useBackendsStore.setState({ backends: [] });
+  });
+});
+
+describe("linked surface source ownership",()=>{
+  const rows=[{strike:90,"1M":10,"3M":20},{strike:100,"1M":11,"3M":21}];
+  const hints=[{field:"strike",cellDataType:"number" as const,chartDataType:"category" as const},{field:"1M",cellDataType:"number" as const,chartDataType:"series" as const},{field:"3M",cellDataType:"number" as const,chartDataType:"series" as const}];
+  function setup(linked:boolean){
+    register({table:{columns:hints}});
+    useDashboardStore.setState({activeId:"linked-d",activeTabId:"linked-t",dashboards:[{id:"linked-d",name:"FX",tabs:[{id:"linked-t",name:"Data",cards:[card,...(linked?[makeCard({id:"surface",widgetId:"linked_chart",backendId:"builtin",linkedSource:{kind:"widget",sourceWidgetId:card.id},linkedChart:{type:"surface",display:"grouped",category:"strike",measures:["1M","3M"]}})]:[])]}]}]});
+    useWidgetData.mockReturnValue({status:"ready",data:rows,retry:vi.fn(),responseCurrent:true,acquisition:{},queryKey:"q",stale:false,dataStale:false});
+  }
+  it("delegates linked-card Refresh to the selected source acquisition",async()=>{
+    setup(true);useWidgetRegistryStore.setState(s=>({widgets:[...s.widgets,...BUILTIN_WIDGETS]}));
+    const refresh=vi.fn(),own=vi.fn();useWidgetData.mockReturnValue({status:"ready",data:null,retry:own});
+    acquireLinkedSource("linked-d",card.id).publish({status:"ready",generation:1,queryKey:"q",title:"FX",stale:false,refresh,data:{columns:[{id:"strike",label:"Strike",dtype:"number"},{id:"1M",label:"1M",dtype:"number"}],rows}});
+    const linked=useDashboardStore.getState().dashboards[0].tabs[0].cards[1];render(<WidgetCard card={{...linked,linkedChart:{type:"surface",display:"grouped",category:"strike",measures:["1M"]}}} onRemove={vi.fn()}/>);
+    await userEvent.click(screen.getByRole("button",{name:"Refresh"}));expect(refresh).toHaveBeenCalledOnce();expect(own).not.toHaveBeenCalled();
+  });
+  it("publishes an inactive-tab source without mounting its table renderer",()=>{
+    setup(true);const dashboard=useDashboardStore.getState().dashboards[0];const linked=dashboard.tabs[0].cards[1];const cross={...dashboard,tabs:[{id:"source-tab",name:"Source",cards:[card]},{id:"chart-tab",name:"Chart",cards:[linked]}]};
+    useDashboardStore.setState({dashboards:[cross],activeTabId:"chart-tab"});render(<InactiveLinkedSources dashboard={cross} activeTabId="chart-tab"/>);
+    expect(useLinkedSourcesStore.getState().sources.get(linkedSourceKey("linked-d",card.id))?.publication?.data?.rows).toEqual(rows);expect(screen.queryByRole("article")).not.toBeInTheDocument();expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+  it("creates a linked surface from a source action without changing the source view",async()=>{
+    setup(false);render(<WidgetCard card={card} onRemove={vi.fn()}/>);await userEvent.click(screen.getByRole("button",{name:"Card menu"}));await userEvent.click(screen.getByRole("menuitem",{name:"Create linked surface"}));
+    await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].tabs[0].cards).toHaveLength(2));const chart=useDashboardStore.getState().dashboards[0].tabs[0].cards[1];expect(chart.linkedSource?.sourceWidgetId).toBe(card.id);expect(chart.linkedChart).toMatchObject({category:"strike",measures:["1M","3M"]});expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].view).toBeUndefined();
+  });
+  it("keeps the complete source publication through raw, minimized and inactive-tab controllers",()=>{
+    setup(true);const {rerender}=render(<WidgetCard card={card} onRemove={vi.fn()}/>);
+    const read=()=>useLinkedSourcesStore.getState().sources.get(linkedSourceKey("linked-d",card.id))?.publication?.data?.rows;
+    expect(read()).toEqual(rows);rerender(<WidgetCard card={{...card,view:"raw"}} onRemove={vi.fn()}/>);expect(read()).toEqual(rows);rerender(<WidgetCard card={{...card,minimized:true}} onRemove={vi.fn()}/>);expect(read()).toEqual(rows);rerender(<WidgetCard headless card={card} onRemove={vi.fn()}/>);expect(read()).toEqual(rows);expect(screen.queryByRole("article")).not.toBeInTheDocument();
   });
 });

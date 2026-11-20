@@ -1,6 +1,6 @@
 # BDOBB — Adventures in OpenBQ
 
-This repository reconstructs a clean release sequence. Version 3.0.0 provides the reference-build desktop: ordinary tables and charts, documents, grouped controls, Run and numeric refresh, backend Apps discovery, and compatible JSON interchange.
+This repository reconstructs a clean release sequence. Version 3.0.0 provides the reference-build desktop: ordinary tables and charts, linked FX surfaces, documents, grouped controls, Run and numeric refresh, backend Apps discovery, and compatible JSON interchange.
 
 Cron refetch is deferred. Analytical Pivot, workspaces and Statement are not part of v3.
 

@@ -67,7 +67,7 @@ export function buildLinkedSurface(dataset: SurfaceDataset, settings: SurfaceSet
   const scenes:Record<string,unknown>={};
   const data=[...groups.values()].map((g,i)=>{
     const scene=i?`scene${i+1}`:"scene";
-    scenes[scene]={domain:{x:[i/groups.size,(i+1)/groups.size]},bgcolor:background,xaxis:{title:{text:axisLabel},...(numeric?{}:ticked(g.rows.map(r=>labels[r])))},yaxis:{title:{text:""},...ticked(measures.map(m=>m.name))},zaxis:{title:{text:""}}};
+    scenes[scene]={domain:{x:[i/groups.size,(i+1)/groups.size]},bgcolor:background,camera:{eye:{x:1.6,y:1.6,z:1.4}},xaxis:{title:{text:axisLabel},...(numeric?{}:ticked(g.rows.map(r=>labels[r])))},yaxis:{title:{text:""},...ticked(measures.map(m=>m.name))},zaxis:{title:{text:""}}};
     return {type:"surface",scene,name:g.title,coloraxis:"coloraxis",x:g.rows.map((r,j)=>numeric?own(dataset.rows[r],category):j),y:measures.map((_,j)=>j),z:measures.map(m=>g.rows.map(r=>m.values[r])),text:measures.map(m=>g.rows.map(r=>`${axisLabel}: ${escape(labels[r])}<br>${escape(m.name)}: ${m.values[r]??"Missing"}`)),hovertemplate:"%{text}<extra></extra>"};
   });
   return {ok:true,revision,figure:{data,layout:{uirevision:revision,margin:{l:0,r:0,t:28,b:0},coloraxis:{colorscale:"Viridis"},annotations:titles,paper_bgcolor:background,font,...scenes}}};

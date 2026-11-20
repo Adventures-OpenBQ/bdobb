@@ -1,6 +1,6 @@
 # BDOBB v3.0.0 — reference desktop
 
-This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. It pairs with openbq-docker `v3.0.0`, whose API serves three example dashboards — **Built-in widgets**, **Demo providers** and **Video Library** — under **Apps**; see the Reference Manual's *The openbq-docker Stack* and *Example Dashboards*.
+This is the clean release line for Adventures in OpenBQ Episode 3. It provides ordinary tables and charts, documents, backend Apps, linked parameter groups, Run/numeric refresh, and compatible dashboard exchange. It pairs with openbq-docker `v3.0.0`, whose API serves four example dashboards — **FX linked surface**, **Built-in widgets**, **Demo providers** and **Video Library** — under **Apps**; see the Reference Manual's *The openbq-docker Stack* and *Example Dashboards*.
 
 ## Connect and open the reference app
 
@@ -16,7 +16,7 @@ A later analytical app may appear in a backend catalog. v3 refuses an unsupporte
 
 Open **Grouping**. The manufacturer details and performance cards share Manufacturer and Model Year. Select Tesla in either Manufacturer control. Both controls should say Tesla; the details and performance data should change together. In the reference fixture, Tesla global sales are 2.1M. That is synthetic demonstration data.
 
-A card's parameter controls sit in its title bar; a widget that arranges them in rows gets a further line under the title for each extra row. The numbered badges show group membership. A cell in the company table can also change the linked Symbol group. To let a dashboard's cards operate independently, use **Disable grouping** on its dashboard-row menu; the groups remain saved and can be enabled again.
+Only parameter row 0 appears in a card’s compact title bar. Rows 1 and above open in the parameter card beneath it. The numbered badges show group membership. A cell in the company table can also change the linked Symbol group. To let a dashboard's cards operate independently, use **Disable grouping** on its dashboard-row menu; the groups remain saved and can be enabled again.
 
 ![Linked manufacturer controls after choosing Tesla](images/grouping-tesla.png)
 
@@ -70,6 +70,28 @@ If no apps appear, check whether the connection actually serves `apps.json`. If 
 On October 6, 2026 the fresh client passed a 71-widget curated reference rendering sweep, seven reference contract/import/export checks, linked Toyota→Tesla browser acceptance, and real Run/numeric-refresh request checks. A separate OpenBQ Docker smoke passed eight live-data tables plus a historical chart view. It covers nine selected cases, not all 995 advertised widgets.
 
 Browser rehearsal used real backend responses with a test-only CORS adapter. Cron, live account authentication, and packaged native restart remain outside this qualification. Full regression and native bundle status are recorded in the release receipt; these reference passes alone do not announce a tagged release.
+
+## FX linked surfaces
+
+Open **Apps ▸ FX linked surface** against this episode’s backend. The example
+contains the keyless CFTC EURUSD table and a chart linked to that particular
+card. Table filters and sorting change the chart scope; missing tenors stay
+missing rather than becoming zero values.
+
+![CFTC EURUSD surface with observed data](images/linked-surface.png)
+
+Use a table’s **⋯ ▸ Create linked surface** action to make another chart.
+Source, category and measures are selected inside its body. The source can be
+on another tab, minimized or in Raw view. The linked card’s Refresh asks its
+source for updated data. One selected measure draws a line; drag a 3D surface
+to rotate it. Unavailable fields can be removed, and Reset chart fields
+restores the current schema’s category/series choices.
+
+Save as **BDOBB Workspace** to retain source references and chart fields.
+Compatible imports, Workspace round trips and duplicated dashboards remap the
+references to their new source-card identities. A missing source is reported
+explicitly. Each pair/date plot needs two rows, and at most six plots can be
+shown together.
 
 ---
 
