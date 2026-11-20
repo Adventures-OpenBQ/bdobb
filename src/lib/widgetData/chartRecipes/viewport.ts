@@ -16,9 +16,9 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
   return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
 }
 
-/** Only figures produced by these two recipe builders can opt into a scrolling plot. */
+/** These recipe builders supply a plot height for the card’s scroll viewport. */
 export function recipePlotHeight(kind: RecipeOptions['kind'], figure: PlotlyFigure): number | undefined {
-  if (kind !== 'small-multiples' && kind !== 'etf-exposure') return;
+  if (kind !== 'small-multiples' && kind !== 'etf-exposure' && kind !== 'income-sankey') return;
   const height = figure.layout.height;
   return typeof height === 'number' && Number.isFinite(height) && height > 0 ? height : undefined;
 }

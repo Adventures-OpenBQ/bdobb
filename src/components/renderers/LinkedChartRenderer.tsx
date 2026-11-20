@@ -15,13 +15,15 @@ import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
 import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
-import { savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
+import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
+import { readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
+import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
 import { nextMultiplesWidth, recipePlotHeight } from '../../lib/widgetData/chartRecipes/viewport';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
-import { LinkedChartRecipeControls, recipeAvailability, recipeLabels } from './LinkedChartRecipeControls';
+import { LinkedChartRecipeControls, recipeAvailability, recipeLabels, type SourceChoiceKind } from './LinkedChartRecipeControls';
 
 function revisionKey({ widgetId, input, model, output }: Revision) {
     return JSON.stringify([widgetId, input, model, output]);
@@ -63,9 +65,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const [draft, setDraft] = useState<{ scope: string; kind: RecipeOptions['kind'] }>();
     const editing = !viewer && draft?.scope === editScope ? draft.kind : settings.type;
     const financial = isRecipeType(editing);
-    const legacy = !financial && !recipe;
+    const legacy = !recipe;
     const executor = source ? store.readExecutor(dashboardId, source) : undefined;
-    const presented = view.ready?.columns ?? [];
+    const presented = view.sourceRevision?.widgetId === source ? view.ready?.columns ?? [] : [];
     const loadSymbols = useCallback(async (field: string | undefined, signal: AbortSignal) => {
         const revision = view.sourceRevision;
         if (!executor || !revision || revision.widgetId !== source || !view.ready || !['ready', 'empty'].includes(view.status))
@@ -87,6 +89,26 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             if (symbol) symbols.add(symbol);
         }
         return [...symbols].sort();
+    }, [executor, source, view.ready, view.sourceRevision, view.status]);
+    const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
+        const revision = view.sourceRevision;
+        const ready = view.ready;
+        if (!executor || !revision || revision.widgetId !== source || !ready || !['ready', 'empty'].includes(view.status))
+            throw new Error('Wait for the selected source table to finish loading.');
+        const fields = kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
+            : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [];
+        const data = await executor.chartData(revision, fields, signal);
+        signal.throwIfAborted();
+        if (revisionKey(data.revision) !== revisionKey(revision) || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
+            throw new Error('The selected source revision changed. Reload the chart choices.');
+        if (kind === 'income-sankey') return incomeSankeyPeriodChoices(data).map(period => ({
+            value: period.columnId,
+            label: [`${period.kind}${period.fiscalYear ? ' ' + period.fiscalYear : ''}`,
+                period.kind === 'FQ' ? period.fiscalPeriod : null, period.end].filter(Boolean).join(' · '),
+        }));
+        if (kind === 'bubble-regression') return dateField ? bubblePriceDates(data, dateField).map(value => ({ value, label: value })) : [];
+        const evidence = readFinancialEvidence(data.provenance);
+        return evidence?.kind === 'dividends' ? [{ value: evidence.qualified_symbol, label: evidence.qualified_symbol }] : [];
     }, [executor, source, view.ready, view.sourceRevision, view.status]);
     const active = JSON.stringify(view.sourceRevision);
     const quarterScope = JSON.stringify([identity, source, active, settings.category]);
@@ -210,7 +232,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
       {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
-        columns={presented} loadSymbols={loadSymbols} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        columns={presented} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
@@ -221,7 +243,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     </div> : null}
     <div className="linked-chart-status">
     {saveError ? <p role="alert">{saveError}</p> : null}
-    {!financial && recipe && !recipe.ok && <p role="status">{recipe.message}</p>}
+    {!isRecipeType(settings.type) && recipe && !recipe.ok && <p role="status">{recipe.message}</p>}
     {legacy && error ? <p role="alert">{error}</p> : null}
     {lagging ? <p role="status">Updating chart — showing completed data (stale).</p> : null}
     {legacy && noMatches ? <p role="status">No selected series match the current filter.</p> : null}
@@ -229,7 +251,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     {legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused ? <p role="status">{carried && source && (view.sourceRevision?.widgetId !== source || view.status === 'pending' || view.status === 'updating') ? `Loading source ${source}…` : view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
-    {financial && editing === settings.type && (recipe?.ok
+    {isRecipeType(settings.type) && (recipe?.ok
       ? <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>
       : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
@@ -260,12 +282,16 @@ function FinancialChart(props: FinancialProps) {
     if (view.error) return props.parentReportsSourceStatus ? null : <p role="alert">{view.error}</p>;
     return <p role="status">{source ? `Loading source ${source}…` : 'Select an available source table.'}</p>;
   }
-  const issue = savedBindingIssue(options, view.ready.columns);
+  const emptyDividend = options.kind === 'dividend-steps' && view.ready.topLevelCount === 0;
+  const issue = emptyDividend ? undefined : savedBindingIssue(options, view.ready.columns);
   if (issue) return <p role="alert">{issue}</p>;
   const completeness = view.ready.completeness.kind;
-  if (options.kind !== 'estimate-range' && options.kind !== 'etf-pareto' && options.kind !== 'etf-exposure'
-      && completeness !== 'complete' && completeness !== 'bounded')
-    return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
+  switch (options.kind) {
+    case 'drawdown': case 'yield-curve': case 'monthly-returns': case 'correlation':
+    case 'return-distribution': case 'small-multiples':
+      if (completeness !== 'complete' && completeness !== 'bounded')
+        return <p role="status">The source must be fully loaded. Acquisition is {completeness}.</p>;
+  }
   return <WorkerChart {...props} source={source} executor={executor} ready={view.ready} revision={view.sourceRevision}/>;
 }
 
@@ -283,7 +309,9 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const [readError, setReadError] = useState<string>();
   const [workerError, setWorkerError] = useState<string>();
   const today = todayLocal();
-  const [width, setWidth] = useState(900);
+  const sankey = options.kind === 'income-sankey';
+  const [width, setWidth] = useState(sankey ? 390 : 900);
+  const measureSankey = useCallback((width: number) => setWidth(Math.min(width, 10_000)), []);
   const panels = options.kind === 'small-multiples' ? options.symbols.length : 0;
   const observePlot = useCallback((element: HTMLDivElement | null) => {
     if (!element || panels < 2) return;
@@ -294,7 +322,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     observer.observe(element);
     return () => observer.disconnect();
   }, [panels]);
-  const viewportWidth = panels ? width : undefined;
+  const viewportWidth = panels || sankey ? width : undefined;
   const context = JSON.stringify([theme, maxDecimals, today, viewportWidth]);
   const mapping = JSON.stringify(options);
   const active = revisionKey(revision);
@@ -302,7 +330,9 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   useEffect(() => {
     if (!available) return;
     const controller = new AbortController();
-    const fields = requiredRecipeFields(options);
+    let fields = requiredRecipeFields(options);
+    if (options.kind === 'dividend-steps' && ready.topLevelCount === 0)
+      fields = fields.filter(field => ready.columns.some(column => column.id === field));
     if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
     setReadError(undefined);
     void executor.chartData(revision, [...new Set(fields)], controller.signal).then(data => {
@@ -346,6 +376,10 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     </>}
     {completed && <DatasetStatus dataset={completed.data} source={source} notes={completed.result.ok ? completed.result.notes : []}/>}
   </div>
-  {completed?.result.ok && <div className="linked-chart-plot" ref={observePlot}><ChartRenderer data={completed.result.figure}
-    touchScroll={options.kind === 'small-multiples' ? 'overflow' : options.kind === 'etf-exposure'} scrollHeight={recipePlotHeight(options.kind, completed.result.figure)} uirevision={completed.result.revision}/></div>}</>;
+  {completed?.result.ok && completed.result.figure.data.length > 0 && <div className="linked-chart-plot" ref={observePlot}>
+    <ChartRenderer data={completed.result.figure} uirevision={completed.result.revision}
+      scrollHeight={recipePlotHeight(options.kind, completed.result.figure)}
+      touchScroll={sankey || panels ? 'overflow' : options.kind === 'etf-exposure'}
+      inspectSankeyOnTouch={sankey} onPlotWidthChange={sankey ? measureSankey : undefined}/>
+  </div>}</>;
 }

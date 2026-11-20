@@ -118,3 +118,37 @@ it('offers only the category dimension for the selected exposure mode', () => {
   fireEvent.click(screen.getByRole('button', { name: /apply/i }));
   expect(save).toHaveBeenCalledWith(expect.objectContaining({ mode: 'region', fields: { category: 'alias-country', weight: 'alias-weight' } }));
 });
+
+it('defaults screening to latest with an enabled fit and requires each acquired origin', async () => {
+  const columns = ['symbol', 'last_day_data_date', 'dividend_yield', 'price_change_5d', 'market_cap', 'exchange', 'currency_symbol']
+    .map(sourceFieldId => ({ id: 'alias-' + sourceFieldId, sourceFieldId, label: sourceFieldId }));
+  const loadSourceChoices = vi.fn(async () => [{ value: '2026-08-31', label: '2026-08-31' }]);
+  const save = vi.fn();
+  expect(recipeAvailability('bubble-regression', columns)).toBeNull();
+  expect(recipeAvailability('bubble-regression', columns.slice(0, -1))).toMatch(/listing denomination/);
+  expect(recipeAvailability('income-sankey', columns)).toMatch(/income Statement table/);
+  render(<LinkedChartRecipeControls kind="bubble-regression" columns={columns} loadSymbols={loadSymbols} disabled={false}
+    loadSourceChoices={loadSourceChoices} onApply={save}/>);
+  await screen.findByRole('option', { name: '2026-08-31' });
+  expect(screen.getByLabelText('Price date')).toHaveValue('latest');
+  expect(screen.getByLabelText('Show regression')).toBeChecked();
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith({ version: 1, kind: 'bubble-regression', priceDate: 'latest', regression: true,
+    fields: { symbol: 'alias-symbol', date: 'alias-last_day_data_date', dividendYield: 'alias-dividend_yield',
+      priceChange: 'alias-price_change_5d', marketCap: 'alias-market_cap', exchange: 'alias-exchange', currency: 'alias-currency_symbol' } });
+});
+
+it('defaults dividends to the acquired qualified instrument with no free-form symbol or amount fallback', async () => {
+  const sourceFields = ['ex_dividend_date', 'amount', 'currency', 'unadjusted_amount'];
+  const columns = sourceFields.map(id => ({ id, label: id }));
+  const save = vi.fn();
+  expect(recipeAvailability('dividend-steps', columns.filter(c => c.id !== 'amount'))).toMatch(/split-adjusted amount/);
+  render(<LinkedChartRecipeControls kind="dividend-steps" columns={columns} loadSymbols={loadSymbols}
+    loadSourceChoices={async () => [{ value: 'SHEL.LSE', label: 'SHEL.LSE' }]} disabled={false} onApply={save}/>);
+  await screen.findByRole('option', { name: 'SHEL.LSE' });
+  expect(screen.getByLabelText('Acquired instrument')).toHaveValue('SHEL.LSE');
+  expect(screen.queryByRole('option', { name: 'unadjusted_amount' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith({ version: 1, kind: 'dividend-steps', instrument: 'SHEL.LSE',
+    fields: { date: 'ex_dividend_date', amount: 'amount', currency: 'currency' } });
+});

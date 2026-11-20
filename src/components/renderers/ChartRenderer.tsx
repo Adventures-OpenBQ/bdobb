@@ -41,6 +41,50 @@ function unregisteredTraceType(figure: PlotlyFigure): string | null {
   return figure.data.map((t) => traceType(t)).find((t) => !REGISTERED_TRACE_TYPES.has(t)) ?? null;
 }
 
+// The installed Sankey trace follows mouse movements and clears hover on click.
+function inspectSankeyTaps(plot: HTMLDivElement) {
+  const targetFor = (event: TouchEvent) => event.target instanceof Element
+    ? event.target.closest('.sankey-node, .sankey-link') : null;
+  let start: { target: Element; touch: Touch; time: number } | undefined;
+  let hovered: Element | undefined;
+  const moved = (touch: Touch | undefined) => !start || !touch || touch.identifier !== start.touch.identifier
+    || Math.hypot(touch.clientX - start.touch.clientX, touch.clientY - start.touch.clientY) > 8;
+  function begin(event: TouchEvent) {
+    const target = targetFor(event);
+    start = target && event.touches.length === 1 ? { target, touch: event.touches[0], time: event.timeStamp } : undefined;
+    // D3 installs a scroll-blocking touch drag even on fixed nodes.
+    if (target?.classList.contains('sankey-node')) event.stopPropagation();
+  }
+  function move(event: TouchEvent) {
+    if (event.touches.length !== 1 || moved(event.touches[0])) start = undefined;
+  }
+  function clear() { start = undefined; }
+  function end(event: TouchEvent) {
+    const target = targetFor(event);
+    const touch = event.changedTouches[0];
+    const tap = start && start.target === target && !event.touches.length && !moved(touch)
+      && event.timeStamp - start.time < 500;
+    clear();
+    if (!tap || !target || !event.cancelable) return;
+    event.preventDefault();
+    const mouse = { bubbles: true, clientX: touch.clientX, clientY: touch.clientY };
+    if (hovered && hovered !== target) hovered.dispatchEvent(new MouseEvent('mouseout', mouse));
+    target.dispatchEvent(new MouseEvent('mouseover', mouse));
+    target.dispatchEvent(new MouseEvent('mousemove', mouse));
+    hovered = target;
+  }
+  plot.addEventListener('touchstart', begin, { capture: true, passive: true });
+  plot.addEventListener('touchmove', move, { passive: true });
+  plot.addEventListener('touchcancel', clear);
+  plot.addEventListener('touchend', end, { passive: false });
+  return () => {
+    plot.removeEventListener('touchstart', begin, true);
+    plot.removeEventListener('touchmove', move);
+    plot.removeEventListener('touchcancel', clear);
+    plot.removeEventListener('touchend', end);
+  };
+}
+
 /**
  * `uirevision` names the question this chart answers — the card's params.
  * While it holds, Plotly.react keeps the user's zoom/pan across a refetch or a
@@ -54,11 +98,16 @@ export function ChartRenderer({
   chartType,
   scrollHeight,
   touchScroll = false,
+  inspectSankeyOnTouch = false,
+  onPlotWidthChange,
 }: {
   data: unknown;
   uirevision?: string;
   scrollHeight?: number;
   touchScroll?: boolean | 'overflow';
+  inspectSankeyOnTouch?: boolean;
+  /** Explicitly sized figures rebuild their layout at the measured width. */
+  onPlotWidthChange?: (width: number) => void;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -99,6 +148,7 @@ export function ChartRenderer({
   const attachNode = useCallback((el: HTMLDivElement | null) => {
     node.current = el;
     if (!el) return;
+    const stopInspecting = inspectSankeyOnTouch ? inspectSankeyTaps(el) : undefined;
     let last = { w: 0, h: 0 };
     const observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect;
@@ -107,15 +157,18 @@ export function ChartRenderer({
       const w = Math.round(box.width);
       const h = Math.round(box.height);
       if (w === last.w && h === last.h) return;
+      if (onPlotWidthChange) {
+        if (w > 0 && w !== last.w) onPlotWidthChange(w);
+      } else resizePlot(el);
       last = { w, h };
-      resizePlot(el);
     });
     observer.observe(el);
     return () => {
       observer.disconnect();
+      stopInspecting?.();
       purgePlot(el);
     };
-  }, []);
+  }, [inspectSankeyOnTouch, onPlotWidthChange]);
 
   // Reconciles the existing plot in place via Plotly.react (renderPlot)
   // rather than purging and redrawing on every new `data`/`drawable`
@@ -173,6 +226,6 @@ export function ChartRenderer({
   }
   const plot = <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>;
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
-  return scrolling ? <div className="chart-scroll-viewport" ref={observeViewport}
-    onTouchEnd={coarseScroll ? event => event.preventDefault() : undefined}>{plot}</div> : plot;
+  return scrolling ? <div className={measureOverflow && overflows ? "chart-scroll-viewport chart-scroll-viewport--touch-scroll" : "chart-scroll-viewport"}
+    ref={observeViewport} onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div> : plot;
 }

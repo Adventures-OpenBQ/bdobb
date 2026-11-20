@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // plotly.js does not run under jsdom — it needs canvas and layout APIs jsdom
@@ -17,7 +17,7 @@ vi.mock("../../lib/plotly", () => ({
   renderPlot: (n: HTMLElement, f: unknown, u?: unknown) => renderPlot(n, f, u),
   purgePlot: (n: HTMLElement) => purgePlot(n),
   resizePlot: (n: HTMLElement) => resizePlot(n),
-  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall"]),
+  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey"]),
 }));
 
 const logError = vi.fn((_message: string) => Promise.resolve());
@@ -399,4 +399,34 @@ it('releases coarse watchlist drags only while its viewport overflows and restor
   available = 280;
   resize();
   expect(figureFromLastCall()).toEqual(data);
+});
+
+it('inspects Sankey nodes and links on tap and lets touch drags or unrelated taps pass through', () => {
+  const data = { data: [{ type: 'sankey' }], layout: { width: 390, height: 680 } };
+  render(<ChartRenderer data={data} scrollHeight={680} touchScroll="overflow" inspectSankeyOnTouch/>);
+  const plot = screen.getByTestId('chart-plot');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.innerHTML = '<g class="sankey-node"><rect/></g><path class="sankey-link"/><rect/>';
+  plot.append(svg);
+  const handlers = vi.fn();
+  svg.addEventListener('mouseover', handlers);
+  svg.addEventListener('mousemove', handlers);
+  const touch = { identifier: 1, clientX: 40, clientY: 50 };
+  for (const target of [svg.querySelector('g rect')!, svg.querySelector('path')!]) {
+    fireEvent.touchStart(target, { touches: [touch] });
+    expect(fireEvent.touchEnd(target, { changedTouches: [touch], touches: [] })).toBe(false);
+    expect(handlers.mock.calls.slice(-2).map(([event]) => [event.type, event.clientX, event.clientY]))
+      .toEqual([['mouseover', 40, 50], ['mousemove', 40, 50]]);
+  }
+  const link = svg.querySelector('path')!;
+  fireEvent.touchStart(link, { touches: [touch] });
+  fireEvent.touchMove(link, { touches: [{ ...touch, clientY: 75 }] });
+  expect(fireEvent.touchEnd(link, { changedTouches: [touch], touches: [] })).toBe(true);
+  const background = svg.lastElementChild!;
+  fireEvent.touchStart(background, { touches: [touch] });
+  expect(fireEvent.touchEnd(background, { changedTouches: [touch], touches: [] })).toBe(true);
+  fireEvent.touchStart(link, { touches: [touch] });
+  fireEvent.touchStart(link, { touches: [touch, { ...touch, identifier: 2 }] });
+  expect(fireEvent.touchEnd(link, { changedTouches: [touch], touches: [] })).toBe(true);
+  expect(handlers).toHaveBeenCalledTimes(4);
 });
