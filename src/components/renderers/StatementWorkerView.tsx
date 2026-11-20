@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { tableExecutionStore } from '../../stores/tableExecutionStore';
+import { tableCommitCoordinators } from '../../stores/tableCommitCoordinator';
 import { createWorkerExecutor } from '../../lib/tableExecution/workerClient';
 import { loadStatementSnapshot, type StatementSnapshot } from '../../lib/statementExecution';
 import { NOTHING_TO_STATEMENT } from '../../lib/statementRows';
@@ -26,6 +27,12 @@ export function StatementWorkerView({ dashboardId, widgetId, owned, data, spec, 
   const publish = useRef(onSnapshot); publish.current = onSnapshot;
   const owner = JSON.stringify([dashboardId, widgetId]);
   useEffect(() => { if (owned) tableExecutionStore.ensureTable(dashboardId, widgetId); }, [dashboardId, widgetId, owned]);
+  // Statement replaces the table renderer, so it must retain the same edit
+  // coordinator for Rita's reads and guarded writes while this view is open.
+  useEffect(() => {
+    if (!owned) return;
+    return tableCommitCoordinators.get(dashboardId, widgetId).retain();
+  }, [dashboardId, widgetId, owned]);
   useEffect(() => {
     const version = ++generation.current;
     setTransferring(true);

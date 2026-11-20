@@ -920,7 +920,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 
   function body() {
     if (isStatement && dashboard) return <StatementWorkerView
-      dashboardId={dashboard.id} widgetId={card.id} owned={isManagedTable(card) || card.widgetId === "local_table" || !!card.linkedSource}
+      dashboardId={dashboard.id} widgetId={card.id} owned={workerTable}
       data={data} spec={widget?.table} definition={statementDefinition} selection={card.tableSelection}
       sourceLoading={status === "loading"} sourceError={status === "error"}
       collapsed={statementCollapsed} onSnapshot={setStatementSnapshot}
