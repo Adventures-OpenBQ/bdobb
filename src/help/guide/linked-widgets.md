@@ -24,7 +24,7 @@ It has its own sorting, filters, columns and **Pivot** drawer, saved with the ca
 
 ## A linked chart
 
-Its controls sit above the plot and save as you change them:
+Chart configuration is part of the card's **Parameters**. Open the title-bar chevron or **⋯ → Parameters** to choose the source, chart type, category, measures and series layout. The panel starts closed and its open state saves with the card. Closing it leaves the chart and its saved configuration intact. Changes save as you make them:
 
 - **Chart type** — **Columns (vertical)** (the default), **Bars (horizontal)**, **Lines**, **Pie**, **Waterfall** or **Surface (3-D)**.
 - **Category** — the column along the axis.

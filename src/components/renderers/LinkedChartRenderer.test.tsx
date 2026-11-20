@@ -493,3 +493,31 @@ it('a Surface on a report whose checklist hides a column member requests only th
     expect(request.mock.calls.at(-1)![1]).toEqual([LABEL_FIELD, ...sales]);
     cleanup(); store.disposeDashboard('d');
 });
+
+it('moves chart configuration into Parameters without resetting the delivered figure', async () => {
+    const store = await setup();
+    const commit = vi.fn(async () => true);
+    const panel = document.createElement('div');
+    panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', 'Parameters');
+    document.body.appendChild(panel);
+    try {
+        const props = {dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: commit};
+        const {rerender} = render(<LinkedChartRenderer {...props} controlsHost={null}/>);
+        await screen.findByTestId('figure');
+        const completed = screen.getByTestId('figure').textContent;
+        const source = store.readView('d', 's');
+        expect(screen.queryByLabelText('Chart type')).toBeNull();
+        rerender(<LinkedChartRenderer {...props} controlsHost={panel}/>);
+        expect(panel).toContainElement(screen.getByLabelText('Chart type'));
+        fireEvent.change(screen.getByLabelText('Chart type'), {target: {value: 'line'}});
+        await waitFor(() => expect(commit).toHaveBeenCalledWith({...settings, type: 'line'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: /^Measures:/})).not.toBeDisabled());
+        fireEvent.click(screen.getByRole('button', {name: /^Measures:/}));
+        expect(screen.getByRole('dialog', {name: 'Measures'})).toBeVisible();
+        rerender(<LinkedChartRenderer {...props} controlsHost={null}/>);
+        expect(screen.queryByRole('dialog', {name: 'Measures'})).toBeNull();
+        expect(screen.queryByLabelText('Chart type')).toBeNull();
+        expect(screen.getByTestId('figure').textContent).toBe(completed);
+        expect(store.readView('d', 's')).toBe(source);
+    } finally {cleanup(); panel.remove(); store.disposeDashboard('d');}
+});

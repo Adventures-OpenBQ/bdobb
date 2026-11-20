@@ -279,7 +279,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
    * not about the card.
    */
   const [exportNotice, setExportNotice] = useState<string | null>(null);
-  const paramsRef = useRef<HTMLDivElement | null>(null);
+  const [paramsHost, setParamsHost] = useState<HTMLDivElement | null>(null);
 
   /**
    * The ⋯ toggle, kept so the menu can hang from it. The menu is portalled
@@ -307,12 +307,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
    * hand focus to whichever card mounted last.
    */
   useEffect(() => {
-    if (!paramsOpen || !focusParamsOnOpen.current) return;
+    if (!paramsOpen || !paramsHost || !focusParamsOnOpen.current) return;
     focusParamsOnOpen.current = false;
-    paramsRef.current
-      ?.querySelector<HTMLElement>("input, select, button, [tabindex]")
+    paramsHost
+      .querySelector<HTMLElement>("input, select, button, [tabindex]")
       ?.focus();
-  }, [paramsOpen]);
+  }, [paramsOpen, paramsHost]);
 
   /**
    * Escape restores. Registered only while THIS card is the maximized one, so
@@ -407,6 +407,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   const tabs = widget ? bodyParams(widget, "tabs") : [];
   const forms = widget ? bodyParams(widget, "form") : [];
   const hasControls = widget ? visibleParams(widget).length > 0 : false;
+  const hasChartParameters = !viewer && Boolean(card.linkedChart && card.linkedSource);
+  const hasParameters = hasControls || hasChartParameters;
   // Does the ◷ do anything on this card? Yes when the hook has a request to
   // repeat (fetchesData), or when the renderer takes `refreshKey` and does
   // its own reload. Otherwise -- a framed page, a note, the clock, the keys
@@ -928,7 +930,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   }
 
   function body() {
-    if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
+    if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} controlsHost={paramsOpen ? paramsHost : null} />;
 
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {
       return <p className="empty-state">Waiting for widget…</p>;
@@ -1365,7 +1367,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
         {/* v5.5.1 (user ruling 2026-09-30): the Parameters panel's own
             toggle, on every card with parameters. ▸ is closed, ▾ is open;
             the state is saved on the card (see paramsOpen). */}
-        {hasControls && !minimized ? (
+        {hasParameters && !minimized ? (
           <button
             type="button"
             className="card-params-chevron"
@@ -1514,7 +1516,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                     >
                       {"Rename…"}
                     </button>
-                    {hasControls ? (
+                    {hasParameters ? (
                       <button
                         type="button"
                         role="menuitem"
@@ -1757,8 +1759,9 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             .card-params-panel). A child of <header>, after .card-controls,
             on a line of its own under the bar (the header wraps). Docked,
             not floating, since v5.5.1 -- see paramsOpen. */}
-        {paramsOpen && !minimized && controlProps ? (
-          <div className="card-params-panel" role="region" aria-label="Parameters" ref={paramsRef}>
+        {paramsOpen && !minimized && (hasControls && controlProps || hasChartParameters) ? (
+          <div className="card-params-panel" role="region" aria-label="Parameters" ref={setParamsHost}>
+            {hasControls && controlProps ? <>
             <ParamControls
               {...controlProps}
               // Same viewer read-only contract as the chips instance.
@@ -1783,6 +1786,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
               />
               Display on title bar
             </label>
+            </> : null}
+            {hasChartParameters ? <button type="button" onClick={() => setChooseSource(true)}>Choose source</button> : null}
           </div>
         ) : null}
         {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} /> : null}
@@ -1861,9 +1866,9 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
 }
 
 /** Linked presentations share the dashboard runtime status and source repair action. */
-function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer }: {
+function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer, controlsHost }: {
   dashboardId: string; card: DashboardCard; refreshKey: number; filterRow: boolean;
-  onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean;
+  onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean; controlsHost: HTMLElement | null;
 }) {
   const view = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
   useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, card.linkedSource?.sourceWidgetId]);
@@ -1882,11 +1887,11 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   const unavailable = view.status === 'unavailable' || !dashboard || !card.linkedSource
     || !canUseLinkedSource(dashboard, card.id, card.linkedSource.sourceWidgetId);
   const content = <>
-    {!viewer ? <button type="button" onClick={chooseSource}>Choose source</button> : null}
+    {!viewer && !card.linkedChart ? <button type="button" onClick={chooseSource}>Choose source</button> : null}
     {!unavailable && view.stale ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && card.linkedChart && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
-      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} hints={hints || undefined} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
+      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} controlsHost={controlsHost} hints={hints || undefined} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;
   return card.linkedChart ? <div className="linked-chart-card">{content}</div> : content;

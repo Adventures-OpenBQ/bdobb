@@ -4682,3 +4682,22 @@ describe('managed SSRM consumer controls',()=>{
   expect(screen.getByRole('menuitem',{name:/^Export/})).toBeInTheDocument();
  });
 });
+
+it('treats linked-chart source selection as saved Parameters, closed by default', async () => {
+  const {tableExecutionStore} = await import('../stores/tableExecutionStore');
+  const ensure = vi.spyOn(tableExecutionStore, 'ensureTable').mockImplementation(() => {});
+  try {
+    register({params: []});
+    const linked = {...card, linkedSource: {kind: 'widget' as const, sourceWidgetId: 'missing'}, linkedChart: {type: 'surface' as const, display: 'grouped' as const, measures: []}};
+    useDashboardStore.setState({dashboards: [{id: 'd1', name: 'D', tabs: [{id: 't1', name: 'Main', cards: [linked]}]}], activeId: 'd1', activeTabId: 't1'});
+    render(<WidgetCard card={linked} onRemove={vi.fn()}/>);
+    expect(screen.queryByRole('region', {name: 'Parameters'})).toBeNull();
+    expect(screen.queryByRole('button', {name: 'Choose source'})).toBeNull();
+    await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+    expect(within(screen.getByRole('region', {name: 'Parameters'})).getByRole('button', {name: 'Choose source'})).toBeVisible();
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true));
+    await userEvent.click(screen.getByRole('button', {name: 'Hide parameters'}));
+    expect(screen.queryByRole('button', {name: 'Choose source'})).toBeNull();
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0]).not.toHaveProperty('paramsOpen'));
+  } finally {ensure.mockRestore();}
+});
