@@ -293,7 +293,9 @@ live("Rita authors a dashboard", () => {
     const note = BUILTIN_WIDGETS.find((w) => w.id === "note")!;
     const id = (await useDashboardStore.getState().addCard(note, { text: "" })) as string;
     await useDashboardStore.getState().patchCardField(id, "title", "Answer");
-    const { rounds, statuses, reply } = await turn("Write a one-sentence definition of inflation into the note titled Answer.", true);
+    // This restricted-tool fixture tests recovery, not natural tool selection.
+    // Name the available fallback because the preferred markdown writer is deliberately absent.
+    const { rounds, statuses, reply } = await turn("Use the available set_widget_params tool with nested params.text to write a one-sentence definition of inflation into the existing note titled Answer.", true);
     console.log("[recovery-reply]", reply);
     console.log("[statuses]", JSON.stringify(statuses.map((st) => [st.eventType, st.message])));
     // Rita's own status for the refused call names it an error (from the typed

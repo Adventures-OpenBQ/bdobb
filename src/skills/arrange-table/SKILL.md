@@ -16,6 +16,12 @@ table's row count exactly as `describe_table` gives it in
 `completeness.totalRowCount` when `completeness.totalRowCountKind` is
 `exact`: no number of groups, no grand total, nothing you work out.
 
+A `refused` or `failed` result contains no successful preview. State the
+refusal; do not display calculated rows, member labels, or numbers as its
+output. Never invent a preview. If the requested aggregation is unsupported,
+explain why and offer alternatives without executing them unless the user
+asks. Correct schema errors only while preserving the requested operation.
+
 ## 0. Read-only asks never commit
 
 If the user asks to summarize, describe, inspect, check, compare or suggest,

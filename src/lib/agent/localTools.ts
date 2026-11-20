@@ -123,7 +123,9 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "Address existing objects by {id} and new ones by a request-local {alias}; an applied result's ids maps each alias to its new id. " +
       "The engine validates and calculates: quote only numbers that are values in the result's preview.rows; the grand total and the row count " +
       "are not there, so do not add anything up yourself: state the source table's row count only as describe_table's exact completeness.totalRowCount, " +
-      "never the grand total. Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
+      "never the grand total. A refused or failed result has no successful preview: explain the refusal without invented rows, labels or numbers. " +
+      "Do not substitute another aggregation for an unsupported request; offer alternatives without executing them. Correct schema errors only while preserving the requested operation. " +
+      "Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
       "its alternatives), stale-revision (describe again), busy, timeout or calculation-failed (nothing changed; describe, then retry once). " +
       "view.set switches the card's view to one of describe_table's views (\"table\" is the default) in the same request and Undo. " +
       "An applied result may have revision null and recalculating true while the table settles, and lists each linked table with its status; " +
