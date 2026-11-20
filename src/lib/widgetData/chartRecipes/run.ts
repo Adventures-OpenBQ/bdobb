@@ -12,6 +12,7 @@ import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
 import { buildEstimateRevisions } from './estimateRevisions';
 import { buildIncomeSankey } from './incomeSankey';
+import { buildMarketMap } from './marketMap';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
 import { buildOwnershipSnapshot } from './ownershipSnapshot';
@@ -69,6 +70,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   }
 
   const recipe = decoded.options;
+  if (recipe.kind === 'market-map') return buildMarketMap(dataset, recipe, context);
   if (recipe.kind === 'estimate-revisions') return buildEstimateRevisions(dataset, recipe, context);
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'

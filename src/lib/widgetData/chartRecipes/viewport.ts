@@ -28,6 +28,9 @@ export function estimateRevisionMinPlotWidth(vintages: number): number {
 export const dualAxisOverlayMinPlotWidth = 320;
 export const dualAxisOverlayMinPlotHeight = 210;
 
+export const marketMapMinPlotWidth = 320;
+export const marketMapMinPlotHeight = 260;
+
 export type Range = [number, number];
 // Plotly 3.7 cartesian cleanRange clamps linear coordinates to constants/numerical.js FP_SAFE.
 const plotlySafeMagnitude = Number.MAX_VALUE * 1e-4;

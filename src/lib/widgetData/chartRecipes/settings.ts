@@ -6,7 +6,8 @@ import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
 import { ownershipBarRoles } from './ownershipEvidence';
-import type { DualAxisOverlayOptions, EstimateRevisionsOptions, RecipeOptions, RecipeRequestOptions } from './types';
+import { isOverlayReference } from './overlayEvidence';
+import type { DualAxisOverlayOptions, EstimateRevisionsOptions, MarketMapOptions, RecipeOptions, RecipeRequestOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
 type RecipeShape = { options: readonly string[]; required?: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
@@ -255,8 +256,23 @@ export function decodeEstimateRevisionsOptions(value: unknown): RecipeOptionsRes
   return { ok: true, options: decoded.options as EstimateRevisionsOptions };
 }
 
+export const marketMapFieldOrigins = ['listing', 'sector', 'area', 'change', 'session'] as const;
+const marketMapShape = { options: ['mode', 'universe', 'session'], required: marketMapFieldOrigins, distinctBindings: true } as const;
+
+export function decodeMarketMapOptions(value: unknown): RecipeOptionsResult<MarketMapOptions> {
+  const decoded = decodeRecipeShape(value, 'market-map', marketMapShape);
+  if (!decoded.ok) return decoded;
+  const { mode, universe, session } = decoded.options;
+  if (mode !== 'delivered-cap' && mode !== 'index-weight') return invalid('Choose delivered-sample capitalization or acquired index weights.');
+  if (mode === 'delivered-cap' ? universe !== 'delivered-sample' : !isOverlayReference(universe) || universe === 'delivered-sample')
+    return invalid('Choose the acquired universe for the selected market-map mode.');
+  if (session !== 'latest' && !isoDate(session)) return invalid('Choose latest or a completed YYYY-MM-DD market-map session.');
+  return { ok: true, options: decoded.options as MarketMapOptions };
+}
+
 export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult<RecipeRequestOptions> {
   const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
+  if (kind === 'market-map') return decodeMarketMapOptions(value);
   return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 

@@ -26,12 +26,12 @@ export type MarketMapSource = ChartSourceReceipt & (Cap | Index) & {
   session_ref: string; area_ref: string; coverage_reference: string; listing_keys: string[]; exact_repeats: number;
   rejected_count: number; excluded_areas: { zero: number; negative: number; invalid: number }; diagnostics: Flag[]; unsafe: Record<Flag, boolean>;
 };
-const identityFields = ['universe', 'acquisition_ref', 'prior_session', 'session', 'return_basis', 'price_basis', 'session_ref',
+export const marketMapIdentityFields = ['universe', 'acquisition_ref', 'prior_session', 'session', 'return_basis', 'price_basis', 'session_ref',
   'area_basis', 'area_ref', 'denomination', 'cap_retrieved_at', 'membership_as_of', 'weight_valid_for', 'weight_reference'] as const;
-const keys = ['version', 'kind', 'origin', 'retrieved_at', 'mode', ...identityFields, 'members', 'coverage', 'coverage_reference',
+const keys = ['version', 'kind', 'origin', 'retrieved_at', 'mode', ...marketMapIdentityFields, 'members', 'coverage', 'coverage_reference',
   'rounding_bound_fraction', 'rounding_reference', 'listing_keys', 'raw_count', 'normalized_count', 'delivered_count', 'exact_repeats',
   'rejected_count', 'excluded_areas', 'diagnostics', 'unsafe'];
-const rowKeys = ['listing', 'sector', 'area', 'change', ...identityFields];
+const rowKeys = ['listing', 'sector', 'area', 'change', ...marketMapIdentityFields];
 const exact = (v: unknown, fields: readonly string[]): v is Record<string, unknown> => isChartSourceRecord(v)
   && Object.keys(v).length === fields.length && fields.every(k => Object.hasOwn(v, k));
 const count = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
@@ -87,7 +87,7 @@ function rowsAgree(s: MarketMapSource, rows: readonly Record<string, unknown>[],
   const weights: number[] = [];
   for (const row of rows) {
     if (!exact(row, rowKeys) || !listing(row.listing) || !remaining.delete(row.listing)
-      || !identityFields.every(k => row[k] === s[k])
+      || !marketMapIdentityFields.every(k => row[k] === s[k])
       || (row.sector !== null && (typeof row.sector !== 'string' || !row.sector || row.sector.trim() !== row.sector))
       || !finite(row.area) || row.area <= 0 || (row.change !== null && (!finite(row.change) || row.change < -1))) return false;
     // A contribution of two already proves excess. Preserve the original value in the row.
