@@ -362,7 +362,13 @@ export type TableCardState = {
   pinned?: Record<string, PinSide | null>;
 };
 
+export type LinkedSource = {kind: "widget"; sourceWidgetId: string};
+export type LinkedChartSettings = {type: "surface"; category?: string; measures: string[]; display: "grouped"};
+
 export type DashboardCard = {
+  /** Source card identity within this dashboard; runtime rows never persist. */
+  linkedSource?: LinkedSource;
+  linkedChart?: LinkedChartSettings;
   id: string;
   widgetId: string;
   backendId: string;

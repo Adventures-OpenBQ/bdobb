@@ -13,7 +13,7 @@ export type ExtensionIssue = {
 };
 export type ExtensionResult<T> = { ok: true; value: T } | { ok: false; issue: ExtensionIssue };
 export type V3AppExtension = { schemaVersion: 1; profile: "v3"; tabOrder: string[]; groupsDisabled?: boolean; groupNames?: Record<string, string> };
-export type V3CardExtension = { schemaVersion: 1; profile: "v3"; title?: string; view?: CardView; minimized?: boolean; paramsOpen?: boolean; table?: TableCardState };
+export type V3CardExtension = { schemaVersion: 1; profile: "v3"; instanceId?: string; sourceRef?: string; linkedChart?: DashboardCard["linkedChart"]; title?: string; view?: CardView; minimized?: boolean; paramsOpen?: boolean; table?: TableCardState };
 export class AppExtensionError extends Error {
   constructor(readonly issue: ExtensionIssue) {
     super(`${issue.code} at ${issue.path}: ${issue.message}`);
@@ -78,8 +78,22 @@ export function decodeV3AppExtension(value: unknown, path: string): ExtensionRes
 export function decodeV3CardExtension(value: unknown, path: string): ExtensionResult<V3CardExtension | undefined> {
   return result(() => {
     if (value === undefined) return undefined;
-    const r = header(value, ["title", "view", "minimized", "paramsOpen", "table"], path);
+    const r = header(value, ["title", "view", "minimized", "paramsOpen", "table", "instanceId", "sourceRef", "linkedChart"], path);
     const out: V3CardExtension = { schemaVersion: 1, profile: "v3" };
+    for (const field of ["instanceId", "sourceRef"] as const) if (Object.hasOwn(r, field)) {
+      if (typeof r[field] !== "string" || !r[field] || r[field].length > 1024) extensionError(path, "Invalid portable source reference.");
+      out[field] = r[field];
+    }
+    if (Object.hasOwn(r, "linkedChart")) {
+      const chart = record(r.linkedChart, `${path}.linkedChart`);
+      keys(chart, ["type", "category", "measures", "display"], path);
+      if (chart.type !== "surface" || chart.display !== "grouped") extensionError(path, "Unsupported linked surface settings.");
+      const measures = strings(chart.measures, path);
+      if (measures.length > 64 || new Set(measures).size !== measures.length || measures.some(m => !m || m.length > 1024)) extensionError(path, "Invalid linked surface measures.");
+      if (chart.category !== undefined && (typeof chart.category !== "string" || !chart.category || chart.category.length > 1024)) extensionError(path, "Invalid linked surface category.");
+      out.linkedChart = {type: "surface", display: "grouped", measures, ...(chart.category !== undefined ? {category: chart.category as string} : {})};
+    }
+
     if (Object.hasOwn(r, "title")) {
       if (typeof r.title !== "string") extensionError(path, "Title must be string.");
       out.title = r.title;
@@ -145,12 +159,16 @@ export function unwrapExtension<T>(decoded: ExtensionResult<T>): T {
   return decoded.value;
 }
 
-export function encodeV3CardExtension(card: DashboardCard, path: string): ExtensionResult<V3CardExtension | undefined> {
-  const allowed = new Set(["id", "widgetId", "backendId", "params", "layout", "title", "view", "minimized", "paramsOpen", "bindings", "table", "groupIds", "extensions"]);
+export function encodeV3CardExtension(card: DashboardCard, path: string, identity: {instanceId?: string; sourceRef?: string} = {}): ExtensionResult<V3CardExtension | undefined> {
+  const allowed = new Set(["id", "widgetId", "backendId", "params", "layout", "title", "view", "minimized", "paramsOpen", "bindings", "table", "groupIds", "extensions", "linkedSource", "linkedChart"]);
   for (const [key, value] of Object.entries(card)) if (value !== undefined && !allowed.has(key)) {
     return { ok: false, issue: { code: "UNSUPPORTED_V3_STATE", path, message: "Card has state outside the v3 profile." } };
   }
+  if (card.linkedSource !== undefined && (card.linkedSource?.kind !== "widget" || typeof card.linkedSource.sourceWidgetId !== "string" || !identity.sourceRef || Object.keys(card.linkedSource).some(k => !["kind", "sourceWidgetId"].includes(k)))) {
+    return {ok: false, issue: {code: "UNSUPPORTED_V3_STATE", path, message: "Linked source requires a valid portable source reference."}};
+  }
   const native: Record<string, unknown> = { schemaVersion: 1, profile: "v3" };
-  for (const field of ["title", "view", "minimized", "paramsOpen", "table"] as const) if (card[field] !== undefined) native[field] = card[field];
+  for (const field of ["instanceId", "sourceRef"] as const) if (identity[field] !== undefined) native[field] = identity[field];
+  for (const field of ["title", "view", "minimized", "paramsOpen", "table", "linkedChart"] as const) if (card[field] !== undefined) native[field] = card[field];
   return Object.keys(native).length === 2 ? { ok: true, value: undefined } : decodeV3CardExtension(native, path);
 }

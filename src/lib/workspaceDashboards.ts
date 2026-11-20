@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { decodeV3CardExtension, encodeV3CardExtension, unwrapExtension } from "./appsExtensionsV3";
+import type { V3CardExtension } from "./appsExtensionsV3";
+import { linkedReferences, portableLinkedIdentity, restoreLinkedReferences } from "./linkedReferences";
+import type { PortableLinkedIdentity } from "./linkedReferences";
 import { importApps, toParams } from "./appsJson";
 import { LOCAL_TABLE_ID } from "./builtins";
 import { isRecord } from "./isRecord";
@@ -28,17 +31,18 @@ function parseBindings(value: unknown): ParamBinding[] {
 }
 
 /** BDOBB's own card state from a widget record's extensions.bdobb: title, minimized, table, bindings, and a non-chart view. */
-function applyNative(card: DashboardCard, widget: Rec): void {
+function applyNative(card: DashboardCard, widget: Rec): V3CardExtension | undefined {
   const ext = isRecord(widget.extensions) && isRecord(widget.extensions.bdobb) ? widget.extensions.bdobb : undefined;
   if (ext === undefined) return;
   const { bindings, ...rest } = ext;
   const native = unwrapExtension(decodeV3CardExtension(rest, "$.widgets[].extensions.bdobb"));
-  for (const field of ["title", "minimized", "paramsOpen", "table"] as const) {
+  for (const field of ["title", "minimized", "paramsOpen", "table", "linkedChart"] as const) {
     if (native && Object.hasOwn(native, field)) Object.assign(card, { [field]: native[field] });
   }
   // Workspace's chart toggle is authoritative; a native view applies only while the chart is off.
   if (native?.view && native.view !== "chart" && card.view !== "chart") card.view = native.view;
   if (bindings !== undefined) card.bindings = parseBindings(bindings);
+  return native;
 }
 
 /**
@@ -88,15 +92,17 @@ export function fromWorkspace(content: unknown, store: SyncStore, registry: Widg
     states.push(tabStates);
   });
   const [dashboard] = importApps([{ name, tabs }], registry).dashboards;
+  const sourceClaims: {card: DashboardCard; native?: V3CardExtension}[] = [];
   dashboard.tabs.forEach((tab, t) =>
     tab.cards.forEach((card, c) => {
       const state = states[t]?.[c];
       if (state === undefined) return;
-      applyNative(card, state.widget);
+      sourceClaims.push({card, native: applyNative(card, state.widget)});
       // The params as mapped (seeded defaults included), so an untouched card writes nothing back.
       card.extensions = { workspace: { ...state, params: { ...card.params } } };
     }),
   );
+  restoreLinkedReferences(sourceClaims);
   const native = isRecord(body.extensions) && isRecord(body.extensions.bdobb) ? body.extensions.bdobb : undefined;
   if (native?.groups !== undefined) dashboard.groups = parseGroups(native.groups);
   if (typeof native?.groupsDisabled === "boolean") dashboard.groupsDisabled = native.groupsDisabled;
@@ -123,8 +129,8 @@ function mergeParams(original: Rec, mapped: Record<string, string>, current: Rec
 }
 
 /** The card's BDOBB-only state for extensions.bdobb, or undefined when there is none. A chart view travels as storage.chartView instead. */
-function nativeOf(card: DashboardCard): Rec | undefined {
-  const encoded = unwrapExtension(encodeV3CardExtension(card, "$.card"));
+function nativeOf(card: DashboardCard, identity: PortableLinkedIdentity): Rec | undefined {
+  const encoded = unwrapExtension(encodeV3CardExtension(card, "$.card", identity));
   const native: Rec = encoded ? { ...encoded } : { schemaVersion: 1, profile: "v3" };
   if (native.view === "chart") delete native.view;
   if (card.bindings?.length) native.bindings = card.bindings.map(({ groupId, paramName }) => ({ groupId, paramName }));
@@ -139,7 +145,7 @@ function withNative(extensions: unknown, native: Rec | undefined): Rec | undefin
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-function cardRecord(card: DashboardCard, tabKey: string, used: Set<unknown>): { widget: Rec; layout: Rec } {
+function cardRecord(card: DashboardCard, tabKey: string, used: Set<unknown>, identity: PortableLinkedIdentity): { widget: Rec; layout: Rec } {
   const ws = card.extensions?.workspace;
   // A server card keeps its server id; a BDOBB-made card brings its own, so the next download can match it back
   // to this card. A second use of one id in a dashboard (a duplicated card) gets a fresh one.
@@ -157,7 +163,7 @@ function cardRecord(card: DashboardCard, tabKey: string, used: Set<unknown>): { 
   const widget: Rec = ws
     ? { ...ws.widget, id, ...("innerTab" in ws.widget ? { innerTab: tabKey } : {}), storage }
     : { id, widgetId: card.widgetId, name: card.title ?? card.widgetId, innerTab: tabKey, storage, params: [] };
-  const extensions = withNative(widget.extensions, nativeOf(card));
+  const extensions = withNative(widget.extensions, nativeOf(card, identity));
   if (extensions) widget.extensions = extensions;
   else delete widget.extensions;
   const layout = { ...(ws?.layout ?? {}), i: id, x: card.layout.x, y: card.layout.y, w: card.layout.w, h: card.layout.h };
@@ -181,11 +187,12 @@ export function toWorkspace(dashboard: Dashboard, store: SyncStore, item?: NewIt
   const widgets: Rec[] = [];
   const gridLayout: Record<string, Rec[]> = {};
   const used = new Set<unknown>();
+  const sourceRefs = linkedReferences(dashboard.tabs.flatMap(t => t.cards));
   for (const tab of dashboard.tabs) {
     const key = keyOf(tab.id);
     gridLayout[key] = [];
     for (const card of tab.cards) {
-      const { widget, layout } = cardRecord(card, key, used);
+      const { widget, layout } = cardRecord(card, key, used, portableLinkedIdentity(card, sourceRefs));
       widgets.push(widget);
       gridLayout[key].push(layout);
     }

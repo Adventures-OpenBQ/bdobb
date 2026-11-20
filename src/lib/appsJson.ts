@@ -3,6 +3,7 @@
 
 import { AppExtensionError, bdobbNamespace, decodeV3AppExtension, decodeV3CardExtension, encodeV3CardExtension, extensionError, unwrapExtension } from "./appsExtensionsV3";
 import type { V3AppExtension, V3CardExtension, ExtensionResult } from "./appsExtensionsV3";
+import { linkedReferences, portableLinkedIdentity, restoreLinkedReferences } from "./linkedReferences";
 import { IMPORT_MAX_BYTES, importRefusal } from "./importLimits";
 import { isRecord } from "./isRecord";
 import { paramGroupType } from "./paramGroups";
@@ -463,6 +464,7 @@ export function exportCompatibleApp(dashboard: Dashboard): ExtensionResult<App> 
     };
     if (new Set(normalized.tabs.map((t) => t.id)).size !== normalized.tabs.length) extensionError("$.tabs", "Duplicate tab identity.");
     if (normalized.tabs.some((t) => ["__proto__", "constructor", "prototype"].includes(t.id))) extensionError("$.tabs", "Unsafe tab identity.");
+    const sourceRefs = linkedReferences(normalized.tabs.flatMap(t => t.cards));
     const app = exportApp(normalized);
     // Prevent live discovery from re-inferring a different compatibility key.
     app.groups.forEach((group, i) => { group.groupType = normalized.groups![i].groupType; });
@@ -474,7 +476,7 @@ export function exportCompatibleApp(dashboard: Dashboard): ExtensionResult<App> 
     } };
     unwrapExtension(decodeV3AppExtension(app.extensions.bdobb, "$.extensions.bdobb"));
     for (const tab of normalized.tabs) for (const [index, card] of tab.cards.entries()) {
-      const overlay = unwrapExtension(encodeV3CardExtension(card, `$.tabs.${tab.id}.layout[${index}].state.extensions.bdobb`));
+      const overlay = unwrapExtension(encodeV3CardExtension(card, `$.tabs.${tab.id}.layout[${index}].state.extensions.bdobb`, portableLinkedIdentity(card, sourceRefs)));
       if (!overlay) continue;
       const item = app.tabs[tab.id].layout[index];
       item.state ??= { params: { ...card.params }, chartView: { enabled: card.view === "chart", chartType: "line" } };
@@ -596,6 +598,7 @@ export function importApps(
     const tabs: DashboardTab[] = [];
     /** Every card of THIS app, so a group can reach members across its tabs. */
     const appCards: DashboardCard[] = [];
+    const sourceClaims: {card: DashboardCard; native?: V3CardExtension}[] = [];
     /** Group NAMES each card's own layout entry claimed, by card. */
     const claimedGroups = new Map<DashboardCard, string[]>();
     /** Per card, the param a named group binds when it is not the group's own — from groupBindings. */
@@ -642,10 +645,12 @@ export function importApps(
 
         const native = unwrapExtension(decodeV3CardExtension(bdobbNamespace(state ?? {}, "$"), "$.state.extensions.bdobb"));
         if (native) {
-          for (const field of ["title", "view", "minimized", "paramsOpen", "table"] as const) {
+          for (const field of ["title", "view", "minimized", "paramsOpen", "table", "linkedChart"] as const) {
             if (Object.hasOwn(native, field)) Object.assign(card, { [field]: native[field] });
           }
         }
+
+        sourceClaims.push({card, native});
 
         if (Array.isArray(rawItem.groups)) {
           claimedGroups.set(
@@ -675,6 +680,8 @@ export function importApps(
         cards: tabCards,
       });
     }
+
+    restoreLinkedReferences(sourceClaims);
 
     // A dashboard with no tab has nowhere to put a card and no tab strip to
     // add one from, so an empty import still gets somewhere to work.

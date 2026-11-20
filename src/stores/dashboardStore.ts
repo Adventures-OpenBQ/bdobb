@@ -482,6 +482,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       if (!source) return null;
 
       const groupIdMap = new Map((source.groups ?? []).map((g) => [g.id, crypto.randomUUID()]));
+      const cardIdMap = new Map(source.tabs.flatMap(t => t.cards.map(c => [c.id, crypto.randomUUID()] as const)));
       const copy: Dashboard = {
         id: crypto.randomUUID(),
         name: `${source.name} copy`,
@@ -491,7 +492,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           name: t.name,
           cards: t.cards.map((c) => ({
             ...c,
-            id: crypto.randomUUID(),
+            id: cardIdMap.get(c.id)!,
+            ...(c.linkedSource ? {linkedSource: {...c.linkedSource, sourceWidgetId: cardIdMap.get(c.linkedSource.sourceWidgetId) ?? c.linkedSource.sourceWidgetId}} : {}),
+            ...(c.linkedChart ? {linkedChart: {...c.linkedChart, measures: [...c.linkedChart.measures]}} : {}),
             params: { ...c.params },
             layout: { ...c.layout },
             bindings: c.bindings?.map((b) => ({
