@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "8246dab9e52cd0c6e91486bd38cebd56bfeff069",
-  "sourceId": "387cdbb06f0e19d4924938d7688fcacebf7690906279cca21450be1097731a00",
+  "baseCommit": "6ef33e33a928e8a5567b7c4d98d5fc6b41f2589c",
+  "sourceId": "fc2a3ed8bcb15b98e44055057afb2190a7144933b3ff6f2222ad40a3b0a44262",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -4332,8 +4332,8 @@
       "path": "crates/table-service/README.md",
       "type": "file",
       "mode": 420,
-      "size": 19020,
-      "sha256": "f50ff37fedd5bc2a732c1d8312543a965de6e009d30e466704e9e223bdd75d24"
+      "size": 19124,
+      "sha256": "19a8c68be7055bad793d6ed4b31a6feda6f72c77984532249c10d37b69d96fca"
     },
     {
       "path": "crates/table-service/src/auth.rs",
@@ -4682,8 +4682,8 @@
       "path": "deploy/table-service/README.md",
       "type": "file",
       "mode": 420,
-      "size": 5715,
-      "sha256": "651280254ce3a49f5b532d72e0feedf3f2de986bdfb1455b4dc817e537449e4a"
+      "size": 6243,
+      "sha256": "5ff714b24315fe2743316fd4b71871264da58eafd9cc7763482c1d5edcbba206"
     },
     {
       "path": "deploy/table-service/healthcheck.mjs",
@@ -11410,7 +11410,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "75f4f1fe3068d91ce58d7b656faecf07083627898b89cad6a825b2f7675a862b"
+      "sha256": "ca15910570e82d8601718f003305c0290d512470f5fcced85dfc0e2f166425ec"
     },
     {
       "path": "source_bundle.py",
