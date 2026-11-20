@@ -98,7 +98,8 @@ test('installed indicator renders a finite 75% bar on an overflowing raw span wi
   await graph.locator('.annotation-text').first().hover();
   const hover = graph.locator('.hoverlayer');
   await expect(hover).toContainText('8.988465674311579e+307 USD per share');
-  await expect(hover).toContainText('-1.7976931348623157e+308 USD per share to 1.7976931348623157e+308 USD per share');
+  await expect(hover).toContainText('Minimum -1.7976931348623157e+308 USD per share');
+  await expect(hover).toContainText('Maximum 1.7976931348623157e+308 USD per share');
   await test.info().attach('extreme-gauge-svg-and-hover', {
     body: JSON.stringify({ ...svg, hover: await hover.textContent() }), contentType: 'application/json',
   });

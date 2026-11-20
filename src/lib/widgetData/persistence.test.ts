@@ -102,3 +102,12 @@ it('persists the ownership question and strips runtime evidence, resolved coordi
   const unsupported = { ...recipe, version: 2 } as unknown as RecipeOptions;
   expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
 });
+
+it('keeps only closed linked KPI settings on built-in metric cards', () => {
+  const metric = { ...source, id: 'metric', widgetId: 'linked_metric', linkedSource: { kind: 'widget', sourceWidgetId: 'source' } } as const;
+  const linkedMetric = { version: 1, metric: 'dividend_yield', valueField: 'acquired_yield', observation: { mode: 'latest' }, view: 'card' } as const;
+  expect(persistedCard({ ...metric, linkedMetric }).linkedMetric).toEqual(linkedMetric);
+  const forged = { ...linkedMetric, snapshot: { value: 0.003 }, range: undefined };
+  expect(persistedCard({ ...metric, linkedMetric: forged })).not.toHaveProperty('linkedMetric');
+  expect(persistedCard({ ...metric, widgetId: 'linked_chart', linkedMetric })).not.toHaveProperty('linkedMetric');
+});

@@ -8,6 +8,7 @@ export type AuthLocation = "header" | "query" | "cookie";
 
 import type { CalendarBinding, Policy } from "./calendars/contracts";
 import type { LinkedChartSettings, LinkedSource } from "./widgetData/types";
+import type { LinkedKpiOptions } from "./widgetData/kpi/types";
 
 export type BackendConfig = {
   id: string;
@@ -635,6 +636,7 @@ export type DashboardCard = {
   managedSource?: ManagedSourceReference;
   linkedSource?: LinkedSource;
   linkedChart?: LinkedChartSettings;
+  linkedMetric?: LinkedKpiOptions;
   id: string;
   widgetId: string;
   backendId: string;

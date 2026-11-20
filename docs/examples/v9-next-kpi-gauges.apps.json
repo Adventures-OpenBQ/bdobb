@@ -1,0 +1,271 @@
+[
+  {
+    "name": "KPI fixtures",
+    "description": "Requires BDOBB 9.0.0 or later with Linked metric. Drop the separate fictional KPI observations file to supply the source.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "kpi": {
+        "id": "kpi",
+        "name": "KPI",
+        "layout": [
+          {
+            "i": "linked_metric",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Last price"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_metric",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Market capitalization"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_metric",
+            "x": 0,
+            "y": 20,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Trailing dividend yield"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_metric",
+            "x": 20,
+            "y": 20,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Trailing P/E"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_metric",
+            "x": 0,
+            "y": 40,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Trailing diluted EPS"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_metric",
+            "x": 20,
+            "y": 40,
+            "w": 20,
+            "h": 20,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Trailing revenue"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 60,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "KPI snapshot source"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "kpi"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "kpi",
+            "index": 0,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "price",
+                "valueField": "price",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "card"
+              }
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "kpi",
+            "index": 1,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "market_cap",
+                "valueField": "market_cap",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "card"
+              }
+            }
+          },
+          {
+            "ref": "c2",
+            "tab": "kpi",
+            "index": 2,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "dividend_yield",
+                "valueField": "dividend_yield",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "card"
+              }
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "kpi",
+            "index": 3,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "pe_ratio",
+                "valueField": "pe_ratio",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "card"
+              }
+            }
+          },
+          {
+            "ref": "c4",
+            "tab": "kpi",
+            "index": 4,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "eps_ttm",
+                "valueField": "eps_ttm",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "gauge",
+                "range": {
+                  "min": 0,
+                  "max": 8,
+                  "label": "Fictional planning range"
+                },
+                "reference": {
+                  "kind": "observation",
+                  "id": "alder-eps-initial"
+                }
+              }
+            }
+          },
+          {
+            "ref": "c5",
+            "tab": "kpi",
+            "index": 5,
+            "extras": {
+              "sourceRef": "c6",
+              "linkedMetric": {
+                "version": 1,
+                "metric": "revenue_ttm",
+                "valueField": "revenue_ttm",
+                "observation": {
+                  "mode": "latest"
+                },
+                "view": "card"
+              }
+            }
+          },
+          {
+            "ref": "c6",
+            "tab": "kpi",
+            "index": 6,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

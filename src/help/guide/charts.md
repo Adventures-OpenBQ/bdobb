@@ -58,6 +58,16 @@ The opted-in EODHD ShareStatistics route can verify insider and institutional pe
 
 After importing the source-free example, drop the separate file and use **Choose source**. If the saved issuer is unavailable, attach the intended source or explicitly select the newly acquired issuer and apply. Saving a workspace with an attached file reports `MISSING_LOCAL_ASSET`. For a portable settings file, relink to an empty source card, remove the dropped table and save. Reattach the file after import.
 
+## Linked metric
+
+From a source table’s **Card menu**, choose **Create linked metric**, then select a KPI preset and its original numeric field. **Follow latest acquired** uses the newest eligible vintage. To keep one observation, choose it explicitly. If that pin disappears, reacquire it or choose another available observation. Apply saves the question after checking the source.
+
+The **Card** view shows the original value in the acquired units. The **Gauge** view requires finite minimum and maximum values and a range label. The range and optional user target are assumptions in the acquired units. For a fractional yield, enter 0.01 for 1%. An out-of-range value remains visible on the card beside an alert. Choose a reference observation only when the source verifies the same metric, class, units and basis. EPS and revenue comparisons also require the same actual reporting period.
+
+Open **KPI details** with the keyboard or by tapping it to inspect exact values, references, dates, units and scope. Hover or tap the value annotation on a gauge for its original value and bounds. Swipe a narrow gauge to see its full scale. The card shows the measurement date or its unknown status, plus the observation vintage and separate retrieval time.
+
+An opted-in EODHD KeyMetrics or FinancialRatios table can verify issuer-reported trailing dividend yield and trailing P/E for US primary common stock. Use `chart_source=true` and the `results` selector. The shared routes also need `provider=eodhd`. Other presets and acquired comparisons require a compatible prepared local snapshot. A source-free workspace keeps the saved question. Drop the matching file after import and use **Choose source** to attach it.
+
 ## ETF concentration and exposure
 
 **ETF holdings Pareto** ranks delivered constituents by reported weight of fund assets. The bars show individual weights and the line accumulates the displayed holdings on the same scale. The chart shows at most 50 and separately reports the count and weight of all distinct holdings delivered to it. Transport scope and provider holdings coverage appear separately. Filtering the source changes the rows in the calculation.

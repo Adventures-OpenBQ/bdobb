@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Dashboard } from "../lib/types";
+import type { LinkedPresentation } from "../lib/widgetData/types";
 import type { TableModelV1 } from "../lib/tableModel/types";
 import { __resetJsonStoreForTests } from "../lib/jsonStore";
 import { collectPivotGroupProof } from "../lib/tableExecution/pivotGroupProof";
@@ -60,6 +61,7 @@ const MUTATING = [
   "deletePreset",
   "addLinkedCard",
   "commitLinkedChartSettings",
+  "commitLinkedMetricSettings",
   "replaceLinkedSource",
   "applyPivotGroupChange",
   "undoPivotGroupChange",
@@ -115,7 +117,7 @@ const memRevision = () => store().dashboards.find((d) => d.id === "d1")?.revisio
 const diskRevision = () => (JSON.parse(__read("dashboards/d1.json") ?? "{}") as Dashboard).revision ?? 0;
 
 const addLocalTable = (file = "data.csv") => store().addCardTo("d1", "t1", widget({ id: "local_table", backendId: "builtin" }), { file });
-const addLinked = async (presentation: "table" | "chart") =>
+const addLinked = async (presentation: LinkedPresentation) =>
   store().addLinkedCard({ dashboardId: "d1", tabId: "t1", sourceWidgetId: (await addLocalTable())!, presentation });
 
 const key = (v: string) => JSON.stringify(["string", v]);
@@ -171,6 +173,12 @@ const STEPS: Record<(typeof MUTATING)[number], Step> = {
   commitLinkedChartSettings: {
     setup: () => addLinked("chart"),
     run: (id) => store().commitLinkedChartSettings("d1", id as string, { type: "line", category: "region", measures: ["revenue"], display: "grouped" }),
+  },
+  commitLinkedMetricSettings: {
+    setup: () => addLinked("metric"),
+    run: (id) => store().commitLinkedMetricSettings("d1", id as string, {
+      version: 1, metric: "pe_ratio", valueField: "pe_ratio", observation: { mode: "latest" }, view: "card",
+    }, () => true),
   },
   replaceLinkedSource: {
     setup: async () => ({ id: await addLinked("table"), second: await addLocalTable("second.csv") }),

@@ -44,6 +44,7 @@ const SERVED = {
   // Source acquired separately from a local file.
   "v9-next-return-box-violin": false,
   "v9-next-ownership-snapshot": false,
+  "v9-next-kpi-gauges": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,

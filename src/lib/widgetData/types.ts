@@ -5,6 +5,8 @@ import type { Row } from "../tableColumns";
 import type { AggName, Bucket, ColumnSpec } from "../types";
 import type { RecipeOptions } from "./chartRecipes/types";
 
+export type LinkedPresentation = "table" | "chart" | "metric";
+
 /** Structural group metadata preserves the source field and typed member value. */
 export type DatasetGroupMember = {
   field: string;

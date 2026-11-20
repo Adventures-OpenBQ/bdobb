@@ -48,10 +48,13 @@ export function readDrawingSurface(surface: Element): DrawingSurface {
   return { width: box.width || surface.clientWidth, height: box.height || surface.clientHeight };
 }
 
-// The installed Sankey trace follows mouse movements and clears hover on click.
-function inspectSankeyTaps(plot: HTMLDivElement) {
-  const targetFor = (event: TouchEvent) => event.target instanceof Element
-    ? event.target.closest('.sankey-node, .sankey-link') : null;
+// These installed traces expose the inspection text through mouse hover.
+function inspectPlotTaps(plot: HTMLDivElement, kind: 'sankey' | 'annotation') {
+  const targetFor = (event: TouchEvent) => {
+    if (!(event.target instanceof Element)) return null;
+    if (kind === 'sankey') return event.target.closest('.sankey-node, .sankey-link');
+    return event.target.closest('.annotation-text-g') ? event.target : null;
+  };
   let start: { target: Element; touch: Touch; time: number } | undefined;
   let hovered: Element | undefined;
   const moved = (touch: Touch | undefined) => !start || !touch || touch.identifier !== start.touch.identifier
@@ -106,6 +109,7 @@ export function ChartRenderer({
   scrollHeight,
   touchScroll = false,
   inspectSankeyOnTouch = false,
+  inspectAnnotationsOnTouch = false,
   onPlotWidthChange,
   onViewportWidthChange,
   minPlotWidth,
@@ -117,6 +121,7 @@ export function ChartRenderer({
   scrollHeight?: number;
   touchScroll?: boolean | 'overflow';
   inspectSankeyOnTouch?: boolean;
+  inspectAnnotationsOnTouch?: boolean;
   /** Explicitly sized figures rebuild their layout at the measured width. */
   onPlotWidthChange?: (width: number) => void;
   /** Measure a retained scrolling viewport, even when no figure can be drawn. */
@@ -165,7 +170,8 @@ export function ChartRenderer({
   const attachNode = useCallback((el: HTMLDivElement | null) => {
     node.current = el;
     if (!el) return;
-    const stopInspecting = inspectSankeyOnTouch ? inspectSankeyTaps(el) : undefined;
+    const stopInspecting = inspectSankeyOnTouch ? inspectPlotTaps(el, 'sankey')
+      : inspectAnnotationsOnTouch ? inspectPlotTaps(el, 'annotation') : undefined;
     let last = { w: 0, h: 0 };
     const observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect;
@@ -187,7 +193,7 @@ export function ChartRenderer({
       // React can immediately reattach the same node, including during a draw.
       queueMicrotask(() => { if (node.current !== el) purgePlot(el); });
     };
-  }, [inspectSankeyOnTouch, onPlotWidthChange]);
+  }, [inspectSankeyOnTouch, inspectAnnotationsOnTouch, onPlotWidthChange]);
 
   // Reconciles the existing plot in place via Plotly.react (renderPlot)
   // rather than purging and redrawing on every new `data`/`drawable`
@@ -287,5 +293,5 @@ export function ChartRenderer({
     + (minPlotWidth ? ' chart-scroll-viewport--wide' : '');
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
   return <>{onDrawingSurfaceChange && problem}<div className={viewportClass} ref={observeViewport}
-    onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div></>;
+    onTouchEnd={coarseScroll && !inspectSankeyOnTouch && !inspectAnnotationsOnTouch ? event => event.preventDefault() : undefined}>{plot}</div></>;
 }

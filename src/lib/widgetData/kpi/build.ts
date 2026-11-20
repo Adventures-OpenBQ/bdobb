@@ -140,7 +140,7 @@ function gaugeFigure(snapshot: KpiSnapshot, revision: string, notes: string[]): 
   const hover = [
     snapshot.label, `Original value: ${valueText}${unit.kind === 'fraction' ? ` (${value} fraction)` : ''}`,
     `As of ${snapshot.asOf ?? 'unknown'}`, `Vintage ${snapshot.observation.vintage}`, `Retrieved ${snapshot.retrievedAt}`,
-    label, `${minText} to ${maxText}`,
+    label, ...(boundsOnSeparateLines ? [`Minimum ${minText}`, `Maximum ${maxText}`] : [`${minText} to ${maxText}`]),
     ...(reference ? [`${referenceLabel}: ${formatKpiValue(reference.value, unit)}`] : []),
     ...(reference?.kind === 'observation' ? [
       `Reference as of ${reference.observation.as_of ?? 'unknown'}`, `Reference vintage ${reference.observation.vintage}`,

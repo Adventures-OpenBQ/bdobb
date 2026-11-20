@@ -3797,3 +3797,18 @@ body {
 .drop-veil {
   top: var(--safe-top);
 }
+
+.linked-kpi-renderer { position: relative; min-width: 0; container-type: inline-size; }
+.linked-kpi-renderer .metric { height: auto; padding: 8px 0; }
+.linked-kpi-renderer .metric-value { font-size: clamp(var(--font-size-16), 8cqi, var(--font-size-28)); }
+.linked-kpi-settings, .linked-kpi-details { margin-block: 6px; }
+.linked-kpi-settings summary, .linked-kpi-details summary { cursor: pointer; }
+.linked-kpi-controls fieldset { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px; margin: 0 0 6px; border: 0; min-width: 0; }
+.linked-kpi-controls label { display: flex; flex-direction: column; min-width: 0; max-width: 100%; gap: 2px; }
+.linked-kpi-controls input, .linked-kpi-controls select { max-width: 100%; }
+.linked-kpi-controls .linked-kpi-checkbox { flex-direction: row; align-items: center; align-self: end; }
+.linked-kpi-controls p, .linked-kpi-provenance { margin-block: 4px; }
+.linked-kpi-provenance, .linked-kpi-details li, .linked-kpi-renderer .metric-value { overflow-wrap: anywhere; }
+.linked-kpi-details ul { margin-block: 4px; }
+.linked-kpi-plot { height: 164px; }
+.linked-kpi-surface-probe { position: absolute; inset: 0 0 auto; height: 164px; visibility: hidden; pointer-events: none; }

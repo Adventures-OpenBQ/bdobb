@@ -15,9 +15,12 @@ function text(value: unknown): string | null {
   return null;
 }
 
+/** A presentation-only snapshot already validated and formatted by its caller. */
+type FormattedMetric = { value: string; label?: string; delta?: string };
+
 /** One headline value, with label and delta where the payload supplies them. */
-export function MetricRenderer({ data }: { data: unknown }) {
-  const record = asRecord(data);
+export function MetricRenderer(props: { data: unknown; snapshot?: never } | { snapshot: FormattedMetric; data?: never }) {
+  const record = props.snapshot ?? asRecord(props.data);
   const value = record ? text(record.value) : null;
   if (value === null) return <p className="empty-state">No metric value in this payload.</p>;
 

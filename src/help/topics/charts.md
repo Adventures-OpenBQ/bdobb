@@ -69,6 +69,8 @@ For **Return distribution**, select adjusted daily prices, one symbol and 5–10
 
 **Ownership snapshot** defaults to independent bars for reported insider ownership, institutional ownership and free float. The card shows which measures are available, each measurement date or its unknown status, the share class and the separate UTC retrieval time. Hover, tap or open **Ownership snapshot details** for the original values and units. **Waffle** requires a source that verifies an exclusive and exhaustive partition with a common outstanding-shares denominator. Its 100 cells use 1% visual steps, and the details include buckets that receive zero cells. Use **Choose source** to attach a compatible snapshot and **Apply chart settings** to repair an unavailable issuer or binding.
 
+**Linked metric** presents a single verified KPI observation. Use the source table’s **Card menu → Create linked metric** and select a preset. The default card has no range. A gauge needs explicitly labeled bounds in the acquired units. Use **KPI details** or hover or tap the gauge value to inspect original values, dates and units. A missing pin or source requires an explicit repair. Paired EODHD KeyMetrics and FinancialRatios can verify the reported trailing yield and P/E for US primary common stock. Other presets and acquired comparisons require compatible local snapshots.
+
 ## Highcharts, Vega-Lite and TradingView
 
 A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or

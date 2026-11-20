@@ -8,7 +8,8 @@ import { importApps, planAppsImport } from "./appsJson";
 import { encodeV3CardExtension } from "./appsExtensionsV3";
 import { saveDashboard, loadDashboards } from "./dashboardsFile";
 import { __reset, __list } from "../test/memfs";
-import { __resetJsonStoreForTests } from "./jsonStore";
+import { __resetJsonStoreForTests, saveJson } from "./jsonStore";
+import { BUILTIN_WIDGETS } from "./builtins";
 import type { RecipeOptions } from "./widgetData/chartRecipes/types";
 
 const table: TableCardState = {
@@ -397,4 +398,67 @@ it("roundtrips ownership choices and refuses runtime data, unknown keys and vers
     const text = JSON.stringify(payload);
     return planAppsImport(text, text.length, [], []).ok;
   })).toEqual(hostile.map(() => false));
+});
+
+const kpiOptions = {
+  version: 1, metric: 'eps_ttm', valueField: 'eps_ttm', observation: { mode: 'pinned', id: 'revised-report' },
+  view: 'gauge', range: { min: 0, max: 100, label: 'Planning range' },
+  reference: { kind: 'observation', id: 'first-report' },
+} as const;
+
+function kpiDashboard(linkedMetric = kpiOptions): Dashboard {
+  const source = card({ id: 'kpi-source', widgetId: 'local_table', backendId: 'builtin' });
+  const metric = card({ id: 'kpi', widgetId: 'linked_metric', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: source.id } });
+  return { id: 'kpi-dash', name: 'KPI', tabs: [{ id: 'kpi-tab', name: 'KPI', cards: [source, { ...metric, linkedMetric }] }] };
+}
+
+it('round trips only the authored KPI question and repairs its source identity', async () => {
+  const original = kpiDashboard();
+  const result = appsJson.exportCompatibleApp(original);
+  expect(result.ok).toBe(true);
+  if (!result.ok) throw new Error(result.issue.message);
+  const restored = importApps([JSON.parse(JSON.stringify(result.value))], BUILTIN_WIDGETS).dashboards[0];
+  const [table, metric] = restored.tabs[0].cards;
+  expect(metric.widgetId).toBe('linked_metric');
+  expect(metric.linkedMetric).toEqual(kpiOptions);
+  expect(metric.linkedSource).toEqual({ kind: 'widget', sourceWidgetId: table.id });
+  await saveDashboard(restored);
+  expect((await loadDashboards())[0].tabs[0].cards[1].linkedMetric).toEqual(kpiOptions);
+});
+
+it.each([
+  { version: 2 }, { snapshot: { unit: 'USD', value: 1 } }, { gauge: { data: [] } }, { chartSources: {} },
+  { observation: { mode: 'latest', id: 'first-report' } }, { range: { ...kpiOptions.range, unit: 'USD' } },
+  { reference: { ...kpiOptions.reference, currency: 'USD' } }, { range: undefined },
+])('rejects malformed linkedMetric options during v4 app import and export (%j)', change => {
+  const base = kpiDashboard();
+  delete base.tabs[0].cards[1].linkedMetric;
+  const exported = appsJson.exportCompatibleApp(base);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const input = exported.value;
+  const portableCards = (input.extensions!.bdobb as { cards: { extras: Record<string, unknown> }[] }).cards;
+  portableCards[1].extras.linkedMetric = { ...kpiOptions, ...change };
+  expect(() => importApps([input], [])).toThrow(/linkedMetric/);
+  Object.assign(base.tabs[0].cards[1], { linkedMetric: { ...kpiOptions, ...change } });
+  expect(appsJson.exportCompatibleApp(base).ok).toBe(false);
+});
+
+
+it('reopens native dashboard cards with tampered linkedMetric settings cleared', async () => {
+  const dashboard = kpiDashboard();
+  const metric = dashboard.tabs[0].cards[1];
+  Object.assign(metric, { linkedMetric: { ...kpiOptions, observation: { ...kpiOptions.observation, unit: 'USD' } } });
+  await saveJson(`dashboards/${dashboard.id}.json`, dashboard);
+  const reopened = (await loadDashboards())[0].tabs[0].cards[1];
+  expect(reopened.widgetId).toBe('linked_metric');
+  expect(reopened.linkedSource).toEqual(metric.linkedSource);
+  expect(reopened).not.toHaveProperty('linkedMetric');
+});
+
+it('rejects portable KPI settings hosted by a backend metric with the same widget id', () => {
+  const result = appsJson.exportCompatibleApp(kpiDashboard());
+  if (!result.ok) throw new Error(result.issue.message);
+  const builtIn = BUILTIN_WIDGETS.find(widget => widget.id === 'linked_metric')!;
+  const impostor = { ...builtIn, backendId: 'external' };
+  expect(() => importApps([result.value], [impostor])).toThrow(/built-in linked metric widget/);
 });

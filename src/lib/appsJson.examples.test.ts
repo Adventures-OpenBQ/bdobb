@@ -4,10 +4,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
+import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
 import { datasetFromBytes } from "./localTableData";
+import { buildKpiSnapshot } from "./widgetData/kpi/build";
 import { runRecipe } from "./widgetData/chartRecipes/run";
 import { normalizeWidgets } from "./widgetsJson";
 import { captureChartSources, chartRequestContext } from "./widgetData/chartRecipes/chartSourceContracts";
@@ -81,6 +82,7 @@ describe("docs/examples", () => {
     "v9-next-news-sentiment-calendar.apps.json",
     "v9-next-return-box-violin.apps.json",
     "v9-next-ownership-snapshot.apps.json",
+    "v9-next-kpi-gauges.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -190,6 +192,40 @@ describe("docs/examples", () => {
       } else {
         expect(result.ownershipSnapshot?.measures.map(measure => measure.reported)).toEqual([33.3, .421875, 22.125]);
       }
+    }
+  });
+
+  it("v9-next-kpi-gauges imports six source-free metric questions and admits their acquired units", async () => {
+    const name = "v9-next-kpi-gauges", file = "fictional-observations.json";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [tab] = imported.dashboards[0].tabs;
+    const source = tab.cards.find(card => card.widgetId === LOCAL_TABLE_ID)!;
+    expect(source.params).toEqual({});
+    const metrics = tab.cards.filter(card => card.widgetId === LINKED_METRIC_ID);
+    expect(metrics).toHaveLength(6);
+    const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+    const expected = [
+      ["price", 82.415, { kind: "money-per-share", currency: "USD" }],
+      ["market_cap", 8241500000, { kind: "money", currency: "USD" }],
+      ["dividend_yield", .00428, { kind: "fraction" }],
+      ["pe_ratio", 18.125, { kind: "multiple" }],
+      ["eps_ttm", 4.546, { kind: "money-per-share", currency: "USD" }],
+      ["revenue_ttm", 2901200000, { kind: "money", currency: "USD" }],
+    ];
+    for (const [index, card] of metrics.entries()) {
+      expect(card.linkedSource).toEqual({ kind: "widget", sourceWidgetId: source.id });
+      const [metric, value, unit] = expected[index];
+      const options = card.linkedMetric;
+      if (!options) throw new Error("Missing linked KPI options.");
+      expect(options.metric).toBe(metric);
+      const result = buildKpiSnapshot(dataset, options);
+      expect(result).toMatchObject({ ok: true, snapshot: { value, unit } });
+      if (metric === "eps_ttm") expect(result).toMatchObject({
+        ok: true, gauge: { data: [expect.objectContaining({ type: "indicator" })] },
+        snapshot: { reference: { kind: "observation", value: 4.2 }, observation: { reporting_basis: "US-GAAP", period_start: "2025-10-01" } },
+      });
     }
   });
 
@@ -452,11 +488,8 @@ describe("docs/examples", () => {
 
   it.each(files)("%s imports every card against a registry that serves it", (file) => {
     const { apps, ids } = load(file);
-    // BUILTIN_WIDGETS' own ids are already served by the app without a
-    // registry entry, but the fixture registry here has to stand in for
-    // every id a file names, built-in or not, since importApps takes one
-    // flat registry.
-    const registry = [...new Set(ids)].map(widget);
+    // Use actual built-in identities and stub the backend widgets separately.
+    const registry = [...new Set(ids)].map(id => BUILTIN_WIDGETS.find(builtIn => builtIn.id === id) ?? widget(id));
     const { dashboards, cards, unresolved } = importApps(apps, registry);
     expect(unresolved).toBe(0);
     expect(cards).toBe(ids.length);
@@ -480,7 +513,7 @@ describe("docs/examples", () => {
       // The Picture in Picture only does anything in the macOS app (it is a
       // placeholder elsewhere) and needs a Chrome player to park, so it gets
       // no sample card either.
-      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, "picture_in_picture"].includes(w.id)) continue;
+      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID, "picture_in_picture"].includes(w.id)) continue;
       expect(present.has(w.id), `${w.id} has no card in v4.0.0-builtins.apps.json`).toBe(true);
     }
     expect(present.has("param_echo")).toBe(true);

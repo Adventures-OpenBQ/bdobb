@@ -40,6 +40,10 @@ import { dividendEvidence, dividendRow, emptyDividendEvidence, incomeEvidence, i
 import { liveOwnershipReceipt, liveOwnershipRows } from '../test/fixtures/ownershipEvidence';
 import { calendarArticle, calendarOptions, calendarSnapshot } from '../test/fixtures/newsCalendar';
 import * as fs from '@tauri-apps/plugin-fs';
+import { buildKpiSnapshot } from '../lib/widgetData/kpi/build';
+import type { LinkedKpiOptions } from '../lib/widgetData/kpi/types';
+import * as kpiWorkers from '../lib/widgetData/kpi/workerClient';
+import { metricReceipt, metricRows } from '../test/fixtures/metricEvidence';
 class Boundary {
   static failChild = false;
   onmessage: ((e: MessageEvent) => void) | null = null;
@@ -1390,4 +1394,216 @@ it('fences ownership worker and draw errors across a relink and retains a same-s
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     expect(screen.getByText('Ownership snapshot details')).toBeVisible();
   } finally { read.mockRestore(); factory.mockRestore(); }
+});
+
+it('creates a native linked metric widget with no inferred KPI question', async () => {
+  render(<WidgetCard card={source} onRemove={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Card menu' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Create linked metric' }));
+  await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1]).toMatchObject({
+    widgetId: 'linked_metric', linkedSource: { kind: 'widget', sourceWidgetId: 's' },
+  }));
+  const metric = useDashboardStore.getState().dashboards[0].tabs[0].cards[1];
+  expect(metric).not.toHaveProperty('linkedMetric');
+  expect(useWidgetRegistryStore.getState().find('builtin', 'linked_metric')?.type).toBe('metric');
+  expect(metric).not.toHaveProperty('linkedChart');
+});
+
+const focusedKpi: LinkedKpiOptions = {
+  version: 1, metric: 'eps_ttm', valueField: 'eps_ttm', observation: { mode: 'latest' },
+  view: 'gauge', range: { min: -100, max: 100, label: 'Planning range' },
+};
+function LiveKpi() {
+  const current = useDashboardStore(s => s.dashboards[0].tabs[0].cards.find(c => c.widgetId === 'linked_metric')!);
+  return <><TableExecutionRuntime /><WidgetCard card={current} onRemove={() => {}} /></>;
+}
+async function localKpiSource(id: string, amount: number) {
+  const content = { rows: [{ ...metricRows[0], eps_ttm: amount }, metricRows[1]], completeness: 'complete',
+    chart_sources: { version: 1, receipts: [metricReceipt] } };
+  const file = await saveLocalFile(new File([JSON.stringify(content)], id + '.json'));
+  return card({ id, widgetId: 'local_table', backendId: 'builtin', params: { file } });
+}
+function mockKpiWorker() {
+  vi.stubGlobal('Worker', Boundary);
+  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  return vi.spyOn(kpiWorkers, 'createKpiWorker').mockImplementation(() => ({
+    run: vi.fn(async (data, options) => buildKpiSnapshot(data, options)), dispose() {},
+  }));
+}
+function kpiCard(linkedMetric = focusedKpi) {
+  return { ...card({ id: 'kpi', widgetId: 'linked_metric', backendId: 'builtin',
+    linkedSource: { kind: 'widget', sourceWidgetId: 'A' } }), linkedMetric };
+}
+
+it('clears linked KPI settings with an unsupported applied version and never renders their value', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', 18.125);
+  const linked = kpiCard();
+  installDashboard(riskDashboard([a, linked]));
+  try {
+    render(<LiveKpi/>);
+    await screen.findByText('18.125 USD per share');
+    act(() => installDashboard(riskDashboard([a, { ...linked, linkedMetric: { ...focusedKpi, version: 2 } as unknown as LinkedKpiOptions }])));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/version 1 linked KPI/i);
+    expect(screen.queryByText('18.125 USD per share')).toBeNull();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('clears KPI output on A to B pending and failure, fences obsolete worker and draw errors, and retains same-source stale output', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', 18.125), b = await localKpiSource('B', 33.25);
+  const plot = vi.mocked(renderPlot);
+  let rejectDraw!: (e: Error) => void;
+  plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
+  installDashboard(riskDashboard([a, b, kpiCard()]));
+  const readFile = fs.readFile;
+  let rejectB!: (e: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, opts) => path === 'files/' + b.params.file ? held : readFile(path, opts));
+  try {
+    render(<LiveKpi/>);
+    const first = await screen.findByTestId('chart-plot');
+    await screen.findByText('18.125 USD per share');
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(first));
+    const appliedWorker = factory.mock.results.find(result => vi.mocked(result.value.run).mock.calls.length)?.value;
+    let rejectWorker!: (e: Error) => void;
+    vi.mocked(appliedWorker.run).mockImplementationOnce(async () => new Promise((_, reject) => { rejectWorker = reject; }));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(rejectWorker).toBeDefined());
+    await chooseRiskSource('B');
+    expect(await screen.findByText('Loading source B…')).toBeVisible();
+    expect(screen.queryByText('Showing completed data (stale).')).toBeNull();
+    expect(screen.queryByText('18.125 USD per share')).toBeNull();
+    expect(first).not.toBeInTheDocument();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source B: File read failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByText('33.25 USD per share');
+    const second = await screen.findByTestId('chart-plot');
+    await act(async () => {
+      rejectDraw(new Error('Obsolete Plotly draw'));
+      rejectWorker(new Error('Obsolete KPI calculation'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    read.mockImplementation((path, opts) => path === 'files/' + b.params.file ? Promise.reject(new Error('File read failed')) : readFile(path, opts));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByText('Showing completed data (stale).');
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source B: File read failed']);
+    expect(screen.getByTestId('chart-plot')).toBe(second);
+    expect(screen.getByText('33.25 USD per share')).toBeVisible();
+  } finally { read.mockRestore(); factory.mockRestore(); }
+});
+
+it('announces a current KPI draw failure locally while retaining the exact value', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', -9.125);
+  vi.mocked(renderPlot).mockRejectedValueOnce(new Error('Indicator failed'));
+  installDashboard(riskDashboard([a, kpiCard()]));
+  try {
+    render(<LiveKpi/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Indicator failed');
+    expect(screen.getByText('-9.125 USD per share')).toBeVisible();
+  } finally { factory.mockRestore(); }
+});
+
+it('clears a latest KPI when its acquired observation is filtered and leaves the earlier observation available for repair', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', 0);
+  installDashboard(riskDashboard([a, kpiCard({ ...focusedKpi, view: 'card' })]));
+  try {
+    render(<LiveKpi/>);
+    expect(await screen.findByText('0 USD per share', { selector: '.metric-value' })).toBeVisible();
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', 'A', { table: {}, search: 'first-report' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/latest KPI observation is unavailable in the source presentation/i);
+    expect(screen.queryByText('0 USD per share', { selector: '.metric-value' })).toBeNull();
+    expect(screen.queryByText('76.544 USD per share', { selector: '.metric-value' })).toBeNull();
+    expect(screen.getByLabelText('Observation', { exact: true })).toHaveValue('@latest');
+    fireEvent.change(screen.getByLabelText('Observation', { exact: true }), { target: { value: 'first-report' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Apply KPI settings' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Apply KPI settings' }));
+    expect(await screen.findByText('76.544 USD per share', { selector: '.metric-value' })).toBeVisible();
+  } finally { factory.mockRestore(); }
+});
+
+it('reports a current KPI worker failure locally and clears its previously completed presentation', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', 18);
+  installDashboard(riskDashboard([a, kpiCard()]));
+  try {
+    render(<LiveKpi/>);
+    await screen.findByTestId('chart-plot');
+    const worker = factory.mock.results.find(result => vi.mocked(result.value.run).mock.calls.length)!.value;
+    vi.mocked(worker.run).mockRejectedValueOnce(new Error('KPI worker delivery failed'));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not calculate the linked KPI. KPI worker delivery failed');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText('18 USD per share')).toBeNull();
+    const readFile = fs.readFile;
+    const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === 'files/' + a.params.file
+      ? Promise.reject(new Error('Current source failed')) : readFile(path, options));
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Source A: Current source failed');
+      expect(screen.queryByText('Showing completed data (stale).')).toBeNull();
+    } finally { read.mockRestore(); }
+  } finally { factory.mockRestore(); }
+});
+
+it('fences KPI drafts across option, geometry and source revision changes before Apply', async () => {
+  const { factory: recipeFactory, resize, setSize } = riskRuntime();
+  resize(400, 164);
+  const run = vi.fn<ReturnType<typeof kpiWorkers.createKpiWorker>['run']>();
+  const factory = vi.spyOn(kpiWorkers, 'createKpiWorker').mockReturnValue({ run, dispose() {} });
+  const requests: { max: number; signal: AbortSignal; release: () => void }[] = [];
+  run.mockImplementation(async (data, options, signal) => {
+    const result = buildKpiSnapshot(data, options);
+    if (options.range?.max !== 100) await new Promise<void>(release => requests.push({ max: options.range!.max, signal, release }));
+    return result;
+  });
+  const a = await localKpiSource('A', 18);
+  installDashboard(riskDashboard([a, kpiCard()]));
+  try {
+    render(<LiveKpi/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    fireEvent.click(screen.getByText('KPI settings', { exact: true }));
+    const rangeMax = screen.getByLabelText('Range maximum');
+    const apply = screen.getByRole('button', { name: 'Apply KPI settings' });
+    fireEvent.change(rangeMax, { target: { value: '110' } });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    fireEvent.change(rangeMax, { target: { value: '120' } });
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[0].signal.aborted).toBe(true);
+    await act(async () => requests[0].release());
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    await act(async () => requests[1].release());
+    expect(apply).toBeEnabled();
+    setSize(295.5, 164);
+    fireEvent.click(apply);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedMetric).toEqual(focusedKpi);
+    act(() => resize(296, 164));
+    await waitFor(() => expect(requests).toHaveLength(3));
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: { sorting: [{ id: 'eps_ttm', desc: true }] }, search: '' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(requests).toHaveLength(4));
+    expect(requests.map(request => request.max)).toEqual([110, 120, 120, 120]);
+    expect(requests[2].signal.aborted).toBe(true);
+    await act(async () => requests[2].release());
+    expect(apply).toBeDisabled();
+    await act(async () => requests[3].release());
+    fireEvent.click(apply);
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedMetric?.range?.max).toBe(120));
+    // The committed settings are independently rendered with the same projection.
+    await waitFor(() => expect(requests).toHaveLength(5));
+    await act(async () => requests[4].release());
+  } finally { factory.mockRestore(); recipeFactory.mockRestore(); }
 });

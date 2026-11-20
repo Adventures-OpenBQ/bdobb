@@ -13,7 +13,9 @@ import { PivotIcon } from "./PivotIcon";
 import { StatementWorkerView } from "./renderers/StatementWorkerView";
 import type { StatementSnapshot } from "../lib/statementExecution";
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
-import { type ComponentProps, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { LinkedKpiRenderer } from "./renderers/LinkedKpiRenderer";
+import type { LinkedPresentation } from "../lib/widgetData/types";
+import { type ComponentProps, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat } from "@tauri-apps/plugin-fs";
 import { saveBinaryFile, saveTextFile } from "../lib/saveTextFile";
@@ -22,7 +24,7 @@ import { useStatementRows } from "../hooks/useStatementRows";
 import { useWidgetData } from "../hooks/useWidgetData";
 import { useCardRequest } from "../hooks/useCardRequest";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
-import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
+import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData, isLinkedMetricCard } from "../lib/builtins";
 import { isCardAgentOffLimits, keyMaintBackendIds } from "../lib/providerKeys";
 import { availableViews } from "../lib/cardViews";
 import { rowsOf } from "../lib/chartShapes";
@@ -459,6 +461,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // tooltip said "Not fetched yet" forever, so it is not drawn (v5.5.1, user
   // ruling 2026-09-30). A run-button card's ▶ always runs, so it stays.
   // Drawn while the widget is still resolving, as before.
+  const linkedMetric = isLinkedMetricCard(card);
   const refreshable = !!card.linkedSource || widget === undefined || fetchesData(widget) || SELF_REFRESHING_TYPES.has(widget.type);
   const view = card.view;
   /**
@@ -482,7 +485,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    * losing its JSON item to a view it never shows. ViewToggle still displays
    * the stray value (disabled) so the user can clear it.
    */
-  const isStatement = view === "statement" && (TRANSPOSABLE_TYPES.has(widget?.type ?? "") || !!card.linkedSource || isManagedTable(card));
+  const isStatement = !linkedMetric && view === "statement" && (TRANSPOSABLE_TYPES.has(widget?.type ?? "") || !!card.linkedSource || isManagedTable(card));
   const [statementSnapshot, setStatementSnapshot] = useState<StatementSnapshot>();
   const statementDefinition = useMemo(() => card.tableDefinition ?? (card.table ? { table: card.table, search: "" } : undefined), [card.tableDefinition, card.table]);
   const statementCollapsed = useMemo(() => new Set(card.statement?.collapsed ?? []), [card.statement?.collapsed]);
@@ -507,7 +510,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     else if (status === "ready" && acquired !== null) tableExecutionStore.setBackendRows(dashboardId, card.id, acquired, acquisition);
   }, [dashboardId, backendTable, card.id, acquired, acquisition, status, failed, error]);
 
-  const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: card.linkedSource }), [widget, data, card.linkedSource]);
+  const modes: ViewMode[] = useMemo(() => availableViews(widget, data, { linkedSource: linkedMetric ? undefined : card.linkedSource }), [widget, data, card.linkedSource, linkedMetric]);
 
   // No export surface at all for the built-in and document cards: fetchesData
   // is already the "this card has a fetched payload" predicate (it is false
@@ -592,7 +595,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
     // which no built-in card has (see canExport).
-    ((isManagedTable(card) || widget?.type === "local_table" || (card.linkedSource && !card.linkedChart)) && !isTransposed && !isStatement);
+    ((isManagedTable(card) || widget?.type === "local_table" || (card.linkedSource && !card.linkedChart && !linkedMetric)) && !isTransposed && !isStatement);
 
   /**
    * The same column list the renderer builds, from the same pure function.
@@ -1011,7 +1014,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [widget, declaresRange, groups, groupsDisabled, fiscalYearEnd]);
 
-  async function createLinked(presentation: 'table' | 'chart') {
+  async function createLinked(presentation: LinkedPresentation) {
     const owner = dashboard;
     const tabId = useDashboardStore.getState().activeTabIds[dashboardId] ?? dashboard?.tabs[0]?.id ?? null;
     if (!owner || !tabId) return;
@@ -1031,7 +1034,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         const collapsed = folded.includes(section) ? folded.filter(name => name !== section) : [...folded, section];
         void patchCardField(card.id, "statement", collapsed.length ? { collapsed } : null).catch(() => setExportNotice("Could not save Statement sections."));
       }} />;
-    if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
+    if ((card.linkedSource || linkedMetric) && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
 
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {
       return <p className="empty-state">Waiting for widget…</p>;
@@ -1626,6 +1629,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                     )}
                     {!readOnly && !inDocks && workerTable ? <>
                       <button type="button" role="menuitem" onClick={() => void createLinked('chart')}>Create linked chart</button>
+                      <button type="button" role="menuitem" onClick={() => void createLinked('metric')}>Create linked metric</button>
                       <button type="button" role="menuitem" onClick={() => void createLinked('table')}>Create linked table</button>
                     </> : null}
                     {!readOnly && card.linkedSource ? <button type="button" role="menuitem" onClick={() => { setExportOpen(false); setChooseSource(true); }}>Choose source</button> : null}
@@ -1977,7 +1981,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                 {menu}
               </>
             ) : null}
-            {dashboard && !locked && !isTransposed && !isStatement && (workerTable || (!!card.linkedSource && !card.linkedChart)) ? <PivotToggle dashboardId={dashboard.id} widgetId={card.id}/> : null}
+            {dashboard && !locked && !isTransposed && !isStatement && (workerTable || (!!card.linkedSource && !card.linkedChart && !linkedMetric)) ? <PivotToggle dashboardId={dashboard.id} widgetId={card.id}/> : null}
             {backendPivot && !locked ? (
               <button
                 type="button"
@@ -2212,6 +2216,20 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean;
 }) {
   const view = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
+  const metric = isLinkedMetricCard(card);
+  const sourceId = card.linkedSource?.sourceWidgetId;
+  const executor = metric && sourceId ? tableExecutionStore.readExecutor(dashboardId, sourceId) : undefined;
+  const previousRefresh = useRef(refreshKey);
+  useEffect(() => {
+    if (metric && previousRefresh.current !== refreshKey) tableExecutionStore.refresh(dashboardId, card.id);
+    previousRefresh.current = refreshKey;
+  }, [metric, refreshKey, dashboardId, card.id]);
+  const readKpiSource = useCallback(() => ({
+    view: tableExecutionStore.readView(dashboardId, card.id),
+    executor: sourceId ? tableExecutionStore.readExecutor(dashboardId, sourceId) : undefined,
+    card: useDashboardStore.getState().dashboards.find(d => d.id === dashboardId)?.tabs
+      .flatMap(t => t.cards).find(c => c.id === card.id),
+  }), [dashboardId, card.id, sourceId]);
   useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, card.linkedSource?.sourceWidgetId]);
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
   // Recoverable model/worker failures retain the mounted presentation and its
@@ -2219,12 +2237,16 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   const unavailable = view.status === 'unavailable' || !dashboard || !card.linkedSource
     || !canUseLinkedSource(dashboard, card.id, card.linkedSource.sourceWidgetId);
   const content = <>
-    {!viewer ? <button type="button" onClick={chooseSource}>Choose source</button> : null}
-    {!unavailable && view.stale ? <p role="status">Showing completed data (stale).</p> : null}
-    {!unavailable && card.linkedChart && view.error ? <p role="alert">{view.error}</p> : null}
+    {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
+    {!unavailable && view.stale && !metric ? <p role="status">Showing completed data (stale).</p> : null}
+    {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
+      : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, sourceId])}
+        sourceId={sourceId} executor={executor} view={view} persisted={card.linkedMetric} viewer={viewer}
+        readCurrent={readKpiSource}
+        onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedMetricSettings(dashboardId, card.id, settings, guard)} />
       : card.linkedChart ? <LinkedChartRenderer parentReportsSourceStatus dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;
-  return card.linkedChart ? <div className="linked-chart-card">{content}</div> : content;
+  return card.linkedChart || metric ? <div className="linked-chart-card">{content}</div> : content;
 }

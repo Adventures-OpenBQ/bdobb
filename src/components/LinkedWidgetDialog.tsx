@@ -5,10 +5,11 @@ import { useId, useState } from 'react';
 import { useModalDialog } from '../hooks/useModalDialog';
 import { useDashboardStore } from '../stores/dashboardStore';
 import { canUseLinkedSource } from '../lib/widgetData/sources';
+import type { LinkedPresentation } from '../lib/widgetData/types';
 import { DialogShell } from './dialogs/DialogShell';
 
 export function LinkedWidgetDialog({ dashboardId, tabId, cardId, presentation = 'table', sourceWidgetId, onClose }: {
-  dashboardId: string; tabId: string; cardId?: string; presentation?: 'table' | 'chart'; sourceWidgetId?: string; onClose: () => void;
+  dashboardId: string; tabId: string; cardId?: string; presentation?: LinkedPresentation; sourceWidgetId?: string; onClose: () => void;
 }) {
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
   const [source, setSource] = useState(sourceWidgetId ?? '');

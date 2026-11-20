@@ -15,7 +15,7 @@ import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financia
 import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
-import { LOCAL_TABLE_ID } from '../lib/builtins';
+import { isLinkedMetricCard, LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
 import { validateGraph } from '../lib/widgetData/graph';
 import type { SourceAdapter } from '../lib/widgetData/source';
@@ -289,7 +289,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       unavailable(node, 'blocked', error instanceof Error ? error.message : 'Invalid table definition');
       return Promise.resolve();
     }
-    if (!node.card.linkedChart && !isWorkerTableProducer(node.card)) {
+    if (!node.card.linkedChart && !isLinkedMetricCard(node.card) && !isWorkerTableProducer(node.card)) {
       unavailable(node, 'unavailable', 'This presentation is unavailable as a table source; restore Table view');
       return Promise.resolve();
     }
@@ -319,7 +319,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
             return;
           }
           const upstream = { ...parent.view.active };
-          if (node.card.linkedChart) {
+          if (node.card.linkedChart || isLinkedMetricCard(node.card)) {
             node.view = { ...node.view, status: parent.view.status, active: upstream, requested: upstream, sourceRevision: upstream, ready: parent.view.ready, stale: false, error: undefined };
             emit();
             return;
@@ -480,7 +480,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       const cards = dashboard.tabs.flatMap(tab => tab.cards).filter(c => c.widgetId === LOCAL_TABLE_ID || c.linkedSource || isBackendTable(c) || isManagedTable(c));
       const ids = new Set(cards.map(c => c.id));
       // A previously owned deleted source is unavailable, whereas foreign persisted references are invalid.
-      const graph = cards.map(c => ({ id: c.id, source: c.linkedSource?.sourceWidgetId, producer: !c.linkedChart }));
+      const graph = cards.map(c => ({ id: c.id, source: c.linkedSource?.sourceWidgetId, producer: !c.linkedChart && !isLinkedMetricCard(c) }));
       const missing = [...new Set(graph.flatMap(n => n.source && !ids.has(n.source) && runtime.seen.has(n.source) ? [n.source] : []))];
       try {
         for (const card of cards) {
@@ -538,7 +538,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           if(sourceChanged && existing.managed){disposeNode(existing);existing.executor=undefined;existing.managed=undefined;}
           if (sourceChanged || modelChanged || runtimeChanged || groupsChanged)
             invalidate(runtime, card.id, sourceChanged);
-          if (!card.linkedChart && !isWorkerTableProducer(card)) {
+          if (!card.linkedChart && !isLinkedMetricCard(card) && !isWorkerTableProducer(card)) {
             disposeNode(existing);
             existing.executor = undefined;
             unavailable(existing, 'unavailable', 'This presentation is unavailable as a table source; restore Table view');
