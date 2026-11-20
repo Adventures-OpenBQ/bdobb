@@ -1554,12 +1554,14 @@ it('clears the prior gauge while a ready revision checks a filtered latest KPI a
   } finally { factory.mockRestore(); }
 });
 
-it('clears the KPI when its linked table relinks upstream, then retains a same-ancestry refresh', async () => {
+it.each(['relink', 'same-ID File replacement'] as const)('clears the KPI on %s, then retains a same-acquisition refresh', async change => {
   const factory = mockKpiWorker();
-  const a = await localKpiSource('A', 18.125), b = await localKpiSource('B', 33.25);
+  const a = await localKpiSource('A', 18.125), b = await localKpiSource(change === 'relink' ? 'B' : 'A', 33.25);
   const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
   const metric = { ...kpiCard(), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
-  installDashboard(riskDashboard([a, b, table, metric]));
+  installDashboard(riskDashboard(change === 'relink' ? [a, b, table, metric] : [a, table, metric]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
   const readFile = fs.readFile;
   let rejectB!: (error: Error) => void;
   const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
@@ -1575,12 +1577,20 @@ it('clears the KPI when its linked table relinks upstream, then retains a same-a
     render(<LiveKpi/>);
     await screen.findByText('18.125 USD per share');
     await screen.findByTestId('chart-plot');
-    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    if (change === 'relink') {
+      await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    } else {
+      sync.mockImplementation(() => {});
+      act(() => installDashboard(riskDashboard([b, table, metric])));
+      expect(oldPresentation()).toEqual(cleared);
+      sync.mockImplementation(originalSync);
+      act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    }
     await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
     expect(tableExecutionStore.readView('d', 'kpi').status).toBe('updating');
     const pending = oldPresentation();
     await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual([`Source T: Source ${b.id}: File read failed`]);
     expect({ pending, failed: oldPresentation() }).toEqual({ pending: cleared, failed: cleared });
 
     read.mockImplementation(readFile);
@@ -1595,11 +1605,11 @@ it('clears the KPI when its linked table relinks upstream, then retains a same-a
     expect(screen.getByTestId('chart-plot')).toBe(gauge);
     expect(screen.getByText('33.25 USD per share', { selector: '.metric-value' })).toBeVisible();
     await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual([`Source T: Source ${b.id}: Refresh failed`]);
     expect(screen.getByText('Showing completed data (stale).')).toBeVisible();
     expect(screen.getByTestId('chart-plot')).toBe(gauge);
     expect(screen.getByText('33.25 USD per share', { selector: '.metric-value' })).toBeVisible();
-  } finally { read.mockRestore(); factory.mockRestore(); }
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });
 
 it('reports a current KPI worker failure locally and clears its previously completed presentation', async () => {
@@ -1745,12 +1755,12 @@ it('clears ETF output while a ready filtered producer waits for its exact worker
   } finally { factory.mockRestore(); }
 });
 
-it('fences ETF jobs and results before recursive relinks synchronize and keeps only same-chain stale output', async () => {
+it.each(['relink', 'same-ID File replacement'] as const)('fences ETF on %s before sync and retains same-acquisition refresh', async change => {
   const { factory, run } = riskRuntime();
-  const a = await etfSource('A', .27), b = await etfSource('B', .34);
+  const a = await etfSource('A', .27), b = await etfSource(change === 'relink' ? 'B' : 'A', .34);
   const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
   const chart = { ...riskChart(etfOptions), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
-  installDashboard(riskDashboard([a, b, table, chart]));
+  installDashboard(riskDashboard(change === 'relink' ? [a, b, table, chart] : [a, table, chart]));
   const originalSync = tableExecutionStore.syncDashboard;
   const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
   const readFile = fs.readFile;
@@ -1764,7 +1774,11 @@ it('fences ETF jobs and results before recursive relinks synchronize and keeps o
     await screen.findByTestId('chart-plot');
     sync.mockImplementation(() => {});
     const previousJobs = run.mock.calls.length;
-    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    if (change === 'relink') {
+      await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    } else {
+      act(() => installDashboard(riskDashboard([b, table, chart])));
+    }
     expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     expect(screen.queryByText(/Original total fraction 0\.27/i)).toBeNull();
@@ -1774,7 +1788,7 @@ it('fences ETF jobs and results before recursive relinks synchronize and keeps o
     await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: File read failed`]);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     read.mockImplementation(readFile);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
@@ -1787,7 +1801,7 @@ it('fences ETF jobs and results before recursive relinks synchronize and keeps o
     expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
     expect(screen.getByText(/Original total fraction 0\.34/i)).toBeVisible();
     await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: Refresh failed`]);
     expect(screen.getByText(/Original total fraction 0\.34/i)).toBeVisible();
   } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });
@@ -1950,12 +1964,12 @@ it('keeps the applied overlay on an incompatible draft and fences checked settin
   } finally { factory.mockRestore(); }
 });
 
-it('fences recursive overlay relinks before runtime sync, then keeps only same-chain stale output', async () => {
+it.each(['relink', 'same-ID File replacement'] as const)('fences overlay on %s before sync and retains same-acquisition refresh', async change => {
   const { factory, run } = riskRuntime();
-  const a = await overlaySource('A', 310), b = await overlaySource('B', 365);
+  const a = await overlaySource('A', 310), b = await overlaySource(change === 'relink' ? 'B' : 'A', 365);
   const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
   const chart = { ...riskChart(overlayOptions), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
-  installDashboard(riskDashboard([a, b, table, chart]));
+  installDashboard(riskDashboard(change === 'relink' ? [a, b, table, chart] : [a, table, chart]));
   const originalSync = tableExecutionStore.syncDashboard;
   const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
   const readFile = fs.readFile;
@@ -1968,7 +1982,11 @@ it('fences recursive overlay relinks before runtime sync, then keeps only same-c
     await screen.findByTestId('chart-plot');
     sync.mockImplementation(() => {});
     const previousJobs = run.mock.calls.length;
-    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    if (change === 'relink') {
+      await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    } else {
+      act(() => installDashboard(riskDashboard([b, table, chart])));
+    }
     expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     expect(screen.queryByText(/currently restated/i)).toBeNull();
@@ -1978,7 +1996,7 @@ it('fences recursive overlay relinks before runtime sync, then keeps only same-c
     await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: File read failed`]);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     read.mockImplementation(readFile);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
@@ -1990,7 +2008,7 @@ it('fences recursive overlay relinks before runtime sync, then keeps only same-c
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
     await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: Refresh failed`]);
     expect(screen.getByText(/currently restated/i)).toBeVisible();
   } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });
@@ -2200,12 +2218,12 @@ it('accepts draft sizing only for the current pins and waits for a successful wo
   } finally { factory.mockRestore(); }
 });
 
-it('fences recursive estimate revision relinks before runtime sync, then keeps only same-chain stale output', async () => {
+it.each(['relink', 'same-ID File replacement'] as const)('fences estimate revisions on %s before sync and retains same-acquisition refresh', async change => {
   const { factory, run } = riskRuntime();
-  const a = await estimateHistorySource('A', revisionHistory([[10, null, 12]])), b = await estimateHistorySource('B', revisionHistory([[20, null, 24]]));
+  const a = await estimateHistorySource('A', revisionHistory([[10, null, 12]])), b = await estimateHistorySource(change === 'relink' ? 'B' : 'A', revisionHistory([[20, null, 24]]));
   const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
   const chart = { ...riskChart(revisionSlope), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
-  installDashboard(riskDashboard([a, b, table, chart]));
+  installDashboard(riskDashboard(change === 'relink' ? [a, b, table, chart] : [a, table, chart]));
   const originalSync = tableExecutionStore.syncDashboard;
   const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
   const readFile = fs.readFile;
@@ -2218,7 +2236,11 @@ it('fences recursive estimate revision relinks before runtime sync, then keeps o
     await screen.findByTestId('chart-plot');
     sync.mockImplementation(() => {});
     const previousJobs = run.mock.calls.length;
-    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    if (change === 'relink') {
+      await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    } else {
+      act(() => installDashboard(riskDashboard([b, table, chart])));
+    }
     expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     expect(screen.queryByText(/uses acquired USD\/share/i)).toBeNull();
@@ -2228,7 +2250,7 @@ it('fences recursive estimate revision relinks before runtime sync, then keeps o
     await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: File read failed`]);
     expect(screen.queryByTestId('chart-plot')).toBeNull();
     read.mockImplementation(readFile);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
@@ -2240,7 +2262,7 @@ it('fences recursive estimate revision relinks before runtime sync, then keeps o
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
     await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
-    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual([`Source T: Source ${b.id}: Refresh failed`]);
     expect(screen.getByText(/uses acquired USD\/share/i)).toBeVisible();
   } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });
@@ -2600,5 +2622,49 @@ it('does not retain chart data when a market-map acquisition File changes under 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await screen.findByTestId('chart-plot');
     expect(vi.mocked(renderPlot).mock.lastCall?.[1].layout.title).toMatchObject({ text: expect.stringContaining('2026-11-12') });
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it.each([calendarOptions, returnOptions, ownershipOptions])('retires $kind when a linked ancestor replaces its File under the same ID', async recipe => {
+  const { factory, run } = riskRuntime();
+  const a = await acquiredSource(recipe, 'A');
+  const b = { ...a, params: (await acquiredSource(recipe, 'B')).params };
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin',
+    linkedSource: { kind: 'widget', sourceWidgetId: a.id } });
+  const chart = { ...riskChart(recipe), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  const pathB = 'files/' + b.params.file;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, opts) => path === pathB ? held : readFile(path, opts));
+  try {
+    render(<LiveRiskChart/>);
+    const first = await screen.findByTestId('chart-plot');
+    const figureA = vi.mocked(renderPlot).mock.lastCall![1];
+    const jobs = run.mock.calls.length;
+    sync.mockImplementation(() => {});
+    await act(async () => installDashboard(riskDashboard([b, table, chart])));
+    expect(first).not.toBeInTheDocument();
+    expect(run).toHaveBeenCalledTimes(jobs);
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/showing completed data \(stale\)/i)).toBeNull();
+    await act(async () => { rejectB(new Error('Replacement failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(node => node.textContent)).toEqual(['Source T: Source A: Replacement failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall![1].data).not.toEqual(figureA.data);
+    read.mockImplementation((path, opts) => path === pathB ? Promise.reject(new Error('Refresh failed')) : readFile(path, opts));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByRole('alert');
+    expect(screen.getByTestId('chart-plot')).toBeVisible();
+    expect(screen.getAllByText(/showing completed data \(stale\)/i)).toHaveLength(1);
   } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });

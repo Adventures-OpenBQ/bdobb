@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { acquisitionConfiguration } from '../lib/widgetData/sources';
 import { filterDateContext, resolveDateFilters } from "../lib/dateFilters";
 import {categoryRecipe} from '../lib/tableModel/categories';
 import { resolvePivotParams,composePivotParams,type PivotGroupCandidate } from '../lib/pivotParamGroups';
@@ -695,11 +696,10 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     sourceMatches(d: string, id: string, liveCards: readonly DashboardCard[], ownActivation?: {view:ViewState;executor:LocalWorkerExecutor}): boolean {
       const runtime=dashboards.get(d); if(!runtime||runtime.invalid)return false;
       const seen=new Set<string>(); let currentId:string|undefined=id;
-      const source=(card:DashboardCard)=>[card.widgetId,card.backendId,card.params,card.linkedSource,card.managedSource,card.view];
       while(currentId) {
         if(seen.has(currentId))return false;seen.add(currentId);
         const node=runtime.nodes.get(currentId),live=liveCards.find(card=>card.id===currentId);
-        if(!node||!live||!sameConfig(source(node.card),source(live)))return false;
+        if(!node||!live||!sameConfig(acquisitionConfiguration(node.card),acquisitionConfiguration(live)))return false;
         // Only the coordinator's exact own activation may queue another functional
         // edit over already acquired input. Acquisition and every upstream stay strict.
         const ownRecalculation=currentId===id&&node.view.status==='updating'&&node.acquired&&!node.acquisition

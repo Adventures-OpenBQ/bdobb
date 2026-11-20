@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { useShallow } from "zustand/react/shallow";
 import { isTableSnapshotEnvelope } from "../lib/tableRowValues";
 import { filterDateContext } from "../lib/dateFilters";
 import { calendarOf } from "../lib/calendar";
@@ -65,7 +66,7 @@ import { ErrorState } from "./renderers/ErrorState";
 import { HtmlRenderer } from "./renderers/HtmlRenderer";
 import { IframeRenderer } from "./renderers/IframeRenderer";
 import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
-import { linkedSourceAncestry } from "../lib/widgetData/sources";
+import { acquisitionConfiguration, linkedSourceAncestry } from "../lib/widgetData/sources";
 import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
 import { SsrmTableRenderer } from "./renderers/SsrmTableRenderer";
@@ -2238,24 +2239,30 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
   }, [dashboardId, card.id, sourceId]);
   useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, sourceId]);
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
-  const ancestry = dashboard && sourceId ? linkedSourceAncestry(dashboard, card.id, sourceId) : undefined;
-  // A refresh may retain the same source's data. Replacing a file or changing
-  // acquisition parameters under the same card IDs must retire its chart.
-  const sourceCards = card.linkedChart && ancestry && dashboard ? dashboard.tabs.flatMap(tab => tab.cards) : [];
-  const sourceAcquisitionKey = ancestry && JSON.stringify(ancestry.map(id => {
-    const source = sourceCards.find(candidate => candidate.id === id);
-    return source && [source.id, source.widgetId, source.backendId, source.params, source.linkedSource, source.managedSource, source.view];
-  }));
+  const presentation = Boolean(card.linkedChart || metric);
+  // Producer eligibility also follows backend discovery. Equal ancestor IDs can
+  // share their array while the persisted dashboard supplies the current configuration.
+  const ancestry = useWidgetRegistryStore(useShallow(() =>
+    dashboard && sourceId ? linkedSourceAncestry(dashboard, card.id, sourceId) : undefined));
+  const sourceAcquisitionKey = useMemo(() => {
+    if (!presentation || !dashboard || !ancestry) return;
+    const cards = new Map(dashboard.tabs.flatMap(tab => tab.cards).map(source => [source.id, source]));
+    return JSON.stringify(ancestry.map(id => [id, acquisitionConfiguration(cards.get(id)!)]), (_, value) =>
+      value && typeof value === 'object' && !Array.isArray(value)
+        ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0))
+        : value);
+  }, [presentation, dashboard, ancestry]);
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
   const unavailable = view.status === 'unavailable' || !ancestry;
   const content = <>
     {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
     {!unavailable && view.stale && !metric && card.linkedChart?.type !== 'etf-sunburst' && card.linkedChart?.type !== 'dual-axis-overlay'
-      && card.linkedChart?.type !== 'estimate-revisions' && card.linkedChart?.type !== 'market-map' ? <p role="status">Showing completed data (stale).</p> : null}
+      && card.linkedChart?.type !== 'estimate-revisions' && card.linkedChart?.type !== 'market-map'
+      && card.linkedChart?.type !== 'news-sentiment-calendar' && card.linkedChart?.type !== 'return-summary' && card.linkedChart?.type !== 'ownership-snapshot' ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
-      : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, ancestry])}
+      : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, sourceAcquisitionKey])}
         sourceId={sourceId} executor={executor} view={view} persisted={card.linkedMetric} viewer={viewer}
         readCurrent={readLinkedSource} sourceCurrent={readLinkedSource().sourceCurrent}
         onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedMetricSettings(dashboardId, card.id, settings, guard)} />

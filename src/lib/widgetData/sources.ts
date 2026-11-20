@@ -5,6 +5,11 @@ import type { Dashboard, DashboardCard } from '../types';
 import { isWorkerTableProducer } from '../tableExecution/eligibility';
 import { validateGraph } from './graph';
 
+/** Persisted inputs that identify the acquisition. Refresh and visual settings do not change ownership. */
+export function acquisitionConfiguration(card: DashboardCard) {
+  return [card.widgetId, card.backendId, card.params, card.linkedSource, card.managedSource, card.view];
+}
+
 /** Validate the proposed ancestry without preventing repair of unrelated invalid cards. */
 export function linkedSourceAncestry(dashboard: Dashboard, targetId: string, sourceId: string): string[] | undefined {
   const cards = new Map(dashboard.tabs.flatMap(t => t.cards).map(c => [c.id, c]));

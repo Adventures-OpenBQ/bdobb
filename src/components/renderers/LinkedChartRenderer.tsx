@@ -174,11 +174,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const overlayChart = settings.type === 'dual-axis-overlay';
     const revisionsForm = editing === 'estimate-revisions';
     const revisionsChart = settings.type === 'estimate-revisions';
-    const acquiredScope = JSON.stringify([editScope, sourceAncestry]);
+    const acquiredScope = JSON.stringify([editScope, sourceAncestry, sourceAcquisitionKey]);
     const marketForm = editing === 'market-map';
     const marketChart = settings.type === 'market-map';
-    const marketScope = JSON.stringify([acquiredScope, sourceAcquisitionKey]);
-    const revisionsScope = JSON.stringify([identity, source, sourceAncestry]);
+    const revisionsScope = JSON.stringify([identity, source, sourceAncestry, sourceAcquisitionKey]);
     const readAcquiredSource = useCallback(() => {
         if (readCurrentSource) return readCurrentSource();
         const current = store.readView(dashboardId, card.id);
@@ -327,7 +326,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
-        const sourceLabel = next.type === 'market-map' ? 'market-map' : next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : 'ETF holdings';
+        const sourceLabel = next.type === 'market-map' ? 'market-map' : next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : next.type === 'etf-sunburst' ? 'ETF holdings' : 'chart';
         const sourceChanged = `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
         if (guard && !guard()) throw new Error(sourceChanged);
         const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
@@ -343,13 +342,15 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
-    function applyOwnership(options: OwnershipSnapshotOptions) {
-        const current = store.readView(dashboardId, card.id);
-        if (!source || store.readExecutor(dashboardId, source) !== executor || current.ready !== view.ready
-            || !current.sourceRevision || !view.sourceRevision
-            || revisionKey(current.sourceRevision) !== revisionKey(view.sourceRevision)
-            || !['ready', 'empty'].includes(current.status)) return;
-        void commit({ ...withRecipeType(settings, options.kind), recipe: options });
+    function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions) {
+        const stillCurrent = () => {
+            const current = readAcquiredSource();
+            return !!source && current.sourceCurrent && current.executor === executor && current.view.ready === view.ready
+                && !!current.view.sourceRevision && !!view.sourceRevision
+                && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
+                && JSON.stringify(current.card?.linkedChart) === JSON.stringify(settings);
+        };
+        void commit({ ...withRecipeType(settings, options.kind), recipe: options }, stillCurrent);
     }
     function applyEtf(options: EtfSunburstOptions, current: () => boolean) {
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
@@ -363,6 +364,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const ownershipChart = settings.type === 'ownership-snapshot';
     const returnForm = editing === 'return-summary';
     const returnChart = settings.type === 'return-summary';
+    const basicAcquiredChart = ownershipChart || returnChart || settings.type === 'news-sentiment-calendar';
+    const basicAcquiredForm = ownershipForm || returnForm || editing === 'news-sentiment-calendar';
+    const awaitingSync = (basicAcquiredChart || basicAcquiredForm) && (view.status === 'ready' || view.status === 'empty')
+        && !readAcquiredSource().sourceCurrent;
     return <div className={'linked-chart-renderer'
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
@@ -388,7 +393,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {marketForm ? <MarketMapControls key={marketScope} job={marketJob} context={measuredDraftContext}
+      {basicAcquiredForm && awaitingSync ? null : marketForm ? <MarketMapControls key={acquiredScope} job={marketJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'market-map' ? recipe.options : undefined}
         onApply={applyClosedRecipe}/> : revisionsForm ? <EstimateRevisionsControls key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'estimate-revisions' ? recipe.options : undefined}
@@ -396,15 +401,16 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'dual-axis-overlay' ? recipe.options : undefined}
         onApply={applyClosedRecipe}/> : etfForm ? <EtfSunburstControls key={acquiredScope} job={etfJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'etf-sunburst' ? recipe.options : undefined}
-        onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls key={editScope} columns={presented}
+        onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls key={acquiredScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={applyOwnership}/> : financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
+        onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext}
         loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
+        onApply={options => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
+          ? applyAcquired(options) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
@@ -424,7 +430,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     </div>
     {isRecipeType(settings.type) && (recipe?.ok
       ? (recipe.options.kind === 'market-map'
-        ? <LinkedMarketMap key={marketScope} view={view} job={marketJob} options={recipe.options}
+        ? <LinkedMarketMap key={acquiredScope} view={view} job={marketJob} options={recipe.options}
             context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
         : recipe.options.kind === 'etf-sunburst'
         ? <LinkedEtfSunburst key={acquiredScope} view={view} job={etfJob} options={recipe.options} sourceId={source}
@@ -435,7 +441,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
           : recipe.options.kind === 'estimate-revisions'
             ? <LinkedEstimateRevisions key={revisionsScope} view={view} job={revisionsJob} options={recipe.options}
                 context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
-            : <FinancialChart key={editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
+            : basicAcquiredChart && awaitingSync ? <p role="status">Waiting for the source to synchronize.</p>
+            : <FinancialChart key={basicAcquiredChart ? acquiredScope : editScope} parentReportsSourceStatus={parentReportsSourceStatus} view={view} executor={executor} source={source} options={recipe.options} theme={theme} maxDecimals={maxDecimals}/>)
       : <p role="status">{recipe && !recipe.ok ? recipe.message : 'Choose recipe field bindings.'}</p>)}
     {figure ? <div className="linked-chart-plot"><ChartRenderer data={figure} uirevision={String(figure.layout.uirevision)} /></div> : null}
   </div>;
@@ -566,7 +573,9 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     : undefined, [scaledAxis]);
   return <><div className="linked-chart-status">
     {error && <p role="alert">{error}</p>}
-    {stale && !(parentReportsSourceStatus && view.stale) && <p role="status">Updating chart — showing completed data (stale).</p>}
+    {stale && (ownership || returns || news) && view.stale
+      ? <p role="status">Showing completed data (stale).</p>
+      : stale && !(parentReportsSourceStatus && view.stale) && <p role="status">Updating chart — showing completed data (stale).</p>}
     {!completed && !error && !view.error && <p role="status">Calculating chart…</p>}
     {completed && !completed.result.ok && <p role={completed.result.refused ? 'status' : 'alert'}>{completed.result.message}</p>}
     {completed?.result.ok && options.kind === 'small-multiples' && <>
