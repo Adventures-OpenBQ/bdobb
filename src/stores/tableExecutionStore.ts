@@ -131,6 +131,13 @@ function canonicalRequestUrl(address: string) {
     return address;
   }
 }
+function backendProducer(card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef): BackendProducer {
+  const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
+    ? [backend.headerName, backend.headerValue] : undefined;
+  const identity = JSON.stringify([widget.runButton === true, backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
+    queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
+  return { backendId: card.backendId, widgetId: card.widgetId, identity };
+}
 function pendingRows(configuration: BackendRows['configuration']): BackendRows {
   let resolve!: () => void;
   const ready = new Promise<void>(done => { resolve = done; });
@@ -667,11 +674,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     observeBackendProducer(d: string, card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef,
       initialQuestion?: () => RunQuestion) {
       const owner = ownerFor(d, card.id);
-      const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
-        ? [backend.headerName, backend.headerValue] : undefined;
-      const identity = JSON.stringify([widget.runButton === true, backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
-        queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
-      const producer = { backendId: card.backendId, widgetId: card.widgetId, identity };
+      const producer = backendProducer(card, backend, widget);
       if (!sameConfig(producer, owner.producer)) {
         const replaced = owner.producer !== undefined;
         owner.producer = producer;
@@ -679,6 +682,11 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         if (replaced) retireBackendInput(d, card.id, owner);
       }
       return owner.armed ??= initialQuestion?.();
+    },
+    /** A reader can use an existing compatible question without arming one or acquiring rows. */
+    readArmedBackendRequest(d: string, card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef) {
+      const owner = backendRows.get(d)?.get(card.id);
+      return owner?.armed && sameConfig(owner.producer, backendProducer(card, backend, widget)) ? owner.armed : undefined;
     },
     /** Commit a changed Run-button question even if its GET must wait for a calendar. */
     replaceArmedBackendRequest(d: string, cardId: string, previous: RunQuestion, next: RunQuestion) {

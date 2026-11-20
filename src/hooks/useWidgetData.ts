@@ -12,7 +12,8 @@ import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
 import { dataBounds } from "../lib/dataBounds";
 import { isPeriodType, namesBounds } from "../lib/dateExpressions";
-import type { Dashboard, DashboardCard, WidgetDef } from "../lib/types";
+import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from "../lib/types";
+import { isBackendTable } from "../lib/tableExecution/eligibility";
 import { tableExecutionStore, type BackendRequest, type RunQuestion } from "../stores/tableExecutionStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
@@ -73,17 +74,16 @@ export function refreshIntervalMs(
   return Math.min(autoRefreshMinutes * 60_000, MAX_TIMEOUT_MS);
 }
 
-/** What a Run-button card last ran: the params it fetches and shows, and their fiscal map. */
-export type ArmedRequest = { params: Record<string, string>; fiscalYearEnd?: Record<string, number> };
-/** By card id, while the card is mounted; see armedRequestOf. */
+/** An agent read uses the table owner's wire safeguards when a dashboard owns the source. */
+export type ArmedRequest = Pick<RunQuestion, "params" | "fiscalYearEnd"> & { progress?: RunQuestion["progress"] };
+/** Other Run-button widgets publish their request for the lifetime of the mount. */
 const armedRequests = new Map<string, ArmedRequest>();
-/**
- * A mounted Run-button card's last-run request, for Rita's get_widget_data
- * (cardRequestSync): she must read what the card shows, not an un-run edit.
- * Undefined when no fetch hook currently publishes this card to the agent.
- */
-export function armedRequestOf(cardId: string): ArmedRequest | undefined {
-  return armedRequests.get(cardId);
+export function armedRequestOf(card: DashboardCard, widget: WidgetDef, backend: BackendConfig | undefined, dashboardId?: string): ArmedRequest | undefined {
+  if (widget.runButton !== true) return undefined;
+  if (dashboardId !== undefined && isBackendTable(card)) {
+    return tableExecutionStore.readArmedBackendRequest(dashboardId, card, backend, widget);
+  }
+  return armedRequests.get(card.id);
 }
 
 /**
@@ -222,15 +222,14 @@ export function useWidgetData(
     setArmed(next);
   }, [liveQuestion, armed, tableDashboardId, card.id]);
   useEffect(() => {
-    if (!runButton || armedParams === null) return;
+    if (!runButton || tableDashboardId !== undefined || armedParams === null) return;
     const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd };
     armedRequests.set(card.id, entry);
-    // Only its own entry: a second mount of the same card (a linked table's
-    // off-tab source runner) may have armed since.
+    // A newer mount may already have replaced this entry.
     return () => {
       if (armedRequests.get(card.id) === entry) armedRequests.delete(card.id);
     };
-  }, [runButton, card.id, armedParams, armedFiscalYearEnd]);
+  }, [runButton, tableDashboardId, card.id, armedParams, armedFiscalYearEnd]);
   /**
    * runButton only: the WIRE values the last fetch sent, as a fingerprint,
    * and whether a refresh trigger found them moved. An expression (`T`, a

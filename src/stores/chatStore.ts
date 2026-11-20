@@ -281,7 +281,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get cards() {
           return settings.contextSharing ? (liveDashboard()?.tabs.flatMap((t) => t.cards) ?? []) : [];
         },
-        backends,
+        // Resolve the same current connection as the card, including a credential changed during this turn.
+        get backends() {
+          return useBackendsStore.getState().backends;
+        },
         findWidget,
         // Read at each fetch, not once per turn: findWidget is live, so a
         // key-maint backend that finishes loading mid-turn must be off limits
@@ -289,8 +292,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get keyMaintBackends() {
           return keyMaintBackendIds(useWidgetRegistryStore.getState().widgets);
         },
-        request: (card, widget, backend, overrides) =>
-          cardRequestSync(card, widget, backend, liveDashboard(), armedRequestOf(card.id), new Date(), overrides),
+        request: (card, widget, backend, overrides) => {
+          const dashboard = liveDashboard();
+          return cardRequestSync(card, widget, backend, dashboard, armedRequestOf(card, widget, backend, dashboard?.id), new Date(), overrides);
+        },
       });
       const deps = {
         fetchWidget,
