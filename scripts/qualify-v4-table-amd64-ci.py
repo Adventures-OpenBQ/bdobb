@@ -6,7 +6,6 @@ import json
 import os
 import platform
 import re
-import shutil
 import subprocess
 
 root = Path.cwd()
@@ -65,7 +64,18 @@ run('production-runtime-smoke', ['docker', 'run', '--rm', '--network', 'none', '
 proof = json.loads(next(line for line in (out / 'production-runtime-smoke.log').read_text().splitlines()
     if line.startswith('{') and '"PASS"' in line))
 assert proof['result'] == 'PASS'
-receipt = {'result': 'PASS', 'architecture': info['Architecture'], 'runner_machine': platform.machine(),
+archive = out / 'qualified-table-image-amd64.tar.gz'
+with archive.open('wb') as output:
+    saved = subprocess.Popen(['docker', 'save', image], stdout=subprocess.PIPE)
+    compressed = subprocess.run(['gzip', '-1'], stdin=saved.stdout, stdout=output)
+    saved.stdout.close()
+    assert saved.wait() == 0 and compressed.returncode == 0
+with archive.open('rb') as stream:
+    archive_sha = hashlib.file_digest(stream, 'sha256').hexdigest()
+receipt = {'docker_archive': archive.name, 'docker_archive_sha256': archive_sha,
+    'rootfs_diff_ids': info['RootFS']['Layers'],
+    'runtime_config_sha256': hashlib.sha256(json.dumps(info['Config'], sort_keys=True).encode()).hexdigest(),
+    'result': 'PASS', 'architecture': info['Architecture'], 'runner_machine': platform.machine(),
     'runner_os': platform.system(), 'run_id': os.environ.get('GITHUB_RUN_ID'),
     'source_revision': source, 'source_tree': tree, 'image_id': info['Id'],
     'linux_release_tests': count, 'production_runtime': proof,
