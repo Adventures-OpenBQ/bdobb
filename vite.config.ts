@@ -179,6 +179,9 @@ export default defineConfig(({ mode }) => ({
   },
   // The module table worker lazily loads the file parser as a separate chunk.
   worker: { format: "es" },
+  // The ETF worker imports this CommonJS path builder. Discover it before the
+  // first chart request so Vite can serve it without reloading the open page.
+  optimizeDeps: { include: ["plotly.js/src/lib/angles.js"] },
   build: { target: "es2022", sourcemap: true },
   test: {
     globals: true,

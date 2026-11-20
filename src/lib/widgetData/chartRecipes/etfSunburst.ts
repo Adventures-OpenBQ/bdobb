@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { pathAnnulus } from 'plotly.js/src/lib/angles.js';
 import { themedLayout } from '../../chartShapes';
 import { color, escape } from '../figureHelpers';
 import type { DatasetColumn, WidgetDataset } from '../types';
@@ -198,9 +199,9 @@ const margin = { l: 12, r: 12, t: 64, b: 12, autoexpand: false };
 const fullTurn = 2 * Math.PI;
 type PlotNode = EtfHierarchy['root'] | Sector | Holding | Residual;
 
-type GeometryFailure = { node: PlotNode; reason: 'viewport' | 'partition' | 'path' };
+type GeometryFailure = { node: PlotNode; reason: 'viewport' | 'partition' | 'path' | 'unverified' };
 
-/** Check the installed partition and the SVG endpoint coordinates at each available drill level. */
+/** Check Plotly's partition and native path fill at the overview and each available drill level. */
 function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, context: RecipeContext): GeometryFailure | undefined {
   const width = Math.round(context.viewportWidth ?? 360) - margin.l - margin.r;
   const height = Math.round(context.viewportHeight ?? 280) - margin.t - margin.b;
@@ -217,21 +218,29 @@ function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, cont
   const pathPoint = (r: number, a: number): Point =>
     [Math.fround(r * Math.cos(a) + cx), Math.fround(cy - r * Math.sin(a))];
 
-  function preservesWedge(inner: number, outer: number, from: number, to: number): boolean {
+  let hitTest: OffscreenCanvasRenderingContext2D | null | undefined;
+  function wedgeFailure(inner: number, outer: number, from: number, to: number): 'path' | 'unverified' | undefined {
     const midpoint = (from + to) / 2;
-    const [x, y] = pathPoint((inner + outer) / 2, midpoint);
-    const innerStart = pathPoint(inner, from), innerEnd = pathPoint(inner, to);
-    const outerStart = pathPoint(outer, from), outerEnd = pathPoint(outer, to);
     const tangentX = -Math.sin(midpoint), tangentY = -Math.cos(midpoint);
-    // Positive tangential order keeps both arcs distinct and correctly oriented.
+    // A native hit can include the boundary of a degenerate path. Both arcs
+    // must also have distinct endpoints advancing in the intended direction.
     const forward = ([x0, y0]: Point, [x1, y1]: Point) =>
       (x1 - x0) * tangentX + (y1 - y0) * tangentY > 0;
-    // Distinct pairs can still round almost radially. The rounded midpoint
-    // must lie inside both radial sides of the resulting wedge.
-    const inside = ([x0, y0]: Point, [x1, y1]: Point) =>
-      (x1 - x0) * (y - y0) - (y1 - y0) * (x - x0) < 0;
-    return forward(innerStart, innerEnd) && forward(outerStart, outerEnd)
-      && inside(innerStart, outerStart) && inside(outerEnd, innerEnd);
+    if (!forward(pathPoint(inner, from), pathPoint(inner, to))
+        || !forward(pathPoint(outer, from), pathPoint(outer, to))) return 'path';
+
+    // Use Plotly's own SVG path commands. The native engine parses its arcs
+    // and tests the fill in CSS coordinates with the identity transform.
+    try {
+      if (typeof Path2D === 'undefined' || typeof OffscreenCanvas === 'undefined') return 'unverified';
+      if (hitTest === undefined) hitTest = new OffscreenCanvas(1, 1).getContext('2d');
+      if (!hitTest) return 'unverified';
+      const path = new Path2D(pathAnnulus(inner, outer, from, to, cx, cy));
+      const r = (inner + outer) / 2;
+      if (!hitTest.isPointInPath(path, cx + r * Math.cos(midpoint), cy - r * Math.sin(midpoint))) return 'path';
+    } catch {
+      return 'unverified';
+    }
   }
 
   function partition(parent: PlotNode, from: number, to: number, ring: number, ringCount: number, full: boolean): GeometryFailure | undefined {
@@ -248,14 +257,15 @@ function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, cont
       const childIsFull = full && siblings.length === 1;
       // Plotly's pathAnnulus treats spans within 1e-14 radians of a turn as full circles.
       const plotlyFull = angle > fullTurn - 1e-14;
-      const collapsedPath = !plotlyFull && !preservesWedge(inner, outer, from, end);
-      if (plotlyFull !== childIsFull || collapsedPath) {
+      const failure = plotlyFull !== childIsFull ? 'partition'
+        : plotlyFull ? undefined : wedgeFailure(inner, outer, from, end);
+      if (failure) {
         // A near-full branch with a collapsed gap is a failure to show its
         // narrow peers. Report the smallest weight in that partition.
-        const node = angle > Math.PI && !childIsFull
+        const node = failure !== 'unverified' && angle > Math.PI && !childIsFull
           ? siblings.reduce((smallest, sibling) => sibling.value < smallest.value ? sibling : smallest)
           : child;
-        return { node, reason: collapsedPath ? 'path' : 'partition' };
+        return { node, reason: failure };
       }
       const failed = partition(child, from, end, ring + 1, ringCount, childIsFull);
       if (failed) return failed;
@@ -308,9 +318,10 @@ export function buildEtfSunburst(dataset: WidgetDataset, options: RecipeOptions,
     const canDrawSectors = options.depth === 2
       && !geometryFailure(root, new Map([[root.id, children.get(root.id) ?? []]]), context);
     const repair = canDrawSectors ? 'Select sector depth to show sectors with exact holding weights in the details.'
-      : failed.reason === 'partition' ? 'Use the exact weights in the source table.'
+      : (failed.reason === 'partition' || failed.reason === 'unverified') ? 'Use the exact weights in the source table.'
         : 'Try a larger drawing area or use the exact weights in the source table.';
-    return refuse(`Plotly cannot draw the required sunburst geometry for ${failed.node.label.slice(0, 100)} at this size. `
+    const problem = failed.reason === 'unverified' ? 'This browser cannot verify' : 'Plotly cannot draw';
+    return refuse(`${problem} the required sunburst geometry for ${failed.node.label.slice(0, 100)} at this size. `
       + `Original fund weight ${failed.node.value}. ${repair}`);
   }
   const flatten = (item: PlotNode): PlotNode[] => [item, ...(children.get(item.id) ?? []).flatMap(flatten)];

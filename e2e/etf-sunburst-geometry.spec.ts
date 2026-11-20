@@ -168,25 +168,33 @@ for (const depth of [1, 2] as const) {
   });
 }
 
-test('the real worker refuses a narrow holding whose intended angular fill collapses', async ({ page }) => {
-  const weights = [.08726681249999999, 3.899296105751436e-9, .26273318360070386];
-  const { result, graph } = await draw(page, weights, 'light', 2, true);
-  if (result.ok) {
-    const slices = await inspect(graph);
-    await test.info().attach('unexpected-narrow-holding-paths', { body: JSON.stringify(slices), contentType: 'application/json' });
-  }
-  expect(result).toMatchObject({ ok: false, refused: true,
-    message: expect.stringContaining('Original fund weight 3.899296105751436e-9. Select sector depth') });
-  await expect(graph).toHaveCount(0);
+for (const weights of [
+  [.08726681249999999, 3.899296105751436e-9, .26273318360070386],
+  [.15614308710594246, 5.236459842602384e-9, .19385690765759772],
+]) {
+  test(`the real worker refuses a missed SVG midpoint for ${weights[1]}`, async ({ page }) => {
+    const { result, graph } = await draw(page, weights, 'light', 2, true);
+    if (result.ok) {
+      const slices = await inspect(graph, 'AAYA.F');
+      await test.info().attach('unexpected-narrow-holding-paths', { body: JSON.stringify(slices), contentType: 'application/json' });
+    }
+    expect(result).toMatchObject({ ok: false, refused: true,
+      message: expect.stringContaining(`Original fund weight ${weights[1]}. Select sector depth`) });
+    await expect(graph).toHaveCount(0);
 
-  const sector = await draw(page, weights, 'light', 1, true);
-  expect(sector.result).toMatchObject({ ok: true, etfHierarchy: {
-    holdings: expect.arrayContaining([expect.objectContaining({ symbol: 'AAYA.F', value: weights[1] })]),
-  } });
-  const paths = await inspect(sector.graph);
-  expect(paths).toHaveLength(2);
-  expect(paths.every(slice => slice.angle === 2 * Math.PI && slice.containsMidpoint)).toBe(true);
-});
+    const sector = await draw(page, weights, 'light', 1, true);
+    expect(sector.result).toMatchObject({ ok: true, etfHierarchy: {
+      holdings: expect.arrayContaining([expect.objectContaining({ symbol: 'AAYA.F', value: weights[1] })]),
+    } });
+    const paths = await inspect(sector.graph);
+    expect(paths).toHaveLength(2);
+    for (const slice of paths) {
+      expect(slice.angle).toBeCloseTo(2 * Math.PI, 14);
+      expect(slice.containsMidpoint).toBe(true);
+    }
+    await test.info().attach('verified-sector-repair', { body: JSON.stringify(paths), contentType: 'application/json' });
+  });
+}
 
 test('installed Plotly retains the angular fill of a near-resolution holding before and after drill', async ({ page }) => {
   const weights = [.14747811893136722, 6.057835021435319e-9, .20252187501079774];

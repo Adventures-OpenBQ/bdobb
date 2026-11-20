@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { context as request, live, local, rows, stamp } from '../../../test/fixtures/etfHierarchyEvidence';
 import { datasetFromRows } from '../../localTableData';
 import { parseTableSnapshot } from '../../tableRowValues';
@@ -17,6 +17,16 @@ const options: EtfSunburstOptions = {
 };
 const context: RecipeContext = { theme: 'light', maxDecimals: 2, today: '2026-11-20', viewportWidth: 600, viewportHeight: 460 };
 const holdings = [{ ...rows[0], weight: .20 }, { ...rows[1], weight: .15 }];
+
+// jsdom has no native canvas path engine. Unit tests exercise the worker's response
+// to measured hit-test results. Playwright compares real worker decisions with Plotly SVG.
+const isPointInPath = vi.fn((_path: unknown, _x: number, _y: number) => true);
+beforeEach(() => {
+  isPointInPath.mockReset().mockReturnValue(true);
+  vi.stubGlobal('OffscreenCanvas', class { getContext() { return { isPointInPath }; } });
+  vi.stubGlobal('Path2D', class {});
+});
+afterEach(() => vi.unstubAllGlobals());
 
 function acquire(results = holdings, receipt: Record<string, unknown> = local) {
   const snapshot = parseTableSnapshot({
@@ -173,8 +183,10 @@ it('attributes a collapsed sector to its original fraction and offers only a rel
   expect(buildEtfSunburst(sameSector, { ...options, depth: 1 }, context).ok).toBe(true);
 });
 
-it('refuses a holding when rounded endpoints move radially and miss the intended wedge', () => {
-  const weights = [.08726681249999999, 3.899296105751436e-9, .26273318360070386];
+it.each([
+  [[.08726681249999999, 3.899296105751436e-9, .26273318360070386]],
+  [[.15614308710594246, 5.236459842602384e-9, .19385690765759772]],
+])('refuses a source-bound holding with a native midpoint miss and checks the depth repair, %j', weights => {
   const leaves = [
     { ...holdings[0], weight: weights[0] },
     { ...holdings[1], sector: holdings[0].sector, weight: weights[1] },
@@ -184,11 +196,25 @@ it('refuses a holding when rounded endpoints move radially and miss the intended
     holding_keys: leaves.map(({ symbol }) => symbol) });
   const built = requireSuccess(buildEtfHierarchy(dataset, options));
   expect(built.value.holdings[1]).toMatchObject({ symbol: 'AAYA.F', value: weights[1] });
+  const scale = 2 * Math.PI / built.value.root.value;
+  const start = weights[0] * scale, end = start + weights[1] * scale;
+  const midpoint = (start + end) / 2;
+  const x = 300 + 160 * Math.cos(midpoint), y = 256 - 160 * Math.sin(midpoint);
+  isPointInPath.mockImplementation((_path, px, py) => px !== x || py !== y);
   const result = buildEtfSunburst(dataset, options, context);
   expect(result).toMatchObject({ ok: false,
-    message: expect.stringContaining('Original fund weight 3.899296105751436e-9. Select sector depth') });
+    message: expect.stringContaining(`Original fund weight ${weights[1]}. Select sector depth`) });
   const sectors = requireSuccess(buildEtfSunburst(dataset, { ...options, depth: 1 }, context));
   expect(sectors.etfHierarchy?.holdings[1].value).toBe(weights[1]);
+});
+
+it('refuses an unchecked partial path when native hit testing is unavailable', () => {
+  vi.stubGlobal('OffscreenCanvas', undefined);
+  const dataset = acquire();
+  const result = runRecipe(dataset, options, context);
+  expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/browser.*cannot verify.*0\.2/i) });
+  if (!result.ok) expect(result.message).not.toMatch(/select sector depth/i);
+  expect(requireSuccess(buildEtfHierarchy(dataset, options)).value.deliveredWeight).toBe(.35);
 });
 
 it('admits a narrow holding whose rounded midpoint still lies inside the wedge', () => {
