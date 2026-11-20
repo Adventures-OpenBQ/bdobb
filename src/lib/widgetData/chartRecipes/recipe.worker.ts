@@ -10,7 +10,7 @@ self.onmessage = ({ data }: MessageEvent<RecipeRequest>) => {
   try {
     const result = runRecipe(dataset, options, context);
     if (result.ok && options.kind !== 'income-sankey' && options.kind !== 'bubble-regression'
-      && options.kind !== 'dividend-steps' && options.kind !== 'return-summary' && ('periodEnd' in options.fields || 'date' in options.fields)) {
+      && options.kind !== 'dividend-steps' && options.kind !== 'return-summary' && options.kind !== 'dual-axis-overlay' && ('periodEnd' in options.fields || 'date' in options.fields)) {
       const dateField = 'periodEnd' in options.fields ? options.fields.periodEnd : options.fields.date;
       let first: string | undefined, last: string | undefined;
       for (const row of dataset.rows) {

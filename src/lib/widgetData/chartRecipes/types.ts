@@ -3,6 +3,7 @@
 
 import type { LinkedFigureResult } from '../chartFigure';
 import type { EtfHierarchy } from './etfSunburst';
+import type { OverlaySeriesPair } from './dualAxisOverlay';
 import type { NewsCalendarDay } from './newsCalendar';
 import type { ReturnSummaryWindow } from './priceSamples';
 import type { ReturnSummaryDetails } from './returnSummary';
@@ -52,6 +53,13 @@ export type EtfSunburstOptions = {
   fields: { holding: string; sector: string; weight: string };
 };
 
+export type DualAxisOverlayOptions = {
+  version: 1;
+  kind: 'dual-axis-overlay';
+  recipe: 'price-eps' | 'cpi-ten-year';
+  fields: { series: string; date: string; value: string; availableAt?: string; targetStart?: string; targetEnd?: string };
+};
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -70,6 +78,9 @@ export type RecipeOptions =
   | OwnershipSnapshotOptions
   | EtfSunburstOptions;
 
+/** Worker-ready recipes may precede registration in linked chart authoring and persistence. */
+export type RecipeRequestOptions = RecipeOptions | DualAxisOverlayOptions;
+
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
@@ -77,6 +88,7 @@ export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;
 export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & {
   daySummaries?: NewsCalendarDay[];
   etfHierarchy?: EtfHierarchy;
+  overlay?: OverlaySeriesPair;
   returnSummary?: ReturnSummaryDetails;
   ownershipSnapshot?: OwnershipSnapshotDetails;
 }) | RecipeRefusal;

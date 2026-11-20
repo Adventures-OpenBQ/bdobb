@@ -8,6 +8,7 @@ import { buildBubbleRegression } from './bubbleRegression';
 import { buildCorrelation } from './correlation';
 import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
+import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
 import { buildIncomeSankey } from './incomeSankey';
 import { buildMonthlyReturns } from './monthlyReturns';
@@ -15,7 +16,7 @@ import { buildNewsCalendar } from './newsCalendar';
 import { buildOwnershipSnapshot } from './ownershipSnapshot';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
-import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
+import type { RecipeContext, RecipeRequestOptions, RecipeResult } from './types';
 import { buildEtfExposure } from './etfExposure';
 import { buildEtfPareto } from './etfPareto';
 import { buildEtfSunburst } from './etfSunburst';
@@ -51,7 +52,7 @@ function hasRecipeContext(context: unknown): boolean {
 }
 
 /** Pure worker entry point. Builder errors are left to the caller's worker error handling. */
-export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, context: RecipeContext): RecipeResult {
+export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions, context: RecipeContext): RecipeResult {
   const decoded = decodeRecipeRequestOptions(options);
   if (!decoded.ok) return { ok: false, refused: true, message: decoded.message };
   if (!hasChartInputs(dataset))
@@ -66,6 +67,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
   }
 
   const recipe = decoded.options;
+  if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };

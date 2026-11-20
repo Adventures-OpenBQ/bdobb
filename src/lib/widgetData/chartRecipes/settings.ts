@@ -6,7 +6,7 @@ import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
 import { ownershipBarRoles } from './ownershipEvidence';
-import type { RecipeOptions } from './types';
+import type { DualAxisOverlayOptions, RecipeOptions, RecipeRequestOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
 type RecipeShape = { options: readonly string[]; required?: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
@@ -77,19 +77,16 @@ function distinctSymbols(value: unknown, maximum = Infinity, isSymbol = nonblank
   return true;
 }
 
-type RecipeOptionsResult = { ok: true; options: RecipeOptions } | { ok: false; message: string };
-const invalid = (message: string): RecipeOptionsResult => ({ ok: false, message });
+type RecipeInvalid = { ok: false; message: string };
+type RecipeOptionsResult<T = RecipeOptions> = { ok: true; options: T } | RecipeInvalid;
+const invalid = (message: string): RecipeInvalid => ({ ok: false, message });
 
-/** The same closed schema supplies repair messages on import and at runtime. */
-export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOptionsResult {
-  if (!isRecipeType(chartType)) return invalid('Recipe options require a financial recipe chart type.');
+function decodeRecipeShape(value: unknown, chartType: string, shape: RecipeShape): RecipeOptionsResult<Record<string, unknown>> {
   if (!declarativeRecord(value) || !Object.hasOwn(value, 'version') || value.version !== 1)
     return invalid('Supply plain version 1 recipe options.');
   if (!Object.hasOwn(value, 'kind') || chartType !== value.kind)
     return invalid('Recipe kind must match the linked chart type.');
 
-  const shape: RecipeShape = chartType === 'ownership-snapshot' && value.view === 'waffle'
-    ? ownershipWaffleShape : recipeShapes[chartType];
   const allowed = ['version', 'kind', ...(shape.required ? ['fields'] : []), ...shape.options];
   const extra = Object.keys(value).find(key => !allowed.includes(key));
   if (extra !== undefined) return invalid(`Remove unsupported recipe option "${extra}".`);
@@ -117,6 +114,17 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
 
   if (shape.options.some(key => !Object.hasOwn(value, key)))
     return invalid(`Supply the required ${chartType} recipe options (${shape.options.join(', ')}).`);
+  return { ok: true, options: value };
+}
+
+/** The same closed schema supplies repair messages on import and at runtime. */
+export function decodeRecipeOptions(candidate: unknown, chartType: string): RecipeOptionsResult {
+  if (!isRecipeType(chartType)) return invalid('Recipe options require a financial recipe chart type.');
+  const shape = chartType === 'ownership-snapshot' && isRecord(candidate) && Object.getOwnPropertyDescriptor(candidate, 'view')?.value === 'waffle'
+    ? ownershipWaffleShape : recipeShapes[chartType];
+  const decoded = decodeRecipeShape(candidate, chartType, shape);
+  if (!decoded.ok) return decoded;
+  const { options: value } = decoded;
   switch (chartType) {
     case 'drawdown':
       if (!distinctSymbols(value.symbols)) return invalid('Select one or more distinct symbols for drawdown.');
@@ -197,8 +205,24 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
   return { ok: true, options: value as RecipeOptions };
 }
 
-export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult {
+const overlayDates = ['availableAt', 'targetStart', 'targetEnd'] as const;
+const overlayFields = ['series', 'date', 'value'] as const;
+
+export function decodeDualAxisOverlayOptions(value: unknown): RecipeOptionsResult<DualAxisOverlayOptions> {
+  const recipe = isRecord(value) && Object.getOwnPropertyDescriptor(value, 'recipe')?.value;
+  if (recipe !== 'price-eps' && recipe !== 'cpi-ten-year')
+    return invalid('Choose adjusted price and reported diluted EPS or CPI and ten-year Treasury yield.');
+  const shape: RecipeShape = {
+    options: ['recipe'], distinctBindings: true,
+    ...(recipe === 'price-eps' ? { required: [...overlayFields, ...overlayDates] } : { required: overlayFields, optional: overlayDates }),
+  };
+  const decoded = decodeRecipeShape(value, 'dual-axis-overlay', shape);
+  return decoded.ok ? { ok: true, options: decoded.options as DualAxisOverlayOptions } : decoded;
+}
+
+export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult<RecipeRequestOptions> {
   const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
+  if (kind === 'dual-axis-overlay') return decodeDualAxisOverlayOptions(value);
   return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 

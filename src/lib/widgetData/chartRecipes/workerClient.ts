@@ -4,10 +4,10 @@
 import type { Revision } from '../../tableExecution/types';
 import type { WidgetDataset } from '../types';
 import { decodeRecipeRequestOptions } from './settings';
-import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
+import type { RecipeContext, RecipeRequestOptions, RecipeResult } from './types';
 
 type RecipeIdentity = { requestId: number; sourceWidgetId: string; inputRevision?: number; resultRevision: number; outputRevision: number };
-export type RecipeRequest = { identity: RecipeIdentity; dataset: WidgetDataset; options: RecipeOptions; context: RecipeContext };
+export type RecipeRequest = { identity: RecipeIdentity; dataset: WidgetDataset; options: RecipeRequestOptions; context: RecipeContext };
 export type RecipeReply = RecipeIdentity & ({ result: RecipeResult } | { error: string });
 
 /** A client serves one card. Terminating an obsolete synchronous transform releases the worker immediately. */
@@ -21,7 +21,7 @@ export function createRecipeWorker(create = () => new Worker(new URL('./recipe.w
     port = undefined;
   }
   return {
-    async run(dataset: WidgetDataset & { revision?: Revision }, options: RecipeOptions, context: RecipeContext, signal: AbortSignal): Promise<RecipeResult> {
+    async run(dataset: WidgetDataset & { revision?: Revision }, options: RecipeRequestOptions, context: RecipeContext, signal: AbortSignal): Promise<RecipeResult> {
       if (disposed) throw new Error('The chart worker was disposed.');
       signal.throwIfAborted();
       cancel?.();

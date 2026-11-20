@@ -36,14 +36,14 @@ export type OverlaySource = ChartSourceReceipt & {
 
 const exact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> =>
   isChartSourceRecord(v) && Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));
-const reference = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z][A-Za-z0-9._:/-]{0,255}$/.test(v)
+export const isOverlayReference = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z][A-Za-z0-9._:/-]{0,255}$/.test(v)
   && !/^(?:na|unknown|none|null|missing|unspecified|unavailable|notprovided|notavailable)$/i.test(v.replace(/[^a-z0-9]/gi, ''));
 const count = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
 // Date precision is semantic. Normalize only equivalent spellings of the same UTC instant for comparison.
-const coordinateKey = (v: string) => v.length === 10 ? v : stampKey(v);
-const byVintage = (v: unknown, vintage: string, allowTime: boolean): v is string =>
+export const overlayCoordinateKey = (v: string) => v.length === 10 ? v : stampKey(v);
+export const overlayCoordinateByVintage = (v: unknown, vintage: string, allowTime: boolean): v is string =>
   isoDate(v) ? v <= vintage.slice(0, 10) : allowTime && utcTimestamp(v) && stampKey(v) <= stampKey(vintage);
 
 const sourceKeys = ['version', 'kind', 'origin', 'recipe', 'retrieved_at', 'raw_count', 'normalized_count', 'delivered_count',
@@ -61,11 +61,11 @@ export function parseOverlaySource(value: unknown): OverlaySource | undefined {
   if (new Set(diagnostics).size !== diagnostics.length || diagnostics.some(d => !flags.some(k => k === d))
     || flags.some(k => unsafe[k] !== diagnostics.includes(k))
     || (value.raw_count > value.delivered_count) !== !!diagnostics.length
-    || !reference(preparation.reference) || !isChartSourceArray(preparation.input_refs)
-    || preparation.input_refs.length !== 2 || !preparation.input_refs.every(reference)
+    || !isOverlayReference(preparation.reference) || !isChartSourceArray(preparation.input_refs)
+    || preparation.input_refs.length !== 2 || !preparation.input_refs.every(isOverlayReference)
     || new Set([...preparation.input_refs, preparation.reference]).size !== 3) return;
   if (recipe === 'price-eps' ? !exact(identity, ['issuer', 'listing', 'share_basis_ref'])
-    || !reference(identity.issuer) || !reference(identity.share_basis_ref) || !qualifiedSymbol(identity.listing)
+    || !isOverlayReference(identity.issuer) || !isOverlayReference(identity.share_basis_ref) || !qualifiedSymbol(identity.listing)
     || /^\d+\.\d+(?:E[+-]?\d+)?$/.test(identity.listing) : identity !== null) return;
   let n = 0;
   for (const side of sides) {
@@ -74,8 +74,8 @@ export function parseOverlaySource(value: unknown): OverlaySource | undefined {
       || s.coordinate !== def.coordinate || s.period_kind !== def.period_kind || typeof s.restated !== 'boolean'
       || (s.restated && s.id !== 'reported_diluted_eps') || (recipe === 'price-eps' ? !isChartCurrency(s.currency) : s.currency !== null)
       || !utcTimestamp(vintage) || stampKey(vintage) > stampKey(value.retrieved_at) || !isChartSourceArray(points) || !points.length
-      || !points.every((c): c is string => byVintage(c, vintage, s.coordinate === 'availability-date')
-        && (s.id !== 'CUSR0000SA0' || c.endsWith('-01'))) || new Set(points.map(coordinateKey)).size !== points.length) return;
+      || !points.every((c): c is string => overlayCoordinateByVintage(c, vintage, s.coordinate === 'availability-date')
+        && (s.id !== 'CUSR0000SA0' || c.endsWith('-01'))) || new Set(points.map(overlayCoordinateKey)).size !== points.length) return;
     n += points.length;
   }
   if (n !== value.delivered_count || (value.series.left as OverlaySeriesFact).currency !== (value.series.right as OverlaySeriesFact).currency) return;
@@ -98,7 +98,7 @@ function valueAgrees(id: string, raw: unknown, value: unknown) {
   return value === raw && ((id !== 'CUSR0000SA0' && id !== 'adjusted_close') || value > 0);
 }
 
-function supportedQuarter(start: string, end: string): boolean {
+export function isSupportedOverlayQuarter(start: string, end: string): boolean {
   const first = new Date(start), exclusiveEnd = Date.parse(end) + 86_400_000;
   const days = (exclusiveEnd - first.getTime()) / 86_400_000;
   if (days === 13 * 7 || days === 14 * 7) return true;
@@ -109,30 +109,40 @@ function supportedQuarter(start: string, end: string): boolean {
   return exclusiveEnd === anniversary.getTime();
 }
 
+/** Source-owned declarations can be cross-checked wherever their physical fields remain visible. */
+export function overlayRowFacts(source: OverlaySource, side: Side) {
+  const series = source.series[side];
+  return {
+    source_contract: definitions[source.recipe][side].contract,
+    input_ref: source.preparation.input_refs[side === 'left' ? 0 : 1], input_vintage: source.vintages[side],
+    issuer: source.identity?.issuer ?? null, listing: source.identity?.listing ?? null,
+    share_basis_ref: source.identity?.share_basis_ref ?? null, unit: series.unit, basis: series.basis,
+    currency: series.currency, period_kind: series.period_kind, restated: series.restated,
+  };
+}
+
 function rowsAgree(source: OverlaySource, rows: readonly Record<string, unknown>[]): boolean {
   if (rows.length !== source.delivered_count) return false;
   const remaining = { left: new Set(source.coordinates.left), right: new Set(source.coordinates.right) };
   const fiscalEnds = new Set<string>();
+  const expectedFacts = { left: Object.entries(overlayRowFacts(source, 'left')), right: Object.entries(overlayRowFacts(source, 'right')) };
   for (const row of rows) {
     if (!exact(row, rowKeys)) return false;
     const side = row.series === source.series.left.id ? 'left' : row.series === source.series.right.id ? 'right' : undefined;
     if (!side) return false;
     const s = source.series[side], vintage = source.vintages[side], eps = s.coordinate === 'availability-date';
-    if (row.source_contract !== definitions[source.recipe][side].contract || row.input_ref !== source.preparation.input_refs[side === 'left' ? 0 : 1]
-      || row.input_vintage !== vintage || row.issuer !== (source.identity?.issuer ?? null) || row.listing !== (source.identity?.listing ?? null)
-      || row.share_basis_ref !== (source.identity?.share_basis_ref ?? null) || row.unit !== s.unit || row.basis !== s.basis
-      || row.currency !== s.currency || row.period_kind !== s.period_kind || row.restated !== s.restated
-      || !valueAgrees(s.id, row.source_value, row.value) || !byVintage(row.date, vintage, false)) return false;
+    if (expectedFacts[side].some(([field, expected]) => row[field] !== expected)
+      || !valueAgrees(s.id, row.source_value, row.value) || !overlayCoordinateByVintage(row.date, vintage, false)) return false;
     const at = row.available_at;
     if (at === null ? row.release_ref !== null :
-      !byVintage(at, vintage, true) || !reference(row.release_ref) || at.slice(0, 10) < row.date) return false;
+      !overlayCoordinateByVintage(at, vintage, true) || !isOverlayReference(row.release_ref) || at.slice(0, 10) < row.date) return false;
     if (s.id === 'CUSR0000SA0') {
       const month = row.date.slice(0, 7);
       if (!row.date.endsWith('-01') || (row.value !== null && vintage.slice(0, 7) <= month)
         || (typeof at === 'string' && at.slice(0, 7) <= month)) return false;
     }
     if (eps) {
-      if (typeof at !== 'string' || !isoDate(row.target_start) || row.target_end !== row.date || !supportedQuarter(row.target_start, row.date)
+      if (typeof at !== 'string' || !isoDate(row.target_start) || row.target_end !== row.date || !isSupportedOverlayQuarter(row.target_start, row.date)
         || fiscalEnds.has(row.date) || ![null, 'before-market', 'during-market', 'after-market'].some(v => v === row.session_timing)) return false;
       fiscalEnds.add(row.date);
     } else if (row.target_start !== null || row.target_end !== null || row.session_timing !== null) return false;
