@@ -1255,3 +1255,28 @@ describe('dashboard bursts through one bounded gateway', () => {
     }
   });
 });
+
+it('holds optional 404 discovery slots until their response bodies drain', async () => {
+  let drain!: () => void;
+  const gate = new Promise<void>(resolve => { drain = resolve; });
+  let active = 0;
+  let peak = 0;
+  const mock = vi.mocked(pluginFetch);
+  mock.mockImplementation(async () => {
+    active++;
+    peak = Math.max(peak, active);
+    return { status: 404, ok: false, headers: new Headers(),
+      text: async () => { await gate; active--; return 'No apps'; },
+    } as Response;
+  });
+  const requests = Array.from({ length: 14 }, () => fetchAppsJson(makeBackend({ baseUrl: 'https://optional-drain.example' })));
+  try {
+    await vi.waitFor(() => expect(mock.mock.calls.length).toBeGreaterThanOrEqual(4));
+    expect(peak).toBeLessThanOrEqual(4);
+  } finally {
+    drain();
+    await Promise.all(requests);
+    mock.mockImplementation((...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args));
+  }
+  expect(active).toBe(0);
+});
