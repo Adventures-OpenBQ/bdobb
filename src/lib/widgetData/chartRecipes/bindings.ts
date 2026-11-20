@@ -8,7 +8,7 @@ import { adjustedPriceOrigins, priceDateOrigins } from './priceEvidence';
 import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
 import type { RecipeOptions } from './types';
 
-type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean; strictOrigin?: true };
+type Role = { key: string; label: string; names: string[]; optional?: boolean; numeric?: boolean; date?: boolean; strictOrigin?: true | 'ignore-case' };
 export const adjustedPriceRole: Role = { key: 'price', label: 'Adjusted price', names: adjustedPriceOrigins, numeric: true };
 const dateRole = { key: 'date', label: 'Observation date', names: priceDateOrigins, date: true };
 const weightRole: Role = { key: 'weight', label: 'Reported weight', names: ['weight'], numeric: true };
@@ -53,6 +53,11 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     acquiredRole('instrument', 'Qualified article listings', 'symbols'),
     acquiredRole('polarity', 'Article polarity', 'polarity', 'numeric'),
   ];
+  if (kind === 'return-summary') return [
+    { ...dateRole, strictOrigin: 'ignore-case' },
+    { ...adjustedPriceRole, strictOrigin: 'ignore-case' },
+    { key: 'symbol', label: 'Qualified listing field', names: ['symbol', 'ticker'], optional: true, strictOrigin: 'ignore-case' },
+  ];
   if (kind === 'income-sankey') return [];
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
@@ -79,7 +84,8 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
 }
 export function acceptsBinding(role: Role, c: DatasetColumn, rows?: DatasetRow[]): boolean {
   const origin = acquiredColumnOrigin(c);
-  if (origin === undefined || (role.strictOrigin && !role.names.includes(origin))) return false;
+  if (origin === undefined) return false;
+  if (role.strictOrigin && !role.names.includes(role.strictOrigin === 'ignore-case' ? origin.toLowerCase() : origin)) return false;
   if (role.date && (c.dtype === 'date' || c.dtype === 'dateString')) return true;
   if (c.dtype && (role.numeric ? c.dtype !== 'number' : !['text', 'date', 'dateString'].includes(c.dtype))) return false;
   if (role.key === 'price') {

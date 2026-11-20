@@ -18,6 +18,7 @@ import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 import { buildEtfExposure } from './etfExposure';
 import { buildEtfPareto } from './etfPareto';
 import { buildReturnDistribution } from './returnDistribution';
+import { buildReturnSummary } from './returnSummary';
 import { buildSmallMultiples } from './smallMultiples';
 import { buildYieldCurve } from './yieldCurve';
 
@@ -70,6 +71,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'monthly-returns': return buildMonthlyReturns(dataset, recipe, context);
     case 'correlation': return buildCorrelation(dataset, recipe, context);
     case 'return-distribution': return buildReturnDistribution(dataset, recipe, context);
+    case 'return-summary': return buildReturnSummary(dataset, recipe, context);
     case 'small-multiples': return buildSmallMultiples(dataset, recipe, context);
     case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);

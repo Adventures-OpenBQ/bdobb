@@ -25,17 +25,19 @@ vi.mock("plotly.js/lib/heatmap", () => ({ default: { name: "heatmap" } }));
 vi.mock("plotly.js/lib/pie", () => ({ default: { name: "pie" } }));
 vi.mock("plotly.js/lib/indicator", () => ({ default: { name: "indicator" } }));
 vi.mock("plotly.js/lib/waterfall", () => ({ default: { name: "waterfall" } }));
+vi.mock("plotly.js/lib/box", () => ({ default: { name: "box" } }));
 vi.mock("plotly.js/lib/sankey", () => ({ default: { name: "sankey" } }));
 
 import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
 describe("REGISTERED_TRACE_TYPES", () => {
-  it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey"])("includes the registered %s trace", (type) => {
+  it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey", "box"])("includes the registered %s trace", (type) => {
     expect(REGISTERED_TRACE_TYPES.has(type)).toBe(true);
   });
 
   it("excludes unsupported trace types", () => {
     expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(false);
+    expect(REGISTERED_TRACE_TYPES.has("violin")).toBe(false);
   });
 });
 

@@ -11,10 +11,11 @@ import pie from "plotly.js/lib/pie";
 import indicator from "plotly.js/lib/indicator";
 import waterfall from "plotly.js/lib/waterfall";
 import sankey from "plotly.js/lib/sankey";
+import box from "plotly.js/lib/box";
 import type { Data } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
-const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall, sankey];
+const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall, sankey, box];
 
 Plotly.register(REGISTERED_TRACES);
 

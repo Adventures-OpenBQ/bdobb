@@ -17,6 +17,7 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'monthly-returns': { options: ['symbol'], ...priceFields },
   correlation: { options: ['symbols', 'lookback', 'minOverlap'], ...priceFields },
   'return-distribution': { options: ['symbol', 'bins'], ...priceFields, distinctBindings: true },
+  'return-summary': { options: ['symbols', 'view', 'window'], ...priceFields, distinctBindings: true },
   'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
   'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
@@ -135,6 +136,18 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
       if (typeof bins !== 'number' || !Number.isInteger(bins) || bins < 5 || bins > 100)
         return invalid('Set return distribution bins to an integer between 5 and 100.');
       break;
+    }
+    case 'return-summary': {
+      if (!distinctSymbols(value.symbols, 12, qualifiedSymbol)) return invalid('Select 1 to 12 distinct qualified return listings.');
+      if (value.view !== 'box' && value.view !== 'violin') return invalid('Choose box or violin for return summaries.');
+      const window = value.window;
+      if (declarativeRecord(window) && Object.hasOwn(window, 'mode')) {
+        if (window.mode === 'own' && Object.keys(window).length === 1) break;
+        if (window.mode === 'common' && Object.keys(window).length === 3
+          && Object.hasOwn(window, 'start') && Object.hasOwn(window, 'end')
+          && isoDate(window.start) && isoDate(window.end) && window.start <= window.end) break;
+      }
+      return invalid('Choose separate listing windows or enter ordered YYYY-MM-DD common bounds.');
     }
     case 'small-multiples':
       if (!distinctSymbols(value.symbols, 12, canonicalObservationSymbol))

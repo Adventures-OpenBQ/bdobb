@@ -3,6 +3,8 @@
 
 import type { LinkedFigureResult } from '../chartFigure';
 import type { NewsCalendarDay } from './newsCalendar';
+import type { ReturnSummaryWindow } from './priceSamples';
+import type { ReturnSummaryDetails } from './returnSummary';
 
 export type PriceBindings = { date: string; price: string; symbol?: string };
 
@@ -20,6 +22,15 @@ export type NewsCalendarOptions = {
   window: { mode: 'latest-12-months' } | { mode: 'pinned'; start: string; end: string };
 };
 
+export type ReturnSummaryOptions = {
+  version: 1;
+  kind: 'return-summary';
+  fields: PriceBindings;
+  symbols: string[];
+  view: 'box' | 'violin';
+  window: ReturnSummaryWindow;
+};
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -33,10 +44,11 @@ export type RecipeOptions =
   | { version: 1; kind: 'bubble-regression'; fields: BubbleBindings; priceDate: string; regression: boolean }
   | { version: 1; kind: 'dividend-steps'; fields: DividendBindings; instrument: string }
   | { version: 1; kind: 'income-sankey'; periodColumn: string }
-  | NewsCalendarOptions;
+  | NewsCalendarOptions
+  | ReturnSummaryOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;
-export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & { daySummaries?: NewsCalendarDay[] }) | RecipeRefusal;
+export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & { daySummaries?: NewsCalendarDay[]; returnSummary?: ReturnSummaryDetails }) | RecipeRefusal;

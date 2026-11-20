@@ -8,8 +8,13 @@ import { parseTableSnapshot } from '../../tableRowValues';
 import { startMockServer } from '../../../test/mockServer';
 import { backend, widget } from '../../../test/fixtures';
 import type { BackendAcquisition } from './financialEvidence';
+import { priceOmissionEvidence } from './priceEvidence';
 import { dailyPriceRows, priceFields } from './fixtures';
 import { admitReturnSummary, dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
+import { buildReturnSummary, estimateReturnDensity, summarizeReturns } from './returnSummary';
+import { runRecipe } from './run';
+import { decodeRecipeOptions } from './settings';
+import type { ReturnSummaryOptions } from './types';
 
 vi.mock('@tauri-apps/plugin-http', () => ({
   fetch: (...args: Parameters<typeof fetch>) => fetch(...args),
@@ -188,3 +193,132 @@ it.each([[], ['AAA.US', 'AAA.US'], Array.from({ length: 13 }, (_, i) => `AAA${i}
     expect(admitReturnSummary(await source(), priceFields, symbols, own)).toMatchObject({ ok: false, refused: true });
   },
 );
+
+const options: ReturnSummaryOptions = { version: 1, kind: 'return-summary', fields: priceFields, symbols: ['AAA.US'], view: 'box', window: own };
+const context = { theme: 'light', today: day(31), maxDecimals: 2 } as const;
+const returnsAsPrices = (values: number[]) => values.reduce((closes, value) => [...closes, closes.at(-1)! * (1 + value)], [1]);
+const varied = Array.from({ length: 20 }, (_, i) => (i % 5) / 8);
+const fromReturns = (values: number[], symbol = 'AAA.US') => dailyPriceRows(returnsAsPrices(values), symbol);
+const extremePrices = Array.from({ length: 21 }, (_, i) => i % 2 === 0 ? 1 : (1 + (i % 7) / 8) * 2 ** 1023);
+
+it('known_result computes R7 quartiles, observed Tukey whiskers and the complete outlier set', () => {
+  const summary = summarizeReturns([0, .01, .02, .03, 1]);
+  expect(summary).toMatchObject({ q1: .01, median: .02, q3: .03, lowerWhisker: 0, upperWhisker: .03, outliers: [1] });
+  expect(summarizeReturns([-.375, 0, 0, .125, .25, .25, .625])).toMatchObject({
+    q1: 0, q3: .25, lowerWhisker: -.375, upperWhisker: .625, outliers: [],
+  });
+  expect(summarizeReturns([1.25, 1, 1, 1, 1, 1, 1, 1, 1.25]).outliers).toEqual([1.25, 1.25]);
+});
+
+it('zero_missing_and_scope retains exact zero and explains gaps and KDE fallback', async () => {
+  const rows = dailyPriceRows(Array.from({ length: 24 }, (_, i) => i === 1 ? null : 1), 'AAA.US');
+  const result = buildReturnSummary(await source(rows), { ...options, view: 'violin' }, context);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.returnSummary).toMatchObject({
+    view: 'box', scope: { start: day(1), end: day(31), interval: '1d' }, adjustmentBasis: 'adjusted-price',
+    series: [{ symbol: 'AAA.US', start: day(4), end: day(24), excludedOpportunities: 2, gapCount: 1,
+      summary: { q1: 0, median: 0, q3: 0, iqr: 0, outliers: [] } }],
+  });
+  expect(result.returnSummary?.series[0].samples).toEqual(Array.from({ length: 21 }, (_, i) => ({ date: day(i + 4), value: 0 })));
+  expect(result.notes?.join(' ')).toMatch(/KDE.*zero.*bandwidth/i);
+  expect(result.notes?.join(' ')).toMatch(/zero IQR/i);
+});
+
+it('hidden_unsafe_fact refuses after an acquired conflicting point is removed from the displayed dataset', async () => {
+  const data = await source([...daily, { ...daily[3], adjusted_close: 700 }]);
+  const presented = data.rows.slice(0, -1);
+  data.provenance = priceOmissionEvidence(data, data.rows, presented, Object.values(priceFields));
+  data.rows = presented;
+  expect(runRecipe(data, options, context)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/conflict/i) });
+});
+
+it('numerical_limits computes a stable KDE for tiny and huge samples, and refuses collapsed geometry', async () => {
+  for (const scale of [1e-200, 1e200]) {
+    const density = estimateReturnDensity(varied.map(value => value * scale));
+    if (!density.ok) throw new Error(density.reason);
+    expect(density.points).toHaveLength(128);
+    expect(density.points[0].value).toBe(0);
+    expect(density.points.at(-1)?.value).toBe(.5 * scale);
+    expect(density.points.every(point => Number.isFinite(point.density) && point.density > 0)).toBe(true);
+    expect(density.bandwidth / scale).toBeCloseTo(.08966020314111067, 14);
+    expect(density.points[63].value / scale).toBeCloseTo(.24803149606299213, 14);
+    expect(density.points[0].density * scale).toBeCloseTo(1.2450112823994681, 13);
+    expect(density.points[63].density * scale).toBeCloseTo(1.5998392598161482, 13);
+  }
+  expect(() => summarizeReturns([NaN, 0, 0, 0, 1])).toThrow(RangeError);
+  expect(() => summarizeReturns([-1e308, -1e308, 0, 1e308, 1e308])).toThrow(RangeError);
+  const close = estimateReturnDensity(Array.from({ length: 20 }, (_, i) => 1 + (i % 5) * Number.EPSILON));
+  expect(close).toMatchObject({ ok: false, reason: 'geometry' });
+  const extreme = await source(dailyPriceRows(extremePrices, 'AAA.US'));
+  const result = runRecipe(extreme, { ...options, view: 'violin' }, context);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.returnSummary?.series[0].samples[1].value).toBe(-1);
+  expect(result.returnSummary?.series[0].samples[0].value).toBe(extremePrices[1]);
+  const mixed = await source([...dailyPriceRows(extremePrices, 'AAA.US'), ...fromReturns(varied, 'BBB.US')]);
+  expect(runRecipe(mixed, { ...options, symbols: ['AAA.US', 'BBB.US'] }, context))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry/i) });
+});
+
+it('R7 quartiles stay precomputed when a whisker falls inside the box', async () => {
+  const result = runRecipe(await source(fromReturns([-.75, -.75, 0, 0, 0, 0, 0, 0])), options, context);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.returnSummary?.series[0].summary).toMatchObject({
+    q1: -.1875, median: 0, q3: 0, lowerWhisker: 0, upperWhisker: 0, outliers: [-.75, -.75],
+  });
+  expect(result.figure.data).toContainEqual(expect.objectContaining({
+    type: 'box', q1: [-.1875], median: [0], q3: [0], showwhiskers: false,
+  }));
+});
+
+it('constant and nearly constant observations do not create infinite bandwidth or fake KDE', () => {
+  expect(estimateReturnDensity(Array(20).fill(0))).toMatchObject({ ok: false, reason: 'bandwidth' });
+  const result = estimateReturnDensity(Array.from({ length: 20 }, (_, i) => 1 + ((i % 5) * 1e-11)));
+  if (!result.ok) throw new Error(result.reason);
+  expect(result.points).toHaveLength(128);
+  expect(result.bandwidth).toBeGreaterThan(0);
+  expect(result.points.map(p => p.value)).toEqual([...new Set(result.points.map(p => p.value))]);
+});
+
+it('all selected listings stay represented and N=4, 5, 19 and 20 gate the correct whole figure', async () => {
+  expect(runRecipe(await source([...daily, ...fromReturns(varied.slice(0, 4), 'BBB.US')]),
+    { ...options, symbols: ['AAA.US', 'BBB.US'] }, context))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/5.*BBB\.US.*4/) });
+  const five = runRecipe(await source(fromReturns(varied.slice(0, 5))), options, context);
+  expect(five).toMatchObject({ ok: true, returnSummary: { view: 'box', series: [{ samples: expect.any(Array) }] } });
+  const peers = (count: number) => source([...fromReturns(varied), ...fromReturns(varied.slice(0, count).map(x => x / 2), 'BBB.US')]);
+  const violin = { ...options, view: 'violin', symbols: ['BBB.US', 'AAA.US'] } as const;
+  const selection: ReturnSummaryOptions = { ...violin, symbols: [...violin.symbols] };
+  const nineteen = runRecipe(await peers(19), selection, context);
+  expect(nineteen).toMatchObject({ ok: true, returnSummary: { view: 'box', series: [{ symbol: 'BBB.US' }, { symbol: 'AAA.US' }] },
+    notes: expect.arrayContaining([expect.stringMatching(/BBB\.US.*20.*19/)]) });
+  const twenty = runRecipe(await peers(20), selection, context);
+  if (!twenty.ok) throw new Error(twenty.message);
+  expect(twenty.returnSummary?.view).toBe('violin');
+  const polygons = twenty.figure.data.filter((trace): trace is { fill: 'toself'; x: number[] } =>
+    typeof trace === 'object' && trace !== null && 'fill' in trace && trace.fill === 'toself');
+  expect(polygons).toHaveLength(2);
+  expect(Math.max(...polygons[0].x)).toBeCloseTo(.34);
+  expect(Math.max(...polygons[1].x) - 1).toBeCloseTo(.17);
+});
+
+it('decodes only closed, distinct, qualified return summary selections and explicit date bounds', () => {
+  expect(decodeRecipeOptions(options, 'return-summary')).toEqual({ ok: true, options });
+  for (const value of [
+    { ...options, version: 2 }, { ...options, symbols: ['AAA'] }, { ...options, symbols: ['AAA.US', 'AAA.US'] },
+    { ...options, fields: { ...priceFields, symbol: priceFields.date } }, { ...options, evidence: 'verified' },
+    { ...options, window: { mode: 'own', start: day(1) } }, { ...options, view: 'histogram' },
+    { ...options, window: { mode: 'common', start: day(3), end: day(2) } },
+    { ...options, window: { mode: 'common', start: day(1), end: day(2), other: day(2) } },
+  ]) expect(decodeRecipeOptions(value, 'return-summary').ok).toBe(false);
+  const common = { ...options, window: { mode: 'common', start: day(2), end: day(8) } };
+  expect(decodeRecipeOptions(common, 'return-summary')).toEqual({ ok: true, options: common });
+});
+
+it('runs with aliases from acquired case-insensitive price origins and rejects a custom binding', async () => {
+  const data = await source(daily.map(({ date, adjusted_close, symbol }) => ({
+    DATE: date, ADJUSTED_CLOSE: adjusted_close, SYMBOL: symbol, custom: adjusted_close,
+  })));
+  const fields = { date: 'DATE', price: 'ADJUSTED_CLOSE', symbol: 'SYMBOL' };
+  expect(runRecipe(data, { ...options, fields }, context).ok).toBe(true);
+  expect(runRecipe(data, { ...options, fields: { ...fields, price: 'custom' } }, context).ok).toBe(false);
+});
