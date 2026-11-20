@@ -37,6 +37,21 @@ copyleft-source report records source-member checks. Do not replace upstream
 licenses with AGPL. Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
 
+## Current-lock supplement (required)
+
+This revision additionally requires `dependency-supplement-e386090b3420933f229b.tar.gz`.
+SHA-256: `3cc05062fa8ba94e005d5038400f4bf2a0193461a11a93c01b70276c8e3eec69`.
+Public archive: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-e386090b3420/dependency-supplement-e386090b3420933f229b.tar.gz
+
+The base pack preserves 1,383 of this revision's exact distributions; the
+supplement supplies the other 169, including updated Tauri and development
+packages. Together their manifests cover all 1,552 current pinned npm/Cargo
+distributions, including optional and platform-specific entries. Match the
+coverage lockfile hashes to this source tree. Both archives retain original
+package distributions and their notices; application/local path-package source
+remains in this application archive. This does not claim that every published
+JavaScript distribution contains upstream preferred source or bundle OS SDKs.
+
 ## Build the application
 
 Use the tool versions in package.json, the Cargo manifests and (where present)
