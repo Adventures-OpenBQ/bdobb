@@ -1,0 +1,12 @@
+#33 43.18 .......................
+#33 112.2 ----------------------------------------------------------------------
+#33 112.2 Ran 23 tests in 81.726s
+#33 112.2
+#33 112.2 OK
+#33 112.2 PASS: openbq-eodhd 9.0.1, 53 obb.eodhd.* mirrors, the EODHD app, stubbed price and chart-source queries, and the app under OPENBB_API_AUTH
+#33 112.2 Exception ignored in atexit callback: <function get_async_requests_session.<locals>.at_exit at 0xfffeed27f740>
+#33 112.2 Traceback (most recent call last):
+#33 112.2   File "/usr/local/lib/python3.12/site-packages/aiohttp/connector.py", line 1083, in close
+#33 112.2     await super().close(abort_ssl=abort_ssl or self._ssl_shutdown_timeout == 0)
+#33 112.2 RuntimeError: Task <Task pending name='anyio.from_thread.BlockingPortal._call_func' coro=<TaskHandle._run_coro() running at /usr/local/lib/python3.12/site-packages/anyio/_core/_tasks.py:327> cb=[TaskGroup._spawn.<locals>.task_done() at /usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:870]> got Future <Task pending name='Task-164' coro=<_wait_for_close() running at /usr/local/lib/python3.12/site-packages/aiohttp/connector.py:124> wait_for=<_GatheringFuture pending cb=[Task.task_wakeup()]>> attached to a different loop
+#33 DONE 115.1s

@@ -6,6 +6,9 @@ The fixed examples use AAPL.US and MCD.US from 2026-10-12 through
 2026-11-19 inclusive. The acquisition contract also accepts other eligible
 bounded daily US listing requests when the backend account has access.
 
+The following history records the first qualification. The final fixes have a
+separate provider pin, image, captures and test results. [Final qualification](#final-declaration-fix-and-requalification)
+
 ## Source and image identity
 
 | Artifact | Identity |
@@ -110,7 +113,7 @@ CA file. [Certifi advisory](https://github.com/certifi/python-certifi/security/a
 | --- | --- |
 | New installed route regressions against old image | 8 failing subtests on missing opt-in schema, absent receipts and opt-in empty HTTP 204. An initial test draft had 4 failures and 4 missing-key/envelope errors. Added explicit presence assertions and reran. |
 | Exact trust gate against old image | Failed on the three removed emSign G3, C1 and C3 roots. The first gate also flagged G1. The first build with the patched distribution exposed that broad assertion, which was corrected using official fingerprints. |
-| `docker build --target v3` | Passed. EODHD's 23-test in-build stack gate passed. Requests trust and `pip check` passed in the resulting image. |
+| `docker build --target v3` | Passed. EODHD's 23-test in-build stack gate passed. Requests trust and `pip check` passed in the resulting image. This successful build emitted its own ignored aiohttp cross-event-loop shutdown warning. [Raw build excerpt](evidence/first-qualification-build-excerpt.txt) |
 | Installed `pytest` and parity | Network-disabled v3 container, 24 tests and 33 subtests passed with no skips. The run reported one existing OpenBB aiohttp inheritance deprecation. Installed package and RECORD hash comparisons passed. |
 | Host Docker `pytest tests v3/tests` | 121 passed and 15 subtests passed. The first collection attempt lacked PyYAML. The rerun used test-only PyYAML 6.0.3. |
 | Canonical and vendor parity | 151 byte comparisons passed and the source pin test passed. |
@@ -122,7 +125,7 @@ CA file. [Certifi advisory](https://github.com/certifi/python-certifi/security/a
 | Client `pnpm pivot:test` at `17669a66` | 199 Rust core, 1 WASM crate and 19 wire codec tests passed. The later alias correction passed 115 focused cases with actual compiled WASM. |
 | Client `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:web` | 57 passed, zero skips. |
 | Client `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm scrub` | Exit 0 for typecheck, full lint, scrub and header checks. |
-| Client `pnpm knip` | Exit 0. Its unused exported `Monitor` type warning in `src/browser-shim/window.ts` also appears in the baseline. |
+| Client `pnpm knip` | Exit 0. Its unused exported `Monitor` type warning in `src/browser-shim/window.ts` also appears in the baseline. In the baseline archive, ordinary Knip and its Git-ceiling rerun reported 19 unused dependencies and seven unused dev dependencies. `pnpm exec knip --no-progress --no-gitignore` restored source discovery, reporting the same type and 16 ignored build outputs. [Raw baseline diagnostic](evidence/baseline-knip-no-gitignore.txt) |
 | Client `pnpm pivot:verify` and `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:pivot:packaging` | Exit 0. All three packaging tests passed, including refusal of missing, stale and altered compiled artifacts. |
 | Client `PIVOT_WASM_VERIFY_ONLY=1 pnpm build` and `PIVOT_WASM_VERIFY_ONLY=1 pnpm build:web` | Exit 0 for the production app frontend and private web function. The existing mixed static/dynamic import warnings and 500 kB chunk warning appeared in the builds. |
 
@@ -131,7 +134,7 @@ and matched their worker samples. Its binary observer misidentified the
 Vite WASM URL shim. The replay now counts only successful
 `application/wasm` responses.
 
-Since the client full-unit run, the Git diff contains only browser tests,
+Between the original client full-unit and release-check commits, the Git diff contained only browser tests,
 captured fixtures and release notes. The Rust crate, build script and wire
 codec test inputs also match the `pnpm pivot:test` run. The provider full
 suite and Docker runtime evidence apply to the exact provider and Docker
@@ -204,3 +207,79 @@ The installed-image proof covers the local `linux/arm64` v3 Docker image
 and its two EODHD mirrors. Browser proof comes from desktop-hosted Chromium
 and WebKit. Physical devices, `linux/amd64` and a live ArcticDB service
 remain outside this qualification. [Review](review.md)
+
+## Final declaration fix and requalification
+
+The final canonical provider checks row declarations of OpenBB interval,
+SDK period, currency and unit on every original bar, including bars later
+removed. A weekly declaration or a within-listing denomination change sets
+the closed `invalid_response` flag. The client checks actual selected rows
+and checks acquired field origins at each worker input before a filter or
+projection can hide a conflict. Unlabelled sparse daily observations and
+different stable denominations on separate listings qualified in controls.
+
+| Artifact | Final identity |
+| --- | --- |
+| Client product | `45a165321a32ae6225d1c9ebade6f12959c9f67a`, tree `0319a9aa092afd175b374d990cdfddafba5880ef` |
+| Canonical provider | `adb2e2e410552863bcbfbd5584e3e7c9720d0cbc`, tree `757335c861fead6e500414eef46b3c080f053fdf` |
+| Docker pairing | `52436dd8a1a6a13eaf142a8486a7f0bda7f1db5b`, tree `f8b9017849086221e36dcee0c9e16bb614d939e1` |
+| Source manifest | 151 paired Git blobs, SHA-256 `338a6b2540135d10b0e0205cddb21849b0e72c24a540e10c3c8a137e97e90062` |
+| Local arm64 v3 image | `openbq-v9-live-observed-returns:final-adb2e2e-20261120`, index `sha256:068944e7bded0471cb222399db083ffeb6306ae30fe14954907fa0dd8dfc2acc` |
+| arm64 manifest | `sha256:d00182470c84e8105d966226c7cdd50fdfe6a81c6cbc3490f1bc0e7d93bb3a7a` |
+| Image config | `sha256:8a2a1ede68b9ae3b39d75d6efb9bd31b85f41012f358f633b670b3e83b962524` |
+| Wheel inventory | 95 files and 104 hashed RECORD entries verified. Package-file inventory digest `1e1ea87c2db7d4c629c4b351813ec287e9a2acf209b70d9ad2c89ef59700df0b`. |
+
+The new image passed its 24-test EODHD and 11-test EconDB build gates. A
+separate ignored aiohttp cross-event-loop shutdown warning appeared in
+this build. The installed trust check confirmed the same patched certifi
+2026.10.23 and Requests 2.34.2 CA file and fingerprint exclusions. The
+installed `pip check` passed. The host Docker unit/static suite passed
+121 tests plus 15 subtests.
+
+| Final verification | Result |
+| --- | --- |
+| Before the fixes | All four independent provider and client probes reproduced. Nine provider regressions failed and 56 controls passed. The client and both actual worker engines had 13 failing regressions and 100 passes. The tests against the previous image had eight failing subtests on dropped contradictory rows across the equity and ETF mirrors. |
+| Provider | Focused suite 65 passed. Full suite 958 passed, one optional ArcticDB skip and seven warnings from installed extensions. |
+| Client | Focused capture, recipe and paired worker suite 113 passed. Full suite 10,256 passed and 47 optional skips across seven skipped files. Existing React act warnings remain. Web suite 57 passed. |
+| Static checks | Typecheck, lint, Knip, scrub, headers and pinned WASM verification passed. A concurrent lint invocation encountered a transient Vite config ENOENT; the serial unchanged rerun passed. Knip reported the existing unused Monitor type. |
+| Production bundles | App and private web builds passed with existing mixed-import and large-chunk warnings. App JS totals across 15 files were 8,616,858 raw and 2,707,025 gzip bytes (mtime zero), up 34,065 raw and 10,469 gzip over the original baseline. A shell wrapper initially failed to parse the measurement heredoc. The standalone measurement completed. Both packaged WASM copies retained the original 4,570,872 bytes and SHA-256. |
+| Focused live source UI | Chromium 151.0.7922.34 and WebKit 26.5 each passed four live cases on TypeScript and four on compiled Rust. All 16 passed with zero retries or skips. Cases covered authoring, pins and filtering, ordinary sources, stale recovery/replacement and source-free export/import. |
+
+The final-image deterministic socket GETs again delivered 19 rows from 21 raw
+observations on each mirror, yielding seven MCD.US pairs and nine AAPL.US pairs.
+The source and widget used the nested `data.dataKey` selector and the OBBject
+receipt path recorded above. The separate canonical installation also repeated
+its four deterministic alias GETs, with the previously described dependency
+constraint on the standard routers. Each source GET made one bounded daily SDK
+call per listing, in MCD.US, AAPL.US order.
+
+Fresh direct public HTTPS acquisitions at 23:51 UTC on 20 November matched the
+earlier byte hashes for each symbol. The final image's real public equity
+mirror GET at 23:55 UTC acquired 29 distinct positive adjusted prices and
+28 returns per listing. Its SDK responses matched the fresh independent arrays,
+and selected values matched them by listing and date. The public capture
+finished with HTTP 200, wrote the fixture, then emitted the previously observed
+ignored aiohttp shutdown warning. The three capture files below record the
+new identities. The original capture files remain at their previous paths.
+
+| Final capture | SHA-256 |
+| --- | --- |
+| [Canonical standard aliases](../../../../../e2e/fixtures/installed-observed-returns/adb2e2e/canonical-standards.json) | `39de0d64ef43c2fffa9a4a919a9782189c6c79d0f6ac6bacadbb17ecc483748f` |
+| [Installed deterministic mirrors](../../../../../e2e/fixtures/installed-observed-returns/adb2e2e/deterministic-sdk.json) | `ec79f38d4491ad5a21116e746b07608f74e177d4ab84b6b53ce334b78f23d239` |
+| [Installed fresh public equity](../../../../../e2e/fixtures/installed-observed-returns/adb2e2e/public-demo.json) | `a993a8c8b8cb443b338ea5d16864e62bf1ee89bad4013402a1956fbe76e0b61c` |
+
+At client replay commit `561bc4f4b812b3c626feb031a967064e6a926bd4`
+(tree `8150c030244937ebb2325fbd885d8e347de69b13`), all five new transport
+cases passed in Chromium with TypeScript, and all five passed with the actual
+Rust binary. Every replay compared worker dates and return values exactly,
+with zero retries or skips. The development browser requested each source
+twice, then switched the public view to violin without another GET. Each
+installed backend count above is for a single source GET.
+
+The network-disabled final image passed all 25 installed tests and 41 subtests,
+including the eight previously failing declaration subtests, next-source
+regressions and the source pin. There were zero skips and one OpenBB aiohttp
+inheritance deprecation. The pinned WASM packaging suite passed all three
+cases. Scope remains the local arm64 image, the two installed mirrors and the
+desktop-hosted browsers above. The controller's scoped re-review of the
+consolidated fix is pending.

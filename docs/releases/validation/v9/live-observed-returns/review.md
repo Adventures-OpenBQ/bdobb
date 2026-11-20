@@ -1,8 +1,9 @@
 # Live observed returns qualification review
 
 Tasks 1–5 completed independent task review against the approved design.
-The task reviewers closed all Critical and Important findings. Final
-independent review of the three branches together is pending.
+The first independent whole-change review then found two Important admission
+errors. The consolidated fix has completed implementation. Independent scoped
+re-review of the fixes across the three branches is pending.
 
 | Task | Reviewed change |
 | --- | --- |
@@ -14,10 +15,9 @@ independent review of the three branches together is pending.
 
 The release checks verified all three source identities, vendor parity,
 compiled artifact fingerprints and the production bundles. The earlier
-test results are attributed to their exact inputs. The independent
-whole-change review still covers receipt contents and backend-only
-authority, both kinds of coordinate loss,
-caller order, ordinary routes and source replacement races. [Approved design](../../../../superpowers/specs/2026-11-20-v9-live-observed-returns-design.md) · [Execution plan](../../../../superpowers/plans/2026-11-20-v9-live-observed-returns.md)
+test results are attributed to their exact inputs. The first independent
+whole-change review examined receipt contents, backend authority, both kinds
+of coordinate loss, caller order, ordinary routes and source replacement races. [Approved design](../../../../superpowers/specs/2026-11-20-v9-live-observed-returns-design.md) · [Execution plan](../../../../superpowers/plans/2026-11-20-v9-live-observed-returns.md)
 
 - Re-vendoring copied each tracked file from the canonical Git object. The
   installed wheel comparison checks its package inventory and every packaged
@@ -59,3 +59,12 @@ caller order, ordinary routes and source replacement races. [Approved design](..
 
 See [paired verification](verification.md) for exact identities, results and
 fixture paths.
+
+## Findings from the whole-change review
+
+- A daily request could certify observations explicitly marked weekly in either OpenBB `interval` or SDK `period`. The canonical fetcher now checks every raw bar before date, price or normalizer loss. The client checks every selected row and each worker input using acquired field origins. Unlabelled sparse dates and explicit daily declarations remain eligible.
+- One listing could switch from dollars at 100 to cents at 10,000 and yield a spurious +9,900% return, or switch currencies mid-history. The provider and client now compare explicit currency and unit strings within each listing. A contradiction disables the whole receipt. Undeclared dimensions and independent listings with different stable denominations remain eligible. Neither acquisition nor projection converts prices.
+- Four observed returns now produce observed-quote guidance and the live scope sentence. The exact four-return local snapshot guidance is preserved. The portable verification history now identifies the successful build's separate shutdown warning and the baseline Knip invocation.
+- Mixed paging and message wrappers can report the generic invalid-response reason. Fully filtered sources can prioritize insufficiency over invalid binding guidance. Both continue to refuse. The earlier narrow-touch hover failure and all environment limits remain open as described above.
+
+The implementation and its requalification are recorded in [paired verification](verification.md#final-declaration-fix-and-requalification). The controller owns the independent scoped re-review.
