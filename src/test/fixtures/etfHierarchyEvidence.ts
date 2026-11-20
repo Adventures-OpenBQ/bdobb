@@ -20,3 +20,11 @@ export const context = { endpoint: '/api/v1/eodhd/etf/holdings', selector: 'resu
   parameters: { symbol: 'vti', chart_source: 'true' } };
 export const rawUnsafe = { ...live, raw_count: 5, diagnostics: Object.keys(live.unsafe),
   unsafe: Object.fromEntries(Object.keys(live.unsafe).map(key => [key, true])) };
+
+export const extremeRows = [
+  ...Array.from({ length: 106 }, (_, i) => ({ ...rows[1], symbol: 'EXT' + i + '.US', weight: 1.7e306 })),
+  rows[0],
+];
+export const extremeSource = { ...live, raw_count: 107, normalized_count: 107, delivered_count: 107,
+  holding_keys: extremeRows.map(row => row.symbol), diagnostics: ['excess_weight'],
+  unsafe: { ...live.unsafe, excess_weight: true } };

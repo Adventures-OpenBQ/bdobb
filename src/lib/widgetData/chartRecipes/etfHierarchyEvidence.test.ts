@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
-import { context, live, local, rawUnsafe, rows, stamp } from '../../../test/fixtures/etfHierarchyEvidence';
+import { context, extremeRows, extremeSource, live, local, rawUnsafe, rows, stamp } from '../../../test/fixtures/etfHierarchyEvidence';
 import { datasetFromRows } from '../../localTableData';
 import { parseTableSnapshot } from '../../tableRowValues';
 import { captureChartSources } from './chartSourceContracts';
@@ -148,4 +148,12 @@ it('honors compatible declared weight_unit and basis on the completed holdings r
     receipt: { fund_symbol: 'VTI.US', unit: 'fraction', weight_unit: 'fraction', basis: 'fund-assets' },
   }, rows)).toEqual({ 'etf-hierarchy': live });
   expect(captureChartSources(context, { ...response(live), receipt: { weight_unit: 'percent-points' } }, rows)).toBeUndefined();
+});
+
+it('retains a captured raw excess flag when summing finite weights would overflow', () => {
+  expect(capture(extremeSource, extremeRows)).toEqual({ 'etf-hierarchy': extremeSource });
+  expect(extremeRows[0].weight).toBe(1.7e306);
+  expect(capture({ ...extremeSource, diagnostics: [], unsafe: live.unsafe }, extremeRows)).toBeUndefined();
+  const wrongLastRow = [...extremeRows.slice(0, -1), { ...extremeRows[106], weight_basis: 'equity-exposure' }];
+  expect(capture(extremeSource, wrongLastRow)).toBeUndefined();
 });

@@ -91,12 +91,13 @@ function rowsAgree(source: EtfHierarchySource, rows: readonly Record<string, unk
       || (Object.hasOwn(row, 'holdings_coverage') && row.holdings_coverage !== source.coverage)
       || (Object.hasOwn(row, 'as_of') && row.as_of !== source.as_of)
       || (source.as_of !== null && source.snapshot !== source.as_of && row.as_of !== source.as_of)) return false;
-    const add = row.weight - correction;
+    // Every admission bound is at most 1.0001. A contribution of 2 proves excess
+    // while keeping this check finite even across many extreme original weights.
+    const add = Math.min(row.weight, 2) - correction;
     const next = sum + add;
     correction = (next - sum) - add;
     sum = next;
   }
-  if (!Number.isFinite(sum)) return false;
   const bound = source.rounding_bound_fraction ?? 1e-12;
   if (sum > 1 + bound && !source.unsafe.excess_weight) return false;
   if (source.coverage === 'complete' && (sum < 1 - bound || sum > 1 + bound)) return false;
