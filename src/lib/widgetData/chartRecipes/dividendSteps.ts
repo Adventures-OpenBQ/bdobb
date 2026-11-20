@@ -7,12 +7,12 @@ import type { DatasetRow, WidgetDataset } from '../types';
 import { savedBindingIssue } from './bindings';
 import { read, text } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate, readFinancialEvidence } from './financialEvidence';
+import { admitDividendWindow, duplicateDividendDate } from './financialAdmission';
 import { decodeRecipeOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
 
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
 const continuityIssue = 'Dividend event continuity is unverified. Use the fully loaded, unfiltered event source.';
-const duplicateIssue = 'Multiple distributions share the same ex-dividend date. Acquire an unambiguous event source.';
 const title = 'Last reported split-adjusted<br>dividend per share';
 const plotLimit = Number.MAX_VALUE * 1e-4;
 
@@ -49,21 +49,11 @@ export function buildDividendSteps(dataset: WidgetDataset, options: RecipeOption
 
   const evidence = readFinancialEvidence(dataset.provenance);
   if (evidence?.kind !== 'dividends') return refuse('Reload an opted-in dividend source with verified acquisition evidence.');
-  const { unsafe, coverage, qualified_symbol: instrument, requested_start: start, requested_end: end } = evidence;
+  const instrument = evidence.qualified_symbol;
   if (options.instrument !== instrument) return refuse(`Choose the acquired instrument ${instrument}.`);
-  if (unsafe.instrument_conflict) return refuse('The acquired dividend records have conflicting instrument identities. Repair the source.');
-  if (unsafe.amount_basis_conflict) return refuse('The acquired dividend records have a conflicting amount basis. Use split-adjusted amounts.');
-  if (unsafe.invalid_ex_date) return refuse('The acquired dividend records include a missing or invalid ex-dividend date. Repair the source.');
-  if (evidence.duplicate_dates.length) return refuse(duplicateIssue);
-  if (unsafe.currency_conflict) return refuse('The acquired dividends have conflicting payment currencies. Use one payment currency.');
-  const [currency] = evidence.payment_currencies;
-  if (unsafe.unknown_payment_currency || (evidence.raw_count > 0 && !currency))
-    return refuse('The acquired dividends have an unknown payment currency. Use a source that supplies the payment currency.');
-  if (unsafe.outside_requested_window) return refuse('The acquired dividend dates fall outside the verified window. Repair the source.');
-  if (!start || !end || start > end) return refuse('Acquire dividends with explicit inclusive start and end dates.');
-  if (coverage.status === 'unknown') return refuse('Dividend coverage is unknown. Load a snapshot with a verified inclusive acquisition window.');
-  if (coverage.status === 'clipped')
-    return refuse(`Dividend coverage is clipped. The acquired interval ${coverage.start} to ${coverage.end} does not cover the full requested window ${start} to ${end}.`);
+  const admission = admitDividendWindow(evidence);
+  if (!admission.ok) return admission;
+  const { coverage, start, end, currency } = admission;
   if (dataset.provenance.inputMayContainAggregates || dataset.rows.some(row => row.groupPath !== undefined))
     return refuse('Present the raw dividend events before grouping, pivoting or aggregation.');
 
@@ -102,7 +92,7 @@ export function buildDividendSteps(dataset: WidgetDataset, options: RecipeOption
     if (!isoDate(date)) return refuse('A presented record has a missing or invalid ex-dividend date. Repair the source.');
     if (date < start || date > end) return refuse('A presented dividend date falls outside the acquired window. Repair the source.');
     if (!acquiredDates.has(date) || omitted.has(date)) return refuse(continuityIssue);
-    if (byDate.has(date)) return refuse(duplicateIssue);
+    if (byDate.has(date)) return refuse(duplicateDividendDate);
     if (symbolFields.some(field => {
       const value = read(row, field);
       return value != null && value !== instrument;

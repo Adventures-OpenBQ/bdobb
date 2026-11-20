@@ -193,6 +193,10 @@ function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
 
 function dividendFactsAgree(evidence: DividendFinancialEvidence): boolean {
   const { requested_start: start, requested_end: end, coverage, event_dates, invalid_amount_dates, duplicate_dates, payment_currencies, raw_count, unsafe } = evidence;
+  const diagnostics = new Set<string>(evidence.diagnostics);
+  const facts = { ...unsafe, duplicate_ex_date: duplicate_dates.length > 0, invalid_amount: invalid_amount_dates.length > 0,
+    clipped_coverage: coverage.status === 'clipped', unknown_coverage: coverage.status === 'unknown' };
+  if (!Object.entries(facts).every(([code, fact]) => diagnostics.has(code) === fact)) return false;
   const events = new Set(event_dates);
   if (event_dates.length + duplicate_dates.length > raw_count || payment_currencies.length > raw_count
     || ![event_dates, invalid_amount_dates, duplicate_dates, payment_currencies].every(unique)
@@ -213,6 +217,7 @@ function incomeFactsAgree(evidence: IncomeFinancialEvidence): boolean {
   return raw_count === (requested_limit ? Math.min(requested_limit, available_period_count) : available_period_count)
     && periods.length <= raw_count && unique(periods.map(period => period.period_end))
     && periods.every(period => period.period_kind === period_kind && unique(period.present_fields)
+      && (period.fiscal_period === null || (period.fiscal_period === 'FY') === (period_kind === 'FY'))
       && (!period.identity_conflict || period.record_coverage === 'unknown')
       && (!period.declared_currency || period.declared_currency === reporting_currency || period.currency_conflict));
 }
@@ -278,6 +283,12 @@ export function financialProjectionProvenance(provenance: DatasetProvenance, row
     ? { ...provenance, metadata: { ...provenance.metadata, financialOmittedEventDates: projected.omitted_event_dates } } : provenance;
 }
 
+/** Explicit delivery limits contradict a receipt certifying the entire event window. */
+export function financialScopeAgrees(evidence: FinancialEvidence, scope: unknown): boolean {
+  return evidence.kind !== 'dividends' || evidence.coverage.status !== 'verified'
+    || (scope !== 'paged' && scope !== 'partial' && scope !== 'sample');
+}
+
 /** Check that the source's evidence and actual delivered rows describe the same acquisition. */
 export function financialRowsAgree(evidence: FinancialEvidence, rows: readonly Record<string, unknown>[]): boolean {
   if (rows.length !== evidence.delivered_count) return false;
@@ -285,7 +296,8 @@ export function financialRowsAgree(evidence: FinancialEvidence, rows: readonly R
     const cohorts = new Map(evidence.cohorts.map(cohort => [cohort.price_date, { cohort, count: 0, first: new Map<string, unknown[]>() }]));
     return rows.every(row => {
       const day = row.last_day_data_date, instrument = row.symbol;
-      if (!qualifiedSymbol(instrument) && !evidence.unsafe.unassignable_identity) return false;
+      if ((!qualifiedSymbol(instrument) || !text(row.exchange) || !instrument.endsWith('.' + row.exchange.toUpperCase()))
+        && !evidence.unsafe.unassignable_identity) return false;
       if (!isoDate(day)) return evidence.unsafe.unassignable_date;
       const observed = cohorts.get(day);
       if (!observed || ++observed.count > observed.cohort.raw_count) return false;
@@ -309,6 +321,7 @@ export function financialRowsAgree(evidence: FinancialEvidence, rows: readonly R
       const day = row.ex_dividend_date, paymentCurrency = row.currency;
       if (!isoDate(day) || !eventDates.has(day) || !finite(row.amount) || row.amount < 0
         || (delivered.has(day) && !duplicates.has(day))
+        || (Object.hasOwn(row, 'amount_basis') && row.amount_basis !== evidence.amount_basis && !evidence.unsafe.amount_basis_conflict)
         || (row.symbol != null && row.symbol !== evidence.qualified_symbol && !evidence.unsafe.instrument_conflict)
         || (currency(paymentCurrency) ? !evidence.payment_currencies.includes(paymentCurrency) : !evidence.unsafe.unknown_payment_currency))
         return false;
@@ -324,6 +337,8 @@ export function financialRowsAgree(evidence: FinancialEvidence, rows: readonly R
     if (!period || (delivered.has(day) && !period.identity_conflict)
       || (row.symbol != null && row.symbol !== evidence.qualified_symbol)
       || (row.period_kind != null && row.period_kind !== evidence.period_kind)
+      || (row.fiscal_year != null && row.fiscal_year !== period.fiscal_year)
+      || (row.fiscal_period != null && row.fiscal_period !== period.fiscal_period)
       || (row.reporting_currency != null && row.reporting_currency !== evidence.reporting_currency && !period.currency_conflict)
       || (row.scale_multiplier != null && evidence.scale.status === 'verified'
         && row.scale_multiplier !== evidence.scale.multiplier && !period.scale_conflict && !evidence.unsafe.scale_conflict)
@@ -383,6 +398,7 @@ export function backendFinancialResponse(payload: unknown, url: URL, credentialK
   const evidence = parseFinancialEvidence(asRecord(asRecord(envelope?.extra)?.results_metadata)?.chart_evidence);
   if (!evidence || !requestAgrees(evidence, url, credentialKey)) return undefined;
   const result = envelope?.results;
+  if (!financialScopeAgrees(evidence, envelope?.completeness) || !financialScopeAgrees(evidence, asRecord(result)?.completeness)) return undefined;
   const rows = Array.isArray(result) ? result : asRecord(result)?.rows;
   if (!Array.isArray(rows) || !rows.every(row => asRecord(row) !== undefined) || !financialRowsAgree(evidence, rows)) return undefined;
   return { evidence, rows };

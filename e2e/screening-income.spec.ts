@@ -380,3 +380,52 @@ test('taps Sankey nodes and links, scrolls from a fixed node and zooms fitting p
     await context.close();
   }
 });
+
+test('keeps the narrow fractional regression sample and fitted endpoints inside the SVG plot', async ({ page }, info) => {
+  await page.setViewportSize({ width: 2600, height: 1200 });
+  const payload = screeningPayload(screenPath);
+  const date = '2026-08-31';
+  payload.results = [0.1, 0.10000000000000002, 0.10000000000000003].map((x, i) => ({
+    ...payload.results[0], symbol: 'LIST' + i + '.US', last_day_data_date: date,
+    dividend_yield: x, price_change_5d: i * .01, market_cap: 100,
+  }));
+  const evidence = payload.extra.results_metadata.chart_evidence;
+  Object.assign(evidence, { raw_count: 3, normalized_count: 3, delivered_count: 3,
+    cohorts: [{ ...evidence.cohorts[0], raw_count: 3, price_date: date }] });
+  await importScreening(page, undefined, new Map([[screenPath, payload]]));
+  const graph = plot(page, bubble);
+  await expect(markers(graph)).toHaveCount(3);
+  await expect(card(page, bubble)).toContainText('N = 3, R² = 1');
+  for (const [width, height] of [[780, 480], [390, 440], [1100, 620]]) {
+    await graph.evaluate((el, [w, h]) => {
+      el.style.width = w + 'px';
+      el.style.height = h + 'px';
+    }, [width, height]);
+    await expect.poll(() => graph.evaluate(el => (el as Graph)._fullLayout.width)).toBe(width);
+    const geometry = await graph.evaluate(el => {
+      const domain = el.querySelector<SVGRectElement>('.nsewdrag')!;
+      const points = [...el.querySelectorAll<SVGGraphicsElement>('.points .point')].map(point => {
+        const { e, f } = point.transform.baseVal.consolidate()!.matrix;
+        return [e, f];
+      });
+      const line = el.querySelector<SVGPathElement>('.js-line')!;
+      const endpoints = [0, line.getTotalLength()].map(length => {
+        const { x, y } = line.getPointAtLength(length);
+        return [x, y];
+      });
+      return { points, endpoints, width: domain.width.baseVal.value, height: domain.height.baseVal.value };
+    });
+    for (const [x, y] of [...geometry.points, ...geometry.endpoints]) {
+      expect(x, JSON.stringify(geometry)).toBeGreaterThanOrEqual(0);
+      expect(x, JSON.stringify(geometry)).toBeLessThanOrEqual(geometry.width);
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(geometry.height);
+    }
+    for (const [index, endpoint] of geometry.endpoints.entries()) {
+      expect(endpoint[0]).toBeCloseTo(geometry.points[index * 2][0], 0);
+      expect(endpoint[1]).toBeCloseTo(geometry.points[index * 2][1], 0);
+    }
+    await info.attach('geometry-' + width, { body: JSON.stringify(geometry), contentType: 'application/json' });
+    if (width === 780) await graph.screenshot({ path: info.outputPath('narrow-span-regression.png') });
+  }
+});

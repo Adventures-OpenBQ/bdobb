@@ -7,6 +7,7 @@ import { projectStatementDataset, readStatementPresentation } from '../../statem
 import type { WidgetDataset } from '../types';
 import { isIncomePeriodColumn, savedBindingIssue } from './bindings';
 import { incomeEvidenceFields, isoDate, readFinancialEvidence, type IncomeEvidenceField, type IncomeFinancialEvidence } from './financialEvidence';
+import { admitIncomeUnits, incomePeriodIssue } from './financialAdmission';
 import { decodeRecipeOptions } from './settings';
 import type { RecipeOptions, RecipeRefusal } from './types';
 
@@ -78,18 +79,16 @@ export function resolveIncomeSankeyInput(
   if (issue) return refuse(issue);
   const evidence = readFinancialEvidence(dataset.provenance);
   if (evidence?.kind !== 'income') return refuse('Acquire the income statement with verified source evidence.');
-  if (evidence.unsafe.invalid_period_identity) return refuse('The income acquisition contains invalid period identities.');
-  if (evidence.scale.status !== 'verified' || evidence.unsafe.scale_conflict) return refuse('Verify one monetary scale for the acquired income statement.');
-  if (!evidence.reporting_currency) return refuse('Verify the income statement reporting currency.');
+  const units = admitIncomeUnits(evidence);
+  if (!units.ok) return units;
 
   const proof = readProof(dataset, evidence);
   if (!proof) return refuse('Use a compiler-validated income statement with canonical source fields.');
   const period = periodChoices(dataset, evidence, proof).find(choice => choice.columnId === options.periodColumn);
   if (!period) return refuse('Select a fiscal period column backed by one actual acquired report date.');
   const acquired = evidence.periods.find(report => report.period_end === period.end)!;
-  if (acquired.record_coverage !== 'full-record') return refuse('Acquire a complete income statement record for the selected period.');
-  if (acquired.currency_conflict || acquired.scale_conflict || acquired.identity_conflict || acquired.field_origin_conflict)
-    return refuse('The selected income statement period has conflicting currency, scale, identity or field origins.');
+  const periodIssue = incomePeriodIssue(acquired);
+  if (periodIssue) return refuse(periodIssue);
 
   const { item, period: periodId, value, line, formula } = incomeStatementIds;
   let presented;
@@ -145,7 +144,8 @@ export function resolveIncomeSankeyInput(
   const components = { ...(cost_of_revenue ? { cost_of_revenue } : {}), ...(income_tax_expense ? { income_tax_expense } : {}) };
   const notes = (Object.keys(componentLabels) as IncomeComponent[]).flatMap(field => components[field]
     ? [] : [`${componentLabels[field]} is unavailable in the presented period. Reconciliation includes lines not shown.`]);
-  const issuer = evidence.qualified_symbol, currency = evidence.reporting_currency, scale = evidence.scale;
+  const issuer = evidence.qualified_symbol;
+  const { currency, scale } = units;
   return { ok: true, issuer, currency, scale, period, anchors: anchors as IncomeSankeyInput['anchors'], components, notes, evidence,
     revision: JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, options.periodColumn,
       issuer, period.kind, period.end, currency, scale.multiplier]) };

@@ -704,8 +704,8 @@ it('projects only presented fiscal periods and defaults Sankey to the newest act
 it.each([
   ['covered empty', emptyDividendEvidence, /no dividend events were supplied/i],
   ['all invalid', { ...dividendEvidence, normalized_count: 0, delivered_count: 0,
-    invalid_amount_dates: dividendEvidence.event_dates }, /no usable historical dividends.*1 invalid amount/i],
-  ['unknown coverage', { ...emptyDividendEvidence, coverage: { status: 'unknown' } }, /dividend coverage is unknown/i],
+    diagnostics: ['invalid_amount'], invalid_amount_dates: dividendEvidence.event_dates }, /no usable historical dividends.*1 invalid amount/i],
+  ['unknown coverage', { ...emptyDividendEvidence, diagnostics: ['unknown_coverage'], coverage: { status: 'unknown' } }, /dividend coverage is unknown/i],
 ] as const)('keeps %s dividend status through a columnless result without drawing empty traces', async (_, evidence, message) => {
   const { run, factory } = riskRuntime();
   const recipe = screeningRecipes[1];
@@ -785,5 +785,105 @@ it('requires repairing the dividend instrument after reacquisition and resets th
     await screen.findByTestId('chart-plot');
     await waitFor(() => expect(vi.mocked(renderPlot).mock.lastCall![2]).not.toBe(revision));
     expect(vi.mocked(renderPlot).mock.lastCall![1].data[0]).toMatchObject({ name: 'BP.LSE' });
+  } finally { factory.mockRestore(); }
+});
+
+it('keeps a working chart while a valid dividend receipt requires verified coverage', async () => {
+  const { factory } = riskRuntime();
+  const root = await screeningSource(screeningRecipes[1], 'A');
+  const linkedChart = { type: 'column', category: 'ex_dividend_date', display: 'grouped', measures: ['amount'] } as const;
+  const chart = { ...riskChart(screeningRecipes[1]), linkedChart: { ...linkedChart, measures: [...linkedChart.measures] } };
+  await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
+    completeness: 'unknown', rows: [dividendRow],
+    chart_evidence: { ...dividendEvidence, coverage: { status: 'unknown' }, diagnostics: ['unknown_coverage'] },
+  })));
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'dividend-steps' } });
+    await screen.findByRole('option', { name: 'SHEL.LSE' });
+    expect(screen.getByRole('button', { name: /apply chart/i })).toBeDisabled();
+    expect(screen.getByText(/dividend coverage is unknown/i)).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+  } finally { factory.mockRestore(); }
+});
+
+it('applies Dividend steps to a newly linked columnless verified-empty file', async () => {
+  const { factory } = riskRuntime();
+  const root = await screeningSource(screeningRecipes[1], 'A');
+  const chart = { ...riskChart(screeningRecipes[1]), linkedChart: { type: 'column' as const, display: 'grouped' as const, measures: [] } };
+  await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
+    completeness: 'bounded', rows: [], chart_evidence: emptyDividendEvidence,
+  })));
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const option = screen.getByRole('option', { name: /Dividend steps/i });
+    await waitFor(() => expect(option).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'dividend-steps' } });
+    const apply = screen.getByRole('button', { name: /apply chart/i });
+    await waitFor(() => expect(apply).toBeEnabled());
+    expect(screen.getByLabelText('Acquired instrument')).toHaveValue('SHEL.LSE');
+    fireEvent.click(apply);
+    expect(await screen.findByText(/no dividend events were supplied/i)).toBeVisible();
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(screeningRecipes[1]);
+  } finally { factory.mockRestore(); }
+});
+
+it('checks the selected screening cohort before applying a draft over a working chart', async () => {
+  const { factory } = riskRuntime();
+  const recipe = screeningRecipes[0];
+  const root = await screeningSource(recipe, 'A');
+  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const evidence = snapshot.chart_evidence;
+  if (!('cohorts' in evidence)) throw new Error('Expected screener evidence');
+  Object.assign(snapshot, { rows: [...snapshot.rows, { ...snapshot.rows.at(-1), market_cap: 1 }] });
+  evidence.raw_count++;
+  evidence.normalized_count++;
+  evidence.delivered_count++;
+  evidence.cohorts[1].raw_count++;
+  evidence.cohorts[1].conflicting_duplicates = true;
+  Object.assign(evidence, { diagnostics: ['screener_duplicate_conflict'] });
+  await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify(snapshot)));
+  const linkedChart = { type: 'column' as const, category: 'symbol', display: 'grouped' as const, measures: ['market_cap'] };
+  installDashboard(riskDashboard([root, { ...riskChart(recipe), linkedChart }]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'bubble-regression' } });
+    expect(await screen.findByText(/2026-08-31.*conflicting duplicate listings/)).toBeVisible();
+    const apply = screen.getByRole('button', { name: /apply chart/i });
+    expect(apply).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Price date'), { target: { value: '2026-08-28' } });
+    expect(apply).toBeEnabled();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+  } finally { factory.mockRestore(); }
+});
+
+it('checks record coverage for the selected income period before saving its draft', async () => {
+  const { factory } = riskRuntime();
+  const recipe = screeningRecipes[2];
+  const root = await screeningSource(recipe, 'A');
+  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const evidence = snapshot.chart_evidence;
+  if (!('periods' in evidence)) throw new Error('Expected income evidence');
+  evidence.periods[0].record_coverage = 'unknown';
+  Object.assign(evidence, { diagnostics: ['unknown_record_coverage'] });
+  await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify(snapshot)));
+  const linkedChart = { type: 'column' as const, display: 'grouped' as const, measures: [] };
+  installDashboard(riskDashboard([root, { ...riskChart(recipe), linkedChart }]));
+  try {
+    render(<LiveRiskChart/>);
+    await waitFor(() => expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready'));
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'income-sankey' } });
+    expect(await screen.findByText(/complete income statement record/i)).toBeVisible();
+    const apply = screen.getByRole('button', { name: /apply chart/i });
+    expect(apply).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Income statement period'), { target: { value: incomeColumn(2025) } });
+    expect(apply).toBeEnabled();
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
   } finally { factory.mockRestore(); }
 });

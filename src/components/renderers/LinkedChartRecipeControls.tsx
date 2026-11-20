@@ -12,7 +12,7 @@ type Metric = 'eps' | 'revenue';
 type Mode = 'sector' | 'region';
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 export type SourceChoiceKind = 'bubble-regression' | 'dividend-steps' | 'income-sankey';
-export type SourceChoice = { value: string; label: string };
+export type SourceChoice = { value: string; label: string; issue?: string };
 type LoadSourceChoices = (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => Promise<SourceChoice[]>;
 
 const sourceChoiceLabels = {
@@ -36,7 +36,8 @@ export const recipeLabels: Partial<Record<Kind, string>> = {
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
   return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
-export function recipeAvailability(kind: Kind, columns: DatasetColumn[]): string | null {
+export function recipeAvailability(kind: Kind, columns: DatasetColumn[], verifiedEmpty = false): string | null {
+  if (kind === 'dividend-steps' && verifiedEmpty) return null;
   if (kind === 'income-sankey') return columns.some(isIncomePeriodColumn) ? null
     : 'Present actual FY or FQ columns from an income Statement table.';
   const missing = missingRoles(kind, columns, 'eps');
@@ -53,8 +54,8 @@ function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[], mode?: M
   }));
 }
 
-export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, loadSourceChoices, disabled, onApply }: {
-  kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; loadSymbols: LoadSymbols;
+export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, disabled, onApply }: {
+  kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
   loadSourceChoices?: LoadSourceChoices; disabled: boolean; onApply: (options: RecipeOptions) => void;
 }) {
   const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
@@ -62,7 +63,10 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, l
   const [mode, setMode] = useState<Mode>(() => saved?.kind === 'etf-exposure' ? saved.mode
     : kind === 'etf-exposure' && missingRoles(kind, columns, metric).length && !missingRoles(kind, columns, metric, 'region').length ? 'region' : 'sector');
   const [editedFields, setFields] = useState<Record<string, string> | undefined>(() => saved && 'fields' in saved ? { ...saved.fields } : undefined);
-  const fields = editedFields ?? defaults(kind, metric, columns, mode);
+  const emptyDividend = kind === 'dividend-steps' && verifiedEmpty;
+  const fields = editedFields ?? (emptyDividend
+    ? Object.fromEntries(bindingRoles(kind, metric).filter(role => !role.optional).map(role => [role.key, role.names[0]]))
+    : defaults(kind, metric, columns, mode));
   const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
@@ -70,7 +74,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, l
   const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
   const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
   const needsSymbols = singleSymbol || multipleSymbols;
-  const roleList = bindingRoles(kind, metric, mode);
+  const roleList = emptyDividend ? [] : bindingRoles(kind, metric, mode);
   const fieldIssue = roleList.find(role => (
     !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
   ));
@@ -118,6 +122,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, loadSymbols, l
   const latest = sourceKind === 'bubble-regression' && value === 'latest';
   const unavailable = Boolean(value && !latest && !sourceValues.some(choice => choice.value === value));
   const sourceIssue = choiceLabel && (!sourceCurrent ? 'Loading choices from the source…' : sourceCurrent.error
+    ?? (latest ? sourceValues[0] : sourceValues.find(choice => choice.value === value))?.issue
     ?? (!sourceValues.length ? choiceLabel.unavailable : unavailable ? 'Repair the unavailable ' + choiceLabel.label.toLowerCase() + '.' : undefined));
   const candidate = kind === 'income-sankey' ? { version: 1, kind, periodColumn: value } : {
     version: 1, kind, fields, ...(kind === 'estimate-range' ? { metric } : {}),

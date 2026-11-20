@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { WidgetDataset } from './widgetData/types';
 import { isRecord } from './isRecord';
-import { financialRowsAgree, parseFinancialEvidence, type FinancialEvidence } from './widgetData/chartRecipes/financialEvidence';
+import { financialRowsAgree, financialScopeAgrees, parseFinancialEvidence, type FinancialEvidence } from './widgetData/chartRecipes/financialEvidence';
 /** One record of a table payload. */
 export type Row = Record<string, unknown>;
 /** Shared acquisition shape check, independent of renderer and Pivot calculation imports. */
@@ -42,7 +42,7 @@ export function parseTableSnapshot(data: unknown, source: 'backend' | 'local-fil
     || (legacy && (!isRecord(receipt) || !Object.entries(receipt).every(([k, v]) => keys.includes(k) && typeof v === 'string' && v.trim() && v.length <= 4096))))
     throw new Error('Invalid table snapshot');
   const financialEvidence = financial ? parseFinancialEvidence(data.chart_evidence) : undefined;
-  if (financial && (!financialEvidence || !financialRowsAgree(financialEvidence, records)))
+  if (financial && (!financialEvidence || !financialScopeAgrees(financialEvidence, kind) || !financialRowsAgree(financialEvidence, records)))
     throw new Error('Invalid table snapshot');
   return { data: rows, snapshot: { ...(legacy ? { receipt: receipt as Record<string, string> } : {}), completeness: kind,
     ...(financialEvidence ? { financialEvidence } : {}) } };

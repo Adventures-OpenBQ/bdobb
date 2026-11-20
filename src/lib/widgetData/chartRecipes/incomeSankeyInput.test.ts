@@ -3,6 +3,7 @@
 
 import { expect, it } from 'vitest';
 import { incomeEvidence, incomeRow } from '../../../test/fixtures/financialEvidence';
+import weekBasedIncomeSnapshot from '../../../test/fixtures/weekBasedIncomeSnapshot.json';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
 import { datasetFromBytes } from '../../localTableData';
 import { intent } from '../../statementModel/testFixtures';
@@ -10,6 +11,7 @@ import { statementOwnedIds } from '../../statementModel/types';
 import { createRustExecutor } from '../../tableExecution/rust/runtime';
 import { appendSubset, beginSubset, commitSubset, type PendingInput } from '../../tableExecution/subsetTransfer';
 import { createWorkerExecutor } from '../../tableExecution/workerClient';
+import { buildIncomeSankey } from './incomeSankey';
 import { incomeSankeyPeriodChoices, resolveIncomeSankeyInput } from './incomeSankeyInput';
 
 const signal = new AbortController().signal;
@@ -143,7 +145,7 @@ it.each(engines)('%s orders period defaults by actual ends and refuses a bucket 
   const fixture = await snapshot((_model, rows, evidence) => {
     Object.assign(evidence, { requested_limit: 2, raw_count: 2, normalized_count: 2, delivered_count: 2 });
     const older = '2025-06-30';
-    rows.push({ ...rows[0], period_ending: older, start: '2025-01-01', end: '2025-12-31', display_year: 2030 });
+    rows.push({ ...rows[0], period_ending: older, fiscal_year: 2025, start: '2025-01-01', end: '2025-12-31', display_year: 2030 });
     evidence.periods.push({ ...evidence.periods[0], period_end: older, fiscal_year: 2025 });
   });
   let all = await present(make, fixture, true);
@@ -218,4 +220,17 @@ it.each(engines)('%s preserves compiler-proven income through a linked table tha
     root.dispose();
     child.dispose();
   }
+});
+
+it.each(engines)('%s labels the week-based snapshot by its acquired kind and actual end', async (_, make) => {
+  const fixture = await snapshot((model, rows, evidence) => {
+    const record = weekBasedIncomeSnapshot.rows[0];
+    model.periodKind = 'FQ';
+    Object.assign(model.bindings.fiscal, { periodKind: 'FQ', fiscalQuarterFieldId: 'display_quarter' });
+    rows[0] = { ...record, display_year: 2025, display_quarter: 4, start: '2024-11-03', end: record.period_ending };
+    Object.assign(evidence, weekBasedIncomeSnapshot.chart_evidence);
+  });
+  const { data, options } = await present(make, fixture);
+  expect(buildIncomeSankey(data, options, { theme: 'light', maxDecimals: 2, today: '2026-11-19' }))
+    .toMatchObject({ ok: true, figure: { layout: { title: { text: 'HSBA.LSE · Income Sankey<br>FQ · 2025-02-01 · USD × 1000' } } } });
 });

@@ -8,6 +8,7 @@ import { doubleUnitExponent, roundedRatio, scaledInteger } from './binary64';
 import { bubblePriceDates, savedBindingIssue } from './bindings';
 import { read, text } from './estimateEvidence';
 import { isoDate, qualifiedSymbol, readFinancialEvidence, type ScreenerFinancialEvidence } from './financialEvidence';
+import { cohortIssue, screenerIssue } from './financialAdmission';
 import { decodeRecipeOptions } from './settings';
 import type { BubbleBindings, RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
 
@@ -111,9 +112,12 @@ function plotRangeIsSafe({ min, max }: Bounds): boolean {
 }
 
 function percentAxis(title: string, { min, max }: Bounds) {
-  // Plotly's default padding of ±1 cannot expand a large constant coordinate.
-  const pad = Math.abs(min) * .05;
-  const range = min === max && (min - 1 === min || max + 1 === max)
+  // Plotly converts a coordinate with slope * value + offset. Widen nearly
+  // constant ranges before that subtraction can move a marker by a pixel.
+  const magnitude = Math.max(Math.abs(min), Math.abs(max));
+  const narrow = min !== max && (max - min) <= 10_000 * Number.EPSILON * magnitude;
+  const pad = magnitude * .05;
+  const range = narrow || (min === max && (min - 1 === min || max + 1 === max))
     ? [Math.max(-plotLimit, min - pad), Math.min(plotLimit, max + pad)] : undefined;
   return {
     type: 'linear', title: { text: title }, tickformat: '.2%', automargin: true,
@@ -138,10 +142,8 @@ export function buildBubbleRegression(dataset: WidgetDataset, options: RecipeOpt
   if (!decoded.ok) return refuse(decoded.message);
   const evidence = readFinancialEvidence(dataset.provenance);
   if (evidence?.kind !== 'screener') return refuse('Reload an opted-in screener source with verified acquisition evidence.');
-  const { unsafe } = evidence;
-  if (unsafe.unassignable_identity) return refuse('The acquired screener includes an unassignable listing identity. Repair the source.');
-  if (unsafe.unassignable_date) return refuse('The acquired screener includes an unassignable price-data date. Repair the source.');
-  if (unsafe.unit_conflict) return refuse('The acquired screener has conflicting field units. Repair the source.');
+  const issue = screenerIssue(evidence);
+  if (issue) return refuse(issue);
   const bindingIssue = savedBindingIssue(options, dataset.columns, dataset.rows);
   if (bindingIssue) return refuse(bindingIssue);
   if (dataset.provenance.inputMayContainAggregates || dataset.rows.some(row => row.groupPath?.length))
@@ -158,12 +160,9 @@ export function buildBubbleRegression(dataset: WidgetDataset, options: RecipeOpt
   const cohort = date && cohorts.get(date);
   if (!date || !cohort || !dates.includes(date))
     return refuse('Choose a presented price-data date from the acquired screener page.');
+  const selectedIssue = cohortIssue(cohort);
+  if (selectedIssue) return refuse(selectedIssue);
   const [denomination] = cohort.denominations;
-  if (cohort.denominations.length > 1) return refuse(`The acquired ${date} price-data cohort has mixed market-cap denominations. Use a single-denomination screen.`);
-  if (cohort.unknown_denomination || !denomination)
-    return refuse(`The acquired ${date} price-data cohort has an unknown market-cap denomination. Use a source with verified listing currencies.`);
-  if (cohort.conflicting_duplicates)
-    return refuse(`The acquired ${date} price-data cohort contains conflicting duplicate listings. Repair the source.`);
 
   const selected = listings.filter(listing => listing.date === date);
   const observations = new Map<string, { listing: PresentedListing; values: readonly [unknown, unknown, unknown] }>();

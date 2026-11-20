@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { LinkedChartRecipeControls, recipeAvailability } from './LinkedChartRecipeControls';
 import type { DatasetColumn } from '../../lib/widgetData/types';
@@ -151,4 +151,15 @@ it('defaults dividends to the acquired qualified instrument with no free-form sy
   fireEvent.click(screen.getByRole('button', { name: /apply/i }));
   expect(save).toHaveBeenCalledWith({ version: 1, kind: 'dividend-steps', instrument: 'SHEL.LSE',
     fields: { date: 'ex_dividend_date', amount: 'amount', currency: 'currency' } });
+});
+
+it('preserves applied dividend field aliases on a verified-empty refresh', async () => {
+  const save = vi.fn();
+  const saved = { version: 1, kind: 'dividend-steps', instrument: 'SHEL.LSE',
+    fields: { date: 'aliased_ex_date', amount: 'aliased_amount', currency: 'aliased_currency' } } as const;
+  render(<LinkedChartRecipeControls kind="dividend-steps" saved={saved} verifiedEmpty columns={[]} loadSymbols={loadSymbols}
+    loadSourceChoices={async () => [{ value: 'SHEL.LSE', label: 'SHEL.LSE' }]} disabled={false} onApply={save}/>);
+  await waitFor(() => expect(screen.getByRole('button', { name: /apply/i })).toBeEnabled());
+  fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+  expect(save).toHaveBeenCalledWith(saved);
 });

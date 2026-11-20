@@ -121,3 +121,23 @@ it.each(engines)('%s preserves full-record income coverage at a period-count lim
     root.dispose();
   }
 });
+
+it.each(engines)('%s preserves the acquired amount-basis conflict after hiding the contradictory column and linking', async (_, make) => {
+  const [root, child] = ['root', 'child'].map(make);
+  try {
+    const receipt = { ...dividendEvidence, diagnostics: ['amount_basis_conflict'],
+      unsafe: { ...dividendEvidence.unsafe, amount_basis_conflict: true } };
+    const first = await edited(root, 'root', snapshot([{ ...dividendRow, amount_basis: 'unadjusted' }], receipt));
+    const second = await edited(child, 'child', await subset(root, first));
+    const chart = await child.chartData(second, ['ex_dividend_date', 'amount', 'currency'], signal);
+    expect(chart.rows[0].values).not.toHaveProperty('amount_basis');
+    expect(runRecipe(chart, { kind: 'dividend-steps', version: 1, instrument: 'SHEL.LSE',
+      fields: { date: 'ex_dividend_date', amount: 'amount', currency: 'currency' } },
+    { today: '2026-06-01', theme: 'light', maxDecimals: 2 })).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/conflicting amount basis/),
+    });
+  } finally {
+    root.dispose();
+    child.dispose();
+  }
+});

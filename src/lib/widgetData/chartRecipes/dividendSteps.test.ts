@@ -151,7 +151,7 @@ describe('dividend steps', () => {
     const parameters = { chart_source: 'true', symbol: 'SHEL.LSE', start_date: first, end_date: fourth };
     const url = new URL(`https://example.test${endpoint}?${new URLSearchParams(parameters)}`);
     const rows = [dividendRow];
-    const chart_evidence = status === 'verified' ? dividendEvidence : { ...dividendEvidence, coverage: { status } };
+    const chart_evidence = status === 'verified' ? dividendEvidence : { ...dividendEvidence, diagnostics: ['unknown_coverage'], coverage: { status } };
     const matched = backendFinancialResponse({ results: rows, extra: { results_metadata: { chart_evidence } } }, url);
     expect(matched?.evidence).toEqual(chart_evidence);
     const acquired = datasetFromRows(rows, 'dividends', 1, 'backend', undefined, [], undefined, {
@@ -185,18 +185,18 @@ describe('dividend steps', () => {
   });
 
   it.each([
-    [snapshot([event(second, .2)], { coverage: { status: 'unknown' } }), /coverage.*unknown/i],
-    [snapshot([event(second, .2)], { requested_start: '2025-12-31', coverage: clipped.coverage }), /coverage.*clipped/i],
-    [snapshot([event(second, .2)], { requested_start: null, requested_end: null, coverage: { status: 'unknown' } }), /explicit.*inclusive/i],
-    [snapshot([event(second, .2)], { raw_count: 2, unsafe: { ...dividendEvidence.unsafe, invalid_ex_date: true } }), /invalid.*ex-dividend date/i],
-    [snapshot([event(second, .2), event(second, .2)], { duplicate_dates: [second] }), /multiple.*same ex-dividend date/i],
-    [snapshot([event(second, .2)], { unsafe: { ...dividendEvidence.unsafe, instrument_conflict: true } }), /conflicting.*instrument/i],
-    [snapshot([event(second, .2)], { unsafe: { ...dividendEvidence.unsafe, amount_basis_conflict: true } }), /conflicting.*amount basis/i],
+    [snapshot([event(second, .2)], { diagnostics: ['unknown_coverage'], coverage: { status: 'unknown' } }), /coverage.*unknown/i],
+    [snapshot([event(second, .2)], { requested_start: '2025-12-31', diagnostics: ['clipped_coverage'], coverage: clipped.coverage }), /coverage.*clipped/i],
+    [snapshot([event(second, .2)], { requested_start: null, requested_end: null, diagnostics: ['unknown_coverage'], coverage: { status: 'unknown' } }), /explicit.*inclusive/i],
+    [snapshot([event(second, .2)], { raw_count: 2, diagnostics: ['invalid_ex_date'], unsafe: { ...dividendEvidence.unsafe, invalid_ex_date: true } }), /invalid.*ex-dividend date/i],
+    [snapshot([event(second, .2), event(second, .2)], { diagnostics: ['duplicate_ex_date'], duplicate_dates: [second] }), /multiple.*same ex-dividend date/i],
+    [snapshot([event(second, .2)], { diagnostics: ['instrument_conflict'], unsafe: { ...dividendEvidence.unsafe, instrument_conflict: true } }), /conflicting.*instrument/i],
+    [snapshot([event(second, .2)], { diagnostics: ['amount_basis_conflict'], unsafe: { ...dividendEvidence.unsafe, amount_basis_conflict: true } }), /conflicting.*amount basis/i],
     [snapshot([event(second, .2)], { payment_currencies: ['GBP', 'USD'], raw_count: 2,
-      event_dates: [first, second], invalid_amount_dates: [first], unsafe: { ...dividendEvidence.unsafe, currency_conflict: true } }), /conflicting.*payment currenc/i],
+      event_dates: [first, second], invalid_amount_dates: [first], diagnostics: ['currency_conflict', 'invalid_amount'], unsafe: { ...dividendEvidence.unsafe, currency_conflict: true } }), /conflicting.*payment currenc/i],
     [snapshot([event(second, .2, { currency: null })], { payment_currencies: [],
-      unsafe: { ...dividendEvidence.unsafe, unknown_payment_currency: true } }), /unknown.*payment currency/i],
-    [snapshot([event('2025-12-31', .2)], { unsafe: { ...dividendEvidence.unsafe, outside_requested_window: true } }), /outside.*window/i],
+      diagnostics: ['unknown_payment_currency'], unsafe: { ...dividendEvidence.unsafe, unknown_payment_currency: true } }), /unknown.*payment currency/i],
+    [snapshot([event('2025-12-31', .2)], { diagnostics: ['outside_requested_window'], unsafe: { ...dividendEvidence.unsafe, outside_requested_window: true } }), /outside.*window/i],
   ] satisfies [WidgetDataset, RegExp][])('refuses unsafe or unverified acquired data %#', (acquired, message) => {
     expect(runRecipe(acquired, options, context)).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(message) });
   });

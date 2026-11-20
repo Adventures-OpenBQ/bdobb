@@ -1312,6 +1312,9 @@ it('dotted_selector_retains_envelope_evidence', async () => {
     expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
     await fetchWidgetData(b, w, { ...params, chart_source: 'false' }, undefined, undefined, undefined, context);
     expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+    Object.assign(results, { completeness: 'paged' });
+    expect(await fetchWidgetData(b, w, params, undefined, undefined, undefined, context)).toEqual(results);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
   } finally {
     await server.close();
   }

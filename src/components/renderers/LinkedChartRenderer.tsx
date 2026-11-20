@@ -17,6 +17,7 @@ import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartReci
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
+import { admitDividendWindow, admitIncomeUnits, cohortIssue, incomePeriodIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
@@ -104,18 +105,45 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         signal.throwIfAborted();
         if (revisionKey(data.revision) !== revisionKey(revision) || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
             throw new Error('The selected source revision changed. Reload the chart choices.');
-        if (kind === 'income-sankey') return incomeSankeyPeriodChoices(data).map(period => ({
-            value: period.columnId,
-            label: [`${period.kind}${period.fiscalYear ? ' ' + period.fiscalYear : ''}`,
-                period.kind === 'FQ' ? period.fiscalPeriod : null, period.end].filter(Boolean).join(' · '),
-        }));
         const evidence = readFinancialEvidence(data.provenance);
+        if (kind === 'income-sankey') {
+            if (evidence?.kind !== 'income') return [];
+            const units = admitIncomeUnits(evidence);
+            if (!units.ok) throw new Error(units.message);
+            const periods = new Map(evidence.periods.map(period => [period.period_end, period]));
+            return incomeSankeyPeriodChoices(data).map(period => ({
+                value: period.columnId, issue: incomePeriodIssue(periods.get(period.end)!),
+                label: [`${period.kind}${period.fiscalYear ? ' ' + period.fiscalYear : ''}`,
+                    period.kind === 'FQ' ? period.fiscalPeriod : null, period.end].filter(Boolean).join(' · '),
+            }));
+        }
         if (kind === 'bubble-regression') {
             if (evidence?.kind !== 'screener') throw new Error('Acquire screening data with a validated screener receipt.');
-            return dateField ? bubblePriceDates(data, dateField).map(value => ({ value, label: value })) : [];
+            const issue = screenerIssue(evidence);
+            if (issue) throw new Error(issue);
+            const cohorts = new Map(evidence.cohorts.map(cohort => [cohort.price_date, cohort]));
+            return dateField ? bubblePriceDates(data, dateField).map(value => {
+                const cohort = cohorts.get(value);
+                return { value, label: value, issue: cohort ? cohortIssue(cohort) : 'Choose a presented date from the acquired screener page.' };
+            }) : [];
         }
-        return evidence?.kind === 'dividends' ? [{ value: evidence.qualified_symbol, label: evidence.qualified_symbol }] : [];
+        if (evidence?.kind !== 'dividends') return [];
+        const admission = admitDividendWindow(evidence);
+        return [{ value: evidence.qualified_symbol, label: evidence.qualified_symbol, verifiedEmpty: admission.ok && evidence.raw_count === 0
+            && !data.rows.length && !data.provenance.inputMayContainAggregates, issue: admission.ok ? undefined : admission.message }];
     }, [executor, source, view.ready, view.sourceRevision, view.status]);
+    const columnless = !viewer && !!view.ready && view.ready.topLevelCount === 0 && !presented.length;
+    const [emptyProof, setEmptyProof] = useState<typeof loadSourceChoices>();
+    useEffect(() => {
+        if (!columnless) return;
+        const controller = new AbortController();
+        void loadSourceChoices('dividend-steps', undefined, controller.signal).then(choices => {
+            if (!controller.signal.aborted && choices.some(choice => 'verifiedEmpty' in choice && choice.verifiedEmpty))
+                setEmptyProof(() => loadSourceChoices);
+        }).catch(() => { /* An unavailable source cannot certify an empty acquisition. */ });
+        return () => controller.abort();
+    }, [columnless, loadSourceChoices]);
+    const verifiedEmpty = columnless && emptyProof === loadSourceChoices;
     const active = JSON.stringify(view.sourceRevision);
     const quarterScope = JSON.stringify([identity, source, active, settings.category]);
     const [completed, setCompleted] = useState<Completed>();
@@ -226,7 +254,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={editing} onChange={e => {
         const type = e.target.value as LinkedChartSettings['type'];
         if (isRecipeType(type)) {
-          if (!recipeAvailability(type, presented)) setDraft({ scope: editScope, kind: type });
+          if (!recipeAvailability(type, presented, verifiedEmpty)) setDraft({ scope: editScope, kind: type });
           return;
         }
         if (type === settings.type) { setDraft(undefined); return; }
@@ -234,11 +262,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         void commit(type === 'bullet' && !next.category && fields.some(c => c.id === 'fiscal_period') ? { ...next, category: 'fiscal_period' } : next);
       }}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="bullet">Bullet</option><option value="waterfall">Waterfall</option>
       {Object.entries(recipeLabels).map(([kind, label]) => {
-        const issue = recipeAvailability(kind as RecipeOptions['kind'], presented);
+        const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
       {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
-        columns={presented} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
