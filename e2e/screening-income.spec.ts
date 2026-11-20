@@ -65,6 +65,32 @@ async function hover(page: Page, mark: Locator) {
   await page.mouse.move(x, y);
 }
 
+async function expectReadableTooltip(graph: Locator) {
+  const rendered = await tip(graph).locator('.hovertext').evaluate(label => {
+    const foreground = getComputedStyle(label.querySelector('text.nums')!).fill;
+    const path = getComputedStyle(label.querySelector('path')!);
+    const rgb = (color: string) => (color.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+    const luminance = (channels: number[]) => {
+      const linear = channels.map(channel => {
+        const srgb = channel / 255;
+        return srgb <= .04045 ? srgb / 12.92 : ((srgb + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+    };
+    const text = luminance(rgb(foreground));
+    const opacity = Number(path.fillOpacity);
+    // Plotly fades the label over the canvas. Black and white bound the
+    // luminance of any underlying chart colors, including the ribbons.
+    const backgrounds = [0, 255].map(under => luminance(rgb(path.fill)
+      .map(channel => channel * opacity + under * (1 - opacity))));
+    const lightest = Math.max(...backgrounds), darkest = Math.min(...backgrounds);
+    const minimumContrast = text > lightest ? (text + .05) / (lightest + .05)
+      : text < darkest ? (darkest + .05) / (text + .05) : 1;
+    return { foreground, background: path.fill, opacity, minimumContrast };
+  });
+  expect.soft(rendered.minimumContrast, JSON.stringify(rendered)).toBeGreaterThanOrEqual(4.5);
+}
+
 // For a curved SVG ribbon, the box center can lie outside the actual painted area.
 async function ribbonPoint(ribbon: Locator) {
   await ribbon.scrollIntoViewIfNeeded();
@@ -80,6 +106,7 @@ async function ribbonPoint(ribbon: Locator) {
 }
 
 test('reads delivered scope and original values from rendered bubbles, steps and Sankey geometry in both themes', async ({ page }, info) => {
+  await page.emulateMedia({ colorScheme: 'light' });
   await importScreening(page);
   await ready(page);
   const screen = card(page, bubble);
@@ -118,9 +145,11 @@ test('reads delivered scope and original values from rendered bubbles, steps and
   await expectPaintedRibbons(sankey);
   await hover(page, nodes(sankey).first());
   await expect(tip(sankey)).toContainText(/Revenue.*Reported 100 USD × 1000/);
+  await expectReadableTooltip(sankey);
   const link = await ribbonPoint(ribbons(sankey).nth(1));
   await page.mouse.move(link.x, link.y);
   await expect(tip(sankey)).toContainText(/Cost of revenue.*Reported 40 USD × 1000/);
+  await expectReadableTooltip(sankey);
 
   for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme });
@@ -278,7 +307,10 @@ test('taps Sankey nodes and links, scrolls from a fixed node and zooms fitting p
     await page.emulateMedia({ colorScheme: 'dark' });
     await importScreening(page);
     await ready(page);
-    await page.setViewportSize({ width: 430, height: 950 });
+    await page.setViewportSize({ width: 390, height: 1100 });
+    // Keep the actual import notice below the card in the captured viewport.
+    const incomeCard = card(page, income);
+    await incomeCard.evaluate(el => el.scrollIntoView({ block: 'start' }));
     const sankey = plot(page, income);
     const viewport = card(page, income).locator('.chart-scroll-viewport');
     await expect(viewport).toHaveClass(/chart-scroll-viewport--touch-scroll/);
@@ -293,11 +325,13 @@ test('taps Sankey nodes and links, scrolls from a fixed node and zooms fitting p
     const node = await center(nodes(sankey).first());
     await page.touchscreen.tap(node.x, node.y);
     await expect(tip(sankey)).toContainText(/Revenue.*Reported 100 USD × 1000/);
-    await card(page, income).screenshot({ path: info.outputPath('narrow-sankey-node.png') });
+    await expectReadableTooltip(sankey);
+    await incomeCard.screenshot({ path: info.outputPath('narrow-sankey-node.png') });
     const point = await ribbonPoint(ribbons(sankey).nth(1));
     await page.touchscreen.tap(point.x, point.y);
     await expect(tip(sankey)).toContainText(/Cost of revenue.*Reported 40 USD × 1000/);
-    await card(page, income).screenshot({ path: info.outputPath('narrow-sankey-link.png') });
+    await expectReadableTooltip(sankey);
+    await incomeCard.screenshot({ path: info.outputPath('narrow-sankey-link.png') });
     const scrollTop = () => viewport.evaluate(el => el.scrollTop);
     const draggable = await center(nodes(sankey).nth(2));
     const beforeScroll = await scrollTop();
@@ -308,7 +342,10 @@ test('taps Sankey nodes and links, scrolls from a fixed node and zooms fitting p
     const terminal = await center(netIncome);
     await page.touchscreen.tap(terminal.x, terminal.y);
     await expect(tip(sankey)).toContainText(/Net income.*Reported 20 USD × 1000/);
-    await card(page, income).screenshot({ path: info.outputPath('narrow-sankey-scrolled.png') });
+    const notice = await page.getByText('Imported 1 dashboard, 6 cards', { exact: true }).boundingBox();
+    const cardBounds = (await incomeCard.boundingBox())!;
+    if (notice) expect(cardBounds.y + cardBounds.height).toBeLessThanOrEqual(notice.y);
+    await incomeCard.screenshot({ path: info.outputPath('narrow-sankey-scrolled.png') });
     const dimensions = () => sankey.evaluate(el => {
       const { width, uirevision } = (el as Graph)._fullLayout;
       return { width, uirevision };

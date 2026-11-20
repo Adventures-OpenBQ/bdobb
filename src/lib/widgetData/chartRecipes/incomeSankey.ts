@@ -247,6 +247,11 @@ export function buildIncomeSankey(dataset: WidgetDataset, options: RecipeOptions
     type: 'sankey', uid: 'income-sankey', arrangement: 'fixed', orientation: 'v',
     domain: { x: [graphLeft, graphRight], y: [0, 1] },
     textfont: { color: 'rgba(0,0,0,0)', shadow: 'none' },
+    // Plotly partially composites Sankey tooltips over the ribbons. Use a
+    // palette with readable text even over the lightest and darkest fills.
+    hoverlabel: context.theme === 'dark'
+      ? { bgcolor: '#0f172a', bordercolor: '#94a3b8', font: { color: '#f8fafc' } }
+      : { bgcolor: '#f8fafc', bordercolor: '#64748b', font: { color: '#1a1f28' } },
     node: {
       align: 'left', pad: 0, thickness: 14,
       // Plotly 3.7 scales explicit x/y by domain width/height before applying
