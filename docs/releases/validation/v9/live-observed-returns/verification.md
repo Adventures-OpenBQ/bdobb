@@ -10,21 +10,27 @@ bounded daily US listing requests when the backend account has access.
 
 | Artifact | Identity |
 | --- | --- |
+| Client baseline | `3d7b3c9a7b8ec7518de50a5c407d9521e65a68c2` |
+| Client release-check input | `ce39607e16a3cefb3a8fa59bebf6d796d3b974e0`, tree `3be69e0c29f816f60570b364fb654ec8d7ec05b4` |
+| Canonical provider baseline | `a7597ecfb02d087c98c80df926b057f134b076e1` |
 | Canonical openbq-eodhd | `8c06e57ea08f85c3b48a6eff8d99068486b180dc`, tree `848e07485337ccc942f50872fdb43bcb9cb84954`, distribution 9.0.1 |
 | Docker baseline | `86ccb0a61662714b051c9a63d3436139aca851d5` |
 | Docker certifi change | `3eb7252e4209b724ef07220cd6d0eab61de2df30` |
-| Docker pairing | `deb1811d3c958cdd79efa87be7a0247cbdf98d73` |
-| Client acquisition and recipe code | `dcd2541383f8f58044fca7374ea5e46dac5d9afa` |
+| Docker pairing | `deb1811d3c958cdd79efa87be7a0247cbdf98d73`, tree `3cb533f2f885d7e2a26f1017011e4fac80e8db77` |
+| Client product and unit test input | `b4f35811ca6b129b5d477f66bd3e9aa950323e75` |
+| Strengthened Rita browser assertions | `dcd2541383f8f58044fca7374ea5e46dac5d9afa` |
+| Client installed transport replay | `8ee95590147751f43634ea608b96799081b52cd2` |
 | Vendored file inventory | 151 canonical paths, `source.json` SHA-256 `6651d70dfc1a447ed0e0cee97cb5f523f5fa5cc6b9f135dbca160865bfc52693` |
 | Installed wheel files | 95 package files match the pin. All 104 hashed RECORD entries match, including generated metadata. Package SHA-256 inventory digest `cc771f741daeb7eaa49a0d7d59c94b9f1d4f2932f1db889c1dee0a2d36e5e14f`. |
 | Local v3 qualification image | `openbq-v9-live-observed-returns:qualification-20261120`, OCI index `sha256:dcaa9362191ac90078313522d32a10ba2f4292f90c0db7d246a446fda5354f56` |
 | linux/arm64 manifest | `sha256:56c0063a7a67215936e21ffa6c94f1d2ceed0e8ceb5e183b342c897964d3ebc6` |
 | Image config | `sha256:dd3d756d280c8a6a1421aeee61d24ff7b6c390043a88305e4c7dfd585aa83d70` |
 
-The vendor copy used `git ls-tree` and per-path `git show` at the reviewed
-provider commit. Every path and byte was compared. The wheel inventory
-compares installed package files and wheel RECORD paths with the package
-subset of the pin.
+All three isolated `codex/v9-live-observed-returns` checkouts were clean at
+the release-check inputs. A fresh check compared the canonical and vendored
+Git paths, bytes and manifest hashes at the pinned commits. The wheel
+inventory compares installed package files and wheel RECORD paths with the
+package subset of the same pin.
 
 ## Served transport
 
@@ -108,21 +114,93 @@ CA file. [Certifi advisory](https://github.com/certifi/python-certifi/security/a
 | Installed `pytest` and parity | Network-disabled v3 container, 24 tests and 33 subtests passed with no skips. The run reported one existing OpenBB aiohttp inheritance deprecation. Installed package and RECORD hash comparisons passed. |
 | Host Docker `pytest tests v3/tests` | 121 passed and 15 subtests passed. The first collection attempt lacked PyYAML. The rerun used test-only PyYAML 6.0.3. |
 | Canonical and vendor parity | 151 byte comparisons passed and the source pin test passed. |
-| Canonical provider suite inherited from Task 1 | 948 passed. One optional ArcticDB cache test was skipped. |
+| Canonical `python -m pytest -q` at `8c06e57e` | 948 passed. One optional ArcticDB cache test was skipped. Seven warnings came from installed OpenBB packages and extensions. |
 | Canonical selector preflight | The nested selector passed for both mirrors. A subsequent assertion requiring an explicit widget override failed in both cases and was withdrawn after confirming that the generated default supplies `data.dataKey = "results"`. |
 | Public image capture | HTTP 200, content assertions passed and fixture written. An aiohttp process-exit callback then raised an ignored cross-event-loop `RuntimeError`. |
 | Chromium 151.0.7922.34 with TypeScript and compiled Rust | Five replay tests passed per engine, zero retries or skips. The five Rust runs loaded the actual WASM binary and TypeScript loaded none. The binary SHA-256 was `eb55d3eea863ce87460e430d638e6a5db961c99370708429adac0be349c111fa`. |
-| Client typecheck, targeted lint and scrub | Passed. |
+| Client `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:run` at `b4f35811` | 10,242 passed, 47 optional integration skips across seven files. The first run had one failure in the local snapshot prompt. Restoring the prompt passed the focused test and the full rerun. Unrelated React test warnings were present. |
+| Client `pnpm pivot:test` at `17669a66` | 199 Rust core, 1 WASM crate and 19 wire codec tests passed. The later alias correction passed 115 focused cases with actual compiled WASM. |
+| Client `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:web` | 57 passed, zero skips. |
+| Client `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm scrub` | Exit 0 for typecheck, full lint, scrub and header checks. |
+| Client `pnpm knip` | Exit 0. Its unused exported `Monitor` type warning in `src/browser-shim/window.ts` also appears in the baseline. |
+| Client `pnpm pivot:verify` and `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:pivot:packaging` | Exit 0. All three packaging tests passed, including refusal of missing, stale and altered compiled artifacts. |
+| Client `PIVOT_WASM_VERIFY_ONLY=1 pnpm build` and `PIVOT_WASM_VERIFY_ONLY=1 pnpm build:web` | Exit 0 for the production app frontend and private web function. The existing mixed static/dynamic import warnings and 500 kB chunk warning appeared in the builds. |
 
 The first Chromium TypeScript preflight rendered both standard alias boxes
 and matched their worker samples. Its binary observer misidentified the
 Vite WASM URL shim. The replay now counts only successful
 `application/wasm` responses.
 
+Since the client full-unit run, the Git diff contains only browser tests,
+captured fixtures and release notes. The Rust crate, build script and wire
+codec test inputs also match the `pnpm pivot:test` run. The provider full
+suite and Docker runtime evidence apply to the exact provider and Docker
+commits listed above. Release-check commands ran on Darwin arm64 with Node
+26.13.0, pnpm 10.34.4 and the verified compiled WASM bytes.
+
+## Client browser behavior
+
+| Mode | Product matrix at `b4f35811` | Rita assertions at `dcd25413` |
+| --- | --- | --- |
+| Chromium 151.0.7922.34, TypeScript | 22 passed, including 12 live and 10 existing return and geometry cases | 2 passed |
+| Chromium 151.0.7922.34, compiled Rust | 22 passed, plus a focused portable-copy rerun | 2 passed |
+| WebKit 26.5, TypeScript | 12 live cases passed | 2 passed |
+| WebKit 26.5, compiled Rust | 12 live cases passed, plus a focused portable-copy rerun | 2 passed |
+
+The browser checks exercised the source table, both figures and accessible
+samples, Parameters, filtering, common pins, source replacement and recovery,
+configured and pinned Rita, export/import and reacquisition. Controlled stale
+and failed Rita tool responses failed both strengthened assertions before the
+eight focused cases passed across the four modes. The first three Chromium
+TypeScript attempts exposed fixture locator, import, WASM observation and
+GET counting issues. They recorded 5 failures, then 1 failure with 6 passes,
+then 1 failure with 21 passes. A later concurrent run passed all live cases
+and failed one existing narrow-touch median hover case. The unchanged test
+passed in the serial 22-case run. The cause of the transient failure remains
+unconfirmed.
+
 To replay the captured transport in a development checkout, run
 `VITE_TABLE_ENGINE=typescript pnpm exec playwright test e2e/installed-return-summary.spec.ts`
 and repeat with `VITE_TABLE_ENGINE=rust`. The replay uses only the committed
 captures and the local browser harness.
 
-This qualification covers a local image. Broader project verification and
-the independent review are tracked separately. [Review](review.md)
+| Captured fixture | SHA-256 |
+| --- | --- |
+| `canonical-standards.json` | `cc6240f361b50930c6e7d533b0f6a05332dccf776dc14579039ffabb1cbed9f3` |
+| `deterministic-sdk.json` | `1ad0ae85769c72b38a3db998f6e21791853cd2e65fa97083401f00f4d1be7669` |
+| `public-demo.json` | `1564b9e9893cb620c7baf8a8397e6a154f7db0dd8cda05699037f7c6d82d31a9` |
+
+## Production app bundle
+
+The baseline and release build each emitted 15 `dist/assets/*.js` files.
+The measurement sums exact byte sizes and independently compressed each
+file with Python `gzip.compress(data, mtime=0)`. Source maps, `.mjs`, WASM,
+CSS and image assets are outside the JavaScript comparison.
+
+| Build | Raw bytes | Gzip bytes |
+| --- | ---: | ---: |
+| Baseline `3d7b3c9a` | 8,582,793 | 2,696,556 |
+| Release-check input `ce39607e` | 8,612,818 | 2,705,709 |
+| Delta | +30,025 (+0.35%) | +9,153 (+0.34%) |
+
+Eight JavaScript chunks match the baseline SHA-256. The remaining chunks
+are listed with their size deltas and final fingerprints.
+
+| Final JavaScript chunk | Raw delta | Gzip delta | SHA-256 |
+| --- | ---: | ---: | --- |
+| `HelpDialog-Ci1dEJKi.js` | 0 | 0 | `b9204066f7ccfb96a3f0f5316951d3ff8f7ccaf12da3857bbc24c87e46bcce15` |
+| `MarkdownEditorRenderer-BuZDdBZZ.js` | 0 | -2 | `6fffa5fc06d831ee1a4ae8360598a4fa7500e71039ff85cf7941e320d0e92b08` |
+| `index-LgEINeZK.js` | +7,407 | +2,150 | `2f4f9fbdfba7ccc756d3b3654d9fa9fc4519676e0c37d18dd72ed3e22500c2a1` |
+| `kpi.worker-CKq4SyA_.js` | +5,011 | +1,564 | `aee35b91210154ec4f7be72a7fce5093dacf443500d7da3852296a29dbaf9813` |
+| `recipe.worker-Bo2xkmfK.js` | +7,067 | +2,204 | `6cebc86133593392c04e82378d4a6755f35f5bb7fb101e013fc49bcc9b2f06d7` |
+| `rust.worker-f7fctsqO.js` | +5,322 | +1,645 | `4e10f107ba93625cfa1404dd59fa2a1a4c9ce516434491631678c87ec7c5721f` |
+| `table.worker-Bv0sf6Wj.js` | +5,218 | +1,592 | `423c801de8f913e9c2a46d0b20c2541ccc3a041c8cb4a3bd95a7b55ebb3c3323` |
+
+The dependency manifest, lock and Plotly trace registry match the baseline.
+The installed Plotly version is 3.7.0. The app, private web package and
+baseline use the same 4,570,872-byte WASM binary described above.
+
+The installed-image proof covers the local `linux/arm64` v3 Docker image
+and its two EODHD mirrors. Browser proof comes from desktop-hosted Chromium
+and WebKit. Physical devices, `linux/amd64` and a live ArcticDB service
+remain outside this qualification. [Review](review.md)

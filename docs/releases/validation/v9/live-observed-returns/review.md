@@ -1,9 +1,23 @@
 # Live observed returns qualification review
 
-The provider and Docker source pin were reviewed against the approved fixed
-window, receipt transport and SDK request contract. The independent Task 5
-review identified two documentation corrections reflected below. Follow-up
-review and the final release-readiness review are pending.
+Tasks 1–5 completed independent task review against the approved design.
+The task reviewers closed all Critical and Important findings. Final
+independent review of the three branches together is pending.
+
+| Task | Reviewed change |
+| --- | --- |
+| Provider acquisition | Reviewed the per-listing SDK call count, plain routes, exact repeats and unsafe receipts at `8c06e57e`. |
+| Client admission | `709be6af` requires an original observation before a safe receipt can account for a duplicate. Follow-up review verified rejection of an orphan duplicate count. |
+| Sample admission and lineage | `e0adcc4c` uses the acquired adjusted-close origin when display aliases would otherwise fail worker preflight. Follow-up review checked both engines and both views. |
+| Controls and source lifecycle | `dcd25413` checks the delivered Rita tool result for each configured and pinned turn, including the new bounds after Run. Follow-up review verified the controlled failures and passing four-mode replay. |
+| Paired image and live capture | `ce39607e` records the canonical runtime's declared dependency bounds and the full qualification run history. Follow-up review verified both documentation corrections. |
+
+The release checks verified all three source identities, vendor parity,
+compiled artifact fingerprints and the production bundles. The earlier
+test results are attributed to their exact inputs. The independent
+whole-change review still covers receipt contents and backend-only
+authority, both kinds of coordinate loss,
+caller order, ordinary routes and source replacement races. [Approved design](../../../../superpowers/specs/2026-11-20-v9-live-observed-returns-design.md) · [Execution plan](../../../../superpowers/plans/2026-11-20-v9-live-observed-returns.md)
 
 - Re-vendoring copied each tracked file from the canonical Git object. The
   installed wheel comparison checks its package inventory and every packaged
@@ -29,11 +43,19 @@ review and the final release-readiness review are pending.
   The public examples independently verify the source dates and adjusted
   prices. Scope remains observed quote-to-quote returns. Entitlement and
   exchange-session completeness remain unknown outside these acquisitions.
+- The ordinary route retains its prior table behavior. Opted-in responses
+  use adjusted-price rows and may report an unsafe basis or an empty
+  counted result. The client requires a safe reconciled receipt to qualify
+  the history for a return summary.
 - The public capture received HTTP 200, verified the data and wrote the
   fixture before an aiohttp shutdown callback raised an ignored
   cross-event-loop `RuntimeError`. The provider full-suite result is
   inherited from Task 1, with 948 passes and one optional ArcticDB cache
   skip.
+- The existing narrow-touch median hover failed once concurrently in
+  Chromium TypeScript and passed unchanged in the serial matrix. The exact
+  cause remains open. The current Knip warning, build notices and optional
+  integration skips are recorded with their scope in verification.
 
 See [paired verification](verification.md) for exact identities, results and
 fixture paths.
