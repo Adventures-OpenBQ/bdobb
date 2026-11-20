@@ -71,3 +71,37 @@ it.each(engines)('%s aggregate recalculation keeps the raw receipt and omits all
     expect(result.provenance.metadata).not.toHaveProperty('chartSourcePresentationProof');
   } finally { root.dispose(); }
 });
+
+it.each(engines)('%s retains only effective viewer checklist and page restrictions across a link', async (_, make) => {
+  const keep = JSON.stringify(['string', 'keep']);
+  for (const key of ['pivot:filter:category', 'pivot:page']) {
+    const baseline = { categoryId: 'category', memberKeys: [keep] };
+    const definition = { table: {}, search: '', analytical: {
+      schemaVersion: 1 as const, enabled: true,
+      params: { promotePage: true, filters: [{ id: 'filter', categoryId: 'category', label: 'ID', multiSelect: true }] },
+      categories: [{ id: 'category', name: 'ID', sourceFieldId: 'id', transform: 'native' as const }],
+      measures: [], formulas: [], resultFilters: [], subtotals: { grandTotal: false, groups: false },
+      checklists: key === 'pivot:page' ? [] : [baseline],
+      layout: { rows: [], columns: [], values: [], ...(key === 'pivot:page' ? { page: baseline } : {}) },
+    } };
+    for (const memberKeys of [null, [keep]]) {
+      let input = datasetFromRows(structuredClone(sourceRows), 'root', 1, 'localFile');
+      input.provenance.metadata = { chartSources: { metric: sourceReceipt } };
+      for (const name of ['root', 'child']) {
+        const worker = make(name);
+        const revision = { widgetId: name, input: 1, model: 1, output: 1 };
+        try {
+          await worker.registerInput(input, 1, signal);
+          const viewer = { source: 'viewer' as const, memberKeys: name === 'root' ? memberKeys : null };
+          await worker.applyModel(definition, { kind: 'none' }, revision, signal, true, undefined, [], { [key]: viewer });
+          input = await subset(worker, revision);
+          expect(input.rows).toHaveLength(memberKeys === null ? 2 : 1);
+          expect(input.provenance.metadata?.chartSources).toEqual({ metric: sourceReceipt });
+          expect(input.provenance.metadata?.chartSourceFiltered).toBe(memberKeys === null ? undefined : true);
+        } finally {
+          worker.dispose();
+        }
+      }
+    }
+  }
+});

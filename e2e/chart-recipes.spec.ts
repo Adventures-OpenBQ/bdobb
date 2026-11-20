@@ -232,3 +232,31 @@ test('a narrow touch card renders a dense curve and preserves its numeric maturi
     await context.close();
   }
 });
+
+test('recipe worker refuses cloned receipt options and echoes the request identity', async ({ page }) => {
+  await page.goto('/');
+  const identity = { requestId: 37, sourceWidgetId: 'chart-source', inputRevision: 4, resultRevision: 6, outputRevision: 9 };
+  const reply = await page.evaluate(async identity => {
+    const worker = new Worker('/src/lib/widgetData/chartRecipes/recipe.worker.ts', { type: 'module' });
+    try {
+      const received = new Promise((resolve, reject) => {
+        worker.onmessage = event => resolve(event.data);
+        worker.onerror = event => reject(new Error(event.message));
+        worker.onmessageerror = () => reject(new Error('Unreadable worker reply'));
+      });
+      worker.postMessage({
+        identity,
+        dataset: { columns: [], rows: [], resultRevision: 6, outputRevision: 9,
+          provenance: { sourceWidgetId: 'chart-source' }, completeness: { kind: 'unknown', warnings: [] },
+          freshness: { availability: 'available', stale: false } },
+        options: { kind: 'drawdown', version: 1, fields: { date: 'date', price: 'adjusted_close' }, symbols: ['A'],
+          chartSources: { metric: { version: 1 } } },
+        context: { theme: 'light', maxDecimals: 2, today: '2026-11-19' },
+      });
+      return await received;
+    } finally {
+      worker.terminate();
+    }
+  }, identity);
+  expect(reply).toEqual({ ...identity, result: { ok: false, refused: true, message: 'Remove unsupported recipe option "chartSources".' } });
+});

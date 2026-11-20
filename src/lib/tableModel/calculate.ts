@@ -456,6 +456,6 @@ export function calculateTable(input: {
     columns.sort((a, b) => rank(a.id) - rank(b.id));
     const filtered = !!input.search || !!input.table.columnFilters?.length || !!model.checklists.length || !!model.layout.page || !!model.resultFilters.length;
     const financial = financialPresentationProvenance(etfPresentationProvenance(input.source.provenance, filtered), filtered);
-    const provenance = chartPresentationProvenance(financial, filtered || !!Object.keys(input.runtimeParams ?? {}).length);
+    const provenance = chartPresentationProvenance(financial, filtered);
     return { paramDiagnostics, groupResolutions, compiled, pool, recordIds, groups, rows, columns, totals, totalCells, facets, errors, warnings, complete: (!execution || errors.length===0) && sourceQualificationErrors.length === 0 && renderComplete && requiredErrors.length === 0 && page.errors.length === 0 && scopeErrors(pool, totals.scope).length === 0 && qualification.complete && requiredValid && !errors.some(e => e.code === 'missing-reference' || e.code === 'invalid-date' || e.code === 'fiscal-context'), selectionNamespace, eligibleRows, provenance: { ...provenance, ...(grouped ? { inputMayContainAggregates: true } : {}) } };
 }
