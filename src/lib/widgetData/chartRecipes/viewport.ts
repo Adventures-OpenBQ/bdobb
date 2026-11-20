@@ -16,6 +16,10 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
   return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
 }
 
+// Browser-verified drawing surface for both unit-bearing overlay axis titles.
+export const dualAxisOverlayMinPlotWidth = 320;
+export const dualAxisOverlayMinPlotHeight = 210;
+
 export const newsCalendarPlotHeight = 260;
 export const returnSummaryPlotHeight = 280;
 export const ownershipPlotHeight = 240;

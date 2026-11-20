@@ -258,3 +258,16 @@ it('accepts only the closed worker options without registering an authoring char
     expect(runRecipe(dataset, options as DualAxisOverlayOptions, context)).toMatchObject({ ok: false, refused: true });
   }
 });
+
+it.each([['price-eps', equity, equityOptions], ['cpi-ten-year', macro, macroOptions]] as const)(
+  '%s requires the minimum drawable size for both unit titles',
+  async (_recipe, snapshot, options) => {
+    const dataset = await acquire(snapshot);
+    expect(runRecipe(dataset, options, { ...context, viewportWidth: 320, viewportHeight: 210 })).toMatchObject({ ok: true });
+    for (const [viewportWidth, viewportHeight] of [[320, 190], [320, 209], [319, 210]]) {
+      expect(runRecipe(dataset, options, { ...context, viewportWidth, viewportHeight })).toMatchObject({
+        ok: false, refused: true, message: expect.stringMatching(/Increase the drawing area.*axes.*units/),
+      });
+    }
+  },
+);

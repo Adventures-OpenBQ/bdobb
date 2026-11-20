@@ -13,6 +13,7 @@ import {
 } from './overlayEvidence';
 import { decodeDualAxisOverlayOptions } from './settings';
 import type { DualAxisOverlayOptions, RecipeContext, RecipeRefusal, RecipeRequestOptions, RecipeResult } from './types';
+import { dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth } from './viewport';
 
 type Side = 'left' | 'right';
 type SessionTiming = 'before-market' | 'during-market' | 'after-market';
@@ -365,6 +366,10 @@ export function buildDualAxisOverlay(dataset: WidgetDataset, options: RecipeRequ
   if (options.kind !== 'dual-axis-overlay') return refuse('Choose a dual-axis overlay recipe.');
   const prepared = prepareOverlaySeries(dataset, options);
   if (!prepared.ok) return prepared;
+  const { viewportWidth = 640, viewportHeight = 360 } = context;
+  if (viewportWidth < dualAxisOverlayMinPlotWidth || viewportHeight < dualAxisOverlayMinPlotHeight)
+    return refuse(`Increase the drawing area to at least ${dualAxisOverlayMinPlotWidth} × ${dualAxisOverlayMinPlotHeight} pixels so both axes and their units are visible.`);
+
   const { notes, value: pair } = prepared;
   const { left, right } = pair;
   const leftValues = left.points.flatMap(point => point.value === null ? [] : [point.value]);
@@ -375,8 +380,8 @@ export function buildDualAxisOverlay(dataset: WidgetDataset, options: RecipeRequ
   if (!leftRange || !rightRange) return refuse(linearIssue);
   const leftTicks = overlayAxisTicks(leftRange, left.fact.unit), rightTicks = overlayAxisTicks(rightRange, right.fact.unit);
   const margin = { l: leftTicks.margin, r: rightTicks.margin, t: 20, b: 54, pad: 0, autoexpand: false };
-  const width = (context.viewportWidth ?? 640) - margin.l - margin.r;
-  const height = (context.viewportHeight ?? 360) - margin.t - margin.b;
+  const width = viewportWidth - margin.l - margin.r;
+  const height = viewportHeight - margin.t - margin.b;
   if (!(width > 0 && height > 0)) return refuse('Increase the drawing area so both axes and their units are visible.');
   if (!drawableValues(leftValues, leftRange, height) || !drawableValues(rightValues, rightRange, height)) return refuse(linearIssue);
 
