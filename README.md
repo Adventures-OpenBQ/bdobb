@@ -17,6 +17,17 @@ pnpm build
 pnpm e2e
 ```
 
+For a live, keyless FX exercise through your Tailscale HTTPS sidecar:
+
+```sh
+OPENBQ_FX_API=https://YOUR_NODE pnpm exec playwright test e2e/linked-surface-live.spec.ts
+```
+
+This checks real CFTC values, linked filtering/refresh/persistence, two source
+instances, inactive-tab ownership, both themes and 3D rotation. It uses one
+bounded provider wait with automatic retries disabled. Cold FX initialization
+can take longer than the ordinary local-fixture tests.
+
 The local reference backend must be started separately for `pnpm test:reference`; set `OPENBB_REFERENCE_URL` when using a different port. See [source provenance](docs/releases/provenance.md) and [test environment](docs/test-environment.md).
 
 AGPL-3.0-only for the application and first-party source changes. Copyright 2026 SecretoftheUniverse.com LLC. See [licensing and source availability](LICENSING.md). Earlier Apache grants and third-party notices remain in force.
