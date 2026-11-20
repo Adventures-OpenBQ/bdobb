@@ -24,7 +24,8 @@ The app checks a local file's declarations and consistency. It cannot independen
 | Client baseline | `0283dce2bb45afdfc2e6c422a4f77f4b70bb8c48` |
 | Prior isolated archive-reproducer repair | `73154c8082a78d78c79f3be799ca195f0a7142b6` |
 | Reviewed family group before paired source fix | `0c43dd6178f87e72ff1f521af68b0490966c02e7` |
-| Tested client | `dc97414184f803af7e4ba6e5742a10e2478e8ebb` |
+| Client used for the full unit, build, bundle and Chromium gates | `dc97414184f803af7e4ba6e5742a10e2478e8ebb`, two Chromium theme polls corrected at `ef23229b` |
+| Subsequent focused backend correction | `94e5860093d34c02d3445cc429a7c38f433d66d0` |
 | Provider baseline | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | Canonical provider | `f8f0166603f0b59f3f879b704b23582bd893e67d`, distribution 9.0.1 |
 | Canonical root / Docker vendor tree | `aad6d9c74450cfc5ae9f7fa38c4697b85f58e93c`, 149 tracked paths |
@@ -48,7 +49,7 @@ The vendor copy came from `git archive` of the canonical commit. The checked Git
 
 ## Client, native and browser gates
 
-| Gate on the tested product | Result |
+| Gate on the full client candidate at `dc974141` | Result |
 |---|---|
 | `pnpm typecheck`, `pnpm lint`, `pnpm scrub` | All passed. |
 | `pnpm test:run` | 543 files passed, seven opt-in files skipped. 10,135 tests passed, 47 skipped. |
@@ -63,6 +64,8 @@ The vendor copy came from `git archive` of the canonical commit. The checked Git
 At `9080d662`, the backend handoff regression suite passed 744 tests across nine files. Real local HTTP responses exercised a mounted source, an off-tab source, a group-bound symbol and a replacement backend origin. Each case started with AAPL's P/E of 19.875, held the new request, and checked that the old number cleared before the replacement response supplied 33.25. A subsequent refresh of that same request retained 33.25 with a stale label. Late successes and failures from the prior request could not restore 19.875. An unsubmitted form draft reused the registered input without another GET.
 
 At `dc974141`, 751 affected tests across nine files passed. The 10 HTTP parent cases include missing Scope on mounted and off-tab replacement origins, a selector-only refusal before GET, editing and reverting a Run-button source without a second GET, a refresh while an off-tab draft is un-run, and a header-case-only refresh. The runtime also tested a pending producer before GET and the different semantics of HTTP field names, values and cookie names. The completed AAPL 19.875× cleared on incompatible refusal, returned on a zero-GET draft revert and remained labeled stale after a genuinely compatible refresh failure.
+
+The focused correction at `94e58600` passed 775 affected tests in ten files, including 14 production HTTP parent cases. Typecheck, lint and scrub passed. The calendar case acquired December 29 AAPL rows, then held the real XNYS 2027 calendar response on January 6. Reverting a draft preserved the prior committed rows. After an explicit TSLA Run, reverting that draft could no longer reactivate AAPL during the hold, and the financial GET count remained one. Releasing the calendar for the committed TSLA question returned January 5 rows on the second GET. This test inspected producer rows and matching status. Separate tests confirmed that equivalent URL spellings preserve a failed refresh's stale value and that invalid addresses produce a source error. The full-client counts and emitted bundle sizes in this record precede this narrow correction.
 
 The installed-wire reproduction at the first correction captured method, path and decoded query from HTTPX on all 14 responses. Its Chromium route handler checked all three before supplying an envelope. Deliberately dropping `chart_source=true` failed at the query assertion. A shell test ran two private directories concurrently and covered existing data, symlinks, a symlinked parent and cleanup on success and failure. [Reproduction instructions](reproduce/README.md)
 
