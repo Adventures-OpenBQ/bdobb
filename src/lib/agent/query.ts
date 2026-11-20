@@ -31,6 +31,8 @@ export type RunAgentQueryOptions = {
   tools: AgentTool[];
   /** Turns a copilotFunctionCall payload into the tool message Rita expects back. */
   executeFunction: (payload: Record<string, unknown>, signal: AbortSignal) => Promise<AgentMessage>;
+  /** Completed tool rounds must survive Stop or a later transport failure. */
+  onHistory?: (history: AgentMessage[]) => void;
   signal?: AbortSignal;
   /** Idle timeout between bytes received (keepalive comments count); 0 disables. */
   timeoutMs?: number;
@@ -132,6 +134,7 @@ export async function* runAgentQuery(
     }
     history.push({ role: "ai", content: { function: call.function, input_arguments: call.input_arguments } });
     history.push(await opts.executeFunction(call, opts.signal ?? new AbortController().signal));
+    opts.onHistory?.([...history]);
   }
   return history;
 }
