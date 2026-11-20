@@ -177,7 +177,10 @@ test('keeps ordinary sector labels visible on the minimum drawing surface in bot
   await expectSectorLabel(graph, 'Technology');
   await expectSectorLabel(graph, 'Banks');
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect.poll(async () => (await drawing(graph)).theme).toBe('#1e242e');
+  await expect.poll(() => graph.evaluate(node => {
+    const plot = node as HTMLElement & { _fullLayout?: { paper_bgcolor: string } };
+    return plot.isConnected ? plot._fullLayout?.paper_bgcolor : undefined;
+  })).toBe('#1e242e');
   await expectSectorLabel(graph, 'Technology');
   await expectSectorLabel(graph, 'Banks');
   expect((await drawing(graph)).question).toBe(original.question);

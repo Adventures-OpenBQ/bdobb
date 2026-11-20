@@ -91,7 +91,10 @@ test('offers the two closed recipes and shows both currency axes and original re
   await expect(apply(widget)).toBeDisabled();
   await expect(graph.locator('.y2title')).toHaveText('Diluted FQ EPS (USD/share)');
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect.poll(async () => (await drawing(graph)).paper).toBe('#1e242e');
+  await expect.poll(() => graph.evaluate(node => {
+    const plot = node as HTMLElement & { _fullLayout?: { paper_bgcolor: string } };
+    return plot.isConnected ? plot._fullLayout?.paper_bgcolor : undefined;
+  })).toBe('#1e242e');
   await widget.screenshot({ path: info.outputPath('overlay-dark.png') });
   expect(requests).toEqual([]);
 });
