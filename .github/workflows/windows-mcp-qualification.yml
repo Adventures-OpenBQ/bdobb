@@ -1,0 +1,41 @@
+name: Windows MCP qualification
+
+# An isolated debug test application. Never changes the release bridge guard.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install pinned Wasm glue generator
+        run: cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
+      - name: Prepare isolated application identity
+        shell: pwsh
+        run: |
+          $config = Get-Content src-tauri/tauri.mcp.conf.json -Raw | ConvertFrom-Json
+          $config | Add-Member productName 'BDOBB v7 MCP'
+          $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v7.windows.mcp'
+          $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
+      - name: Build debug-only MCP installer
+        shell: pwsh
+        run: pnpm tauri build --debug --features mcp-bridge --bundles nsis --config "$env:RUNNER_TEMP/windows-mcp.json"
+      - name: Upload isolated installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdobb-v7-windows-mcp
+          path: src-tauri/target/debug/bundle/nsis/*.exe
+          retention-days: 7
