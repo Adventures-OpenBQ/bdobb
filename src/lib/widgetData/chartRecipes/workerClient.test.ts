@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { afterEach, expect, it, vi } from 'vitest';
+import { screenerEvidence } from '../../../test/fixtures/financialEvidence';
+import { datasetFromRows } from '../../localTableData';
 import { createRecipeWorker, type RecipeRequest } from './workerClient';
 import { drawdownOptions, priceDataset } from './fixtures';
+import { parseFinancialEvidence } from './financialEvidence';
 
 const dataset = priceDataset([{ date: '2026-01-02', adjusted_close: 20, symbol: 'A' }]);
 const context = { theme: 'light', maxDecimals: 2, today: '2026-02-01' } as const;
@@ -71,6 +74,29 @@ it('runs the actual worker entry and posts a structured-cloneable chart with its
   const reply = structuredClone(scope.postMessage.mock.lastCall![0]);
   expect(reply.result.notes).toContain('Presented observation dates: 2026-01-02 to 2026-01-02.');
   expect(reply).toMatchObject({ ...identity, result: { ok: true, figure: { data: expect.arrayContaining([expect.objectContaining({ y: [0] })]) } } });
+});
+
+it('dispatches the bubble recipe through the actual worker without the legacy observation-date note', async () => {
+  const scope = { onmessage: undefined as ((event: { data: RecipeRequest }) => void) | undefined, postMessage: vi.fn() };
+  vi.stubGlobal('self', scope);
+  vi.resetModules();
+  await import('./recipe.worker');
+  const identity = { requestId: 11, sourceWidgetId: 'screen', resultRevision: 1, outputRevision: 1 };
+  const source = datasetFromRows([{
+    symbol: 'A.US', last_day_data_date: '2026-08-28', dividend_yield: 0,
+    price_change_5d: .02, market_cap: 10, exchange: 'US', currency_symbol: '$',
+  }], 'screen', 1, 'localFile', undefined, [], { completeness: 'paged', financialEvidence: parseFinancialEvidence(screenerEvidence) });
+  scope.onmessage!({ data: structuredClone({
+    identity, dataset: source, context,
+    options: { kind: 'bubble-regression', version: 1, priceDate: 'latest', regression: true,
+      fields: { symbol: 'symbol', date: 'last_day_data_date', dividendYield: 'dividend_yield',
+        priceChange: 'price_change_5d', marketCap: 'market_cap', exchange: 'exchange', currency: 'currency_symbol' } },
+  } satisfies RecipeRequest) });
+  const reply = structuredClone(scope.postMessage.mock.lastCall![0]);
+  expect(reply).toMatchObject({ ...identity, result: { ok: true,
+    figure: { data: [expect.objectContaining({ mode: 'markers', x: [0], y: [.02] })] } } });
+  expect(reply.result.notes.join(' ')).toMatch(/Price-data date 2026-08-28/);
+  expect(reply.result.notes.join(' ')).not.toMatch(/Presented observation dates/);
 });
 
 it('sends layout width in context and fences a superseded arrangement of the same source revision', async () => {

@@ -4,6 +4,7 @@
 import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
 import { savedBindingIssue } from './bindings';
+import { buildBubbleRegression } from './bubbleRegression';
 import { buildCorrelation } from './correlation';
 import { buildDrawdown } from './drawdown';
 import { buildEstimateRange } from './estimateRange';
@@ -68,7 +69,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'small-multiples': return buildSmallMultiples(dataset, recipe, context);
     case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
-    case 'bubble-regression':
+    case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
     case 'dividend-steps':
     case 'income-sankey':
       return { ok: false, refused: true, message: 'This chart recipe is unavailable in this build.' };
