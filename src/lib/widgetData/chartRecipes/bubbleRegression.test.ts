@@ -50,6 +50,15 @@ function fitted(points: readonly { x: number; y: number }[]) {
   return result;
 }
 
+type SvgMarker = { size: number[]; sizemode: 'area'; sizeref: number; sizemin?: number };
+
+const plotlyRequire = createRequire(import.meta.url);
+const plotlyRadius = plotlyRequire('plotly.js/src/traces/scatter/make_bubble_size_func.js') as
+  (trace: { marker: SvgMarker }) => (size: number) => number;
+const plotlySymbols = plotlyRequire('plotly.js/src/components/drawing/symbol_defs.js') as
+  { circle: { f: (radius: number, angle: number, standoff: number) => string } };
+const circlePath = (radius: number) => plotlySymbols.circle.f(radius, 0, 0);
+
 describe('fitUnweightedOls', () => {
   it('fits an exact intercept relationship', () => {
     expect(fitted([{ x: 0, y: 1 }, { x: 1, y: 3 }, { x: 2, y: 5 }])).toEqual({
@@ -77,6 +86,24 @@ describe('fitUnweightedOls', () => {
     ]);
     expect(slope / 5e-51).toBeCloseTo(1, 14);
     expect(rSquared / (1e-100 / 6)).toBeCloseTo(1, 14);
+  });
+
+  it('preserves distinct X values that differ by less than one unit at the midpoint', () => {
+    const { slope, rSquared, n } = fitted([
+      { x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 1 },
+      { x: 1, y: -1 }, { x: 0, y: -1 }, { x: 1e-20, y: 1 },
+    ]);
+    expect(slope / 7.5e-21).toBeCloseTo(1, 14);
+    expect(rSquared / 1.25e-41).toBeCloseTo(1, 14);
+    expect(n).toBe(6);
+  });
+
+  it('withholds a fit when a genuine nonzero R-squared would round to zero', () => {
+    const result = fitUnweightedOls([
+      { x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 1 },
+      { x: 1, y: -1 }, { x: 0, y: -1 }, { x: 1e-200, y: 1 },
+    ]);
+    expect(result).toEqual({ reason: expect.stringMatching(/precision/i) });
   });
 
   it.each([
@@ -133,29 +160,48 @@ describe('buildBubbleRegression', () => {
   it('sets a 48px maximum diameter and propagates ratios without a minimum marker', () => {
     const max = Number.MAX_VALUE;
     const source = screen([row('A', 0, 0, max), row('B', .01, .01, max), row('C', .02, .01, max / 4),
-      row('D', .03, -.02, 1)]);
+      row('D', .03, -.02, max / 10000)]);
     const { figure, notes } = chart(buildBubbleRegression(source, options, context));
-    const { marker, text } = figure.data[0] as { marker: { size: number[]; sizeref: number; sizemin?: number }; text: string[] };
+    const { marker, text } = figure.data[0] as { marker: SvgMarker; text: string[] };
     expect(marker).toMatchObject({ sizemode: 'area' });
-    // This is the installed Plotly SVG scatter renderer's radius function.
-    const radiusFor = createRequire(import.meta.url)('plotly.js/src/traces/scatter/make_bubble_size_func.js') as
-      (trace: { marker: typeof marker }) => (size: number) => number;
-    const radius = radiusFor({ marker });
+    const radius = plotlyRadius({ marker });
     expect(2 * radius(marker.size[0])).toBe(48);
     expect(2 * radius(marker.size[1])).toBe(48);
     expect(2 * radius(marker.size[2])).toBe(24);
-    expect(radius(marker.size[3])).toBeGreaterThan(0);
+    expect(circlePath(radius(marker.size[0]))).toMatch(/A24,24/);
+    expect(circlePath(radius(marker.size[2]))).toMatch(/A12,12/);
+    expect(circlePath(radius(marker.size[3]))).toMatch(/A0\.24,0\.24/);
     expect(marker.sizemin ?? 0).toBe(0);
     expect(text[0]).toContain(String(max));
     expect(notes.join(' ')).toMatch(/N\s*=\s*4/);
   });
 
-  it('renders a positive tiny cap whenever Plotly can represent its area', () => {
-    const source = screen([row('A', 0, 0, Number.MIN_VALUE), row('B', .01, .01, 1)]);
+  it('retains tiny subpixel SVG circles when Plotly draws a positive radius', () => {
+    const source = screen([row('A', 0, 0, 5000), row('B', .01, .01, 1e11)]);
     const { figure } = chart(buildBubbleRegression(source, options, context));
-    const { marker, text } = figure.data[0] as { marker: { size: number[] }; text: string[] };
-    expect(marker.size[0] / 2).toBeGreaterThan(0);
+    const { marker, text } = figure.data[0] as { marker: SvgMarker; text: string[] };
+    const radius = plotlyRadius({ marker })(marker.size[0]);
+    expect(radius).toBeLessThan(.01);
+    expect(circlePath(radius)).toMatch(/A0\.01,0\.01/);
+    expect(text[0]).toContain('5000');
+  });
+
+  it('scales proportional tiny caps without overflowing the size scale', () => {
+    const source = screen([row('A', 0, 0, Number.MIN_VALUE), row('B', .01, .01, 2 * Number.MIN_VALUE)]);
+    const { figure } = chart(buildBubbleRegression(source, options, context));
+    const { marker, text } = figure.data[0] as { marker: SvgMarker; text: string[] };
+    const radius = plotlyRadius({ marker });
+    expect(radius(marker.size[0])).toBeCloseTo(24 / Math.sqrt(2));
+    expect(circlePath(radius(marker.size[1]))).toMatch(/A24,24/);
     expect(text[0]).toContain(String(Number.MIN_VALUE));
+  });
+
+  it('refuses a sample when Plotly rounds a positive nominal radius to a zero-area SVG circle', () => {
+    expect(circlePath(.0024)).toMatch(/A0,0 /);
+    const source = screen([row('A', 0, 0, 1000), row('B', .01, .01, 1e11), row('C', .02, .03, 1e11)]);
+    expect(buildBubbleRegression(source, options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/below.*marker.*precision/i),
+    });
   });
 
   it('refuses a sample when an admitted positive cap would draw a zero-area marker', () => {

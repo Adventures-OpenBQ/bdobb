@@ -19,7 +19,8 @@ type PresentedListing = { row: DatasetRow; symbol: string; date: string; exchang
 type Bubble = Point & { marketCap: number; listing: PresentedListing };
 
 const numericFailure = { reason: 'The fitted coefficients or endpoints exceed finite numeric precision.' };
-const smallestNormal = 2 ** -1022;
+const doubleUnitExponent = -1074; // Every finite binary64 value is a multiple of 2**-1074.
+const hiddenSignificandBit = 1n << 52n;
 // Plotly cartesian autorange and range conversion use this floating-point limit.
 const plotLimit = Number.MAX_VALUE * 1e-4;
 const maxDiameter = 48;
@@ -39,37 +40,37 @@ function pointBounds(points: readonly Point[]): { x: Bounds; y: Bounds } {
   return { x, y };
 }
 
-function centerAndScale({ min, max }: Bounds) {
-  // A midpoint based on the span retains adjacent representable observations
-  // at a large common level. Halve opposite signs first to avoid overflow.
-  const center = min < 0 && max > 0 ? min / 2 + max / 2 : min + (max - min) / 2;
-  return { center, scale: Math.max(max - center, center - min) };
+/** Read a finite IEEE 754 double as an exact integer in units of Number.MIN_VALUE. */
+function scaledInteger(value: number, view: DataView): bigint {
+  view.setFloat64(0, value);
+  const bits = view.getBigUint64(0);
+  const exponent = Number((bits >> 52n) & 0x7ffn);
+  const fraction = bits & (hiddenSignificandBit - 1n);
+  const magnitude = exponent === 0 ? fraction : (hiddenSignificandBit | fraction) << BigInt(exponent - 1);
+  return value < 0 ? -magnitude : magnitude;
 }
 
-function compensatedSum<T>(items: readonly T[], valueOf: (item: T) => number): number {
-  let sum = 0, correction = 0;
-  for (const item of items) {
-    const value = valueOf(item);
-    const next = sum + value;
-    correction += Math.abs(sum) >= Math.abs(value) ? (sum - next) + value : (value - next) + sum;
-    sum = next;
-  }
-  return sum + correction;
-}
+/** Round an exact ratio with a positive denominator to the nearest binary64 value. */
+function roundedRatio(numerator: bigint, denominator: bigint, scaleExponent = 0): number {
+  if (numerator === 0n) return 0;
+  const sign = numerator < 0n ? -1 : 1;
+  let magnitude = numerator < 0n ? -numerator : numerator;
+  const difference = magnitude.toString(2).length - denominator.toString(2).length;
+  const alignedNumerator = magnitude << BigInt(Math.max(0, -difference));
+  const alignedDenominator = denominator << BigInt(Math.max(0, difference));
+  const exponent = scaleExponent + difference - (alignedNumerator < alignedDenominator ? 1 : 0);
+  if (exponent > 1023) return sign * Infinity;
+  if (exponent < doubleUnitExponent - 1) return 0;
 
-function rescaleSlope(slope: number, scaleX: number, scaleY: number): number {
-  if (slope === 0) return 0;
-  // Avoid an overflowing or subnormal intermediate when another order
-  // can represent the same product and quotient at full precision.
-  const orders = [
-    { intermediate: scaleY / scaleX, apply: (value: number) => value * slope },
-    { intermediate: slope * scaleY, apply: (value: number) => value / scaleX },
-    { intermediate: slope / scaleX, apply: (value: number) => value * scaleY },
-  ];
-  for (const { intermediate, apply } of orders) {
-    if (finite(intermediate) && Math.abs(intermediate) >= smallestNormal) return apply(intermediate);
-  }
-  return NaN;
+  // Round only after scaling the ratio into the binary64 significand or subnormal unit.
+  const place = Math.max(doubleUnitExponent, exponent - 52);
+  const shift = scaleExponent - place;
+  magnitude <<= BigInt(Math.max(0, shift));
+  const divisor = denominator << BigInt(Math.max(0, -shift));
+  const units = magnitude / divisor;
+  const doubledRemainder = 2n * (magnitude % divisor);
+  const roundUp = doubledRemainder > divisor || (doubledRemainder === divisor && units % 2n !== 0n);
+  return sign * Number(roundUp ? units + 1n : units) * 2 ** place;
 }
 
 function fitLine(points: readonly Point[]): { fit: Fit; line: { x: number[]; y: number[] } } | Withheld {
@@ -81,32 +82,33 @@ function fitLine(points: readonly Point[]): { fit: Fit; line: { x: number[]; y: 
   if (bounds.x.min === bounds.x.max) return { reason: 'Dividend yield is constant across usable listings.' };
   if (bounds.y.min === bounds.y.max) return { reason: 'Five-day price change is constant across usable listings.' };
 
-  const x = centerAndScale(bounds.x), y = centerAndScale(bounds.y);
-  const normalizeX = (value: number) => (value - x.center) / x.scale;
-  const scaled = points.map(point => ({ x: normalizeX(point.x), y: (point.y - y.center) / y.scale }));
-  const meanX = compensatedSum(scaled, point => point.x) / n;
-  const meanY = compensatedSum(scaled, point => point.y) / n;
-  const xx = compensatedSum(scaled, point => (point.x - meanX) ** 2);
-  const yy = compensatedSum(scaled, point => (point.y - meanY) ** 2);
-  const xy = compensatedSum(scaled, point => (point.x - meanX) * (point.y - meanY));
-  if (!(xx > 0 && yy > 0)) return numericFailure;
-
-  const normalizedSlope = xy / xx;
-  const slope = rescaleSlope(normalizedSlope, x.scale, y.scale);
-  const predict = (scaledX: number) => {
-    const scaledY = meanY + (scaledX - meanX) * normalizedSlope;
-    const offset = scaledY * y.scale;
-    return finite(offset) ? y.center + offset : (y.center / 2 + scaledY * (y.scale / 2)) * 2;
-  };
-  const centerPrediction = predict(0);
-  const offset = slope * x.center;
-  const intercept = finite(offset) ? centerPrediction - offset : (centerPrediction / 2 - slope * (x.center / 2)) * 2;
-  const correlation = xy / Math.sqrt(xx * yy);
-  const rSquared = correlation ** 2;
-  const line = { x: [bounds.x.min, bounds.x.max], y: [predict(normalizeX(bounds.x.min)), predict(normalizeX(bounds.x.max))] };
-  if (![slope, intercept, rSquared, ...line.y].every(finite) || (normalizedSlope !== 0 && slope === 0)
-    || (correlation !== 0 && rSquared === 0) || rSquared > 1 + 16 * Number.EPSILON) return numericFailure;
-  return { fit: { slope, intercept, rSquared: Math.min(1, rSquared), n }, line };
+  // The linear pass uses a fixed binary scale and exact moments. Forming centered
+  // sums afterward keeps tiny differences intact even beside large common levels.
+  // Finite doubles and array lengths bound the integer widths.
+  const view = new DataView(new ArrayBuffer(8));
+  let sumX = 0n, sumY = 0n, sumXX = 0n, sumYY = 0n, sumXY = 0n;
+  for (const point of points) {
+    const x = scaledInteger(point.x, view), y = scaledInteger(point.y, view);
+    sumX += x;
+    sumY += y;
+    sumXX += x * x;
+    sumYY += y * y;
+    sumXY += x * y;
+  }
+  const count = BigInt(n);
+  const xx = count * sumXX - sumX * sumX;
+  const yy = count * sumYY - sumY * sumY;
+  const xy = count * sumXY - sumX * sumY;
+  const slope = roundedRatio(xy, xx);
+  const rSquared = roundedRatio(xy * xy, xx * yy);
+  const predict = (x: number) =>
+    roundedRatio(sumY * xx + (count * scaledInteger(x, view) - sumX) * xy, count * xx, doubleUnitExponent);
+  const intercept = predict(0);
+  const x = [bounds.x.min, bounds.x.max];
+  const y = x.map(predict);
+  if (![slope, intercept, rSquared, ...y].every(finite) || (xy !== 0n && (slope === 0 || rSquared === 0)))
+    return numericFailure;
+  return { fit: { slope, intercept, rSquared, n }, line: { x, y } };
 }
 
 export function fitUnweightedOls(points: readonly Point[]): Fit | Withheld {
@@ -242,7 +244,9 @@ export function buildBubbleRegression(dataset: WidgetDataset, options: RecipeOpt
     const squaredRadius = finite(squaredRadiusPerCap) ? marketCap * squaredRadiusPerCap : (marketCap / maxCap) * maxSquaredRadius;
     return 2 * Math.min(squaredRadius, maxSquaredRadius);
   });
-  if (sizes.some(size => size === 0))
+  // With sizeref 1, the supplied circle uses sqrt(size / 2) for radius.
+  // Its SVG path rounds that radius to hundredths of a pixel before drawing.
+  if (sizes.some(size => Math.round(Math.sqrt(size / 2) * 100) === 0))
     return refuse(`The ${date} sample includes a positive market cap with area below marker rendering precision. ${countNote}`);
 
   const scope = screenScope(evidence.scope);
@@ -264,7 +268,7 @@ export function buildBubbleRegression(dataset: WidgetDataset, options: RecipeOpt
   const data: PlotlyFigure['data'] = [{
     type: 'scatter', uid: 'bubble-regression-sample', mode: 'markers', name: `Market cap area (${denomination})`,
     x: points.map(point => point.x), y: points.map(point => point.y),
-    marker: { color: color('bubble-regression-sample'), opacity: .75, line: { width: 0 },
+    marker: { symbol: 'circle', color: color('bubble-regression-sample'), opacity: .75, line: { width: 0 },
       size: sizes, sizemode: 'area', sizeref: 1, sizemin: 0 },
     text: points.map(({ listing, marketCap }) => {
       const labels = [listing.symbol, text(read(listing.row, fields.name)), text(read(listing.row, fields.sector))];
