@@ -31,7 +31,7 @@ vi.mock("plotly.js/lib/sunburst", () => ({ default: { name: "sunburst" } }));
 vi.mock("plotly.js/lib/box", () => ({ default: { name: "box" } }));
 vi.mock("plotly.js/lib/sankey", () => ({ default: { name: "sankey" } }));
 
-import { followPlotYAxisTicks, REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
+import { followPlotYAxisTicks, followSunburstLevel, REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
 describe("REGISTERED_TRACE_TYPES", () => {
   it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey", "box", "sunburst"])("includes the registered %s trace", (type) => {
@@ -148,5 +148,44 @@ describe("live y-axis tick failures", () => {
       expect(onError.mock.calls).toEqual([[error]]);
       stop();
     } else expect(onError).not.toHaveBeenCalled();
+  });
+});
+
+describe("sunburst level listener lifetime", () => {
+  const event = "plotly_sunburstclick";
+  function sunburstGraph() {
+    const events = new EventEmitter();
+    const remove = vi.fn(events.removeListener.bind(events));
+    const graph = Object.assign(document.createElement("div"), { on: events.on.bind(events), removeListener: remove });
+    const onLevel = vi.fn();
+    const dispose = followSunburstLevel(graph, onLevel);
+    const select = events.listeners(event)[0];
+    return { graph, events, remove, onLevel, dispose, select };
+  }
+
+  it("can dispose an already-purged graph and retires the captured callback", () => {
+    const { graph, remove, onLevel, dispose, select } = sunburstGraph();
+    // Installed Plotly deletes its event methods during purge.
+    Reflect.deleteProperty(graph, "removeListener");
+    expect(dispose).not.toThrow();
+    expect(dispose).not.toThrow();
+    expect(remove).not.toHaveBeenCalled();
+    expect(select({ nextLevel: "root" })).toBeUndefined();
+    expect(onLevel).not.toHaveBeenCalled();
+  });
+
+  it("removes its own listener once and ignores obsolete callbacks", () => {
+    const { events, remove, onLevel, dispose, select } = sunburstGraph();
+    const other = vi.fn();
+    events.on(event, other);
+    expect(select({})).toBeUndefined();
+    expect(select({ nextLevel: "Technology" })).toBe(false);
+    expect(onLevel.mock.calls).toEqual([["Technology"]]);
+    dispose();
+    dispose();
+    expect(remove.mock.calls).toEqual([[event, select]]);
+    expect(events.listeners(event)).toEqual([other]);
+    expect(select({ nextLevel: "root" })).toBeUndefined();
+    expect(onLevel.mock.calls).toEqual([["Technology"]]);
   });
 });
