@@ -1,10 +1,10 @@
-# Source for the proposed v3.0.0 AGPL edition
+# Corresponding Source for the v3.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: be58990a6bd51e9b1e7a684e7d917478c52c6c26
+Exact base revision and source identity: source-offer.json and SOURCE-MANIFEST.json.
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
-This source tree includes the proposed AGPL migration, revision-specific Help
+This source tree includes the AGPL edition, revision-specific Help
 source link, exact lockfiles, necessary build scripts, original artwork and
 vendored source where present. It is NOT the unchanged source of the old
 Apache binary. Build any new AGPL binary from this complete edition tree.
@@ -14,17 +14,20 @@ Apache binary. Build any new AGPL binary from this complete edition tree.
 Run `python3 -B verify-source.py` immediately after extraction, before creating
 node_modules, Git state or generated build output. SOURCE-MANIFEST.json lists
 the exact files and source identity. The external catalogue supplies the SHA-256
-of the compressed archive. The original tag and commit have not been moved.
+of the compressed archive. The source identity excludes only the two generated manifest/offer files;
+the manifest checks all other archived bytes and file modes. Historical source
+offers remain available under their own revision-specific release tags.
 
 ## Matching dependency distributions and license evidence
 
 Also download the shared package archive `dependency-pack-a1b2ab0d108e6dbb7044.tar.gz`.
 SHA-256: `64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941`.
-Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
+Public dependency archive: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
 
-This public URL and the application's Help source URL are prepared targets,
-not a claim that anything has been uploaded. For local review use the sibling
-catalogue's download links. Its dependency manifest identifies each package,
+The shared dependency archive is published separately. Verify its checksum
+before use. The application's Help source URL identifies this particular
+source revision; release qualification verifies that exact archive link.
+The dependency manifest identifies each package,
 original location, lockfile integrity and release coverage. Original npm .tgz
 and Cargo .crate distributions are provided separately to avoid duplicating
 the same dependency bytes in every application's source archive. Extract those
