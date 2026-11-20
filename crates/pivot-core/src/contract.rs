@@ -24,42 +24,7 @@ pub enum WireValue {
     #[serde(rename = "record")]
     Record(Vec<(String, WireValue)>),
 }
-// Struct variants keep presence of `value` observable: serde's adjacent unit
-// variants otherwise accept null content and erase it before validation.
-impl<'de> Deserialize<'de> for WireValue {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        #[derive(Deserialize)]
-        #[serde(tag = "tag", deny_unknown_fields)]
-        enum StrictValue {
-            #[serde(rename = "missing")]
-            Missing {},
-            #[serde(rename = "null")]
-            Null {},
-            #[serde(rename = "bool")]
-            Bool { value: bool },
-            #[serde(rename = "string")]
-            String { value: String },
-            #[serde(rename = "f64")]
-            F64 { value: WireNumber },
-            #[serde(rename = "bigint-string")]
-            BigIntString { value: String },
-            #[serde(rename = "array")]
-            Array { value: Vec<WireValue> },
-            #[serde(rename = "record")]
-            Record { value: Vec<(String, WireValue)> },
-        }
-        Ok(match StrictValue::deserialize(deserializer)? {
-            StrictValue::Missing {} => Self::Missing,
-            StrictValue::Null {} => Self::Null,
-            StrictValue::Bool { value } => Self::Bool(value),
-            StrictValue::String { value } => Self::String(value),
-            StrictValue::F64 { value } => Self::F64(value),
-            StrictValue::BigIntString { value } => Self::BigIntString(value),
-            StrictValue::Array { value } => Self::Array(value),
-            StrictValue::Record { value } => Self::Record(value),
-        })
-    }
-}
+mod wire_value;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
