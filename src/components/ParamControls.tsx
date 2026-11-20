@@ -17,7 +17,9 @@ import { GroupLink } from "./GroupLink";
 import { ParamInput } from "./ParamInput";
 
 type Props = {
-  /** Header shows only row zero; the parameter card exposes every visible field. */
+  /** Avoid repeating row zero when those controls are visible in the title strip. */
+  omitRowZero?: boolean;
+  /** Header shows only row zero; the panel omits it when already visible there. */
   placement?: "header" | "panel" | "observer";
   widget: WidgetDef;
   card: DashboardCard;
@@ -118,6 +120,7 @@ function unofferedValues(
 }
 
 export function ParamControls({
+  omitRowZero = false,
   placement,
   widget,
   card,
@@ -451,7 +454,7 @@ export function ParamControls({
   const below = [...byRow].sort(([a], [b]) => a - b);
 
   if (placement === "observer") return null;
-  if (placement) return <div className={placement === "header" ? "card-params" : "card-params-panel-fields"}>{params.filter((p) => placement !== "header" || (p.row ?? 0) === 0).map(field)}</div>;
+  if (placement) return <div className={placement === "header" ? "card-params" : "card-params-panel-fields"}>{params.filter((p) => (placement !== "header" || (p.row ?? 0) === 0) && (!omitRowZero || (p.row ?? 0) !== 0)).map(field)}</div>;
 
   return (
     <>

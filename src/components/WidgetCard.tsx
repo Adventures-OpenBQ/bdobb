@@ -1481,7 +1481,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
       </header>
       {paramsOpen && !minimized && widget && dashboard ? (
         <div className="card-params-panel" role="region" aria-label="Parameters">
-          <ParamControls placement="panel" widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={(edit) => void apply(edit)} />
+          <ParamControls placement="panel" omitRowZero={hasTitleParams && (!collapseControls || controlsOpen)} widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={(edit) => void apply(edit)} />
         </div>
       ) : null}
       {exportNotice ? (

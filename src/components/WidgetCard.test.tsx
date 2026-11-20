@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useState } from "react";
-import { act, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -668,6 +668,23 @@ describe("WidgetCard header controls", () => {
     await userEvent.setup().click(screen.getByRole("button", {name: "Show parameters"}));
     expect(screen.getByRole("region", {name: "Parameters"})).toContainElement(screen.getByLabelText("Start"));
     expect(container.querySelector("header")).not.toContainElement(screen.getByLabelText("Start"));
+    expect(screen.getAllByLabelText("Symbol")).toHaveLength(1);
+    expect(within(screen.getByRole("region", {name: "Parameters"})).queryByLabelText("Symbol")).toBeNull();
+  });
+
+  it("keeps row zero editable in the panel while title controls are collapsed", async () => {
+    register(normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "market", label: "Market", type: "text", row: 1}]}}, "b1").widgets[0]);
+    useSettingsStore.setState({settings: {...DEFAULT_SETTINGS, collapseWidgetControls: true}});
+    useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
+    const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", {name: "Show parameters"}));
+    const panel = screen.getByRole("region", {name: "Parameters"});
+    expect(within(panel).getByLabelText("Symbol")).toBeInTheDocument();
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", {name: "Show widget controls"}));
+    expect(within(panel).queryByLabelText("Symbol")).toBeNull();
+    expect(container.querySelector(".card-chips")).toContainElement(screen.getByLabelText("Symbol"));
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
   });
 
   it("hands the hook the group-merged params, not the card's own", () => {
