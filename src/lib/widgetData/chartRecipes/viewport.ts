@@ -17,6 +17,12 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
 }
 
 export const newsCalendarPlotHeight = 260;
+export const returnSummaryPlotHeight = 280;
+
+/** Leave room for each listing's date pair at the normal Plotly text size. */
+export function returnSummaryPlotWidth(listings: number): number {
+  return 90 + 178 * listings;
+}
 
 /** These recipe builders supply a plot height for the card’s scroll viewport. */
 export function recipePlotHeight(kind: RecipeOptions['kind'], figure: PlotlyFigure): number | undefined {

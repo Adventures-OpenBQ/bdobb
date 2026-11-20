@@ -4,7 +4,7 @@
 import { list } from '../figureHelpers';
 import type { ChartBuildResult } from './chartSourceContracts';
 import { isoDate, qualifiedSymbol } from './financialEvidence';
-import { dailyScope, priceBasisFields, priceDateFields, priceIdentityFields } from './priceEvidence';
+import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot, priceBasisFields, priceDateFields, priceIdentityFields } from './priceEvidence';
 import type { WidgetDataset } from '../types';
 import { preparePrices, type PriceScope, type PriceSeries } from './input';
 import type { PriceBindings } from './types';
@@ -66,9 +66,7 @@ export function admitReturnSummary(
   if (!symbols.length || symbols.length > 12 || new Set(symbols).size !== symbols.length || !symbols.every(qualifiedSymbol)) {
     return refuse('Choose 1 to 12 distinct qualified listings from the acquired price history.');
   }
-  if (dataset.provenance.sourceKind !== 'localFile' || !dailyScope({ ...dataset.provenance, parameters: undefined })) {
-    return refuse('Choose a local adjusted-price snapshot with an acquisition receipt documenting its daily interval and dates.');
-  }
+  if (!hasDocumentedDailySnapshot(dataset.provenance)) return refuse(documentedDailySnapshotMessage);
   if (!priceBasisFields(dataset.columns).includes(fields.price)) {
     return refuse('Choose a source-documented adjusted-price field.');
   }

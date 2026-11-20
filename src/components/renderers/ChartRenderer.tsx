@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/chartShapes";
 import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
-import { purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot } from "../../lib/plotly";
+import { followPlotYAxisTicks, purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot, type AxisTickFormatter } from "../../lib/plotly";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 
@@ -39,6 +39,13 @@ function traceType(trace: unknown): string {
 /** The first trace type this partial bundle never registered, if any. */
 function unregisteredTraceType(figure: PlotlyFigure): string | null {
   return figure.data.map((t) => traceType(t)).find((t) => !REGISTERED_TRACE_TYPES.has(t)) ?? null;
+}
+
+export type DrawingSurface = { width: number; height: number };
+
+export function readDrawingSurface(surface: Element): DrawingSurface {
+  const box = surface.getBoundingClientRect();
+  return { width: box.width || surface.clientWidth, height: box.height || surface.clientHeight };
 }
 
 // The installed Sankey trace follows mouse movements and clears hover on click.
@@ -101,6 +108,9 @@ export function ChartRenderer({
   inspectSankeyOnTouch = false,
   onPlotWidthChange,
   onViewportWidthChange,
+  minPlotWidth,
+  onDrawingSurfaceChange,
+  formatYAxisTicks,
 }: {
   data: unknown;
   uirevision?: string;
@@ -111,6 +121,10 @@ export function ChartRenderer({
   onPlotWidthChange?: (width: number) => void;
   /** Measure a retained scrolling viewport, even when no figure can be drawn. */
   onViewportWidthChange?: (width: number) => void;
+  minPlotWidth?: number;
+  /** Measure the actual drawing surface after minimum dimensions and scrollbar gutters. */
+  onDrawingSurfaceChange?: (size: DrawingSurface) => void;
+  formatYAxisTicks?: AxisTickFormatter;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -192,30 +206,56 @@ export function ChartRenderer({
   }), [drawable, uirevision, scrolling, coarseScroll]);
   const [failure, setFailure] = useState<{ id: symbol; message: string }>();
   const hasPlot = Boolean(drawable && failure?.id !== draw.id);
+  const measured = Boolean(onViewportWidthChange || onDrawingSurfaceChange);
   const observeViewport = useCallback((viewport: HTMLDivElement | null) => {
-    if (!viewport || (!measureOverflow && !onViewportWidthChange)) return;
+    if (!viewport || (!measureOverflow && !onViewportWidthChange && !onDrawingSurfaceChange)) return;
+    const surface = viewport.firstElementChild;
+    let previousWidth = 0;
+    let previousHeight = 0;
     const measure = () => {
       if (measureOverflow) {
-        const requiredHeight = onViewportWidthChange ? scrollHeight ?? 0 : viewport.scrollHeight;
-        setOverflows(hasPlot && requiredHeight > viewport.clientHeight);
+        // An old Plotly SVG can still overflow while the CSS surface is
+        // shrinking. Its DOM overflow may settle without another resize event.
+        const requiredHeight = (onDrawingSurfaceChange ? surface?.clientHeight : scrollHeight) ?? 0;
+        const requiredWidth = onDrawingSurfaceChange ? surface?.clientWidth ?? 0 : viewport.clientWidth;
+        setOverflows(hasPlot && (requiredHeight > viewport.clientHeight || requiredWidth > viewport.clientWidth));
       }
       if (viewport.clientWidth > 0) onViewportWidthChange?.(viewport.clientWidth);
+      if (surface && onDrawingSurfaceChange) {
+        const { width, height } = readDrawingSurface(surface);
+        if (width > 0 && height > 0 && (width !== previousWidth || height !== previousHeight)) {
+          previousWidth = width;
+          previousHeight = height;
+          onDrawingSurfaceChange({ width, height });
+        }
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
     // Plot height changes when the watchlist reflows, even if its viewport stays the same size.
-    if (hasPlot && viewport.firstElementChild) observer.observe(viewport.firstElementChild);
+    if (surface && (hasPlot || onDrawingSurfaceChange)) observer.observe(surface);
     return () => observer.disconnect();
-  }, [hasPlot, measureOverflow, onViewportWidthChange, scrollHeight]);
+  }, [hasPlot, measureOverflow, onDrawingSurfaceChange, onViewportWidthChange, scrollHeight]);
   useEffect(() => {
     const el = node.current;
     const figure = draw.figure;
     if (!el || !figure) return;
     let active = true;
+    let stopFollowingTicks: (() => void) | undefined;
+    const axis = formatYAxisTicks
+      ? figure.layout.yaxis as { range?: number[]; tickvals?: number[]; ticktext?: string[] } | undefined
+      : undefined;
     const render = async () => {
       try {
-        await renderPlot(el, figure, draw.uirevision);
+        // Measured worker figures can be redrawn both for viewport changes and
+        // touch mode. Plotly mutates nested ranges during gestures and react.
+        const chart = onDrawingSurfaceChange ? { ...figure, layout: structuredClone(figure.layout) } : figure;
+        await renderPlot(el, chart, draw.uirevision);
+        if (active && node.current === el && formatYAxisTicks && axis?.range && axis.tickvals && axis.ticktext) {
+          const initial = { range: axis.range, tickvals: axis.tickvals, ticktext: axis.ticktext };
+          stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, initial);
+        }
       } catch (err) {
         if (!active || node.current !== el) return;
         const message = (err instanceof Error ? err.message : String(err)).slice(0, 400);
@@ -224,21 +264,24 @@ export function ChartRenderer({
       }
     };
     void render();
-    return () => { active = false; };
-  }, [draw]);
+    return () => { active = false; stopFollowingTicks?.(); };
+  }, [draw, formatYAxisTicks, onDrawingSurfaceChange]);
 
   const problem = failure?.id === draw.id ? <p role="alert">Chart could not be drawn. {failure.message}</p>
-    : !figure ? (onViewportWidthChange ? null : <p className="empty-state">Nothing chartable in this payload.</p>)
+    : !figure ? (measured ? null : <p className="empty-state">Nothing chartable in this payload.</p>)
       : unregisteredType !== null ? <p className="empty-state">
         This chart needs a trace type this build does not include: {unregisteredType}.
       </p> : null;
-  const plot = drawable && !problem
-    ? <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>
+  const surfaceStyle = scrolling ? { height: scrollHeight, minWidth: minPlotWidth } : undefined;
+  const plot = hasPlot
+    ? <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={surfaceStyle}/>
+    : onDrawingSurfaceChange ? <div className="chart-plot chart-surface-placeholder" aria-hidden="true" style={surfaceStyle}/>
     : problem;
-  if (!scrolling || (!onViewportWidthChange && (!drawable || problem))) return plot;
-  const viewportClass = 'chart-scroll-viewport' + (onViewportWidthChange ? ' chart-scroll-viewport--measured' : '')
-    + (measureOverflow && overflows ? ' chart-scroll-viewport--touch-scroll' : '');
+  if (!scrolling || (!measured && !hasPlot)) return plot;
+  const viewportClass = 'chart-scroll-viewport' + (measured ? ' chart-scroll-viewport--measured' : '')
+    + (measureOverflow && overflows ? ' chart-scroll-viewport--touch-scroll' : '')
+    + (minPlotWidth ? ' chart-scroll-viewport--wide' : '');
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
-  return <div className={viewportClass} ref={observeViewport}
-    onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div>;
+  return <>{onDrawingSurfaceChange && problem}<div className={viewportClass} ref={observeViewport}
+    onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div></>;
 }

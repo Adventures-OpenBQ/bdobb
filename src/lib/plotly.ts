@@ -12,7 +12,7 @@ import indicator from "plotly.js/lib/indicator";
 import waterfall from "plotly.js/lib/waterfall";
 import sankey from "plotly.js/lib/sankey";
 import box from "plotly.js/lib/box";
-import type { Data } from "plotly.js/lib/core";
+import type { Data, PlotlyHTMLElement } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
 const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall, sankey, box];
@@ -61,6 +61,33 @@ export function renderPlot(node: HTMLElement, figure: PlotlyFigure, uirevision?:
     Plotly.purge(node);
   }
   return Plotly.react(node, figure.data as Data[], layout, CONFIG) as unknown as Promise<void>;
+}
+
+type TickLabels = { tickvals: number[]; ticktext: string[] };
+export type AxisTickFormatter = (range: readonly [number, number]) => TickLabels;
+
+/** Keep native zoom/pan while relabeling an affine coordinate range in original units. */
+export function followPlotYAxisTicks(
+  node: HTMLElement, formatter: AxisTickFormatter, initial: TickLabels & { range: readonly number[] },
+): () => void {
+  type LiveGraph = PlotlyHTMLElement & {
+    _fullLayout?: { yaxis?: TickLabels & { range: [number, number] } };
+    removeListener?: (type: string, listener: () => void) => void;
+  };
+  const graph = node as LiveGraph;
+  function update() {
+    const axis = graph._fullLayout?.yaxis;
+    if (!axis?.range || !axis.range.every(Number.isFinite)) return;
+    const [low, high] = axis.range;
+    const labels = low === initial.range[0] && high === initial.range[1] ? initial : formatter(axis.range);
+    if (axis.tickvals?.length === labels.tickvals.length && axis.ticktext?.length === labels.ticktext.length
+      && labels.tickvals.every((value, i) => axis.tickvals[i] === value && axis.ticktext[i] === labels.ticktext[i])) return;
+    void Plotly.relayout(node, { 'yaxis.tickvals': labels.tickvals, 'yaxis.ticktext': labels.ticktext } as Partial<PlotlyHTMLElement['layout']>)
+      .catch(() => { /* A detached plot may finish a relayout after purge. */ });
+  }
+  graph.on('plotly_relayout', update);
+  update();
+  return () => graph.removeListener?.('plotly_relayout', update);
 }
 
 export function purgePlot(node: HTMLElement): void {

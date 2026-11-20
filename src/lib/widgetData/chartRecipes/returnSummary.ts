@@ -6,6 +6,7 @@ import { color, escape } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
 import { doubleUnitExponent, roundedRatio, scaledInteger } from './binary64';
 import { admitReturnSummary } from './priceSamples';
+import { returnPercent, type ReturnAxisScaling } from './returnSummaryDisplay';
 import { decodeRecipeOptions } from './settings';
 import type { RecipeContext, RecipeResult, ReturnSummaryOptions } from './types';
 
@@ -24,10 +25,14 @@ export type DensityResult =
   | { ok: false; reason: 'sample-size' | 'bandwidth' | 'geometry' };
 
 type Admitted = Extract<ReturnType<typeof admitReturnSummary>, { ok: true }>['value'];
-type ReturnSeries = Admitted['series'][number] & { summary: ReturnBoxSummary };
+type ReturnSeries = Admitted['series'][number] & {
+  summary: ReturnBoxSummary;
+  outlierObservations: Admitted['series'][number]['samples'];
+};
 export type ReturnSummaryDetails = Omit<Admitted, 'series'> & {
   view: ReturnSummaryOptions['view'];
   series: ReturnSeries[];
+  scaledAxis?: ReturnAxisScaling;
 };
 
 const densityMinimum = 20;
@@ -36,13 +41,6 @@ const maximumHalfWidth = .34;
 const plotMargins = { l: 70, r: 12, t: 44, b: 72 };
 const pathPixelStep = .01; // Plotly Cartesian c2p rounds SVG coordinates to two decimal places.
 const minimumAxisPixels = 2; // Plotly's smallest supported inner axis dimension.
-const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17 });
-const scientificPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17, notation: 'scientific' });
-
-function formatPercent(value: number): string {
-  const magnitude = Math.abs(value);
-  return (magnitude >= 1e4 || (magnitude > 0 && magnitude < 1e-6) ? scientificPercent : percent).format(value);
-}
 
 function interpolate(low: bigint, high: bigint, step: number, divisions: number): bigint {
   return low * BigInt(divisions - step) + high * BigInt(step);
@@ -207,17 +205,18 @@ function returnAxis(
   const decimals = Math.max(context.maxDecimals, Math.min(20, -Math.floor(Math.log10(100 * tickStep))));
   return {
     coordinate,
+    scaling: exceptional ? { origin, scale } : undefined,
     layout: {
       type: 'linear', title: { text: 'Daily return' }, range, autorange: false, automargin: true,
       uirevision: JSON.stringify([revision, origin, scale]),
-      ...(manualTicks ? { tickmode: 'array', tickvals: manualTicks.map(coordinate), ticktext: manualTicks.map(formatPercent) }
+      ...(manualTicks ? { tickmode: 'array', tickvals: manualTicks.map(coordinate), ticktext: manualTicks.map(returnPercent) }
         : { tickformat: `.${decimals}%` }),
     },
   };
 }
 
 function returnLabel(value: number): string {
-  return escape(`${formatPercent(value)} (${value})`);
+  return escape(`${returnPercent(value)} (${value})`);
 }
 
 function summaryHover(series: ReturnSeries): string {
@@ -298,7 +297,8 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
     if (summary.iqr > 0 && summary.q1 === summary.q3) {
       return refusal(`The return box geometry for ${source.symbol} cannot preserve its distinct quartiles. Choose a different window or listing.`);
     }
-    series.push({ ...source, summary });
+    const outlierObservations = source.samples.filter(sample => sample.value < summary.lowerWhisker || sample.value > summary.upperWhisker);
+    series.push({ ...source, summary, outlierObservations });
     notes.push(`${source.symbol} · N = ${source.samples.length} daily returns · ${source.start} to ${source.end} · ${source.excludedOpportunities} excluded opportunities (${source.gapCount} known price gaps, ${source.excludedNonfinite} nonfinite returns).`);
     if (summary.iqr === 0) notes.push(`${source.symbol} has zero IQR.`);
   }
@@ -361,7 +361,7 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
       ...hover, uid: `return-summary-${index}`, x: [index], y: [coordinate(summary.median)], text: [summaryHover(item)],
       marker: { size: 8, color: color(symbol), line: { color: context.theme === 'dark' ? '#111827' : '#ffffff', width: 1 } },
     });
-    const outliers = item.samples.filter(sample => sample.value < summary.lowerWhisker || sample.value > summary.upperWhisker);
+    const outliers = item.outlierObservations;
     if (outliers.length) data.push({
       ...hover, uid: `return-outliers-${index}`, x: outliers.map(() => index), y: outliers.map(sample => coordinate(sample.value)),
       text: outliers.map(sample => `<b>${escape(symbol)}</b><br>Outlier · ${escape(sample.date)}<br>Daily return: ${returnLabel(sample.value)}`),
@@ -372,11 +372,13 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
   if (window.mode === 'common') notes.push(`Common inclusive bounds ${window.start} to ${window.end}. Each listing uses its own observed sessions.`);
   if (view === 'violin') notes.push('Gaussian KDE is density smoothing within observed endpoints. Width uses one density scale across listings.');
   return {
-    ok: true, notes, revision, returnSummary: { ...admitted.value, view, series },
+    ok: true, notes, revision, returnSummary: { ...admitted.value, view, series, ...(yaxis.scaling && { scaledAxis: yaxis.scaling }) },
     figure: {
       data,
       layout: {
         ...themedLayout(context.theme), uirevision: revision, hovermode: 'closest', showlegend: false,
+        hoverlabel: { bgcolor: context.theme === 'dark' ? '#202937' : '#ffffff',
+          font: { color: context.theme === 'dark' ? '#f1f5f9' : '#152034' } },
         title: { text: view === 'box' ? 'Daily return boxes' : 'Daily return density' },
         margin: { ...plotMargins },
         ...(view === 'violin' ? { minreducedwidth, minreducedheight } : {}),

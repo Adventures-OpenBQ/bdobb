@@ -1,20 +1,23 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bindingRoles, bindingCandidates, isIncomePeriodColumn } from '../../lib/widgetData/chartRecipes/bindings';
 import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
-import type { NewsCalendarOptions, RecipeContext, RecipeOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
+import { returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
+import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
 
 type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
 type Mode = 'sector' | 'region';
 type LoadNewsInput = (signal: AbortSignal) => Promise<WidgetDataset>;
-type LoadNewsDraft = (options: NewsCalendarOptions, signal: AbortSignal) => Promise<ChartResult>;
+type DraftWorker = ReturnType<typeof createRecipeWorker>;
+type LoadDraft<T extends RecipeOptions> = (options: T, signal: AbortSignal) => Promise<ChartResult>;
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 export type SourceChoiceKind = 'bubble-regression' | 'dividend-steps' | 'income-sankey';
 export type SourceChoice = { value: string; label: string; issue?: string };
@@ -37,13 +40,14 @@ export const recipeLabels: Partial<Record<Kind, string>> = {
   'etf-pareto': 'ETF holdings Pareto', 'etf-exposure': 'ETF exposure',
   'bubble-regression': 'Screening bubble', 'dividend-steps': 'Dividend steps', 'income-sankey': 'Income Sankey',
   'news-sentiment-calendar': 'News sentiment calendar',
+  'return-summary': 'Return summaries',
 };
 
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
   return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
 export function recipeAvailability(kind: Kind, columns: DatasetColumn[], verifiedEmpty = false): string | null {
-  if (kind === 'news-sentiment-calendar') return null; // The draft loads and checks the acquisition, including a columnless empty result.
+  if (kind === 'news-sentiment-calendar' || kind === 'return-summary') return null; // The draft loads and checks the acquisition, including a columnless empty result.
   if (kind === 'dividend-steps' && verifiedEmpty) return null;
   if (kind === 'income-sankey') return columns.some(isIncomePeriodColumn) ? null
     : 'Present actual FY or FQ columns from an income Statement table.';
@@ -61,17 +65,59 @@ function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[], mode?: M
   }));
 }
 
-export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext, disabled, onApply }: {
+function useDraftCheck<T extends RecipeOptions>(
+  options: T | undefined, load: LoadDraft<T> | undefined, context: RecipeContext | undefined,
+  worker: React.RefObject<DraftWorker | undefined>,
+): RecipeResult | undefined {
+  const serialized = options && JSON.stringify(options);
+  const request = useMemo(() => serialized && load && context
+    ? { options: JSON.parse(serialized) as T, load, context }
+    : undefined, [serialized, load, context]);
+  const [checked, setChecked] = useState<{ request: NonNullable<typeof request>; result: RecipeResult }>();
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    void request.load(request.options, signal).then(input => {
+      signal.throwIfAborted();
+      worker.current ??= createRecipeWorker();
+      return worker.current.run(input, request.options, request.context, signal);
+    }).then(result => {
+      if (!signal.aborted) setChecked({ request, result });
+    }).catch(error => {
+      if (!signal.aborted) {
+        const message = error instanceof Error ? error.message : String(error);
+        setChecked({ request, result: { ok: false, message: message || 'Could not validate chart settings.' } });
+      }
+    });
+    return () => controller.abort();
+  }, [request, worker]);
+  return request && checked?.request === request ? checked.result : undefined;
+}
+
+export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext,
+  loadReturnListings, loadReturnDraft, returnDraftContext, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
   loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadNewsInput;
-  loadNewsDraft?: LoadNewsDraft; newsDraftContext?: RecipeContext; disabled: boolean; onApply: (options: RecipeOptions) => void;
+  loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext;
+  loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
+  disabled: boolean; onApply: (options: RecipeOptions) => void;
 }) {
+  const draftWorker = useRef<DraftWorker | undefined>(undefined);
+  useEffect(() => () => { draftWorker.current?.dispose(); draftWorker.current = undefined; }, []);
   const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
     : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
   const [mode, setMode] = useState<Mode>(() => saved?.kind === 'etf-exposure' ? saved.mode
     : kind === 'etf-exposure' && missingRoles(kind, columns, metric).length && !missingRoles(kind, columns, metric, 'region').length ? 'region' : 'sector');
   const [editedFields, setFields] = useState<Record<string, string> | undefined>(() => saved && 'fields' in saved ? { ...saved.fields } : undefined);
   const news = kind === 'news-sentiment-calendar';
+  const returns = kind === 'return-summary';
+  const savedReturn = saved?.kind === 'return-summary' ? saved : undefined;
+  const [returnView, setReturnView] = useState(savedReturn?.view ?? 'box');
+  const [returnWindow, setReturnWindow] = useState(savedReturn?.window.mode ?? 'own');
+  const returnPins = savedReturn?.window.mode === 'common' ? savedReturn.window : undefined;
+  const [returnStart, setReturnStart] = useState(returnPins?.start);
+  const [returnEnd, setReturnEnd] = useState(returnPins?.end);
   const [newsRead, setNewsRead] = useState<{ load: LoadNewsInput; dataset?: WidgetDataset; error?: string }>();
   useEffect(() => {
     if (!news || !loadNewsInput) return;
@@ -106,12 +152,26 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     ? Object.fromEntries(bindingRoles(kind, metric).filter(role => !role.optional).map(role => [role.key, role.names[0]]))
     : defaults(kind, metric, columns, mode));
   const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
+  const minimumPlotWidth = returnSummaryPlotWidth(symbols.length);
+  const returnProbe = useRef<HTMLDivElement>(null);
+  const [returnMeasurement, setReturnMeasurement] = useState<DrawingSurface & { minimumPlotWidth: number }>();
+  const measureReturn = useCallback((size: DrawingSurface) => {
+    const width = Math.min(size.width, 10_000);
+    const height = Math.min(size.height, 10_000);
+    setReturnMeasurement(previous => previous?.width === width && previous.height === height && previous.minimumPlotWidth === minimumPlotWidth
+      ? previous : { width, height, minimumPlotWidth });
+  }, [minimumPlotWidth]);
+  const returnSize = returnMeasurement?.minimumPlotWidth === minimumPlotWidth ? returnMeasurement : undefined;
+  const returnContext = useMemo(() => returnSize && returnDraftContext
+    ? { ...returnDraftContext, viewportWidth: returnSize.width, viewportHeight: returnSize.height }
+    : undefined, [returnSize, returnDraftContext]);
   const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
   const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
   const [bins, setBins] = useState(String(saved?.kind === 'return-distribution' ? saved.bins : 30));
   const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
   const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
-  const needsSymbols = singleSymbol || multipleSymbols;
+  const needsSymbols = singleSymbol || multipleSymbols || returns;
+  const loadListings = returns ? loadReturnListings : loadSymbols;
   const roleList = emptyAcquisition ? [] : bindingRoles(kind, metric, mode);
   const fieldIssue = roleList.find(role => (
     !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
@@ -120,19 +180,29 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const symbolField = fields.symbol;
   const [choices, setChoices] = useState<{ load: LoadSymbols; field?: string; values: string[]; error?: string }>();
   useEffect(() => {
-    if (!needsSymbols || !fieldsReady) return;
+    if (!needsSymbols || !loadListings || !fieldsReady) return;
     const controller = new AbortController();
-    void loadSymbols(symbolField, controller.signal).then(values => {
-      if (!controller.signal.aborted) setChoices({ load: loadSymbols, field: symbolField, values });
+    void loadListings(symbolField, controller.signal).then(values => {
+      if (!controller.signal.aborted) setChoices({ load: loadListings, field: symbolField, values });
     }).catch(error => {
-      if (!controller.signal.aborted) setChoices({ load: loadSymbols, field: symbolField, values: [], error: String(error instanceof Error ? error.message : error) });
+      if (!controller.signal.aborted) setChoices({ load: loadListings, field: symbolField, values: [], error: error instanceof Error ? error.message : String(error) });
     });
     return () => controller.abort();
-  }, [needsSymbols, fieldsReady, loadSymbols, symbolField]);
-  const current = choices?.load === loadSymbols && choices.field === symbolField ? choices : undefined;
-  const choiceIssue = needsSymbols && (!current ? 'Loading source symbols…' : current.error ??
-    (!current.values.length ? 'No identified symbols in the presented source. Bind a symbol field or document a single acquisition symbol.' :
-      symbols.some(symbol => !current.values.includes(symbol)) ? 'Repair the unavailable symbol selection.' : undefined));
+  }, [needsSymbols, fieldsReady, loadListings, symbolField]);
+  const current = choices && choices.load === loadListings && choices.field === symbolField ? choices : undefined;
+  const choiceIssue = needsSymbols && (!current ? (returns ? 'Loading acquired listings…' : 'Loading source symbols…') : current.error ??
+    (!current.values.length ? (returns ? 'No qualified listings in the presented source. Bind the listing field or document a single listing in the snapshot.'
+      : 'No identified symbols in the presented source. Bind a symbol field or document a single acquisition symbol.') :
+      symbols.some(symbol => !current.values.includes(symbol)) ? (returns ? 'Repair the unavailable listing selection.' : 'Repair the unavailable symbol selection.') : undefined));
+  const returnBase = { version: 1, kind, fields, symbols };
+  const defaultReturn = returnWindow === 'common' && (returnStart === undefined || returnEnd === undefined)
+    && returns && fieldsReady && !choiceIssue
+    ? decodeRecipeOptions({ ...returnBase, view: 'box', window: { mode: 'own' } }, kind) : undefined;
+  const defaultReturnOptions = defaultReturn?.ok && defaultReturn.options.kind === 'return-summary' ? defaultReturn.options : undefined;
+  const defaultReturnResult = useDraftCheck(defaultReturnOptions, loadReturnDraft, returnContext, draftWorker);
+  const overlapBounds = defaultReturnResult?.ok ? defaultReturnResult.returnSummary?.commonWindow : undefined;
+  const returnPinStart = returnStart ?? overlapBounds?.start ?? '';
+  const returnPinEnd = returnEnd ?? overlapBounds?.end ?? '';
   const sourceKind = usesSourceChoices(kind) ? kind : undefined;
   const priceDateField = sourceKind === 'bubble-regression' ? fields.date : undefined;
   const [sourceChoice, setSourceChoice] = useState(() => {
@@ -169,6 +239,8 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     ...(news ? { instrument, window: windowMode === 'pinned' ? { mode: windowMode, start: pinStart, end: pinEnd } : { mode: windowMode } } : {}),
     ...(singleSymbol ? { symbol: symbols[0] } : {}),
     ...(multipleSymbols ? { symbols } : {}),
+    ...(returns ? { symbols, view: returnView,
+      window: returnWindow === 'common' ? { mode: returnWindow, start: returnPinStart, end: returnPinEnd } : { mode: returnWindow } } : {}),
     ...(kind === 'return-distribution' ? { bins: Number(bins) } : {}),
     ...(kind === 'etf-exposure' ? { mode } : {}),
     ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
@@ -176,38 +248,18 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const newsOptions = decoded.ok && decoded.options.kind === 'news-sentiment-calendar' ? decoded.options : undefined;
   const resolvedWindow = newsSource && newsOptions && resolveNewsWindow(newsSource, newsOptions.window);
   const windowIssue = resolvedWindow && !resolvedWindow.ok ? resolvedWindow.message : undefined;
-  const requestedOptions = newsOptions && newsSource && !fieldIssue && !windowIssue ? JSON.stringify(newsOptions) : undefined;
-  const request = useMemo(() => requestedOptions && loadNewsDraft && newsDraftContext?.viewportWidth !== undefined
-    ? { options: JSON.parse(requestedOptions) as NewsCalendarOptions, load: loadNewsDraft, context: newsDraftContext }
-    : undefined, [requestedOptions, loadNewsDraft, newsDraftContext]);
-  const draftWorker = useRef<ReturnType<typeof createRecipeWorker> | undefined>(undefined);
-  const [checked, setChecked] = useState<{ request: NonNullable<typeof request>; issue?: string }>();
-  useEffect(() => {
-    if (!news) return;
-    return () => { draftWorker.current?.dispose(); draftWorker.current = undefined; };
-  }, [news]);
-  useEffect(() => {
-    if (!request) return;
-    const controller = new AbortController();
-    const { signal } = controller;
-    void request.load(request.options, signal).then(input => {
-      signal.throwIfAborted();
-      const worker = draftWorker.current ??= createRecipeWorker();
-      return worker.run(input, request.options, request.context, signal);
-    }).then(result => {
-      if (!signal.aborted) setChecked({ request, issue: result.ok ? undefined : result.message });
-    }).catch(error => {
-      if (!signal.aborted) {
-        const message = error instanceof Error ? error.message : String(error);
-        setChecked({ request, issue: message || 'Could not validate calendar draft.' });
-      }
-    });
-    return () => controller.abort();
-  }, [request]);
-  const checkingDraft = news && (!request || checked?.request !== request);
-  const validationIssue = request && checked?.request === request ? checked.issue : undefined;
+  const checkNews = newsOptions && newsSource && !fieldIssue && !windowIssue ? newsOptions : undefined;
+  const checkedNews = useDraftCheck(checkNews, loadNewsDraft, newsDraftContext, draftWorker);
+  const checkReturn = decoded.ok && decoded.options.kind === 'return-summary' && !fieldIssue && !choiceIssue ? decoded.options : undefined;
+  const checkedReturn = useDraftCheck(checkReturn, loadReturnDraft, returnContext, draftWorker);
+  const checked = news ? checkedNews : checkedReturn;
+  const checkingDraft = (news || returns) && !checked;
+  const validationIssue = checked && !checked.ok ? checked.message : undefined;
+  const pendingBounds = defaultReturnOptions && !defaultReturnResult;
+  const boundsIssue = defaultReturnResult && !defaultReturnResult.ok ? defaultReturnResult.message
+    : defaultReturnResult?.ok && !overlapBounds ? 'The selected histories have no common acquired bounds. Choose different listings or use their own windows.' : undefined;
   const problem = newsProblem || (fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.'
-    : choiceIssue || sourceIssue || windowIssue || (!decoded.ok ? decoded.message : validationIssue));
+    : choiceIssue || sourceIssue || windowIssue || boundsIssue || (!decoded.ok ? (pendingBounds ? undefined : decoded.message) : validationIssue));
   const announcingDraftCheck = checkingDraft && !problem;
   const bindingInputs = roleList.map(role => {
     const available = bindingCandidates(role, columns);
@@ -261,6 +313,31 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
       {[...new Set([...symbols, ...(current?.values ?? [])])].map(s => <label key={s}><input type="checkbox" checked={symbols.includes(s)}
         onChange={e => setSymbols(e.target.checked ? [...symbols, s] : symbols.filter(v => v !== s))}/>{s}</label>)}
     </fieldset>}
+    {returns && <>
+      <div aria-hidden="true" className="return-summary-draft-probe" ref={returnProbe}>
+        <ChartRenderer data={undefined} scrollHeight={returnSummaryPlotHeight} minPlotWidth={minimumPlotWidth}
+          onDrawingSurfaceChange={measureReturn}/>
+      </div>
+      <fieldset className="return-summary-listings"><legend>Acquired listings</legend>
+        {[...new Set([...symbols, ...(current?.values ?? [])])].map(symbol => {
+          const selected = symbols.includes(symbol);
+          const unavailable = current && !current.values.includes(symbol);
+          return <label key={symbol}><input type="checkbox" checked={selected} disabled={!selected && symbols.length >= 12}
+            onChange={event => setSymbols(event.target.checked ? [...symbols, symbol] : symbols.filter(value => value !== symbol))}/>
+            {symbol}{unavailable && ' (unavailable)'}</label>;
+        })}
+      </fieldset>
+      <label>Return view<select value={returnView} onChange={event => setReturnView(event.target.value === 'violin' ? 'violin' : 'box')}>
+        <option value="box">Box</option><option value="violin">Violin</option>
+      </select></label>
+      <label>Return window<select value={returnWindow} onChange={event => setReturnWindow(event.target.value === 'common' ? 'common' : 'own')}>
+        <option value="own">Each listing’s own dates</option><option value="common">Common inclusive dates</option>
+      </select></label>
+      {returnWindow === 'common' && <>
+        <label>Start date<input type="date" value={returnPinStart} onChange={event => setReturnStart(event.target.value)}/></label>
+        <label>End date<input type="date" value={returnPinEnd} onChange={event => setReturnEnd(event.target.value)}/></label>
+      </>}
+    </>}
     {kind === 'return-distribution' && <label>Bins<input type="number" min="5" max="100" step="1" value={bins} onChange={e => setBins(e.target.value)}/></label>}
     {kind === 'etf-exposure' && <label>Exposure mode<select value={mode} onChange={e => {
       const next = e.target.value === 'region' ? 'region' : 'sector';
@@ -276,8 +353,21 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
       <div>{bindingInputs}</div>
     </details>}
     {problem && <p role="status">{problem}</p>}
-    {announcingDraftCheck && <span className="sr-only" role="status">Checking calendar draft…</span>}
+    {announcingDraftCheck && <span className="sr-only" role="status">{news ? 'Checking calendar draft…' : 'Checking return draft…'}</span>}
     <button type="button" disabled={!!problem || checkingDraft} aria-busy={announcingDraftCheck || undefined}
-      onClick={() => { if (!problem && !checkingDraft && decoded.ok) onApply(decoded.options); }}>Apply chart settings</button>
+      onClick={() => {
+        if (problem || checkingDraft || !decoded.ok) return;
+        if (returns) {
+          const surface = returnProbe.current?.querySelector('.chart-plot');
+          if (!surface) return;
+          const size = readDrawingSurface(surface);
+          if (size.width <= 0 || size.height <= 0) return;
+          if (Math.min(size.width, 10_000) !== returnSize?.width || Math.min(size.height, 10_000) !== returnSize?.height) {
+            measureReturn(size);
+            return;
+          }
+        }
+        onApply(decoded.options);
+      }}>Apply chart settings</button>
   </fieldset>;
 }

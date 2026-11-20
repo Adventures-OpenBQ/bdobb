@@ -336,3 +336,35 @@ it("preserves a pinned news calendar and strictly rejects unknown settings and v
     expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
   }
 });
+
+
+it("preserves a return summary’s explicit order and bounds and rejects runtime data on import", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = {
+    version: 1, kind: "return-summary", symbols: ["ZZZ.US", "AAA.US"], view: "violin",
+    fields: { date: "date", price: "adjusted_close", symbol: "symbol" },
+    window: { mode: "common", start: "2026-01-03", end: "2026-01-28" },
+  } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "returns", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, summary] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(summary.linkedChart?.recipe).toEqual(recipe);
+  expect(summary.linkedSource?.sourceWidgetId).toBe(producer.id);
+  for (const change of [
+    { returnSummary: { series: [] } },
+    { receipt: { interval: "1d" } },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, viewportHeight: 340 } },
+    { recipe: { ...recipe, window: { ...recipe.window, resolved: "2026-01-28" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+  }
+});

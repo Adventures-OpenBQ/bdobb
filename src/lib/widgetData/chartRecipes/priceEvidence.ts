@@ -32,6 +32,12 @@ export function dailyScope(provenance: DatasetProvenance): PriceScope | null {
   return window && fact(provenance, 'interval') === '1d' ? { ...window, interval: '1d' } : null;
 }
 
+export const documentedDailySnapshotMessage = 'Choose a local adjusted-price snapshot with an acquisition receipt documenting its daily interval and dates.';
+
+export function hasDocumentedDailySnapshot(provenance: DatasetProvenance): boolean {
+  return provenance.sourceKind === 'localFile' && dailyScope({ ...provenance, parameters: undefined }) !== null;
+}
+
 export function observationSymbol(value: unknown): string | undefined {
   return typeof value === 'string' && !value.includes(',') ? value.trim() || undefined : undefined;
 }

@@ -28,7 +28,7 @@ With no date-shaped column, the x-axis is the one non-numeric column if there is
 
 "Numeric" means every non-null value in those first five rows is a number. A mostly-text column with one stray number does not qualify, and a bare year like `2026` is not date-shaped and will not become an x-axis. If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator, waterfall and Sankey traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator, waterfall, Sankey and box traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
 
 Two other chart widget types render here as well. A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or Vega-Lite specification instead of a Plotly figure; the app translates the common cases — line, area, bar, column and scatter — into the same bundled Plotly, so they draw as ordinary chart cards rather than raw JSON. A spec that uses something the translation does not cover falls back to the card's **Raw** view.
 
@@ -41,6 +41,14 @@ Create a **linked chart** from a table’s card menu or the Widget Library’s s
 Choose **Return distribution**, bind the presented date and adjusted price, choose a symbol, and apply. Select 5–100 bins. Each count represents a finite return between adjacent usable daily prices. A flat price contributes a zero return. A missing or nonpositive price interrupts the sequence. Hover a bar for its bounds, observation count and share of the sample. The last bin includes its upper bound. Constant returns share one centered bin.
 
 Choose **Small multiples** and select up to twelve symbols in panel order. Every series starts at 100 on the first shared positive price date and ends at the earliest last delivered date among those symbols. The panels share date and index scales. Broken lines mark known gaps. Resizing the card wraps panels into one, two or three columns. Both daily charts require documented complete or bounded daily prices and show the acquisition window.
+
+## Return summaries
+
+Choose **Return summaries** to compare observed daily simple returns for up to twelve qualified listings in your selection order. Use a local JSON snapshot with a receipt documenting the daily interval and date bounds, or a linked table descended from that snapshot. Bind its acquired trading date and adjusted-price fields. Ordinary remote price responses cannot verify this recipe.
+
+**Box** is the default. It reports the median, R7 quartiles, and the most extreme observed returns within 1.5 IQR of the quartiles. Every listing needs at least five returns. Open **Return listing details** or hover the plot to read original fractional values, dated outliers and excluded opportunities. **Violin** smooths the same samples with Gaussian KDE within the observed endpoints and uses a shared density scale. If a listing has fewer than twenty returns or its bandwidth is zero or nonfinite, the card shows boxes and explains why.
+
+Choose **Common inclusive dates** to initialize bounds from the selected listings' overlapping acquired histories. Each listing keeps its own observed sessions and both prices in a return must fall inside the bounds. **Apply chart settings** saves the explicit dates after validation. If a later snapshot cannot supply them, repair the dates or choose each listing's own dates. After opening a source-free Workspace template, drop the snapshot as a local table and use **Choose source**. On touch screens, drag to zoom when the plot fits or swipe to scroll when the comparison overflows.
 
 ## ETF concentration and exposure
 

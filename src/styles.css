@@ -2439,8 +2439,10 @@ body {
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
 /* Match the news plot viewport's stable scrollbar gutter without occupying card height. */
 .news-calendar-width-probe { flex: 0 0 0; height: 0; visibility: hidden; }
-.linked-chart-renderer--news .chart-controls > label { width: min(100%, 320px); }
-.linked-chart-renderer--news .chart-controls > label > select { flex: 1; min-width: 0; }
+.linked-chart-renderer--news .chart-controls > label,
+.linked-chart-renderer--return .chart-controls > label { width: min(100%, 320px); }
+.linked-chart-renderer--news .chart-controls > label > select,
+.linked-chart-renderer--return .chart-controls > label > select { flex: 1; min-width: 0; }
 .news-calendar-fields { flex: 1 0 100%; }
 .news-calendar-fields > div { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; }
 .news-calendar-fields summary, .news-calendar-details summary { cursor: pointer; }
@@ -2448,6 +2450,26 @@ body {
 .news-calendar-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
 .news-calendar-day-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .news-calendar-details p, .news-calendar-details ul { margin: 4px 0; }
+
+.linked-chart-renderer--return { position: relative; --return-plot-share: 58%; }
+.linked-chart-plot--return { flex: 0 0 var(--return-plot-share); margin-top: auto; }
+.return-summary-draft-probe {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--return-plot-share);
+  visibility: hidden;
+  pointer-events: none;
+}
+.chart-surface-placeholder { visibility: hidden; }
+.chart-scroll-viewport--wide { overflow-x: auto; }
+.chart-scroll-viewport--wide.chart-scroll-viewport--touch-scroll { touch-action: pan-x pan-y pinch-zoom; }
+.linked-chart-renderer .return-summary-listings { flex-basis: 100%; }
+.return-summary-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
+.return-summary-details:not([open]) { flex-shrink: 0; }
+.return-summary-details summary { cursor: pointer; }
+.return-summary-details p, .return-summary-details dl, .return-summary-details ul { margin: 4px 0; }
+.return-summary-details dt { font-weight: 600; }
+.return-summary-details dd { margin-inline-start: 1em; overflow-wrap: anywhere; }
 
 /* The header's view dropdown. A native select inherits the platform's
    chrome, so the same tokens .card-action uses are restated for the parts

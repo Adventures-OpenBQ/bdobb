@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
+import { datasetFromBytes } from "./localTableData";
+import { runRecipe } from "./widgetData/chartRecipes/run";
 import { normalizeWidgets } from "./widgetsJson";
 import { captureChartSources, chartRequestContext } from "./widgetData/chartRecipes/chartSourceContracts";
 import { backendFinancialResponse } from "./widgetData/chartRecipes/financialEvidence";
@@ -77,6 +79,7 @@ describe("docs/examples", () => {
     "v9-risk-exposure.apps.json",
     "v9-screening-income.apps.json",
     "v9-next-news-sentiment-calendar.apps.json",
+    "v9-next-return-box-violin.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -140,6 +143,27 @@ describe("docs/examples", () => {
       kind: "news", instrument: "CANOPY.US", delivered_count: 5, scope: { kind: "sample", limit: 10, offset: 0 },
     });
     expect(importApps(apps, BUILTIN_WIDGETS).unresolved).toBe(1);
+  });
+
+  it("v9-next-return-box-violin imports its chart question and reacquires the separate local fixture", async () => {
+    const name = "v9-next-return-box-violin";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(source.params).toEqual({});
+    const recipe = chart.linkedChart?.recipe;
+    if (!recipe) throw new Error("Missing imported return summary recipe.");
+    expect(recipe).toMatchObject({ kind: "return-summary", symbols: ["CANOPY.US", "ALDER.US"], view: "box", window: { mode: "own" } });
+    const filename = "fixture-adjusted-prices.json";
+    const dataset = await datasetFromBytes(filename, readFileSync(join(dir, name, filename)), source.id, 1);
+    const result = runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+    expect(result).toMatchObject({ ok: true, returnSummary: { series: [
+      { symbol: "CANOPY.US", start: "2026-01-06", end: "2026-02-02" },
+      { symbol: "ALDER.US", start: "2026-01-06", end: "2026-02-02" },
+    ] } });
+    if (result.ok) expect(result.returnSummary?.series.map(item => item.samples.length)).toEqual([20, 20]);
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {

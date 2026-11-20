@@ -42,7 +42,7 @@ x-axis.
 If none of that applies, the card says *Nothing chartable in this payload.*
 
 The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator,
-waterfall and Sankey traces. A
+waterfall, Sankey and box traces. A
 ready-made figure asking for anything else says so and names the trace type it
 wanted.
 
@@ -54,6 +54,8 @@ controls pick **Chart type** (Columns, Bars or Lines), a **Category**, the
 Stacked. See Tables for what output it receives.
 
 For **Return distribution**, select adjusted daily prices, one symbol and 5–100 bins. Hover a bar for its interval, count and share. **Small multiples** compares up to twelve selected symbols from a shared base of 100. Gaps break both calculations. Both charts require complete or bounded daily history.
+
+**Return summaries** compares up to twelve qualified listings from a documented local daily adjusted-price snapshot. Boxes show R7 quartiles, observed whiskers and outliers. Violin uses Gaussian density smoothing on the same returns and a shared scale. Hover, tap, or open **Return listing details** for original returns, dates and counts. Use **Common inclusive dates** to compare within explicit bounds. After importing a source-free template, drop the snapshot and select it with **Choose source**.
 
 **ETF holdings Pareto** compares individual and cumulative weight of fund assets for up to 50 delivered holdings. Read the delivered weight and provider coverage beneath the controls. **ETF exposure** shows the reported weight of equity exposure for every delivered sector or region. Scroll the plot to reach the last category. Use **Card menu → Choose source** to change tables, choose the matching exposure mode and category, then **Apply chart settings**.
 

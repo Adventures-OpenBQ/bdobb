@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap']) }));
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box']) }));
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
@@ -27,7 +27,7 @@ import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
 import { pivotValueKey } from '../lib/pivotKeys';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { exportCompatibleApp, importApps } from '../lib/appsJson';
-import type { RecipeOptions } from '../lib/widgetData/chartRecipes/types';
+import type { RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
 import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
 import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
 import { runRecipe } from '../lib/widgetData/chartRecipes/run';
@@ -246,6 +246,10 @@ const riskRecipes = [
   { version: 1, kind: 'etf-exposure', mode: 'sector', fields: { category: 'sector', weight: 'weight' } },
 ] satisfies RecipeOptions[];
 
+const returnOptions: ReturnSummaryOptions = {
+  version: 1, kind: 'return-summary', fields: priceFields, symbols: ['A.US'], view: 'box', window: { mode: 'own' },
+};
+
 const incomeColumn = (year: number) => `${pivotValueKey('FY' + year)}${KEY_SEP}${incomeStatementIds.value}`;
 const screeningRecipes = [
   { version: 1, kind: 'bubble-regression', priceDate: 'latest', regression: true, fields: {
@@ -308,7 +312,8 @@ function newsSnapshot(first: boolean) {
   ]);
 }
 async function acquiredSource(recipe: RecipeOptions, id: string) {
-  const snapshot = recipe.kind === 'news-sentiment-calendar' ? newsSnapshot(id === 'A') : acquiredSnapshot(recipe, id);
+  const snapshot = recipe.kind === 'news-sentiment-calendar' ? newsSnapshot(id === 'A')
+    : recipe.kind === 'return-summary' ? returnSnapshot(id) : acquiredSnapshot(recipe, id);
   const file = await saveLocalFile(new File([JSON.stringify(snapshot)], 'acquired.json'));
   const root = { ...source, id, title: id, params: { file } };
   if (recipe.kind !== 'income-sankey') return root;
@@ -344,16 +349,21 @@ function riskRuntime() {
     disconnect() { resizeListeners.delete(this.notify); }
   });
   let measured = 900;
+  let measuredHeight = 430;
   const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
-    return this.classList.contains('chart-scroll-viewport--measured') ? measured : 0;
+    return this.matches('.chart-scroll-viewport--measured, .chart-scroll-viewport--wide > .chart-plot') ? measured : 0;
   });
-  restoreViewportWidth = () => width.mockRestore();
+  const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+    return this.matches('.chart-scroll-viewport--wide > .chart-plot') ? measuredHeight : 0;
+  });
+  restoreViewportWidth = () => { width.mockRestore(); height.mockRestore(); };
   const run = vi.fn<ReturnType<typeof recipeWorkers.createRecipeWorker>['run']>(
     async (dataset, options, context) => runRecipe(dataset, options, context),
   );
   const factory = vi.spyOn(recipeWorkers, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
-  function resize(next: number) {
+  function resize(next: number, nextHeight = measuredHeight) {
     measured = next;
+    measuredHeight = nextHeight;
     for (const notify of resizeListeners) notify([]);
   }
   return { run, factory, resize };
@@ -534,7 +544,7 @@ it('revalidates exposure mode against the linked snapshot without acquiring anot
   } finally { reads.mockRestore(); factory.mockRestore(); }
 });
 
-it.each([...screeningRecipes, calendarOptions])('fences $kind on a failed source change and retains only same-source completed output', async recipe => {
+it.each([...screeningRecipes, calendarOptions, returnOptions])('fences $kind on a failed source change and retains only same-source completed output', async recipe => {
   const { run, factory } = riskRuntime();
   const plot = vi.mocked(renderPlot);
   let rejectDraw!: (error: Error) => void;
@@ -550,7 +560,8 @@ it.each([...screeningRecipes, calendarOptions])('fences $kind on a failed source
     const first = await screen.findByTestId('chart-plot');
     await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(first));
     const figureA = plot.mock.lastCall![1];
-    expect(first.style.height).toBe(recipe.kind === 'news-sentiment-calendar' ? '260px' : recipe.kind === 'income-sankey' ? figureA.layout.height + 'px' : '');
+    if (recipe.kind === 'return-summary') expect(screen.getByText('Return listing details')).toBeVisible();
+    else expect(first.style.height).toBe(recipe.kind === 'news-sentiment-calendar' ? '260px' : recipe.kind === 'income-sankey' ? figureA.layout.height + 'px' : '');
     if (recipe.kind === 'news-sentiment-calendar') expect(screen.getByText(/^AAPL.US · Delivered news sentiment ·/)).toBeVisible();
     else expect(screen.getByText(/^Source A ·/)).toBeVisible();
     let rejectWorker!: (error: Error) => void;
@@ -1046,5 +1057,99 @@ it.each(['options', 'source revision', 'width'] as const)('fences an obsolete ne
     await act(async () => requests[1].resolve());
     expect(apply).toBeEnabled();
     expect(apply).not.toHaveAttribute('aria-busy');
+  } finally { factory.mockRestore(); }
+});
+
+
+function returnSnapshot(id: string) {
+  return {
+    completeness: 'bounded', receipt: { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-09' },
+    rows: dailyPriceRows(id === 'A' ? [16, 4, 1, 1, 1, 1, 1, 1, 1] : [4, 2, 1, 1, 1, 1, 1, 1, 1])
+      .map(row => ({ ...row, symbol: 'A.US' })),
+  };
+}
+
+it('discovers a Return summaries draft and requires a documented acquisition before applying', async () => {
+  const { factory } = riskRuntime();
+  try {
+    const { rows } = returnSnapshot('A');
+    const file = await saveLocalFile(new File([JSON.stringify(rows)], 'undocumented.json'));
+    const root = { ...source, id: 'A', params: { file } };
+    const linkedChart = { type: 'column' as const, category: 'date', measures: ['adjusted_close'], display: 'grouped' as const };
+    installDashboard(riskDashboard([root, { ...riskChart(returnOptions), linkedChart }]));
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    expect(screen.getByRole('option', { name: 'Return summaries' })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
+    expect(screen.getByLabelText('Return view')).toHaveValue('box');
+    expect(await screen.findByText(/local adjusted-price snapshot with an acquisition receipt/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+  } finally { factory.mockRestore(); }
+});
+
+it.each(['options', 'source revision', 'height'] as const)('fences an obsolete return draft check after changing %s', async change => {
+  const { run, factory, resize } = riskRuntime();
+  const file = await saveLocalFile(new File([JSON.stringify(returnSnapshot('A'))], 'snapshot.json'));
+  const root = { ...source, id: 'A', params: { file } };
+  const linkedChart = { type: 'column' as const, category: 'date', measures: ['adjusted_close'], display: 'grouped' as const };
+  installDashboard(riskDashboard([root, { ...riskChart(returnOptions), linkedChart }]));
+  const requests: { size: (number | undefined)[]; signal: AbortSignal; release: () => void }[] = [];
+  run.mockImplementation(async (dataset, options, context, signal) => {
+    const result = runRecipe(dataset, options, context);
+    await new Promise<void>(release => requests.push({ size: [context.viewportWidth, context.viewportHeight], signal, release }));
+    return result;
+  });
+  try {
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'A.US' }));
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(apply).toBeDisabled();
+    expect(apply).toHaveAttribute('aria-busy', 'true');
+
+    if (change === 'options') fireEvent.change(screen.getByLabelText('Return view'), { target: { value: 'violin' } });
+    if (change === 'height') act(() => resize(900, 330));
+    if (change === 'source revision') await act(async () => {
+      tableExecutionStore.updateDefinition('d', root.id, { table: { hidden: ['memo'] }, search: '' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[0].size).toEqual([900, 430]);
+    expect(requests[1].size).toEqual([900, change === 'height' ? 330 : 430]);
+    expect(requests[0].signal.aborted).toBe(true);
+    await act(async () => requests[0].release());
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+    await act(async () => requests[1].release());
+    expect(apply).toBeEnabled();
+  } finally { factory.mockRestore(); }
+});
+
+it('keeps applied return details through a refused pinned draft and clears invalid applied options', async () => {
+  const { factory } = riskRuntime();
+  const file = await saveLocalFile(new File([JSON.stringify(returnSnapshot('A'))], 'snapshot.json'));
+  const root = { ...source, id: 'A', params: { file } };
+  const chart = riskChart(returnOptions);
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    const detail = screen.getByText('Return listing details', { exact: true });
+    fireEvent.change(screen.getByLabelText('Return window'), { target: { value: 'common' } });
+    fireEvent.change(screen.getByLabelText('Start date'), { target: { value: '2026-01-06' } });
+    expect(await screen.findByText(/at least 5 finite daily returns.*A\.US/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    expect(detail).toBeVisible();
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(returnOptions);
+    const invalid = { ...returnOptions, viewportHeight: 900 };
+    act(() => installDashboard(riskDashboard([root, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: invalid } }])));
+    expect(displayed).not.toBeInTheDocument();
+    expect(detail).not.toBeInTheDocument();
+    expect(screen.getByText(/unsupported recipe option "viewportHeight"/i)).toBeVisible();
   } finally { factory.mockRestore(); }
 });
