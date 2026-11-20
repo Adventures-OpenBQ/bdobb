@@ -183,8 +183,9 @@ const tickPercent = (value: number) => {
   const exact = asPercent(value);
   return exact.length > 14 ? compactPercent.format(value) : exact;
 };
+const fractionLabels = (value: number) => [asPercent(value), `fraction ${value}`];
 const areaLabel = (value: number, denomination: string | null) => denomination
-  ? `${value} ${denomination}` : `${asPercent(value)} · fraction ${value}`;
+  ? `${value} ${denomination}` : fractionLabels(value).join(' · ');
 const sessionLabel = (map: MarketMapHierarchy) => `Completed close-to-close return ${map.priorSession} to ${map.session}`;
 const vintageLabel = (map: MarketMapHierarchy) => map.capRetrievedAt
   ? `Capitalization retrieved ${map.capRetrievedAt}`
@@ -255,18 +256,19 @@ const shortLabel = (label: string, limit = 24) => label.length > limit ? `${labe
 
 const nodeLabel = (item: PlotNode) => item.kind === 'market-root' ? item.label : shortLabel(item.label);
 
+function fractionHoverLines(value: number): string[] {
+  const labels = fractionLabels(value);
+  const combined = labels.join(' · ');
+  return combined.length <= 36 ? [combined] : labels;
+}
+
 function hover(item: PlotNode, map: MarketMapHierarchy): string {
-  const text = [nodeLabel(item), areaLabel(item.value, map.denomination)];
+  const area = map.denomination ? [areaLabel(item.value, map.denomination)] : fractionHoverLines(item.value);
+  const text = [nodeLabel(item), ...area];
   if (item.kind === 'market-listing') {
     text.push(shortLabel(item.sector ?? 'Sector unavailable'));
     if (item.change === null) text.push('Return unavailable');
-    else {
-      const percent = asPercent(item.change);
-      const fraction = `fraction ${item.change}`;
-      const together = `${percent} · ${fraction}`;
-      if (together.length <= 36) text.push(together);
-      else text.push(percent, fraction);
-    }
+    else text.push(...fractionHoverLines(item.change));
   }
   text.push(`Completed session ${map.session}`, vintageLabel(map));
   return text.map(escape).join('<br>');

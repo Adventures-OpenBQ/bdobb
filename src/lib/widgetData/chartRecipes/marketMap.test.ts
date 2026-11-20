@@ -157,6 +157,23 @@ it('tiny_cells_and_typed_ids: exact small values and distinct qualified listings
   expect(result.figure.data[0]).toMatchObject({ hovertext: expect.arrayContaining([expect.stringContaining('0.0001 USD'), expect.stringContaining('-10%')]) });
 });
 
+it('tiny index weight hover wraps the full percent and original fraction for every node kind', async () => {
+  const area = 1.2345678901234568e-128;
+  const receipt = { ...index.chart_sources.receipts[0], coverage: 'partial' };
+  const dataset = await load({ ...index, completeness: 'partial', rows: index.rows.map(row => ({ ...row, area })),
+    chart_sources: { version: 1, receipts: [receipt] } });
+  const result = render(dataset, indexOptions);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.marketMap).toMatchObject({ scope: 'delivered', root: { value: 2.4691357802469136e-128 },
+    sectors: [{ value: area }, { value: area }], listings: [{ value: area }, { value: area }] });
+  const weight = '<br>1.2345678901234568E-126%<br>fraction 1.2345678901234568e-128<br>';
+  expect(result.figure.data[0]).toMatchObject({ hovertext: [
+    expect.stringContaining('Delivered index components<br>2.4691357802469136E-126%<br>fraction 2.4691357802469136e-128<br>'),
+    expect.stringContaining(`Technology${weight}`), expect.stringContaining(`Sector unavailable${weight}`),
+    expect.stringContaining(`ALFA.US${weight}`), expect.stringContaining(`BETA.US${weight}`),
+  ] });
+});
+
 it('physical_bindings: allows unique aliases and refuses calculated, aggregate, ambiguous or duplicate identities', async () => {
   const dataset = await load(cap);
   const alias = 'c-user-area';
