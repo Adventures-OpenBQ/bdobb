@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "1180708a2ab1d6a7effd569524798ca74936b4c6",
-  "sourceId": "e40111e4c6655de65ac0700d5cdbf31629a955f5a77e23d9367b4a20964cfb55",
+  "baseCommit": "d6c016ed790818f133b316f05ab6cb52ccb82fa6",
+  "sourceId": "d07a627bec0ae226d4964db70e83dafafbd77de1a03e9a3fc2d7753de2127739",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "71ea38d0590cb3c2048fe17773e8fc08ca578d96915f98d8a71e88b8a958fbef"
+      "sha256": "a3af430f6b46c7699f040b5216c4eb73a5783fd416ccdf422366c31f4fbe6d20"
     },
     {
       "path": "source_bundle.py",
@@ -6110,8 +6110,8 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 165605,
-      "sha256": "a5deb0400171f01ee33365df5274ae88da296510caac2951300d1ed7f5e8c3ab"
+      "size": 165730,
+      "sha256": "1e0678c5a392744bb7db2b321c8445171e68ea519177de0b3203e96da0eb3de9"
     },
     {
       "path": "src/components/WidgetCard.tsx",
@@ -8539,15 +8539,15 @@
       "path": "src/lib/widgetsJson.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 39157,
-      "sha256": "288b6bfd456839557450459bfc6e72cc0190233997ff99a900aa6b56e1e7c0a5"
+      "size": 40574,
+      "sha256": "c84f2f2560360b2dc02d0a1e026bf481636741bf5597e50acddea8b8b287aa96"
     },
     {
       "path": "src/lib/widgetsJson.ts",
       "type": "file",
       "mode": 420,
-      "size": 22432,
-      "sha256": "52b0f4b2e47905330f7cb4acb0f208b0eb4525ac3669b93ea2ce235db4c674c9"
+      "size": 22813,
+      "sha256": "42de8f11a28800ce550c93f802bb6024c4ce77064fd849cd93c082077a86ecf9"
     },
     {
       "path": "src/lib/workspaceAccount.sync.test.ts",
