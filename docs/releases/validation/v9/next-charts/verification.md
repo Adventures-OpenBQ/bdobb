@@ -177,7 +177,7 @@ git rev-parse HEAD:v9/eodhd/source
 From BDOBB, run the compiled artifact and packaging gates before the server-backed suites. Each Playwright invocation owns a single controlled server, one worker and zero retries. The TypeScript sweep includes affected older chart suites. Eight family integration specs then exercise the compiled Rust engine.
 
 ```bash
-pnpm typecheck && pnpm lint && pnpm test:run && pnpm scrub && pnpm test:web
+pnpm typecheck && pnpm lint && pnpm knip && pnpm test:run && pnpm scrub && pnpm test:web
 pnpm pivot:build && pnpm pivot:verify && pnpm pivot:test && pnpm test:pivot:packaging
 PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap
 features=(e2e/{market-map,estimate-revisions,dual-axis-overlay,etf-sunburst,linked-kpi,ownership-snapshot,return-summary,news-calendar}.spec.ts)
@@ -214,3 +214,9 @@ The eleven selected Chromium cases covered the source-related chart, calendar an
 Final independent readiness review at `d812f8f3` accepted the Rita correction and existing-PR publication with zero Critical/Important findings. Product `4e6c50c0` retains the recorded 10,175 unit passes / 47 opt-in skips, 57 web passes, 1,050 affected passes, typecheck/lint/scrub/build, TypeScript 10/11 + unchanged news 1/1 isolated rerun and compiled Rust 11/11. The rerun does not establish a fixed hover defect. No further product change follows these checks. Canonical provider `f8f01666` and Docker `a0efab23` retain their earlier exact-pair qualification.
 
 Local merge-tree checks against the current PR targets release/v9, main and release/v9 were conflict-free. The provider prospective merged tree equals canonical/vendor `aad6d9c74450cfc5ae9f7fa38c4697b85f58e93c`. The final reviewer reproduced a baseline pre-pin imported-card Rita refusal and accepted it as nonblocking. See independent-release-readiness-review.md. No merge or deployment is part of publication.
+
+## Client CI Knip follow-up
+
+The client [build job](https://github.com/Adventures-OpenBQ/bdobb/actions/runs/44763204472/job/136380866304) stopped at `pnpm knip` on `a595ff83`. The local run reproduced exit 1 with seven unused-file findings for the [opt-in reproducers](reproduce/README.md). Registering those scripts as entries also exposed browser-side imports that use Vite's root-relative `/src/` URLs. Knip now resolves those URLs against the checkout, so the scripts and their imports stay in the analysis.
+
+The two mode-dependent Vite aliases for dialog and file storage are explicit entry modules. Eight unused internal export names were removed. Local `pnpm knip` exited 0 with one warning for the existing window shim's `Monitor` type, retained as part of the shim surface. The 15 focused suites passed all 330 tests. All seven scripts passed Node's syntax check. Typecheck, lint and scrub passed. The focused checks cover the static cleanup. Earlier full-suite and browser qualification belongs to the product heads recorded above.

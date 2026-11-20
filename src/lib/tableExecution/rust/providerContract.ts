@@ -3,7 +3,7 @@
 import type {TableExecutor,ProviderSession,ProviderCapabilities,ProviderCount,ProviderResultIdentity,ProviderSourceIdentity,SessionOptions,Revision,ProviderApplyRequirements} from '../types';
 import {ProviderContractError,refusal} from './providerCapabilities';
 import {assertUnicodeScalarGraph} from './wireCodec';
-export {ProviderContractError,localCapabilities,capabilityPreflight} from './providerCapabilities';
+export {localCapabilities} from './providerCapabilities';
 export function validateSessionOptions(options:SessionOptions,capabilities:ProviderCapabilities):void {
  assertUnicodeScalarGraph({protocolVersion:options.protocolVersion,widgetId:options.widgetId,locale:options.locale});
  if(options.protocolVersion!==1||!capabilities.protocolVersions.includes(options.protocolVersion))throw new ProviderContractError({code:'UNSUPPORTED_PROTOCOL',message:'Unsupported provider protocol version'});

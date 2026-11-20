@@ -11,8 +11,6 @@ import { isNewsPolarity } from './newsEvidence';
 import { decodeRecipeOptions } from './settings';
 import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
 
-export { acquiredNewsWindow } from './newsCalendarInput';
-
 export type NewsCalendarDay = {
   date: string; mean: number | null; delivered: number; scored: number; articles: NewsArticle[];
 };

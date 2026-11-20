@@ -7,7 +7,7 @@ import type { FormulaDef, MemberSelector, TableModelV1 } from '../../../lib/tabl
 import type { DatasetColumn } from '../../../lib/widgetData/types';
 import {rememberMembers,applyBindings,chronological,type DraftBindings} from '../../../lib/tableModel/formulaProvenance';
 export {rememberFormulaBindings} from '../../../lib/tableModel/formulaProvenance';
-export type {Reference,DraftBindings} from '../../../lib/tableModel/formulaProvenance';
+export type {DraftBindings} from '../../../lib/tableModel/formulaProvenance';
 export type DraftMemberProof = MemberSelector & { token: string; categoryName: string; value: number | string | boolean | null };
 /** Keep only inserted selectors still present in this bounded draft, never a facet cache. */
 export function retainDraftMembers(expression: string, proofs: readonly DraftMemberProof[]): DraftMemberProof[] {

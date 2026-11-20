@@ -6,8 +6,20 @@
     "deploy/reference-demo/vercel/build.mjs",
     "deploy/table-service/*.mjs",
     "e2e/**/*.{ts,tsx,mjs}",
+    "src/browser-shim/dialog.ts",
+    "src/browser-shim/fs.ts",
+    "docs/releases/validation/v9/next-charts/reproduce/etf-2-native-fill-comparison.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/etf-2-native-worker-probe.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/etf-2-rounded-midpoint-probe.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/market-map-2-renderer.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/overlay-2-native-probe.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/overlay-2-renderer.mjs",
+    "docs/releases/validation/v9/next-charts/reproduce/revision-2-renderer.mjs",
     "playwright.*.config.ts"
   ],
+  "paths": {
+    "/src/*": ["./src/*"]
+  },
   "ignore": [
     "LICENSES/**",
     "scripts/*.d.mts",

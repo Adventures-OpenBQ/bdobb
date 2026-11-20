@@ -19,8 +19,6 @@ import {
   axisPixels, drawableValues, dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth, extents, valueRange, type Range,
 } from './viewport';
 
-export { overlayAxisTicks } from './overlayDisplay';
-
 type Side = 'left' | 'right';
 type SessionTiming = 'before-market' | 'during-market' | 'after-market';
 export type OverlayPoint = {

@@ -21,12 +21,6 @@ import type { WidgetDef } from "../lib/types";
 import { useBackendsStore } from "./backendsStore";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
 
-/**
- * Re-exported, not redefined: the id and the rule that reads it live in
- * src/lib/providerKeys.ts, which is where KeysPanel takes them from too.
- */
-export { KEY_MAINT_WIDGET_ID } from "../lib/providerKeys";
-
 export type KeysSource = "key-maint" | "probe" | "none";
 
 /**
