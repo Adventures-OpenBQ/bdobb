@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "8f9482981d3d181115ceb293058b4fc63d51f51d",
-  "sourceId": "4d54f8f4f9d011d4d694e3fb3f651391060052dac395745605e01b3e143b8b0b",
+  "baseCommit": "8222669dde4284cb5d57df4c6601a0d4b6935745",
+  "sourceId": "5c0a9812aab40a123994b5fe6a5bab4161edfc8b4b339be502733e8d2059b328",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -4794,8 +4794,8 @@
       "path": "docs/reference-manual/v4/README.md",
       "type": "file",
       "mode": 420,
-      "size": 6507,
-      "sha256": "a4bc6553dae2f8798822650fddc7f9535dcee18b54869007cfb62b25b3e188f3"
+      "size": 6854,
+      "sha256": "7921a3770bc2ac1ff512b8dcdd71f64bd669e70de0163cf51b019c582b9cc396"
     },
     {
       "path": "docs/reference-manual/v4/images/calendar-view-dark.png",
@@ -11403,7 +11403,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "166db901883db7e359fcd4649619aa39ba6d7d4d959bd02e93b444b1b0db8282"
+      "sha256": "d5c7bd09e749f571df149ca3dcf4194a91dcd206102468b3b680f191cb410ef1"
     },
     {
       "path": "source_bundle.py",
@@ -11962,15 +11962,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 200691,
-      "sha256": "1b028e0289291e392be431c0a7c45b687625e3b6f61c2ed5f5834c6a440f3d9b"
+      "size": 202201,
+      "sha256": "93a53863c7c03882117b782ba5c59bac7147edd95783b7fbe1e3399c2991d83d"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 96318,
-      "sha256": "44056bb18afdd621ded422789ee877f89dcc969f0162676f1e9c566fe8da0215"
+      "size": 96889,
+      "sha256": "25b4f8052d6a01be73857ed52adac66808404c9c0314a9ce5607f6868817b493"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -12550,15 +12550,15 @@
       "path": "src/components/renderers/LinkedChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 45508,
-      "sha256": "090b93f4758983471b7dc80e0e00e2615b811ce7e4ccadf5111946fa6d141741"
+      "size": 47311,
+      "sha256": "91ba59c9d7b150a21e1ac49a502a07bef1be7a17d9d48095e0e611f0ca7c7cb4"
     },
     {
       "path": "src/components/renderers/LinkedChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 18507,
-      "sha256": "372e5a9b8170f9ba5a25ba42089055347f8728c9a7d14670b472fecdc6771e89"
+      "size": 18775,
+      "sha256": "aeee693f10aa6cd5a5c29d8c8341d4dc8a4fe5d359260e2b82de09150d48974b"
     },
     {
       "path": "src/components/renderers/LiveGridRenderer.test.tsx",
@@ -13474,8 +13474,8 @@
       "path": "src/help/guide/linked-widgets.md",
       "type": "file",
       "mode": 420,
-      "size": 10445,
-      "sha256": "923d44b3cddc68c9ae0a52e3cb50a43ebecdd31160236a58b7450a39bfb09547"
+      "size": 10726,
+      "sha256": "5276ad47ee376100f6ee73be21b7a05bf7845cd0c2d09bfb1aa54dab971ebcfd"
     },
     {
       "path": "src/help/guide/openbq-docker-stack.md",
@@ -14097,8 +14097,8 @@
       "path": "src/help/topics/linked-widgets.md",
       "type": "file",
       "mode": 420,
-      "size": 7181,
-      "sha256": "858470ceaac91ce75b5e34d75a2484e4a78ef48fccadbbbd584cd9931fed4102"
+      "size": 7462,
+      "sha256": "d57daff221d7e77a2d29146c40375e04764c108f52368ea8ac33eeb64416dc2d"
     },
     {
       "path": "src/help/topics/provider-keys.md",
@@ -17506,8 +17506,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 111121,
-      "sha256": "59ec38b2a59d25bb5eeb2c4d89be718f87747ff605477b04de7bac28ce78fa1f"
+      "size": 111289,
+      "sha256": "4dced23fe6a62e6bb7fd9584546ccc9ae87667a81b104a0547f866cd9cb28138"
     },
     {
       "path": "src/test/fakeSocket.ts",
