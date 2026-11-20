@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "4957284e364a7983059a89766bab5671353d093a",
-  "sourceId": "30bb6bd5bf529bfdc7a430a3b8b067c15d06288b51e696c75b3bde384177f1b3",
+  "baseCommit": "aa49088f1e84744f0c18e00f56ff5f568f6c86ed",
+  "sourceId": "cc7310b7e70b32a78fdfe186d2ea009e69d1070f11859170c418ced7adabd946",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "e924810cb7f4084f2347e52159d628ea5b423cf9a07a9854a82a8cfe38bf5de6"
+      "sha256": "4a260a53b50a05648c9bffdc83ebdda37302418c86d6c38afc62959e09f017dd"
     },
     {
       "path": "source_bundle.py",
@@ -7874,15 +7874,15 @@
       "path": "src/lib/dataClient.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 48283,
-      "sha256": "6feddb37e7ed265253ab35820b0797c8c653dd2321e5a78b733fa3303d49715b"
+      "size": 49247,
+      "sha256": "10fb324b8a3f4614d5b3c1da7c6f1296185dfb5c693d677964eb4777743fbded"
     },
     {
       "path": "src/lib/dataClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 31213,
-      "sha256": "bff358c2178b90a8539f5eb5969a57b74ae698ee5c7160258a47066a3b6b1b72"
+      "size": 31244,
+      "sha256": "458194ca418eaafcd7d336e4bda7b64cb49f867b352aa8a219e8831ab4c401d5"
     },
     {
       "path": "src/lib/discovery.test.ts",
