@@ -90,3 +90,15 @@ it('keeps the news window declaration and strips attempted runtime evidence on s
   const unsupported = { ...recipe, version: 2 } as unknown as RecipeOptions;
   expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
 });
+
+it('persists the ownership question and strips runtime evidence, resolved coordinates and geometry', () => {
+  const recipe = { version: 1, kind: 'ownership-snapshot', issuer: 'AAPL.US', view: 'bars',
+    fields: { insiders: 'percent_insiders' } } satisfies RecipeOptions;
+  const linkedChart = { type: recipe.kind, recipe, display: 'grouped', measures: [] } as const;
+  const authored = { ...linkedChart, measures: [] };
+  const injected = { ...authored, chart_sources: { receipts: ['injected'] }, ownershipSnapshot: { buckets: [] },
+    resolvedAsOf: '2026-11-19', viewportWidth: 300 };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(authored);
+  const unsupported = { ...recipe, version: 2 } as unknown as RecipeOptions;
+  expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
+});

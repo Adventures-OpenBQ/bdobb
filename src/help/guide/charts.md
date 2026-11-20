@@ -50,6 +50,14 @@ Choose **Return summaries** to compare observed daily simple returns for up to t
 
 Choose **Common inclusive dates** to initialize bounds from the selected listings' overlapping acquired histories. Each listing keeps its own observed sessions and both prices in a return must fall inside the bounds. **Apply chart settings** saves the explicit dates after validation. If a later snapshot cannot supply them, repair the dates or choose each listing's own dates. After opening a source-free Workspace template, drop the snapshot as a local table and use **Choose source**. On touch screens, drag to zoom when the plot fits or swipe to scroll when the comparison overflows.
 
+## Ownership snapshot
+
+Link a table with acquired ownership evidence, then choose **Ownership snapshot**. The default **Independent bars** view uses separate insider, institutional and free-float measures for one qualified issuer. Bind the acquired fields, then select **Apply chart settings**. Observed zero, unavailable data and a cleared binding have distinct labels or markers. Open **Ownership snapshot details** to read each source value, unit, basis and measurement date. The card reports the share class and UTC retrieval time. A refresh uses the latest compatible snapshot acquired by the source table.
+
+The opted-in EODHD ShareStatistics route can verify insider and institutional percentages for US primary common stock. Use `chart_source=true` on the table, selecting `results`, and include `provider=eodhd` on the shared route. Field dates, share class and basis can remain unknown. Direct free float and the data for **Waffle** require separate acquired evidence. Waffle uses 100 squares for an exclusive, exhaustive partition with a common outstanding-shares denominator, one class and one measurement date. Its details give exact bucket values, including buckets with zero cells, and the chart reports any admitted rounding discrepancy.
+
+After importing the source-free example, drop the separate file and use **Choose source**. If the saved issuer is unavailable, attach the intended source or explicitly select the newly acquired issuer and apply. Saving a workspace with an attached file reports `MISSING_LOCAL_ASSET`. For a portable settings file, relink to an empty source card, remove the dropped table and save. Reattach the file after import.
+
 ## ETF concentration and exposure
 
 **ETF holdings Pareto** ranks delivered constituents by reported weight of fund assets. The bars show individual weights and the line accumulates the displayed holdings on the same scale. The chart shows at most 50 and separately reports the count and weight of all distinct holdings delivered to it. Transport scope and provider holdings coverage appear separately. Filtering the source changes the rows in the calculation.

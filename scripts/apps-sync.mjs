@@ -43,6 +43,7 @@ const SERVED = {
   "v9-next-news-sentiment-calendar": false,
   // Source acquired separately from a local file.
   "v9-next-return-box-violin": false,
+  "v9-next-ownership-snapshot": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,

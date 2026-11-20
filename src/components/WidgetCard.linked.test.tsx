@@ -27,7 +27,7 @@ import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
 import { pivotValueKey } from '../lib/pivotKeys';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { exportCompatibleApp, importApps } from '../lib/appsJson';
-import type { RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
+import type { OwnershipSnapshotOptions, RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
 import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
 import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
 import { runRecipe } from '../lib/widgetData/chartRecipes/run';
@@ -37,6 +37,7 @@ import { fixture as incomeFixture } from '../lib/statementModel/compileFixtures'
 import { intent as statementIntent } from '../lib/statementModel/testFixtures';
 import { incomeStatementIds } from '../lib/statementModel/incomeChartProof';
 import { dividendEvidence, dividendRow, emptyDividendEvidence, incomeEvidence, incomeRow, screenerEvidence } from '../test/fixtures/financialEvidence';
+import { liveOwnershipReceipt, liveOwnershipRows } from '../test/fixtures/ownershipEvidence';
 import { calendarArticle, calendarOptions, calendarSnapshot } from '../test/fixtures/newsCalendar';
 import * as fs from '@tauri-apps/plugin-fs';
 class Boundary {
@@ -250,6 +251,15 @@ const returnOptions: ReturnSummaryOptions = {
   version: 1, kind: 'return-summary', fields: priceFields, symbols: ['A.US'], view: 'box', window: { mode: 'own' },
 };
 
+const ownershipOptions: OwnershipSnapshotOptions = {
+  version: 1, kind: 'ownership-snapshot', issuer: 'AAPL.US', view: 'bars', fields: liveOwnershipReceipt.field_origins,
+};
+function ownershipSnapshot(id: string, issuer = 'AAPL.US') {
+  return { completeness: 'complete', rows: [{
+    ...liveOwnershipRows[0], symbol: issuer, share_class: null, percent_insiders: id === 'A' ? 1.687 : 2.875,
+  }], chart_sources: { version: 1, receipts: [{ ...liveOwnershipReceipt, origin: 'acquired-snapshot', issuer }] } };
+}
+
 const incomeColumn = (year: number) => `${pivotValueKey('FY' + year)}${KEY_SEP}${incomeStatementIds.value}`;
 const screeningRecipes = [
   { version: 1, kind: 'bubble-regression', priceDate: 'latest', regression: true, fields: {
@@ -313,7 +323,8 @@ function newsSnapshot(first: boolean) {
 }
 async function acquiredSource(recipe: RecipeOptions, id: string) {
   const snapshot = recipe.kind === 'news-sentiment-calendar' ? newsSnapshot(id === 'A')
-    : recipe.kind === 'return-summary' ? returnSnapshot(id) : acquiredSnapshot(recipe, id);
+    : recipe.kind === 'return-summary' ? returnSnapshot(id)
+      : recipe.kind === 'ownership-snapshot' ? ownershipSnapshot(id) : acquiredSnapshot(recipe, id);
   const file = await saveLocalFile(new File([JSON.stringify(snapshot)], 'acquired.json'));
   const root = { ...source, id, title: id, params: { file } };
   if (recipe.kind !== 'income-sankey') return root;
@@ -1213,4 +1224,170 @@ it('refuses an oversized applied return height and recovers with the same questi
     await screen.findByTestId('chart-plot');
     expect(vi.mocked(renderPlot).mock.lastCall?.[2]).toBe(revision);
   } finally { factory.mockRestore(); }
+});
+
+it('discovers ownership draft settings but ordinary data cannot enable Apply or waffle', async () => {
+  const { factory } = riskRuntime();
+  const file = await saveLocalFile(new File([JSON.stringify(liveOwnershipRows)], 'ordinary.json'));
+  const root = { ...source, id: 'A', params: { file } };
+  const linkedChart = { type: 'column' as const, category: 'symbol', measures: ['percent_insiders'], display: 'grouped' as const };
+  installDashboard(riskDashboard([root, { ...riskChart(ownershipOptions), linkedChart }]));
+  try {
+    render(<LiveRiskChart/>);
+    const applied = await screen.findByTestId('chart-plot');
+    expect(screen.getByRole('option', { name: 'Ownership snapshot' })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'ownership-snapshot' } });
+    expect(screen.getByLabelText('Ownership view')).toHaveValue('bars');
+    expect(screen.getByRole('option', { name: 'Waffle' })).toBeDisabled();
+    expect(await screen.findByText(/acquire an ownership snapshot with verified field and issuer evidence/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(applied);
+  } finally { factory.mockRestore(); }
+});
+
+it.each(['field', 'output', 'height'] as const)('admits only the exact ownership draft after a change to %s', async change => {
+  const { run, factory, resize, setSize } = riskRuntime();
+  const root = await acquiredSource(ownershipOptions, 'A');
+  const linkedChart = { type: 'column' as const, category: 'symbol', measures: ['percent_insiders'], display: 'grouped' as const };
+  installDashboard(riskDashboard([root, { ...riskChart(ownershipOptions), linkedChart }]));
+  const requests: { context: Parameters<typeof run>[2]; signal: AbortSignal; release: () => void }[] = [];
+  run.mockImplementation(async (dataset, options, context, signal) => {
+    const result = runRecipe(dataset, options, context);
+    await new Promise<void>(release => requests.push({ context, signal, release }));
+    return result;
+  });
+  try {
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'ownership-snapshot' } });
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(apply).toBeDisabled();
+    expect(apply).toHaveAttribute('aria-busy', 'true');
+    if (change === 'field') fireEvent.change(screen.getByLabelText('Insider ownership'), { target: { value: '' } });
+    if (change === 'height') act(() => resize(900, 330));
+    if (change === 'output') await act(async () => {
+      tableExecutionStore.updateDefinition('d', root.id, { table: { hidden: ['date'] }, search: '' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests.map(({ context }) => [context.viewportWidth, context.viewportHeight]))
+      .toEqual([[900, 430], [900, change === 'height' ? 330 : 430]]);
+    expect(requests[0].signal.aborted).toBe(true);
+    await act(async () => requests[0].release());
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    await act(async () => requests[1].release());
+    expect(apply).toBeEnabled();
+
+    setSize(10_000.5, 430);
+    fireEvent.click(apply);
+    expect(apply).toBeDisabled();
+    await waitFor(() => expect(requests).toHaveLength(3));
+    expect(requests[2].context.viewportWidth).toBe(10_000.5);
+    await act(async () => requests[2].release());
+    expect(await screen.findByText(/viewport width greater than 0 and at most 10,000/)).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+  } finally { requests.forEach(request => request.release()); factory.mockRestore(); }
+});
+
+it('clears invalid applied ownership settings and repairs an unavailable saved issuer only explicitly', async () => {
+  const { factory, resize } = riskRuntime();
+  const root = await acquiredSource(ownershipOptions, 'A');
+  const chart = riskChart(ownershipOptions);
+  const plot = vi.mocked(renderPlot);
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const displayed = await screen.findByTestId('chart-plot');
+    expect(screen.getByText('Ownership snapshot details')).toBeVisible();
+    const revision = plot.mock.lastCall?.[2];
+    act(() => resize(900, 350));
+    await waitFor(() => expect(plot.mock.calls.filter(([node]) => node === displayed)).toHaveLength(2));
+    expect(plot.mock.lastCall?.[2]).toBe(revision);
+    expect(screen.getByTestId('chart-plot')).toBe(displayed);
+
+    const invalid = { ...ownershipOptions, resolvedAsOf: '2026-11-19' };
+    act(() => installDashboard(riskDashboard([root, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: invalid } }])));
+    expect(displayed).not.toBeInTheDocument();
+    expect(screen.queryByText('Ownership snapshot details')).not.toBeInTheDocument();
+    expect(screen.getByText(/unsupported recipe option "resolvedAsOf"/)).toBeVisible();
+
+    const pinned = { ...ownershipOptions, issuer: 'MSFT.US' };
+    act(() => installDashboard(riskDashboard([root, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: pinned } }])));
+    const issuer = screen.getByLabelText('Acquired issuer');
+    await waitFor(() => expect(issuer).toHaveValue('MSFT.US'));
+    expect(await screen.findByRole('option', { name: 'MSFT.US (unavailable)' })).toBeDisabled();
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    expect(apply).toBeDisabled();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    fireEvent.change(issuer, { target: { value: 'AAPL.US' } });
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+    await screen.findByTestId('chart-plot');
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(ownershipOptions);
+  } finally { factory.mockRestore(); }
+});
+
+it('fences ownership worker and draw errors across a relink and retains a same-source stale result', async () => {
+  const { run, factory } = riskRuntime();
+  const a = await acquiredSource(ownershipOptions, 'A'), b = await acquiredSource(ownershipOptions, 'B');
+  installDashboard(riskDashboard([a, b, riskChart(ownershipOptions)]));
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, opts) => path === 'files/' + b.params.file ? held : readFile(path, opts));
+  const plot = vi.mocked(renderPlot);
+  let oldDraw!: (error: Error) => void;
+  plot.mockImplementationOnce(async () => new Promise<void>((_, reject) => { oldDraw = reject; }));
+  try {
+    render(<LiveRiskChart/>);
+    const first = await screen.findByTestId('chart-plot');
+    expect(await screen.findByText('Ownership snapshot details')).toBeVisible();
+    let finishA!: () => void;
+    let signalA: AbortSignal | undefined;
+    run.mockImplementation(async (data, options, context, signal) => {
+      const result = runRecipe(data, options, context);
+      if (data.provenance.sourceWidgetId === 'A') {
+        signalA = signal;
+        await new Promise<void>(resolve => { finishA = resolve; });
+      }
+      return result;
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await waitFor(() => expect(finishA).toBeDefined());
+    await chooseRiskSource('B');
+    expect(await screen.findByText('Loading source B…')).toBeVisible();
+    expect(first).not.toBeInTheDocument();
+    expect(signalA?.aborted).toBe(true);
+    expect(screen.queryByText('Ownership snapshot details')).not.toBeInTheDocument();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    const diagnostic = 'Source B: File read failed';
+    expect(screen.getAllByRole('alert').map(node => node.textContent)).toEqual([diagnostic]);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    const second = await screen.findByTestId('chart-plot');
+    expect(await screen.findByText('Ownership snapshot details')).toBeVisible();
+    const calls = plot.mock.calls.length;
+    await act(async () => { finishA(); oldDraw(new Error('Obsolete draw')); });
+    expect(plot).toHaveBeenCalledTimes(calls);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    read.mockImplementation((path, opts) => path === 'files/' + b.params.file ? Promise.reject(new Error('File read failed')) : readFile(path, opts));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByText('Showing completed data (stale).');
+    expect(screen.getAllByText(/showing completed data \(stale\)/i)).toHaveLength(1);
+    expect(screen.getAllByRole('alert').map(node => node.textContent)).toEqual([diagnostic]);
+    expect(screen.getByTestId('chart-plot')).toBe(second);
+
+    read.mockImplementation(readFile);
+    plot.mockRejectedValueOnce(new Error('Current ownership draw failed'));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Current ownership draw failed');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.getByText('Ownership snapshot details')).toBeVisible();
+  } finally { read.mockRestore(); factory.mockRestore(); }
 });

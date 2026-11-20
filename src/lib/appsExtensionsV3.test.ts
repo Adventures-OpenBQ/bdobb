@@ -368,3 +368,33 @@ it("preserves a return summary’s explicit order and bounds and rejects runtime
     expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
   }
 });
+
+it("roundtrips ownership choices and refuses runtime data, unknown keys and versions", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: "ownership-snapshot", version: 1, issuer: "EXAMPLE.US", view: "waffle",
+    fields: { bucket: "bucket_id", share: "reported_share" } } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "ownership", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, ownership] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(ownership.linkedChart?.recipe).toEqual(recipe);
+  expect(ownership.linkedSource?.sourceWidgetId).toBe(producer.id);
+  const hostile = [
+    { ownershipSnapshot: { buckets: [] } },
+    { chart_sources: { version: 1, receipts: [] } },
+    { unexpected: "unknown key" },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, partition: { status: "verified" } } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, asOf: "as_of" } } },
+  ];
+  expect(hostile.map(change => {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    return planAppsImport(text, text.length, [], []).ok;
+  })).toEqual(hostile.map(() => false));
+});

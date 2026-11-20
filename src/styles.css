@@ -2440,8 +2440,10 @@ body {
 /* Match the news plot viewport's stable scrollbar gutter without occupying card height. */
 .news-calendar-width-probe { flex: 0 0 0; height: 0; visibility: hidden; }
 .linked-chart-renderer--news .chart-controls > label,
+.linked-chart-renderer--ownership .chart-controls > label,
 .linked-chart-renderer--return .chart-controls > label { width: min(100%, 320px); }
 .linked-chart-renderer--news .chart-controls > label > select,
+.linked-chart-renderer--ownership .chart-controls > label > select,
 .linked-chart-renderer--return .chart-controls > label > select { flex: 1; min-width: 0; }
 .news-calendar-fields { flex: 1 0 100%; }
 .news-calendar-fields > div { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; }
@@ -2451,12 +2453,12 @@ body {
 .news-calendar-day-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .news-calendar-details p, .news-calendar-details ul { margin: 4px 0; }
 
-.linked-chart-renderer--return { position: relative; --return-plot-share: 58%; }
-.linked-chart-plot--return { flex: 0 0 var(--return-plot-share); margin-top: auto; }
-.return-summary-draft-probe {
+.linked-chart-renderer--return, .linked-chart-renderer--ownership { position: relative; --recipe-plot-share: 58%; }
+.linked-chart-plot--return, .linked-chart-plot--ownership { flex: 0 0 var(--recipe-plot-share); margin-top: auto; }
+.return-summary-draft-probe, .ownership-draft-probe {
   position: absolute;
   inset: auto 0 0;
-  height: var(--return-plot-share);
+  height: var(--recipe-plot-share);
   visibility: hidden;
   pointer-events: none;
 }
@@ -2464,10 +2466,14 @@ body {
 .chart-scroll-viewport--wide { overflow-x: auto; }
 .chart-scroll-viewport--wide.chart-scroll-viewport--touch-scroll { touch-action: pan-x pan-y pinch-zoom; }
 .linked-chart-renderer .return-summary-listings { flex-basis: 100%; }
-.return-summary-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
-.return-summary-details:not([open]) { flex-shrink: 0; }
-.return-summary-details summary { cursor: pointer; }
-.return-summary-details p, .return-summary-details dl, .return-summary-details ul { margin: 4px 0; }
+.return-summary-details, .ownership-snapshot-details { flex: 0 1 auto; max-height: 25%; overflow: auto; padding: 4px 6px; }
+.return-summary-details:not([open]), .ownership-snapshot-details:not([open]) { flex-shrink: 0; }
+.return-summary-details summary, .ownership-snapshot-details summary { cursor: pointer; }
+.return-summary-details p, .return-summary-details dl, .return-summary-details ul, .ownership-snapshot-details ul { margin: 4px 0; }
+.ownership-recipe-controls label { max-width: 100%; }
+.ownership-recipe-controls select { min-width: 0; }
+.ownership-recipe-controls p { flex: 1 0 100%; margin: 2px 0; }
+.ownership-snapshot-details li { overflow-wrap: anywhere; }
 .return-summary-details dt { font-weight: 600; }
 .return-summary-details dd { margin-inline-start: 1em; overflow-wrap: anywhere; }
 

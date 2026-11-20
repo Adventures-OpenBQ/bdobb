@@ -13,21 +13,23 @@ import { ChartRenderer, type DrawingSurface } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
-import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
-import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
+import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, documentedDailySnapshotMessage, hasDocumentedDailySnapshot, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
-import { newsCalendarPlotHeight, nextMultiplesWidth, recipePlotHeight, returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
+import { newsCalendarPlotHeight, nextMultiplesWidth, ownershipPlotHeight, ownershipPlotWidth, recipePlotHeight, returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
+import type { OwnershipSnapshotDetails } from '../../lib/widgetData/chartRecipes/ownershipSnapshot';
+import { ownershipMeasureText } from '../../lib/widgetData/chartRecipes/ownershipSnapshotDisplay';
 import type { ReturnSummaryDetails } from '../../lib/widgetData/chartRecipes/returnSummary';
 import { returnPercent, scaledReturnTicks } from '../../lib/widgetData/chartRecipes/returnSummaryDisplay';
 import type { NewsCalendarDay } from '../../lib/widgetData/chartRecipes/newsCalendar';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
-import { LinkedChartRecipeControls, recipeAvailability, recipeLabels, type SourceChoiceKind } from './LinkedChartRecipeControls';
+import { LinkedChartRecipeControls, OwnershipRecipeControls, recipeAvailability, recipeLabels, type SourceChoiceKind } from './LinkedChartRecipeControls';
 
 function revisionKey({ widgetId, input, model, output }: Revision) {
     return JSON.stringify([widgetId, input, model, output]);
@@ -37,6 +39,11 @@ function recipeInputFields(options: RecipeOptions, ready: NonNullable<ViewState[
     let fields = requiredRecipeFields(options);
     if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
         fields = fields.filter(field => ready.columns.some(column => column.id === field));
+    if (options.kind === 'ownership-snapshot') {
+        // Let the recipe prioritize source or partition repair before checking unavailable bindings.
+        fields = fields.filter(field => ready.columns.some(column => column.id === field));
+        fields.push(...ownershipInputFields(ready.columns));
+    }
     if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
     return [...new Set(fields)];
 }
@@ -121,6 +128,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
     const loadReturnDraft = useCallback((options: ReturnSummaryOptions, signal: AbortSignal) =>
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
+    const loadOwnershipInput = useCallback((signal: AbortSignal) =>
+        chartChoicesInput(() => [], signal), [chartChoicesInput]);
+    const loadOwnershipDraft = useCallback((options: OwnershipSnapshotOptions, signal: AbortSignal) =>
+        chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
     const loadReturnListings = useCallback(async (field: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(() => field ? [field] : [], signal);
         if (!hasDocumentedDailySnapshot(data.provenance)) throw new Error(documentedDailySnapshotMessage);
@@ -148,7 +159,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const today = todayLocal();
     const newsDraftContext = useMemo<RecipeContext | undefined>(() => draftWidth === undefined
         ? undefined : { theme, maxDecimals, today, viewportWidth: draftWidth }, [theme, maxDecimals, today, draftWidth]);
-    const returnDraftContext = useMemo<RecipeContext>(() => ({ theme, maxDecimals, today }), [theme, maxDecimals, today]);
+    const measuredDraftContext = useMemo<RecipeContext>(() => ({ theme, maxDecimals, today }), [theme, maxDecimals, today]);
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
@@ -295,11 +306,22 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
+    function applyOwnership(options: OwnershipSnapshotOptions) {
+        const current = store.readView(dashboardId, card.id);
+        if (!source || store.readExecutor(dashboardId, source) !== executor || current.ready !== view.ready
+            || !current.sourceRevision || !view.sourceRevision
+            || revisionKey(current.sourceRevision) !== revisionKey(view.sourceRevision)
+            || !['ready', 'empty'].includes(current.status)) return;
+        void commit({ ...withRecipeType(settings, options.kind), recipe: options });
+    }
+    const ownershipForm = editing === 'ownership-snapshot';
+    const ownershipChart = settings.type === 'ownership-snapshot';
     const returnForm = editing === 'return-summary';
     const returnChart = settings.type === 'return-summary';
     return <div className={'linked-chart-renderer'
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
-      + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')}>
+      + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
+      + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')}>
     {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
       className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
     {!viewer ? <div className="chart-controls">
@@ -317,10 +339,13 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
+      {ownershipForm ? <OwnershipRecipeControls key={editScope} columns={presented}
+        loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
+        disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        onApply={applyOwnership}/> : financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext}
-        loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={returnDraftContext}
+        loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
@@ -403,9 +428,11 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const [width, setWidth] = useState(sankey ? 390 : 900);
   const [newsWidth, setNewsWidth] = useState<number>();
   const returns = options.kind === 'return-summary';
-  const [returnSize, setReturnSize] = useState<DrawingSurface>();
-  const measureReturn = useCallback(({ width, height }: DrawingSurface) => {
-    setReturnSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
+  const ownership = options.kind === 'ownership-snapshot';
+  const measured = returns || ownership;
+  const [drawingSize, setDrawingSize] = useState<DrawingSurface>();
+  const measureDrawing = useCallback(({ width, height }: DrawingSurface) => {
+    setDrawingSize(previous => previous?.width === width && previous.height === height ? previous : { width, height });
   }, []);
   const measureSankey = useCallback((width: number) => setWidth(Math.min(width, 10_000)), []);
   const measureNews = useCallback((width: number) => setNewsWidth(Math.min(width, 10_000)), []);
@@ -419,8 +446,8 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     observer.observe(element);
     return () => observer.disconnect();
   }, [panels]);
-  const viewportWidth = news ? newsWidth : returns ? returnSize?.width : panels || sankey ? width : undefined;
-  const viewportHeight = returns ? returnSize?.height : undefined;
+  const viewportWidth = news ? newsWidth : measured ? drawingSize?.width : panels || sankey ? width : undefined;
+  const viewportHeight = measured ? drawingSize?.height : undefined;
   const context = JSON.stringify([theme, maxDecimals, today, viewportWidth, viewportHeight]);
   const mapping = JSON.stringify(options);
   const active = revisionKey(revision);
@@ -441,7 +468,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   }, [available, executor, ready, active, mapping]);
   const current = available && loaded?.ready === ready && revisionKey(loaded.data.revision) === active ? loaded.data : undefined;
   useEffect(() => {
-    if (!current || !worker.current || (news && viewportWidth === undefined) || (returns && !returnSize)) return;
+    if (!current || !worker.current || (news && viewportWidth === undefined) || (measured && !drawingSize)) return;
     const controller = new AbortController();
     setWorkerError(undefined);
     void worker.current.run(current, options, { theme, maxDecimals, today, viewportWidth, viewportHeight }, controller.signal).then(result => {
@@ -460,6 +487,10 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const stale = completed?.result.ok && (!available || view.stale || completed.data !== current || completed.context !== context || error);
   const result = completed?.result.ok ? completed.result : undefined;
   const drawable = result?.figure.data.length ? result : undefined;
+  const ownershipDetails = result?.ownershipSnapshot;
+  // The ordered measure notes also appear in the expandable original values.
+  const statusNotes = ownershipDetails?.view === 'bars' && result
+    ? result.notes.slice(0, -ownershipDetails.measures.length) : result?.notes ?? [];
   const scaledAxis = result?.returnSummary?.scaledAxis;
   const formatYAxisTicks = useMemo(() => scaledAxis
     ? (range: readonly [number, number]) => scaledReturnTicks(range, scaledAxis)
@@ -474,19 +505,21 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
       {completed.data.completeness.acquiredRowCount !== undefined && completed.data.rows.length < completed.data.completeness.acquiredRowCount &&
         <p>Filtered source delivered {completed.data.rows.length} of {completed.data.completeness.acquiredRowCount} acquired rows.</p>}
     </>}
-    {completed && <DatasetStatus dataset={completed.data} source={news ? undefined : source} showCompleteness={!news}
-      notes={result?.notes ?? []}/>}
+    {completed && <DatasetStatus dataset={completed.data} source={news || ownership ? undefined : source}
+      showCompleteness={!news && !ownership} notes={statusNotes}/>}
   </div>
   {news && !!result?.daySummaries?.length && <NewsCalendarDetails days={result.daySummaries}/>}
   {result?.returnSummary && <ReturnListingDetails details={result.returnSummary}/>}
-  {(news || returns || drawable) && <div className={'linked-chart-plot' + (returns ? ' linked-chart-plot--return' : '')} ref={observePlot}>
+  {ownershipDetails && <OwnershipDetails details={ownershipDetails}/>}
+  {(news || measured || drawable) && <div className={'linked-chart-plot'
+    + (returns ? ' linked-chart-plot--return' : ownership ? ' linked-chart-plot--ownership' : '')} ref={observePlot}>
     <ChartRenderer data={drawable?.figure} uirevision={drawable?.revision}
-      scrollHeight={news ? newsCalendarPlotHeight : returns ? returnSummaryPlotHeight : drawable && recipePlotHeight(options.kind, drawable.figure)}
-      minPlotWidth={returns ? returnSummaryPlotWidth(options.symbols.length) : undefined}
+      scrollHeight={news ? newsCalendarPlotHeight : returns ? returnSummaryPlotHeight : ownership ? ownershipPlotHeight : drawable && recipePlotHeight(options.kind, drawable.figure)}
+      minPlotWidth={returns ? returnSummaryPlotWidth(options.symbols.length) : options.kind === 'ownership-snapshot' ? ownershipPlotWidth(options.view) : undefined}
       formatYAxisTicks={formatYAxisTicks}
-      touchScroll={news || returns || sankey || panels ? 'overflow' : options.kind === 'etf-exposure'}
+      touchScroll={news || measured || sankey || panels ? 'overflow' : options.kind === 'etf-exposure'}
       inspectSankeyOnTouch={sankey} onPlotWidthChange={sankey ? measureSankey : undefined}
-      onViewportWidthChange={news ? measureNews : undefined} onDrawingSurfaceChange={returns ? measureReturn : undefined}/>
+      onViewportWidthChange={news ? measureNews : undefined} onDrawingSurfaceChange={measured ? measureDrawing : undefined}/>
   </div>}</>;
 }
 
@@ -539,6 +572,17 @@ function ReturnListingDetails({ details }: { details: ReturnSummaryDetails }) {
     </dl>
     {outlierObservations.length > 0 && <ul aria-label="Outlier observations">
       {outlierObservations.map(({ date, value }) => <li key={date}>{date} · {originalValue(value)}</li>)}
+    </ul>}
+  </details>;
+}
+
+function OwnershipDetails({ details }: { details: OwnershipSnapshotDetails }) {
+  return <details className="ownership-snapshot-details">
+    <summary>Ownership snapshot details</summary>
+    {details.view === 'bars' ? <ul aria-label="Original ownership measures">
+      {details.measures.map(measure => <li key={measure.id}>{ownershipMeasureText(measure).join(' · ')}</li>)}
+    </ul> : <ul aria-label="Original ownership buckets">
+      {details.buckets.map(({ id, percent, cells }) => <li key={id}>{id} · {percent}% reported · {cells} of 100 cells</li>)}
     </ul>}
   </details>;
 }

@@ -18,6 +18,10 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
 
 export const newsCalendarPlotHeight = 260;
 export const returnSummaryPlotHeight = 280;
+export const ownershipPlotHeight = 240;
+export function ownershipPlotWidth(view: 'bars' | 'waffle'): number {
+  return view === 'bars' ? 270 : 310;
+}
 
 /** Leave room for each listing's date pair at the normal Plotly text size. */
 export function returnSummaryPlotWidth(listings: number): number {

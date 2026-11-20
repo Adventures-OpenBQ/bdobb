@@ -67,6 +67,8 @@ For **Return distribution**, select adjusted daily prices, one symbol and 5–10
 
 **News sentiment calendar** displays the daily mean polarity of one acquired CompanyNews page in UTC. Hover or tap a day for original timestamps and scores. Use **Calendar day details** to inspect any date with the keyboard. Choose the latest acquired 12 months or pin dates within the acquired range. The card shows its query, retrieval scope and delivered and scored article counts. Use `chart_source=true` on the paired EODHD CompanyNews table. A missing receipt or out-of-range pin requires repair.
 
+**Ownership snapshot** defaults to independent bars for reported insider ownership, institutional ownership and free float. The card shows which measures are available, each measurement date or its unknown status, the share class and the separate UTC retrieval time. Hover, tap or open **Ownership snapshot details** for the original values and units. **Waffle** requires a source that verifies an exclusive and exhaustive partition with a common outstanding-shares denominator. Its 100 cells use 1% visual steps, and the details include buckets that receive zero cells. Use **Choose source** to attach a compatible snapshot and **Apply chart settings** to repair an unavailable issuer or binding.
+
 ## Highcharts, Vega-Lite and TradingView
 
 A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or

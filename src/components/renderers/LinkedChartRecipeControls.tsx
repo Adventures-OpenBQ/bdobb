@@ -1,21 +1,22 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { bindingRoles, bindingCandidates, isIncomePeriodColumn } from '../../lib/widgetData/chartRecipes/bindings';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { bindingRoles, bindingCandidates, isIncomePeriodColumn, ownershipBarLabels, ownershipBindingRoles } from '../../lib/widgetData/chartRecipes/bindings';
 import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
-import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
+import { inspectOwnershipSource, ownershipPartitionRepair } from '../../lib/widgetData/chartRecipes/ownershipSnapshotInput';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
-import { returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
+import { ownershipPlotHeight, ownershipPlotWidth, returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
 
 type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
 type Mode = 'sector' | 'region';
-type LoadNewsInput = (signal: AbortSignal) => Promise<WidgetDataset>;
+type LoadAcquiredInput = (signal: AbortSignal) => Promise<WidgetDataset>;
 type DraftWorker = ReturnType<typeof createRecipeWorker>;
 type LoadDraft<T extends RecipeOptions> = (options: T, signal: AbortSignal) => Promise<ChartResult>;
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
@@ -41,13 +42,14 @@ export const recipeLabels: Partial<Record<Kind, string>> = {
   'bubble-regression': 'Screening bubble', 'dividend-steps': 'Dividend steps', 'income-sankey': 'Income Sankey',
   'news-sentiment-calendar': 'News sentiment calendar',
   'return-summary': 'Return summaries',
+  'ownership-snapshot': 'Ownership snapshot',
 };
 
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
   return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
 export function recipeAvailability(kind: Kind, columns: DatasetColumn[], verifiedEmpty = false): string | null {
-  if (kind === 'news-sentiment-calendar' || kind === 'return-summary') return null; // The draft loads and checks the acquisition, including a columnless empty result.
+  if (kind === 'news-sentiment-calendar' || kind === 'return-summary' || kind === 'ownership-snapshot') return null; // The draft loads and checks the acquisition, including a columnless empty result.
   if (kind === 'dividend-steps' && verifiedEmpty) return null;
   if (kind === 'income-sankey') return columns.some(isIncomePeriodColumn) ? null
     : 'Present actual FY or FQ columns from an income Statement table.';
@@ -95,10 +97,25 @@ function useDraftCheck<T extends RecipeOptions>(
   return request && checked?.request === request ? checked.result : undefined;
 }
 
+function useAcquiredInput(load: LoadAcquiredInput | undefined) {
+  const [read, setRead] = useState<{ load: LoadAcquiredInput; dataset?: WidgetDataset; error?: string }>();
+  useEffect(() => {
+    if (!load) return;
+    const controller = new AbortController();
+    void load(controller.signal).then(dataset => {
+      if (!controller.signal.aborted) setRead({ load, dataset });
+    }).catch(error => {
+      if (!controller.signal.aborted) setRead({ load, error: error instanceof Error ? error.message : String(error) });
+    });
+    return () => controller.abort();
+  }, [load]);
+  return read?.load === load ? read : undefined;
+}
+
 export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext,
   loadReturnListings, loadReturnDraft, returnDraftContext, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
-  loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadNewsInput;
+  loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadAcquiredInput;
   loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext;
   loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
   disabled: boolean; onApply: (options: RecipeOptions) => void;
@@ -118,18 +135,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const returnPins = savedReturn?.window.mode === 'common' ? savedReturn.window : undefined;
   const [returnStart, setReturnStart] = useState(returnPins?.start);
   const [returnEnd, setReturnEnd] = useState(returnPins?.end);
-  const [newsRead, setNewsRead] = useState<{ load: LoadNewsInput; dataset?: WidgetDataset; error?: string }>();
-  useEffect(() => {
-    if (!news || !loadNewsInput) return;
-    const controller = new AbortController();
-    void loadNewsInput(controller.signal).then(dataset => {
-      if (!controller.signal.aborted) setNewsRead({ load: loadNewsInput, dataset });
-    }).catch(error => {
-      if (!controller.signal.aborted) setNewsRead({ load: loadNewsInput, error: error instanceof Error ? error.message : String(error) });
-    });
-    return () => controller.abort();
-  }, [news, loadNewsInput]);
-  const newsReadCurrent = newsRead?.load === loadNewsInput ? newsRead : undefined;
+  const newsReadCurrent = useAcquiredInput(news ? loadNewsInput : undefined);
   const newsDataset = newsReadCurrent?.dataset;
   const newsAdmission = useMemo(() => newsDataset && inspectNewsSource(newsDataset), [newsDataset]);
   const newsSource = newsAdmission?.ok ? newsAdmission.value.source : undefined;
@@ -367,5 +373,100 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
         }
         onApply(decoded.options);
       }}>Apply chart settings</button>
+  </fieldset>;
+}
+
+export function OwnershipRecipeControls({ saved, columns, loadInput, loadDraft, context, disabled, onApply }: {
+  saved?: OwnershipSnapshotOptions; columns: DatasetColumn[]; loadInput: LoadAcquiredInput;
+  loadDraft: LoadDraft<OwnershipSnapshotOptions>; context: RecipeContext;
+  disabled: boolean; onApply: (options: OwnershipSnapshotOptions) => void;
+}) {
+  const [view, setView] = useState(saved?.view ?? 'bars');
+  const [selectedIssuer, setSelectedIssuer] = useState(saved?.issuer);
+  const [edited, setEdited] = useState<Partial<Record<OwnershipSnapshotOptions['view'], Record<string, string>>>>(
+    () => saved ? { [saved.view]: { ...saved.fields } } : {},
+  );
+  const read = useAcquiredInput(loadInput);
+  const dataset = read?.dataset;
+  const admission = useMemo(() => dataset && inspectOwnershipSource(dataset), [dataset]);
+  const source = admission?.ok ? admission.value.source : undefined;
+  const partitionAvailable = !!source && 'bucket_keys' in source;
+  const issuer = selectedIssuer ?? source?.issuer ?? '';
+  const unavailableIssuer = !!issuer && issuer !== source?.issuer;
+  const sourceProblem = read?.error ?? (admission && !admission.ok ? admission.message : undefined)
+    ?? (!source ? 'Loading acquired ownership evidence…' : undefined);
+  const applicable = source && (view === 'waffle') === partitionAvailable ? ownershipBindingRoles(source) : [];
+  const available = new Map(applicable.map(role => [role.key, bindingCandidates(role, columns)]));
+  const fields = edited[view] ?? Object.fromEntries([...available].flatMap(([key, candidates]) =>
+    candidates.length === 1 ? [[key, candidates[0].id]] : []));
+
+  const labels = view === 'bars' ? ownershipBarLabels : { bucket: 'Ownership bucket', share: 'Reported share' };
+  const roles = Object.entries(labels).filter(([key]) => view === 'waffle' || available.has(key) || fields[key]);
+  const partitionRepairId = useId();
+  const problem = sourceProblem
+    ?? (unavailableIssuer ? `Choose the acquired issuer ${source?.issuer} or reload the intended source.` : undefined)
+    ?? (view === 'waffle' && !partitionAvailable ? ownershipPartitionRepair : undefined);
+  const decoded = decodeRecipeOptions({ version: 1, kind: 'ownership-snapshot', issuer, view, fields }, 'ownership-snapshot');
+  const candidate = !problem && decoded.ok && decoded.options.kind === 'ownership-snapshot' ? decoded.options : undefined;
+
+  const probe = useRef<HTMLDivElement>(null);
+  const minimumWidth = ownershipPlotWidth(view);
+  const [measurement, setMeasurement] = useState<DrawingSurface & { minimumWidth: number }>();
+  const measure = useCallback(({ width, height }: DrawingSurface) => {
+    setMeasurement(previous => previous?.width === width && previous.height === height && previous.minimumWidth === minimumWidth
+      ? previous : { width, height, minimumWidth });
+  }, [minimumWidth]);
+  const size = measurement?.minimumWidth === minimumWidth ? measurement : undefined;
+  const measuredContext = useMemo(() => size
+    ? { ...context, viewportWidth: size.width, viewportHeight: size.height } : undefined, [context, size]);
+  const worker = useRef<DraftWorker | undefined>(undefined);
+  useEffect(() => () => { worker.current?.dispose(); worker.current = undefined; }, []);
+  const checked = useDraftCheck(candidate, loadDraft, measuredContext, worker);
+  const issue = problem ?? (!decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
+  const checking = !!candidate && !checked;
+  return <fieldset disabled={disabled} className="ownership-recipe-controls"><legend>Ownership snapshot settings</legend>
+    <div aria-hidden="true" className="ownership-draft-probe" ref={probe}>
+      <ChartRenderer data={undefined} scrollHeight={ownershipPlotHeight} minPlotWidth={minimumWidth}
+        onDrawingSurfaceChange={measure}/>
+    </div>
+    <label>Acquired issuer<select value={issuer} onChange={event => setSelectedIssuer(event.target.value)}>
+      {!issuer && <option value="">Awaiting acquired issuer</option>}
+      {unavailableIssuer && <option value={issuer} disabled>{issuer} (unavailable)</option>}
+      {source && <option value={source.issuer}>{source.issuer}</option>}
+    </select></label>
+    <label>Ownership view<select value={view} aria-describedby={partitionAvailable ? undefined : partitionRepairId}
+      onChange={event => setView(event.target.value === 'waffle' ? 'waffle' : 'bars')}>
+      <option value="bars">Independent bars</option>
+      <option value="waffle" disabled={!partitionAvailable}>Waffle</option>
+    </select></label>
+    {roles.map(([key, label]) => {
+      const candidates = available.get(key) ?? [];
+      const selected = fields[key] ?? '';
+      return <label key={key}>{label}<select value={selected} onChange={event => {
+        const next = { ...fields };
+        if (event.target.value) next[key] = event.target.value; else delete next[key];
+        setEdited({ ...edited, [view]: next });
+      }}>
+        <option value="">{view === 'bars' ? 'None' : 'Choose field'}</option>
+        {selected && !candidates.some(column => column.id === selected) &&
+          <option value={selected} disabled>{selected} (unavailable)</option>}
+        {candidates.map(column => <option key={column.id} value={column.id}>{column.label}</option>)}
+      </select></label>;
+    })}
+    {!partitionAvailable && <p id={partitionRepairId}>{ownershipPartitionRepair}</p>}
+    {issue && issue !== ownershipPartitionRepair && <p role="status">{issue}</p>}
+    {checking && <span className="sr-only" role="status">Checking ownership draft…</span>}
+    <button type="button" disabled={!checked?.ok} aria-busy={checking || undefined} onClick={() => {
+      if (disabled || !candidate || !checked?.ok) return;
+      const surface = probe.current?.querySelector('.chart-plot');
+      if (!surface) return;
+      const measured = readDrawingSurface(surface);
+      if (measured.width <= 0 || measured.height <= 0) return;
+      if (measured.width !== size?.width || measured.height !== size?.height) {
+        measure(measured);
+        return;
+      }
+      onApply(candidate);
+    }}>Apply chart settings</button>
   </fieldset>;
 }

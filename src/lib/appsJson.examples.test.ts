@@ -80,6 +80,7 @@ describe("docs/examples", () => {
     "v9-screening-income.apps.json",
     "v9-next-news-sentiment-calendar.apps.json",
     "v9-next-return-box-violin.apps.json",
+    "v9-next-ownership-snapshot.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -164,6 +165,32 @@ describe("docs/examples", () => {
       { symbol: "ALDER.US", start: "2026-01-06", end: "2026-02-02" },
     ] } });
     if (result.ok) expect(result.returnSummary?.series.map(item => item.samples.length)).toEqual([20, 20]);
+  });
+
+  it("v9-next-ownership-snapshot imports source-free questions and independently verifies its two local snapshots", async () => {
+    const name = "v9-next-ownership-snapshot";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [barsTab, waffleTab] = imported.dashboards[0].tabs;
+    for (const [tab, view, file] of [[barsTab, "bars", "fictional-measures.json"], [waffleTab, "waffle", "fictional-register.json"]] as const) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const recipe = chart.linkedChart?.recipe;
+      if (!recipe) throw new Error("Missing imported ownership recipe.");
+      expect(recipe).toMatchObject({ kind: "ownership-snapshot", issuer: "EXAMPLE.US", version: 1, view });
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      const result = runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+      expect(result).toMatchObject({ ok: true, ownershipSnapshot: { view } });
+      if (!result.ok) continue;
+      if (result.ownershipSnapshot?.view === "waffle") {
+        expect(result.ownershipSnapshot.buckets.reduce((sum, bucket) => sum + bucket.cells, 0)).toBe(100);
+        expect(result.ownershipSnapshot.buckets).toContainEqual({ id: "treasury", percent: .01, cells: 0 });
+      } else {
+        expect(result.ownershipSnapshot?.measures.map(measure => measure.reported)).toEqual([33.3, .421875, 22.125]);
+      }
+    }
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {

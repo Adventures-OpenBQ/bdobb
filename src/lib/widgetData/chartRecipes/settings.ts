@@ -38,8 +38,8 @@ export function isRecipeType(type: unknown): type is RecipeKind {
   return typeof type === 'string' && Object.hasOwn(recipeShapes, type);
 }
 
-export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' {
-  return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey' || type === 'news-sentiment-calendar' || type === 'return-summary';
+export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' | 'ownership-snapshot' {
+  return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey' || type === 'news-sentiment-calendar' || type === 'return-summary' || type === 'ownership-snapshot';
 }
 
 export const LINKED_CHART_FIELDS = ['type', 'category', 'measures', 'display', 'seriesFrom', 'period', 'recipe'] as const;

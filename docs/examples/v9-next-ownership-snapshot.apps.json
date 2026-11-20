@@ -1,0 +1,169 @@
+[
+  {
+    "name": "Ownership snapshot fixtures",
+    "description": "Requires BDOBB 9.0.0 or later with Ownership snapshot. Two fictional ownership files are supplied separately.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "ownership-measures": {
+        "id": "ownership-measures",
+        "name": "Independent bars",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Ownership measures"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Ownership measures source"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ownership-partition": {
+        "id": "ownership-partition",
+        "name": "Certified waffle",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Ownership partition"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Ownership partition source"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "ownership-measures",
+            "ownership-partition"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "ownership-measures",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "ownership-snapshot",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "ownership-snapshot",
+                  "issuer": "EXAMPLE.US",
+                  "view": "bars",
+                  "fields": {
+                    "insiders": "reported_insiders",
+                    "institutions": "reported_institutions",
+                    "freeFloat": "reported_float"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "ownership-measures",
+            "index": 1,
+            "extras": {}
+          },
+          {
+            "ref": "c2",
+            "tab": "ownership-partition",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "ownership-snapshot",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "ownership-snapshot",
+                  "issuer": "EXAMPLE.US",
+                  "view": "waffle",
+                  "fields": {
+                    "bucket": "bucket_id",
+                    "share": "reported_share"
+                  }
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "ownership-partition",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

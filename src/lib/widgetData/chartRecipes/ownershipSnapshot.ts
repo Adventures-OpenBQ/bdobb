@@ -5,13 +5,15 @@ import { themedLayout } from '../../chartShapes';
 import { escape } from '../figureHelpers';
 import type { DatasetColumn, WidgetDataset } from '../types';
 import { acceptsBinding, ownershipBarLabels, ownershipBindingRoles } from './bindings';
-import { readChartSource, readChartSourceProjection, type ChartBuildResult } from './chartSourceContracts';
+import type { ChartBuildResult } from './chartSourceContracts';
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin } from './financialEvidence';
 import {
-  ownershipBarRoles, ownershipSourceAdapter, parseOwnershipSource,
+  ownershipBarRoles, ownershipSourceAdapter,
   type OwnershipBarRole, type OwnershipBarsSource, type OwnershipMeasure, type OwnershipPartitionSource, type OwnershipSource,
 } from './ownershipEvidence';
+import { ownershipDecimalParts, ownershipMeasureText } from './ownershipSnapshotDisplay';
+import { inspectOwnershipSource, ownershipPartitionRepair } from './ownershipSnapshotInput';
 import { decodeRecipeOptions } from './settings';
 import type { OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
 
@@ -43,13 +45,6 @@ export type OwnershipSnapshotDetails = (OwnershipBars | OwnershipWaffle) & Snaps
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
 const geometryIssue = 'The ownership values cannot preserve distinct geometry at this chart size. Widen or enlarge the chart.';
 const coordinateIssue = 'The presentation disagrees with the acquired ownership coordinates. Repair the raw source fields.';
-const unsafeIssues = {
-  identity_conflict: 'issuer or share class conflict',
-  unit_conflict: 'unit conflict',
-  date_conflict: 'measurement date conflict',
-  partition_conflict: 'partition conflict',
-} satisfies Record<keyof OwnershipSource['unsafe'], string>;
-
 const cellCount = 100;
 const gridSide = 10;
 const compareKeys = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
@@ -59,15 +54,8 @@ const compareKeys = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
 const decimalPlaces = 324;
 const unitsPerPercent = 10n ** BigInt(decimalPlaces);
 
-function decimalParts(value: number) {
-  const [coefficient, exponent = '0'] = value.toString().split('e');
-  const [whole, fraction = ''] = coefficient.split('.');
-  const digits = (whole + fraction).replace(/^0+(?=\d)/, '');
-  return { digits, power: Number(exponent) - fraction.length };
-}
-
 function percentUnits(percent: number): bigint {
-  const { digits, power } = decimalParts(percent);
+  const { digits, power } = ownershipDecimalParts(percent);
   return BigInt(digits) * 10n ** BigInt(decimalPlaces + power);
 }
 
@@ -86,15 +74,6 @@ function apportion(buckets: readonly { id: string; units: bigint }[]): Record<st
 /** Apportion an admitted partition's percentages to the fixed visual grid. */
 export function allocateWaffle(buckets: readonly OwnershipBucket[]): Record<string, number> {
   return apportion(decimalBuckets(buckets));
-}
-
-export function inspectOwnershipSource(dataset: WidgetDataset) {
-  const source = readChartSource(dataset.provenance, 'ownership', parseOwnershipSource);
-  const projection = readChartSourceProjection(dataset.provenance, 'ownership');
-  if (!source || !projection) return refuse('Acquire an ownership snapshot with verified field and issuer evidence.');
-  const hazards = Object.entries(unsafeIssues).flatMap(([fact, message]) => source.unsafe[fact] ? [message] : []);
-  if (hazards.length) return refuse(`The ownership acquisition reports ${hazards.join(', ')}. Repair the source.`);
-  return { ok: true, value: { source, projection } } as const;
 }
 
 function boundColumn(columns: readonly DatasetColumn[], id: string | undefined): DatasetColumn | undefined {
@@ -142,7 +121,7 @@ function readBars(
       return refuse(`${label} has an invalid presented percentage for its acquired unit. Repair the source.`);
     let fraction = reported;
     if (reported !== null && measure.unit === 'percent-points') {
-      const { digits, power } = decimalParts(reported);
+      const { digits, power } = ownershipDecimalParts(reported);
       fraction = Number(`${digits}e${power - 2}`);
     }
     measures.push({ ...metadata, status: reported === null ? 'unavailable' : 'observed', reported, fraction });
@@ -186,33 +165,21 @@ function readWaffle(
 }
 
 function readMeasures(
-  dataset: WidgetDataset, options: OwnershipSnapshotOptions, source: OwnershipSource,
+  dataset: WidgetDataset, options: OwnershipSnapshotOptions, source: OwnershipSource, fullyDelivered: boolean,
 ): ChartBuildResult<OwnershipBars | OwnershipWaffle> {
-  if ('bucket_keys' in source) return options.view === 'waffle' ? readWaffle(dataset, options.fields, source)
-    : refuse('Acquire independent ownership measures for bars or choose the certified waffle.');
-  return options.view === 'bars' ? readBars(dataset, options.fields, source)
-    : refuse('Independent measures can overlap. Acquire a certified partition with exclusive, exhaustive buckets for waffle.');
+  if ('bucket_keys' in source) {
+    if (options.view !== 'waffle') return refuse('Acquire independent ownership measures for bars or choose the certified waffle.');
+    if (!fullyDelivered) return refuse('The presentation omits or changes acquired ownership buckets. Repair the source or restore the full partition.');
+    return readWaffle(dataset, options.fields, source);
+  }
+  if (options.view !== 'bars') return refuse(ownershipPartitionRepair);
+  if (!fullyDelivered) return refuse('The presentation omits or changes the acquired issuer row. Repair the source or restore the issuer.');
+  return readBars(dataset, options.fields, source);
 }
 
 const barMargin = { l: 124, r: 18, t: 40, b: 35, autoexpand: false };
 const waffleMargin = { l: 14, r: 14, t: 40, b: 14, autoexpand: false };
 const hovertemplate = '%{text}<extra></extra>';
-function fractionPercent(fraction: number): string {
-  if (fraction === 0) return '0%';
-  const { digits, power } = decimalParts(fraction);
-  const point = digits.length + power + 2;
-  if (point <= 0) return `0.${'0'.repeat(-point)}${digits}%`;
-  if (point >= digits.length) return `${digits.padEnd(point, '0')}%`;
-  return `${digits.slice(0, point)}.${digits.slice(point)}%`;
-}
-
-function measureText(measure: OwnershipBar) {
-  const { label, status, reported, unit, asOf, basis } = measure;
-  const value = reported === null ? status === 'unbound' ? 'Binding unselected' : 'Unavailable'
-    : (unit === 'percent-points' ? `${reported}%` : fractionPercent(reported)) + ` (reported ${reported} ${unit})`;
-  return [label, value, `As of ${asOf ?? 'unknown'}`, basis ? 'Shares outstanding basis' : 'Basis unknown'];
-}
-
 function drawBars(snapshot: OwnershipBars & SnapshotIdentity, context: RecipeContext) {
   const { measures, retrievedAt } = snapshot;
   const width = (context.viewportWidth ?? 360) - barMargin.l - barMargin.r;
@@ -223,7 +190,7 @@ function drawBars(snapshot: OwnershipBars & SnapshotIdentity, context: RecipeCon
   const positive = measures.filter(measure => measure.fraction !== null && measure.fraction > 0);
   const states = measures.filter(measure => measure.fraction === null || measure.fraction === 0);
   const text = (items: OwnershipBar[]) => items.map(measure =>
-    [...measureText(measure), `Retrieved ${retrievedAt}`].map(escape).join('<br>'));
+    [...ownershipMeasureText(measure), `Retrieved ${retrievedAt}`].map(escape).join('<br>'));
   const position = (items: OwnershipBar[]) => items.map(measure => measures.indexOf(measure));
   const dark = context.theme === 'dark';
   const data: unknown[] = [];
@@ -241,11 +208,15 @@ function drawBars(snapshot: OwnershipBars & SnapshotIdentity, context: RecipeCon
   });
   return { data, layout: {
     margin: barMargin, barmode: 'group', bargap: .35,
-    xaxis: { type: 'linear', range: [0, 1], fixedrange: true, tickformat: '.0%', tickvals: [0, .25, .5, .75, 1], layer: 'below traces' },
+    xaxis: { type: 'linear', range: [0, 1], tickformat: '.3~%', layer: 'below traces' },
     yaxis: {
       type: 'linear', range: [2.5, -.5], fixedrange: true, tickvals: [0, 1, 2], showgrid: false, zeroline: false,
-      ticktext: measures.map(measure => [measure.label, ...(measure.fraction === 0 ? ['0%']
-        : measure.fraction === null ? [measure.status === 'unbound' ? 'Unselected' : 'Unavailable'] : [])].map(escape).join('<br>')),
+      ticktext: measures.map(measure => {
+        const label = measure.id === 'institutions' ? ['Institutional ', 'ownership'] : [measure.label];
+        const state = measure.fraction === 0 ? '0%' : measure.fraction === null
+          ? measure.status === 'unbound' ? 'Unselected' : 'Unavailable' : undefined;
+        return [...label, ...(state ? [state] : [])].map(escape).join('<br>');
+      }),
     },
   } };
 }
@@ -273,7 +244,7 @@ function drawWaffle(snapshot: OwnershipWaffle & SnapshotIdentity, context: Recip
     }
   }
   if (x.length !== cellCount) return;
-  const axis = { type: 'linear', constrain: 'domain', visible: false, fixedrange: true };
+  const axis = { type: 'linear', constrain: 'domain', visible: false };
   return {
     data: [{ type: 'scatter', mode: 'markers', x, y, text, hovertemplate,
       marker: { symbol: 'square', size: Math.floor(step * .8), color: colors } }],
@@ -310,14 +281,9 @@ export function buildOwnershipSnapshot(dataset: WidgetDataset, options: RecipeOp
   const { kind, acquiredRowCount } = dataset.completeness;
   if (kind !== 'complete' && kind !== 'unknown')
     return refuse(`Ownership requires its full acquired snapshot. The current acquisition is ${kind}. Repair the source.`);
-  if (projection.omitted.length || dataset.rows.length !== source.delivered_count
-    || (acquiredRowCount !== undefined && acquiredRowCount !== source.delivered_count)) {
-    return refuse(options.view === 'waffle'
-      ? 'The presentation omits or changes acquired ownership buckets. Repair the source or restore the full partition.'
-      : 'The presentation omits or changes the acquired issuer row. Repair the source or restore the issuer.');
-  }
-
-  const input = readMeasures(dataset, options, source);
+  const fullyDelivered = !projection.omitted.length && dataset.rows.length === source.delivered_count
+    && (acquiredRowCount === undefined || acquiredRowCount === source.delivered_count);
+  const input = readMeasures(dataset, options, source, fullyDelivered);
   if (!input.ok) return input;
   const snapshot: OwnershipSnapshotDetails = {
     ...input.value, issuer: source.issuer, shareClass: source.share_class, retrievedAt: source.retrieved_at,
@@ -334,13 +300,16 @@ export function buildOwnershipSnapshot(dataset: WidgetDataset, options: RecipeOp
   const notes = [`${heading} · ${source.issuer} · ${classText} · Retrieved ${source.retrieved_at}.`];
   if (projection.filtered) notes.push('The presented source has active filters or selection and retains the acquired rows.');
   if (snapshot.view === 'bars') {
-    notes.push(...snapshot.measures.map(measure => measureText(measure).join(' · ') + '.'));
+    notes.push(...snapshot.measures.map(measure => ownershipMeasureText(measure).join(' · ') + '.'));
   } else {
     notes.push(`As of ${snapshot.asOf} · Shares outstanding basis · Acquired partition reference ${snapshot.reference}.`);
     notes.push(`100 cells at 1% visual granularity. Reported shares retain their original values. Total discrepancy ${snapshot.totalDiscrepancyPercent} percentage points.`);
   }
+  const dark = context.theme === 'dark';
   return { ok: true, ownershipSnapshot: snapshot, revision, notes, figure: { data: plot.data, layout: {
     ...themedLayout(context.theme), ...plot.layout, title: { text: heading, font: { size: 15 } },
     uirevision: revision, showlegend: false, hovermode: 'closest',
+    hoverlabel: { bgcolor: dark ? '#202938' : '#ffffff', bordercolor: dark ? '#aebed2' : '#40536d',
+      font: { color: dark ? '#f0f4fb' : '#192638' }, align: 'left' },
   } } };
 }
