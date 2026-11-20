@@ -1496,7 +1496,7 @@ body {
    the widest declared row, which supplies the scroller's full width. */
 .card-params { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; min-width: 0; }
 .card-chips .card-params { display: block; width: max-content; min-width: 100%; white-space: nowrap; padding: 1px 0; }
-.card-chips .param-field { vertical-align: middle; margin-inline-end: 6px; }
+
 .card-params-break { display: none; }
 .card-chips .card-params-break { display: block; height: 2px; }
 /* No param on row 0 (the list opens with `[]`): the chips go under the title
@@ -1580,6 +1580,7 @@ body {
    resolution on a second line, and a fixed 20px let that line spill over the
    next wrapped control on a narrow card. */
 .card-chips .param-field {
+  vertical-align: middle; margin-inline-end: 6px;
   min-height: 20px;
   padding: 0 4px;
   border-radius: 4px;
