@@ -115,7 +115,17 @@ for(const entry of entries){
        await nested.contentFrame().getByRole("link",{name:"Alabama",exact:true}).click({timeout:15_000});
        await expect.poll(()=>nested.contentFrame().locator("body").innerText(),{timeout:60_000}).toMatch(/\d{1,3},\d{3}/);assertion="Selected Alabama profile returns numerical state data";
       } else if(entry.id.includes("uscongress_committee_members")) {expect(body).toContain("House Committee on the Judiciary");expect(body).toContain("Jim Jordan");expect(body).toContain("Members");assertion="Actual committee membership names, roles and counts render";
-      } else if(entry.id.includes("uscongress_member_info")) {expect(body).toContain("Robert B. Aderholt");expect(body).toContain("VOTING RECORD");expect(body).toContain("COMMITTEE ASSIGNMENTS");assertion="Actual member record, voting counts and committee assignments render";}
+      } else if(entry.id.includes("uscongress_member_info")) {
+       expect(body).toContain("Robert B. Aderholt");expect(body).toContain("VOTING RECORD");expect(body).toContain("COMMITTEE ASSIGNMENTS");expect(body).toContain("TERM HISTORY");
+       const voting=body.split("VOTING RECORD")[1].split("COMMITTEE ASSIGNMENTS")[0];
+       if(/not available|unavailable/i.test(voting)) {
+        expect(voting).not.toMatch(/No On-Passage|\b\d+\s+(Yea|Nay)\b/i);
+        assertion="Actual member identity, terms and committees render; career voting explicitly unavailable, no vote-count pass claimed";
+       } else {
+        expect(voting).toMatch(/\d+\s+Yea/i);expect(voting).toMatch(/\d+\s+Nay/i);
+        assertion="Actual member identity, terms, committees and complete-career voting counts render";
+       }
+      }
       save(join(dir,"functional-frame-body.txt"),await (await nested.count()?nested.contentFrame():doc).locator("body").innerText());
      }
      if(process.env.OPENBQ_FRAME_DIAGNOSTICS==="1") {
