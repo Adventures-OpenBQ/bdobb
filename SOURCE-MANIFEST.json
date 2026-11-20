@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "7896707c8372a70db5c26be18fb372b1182d7d69",
-  "sourceId": "3db5a3c4da74be278472a5f8ad6a2c06ebca07705e0e8313fed9cd69cad7d344",
+  "baseCommit": "3cdc9be113997b9b6aeb7bc892b8a2acacc9874d",
+  "sourceId": "18c684bd9d02bba7bfcf07d79d3baac93139dee5a1a424f52fa7be9b5d71d2be",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "d97799e686cd3b6299306b6a5c7c5df81e7fb5a26e8268f0e558c5af36373c1c"
+      "sha256": "6f85b887bb299e6042dccb706a06f6eb3587537c9c2122818c9163d695a840d6"
     },
     {
       "path": "source_bundle.py",
@@ -9155,15 +9155,15 @@
       "path": "web/.env.example",
       "type": "file",
       "mode": 420,
-      "size": 312,
-      "sha256": "58f4852f40997447297b3edace644a1489b5ec93169aa94ac172fb00b5aa9998"
+      "size": 418,
+      "sha256": "1a6d2f26c15ccadc3f959177b37026b02d985420f910f56a0b4527a653fb25fb"
     },
     {
       "path": "web/README.md",
       "type": "file",
       "mode": 420,
-      "size": 15903,
-      "sha256": "cbea1b71847e7c66e832fddfb4d7ca8ff462abd0c1084ab42d8563379b5b86bb"
+      "size": 16213,
+      "sha256": "2be86c475a14d870831c72323ccdf6be46cce2ae62c1f6685cea840b2beb6ac2"
     },
     {
       "path": "web/auth.mjs",
@@ -9190,8 +9190,8 @@
       "path": "web/config.mjs",
       "type": "file",
       "mode": 420,
-      "size": 2259,
-      "sha256": "3bc09beb0a305c27be4593c8ae7bd456107cbbe635a21d95a4c68bcb0884717d"
+      "size": 2497,
+      "sha256": "761a490a623426c313b18beb72c805316d16be1e702f3be7eeabb806469574af"
     },
     {
       "path": "web/entry.mjs",
@@ -9232,15 +9232,15 @@
       "path": "web/security.test.mjs",
       "type": "file",
       "mode": 420,
-      "size": 45807,
-      "sha256": "f3c75a11e8a02974b020813e4b6d3bea94134844644f0872f1c3bf41773c7724"
+      "size": 48890,
+      "sha256": "8048a6fd7757090be0f5d3c13bdec62793f8a3e18bca4e84fcd55a95d14152b5"
     },
     {
       "path": "web/server.mjs",
       "type": "file",
       "mode": 420,
-      "size": 20238,
-      "sha256": "3f92dc0d0517ca31e46f8920f640d1a214c508cd6e5ace6c6d384c441c40339c"
+      "size": 20476,
+      "sha256": "6fc1948aa0c54e31970d29441f9b3a00b686591e99cf8cbe56a5c0a5b79568e9"
     }
   ],
   "thirdPartySources": {
