@@ -204,7 +204,7 @@ impl Evaluator<'_> {
                     Err(e) => self.fail(&e[0].code, &e[0].message, id, at, &e, &[]),
                 })
             }
-            FormulaAst::Call { function, args } if *function != FormulaFunction::If => {
+            FormulaAst::Call { function, args } if function.is_aggregate() => {
                 Some(self.input(
                     &args[0],
                     function_aggregation(*function).unwrap(),

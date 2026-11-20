@@ -277,6 +277,20 @@ function runTeam(box) {
 }
 
 describe("ios.sh team", () => {
+  it.each([
+    ["TEAM123456.*", true],
+    ["TEAM123456.com.example.*", true],
+    ["TEAM123456.com.other.*", false],
+    ["OTHER12345.*", false],
+  ])("matches wildcard profile %s only within its team and bundle prefix", async (app, accepted) => {
+    const result = await runTeam(profileSandbox({
+      profiles: ["wildcard.mobileprovision"],
+      fields: {"Entitlements.application-identifier": app, "TeamIdentifier.0": "TEAM123456", ExpirationDate: "2099-01-01T00:00:00Z"},
+    }));
+    expect(result.code).toBe(accepted ? 0 : 1);
+    if (accepted) expect(result.out).toMatch(/APPLE_DEVELOPMENT_TEAM=TEAM123456/);
+  });
+
   it("reports when no profile exists, and names the only thing that makes one", async () => {
     // A certificate is not a profile. The keychain can be full and the answer
     // still be "Xcode has not issued one".

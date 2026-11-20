@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { bindFormula, type ModelSymbols } from './formulaBinding';
-import { validateFormulaAst, type FormulaDiagnostic } from './formulaSyntax';
+import { isAggregateFunction, validateFormulaAst, type FormulaDiagnostic } from './formulaSyntax';
 import type { FormulaAst, FormulaDef } from './types';
 export type GraphEntry = { raw: unknown; value?: FormulaDef; diagnostics: FormulaDiagnostic[] };
 export type GraphNode = { kind: 'formula' | 'measure' | 'category'; id: string; name: string };
@@ -93,8 +93,8 @@ export function validateFormulaGraph(definitions: readonly unknown[], symbols?: 
       case 'unary': walk(ast.operand, entry, from, scope); break;
       case 'binary': walk(ast.left, entry, from, scope); walk(ast.right, entry, from, scope); break;
       case 'call':
-        if (ast.function !== 'IF' && scope === 'source') report('scope', 'Aggregate calls require aggregate scope.');
-        ast.args.forEach(arg => walk(arg, entry, from, ast.function === 'IF' ? scope : 'source'));
+        if (isAggregateFunction(ast.function) && scope === 'source') report('scope', 'Aggregate calls require aggregate scope.');
+        ast.args.forEach(arg => walk(arg, entry, from, !isAggregateFunction(ast.function) ? scope : 'source'));
         break;
       case 'member':
         if (scope === 'source') report('scope', 'Category member comparisons require aggregate scope.');

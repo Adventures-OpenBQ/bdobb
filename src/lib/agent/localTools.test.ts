@@ -263,6 +263,19 @@ describe("executeLocalTool", () => {
     expect(card.params).toMatchObject({ symbol: "AAPL", interval: "1d" });
   });
 
+  it("add_widget keeps native chart intent on the default chart view while applying valid params", async () => {
+    useWidgetRegistryStore.setState({ widgets: [widget({ id: "native_chart", name: "Equity Chart", backendId: "reference", type: "chart", params: [{ paramName: "symbol", type: "text", value: "AAPL" }, { paramName: "interval", options: [{ label: "30m", value: "30m" }] }] })] });
+    const r = await executeLocalTool("add_widget", { widget_id: "native_chart", params: { symbol: "NVDA", interval: "30m" }, view: "chart" });
+    expect(r).toMatchObject({ added: true, params: { applied: ["symbol", "interval"] } });
+    const cards = useDashboardStore.getState().activeDashboard()!.tabs[0].cards;
+    expect(cards).toHaveLength(1);
+    expect(cards[0].params).toMatchObject({ symbol: "NVDA", interval: "30m" });
+    expect(cards[0].view).toBeUndefined();
+    expect(r.view).toBe("default");
+    await useAgentEditsStore.getState().undoLast();
+    expect(useDashboardStore.getState().activeDashboard()!.tabs[0].cards[0].params.symbol).toBe("AAPL");
+  });
+
   it("add_widget still adds the card on a bad param and reports what was refused and why", async () => {
     useWidgetRegistryStore.setState({ widgets: [chartDef()] });
     const r = (await executeLocalTool("add_widget", { widget_id: "chart", params: { symbol: "AAPL", ticker: "X" } })) as Record<string, unknown>;

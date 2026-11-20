@@ -637,6 +637,30 @@ describe("assembleTools", () => {
 describe("callMcpTool", () => {
   beforeEach(() => resetMcpCache());
 
+  it("allows a cold provider tool to finish after discovery's ten-second budget", async () => {
+    vi.useFakeTimers();
+    try {
+      let latency = 15_000;
+      const fetchImpl = vi.fn(async (_url: string, opts: RequestInit) => {
+        const body = JSON.parse(String(opts.body));
+        if (body.method === "initialize") return sseResponse(`data: ${JSON.stringify({ jsonrpc: "2.0", id: body.id, result: {} })}\n\n`, { sessionId: "cold" });
+        if (body.method === "notifications/initialized") return new Response("", { status: 202 });
+        return new Promise<Response>((resolve, reject) => {
+          const timer = setTimeout(() => resolve(sseResponse(`data: ${JSON.stringify({ jsonrpc: "2.0", id: body.id, result: { content: [{ type: "text", text: "actual rows" }] } })}\n\n`)), latency);
+          opts.signal?.addEventListener("abort", () => { clearTimeout(timer); reject(new DOMException("Aborted", "AbortError")); });
+        });
+      });
+      const outcome = callMcpTool("http://x/mcp", "cold_eia", {}, fetchImpl as never).then((result) => ({ result }), (error) => ({ error }));
+      await vi.advanceTimersByTimeAsync(15_001);
+      expect(await outcome).toMatchObject({ result: { content: [{ text: "actual rows" }] } });
+      latency = 200_000;
+      const bounded = callMcpTool("http://x/mcp", "stalled_eia", {}, fetchImpl as never).then(() => "unexpected success", (error) => error);
+      await vi.advanceTimersByTimeAsync(170_001);
+      expect(await bounded).toMatchObject({ code: "timeout" });
+    } finally { vi.useRealTimers(); }
+  });
+
+
   it("performs its own handshake rather than reusing the discovery cache", async () => {
     const fetchImpl = vi.fn(async (_url: string, opts: RequestInit) => {
       const body = JSON.parse(opts.body as string) as { method: string; id?: number };

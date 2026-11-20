@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DrawerFooterActions } from '../pivot-drawer/DrawerFooterTarget';
 import { tokenFor, memberToken } from '../../../lib/tableModel/formulaTokens';
-import { parseFormula, type SyntaxAst, type FormulaDiagnostic } from '../../../lib/tableModel/formulaSyntax';
+import { isAggregateFunction, parseFormula, type SyntaxAst, type FormulaDiagnostic } from '../../../lib/tableModel/formulaSyntax';
 import { bindFormula } from '../../../lib/tableModel/formulaBinding';
 import { compileAnalyticalModel } from '../../../lib/tableModel/calculate';
 import type { TableModelV1, FormulaDef } from '../../../lib/tableModel/types';
@@ -20,7 +20,7 @@ function insertionScope(text: string, start: number, end: number, scope: Formula
     const parsed = parseFormula(text.slice(0, start) + marker + text.slice(end)).ast;
     const visit = (ast: SyntaxAst, context: FormulaDef['scope']): FormulaDef['scope'] | undefined => {
         if (ast.kind === 'name') return ast.name === marker ? context : undefined;
-        if (ast.kind === 'call') return ast.args.map(arg => visit(arg, ast.function === 'IF' ? context : 'source')).find(Boolean);
+        if (ast.kind === 'call') return ast.args.map(arg => visit(arg, !isAggregateFunction(ast.function) ? context : 'source')).find(Boolean);
         if (ast.kind === 'binary') return visit(ast.left, context) ?? visit(ast.right, context);
         if (ast.kind === 'unary') return visit(ast.operand, context);
         if (ast.kind === 'member') return visit(ast.value, context);
@@ -128,7 +128,7 @@ export function FormulaPanel({ model, columns, readonly, selectedId, pending, in
         if (!r.token) { setErrors([r.error!]); return; }
         insertReference(r.token);
     }}>{r.token ?? r.label}</button>)}
- {['SUM', 'MEAN', 'MEDIAN', 'MIN', 'MAX', 'FIRST', 'LAST', 'COUNT', 'UNIQUECOUNT', 'IF'].filter(f => f.toLowerCase().includes(search.toLowerCase())).map(f => <button type="button" className="pivot-formula-chip pivot-formula-function" aria-label={`Insert ${f}`} key={f} onClick={() => insert(f === 'IF' ? 'IF(, , )' : `${f}()`, f.length + 1)}>{f}</button>)}</div>
+ {['SUM', 'MEAN', 'MEDIAN', 'MIN', 'MAX', 'FIRST', 'LAST', 'COUNT', 'UNIQUECOUNT', 'IF', 'LN', 'SQRT'].filter(f => f.toLowerCase().includes(search.toLowerCase())).map(f => <button type="button" className="pivot-formula-chip pivot-formula-function" aria-label={`Insert ${f}`} key={f} onClick={() => insert(f === 'IF' ? 'IF(, , )' : `${f}()`, f.length + 1)}>{f}</button>)}</div>
  {category ? <section aria-label="Observed comparison members"><p className="pivot-formula-note">Members of {model.categories.find(c=>c.id===category)?.name} · acquired input</p><p className="pivot-formula-note">Observed identities bind independently of the current view. Eligibility counts reflect authored source filters and checklists; Page, group and viewer selections still govern execution.</p>
  {memberPending?<p role="status">Loading observed members…</p>:null}{memberError?<p role="alert">{memberError}</p>:null}
  {memberPage?<><p role="status">Showing {memberPage.total?memberPage.offset+1:0}–{memberPage.offset+memberPage.scanned} of {memberPage.total} observed members{search?' matching search':''}{memberPage.omittedCount?` · ${memberPage.omittedCount} identities omitted`:''}{!memberPage.classificationComplete?` · Partial classification (${memberPage.categoryErrorCount} errors)`:''}</p>

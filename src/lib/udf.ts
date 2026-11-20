@@ -21,9 +21,9 @@ import { isRecord } from "./isRecord";
 /** One daily bar. `time` is unix SECONDS, as UDF sends it and lightweight-charts takes it. */
 export type UdfBar = {
   time: number;
-  open: number;
-  high: number;
-  low: number;
+  open?: number;
+  high?: number;
+  low?: number;
   close: number;
   volume: number;
 };
@@ -67,21 +67,37 @@ export function parseUdfHistory(payload: unknown): UdfBar[] {
   }
   if (payload.s !== "ok") throw new Error(NOT_UDF);
 
-  const cols = [payload.t, payload.o, payload.h, payload.l, payload.c];
+  const closeOnly = payload.o === undefined && payload.h === undefined && payload.l === undefined;
+  const cols = closeOnly ? [payload.t, payload.c] : [payload.t, payload.o, payload.h, payload.l, payload.c];
   const v = payload.v;
   if (!cols.every(Array.isArray) || (v !== undefined && !Array.isArray(v))) throw new Error(NOT_UDF);
-  const [t, o, h, l, c] = cols as unknown[][];
+  const t = payload.t as unknown[];
+  const c = payload.c as unknown[];
+  const o = payload.o as unknown[];
+  const h = payload.h as unknown[];
+  const l = payload.l as unknown[];
   const n = t.length;
-  if ([o, h, l, c, ...(v === undefined ? [] : [v as unknown[]])].some((a) => a.length !== n)) {
+  if ([...cols as unknown[][], ...(v === undefined ? [] : [v as unknown[]])].some((a) => a.length !== n)) {
     throw new Error(`${NOT_UDF} (arrays of unequal length)`);
   }
 
   const byTime = new Map<number, UdfBar>();
   for (let i = 0; i < n; i++) {
-    const [time, open, high, low, close] = [t[i], o[i], h[i], l[i], c[i]];
-    if (!isNum(time) || !isNum(open) || !isNum(high) || !isNum(low) || !isNum(close)) continue;
+    const [time, close] = [t[i], c[i]];
+    if (!isNum(time) || !isNum(close)) continue;
     const vol = v === undefined ? undefined : (v as unknown[])[i];
-    byTime.set(time, { time, open, high, low, close, volume: isNum(vol) ? vol : 0 });
+    const bar: UdfBar = { time, close, volume: isNum(vol) ? vol : 0 };
+    if (!closeOnly) {
+      const [open, high, low] = [o[i], h[i], l[i]];
+      if (!isNum(open) || !isNum(high) || !isNum(low)) continue;
+      Object.assign(bar, { open, high, low });
+    }
+    byTime.set(time, bar);
   }
   return [...byTime.values()].sort((a, b) => a.time - b.time);
+}
+
+/** An actual OHLC observation, not a close price copied into missing fields. */
+export function hasOhlc(bar: UdfBar): bar is UdfBar & {open:number;high:number;low:number} {
+  return isNum(bar.open) && isNum(bar.high) && isNum(bar.low);
 }

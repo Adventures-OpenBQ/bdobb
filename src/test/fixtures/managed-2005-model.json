@@ -1,0 +1,239 @@
+{
+  "protocolVersion": 1,
+  "locale": "en-US",
+  "definition": {
+    "search": "",
+    "table": {},
+    "analytical": {
+      "schemaVersion": 1,
+      "params": {
+        "promotePage": true,
+        "filters": []
+      },
+      "enabled": true,
+      "categories": [
+        {
+          "id": "2b342f66-67fe-433b-8fd3-0f3d2caf0b11",
+          "name": "group",
+          "sourceFieldId": "group",
+          "transform": "native"
+        }
+      ],
+      "measures": [],
+      "formulas": [],
+      "layout": {
+        "values": [],
+        "rows": [
+          "2b342f66-67fe-433b-8fd3-0f3d2caf0b11"
+        ],
+        "columns": []
+      },
+      "checklists": [],
+      "resultFilters": [],
+      "subtotals": {
+        "grandTotal": true,
+        "groups": false
+      },
+      "legacyPivot": {
+        "enabled": true,
+        "grouping": [],
+        "split": []
+      }
+    }
+  },
+  "analyticalRecipeSource": {
+    "tag": "record",
+    "value": [
+      [
+        "schemaVersion",
+        {
+          "tag": "f64",
+          "value": 1
+        }
+      ],
+      [
+        "params",
+        {
+          "tag": "record",
+          "value": [
+            [
+              "promotePage",
+              {
+                "tag": "bool",
+                "value": true
+              }
+            ],
+            [
+              "filters",
+              {
+                "tag": "array",
+                "value": []
+              }
+            ]
+          ]
+        }
+      ],
+      [
+        "enabled",
+        {
+          "tag": "bool",
+          "value": true
+        }
+      ],
+      [
+        "categories",
+        {
+          "tag": "array",
+          "value": [
+            {
+              "tag": "record",
+              "value": [
+                [
+                  "id",
+                  {
+                    "tag": "string",
+                    "value": "2b342f66-67fe-433b-8fd3-0f3d2caf0b11"
+                  }
+                ],
+                [
+                  "name",
+                  {
+                    "tag": "string",
+                    "value": "group"
+                  }
+                ],
+                [
+                  "sourceFieldId",
+                  {
+                    "tag": "string",
+                    "value": "group"
+                  }
+                ],
+                [
+                  "transform",
+                  {
+                    "tag": "string",
+                    "value": "native"
+                  }
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      [
+        "measures",
+        {
+          "tag": "array",
+          "value": []
+        }
+      ],
+      [
+        "formulas",
+        {
+          "tag": "array",
+          "value": []
+        }
+      ],
+      [
+        "layout",
+        {
+          "tag": "record",
+          "value": [
+            [
+              "values",
+              {
+                "tag": "array",
+                "value": []
+              }
+            ],
+            [
+              "rows",
+              {
+                "tag": "array",
+                "value": [
+                  {
+                    "tag": "string",
+                    "value": "2b342f66-67fe-433b-8fd3-0f3d2caf0b11"
+                  }
+                ]
+              }
+            ],
+            [
+              "columns",
+              {
+                "tag": "array",
+                "value": []
+              }
+            ]
+          ]
+        }
+      ],
+      [
+        "checklists",
+        {
+          "tag": "array",
+          "value": []
+        }
+      ],
+      [
+        "resultFilters",
+        {
+          "tag": "array",
+          "value": []
+        }
+      ],
+      [
+        "subtotals",
+        {
+          "tag": "record",
+          "value": [
+            [
+              "grandTotal",
+              {
+                "tag": "bool",
+                "value": true
+              }
+            ],
+            [
+              "groups",
+              {
+                "tag": "bool",
+                "value": false
+              }
+            ]
+          ]
+        }
+      ],
+      [
+        "legacyPivot",
+        {
+          "tag": "record",
+          "value": [
+            [
+              "enabled",
+              {
+                "tag": "bool",
+                "value": true
+              }
+            ],
+            [
+              "grouping",
+              {
+                "tag": "array",
+                "value": []
+              }
+            ],
+            [
+              "split",
+              {
+                "tag": "array",
+                "value": []
+              }
+            ]
+          ]
+        }
+      ]
+    ]
+  }
+}

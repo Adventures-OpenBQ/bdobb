@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
-import { buildLinkedFigure } from './chartFigure';
+import { buildLinkedFigure, measureName, expiryColumns, isPivoted, reportValues } from './chartFigure';
 import type { WidgetDataset, LinkedChartSettings } from './types';
 const settings: LinkedChartSettings = { type: 'column', category: 'label', measures: ['a', 'b'], display: 'grouped' };
 const dataset: WidgetDataset = { rows: [{ id: 'r1', values: { label: 'Same', a: 10, b: null }, groupPath: [{ field: 'region', value: 'US' }] }, { id: 'r2', values: { label: 'Same', a: 20, b: 30 } }], columns: [{ id: 'label', label: 'Label', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }, { id: 'b', label: 'Cost', dtype: 'number' }], resultRevision: 1, outputRevision: 1, provenance: { sourceWidgetId: 'source' }, completeness: { kind: 'complete', warnings: [] }, freshness: { availability: 'available', stale: false } };
@@ -81,4 +81,335 @@ it('places a horizontal company legend below the plot with room for fiscal-year 
 
 it('keeps multiline financial details in hover rather than printing them inside bars', () => {
     expect(figure().data[0]).toMatchObject({ textposition: 'none', hovertemplate: '%{text}<extra></extra>' });
+});
+
+// Pinned on pre-Rows code: existing cards must keep byte-identical figures.
+const pin = (s: LinkedChartSettings) => JSON.stringify(figure(s));
+it('existing grouped column cards give byte-identical figures', () => {
+    expect(pin(settings)).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing stacked bar cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'bar', display: 'stacked' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":[10,20],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":[null,30],"y":["r1","r2"],"orientation":"h","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"bar\\",\\"label\\",[\\"a\\",\\"b\\"],\\"stacked\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"stack","yaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing line cards give byte-identical figures', () => {
+    expect(pin({ ...settings, type: 'line' })).toMatchInlineSnapshot(`"{"data":[{"type":"scatter","name":"Revenue","x":["r1","r2"],"y":[10,20],"mode":"lines+markers","connectgaps":false,"line":{"color":"#ef8354"},"marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"scatter","name":"Cost","x":["r1","r2"],"y":[null,30],"mode":"lines+markers","connectgaps":false,"line":{"color":"#71c7a1"},"marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"line\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+it('existing explicit columns cards give byte-identical figures', () => {
+    expect(pin({ ...settings, seriesFrom: 'columns' })).toMatchInlineSnapshot(`"{"data":[{"type":"bar","name":"Revenue","x":["r1","r2"],"y":[10,20],"orientation":"v","textposition":"none","marker":{"color":"#ef8354"},"text":["Same<br>region: US<br>Revenue (sum): 10","Same<br>Revenue (sum): 20"],"hovertemplate":"%{text}<extra></extra>"},{"type":"bar","name":"Cost","x":["r1","r2"],"y":[null,30],"orientation":"v","textposition":"none","marker":{"color":"#71c7a1"},"text":["Same<br>region: US<br>Cost: Missing","Same<br>Cost: 30"],"hovertemplate":"%{text}<extra></extra>"}],"layout":{"uirevision":"[\\"column\\",\\"label\\",[\\"a\\",\\"b\\"],\\"grouped\\"]","margin":{"l":48,"r":12,"t":12,"b":80},"barmode":"group","xaxis":{"type":"category","categoryorder":"array","categoryarray":["r1","r2"],"tickmode":"array","tickvals":["r1","r2"],"ticktext":["Same","Same"]},"showlegend":true,"legend":{"orientation":"h","x":0.5,"xanchor":"center","y":-0.3,"yanchor":"top"},"paper_bgcolor":"#1e242e","plot_bgcolor":"#1e242e","font":{"color":"#dfe4ec"}}}"`);
+});
+
+const years: WidgetDataset = { ...dataset,
+  columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'fy24', label: 'FY2024', dtype: 'number' }, { id: 'fy25', label: 'FY2025', dtype: 'number' }],
+  rows: [{ id: 'cash', values: { item: 'cash', fy24: 10, fy25: 30 } }, { id: 'inv', values: { item: 'inventory', fy24: 30, fy25: 10 } }] };
+const rows: LinkedChartSettings = { type: 'column', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped', seriesFrom: 'rows' };
+
+it('rows mode builds one trace per row with the measure columns as x', () => {
+  const f = figure(rows, years);
+  expect(f.data).toHaveLength(2);
+  expect(f.data[0]).toMatchObject({ type: 'bar', name: 'cash', x: ['fy24', 'fy25'], y: [10, 30] });
+  expect(f.layout.xaxis).toMatchObject({ tickvals: ['fy24', 'fy25'], ticktext: ['FY2024', 'FY2025'] });
+  const text = (f.data[0] as { text: string[] }).text[1];
+  expect(text).toContain('cash'); expect(text).toContain('FY2025'); expect(text).toContain('30');
+  expect(figure({ ...rows, type: 'bar' }, years).data[0]).toMatchObject({ orientation: 'h', x: [10, 30], y: ['fy24', 'fy25'] });
+  expect(figure({ ...rows, type: 'line' }, years).data[0]).toMatchObject({ type: 'scatter', x: ['fy24', 'fy25'] });
+});
+it('rows mode labels a split measure position with its split path', () => {
+  const split = { ...years, columns: [years.columns[0], { ...years.columns[1], splitPath: [{ field: 'Symbol', value: 'AMD' }] }] };
+  expect(figure({ ...rows, measures: ['fy24'] }, split).layout.xaxis).toMatchObject({ ticktext: ['AMD — FY2024'] });
+});
+it('rows mode keeps duplicate category values as separate, disambiguated series', () => {
+  const d = { ...years, rows: [
+    { id: 'a', values: { item: 'Revenue', fy24: 1 }, groupPath: [{ field: 'Segment', value: 'cloud', label: 'Cloud' }] },
+    { id: 'b', values: { item: 'Revenue', fy24: 2 }, groupPath: [{ field: 'Segment', value: 'devices', label: 'Devices' }] },
+    { id: 'c', values: { item: 'Cost', fy24: 3 } }, { id: 'd', values: { item: 'Cost', fy24: 4 } }] };
+  const f = figure({ ...rows, measures: ['fy24'] }, d);
+  expect(f.data.map(t => (t as { name: string }).name)).toEqual(['Revenue — Segment: Cloud', 'Revenue — Segment: Devices', 'Cost', 'Cost (2)']);
+  expect((f.data[2] as { marker: unknown }).marker).toEqual((f.data[3] as { marker: unknown }).marker);
+});
+it('an item keeps its colour by identity, whatever the row order or measure set', () => {
+  const a = figure(rows, years), b = figure({ ...rows, measures: ['fy25'] }, { ...years, rows: [...years.rows].reverse() });
+  expect((b.data[1] as { marker: unknown }).marker).toEqual((a.data[0] as { marker: unknown }).marker);
+});
+it('rows mode changes the revision; columns mode keeps it', () => {
+  expect(figure(rows, years).layout.uirevision).not.toBe(figure({ ...rows, seriesFrom: undefined }, years).layout.uirevision);
+  expect(figure({ ...settings, seriesFrom: 'columns' }).layout.uirevision).toBe(figure().layout.uirevision);
+});
+it('success carries an empty notes list for plain charts', () => {
+  const r = buildLinkedFigure(dataset, settings, 'dark');
+  expect(r.ok && r.notes).toEqual([]);
+});
+
+const refused = (s: LinkedChartSettings, d: WidgetDataset) => { const r = buildLinkedFigure(d, s, 'dark'); expect(r).toMatchObject({ ok: false, refused: true }); return (r as { message: string }).message; };
+const withRows = (vals: [string, number | null, number | null][]) => ({ ...years, rows: vals.map(([item, fy24, fy25], i) => ({ id: `r${i}`, values: { item, fy24, fy25 } })) });
+
+it('percent sets barnorm, a percent axis and the share in the hover', () => {
+  const f = figure({ ...rows, display: 'percent' }, years);
+  expect(f.layout).toMatchObject({ barmode: 'stack', barnorm: 'percent', yaxis: { ticksuffix: '%' } });
+  expect((f.data[0] as { text: string[] }).text[0]).toMatch(/10[\s\S]*25\.0%/); // cash FY2024: 10 of 40
+  expect(figure({ ...settings, type: 'bar', display: 'percent' }).layout).toMatchObject({ barnorm: 'percent', xaxis: { ticksuffix: '%' } });
+});
+it('pie builds one pie trace over the rows of one measure and refuses more than one', () => {
+  const f = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect(f.data).toEqual([expect.objectContaining({ type: 'pie', labels: ['cash', 'inventory'], values: [30, 10], sort: false, textinfo: 'percent' })]);
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24', 'fy25'], display: 'grouped' }, years)).toBe('Pie shows one measure — choose one');
+  // Plotly merges equal pie labels, so duplicates must already be unique
+  expect(figure({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['Cost', 1, 1], ['Cost', 2, 2]])).data[0]).toMatchObject({ labels: ['Cost', 'Cost (2)'], values: [1, 2] });
+});
+it('a pie slice has the colour of the same row in a rows chart', () => {
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'grouped' }, years);
+  expect((pie.data[0] as { marker: { colors: string[] } }).marker.colors[0]).toEqual((figure(rows, years).data[0] as { marker: { color: string } }).marker.color);
+});
+it('pie and percent refuse negative values, listing at most five', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 10, 5], ['treasury_stock', 2, -4]]))).toBe("Can't show shares of negative values: treasury_stock (FY2025).");
+  const many = withRows(Array.from({ length: 7 }, (_, i) => [`neg${i}`, -1, 1] as [string, number, number]));
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, many)).toBe("Can't show shares of negative values: neg0 (FY2024), neg1 (FY2024), neg2 (FY2024), neg3 (FY2024), neg4 (FY2024), and 2 more.");
+});
+it('pie and percent refuse a zero total, naming the year or measure', () => {
+  expect(refused({ ...rows, display: 'percent' }, withRows([['cash', 0, 5], ['inventory', 0, 5]]))).toBe("Can't show shares of a zero total: FY2024.");
+  expect(refused({ type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, withRows([['cash', 0, 1]]))).toBe("Can't show shares of a zero total: FY2024.");
+});
+it('missing values are left out and listed, and the chart still draws', () => {
+  const r = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark');
+  expect(r).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'] });
+  const pie = buildLinkedFigure(withRows([['cash', 10, 5], ['inventory', null, 5]]), { type: 'pie', category: 'item', measures: ['fy24'], display: 'grouped' }, 'dark');
+  expect(pie).toMatchObject({ ok: true, notes: ['Missing: inventory (FY2024)'], figure: { data: [{ labels: ['cash'], values: [10] }] } });
+});
+it('an all-missing stack is listed as missing, not refused as a zero total', () => {
+  expect(buildLinkedFigure(withRows([['cash', null, 5], ['inventory', null, 5]]), { ...rows, display: 'percent' }, 'dark')).toMatchObject({ ok: true, notes: ['Missing: cash (FY2024), inventory (FY2024)'] });
+});
+it('grouped, stacked and line charts keep negatives and give no notes', () => {
+  const d = withRows([['cash', 10, null], ['treasury_stock', -4, 1]]);
+  for (const display of ['grouped', 'stacked'] as const) expect(buildLinkedFigure(d, { ...rows, display }, 'dark')).toMatchObject({ ok: true, notes: [] });
+});
+it('leftover fields from another type still draw', () => {
+  const line = figure({ ...rows, type: 'line', display: 'percent' }, withRows([['cash', -1, 2]]));
+  expect(line.data[0]).toMatchObject({ type: 'scatter' }); expect(line.layout).not.toHaveProperty('barnorm');
+  const pie = figure({ type: 'pie', category: 'item', measures: ['fy25'], display: 'percent', seriesFrom: 'rows' }, years);
+  expect(pie.data[0]).toMatchObject({ type: 'pie', labels: ['cash', 'inventory'] });
+});
+
+const agg = (vals: [string, number][]): WidgetDataset => ({ ...dataset, columns: [{ id: 'item', label: 'Item', dtype: 'text' }, { id: 'a', label: 'Revenue', dtype: 'number', aggregation: 'sum' }], rows: vals.map(([item, a], i) => ({ id: `r${i}`, values: { item, a } })) });
+it('rows and pie hover carry the measure aggregation, like columns hover', () => {
+  const d = agg([['cash', 1], ['inventory', 2]]);
+  const text = (f: ReturnType<typeof figure>) => (f.data[0] as { text: string[] }).text[0];
+  expect(text(figure({ type: 'column', category: 'item', measures: ['a'], display: 'grouped', seriesFrom: 'rows' }, d))).toContain('Revenue (sum): 1');
+  expect(text(figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d))).toContain('Revenue (sum): 1');
+});
+it('a real label equal to a generated suffix still gets a unique pie name', () => {
+  const d = agg([['Revenue', 1], ['Revenue', 2], ['Revenue (2)', 3]]);
+  const labels = (figure({ type: 'pie', category: 'item', measures: ['a'], display: 'grouped' }, d).data[0] as { labels: string[] }).labels;
+  expect(new Set(labels).size).toBe(3);
+  expect(labels.slice(0, 2)).toEqual(['Revenue', 'Revenue (2)']);
+});
+
+it('names a measure by its split path and label, the way the legend does', () => {
+    expect(measureName({ label: 'Value' })).toBe('Value');
+    expect(measureName({ label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }, { field: 'company', value: 'AMD' }] })).toBe('FY2024 — AMD — Value');
+});
+// The CFTC FX implied-vol table: a row per strike, a vol column per expiry, pair and date on every row.
+const volColumns = [{ id: 'strike', label: 'Strike', dtype: 'number' as const }, { id: 'vol_1m', label: '1M', dtype: 'number' as const }, { id: 'vol_3m', label: '3M', dtype: 'number' as const }, { id: 'pair', label: 'Pair', dtype: 'text' as const }, { id: 'date', label: 'Date', dtype: 'text' as const }];
+const volRow = (id: string, pair: string, strike: number, m1: number | null, m3: number) => ({ id, values: { strike, vol_1m: m1, vol_3m: m3, pair, date: '2026-11-17' } });
+const vol: WidgetDataset = { ...dataset, columns: volColumns, rows: [volRow('r1', 'EURUSD', 1.05, 7.1, 7.4), volRow('r2', 'EURUSD', 1.1, null, 7.0), volRow('r3', 'USDJPY', 150, 9.2, 9.5), volRow('r4', 'USDJPY', 155, 8.8, 9.1)] };
+const surface: LinkedChartSettings = { type: 'surface', category: 'strike', measures: ['vol_1m', 'vol_3m'], display: 'grouped' };
+it('draws one surface per pair/date: x strike, y expiry, z vol, each in its own titled scene on a shared colour scale', () => {
+    const f = figure(surface, vol);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'surface', scene: 'scene', coloraxis: 'coloraxis', x: [1.05, 1.1], y: [0, 1], z: [[7.1, null], [7.4, 7.0]], text: [['Strike: 1.05<br>1M: 7.1', 'Strike: 1.1<br>1M: Missing'], ['Strike: 1.05<br>3M: 7.4', 'Strike: 1.1<br>3M: 7']] }),
+        expect.objectContaining({ type: 'surface', scene: 'scene2', x: [150, 155], z: [[9.2, 8.8], [9.5, 9.1]] }),
+    ]);
+    expect(f.layout.scene).toMatchObject({ domain: { x: [0, 0.5] }, yaxis: { tickvals: [0, 1], ticktext: ['1M', '3M'] } });
+    expect(f.layout.scene2).toMatchObject({ domain: { x: [0.5, 1] } });
+    expect((f.layout.annotations as { text: string }[]).map(a => a.text)).toEqual(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+});
+it('draws a single untitled surface when the rows carry no pair or date', () => {
+    const bare = { ...vol, columns: volColumns.slice(0, 3), rows: vol.rows.slice(0, 2) };
+    const f = figure(surface, bare);
+    expect(f.data).toHaveLength(1);
+    expect(f.layout.annotations).toEqual([]);
+    const text = { ...bare, columns: [{ id: 'strike', label: 'Strike', dtype: 'text' as const }, ...volColumns.slice(1, 3)], rows: bare.rows.map((r, i) => ({ ...r, values: { ...r.values, strike: ['25D put', 'ATM'][i] } })) };
+    const t = figure(surface, text);
+    expect(t.data[0]).toMatchObject({ x: [0, 1] });
+    expect(t.layout.scene).toMatchObject({ xaxis: { tickvals: [0, 1], ticktext: ['25D put', 'ATM'] } });
+});
+it('refuses a surface it cannot mesh or that would split into too many plots', () => {
+    const thin = { ...vol, rows: vol.rows.slice(0, 3) };
+    expect(buildLinkedFigure(thin, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+    const many = { ...vol, rows: Array.from({ length: 14 }, (_, i) => volRow(`r${i}`, `P${i >> 1}`, i, 1, 2)) };
+    expect(buildLinkedFigure(many, surface, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface draws at most 6 plots — the rows hold 7 pair/date combinations.' });
+});
+it('draws a Surface with one measure ticked as a line per pair/date, not a surface', () => {
+    const f = figure({ ...surface, measures: ['vol_3m'] }, vol);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [1.05, 1.1], y: [7.4, 7.0] }),
+        expect.objectContaining({ type: 'scatter', xaxis: 'x2', yaxis: 'y2', x: [150, 155], y: [9.5, 9.1] }),
+    ]);
+    expect(f.layout.xaxis).toMatchObject({ anchor: 'y', title: { text: 'Strike' } });
+    expect(f.layout.yaxis).toMatchObject({ title: { text: '3M' } });
+    expect((f.layout.annotations as { text: string }[]).map(a => a.text)).toEqual(['EURUSD — 2026-11-17', 'USDJPY — 2026-11-17']);
+    expect(f.layout.scene).toBeUndefined();
+});
+it('runs the surface measure axis in source column order, whatever order the measures were ticked in', () => {
+    const f = figure({ ...surface, measures: ['vol_3m', 'vol_1m'] }, vol);
+    expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: ['1M', '3M'] } });
+    expect(f.data[0]).toMatchObject({ z: [[7.1, null], [7.4, 7.0]] });
+});
+
+// The pivot report's recorded shape: rows underlying › strike, a column per expiry and report value, members with a value and no label.
+const D = ['2026-12-18', '2027-01-15', '2027-03-19'];
+const RT = [0.2, 0.3, 0.5];
+const VALUE_LABEL = { iv: 'implied_volatility — Median', lm: 'log_moneyness — Average', rt: 'root_t — Average' };
+const memberKey = (v: string | number) => JSON.stringify([typeof v === 'number' ? 'number' : 'string', v]);
+const cell = (d: string, m: string) => `${memberKey(d)}\u001f${m}`;
+const reportColumns = [{ id: '\u001egroup', label: 'underlying › Strike', dtype: 'text' as const }, ...D.flatMap(d => (['iv', 'lm', 'rt'] as const).map(m => ({ id: cell(d, m), label: VALUE_LABEL[m], dtype: 'number' as const, measureId: m, splitPath: [{ field: 'expiry', categoryId: 'expiry', sourceBindingId: 'expiration', transform: 'native' as const, memberKey: memberKey(d), value: d }] })))];
+const reportRow = (u: string, k: number | string, lm: number, iv: (number | string | null)[]) => ({ id: `${u}/${k}`,
+    groupPath: [{ field: 'underlying', categoryId: 'underlying', memberKey: memberKey(u), value: u }, { field: 'strike_cat', categoryId: 'strike_cat', memberKey: memberKey(k), value: k }],
+    values: { '\u001egroup': String(k), ...Object.fromEntries(D.flatMap((d, e) => [[cell(d, 'iv'), iv[e]], [cell(d, 'lm'), iv[e] === null ? null : lm], [cell(d, 'rt'), iv[e] === null ? null : RT[e]]])) } });
+const reportRows = [reportRow('AAA', 90, -0.105, [0.21, 0.22, 0.23]), reportRow('AAA', 100, 0, [0.2, 0.21, 0.22]), reportRow('AAA', 110, 0.095, [0.22, 0.23, 0.24]),
+    reportRow('BBB', 45, -0.105, [0.3, 0.31, null]), reportRow('BBB', 50, 0, [0.29, 0.3, null]), reportRow('BBB', 55, 0.095, [0.31, 0.32, null])];
+const report: WidgetDataset = { ...dataset, columns: reportColumns, rows: reportRows };
+const ps: LinkedChartSettings = { type: 'surface', measures: [], display: 'grouped', height: 'iv', spaceRowsBy: 'lm', spaceColumnsBy: 'rt' };
+const withCells = (edit: (id: string, values: Record<string, unknown>) => void): WidgetDataset => ({ ...report, rows: report.rows.map(r => { const values = { ...r.values }; edit(r.id, values); return { ...r, values } as typeof r; }) });
+const titlesOf = (f: ReturnType<typeof figure>) => (f.layout.annotations as { text: string }[]).map(a => a.text);
+it('draws one surface per outer row group, spaced by the report values and labelled by members', () => {
+    const f = figure(ps, report);
+    expect(f.data.map(t => (t as { type: string }).type)).toEqual(['surface', 'surface']);
+    expect(titlesOf(f)).toEqual(['AAA', 'BBB']);
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT, z: [[0.21, 0.2, 0.22], [0.22, 0.21, 0.23], [0.23, 0.22, 0.24]] });
+    expect((f.data[0] as { text: string[][] }).text[0][0]).toBe('90<br>2026-12-18<br>implied_volatility — Median: 0.21');
+    expect(f.layout.scene).toMatchObject({ xaxis: { title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['90', '100', '110'] }, yaxis: { tickvals: RT, ticktext: D } });
+});
+it('takes the first non-empty cell along the row or column for spacing', () => {
+    const f = figure(ps, withCells((id, v) => { if (id === 'AAA/90') { v[cell(D[0], 'lm')] = null; v[cell(D[0], 'rt')] = null; } }));
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT });
+});
+it('drops an expiry one underlying lacks', () => {
+    const f = figure(ps, report);
+    expect(f.data[1]).toMatchObject({ x: [-0.105, 0, 0.095], y: RT.slice(0, 2), z: [[0.3, 0.29, 0.31], [0.31, 0.3, 0.32]] });
+    expect(f.layout.scene2).toMatchObject({ yaxis: { ticktext: D.slice(0, 2) } });
+});
+it('drops an underlying whose ticked expiries all lack data, and refuses when no plot remains', () => {
+    const f = figure({ ...ps, measures: [cell(D[2], 'iv')] }, report);
+    expect(titlesOf(f)).toEqual(['AAA']);
+    expect(f.data).toHaveLength(1);
+    expect(buildLinkedFigure({ ...report, rows: report.rows.slice(3) }, { ...ps, measures: [cell(D[2], 'iv')] }, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+    expect(buildLinkedFigure(report, { ...ps, measures: ['stale'] }, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface needs at least two rows per plot.' });
+});
+it('refuses a row whose spacing value is empty everywhere', () => {
+    const rows = withCells((id, v) => { if (id === 'AAA/100') for (const d of D) v[cell(d, 'lm')] = null; });
+    expect(buildLinkedFigure(rows, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: "Can't space rows by log_moneyness — Average: 100 has no value." });
+    const columns = withCells((_, v) => { v[cell(D[1], 'rt')] = null; });
+    expect(buildLinkedFigure(columns, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: "Can't space columns by root_t — Average: 2027-01-15 has no value." });
+});
+it('with no spacing chosen, numeric rows sit at their own value and columns are evenly spaced', () => {
+    const f = figure({ ...ps, spaceRowsBy: undefined, spaceColumnsBy: undefined }, report);
+    expect(f.data[0]).toMatchObject({ x: [90, 100, 110], y: [0, 1, 2] });
+    expect((f.layout.scene as { xaxis: { tickvals?: unknown } }).xaxis.tickvals).toBeUndefined();
+    expect(f.layout.scene).toMatchObject({ yaxis: { tickvals: [0, 1, 2], ticktext: D } });
+});
+it('spaces text rows evenly', () => {
+    const text = { ...report, rows: [reportRow('AAA', '25D put', -0.1, [0.21, 0.22, 0.23]), reportRow('AAA', 'ATM', 0, [0.2, 0.21, 0.22])] };
+    const f = figure({ ...ps, spaceRowsBy: undefined }, text);
+    expect(f.data[0]).toMatchObject({ x: [0, 1] });
+    expect(f.layout.scene).toMatchObject({ xaxis: { tickvals: [0, 1], ticktext: ['25D put', 'ATM'] } });
+});
+it('draws only the ticked expiry columns; none ticked draws all', () => {
+    const f = figure({ ...ps, measures: [cell(D[2], 'iv'), cell(D[0], 'iv')] }, report);
+    expect(f.data[0]).toMatchObject({ y: [RT[0], RT[2]], z: [[0.21, 0.2, 0.22], [0.23, 0.22, 0.24]] });
+    expect(f.layout.scene).toMatchObject({ yaxis: { ticktext: [D[0], D[2]] } });
+    expect(f.data[1]).toMatchObject({ type: 'scatter', y: [0.3, 0.29, 0.31] }); // BBB is left with one expiry: a line (ruling I1)
+    expect(f.layout.yaxis).toMatchObject({ title: { text: D[0] } });
+    expect((figure(ps, report).data[0] as { y: number[] }).y).toEqual(RT);
+});
+it('draws a pivoted surface with one ticked expiry as a line', () => {
+    const f = figure({ ...ps, measures: [cell(D[1], 'iv')] }, report);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [-0.105, 0, 0.095], y: [0.22, 0.21, 0.23] }),
+        expect.objectContaining({ type: 'scatter', xaxis: 'x2', yaxis: 'y2', y: [0.31, 0.3, 0.32] }),
+    ]);
+    expect(f.layout.xaxis).toMatchObject({ title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['90', '100', '110'] });
+    expect(f.layout.scene).toBeUndefined();
+});
+it('draws a plot left with one expiry as a line beside the other plots\' surfaces', () => {
+    const f = figure({ ...ps, measures: [cell(D[1], 'iv'), cell(D[2], 'iv')] }, report);
+    expect(f.data).toEqual([
+        expect.objectContaining({ type: 'surface', scene: 'scene', coloraxis: 'coloraxis', y: RT.slice(1), z: [[0.22, 0.21, 0.23], [0.23, 0.22, 0.24]] }),
+        expect.objectContaining({ type: 'scatter', mode: 'lines+markers', xaxis: 'x', yaxis: 'y', x: [-0.105, 0, 0.095], y: [0.31, 0.3, 0.32] }),
+    ]);
+    expect(f.data[1]).not.toHaveProperty('coloraxis');
+    // The line keeps the all-lines colour for its expiry.
+    const allLines = figure({ ...ps, measures: [cell(D[1], 'iv')] }, report);
+    expect((f.data[1] as { line: unknown }).line).toEqual((allLines.data[1] as { line: unknown }).line);
+    expect(f.layout.scene).toMatchObject({ domain: { x: [0, 0.5] }, yaxis: { ticktext: D.slice(1) } });
+    expect(f.layout.xaxis).toMatchObject({ domain: [0.54, 1], anchor: 'y', title: { text: 'Strike' }, tickvals: [-0.105, 0, 0.095], ticktext: ['45', '50', '55'] });
+    expect(f.layout.yaxis).toMatchObject({ anchor: 'x', title: { text: D[1] } });
+    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 0.21, cmax: 0.24 }); // the surface's own cells; the line is off the scale
+    expect(f.layout.scene2).toBeUndefined();
+    expect(titlesOf(f)).toEqual(['AAA', 'BBB']);
+});
+it('draws one surface when the report holds one outer member', () => {
+    const f = figure(ps, { ...report, rows: report.rows.slice(3) });
+    expect(f.data).toHaveLength(1);
+    expect(titlesOf(f)).toEqual(['BBB']);
+});
+it('draws only the selected strike rows', () => {
+    const f = figure(ps, { ...report, rows: [report.rows[0], report.rows[2]] });
+    expect(f.data).toHaveLength(1);
+    expect(f.data[0]).toMatchObject({ x: [-0.105, 0.095] });
+});
+it('refuses more than six outer groups', () => {
+    const many = { ...report, rows: Array.from({ length: 14 }, (_, i) => reportRow(`U${i >> 1}`, i, i, [0.2, 0.2, 0.2])) };
+    expect(buildLinkedFigure(many, ps, 'dark')).toMatchObject({ ok: false, refused: true, message: 'Surface draws at most 6 plots — the rows hold 7 underlying combinations.' });
+});
+it('refuses a non-numeric height cell', () => {
+    const bad = withCells((id, v) => { if (id === 'AAA/90') v[cell(D[0], 'iv')] = '#ERROR'; });
+    expect(buildLinkedFigure(bad, ps, 'dark')).toMatchObject({ ok: false, message: 'Value implied_volatility — Median contains non-numeric or unsafe values.' });
+});
+it('falls back when the source is not pivoted', () => {
+    expect(buildLinkedFigure(vol, ps, 'dark')).toMatchObject({ ok: false, message: 'Choose an available category field.' });
+});
+it('asks for Height', () => {
+    expect(buildLinkedFigure(report, { ...ps, height: undefined }, 'dark')).toMatchObject({ ok: false, message: 'Choose chart fields: select a value for Height.' });
+    expect(buildLinkedFigure(report, { ...ps, height: 'zz' }, 'dark')).toMatchObject({ ok: false, message: 'Field zz is unavailable. Repair chart fields.' });
+    expect(buildLinkedFigure(report, { ...ps, spaceRowsBy: 'qq' }, 'dark')).toMatchObject({ ok: false, message: 'Field qq is unavailable. Repair chart fields.' });
+});
+it('lists report values, expiry columns and whether a source is pivoted', () => {
+    expect(isPivoted(report.columns)).toBe(true);
+    expect(isPivoted(vol.columns)).toBe(false);
+    expect(reportValues(report.columns)).toEqual([{ id: 'iv', label: VALUE_LABEL.iv }, { id: 'lm', label: VALUE_LABEL.lm }, { id: 'rt', label: VALUE_LABEL.rt }]);
+    expect(expiryColumns(report.columns, 'iv').map(c => c.id)).toEqual(D.map(d => cell(d, 'iv')));
+});
+// A text or spaced axis labels at most ten positions, evenly across the members and always the first and last; every member is still plotted.
+const wide = (n: number) => ({ ...report, rows: Array.from({ length: n }, (_, i) => reportRow('AAA', 100 + i, i / 100, [0.2 + i / 1000, 0.21 + i / 1000, 0.22 + i / 1000])) });
+it('thins the tick labels of a long axis to ten, keeping every point plotted and hoverable', () => {
+    const f = figure(ps, wide(129));
+    const scene = f.layout.scene as { xaxis: { tickvals: number[]; ticktext: string[] } };
+    expect(scene.xaxis.tickvals).toHaveLength(10);
+    expect(scene.xaxis.ticktext).toEqual(['100', '114', '128', '143', '157', '171', '185', '200', '214', '228']);
+    expect(scene.xaxis.tickvals[0]).toBe(0); expect(scene.xaxis.tickvals[9]).toBe(1.28);
+    expect((f.data[0] as { x: number[] }).x).toHaveLength(129);
+    expect((f.data[0] as { text: string[][] }).text[0]).toHaveLength(129);
+    expect((f.layout.scene as { yaxis: { ticktext: string[] } }).yaxis.ticktext).toEqual(D);
+});
+it('thins the category axis of a one-expiry line panel and leaves ten or fewer labels alone', () => {
+    const line = figure({ ...ps, measures: [cell(D[1], 'iv')] }, wide(129));
+    expect((line.layout.xaxis as { ticktext: string[] }).ticktext).toHaveLength(10);
+    expect((line.data[0] as { x: number[] }).x).toHaveLength(129);
+    const ten = figure(ps, wide(10)).layout.scene as { xaxis: { ticktext: string[] } };
+    expect(ten.xaxis.ticktext).toHaveLength(10);
+    const eleven = figure(ps, wide(11)).layout.scene as { xaxis: { ticktext: string[] } };
+    expect(eleven.xaxis.ticktext).toHaveLength(10);
+    expect(eleven.xaxis.ticktext[0]).toBe('100'); expect(eleven.xaxis.ticktext[9]).toBe('110');
+});
+// The colour range follows the cells the mesh draws: those in at least one complete 2-by-2 block of finite cells, across every 3-D plot.
+it('sets the colour range from drawn cells only, across all 3-D plots, keeping lone cells in the data and hover', () => {
+    const lone = withCells((id, v) => { if (id === 'AAA/110') { v[cell(D[1], 'iv')] = null; v[cell(D[2], 'iv')] = 0.9; } if (id === 'AAA/100') v[cell(D[2], 'iv')] = null; });
+    const f = figure(ps, lone);
+    // AAA: only its first two expiries over the first two strikes form a block (0.20-0.22); BBB's whole 3-by-2 grid is drawn (0.29-0.32); the lone 0.9 is not.
+    expect(f.layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 0.2, cmax: 0.32 });
+    expect((f.data[0] as { z: (number | null)[][] }).z[2]).toEqual([0.23, null, 0.9]);
+    expect((f.data[0] as { text: string[][] }).text[2][2]).toContain('0.9');
+});
+it('FX surfaces: a plot short of any complete block stays off the colour range, and with no drawn cell the scale stays automatic', () => {
+    expect(figure(surface, vol).layout.coloraxis).toEqual({ colorscale: 'Viridis', cmin: 8.8, cmax: 9.5 });
+    expect(figure(surface, { ...vol, rows: vol.rows.slice(0, 2) }).layout.coloraxis).toEqual({ colorscale: 'Viridis' });
 });

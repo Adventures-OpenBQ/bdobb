@@ -14,6 +14,7 @@ Sorting and filtering operate over loaded input, not only visible rows. Local an
 
 A table selection can be explicit or **all matching** with exclusions. Create a linked table or linked chart from a source to follow its presented input and selection. Linked cards retain their source relationship when saved and when exported through the v4 compatible format. Remove or change a source deliberately; a missing source should produce a diagnostic rather than unrelated data.
 
+**Create linked table** and **Create linked chart** on a table's **⋯** menu, or the Linked table and Linked chart entries in the library, add a card that follows a source table's presented rows and selection. For a linked chart, open its title-bar **Parameters** chevron (or **⋯ → Parameters**) to use **Choose source**, **Chart type**, **Category**, **Measures** and **Series from**. The panel starts closed; closing it leaves the chart rendered and its configuration saved. **Choose source** relinks it. A missing source shows a diagnostic, never unrelated data, and when the source's scope is successfully empty the linked chart clears its figure.
 ## Date expressions and trading calendars
 
 Add the **Date expression** or **Period echo** built-in, or import `docs/examples/v4.0.0-parameters.apps.json`. Expressions resolve against their As of value; `T` means the current reference date and `T-5bd` moves back five business sessions. Choose the relevant exchange for session-aware expressions. Fiscal controls use the card's fiscal year-end month.
@@ -22,7 +23,7 @@ Trading-calendar coverage is finite. Dates outside supported exchange data use t
 
 ## Keep parameters visible
 
-Titlebar chips show parameter values. Open **Parameters** from the card menu or its chevron to dock the labeled controls beneath the titlebar. The panel stays open until you close it; clicking outside or Escape does not dismiss it. **Display on title bar** controls whether those values also appear as chips. Both choices save with the card and travel in a BDOBB-compatible v4 export.
+A widget's parameters can be laid out in rows, as in OpenBB Workspace: row 0 shares the title line and later rows appear only in the Parameters panel. Row 0 is not repeated there while it remains visible in the title. The **▸** chevron or **⋯ ▸ Parameters** docks the labeled controls under the title bar; the panel stays until you close it (Escape or a click outside does not dismiss it). **Display on title bar** turns a card's chips off. Both choices save with the card.
 
 ## Calendar, library and keys
 

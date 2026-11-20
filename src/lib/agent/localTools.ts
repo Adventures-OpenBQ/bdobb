@@ -123,7 +123,9 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "Address existing objects by {id} and new ones by a request-local {alias}; an applied result's ids maps each alias to its new id. " +
       "The engine validates and calculates: quote only numbers that are values in the result's preview.rows; the grand total and the row count " +
       "are not there, so do not add anything up yourself: state the source table's row count only as describe_table's exact completeness.totalRowCount, " +
-      "never the grand total. Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
+      "never the grand total. A refused or failed result has no successful preview: explain the refusal without invented rows, labels or numbers. " +
+      "Do not substitute another aggregation for an unsupported request; offer alternatives without executing them. Correct schema errors only while preserving the requested operation. " +
+      "Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
       "its alternatives), stale-revision (describe again), busy, timeout or calculation-failed (nothing changed; describe, then retry once). " +
       "view.set switches the card's view to one of describe_table's views (\"table\" is the default) in the same request and Undo. " +
       "An applied result may have revision null and recalculating true while the table settles, and lists each linked table with its status; " +
@@ -698,7 +700,10 @@ export async function executeLocalTool(
     }
     // #40: the view, from the ones this card's view menu could offer.
     const views = possibleViews(def, card);
-    if (args.view !== undefined && args.view !== "default" && !views.includes(args.view as CardView)) {
+    // A chart widget already renders its chart in the default view. Do not
+    // refuse its valid parameters when Rita explicitly asks for that chart.
+    const nativeChartView = def.type === "chart" && args.view === "chart";
+    if (args.view !== undefined && args.view !== "default" && !nativeChartView && !views.includes(args.view as CardView)) {
       problems.push(`view "${String(args.view)}" must be one of: ${["default", ...views].join(", ")}`);
     }
     if (problems.length > 0) {
@@ -720,7 +725,7 @@ export async function executeLocalTool(
       }
     }
     const viewBefore = card.view;
-    const viewAfter = args.view === "default" ? undefined : (args.view as CardView | undefined);
+    const viewAfter = args.view === "default" || nativeChartView ? undefined : (args.view as CardView | undefined);
     // Through splitParamEdit, as the card's own controls write: a grouped
     // param lands on its group, or the group would mask it on the next render.
     const split = (edits: Record<string, string>, c: DashboardCard) => {
@@ -752,7 +757,7 @@ export async function executeLocalTool(
         if (args.view !== undefined) await useDashboardStore.getState().patchCardField(cardId, "view", viewBefore ?? null);
       },
     });
-    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: args.view } : {}) };
+    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: viewAfter ?? "default" } : {}) };
   }
 
   if (name === "remove_widget") {

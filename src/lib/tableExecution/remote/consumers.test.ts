@@ -27,11 +27,11 @@ const stores:TableExecutionStore[]=[];
 afterEach(()=>{for(const store of stores.splice(0))store.disposeDashboard('d');});
 /** Models server ownership using the compiled Rust provider. This is orchestration qualification,
  * not an HTTP/native-service E2E: only this backend fixture materializes derived input. */
-async function setup(cards=[root,child],linked=true,data=source){
+async function setup(cards=[root,child],linked=true,data=source,initialDerivationFailure=false){
  useWidgetRegistryStore.setState({widgets:normalizeWidgets({managed:{type:'table_ssrm',provider:'managed-native',protocolVersion:1,endpoint:'/sessions'}},'b').widgets});
  const runtime=await realRustRuntime();
  const sessions:ProviderSession[]=[],disposals:ReturnType<typeof vi.fn>[]=[],derivations:ReturnType<typeof vi.fn>[]=[],presented:ReturnType<typeof vi.fn>[]=[];
- let failDerive=false,failApply=false;
+ let failDerive=initialDerivationFailure,failApply=false;
  const holds:{derive?:Promise<void>;chart?:Promise<void>}={};
  async function open(data:WidgetDataset,options:Parameters<ExecutionProvider['open']>[1]):Promise<ProviderSession>{
   const fixture=createRemoteProviderFixture({runtime,input:data,sourceId:'private',snapshotId:'',batchRows:37});
@@ -52,7 +52,7 @@ async function setup(cards=[root,child],linked=true,data=source){
  const acquire=vi.fn(),executor=vi.fn();
  const store=createTableExecutionStore({source:acquire,executor,managedProvider:()=>({open:async(binding,options)=>open({...data,resultRevision:binding.kind==='remote'?binding.managed!.inputRevision:1},options)})});
  stores.push(store);store.syncDashboard(dashboard(cards));store.ensureTable('d',cards.at(-1)!.id);await store.settled('d');
- return {store,holds,sessions,disposals,derivations,presented,acquire,executor,failDerive:()=>{failDerive=true;},failApply:()=>{failApply=true;}};
+ return {store,holds,sessions,disposals,derivations,presented,acquire,executor,failDerive:()=>{failDerive=true;},allowDerive:()=>{failDerive=false;},failApply:()=>{failApply=true;}};
 }
 it('derives managed linked chains from full selected results without client input or subset transfer and reconstructs on reopen',async()=>{
  const grandchild={...child,id:'grandchild',linkedSource:{kind:'widget' as const,sourceWidgetId:'child'}};
@@ -124,11 +124,22 @@ it('disposes a late derived candidate when a newer generation supersedes it',asy
  s.store.updateDefinition('d','root',{...flat,search:'Unseen'},{kind:'none'});
  await vi.waitFor(()=>expect(s.sessions).toHaveLength(3));
  s.holds.derive=undefined;
+ const delayedSource=s.store.readView('d','root').active;
  s.store.updateDefinition('d','root',flat,{kind:'none'});
- await vi.waitFor(()=>expect(s.store.readView('d','child').ready?.topLevelCount).toBe(205));
+ await vi.waitFor(()=>{
+  const parent=s.store.readView('d','root'),child=s.store.readView('d','child');
+  expect(parent.active).not.toEqual(delayedSource);
+  expect(child.status).toBe('ready');
+  expect(child.sourceRevision).toEqual(parent.active);
+  expect(child.ready?.topLevelCount).toBe(205);
+ });
+ const completed=s.store.readView('d','child');
+ const result=await s.store.readExecutor('d','child')!.chartData(completed.active!,['team','revenue'],signal());
  release();await s.store.settled('d');
  expect(s.disposals[2]).toHaveBeenCalledTimes(1);expect(s.store.readView('d','child').ready?.topLevelCount).toBe(205);
+ expect(s.store.readView('d','child').active).toEqual(completed.active);
  expect(s.store.readView('d','child').sourceRevision).toEqual(s.store.readView('d','root').active);
+ expect(await s.store.readExecutor('d','child')!.chartData(completed.active!,['team','revenue'],signal())).toMatchObject({rows:result.rows,revision:result.revision,columns:result.columns,provenance:result.provenance});
 });
 it('failed parent refresh retains completed child identity and an admitted child export',async()=>{
  const s=await setup();const before=s.store.readView('d','child');
@@ -188,4 +199,33 @@ it('acquires an export lease before its first next and releases it on return or 
  await first.return!();expect(s.disposals[1]).not.toHaveBeenCalled();
  c.abort();await vi.waitFor(()=>expect(s.disposals[1]).toHaveBeenCalledTimes(1));
  await second.return!();expect(s.disposals[1]).toHaveBeenCalledTimes(1);
+});
+
+it('first derivation refusal publishes no child and supported reopen recovers',async()=>{
+ const s=await setup(undefined,true,source,true);
+ const failed=s.store.readView('d','child');
+ expect(failed.status).toBe('failed');expect(failed.error).toMatch(/Derivation refused/);
+ expect(failed.active).toBeUndefined();expect(failed.ready).toBeUndefined();
+ expect(s.store.readExecutor('d','child')).toBeUndefined();
+ // Retry with the real provider after its temporary admission refusal ends.
+ s.allowDerive();
+ s.store.reopen('d','child');await s.store.settled('d');
+ expect(s.store.readView('d','child').status).toBe('ready');
+ expect(s.store.readView('d','child').ready?.topLevelCount).toBe(205);
+});
+it('disposed derived generation cannot publish after dashboard and widget IDs are reused',async()=>{
+ const s=await setup();let release!:()=>void;s.holds.derive=new Promise<void>(resolve=>{release=resolve;});
+ s.store.updateDefinition('d','root',{...flat,search:'Unseen'},{kind:'none'});
+ await vi.waitFor(()=>expect(s.sessions).toHaveLength(3));
+ s.store.disposeDashboard('d');s.holds.derive=undefined;
+ s.store.syncDashboard(dashboard());s.store.ensureTable('d','child');
+ await vi.waitFor(()=>expect(s.store.readView('d','child').ready?.topLevelCount).toBe(205));
+ const before=s.store.readView('d','child');const executor=s.store.readExecutor('d','child');
+ release();await s.store.settled('d');
+ await vi.waitFor(()=>expect(s.disposals[2]).toHaveBeenCalledTimes(1));
+ expect(s.store.readView('d','child').active).toEqual(before.active);
+ expect(s.store.readView('d','child').sourceRevision).toEqual(before.sourceRevision);
+ expect(s.store.readExecutor('d','child')).toBe(executor);
+ const result=await executor!.chartData(before.active!,['team','revenue'],signal());
+ expect(result.rows).toHaveLength(205);
 });

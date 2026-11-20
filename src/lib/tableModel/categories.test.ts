@@ -136,3 +136,21 @@ it('keeps explicit bound period kind in category compatibility recipes', () => {
   const definition: CategoryDef = { id: 'fy', name: 'Fiscal year', sourceFieldId: 'date', transform: 'FY', fiscalBinding: { companyFieldId: 'company', periodKind: 'FY' } };
   expect(categoryRecipe(definition)).not.toBe(categoryRecipe({ ...definition, fiscalBinding: { ...definition.fiscalBinding!, periodKind: 'FQ' } }));
 });
+
+import { calculateTable } from './calculate';
+it('orders members by the sort field while keeping the label', () => {
+  const dataset = { columns: [{ id: 'tenor', label: 'tenor' }, { id: 'tenor_months', label: 'tenor_months', dtype: 'number' as const }, { id: 'dte', label: 'dte', dtype: 'number' as const }, { id: 'iv', label: 'iv', dtype: 'number' as const }],
+    rows: [['1M', 1, 30], ['1W', 0.25, 7], ['3M', 3, 90]].map(([tenor, tenor_months, dte], i) => ({ id: String(i), values: { tenor, tenor_months, dte, iv: 0.1 * (i + 1) } })),
+    resultRevision: 1, outputRevision: 1, provenance: { sourceWidgetId: 'test' }, freshness: { availability: 'available' as const, stale: false }, completeness: { kind: 'complete' as const, warnings: [] } };
+  const days = { id: 'days', name: 'days', scope: 'source' as const, expression: 'dte', ast: { kind: 'reference' as const, target: 'field' as const, id: 'dte' } };
+  const split = (sortFieldId?: string) => {
+    const expiry: CategoryDef = { id: 'expiry', name: 'Expiry', sourceFieldId: 'tenor', transform: 'native', ...(sortFieldId ? { sortFieldId } : {}) };
+    const model = { schemaVersion: 1, params: { promotePage: true, filters: [] }, enabled: true, categories: [expiry], measures: [{ id: 'vol', sourceFieldId: 'iv', aggregation: 'median' }], formulas: [days], layout: { rows: [], columns: ['expiry'], values: ['vol'] }, checklists: [], resultFilters: [], subtotals: { grandTotal: false, groups: false } };
+    const result = calculateTable({ source: dataset, model, table: {}, search: '' });
+    expect(result.errors).toEqual([]);
+    return result.columns.flatMap(c => c.splitPath ? [c.splitPath[0].value] : []);
+  };
+  expect(split()).toEqual(['1M', '1W', '3M']);
+  expect(split('tenor_months')).toEqual(['1W', '1M', '3M']);
+  expect(split('days')).toEqual(['1W', '1M', '3M']);
+});

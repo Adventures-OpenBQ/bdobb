@@ -62,3 +62,23 @@ it("on iOS, an export writes the content to Documents/<name> BEFORE the picker o
   // Nothing is written to the path the picker returned -- it already holds the file.
   expect(__read("/picked/out.csv")).toBeUndefined();
 });
+
+it("wraps native iPad title parameters independently of pointer type", async () => {
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/605.1.15');
+  Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, value: 5 });
+  const card = makeCard({ id: 'ipad-wrap', widgetId: 'ipad-widget' });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: 'ipad-widget', name: 'iPad title', type: 'chart' })] });
+  useWidgetData.mockReturnValue({ status: 'ready', data: [{a: 1}], retry: vi.fn(), attempt: 0 });
+  const {container} = render(<WidgetCard card={card} dashboardId="d1" onRemove={vi.fn()} />);
+  expect(container.querySelector('.widget-card')).toHaveAttribute('data-parameter-layout', 'wrap');
+});
+
+it("keeps iPhone title parameters scrolling", async () => {
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (iPhone; CPU iPhone OS 27_2 like Mac OS X)');
+  Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, value: 5 });
+  const card = makeCard({ id: 'iphone-scroll', widgetId: 'phone-widget' });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: 'phone-widget', name: 'Phone title', type: 'chart' })] });
+  useWidgetData.mockReturnValue({ status: 'ready', data: [{a: 1}], retry: vi.fn(), attempt: 0 });
+  const {container} = render(<WidgetCard card={card} dashboardId="d1" onRemove={vi.fn()} />);
+  expect(container.querySelector('.widget-card')).toHaveAttribute('data-parameter-layout', 'scroll');
+});

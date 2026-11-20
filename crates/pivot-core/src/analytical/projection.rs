@@ -182,6 +182,7 @@ pub(super) fn project(
                         source_field_id: c.source_field_id.clone(),
                         bucket: c.bucket,
                         periodicity: c.periodicity,
+                        sort_field_id: c.sort_field_id.clone(),
                     },
                 )
             })
