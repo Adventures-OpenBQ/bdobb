@@ -49,17 +49,16 @@ function canOfferBump(source: EstimateVintageSource, data: ChartResult) {
   const [issuerField, vintageField, valueField] = fields;
   if (!issuerField || !vintageField || !valueField) return false;
   const baseline = source.vintages.find(v => v.batch === universe.baseline_batch)?.id;
-  const current = source.vintages.find(v => v.batch === universe.current_batch)?.id;
-  const baselineMembers = new Set<unknown>(), currentMembers = new Set<unknown>();
+  const baselineMembers = new Set<string>();
   for (const row of rows) {
-    const issuer = readCell(row, issuerField), vintage = readCell(row, vintageField), value = readCell(row, valueField);
-    if (typeof value !== 'number' || !Number.isFinite(value)) continue;
-    if (vintage === baseline && value > 0) baselineMembers.add(issuer);
-    if (vintage === current) currentMembers.add(issuer);
+    if (readCell(row, vintageField) !== baseline) continue;
+    const issuer = readCell(row, issuerField), value = readCell(row, valueField);
+    if (typeof issuer === 'string' && typeof value === 'number' && Number.isFinite(value) && value > 0)
+      baselineMembers.add(issuer);
   }
-  // This controls the option's availability. The worker checks the exact draft
-  // bindings, pins, source agreement, whole columns and final drawing dimensions.
-  return universe.members.every(issuer => baselineMembers.has(issuer) && currentMembers.has(issuer));
+  // The worker verifies the exact endpoint pins and admits each comparison
+  // column as a whole. A gap in the current batch leaves prior ranks available.
+  return universe.members.every(issuer => baselineMembers.has(issuer));
 }
 
 function useEstimateHistory(job: Job | undefined) {
@@ -134,7 +133,7 @@ export function EstimateRevisionsControls({ job, saved, context, disabled, onApp
   const issue = read?.error ?? (read && (changed || !saved) && (!source ? estimateVintageSourceIssue
     : !compatible ? 'Choose the exact metric and fiscal target from the acquired history.'
       : missingVintages.length ? 'A pinned acquired vintage is unavailable. Clear unavailable pins and choose recorded vintages.'
-        : view === 'bump' && !read.bump ? 'Bump requires a verified complete universe, positive baselines and comparable current estimates for every member.'
+        : view === 'bump' && !read.bump ? 'Bump requires a verified complete universe and a positive common baseline estimate for every member.'
           : !decoded.ok ? decoded.message : checked && !checked.ok && !checking ? checked.message : undefined));
   const toggleVintage = (id: string, checked: boolean) => setVintages(checked
     ? [...(vintages ?? []), id]
@@ -158,7 +157,7 @@ export function EstimateRevisionsControls({ job, saved, context, disabled, onApp
       <label>Revision view<select value={view} onChange={event => setView(event.target.value as View)}>
         <option value="slope">Slope</option>
         <option value="path">Time path</option>
-        <option value="bump" disabled={!read?.bump}>Bump{!read?.bump && ' (requires a verified complete universe)'}</option>
+        <option value="bump" disabled={!read?.bump}>Bump{!read?.bump && ' (requires a complete universe and positive baselines)'}</option>
       </select></label>
       <p>{view === 'bump' ? 'Pin the declared baseline and current batches. Each ranked vintage requires comparable values for the whole universe.'
         : 'Filter or select one issuer in the source table. Pin two recorded vintages for a slope or at least three for a time path.'}</p>

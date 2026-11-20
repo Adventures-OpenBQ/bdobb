@@ -2288,15 +2288,43 @@ it('drops an estimate revision chart from the outgoing ready revision and ignore
 });
 
 
-it.each([[0, 4, 5], [3, 4, null]])('disables bump with an ineligible declared endpoint %j', async (...values) => {
+it.each([0, -2, null])('disables bump with an ineligible baseline %j', async baseline => {
   const { factory } = riskRuntime();
-  const local = await estimateHistorySource('A', revisionHistory([values]));
+  const local = await estimateHistorySource('A', revisionHistory([[baseline, 4, 5]]));
   installDashboard(riskDashboard([local, riskChart(revisionSlope)]));
   try {
     render(<LiveRiskChart/>);
     fireEvent.click(revisionSettings());
     expect(await within(screen.getByLabelText('Consensus value')).findByRole('option', { name: 'value' })).toBeEnabled();
     expect(screen.getByRole('option', { name: /Bump/ })).toBeDisabled();
+  } finally { factory.mockRestore(); }
+});
+
+it('creates a bump chart with a current rank gap after pinning both declared endpoint batches', async () => {
+  const { factory } = riskRuntime();
+  const local = await estimateHistorySource('A', revisionHistory([[10, 12, 14], [5, 6, null]]));
+  const chart = { ...riskChart(revisionBump), linkedChart: { type: 'column' as const, measures: [], display: 'grouped' as const } };
+  installDashboard(riskDashboard([local, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Chart type' }), { target: { value: 'estimate-revisions' } });
+    expect(await within(screen.getByLabelText('Consensus value')).findByRole('option', { name: 'value' })).toBeEnabled();
+    expect(screen.getByRole('option', { name: /Bump/ })).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Revision view'), { target: { value: 'bump' } });
+    fireEvent.click(vintage(/snap-a/));
+    fireEvent.click(vintage(/snap-b/));
+    expect(await screen.findByText(/Pin the exact declared baseline and current batches/i)).toBeVisible();
+    expect(revisionApply()).toBeDisabled();
+
+    fireEvent.click(vintage(/snap-c/));
+    await waitFor(() => expect(revisionApply()).toBeEnabled());
+    fireEvent.click(revisionApply());
+    expect(await screen.findByText(/Whole rank columns unavailable at snap-c/i)).toBeVisible();
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards.at(-1)?.linkedChart?.recipe).toEqual(revisionBump);
+    expect(vi.mocked(renderPlot).mock.lastCall?.[1].data).toEqual([
+      expect.objectContaining({ name: 'ALFA.US', y: [1, 1, null] }),
+      expect.objectContaining({ name: 'BETA.CA', y: [1, 1, null] }),
+    ]);
   } finally { factory.mockRestore(); }
 });
 

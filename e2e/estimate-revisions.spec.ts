@@ -21,11 +21,11 @@ async function drawing(graph: Locator) {
   return graph.evaluate(node => {
     const layout = (node as HTMLElement & { _fullLayout: {
       xaxis: { range: number[] }; yaxis: { range: number[] }; width: number; height: number;
-      uirevision: string; paper_bgcolor: string;
+      uirevision: string;
     } })._fullLayout;
     const { width, height } = node.getBoundingClientRect();
     return { size: [layout.width, layout.height], surface: [Math.round(width), Math.round(height)],
-      ranges: [layout.xaxis.range, layout.yaxis.range], revision: layout.uirevision, paper: layout.paper_bgcolor };
+      ranges: [layout.xaxis.range, layout.yaxis.range], revision: layout.uirevision };
   });
 }
 
@@ -113,7 +113,10 @@ test('offers explicit pins, repairs source scope and draws original slope and pa
   if (!(await widget.getByRole('list', { name: 'Original estimates for snap-b' }).isVisible())) await details(widget).click();
   await expect(widget.getByRole('list', { name: 'Original estimates for snap-b' })).toContainText('Consensus missing at this vintage');
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect.poll(async () => (await drawing(graph)).paper).toBe('#1e242e');
+  await expect.poll(() => graph.evaluate(node => {
+    const plot = node as HTMLElement & { _fullLayout?: { paper_bgcolor: string } };
+    return plot.isConnected ? plot._fullLayout?.paper_bgcolor : undefined;
+  })).toBe('#1e242e');
   await widget.screenshot({ path: info.outputPath('revisions-dark-gap.png') });
   expect(requests).toEqual([]);
 });
@@ -176,6 +179,53 @@ test('shows unavailable whole rank columns while preserving all original estimat
   await expect(widget.getByRole('region', { name: /snap-b/ })).toContainText('Entire rank column unavailable');
   await expect(widget.getByRole('list', { name: 'Original estimates for snap-b' })).toContainText('Consensus 26 CAD/share');
   expect(requests).toEqual([]);
+});
+
+test('new and saved Bump show the same unavailable current column with prior ranks intact', async ({ page, context, baseURL }) => {
+  const history = revisionHistory([[10, 12, 14], [5, 6, null]]);
+  const requests = dataRequests(page, baseURL!);
+  await seedRevisions(page);
+  await attachRevisions(page, history);
+  const widget = card(page, chartName);
+  await widget.getByLabel('Chart type').selectOption('estimate-revisions');
+  const view = widget.getByLabel('Revision view');
+  await expect(view.locator('option[value="bump"]')).not.toHaveAttribute('disabled', '');
+  await view.selectOption('bump');
+  for (const id of revisionBump.vintages) await pin(widget, id).check();
+  await expect(apply(widget)).toBeEnabled();
+  await apply(widget).click();
+  const savedRecipe = async () => {
+    const stored = await read(page, 'dashboards/d1.json');
+    return stored && JSON.parse(stored).tabs[0].cards[0].linkedChart.recipe;
+  };
+  await expect.poll(savedRecipe).toEqual(revisionBump);
+
+  const assertCurrentGap = async (active: Page) => {
+    const graph = plot(active, chartName);
+    await expect(graph.locator('.ytitle')).toHaveText('Percentage revision rank');
+    const traces = graph.locator('.scatterlayer .trace');
+    await expect(traces).toHaveCount(2);
+    for (const trace of await traces.all()) await expect(trace.locator('.point')).toHaveCount(2);
+    const activeWidget = card(active, chartName);
+    await details(activeWidget).click();
+    const prior = activeWidget.getByRole('list', { name: 'Original estimates for snap-b' });
+    await expect(prior.getByText(/Rank 1 of 2/)).toHaveCount(2);
+    await expect(activeWidget.getByRole('region', { name: /snap-c/ })).toContainText('Entire rank column unavailable. Missing comparable observations for BETA.CA.');
+    const current = activeWidget.getByRole('list', { name: 'Original estimates for snap-c' });
+    await expect(current).toContainText('Consensus 14 USD/share');
+    await expect(current).toContainText('Consensus missing at this vintage');
+    await expect(current.getByText(/Rank [1-2] of 2/)).toHaveCount(0);
+  };
+  await assertCurrentGap(page);
+  const fresh = await context.newPage();
+  try {
+    const reacquired = dataRequests(fresh, baseURL!);
+    await seedRevisions(fresh, await savedRecipe());
+    await attachRevisions(fresh, history);
+    await assertCurrentGap(fresh);
+    expect(requests).toEqual([]);
+    expect(reacquired).toEqual([]);
+  } finally { await fresh.close(); }
 });
 
 test('uses real touch inspection and fitting zoom, then scrolls the measured overflow with the same question', async ({ browser, baseURL }, info) => {

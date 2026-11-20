@@ -86,7 +86,7 @@ Drop a verified local JSON history of independently recorded consensus estimates
 
 The fiscal target dates identify the reporting period. The separately labeled UTC observation times and batch IDs identify when consensus was recorded. Each position represents one recorded vintage at equal spacing. A restatement recorded in a later batch appears at that later observation time. Hover or tap, or open **Estimate revision observations** for original values, signed absolute changes and eligible percentage changes. A zero or negative reference estimate gives an unavailable percentage. Missing, omitted and errored cells leave gaps.
 
-**Bump** requires a verified complete and stable issuer universe with sufficiently comparable baseline and current batches. Pin the exact declared baseline and current vintage IDs. Each later column ranks percentage change from the same positive baseline, with tied competition ranks. If any member is missing an eligible reading, its entire comparison column is unavailable.
+**Bump** requires a verified complete and stable issuer universe and a positive estimate for every member in one common baseline batch. Pin the exact declared baseline and current vintage IDs. Each eligible column ranks percentage change from the same baseline with tied competition ranks. A missing eligible reading leaves its entire rank column unavailable, including at the current vintage. Other eligible columns retain their ranks.
 
 All live revision views remain unavailable. The live analyst estimates route reports fiscal targets and relative changes without independent observation vintages. The chart uses the recorded history already attached to the source table.
 
