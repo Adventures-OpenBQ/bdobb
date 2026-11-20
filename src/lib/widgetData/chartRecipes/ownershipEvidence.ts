@@ -165,6 +165,7 @@ const parameters = ['provider', 'symbol', 'exchange'] as const;
 export const ownershipSourceAdapter: ChartSourceAdapter<OwnershipSource> = {
   kind: 'ownership',
   decode: parseOwnershipSource,
+  allowsLocal: source => source.origin === 'acquired-snapshot',
   rowsAgree,
   routes: [
     { endpoint: '/api/v1/equity/ownership/share_statistics', selector: 'results', parameters,

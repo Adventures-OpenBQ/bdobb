@@ -25,6 +25,8 @@ export type ChartCoordinateGroup = { fields: string[]; points: { id: string; val
 export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt> = {
   kind: T['kind'];
   decode(value: unknown): T | undefined;
+  /** Some families reserve specific receipt origins for a completed backend request. */
+  allowsLocal?(receipt: T): boolean;
   rowsAgree(receipt: T, rows: readonly Record<string, unknown>[], scope: unknown): boolean;
   routes: readonly {
     endpoint: string;
@@ -141,7 +143,8 @@ export function captureChartSources(context: BackendAcquisition, response: unkno
 
 export function localChartSources(value: unknown, rows: readonly Record<string, unknown>[], scope: unknown): ChartSourceMap | undefined {
   const entries = envelope(value, chartSourceRegistry);
-  if (!entries || !entries.every(({ receipt, adapter }) => receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))) return;
+  if (!entries || !entries.every(({ receipt, adapter }) => adapter.allowsLocal?.(receipt) !== false
+    && receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))) return;
   return Object.fromEntries(entries.map(({ receipt }) => [receipt.kind, receipt]));
 }
 
@@ -153,8 +156,9 @@ export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: 
     const entry = decode(wire, chartSourceRegistry);
     if (!entry || entry.receipt.kind !== kind) return;
     const { receipt, adapter } = entry;
-    if (receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope)
-      && (!request || requestMatches(request, receipt, adapter))) result[receipt.kind] = receipt;
+    const originMatches = request ? requestMatches(request, receipt, adapter) : adapter.allowsLocal?.(receipt) !== false;
+    if (originMatches && receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))
+      result[receipt.kind] = receipt;
   }
   return Object.keys(result).length ? result : undefined;
 }

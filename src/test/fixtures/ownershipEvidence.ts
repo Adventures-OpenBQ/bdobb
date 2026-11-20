@@ -20,3 +20,21 @@ export const unsafeOwnershipPartition = {
   ...acquiredOwnershipPartition, raw_count: 3, diagnostics: ['identity_conflict', 'date_conflict', 'partition_conflict'],
   unsafe: { ...acquiredOwnershipPartition.unsafe, identity_conflict: true, date_conflict: true, partition_conflict: true },
 };
+
+export const liveOwnershipReceipt = {
+  version: 1, kind: 'ownership', origin: 'eodhd-share-statistics', issuer: 'AAPL.US', share_class: null,
+  retrieved_at: '2026-11-20T04:16:46Z', raw_count: 1, normalized_count: 1, delivered_count: 1,
+  diagnostics: [], unsafe: { identity_conflict: false, unit_conflict: false, date_conflict: false, partition_conflict: false },
+  measures: {
+    insiders: { unit: 'percent-points', basis: null, as_of: null },
+    institutions: { unit: 'percent-points', basis: null, as_of: null },
+  },
+  field_origins: { insiders: 'percent_insiders', institutions: 'percent_institutions' },
+  partition: { status: 'unavailable' },
+} as const;
+export const liveOwnershipRows = [{ symbol: 'AAPL.US', date: '2026-11-19', percent_insiders: 1.687,
+  percent_institutions: 66.375, free_float: 99.827 }];
+export const liveOwnershipContext = {
+  endpoint: '/api/v1/eodhd/equity/ownership/share_statistics', selector: 'results', retrievedAt: 1,
+  parameters: { symbol: 'aapl', chart_source: 'true' },
+};

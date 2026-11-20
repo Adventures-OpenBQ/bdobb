@@ -1,10 +1,10 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
-import { acquiredOwnershipRows, unsafeOwnershipPartition } from '../../../test/fixtures/ownershipEvidence';
+import { acquiredOwnershipRows, liveOwnershipContext, liveOwnershipReceipt, liveOwnershipRows, unsafeOwnershipPartition } from '../../../test/fixtures/ownershipEvidence';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
-import { datasetFromBytes } from '../../localTableData';
-import { readChartSource, readChartSourceProjection } from '../../widgetData/chartRecipes/chartSourceContracts';
+import { datasetFromBytes, datasetFromRows } from '../../localTableData';
+import { captureChartSources, readChartSource, readChartSourceProjection } from '../../widgetData/chartRecipes/chartSourceContracts';
 import { parseOwnershipSource } from '../../widgetData/chartRecipes/ownershipEvidence';
 import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
 import type { LocalWorkerExecutor, Revision } from '../types';
@@ -61,4 +61,38 @@ it.each(engines)('%s preserves raw ownership conflicts and coordinate omissions 
     } finally { executor.dispose(); }
   }
   expect(input.provenance.lineage).toHaveLength(3);
+});
+
+it.each(engines)('%s propagates completed live ownership but no locally asserted live origin', async (_, make) => {
+  const rows = structuredClone(liveOwnershipRows);
+  const context = liveOwnershipContext;
+  const results = {
+    results: rows, extra: { results_metadata: { chart_sources: { version: 1, receipts: [liveOwnershipReceipt] } } },
+  };
+  const chartSources = captureChartSources(context, results, rows);
+  expect(chartSources).toEqual({ ownership: liveOwnershipReceipt });
+  const local = datasetFromRows(rows, 'local', 1, 'localFile', undefined, [], {
+    completeness: 'complete', chartSources,
+  });
+  const backend = datasetFromRows(rows, 'backend', 1, 'backend', undefined, [], undefined, {
+    ...context, chartSources,
+  });
+  for (const [root, initial, receipt] of [
+    ['local', local, undefined], ['backend', backend, liveOwnershipReceipt],
+  ] as const) {
+    let input = initial;
+    for (const generation of ['root', 'child', 'grandchild']) {
+      const id = root + '-' + generation;
+      const executor = make(id);
+      const revision = { widgetId: id, input: 1, model: 1, output: 1 };
+      try {
+        await executor.registerInput(input, 1, signal);
+        await executor.applyModel({ search: '', table: {} }, { kind: 'none' }, revision, signal);
+        input = await presentedSubset(executor, revision);
+        expect(input.rows[0].values.symbol).toBe('AAPL.US');
+        expect(readChartSource(input.provenance, 'ownership', parseOwnershipSource)).toEqual(receipt);
+      } finally { executor.dispose(); }
+    }
+    expect(input.provenance.lineage).toHaveLength(3);
+  }
 });

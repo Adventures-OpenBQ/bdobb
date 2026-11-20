@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
-import { acquiredOwnershipPartition, acquiredOwnershipRows } from '../../../test/fixtures/ownershipEvidence';
+import { acquiredOwnershipPartition, acquiredOwnershipRows, liveOwnershipContext as context, liveOwnershipReceipt as live, liveOwnershipRows as results } from '../../../test/fixtures/ownershipEvidence';
 import { datasetFromBytes, datasetFromRows } from '../../localTableData';
 import { parseTableSnapshot } from '../../tableRowValues';
 import { captureChartSources, chartRequestContext, readChartSource } from './chartSourceContracts';
@@ -88,20 +88,7 @@ it('requires local acquisition and ignores backend snapshots and saved certifica
   expect(chartRequestContext(url, 'results.rows', 1)).toBeUndefined();
 });
 
-const live = {
-  ...common, origin: 'eodhd-share-statistics', issuer: 'AAPL.US', share_class: null,
-  measures: {
-    insiders: { unit: 'percent-points', basis: null, as_of: null },
-    institutions: { unit: 'percent-points', basis: null, as_of: null },
-  },
-  field_origins: { insiders: 'percent_insiders', institutions: 'percent_institutions' },
-  partition: { status: 'unavailable' },
-};
-const results = [{ symbol: 'AAPL.US', date: '2026-11-19', percent_insiders: 1.687,
-  percent_institutions: 66.375, free_float: 99.827 }];
-const mirror = '/api/v1/eodhd/equity/ownership/share_statistics';
 const standard = '/api/v1/equity/ownership/share_statistics';
-const context = { endpoint: mirror, selector: 'results', retrievedAt: 1, parameters: { symbol: 'aapl', chart_source: 'true' } };
 const response = (receipt: unknown, rows = results) =>
   ({ results: rows, extra: { results_metadata: { chart_sources: { version: 1, receipts: [receipt] } } } });
 
@@ -130,4 +117,31 @@ it('requires the completed qualified primary US request, exact selector and acqu
   expect(datasetFromRows(results, 'backend', 1, 'backend', undefined, [], undefined, positive)
     .provenance.metadata?.chartSources).toEqual({ ownership: live });
   expect(datasetFromRows(results, 'backend', 1, 'backend').provenance.metadata?.chartSources).toBeUndefined();
+});
+
+it('rejects live-origin ownership at both local acquisition entry points', async () => {
+  const forged = { ...live, issuer: 'MADEUP.US' };
+  const rows = [{ ...results[0], symbol: forged.issuer, share_class: null }];
+  expect(parseOwnershipSource(forged)).toEqual(forged);
+  const localReceipt = { ...forged, origin: 'acquired-snapshot' };
+  expect(await read(localReceipt, rows)).toEqual(localReceipt);
+  expect(() => parseTableSnapshot(file(forged, rows), 'local-file')).toThrow('Invalid table snapshot');
+  await expect(load(forged, rows)).rejects.toThrow('Could not parse local table');
+
+  const source = parseOwnershipSource(forged);
+  const direct = datasetFromRows(rows, 'local', 1, 'localFile', undefined, [], {
+    chartSources: { ownership: source }, completeness: 'complete',
+  });
+  expect(readChartSource(direct.provenance, 'ownership', parseOwnershipSource)).toBeUndefined();
+});
+
+it('rejects explicit snapshot ownership at both completed-request entry points', async () => {
+  const local = { ...live, origin: 'acquired-snapshot' };
+  const rows = [{ ...results[0], share_class: null }];
+  expect(await read(local, rows)).toEqual(local);
+  expect(captureChartSources(context, response(local, rows), rows)).toBeUndefined();
+  const direct = datasetFromRows(rows, 'backend', 1, 'backend', undefined, [], undefined, {
+    ...context, chartSources: { ownership: parseOwnershipSource(local) },
+  });
+  expect(readChartSource(direct.provenance, 'ownership', parseOwnershipSource)).toBeUndefined();
 });
