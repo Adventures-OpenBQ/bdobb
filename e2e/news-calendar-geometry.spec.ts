@@ -83,6 +83,9 @@ test('Plotly renders separate neutral, missing and unscored calendar cells with 
     [article('neutral', '2026-11-15T03:00:00Z', 0), '2026-11-15'],
     [article('unscored', '2026-11-17T03:00:00Z', null), '2026-11-17'],
     [article('scored', '2026-11-19T00:30:00+01:00', .123456789), '2026-11-18'],
+    [article('one-tenth', '2026-11-19T00:00:00Z', .1), '2026-11-19'],
+    [article('two-tenths', '2026-11-19T01:00:00Z', .2), '2026-11-19'],
+    [article('three-tenths', '2026-11-19T02:00:00Z', .3), '2026-11-19'],
   ]), 'light', 740);
   const positions = [
     { week: 0, weekday: 6 }, { week: 1, weekday: 0 }, { week: 1, weekday: 1 }, { week: 0, weekday: 0 },
@@ -97,6 +100,7 @@ test('Plotly renders separate neutral, missing and unscored calendar cells with 
   await expect(original).toContainText('2026-11-18');
   await expect(original).toContainText('2026-11-19T00:30:00+01:00');
   await expect(original).toContainText('0.123456789');
+  await expect(await hover(page, graph, { week: 1, weekday: 3 })).toContainText(/Mean polarity: 0\.2\s*Delivered:/);
   await expect(await hover(page, graph, positions[1])).toContainText('No delivered articles');
   await expect(await hover(page, graph, positions[2])).toContainText('No scored articles');
 });

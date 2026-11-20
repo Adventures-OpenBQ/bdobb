@@ -106,6 +106,19 @@ it('numerical_limits', async () => {
   expect(buildNewsCalendar(dataset, calendarOptions, calendarContext)).toMatchObject({ ok: false, refused: true });
 });
 
+it.each([
+  ['ordinary polarity', [0.1, 0.2, 0.3], 0.2],
+  ['near the positive endpoint', [1, 1, 0.9999999999999998], 0.9999999999999999],
+] as const)('rounds the exact daily mean once for %s', async (_, scores, mean) => {
+  const date = '2026-11-19';
+  const dataset = await load(calendarSnapshot(scores.map((polarity, index) =>
+    [article(String(index), date + 'T00:00:00Z', polarity), date] as const)));
+  const result = aggregateNewsDays(dataset, calendarOptions);
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(result.value.days[date].mean).toBe(mean);
+});
+
 it('keeps a third-scale residual after two larger opposite scores cancel', async () => {
   const date = '2026-11-19';
   const small = 2 ** -120;

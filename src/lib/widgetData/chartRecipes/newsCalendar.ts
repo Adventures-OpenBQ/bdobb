@@ -109,31 +109,17 @@ function presentation(
   return { ok: true, value: articles, notes: [] };
 }
 
-function summarize(date: string, articles: NewsArticle[]): NewsCalendarDay | undefined {
-  let sum = 0;
-  let correction = 0;
+function summarize(date: string, articles: NewsArticle[], scoreBits: DataView): NewsCalendarDay | undefined {
+  let total = 0n;
   let scored = 0;
   for (const { polarity } of articles) {
     if (polarity === null) continue;
     scored++;
-    const next = sum + polarity;
-    // Neumaier summation also retains small terms when a later term dominates the running sum.
-    correction += Math.abs(sum) >= Math.abs(polarity) ? (sum - next) + polarity : (polarity - next) + sum;
-    sum = next;
+    total += scaledInteger(polarity, scoreBits);
   }
-  const total = sum + correction;
-  let mean = scored > 0 ? total / scored : null;
-  // Near zero, cancellation can also erase bits from the correction. Use the exact binary
-  // residual there so that neither lost precision nor underflow can produce false neutrality.
-  if (scored && Math.abs(total) <= Number.EPSILON * scored) {
-    const view = new DataView(new ArrayBuffer(8));
-    let exact = 0n;
-    for (const { polarity } of articles)
-      if (polarity) exact += scaledInteger(polarity, view);
-    mean = roundedRatio(exact, BigInt(scored), doubleUnitExponent);
-    if (mean === 0 && exact !== 0n) return;
-  }
-  if (mean !== null && !isNewsPolarity(mean)) return;
+  // Retain the exact binary64 sum through division to round the mean only once.
+  const mean = scored > 0 ? roundedRatio(total, BigInt(scored), doubleUnitExponent) : null;
+  if (mean !== null && (!isNewsPolarity(mean) || (mean === 0 && total !== 0n))) return;
   return { date, mean, scored, delivered: articles.length, articles };
 }
 
@@ -177,9 +163,10 @@ export function aggregateNewsDays(dataset: WidgetDataset, options: NewsCalendarO
       if (!grouped.has(day)) grouped.set(day, []);
       grouped.get(day)!.push({ timestamp, polarity });
     }
+    const scoreBits = new DataView(new ArrayBuffer(8));
     for (let i = 0; i < length; i++) {
       const date = new Date(first + i * dayMs).toISOString().slice(0, 10);
-      const day = summarize(date, grouped.get(date) ?? []);
+      const day = summarize(date, grouped.get(date) ?? [], scoreBits);
       if (!day) return refuse(`The mean for ${date} cannot be represented at chart polarity precision.`);
       days[date] = day;
       delivered += day.delivered;
