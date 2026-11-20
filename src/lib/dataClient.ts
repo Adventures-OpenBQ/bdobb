@@ -326,9 +326,10 @@ async function request(
       // Read and discard: a body left unconsumed holds its connection out of
       // the pool until it is collected, and this 404 is the ORDINARY case for
       // an optional document — every discovery of a backend serving no
-      // apps.json takes this path. Voided deliberately; the answer is "no
+      // apps.json takes this path. Await the drain to retain the queue slot;
+      // the answer is "no
       // document", whatever the backend chose to say alongside it.
-      void res.text().catch(() => {});
+      await res.text().catch(() => {});
       return null;
     }
     if (!res.ok) {
