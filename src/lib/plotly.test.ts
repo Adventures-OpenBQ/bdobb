@@ -22,6 +22,7 @@ vi.mock("plotly.js/lib/candlestick", () => ({ default: { name: "candlestick" } }
 vi.mock("plotly.js/lib/scatter", () => ({ default: { name: "scatter" } }));
 vi.mock("plotly.js/lib/bar", () => ({ default: { name: "bar" } }));
 vi.mock("plotly.js/lib/heatmap", () => ({ default: { name: "heatmap" } }));
+vi.mock("plotly.js/lib/surface", () => ({ default: { name: "surface" } }));
 
 import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
@@ -32,6 +33,7 @@ import { REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 // own CONFIG and layout handling run for real.
 
 describe("REGISTERED_TRACE_TYPES", () => {
+  it("registers the linked FX surface trace", () => { expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(true); });
   it("includes every trace chartShapes can produce", () => {
     expect(REGISTERED_TRACE_TYPES.has("scatter")).toBe(true);
     expect(REGISTERED_TRACE_TYPES.has("candlestick")).toBe(true);
