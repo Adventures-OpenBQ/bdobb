@@ -21,7 +21,7 @@ import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
 import { rowChartAxes, rowsOf } from "../lib/chartShapes";
 import { dataUpdateText } from "../lib/cron";
-import { authHeaders } from "../lib/dataClient";
+import { authHeaders, buildIframeWidgetUrl } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, collectPresentedExport, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
 import { logError, logOnce } from "../lib/logger";
@@ -440,7 +440,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   // get here. The rest pivot in-thread with TableRenderer's own panel.
   const backendTable = isBackendTable(card);
   // Memoised: the table's date filters start from these rows, recomputed per payload.
-  const backendRows = useMemo(() => (backendTable ? tableRows(data) ?? undefined : undefined), [backendTable, data]);
+  const backendRows = useMemo(() => (backendTable ? tableRows(data, widget?.table) ?? undefined : undefined), [backendTable, data, widget?.table]);
   const workerTable = isWorkerTableProducer(card) && (!backendTable || fitsTableWorker(data));
   const backendPivot =
     widget?.type === "table" && !isTransposed && (view === undefined || view === "table") && !card.linkedSource && !workerTable;
@@ -462,7 +462,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     const type = widget?.type ?? "table";
     const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
     if (type !== "chart") {
-      const rows = rowsOf(data);
+      const rows = rowsOf(tableRows(data, widget?.table) ?? data);
       if (rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
     }
     const calendarRows = rowsOf(data);
@@ -483,7 +483,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       // ([[1,2],[3,4]]) that the transposed view cannot render at all, and
       // offering the option there would dead-end in the empty state with
       // every export disabled. This gate must be the renderer's own.
-      const rows = tableRows(data);
+      const rows = tableRows(data, widget?.table);
       // A local_table card's rows live in its renderer, not in `data`, so the
       // option is offered unconditionally there -- the same reason showsTable
       // treats that type separately.
@@ -519,12 +519,12 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
    */
   const transposed = useMemo(() => {
     if (!isTransposed) return null;
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows ? transposeRows(rows) : null;
-  }, [isTransposed, data]);
+  }, [isTransposed, data, widget?.table]);
   const exportRows = useMemo(
-    () => (isTransposed ? (transposed?.rows ?? null) : rowsForExport(data)),
-    [isTransposed, transposed, data],
+    () => (isTransposed ? (transposed?.rows ?? null) : rowsForExport(tableRows(data, widget?.table) ?? data)),
+    [isTransposed, transposed, data, widget?.table],
   );
   // Explicit order for the exporters; undefined lets them derive it as today.
   const exportColumns = isTransposed ? transposed?.columns : undefined;
@@ -551,7 +551,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       view !== "raw" &&
       view !== "chart" &&
       !isTransposed &&
-      tableRows(data) !== null) ||
+      tableRows(data, widget?.table) !== null) ||
     // A local-file card's rows live inside its renderer, not in `data`: it
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
@@ -565,7 +565,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
    */
   const menuColumns = useMemo(() => {
     if (workerTable && executionView.ready) return schemaColumns(executionView.ready.inspection.inputColumns, widget?.table);
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows && rows.length > 0 ? tableColumns(rows, widget?.table) : [];
   }, [data, widget?.table, workerTable, executionView.ready]);
   const menuOrder = orderFields(menuColumns, card.table?.columnOrder);
@@ -940,7 +940,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       const isBuiltin = widget.backendId === BUILTIN_BACKEND_ID;
       return (
         <IframeRenderer
-          url={isBuiltin ? (card.params.url ?? "") : widget.endpoint}
+          url={isBuiltin ? (card.params.url ?? "") : buildIframeWidgetUrl(backend, widget, query)}
           emptyHint={isBuiltin ? "Enter a URL in Parameters to frame a page." : undefined}
           messaging={messagingFor(widget)}
         />
@@ -1496,6 +1496,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                     // every dashboard.
                     layoutKey={`${exportSubOpen} ${columnsSubOpen} ${copySubOpen} ${quickSubOpen}`}
                   >
+
                     <button
                       type="button"
                       role="menuitem"

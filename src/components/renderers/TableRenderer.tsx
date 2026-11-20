@@ -290,7 +290,7 @@ export function TableRenderer({
    */
   columns?: string[];
 }) {
-  const rows = tableRows(data);
+  const rows = tableRows(data, view.spec);
 
   // An unexpected shape always falls through to raw JSON, never to nothing.
   if (!rows) return <RawJsonView data={data} />;

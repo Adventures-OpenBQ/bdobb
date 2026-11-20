@@ -17,6 +17,7 @@ import type { Row } from './tableRowValues';
 export const COLUMN_DRAG_TYPE = "application/x-bdobb-column";
 
 /**
+
  * A column's `renderFn: "cellOnClick"` with `actionType: "groupBy"`, already
  * validated. Clicking such a cell assigns the cell's value to `paramName`.
  *

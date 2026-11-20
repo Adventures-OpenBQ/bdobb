@@ -70,6 +70,27 @@ export function buildWidgetUrl(
 }
 
 /**
+ * Framed backend tools may use relative API endpoints. Resolve only those
+ * against their own backend, including their current query parameters.
+ * Absolute/protocol-relative addresses are handed to IframeRenderer verbatim:
+ * its safeUrl gate validates them, and no backend credential goes off-site.
+ */
+export function buildIframeWidgetUrl(
+  backend: BackendConfig | undefined,
+  widget: WidgetDef,
+  params: Record<string, string>,
+): string {
+  if (!backend || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(widget.endpoint)) return widget.endpoint;
+  try {
+    return buildWidgetUrl(backend, widget, params);
+  } catch {
+    // An invalid saved backend must produce the renderer's invalid-URL hint,
+    // not throw while rendering the whole dashboard.
+    return widget.endpoint;
+  }
+}
+
+/**
  * The ws:// URL for a live_grid's updates. Mirrors buildWidgetUrl: it joins the
  * backend base and the widget's wsEndpoint, swaps the scheme to ws/wss, and
  * carries the credential the same way a GET does (applyAuthQuery, so a
