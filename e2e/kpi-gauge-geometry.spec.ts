@@ -3,6 +3,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { metricReceipt, metricRows } from '../src/test/fixtures/metricEvidence';
+import { KPI_GAUGE_MIN_DRAW_WIDTH } from '../src/lib/widgetData/kpi/build';
 import type { LinkedKpiOptions } from '../src/lib/widgetData/kpi/types';
 
 async function draw(page: Page, value: number, min: number, max: number, target?: number, width = 420) {
@@ -82,7 +83,7 @@ test('installed indicator renders the set bounds, proportional bar/target, and a
 
 test('installed indicator renders a finite 75% bar on an overflowing raw span without losing the original values', async ({ page }) => {
   const max = Number.MAX_VALUE;
-  const { result, graph, geometry } = await draw(page, max / 2, -max, max, undefined, 296);
+  const { result, graph, geometry } = await draw(page, max / 2, -max, max, undefined, KPI_GAUGE_MIN_DRAW_WIDTH);
   expect(result.ok, JSON.stringify(result)).toBe(true);
   const svg = await geometry();
   expect(svg.range).toEqual([0, 1]);
@@ -110,4 +111,35 @@ test('the real worker produces no gauge for a 120 outside 0 to 100 or a collapse
   const collapsed = await draw(page, Number.MIN_VALUE, 0, 100);
   expect(collapsed.result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry/i) });
   await expect(collapsed.graph).toHaveCount(0);
+});
+
+test('installed indicator draws distinct bar and threshold coordinates just above one step at 296 pixels', async ({ page }) => {
+  const { result, geometry } = await draw(page, .0037, 0, 100, .0074, KPI_GAUGE_MIN_DRAW_WIDTH);
+  expect(result).toMatchObject({ ok: true, snapshot: { value: .0037 } });
+  const svg = await geometry();
+  expect(svg.plotWidth).toBe(296);
+  expect(svg.outline).toBe(272);
+  expect(svg.bar).toBeCloseTo(.01, 8);
+  expect(svg.threshold).toBe(.02);
+  await test.info().attach('minimum-width-coordinate-steps', { body: JSON.stringify(svg), contentType: 'application/json' });
+});
+
+test('the real worker refuses a positive bar that the indicator would round to zero', async ({ page }) => {
+  const { result, graph, geometry } = await draw(page, .000001, 0, 100);
+  if (result.ok && result.gauge) {
+    const svg = await geometry();
+    await test.info().attach('rounded-positive-bar', { body: JSON.stringify(svg), contentType: 'application/json' });
+  }
+  expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry/i) });
+  await expect(graph).toHaveCount(0);
+});
+
+test('the real worker refuses a distinct target that the indicator would draw at the bar endpoint', async ({ page }) => {
+  const { result, graph, geometry } = await draw(page, 25, -25, 75, 25.000001);
+  if (result.ok && result.gauge) {
+    const svg = await geometry();
+    await test.info().attach('coincident-bar-and-target', { body: JSON.stringify(svg), contentType: 'application/json' });
+  }
+  expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry/i) });
+  await expect(graph).toHaveCount(0);
 });

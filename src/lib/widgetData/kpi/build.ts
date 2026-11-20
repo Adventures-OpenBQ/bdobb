@@ -17,6 +17,15 @@ import type { KpiReference, KpiResult, KpiSnapshot, LinkedKpiOptions } from './t
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
 const userTarget = 'User target (assumption)';
 
+/** The renderer must give the Plotly drawing surface at least this many CSS pixels. */
+export const KPI_GAUGE_MIN_DRAW_WIDTH = 296;
+const gaugeMargin = { l: 12, r: 12, t: 8, b: 8, autoexpand: false };
+// Gauge-only mode uses the whole x domain. The fixed margins make the band at least 272 px.
+const minimumBandWidth = KPI_GAUGE_MIN_DRAW_WIDTH - gaugeMargin.l - gaugeMargin.r;
+// Plotly rounds converted indicator coordinates to hundredths of a pixel. A distance beyond
+// one rounding step keeps the positions distinct for any greater width and any rounding phase.
+const minimumGaugeSeparation = .01 / minimumBandWidth + Number.EPSILON;
+
 const percent = new Intl.NumberFormat('en-US', {
   style: 'percent', useGrouping: false, maximumSignificantDigits: 17,
 });
@@ -100,8 +109,7 @@ function positionInRange(value: number, min: number, max: number): number | unde
   const span = max - min;
   const position = Number.isFinite(span) ? (value - min) / span
     : (value / 2 - min / 2) / (max / 2 - min / 2);
-  // Protect distinct endpoints when Plotly transforms normalized values to floats on a drawing surface.
-  if (position >= Number.EPSILON && 1 - position >= Number.EPSILON) return position;
+  if (position > minimumGaugeSeparation && 1 - position > minimumGaugeSeparation) return position;
 }
 
 function gaugeFigure(snapshot: KpiSnapshot, revision: string, notes: string[]): PlotlyFigure | RecipeRefusal {
@@ -110,14 +118,15 @@ function gaugeFigure(snapshot: KpiSnapshot, revision: string, notes: string[]): 
   const { min, max, label } = range;
   const position = positionInRange(value, min, max);
   let threshold: number | undefined;
-  const geometryRefusal = refuse('The KPI gauge geometry cannot distinguish the original values. Choose a different user range or use a card.');
+  const geometryRefusal = refuse('The KPI gauge geometry cannot distinguish the original values. Narrow the user range, choose an appropriate reference, or use a card.');
   if (position === undefined) return geometryRefusal;
   if (reference) {
     if (reference.value < min || reference.value > max) {
       notes.push('The reference is outside the user range.');
     } else {
       threshold = positionInRange(reference.value, min, max);
-      if (threshold === undefined || (reference.value !== value && Math.abs(position - threshold) < Number.EPSILON))
+      if (threshold === undefined
+        || (reference.value !== value && Math.abs(position - threshold) <= minimumGaugeSeparation))
         return geometryRefusal;
     }
   }
@@ -150,7 +159,7 @@ function gaugeFigure(snapshot: KpiSnapshot, revision: string, notes: string[]): 
       },
     }],
     layout: {
-      uirevision: revision, margin: { l: 12, r: 12, t: 8, b: 8 }, font: { color: '#71829a', size: 11 },
+      uirevision: revision, margin: { ...gaugeMargin }, font: { color: '#71829a', size: 11 },
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
       annotations: [
         { ...annotation, x: .5, y: .76, text: escape(valueText), font: { size: 15 }, hovertext: hover },

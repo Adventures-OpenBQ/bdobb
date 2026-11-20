@@ -225,3 +225,18 @@ it.each([
   expect(result.snapshot.value).toBe(23.71);
   expect(formatKpiValue(result.snapshot.value, result.snapshot.unit)).toBe(display);
 });
+
+it('requires one Plotly coordinate step at the minimum gauge width for different positions', () => {
+  // 296 CSS px less two 12 px margins gives a 272 px bullet band.
+  // On a 100-unit range .0036 occupies .009792 px and .0037 occupies .010064 px.
+  for (const value of [.0036, 99.9964])
+    expect(buildKpiSnapshot(prepared([value, 0]), gauge)).toMatchObject({ ok: false, message: expect.stringMatching(/geometry/i) });
+  for (const value of [0, .0037, 99.9963, 100]) {
+    expect(buildKpiSnapshot(prepared([value, 0]), gauge)).toMatchObject({ ok: true, gauge: expect.anything() });
+  }
+  const withTarget = (value: number): LinkedKpiOptions => ({ ...gauge, reference: { kind: 'user-target', value } });
+  expect(buildKpiSnapshot(prepared([25, 0]), withTarget(25.0036))).toMatchObject({ ok: false, message: expect.stringMatching(/geometry/i) });
+  expect(buildKpiSnapshot(prepared([25, 0]), withTarget(25.0037))).toMatchObject({ ok: true, gauge: expect.anything() });
+  expect(buildKpiSnapshot(prepared([25, 0]), withTarget(25))).toMatchObject({ ok: true, gauge: expect.anything() });
+  expect(buildKpiSnapshot(prepared([25, 0]), withTarget(.0036))).toMatchObject({ ok: false, message: expect.stringMatching(/geometry/i) });
+});
