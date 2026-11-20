@@ -47,7 +47,7 @@ export function parseTableSnapshot(data: unknown, source: 'backend' | 'local-fil
   const financialEvidence = financial ? parseFinancialEvidence(data.chart_evidence) : undefined;
   if (financial && (!financialEvidence || !financialScopeAgrees(financialEvidence, kind) || !financialRowsAgree(financialEvidence, records)))
     throw new Error('Invalid table snapshot');
-  const chartSources = chart ? localChartSources(data.chart_sources, records, kind) : undefined;
+  const chartSources = chart ? localChartSources(data.chart_sources, records, kind, receipt) : undefined;
   if (chart && !chartSources) throw new Error('Invalid table snapshot');
   return { data: rows, snapshot: { ...(chartSources ? { chartSources } : {}), ...(legacy ? { receipt: receipt as Record<string, string> } : {}), completeness: kind,
     ...(financialEvidence ? { financialEvidence } : {}) } };

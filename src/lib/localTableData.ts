@@ -163,8 +163,8 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
 export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: number, sourceKind: string,
   formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot, acquisition?: BackendAcquisition): WidgetDataset {
   const chartSources = sourceKind === 'localFile'
-    ? acquiredChartSources(snapshot?.chartSources, rows, snapshot?.completeness)
-    : acquiredChartSources(acquisition?.chartSources, rows, snapshot?.completeness, acquisition);
+    ? acquiredChartSources(snapshot?.chartSources, rows, snapshot?.completeness, undefined, snapshot?.receipt)
+    : acquiredChartSources(acquisition?.chartSources, rows, snapshot?.completeness, acquisition, snapshot?.receipt);
   const receipt = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
   const evidence = receipt && financialRowsAgree(receipt, rows) ? receipt : undefined;
   if (evidence?.kind === 'income') {

@@ -29,6 +29,8 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
   /** Some families reserve specific receipt origins for a completed backend request. */
   allowsLocal?(receipt: T): boolean;
   rowsAgree(receipt: T, rows: readonly Record<string, unknown>[], scope: unknown): boolean;
+  /** Check relevant declarations on a sibling legacy table receipt, when present. */
+  legacyReceiptAgrees?(receipt: T, legacy: unknown): boolean;
   routes: readonly {
     endpoint: string;
     selector: string;
@@ -117,6 +119,8 @@ export function captureMatchedChartSources(context: BackendAcquisition, response
   for (const { receipt, adapter } of entries) {
     if (!requestMatches(context, receipt, adapter) || receipt.delivered_count !== selectedRows.length) continue;
     const scopes = new Set([asRecord(parent)?.completeness, asRecord(response)?.completeness]);
+    const legacyReceipts = new Set([asRecord(parent)?.receipt, asRecord(response)?.receipt]);
+    if ([...legacyReceipts].some(legacy => legacy !== undefined && adapter.legacyReceiptAgrees?.(receipt, legacy) === false)) continue;
     const declared = [...scopes].filter(scope => scope !== undefined);
     if ((declared.length ? declared : [undefined]).every(scope => adapter.rowsAgree(receipt, selectedRows, scope)))
       result[receipt.kind] = receipt;
@@ -127,15 +131,16 @@ export function captureChartSources(context: BackendAcquisition, response: unkno
   return captureMatchedChartSources(context, response, selectedRows, chartSourceRegistry);
 }
 
-export function localChartSources(value: unknown, rows: readonly Record<string, unknown>[], scope: unknown): ChartSourceMap | undefined {
+export function localChartSources(value: unknown, rows: readonly Record<string, unknown>[], scope: unknown, legacy?: unknown): ChartSourceMap | undefined {
   const entries = envelope(value, chartSourceRegistry);
   if (!entries || !entries.every(({ receipt, adapter }) => adapter.allowsLocal?.(receipt) !== false
+    && (legacy === undefined || adapter.legacyReceiptAgrees?.(receipt, legacy) !== false)
     && receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))) return;
   return Object.fromEntries(entries.map(({ receipt }) => [receipt.kind, receipt]));
 }
 
 /** Some table cards relabel fiscal rows before handover. Recheck the actual input and the bound request. */
-export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: readonly Record<string, unknown>[], scope: unknown, request?: BackendAcquisition): ChartSourceMap | undefined {
+export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: readonly Record<string, unknown>[], scope: unknown, request?: BackendAcquisition, legacy?: unknown): ChartSourceMap | undefined {
   if (!plain(sources)) return;
   const result: ChartSourceMap = {};
   for (const [kind, wire] of Object.entries(sources)) {
@@ -143,7 +148,8 @@ export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: 
     if (!entry || entry.receipt.kind !== kind) return;
     const { receipt, adapter } = entry;
     const originMatches = request ? requestMatches(request, receipt, adapter) : adapter.allowsLocal?.(receipt) !== false;
-    if (originMatches && receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))
+    if (originMatches && (legacy === undefined || adapter.legacyReceiptAgrees?.(receipt, legacy) !== false)
+      && receipt.delivered_count === rows.length && adapter.rowsAgree(receipt, rows, scope))
       result[receipt.kind] = receipt;
   }
   return Object.keys(result).length ? result : undefined;
