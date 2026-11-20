@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
 import { fetchDocumentBytes } from "../../lib/dataClient";
 import type { Document } from "../../lib/documents";
@@ -40,6 +41,7 @@ const DOCUMENT_TIMEOUT_MS = 30_000;
 
 function LinkedPdf({ url, filename }: { url: string; filename: string }) {
   const [attempt, setAttempt] = useState(0);
+  const [externalError, setExternalError] = useState(false);
   const [state, setState] = useState<{ bytes: Uint8Array } | { error: string } | null>(null);
   useEffect(() => {
     // A late answer for a url this view no longer shows must not land.
@@ -64,6 +66,10 @@ function LinkedPdf({ url, filename }: { url: string; filename: string }) {
   }, [url, filename, attempt]);
 
   if (state === null) return <p className="empty-state">Loading…</p>;
-  if ("error" in state) return <ErrorState message={state.error} onRetry={() => setAttempt((n) => n + 1)} />;
+  if ("error" in state) return <>
+    <ErrorState message={state.error} onRetry={() => { setExternalError(false); setAttempt((n) => n + 1); }} />
+    <button type="button" onClick={() => { setExternalError(false); void openUrl(url).catch(() => setExternalError(true)); }}>Open externally ↗</button>
+    {externalError && <p role="status">Could not open the document externally.</p>}
+  </>;
   return <PdfView bytes={state.bytes} filename={filename} />;
 }
