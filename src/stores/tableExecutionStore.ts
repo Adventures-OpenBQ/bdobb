@@ -111,6 +111,16 @@ function canonicalHeaders(headers: Record<string, string>) {
   return Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
     .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
 }
+function canonicalRequestUrl(address: string) {
+  try {
+    const url = new URL(address);
+    url.searchParams.sort();
+    return url.href;
+  } catch {
+    // Preserve the configured address. The normal fetch path reports invalid URLs.
+    return address;
+  }
+}
 function pendingRows(configuration: BackendRows['configuration']): BackendRows {
   let resolve!: () => void;
   const ready = new Promise<void>(done => { resolve = done; });
@@ -512,6 +522,17 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     runtime.jobs.add(job);
     return job;
   }
+  function retireBackendInput(d: string, cardId: string, owner: BackendOwner) {
+    owner.revision = ++wireRevision;
+    owner.wire = undefined;
+    owner.slots = owner.slots.filter(slot => !slot.request);
+    const runtime = dashboards.get(d);
+    if (runtime?.nodes.has(cardId)) {
+      invalidate(runtime, cardId, true);
+      void ensure(d, cardId);
+    }
+    emit();
+  }
   const api = {
     subscribe(fn: () => void) {
       listeners.add(fn);
@@ -633,21 +654,17 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       const owner = ownerFor(d, cardId);
       const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
         ? [backend.headerName, backend.headerValue] : undefined;
-      const producer = JSON.stringify([backend?.id, backend && joinUrl(backend.baseUrl, widget.endpoint), widget.dataKey,
+      const producer = JSON.stringify([backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
         queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
       if (producer === owner.producer) return;
       const replaced = owner.producer !== undefined;
       owner.producer = producer;
-      if (!replaced) return;
-      owner.revision = ++wireRevision;
-      owner.wire = undefined;
-      owner.slots = owner.slots.filter(slot => !slot.request);
-      const runtime = dashboards.get(d);
-      if (runtime?.nodes.has(cardId)) {
-        invalidate(runtime, cardId, true);
-        void ensure(d, cardId);
-      }
-      emit();
+      if (replaced) retireBackendInput(d, cardId, owner);
+    },
+    /** Commit a changed Run-button question even if its GET must wait for a calendar. */
+    replaceArmedBackendRequest(d: string, cardId: string) {
+      const owner = backendRows.get(d)?.get(cardId);
+      if (owner?.slots.some(slot => slot.request)) retireBackendInput(d, cardId, owner);
     },
     /** The source card owns the request; consumers only wait for this particular completion. */
     beginBackendRequest(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d), committedParams?: Record<string,string>): BackendRequest {
@@ -672,9 +689,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       if (!owner?.slots.some(slot => slot.request === request)) return;
       // This hook only transports GETs with no body. Full private identity is
       // available after calendar resolution; renderers receive only a generation.
-      const target = new URL(url);
-      target.searchParams.sort();
-      const wire = JSON.stringify([target.href, selector, canonicalHeaders(headers)]);
+      const wire = JSON.stringify([canonicalRequestUrl(url), selector, canonicalHeaders(headers)]);
       const changed = owner.wire !== undefined && owner.wire !== wire;
       owner.wire = wire;
       if (changed) {

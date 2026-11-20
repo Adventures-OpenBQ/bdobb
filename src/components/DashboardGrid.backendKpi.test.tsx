@@ -20,21 +20,32 @@ import type { Dashboard } from '../lib/types';
 vi.mock('@tauri-apps/plugin-http', () => ({ fetch: vi.fn() }));
 vi.mock('react-grid-layout', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>, WidthProvider: (c: unknown) => c }));
 
-async function mountKpi(mode: string, { runButton = false, secondOrigin = false, headerName = '' } = {}) {
+async function mountKpi(mode: string, { runButton = false, secondOrigin = false, headerName = '', dated = false } = {}) {
   const path = '/api/v1/eodhd/equity/fundamental/metrics';
-  const serve = (replacement = false) => startMockServer({ [path]: (url: URL) => {
+  const calendarPath = '/api/v1/calendar/trading';
+  const serve = (replacement = false) => startMockServer({ [calendarPath]: { data: {
+    Name: 'Test exchange', Timezone: 'America/New_York',
+    TradingHours: { Open: '09:30:00', Close: '16:00:00', WorkingDays: 'Mon, Tue, Wed, Thu, Fri' }, ExchangeHolidays: {},
+  } }, [path]: (url: URL) => {
     const issuer = url.searchParams.get('symbol') + '.US';
-    return { results: [{ ...liveMetricRows[0], symbol: issuer, pe_ratio: !replacement && issuer === 'AAPL.US' ? 19.875 : 33.25 }],
+    return { results: [{ ...liveMetricRows[0], symbol: issuer, ...(dated ? { date: url.searchParams.get('date') } : {}), pe_ratio: !replacement && issuer === 'AAPL.US' ? 19.875 : 33.25 }],
       extra: { results_metadata: { chart_sources: { version: 1, receipts: [{ ...liveMetricReceipt, issuer, listing: issuer }] } } } };
   } });
   const server = await serve();
   const alternate = mode === 'connection' || secondOrigin ? await serve(true) : undefined;
   const replacementSymbol = alternate ? 'AAPL' : 'TSLA';
   const waiting: Array<{ symbol: string; finish: (fail?: boolean) => void }> = [];
+  let releaseCalendar!: () => void;
+  const calendarGate = new Promise<void>(resolve => { releaseCalendar = resolve; });
   vi.mocked(httpFetch).mockImplementation(async (input, init) => {
     const response = await globalThis.fetch(input, init);
+    const url = new URL(response.url);
+    if (url.pathname === calendarPath) {
+      if (url.searchParams.get('year') === '2027') await calendarGate;
+      return response;
+    }
     await new Promise<void>((resolve, reject) => waiting.push({
-      symbol: new URL(response.url).searchParams.get('symbol')!,
+      symbol: url.searchParams.get('symbol')!,
       finish: fail => fail ? reject(new Error('held request failed')) : resolve(),
     }));
     return response;
@@ -51,10 +62,12 @@ async function mountKpi(mode: string, { runButton = false, secondOrigin = false,
   connect(server.url);
   useWidgetRegistryStore.getState().seedBuiltins();
   useWidgetRegistryStore.setState(s => ({ widgets: [...s.widgets.filter(w => w.id !== 'metrics-source'), widget({ id: 'metrics-source', type: 'table', runButton,
-    endpoint: path, dataKey: 'results', params: [{ paramName: 'symbol', type: 'text', label: 'Symbol' }, { paramName: 'chart_source', type: 'text', label: 'Source' },
+    endpoint: path, dataKey: 'results', params: [
+      ...(dated ? [{ paramName: 'date', type: 'date' as const, exchange: 'XNYS' }] : []),
+      { paramName: 'symbol', type: 'text', label: 'Symbol' }, { paramName: 'chart_source', type: 'text', label: 'Source' },
       { paramName: 'order', label: 'Order', type: 'form', form: { endpoint: '/order', inputs: [{ paramName: 'note', label: 'Note', type: 'text' }] } }] })] }));
   const board = (symbol: string): Dashboard => {
-    const root = card({ id: 'source', widgetId: 'metrics-source', params: { symbol: mode === 'group' ? 'unchanged' : symbol, chart_source: 'true' },
+    const root = card({ id: 'source', widgetId: 'metrics-source', params: { symbol: mode === 'group' ? 'unchanged' : symbol, chart_source: 'true', ...(dated ? { date: 'T-1bd' } : {}) },
       bindings: mode === 'group' ? [{ groupId: 'ticker', paramName: 'symbol' }] : undefined });
     const metric = card({ id: 'kpi', backendId: 'builtin', widgetId: 'linked_metric', linkedSource: { kind: 'widget', sourceWidgetId: root.id },
       linkedMetric: { version: 1, metric: 'pe_ratio', valueField: 'pe_ratio', view: 'card', observation: { mode: 'latest' } } });
@@ -79,10 +92,10 @@ async function mountKpi(mode: string, { runButton = false, secondOrigin = false,
   const value = () => view.container.querySelector('.metric-value')?.textContent;
   const matches = () => tableExecutionStore.sourceMatches(b.id, 'kpi', b.tabs.flatMap(t => t.cards));
   onTestFinished(async () => {
-    view.unmount(); sync.mockRestore(); factory.mockRestore(); vi.unstubAllGlobals();
+    view.unmount(); releaseCalendar(); sync.mockRestore(); factory.mockRestore(); vi.unstubAllGlobals();
     tableExecutionStore.disposeDashboard(b.id); await server.close(); await alternate?.close();
   });
-  return { next, value, refresh, board, b, view, server, alternate, sync, connect, install, matches, originalSync, waiting, replacementSymbol };
+  return { next, value, refresh, board, b, view, server, alternate, sync, connect, install, matches, originalSync, waiting, replacementSymbol, releaseCalendar };
 }
 
 it.each(['mounted', 'off-tab', 'group', 'connection'])('matches only its current backend response through the %s KPI source', async mode => {
@@ -185,12 +198,12 @@ it('recovers an armed source after reverting a draft and fences a late response 
   expect(server.requests).toHaveLength(3);
 });
 
-it('retains the completed KPI across a case-only HTTP header refresh failure', async () => {
+it.each(['header', 'URL scheme'])('retains the completed KPI across a case-only %s refresh failure', async change => {
   const { next, value, server, view, connect } = await mountKpi('mounted', { headerName: 'X-Demo' });
   const completeA = await next('AAPL');
   act(() => completeA());
   await waitFor(() => expect(value()).toBe('19.875×'));
-  act(() => connect(server.url, 'x-demo'));
+  act(() => change === 'header' ? connect(server.url, 'x-demo') : connect(server.url.replace('http:', 'HTTP:')));
   const fail = await next('AAPL');
   act(() => fail(true));
   await waitFor(() => expect(tableExecutionStore.readView('backend-kpi', 'kpi').error).toContain('held request failed'));
@@ -216,4 +229,56 @@ it('recovers the un-run off-tab source without another GET', async () => {
   act(() => install(board('AAPL')));
   await waitFor(() => expect(value()).toBe('19.875×'));
   expect(server.requests).toHaveLength(2);
+});
+
+it.each([false, true])('admits only the committed source across a held exchange calendar year (explicit Run=%s)', async explicitRun => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-12-30T17:00:00Z'));
+  onTestFinished(() => { vi.useRealTimers(); });
+  const { next, board, install, server, view, releaseCalendar } = await mountKpi('mounted', { runButton: true, dated: true });
+  const root = () => tableExecutionStore.readView('backend-kpi', 'source');
+  const matches = (symbol: string) => tableExecutionStore.sourceMatches('backend-kpi', 'kpi', board(symbol).tabs.flatMap(tab => tab.cards));
+  const rows = async () => (await tableExecutionStore.readExecutor('backend-kpi', 'source')!
+    .chartData(root().active!, ['symbol', 'date', 'pe_ratio'], new AbortController().signal)).rows.map(row => row.values);
+  const metricsRequests = () => server.requests.filter(r => r.path.endsWith('/metrics'));
+  const finishA = await next('AAPL');
+  act(() => finishA());
+  await waitFor(() => expect(matches('AAPL')).toBe(true));
+  expect(await rows()).toEqual([{ symbol: 'AAPL.US', date: '2026-12-29', pe_ratio: 19.875 }]);
+  vi.setSystemTime(new Date('2027-01-06T17:00:00Z'));
+  act(() => install(board('TSLA')));
+  await waitFor(() => expect(server.requests.some(r => r.path === '/api/v1/calendar/trading'
+    && new URLSearchParams(r.search).get('year') === '2027' && new URLSearchParams(r.search).get('exchange') === 'XNYS')).toBe(true));
+  if (explicitRun) fireEvent.click(within(view.container.querySelector<HTMLElement>('[data-card-id="source"]')!).getByRole('button', { name: 'Run' }));
+  act(() => install(board('AAPL')));
+  // Allow any already-resolved acquisition to activate while the calendar remains held.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 25)); });
+  expect(metricsRequests()).toHaveLength(1);
+  if (!explicitRun) {
+    expect(matches('AAPL')).toBe(true);
+    expect(await rows()).toEqual([{ symbol: 'AAPL.US', date: '2026-12-29', pe_ratio: 19.875 }]);
+    await act(async () => releaseCalendar());
+    expect(metricsRequests()).toHaveLength(1);
+    return;
+  }
+  expect({ ready: root().status === 'ready', matches: matches('AAPL') }).toEqual({ ready: false, matches: false });
+  act(() => install(board('TSLA')));
+  act(() => releaseCalendar());
+  const finishB = await next('TSLA');
+  act(() => finishB());
+  await waitFor(() => expect(matches('TSLA')).toBe(true));
+  expect(await rows()).toEqual([{ symbol: 'TSLA.US', date: '2027-01-05', pe_ratio: 33.25 }]);
+  expect(metricsRequests()).toHaveLength(2);
+});
+
+it('retires the old result and reports an invalid replacement URL through the source error', async () => {
+  const { next, value, server, view, connect } = await mountKpi('mounted');
+  const finish = await next('AAPL');
+  act(() => finish());
+  await waitFor(() => expect(value()).toBe('19.875×'));
+  act(() => connect('invalid address'));
+  await waitFor(() => expect(tableExecutionStore.readView('backend-kpi', 'kpi').error).toMatch(/invalid URL/i));
+  expect(value()).toBeUndefined();
+  expect(view.queryByText('Showing completed data (stale).')).toBeNull();
+  expect(server.requests).toHaveLength(1);
 });

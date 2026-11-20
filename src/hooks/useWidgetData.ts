@@ -382,12 +382,13 @@ export function useWidgetData(
       // unchanged and nothing else would make the effect re-run.
       armedWireRef.current = null;
       setWireStale(false);
+      if (tableDashboardId) tableExecutionStore.replaceArmedBackendRequest(tableDashboardId, card.id);
       armRequest();
       setAttempt((n) => n + 1);
       return;
     }
     retry();
-  }, [stale, armRequest, retry]);
+  }, [stale, armRequest, retry, tableDashboardId, card.id]);
 
   /**
    * The `key` the payload currently in `data` was fetched under. WidgetCard
