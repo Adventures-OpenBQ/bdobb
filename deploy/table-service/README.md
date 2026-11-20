@@ -2,8 +2,10 @@
 
 The Rust service and worker are maintained only in this repository. The paired
 `Adventures-OpenBQ/openbq-docker` checkout owns Compose, the canonical route policy,
-private example settings, and `table-service/source.lock.json`. No image is published
-by this work. `bdobb-table-service:local` is a locally built image name.
+private example settings, and `table-service/source.lock.json`.
+`bdobb-table-service:local` is the recipe's local image name. Qualified images may
+also be retained in an authenticated GHCR regression cache; public readers can
+build this source recipe without registry credentials.
 
 Use the Docker repository's `prepare-source.mjs` against this checkout to export the
 exact pinned commit into a new build context. Its generated `.table-source.json`
@@ -68,7 +70,7 @@ runtime smoke. Record the image build, inspect its revision/tree labels and
 before publishing a production artifact.
 
 The current sample profile uses an 8 GiB container with 7 GiB global / 6 GiB principal
-reservations, 512 MiB worker address-space bounds, 64 MiB retained-result estimates
+reservations, 512 MiB worker address-space bounds, 256 MiB retained-result estimates
 and a separate 1 MiB export wire cap. These are configurable conservative limits.
 The qualification evidence (the actual 1,205 × 4 and 2,005 × 8 workloads, refusal
 cases and exact paired source) is recorded on the v10 line, where it was measured.
@@ -80,3 +82,9 @@ derivation, bounded export and restart/reopen checks with two contained workers.
 These runtime checks do not replace browser paging and large-table qualification;
 those remain separate release gates. The smoke harness must set the canonical
 gateway deadlines explicitly when constructing its configuration directly.
+
+The paired recipe previously used a 64 MiB retained-result profile. It correctly
+refused the 2,005-row, five-group pivot because its conservative retained estimate
+was about 96 MB. The 256 MiB recipe profile passed native grouping, expansion,
+exact CSV totals, linked chart/table and reopen checks. Worker/container/global/
+principal ceilings stay separate; this example does not raise library defaults.

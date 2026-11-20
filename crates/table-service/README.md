@@ -30,7 +30,8 @@ errors are never echoed. Bind on a private interface behind an authenticated
 gateway; the service does not provide TLS or browser cookie/CSRF handling.
 
 Example (paths and credentials are operator values; numbers require workload
-qualification):
+qualification; the 256 MiB retained-result example matches the paired V4 recipe,
+not a change to the library default):
 
 ```json
 {
@@ -40,7 +41,7 @@ qualification):
     "limits": {
       "max_upload_bytes": 2097152,
       "max_parse_bytes": 8388608,
-      "max_cache_bytes": 67108864,
+      "max_cache_bytes": 268435456,
       "max_input_rows": 20000,
       "max_output_columns": 256,
       "max_row_block_rows": 100,
