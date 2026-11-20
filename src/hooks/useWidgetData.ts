@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { acquisitionParams } from "../lib/widgetData/sources";
 import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
@@ -199,10 +200,9 @@ export function useWidgetData(
    */
   // v5.4.0 fix round 2: that release now re-arms the params and the map
   // together, so the rule above holds without the exception.
-  const [armedParams, setArmedParams] = useState<Record<string, string> | null>(null);
-  const [armedFiscalYearEnd, setArmedFiscalYearEnd] = useState<Record<string, number> | undefined>(
-    undefined,
-  );
+  const [armed, setArmed] = useState<(ArmedRequest & { intent: string; sourceParams?: Record<string, string> })>();
+  const armedParams = armed?.params ?? null;
+  const armedFiscalYearEnd = armed?.fiscalYearEnd;
   /**
    * v5.4.0 fix round 2: the intent a send was armed under, recorded wherever
    * one is armed (the first arm, Run) and compared when a held send is
@@ -212,7 +212,11 @@ export function useWidgetData(
    * fiscal map never relabels.
    */
   const intent = calendars?.intent ?? paramsKey(params);
-  const [armedIntent, setArmedIntent] = useState<string | undefined>(undefined);
+  const armedIntent = armed?.intent;
+  const armRequest = useCallback(() => {
+    setArmed({ params, fiscalYearEnd, intent,
+      sourceParams: backendTableDashboard ? acquisitionParams(card, backendTableDashboard) : undefined });
+  }, [params, fiscalYearEnd, intent, card, backendTableDashboard]);
   useEffect(() => {
     if (!runButton || armedParams === null) return;
     const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd };
@@ -278,9 +282,7 @@ export function useWidgetData(
   // exactly the request a run button exists to prevent. Until then the effect
   // returns early on `!widget` and nothing has been requested at all.
   if (runButton && armedParams === null && widget) {
-    setArmedParams(params);
-    setArmedFiscalYearEnd(fiscalYearEnd);
-    setArmedIntent(intent);
+    armRequest();
   }
 
   const retry = useCallback(() => {
@@ -380,14 +382,12 @@ export function useWidgetData(
       // unchanged and nothing else would make the effect re-run.
       armedWireRef.current = null;
       setWireStale(false);
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
-      setArmedIntent(intent);
+      armRequest();
       setAttempt((n) => n + 1);
       return;
     }
     retry();
-  }, [stale, params, fiscalYearEnd, intent, retry]);
+  }, [stale, armRequest, retry]);
 
   /**
    * The `key` the payload currently in `data` was fetched under. WidgetCard
@@ -448,8 +448,10 @@ export function useWidgetData(
 
     // Capture the owner in this fetch closure. A later render can see the previous
     // payload while its new parameters are waiting to send or complete.
-    const beginRequest = () => backendTableDashboard && (!runButton || !stale)
-      ? tableExecutionStore.beginBackendRequest(backendTableDashboard.id, card, backendTableDashboard) : undefined;
+    if (backendTableDashboard) tableExecutionStore.observeBackendProducer(backendTableDashboard.id, card.id, backend, widget);
+    const beginRequest = () => backendTableDashboard
+      ? tableExecutionStore.beginBackendRequest(backendTableDashboard.id, card, backendTableDashboard, runButton ? armed?.sourceParams : undefined)
+      : undefined;
     const missing = missingRequiredParams(widget, fetchParams);
     if (missing.length > 0) {
       setCompletedRequest(beginRequest());
@@ -501,11 +503,11 @@ export function useWidgetData(
     // Review I2: after an un-run edit a card's bundle calendars are the EDIT's (useBundleCalendars reads the live
     // params), so the armed params it re-sends resolve on their own, from the shared cache, as preview showed them:
     // all of a bound card's, and a legacy card's overnight ones laid over its per-year map (2026-10-24).
-    const armed =
+    const armedCalendars =
       backend && key !== paramsKey(params)
         ? peekWidgetCalendars(backend, widget, fetchParams, exchange, new Date()).calendars
         : undefined;
-    const sendMap = !armed ? calendarMap : widget.calendarBinding ? armed : { ...calendarMap, ...armed };
+    const sendMap = !armedCalendars ? calendarMap : widget.calendarBinding ? armedCalendars : { ...calendarMap, ...armedCalendars };
 
     // runButton: re-resolve, and refuse to send a resolution the user has not
     // run. The comparison is on the WIRE values — what wireParams would put on
@@ -767,8 +769,7 @@ export function useWidgetData(
         settleUnsent();
         return;
       }
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
+      armRequest();
     }
     setReleased((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps

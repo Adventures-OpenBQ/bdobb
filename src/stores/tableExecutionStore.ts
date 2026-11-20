@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { authHeaders, joinUrl } from '../lib/dataClient';
 import { acquisitionConfiguration, acquisitionParams, type SourceGroups } from '../lib/widgetData/sources';
 import { filterDateContext, resolveDateFilters } from "../lib/dateFilters";
 import {categoryRecipe} from '../lib/tableModel/categories';
@@ -10,7 +11,7 @@ import { validateTableModel as validateAnalyticalModel } from '../lib/tableModel
 import { activeRuntimeKeys, validateRuntimeParams, type RuntimeParams } from '../lib/tableExecution/runtimeParams';
 import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
-import type { Dashboard, DashboardCard } from '../lib/types';
+import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from '../lib/types';
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
 import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
@@ -94,24 +95,26 @@ export type ExecutionDependencies = {
  */
 export type BackendRequest = { readonly dashboardId: string; readonly cardId: string };
 // Table presentation settings do not change the backend request.
-function backendConfiguration(card: DashboardCard, scope?: SourceGroups) {
-  return [card.backendId, card.widgetId, acquisitionParams(card, scope)];
+function backendConfiguration(card: DashboardCard, scope?: SourceGroups, params = acquisitionParams(card, scope)) {
+  return [card.backendId, card.widgetId, params];
 }
 type BackendRows = {
   configuration: ReturnType<typeof backendConfiguration>;
   request?: BackendRequest;
-  // Private wire identity. Only its generation is visible to linked renderers.
-  wire?: string;
-  wireRevision: number;
   data?: unknown;
   acquisition?: BackendAcquisition;
   ready: Promise<void>;
   resolve: () => void;
 };
-function pendingRows(card: DashboardCard, scope?: SourceGroups): BackendRows {
+type BackendOwner = { slots: BackendRows[]; producer?: string; wire?: string; revision: number };
+function canonicalHeaders(headers: Record<string, string>) {
+  return Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+}
+function pendingRows(configuration: BackendRows['configuration']): BackendRows {
   let resolve!: () => void;
   const ready = new Promise<void>(done => { resolve = done; });
-  return { configuration: structuredClone(backendConfiguration(card, scope)), wireRevision: 0, ready, resolve };
+  return { configuration: structuredClone(configuration), ready, resolve };
 }
 /**
  * A backend table the user never hid columns on hides its widgets.json
@@ -142,32 +145,30 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
   // A request can start before React synchronizes the new dashboard definition.
   // Keep the source waiters keyed by definition until that handoff converges.
   let wireRevision = 0;
-  const backendRows = new Map<string, Map<string, BackendRows[]>>();
-  function slotsFor(d: string, id: string) {
+  const backendRows = new Map<string, Map<string, BackendOwner>>();
+  function ownerFor(d: string, id: string) {
     let cards = backendRows.get(d);
     if (!cards) {
       cards = new Map();
       backendRows.set(d, cards);
     }
-    let slots = cards.get(id);
-    if (!slots) {
-      slots = [];
-      cards.set(id, slots);
+    let owner = cards.get(id);
+    if (!owner) {
+      owner = { slots: [], revision: 0 };
+      cards.set(id, owner);
     }
-    return slots;
+    return owner;
   }
-  function rowsEntry(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d)) {
-    const slots = slotsFor(d, card.id);
-    const configuration = backendConfiguration(card, scope);
-    let entry = slots.find(slot => sameConfig(slot.configuration, configuration));
+  function rowsEntry(owner: BackendOwner, configuration: BackendRows['configuration']) {
+    let entry = owner.slots.find(slot => sameConfig(slot.configuration, configuration));
     if (!entry) {
-      entry = pendingRows(card, scope);
-      slots.push(entry);
+      entry = pendingRows(configuration);
+      owner.slots.push(entry);
     }
     return entry;
   }
   function backendSource(d: string, card: DashboardCard) {
-    return backendTableSource(card, rowsEntry(d, card));
+    return backendTableSource(card, rowsEntry(ownerFor(d, card.id), backendConfiguration(card, dashboards.get(d))));
   }
   function sourceFor(d: string, card: DashboardCard) {
     return deps.source?.(card) ?? (isBackendTable(card) ? backendSource(d, card) : undefined);
@@ -582,9 +583,15 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           const groupsChanged=!sameConfig(existing.groupCandidates,liveBaseline.candidates)||!sameConfig(existing.groupDiagnostics,liveBaseline.diagnostics);
           existing.groupCandidates=snapshotCandidates(liveBaseline.candidates);existing.groupDiagnostics=liveBaseline.diagnostics;
           if (sourceChanged) {
-            const slots = backendRows.get(dashboard.id)?.get(card.id);
-            if (slots) backendRows.get(dashboard.id)!.set(card.id, slots.filter(slot =>
-              sameConfig(slot.configuration, backendConfiguration(card, runtime))));
+            const owner = backendRows.get(dashboard.id)?.get(card.id);
+            if (owner) {
+              // The most recent Run owns its result while the user edits a draft.
+              // An incompatible draft waits separately. A new Run retires the old ticket.
+              const keepArmed = existing.card.widgetId === card.widgetId && existing.card.backendId === card.backendId
+                && isBackendTable(card) && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.runButton === true;
+              owner.slots = owner.slots.filter(slot => (keepArmed && slot.request)
+                || sameConfig(slot.configuration, backendConfiguration(card, runtime)));
+            }
           }
           existing.card = structuredClone(card);
           if (modelChanged) {
@@ -621,16 +628,37 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         for (const card of cards)
           void ensure(dashboard.id, card.id);
     },
+    /** A new producer may wait for a calendar or refuse validation before any URL is sent. */
+    observeBackendProducer(d: string, cardId: string, backend: BackendConfig | undefined, widget: WidgetDef) {
+      const owner = ownerFor(d, cardId);
+      const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
+        ? [backend.headerName, backend.headerValue] : undefined;
+      const producer = JSON.stringify([backend?.id, backend && joinUrl(backend.baseUrl, widget.endpoint), widget.dataKey,
+        queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
+      if (producer === owner.producer) return;
+      const replaced = owner.producer !== undefined;
+      owner.producer = producer;
+      if (!replaced) return;
+      owner.revision = ++wireRevision;
+      owner.wire = undefined;
+      owner.slots = owner.slots.filter(slot => !slot.request);
+      const runtime = dashboards.get(d);
+      if (runtime?.nodes.has(cardId)) {
+        invalidate(runtime, cardId, true);
+        void ensure(d, cardId);
+      }
+      emit();
+    },
     /** The source card owns the request; consumers only wait for this particular completion. */
-    beginBackendRequest(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d)): BackendRequest {
-      const entry = rowsEntry(d, card, scope);
+    beginBackendRequest(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d), committedParams?: Record<string,string>): BackendRequest {
+      const owner = ownerFor(d, card.id);
+      const configuration = backendConfiguration(card, scope, committedParams);
+      const entry = rowsEntry(owner, configuration);
       const request = { dashboardId: d, cardId: card.id };
-      // Fence earlier owners, including another mount and A -> B -> A on one card.
-      const next = entry.request ? pendingRows(card, scope) : entry;
-      next.wire = entry.wire;
-      next.wireRevision = entry.wireRevision;
+      const next = entry.request ? pendingRows(configuration) : entry;
+      // Supersede every earlier request, preserving waiters for an un-run draft.
+      owner.slots = [next, ...owner.slots.filter(slot => slot !== entry && !slot.request)];
       next.request = request;
-      backendRows.get(d)!.set(card.id, [next]);
       const runtime = dashboards.get(d), node = runtime?.nodes.get(card.id);
       if (next !== entry && runtime && node && sameConfig(next.configuration, backendConfiguration(node.card, runtime))) {
         invalidate(runtime, card.id, true);
@@ -640,27 +668,27 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       return request;
     },
     identifyBackendRequest(request: BackendRequest, url: string, headers: Record<string, string>, selector?: string) {
-      const entry = backendRows.get(request.dashboardId)?.get(request.cardId)?.find(slot => slot.request === request);
-      if (!entry) return;
-      // This hook only transports GETs with no body. URL includes the resolved backend,
-      // path and query. Compare credentials privately; never put them in a render key.
+      const owner = backendRows.get(request.dashboardId)?.get(request.cardId);
+      if (!owner?.slots.some(slot => slot.request === request)) return;
+      // This hook only transports GETs with no body. Full private identity is
+      // available after calendar resolution; renderers receive only a generation.
       const target = new URL(url);
       target.searchParams.sort();
-      const wire = JSON.stringify([target.href, selector, headers]);
-      const changed = entry.wire !== undefined && entry.wire !== wire;
-      entry.wire = wire;
+      const wire = JSON.stringify([target.href, selector, canonicalHeaders(headers)]);
+      const changed = owner.wire !== undefined && owner.wire !== wire;
+      owner.wire = wire;
       if (changed) {
-        entry.wireRevision = ++wireRevision;
+        owner.revision = ++wireRevision;
         emit();
       }
     },
     backendWireRevision(d: string, id: string | undefined) {
-      return id ? backendRows.get(d)?.get(id)?.find(entry => entry.request)?.wireRevision ?? 0 : 0;
+      return id ? backendRows.get(d)?.get(id)?.revision ?? 0 : 0;
     },
     /** Fiscal relabelling may deliver updated rows for the same completed request. */
     setBackendRows(request: BackendRequest, data: unknown, acquisition?: BackendAcquisition) {
       const { dashboardId: d, cardId: id } = request;
-      const entry = backendRows.get(d)?.get(id)?.find(slot => slot.request === request);
+      const entry = backendRows.get(d)?.get(id)?.slots.find(slot => slot.request === request);
       if (!entry || (entry.data === data && entry.acquisition === acquisition)) return;
       const replaced = 'data' in entry;
       entry.data = data;

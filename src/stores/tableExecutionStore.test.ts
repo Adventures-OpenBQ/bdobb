@@ -1194,3 +1194,42 @@ it('hydrates only a matching dashboard, card and request, including repeated sym
     store.disposeDashboard('two');
   }
 });
+
+it('fences a waiting producer before GET and compares header fields by HTTP semantics', async () => {
+  const store = createTableExecutionStore({});
+  const root = fixtureCard({ id: 'waiting-root', widgetId: 'quotes' });
+  const source = widget({ id: 'quotes', endpoint: '/quotes', dataKey: 'results' });
+  const connection = backend({ authLocation: 'cookie', headerName: 'Session', headerValue: 'demo' });
+  const revision = () => store.backendWireRevision('d', root.id);
+  const wire = (req: ReturnType<typeof store.beginBackendRequest>, headers: Record<string,string>) =>
+    store.identifyBackendRequest(req, 'https://example.invalid/quotes?symbol=A', headers, 'results');
+  try {
+    store.observeBackendProducer('d', root.id, connection, source);
+    const a = store.beginBackendRequest('d', root);
+    wire(a, { 'X-Desk': 'A', 'X-Book': 'B' });
+    const initial = revision();
+    wire(a, { 'x-book': 'B', 'x-desk': 'A' });
+    expect(revision()).toBe(initial);
+    wire(a, { 'x-book': 'b', 'x-desk': 'A' });
+    expect(revision()).toBeGreaterThan(initial);
+    store.setBackendRows(a, [{ value: 'A' }]);
+    const prior = revision();
+    // Cookie names are wire values inside Cookie, and remain case-sensitive.
+    store.observeBackendProducer('d', root.id, { ...connection, headerName: 'session' }, source);
+    expect(revision()).toBeGreaterThan(prior);
+    let ready = false;
+    const waiting = store.backendSource('d', root).acquire(new AbortController().signal).then(answer => {
+      ready = true;
+      return answer;
+    });
+    store.setBackendRows(a, new Error('late A'));
+    await Promise.resolve();
+    expect(ready).toBe(false);
+    const b = store.beginBackendRequest('d', root);
+    store.setBackendRows(b, [{ value: 'B' }]);
+    const answer = await waiting;
+    expect(answer.kind === 'dataset' && answer.dataset.rows[0].values.value).toBe('B');
+  } finally {
+    store.disposeDashboard('d');
+  }
+});
