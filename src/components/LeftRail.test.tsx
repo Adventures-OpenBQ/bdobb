@@ -2114,3 +2114,13 @@ it("offers corresponding source in Help and opens the exact archived revision", 
   expect(openUrl).toHaveBeenCalledWith(sourceOffer.archiveUrl);
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
+
+
+it("labels Windows shortcuts with Control and Alt", () => {
+  const platform=vi.spyOn(navigator,"platform","get").mockReturnValue("Win32");
+  try {
+    render(<LeftRail onOpenLibrary={vi.fn()} onOpenAI={vi.fn()} onOpenApps={() => {}} onOpenConnections={vi.fn()} onOpenSettings={vi.fn()} onOpenHelp={vi.fn()}/>);
+    expect(screen.getByRole("button",{name:"Add widget (Ctrl+K)"})).toBeInTheDocument();
+    expect(screen.getByText("Alt+1")).toBeInTheDocument();
+  } finally {platform.mockRestore();}
+});

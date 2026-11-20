@@ -507,3 +507,32 @@ describe("Command+? opens Help", () => {
     expect(useChatStore.getState().pinned).toBe(false);
   });
 });
+
+
+describe("Windows dashboard shortcut parity", () => {
+  it("uses Control for library, refresh and Help without claiming Windows keys", () => {
+    const platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+    try {
+      const library = vi.fn(); const help = vi.fn(); const refresh = vi.fn();
+      useDashboardStore.setState({refreshAll: refresh});
+      render(<Harness onOpenLibrary={library} onOpenHelp={help}/>);
+      for (const [code, shiftKey] of [["KeyK", false], ["KeyR", false], ["Slash", true]] as const) {
+        const event = new KeyboardEvent("keydown", {code, ctrlKey:true, shiftKey, bubbles:true, cancelable:true});
+        window.dispatchEvent(event); expect(event.defaultPrevented).toBe(true);
+      }
+      expect(library).toHaveBeenCalledTimes(1); expect(refresh).toHaveBeenCalledTimes(1); expect(help).toHaveBeenCalledTimes(1);
+      window.dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK", metaKey:true, bubbles:true}));
+      expect(library).toHaveBeenCalledTimes(1);
+    } finally {platform.mockRestore();}
+  });
+  it("keeps Control shortcuts inert in text fields and behind a modal", () => {
+    const platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+    try {
+      const library=vi.fn();render(<Harness onOpenLibrary={library}/>);
+      screen.getByLabelText("typing target").dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK", ctrlKey:true,bubbles:true}));
+      const dialog=document.createElement("dialog");dialog.open=true;document.body.append(dialog);
+      try {window.dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK",ctrlKey:true,bubbles:true})); expect(library).not.toHaveBeenCalled();}
+      finally {dialog.remove();}
+    } finally {platform.mockRestore();}
+  });
+});
