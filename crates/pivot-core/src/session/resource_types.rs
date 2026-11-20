@@ -218,7 +218,7 @@ struct_heap!(crate::statement::StatementBindings; shape,company_field_id,period_
 struct_heap!(crate::statement::LongFields; item_field_id,value_field_id);
 struct_heap!(crate::statement::Mapping; source_field_id,line_id);
 struct_heap!(crate::statement::UnpivotSpec; id,carry_field_ids,mappings,item_field_id,value_field_id);
-struct_heap!(crate::statement::StatementOverrides; labels,section_order,line_order,hidden_ids,formulas);
+struct_heap!(crate::statement::StatementOverrides; labels,section_order,line_order,line_section,hidden_ids,formulas);
 struct_heap!(crate::statement::OutputMember; selectors,formula_id,require_observed,format);
 struct_heap!(crate::statement::StatementPolicy; category_id,dependent_category_ids,measure_id,value_field_id,members,formulas,required,period_kind,company_field_id,currency_field_id,unit_field_id,fiscal);
 struct_heap!(crate::statement::ExecutionDescriptor; member_orders,member_labels,scope_members,output_members,policy,source_columns_by_row_id);

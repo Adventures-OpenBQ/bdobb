@@ -7,6 +7,7 @@ pub fn compile_statement(
     columns: &[DatasetColumn],
 ) -> Result<EffectiveStatement, Diagnostic> {
     validate_intent(i)?;
+    let displayed = displayed_sections(i);
     let b = &i.bindings;
     let p = prefix(i);
     let item = format!("{p}category/item");
@@ -64,9 +65,7 @@ pub fn compile_statement(
     } else {
         (format!("{p}field/item"), format!("{p}field/value"))
     };
-    let section_by_line: BTreeMap<_, _> = i
-        .template
-        .sections
+    let section_by_line: BTreeMap<_, _> = displayed
         .iter()
         .flat_map(|s| s.line_ids.iter().map(|l| (l.clone(), s.id.clone())))
         .collect();
@@ -183,8 +182,7 @@ pub fn compile_statement(
         .iter()
         .flat_map(|id| {
             i.overrides.line_order.get(id).cloned().unwrap_or_else(|| {
-                i.template
-                    .sections
+                displayed
                     .iter()
                     .find(|s| &s.id == id)
                     .unwrap()
