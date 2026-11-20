@@ -3,6 +3,7 @@
 import { asRecord } from '../../isRecord';
 import type { DatasetColumn, DatasetProvenance, DatasetRow } from '../types';
 import { acquiredColumnOrigin, utcTimestamp, type BackendAcquisition } from './financialEvidence';
+import { isChartSourceArray as dense, isChartSourceRecord as plain } from './chartSourceShape';
 import { chartSourceRegistry } from './chartSourceRegistry';
 import type { RecipeRefusal } from './types';
 
@@ -38,21 +39,6 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
 };
 export type ChartSourceRegistry = Readonly<Partial<Record<Kind, ChartSourceAdapter>>>;
 
-function plain(value: unknown): value is Record<string, unknown> {
-  const obj = asRecord(value);
-  return !!obj && [null, Object.prototype].includes(Object.getPrototypeOf(obj)) && Reflect.ownKeys(obj).every(key => {
-    const d = Object.getOwnPropertyDescriptor(obj, key);
-    return typeof key === 'string' && d?.enumerable && 'value' in d;
-  });
-}
-function dense(value: unknown): value is unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || Reflect.ownKeys(value).length !== value.length + 1) return false;
-  for (let i = 0; i < value.length; i++) {
-    const d = Object.getOwnPropertyDescriptor(value, i);
-    if (!d?.enumerable || !('value' in d)) return false;
-  }
-  return true;
-}
 function strings(value: unknown): value is string[] {
   return dense(value) && value.every(s => typeof s === 'string') && new Set(value).size === value.length;
 }
