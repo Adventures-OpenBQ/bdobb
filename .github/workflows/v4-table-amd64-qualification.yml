@@ -17,13 +17,13 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
-          ref: 1453fa7b4a8928baa106edbe84a9d36f8c260161
+          ref: e6e58e2555cc434611aa473e2c97578bbd4d25c7
           path: input-source
           persist-credentials: false
       - uses: actions/checkout@v4
         with:
           repository: Adventures-OpenBQ/openbq-docker
-          ref: 7730cc0ca5422d1c38fdac9f33cab950576bb01b
+          ref: 3c9466a0f675aa532d74456c1eadbd5ad558676d
           path: backend
           persist-credentials: false
       - name: Prepare the exact recipe source

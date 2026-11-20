@@ -13,14 +13,14 @@ out = root / 'qualification-evidence'
 out.mkdir(exist_ok=True)
 context = root / 'table-context'
 backend = root / 'backend'
-source = '1453fa7b4a8928baa106edbe84a9d36f8c260161'
-tree = '59e784c16d08c7211810af64083a102223519623'
-image = 'table-qualification:v4-1453-amd64'
-build = 'table-qualification:v4-1453-amd64-build'
+source = 'e6e58e2555cc434611aa473e2c97578bbd4d25c7'
+tree = '1c3801f6a8e8343cbf06ff70c39e9e72f85c1143'
+image = 'table-qualification:v4-e6e58e25-amd64'
+build = 'table-qualification:v4-e6e58e25-amd64-build'
 assert platform.system() == 'Linux' and platform.machine() == 'x86_64'
 manifest = json.loads((context / '.table-source.json').read_text())
 assert manifest['revision'] == source and manifest['tree'] == tree
-assert manifest['sourceArchiveSha256'] == '5a7d11053a6b84381e9c4fa11ab8a5e1532a2ef73f272506ea5a208256f19d7e'
+assert manifest['sourceArchiveSha256'] == 'e736d67387d4e89bea6241c552878788149eb827c1944c565b388fadebb5f314'
 (out / 'source.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
 def run(name, command, **kwargs):
@@ -47,7 +47,8 @@ run('linux-release-tests', ['docker', 'run', '--rm', '--cpus', '2', '--memory', 
     '&& cargo test --locked --release --manifest-path crates/table-service/Cargo.toml -- --test-threads=2'])
 log = (out / 'linux-release-tests.log').read_text()
 count = sum(map(int, re.findall(r'test result: ok\. (\d+) passed', log)))
-assert count == 77 and 'test result: FAILED' not in log
+assert count == 78 and 'test result: FAILED' not in log
+assert 'managed_statement_move_preserves_rows_formula_values_and_authentication ... ok' in log
 # Gateway dependencies stay outside the pinned production table image.
 run('gateway-install', ['npm', 'ci', '--ignore-scripts'], cwd=backend / 'funnel-gateway')
 smoke = root / 'deploy/table-service/runtime-smoke.mjs'
@@ -78,7 +79,7 @@ receipt = {'docker_archive': archive.name, 'docker_archive_sha256': archive_sha,
     'result': 'PASS', 'architecture': info['Architecture'], 'runner_machine': platform.machine(),
     'runner_os': platform.system(), 'run_id': os.environ.get('GITHUB_RUN_ID'),
     'source_revision': source, 'source_tree': tree, 'image_id': info['Id'],
-    'linux_release_tests': count, 'production_runtime': proof,
+    'linux_release_tests': count, 'statement_line_placement': True, 'production_runtime': proof,
     'read_only_runtime': True, 'network_none_runtime': True, 'runtime_uid': info['Config']['User'],
     'no_host_ports': True, 'no_provider_keys': True,
     'runtime_smoke_sha256': hashlib.sha256(smoke.read_bytes()).hexdigest()}
