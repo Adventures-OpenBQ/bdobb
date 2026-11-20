@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "8222669dde4284cb5d57df4c6601a0d4b6935745",
-  "sourceId": "5c0a9812aab40a123994b5fe6a5bab4161edfc8b4b339be502733e8d2059b328",
+  "baseCommit": "f936fd1c6ef6979926c45beff237bf8bd18441eb",
+  "sourceId": "37514ccf1b5db963d7a28e58e00b6a90718ed43aa496d89de7e32481cb381882",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3956,6 +3956,13 @@
       "mode": 420,
       "size": 36246,
       "sha256": "e8e3b13b5a7cccf4c3724f063329f0ea4d590d08efa9dd56a686caea8833ebdc"
+    },
+    {
+      "path": "crates/pivot-core/tests/managed_budget.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3560,
+      "sha256": "ac35f52f5ccf2ef4484e4b202d69af87bd25be6baf448be309971c29035f9b59"
     },
     {
       "path": "crates/pivot-core/tests/ordering.rs",
@@ -11403,7 +11410,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "d5c7bd09e749f571df149ca3dcf4194a91dcd206102468b3b680f191cb410ef1"
+      "sha256": "69545fbc77284b1244e99cd4b81822dfd2d8b5dc3bc89bb0421148541673b982"
     },
     {
       "path": "source_bundle.py",
@@ -15035,15 +15042,15 @@
       "path": "src/lib/dataClient.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 50229,
-      "sha256": "0f34b23b3c6eadbfce2c605ca0326a9615ec9d1a77bf3d917cda9aa5c949e453"
+      "size": 51402,
+      "sha256": "8fdacda7ebb36d171d1153aedbc925842d66327ded0e6afb2bfc56a434a8661c"
     },
     {
       "path": "src/lib/dataClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 36866,
-      "sha256": "1984cd121bd20331f30145c8e209e6757157d4b873ddaa35221643a5ca65e3e0"
+      "size": 37062,
+      "sha256": "4cd609dc979fc1eb1dd8438aeed33510cc6f2522a1bf56a5b72cfc1fe972df74"
     },
     {
       "path": "src/lib/dateExpressions.test.ts",
@@ -15688,6 +15695,20 @@
       "mode": 420,
       "size": 297,
       "sha256": "37a4955491b09d4512e5082e117098c2ec697b6f7687d2617367f96a21377c92"
+    },
+    {
+      "path": "src/lib/requestQueue.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1474,
+      "sha256": "cca94e3a2f61153009098a9e83cf917999be172944c1b96fb804ae198c4f9f55"
+    },
+    {
+      "path": "src/lib/requestQueue.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1880,
+      "sha256": "5e8bc5a1f7d341a4fc25bbc0c9ab42c9d71d24e9cbb2b42f95e4cc362a93c9db"
     },
     {
       "path": "src/lib/safeUrl.test.ts",
@@ -17506,8 +17527,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 111289,
-      "sha256": "4dced23fe6a62e6bb7fd9584546ccc9ae87667a81b104a0547f866cd9cb28138"
+      "size": 111672,
+      "sha256": "47f4782831b5e6779d92914dbbf029ff23049a27d9ebf51ff2302438bb4b072e"
     },
     {
       "path": "src/test/fakeSocket.ts",
@@ -17515,6 +17536,13 @@
       "mode": 420,
       "size": 1629,
       "sha256": "be7fadb138066f18312239762f58ec23106f36c175e71467006529e38b636468"
+    },
+    {
+      "path": "src/test/fixtures/managed-2005-model.json",
+      "type": "file",
+      "mode": 420,
+      "size": 4663,
+      "sha256": "e0be0e731a639d3496220517e3802cc9b3f2f5a03244af4e80d80294c7fdd0dd"
     },
     {
       "path": "src/test/fixtures/rust-pivot/analytical-all-operators.json",
