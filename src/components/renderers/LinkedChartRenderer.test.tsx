@@ -341,7 +341,7 @@ it('rows mode gives duplicate category values disambiguated names', async () => 
     cleanup(); store.disposeDashboard('d');
 });
 
-it('labels split measures with their period, as the legend names them', async () => { const store = await setup({ columns: [{ id: 'region', label: 'region' }, { id: 'revenue', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }] }] }); render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={vi.fn(async () => true)}/>); fireEvent.click(await screen.findByRole('button', { name: /^Measures/ })); expect(await screen.findByRole('checkbox', { name: 'FY2024 — Value', exact: true })).toBeTruthy(); cleanup(); store.disposeDashboard('d'); });
+it('labels split measures with their period, as the legend names them', async () => { const store = await setup({ columns: [{ id: 'region', label: 'region' }, { id: 'revenue', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }] }] }); render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={vi.fn(async () => true)}/>); fireEvent.click(await screen.findByRole('button', { name: /^Measures/ })); expect(await screen.findByRole('checkbox', { name: 'FY2024 — Value' })).toBeTruthy(); cleanup(); store.disposeDashboard('d'); });
 
 it('picking Surface with no fields chosen takes them from the source chartDataType hints, and never overwrites a choice', async () => {
     const store = await setup(); const commit = vi.fn(async (_: unknown) => true);

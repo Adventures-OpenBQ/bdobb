@@ -1,0 +1,89 @@
+[
+  {
+    "name": "FX linked surface",
+    "description": "Keyless CFTC EURUSD implied volatility and a surface linked to the same table card. Filter or sort the table to change the chart scope; missing observations stay gaps. Requires this episode\u2019s OpenBQ backend and BDOBB build.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "fx": {
+        "id": "fx",
+        "name": "EURUSD volatility",
+        "layout": [
+          {
+            "i": "cftc_fx_implied_vol_cftc_obb",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 15,
+            "state": {
+              "params": {
+                "pair": "EURUSD",
+                "basis": "empirical",
+                "min_trades": "3",
+                "use_cache": "true",
+                "provider": "cftc"
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 15,
+            "w": 40,
+            "h": 22,
+            "state": {
+              "params": {}
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "fx"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "fx",
+            "index": 0,
+            "extras": {}
+          },
+          {
+            "ref": "c1",
+            "tab": "fx",
+            "index": 1,
+            "extras": {
+              "sourceRef": "c0",
+              "linkedChart": {
+                "type": "surface",
+                "display": "grouped",
+                "category": "strike",
+                "measures": [
+                  "vol_1w",
+                  "vol_2w",
+                  "vol_1m",
+                  "vol_2m",
+                  "vol_3m",
+                  "vol_6m",
+                  "vol_9m",
+                  "vol_1y",
+                  "vol_2y"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+]

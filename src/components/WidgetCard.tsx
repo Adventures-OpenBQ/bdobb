@@ -1404,7 +1404,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
+        {!minimized && hasControls && !hideTitleParams && controlProps ? (
           <div
             className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
@@ -1780,7 +1780,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             </label>
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline rowZeroOnly /> : undefined} /> : null}
+        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} /> : null}
       </header>
       {exportNotice ? (
         <p className="card-notice" role="status">

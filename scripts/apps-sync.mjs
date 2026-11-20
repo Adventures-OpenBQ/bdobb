@@ -44,6 +44,7 @@ const SERVED = {
   "v3.2.0-video-library": true,
   // Built-ins only (the v4 date-expression and period cards among them).
   "v4.0.0-builtins": true,
+  "v4.0.0-fx-linked-surface": true,
   "v4.0.0-parameters": true,
   // OpenBB Workspace's CFTC, BLS and IMF dashboards on openbq-docker's widget ids.
   "v3.1.0-openbb-workspace": true,

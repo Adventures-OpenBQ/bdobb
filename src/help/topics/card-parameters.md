@@ -1,26 +1,18 @@
 # Card parameters
 
-Most widgets take parameters — a symbol, a date range, a provider. The card's
-header carries its parameters as chips on the title line — one per visible
-parameter, showing the value, named by its tooltip — and they wrap to a
-second line when the title bar is narrow. What a card is asking for is
-always in view; the `▸` chevron before the title, or **Parameters** in the
-`⋯` menu, opens a panel docked under the title bar with the same controls and
-their names, as a form. It stays open until you close it, and open or closed
-is saved with the card.
+Only parameter row 0 appears beside the card title. Its strip scrolls horizontally
+when the controls need more room. Use **▸ Show parameters** or **Parameters** in
+the card menu to open the docked panel. It contains every visible field,
+including rows 1 and above, and its open state is saved with the card.
 
 Uncheck **Display on title bar** at the bottom of that form to take a card's
 chips off its title line. The form still edits them, and the choice is
 saved with the card. A **Date expression** card starts with the box
 unchecked; check it to put its chips on the title line.
 
-A widget can arrange its parameters in rows (OpenBB's parameter positioning):
-in its `params` list a bare parameter sits on the first row, and each nested
-array is a row of its own, in order — an empty array `[]` still takes a row.
-The first row's chips share the title line, and each further row starts a
-line of its own under it. A widget whose first row is empty puts all its
-chips under the title line. The Parameters panel ignores the rows: it lists
-every field as one form, in row order.
+Widgets can declare parameter rows. Only row 0 uses the title strip; rows 1 and
+above remain in the panel and do not add header lines. If row 0 is empty, open
+the panel to edit the fields. Hidden provider parameters still travel on requests.
 
 ![Two cards with their parameter rows](./shots/card-parameters.png)
 

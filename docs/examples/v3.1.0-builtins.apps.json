@@ -1,7 +1,7 @@
 [
   {
     "name": "Built-in widgets",
-    "description": "Every built-in widget on its own tab, plus a Grouping tab showing two Parameter echo cards sharing a Ticker group. Nothing here needs a backend, a key or a sign-up -- it opens and works the moment you import it.",
+    "description": "Embedded notes, clocks, web viewers and controls on their own tabs, plus grouped Parameter echo cards. The Linked surface tab needs a source table from a data backend; the dedicated FX example provides one.",
     "img": "",
     "img_dark": "",
     "img_light": "",
@@ -138,7 +138,9 @@
             "y": 8,
             "w": 14,
             "h": 6,
-            "groups": ["Ticker"],
+            "groups": [
+              "Ticker"
+            ],
             "state": {
               "params": {
                 "date": "$currentDate"
@@ -151,7 +153,9 @@
             "y": 8,
             "w": 14,
             "h": 6,
-            "groups": ["Ticker"],
+            "groups": [
+              "Ticker"
+            ],
             "state": {
               "params": {
                 "date": "$currentDate"
@@ -159,10 +163,43 @@
             }
           }
         ]
+      },
+      "linked-surface": {
+        "id": "linked-surface",
+        "name": "Linked surface",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 30,
+            "h": 18,
+            "state": {
+              "params": {}
+            }
+          },
+          {
+            "i": "note",
+            "x": 30,
+            "y": 0,
+            "w": 25,
+            "h": 10,
+            "state": {
+              "params": {
+                "text": "Add a table from your data backend, then choose Create linked surface in its card menu. The FX linked-surface example provides the real keyless CFTC table and its linked chart. Source/category/measure choices live in the chart body."
+              }
+            }
+          }
+        ]
       }
     },
     "groups": [
-      { "name": "Ticker", "type": "param", "paramName": "ticker", "defaultValue": "AAPL" }
+      {
+        "name": "Ticker",
+        "type": "param",
+        "paramName": "ticker",
+        "defaultValue": "AAPL"
+      }
     ],
     "prompts": []
   }

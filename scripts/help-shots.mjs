@@ -212,15 +212,12 @@ function clip(page, width, height) {
   return page.screenshot({ clip: { x: 0, y: 0, width, height }, animations: "disabled" });
 }
 
-/**
- * A card's controls row, one per visible parameter, sits under the title and
- * is always on screen -- there is nothing left to open. Waiting for it keeps
- * every caller's intent (the parameters must be visible before the shot)
- * without pretending there is still a toggle to click.
- */
+/** Open the actual saved Parameters panel before taking a panel screenshot. */
 async function openParams(page, title) {
   const cardBox = page.locator(".react-grid-item", { hasText: title }).first();
-  await cardBox.locator(".card-params").waitFor();
+  const panel=cardBox.getByRole('region',{name:'Parameters',exact:true});
+  if (!await panel.isVisible()) await cardBox.getByRole('button',{name:'Show parameters',exact:true}).click();
+  await panel.waitFor();
 }
 
 /**
@@ -420,7 +417,7 @@ const SHOTS = [
       await openParams(page, "Congress Committees");
       await openParams(page, "Form Table");
       // The cascading select only fills once /committees has answered.
-      await page.getByLabel("Committee", { exact: true }).waitFor();
+      await page.getByRole("region", { name: "Parameters", exact: true }).getByLabel("Committee", { exact: true }).waitFor();
       // Both tables drawn, not "Loading…".
       await page.getByRole("cell", { name: "42", exact: true }).waitFor();
       await page.getByRole("cell", { name: "formed", exact: true }).waitFor();
