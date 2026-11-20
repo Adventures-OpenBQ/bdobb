@@ -37,7 +37,9 @@ type FlowLink = {
 };
 type FlowStage = {
   id: StageId; from: IncomeAnchor; to: IncomeAnchor; residual: number;
-  throughput: number; rounding: number;
+  throughput: number;
+  /** Accepted cancellation difference in original units, measured as outflow minus inflow. */
+  rounding: number;
 };
 type FlowNode = { id: FlowNodeId; label: string; offset: number; value: number; kind: 'main' | 'credit' | 'deduction' };
 
@@ -77,14 +79,14 @@ export function buildIncomeFlows(input: IncomeSankeyInput): IncomeFlowGraph | Re
     const component = 'component' in stage ? components[stage.component] : undefined;
     const step = -(component?.value ?? 0);
     const gap = exact(b) - exact(a) - exact(step);
-    const fullResidual = sourceAmount(gap);
     if (gap > upperBound || gap < -upperBound) return overflow();
+    const fullResidual = sourceAmount(gap);
 
     // A pure bridge has only the derived net change. Retain it even if it is small.
     // On component stages never suppress a whole source unit or a whole reporting-currency unit.
     const tolerance = statementRoundingTolerance(b, a + Math.abs(step));
-    const rounded = component !== undefined && Math.abs(fullResidual) <= tolerance && Math.abs(fullResidual) < wholeUnit;
-    const residual = rounded ? 0 : fullResidual;
+    const withinRounding = (difference: number) => Math.abs(difference) <= tolerance && Math.abs(difference) < wholeUnit;
+    const residual = component && withinRounding(fullResidual) ? 0 : fullResidual;
 
     const branch = (kind: 'component' | 'residual', signedValue: number, label: string, line?: IncomeLineValue) => {
       if (signedValue === 0) return;
@@ -100,13 +102,13 @@ export function buildIncomeFlows(input: IncomeSankeyInput): IncomeFlowGraph | Re
     const inflow = exact(a) + exact(Math.max(0, step)) + exact(Math.max(0, residual));
     const outflow = exact(b) + exact(Math.max(0, -step)) + exact(Math.max(0, -residual));
     if (inflow > upperBound || outflow > upperBound) return overflow();
-    const incoming = sourceAmount(inflow), outgoing = sourceAmount(outflow);
-    // If a residual requires binary64 rounding, the junction must still reconcile
-    // when its exact original-value totals are rounded. Never lose a whole unit.
-    if (!rounded && (incoming !== outgoing || Math.abs(sourceAmount(inflow - outflow)) >= wholeUnit))
-      return unfaithfulWidth();
+    // Compare the exact totals before converting them to binary64. One rounded
+    // residual may make the published totals differ by an ULP even when the
+    // exact difference is within the same cancellation allowance.
+    const rounding = sourceAmount(outflow - inflow);
+    if (!withinRounding(rounding)) return unfaithfulWidth();
     summaries.push({ id: stage.id, from: stage.from, to: stage.to, residual,
-      throughput: Math.max(incoming, outgoing), rounding: rounded ? fullResidual : 0 });
+      throughput: sourceAmount(inflow > outflow ? inflow : outflow), rounding });
   }
 
   const largest = Math.max(...summaries.map(stage => stage.throughput));
@@ -229,10 +231,12 @@ export function buildIncomeSankey(dataset: WidgetDataset, options: RecipeOptions
     const summary = byStage.get(stage.id)!;
     const anchor = anchors[stage.to];
     const branchNotes = links.filter(link => link.kind !== 'anchor' && (link.source === stage.id || link.target === stage.id))
-      .map(link => `${link.label} ${original(link.value)}`);
+      .map(link => `${link.label} ${link.signedValue > 0 ? '+' : ''}${original(link.signedValue)}`);
     const component = 'component' in stage ? input.components[stage.component] : undefined;
     if (component?.value === 0) branchNotes.unshift(`${stage.expense} ${original(0)}`);
     if (branchNotes.length) notes.push(`${stage.label}. ${branchNotes.join(' · ')}.`);
+    if (summary.rounding)
+      notes.push(`${stage.label} rounding difference ${original(summary.rounding)} (outflow minus inflow).`);
     if (summary.throughput !== anchor.value)
       notes.push(`${stage.label} throughput ${original(summary.throughput)}. ${originLabel(anchor)} ${anchorLabels[stage.to]} ${original(anchor.value)}.`);
   }

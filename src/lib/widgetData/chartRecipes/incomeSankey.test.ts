@@ -96,8 +96,9 @@ it('conserves the reported anchor path and uses the derived operating deduction 
 });
 
 it('routes expense credits and signed adjustments at the corresponding junctions', async () => {
-  const result = graph(await fixture({ cost_of_revenue: -20, gross_profit: 110, operating_income: 120,
-    income_before_tax: 150, income_tax_expense: -10, net_income: 170 }));
+  const f = await fixture({ cost_of_revenue: -20, gross_profit: 110, operating_income: 120,
+    income_before_tax: 150, income_tax_expense: -10, net_income: 170 });
+  const result = graph(f);
   expect(result.stages.map(stage => [stage.residual, stage.throughput])).toEqual([[-10, 120], [10, 120], [30, 150], [10, 170]]);
   expect(result.links.filter(link => link.kind !== 'anchor').map(link => [link.label, link.value])).toEqual([
     ['Cost of revenue credit', 20], ['Gross profit adjustment (derived)', 10], ['Net operating credits (derived)', 10],
@@ -105,6 +106,7 @@ it('routes expense credits and signed adjustments at the corresponding junctions
   ]);
   expect(result.anchors.gross_profit.value).toBe(110);
   expect(result.anchors.income_before_tax.value).toBe(150);
+  expect(chart(f).notes.join(' ')).toMatch(/Gross profit adjustment \(derived\) -10 USD.*Tax reconciliation adjustment \(derived\) \+10 USD/);
 });
 
 it('leaves filtered and errored optional components unavailable with visible differences', async () => {
@@ -204,6 +206,56 @@ it('reconciles ordinary fractional bridge amounts at their original numeric prec
     operating_income: 10.1, income_before_tax: 9.2, income_tax_expense: 2.2, net_income: 7 }));
   expect(result.stages[1].residual).toBeCloseTo(-67.1, 12);
   expect(result.anchors.operating_income.value).toBe(10.1);
+});
+
+it('keeps the 0.07 operating deduction when rounded junction totals differ by one ULP', async () => {
+  const f = await fixture({ revenue: .2, cost_of_revenue: .09, gross_profit: .11, operating_income: .04,
+    income_before_tax: .04, income_tax_expense: 0, net_income: .04 });
+  const result = buildIncomeFlows(input(f));
+  if (!result.ok) throw new Error(result.message);
+  const stage = result.stages[1];
+  expect(stage).toMatchObject({ from: gross, to: operating, residual: -.07, rounding: 2 ** -57 });
+  expect(result.links).toContainEqual(expect.objectContaining({ source: stage.id, kind: 'residual',
+    label: 'Net operating deductions (derived)', value: .07, signedValue: -.07 }));
+  expect(result.anchors.gross_profit.value).toBe(.11);
+  expect(result.anchors.operating_income.value).toBe(.04);
+
+  const { figure, notes } = chart(f);
+  expect(notes).toContain(`Operating income bridge rounding difference ${2 ** -57} USD × 1000 (outflow minus inflow).`);
+  const node = document.body.appendChild(document.createElement('div'));
+  try {
+    await renderPlot(node, figure);
+    const paths = node.querySelectorAll<SVGPathElement>('.sankey-link');
+    expect(paths).toHaveLength(7);
+    const deduction = [...paths].map(element => (element as SVGPathElement & {
+      __data__: { link: { label: string; width: number; customdata: string } };
+    }).__data__.link).find(link => link.label === 'Net operating deductions (derived)');
+    expect(deduction?.width).toBeGreaterThan(0);
+    expect(deduction?.customdata).toContain('Derived change -0.07 USD × 1000');
+  } finally {
+    purgePlot(node);
+    node.remove();
+  }
+});
+
+it.each([
+  ['one reporting-currency unit', 2 ** 49, 2 ** 46 + 1 / 64],
+  ['the waterfall tolerance cap', 2 ** 43, .123],
+])('refuses recombination error above %s even if rounded totals match', async (_bound, a, b) => {
+  const f = await fixture({ revenue: a, gross_profit: a, cost_of_revenue: 0,
+    operating_income: b, income_before_tax: b, net_income: b, income_tax_expense: 0 });
+  expect(buildIncomeFlows(input(f))).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/display/i) });
+});
+
+it('keeps a whole reporting-currency unit when the stated scale makes it a fractional source unit', async () => {
+  const profit = 2 ** 40;
+  const f = await fixture({ revenue: 3 * profit, gross_profit: profit, cost_of_revenue: 2 * profit + 1 / 1024,
+    operating_income: profit, income_before_tax: profit, net_income: profit, income_tax_expense: 0 },
+  (_model, evidence) => { evidence.scale.multiplier = 1024; });
+  const result = graph(f);
+  expect(result.stages[0].residual).toBe(1 / 1024);
+  expect(result.stages[0].rounding).toBe(0);
+  expect(chart(f).notes.join(' ')).toMatch(/adjustment \(derived\) \+0.0009765625 USD × 1024/);
 });
 
 it('uses a reversible binary display scale for large but proportionate flows', async () => {
