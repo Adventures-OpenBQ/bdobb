@@ -19,6 +19,9 @@ test('native iPad wraps row-zero fields without horizontal overflow and opens it
   expect(await chips.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
   await expect(card.locator('.card-title')).toBeVisible();
   await expect(card.getByRole('button',{name:'Refresh',exact:true})).toBeVisible();
+  const menu=await card.getByRole('button',{name:'Card menu',exact:true}).boundingBox();
+  const strip=await chips.boundingBox();
+  expect(strip!.y).toBeGreaterThanOrEqual(menu!.y+menu!.height);
   await chips.getByRole('button',{name:'Calendar',exact:true}).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });

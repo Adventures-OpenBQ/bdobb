@@ -3493,6 +3493,7 @@ body {
    Later declared rows remain exclusively in Parameters, as on desktop. */
 .widget-card[data-parameter-layout="wrap"] .card-chips {
   flex: 1 1 100%;
+  order: 2;
   overflow: visible;
 }
 .widget-card[data-parameter-layout="wrap"] .card-chips .card-params {
