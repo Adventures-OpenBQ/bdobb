@@ -6,7 +6,7 @@ import type { ChartBuildResult } from './chartSourceContracts';
 import { isoDate, qualifiedSymbol } from './financialEvidence';
 import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot, priceBasisFields, priceDateFields, priceIdentityFields } from './priceEvidence';
 import type { WidgetDataset } from '../types';
-import { prepareLiveReturnPrices, preparePrices, type PriceScope, type PriceSeries } from './input';
+import { observedReturnScope, prepareLiveReturnPrices, preparePrices, type PriceScope, type PriceSeries } from './input';
 import type { PriceBindings } from './types';
 
 /** Apply strict selection after the shared source and continuity checks. */
@@ -116,7 +116,8 @@ export function admitReturnSummary(
     const result = dailyReturnSamples({ symbol: source.symbol, points });
     const { samples } = result;
     if (samples.length < 5) {
-      return refuse(`At least 5 finite daily returns are required for ${source.symbol}. Found ${samples.length}. Choose a wider window or a different listing.`);
+      const kind = live ? 'observed quote-to-quote' : 'daily';
+      return refuse(`At least 5 finite ${kind} returns are required for ${source.symbol}. Found ${samples.length}. Choose a wider window or a different listing.${live ? ` ${observedReturnScope}` : ''}`);
     }
     series.push({
       ...result, symbol: source.symbol, start: samples[0].date, end: samples[samples.length - 1].date,

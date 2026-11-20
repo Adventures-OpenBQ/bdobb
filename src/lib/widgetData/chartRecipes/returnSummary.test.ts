@@ -373,7 +373,9 @@ it.each([
   const data = liveDailyPriceDataset(rows, ['AAA.US', 'BBB.US']);
   const result = runRecipe(data, { ...options, view }, context);
   if (!drawn) {
-    expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/5.*AAA\.US.*4/) });
+    expect(result).toMatchObject({ ok: false, refused: true, message:
+      'At least 5 finite observed quote-to-quote returns are required for AAA.US. Found 4. Choose a wider window or a different listing. Observed quote-to-quote returns; exchange-session completeness unknown.',
+    });
     return;
   }
   expect(result).toMatchObject({
@@ -437,5 +439,38 @@ it('retains local snapshot binding validation for an adjusted price displayed as
   }
   expect(runRecipe(data, { ...options, fields: { ...priceFields, price: 'close' } }, context)).toMatchObject({
     ok: false, refused: true, message: expect.stringContaining('Field close cannot supply adjusted price'),
+  });
+});
+
+it.each([
+  { interval: '1W' }, { period: 'w' }, { currency: 'EUR' }, { unit: 'cents' },
+])('refuses a contradictory declaration on the selected array: %j', declaration => {
+  const rows = daily.map((row, i) => ({
+    ...row, adjusted_close: i < 3 ? 100 : 10000, interval: '1d', period: 'd', currency: 'USD', unit: 'dollars',
+    ...(i < 3 ? {} : declaration),
+  }));
+  const data = liveDailyPriceDataset(rows, ['AAA.US']);
+  expect(data.provenance.metadata?.chartSources).toBeUndefined();
+  expect(admitReturnSummary(data, { date: 'date', price: 'adjusted_close' }, ['AAA.US'], own).ok).toBe(false);
+});
+
+it('admits unlabelled sparse quotes and different stable denominations per listing', () => {
+  const symbols = ['AAA.US', 'BBB.US'];
+  const dates = [1, 6, 12, 18, 24, 30];
+  const rows = symbols.flatMap((symbol, s) => dates.map((d, i) => ({
+    symbol, date: day(d), adjusted_close: 2 ** i,
+    ...(i % 2 ? {} : { interval: '1d', period: 'd', currency: s ? 'EUR' : 'USD', unit: s ? 'cents' : 'dollars' }),
+  })));
+  const data = liveDailyPriceDataset(rows, symbols);
+  const result = admitReturnSummary(data, priceFields, symbols, own);
+  if (!result.ok) throw new Error(result.message);
+  for (const { samples } of result.value.series) {
+    expect(samples).toEqual(dates.slice(1).map(d => ({ date: day(d), value: 1 })));
+  }
+});
+
+it('keeps the established four-return local snapshot prompt', async () => {
+  expect(admitReturnSummary(await source(daily.slice(0, 5)), priceFields, ['AAA.US'], own)).toMatchObject({
+    ok: false, message: 'At least 5 finite daily returns are required for AAA.US. Found 4. Choose a wider window or a different listing.',
   });
 });

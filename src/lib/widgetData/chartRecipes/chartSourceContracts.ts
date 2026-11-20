@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { asRecord } from '../../isRecord';
-import type { DatasetColumn, DatasetProvenance, DatasetRow } from '../types';
+import type { DatasetColumn, DatasetProvenance, DatasetRow, WidgetDataset } from '../types';
 import { acquiredColumnOrigin, utcTimestamp, type BackendAcquisition } from './financialEvidence';
 import { isChartSourceArray as dense, isChartSourceRecord as plain } from './chartSourceShape';
 import { chartSourceRegistry } from './chartSourceRegistry';
@@ -42,8 +42,9 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
   coordinates(receipt: T): ChartCoordinateGroup[];
   /** A family whose receipt carries only counts can use coordinates captured at acquisition. */
   acquiredCoordinates?(receipt: T, provenance: DatasetProvenance): ChartCoordinateGroup[] | undefined;
-  /** Validate original field bindings before a table presentation can hide an ambiguity. */
-  acquiredColumnsAgree?(receipt: T, columns: readonly DatasetColumn[]): boolean;
+  /** Recheck the incoming rows and their acquired field origins before a table can filter or project them. */
+  acquiredInputAgrees?(receipt: T, input: Pick<WidgetDataset, 'columns' | 'rows'>,
+    provenance: DatasetProvenance, omitted: readonly string[]): boolean;
 };
 export type ChartSourceRegistry = Readonly<Partial<Record<Kind, ChartSourceAdapter>>>;
 
@@ -164,7 +165,7 @@ export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: 
 }
 
 /** Runtime data is revalidated after every structured-clone or linked-input boundary. */
-function sourceState(provenance: DatasetProvenance, inputColumns?: readonly DatasetColumn[]) {
+function sourceState(provenance: DatasetProvenance, input?: Pick<WidgetDataset, 'columns' | 'rows'>) {
   const metadata = provenance.metadata;
   if (!plain(metadata)) return;
   const sources = metadata.chartSources;
@@ -175,7 +176,6 @@ function sourceState(provenance: DatasetProvenance, inputColumns?: readonly Data
   for (const [kind, value] of Object.entries(sources)) {
     const entry = decode(value, chartSourceRegistry);
     if (!entry || kind !== entry.receipt.kind) return;
-    if (inputColumns && entry.adapter.acquiredColumnsAgree?.(entry.receipt, inputColumns) === false) return;
     const coordinates = entry.adapter.acquiredCoordinates
       ? entry.adapter.acquiredCoordinates(entry.receipt, provenance)
       : entry.adapter.coordinates(entry.receipt);
@@ -185,6 +185,7 @@ function sourceState(provenance: DatasetProvenance, inputColumns?: readonly Data
       const ids = new Set(coordinates.flatMap(group => group.points.map(point => point.id)));
       if (!strings(omitted) || omitted.some(id => !ids.has(id))) return;
     }
+    if (input && entry.adapter.acquiredInputAgrees?.(entry.receipt, input, provenance, omitted ?? []) === false) return;
     entries.push({ ...entry, coordinates, omitted: omitted ?? [] });
   }
   return entries;
@@ -202,14 +203,14 @@ export function readChartSourceProjection(provenance: DatasetProvenance, kind: K
 }
 
 /** Recalculation accepts acquired facts and additive restrictions only. Presentation proof belongs to its producing view. */
-export function validatedChartProvenance(provenance: DatasetProvenance, inputColumns?: readonly DatasetColumn[]): DatasetProvenance {
+export function validatedChartProvenance(provenance: DatasetProvenance, input?: Pick<WidgetDataset, 'columns' | 'rows'>): DatasetProvenance {
   const metadata = provenance.metadata;
   if (!metadata) return provenance;
   const evidenceKeys = ['chartSources', 'chartSourceFiltered', 'chartSourceOmissions', 'dailyPriceCoordinates'];
   const presentationKeys = ['chartSourcePresentationProof', 'chartSourceCoordinatePlan'];
   const keys = [...evidenceKeys, ...presentationKeys];
   if (!keys.some(key => Object.hasOwn(metadata, key))) return provenance;
-  const valid = sourceState(provenance, inputColumns);
+  const valid = sourceState(provenance, input);
   const removed = valid ? [...presentationKeys,
     ...(valid.some(({ receipt }) => receipt.kind === 'daily-price') ? [] : ['dailyPriceCoordinates'])] : keys;
   const retained = Object.fromEntries(Object.keys(metadata).flatMap(key => {

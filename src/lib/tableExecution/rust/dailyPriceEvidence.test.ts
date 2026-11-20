@@ -153,6 +153,27 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
     }
   });
 
+  it.each([
+    ['interval', '1d', '1W'], ['period', 'd', 'w'], ['currency', 'USD', 'EUR'], ['unit', 'dollars', 'cents'],
+  ])('checks the %s source origin before a worker filter removes the contradictory row', async (origin, stable, conflict) => {
+    const input = liveDailyPriceDataset(rows, [symbol], { bounds });
+    aliasColumns(input, singleFields);
+    input.columns.push({ id: 'declaration', label: 'Declaration', sourceFieldId: origin });
+    for (const row of input.rows) row.values.declaration = row.values.tag === 'removed at root' ? conflict : stable;
+    const executor = make('root');
+    const revision: Revision = { widgetId: 'root', input: 1, model: 1, output: 1 };
+    try {
+      await executor.registerInput(input, 1, signal);
+      await executor.applyModel({ search: '', table: { columnFilters: [{ id: 'tag', value: 'kept' }] } },
+        { kind: 'none' }, revision, signal);
+      const chart = await executor.chartData(revision, Object.values(singleFields), signal);
+      expect(chart.rows).toHaveLength(rows.length - 1);
+      expect(chart.columns.map(column => column.id)).not.toContain('declaration');
+      expect(chart.provenance.metadata?.chartSources).toBeUndefined();
+      expect(admitReturnSummary(chart, singleFields, [symbol], own)).toMatchObject({ ok: false, refused: true });
+    } finally { executor.dispose(); }
+  });
+
   it.each(['raw conflicting duplicate', 'mixed listing identity', 'ambiguous date origins', 'ambiguous price origins', 'aggregate'] as const)(
     'refuses %s after table presentation', async variant => {
       const conflicting = variant === 'raw conflicting duplicate';

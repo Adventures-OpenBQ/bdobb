@@ -96,6 +96,24 @@ const exchangeAliases = ['exchange', 'exchange_code'] as const;
 const pythonWhitespace = /^[\p{White_Space}\u001c-\u001f]+|[\p{White_Space}\u001c-\u001f]+$/gu;
 const normalizedTicker = (value: string) => value.replace(pythonWhitespace, '').toUpperCase();
 
+const declarationNames = ['interval', 'period', 'currency', 'unit'];
+type Denominations = Map<string, Map<string, string>>;
+
+function declarationsAgree(symbol: string, entries: Iterable<[string, unknown]>, denominations: Denominations): boolean {
+  for (const [key, value] of entries) {
+    if (value == null) continue;
+    const name = key.toLowerCase();
+    if (name === 'interval' && value !== '1d' || name === 'period' && value !== 'd') return false;
+    if (name !== 'currency' && name !== 'unit') continue;
+    if (typeof value !== 'string' || !value.trim()) return false;
+    const listing = denominations.get(symbol) ?? new Map<string, string>();
+    if (listing.has(name) && listing.get(name) !== value) return false;
+    listing.set(name, value);
+    denominations.set(symbol, listing);
+  }
+  return true;
+}
+
 function readObservation(receipt: DailyPriceReceipt, read: (origin: string) => unknown): PriceCoordinate | undefined {
   const symbol = receipt.symbol_field ? read(receipt.symbol_field) : receipt.symbols[0];
   const date = read(receipt.date_field);
@@ -133,10 +151,11 @@ function deliveredCoordinatesAgree(receipt: DailyPriceReceipt, value: unknown): 
 function rowCoordinates(receipt: DailyPriceReceipt, rows: readonly Record<string, unknown>[]): PriceCoordinate[] | undefined {
   if (receipt.diagnostics.length || rows.length !== receipt.delivered_count) return;
   const points: PriceCoordinate[] = [];
+  const denominations: Denominations = new Map();
   for (const row of rows) {
     if (!record(row)) return;
     const point = readObservation(receipt, key => Object.hasOwn(row, key) ? row[key] : undefined);
-    if (!point) return;
+    if (!point || !declarationsAgree(point[0], Object.entries(row), denominations)) return;
     points.push(point);
   }
   if (deliveredCoordinatesAgree(receipt, points)) return points;
@@ -159,13 +178,39 @@ function acquiredFields(receipt: DailyPriceReceipt, columns: readonly DatasetCol
   const origins = [receipt.date_field, receipt.price_field, ...symbolAliases, ...exchangeAliases];
   for (const column of columns) {
     const origin = acquiredColumnOrigin(column);
-    if (!origin || !origins.some(field => field === origin)) continue;
+    if (!origin || (!origins.some(field => field === origin) && !declarationNames.includes(origin.toLowerCase()))) continue;
     if (fields.has(origin)) return;
     fields.set(origin, column.id);
   }
   if (new Set(fields.values()).size !== fields.size || (receipt.delivered_count > 0
     && (!fields.has(receipt.date_field) || !fields.has(receipt.price_field) || (receipt.symbol_field && !fields.has(receipt.symbol_field))))) return;
   return fields;
+}
+
+function presentedRowsAgree(receipt: DailyPriceReceipt, { columns, rows }: Pick<WidgetDataset, 'columns' | 'rows'>,
+  provenance: DatasetProvenance, omitted: readonly string[]): boolean {
+  const acquired = capturedCoordinates(receipt, provenance);
+  if (!acquired || rows.length !== acquired.length - omitted.length) return false;
+
+  const fields = acquiredFields(receipt, columns);
+  if (!fields) return false;
+
+  const remaining = new Set(acquired.map(coordinateId));
+  for (const id of omitted) remaining.delete(id);
+  const denominations: Denominations = new Map();
+  const declarations = [...fields.keys()].filter(origin => declarationNames.includes(origin.toLowerCase()));
+  for (const row of rows) {
+    if (row.groupPath !== undefined || !record(row.values)) return false;
+    const read = (origin: string) => {
+      const field = fields.get(origin);
+      if (field === undefined || !Object.hasOwn(row.values, field)) return undefined;
+      return row.cellErrors?.[field] ? false : row.values[field];
+    };
+    const point = readObservation(receipt, read);
+    if (!point || !remaining.delete(coordinateId(point))
+      || !declarationsAgree(point[0], declarations.map(key => [key, read(key)]), denominations)) return false;
+  }
+  return remaining.size === 0;
 }
 
 const parameters = ['provider', 'symbol', 'exchange', 'start_date', 'end_date', 'interval'] as const;
@@ -196,7 +241,7 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
     ...routes(['/api/v1/eodhd/equity/price/historical', '/api/v1/eodhd/etf/historical'], 'eodhd'),
   ],
   coordinates: () => [],
-  acquiredColumnsAgree: (receipt, columns) => acquiredFields(receipt, columns) !== undefined,
+  acquiredInputAgrees: presentedRowsAgree,
   acquiredCoordinates(receipt, provenance) {
     const points = capturedCoordinates(receipt, provenance);
     return points && [{
@@ -209,28 +254,12 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
 export function readLiveDailyPriceSource(dataset: WidgetDataset): {
   receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[];
 } | undefined {
-  const { provenance, completeness, columns, rows } = dataset;
+  const { provenance, completeness } = dataset;
   if (provenance.sourceKind !== 'backend' || provenance.inputMayContainAggregates || completeness.kind !== 'unknown') return;
   const receipt = readChartSource(provenance, 'daily-price', parseDailyPriceReceipt);
   const projection = readChartSourceProjection(provenance, 'daily-price');
   if (!receipt || !projection || receipt.delivered_count !== completeness.acquiredRowCount) return;
-  const acquired = capturedCoordinates(receipt, provenance);
-  if (!acquired || rows.length !== acquired.length - projection.omitted.length) return;
-
-  const fields = acquiredFields(receipt, columns);
-  if (!fields) return;
-
-  const remaining = new Set(acquired.map(coordinateId));
-  for (const omitted of projection.omitted) remaining.delete(omitted);
-  for (const row of rows) {
-    if (row.groupPath !== undefined || !record(row.values)) return;
-    const point = readObservation(receipt, origin => {
-      const field = fields.get(origin);
-      if (field === undefined || !Object.hasOwn(row.values, field)) return undefined;
-      return row.cellErrors?.[field] ? false : row.values[field];
-    });
-    if (!point || !remaining.delete(coordinateId(point))) return;
-  }
+  if (!presentedRowsAgree(receipt, dataset, provenance, projection.omitted)) return;
   return {
     receipt, scope: { start: receipt.start_date, end: receipt.end_date, interval: receipt.interval },
     symbols: [...receipt.symbols],

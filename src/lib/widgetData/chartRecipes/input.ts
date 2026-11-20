@@ -93,6 +93,8 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
   return finishPrices(scope, indexed, omitted, notes);
 }
 
+export const observedReturnScope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
+
 /** Live evidence establishes an acquired window for return summaries alone. */
 export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
   const live = readLiveDailyPriceSource(dataset);
@@ -112,7 +114,7 @@ export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBin
     .map((id): PriceCoordinate => JSON.parse(id));
   const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
   if (typeof indexed === 'string') return refuse(indexed);
-  const notes = ['Observed quote-to-quote returns; exchange-session completeness unknown.'];
+  const notes = [observedReturnScope];
   if (rawOmissions.length) notes.push(`Preserved ${rawOmissions.length} price gap(s) from provider omissions.`);
   if (tableOmissions.length) notes.push(`Preserved ${tableOmissions.length} price gap(s) from table filtering.`);
   return finishPrices(scope, indexed, [...rawOmissions, ...tableOmissions], notes);
