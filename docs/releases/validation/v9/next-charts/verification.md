@@ -26,6 +26,7 @@ The app checks a local file's declarations and consistency. It cannot independen
 | Reviewed family group before paired source fix | `0c43dd6178f87e72ff1f521af68b0490966c02e7` |
 | Earlier full-client run before the Parameters amendment | `dc97414184f803af7e4ba6e5742a10e2478e8ebb`, two Chromium theme polls corrected at `ef23229b` |
 | Subsequent focused backend correction | `94e5860093d34c02d3445cc429a7c38f433d66d0` |
+| Whole-branch review and subsequent source fix | `9bafd2f4c6ae9044da70a1a1604326a3686365c9` reviewed, `e16783c6781646befb875934defc8aed4023241d` corrected |
 | Provider baseline | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | Canonical provider | `f8f0166603f0b59f3f879b704b23582bd893e67d`, distribution 9.0.1 |
 | Canonical root / Docker vendor tree | `aad6d9c74450cfc5ae9f7fa38c4697b85f58e93c`, 149 tracked paths |
@@ -103,15 +104,29 @@ The seven selected Chromium cases passed on each table engine. A real ETF refres
 
 The next scoped correction passed the 149 ChartRenderer and linked-card unit tests, typecheck, lint and scrub. Six Chromium cases passed on each table engine. The new case forces a fractional overlay surface, fails a real File refresh, and verifies that equal scroll and viewport dimensions leave the existing Plotly node in zoom mode. An actual touch drag zooms it. Reducing the viewport height makes an actual swipe scroll the old admitted SVG at its original size. Restoring the viewport restores touch zoom. Unit coverage also checks genuine horizontal overflow and full-precision measurements.
 
+## Final source handoff correction at `e16783c6`
+
+The independent whole-branch reproduction on `9bafd2f4` observed an actual TSLA request after an un-run edit and a tab switch. The new regression failed on that GET. The corrected two-tab scenario recorded four AAPL GETs through refreshes, navigation in both directions and draft reversion. Explicit Run then sent TSLA. Only the current owner's completed response admitted 33.25×. Existing and new hold tests covered relative wire dates, the landed fiscal quarter, explicit Run while a year was pending and a dropped intent across remounts. A separate real-HTTP sequence checked dashboard, card, endpoint replacement and disposal. The focused parent, store, hook, worker-integration and HTTP suites passed 885 tests in 11 files during development.
+
+| Gate on the corrected product | Result |
+|---|---|
+| Full client, `pnpm test:run` | 10,173 passed in 543 files, 47 opt-in tests skipped in seven files. Duration 52.10 s. Existing React act and jsdom canvas diagnostics. |
+| Web, `pnpm test:web` | 57 passed, zero skips or failures. The rejected-authentication case produced its expected diagnostic. |
+| `pnpm typecheck`, `pnpm lint`, `pnpm scrub` | All exited 0. Typecheck and lint emitted no diagnostics. Scrub and header checks reported clean. |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap` | 3,983 modules in 10.94 s. Existing Vite mixed-import and large-chunk warnings. |
+| Chromium with the TypeScript and compiled Rust table engines | 9/9 per engine, one worker, zero retries, skips or failures. TypeScript took 19.2 s and Rust took 20.0 s. |
+
+The Chromium selection exercised source-owned requests for KPI, ownership, ETF and news, fresh acquisition on import, a stale parent alert, an exchange-calendar closure, the fiscal label following an issuer, and backend Statement rows. It used the `linked-kpi`, `ownership-snapshot`, `etf-sunburst`, `news-calendar`, `expressions`, `periods` and `statement-clean-v5` specs under `e2e/`. The existing provider/image qualification applies to the identical provider and Docker heads. The final scoped independent review of the client correction is pending.
+
 ## Bundle cost
 
-Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The measured Parameters implementation at `caf36e08` contains 15 assets. The Parameters change adds 2,991 raw and 1,192 gzip bytes relative to the previous measured paired candidate.
+Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The final source-ownership correction at `e16783c6` contains 15 assets and adds 614 raw and 150 gzip bytes relative to the reviewed `9bafd2f4` build. The earlier Parameters implementation at `caf36e08` totaled 8,581,579 raw and 2,696,078 gzip bytes.
 
 | JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
 |---|---:|---:|---:|
 | HelpDialog | 732,146 / 246,573 | 751,263 / 253,051 | 19,117 / 6,478 |
-| MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,438 | 0 / 0 |
-| index | 3,515,697 / 1,136,886 | 3,740,890 / 1,210,252 | 225,193 / 73,366 |
+| MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,434 | 0 / -4 |
+| index | 3,515,697 / 1,136,886 | 3,741,412 / 1,210,472 | 225,715 / 73,586 |
 | kpi.worker | 0 / 0 | 57,604 / 18,478 | 57,604 / 18,478 |
 | lightweight-charts.production | 180,254 / 57,062 | 180,254 / 57,062 | 0 / 0 |
 | module | 77,311 / 27,623 | 77,311 / 27,623 | 0 / 0 |
@@ -124,7 +139,7 @@ Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript fil
 | table.worker | 274,519 / 86,350 | 322,028 / 100,556 | 47,509 / 14,206 |
 | xlsx 1 | 499,905 / 161,705 | 499,905 / 161,705 | 0 / 0 |
 | xlsx 2 | 499,909 / 161,707 | 499,909 / 161,707 | 0 / 0 |
-| Total | 8,041,112 / 2,519,860 | 8,581,579 / 2,696,078 | 540,467 / 176,218 |
+| Total | 8,041,112 / 2,519,860 | 8,582,101 / 2,696,294 | 540,989 / 176,434 |
 
 The build added the existing Plotly package's box, sunburst and treemap registrations. The isolated production registration deltas for box and sunburst were **14,405 / 5,811** and **40,999 / 14,956** raw/gzip bytes respectively. Treemap's isolated registered-trace bundle delta was **23,547 / 7,577** bytes. Its standalone entry including shared dependencies was **766,659 / 262,526** bytes. These isolated numbers measure different builds and do not add directly to the final main chunk. Violin density uses scatter and worker calculations. There is no full Plotly bundle or version change.
 

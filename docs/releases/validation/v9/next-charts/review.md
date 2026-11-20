@@ -1,6 +1,6 @@
 # Next-chart review record
 
-**Final independent review pending.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review must also cover the common acquisition-ownership fixes, the linked Parameters amendment and the installed Docker pair.
+**The final whole-branch review found one Important issue. Its correction awaits scoped independent re-review.** The table records the independent source, builder and family integration reviews. Each family completed those reviews before the paired shipping check. The last column gives the client head accepted at each stage, in order. The final paired review covered the common acquisition ownership, linked Parameters amendment and installed Docker pair at the heads recorded below.
 
 | Family | Findings resolved during family reviews | Accepted client source / builder / integration |
 |---|---|---|
@@ -57,3 +57,9 @@ The first scoped Parameters review found three Important issues. A same-source s
 
 
 The independent re-review at `9ff0c4ba` accepted all three corrections. It found one new Important touch issue. A fitting retained plot lost drag-to-zoom when its fractional drawing dimensions were compared with the viewport's rounded client dimensions. The second follow-up compares rounded pixels for touch overflow while keeping the full measured dimensions for worker checks. Scoped re-review and final whole-group review are pending.
+
+## Final whole-branch review and source correction
+
+The scoped Parameters review accepted the fractional touch correction at `9bafd2f4` with no new findings. The subsequent independent whole-branch review covered BDOBB `9bafd2f4c6ae9044da70a1a1604326a3686365c9`, EODHD `f8f0166603f0b59f3f879b704b23582bd893e67d` and Docker `a0efab23ab2be34b4a3b15e5641aa39d3a42df59`. It found one new Important issue (I1), zero Critical and zero additional new Minor findings. Its probe on a two-tab workspace recorded a TSLA GET and displayed 33.25× from a TSLA edit the user had never run.
+
+BDOBB `e16783c6781646befb875934defc8aed4023241d` carries the last committed backend question across the visible card and headless source runner. Real HTTP regressions exercise navigation in both directions, the resolved wire, fiscal and calendar holds, stale completions, an un-run revert, explicit Run, source replacement and disposal. Independent scoped re-review of this correction is pending. The prior chart readiness and recorded Minor dispositions continue to apply.

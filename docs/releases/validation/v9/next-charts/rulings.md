@@ -41,3 +41,9 @@ A measured plot that remains eligible after its source refresh fails keeps the w
 
 
 Touch overflow compares the retained drawing and the viewport in rounded CSS pixels. A fitting retained plot keeps drag-to-zoom. A smaller viewport lets touch swipe scroll the same admitted drawing. Worker measurements retain their fractional dimensions.
+
+## A backend source moving between tabs
+
+A Run-button table keeps its committed question while the same dashboard and source card pass between the visible card and the headless runner. A normal mount refresh can repeat the committed GET. Calendar-relative values still require Run when their resolved wire moves. A pending fiscal lookup can adopt its landed year end only if the original intent still matches. A changed Run retires the previous request before the replacement can issue a GET.
+
+A genuinely different backend producer uses the existing first-acquisition policy for its own inputs. Removing or repurposing the source card, or disposing the dashboard, retires the saved question. These boundaries keep a fresh source usable and prevent a tab switch from spending a request on an un-run edit. [Verification](verification.md)
