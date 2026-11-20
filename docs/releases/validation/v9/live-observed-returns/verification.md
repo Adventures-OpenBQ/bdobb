@@ -46,8 +46,12 @@ MCD.US has one dated invalid adjusted price. AAPL.US has one exact repeat.
 The same captured values yield seven and nine pairs, respectively. The
 standard equity and ETF aliases used the same fetcher registrations and
 returned the same rows in the separately installed local canonical runtime
-with OpenBB Core 2.0.1 and Platform API 1.3.6. The Docker image serves
-the mirrors with Core and Platform API 2.0.1. [Installed mirror capture](../../../../../e2e/fixtures/installed-observed-returns/deterministic-sdk.json) · [Standard alias capture](../../../../../e2e/fixtures/installed-observed-returns/canonical-standards.json)
+with a stubbed SDK and OpenBB Core 2.0.1. In that runtime,
+`openbb-equity==1.6.2`, `openbb-etf==1.6.2` and
+`openbb-platform-api==1.3.6` each declare `openbb-core>=1.6.10,<2.0.0`.
+The standard routes were observed outside those declared bounds. The
+dependency-consistent installation verified by `pip check` is the Docker
+image with the two EODHD mirrors and Core and Platform API 2.0.1. [Installed mirror capture](../../../../../e2e/fixtures/installed-observed-returns/deterministic-sdk.json) · [Standard alias capture](../../../../../e2e/fixtures/installed-observed-returns/canonical-standards.json)
 
 The installed tests verify plain and opted-in row equality on clean data and
 check that plain empty data stays HTTP 204 while an opted-in empty array
@@ -60,7 +64,10 @@ The independent HTTPS responses contained 29 unique positive adjusted
 prices and 28 adjacent pairs per listing. In the qualified image, the
 equity mirror's opted-in GET made one real SDK call per listing. The
 SDK arrays matched the independent responses, and the selected table
-dates and adjusted closes matched them exactly.
+dates and adjusted closes matched them exactly. The capture received
+HTTP 200, validated the data and wrote the fixture. At process exit, an
+aiohttp shutdown callback raised an ignored `RuntimeError` because its
+future was attached to a different event loop.
 
 | Listing | Direct response bytes, SHA-256 | First and last adjusted close |
 | --- | --- | --- |
@@ -101,6 +108,9 @@ CA file. [Certifi advisory](https://github.com/certifi/python-certifi/security/a
 | Installed `pytest` and parity | Network-disabled v3 container, 24 tests and 33 subtests passed with no skips. The run reported one existing OpenBB aiohttp inheritance deprecation. Installed package and RECORD hash comparisons passed. |
 | Host Docker `pytest tests v3/tests` | 121 passed and 15 subtests passed. The first collection attempt lacked PyYAML. The rerun used test-only PyYAML 6.0.3. |
 | Canonical and vendor parity | 151 byte comparisons passed and the source pin test passed. |
+| Canonical provider suite inherited from Task 1 | 948 passed. One optional ArcticDB cache test was skipped. |
+| Canonical selector preflight | The nested selector passed for both mirrors. A subsequent assertion requiring an explicit widget override failed in both cases and was withdrawn after confirming that the generated default supplies `data.dataKey = "results"`. |
+| Public image capture | HTTP 200, content assertions passed and fixture written. An aiohttp process-exit callback then raised an ignored cross-event-loop `RuntimeError`. |
 | Chromium 151.0.7922.34 with TypeScript and compiled Rust | Five replay tests passed per engine, zero retries or skips. The five Rust runs loaded the actual WASM binary and TypeScript loaded none. The binary SHA-256 was `eb55d3eea863ce87460e430d638e6a5db961c99370708429adac0be349c111fa`. |
 | Client typecheck, targeted lint and scrub | Passed. |
 
