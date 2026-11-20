@@ -259,3 +259,15 @@ it('admits single-listing rows without a symbol field, including a counted empty
     receipt: empty, symbols: ['AAPL.US'], rawOmissions: [],
   });
 });
+
+it('requires a delivered or omitted coordinate before counting an exact duplicate', () => {
+  const listing = { symbol: 'AAPL.US', raw_count: 1, normalized_count: 0, delivered_count: 0, duplicate_count: 1, omissions: [] };
+  const receipt = { ...dailyPriceReceipt, raw_count: 1, normalized_count: 0, delivered_count: 0,
+    symbols: ['AAPL.US'], symbol_field: null, listings: [listing] };
+  const request = context(dailyPricePaths[2], { ...dailyPriceParameters, symbol: 'AAPL.US' });
+  const datedOmission = { ...receipt, raw_count: 2, listings: [
+    { ...listing, raw_count: 2, omissions: [['AAPL.US', '2026-10-14']] },
+  ] };
+  expect(capture(datedOmission, [], request)).toEqual({ 'daily-price': datedOmission });
+  expect(capture(receipt, [], request)).toBeUndefined();
+});

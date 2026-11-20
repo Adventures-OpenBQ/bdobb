@@ -58,8 +58,11 @@ function listingFacts(value: unknown, symbol: string, start: string, end: string
     || !array(value.omissions) || !value.omissions.every(
       (point): point is PriceCoordinate => coordinate(point, start, end) && point[0] === symbol,
     )) return false;
-  const accounted = value.normalized_count + value.duplicate_count + value.omissions.length;
-  return Number.isSafeInteger(accounted) && accounted <= value.raw_count && (allowUnaccounted || accounted === value.raw_count)
+  const coordinates = value.normalized_count + value.omissions.length;
+  const accounted = coordinates + value.duplicate_count;
+  // In a safe ledger, the first occurrence is delivered or recorded as a dated omission.
+  const complete = accounted === value.raw_count && (value.duplicate_count === 0 || coordinates > 0);
+  return Number.isSafeInteger(accounted) && accounted <= value.raw_count && (allowUnaccounted || complete)
     && new Set(value.omissions.map(([, date]) => date)).size === value.omissions.length;
 }
 
