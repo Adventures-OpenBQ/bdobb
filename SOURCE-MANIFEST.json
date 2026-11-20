@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "aec9f5019f44c3d79ba60342f46d03c1c427642b",
-  "sourceId": "0f972a64db90d4bb0fdc42ccaacb686bffb6886c9575b87ebd2bca4dbd2f4a3b",
+  "baseCommit": "ed9eb76c22b2102a271ea07920e84da02b5abd8e",
+  "sourceId": "fe0f64d1168eabb4b69d518d4e07a9b4b6472ef18c084b90d4e01fbf4ff5059b",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -10416,7 +10416,7 @@
       "type": "file",
       "mode": 420,
       "size": 4507,
-      "sha256": "5b607d99dbd60428c64f379af668e0d639ce949f29e3e9c37aaad431cf87cc62"
+      "sha256": "558646f8c2fadbad66ae86dbc8c8e9aa8c188cc504525fa96786af4d8d95a9c3"
     },
     {
       "path": "playwright.config.ts",
@@ -11431,7 +11431,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "9d59db6ae6795cc4a3cf8ab7e3af5bdc5127dff4e4751f309f84e246470440c9"
+      "sha256": "308ecad49bc8e6e70d4a90f3636c2e2b27728f78a91afae086bde183cabf71d7"
     },
     {
       "path": "source_bundle.py",
@@ -18353,15 +18353,15 @@
       "path": "web/.env.example",
       "type": "file",
       "mode": 420,
-      "size": 547,
-      "sha256": "f842ce4806de66b626aede4db283f0a09a9b57c07733543d5c5eab205279a54a"
+      "size": 653,
+      "sha256": "f40717c4ce911b3794fe107aaefa62d426187fb213855602b16a0b49ee4341ca"
     },
     {
       "path": "web/README.md",
       "type": "file",
       "mode": 420,
-      "size": 18359,
-      "sha256": "d0e9283b6c2b595dd929149d115de3c04e7d754d1021ef35d87a860e97fcfcdf"
+      "size": 18669,
+      "sha256": "3279523b511d75e2106f6c4da1e932c0f209070fdb5a56960fa8797a0d14c8f9"
     },
     {
       "path": "web/auth.mjs",
@@ -18388,8 +18388,8 @@
       "path": "web/config.mjs",
       "type": "file",
       "mode": 420,
-      "size": 3677,
-      "sha256": "8dc3e08c7dc8d8a3c8bee949d818c4f97a57902ae96490a20bbca2f3688c944d"
+      "size": 3915,
+      "sha256": "ee7a1e419bbcc00a4d189baf6a5c688195015157bb52aa34a1c2eac4b0e5b5de"
     },
     {
       "path": "web/control-admission.test.mjs",
@@ -18424,7 +18424,7 @@
       "type": "file",
       "mode": 420,
       "size": 267,
-      "sha256": "21e32fe963939f93bf182f894f5ebf779be87fd463814484cac3278e4b990774"
+      "sha256": "a4d3d397f51a3464078b2b9ba98b258bdb769dfbbae4341f9d966a466e56d6c6"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
@@ -18437,15 +18437,15 @@
       "path": "web/security.test.mjs",
       "type": "file",
       "mode": 420,
-      "size": 54866,
-      "sha256": "bac0a52d09fd2f24fe775527a3a9f81a591fb26f992691ca9b5f9561a7d1a28d"
+      "size": 57949,
+      "sha256": "1d95fb7d2ea391538d15e9829b11498867545e34f2fadaff52aeac99b04cf35e"
     },
     {
       "path": "web/server.mjs",
       "type": "file",
       "mode": 420,
-      "size": 23196,
-      "sha256": "38fff923f836f84d22556b2d36961c9306ba083c37726ae52137ee2608790a68"
+      "size": 23434,
+      "sha256": "747e4e0169d0363ef673b68e21c8c4c69581735c0e2ae90abe24c468a1051f53"
     },
     {
       "path": "web/ssrm-routes.test.mjs",
