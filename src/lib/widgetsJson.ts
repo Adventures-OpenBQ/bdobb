@@ -158,6 +158,9 @@ function toParam(p: Record<string, unknown>): WidgetParam | null {
   if (typeof p.description === "string") param.description = p.description;
   if (typeof p.show === "boolean") param.show = p.show;
   if (typeof p.optional === "boolean") param.optional = p.optional;
+  // SDK catalogues also declare rows directly on a flat params list.
+  // Leave row zero implicit, as for unpositioned controls and nested rows.
+  if (typeof p.row === "number" && Number.isSafeInteger(p.row) && p.row > 0) param.row = p.row;
   const options = toOptions(p.options);
   if (options) param.options = options;
   if (typeof p.optionsEndpoint === "string") param.optionsEndpoint = p.optionsEndpoint;
@@ -207,7 +210,11 @@ function toParams(value: unknown): { params: WidgetParam[]; dropped: number; wro
       for (const entry of item) {
         total++;
         const p = isRecord(entry) ? toParam(entry) : null;
-        if (p) params.push(row === 0 ? p : { ...p, row });
+        if (p) {
+          // Organized arrays declare their own position, including row zero.
+          if (row === 0) delete p.row;
+          params.push(row === 0 ? p : { ...p, row });
+        }
       }
       row++;
       continue;

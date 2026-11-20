@@ -163,6 +163,7 @@ import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { __failPath, __read, __readBytes, __reset, __seed, __writes } from "../test/memfs";
 import { __resetLoggerForTests, logInfo } from "../lib/logger";
 import { DEFAULT_SETTINGS } from "../lib/settingsFile";
+import { normalizeWidgets } from "../lib/widgetsJson";
 import { NOTHING_TO_TRANSPOSE } from "../lib/transpose";
 import type { DashboardCard, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
@@ -658,7 +659,7 @@ describe("WidgetCard header controls", () => {
   });
 
   it("keeps only row zero in the compact title and exposes later rows in the parameter card", async () => {
-    register({params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "start", label: "Start", type: "date", row: 1}]});
+    register(normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "start", label: "Start", type: "date", row: 1}]}}, "b1").widgets[0]);
     useWidgetData.mockReturnValue({status: "ready", data: [], retry: vi.fn()});
     useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
     const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);

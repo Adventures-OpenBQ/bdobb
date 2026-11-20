@@ -643,6 +643,32 @@ describe("issue reporting", () => {
     expect(result.issues).toEqual([]);
   });
 
+  it("preserves explicit SDK parameter rows in a flat catalogue", () => {
+    const result = normalizeWidgets({ffiec: {name: "Financial report", endpoint: "/report", params: [
+      {paramName: "rssd_id"}, {paramName: "report_type", row: 0},
+      {paramName: "section", row: 1}, {paramName: "period", row: 2},
+    ]}}, "b1");
+    expect(result.widgets[0].params.map((p) => [p.paramName, p.row ?? 0])).toEqual([
+      ["rssd_id", 0], ["report_type", 0], ["section", 1], ["period", 2],
+    ]);
+    expect(result.issues).toEqual([]);
+  });
+
+  it("keeps organized array positions authoritative over conflicting explicit rows", () => {
+    const result = normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [
+      [{paramName: "first", row: 2}], [{paramName: "second", row: 0}],
+    ]}}, "b1");
+    expect(result.widgets[0].params.map((p) => p.row ?? 0)).toEqual([0, 1]);
+    expect(result.widgets[0].params[0]).not.toHaveProperty("row");
+  });
+
+  it("ignores malformed explicit rows without dropping usable controls", () => {
+    const invalid = [-1, 1.5, Infinity, NaN, "1", true, Number.MAX_SAFE_INTEGER + 1];
+    const result = normalizeWidgets({w1: {name: "One", endpoint: "/a", params: invalid.map((row, i) => ({paramName: `p${i}`, row}))}}, "b1");
+    expect(result.widgets[0].params).toHaveLength(invalid.length);
+    expect(result.widgets[0].params.every((p) => p.row === undefined)).toBe(true);
+  });
+
   it("keeps a flat params list on row 0 and records no row at all", () => {
     const raw = { w1: { name: "One", endpoint: "/a", params: [{ paramName: "a" }, { paramName: "b" }] } };
     const params = normalizeWidgets(raw, "b1").widgets[0].params;
