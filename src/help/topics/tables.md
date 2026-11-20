@@ -301,13 +301,19 @@ cost; large expansions can still be expensive. Preview never changes the active 
 activates only after a successful guarded durable save. Cancellation, stale source
 changes and failed saves retain the draft and last valid result.
 
-Labels, section/line ordering, visibility and bound formula definitions are local
-overrides. Each section has a **Visible** control; hidden sections mark child lines
-as **Hidden by section**, retaining their individual visibility choices. Origin
-badges distinguish local settings from template defaults. Labels you type in the Statement panel are limited to 4096 characters.
-Resetting overrides preserves source mappings and Page selections. Renaming or
-reordering does not rebind a formula. Formula overrides keep their stable formula
-ID and explicit AST references.
+Labels, section and line order, line placement, visibility and bound formula
+definitions are local overrides. Use a line's **Section** picker to move it to
+the end of another section. The up and down arrows reorder it within that
+section. Hidden sections mark their displayed lines as **Hidden by section**
+and retain each line's visibility choice. Origin badges distinguish local
+settings from template defaults. Labels are limited to 4096 characters.
+
+**Reset line** returns a moved line to its template section. **Reset section**
+restores section settings and keeps per-line placements. **Reset all
+overrides** clears all placements. Resets preserve source mappings and Page
+selections. Line identities and formula bindings stay the same when a line
+moves. Formula overrides keep their stable formula ID and explicit AST
+references.
 
 The embedded snapshot is pinned and read-only. There is no newer bundled release
 currently. **Explicit template update** accepts a supplied validated snapshot for

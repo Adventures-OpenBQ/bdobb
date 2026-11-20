@@ -1,0 +1,60 @@
+{
+  "rows": [
+    {
+      "symbol": "EXAMPLE.US",
+      "share_class": "Class-A",
+      "reported_insiders": 33.3,
+      "reported_institutions": 0.421875,
+      "reported_float": 22.125
+    }
+  ],
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "ownership",
+        "origin": "acquired-snapshot",
+        "issuer": "EXAMPLE.US",
+        "share_class": "Class-A",
+        "retrieved_at": "2026-11-20T04:16:46Z",
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "unit_conflict": false,
+          "date_conflict": false,
+          "partition_conflict": false
+        },
+        "raw_count": 1,
+        "normalized_count": 1,
+        "delivered_count": 1,
+        "field_origins": {
+          "insiders": "reported_insiders",
+          "institutions": "reported_institutions",
+          "freeFloat": "reported_float"
+        },
+        "measures": {
+          "insiders": {
+            "unit": "percent-points",
+            "basis": null,
+            "as_of": null
+          },
+          "institutions": {
+            "unit": "fraction",
+            "basis": "shares-outstanding",
+            "as_of": "2026-09-30"
+          },
+          "freeFloat": {
+            "unit": "percent-points",
+            "basis": "shares-outstanding",
+            "as_of": "2026-10-31"
+          }
+        },
+        "partition": {
+          "status": "unavailable"
+        }
+      }
+    ]
+  }
+}

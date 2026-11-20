@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-use super::StatementIntent;
+use super::{displayed_sections, StatementIntent};
 use crate::contract::*;
 use std::collections::BTreeSet;
 const MAX_BYTES: usize = 1024 * 1024;
@@ -51,7 +51,8 @@ pub fn statement_presentation(
     layout: &Layout,
 ) -> Result<WireValue, Diagnostic> {
     let o = &i.overrides;
-    let template_ids: Vec<String> = i.template.sections.iter().map(|s| s.id.clone()).collect();
+    let displayed = displayed_sections(i);
+    let template_ids: Vec<String> = displayed.iter().map(|s| s.id.clone()).collect();
     let section_ids = ordered(o.section_order.as_ref(), &template_ids);
     if section_ids.len() > 256 {
         return Err(invalid());
@@ -59,12 +60,7 @@ pub fn statement_presentation(
     let label = |id: &String, fallback: &String| text(o.labels.get(id).unwrap_or(fallback));
     let (mut seen, mut count, mut sections) = (BTreeSet::new(), 0, vec![]);
     for id in section_ids {
-        let section = i
-            .template
-            .sections
-            .iter()
-            .find(|s| &s.id == id)
-            .ok_or_else(invalid)?;
+        let section = displayed.iter().find(|s| &s.id == id).ok_or_else(invalid)?;
         if !seen.insert(id) {
             return Err(invalid());
         }

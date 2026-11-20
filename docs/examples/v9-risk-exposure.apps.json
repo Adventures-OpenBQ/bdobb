@@ -1,0 +1,290 @@
+[
+  {
+    "name": "Risk and ETF examples",
+    "description": "Four linked charts explore daily returns, a watchlist and the reported weights of a fictional ETF. Requires the risk and ETF charts on BDOBB 9.0.0 or later. Connect the companion v9-risk-exposure fixture directory before importing.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "risk-examples": {
+        "id": "risk-examples",
+        "name": "Risk and exposure",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 27,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Return distribution"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 27,
+            "w": 40,
+            "h": 23,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Watchlist panels"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 50,
+            "w": 40,
+            "h": 28,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Holdings concentration"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 27,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Equity exposure"
+                }
+              }
+            }
+          },
+          {
+            "i": "risk_demo_prices",
+            "x": 0,
+            "y": 78,
+            "w": 20,
+            "h": 13,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Daily adjusted prices"
+                }
+              }
+            }
+          },
+          {
+            "i": "risk_demo_holdings",
+            "x": 20,
+            "y": 78,
+            "w": 20,
+            "h": 13,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Fund holdings"
+                }
+              }
+            }
+          },
+          {
+            "i": "risk_demo_sectors",
+            "x": 0,
+            "y": 91,
+            "w": 20,
+            "h": 13,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Sector weights"
+                }
+              }
+            }
+          },
+          {
+            "i": "risk_demo_regions",
+            "x": 20,
+            "y": 91,
+            "w": 20,
+            "h": 13,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Region weights"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "risk-examples"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "risk-examples",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "return-distribution",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "return-distribution",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbol": "ALDER",
+                  "bins": 5
+                }
+              },
+              "sourceRef": "c4"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "risk-examples",
+            "index": 1,
+            "extras": {
+              "linkedChart": {
+                "type": "small-multiples",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "small-multiples",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "CEDAR",
+                    "ALDER",
+                    "BIRCH"
+                  ]
+                }
+              },
+              "sourceRef": "c4"
+            }
+          },
+          {
+            "ref": "c2",
+            "tab": "risk-examples",
+            "index": 2,
+            "extras": {
+              "linkedChart": {
+                "type": "etf-pareto",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "etf-pareto",
+                  "fields": {
+                    "holding": "symbol",
+                    "label": "name",
+                    "weight": "weight"
+                  }
+                }
+              },
+              "sourceRef": "c5"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "risk-examples",
+            "index": 3,
+            "extras": {
+              "linkedChart": {
+                "type": "etf-exposure",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "etf-exposure",
+                  "mode": "sector",
+                  "fields": {
+                    "category": "sector",
+                    "weight": "weight"
+                  }
+                }
+              },
+              "sourceRef": "c6"
+            }
+          },
+          {
+            "ref": "c4",
+            "tab": "risk-examples",
+            "index": 4,
+            "extras": {}
+          },
+          {
+            "ref": "c5",
+            "tab": "risk-examples",
+            "index": 5,
+            "extras": {}
+          },
+          {
+            "ref": "c6",
+            "tab": "risk-examples",
+            "index": 6,
+            "extras": {}
+          },
+          {
+            "ref": "c7",
+            "tab": "risk-examples",
+            "index": 7,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

@@ -25,7 +25,7 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import { useSettingsStore } from "../stores/settingsStore";
 import { DEFAULT_SETTINGS } from "./settingsFile";
 import type { AuthLocation, BackendConfig, WidgetDef } from "./types";
-import { backend as makeBackend, widget as makeWidget } from "../test/fixtures";
+import { backend as makeBackend, card as makeCard, widget as makeWidget } from "../test/fixtures";
 import cmes from "./calendars/vendor/conformance/CMES-2026-01.json";
 import { bundledCalendar } from "./calendar";
 import { clearCalendarBundles } from "./calendars/bundles";
@@ -317,6 +317,43 @@ describe("fetchWidgetData over real HTTP", () => {
       now: new Date("2026-01-05T15:00:00Z"), calendars: {},
     })).rejects.toThrow();
     expect(server.requests.filter((r) => r.path === "/equity/price")).toHaveLength(0);
+  });
+
+  it("keeps a declared snapshot receipt when a table selects its rows", async () => {
+    const envelope = { completeness: "paged", receipt: { interval: "1d" }, rows: [{ adjusted_close: 9 }] };
+    server = await startMockServer({ "/equity/price": envelope });
+    const b = { ...backend, baseUrl: server.url };
+    expect(await fetchWidgetData(b, widget({ type: "table", dataKey: "rows" }), {})).toEqual(envelope);
+  });
+
+  it.each(["paged", "plain", "unreceipted-page", "unreceipted-complete", "complete", "bounded"] as const)("uses the %s yield-curve scope when a table selects results.rows", async kind => {
+    const rows = [{ date: "2026-01-09", maturity: "year_2", rate: 0.03 }];
+    const results = kind === "plain" ? { rows } : kind.startsWith("unreceipted") ? { rows, completeness: kind === "unreceipted-page" ? "paged" : "complete" }
+      : { rows, completeness: kind, receipt: { start_date: "2026-01-01", end_date: "2026-01-31" } };
+    server = await startMockServer({ "/equity/price": { results } });
+    const selected = await fetchWidgetData({ ...backend, baseUrl: server.url }, widget({ type: "table", dataKey: "results.rows" }), {});
+    const { tableExecutionStore } = await import("../stores/tableExecutionStore");
+    const { buildYieldCurve } = await import("./widgetData/chartRecipes/yieldCurve");
+    const card = makeCard({ id: "yield-source" });
+    const dashboard = { id: "yield-example", name: "Example", tabs: [{ id: "tab", name: "Tab", cards: [card] }] };
+    tableExecutionStore.syncDashboard(dashboard);
+    try {
+      tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest(dashboard.id, card), selected);
+      const acquired = await tableExecutionStore.backendSource(dashboard.id, card).acquire(new AbortController().signal);
+      if (acquired.kind !== "dataset") throw new Error("Expected a backend dataset");
+      const recipe = buildYieldCurve(acquired.dataset, {
+        version: 1, kind: "yield-curve", fields: { date: "date", maturity: "maturity", rate: "rate" },
+      }, { theme: "light", maxDecimals: 2, today: "2026-02-01" });
+      const eligible = kind === "complete" || kind === "bounded";
+      expect(acquired.dataset.rows.map(row => row.values)).toEqual(rows);
+      expect(recipe).toMatchObject(eligible ? { ok: true, figure: { data: [{ x: [24], y: [0.03] }] } }
+        : { ok: false, refused: true, message: expect.stringContaining(kind === "plain" || kind === "unreceipted-complete" ? "unknown" : "paged") });
+      if (!eligible) expect(acquired.dataset.completeness.totalRowCount).toBeUndefined();
+      if (kind.startsWith("unreceipted")) expect(acquired.dataset.provenance.receipt).toBeUndefined();
+      if (kind === "plain") expect(selected).toEqual(rows);
+    } finally {
+      tableExecutionStore.disposeDashboard(dashboard.id);
+    }
   });
 
   it("hands a keys-type widget the whole envelope even when it declares a dataKey", async () => {
@@ -1256,4 +1293,90 @@ describe("obbjectWarnings", () => {
     expect(obbjectWarnings([1, 2])).toEqual([]);
     expect(obbjectWarnings(null)).toEqual([]);
   });
+});
+
+it('dotted_selector_retains_envelope_evidence', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const path = '/api/v1/eodhd/equity/fundamental/dividends';
+  const results = { rows: [dividendRow] };
+  const body = { results, extra: { results_metadata: { chart_evidence: dividendEvidence } } };
+  const server = await startMockServer({ [path]: body });
+  try {
+    const b = { ...backend, baseUrl: server.url };
+    const w = widget({ type: 'table', endpoint: path, dataKey: 'results.rows' });
+    const params = { chart_source: 'true', symbol: 'SHEL', exchange: 'LSE', start_date: '2026-01-01', end_date: '2026-06-30' };
+    const context = vi.fn();
+    expect(await fetchWidgetData(b, w, params, undefined, undefined, undefined, context)).toEqual([dividendRow]);
+    expect(context.mock.lastCall?.[0]).toMatchObject({ financialEvidence: dividendEvidence });
+    await fetchWidgetData(b, w, { ...params, start_date: '2026-01-02' }, undefined, undefined, undefined, context);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+    await fetchWidgetData(b, w, { ...params, chart_source: 'false' }, undefined, undefined, undefined, context);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+    Object.assign(results, { completeness: 'paged' });
+    expect(await fetchWidgetData(b, w, params, undefined, undefined, undefined, context)).toEqual(results);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+  } finally {
+    await server.close();
+  }
+});
+
+it.each([
+  [4, 3, []],
+  [4, 4, []],
+  [4, 3, ['unassignable_identity']],
+  [3, 3, ['unassignable_identity']],
+  [3, 3, ['unit_conflict']],
+  [3, 3, ['mixed_denomination']],
+] as const)('withholds a request-bound screener receipt with inconsistent cohort facts (raw_count=%d, normalized_count=%d, diagnostics=%j)', async (raw_count, normalized_count, diagnostics) => {
+  const { screenerEvidence } = await import('../test/fixtures/financialEvidence');
+  const rows = ['FIRST.US', 'SECOND.US', 'THIRD.US'].map(symbol => ({
+    symbol, exchange: 'US', currency_symbol: '$', last_day_data_date: '2026-08-28',
+  }));
+  const chart_evidence = { ...screenerEvidence, raw_count, normalized_count, delivered_count: 3, diagnostics,
+    cohorts: [{ ...screenerEvidence.cohorts[0], raw_count }] };
+  const path = '/api/v1/eodhd/equity/screener';
+  const server = await startMockServer({ [path]: { results: rows, extra: { results_metadata: { chart_evidence } } } });
+  try {
+    const context = vi.fn();
+    const b = { ...backend, baseUrl: server.url };
+    const w = widget({ type: 'table', endpoint: path, dataKey: 'results' });
+    expect(await fetchWidgetData(b, w, { chart_source: 'true', exchange: 'us' }, undefined, undefined, undefined, context)).toEqual(rows);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+  } finally {
+    await server.close();
+  }
+});
+
+vi.mock('./widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+it('dotted_selection_keeps_matched_receipt', async () => {
+  const { sourcePath, sourceResponse, sourceRows, sourceReceipt } = await import('../test/fixtures/chartSources');
+  const server = await startMockServer({ [sourcePath]: sourceResponse, '/other': sourceResponse, '/legacy': { results: {rows: sourceRows} } });
+  const acquired = vi.fn();
+  const get = (endpoint: string, params: Record<string,string>, b = { ...backend, baseUrl: server.url }) =>
+    fetchWidgetData(b, widget({ type: 'table', endpoint, dataKey: 'results.rows' }), params, undefined, undefined, undefined, acquired);
+  try {
+    const params = {symbol:'A', chart_source:'true'};
+    expect(await get(sourcePath, params)).toEqual(sourceRows);
+    expect(acquired.mock.lastCall?.[0].chartSources).toEqual({ metric: sourceReceipt });
+    for (const [path, options] of [['/other',params],[sourcePath,{...params, chart_source:'false'}],
+      [sourcePath,{...params, unexpected_scope:'subset'}], ['/legacy',params]] as const) {
+      expect(await get(path, options)).toEqual(sourceRows);
+      expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+    }
+    await get(sourcePath, params, { ...backend, baseUrl: server.url, authLocation:'query', headerName:'symbol', headerValue:'A' });
+    expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+  } finally { await server.close(); }
+});
+
+it('refuses a chart receipt when a matched URL redirected to a different source', async () => {
+  const {sourcePath,sourceResponse,sourceRows} = await import('../test/fixtures/chartSources');
+  const server = await startMockServer({[sourcePath]:{__status:302,__headers:{location:'/other'}}, '/other':sourceResponse});
+  try {
+    const context = vi.fn();
+    expect(await fetchWidgetData({...backend,baseUrl:server.url},widget({type:'table',endpoint:sourcePath,dataKey:'results.rows'}),
+      { chart_source:'true',symbol:'A' },undefined,undefined,undefined,context)).toEqual(sourceRows);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+  } finally { await server.close(); }
 });

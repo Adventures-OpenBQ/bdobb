@@ -179,6 +179,9 @@ export default defineConfig(({ mode }) => ({
   },
   // The module table worker lazily loads the file parser as a separate chunk.
   worker: { format: "es" },
+  // The ETF and market-map workers import these CommonJS geometry helpers.
+  // Discover them before the first chart request to avoid reloading the page.
+  optimizeDeps: { include: ["plotly.js/src/lib/angles.js", "plotly.js/src/traces/treemap/partition.js"] },
   build: { target: "es2022", sourcemap: true },
   test: {
     globals: true,

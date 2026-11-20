@@ -1,0 +1,93 @@
+{
+  "completeness": "complete",
+  "receipt": {
+    "fund_symbol": "CANOPY",
+    "etf_kind": "region",
+    "weight_basis": "equity-exposure",
+    "as_of": "2026-03-17",
+    "retrieved_at": "2026-03-18T12:00:00Z",
+    "unit": "fraction"
+  },
+  "rows": [
+    {
+      "country": "Alder Coast",
+      "weight": 0.16
+    },
+    {
+      "country": "Birch Valley",
+      "weight": 0.14
+    },
+    {
+      "country": "Cedar Sound",
+      "weight": 0.12
+    },
+    {
+      "country": "Dune Islands",
+      "weight": 0.1
+    },
+    {
+      "country": "Elm Ridge",
+      "weight": 0.09
+    },
+    {
+      "country": "Fern Basin",
+      "weight": 0.075
+    },
+    {
+      "country": "Grove Bay",
+      "weight": 0.065
+    },
+    {
+      "country": "Hazel Plain",
+      "weight": 0.05
+    },
+    {
+      "country": "Iris Shore",
+      "weight": 0.04
+    },
+    {
+      "country": "Juniper Cape",
+      "weight": 0.035
+    },
+    {
+      "country": "Kite Valley",
+      "weight": 0.03
+    },
+    {
+      "country": "Laurel Point",
+      "weight": 0.025
+    },
+    {
+      "country": "Maple Reach",
+      "weight": 0.02
+    },
+    {
+      "country": "North Fen",
+      "weight": 0.015
+    },
+    {
+      "country": "Oak Sound",
+      "weight": 0.012
+    },
+    {
+      "country": "Pine Coast",
+      "weight": 0.01
+    },
+    {
+      "country": "Quartz Bay",
+      "weight": 0.008
+    },
+    {
+      "country": "Reed Islands",
+      "weight": 0.004
+    },
+    {
+      "country": "Spruce Ridge",
+      "weight": 0.001
+    },
+    {
+      "country": "Willow Cape",
+      "weight": 0
+    }
+  ]
+}

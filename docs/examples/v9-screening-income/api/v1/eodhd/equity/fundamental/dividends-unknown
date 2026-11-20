@@ -1,0 +1,81 @@
+{
+  "results": [
+    {
+      "ex_dividend_date": "2026-01-12",
+      "amount": 0.125,
+      "unadjusted_amount": 0.5,
+      "currency": "GBP",
+      "frequency": "Quarterly"
+    },
+    {
+      "ex_dividend_date": "2026-03-17",
+      "amount": 0.375,
+      "unadjusted_amount": 1.5,
+      "currency": "GBP",
+      "frequency": "Special"
+    },
+    {
+      "ex_dividend_date": "2026-04-20",
+      "amount": 0.25,
+      "unadjusted_amount": 0.25,
+      "currency": "GBP",
+      "frequency": "Quarterly"
+    },
+    {
+      "ex_dividend_date": "2026-06-17",
+      "amount": 0.5,
+      "unadjusted_amount": 0.5,
+      "currency": "GBP",
+      "frequency": "Quarterly"
+    }
+  ],
+  "provider": "eodhd",
+  "warnings": null,
+  "extra": {
+    "results_metadata": {
+      "chart_evidence": {
+        "version": 1,
+        "retrieved_at": "2026-11-19T16:00:00Z",
+        "raw_count": 4,
+        "normalized_count": 4,
+        "delivered_count": 4,
+        "diagnostics": [
+          "unknown_coverage"
+        ],
+        "kind": "dividends",
+        "field_origins": {
+          "ex_dividend_date": "date",
+          "amount": "value",
+          "currency": "currency",
+          "frequency": "period"
+        },
+        "qualified_symbol": "CANOPY.US",
+        "amount_basis": "split-adjusted-current-share",
+        "requested_start": "2026-01-01",
+        "requested_end": "2026-06-30",
+        "coverage": {
+          "status": "unknown"
+        },
+        "unsafe": {
+          "invalid_ex_date": false,
+          "currency_conflict": false,
+          "unknown_payment_currency": false,
+          "instrument_conflict": false,
+          "amount_basis_conflict": false,
+          "outside_requested_window": false
+        },
+        "event_dates": [
+          "2026-01-12",
+          "2026-03-17",
+          "2026-04-20",
+          "2026-06-17"
+        ],
+        "invalid_amount_dates": [],
+        "duplicate_dates": [],
+        "payment_currencies": [
+          "GBP"
+        ]
+      }
+    }
+  }
+}

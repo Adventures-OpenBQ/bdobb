@@ -1,0 +1,116 @@
+{
+  "completeness": "partial",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "overlay",
+        "origin": "acquired-snapshot",
+        "recipe": "price-eps",
+        "series": {
+          "left": {
+            "id": "adjusted_close",
+            "basis": "splits-and-dividends-adjusted-close",
+            "unit": "money-per-share",
+            "currency": "USD",
+            "coordinate": "observation-date",
+            "period_kind": null,
+            "restated": false
+          },
+          "right": {
+            "id": "reported_diluted_eps",
+            "basis": "current-split-adjusted-diluted-fq",
+            "unit": "money-per-share",
+            "currency": "USD",
+            "coordinate": "availability-date",
+            "period_kind": "FQ",
+            "restated": true
+          }
+        },
+        "identity": {
+          "issuer": "sample/canopy-issuer",
+          "listing": "CANOPY.US",
+          "share_basis_ref": "sample/current-split-ledger"
+        },
+        "vintages": {
+          "left": "2026-11-19T22:00:00.123456Z",
+          "right": "2026-11-19T22:00:00.123456Z"
+        },
+        "preparation": {
+          "input_refs": [
+            "sample/eod",
+            "sample/issuer"
+          ],
+          "reference": "sample/prepared-pair"
+        },
+        "coordinates": {
+          "left": [
+            "2026-11-02"
+          ],
+          "right": [
+            "2026-11-02T21:02:01.123456Z"
+          ]
+        },
+        "raw_count": 2,
+        "normalized_count": 2,
+        "delivered_count": 2,
+        "retrieved_at": "2026-11-19T22:00:00.123456Z",
+        "unsafe": {
+          "identity_conflict": false,
+          "unit_conflict": false,
+          "coordinate_conflict": false,
+          "basis_conflict": false,
+          "untraced_omission": false
+        },
+        "diagnostics": []
+      }
+    ]
+  },
+  "rows": [
+    {
+      "series": "adjusted_close",
+      "date": "2026-11-02",
+      "value": 302.0205,
+      "source_value": 302.0205,
+      "unit": "money-per-share",
+      "currency": "USD",
+      "basis": "splits-and-dividends-adjusted-close",
+      "period_kind": null,
+      "restated": false,
+      "issuer": "sample/canopy-issuer",
+      "listing": "CANOPY.US",
+      "share_basis_ref": "sample/current-split-ledger",
+      "source_contract": "eodhd-eod-adjusted-close",
+      "input_ref": "sample/eod",
+      "input_vintage": "2026-11-19T22:00:00.123456Z",
+      "available_at": null,
+      "release_ref": null,
+      "session_timing": null,
+      "target_start": null,
+      "target_end": null
+    },
+    {
+      "series": "reported_diluted_eps",
+      "date": "2026-09-30",
+      "value": 1.98765,
+      "source_value": 1.98765,
+      "unit": "money-per-share",
+      "currency": "USD",
+      "basis": "current-split-adjusted-diluted-fq",
+      "period_kind": "FQ",
+      "restated": true,
+      "issuer": "sample/canopy-issuer",
+      "listing": "CANOPY.US",
+      "share_basis_ref": "sample/current-split-ledger",
+      "source_contract": "issuer-reported-diluted-fq-eps",
+      "input_ref": "sample/issuer",
+      "input_vintage": "2026-11-19T22:00:00.123456Z",
+      "available_at": "2026-11-02T21:02:01.123456Z",
+      "release_ref": "sample/earnings-release",
+      "session_timing": "after-market",
+      "target_start": "2026-07-01",
+      "target_end": "2026-09-30"
+    }
+  ]
+}

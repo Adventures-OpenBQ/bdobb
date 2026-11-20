@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { isTableSnapshotEnvelope, parseTableSnapshot } from "./tableRowValues";
 import { detectTimeColumn, rowsOf } from "./chartShapes";
 
 /**
@@ -28,6 +29,9 @@ function instantOf(value: string): number {
 
 export function dataBounds(data: unknown): { min: Date; max: Date } | undefined {
   // Rows as they are, or OpenBB's `{ results: [...] }` envelope around them.
+  if (isTableSnapshotEnvelope(data)) {
+    try { data = parseTableSnapshot(data).data; } catch { return undefined; }
+  }
   const rows = rowsOf(data) ?? rowsOf((data as { results?: unknown } | null)?.results);
   if (rows === null || rows.length === 0) return undefined;
   const column = detectTimeColumn(rows);

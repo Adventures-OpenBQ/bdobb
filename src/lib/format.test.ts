@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from "vitest";
-import { cellFormat, decimalPlacesExample, formatCell, isIsoDate } from "./format";
+import { abbreviation, cellFormat, decimalPlacesExample, formatCell, isIsoDate } from "./format";
 
 describe("formatCell", () => {
   it("renders null and undefined as an em dash", () => {
@@ -265,5 +265,15 @@ describe("year columns (#20)", () => {
   });
   it("still compacts a magnitude in an ordinary column", () => {
     expect(formatCell(2024, "revenue", 2)).toBe("2.02K");
+  });
+});
+
+describe("abbreviation", () => {
+  it("is the unit formatNumber picks, stepping up when rounding reaches a thousand", () => {
+    expect(abbreviation(999_999.5, 2)).toEqual({ size: 1e6, suffix: "M" });
+    expect(abbreviation(1.2e12, 2)).toEqual({ size: 1e12, suffix: "T" });
+    expect(abbreviation(-109_417_000_000, 2)).toEqual({ size: 1e9, suffix: "B" });
+    expect(abbreviation(2.02, 2)).toEqual({ size: 1, suffix: "" });
+    expect(abbreviation(999.996, 2)).toEqual({ size: 1e3, suffix: "K" });
   });
 });

@@ -1,6 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { captureChartSources, chartRequestContext, chartResponseRows } from "./widgetData/chartRecipes/chartSourceContracts";
+import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
+import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { calendarIdsOf, sendParams, type WireContext } from "./params";
@@ -137,14 +140,17 @@ export function createManagedTableRequest(backend: BackendConfig): typeof global
 }
 
 /** Walks a dotted dataKey; an unresolvable key yields the whole payload. */
-export function extractData(payload: unknown, dataKey?: string): unknown {
+export function extractData(payload: unknown, dataKey?: string, preserveTableSnapshot = false): unknown {
   if (!dataKey) return payload;
 
   let current: unknown = payload;
-  for (const segment of dataKey.split(".")) {
+  const segments = dataKey.split(".");
+  for (const [index, segment] of segments.entries()) {
     if (typeof current !== "object" || current === null) return payload;
     const next = (current as Record<string, unknown>)[segment];
     if (next === undefined) return payload;
+    // A table can select the rows of an explicit acquisition envelope at any depth.
+    if (preserveTableSnapshot && segment === "rows" && index === segments.length - 1 && isTableSnapshotEnvelope(current)) return current;
     current = next;
   }
   return current;
@@ -311,11 +317,13 @@ async function request(
     parse = true,
     allow404 = false,
     onHeaders,
+    onResponseUrl,
     signal,
   }: {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
+    onResponseUrl?: (url: string) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
@@ -347,6 +355,7 @@ async function request(
     throw new HttpError(describeHttpError(res.status, text), res.status, text);
   }
   onHeaders?.(res.headers);
+  onResponseUrl?.(res.url);
   if (!parse) {
     // Read to the end even though nothing is parsed: an unread body holds the
     // connection open, which is why the !res.ok branch above reads it too.
@@ -475,6 +484,8 @@ export async function fetchWidgetData(
   // an agent fetch has no card context to resolve, so it passes `undefined`.
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
+  onAcquisition?: (acquisition: BackendAcquisition) => void,
+  onRequest?: (url: string, headers: Record<string, string>) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -494,15 +505,40 @@ export async function fetchWidgetData(
     );
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
-  const payload = await request("GET", buildWidgetUrl(backend, widget, params, ctx), authHeaders(backend), undefined, {
-    signal,
+  const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  const headers = authHeaders(backend);
+  onRequest?.(requestUrl, headers);
+  let responseUrl: string | undefined;
+  const payload = await request("GET", requestUrl, headers, undefined, {
+    signal, onResponseUrl: value => { responseUrl = value; },
   });
+  const table = widget.type === "table";
+  const url = table && onAcquisition ? new URL(requestUrl) : undefined;
+  const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
+  const financial = url && backendFinancialResponse(payload, url, credentialKey);
+  const retrievedAt = Date.now();
+  const chartRequest = url && responseUrl === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
+  const fullRows = chartRequest && chartResponseRows(payload, chartRequest.selector);
+  const sources = chartRequest && fullRows && captureChartSources(chartRequest, payload, fullRows);
+  const selected = extractData(payload, widget.dataKey, table);
+  if (url && onAcquisition) {
+    // Use the completed request and only its selected, complete result array.
+    const parameters: Record<string, string> = {};
+    for (const key of ["symbol", "exchange", "provider"]) {
+      if (credentialKey === key) continue;
+      const values = url.searchParams.getAll(key);
+      if (values.length) parameters[key] = values.join(",");
+    }
+    const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(sources && fullRows === selectedRows ? { ...chartRequest, chartSources: sources } : {}),
+      ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
+  }
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
-  return extractData(payload, widget.dataKey);
+  return selected;
 }
 
 /**

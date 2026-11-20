@@ -1,0 +1,314 @@
+{
+  "completeness": "complete",
+  "receipt": {
+    "fund_symbol": "CANOPY",
+    "etf_kind": "holdings",
+    "weight_basis": "fund-assets",
+    "as_of": "2026-03-17",
+    "retrieved_at": "2026-03-18T12:00:00Z",
+    "unit": "fraction",
+    "holdings_coverage": "partial"
+  },
+  "rows": [
+    {
+      "symbol": "H001",
+      "name": "Firm 01",
+      "weight": 0.024
+    },
+    {
+      "symbol": "H002",
+      "name": "Firm 02",
+      "weight": 0.0236
+    },
+    {
+      "symbol": "H003",
+      "name": "Firm 03",
+      "weight": 0.0232
+    },
+    {
+      "symbol": "H004",
+      "name": "Firm 04",
+      "weight": 0.0228
+    },
+    {
+      "symbol": "H005",
+      "name": "Firm 05",
+      "weight": 0.0224
+    },
+    {
+      "symbol": "H006",
+      "name": "Firm 06",
+      "weight": 0.022
+    },
+    {
+      "symbol": "H007",
+      "name": "Firm 07",
+      "weight": 0.0216
+    },
+    {
+      "symbol": "H008",
+      "name": "Firm 08",
+      "weight": 0.0212
+    },
+    {
+      "symbol": "H009",
+      "name": "Firm 09",
+      "weight": 0.0208
+    },
+    {
+      "symbol": "H010",
+      "name": "Firm 10",
+      "weight": 0.0204
+    },
+    {
+      "symbol": "H011",
+      "name": "Firm 11",
+      "weight": 0.02
+    },
+    {
+      "symbol": "H012",
+      "name": "Firm 12",
+      "weight": 0.0196
+    },
+    {
+      "symbol": "H013",
+      "name": "Firm 13",
+      "weight": 0.0192
+    },
+    {
+      "symbol": "H014",
+      "name": "Firm 14",
+      "weight": 0.0188
+    },
+    {
+      "symbol": "H015",
+      "name": "Firm 15",
+      "weight": 0.0184
+    },
+    {
+      "symbol": "H016",
+      "name": "Firm 16",
+      "weight": 0.018
+    },
+    {
+      "symbol": "H017",
+      "name": "Firm 17",
+      "weight": 0.0176
+    },
+    {
+      "symbol": "H018",
+      "name": "Firm 18",
+      "weight": 0.0172
+    },
+    {
+      "symbol": "H019",
+      "name": "Firm 19",
+      "weight": 0.0168
+    },
+    {
+      "symbol": "H020",
+      "name": "Firm 20",
+      "weight": 0.0164
+    },
+    {
+      "symbol": "H021",
+      "name": "Firm 21",
+      "weight": 0.016
+    },
+    {
+      "symbol": "H022",
+      "name": "Firm 22",
+      "weight": 0.0156
+    },
+    {
+      "symbol": "H023",
+      "name": "Firm 23",
+      "weight": 0.0152
+    },
+    {
+      "symbol": "H024",
+      "name": "Firm 24",
+      "weight": 0.0148
+    },
+    {
+      "symbol": "H025",
+      "name": "Firm 25",
+      "weight": 0.0144
+    },
+    {
+      "symbol": "H026",
+      "name": "Firm 26",
+      "weight": 0.014
+    },
+    {
+      "symbol": "H027",
+      "name": "Firm 27",
+      "weight": 0.0136
+    },
+    {
+      "symbol": "H028",
+      "name": "Firm 28",
+      "weight": 0.0132
+    },
+    {
+      "symbol": "H029",
+      "name": "Firm 29",
+      "weight": 0.0128
+    },
+    {
+      "symbol": "H030",
+      "name": "Firm 30",
+      "weight": 0.0124
+    },
+    {
+      "symbol": "H031",
+      "name": "Firm 31",
+      "weight": 0.012
+    },
+    {
+      "symbol": "H032",
+      "name": "Firm 32",
+      "weight": 0.0116
+    },
+    {
+      "symbol": "H033",
+      "name": "Firm 33",
+      "weight": 0.0112
+    },
+    {
+      "symbol": "H034",
+      "name": "Firm 34",
+      "weight": 0.0108
+    },
+    {
+      "symbol": "H035",
+      "name": "Firm 35",
+      "weight": 0.0104
+    },
+    {
+      "symbol": "H036",
+      "name": "Firm 36",
+      "weight": 0.01
+    },
+    {
+      "symbol": "H037",
+      "name": "Firm 37",
+      "weight": 0.0096
+    },
+    {
+      "symbol": "H038",
+      "name": "Firm 38",
+      "weight": 0.0092
+    },
+    {
+      "symbol": "H039",
+      "name": "Firm 39",
+      "weight": 0.0088
+    },
+    {
+      "symbol": "H040",
+      "name": "Firm 40",
+      "weight": 0.0084
+    },
+    {
+      "symbol": "H041",
+      "name": "Firm 41",
+      "weight": 0.008
+    },
+    {
+      "symbol": "H042",
+      "name": "Firm 42",
+      "weight": 0.0076
+    },
+    {
+      "symbol": "H043",
+      "name": "Firm 43",
+      "weight": 0.0072
+    },
+    {
+      "symbol": "H044",
+      "name": "Firm 44",
+      "weight": 0.0068
+    },
+    {
+      "symbol": "H045",
+      "name": "Firm 45",
+      "weight": 0.0064
+    },
+    {
+      "symbol": "H046",
+      "name": "Firm 46",
+      "weight": 0.006
+    },
+    {
+      "symbol": "H047",
+      "name": "Firm 47",
+      "weight": 0.0056
+    },
+    {
+      "symbol": "H048",
+      "name": "Firm 48",
+      "weight": 0.0052
+    },
+    {
+      "symbol": "H049",
+      "name": "Firm 49",
+      "weight": 0.0048
+    },
+    {
+      "symbol": "H050",
+      "name": "Firm 50",
+      "weight": 0.0044
+    },
+    {
+      "symbol": "H051",
+      "name": "Firm 51",
+      "weight": 0.004
+    },
+    {
+      "symbol": "H052",
+      "name": "Firm 52",
+      "weight": 0.0036
+    },
+    {
+      "symbol": "H053",
+      "name": "Firm 53",
+      "weight": 0.0032
+    },
+    {
+      "symbol": "H054",
+      "name": "Firm 54",
+      "weight": 0.0028
+    },
+    {
+      "symbol": "H055",
+      "name": "Firm 55",
+      "weight": 0.0024
+    },
+    {
+      "symbol": "H056",
+      "name": "Firm 56",
+      "weight": 0.002
+    },
+    {
+      "symbol": "H057",
+      "name": "Firm 57",
+      "weight": 0.0016
+    },
+    {
+      "symbol": "H058",
+      "name": "Firm 58",
+      "weight": 0.0012
+    },
+    {
+      "symbol": "H059",
+      "name": "Firm 59",
+      "weight": 0.0008
+    },
+    {
+      "symbol": "H060",
+      "name": "Firm 60",
+      "weight": 0.0004
+    }
+  ]
+}

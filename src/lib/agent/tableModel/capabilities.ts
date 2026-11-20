@@ -10,7 +10,6 @@ import { AGGREGATION_INTENTS, OPERATIONS, PERIODS, SCOPES } from "./contract";
 import type { TableModelV1 } from "../../tableModel/types";
 import type { DatasetColumn } from "../../widgetData/types";
 
-export type Capabilities = ReturnType<typeof capabilitiesFor>;
 const EMPTY: TableModelV1 = { schemaVersion: 1, enabled: true, params: { promotePage: false, filters: [] }, categories: [], measures: [], formulas: [], layout: { rows: [], columns: [], values: [] }, checklists: [], resultFilters: [], subtotals: { grandTotal: false, groups: false } };
 const VIEWER_OPS = ["viewer.set", "viewer.reset"];
 const req = (op: keyof typeof OPERATIONS) => Object.keys(OPERATIONS[op].required).join(", ");

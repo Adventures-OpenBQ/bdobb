@@ -35,7 +35,7 @@ card, so one source can feed several differently arranged tables. See
 
 ## A linked chart
 
-Its controls sit above the plot and save as you change them:
+Use **Show parameters** to open the card’s **Parameters** panel. Examples start with the panel closed. Closing it keeps the applied chart and any pending edits. These basic controls save as you change them.
 
 - **Chart type** — **Columns (vertical)** (the default), **Bars
   (horizontal)** or **Lines**.
@@ -48,9 +48,9 @@ fields: select a category and numeric measures.*
 
 ## Changing or losing the source
 
-**Choose source** — in the `⋯` menu of a linked card, and as a button in its
-body — opens the same dialog to point it at another table. There is no
-unlink: to stop following a source, remove the card.
+In a linked chart or metric, open **Parameters** and select **Choose source**.
+In a linked table, select **Choose source** from its body or `⋯` menu. Both
+open the source table dialog. To stop following a source, remove the linked card.
 
 While the source is updating, the card keeps showing *Showing completed data
 (stale).* If the source is removed or stops being eligible, the card reads

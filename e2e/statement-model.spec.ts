@@ -94,8 +94,11 @@ for(const [shape,extension] of [['wide','xls'],['wide','csv'],['long','xls'],['l
   const child=page.locator('.widget-card').nth(2);await expect(child.locator('tbody')).toContainText('40');
   await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();
   const chart=page.locator('.linked-chart-renderer');
-  await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
-  await chart.getByRole('checkbox',{name:/Value/}).click();
+  const chartCard = page.locator('.widget-card').filter({ has: chart });
+  await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
+  const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
+  await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
+  await parameters.getByRole('checkbox',{name:/Value/}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
   await statement.getByRole('button',{name:'Collapse Profit',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
@@ -240,6 +243,9 @@ test('formatted XLS Statement keeps ratio numeric across actual worker linked ta
  await statement.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked table',exact:true}).click();
  const child=page.locator('.widget-card').nth(2);await expect(child.locator('tbody')).toContainText('40 %');
  await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();const chart=page.locator('.linked-chart-renderer');
- await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await chart.getByRole('checkbox',{name:/Value/}).click();
+ const chartCard = page.locator('.widget-card').filter({ has: chart });
+ await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
+ const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
+ await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await parameters.getByRole('checkbox',{name:/Value/}).click();
  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([0.4]);
 });

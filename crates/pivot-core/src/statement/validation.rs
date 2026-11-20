@@ -176,10 +176,16 @@ pub fn validate_intent(i: &StatementIntent) -> Result<(), Diagnostic> {
             ));
         }
     }
+    if o.line_section.as_ref().is_some_and(|placements| {
+        placements.iter().any(|(line, section)| {
+            !lines.contains(line.as_str()) || !sections.contains(section.as_str())
+        })
+    }) {
+        return Err(fail("overrides.lineSection", "Unknown line or section."));
+    }
+    let displayed = displayed_sections(i);
     for (section, order) in &o.line_order {
-        let s = i
-            .template
-            .sections
+        let s = displayed
             .iter()
             .find(|s| &s.id == section)
             .ok_or_else(|| fail("overrides.lineOrder", "Unknown section or invalid order."))?;

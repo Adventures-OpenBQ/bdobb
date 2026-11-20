@@ -50,7 +50,7 @@ In order: **Rename…**, **Parameters** (**Hide parameters** while the panel is
 open), **Duplicate**, **Copy to ▸** (every
 dashboard's tabs), **Maximize** (or **Restore**), **Pin widget ▸**, on a
 table the app computes itself **Create linked chart** and **Create linked
-table** (on a linked card, **Choose source** — see **Linked widgets**), **Share with Rita** (or
+table** (on a linked table, **Choose source** — see **Linked widgets**), **Share with Rita** (or
 **Stop sharing with Rita**) while Context sharing is on — see *Rita* — and,
 while a table is actually on screen, **Quick actions ▸** (**Autosize
 columns**, **Reset columns** — what **Reset table** did) and **Columns ▸**, then

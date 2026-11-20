@@ -1,0 +1,102 @@
+{
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "market-map",
+        "origin": "acquired-snapshot",
+        "retrieved_at": "2026-11-13T22:00:00Z",
+        "mode": "index-weight",
+        "universe": "EXAMPLE.INDX",
+        "acquisition_ref": "example/acquisition",
+        "session": "2026-11-13",
+        "prior_session": "2026-11-12",
+        "return_basis": "completed-close-to-close-fraction",
+        "price_basis": "split-adjusted-price",
+        "session_ref": "example/completed-sessions",
+        "area_basis": "index-weight-fraction",
+        "area_ref": "example/index-weights",
+        "denomination": null,
+        "cap_retrieved_at": null,
+        "membership_as_of": "2026-11-12",
+        "weight_valid_for": "2026-11-13",
+        "weight_reference": "example/valid-for-session",
+        "members": [
+          "ALFA.US",
+          "BETA.US"
+        ],
+        "coverage": "complete",
+        "coverage_reference": "example/component-roster",
+        "rounding_bound_fraction": null,
+        "rounding_reference": null,
+        "listing_keys": [
+          "ALFA.US",
+          "BETA.US"
+        ],
+        "raw_count": 2,
+        "normalized_count": 2,
+        "delivered_count": 2,
+        "exact_repeats": 0,
+        "rejected_count": 0,
+        "excluded_areas": {
+          "zero": 0,
+          "negative": 0,
+          "invalid": 0
+        },
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "session_conflict": false,
+          "denomination_conflict": false,
+          "membership_conflict": false,
+          "duplicate_conflict": false,
+          "excess_weight": false
+        }
+      }
+    ]
+  },
+  "rows": [
+    {
+      "listing": "ALFA.US",
+      "sector": "Technology",
+      "area": 0.6,
+      "change": 0,
+      "acquisition_ref": "example/acquisition",
+      "universe": "EXAMPLE.INDX",
+      "session": "2026-11-13",
+      "prior_session": "2026-11-12",
+      "return_basis": "completed-close-to-close-fraction",
+      "price_basis": "split-adjusted-price",
+      "session_ref": "example/completed-sessions",
+      "area_basis": "index-weight-fraction",
+      "area_ref": "example/index-weights",
+      "denomination": null,
+      "cap_retrieved_at": null,
+      "membership_as_of": "2026-11-12",
+      "weight_valid_for": "2026-11-13",
+      "weight_reference": "example/valid-for-session"
+    },
+    {
+      "listing": "BETA.US",
+      "sector": null,
+      "area": 0.4,
+      "change": null,
+      "acquisition_ref": "example/acquisition",
+      "universe": "EXAMPLE.INDX",
+      "session": "2026-11-13",
+      "prior_session": "2026-11-12",
+      "return_basis": "completed-close-to-close-fraction",
+      "price_basis": "split-adjusted-price",
+      "session_ref": "example/completed-sessions",
+      "area_basis": "index-weight-fraction",
+      "area_ref": "example/index-weights",
+      "denomination": null,
+      "cap_retrieved_at": null,
+      "membership_as_of": "2026-11-12",
+      "weight_valid_for": "2026-11-13",
+      "weight_reference": "example/valid-for-session"
+    }
+  ]
+}

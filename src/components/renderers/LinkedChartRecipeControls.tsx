@@ -1,0 +1,491 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { bindingRoles, bindingCandidates, isIncomePeriodColumn, ownershipBarLabels, ownershipBindingRoles } from '../../lib/widgetData/chartRecipes/bindings';
+import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
+import type { NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
+import type { ChartResult } from '../../lib/tableExecution/types';
+import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
+import { inspectOwnershipSource, ownershipPartitionRepair } from '../../lib/widgetData/chartRecipes/ownershipSnapshotInput';
+import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
+import { ownershipPlotHeight, ownershipPlotWidth, returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
+import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
+
+type Kind = RecipeOptions['kind'];
+type Metric = 'eps' | 'revenue';
+type Mode = 'sector' | 'region';
+type LoadAcquiredInput = (signal: AbortSignal) => Promise<WidgetDataset>;
+type DraftWorker = ReturnType<typeof createRecipeWorker>;
+type LoadDraft<T extends RecipeOptions> = (options: T, signal: AbortSignal) => Promise<ChartResult>;
+type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
+export type SourceChoiceKind = 'bubble-regression' | 'dividend-steps' | 'income-sankey';
+export type SourceChoice = { value: string; label: string; issue?: string };
+type LoadSourceChoices = (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => Promise<SourceChoice[]>;
+
+const sourceChoiceLabels = {
+  'bubble-regression': { label: 'Price date', unavailable: 'Present valid price-data dates from the screening source.' },
+  'dividend-steps': { label: 'Acquired instrument', unavailable: 'Acquire dividend data with a qualified instrument receipt.' },
+  'income-sankey': { label: 'Income statement period', unavailable: 'Present an acquired actual FY or FQ income statement period.' },
+};
+
+function usesSourceChoices(kind: Kind): kind is SourceChoiceKind {
+  return Object.hasOwn(sourceChoiceLabels, kind);
+}
+
+export const recipeLabels: Partial<Record<Kind, string>> = {
+  drawdown: 'Drawdown', 'yield-curve': 'Yield curve', 'estimate-range': 'Estimate range',
+  'monthly-returns': 'Monthly returns', correlation: 'Correlation',
+  'return-distribution': 'Return distribution', 'small-multiples': 'Small multiples',
+  'etf-pareto': 'ETF holdings Pareto', 'etf-exposure': 'ETF exposure',
+  'bubble-regression': 'Screening bubble', 'dividend-steps': 'Dividend steps', 'income-sankey': 'Income Sankey',
+  'news-sentiment-calendar': 'News sentiment calendar',
+  'return-summary': 'Return summaries',
+  'ownership-snapshot': 'Ownership snapshot',
+  'etf-sunburst': 'ETF sunburst',
+  'dual-axis-overlay': 'Dual-axis overlay',
+  'estimate-revisions': 'Estimate revisions',
+  'market-map': 'Market map',
+};
+
+function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
+  return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
+}
+export function recipeAvailability(kind: Kind, columns: DatasetColumn[], verifiedEmpty = false): string | null {
+  if (kind === 'news-sentiment-calendar' || kind === 'return-summary' || kind === 'ownership-snapshot' || kind === 'etf-sunburst' || kind === 'dual-axis-overlay' || kind === 'estimate-revisions' || kind === 'market-map') return null; // The draft loads and checks the acquisition, including a columnless empty result.
+  if (kind === 'dividend-steps' && verifiedEmpty) return null;
+  if (kind === 'income-sankey') return columns.some(isIncomePeriodColumn) ? null
+    : 'Present actual FY or FQ columns from an income Statement table.';
+  const missing = missingRoles(kind, columns, 'eps');
+  if (kind === 'etf-exposure' && !missingRoles(kind, columns, 'eps', 'region').length) return null;
+  if (!missing.length || (kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length)) return null;
+  return 'Present raw fields for ' + missing.join(', ') + '.';
+}
+function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[], mode?: Mode): Record<string, string> {
+  return Object.fromEntries(bindingRoles(kind, metric, mode).flatMap(role => {
+    const available = bindingCandidates(role, columns);
+    const named = available.find(c => role.names.includes((c.sourceFieldId ?? c.id).toLowerCase()));
+    const column = named ?? (role.date && available.length === 1 ? available[0] : undefined);
+    return column ? [[role.key, column.id]] : [];
+  }));
+}
+
+function useDraftCheck<T extends RecipeOptions>(
+  options: T | undefined, load: LoadDraft<T> | undefined, context: RecipeContext | undefined,
+  worker: React.RefObject<DraftWorker | undefined>,
+): RecipeResult | undefined {
+  const serialized = options && JSON.stringify(options);
+  const request = useMemo(() => serialized && load && context
+    ? { options: JSON.parse(serialized) as T, load, context }
+    : undefined, [serialized, load, context]);
+  const [checked, setChecked] = useState<{ request: NonNullable<typeof request>; result: RecipeResult }>();
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    void request.load(request.options, signal).then(input => {
+      signal.throwIfAborted();
+      worker.current ??= createRecipeWorker();
+      return worker.current.run(input, request.options, request.context, signal);
+    }).then(result => {
+      if (!signal.aborted) setChecked({ request, result });
+    }).catch(error => {
+      if (!signal.aborted) {
+        const message = error instanceof Error ? error.message : String(error);
+        setChecked({ request, result: { ok: false, message: message || 'Could not validate chart settings.' } });
+      }
+    });
+    return () => controller.abort();
+  }, [request, worker]);
+  return request && checked?.request === request ? checked.result : undefined;
+}
+
+function useAcquiredInput(load: LoadAcquiredInput | undefined) {
+  const [read, setRead] = useState<{ load: LoadAcquiredInput; dataset?: WidgetDataset; error?: string }>();
+  useEffect(() => {
+    if (!load) return;
+    const controller = new AbortController();
+    void load(controller.signal).then(dataset => {
+      if (!controller.signal.aborted) setRead({ load, dataset });
+    }).catch(error => {
+      if (!controller.signal.aborted) setRead({ load, error: error instanceof Error ? error.message : String(error) });
+    });
+    return () => controller.abort();
+  }, [load]);
+  return read?.load === load ? read : undefined;
+}
+
+function readDraftSurface(probe: HTMLDivElement | null) {
+  const element = probe?.querySelector('.chart-plot');
+  if (!element) return;
+  const size = readDrawingSurface(element);
+  if (size.width > 0 && size.height > 0) return size;
+}
+
+function matchesDraftSurface(probe: HTMLDivElement | null, admitted: DrawingSurface) {
+  const live = readDraftSurface(probe);
+  return live?.width === admitted.width && live.height === admitted.height;
+}
+
+export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext, matchesNewsDraftWidth,
+  loadReturnListings, loadReturnDraft, returnDraftContext, probeTarget, disabled, onApply }: {
+  kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
+  loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadAcquiredInput;
+  loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext; matchesNewsDraftWidth?: () => boolean;
+  loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
+  probeTarget?: HTMLElement | null; disabled: boolean; onApply: (options: RecipeOptions, matchesDrawing?: () => boolean) => void;
+}) {
+  const draftWorker = useRef<DraftWorker | undefined>(undefined);
+  useEffect(() => () => { draftWorker.current?.dispose(); draftWorker.current = undefined; }, []);
+  const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
+    : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
+  const [mode, setMode] = useState<Mode>(() => saved?.kind === 'etf-exposure' ? saved.mode
+    : kind === 'etf-exposure' && missingRoles(kind, columns, metric).length && !missingRoles(kind, columns, metric, 'region').length ? 'region' : 'sector');
+  const [editedFields, setFields] = useState<Record<string, string> | undefined>(() => saved && 'fields' in saved ? { ...saved.fields } : undefined);
+  const news = kind === 'news-sentiment-calendar';
+  const returns = kind === 'return-summary';
+  const savedReturn = saved?.kind === 'return-summary' ? saved : undefined;
+  const [returnView, setReturnView] = useState(savedReturn?.view ?? 'box');
+  const [returnWindow, setReturnWindow] = useState(savedReturn?.window.mode ?? 'own');
+  const returnPins = savedReturn?.window.mode === 'common' ? savedReturn.window : undefined;
+  const [returnStart, setReturnStart] = useState(returnPins?.start);
+  const [returnEnd, setReturnEnd] = useState(returnPins?.end);
+  const newsReadCurrent = useAcquiredInput(news ? loadNewsInput : undefined);
+  const newsDataset = newsReadCurrent?.dataset;
+  const newsAdmission = useMemo(() => newsDataset && inspectNewsSource(newsDataset), [newsDataset]);
+  const newsSource = newsAdmission?.ok ? newsAdmission.value.source : undefined;
+  const newsProblem = news && (newsReadCurrent?.error ?? (newsAdmission && !newsAdmission.ok ? newsAdmission.message : undefined)
+    ?? (!newsSource ? 'Loading acquired CompanyNews evidence…' : undefined));
+  const acquired = newsSource && acquiredNewsWindow(newsSource);
+  const [newsInstrument, setNewsInstrument] = useState(saved?.kind === 'news-sentiment-calendar' ? saved.instrument : undefined);
+  const instrument = newsInstrument ?? newsSource?.instrument ?? '';
+  const [windowMode, setWindowMode] = useState(saved?.kind === 'news-sentiment-calendar' ? saved.window.mode : 'latest-12-months');
+  const savedPins = saved?.kind === 'news-sentiment-calendar' && saved.window.mode === 'pinned' ? saved.window : undefined;
+  const [start, setStart] = useState(savedPins?.start);
+  const [end, setEnd] = useState(savedPins?.end);
+  const defaultWindow = newsSource && resolveNewsWindow(newsSource, { mode: 'latest-12-months' });
+  const defaultPins = defaultWindow?.ok ? defaultWindow.value : undefined;
+  const pinStart = start ?? defaultPins?.start ?? '';
+  const pinEnd = end ?? defaultPins?.end ?? '';
+  const emptyAcquisition = (kind === 'dividend-steps' && verifiedEmpty)
+    || (news && !!newsSource && newsSource.delivered_count === 0 && !columns.length);
+  const fields = editedFields ?? (emptyAcquisition
+    ? Object.fromEntries(bindingRoles(kind, metric).filter(role => !role.optional).map(role => [role.key, role.names[0]]))
+    : defaults(kind, metric, columns, mode));
+  const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
+  const minimumPlotWidth = returnSummaryPlotWidth(symbols.length);
+  const returnProbe = useRef<HTMLDivElement>(null);
+  const [returnMeasurement, setReturnMeasurement] = useState<DrawingSurface & { minimumPlotWidth: number }>();
+  const measureReturn = useCallback(({ width, height }: DrawingSurface) => {
+    setReturnMeasurement(previous => previous?.width === width && previous.height === height && previous.minimumPlotWidth === minimumPlotWidth
+      ? previous : { width, height, minimumPlotWidth });
+  }, [minimumPlotWidth]);
+  const returnSize = returnMeasurement?.minimumPlotWidth === minimumPlotWidth ? returnMeasurement : undefined;
+  const returnContext = useMemo(() => returnSize && returnDraftContext
+    ? { ...returnDraftContext, viewportWidth: returnSize.width, viewportHeight: returnSize.height }
+    : undefined, [returnSize, returnDraftContext]);
+  const [lookback, setLookback] = useState(String(saved?.kind === 'correlation' ? saved.lookback : 252));
+  const [overlap, setOverlap] = useState(String(saved?.kind === 'correlation' ? saved.minOverlap : 60));
+  const [bins, setBins] = useState(String(saved?.kind === 'return-distribution' ? saved.bins : 30));
+  const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
+  const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
+  const needsSymbols = singleSymbol || multipleSymbols || returns;
+  const loadListings = returns ? loadReturnListings : loadSymbols;
+  const roleList = emptyAcquisition ? [] : bindingRoles(kind, metric, mode);
+  const fieldIssue = roleList.find(role => (
+    !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
+  ));
+  const fieldsReady = !fieldIssue;
+  const symbolField = fields.symbol;
+  const [choices, setChoices] = useState<{ load: LoadSymbols; field?: string; values: string[]; error?: string }>();
+  useEffect(() => {
+    if (!needsSymbols || !loadListings || !fieldsReady) return;
+    const controller = new AbortController();
+    void loadListings(symbolField, controller.signal).then(values => {
+      if (!controller.signal.aborted) setChoices({ load: loadListings, field: symbolField, values });
+    }).catch(error => {
+      if (!controller.signal.aborted) setChoices({ load: loadListings, field: symbolField, values: [], error: error instanceof Error ? error.message : String(error) });
+    });
+    return () => controller.abort();
+  }, [needsSymbols, fieldsReady, loadListings, symbolField]);
+  const current = choices && choices.load === loadListings && choices.field === symbolField ? choices : undefined;
+  const choiceIssue = needsSymbols && (!current ? (returns ? 'Loading acquired listings…' : 'Loading source symbols…') : current.error ??
+    (!current.values.length ? (returns ? 'No qualified listings in the presented source. Bind the listing field or document a single listing in the snapshot.'
+      : 'No identified symbols in the presented source. Bind a symbol field or document a single acquisition symbol.') :
+      symbols.some(symbol => !current.values.includes(symbol)) ? (returns ? 'Repair the unavailable listing selection.' : 'Repair the unavailable symbol selection.') : undefined));
+  const returnBase = { version: 1, kind, fields, symbols };
+  const defaultReturn = returnWindow === 'common' && (returnStart === undefined || returnEnd === undefined)
+    && returns && fieldsReady && !choiceIssue
+    ? decodeRecipeOptions({ ...returnBase, view: 'box', window: { mode: 'own' } }, kind) : undefined;
+  const defaultReturnOptions = defaultReturn?.ok && defaultReturn.options.kind === 'return-summary' ? defaultReturn.options : undefined;
+  const defaultReturnResult = useDraftCheck(defaultReturnOptions, loadReturnDraft, returnContext, draftWorker);
+  const overlapBounds = defaultReturnResult?.ok ? defaultReturnResult.returnSummary?.commonWindow : undefined;
+  const returnPinStart = returnStart ?? overlapBounds?.start ?? '';
+  const returnPinEnd = returnEnd ?? overlapBounds?.end ?? '';
+  const sourceKind = usesSourceChoices(kind) ? kind : undefined;
+  const priceDateField = sourceKind === 'bubble-regression' ? fields.date : undefined;
+  const [sourceChoice, setSourceChoice] = useState(() => {
+    if (saved?.kind === 'bubble-regression') return saved.priceDate;
+    if (saved?.kind === 'dividend-steps') return saved.instrument;
+    if (saved?.kind === 'income-sankey') return saved.periodColumn;
+  });
+  const [regression, setRegression] = useState(saved?.kind !== 'bubble-regression' || saved.regression);
+  const [sourceChoices, setSourceChoices] = useState<{ load: LoadSourceChoices; field?: string; values: SourceChoice[]; error?: string }>();
+  useEffect(() => {
+    if (!sourceKind || !loadSourceChoices || (sourceKind === 'bubble-regression' && !fieldsReady)) return;
+    const controller = new AbortController();
+    void loadSourceChoices(sourceKind, priceDateField, controller.signal).then(values => {
+      if (!controller.signal.aborted) setSourceChoices({ load: loadSourceChoices, field: priceDateField, values });
+    }).catch(error => {
+      if (!controller.signal.aborted) setSourceChoices({ load: loadSourceChoices, field: priceDateField, values: [],
+        error: error instanceof Error ? error.message : String(error) });
+    });
+    return () => controller.abort();
+  }, [sourceKind, loadSourceChoices, priceDateField, fieldsReady]);
+  const sourceCurrent = sourceChoices?.load === loadSourceChoices && sourceChoices?.field === priceDateField ? sourceChoices : undefined;
+  const sourceValues = sourceCurrent?.values ?? [];
+  const value = sourceChoice ?? (sourceKind === 'bubble-regression' ? 'latest' : sourceValues[0]?.value ?? '');
+  const choiceLabel = sourceKind && sourceChoiceLabels[sourceKind];
+  const latest = sourceKind === 'bubble-regression' && value === 'latest';
+  const unavailable = Boolean(value && !latest && !sourceValues.some(choice => choice.value === value));
+  const sourceIssue = choiceLabel && (!sourceCurrent ? 'Loading choices from the source…' : sourceCurrent.error
+    ?? (latest ? sourceValues[0] : sourceValues.find(choice => choice.value === value))?.issue
+    ?? (!sourceValues.length ? choiceLabel.unavailable : unavailable ? 'Repair the unavailable ' + choiceLabel.label.toLowerCase() + '.' : undefined));
+  const candidate = kind === 'income-sankey' ? { version: 1, kind, periodColumn: value } : {
+    version: 1, kind, fields, ...(kind === 'estimate-range' ? { metric } : {}),
+    ...(kind === 'bubble-regression' ? { priceDate: value, regression } : {}),
+    ...(kind === 'dividend-steps' ? { instrument: value } : {}),
+    ...(news ? { instrument, window: windowMode === 'pinned' ? { mode: windowMode, start: pinStart, end: pinEnd } : { mode: windowMode } } : {}),
+    ...(singleSymbol ? { symbol: symbols[0] } : {}),
+    ...(multipleSymbols ? { symbols } : {}),
+    ...(returns ? { symbols, view: returnView,
+      window: returnWindow === 'common' ? { mode: returnWindow, start: returnPinStart, end: returnPinEnd } : { mode: returnWindow } } : {}),
+    ...(kind === 'return-distribution' ? { bins: Number(bins) } : {}),
+    ...(kind === 'etf-exposure' ? { mode } : {}),
+    ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
+  const decoded = decodeRecipeOptions(candidate, kind);
+  const newsOptions = decoded.ok && decoded.options.kind === 'news-sentiment-calendar' ? decoded.options : undefined;
+  const resolvedWindow = newsSource && newsOptions && resolveNewsWindow(newsSource, newsOptions.window);
+  const windowIssue = resolvedWindow && !resolvedWindow.ok ? resolvedWindow.message : undefined;
+  const checkNews = newsOptions && newsSource && !fieldIssue && !windowIssue ? newsOptions : undefined;
+  const checkedNews = useDraftCheck(checkNews, loadNewsDraft, newsDraftContext, draftWorker);
+  const checkReturn = decoded.ok && decoded.options.kind === 'return-summary' && !fieldIssue && !choiceIssue ? decoded.options : undefined;
+  const checkedReturn = useDraftCheck(checkReturn, loadReturnDraft, returnContext, draftWorker);
+  const checked = news ? checkedNews : checkedReturn;
+  const checkingDraft = (news || returns) && !checked;
+  const validationIssue = checked && !checked.ok ? checked.message : undefined;
+  const pendingBounds = defaultReturnOptions && !defaultReturnResult;
+  const boundsIssue = defaultReturnResult && !defaultReturnResult.ok ? defaultReturnResult.message
+    : defaultReturnResult?.ok && !overlapBounds ? 'The selected histories have no common acquired bounds. Choose different listings or use their own windows.' : undefined;
+  const problem = newsProblem || (fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.'
+    : choiceIssue || sourceIssue || windowIssue || boundsIssue || (!decoded.ok ? (pendingBounds ? undefined : decoded.message) : validationIssue));
+  const announcingDraftCheck = checkingDraft && !problem;
+  const bindingInputs = roleList.map(role => {
+    const available = bindingCandidates(role, columns);
+    const value = fields[role.key] ?? '';
+    return <label key={role.key}>{role.label}<select value={value} onChange={e => {
+      const next = { ...fields };
+      if (e.target.value) next[role.key] = e.target.value; else delete next[role.key];
+      setFields(next);
+      if (role.key === 'symbol') setSymbols([]);
+    }}>
+      <option value="">{role.optional ? 'None' : 'Choose field'}</option>
+      {value && !available.some(c => c.id === value) && <option value={value}>{value} (unavailable)</option>}
+      {available.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+    </select></label>;
+  });
+  return <fieldset disabled={disabled}><legend>{recipeLabels[kind] ?? kind} settings</legend>
+    {kind === 'estimate-range' && <label>Metric<select value={metric} onChange={e => {
+      const next = e.target.value === 'revenue' ? 'revenue' : 'eps';
+      setMetric(next);
+      const binding = defaults(kind, next, columns);
+      setFields({ ...fields, low: binding.low ?? '', average: binding.average ?? '', high: binding.high ?? '' });
+    }}>{(['eps', 'revenue'] as const).map(m => <option key={m} value={m} disabled={!!missingRoles(kind, columns, m).length}>{m === 'eps' ? 'EPS' : 'Revenue'}</option>)}</select></label>}
+    {!news && bindingInputs}
+    {choiceLabel && <label>{choiceLabel.label}<select value={value} onChange={e => setSourceChoice(e.target.value)}>
+      {sourceKind !== 'bubble-regression' && <option value="">{sourceKind === 'dividend-steps' ? 'Choose instrument' : 'Choose period'}</option>}
+      {sourceKind === 'bubble-regression' && <option value="latest">Latest</option>}
+      {unavailable && <option value={value}>{value}{sourceCurrent && ' (unavailable)'}</option>}
+      {sourceValues.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+    </select></label>}
+    {news && <>
+      <label>Acquired instrument<select value={instrument} onChange={e => setNewsInstrument(e.target.value)}>
+        {!instrument && <option value="">Awaiting acquired instrument</option>}
+        {instrument && instrument !== newsSource?.instrument && <option value={instrument} disabled>{instrument} (unavailable)</option>}
+        {newsSource && <option value={newsSource.instrument}>{newsSource.instrument}</option>}
+      </select></label>
+      <label>Calendar window<select value={windowMode} onChange={e => setWindowMode(e.target.value === 'pinned' ? 'pinned' : 'latest-12-months')}>
+        <option value="latest-12-months">Latest acquired 12 months</option><option value="pinned">Pinned dates</option>
+      </select></label>
+      {windowMode === 'pinned' && <>
+        <label>Start date<input type="date" min={acquired?.start} max={acquired?.end} value={pinStart} onChange={e => setStart(e.target.value)}/></label>
+        <label>End date<input type="date" min={acquired?.start} max={acquired?.end} value={pinEnd} onChange={e => setEnd(e.target.value)}/></label>
+      </>}
+    </>}
+    {kind === 'bubble-regression' && <label><input type="checkbox" checked={regression}
+      onChange={e => setRegression(e.target.checked)}/>Show regression</label>}
+    {singleSymbol && <label>Symbol<select value={symbols[0] ?? ''} onChange={e => setSymbols(e.target.value ? [e.target.value] : [])}>
+      <option value="">Choose symbol</option>
+      {[...new Set([...symbols, ...(current?.values ?? [])])].map(s => <option key={s} value={s}>{s}</option>)}
+    </select></label>}
+    {multipleSymbols && <fieldset><legend>Symbols</legend>
+      {[...new Set([...symbols, ...(current?.values ?? [])])].map(s => <label key={s}><input type="checkbox" checked={symbols.includes(s)}
+        onChange={e => setSymbols(e.target.checked ? [...symbols, s] : symbols.filter(v => v !== s))}/>{s}</label>)}
+    </fieldset>}
+    {returns && <>
+      {probeTarget && createPortal(<div aria-hidden="true" className="return-summary-draft-probe" ref={returnProbe}>
+        <ChartRenderer data={undefined} scrollHeight={returnSummaryPlotHeight} minPlotWidth={minimumPlotWidth}
+          onDrawingSurfaceChange={measureReturn}/>
+      </div>, probeTarget)}
+      <fieldset className="return-summary-listings"><legend>Acquired listings</legend>
+        {[...new Set([...symbols, ...(current?.values ?? [])])].map(symbol => {
+          const selected = symbols.includes(symbol);
+          const unavailable = current && !current.values.includes(symbol);
+          return <label key={symbol}><input type="checkbox" checked={selected} disabled={!selected && symbols.length >= 12}
+            onChange={event => setSymbols(event.target.checked ? [...symbols, symbol] : symbols.filter(value => value !== symbol))}/>
+            {symbol}{unavailable && ' (unavailable)'}</label>;
+        })}
+      </fieldset>
+      <label>Return view<select value={returnView} onChange={event => setReturnView(event.target.value === 'violin' ? 'violin' : 'box')}>
+        <option value="box">Box</option><option value="violin">Violin</option>
+      </select></label>
+      <label>Return window<select value={returnWindow} onChange={event => setReturnWindow(event.target.value === 'common' ? 'common' : 'own')}>
+        <option value="own">Each listing’s own dates</option><option value="common">Common inclusive dates</option>
+      </select></label>
+      {returnWindow === 'common' && <>
+        <label>Start date<input type="date" value={returnPinStart} onChange={event => setReturnStart(event.target.value)}/></label>
+        <label>End date<input type="date" value={returnPinEnd} onChange={event => setReturnEnd(event.target.value)}/></label>
+      </>}
+    </>}
+    {kind === 'return-distribution' && <label>Bins<input type="number" min="5" max="100" step="1" value={bins} onChange={e => setBins(e.target.value)}/></label>}
+    {kind === 'etf-exposure' && <label>Exposure mode<select value={mode} onChange={e => {
+      const next = e.target.value === 'region' ? 'region' : 'sector';
+      setMode(next);
+      setFields({ ...fields, category: defaults(kind, metric, columns, next).category ?? '' });
+    }}>
+      <option value="sector">Sector</option><option value="region">Region</option>
+    </select></label>}
+    {kind === 'correlation' && <><label>Lookback<input type="number" min="3" value={lookback} onChange={e => setLookback(e.target.value)}/></label>
+      <label>Minimum overlap<input type="number" min="3" max={lookback} value={overlap} onChange={e => setOverlap(e.target.value)}/></label></>}
+    {news && roleList.length > 0 && <fieldset className="news-calendar-fields">
+      <legend>Article fields</legend>
+      {bindingInputs}
+    </fieldset>}
+    {problem && <p role="status">{problem}</p>}
+    {announcingDraftCheck && <span className="sr-only" role="status">{news ? 'Checking calendar draft…' : 'Checking return draft…'}</span>}
+    <button type="button" disabled={!!problem || checkingDraft} aria-busy={announcingDraftCheck || undefined}
+      onClick={() => {
+        if (problem || checkingDraft || !decoded.ok) return;
+        if (news) {
+          if (matchesNewsDraftWidth?.()) onApply(decoded.options, matchesNewsDraftWidth);
+          return;
+        }
+        if (returns) {
+          const size = readDraftSurface(returnProbe.current);
+          if (!size) return;
+          if (size.width !== returnSize?.width || size.height !== returnSize?.height) {
+            measureReturn(size);
+            return;
+          }
+          onApply(decoded.options, () => matchesDraftSurface(returnProbe.current, size));
+          return;
+        }
+        onApply(decoded.options);
+      }}>Apply chart settings</button>
+  </fieldset>;
+}
+
+export function OwnershipRecipeControls({ probeTarget, saved, columns, loadInput, loadDraft, context, disabled, onApply }: {
+  probeTarget: HTMLElement | null; saved?: OwnershipSnapshotOptions; columns: DatasetColumn[]; loadInput: LoadAcquiredInput;
+  loadDraft: LoadDraft<OwnershipSnapshotOptions>; context: RecipeContext;
+  disabled: boolean; onApply: (options: OwnershipSnapshotOptions, matchesDrawing: () => boolean) => void;
+}) {
+  const [view, setView] = useState(saved?.view ?? 'bars');
+  const [selectedIssuer, setSelectedIssuer] = useState(saved?.issuer);
+  const [edited, setEdited] = useState<Partial<Record<OwnershipSnapshotOptions['view'], Record<string, string>>>>(
+    () => saved ? { [saved.view]: { ...saved.fields } } : {},
+  );
+  const read = useAcquiredInput(loadInput);
+  const dataset = read?.dataset;
+  const admission = useMemo(() => dataset && inspectOwnershipSource(dataset), [dataset]);
+  const source = admission?.ok ? admission.value.source : undefined;
+  const partitionAvailable = !!source && 'bucket_keys' in source;
+  const issuer = selectedIssuer ?? source?.issuer ?? '';
+  const unavailableIssuer = !!issuer && issuer !== source?.issuer;
+  const sourceProblem = read?.error ?? (admission && !admission.ok ? admission.message : undefined)
+    ?? (!source ? 'Loading acquired ownership evidence…' : undefined);
+  const applicable = source && (view === 'waffle') === partitionAvailable ? ownershipBindingRoles(source) : [];
+  const available = new Map(applicable.map(role => [role.key, bindingCandidates(role, columns)]));
+  const fields = edited[view] ?? Object.fromEntries([...available].flatMap(([key, candidates]) =>
+    candidates.length === 1 ? [[key, candidates[0].id]] : []));
+
+  const labels = view === 'bars' ? ownershipBarLabels : { bucket: 'Ownership bucket', share: 'Reported share' };
+  const roles = Object.entries(labels).filter(([key]) => view === 'waffle' || available.has(key) || fields[key]);
+  const partitionRepairId = useId();
+  const problem = sourceProblem
+    ?? (unavailableIssuer ? `Choose the acquired issuer ${source?.issuer} or reload the intended source.` : undefined)
+    ?? (view === 'waffle' && !partitionAvailable ? ownershipPartitionRepair : undefined);
+  const decoded = decodeRecipeOptions({ version: 1, kind: 'ownership-snapshot', issuer, view, fields }, 'ownership-snapshot');
+  const candidate = !problem && decoded.ok && decoded.options.kind === 'ownership-snapshot' ? decoded.options : undefined;
+
+  const probe = useRef<HTMLDivElement>(null);
+  const minimumWidth = ownershipPlotWidth(view);
+  const [measurement, setMeasurement] = useState<DrawingSurface & { minimumWidth: number }>();
+  const measure = useCallback(({ width, height }: DrawingSurface) => {
+    setMeasurement(previous => previous?.width === width && previous.height === height && previous.minimumWidth === minimumWidth
+      ? previous : { width, height, minimumWidth });
+  }, [minimumWidth]);
+  const size = measurement?.minimumWidth === minimumWidth ? measurement : undefined;
+  const measuredContext = useMemo(() => size
+    ? { ...context, viewportWidth: size.width, viewportHeight: size.height } : undefined, [context, size]);
+  const worker = useRef<DraftWorker | undefined>(undefined);
+  useEffect(() => () => { worker.current?.dispose(); worker.current = undefined; }, []);
+  const checked = useDraftCheck(candidate, loadDraft, measuredContext, worker);
+  const issue = problem ?? (!decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
+  const checking = !!candidate && !checked;
+  return <fieldset disabled={disabled} className="ownership-recipe-controls"><legend>Ownership snapshot settings</legend>
+    {probeTarget && createPortal(<div aria-hidden="true" className="ownership-draft-probe" ref={probe}>
+      <ChartRenderer data={undefined} scrollHeight={ownershipPlotHeight} minPlotWidth={minimumWidth}
+        onDrawingSurfaceChange={measure}/>
+    </div>, probeTarget)}
+    <label>Acquired issuer<select value={issuer} onChange={event => setSelectedIssuer(event.target.value)}>
+      {!issuer && <option value="">Awaiting acquired issuer</option>}
+      {unavailableIssuer && <option value={issuer} disabled>{issuer} (unavailable)</option>}
+      {source && <option value={source.issuer}>{source.issuer}</option>}
+    </select></label>
+    <label>Ownership view<select value={view} aria-describedby={partitionAvailable ? undefined : partitionRepairId}
+      onChange={event => setView(event.target.value === 'waffle' ? 'waffle' : 'bars')}>
+      <option value="bars">Independent bars</option>
+      <option value="waffle" disabled={!partitionAvailable}>Waffle</option>
+    </select></label>
+    {roles.map(([key, label]) => {
+      const candidates = available.get(key) ?? [];
+      const selected = fields[key] ?? '';
+      return <label key={key}>{label}<select value={selected} onChange={event => {
+        const next = { ...fields };
+        if (event.target.value) next[key] = event.target.value; else delete next[key];
+        setEdited({ ...edited, [view]: next });
+      }}>
+        <option value="">{view === 'bars' ? 'None' : 'Choose field'}</option>
+        {selected && !candidates.some(column => column.id === selected) &&
+          <option value={selected} disabled>{selected} (unavailable)</option>}
+        {candidates.map(column => <option key={column.id} value={column.id}>{column.label}</option>)}
+      </select></label>;
+    })}
+    {!partitionAvailable && <p id={partitionRepairId}>{ownershipPartitionRepair}</p>}
+    {issue && issue !== ownershipPartitionRepair && <p role="status">{issue}</p>}
+    {checking && <span className="sr-only" role="status">Checking ownership draft…</span>}
+    <button type="button" disabled={!checked?.ok} aria-busy={checking || undefined} onClick={() => {
+      if (disabled || !candidate || !checked?.ok) return;
+      const measured = readDraftSurface(probe.current);
+      if (!measured) return;
+      if (measured.width !== size?.width || measured.height !== size?.height) {
+        measure(measured);
+        return;
+      }
+      onApply(candidate, () => matchesDraftSurface(probe.current, measured));
+    }}>Apply chart settings</button>
+  </fieldset>;
+}

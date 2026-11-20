@@ -1,0 +1,220 @@
+{
+  "receipt": {
+    "interval": "1d",
+    "start_date": "2026-01-05",
+    "end_date": "2026-02-02"
+  },
+  "completeness": "bounded",
+  "rows": [
+    {
+      "date": "2026-01-05",
+      "adjusted_close": 1,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-06",
+      "adjusted_close": 1.0,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-07",
+      "adjusted_close": 1.125,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-08",
+      "adjusted_close": 1.40625,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-09",
+      "adjusted_close": 1.93359375,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-12",
+      "adjusted_close": 2.900390625,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-13",
+      "adjusted_close": 2.900390625,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-14",
+      "adjusted_close": 3.262939453125,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-15",
+      "adjusted_close": 4.07867431640625,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-16",
+      "adjusted_close": 5.608177185058594,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-19",
+      "adjusted_close": 8.41226577758789,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-20",
+      "adjusted_close": 8.41226577758789,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-21",
+      "adjusted_close": 9.463798999786377,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-22",
+      "adjusted_close": 11.829748749732971,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-23",
+      "adjusted_close": 16.265904530882835,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-26",
+      "adjusted_close": 24.398856796324253,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-27",
+      "adjusted_close": 24.398856796324253,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-28",
+      "adjusted_close": 27.448713895864785,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-29",
+      "adjusted_close": 34.31089236983098,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-30",
+      "adjusted_close": 47.1774770085176,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-02-02",
+      "adjusted_close": 70.7662155127764,
+      "symbol": "CANOPY.US"
+    },
+    {
+      "date": "2026-01-05",
+      "adjusted_close": 1,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-06",
+      "adjusted_close": 1.0,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-07",
+      "adjusted_close": 1.0625,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-08",
+      "adjusted_close": 1.1953125,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-09",
+      "adjusted_close": 1.41943359375,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-12",
+      "adjusted_close": 1.7742919921875,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-13",
+      "adjusted_close": 1.7742919921875,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-14",
+      "adjusted_close": 1.8851852416992188,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-15",
+      "adjusted_close": 2.120833396911621,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-16",
+      "adjusted_close": 2.51848965883255,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-19",
+      "adjusted_close": 3.1481120735406876,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-20",
+      "adjusted_close": 3.1481120735406876,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-21",
+      "adjusted_close": 3.3448690781369805,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-22",
+      "adjusted_close": 3.762977712904103,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-23",
+      "adjusted_close": 4.468536034073622,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-26",
+      "adjusted_close": 5.585670042592028,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-27",
+      "adjusted_close": 5.585670042592028,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-28",
+      "adjusted_close": 5.93477442025403,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-29",
+      "adjusted_close": 6.6766212227857835,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-01-30",
+      "adjusted_close": 7.928487702058118,
+      "symbol": "ALDER.US"
+    },
+    {
+      "date": "2026-02-02",
+      "adjusted_close": 9.910609627572647,
+      "symbol": "ALDER.US"
+    }
+  ]
+}

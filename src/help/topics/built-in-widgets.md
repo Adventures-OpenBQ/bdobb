@@ -19,8 +19,8 @@ in the library does not add a card at once: a dialog asks for the
 itself — and its button, **Create linked table** or **Create linked chart**,
 adds the card. With no such table it reads *No eligible table sources in this
 dashboard.* Neither can be double-clicked or dragged in the library. The same
-two items are on a source table's `⋯` menu, and a linked card's `⋯` menu has
-**Choose source** to repoint it. See **Linked widgets**.
+two items are on a source table's `⋯` menu. Choose **Choose source** from a linked
+table’s menu or from **Parameters** on a linked chart or metric. See **Linked widgets**.
 
 ## Note
 

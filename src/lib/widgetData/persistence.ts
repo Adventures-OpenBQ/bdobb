@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { DashboardCard } from '../types';
+import { isLinkedMetricCard } from '../builtins';
+import { decodeLinkedKpiOptions } from './kpi/settings';
+import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isRecipeOnlyLinkedChartType, LINKED_CHART_FIELDS } from './chartRecipes/settings';
 
 const DROP = Symbol('drop');
 
@@ -47,13 +50,30 @@ function persistedExtensions(extensions: unknown): DashboardCard['extensions'] {
   return copy === DROP ? undefined : (copy as DashboardCard['extensions']);
 }
 
+function persistedChart(chart: DashboardCard['linkedChart']): DashboardCard['linkedChart'] {
+  if (!chart || !isAcquiredFinancialRecipeType(chart.type)) return chart;
+  const validated = decodeLinkedChartRecipe(chart, chart.type);
+  if (isRecipeOnlyLinkedChartType(chart.type)) {
+    return { type: chart.type, display: 'grouped', measures: [],
+      ...(validated?.ok && { recipe: plainData(validated.options, []) as typeof validated.options }) };
+  }
+  const fields = LINKED_CHART_FIELDS.flatMap(field => {
+    if (field === 'recipe') return validated?.ok ? [[field, plainData(validated.options, [])]] : [];
+    const property = Object.getOwnPropertyDescriptor(chart, field);
+    const value = property?.enumerable && 'value' in property ? plainData(property.value, []) : DROP;
+    return value === DROP ? [] : [[field, value]];
+  });
+  return Object.fromEntries(fields) as NonNullable<DashboardCard['linkedChart']>;
+}
+
 /** Persist card intent only. Calculated rows, revisions and worker caches are ephemeral. */
 export function persistedCard(card: DashboardCard): DashboardCard {
-  const { id, widgetId, backendId, params, layout, title, view, minimized, bindings, table, tableDefinition, tableSelection, linkedSource, linkedChart, fiscalYearEnd, hideTitleParams, paramsOpen, calendar, statement, pinned, news } = card;
+  const { id, widgetId, backendId, params, layout, title, view, minimized, bindings, table, tableDefinition, tableSelection, linkedSource, linkedChart, linkedMetric, fiscalYearEnd, hideTitleParams, paramsOpen, calendar, statement, pinned, news } = card;
+  const metric = linkedSource && isLinkedMetricCard(card) ? decodeLinkedKpiOptions(linkedMetric) : undefined;
   const source=card.managedSource;
   const managedSource=source&&source.version===1&&typeof source.sourceId==='string'&&(source.kind==='upload'||source.kind==='backend')?{sourceId:source.sourceId,kind:source.kind,version:1 as const}:undefined;
   const extensions = persistedExtensions(card.extensions);
-  return { id, widgetId, backendId, params, layout, title, view, minimized, bindings, table, tableDefinition, tableSelection, linkedSource, linkedChart, fiscalYearEnd, hideTitleParams, paramsOpen, calendar, statement, pinned, news, extensions, managedSource };
+  return { id, widgetId, backendId, params, layout, title, view, minimized, bindings, table, tableDefinition, tableSelection, linkedSource, linkedChart: persistedChart(linkedChart), ...(metric?.ok && { linkedMetric: metric.options }), fiscalYearEnd, hideTitleParams, paramsOpen, calendar, statement, pinned, news, extensions, managedSource };
 }
 
 /** Dashboard-scoped ownership remap: preserve unknown references for later validation. */

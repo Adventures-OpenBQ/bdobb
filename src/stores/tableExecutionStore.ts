@@ -1,6 +1,8 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { authHeaders, joinUrl } from '../lib/dataClient';
+import { acquisitionConfiguration, acquisitionParams, type SourceGroups } from '../lib/widgetData/sources';
 import { filterDateContext, resolveDateFilters } from "../lib/dateFilters";
 import {categoryRecipe} from '../lib/tableModel/categories';
 import { resolvePivotParams,composePivotParams,type PivotGroupCandidate } from '../lib/pivotParamGroups';
@@ -9,12 +11,13 @@ import { validateTableModel as validateAnalyticalModel } from '../lib/tableModel
 import { activeRuntimeKeys, validateRuntimeParams, type RuntimeParams } from '../lib/tableExecution/runtimeParams';
 import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
-import type { Dashboard, DashboardCard } from '../lib/types';
+import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from '../lib/types';
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
-import { datasetFromRows } from "../lib/localTableData";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
+import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
-import { LOCAL_TABLE_ID } from '../lib/builtins';
+import { isLinkedMetricCard, LOCAL_TABLE_ID } from '../lib/builtins';
 import { readLocalFile } from '../lib/localFiles';
 import { validateGraph } from '../lib/widgetData/graph';
 import type { SourceAdapter } from '../lib/widgetData/source';
@@ -78,27 +81,67 @@ type Runtime = {
   jobs: Set<Promise<void>>;
 };
 export type ExecutionDependencies = {
+  liveDashboard?: (id: string) => Dashboard | undefined;
   viewerAuthority?: {isViewer:()=>boolean;subscribe:(listener:()=>void)=>()=>void};
   managedProvider?: (card: DashboardCard) => ExecutionProvider;
   executor?: (id: string) => LocalWorkerExecutor;
   engine?: TableEngine;
-  source: (card: DashboardCard) => SourceAdapter | undefined;
+  source?: (card: DashboardCard) => SourceAdapter | undefined;
   reconcileSelection?: (dashboardId: string, widgetId: string, definition: TableDefinition, selection: SelectionSpec, guard: TableCommitGuard) => Promise<boolean>;
 };
 /**
  * The rows each backend table card fetched, handed over by its WidgetCard so
  * the worker never fetches a second time. `ready` settles on the first rows.
  */
-const backendRows = new Map<string, { data?: unknown; ready: Promise<void>; resolve: () => void }>();
-function rowsEntry(id: string) {
-  let entry = backendRows.get(id);
-  if (!entry) {
-    let resolve!: () => void;
-    const ready = new Promise<void>(r => { resolve = r; });
-    entry = { ready, resolve };
-    backendRows.set(id, entry);
+export type BackendRequest = { readonly dashboardId: string; readonly cardId: string };
+// Table presentation settings do not change the backend request.
+function backendConfiguration(card: DashboardCard, scope?: SourceGroups, params = acquisitionParams(card, scope)) {
+  return [card.backendId, card.widgetId, params];
+}
+type BackendRows = {
+  configuration: ReturnType<typeof backendConfiguration>;
+  request?: BackendRequest;
+  data?: unknown;
+  acquisition?: BackendAcquisition;
+  ready: Promise<void>;
+  resolve: () => void;
+};
+// The question outlives its mounted or off-tab fetch hook. Each actual GET
+// still owns a distinct BackendRequest, and only that ticket can deliver rows.
+export type RunQuestion = {
+  params: Record<string, string>;
+  fiscalYearEnd?: Record<string, number>;
+  intent: string;
+  sourceParams?: Record<string, string>;
+  progress: { wire: string | null; held: boolean; bounds?: { min: Date; max: Date } };
+};
+type BackendProducer = { backendId: string; widgetId: string; identity: string };
+type BackendOwner = { slots: BackendRows[]; producer?: BackendProducer; armed?: RunQuestion; wire?: string; revision: number };
+function canonicalHeaders(headers: Record<string, string>) {
+  return Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+}
+function canonicalRequestUrl(address: string) {
+  try {
+    const url = new URL(address);
+    url.searchParams.sort();
+    return url.href;
+  } catch {
+    // Preserve the configured address. The normal fetch path reports invalid URLs.
+    return address;
   }
-  return entry;
+}
+function backendProducer(card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef): BackendProducer {
+  const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
+    ? [backend.headerName, backend.headerValue] : undefined;
+  const identity = JSON.stringify([widget.runButton === true, backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
+    queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
+  return { backendId: card.backendId, widgetId: card.widgetId, identity };
+}
+function pendingRows(configuration: BackendRows['configuration']): BackendRows {
+  let resolve!: () => void;
+  const ready = new Promise<void>(done => { resolve = done; });
+  return { configuration: structuredClone(configuration), ready, resolve };
 }
 /**
  * A backend table the user never hid columns on hides its widgets.json
@@ -109,23 +152,54 @@ function defaultHidden(card: DashboardCard, table: TableDefinition['table']): Ta
   const hidden = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table?.columns?.filter(c => c.hide === true).map(c => c.field) ?? [];
   return hidden.length ? { ...table, hidden } : table;
 }
-export function backendTableSource(card: DashboardCard): SourceAdapter {
+function backendTableSource(card: DashboardCard, entry: BackendRows): SourceAdapter {
   return { async acquire() {
-    const entry = rowsEntry(card.id);
     await entry.ready;
     // The card's own fetch failed: its children must not keep the previous rows.
     if (entry.data instanceof Error) throw entry.data;
-    if (!fitsTableWorker(entry.data)) throw new Error('This table is too large for the table engine');
+    const parsed = parseTableSnapshot(entry.data);
+    if (!fitsTableWorker(parsed.data)) throw new Error('This table is too large for the table engine');
     const spec = useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.table;
     // Copied: datasetFromRows fills absent keys, and these rows are also on screen.
-    const rows = (tableRows(entry.data) ?? []).map(row => ({ ...row }));
+    const rows = (tableRows(parsed.data) ?? []).map(row => ({ ...row }));
     // The provider's aggregation hint rides as column metadata, so a linked table's input keeps it for Rita's describe_table (V9-P2).
     const columns = spec ? tableColumns(rows, spec).map(c => ({ id: c.field, label: c.header, ...(c.cellDataType ? { dtype: c.cellDataType } : {}), ...(c.format ? { format: c.format } : {}), ...(c.hint ? { metadata: { aggregationHint: c.hint } } : {}) })) : [];
-    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns) };
+    return { kind: 'dataset', dataset: datasetFromRows(rows, card.id, 0, 'backend', undefined, columns, parsed.snapshot, entry.acquisition) };
   } };
 }
 /** Only this store owns acquisition and activation; UI caches consume exact active revisions. */
 export function createTableExecutionStore(deps: ExecutionDependencies) {
+  // A request can start before React synchronizes the new dashboard definition.
+  // Keep the source waiters keyed by definition until that handoff converges.
+  let wireRevision = 0;
+  const backendRows = new Map<string, Map<string, BackendOwner>>();
+  function ownerFor(d: string, id: string) {
+    let cards = backendRows.get(d);
+    if (!cards) {
+      cards = new Map();
+      backendRows.set(d, cards);
+    }
+    let owner = cards.get(id);
+    if (!owner) {
+      owner = { slots: [], revision: 0 };
+      cards.set(id, owner);
+    }
+    return owner;
+  }
+  function rowsEntry(owner: BackendOwner, configuration: BackendRows['configuration']) {
+    let entry = owner.slots.find(slot => sameConfig(slot.configuration, configuration));
+    if (!entry) {
+      entry = pendingRows(configuration);
+      owner.slots.push(entry);
+    }
+    return entry;
+  }
+  function backendSource(d: string, card: DashboardCard) {
+    return backendTableSource(card, rowsEntry(ownerFor(d, card.id), backendConfiguration(card, dashboards.get(d))));
+  }
+  function sourceFor(d: string, card: DashboardCard) {
+    return deps.source?.(card) ?? (isBackendTable(card) ? backendSource(d, card) : undefined);
+  }
   const makeExecutor = deps.executor ?? ((id: string) => createTableProvider(id, deps.engine ?? resolveTableEngine()));
   const managedProvider = deps.managedProvider ?? ((card: DashboardCard) => {
     const backend=useBackendsStore.getState().backends.find(b=>b.id===card.backendId);
@@ -287,7 +361,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
       unavailable(node, 'blocked', error instanceof Error ? error.message : 'Invalid table definition');
       return Promise.resolve();
     }
-    if (!node.card.linkedChart && !isWorkerTableProducer(node.card)) {
+    if (!node.card.linkedChart && !isLinkedMetricCard(node.card) && !isWorkerTableProducer(node.card)) {
       unavailable(node, 'unavailable', 'This presentation is unavailable as a table source; restore Table view');
       return Promise.resolve();
     }
@@ -317,7 +391,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
             return;
           }
           const upstream = { ...parent.view.active };
-          if (node.card.linkedChart) {
+          if (node.card.linkedChart || isLinkedMetricCard(node.card)) {
             node.view = { ...node.view, status: parent.view.status, active: upstream, requested: upstream, sourceRevision: upstream, ready: parent.view.ready, stale: false, error: undefined };
             emit();
             return;
@@ -368,7 +442,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           }
         }
         else {
-          const source = deps.source(node.card);
+          const source = sourceFor(d, node.card);
           if (!source) {
             unavailable(node, 'unavailable', 'Source unavailable; choose a source');
             return;
@@ -465,6 +539,17 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     runtime.jobs.add(job);
     return job;
   }
+  function retireBackendInput(d: string, cardId: string, owner: BackendOwner) {
+    owner.revision = ++wireRevision;
+    owner.wire = undefined;
+    owner.slots = owner.slots.filter(slot => !slot.request);
+    const runtime = dashboards.get(d);
+    if (runtime?.nodes.has(cardId)) {
+      invalidate(runtime, cardId, true);
+      void ensure(d, cardId);
+    }
+    emit();
+  }
   const api = {
     subscribe(fn: () => void) {
       listeners.add(fn);
@@ -474,11 +559,12 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     },
     syncDashboard(dashboard: Dashboard) {
       const runtime: Runtime = dashboards.get(dashboard.id) ?? { nodes: new Map(), seen: new Set(), leases: 0, jobs: new Set() };
+      const previousGroups = { groups: runtime.groups, groupsDisabled: runtime.groupsDisabled };
       dashboards.set(dashboard.id, runtime);runtime.groups=dashboard.groups;runtime.groupsDisabled=dashboard.groupsDisabled;runtime.exchange=dashboard.exchange;
       const cards = dashboard.tabs.flatMap(tab => tab.cards).filter(c => c.widgetId === LOCAL_TABLE_ID || c.linkedSource || isBackendTable(c) || isManagedTable(c));
       const ids = new Set(cards.map(c => c.id));
       // A previously owned deleted source is unavailable, whereas foreign persisted references are invalid.
-      const graph = cards.map(c => ({ id: c.id, source: c.linkedSource?.sourceWidgetId, producer: !c.linkedChart }));
+      const graph = cards.map(c => ({ id: c.id, source: c.linkedSource?.sourceWidgetId, producer: !c.linkedChart && !isLinkedMetricCard(c) }));
       const missing = [...new Set(graph.flatMap(n => n.source && !ids.has(n.source) && runtime.seen.has(n.source) ? [n.source] : []))];
       try {
         for (const card of cards) {
@@ -505,7 +591,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           node.acquisition = undefined;
           disposeNode(node);
           runtime.nodes.delete(id);
-          backendRows.delete(id);
+          backendRows.get(dashboard.id)?.delete(id);
           for (const child of runtime.nodes.values())
             if (child.card.linkedSource?.sourceWidgetId === id)
               invalidate(runtime, child.card.id);
@@ -516,8 +602,13 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         if (!existing)
           runtime.nodes.set(card.id, { card: structuredClone(card), runtimeParams:emptyRuntime, groupCandidates:snapshotCandidates(baseline.candidates),groupDiagnostics:baseline.diagnostics, acquired: false, version: 0, view: { status: 'pending', requested: { widgetId: card.id, input: 0, model: 1, output: 1 }, definition: structuredClone(definition), selection: structuredClone(selection), stale: false } });
         else {
-          const sourceChanged = JSON.stringify([existing.card.params, existing.card.linkedSource, existing.card.managedSource, existing.card.backendId, existing.card.widgetId]) !== JSON.stringify([card.params, card.linkedSource, card.managedSource, card.backendId, card.widgetId]) || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
+          const sourceChanged = !sameConfig(backendConfiguration(existing.card, previousGroups), backendConfiguration(card, runtime))
+            || !sameConfig(existing.card.linkedSource, card.linkedSource) || !sameConfig(existing.card.managedSource, card.managedSource)
+            || isWorkerTableProducer(existing.card) !== isWorkerTableProducer(card);
           // Compare against the last persisted card, separately from live runtime edits.
+          // A form-only edit still needs a post-sync notification for strict authoring
+          // guards. Reapply the registered input without awaiting another HTTP fetch.
+          const paramsChanged = !sameConfig(existing.card.params, card.params);
           const definitionChanged = !sameConfig(existing.card.tableDefinition, card.tableDefinition);
           const tableChanged = !sameConfig(existing.card.table, card.table);
           const selectionChanged = !sameConfig(existing.card.tableSelection, card.tableSelection);
@@ -529,14 +620,29 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           const liveBaseline=resolvePivotParams(validateAnalyticalModel(nextDefinition.analytical).model,card.bindings,dashboard.groups,dashboard.groupsDisabled);
           const groupsChanged=!sameConfig(existing.groupCandidates,liveBaseline.candidates)||!sameConfig(existing.groupDiagnostics,liveBaseline.diagnostics);
           existing.groupCandidates=snapshotCandidates(liveBaseline.candidates);existing.groupDiagnostics=liveBaseline.diagnostics;
+          if (sourceChanged) {
+            const owner = backendRows.get(dashboard.id)?.get(card.id);
+            if (owner) {
+              // The most recent Run owns its result while the user edits a draft.
+              // An incompatible draft waits separately. A new Run retires the old ticket.
+              const runButtonTable = isBackendTable(card) && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.runButton === true;
+              const keepArmed = runButtonTable && existing.card.widgetId === card.widgetId && existing.card.backendId === card.backendId;
+              // The new hook may already have observed the replacement before sync.
+              if (!runButtonTable || owner.producer?.backendId !== card.backendId || owner.producer.widgetId !== card.widgetId) {
+                owner.armed = undefined;
+              }
+              owner.slots = owner.slots.filter(slot => (keepArmed && slot.request)
+                || sameConfig(slot.configuration, backendConfiguration(card, runtime)));
+            }
+          }
           existing.card = structuredClone(card);
           if (modelChanged) {
             existing.view = { ...existing.view, definition: structuredClone(nextDefinition), selection: structuredClone(nextSelection) };
           }
           if(sourceChanged && existing.managed){disposeNode(existing);existing.executor=undefined;existing.managed=undefined;}
-          if (sourceChanged || modelChanged || runtimeChanged || groupsChanged)
+          if (sourceChanged || paramsChanged || modelChanged || runtimeChanged || groupsChanged)
             invalidate(runtime, card.id, sourceChanged);
-          if (!card.linkedChart && !isWorkerTableProducer(card)) {
+          if (!card.linkedChart && !isLinkedMetricCard(card) && !isWorkerTableProducer(card)) {
             disposeNode(existing);
             existing.executor = undefined;
             unavailable(existing, 'unavailable', 'This presentation is unavailable as a table source; restore Table view');
@@ -564,20 +670,82 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         for (const card of cards)
           void ensure(dashboard.id, card.id);
     },
-    /** A backend table card's newly fetched rows; a change re-acquires the table. */
-    setBackendRows(d: string, id: string, data: unknown) {
-      const entry = rowsEntry(id);
-      if (entry.data === data) return;
+    /** A new producer may wait for a calendar or refuse validation before any URL is sent. */
+    observeBackendProducer(d: string, card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef,
+      initialQuestion?: () => RunQuestion) {
+      const owner = ownerFor(d, card.id);
+      const producer = backendProducer(card, backend, widget);
+      if (!sameConfig(producer, owner.producer)) {
+        const replaced = owner.producer !== undefined;
+        owner.producer = producer;
+        owner.armed = undefined;
+        if (replaced) retireBackendInput(d, card.id, owner);
+      }
+      return owner.armed ??= initialQuestion?.();
+    },
+    /** A reader can use an existing compatible question without arming one or acquiring rows. */
+    readArmedBackendRequest(d: string, card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef) {
+      const owner = backendRows.get(d)?.get(card.id);
+      return owner?.armed && sameConfig(owner.producer, backendProducer(card, backend, widget)) ? owner.armed : undefined;
+    },
+    /** Commit a changed Run-button question even if its GET must wait for a calendar. */
+    replaceArmedBackendRequest(d: string, cardId: string, previous: RunQuestion, next: RunQuestion) {
+      const owner = backendRows.get(d)?.get(cardId);
+      if (owner?.armed !== previous) return false;
+      owner.armed = next;
+      if (owner.slots.some(slot => slot.request)) retireBackendInput(d, cardId, owner);
+      return true;
+    },
+    /** The source card owns the request; consumers only wait for this particular completion. */
+    beginBackendRequest(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d), committedParams?: Record<string,string>): BackendRequest {
+      const owner = ownerFor(d, card.id);
+      const configuration = backendConfiguration(card, scope, committedParams);
+      const entry = rowsEntry(owner, configuration);
+      const request = { dashboardId: d, cardId: card.id };
+      const next = entry.request ? pendingRows(configuration) : entry;
+      // Supersede every earlier request, preserving waiters for an un-run draft.
+      owner.slots = [next, ...owner.slots.filter(slot => slot !== entry && !slot.request)];
+      next.request = request;
+      const runtime = dashboards.get(d), node = runtime?.nodes.get(card.id);
+      if (next !== entry && runtime && node && sameConfig(next.configuration, backendConfiguration(node.card, runtime))) {
+        invalidate(runtime, card.id, true);
+        emit();
+        void ensure(d, card.id);
+      }
+      return request;
+    },
+    identifyBackendRequest(request: BackendRequest, url: string, headers: Record<string, string>, selector?: string) {
+      const owner = backendRows.get(request.dashboardId)?.get(request.cardId);
+      if (!owner?.slots.some(slot => slot.request === request)) return;
+      // This hook only transports GETs with no body. Full private identity is
+      // available after calendar resolution; renderers receive only a generation.
+      const wire = JSON.stringify([canonicalRequestUrl(url), selector, canonicalHeaders(headers)]);
+      const changed = owner.wire !== undefined && owner.wire !== wire;
+      owner.wire = wire;
+      if (changed) {
+        owner.revision = ++wireRevision;
+        emit();
+      }
+    },
+    backendWireRevision(d: string, id: string | undefined) {
+      return id ? backendRows.get(d)?.get(id)?.revision ?? 0 : 0;
+    },
+    /** Fiscal relabelling may deliver updated rows for the same completed request. */
+    setBackendRows(request: BackendRequest, data: unknown, acquisition?: BackendAcquisition) {
+      const { dashboardId: d, cardId: id } = request;
+      const entry = backendRows.get(d)?.get(id)?.slots.find(slot => slot.request === request);
+      if (!entry || (entry.data === data && entry.acquisition === acquisition)) return;
       const replaced = 'data' in entry;
       entry.data = data;
+      entry.acquisition = data instanceof Error ? undefined : acquisition;
       entry.resolve();
       const runtime = dashboards.get(d), node = runtime?.nodes.get(id);
-      // A node that failed on the previous rows (too large, fetch error) retries on new ones.
-      if (!replaced || !runtime || !node || (!node.acquired && !node.acquisition && !node.view.error)) return;
+      if (!replaced || !runtime || !node || !sameConfig(entry.configuration, backendConfiguration(node.card, runtime))) return;
       invalidate(runtime, id, true);
       emit();
       void ensure(d, id);
     },
+    backendSource,
     ensureTable(d: string, id: string) {
       void ensure(d, id);
     },
@@ -673,7 +841,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           return preview.columns;
         }finally{session.result.dispose();}
       }
-      const source = deps.source(node.card);
+      const source = sourceFor(d, node.card);
       if (!source) throw new Error('Source schema unavailable');
       const executor = makeExecutor(id);
       try {
@@ -691,12 +859,13 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
      * Metadata only: never reads source rows or reaches behind a presented linked input. */
     sourceMatches(d: string, id: string, liveCards: readonly DashboardCard[], ownActivation?: {view:ViewState;executor:LocalWorkerExecutor}): boolean {
       const runtime=dashboards.get(d); if(!runtime||runtime.invalid)return false;
+      const liveScope = deps.liveDashboard?.(d) ?? runtime;
       const seen=new Set<string>(); let currentId:string|undefined=id;
-      const source=(card:DashboardCard)=>[card.widgetId,card.backendId,card.params,card.linkedSource,card.managedSource,card.view];
       while(currentId) {
         if(seen.has(currentId))return false;seen.add(currentId);
         const node=runtime.nodes.get(currentId),live=liveCards.find(card=>card.id===currentId);
-        if(!node||!live||!sameConfig(source(node.card),source(live)))return false;
+        if(!node||!live||!sameConfig(node.card.params, live.params)
+          ||!sameConfig(acquisitionConfiguration(node.card, runtime),acquisitionConfiguration(live, liveScope)))return false;
         // Only the coordinator's exact own activation may queue another functional
         // edit over already acquired input. Acquisition and every upstream stay strict.
         const ownRecalculation=currentId===id&&node.view.status==='updating'&&node.acquired&&!node.acquisition
@@ -748,6 +917,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
     },
     disposeDashboard(d: string) {
       const runtime = dashboards.get(d);
+      backendRows.delete(d);
       if (!runtime)
         return;
       dashboards.delete(d);
@@ -756,7 +926,6 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
         node.acquisition?.controller.abort();
         node.acquisition = undefined;
         disposeNode(node);
-        backendRows.delete(node.card.id);
       }
       runtime.nodes.clear();
       runtime.seen.clear();
@@ -776,6 +945,7 @@ function sameRevision(a: Revision, b: Revision) {
   return a.widgetId === b.widgetId && a.input === b.input && a.model === b.model && a.output === b.output;
 }
 export const tableExecutionStore = createTableExecutionStore({
+  liveDashboard: id => useDashboardStore.getState().dashboards.find(dashboard => dashboard.id === id),
   viewerAuthority:{isViewer:()=>useDashboardStore.getState().viewer,subscribe:listener=>useDashboardStore.subscribe(listener)},
   reconcileSelection: async (d, id, definition, selection, guard) => {
     const { useDashboardStore } = await import('./dashboardStore');
@@ -787,7 +957,7 @@ export const tableExecutionStore = createTableExecutionStore({
       const backendId = card.params.fiscalYearEndBackend;
       const backend = backendId ? useBackendsStore.getState().backends.find(b => b.id === backendId) : undefined;
       return { kind: 'file', name: card.params.file, bytes, ...(backend ? { yearEnds: (symbols: string[]) => statementYearEnds(backend, symbols) } : {}) };
-    } } : isBackendTable(card) ? backendTableSource(card) : undefined });
+    } } : undefined });
 export type TableExecutionStore = ReturnType<typeof createTableExecutionStore>;
 
 /** Release store waiters immediately even when a native read ignores cancellation. */

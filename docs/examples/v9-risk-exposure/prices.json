@@ -1,0 +1,221 @@
+{
+  "completeness": "bounded",
+  "receipt": {
+    "interval": "1d",
+    "start_date": "2026-03-02",
+    "end_date": "2026-03-17",
+    "currency": "USD"
+  },
+  "rows": [
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-02",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-03",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-04",
+      "adjusted_close": 125,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-05",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-06",
+      "adjusted_close": 0,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-09",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-10",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-11",
+      "adjusted_close": 125,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-12",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-13",
+      "adjusted_close": null,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-16",
+      "adjusted_close": 100,
+      "currency": "USD"
+    },
+    {
+      "symbol": "ALDER",
+      "date": "2026-03-17",
+      "adjusted_close": 125,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-02",
+      "adjusted_close": null,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-03",
+      "adjusted_close": 80,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-04",
+      "adjusted_close": 81,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-05",
+      "adjusted_close": 80,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-06",
+      "adjusted_close": 78,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-09",
+      "adjusted_close": 79,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-10",
+      "adjusted_close": 83,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-11",
+      "adjusted_close": 84,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-12",
+      "adjusted_close": 85,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-13",
+      "adjusted_close": 88,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-16",
+      "adjusted_close": 86,
+      "currency": "USD"
+    },
+    {
+      "symbol": "BIRCH",
+      "date": "2026-03-17",
+      "adjusted_close": 90,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-02",
+      "adjusted_close": 50,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-03",
+      "adjusted_close": 51,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-04",
+      "adjusted_close": 50,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-05",
+      "adjusted_close": 52,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-06",
+      "adjusted_close": 55,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-09",
+      "adjusted_close": 54,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-10",
+      "adjusted_close": 55,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-11",
+      "adjusted_close": 56,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-12",
+      "adjusted_close": 55,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-13",
+      "adjusted_close": 58,
+      "currency": "USD"
+    },
+    {
+      "symbol": "CEDAR",
+      "date": "2026-03-16",
+      "adjusted_close": 60,
+      "currency": "USD"
+    }
+  ]
+}

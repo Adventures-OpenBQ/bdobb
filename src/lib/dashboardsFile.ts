@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { persistedCard } from "./widgetData/persistence";
+import { isLinkedMetricCard } from "./builtins";
+import { decodeLinkedKpiOptions } from "./widgetData/kpi/settings";
 import { loadJsonDir, removeJson, saveJson } from "./jsonStore";
 import { parseExchange } from "./calendar";
 import { notifyDashboardChanged } from "./dashboardSync";
@@ -125,7 +127,11 @@ function withGroupType(groups: StoredGroup[] | undefined): ParamGroup[] | undefi
  * filtered the same way.
  */
 function withBindings(card: StoredCard, groups: ParamGroup[]): DashboardCard {
-  const { groupIds, ...rest } = card;
+  const { groupIds, linkedMetric, ...rest } = card;
+  if (linkedMetric !== undefined && rest.linkedSource && isLinkedMetricCard(rest)) {
+    const metric = decodeLinkedKpiOptions(linkedMetric);
+    if (metric.ok) Object.assign(rest, { linkedMetric: metric.options });
+  }
   if (!groupIds) return rest;
   const bindings = [...(rest.bindings ?? [])];
   for (const id of groupIds) {

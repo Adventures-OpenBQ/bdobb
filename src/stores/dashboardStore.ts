@@ -4,14 +4,16 @@ import { validatePivotGroupPlan, type PivotGroupPlan } from '../lib/pivotGroupCh
 import type { PivotGroupProofContext } from '../lib/tableExecution/pivotGroupProof';
 import { reservedPivotName } from '../lib/paramGroups';
 
-import type { LinkedChartSettings } from "../lib/widgetData/types";
+import type { LinkedChartSettings, LinkedPresentation } from "../lib/widgetData/types";
+import type { LinkedKpiOptions } from "../lib/widgetData/kpi/types";
+import { decodeLinkedKpiOptions } from "../lib/widgetData/kpi/settings";
 import { canUseLinkedSource } from "../lib/widgetData/sources";
 import { remapWidgetReferences } from "../lib/widgetData/persistence";
 import { validateTableModel } from "../lib/tableExecution/validation";
 import type { TableDefinition, SelectionSpec } from "../lib/tableExecution/types";
 import { create } from "zustand";
 import { pinResolvedBackends } from "../lib/appsJson";
-import { BUILTIN_BACKEND_ID, BUILTIN_WIDGETS, LINKED_TABLE_ID, LINKED_CHART_ID, LOCAL_TABLE_ID } from "../lib/builtins";
+import { BUILTIN_BACKEND_ID, BUILTIN_WIDGETS, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID, LOCAL_TABLE_ID, isLinkedMetricCard } from "../lib/builtins";
 import {
   clampDockRows,
   DEFAULT_DOCK_ROWS,
@@ -244,8 +246,9 @@ type DashboardState = {
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
   ) => Promise<string | null>;
-  addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: "table" | "chart" }) => Promise<string | null>;
-  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings) => Promise<boolean>;
+  addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: LinkedPresentation }) => Promise<string | null>;
+  commitLinkedMetricSettings: (dashboardId: string, cardId: string, settings: LinkedKpiOptions, guard: () => boolean) => Promise<boolean>;
+  commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
   replaceLinkedSource: (cardId: string, sourceWidgetId: string) => Promise<boolean>;
   removeCard: (cardId: string) => Promise<void>;
   /**
@@ -1212,13 +1215,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       const tab = dashboard?.tabs.find(t => t.id === tabId);
       const id = crypto.randomUUID();
       if (!dashboard || !tab || removing.has(dashboardId) || !canUseLinkedSource(dashboard, id, sourceWidgetId)) return null;
-      const widgetId = presentation === 'chart' ? LINKED_CHART_ID : LINKED_TABLE_ID;
+      const widgetId = { chart: LINKED_CHART_ID, table: LINKED_TABLE_ID, metric: LINKED_METRIC_ID }[presentation];
       const widget = BUILTIN_WIDGETS.find(w => w.id === widgetId)!;
       const card: DashboardCard = {
         id, widgetId, backendId: BUILTIN_BACKEND_ID, params: {},
         layout: { x: 0, y: nextY(tab.cards), w: widget.gridData.w, h: widget.gridData.h },
         linkedSource: { kind: 'widget', sourceWidgetId },
-        ...(presentation === 'chart' ? { linkedChart: { type: 'column' as const, measures: [], display: 'grouped' as const } } : { tableDefinition: { table: {}, search: '' }, tableSelection: { kind: 'none' as const } }),
+        ...(presentation === 'chart' && { linkedChart: { type: 'column' as const, measures: [], display: 'grouped' as const } }),
+        ...(presentation === 'table' && { tableDefinition: { table: {}, search: '' }, tableSelection: { kind: 'none' as const } }),
       };
       const commit = (d: Dashboard): Dashboard => ({ ...d, tabs: d.tabs.map(t => t.id === tabId ? { ...t, cards: [...t.cards, card] } : t) });
       const saved = await saveEdit(commit(dashboard), dashboard);
@@ -1226,14 +1230,29 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       return id;
     }),
 
-    commitLinkedChartSettings: async (dashboardId, cardId, settings) => {
+    commitLinkedChartSettings: async (dashboardId, cardId, settings, guard) => {
       const captured = structuredClone(settings);
       return lifecycle(async () => {
-        if (refuse("commitLinkedChartSettings")) return false;
+        if (refuse("commitLinkedChartSettings") || (guard && !guard())) return false;
         const dashboard = get().dashboards.find(d => d.id === dashboardId);
         const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
         if (!dashboard || removing.has(dashboardId) || !card?.linkedSource || !card.linkedChart) return false;
         const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedChart: captured }));
+        const saved = await saveEdit(commit(dashboard), dashboard);
+        set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboardId ? keepRevision(commit(d), saved) : d) }));
+        return true;
+      });
+    },
+
+    commitLinkedMetricSettings: async (dashboardId, cardId, settings, guard) => {
+      const decoded = decodeLinkedKpiOptions(settings);
+      if (!decoded.ok) return false;
+      const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedMetric: decoded.options }));
+      return lifecycle(async () => {
+        if (refuse("commitLinkedMetricSettings") || !guard()) return false;
+        const dashboard = get().dashboards.find(d => d.id === dashboardId);
+        const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
+        if (!dashboard || removing.has(dashboardId) || !card?.linkedSource || !isLinkedMetricCard(card)) return false;
         const saved = await saveEdit(commit(dashboard), dashboard);
         set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboardId ? keepRevision(commit(d), saved) : d) }));
         return true;
@@ -1247,7 +1266,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         if (refuse("replaceLinkedSource")) return false;
         const dashboard = get().dashboards.find(d => d.id === dashboardId);
         const card = dashboard?.tabs.flatMap(t => t.cards).find(c => c.id === cardId);
-        if (!dashboard || removing.has(dashboard.id) || !card?.linkedSource || !canUseLinkedSource(dashboard, cardId, sourceWidgetId)) return false;
+        if (!dashboard || removing.has(dashboard.id) || !card || (!card.linkedSource && !isLinkedMetricCard(card)) || !canUseLinkedSource(dashboard, cardId, sourceWidgetId)) return false;
         const commit = (d: Dashboard) => updateCardInDashboard(d, cardId, c => ({ ...c, linkedSource: { kind: 'widget', sourceWidgetId } }));
         const saved = await saveEdit(commit(dashboard), dashboard);
         set(state => ({ dashboards: state.dashboards.map(d => d.id === dashboard.id ? keepRevision(commit(d), saved) : d) }));
@@ -1317,7 +1336,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
           if (edge) copy.layout = firstFreeSpot(t.cards.map((c) => c.layout), copy.layout.w, copy.layout.h, GRID_COLS, (d.dockRows ?? DEFAULT_DOCK_ROWS)[edge]);
           // A link names a card on its own dashboard; elsewhere it would be a
           // foreign reference that blocks every table there.
-          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; }
+          if (found.dashboard.id !== dashboardId) { delete copy.linkedSource; delete copy.linkedChart; delete copy.linkedMetric; }
           newId = copy.id;
           return { ...t, cards: [...t.cards, copy] };
         }),

@@ -1,5 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import { revisionSlope } from '../test/fixtures/estimateRevisions';
+import { capMap } from '../test/fixtures/marketMap';
 import { beforeEach, describe, expect, it } from "vitest";
 import * as appsJson from "./appsJson";
 import { card } from "../test/fixtures";
@@ -8,7 +10,9 @@ import { importApps, planAppsImport } from "./appsJson";
 import { encodeV3CardExtension } from "./appsExtensionsV3";
 import { saveDashboard, loadDashboards } from "./dashboardsFile";
 import { __reset, __list } from "../test/memfs";
-import { __resetJsonStoreForTests } from "./jsonStore";
+import { __resetJsonStoreForTests, saveJson } from "./jsonStore";
+import { BUILTIN_WIDGETS } from "./builtins";
+import type { RecipeOptions } from "./widgetData/chartRecipes/types";
 
 const table: TableCardState = {
   sorting: [{ id: "close", desc: true }],
@@ -122,6 +126,36 @@ describe("compatible v3 exports", () => {
     expect(JSON.stringify(input)).toBe(before);
     expect(appsJson.exportApp(input)).not.toHaveProperty("extensions");
   });
+});
+
+it("round trips risk recipe cards and remaps their source through a compatible app export", async () => {
+  const recipes: RecipeOptions[] = [
+    { version: 1, kind: "return-distribution", fields: { date: "date", price: "adjusted_close" }, symbol: "AMD", bins: 30 },
+    { version: 1, kind: "small-multiples", fields: { date: "date", price: "adjusted_close", symbol: "ticker" }, symbols: ["NVDA", "AMD"] },
+    { version: 1, kind: "etf-pareto", fields: { holding: "ticker", weight: "weight" } },
+    { version: 1, kind: "etf-exposure", fields: { category: "region", weight: "weight" }, mode: "region" },
+  ];
+  const input = dashboard();
+  const [tab] = input.tabs;
+  for (const recipe of recipes) {
+    tab.cards.push(card({
+      id: recipe.kind, widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+      linkedChart: { type: recipe.kind, display: "grouped", measures: [], recipe },
+    }));
+  }
+
+  const exported = appsJson.exportCompatibleApp(input);
+  expect(exported).toMatchObject({ ok: true, value: { extensions: { bdobb: { profile: "v4" } } } });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const restored = importApps(JSON.parse(JSON.stringify([exported.value])), []).dashboards[0];
+  await saveDashboard(restored);
+  const [producer, ...charts] = (await loadDashboards())[0].tabs[0].cards;
+  for (const [index, chart] of charts.entries()) {
+    const recipe = recipes[index];
+    expect(chart.linkedSource).toEqual({ kind: "widget", sourceWidgetId: producer.id });
+    expect(chart.linkedChart).toEqual({ type: recipe.kind, display: "grouped", measures: [], recipe });
+  }
+  expect(charts).toHaveLength(4);
 });
 
 it("refuses later card state rather than dropping it from a v3 export", () => {
@@ -242,4 +276,306 @@ describe("a synced card", () => {
     const synced = card({ title: "Mine", extensions: { workspace: { widget: { id: "w1" }, layout: {}, params: {} } } });
     expect(encodeV3CardExtension(synced, "$")).toEqual({ ok: true, value: { schemaVersion: 1, profile: "v3", title: "Mine" } });
   });
+});
+
+it("round trips screening and income recipes through the v4 envelope and refuses fabricated acquisition facts", () => {
+  const recipes = [
+    { version: 1, kind: "bubble-regression", priceDate: "latest", regression: true,
+      fields: { symbol: "symbol", date: "last_day_data_date", dividendYield: "dividend_yield", priceChange: "price_change_5d", marketCap: "market_cap", exchange: "exchange", currency: "currency_symbol" } },
+    { version: 1, kind: "dividend-steps", instrument: "SHEL.LSE", fields: { date: "ex_dividend_date", amount: "amount", currency: "currency" } },
+    { version: 1, kind: "income-sankey", periodColumn: "period-column" },
+  ] satisfies RecipeOptions[];
+  const input = dashboard(), [tab] = input.tabs;
+  for (const recipe of recipes) tab.cards.push(card({ id: recipe.kind, widgetId: "linked_chart",
+    linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, display: "grouped", measures: [], recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  expect(exported).toMatchObject({ ok: true, value: { extensions: { bdobb: { profile: "v4" } } } });
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const payload = JSON.parse(JSON.stringify([exported.value]));
+  const [producer, ...charts] = importApps(payload, []).dashboards[0].tabs[0].cards;
+  expect(charts.map(chart => chart.linkedChart?.recipe)).toEqual(recipes);
+  expect(charts.every(chart => chart.linkedSource?.sourceWidgetId === producer.id)).toBe(true);
+  const [income] = payload[0].extensions.bdobb.cards.filter((entry: { extras: { linkedChart?: { type: string } } }) =>
+    entry.extras.linkedChart?.type === "income-sankey");
+  income.extras.linkedChart.recipe.reportingCurrency = "USD";
+  const text = JSON.stringify(payload);
+  expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+
+  delete income.extras.linkedChart.recipe.reportingCurrency;
+  income.extras.linkedChart.financialEvidence = { scale: 1000 };
+  const forgedChart = JSON.stringify(payload);
+  expect(planAppsImport(forgedChart, forgedChart.length, [], []).ok).toBe(false);
+});
+
+it("preserves a pinned news calendar and strictly rejects unknown settings and versions on import", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = {
+    version: 1, kind: "news-sentiment-calendar", instrument: "CANOPY.US",
+    fields: { timestamp: "date", articleId: "url", instrument: "symbols", polarity: "polarity" },
+    window: { mode: "pinned", start: "2024-02-29", end: "2024-03-01" },
+  } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "news", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, news] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(news.linkedChart?.recipe).toEqual(recipe);
+  expect(news.linkedSource?.sourceWidgetId).toBe(producer.id);
+  for (const change of [
+    { chart_sources: { version: 1, receipts: [] } },
+    { daySummaries: [] },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, title: "title" } } },
+    { recipe: { ...recipe, window: { ...recipe.window, resolved: "2024-03-01" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+  }
+});
+
+
+it("preserves a return summary’s explicit order and bounds and rejects runtime data on import", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = {
+    version: 1, kind: "return-summary", symbols: ["ZZZ.US", "AAA.US"], view: "violin",
+    fields: { date: "date", price: "adjusted_close", symbol: "symbol" },
+    window: { mode: "common", start: "2026-01-03", end: "2026-01-28" },
+  } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "returns", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, summary] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(summary.linkedChart?.recipe).toEqual(recipe);
+  expect(summary.linkedSource?.sourceWidgetId).toBe(producer.id);
+  for (const change of [
+    { returnSummary: { series: [] } },
+    { receipt: { interval: "1d" } },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, viewportHeight: 340 } },
+    { recipe: { ...recipe, window: { ...recipe.window, resolved: "2026-01-28" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+  }
+});
+
+it("roundtrips ownership choices and refuses runtime data, unknown keys and versions", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: "ownership-snapshot", version: 1, issuer: "EXAMPLE.US", view: "waffle",
+    fields: { bucket: "bucket_id", share: "reported_share" } } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "ownership", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, ownership] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(ownership.linkedChart?.recipe).toEqual(recipe);
+  expect(ownership.linkedSource?.sourceWidgetId).toBe(producer.id);
+  const hostile = [
+    { ownershipSnapshot: { buckets: [] } },
+    { chart_sources: { version: 1, receipts: [] } },
+    { unexpected: "unknown key" },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, partition: { status: "verified" } } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, asOf: "as_of" } } },
+  ];
+  expect(hostile.map(change => {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    return planAppsImport(text, text.length, [], []).ok;
+  })).toEqual(hostile.map(() => false));
+});
+
+it("roundtrips only authored ETF sunburst options in a v4 workspace", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: "etf-sunburst", version: 1, fund: "VTI.US", depth: 2, snapshot: "2026-09-30",
+    fields: { holding: "listing", sector: "industry_sector", weight: "asset_fraction" } } satisfies RecipeOptions;
+  const chart = card({ id: "holdings-chart", widgetId: "linked_chart",
+    linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, sunburst] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(sunburst.linkedChart?.recipe).toEqual(recipe);
+  expect(sunburst.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const invalid of [
+    { etfHierarchy: { holdings: [] } }, { viewportHeight: 440 }, { chart_sources: {} },
+    { recipe: { ...recipe, version: 2 } }, { recipe: { ...recipe, resolvedSnapshot: "2026-09-30" } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, snapshot: "snapshot" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, invalid);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(invalid)).toBe(false);
+    Object.assign(chart.linkedChart!, invalid);
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(invalid)).toBe(false);
+    chart.linkedChart = { type: recipe.kind, measures: [], display: "grouped", recipe };
+  }
+});
+
+const kpiOptions = {
+  version: 1, metric: 'eps_ttm', valueField: 'eps_ttm', observation: { mode: 'pinned', id: 'revised-report' },
+  view: 'gauge', range: { min: 0, max: 100, label: 'Planning range' },
+  reference: { kind: 'observation', id: 'first-report' },
+} as const;
+
+function kpiDashboard(linkedMetric = kpiOptions): Dashboard {
+  const source = card({ id: 'kpi-source', widgetId: 'local_table', backendId: 'builtin' });
+  const metric = card({ id: 'kpi', widgetId: 'linked_metric', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: source.id } });
+  return { id: 'kpi-dash', name: 'KPI', tabs: [{ id: 'kpi-tab', name: 'KPI', cards: [source, { ...metric, linkedMetric }] }] };
+}
+
+it('round trips only the authored KPI question and repairs its source identity', async () => {
+  const original = kpiDashboard();
+  const result = appsJson.exportCompatibleApp(original);
+  expect(result.ok).toBe(true);
+  if (!result.ok) throw new Error(result.issue.message);
+  const restored = importApps([JSON.parse(JSON.stringify(result.value))], BUILTIN_WIDGETS).dashboards[0];
+  const [table, metric] = restored.tabs[0].cards;
+  expect(metric.widgetId).toBe('linked_metric');
+  expect(metric.linkedMetric).toEqual(kpiOptions);
+  expect(metric.linkedSource).toEqual({ kind: 'widget', sourceWidgetId: table.id });
+  await saveDashboard(restored);
+  expect((await loadDashboards())[0].tabs[0].cards[1].linkedMetric).toEqual(kpiOptions);
+});
+
+it.each([
+  { version: 2 }, { snapshot: { unit: 'USD', value: 1 } }, { gauge: { data: [] } }, { chartSources: {} },
+  { observation: { mode: 'latest', id: 'first-report' } }, { range: { ...kpiOptions.range, unit: 'USD' } },
+  { reference: { ...kpiOptions.reference, currency: 'USD' } }, { range: undefined },
+])('rejects malformed linkedMetric options during v4 app import and export (%j)', change => {
+  const base = kpiDashboard();
+  delete base.tabs[0].cards[1].linkedMetric;
+  const exported = appsJson.exportCompatibleApp(base);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const input = exported.value;
+  const portableCards = (input.extensions!.bdobb as { cards: { extras: Record<string, unknown> }[] }).cards;
+  portableCards[1].extras.linkedMetric = { ...kpiOptions, ...change };
+  expect(() => importApps([input], [])).toThrow(/linkedMetric/);
+  Object.assign(base.tabs[0].cards[1], { linkedMetric: { ...kpiOptions, ...change } });
+  expect(appsJson.exportCompatibleApp(base).ok).toBe(false);
+});
+
+
+it('reopens native dashboard cards with tampered linkedMetric settings cleared', async () => {
+  const dashboard = kpiDashboard();
+  const metric = dashboard.tabs[0].cards[1];
+  Object.assign(metric, { linkedMetric: { ...kpiOptions, observation: { ...kpiOptions.observation, unit: 'USD' } } });
+  await saveJson(`dashboards/${dashboard.id}.json`, dashboard);
+  const reopened = (await loadDashboards())[0].tabs[0].cards[1];
+  expect(reopened.widgetId).toBe('linked_metric');
+  expect(reopened.linkedSource).toEqual(metric.linkedSource);
+  expect(reopened).not.toHaveProperty('linkedMetric');
+});
+
+it('rejects portable KPI settings hosted by a backend metric with the same widget id', () => {
+  const result = appsJson.exportCompatibleApp(kpiDashboard());
+  if (!result.ok) throw new Error(result.issue.message);
+  const builtIn = BUILTIN_WIDGETS.find(widget => widget.id === 'linked_metric')!;
+  const impostor = { ...builtIn, backendId: 'external' };
+  expect(() => importApps([result.value], [impostor])).toThrow(/built-in linked metric widget/);
+});
+
+
+it('roundtrips only authored dual-axis overlay options in a v4 workspace', () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: 'dual-axis-overlay', version: 1, recipe: 'cpi-ten-year',
+    fields: { series: 'series', date: 'date', value: 'value', availableAt: 'available_at' } } satisfies RecipeOptions;
+  const chart = card({ id: 'overlay-chart', widgetId: 'linked_chart',
+    linkedSource: { kind: 'widget', sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: 'grouped', recipe } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, overlay] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(overlay.linkedChart?.recipe).toEqual(recipe);
+  expect(overlay.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const invalid of [
+    { overlay: { points: [] } }, { viewportHeight: 450 }, { chart_sources: {} },
+    { category: 'old_category' }, { measures: ['measure3'] },
+    { recipe: { ...recipe, version: 2 } }, { recipe: { ...recipe, recipe: 'generic' } },
+    { recipe: { ...recipe, snapshot: '2026-11-01' } },
+    { recipe: { ...recipe, fields: { series: 'series', date: 'date', value: 'value', extraSeries: 'extra' } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, invalid);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(invalid)).toBe(false);
+    Object.assign(chart.linkedChart!, invalid);
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(invalid)).toBe(false);
+    chart.linkedChart = { type: recipe.kind, measures: [], display: 'grouped', recipe };
+  }
+});
+
+it('roundtrips the authored estimate revision question and refuses injected workspace data', () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const chart = card({ id: 'revision-chart', widgetId: 'linked_chart',
+    linkedSource: { kind: 'widget', sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: revisionSlope.kind, measures: [], display: 'grouped', recipe: revisionSlope } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, linked] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(linked.linkedChart?.recipe).toEqual(revisionSlope);
+  expect(linked.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const injected of [
+    { figure: { data: [] } }, { chart_sources: {} }, { estimateRevisionsSurface: {} }, { category: 'issuer' },
+    { measures: ['value'] }, { recipe: { ...revisionSlope, version: 2 } }, { recipe: { ...revisionSlope, issuer: 'ALFA.US' } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, injected);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(injected)).toBe(false);
+    chart.linkedChart = { ...linked.linkedChart!, ...injected } as typeof chart.linkedChart;
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(injected)).toBe(false);
+  }
+});
+
+it('roundtrips the authored market map question and refuses injected workspace data', () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const chart = card({ id: 'market-chart', widgetId: 'linked_chart',
+    linkedSource: { kind: 'widget', sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: capMap.kind, measures: [], display: 'grouped', recipe: capMap } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, linked] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(linked.linkedChart?.recipe).toEqual(capMap);
+  expect(linked.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const injected of [
+    { figure: { data: [] } }, { chart_sources: {} }, { viewport: {} }, { category: 'issuer' },
+    { measures: ['value'] }, { recipe: { ...capMap, version: 2 } }, { recipe: { ...capMap, depth: 2 } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, injected);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(injected)).toBe(false);
+    chart.linkedChart = { ...linked.linkedChart!, ...injected } as typeof chart.linkedChart;
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(injected)).toBe(false);
+  }
 });

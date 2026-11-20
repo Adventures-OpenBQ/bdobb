@@ -10,13 +10,16 @@ import { startMockServer, type MockServer } from "../test/mockServer";
 import { __resetLoggerForTests } from "../lib/logger";
 import { __read } from "../test/memfs";
 import { DEFAULT_SETTINGS } from "../lib/settingsFile";
-import type { DashboardCard, WidgetDef } from "../lib/types";
+import type { Dashboard, DashboardCard, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
+import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
+import { fetchWidgetData } from "../lib/dataClient";
+import { cardRequestSync } from "./useCardRequest";
 import { armedRequestOf, refreshIntervalMs, useWidgetData } from "./useWidgetData";
 import { useBundleCalendars, withOvernight } from "./useBundleCalendars";
 import { useTradingCalendar } from "./useTradingCalendar";
@@ -179,6 +182,45 @@ describe("useWidgetData", () => {
     // XLON's T-1bd from 29 Dec is 24 Dec (25 and 28 Dec closed); the edit's XNYS answer would be 28 Dec.
     expect(server.requests.filter((r) => r.path === "/prices").map((r) => new URLSearchParams(r.search).get("d"))).toEqual(["2026-12-24", "2026-12-24"]);
     vi.unstubAllGlobals();
+  });
+
+  it("reads an unmounted table on its committed bundle calendar and refuses a moved date", async () => {
+    vi.stubGlobal("crypto", webcrypto);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-12-29T12:00:00Z"));
+    clearCalendarBundles();
+    const server = await serve({
+      "/api/v1/calendar/trading/v1/bundle": (url: URL) => url.searchParams.get("calendar_id") === "exchange:XLON" ? xlon : xnysYearEnd,
+      "/prices": (url: URL) => ({ results: [{ date: url.searchParams.get("d") }] }),
+    });
+    registerBound();
+    const w = { ...useWidgetRegistryStore.getState().widgets[0], runButton: true };
+    useWidgetRegistryStore.setState({ widgets: [w] });
+    const be = useBackendsStore.getState().backends[0];
+    const dashboard: Dashboard = { id: "rita-calendar", name: "Calendar", tabs: [] };
+    const initial = { ...card, params: { d: "T-1bd(XLON)" } };
+    const draft = { ...card, params: { d: "T-1bd" } };
+    const agent = async () => {
+      const armed = armedRequestOf(draft, w, be, dashboard.id);
+      const { query, ctx } = cardRequestSync(draft, w, be, dashboard, armed);
+      return fetchWidgetData(be, w, query, ctx);
+    };
+    try {
+      const hook = renderHook(({ c }) => {
+        const calendars = useBundleCalendars(w, c.params, be);
+        return useWidgetData(c, c.params, true, undefined, calendars, undefined, dashboard);
+      }, { initialProps: { c: initial } });
+      await waitFor(() => expect(hook.result.current.data).toEqual([{ date: "2026-12-24" }]));
+      hook.rerender({ c: draft });
+      hook.unmount();
+      await expect(agent()).resolves.toEqual([{ date: "2026-12-24" }]);
+      vi.setSystemTime(new Date("2026-12-30T12:00:00Z"));
+      await expect(agent()).rejects.toThrow(/Run/);
+      expect(server.requests.filter(r => r.path === "/prices").map(r => r.search)).toEqual(["?d=2026-12-24", "?d=2026-12-24"]);
+    } finally {
+      tableExecutionStore.disposeDashboard(dashboard.id);
+      vi.unstubAllGlobals();
+    }
   });
 
   it("re-sends a legacy run-button card's armed CMES value after an un-run edit (review I2, 2026-10-24)", async () => {
@@ -1207,13 +1249,14 @@ describe("useWidgetData with a run button", () => {
 
     const { result, rerender, unmount } = renderRunButton();
     await waitFor(() => expect(result.current.status).toBe("ready"));
-    expect(armedRequestOf(card.id)?.params).toEqual({ symbol: "AAPL" });
+    const read = () => armedRequestOf(card, { ...useWidgetRegistryStore.getState().widgets[0], runButton: true }, useBackendsStore.getState().backends[0]);
+    expect(read()?.params).toEqual({ symbol: "AAPL" });
     rerender({ params: { symbol: "MSFT" } });
-    expect(armedRequestOf(card.id)?.params).toEqual({ symbol: "AAPL" });
+    expect(read()?.params).toEqual({ symbol: "AAPL" });
     act(() => result.current.run());
-    await waitFor(() => expect(armedRequestOf(card.id)?.params).toEqual({ symbol: "MSFT" }));
+    await waitFor(() => expect(read()?.params).toEqual({ symbol: "MSFT" }));
     unmount();
-    expect(armedRequestOf(card.id)).toBeUndefined();
+    expect(read()).toBeUndefined();
   });
 
   it("run() with nothing edited re-asks the same question, bumping attempt", async () => {
@@ -1341,4 +1384,191 @@ it.each(['linked_table', 'linked_chart'])('ordinary external %s IDs still fetch 
   await waitFor(() => expect(result.current.status).toBe('ready'));
   expect(result.current.data).toEqual([{ close: 42 }]);
   expect(server.requests).toHaveLength(1);
+});
+
+it('keeps ETF evidence bound to the completed request', async () => {
+  const path = '/api/v1/eodhd/etf/holdings';
+  const server = await serve({ [path]: (url: URL) => ({
+    __status: 200, __delayMs: 120, __body: { results: [{ requested: url.searchParams.get('symbol') }] },
+  }) });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path + '?private=query', dataKey: 'results' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, { symbol, token: 'private-param' }, true), {
+    initialProps: { symbol: 'FUND_A.US' },
+  });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({ symbol: 'FUND_B.US' });
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.data).toEqual([{ requested: 'FUND_A.US' }]);
+  expect(result.current.acquisition).toEqual({
+    endpoint: path, parameters: { symbol: 'FUND_A.US' }, retrievedAt: expect.any(Number),
+  });
+  act(() => result.current.run());
+  await waitFor(() => expect(result.current.data).toEqual([{ requested: 'FUND_B.US' }]));
+  expect(result.current.acquisition?.parameters.symbol).toBe('FUND_B.US');
+  rerender({ symbol: 'FUND_C.US' });
+  expect(result.current.acquisition?.parameters.symbol).toBe('FUND_B.US');
+});
+
+it('excludes a query credential using the symbol key and clears acquisition on failure', async () => {
+  const path = '/eodhd/etf/holdings';
+  let failing = false;
+  const server = await serve({ [path]: () => failing ? { __status: 500 } : [] });
+  useBackendsStore.setState({ backends: [backend({ baseUrl: server.url, authLocation: 'query', headerName: 'symbol', headerValue: 'private-key' })] });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path + '?private=token' })] });
+  const { result } = renderHook(() => useWidgetData(card, { symbol: 'FUND_A.US', exchange: 'US', provider: 'eodhd' }));
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.acquisition).toEqual({ endpoint: path, retrievedAt: expect.any(Number), parameters: { exchange: 'US', provider: 'eodhd' } });
+  failing = true;
+  act(() => result.current.retry());
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.acquisition).toBeUndefined();
+});
+
+it('stale_request_cannot_attach_receipt', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const path = '/api/v1/eodhd/equity/fundamental/dividends';
+  const server = await serve({ [path]: (url: URL) => {
+    const first = url.searchParams.get('symbol') === 'SHEL.LSE';
+    const qualified_symbol = first ? 'SHEL.LSE' : 'HSBA.LSE';
+    return { __status: 200, __delayMs: first ? 150 : 0, __body: {
+      results: [{ ...dividendRow, symbol: qualified_symbol }],
+      extra: { results_metadata: { chart_evidence: { ...dividendEvidence, qualified_symbol } } },
+    } };
+  } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path, dataKey: 'results' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, {
+    symbol, chart_source: 'true', start_date: '2026-01-01', end_date: '2026-06-30',
+  }), { initialProps: { symbol: 'SHEL.LSE' } });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({ symbol: 'HSBA.LSE' });
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.data).toMatchObject([{ symbol: 'HSBA.LSE' }]);
+  expect(result.current.acquisition).toMatchObject({ financialEvidence: { qualified_symbol: 'HSBA.LSE' } });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 170)); });
+  expect(result.current.data).toMatchObject([{ symbol: 'HSBA.LSE' }]);
+  expect(result.current.acquisition).toMatchObject({ financialEvidence: { qualified_symbol: 'HSBA.LSE' } });
+});
+
+vi.mock('../lib/widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+it('late_request_cannot_attach_context', async () => {
+  const { sourcePath, sourceResponse } = await import('../test/fixtures/chartSources');
+  const server = await serve({ [sourcePath]: (url: URL) => url.searchParams.get('symbol') === 'A'
+    ? { __delayMs: 150, __status: 200, __body: sourceResponse } : { results: { rows: [{ id: 'replacement' }] } } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: sourcePath, dataKey: 'results.rows' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, { symbol, chart_source:'true' }), { initialProps:{symbol:'A'} });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({symbol:'B'});
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 170)); });
+  expect(result.current.data).toEqual([{ id:'replacement' }]);
+  expect(result.current.acquisition).not.toHaveProperty('chartSources');
+});
+
+it('clears a previously matched chart context when its refresh fails', async () => {
+  const { sourcePath, sourceResponse, sourceReceipt } = await import('../test/fixtures/chartSources');
+  let failed = false;
+  await serve({[sourcePath]: () => failed ? {__status:500} : sourceResponse});
+  useWidgetRegistryStore.setState({widgets:[makeWidget({id:card.widgetId,endpoint:sourcePath,dataKey:'results.rows'})]});
+  const {result} = renderHook(() => useWidgetData(card,{symbol:'A',chart_source:'true'}));
+  await waitFor(() => expect(result.current.acquisition?.chartSources).toEqual({metric:sourceReceipt}));
+  failed = true;
+  act(() => result.current.retry());
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.acquisition).toBeUndefined();
+});
+
+it.each([true, false])("releases a transferred fiscal hold only for the committed intent (matching=%s)", async matching => {
+  const server = await serve({ "/equity/price": { results: [] } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: "w1", endpoint: "equity/price", runButton: true,
+    params: [{ paramName: "symbol", type: "text" }, { paramName: "quarter", type: "quarter" }] })] });
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 26, 12));
+  const dashboard: Dashboard = { id: "fiscal-handoff", name: "Fiscal", tabs: [] };
+  const mount = (symbol: string, pending: boolean) => renderHook(() => {
+    const params = { symbol, quarter: "T" };
+    return useWidgetData({ ...card, params }, params, true, { quarter: pending ? 12 : 9 },
+      { calendars: {}, pending, key: pending ? "waiting" : "ready", intent: symbol }, undefined, dashboard);
+  });
+  const agent = (symbol: string) => {
+    const source = { ...card, params: { symbol, quarter: "T" } };
+    const widget = useWidgetRegistryStore.getState().widgets[0], backend = useBackendsStore.getState().backends[0];
+    return cardRequestSync(source, widget, backend, dashboard, armedRequestOf(source, widget, backend, dashboard.id));
+  };
+  const sent = () => server.requests.map(r => {
+    const query = new URLSearchParams(r.search);
+    return [query.get("symbol"), query.get("quarter")];
+  });
+  try {
+    const initial = mount("AAPL", true);
+    await waitFor(() => expect(initial.result.current.status).toBe("loading"));
+    initial.unmount();
+    const symbol = matching ? "AAPL" : "TSLA";
+    expect(() => agent(symbol)).toThrow(/Run|waiting/i);
+    const successor = mount(symbol, false);
+    if (!matching) {
+      await waitFor(() => expect(successor.result.current.status).toBe("incomplete"));
+      expect(sent()).toEqual([]);
+      successor.unmount();
+      expect(() => agent(symbol)).toThrow(/Run/i);
+      const retry = mount(symbol, false);
+      await waitFor(() => expect(retry.result.current.status).toBe("incomplete"));
+      expect(sent()).toEqual([]);
+      act(() => retry.result.current.run());
+      await waitFor(() => expect(retry.result.current.status).toBe("ready"));
+      retry.unmount();
+    } else {
+      await waitFor(() => expect(successor.result.current.status).toBe("ready"));
+      successor.unmount();
+    }
+    expect(sent()).toEqual([[symbol, "2026-Q4"]]);
+    expect(agent("EDIT").ctx.fiscalYearEnd).toEqual({ quarter: 9 });
+    vi.setSystemTime(new Date(2026, 10, 26, 12));
+    expect(() => agent("EDIT")).toThrow(/Run/i);
+  } finally {
+    tableExecutionStore.disposeDashboard(dashboard.id);
+  }
+});
+
+it("isolates backend Run questions by dashboard, card, producer and disposal", async () => {
+  const server = await serve({ "/first": { results: [] }, "/replacement": { results: [] } });
+  const register = (endpoint: string) => useWidgetRegistryStore.setState({ widgets: [
+    makeWidget({ id: "w1", endpoint, runButton: true, params: [{ paramName: "symbol", type: "text" }] }),
+  ] });
+  register("/first");
+  const mount = async (dashboardId: string, cardId: string, symbol: string) => {
+    const params = { symbol };
+    const dashboard = { id: dashboardId, name: dashboardId, tabs: [] };
+    const hook = renderHook(() => useWidgetData({ ...card, id: cardId, params }, params, true, undefined, undefined, undefined, dashboard));
+    await waitFor(() => expect(hook.result.current.status).toBe("ready"));
+    hook.unmount();
+  };
+  const read = (dashboardId: string, cardId: string, change: Partial<WidgetDef> = {}) => {
+    const w = { ...useWidgetRegistryStore.getState().widgets[0], ...change };
+    return armedRequestOf({ ...card, id: cardId }, w, useBackendsStore.getState().backends[0], dashboardId)?.params.symbol;
+  };
+  try {
+    await mount("one", "source", "AAPL");
+    await mount("one", "source", "TSLA");
+    await mount("two", "source", "MSFT");
+    await mount("one", "sibling", "NVDA");
+    expect([read("one", "source"), read("two", "source"), read("one", "sibling")]).toEqual(["AAPL", "MSFT", "NVDA"]);
+    expect(read("one", "source", { dataKey: "other.rows" })).toBeUndefined();
+    register("/replacement");
+    expect(read("one", "source")).toBeUndefined();
+    await mount("one", "source", "TSLA");
+    register("/first");
+    await mount("one", "source", "AMD");
+    tableExecutionStore.disposeDashboard("one");
+    expect(read("one", "source")).toBeUndefined();
+    await mount("one", "source", "INTC");
+    expect(server.requests.map(r => [r.path, new URLSearchParams(r.search).get("symbol")])).toEqual([
+      ["/first", "AAPL"], ["/first", "AAPL"], ["/first", "MSFT"], ["/first", "NVDA"],
+      ["/replacement", "TSLA"], ["/first", "AMD"], ["/first", "INTC"],
+    ]);
+  } finally {
+    tableExecutionStore.disposeDashboard("one");
+    tableExecutionStore.disposeDashboard("two");
+  }
 });

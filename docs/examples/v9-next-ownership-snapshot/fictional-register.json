@@ -1,0 +1,80 @@
+{
+  "rows": [
+    {
+      "symbol": "EXAMPLE.US",
+      "share_class": "Class-A",
+      "as_of": "2026-09-30",
+      "denominator": "outstanding-shares",
+      "bucket_id": "control",
+      "reported_share": 33.3
+    },
+    {
+      "symbol": "EXAMPLE.US",
+      "share_class": "Class-A",
+      "as_of": "2026-09-30",
+      "denominator": "outstanding-shares",
+      "bucket_id": "employees",
+      "reported_share": 33.3
+    },
+    {
+      "symbol": "EXAMPLE.US",
+      "share_class": "Class-A",
+      "as_of": "2026-09-30",
+      "denominator": "outstanding-shares",
+      "bucket_id": "public",
+      "reported_share": 33.39
+    },
+    {
+      "symbol": "EXAMPLE.US",
+      "share_class": "Class-A",
+      "as_of": "2026-09-30",
+      "denominator": "outstanding-shares",
+      "bucket_id": "treasury",
+      "reported_share": 0.01
+    }
+  ],
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "ownership",
+        "origin": "acquired-snapshot",
+        "issuer": "EXAMPLE.US",
+        "share_class": "Class-A",
+        "retrieved_at": "2026-11-20T04:16:46Z",
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "unit_conflict": false,
+          "date_conflict": false,
+          "partition_conflict": false
+        },
+        "raw_count": 4,
+        "normalized_count": 4,
+        "delivered_count": 4,
+        "field_origins": {
+          "bucket": "bucket_id",
+          "share": "reported_share"
+        },
+        "measures": {},
+        "bucket_keys": [
+          "control",
+          "employees",
+          "public",
+          "treasury"
+        ],
+        "partition": {
+          "status": "verified",
+          "as_of": "2026-09-30",
+          "denominator": "outstanding-shares",
+          "exclusive": true,
+          "exhaustive": true,
+          "rounding_bound_percent": 0.002,
+          "reference": "example:ownership-register"
+        }
+      }
+    ]
+  }
+}

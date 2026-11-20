@@ -18,6 +18,7 @@ import {
   UNRESOLVED_BACKEND_ID,
 } from "./appsJson";
 import { IMPORT_MAX_BYTES } from "./importLimits";
+import type { V4AppExtension } from "./appsExtensionsV4";
 import { card as baseCard, widget as baseWidget } from "../test/fixtures";
 import type { Dashboard, WidgetDef } from "./types";
 
@@ -671,6 +672,38 @@ function ready(text: string, existing: ExistingDashboard[]) {
 }
 
 describe("planAppsImport", () => {
+  it("accepts binding-only histogram settings and refuses malformed settings in serialized apps", () => {
+    const source = baseCard({ id: "source", widgetId: "prices" });
+    const chart = baseCard({
+      id: "chart", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: "source" },
+      linkedChart: { type: "line", display: "grouped", measures: [] },
+    });
+    const template = exportCompatibleApp({ id: "d", name: "Returns", tabs: [{ id: "t", name: "Prices", cards: [source, chart] }] });
+    if (!template.ok) throw new Error(template.issue.message);
+    const { cards } = template.value.extensions!.bdobb as V4AppExtension;
+    const recipe = { version: 1, kind: "return-distribution", fields: { date: "date", price: "adjusted_close" }, symbol: "AMD", bins: 30 };
+    const planWith = (options: unknown) => {
+      Object.assign(cards[1].extras, { linkedChart: { type: recipe.kind, display: "grouped", recipe: options } });
+      const text = JSON.stringify([template.value]);
+      return planAppsImport(text, text.length, [], []);
+    };
+
+    const valid = planWith(recipe);
+    if (!valid.ok) throw new Error(valid.refusal);
+    expect(valid.dashboards[0].tabs[0].cards[1].linkedChart).toEqual({
+      type: recipe.kind, display: "grouped", measures: [], recipe,
+    });
+    for (const [options, refusal] of [
+      [{ ...recipe, bins: undefined }, /bins/i],
+      [{ ...recipe, bins: 101 }, /bins/i],
+      [{ ...recipe, symbol: "AMD,AVGO" }, /symbol/i],
+      [{ ...recipe, coverage: "complete" }, /coverage/i],
+      [{ ...recipe, fields: { date: "date", price: "date" } }, /distinct/i],
+    ] as const) {
+      expect(planWith(options)).toMatchObject({ ok: false, refusal: expect.stringMatching(refusal) });
+    }
+  });
+
   it("reports no conflict when every name is new", () => {
     const plan = ready(appsFile("Imported"), [mine("d1", "Main")]);
 

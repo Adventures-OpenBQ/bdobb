@@ -4,13 +4,20 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
+import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
+import { datasetFromBytes } from "./localTableData";
+import { buildKpiSnapshot } from "./widgetData/kpi/build";
+import { buildEtfHierarchy } from "./widgetData/chartRecipes/etfSunburst";
+import { runRecipe } from "./widgetData/chartRecipes/run";
+import { normalizeWidgets } from "./widgetsJson";
+import { captureChartSources, chartRequestContext } from "./widgetData/chartRecipes/chartSourceContracts";
+import { backendFinancialResponse } from "./widgetData/chartRecipes/financialEvidence";
 
 /**
- * Every file under docs/examples is served to users: `pnpm apps:sync` writes
- * them all into openbq-docker's one combined examples/bdobb/apps.json (SERVED
+ * For stack-backed examples, `pnpm apps:sync` writes
+ * the manifests into openbq-docker's one combined examples/bdobb/apps.json (SERVED
  * in scripts/apps-sync.mjs), served at the API's /apps.json and opened from
  * the rail's Apps catalogue. So each one is parsed and imported
  * here exactly as opening it would, against a registry that serves every
@@ -19,7 +26,7 @@ import type { WidgetDef } from "./types";
  */
 const dir = resolve(process.cwd(), "docs/examples");
 // REVIEW (user ruling 2026-10-14): was the top-level *.apps.json only. Every
-// example under docs/examples is served (scripts/apps-sync.mjs scans them all),
+// example under docs/examples is distributed (scripts/apps-sync.mjs scans them all),
 // so a <dir>/apps.json example -- v5-financial-demo -- is read here too, and
 // every it.each below covers it.
 const files = [
@@ -70,6 +77,17 @@ describe("docs/examples", () => {
     "v7.0.0-touch.apps.json",
     "v8.0.0-news.apps.json",
     "v8.0.0-pinned.apps.json",
+    "v9-chart-expansion.apps.json",
+    "v9-risk-exposure.apps.json",
+    "v9-screening-income.apps.json",
+    "v9-next-news-sentiment-calendar.apps.json",
+    "v9-next-return-box-violin.apps.json",
+    "v9-next-ownership-snapshot.apps.json",
+    "v9-next-kpi-gauges.apps.json",
+    "v9-next-etf-sunburst.apps.json",
+    "v9-next-dual-axis-overlays.apps.json",
+    "v9-next-estimate-revisions.apps.json",
+    "v9-next-market-map.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -77,6 +95,256 @@ describe("docs/examples", () => {
   it("ships every known example file, and no file the list does not name", () => {
     expect(files).toEqual(expect.arrayContaining(KNOWN));
     expect([...files].sort()).toEqual([...KNOWN].sort());
+  });
+
+  it("v9-screening-income: imports three versioned questions and matches their source requests to the snapshot receipts", () => {
+    const name = "v9-screening-income";
+    const { apps } = load(name + ".apps.json");
+    const sources = JSON.parse(readFileSync(join(dir, name, "widgets.json"), "utf8")) as Record<string, { endpoint: string }>;
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...Object.keys(sources).map(widget)]);
+    expect(imported.unresolved).toBe(0);
+    const cards = imported.dashboards[0].tabs[0].cards;
+    expect(cards).toHaveLength(6);
+    const charts = cards.filter(card => card.widgetId === LINKED_CHART_ID);
+    expect(charts.map(card => card.linkedChart?.recipe)).toEqual([
+      { version: 1, kind: "bubble-regression", priceDate: "latest", regression: true, fields: {
+        symbol: "symbol", date: "last_day_data_date", dividendYield: "dividend_yield", priceChange: "price_change_5d",
+        marketCap: "market_cap", exchange: "exchange", currency: "currency_symbol", name: "name", sector: "sector",
+      } },
+      { version: 1, kind: "dividend-steps", instrument: "CANOPY.US", fields: {
+        date: "ex_dividend_date", amount: "amount", currency: "currency", frequency: "frequency",
+      } },
+      { version: 1, kind: "income-sankey", periodColumn: '["string","FY2026"]\u001fstatement/income/1.0.0/measure/value' },
+    ]);
+    const kinds = ["screener", "dividends", "income"];
+    for (const [index, chart] of charts.entries()) {
+      const source = cards.find(card => card.id === chart.linkedSource?.sourceWidgetId)!;
+      expect(source.widgetId).toBe("screening_demo_" + kinds[index]);
+      const endpoint = sources[source.widgetId].endpoint;
+      const url = new URL(endpoint, "http://127.0.0.1:17911");
+      for (const [key, value] of Object.entries(source.params)) url.searchParams.set(key, value);
+      expect(url.searchParams.get("chart_source")).toBe("true");
+      const payload: unknown = JSON.parse(readFileSync(join(dir, name, url.pathname), "utf8"));
+      expect(backendFinancialResponse(payload, url)?.evidence.kind).toBe(kinds[index]);
+      if (index === 2) expect(source).toMatchObject({ view: "statement", tableDefinition: { analytical: { kind: "statement" } } });
+    }
+  });
+
+  it("v9-next-news-sentiment-calendar imports with its explicit fixture connection and validates the request scope", () => {
+    const name = "v9-next-news-sentiment-calendar";
+    const { apps } = load(name + ".apps.json");
+    const { widgets, issues } = normalizeWidgets(JSON.parse(readFileSync(join(dir, name, "widgets.json"), "utf8")), "news-fixtures");
+    expect(issues).toEqual([]);
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...widgets]);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(chart.linkedChart?.recipe).toMatchObject({
+      version: 1, kind: "news-sentiment-calendar", instrument: "CANOPY.US", window: { mode: "latest-12-months" },
+    });
+    expect(source.widgetId).toBe(widgets[0].id);
+    const url = new URL(widgets[0].endpoint, "http://127.0.0.1:17912");
+    for (const [key, value] of Object.entries(source.params)) url.searchParams.set(key, value);
+    const payload = JSON.parse(readFileSync(join(dir, name, url.pathname), "utf8"));
+    const acquisition = chartRequestContext(url, "results", Date.parse("2026-11-19T16:00:00Z"));
+    expect(captureChartSources(acquisition!, payload, payload.results)?.news).toMatchObject({
+      kind: "news", instrument: "CANOPY.US", delivered_count: 5, scope: { kind: "sample", limit: 10, offset: 0 },
+    });
+    expect(importApps(apps, BUILTIN_WIDGETS).unresolved).toBe(1);
+  });
+
+  it("v9-next-return-box-violin imports its chart question and reacquires the separate local fixture", async () => {
+    const name = "v9-next-return-box-violin";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(source.params).toEqual({});
+    const recipe = chart.linkedChart?.recipe;
+    if (!recipe) throw new Error("Missing imported return summary recipe.");
+    expect(recipe).toMatchObject({ kind: "return-summary", symbols: ["CANOPY.US", "ALDER.US"], view: "box", window: { mode: "own" } });
+    const filename = "fixture-adjusted-prices.json";
+    const dataset = await datasetFromBytes(filename, readFileSync(join(dir, name, filename)), source.id, 1);
+    const result = runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+    expect(result).toMatchObject({ ok: true, returnSummary: { series: [
+      { symbol: "CANOPY.US", start: "2026-01-06", end: "2026-02-02" },
+      { symbol: "ALDER.US", start: "2026-01-06", end: "2026-02-02" },
+    ] } });
+    if (result.ok) expect(result.returnSummary?.series.map(item => item.samples.length)).toEqual([20, 20]);
+  });
+
+  it("v9-next-ownership-snapshot imports source-free questions and independently verifies its two local snapshots", async () => {
+    const name = "v9-next-ownership-snapshot";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [barsTab, waffleTab] = imported.dashboards[0].tabs;
+    for (const [tab, view, file] of [[barsTab, "bars", "fictional-measures.json"], [waffleTab, "waffle", "fictional-register.json"]] as const) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const recipe = chart.linkedChart?.recipe;
+      if (!recipe) throw new Error("Missing imported ownership recipe.");
+      expect(recipe).toMatchObject({ kind: "ownership-snapshot", issuer: "EXAMPLE.US", version: 1, view });
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      const result = runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+      expect(result).toMatchObject({ ok: true, ownershipSnapshot: { view } });
+      if (!result.ok) continue;
+      if (result.ownershipSnapshot?.view === "waffle") {
+        expect(result.ownershipSnapshot.buckets.reduce((sum, bucket) => sum + bucket.cells, 0)).toBe(100);
+        expect(result.ownershipSnapshot.buckets).toContainEqual({ id: "treasury", percent: .01, cells: 0 });
+      } else {
+        expect(result.ownershipSnapshot?.measures.map(measure => measure.reported)).toEqual([33.3, .421875, 22.125]);
+      }
+    }
+  });
+
+  it("v9-next-kpi-gauges imports six source-free metric questions and admits their acquired units", async () => {
+    const name = "v9-next-kpi-gauges", file = "fictional-observations.json";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [tab] = imported.dashboards[0].tabs;
+    const source = tab.cards.find(card => card.widgetId === LOCAL_TABLE_ID)!;
+    expect(source.params).toEqual({});
+    const metrics = tab.cards.filter(card => card.widgetId === LINKED_METRIC_ID);
+    expect(metrics).toHaveLength(6);
+    const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+    const expected = [
+      ["price", 82.415, { kind: "money-per-share", currency: "USD" }],
+      ["market_cap", 8241500000, { kind: "money", currency: "USD" }],
+      ["dividend_yield", .00428, { kind: "fraction" }],
+      ["pe_ratio", 18.125, { kind: "multiple" }],
+      ["eps_ttm", 4.546, { kind: "money-per-share", currency: "USD" }],
+      ["revenue_ttm", 2901200000, { kind: "money", currency: "USD" }],
+    ];
+    for (const [index, card] of metrics.entries()) {
+      expect(card.linkedSource).toEqual({ kind: "widget", sourceWidgetId: source.id });
+      const [metric, value, unit] = expected[index];
+      const options = card.linkedMetric;
+      if (!options) throw new Error("Missing linked KPI options.");
+      expect(options.metric).toBe(metric);
+      const result = buildKpiSnapshot(dataset, options);
+      expect(result).toMatchObject({ ok: true, snapshot: { value, unit } });
+      if (metric === "eps_ttm") expect(result).toMatchObject({
+        ok: true, gauge: { data: [expect.objectContaining({ type: "indicator" })] },
+        snapshot: { reference: { kind: "observation", value: 4.2 }, observation: { reporting_basis: "US-GAAP", period_start: "2025-10-01" } },
+      });
+    }
+  });
+
+  it("v9-next-etf-sunburst imports a source-free question and admits the supplied local holdings", async () => {
+    const name = "v9-next-etf-sunburst", file = "fictional-holdings.json";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(source.params).toEqual({});
+    const recipe = chart.linkedChart?.recipe;
+    if (recipe?.kind !== "etf-sunburst") throw new Error("Missing imported ETF recipe.");
+    expect(recipe).toMatchObject({ fund: "CANOPY.US", depth: 2, snapshot: "latest" });
+    const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+    const admitted = buildEtfHierarchy(dataset, recipe);
+    expect(admitted).toMatchObject({ ok: true, value: { scope: "delivered", acquiredCount: 4, deliveredWeight: .35,
+      holdings: expect.arrayContaining([
+        expect.objectContaining({ symbol: "CEDAR.US", value: .000001 }),
+        expect.objectContaining({ symbol: "WILLOW.US", value: 0 }),
+      ]) } });
+  });
+
+  it("v9-next-dual-axis-overlays acquires both prepared local recipe examples", async () => {
+    const name = "v9-next-dual-axis-overlays";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Price and EPS", "CPI and Treasury yield"]);
+    for (const [i, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      const file = i === 0 ? "fictional-price-eps.json" : "fictional-cpi-ten-year.json";
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const options = chart.linkedChart?.recipe;
+      if (options?.kind !== "dual-axis-overlay") throw new Error("Missing imported overlay recipe.");
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      const result = runRecipe(dataset, options, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+      expect(result).toMatchObject({ ok: true, overlay: { recipe: i === 0 ? "price-eps" : "cpi-ten-year",
+        left: { unitLabel: i === 0 ? "USD/share" : "1982–84 = 100" },
+        right: { unitLabel: i === 0 ? "USD/share" : "%" },
+      } });
+    }
+  });
+
+  it("v9-next-estimate-revisions imports only pinned questions and compares the acquired examples", async () => {
+    const name = "v9-next-estimate-revisions";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Slope", "Time path", "Bump"]);
+    for (const [index, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const options = chart.linkedChart?.recipe;
+      if (options?.kind !== "estimate-revisions") throw new Error("Missing imported estimate revision recipe.");
+      const file = index === 2 ? "fictional-universe.json" : "fictional-single-issuer.json";
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      expect(runRecipe(dataset, options, { theme: "light", maxDecimals: 2, today: "2026-11-20" })).toMatchObject({
+        ok: true, estimateRevisions: { view: ["slope", "path", "bump"][index], target: { start: "2027-01-01", end: "2027-03-31", kind: "FQ" } },
+      });
+    }
+  });
+
+  it("v9-next-market-map reacquires each authored mode through its matching local example", async () => {
+    const name = "v9-next-market-map";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Delivered capitalization", "Named index"]);
+    const expected = [
+      { file: "fictional-capitalization.json", mode: "delivered-cap", session: "latest", value: 103365.4321, denomination: "USD" },
+      { file: "fictional-index.json", mode: "index-weight", session: "2026-11-13", value: 1, denomination: null },
+    ];
+    for (const [index, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const recipe = chart.linkedChart?.recipe;
+      if (recipe?.kind !== "market-map") throw new Error("Missing imported market-map recipe.");
+      const { file, mode, session, value, denomination } = expected[index];
+      expect(recipe).toMatchObject({ mode, session });
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      expect(runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" })).toMatchObject({
+        ok: true, marketMap: { mode, denomination, session: "2026-11-13", root: { value } },
+      });
+    }
+    const template = readFileSync(join(dir, name + ".apps.json"), "utf8");
+    expect(template).not.toMatch(/chart_sources|viewport|ALFA\.US|example\/acquisition/);
+  });
+
+  it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {
+    const { apps } = load("v9-risk-exposure.apps.json");
+    const sources = ["prices", "holdings", "sectors", "regions"].map(name => widget("risk_demo_" + name));
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...sources]);
+    expect(imported.unresolved).toBe(0);
+    const cards = imported.dashboards[0].tabs[0].cards;
+    expect(cards).toHaveLength(8);
+    const prices = { date: "date", price: "adjusted_close", symbol: "symbol" };
+    const questions = [
+      { kind: "return-distribution", fields: prices, symbol: "ALDER", bins: 5 },
+      { kind: "small-multiples", fields: prices, symbols: ["CEDAR", "ALDER", "BIRCH"] },
+      { kind: "etf-pareto", fields: { holding: "symbol", label: "name", weight: "weight" } },
+      { kind: "etf-exposure", fields: { category: "sector", weight: "weight" }, mode: "sector" },
+    ];
+    const charts = cards.filter(card => card.widgetId === LINKED_CHART_ID);
+    expect(charts.map(card => card.linkedChart?.recipe)).toEqual(questions.map(q => ({ version: 1, ...q })));
+    expect(charts.map(card => cards.find(source => source.id === card.linkedSource?.sourceWidgetId)?.widgetId))
+      .toEqual(["risk_demo_prices", "risk_demo_prices", "risk_demo_holdings", "risk_demo_sectors"]);
+    expect(cards.filter(card => !card.linkedSource).map(card => card.widgetId)).toEqual(sources.map(source => source.id));
   });
 
   // The Demo providers cards are openbq-docker's widget ids (its /widgets.json
@@ -317,15 +585,22 @@ describe("docs/examples", () => {
 
   it.each(files)("%s imports every card against a registry that serves it", (file) => {
     const { apps, ids } = load(file);
-    // BUILTIN_WIDGETS' own ids are already served by the app without a
-    // registry entry, but the fixture registry here has to stand in for
-    // every id a file names, built-in or not, since importApps takes one
-    // flat registry.
-    const registry = [...new Set(ids)].map(widget);
+    // Use actual built-in identities and stub the backend widgets separately.
+    const registry = [...new Set(ids)].map(id => BUILTIN_WIDGETS.find(builtIn => builtIn.id === id) ?? widget(id));
     const { dashboards, cards, unresolved } = importApps(apps, registry);
     expect(unresolved).toBe(0);
     expect(cards).toBe(ids.length);
     expect(dashboards).toHaveLength(apps.length);
+  });
+
+  it.each(files.filter(file => file.startsWith("v9-next-")))("%s imports linked presentation Parameters closed", file => {
+    const { apps, ids } = load(file);
+    const registry = [...new Set(ids)].map(id => BUILTIN_WIDGETS.find(builtIn => builtIn.id === id) ?? widget(id));
+    const { dashboards } = importApps(apps, registry);
+    const linked = dashboards.flatMap(dashboard => dashboard.tabs.flatMap(tab => tab.cards))
+      .filter(card => card.widgetId === LINKED_CHART_ID || card.widgetId === LINKED_METRIC_ID);
+    expect(linked.length).toBeGreaterThan(0);
+    for (const card of linked) expect(card).not.toHaveProperty("paramsOpen");
   });
 
   // N2: a sample dashboard exists for every embedded widget, pinned so a new
@@ -345,7 +620,7 @@ describe("docs/examples", () => {
       // The Picture in Picture only does anything in the macOS app (it is a
       // placeholder elsewhere) and needs a Chrome player to park, so it gets
       // no sample card either.
-      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, "picture_in_picture"].includes(w.id)) continue;
+      if ([LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID, LINKED_METRIC_ID, "picture_in_picture"].includes(w.id)) continue;
       expect(present.has(w.id), `${w.id} has no card in v4.0.0-builtins.apps.json`).toBe(true);
     }
     expect(present.has("param_echo")).toBe(true);

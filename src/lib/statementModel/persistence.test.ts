@@ -7,6 +7,7 @@ import { fixture } from './compileFixtures';
 import { exportCompatibleApp, importApps } from '../appsJson';
 import { persistedCard, remapWidgetReferences } from '../widgetData/persistence';
 import { compileStatement } from './compile';
+import { statementSnapshot } from './persistence';
 import type { Dashboard, DashboardCard } from '../types';
 function compatible(dashboard: Dashboard) { const result = exportCompatibleApp(dashboard); if (!result.ok) throw new Error(result.issue.message); return result.value; }
 const card = ():DashboardCard => ({id:'owner',widgetId:'prices',backendId:'backend',params:{},layout:{x:0,y:0,w:10,h:10},tableDefinition:{table:{},search:'',analytical:fixture().statement},tableSelection:{kind:'none'}});
@@ -73,4 +74,17 @@ it('refuses cyclic and excessively deep optional envelopes without losing the or
  let deep:Record<string,unknown>={};for(let n=0;n<300;n++)deep={child:deep};
  const cards=importApps([{name:'Unsafe',tabs:{one:{layout:[{i:'raw',tableDefinition:cyclic},{i:'raw',tableDefinition:{table:{},search:'',analytical:deep}}]}}}],[]).dashboards[0].tabs[0].cards;
  expect(cards).toHaveLength(2);cards.forEach(c=>expect(c.tableDefinition).toBeUndefined());
+});
+it('line placement round-trips through the snapshot and dashboard import', () => {
+ const source = card(); const statement = source.tableDefinition!.analytical as StatementIntent;
+ const [, expenses, profit] = statement.template.sections; const gross = profit.lineIds[0];
+ statement.overrides.lineSection = { [gross]: expenses.id };
+ statement.overrides.lineOrder[expenses.id] = [gross, ...expenses.lineIds];
+ expect(statementSnapshot(statement)).toEqual(statement);
+ const dashboard: Dashboard = { id: 'd', name: 'Placement', tabs: [{ id: 'tab', name: 'Main', cards: [source] }], groups: [] };
+ const exported = JSON.stringify(compatible(dashboard));
+ expect(importApps([JSON.parse(exported)], []).dashboards[0].tabs[0].cards[0].tableDefinition).toEqual(source.tableDefinition);
+ const placement = JSON.stringify({ [gross]: expenses.id });
+ expect(exported).toContain(placement);
+ expect(() => importApps([JSON.parse(exported.replace(placement, JSON.stringify({ [gross]: 'unknown' })))], [])).toThrow(/Unknown or unowned reference/);
 });

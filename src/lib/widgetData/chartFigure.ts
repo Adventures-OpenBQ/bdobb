@@ -3,28 +3,52 @@
 
 import { pivotValueKey } from '../pivotKeys';
 import type { PlotlyFigure } from '../chartShapes';
-import type { WidgetDataset, LinkedChartSettings } from './types';
-const COLORS = ['#4c9aff', '#ef8354', '#71c7a1', '#b08cde', '#e4c65a', '#65c6d4'];
-function color(id: string) { let hash = 0; for (const c of id)
-    hash = (Math.imul(hash, 31) + c.charCodeAt(0)) >>> 0; return COLORS[hash % COLORS.length]; }
-function escape(value: unknown) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+import type { WidgetDataset, LinkedChartSettings, DatasetColumn } from './types';
+import { buildBulletFigure } from './bulletFigure';
+import { buildWaterfall } from './waterfallFigure';
+import { decodeLinkedChartRecipe, isLegacyLinkedChartType } from './chartRecipes/settings';
+import { color, escape, list } from './figureHelpers';
+export type LinkedFigureResult =
+    | { ok: true; figure: PlotlyFigure; revision: string; notes: string[] }
+    | { ok: false; message: string; refused?: true };
+type DatasetRows = WidgetDataset['rows'];
+/** Legend names for Rows mode: the label, disambiguated by group path and then by row order when it repeats. */
+function rowNames(rows: DatasetRows, labels: string[]): string[] {
+    const count = new Map<string, number>();
+    for (const label of labels)
+        count.set(label, (count.get(label) ?? 0) + 1);
+    const names = rows.map((row, index) => count.get(labels[index])! > 1 ? [labels[index], ...(row.groupPath ?? []).map(m => `${m.field}: ${m.label ?? m.value}`)].join(' — ') : labels[index]);
+    const used = new Set<string>();
+    const nextSuffix = new Map<string, number>();
+    return names.map(name => {
+        let out = name;
+        if (used.has(out)) {
+            let suffix = nextSuffix.get(name) ?? 2;
+            do { out = `${name} (${suffix++})`; } while (used.has(out));
+            nextSuffix.set(name, suffix);
+        }
+        used.add(out);
+        return out;
+    });
+}
 /** Presentation only: the worker has already selected, ordered and aggregated these rows. */
-export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark'): {
-    ok: true;
-    figure: PlotlyFigure;
-    revision: string;
-} | {
-    ok: false;
-    message: string;
-} {
+export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartSettings, theme: 'light' | 'dark', maxDecimals = 2): LinkedFigureResult {
+    const recipe = decodeLinkedChartRecipe(settings, settings.type);
+    if (recipe)
+        return { ok: false, refused: true, message: recipe.ok ? 'Render this financial recipe with the linked chart worker.' : recipe.message };
+    if (!isLegacyLinkedChartType(settings.type))
+        return { ok: false, refused: true, message: 'Choose a supported linked chart type.' };
+    if (settings.type === 'bullet')
+        return buildBulletFigure(dataset, settings, theme, maxDecimals);
     const columns = new Map(dataset.columns.map(c => [c.id, c]));
     if (!settings.category || !columns.has(settings.category))
         return { ok: false, message: 'Choose an available category field.' };
     if (!settings.measures.length)
         return { ok: false, message: 'Choose chart fields: select one or more numeric measures.' };
-    const traces: unknown[] = [];
+    const category = settings.category;
     const ids = dataset.rows.map(r => r.id);
-    const labels = dataset.rows.map(r => String(r.values[settings.category!] ?? ''));
+    const labels = dataset.rows.map(r => String(r.values[category] ?? ''));
+    const measures: { id: string; name: string; colorKey: string; column: DatasetColumn; aggregation?: string; values: (number | null)[]; text: string[] }[] = [];
     for (const id of settings.measures) {
         const column = columns.get(id);
         if (!column)
@@ -45,13 +69,75 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
         }
         const split = column.splitPath ?? [];
         const name = [...split.map(member => String(member.label ?? member.value ?? '')), column.label].join(' — ');
-        const seriesColor = color(split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id);
-        const horizontal = settings.type === 'bar';
+        const colorKey = split.length ? JSON.stringify(split.map(member => [member.categoryId ?? member.field, member.memberKey ?? pivotValueKey(member.value)])) : id;
         const text = dataset.rows.map((row, index) => [escape(labels[index]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), ...(column.splitPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`), `${escape(column.label)}${column.aggregation ? ` (${column.aggregation})` : ''}: ${values[index] ?? 'Missing'}`].join('<br>'));
-        traces.push({ type: settings.type === 'line' ? 'scatter' : 'bar', name, x: horizontal ? values : ids, y: horizontal ? ids : values, ...(settings.type === 'line' ? { mode: 'lines+markers', connectgaps: false, line: { color: seriesColor } } : { orientation: horizontal ? 'h' : 'v', textposition: 'none' }), marker: { color: seriesColor }, text, hovertemplate: '%{text}<extra></extra>' });
+        measures.push({ id, name, colorKey, column, aggregation: column.aggregation, values, text });
     }
-    const revision = JSON.stringify([settings.type, settings.category, settings.measures, settings.display]);
-    const axis = { type: 'category', categoryorder: 'array', categoryarray: ids, tickmode: 'array', tickvals: ids, ticktext: labels };
+    const pie = settings.type === 'pie';
+    if (pie && measures.length > 1)
+        return { ok: false, refused: true, message: 'Pie shows one measure — choose one' };
+    // Pie always uses the Rows layout with its one measure as the only position.
+    const fromRows = pie || (settings.type !== 'waterfall' && settings.seriesFrom === 'rows');
+    const revision = JSON.stringify([settings.type, settings.category, settings.measures, ...(settings.type === 'waterfall' ? [] : [settings.display]), ...(fromRows ? ['rows'] : [])]);
     const background = theme === 'dark' ? '#1e242e' : '#ffffff';
-    return { ok: true, revision, figure: { data: traces, layout: { uirevision: revision, margin: { l: 48, r: 12, t: 12, b: 80 }, barmode: settings.display === 'stacked' ? 'stack' : 'group', [settings.type === 'bar' ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend: { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' }, paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } } } };
+    const frame = { paper_bgcolor: background, plot_bgcolor: background, font: { color: theme === 'dark' ? '#dfe4ec' : '#1a1f28' } };
+    const legend = { orientation: 'h', x: 0.5, xanchor: 'center', y: -0.3, yanchor: 'top' };
+    const margin = { l: 48, r: 12, t: 12, b: 80 };
+    if (settings.type === 'waterfall') {
+        const walk = buildWaterfall(dataset.rows, labels, measures);
+        if (!walk.ok)
+            return walk;
+        return { ok: true, revision, notes: walk.notes, figure: { data: walk.data, layout: { uirevision: revision, margin, waterfallmode: 'group', xaxis: walk.xaxis, showlegend: true, legend, ...frame } } };
+    }
+    // The series-by-position matrix: Columns mode has a series per measure over row positions; Rows mode transposes it.
+    let positions: string[], ticks: string[], series: { name: string; colorKey: string; values: (number | null)[]; text: string[] }[];
+    if (fromRows) {
+        const names = rowNames(dataset.rows, labels);
+        positions = measures.map(m => m.id);
+        ticks = measures.map(m => m.name);
+        series = dataset.rows.map((row, r) => {
+            const values = measures.map(m => m.values[r]);
+            const hoverHead = [escape(names[r]), ...(row.groupPath ?? []).map(m => `${escape(m.field)}: ${escape(m.label ?? m.value)}`)];
+            return {
+                name: names[r],
+                colorKey: JSON.stringify([pivotValueKey(row.values[category]), ...(row.groupPath ?? []).map(m => [m.categoryId ?? m.field, m.memberKey ?? pivotValueKey(m.value)])]),
+                values,
+                text: measures.map((m, i) => [...hoverHead, `${escape(m.name)}${m.aggregation ? ` (${m.aggregation})` : ''}: ${values[i] ?? 'Missing'}`].join('<br>')),
+            };
+        });
+    } else {
+        positions = ids;
+        ticks = labels;
+        series = measures;
+    }
+    const notes: string[] = [];
+    if (pie || (settings.display === 'percent' && settings.type !== 'line')) {
+        // Cells in table-row order, then measure order, whichever way the series run.
+        const cells = dataset.rows.flatMap((_, r) => measures.map((_, m) => fromRows ? [r, m] : [m, r]));
+        const item = ([s, p]: number[]) => `${series[s].name} (${ticks[p]})`;
+        const negative = cells.filter(([s, p]) => series[s].values[p]! < 0);
+        if (negative.length)
+            return { ok: false, refused: true, message: `Can't show shares of negative values: ${list(negative.map(item))}.` };
+        const totals = positions.map((_, p) => series.reduce((sum, s) => sum + (s.values[p] ?? 0), 0));
+        const zero = positions.flatMap((_, p) => totals[p] === 0 && series.some(s => s.values[p] !== null) ? [ticks[p]] : []);
+        if (zero.length)
+            return { ok: false, refused: true, message: `Can't show shares of a zero total: ${list(zero)}.` };
+        const missing = cells.filter(([s, p]) => series[s].values[p] === null);
+        if (missing.length)
+            notes.push(`Missing: ${list(missing.map(item))}`);
+        series = series.map(s => ({ ...s, text: s.text.map((t, p) => s.values[p] === null ? t : `${t}<br>Share: ${(s.values[p]! / totals[p] * 100).toFixed(1)}%`) }));
+    }
+    if (pie) {
+        const present = series.filter(s => s.values[0] !== null);
+        const trace = { type: 'pie', labels: present.map(s => s.name), values: present.map(s => s.values[0]), marker: { colors: present.map(s => color(s.colorKey)) }, text: present.map(s => s.text[0]), hovertemplate: '%{text}<extra></extra>', textinfo: 'percent', sort: false };
+        return { ok: true, revision, notes, figure: { data: [trace], layout: { uirevision: revision, margin, showlegend: true, legend, ...frame } } };
+    }
+    const horizontal = settings.type === 'bar';
+    const traces = series.map(({ name, colorKey, values, text }) => {
+        const seriesColor = color(colorKey);
+        return { type: settings.type === 'line' ? 'scatter' : 'bar', name, x: horizontal ? values : positions, y: horizontal ? positions : values, ...(settings.type === 'line' ? { mode: 'lines+markers', connectgaps: false, line: { color: seriesColor } } : { orientation: horizontal ? 'h' : 'v', textposition: 'none' }), marker: { color: seriesColor }, text, hovertemplate: '%{text}<extra></extra>' };
+    });
+    const percent = settings.display === 'percent' && settings.type !== 'line';
+    const axis = { type: 'category', categoryorder: 'array', categoryarray: positions, tickmode: 'array', tickvals: positions, ticktext: ticks };
+    return { ok: true, revision, notes, figure: { data: traces, layout: { uirevision: revision, margin, barmode: settings.display === 'stacked' || percent ? 'stack' : 'group', ...(percent ? { barnorm: 'percent', [horizontal ? 'xaxis' : 'yaxis']: { ticksuffix: '%' } } : {}), [horizontal ? 'yaxis' : 'xaxis']: axis, showlegend: true, legend, ...frame } } };
 }

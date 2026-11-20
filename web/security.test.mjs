@@ -258,6 +258,7 @@ test("the generic api/v1 rule admits the whole catalogue inside structural bound
   // route, and an optionsEndpoint sitting behind a parameter dropdown.
   for (const allowed of [
     "/api/api/v1/equity/price/quote?symbol=AAPL&provider=eodhd",
+    "/api/api/v1/eodhd/equity/estimates/earnings_vs_estimates?symbol=ALDER&provider=eodhd",
     "/api/api/v1/equity/price/quote?symbol=AAPL&provider=fmp",
     "/api/api/v1/equity/price/quote?symbol=AAPL&exchange=US&provider=kdb",
     "/api/api/v1/economy/fred_series?symbol=GDP&start_date=2020-01-01&provider=fred",

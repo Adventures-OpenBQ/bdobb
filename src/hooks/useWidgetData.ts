@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { acquisitionParams } from "../lib/widgetData/sources";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
@@ -10,7 +12,9 @@ import { logError } from "../lib/logger";
 import { paramsKey, wireParams } from "../lib/params";
 import { dataBounds } from "../lib/dataBounds";
 import { isPeriodType, namesBounds } from "../lib/dateExpressions";
-import type { DashboardCard, WidgetDef } from "../lib/types";
+import type { BackendConfig, Dashboard, DashboardCard, WidgetDef } from "../lib/types";
+import { isBackendTable } from "../lib/tableExecution/eligibility";
+import { tableExecutionStore, type BackendRequest, type RunQuestion } from "../stores/tableExecutionStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -70,22 +74,20 @@ export function refreshIntervalMs(
   return Math.min(autoRefreshMinutes * 60_000, MAX_TIMEOUT_MS);
 }
 
-/** What a Run-button card last ran: the params it fetches and shows, and their fiscal map. */
-export type ArmedRequest = { params: Record<string, string>; fiscalYearEnd?: Record<string, number> };
-/** By card id, while the card is mounted; see armedRequestOf. */
+/** An agent read uses the table owner's wire safeguards when a dashboard owns the source. */
+export type ArmedRequest = Pick<RunQuestion, "params" | "fiscalYearEnd"> & { progress?: RunQuestion["progress"] };
+/** Other Run-button widgets publish their request for the lifetime of the mount. */
 const armedRequests = new Map<string, ArmedRequest>();
-/**
- * A mounted Run-button card's last-run request, for Rita's get_widget_data
- * (cardRequestSync): she must read what the card shows, not an un-run edit.
- * Undefined for any other card, and for one that is not mounted -- it arms
- * its live params when it mounts, so those are what it would show.
- */
-export function armedRequestOf(cardId: string): ArmedRequest | undefined {
-  return armedRequests.get(cardId);
+export function armedRequestOf(card: DashboardCard, widget: WidgetDef, backend: BackendConfig | undefined, dashboardId?: string): ArmedRequest | undefined {
+  if (widget.runButton !== true) return undefined;
+  if (dashboardId !== undefined && isBackendTable(card)) {
+    return tableExecutionStore.readArmedBackendRequest(dashboardId, card, backend, widget);
+  }
+  return armedRequests.get(card.id);
 }
 
 /**
- * Ephemeral per-card state. Never persisted, never in a store.
+ * Backend tables keep their last Run in the dashboard runtime across tab handoffs.
  *
  * `runButton` is the widget manifest's own flag, passed straight through: with
  * it, the hook stops keying the fetch on the live params and keys it on the
@@ -100,6 +102,7 @@ export function useWidgetData(
   calendars?: TradingCalendars & { intent?: string },
   /** v5.4.0: the dashboard's exchange, carried into every wireParams this hook runs. */
   exchange?: string,
+  backendTableDashboard?: Dashboard,
 ) {
   // The explicit descriptor owns acquisition, even when imported card metadata
   // still names a backend widget. Derived cards only signal their runtime here.
@@ -137,8 +140,10 @@ export function useWidgetData(
   const resolved = useResolvedTheme();
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
+  const tableDashboardId = backendTableDashboard?.id;
+  const [completedRequest, setCompletedRequest] = useState<BackendRequest>();
   const [status, setStatus] = useState<Status>("unresolved");
-  const [data, setData] = useState<unknown>(null);
+  const [{ data, acquisition }, setPayload] = useState<{ data: unknown; acquisition?: BackendAcquisition }>({ data: null });
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
   const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(undefined);
   // OBBject warnings from the last successful fetch (e.g. a truncated result).
@@ -194,10 +199,9 @@ export function useWidgetData(
    */
   // v5.4.0 fix round 2: that release now re-arms the params and the map
   // together, so the rule above holds without the exception.
-  const [armedParams, setArmedParams] = useState<Record<string, string> | null>(null);
-  const [armedFiscalYearEnd, setArmedFiscalYearEnd] = useState<Record<string, number> | undefined>(
-    undefined,
-  );
+  const [armed, setArmed] = useState<RunQuestion>();
+  const armedParams = armed?.params ?? null;
+  const armedFiscalYearEnd = armed?.fiscalYearEnd;
   /**
    * v5.4.0 fix round 2: the intent a send was armed under, recorded wherever
    * one is armed (the first arm, Run) and compared when a held send is
@@ -207,24 +211,32 @@ export function useWidgetData(
    * fiscal map never relabels.
    */
   const intent = calendars?.intent ?? paramsKey(params);
-  const [armedIntent, setArmedIntent] = useState<string | undefined>(undefined);
+  const armedIntent = armed?.intent;
+  const liveQuestion = useCallback((): RunQuestion => ({
+    params, fiscalYearEnd, intent, progress: { wire: null, held: false },
+    sourceParams: backendTableDashboard ? acquisitionParams(card, backendTableDashboard) : undefined,
+  }), [params, fiscalYearEnd, intent, card, backendTableDashboard]);
+  const armRequest = useCallback(() => {
+    const next = liveQuestion();
+    if (tableDashboardId && armed && !tableExecutionStore.replaceArmedBackendRequest(tableDashboardId, card.id, armed, next)) return;
+    setArmed(next);
+  }, [liveQuestion, armed, tableDashboardId, card.id]);
   useEffect(() => {
-    if (!runButton || armedParams === null) return;
+    if (!runButton || tableDashboardId !== undefined || armedParams === null) return;
     const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd };
     armedRequests.set(card.id, entry);
-    // Only its own entry: a second mount of the same card (a linked table's
-    // off-tab source runner) may have armed since.
+    // A newer mount may already have replaced this entry.
     return () => {
       if (armedRequests.get(card.id) === entry) armedRequests.delete(card.id);
     };
-  }, [runButton, card.id, armedParams, armedFiscalYearEnd]);
+  }, [runButton, tableDashboardId, card.id, armedParams, armedFiscalYearEnd]);
   /**
    * runButton only: the WIRE values the last fetch sent, as a fingerprint,
    * and whether a refresh trigger found them moved. An expression (`T`, a
    * `bd` offset) re-resolves on every trigger; when the resolution differs
    * from what was armed, the card goes stale and sends nothing until Run
    * (spec §5) — the extension of v5.2.0's "never send an un-run request" to
-   * requests the clock, not the user, would have changed. A ref, not state:
+   * requests the clock, not the user, would have changed. Shared with the committed question:
    * it is written inside the fetch effect and must not re-run it.
    *
    * It is recorded from exactly what the effect sends — the armed params, the
@@ -232,7 +244,6 @@ export function useWidgetData(
    * fingerprint is the resolved wire of the request that went out, never of
    * a live edit.
    */
-  const armedWireRef = useRef<string | null>(null);
   const [wireStale, setWireStale] = useState(false);
   /**
    * The calendars are not armed with the params: a calendar only ever
@@ -262,8 +273,6 @@ export function useWidgetData(
   const calendarsPending = calendars?.pending === true;
   const calendarsKey = calendars?.key ?? "";
   const calendarTrigger = runButton ? "" : calendarsKey;
-  /** runButton only: a real trigger found a consulted year pending and sent nothing yet. */
-  const heldRef = useRef(false);
   const [released, setReleased] = useState(0);
   // Adjusting state during render, deliberately: React discards this pass and
   // re-renders with the value set BEFORE committing, so the fetch effect below
@@ -272,10 +281,8 @@ export function useWidgetData(
   // with the old closure — issue one request against them first, which is
   // exactly the request a run button exists to prevent. Until then the effect
   // returns early on `!widget` and nothing has been requested at all.
-  if (runButton && armedParams === null && widget) {
-    setArmedParams(params);
-    setArmedFiscalYearEnd(fiscalYearEnd);
-    setArmedIntent(intent);
+  if (runButton && !backendTableDashboard && armedParams === null && widget) {
+    armRequest();
   }
 
   const retry = useCallback(() => {
@@ -373,16 +380,13 @@ export function useWidgetData(
       // Forget the armed wire so the next effect run records what Run sends,
       // and bump `attempt` too: when only the CLOCK moved, the params key is
       // unchanged and nothing else would make the effect re-run.
-      armedWireRef.current = null;
       setWireStale(false);
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
-      setArmedIntent(intent);
+      armRequest();
       setAttempt((n) => n + 1);
       return;
     }
     retry();
-  }, [stale, params, fiscalYearEnd, intent, retry]);
+  }, [stale, armRequest, retry]);
 
   /**
    * The `key` the payload currently in `data` was fetched under. WidgetCard
@@ -412,7 +416,7 @@ export function useWidgetData(
   useEffect(() => {
     if (linked) {
       setStatus("ready");
-      setData(null);
+      setPayload({ data: null });
       setError(undefined);
       return;
     }
@@ -436,15 +440,36 @@ export function useWidgetData(
     // Settings notice. See fetchesData.
     if (!fetchesData(widget)) {
       setStatus("ready");
-      setData(null);
+      setPayload({ data: null });
       setError(undefined);
       return;
     }
 
+    // Capture the owner in this fetch closure. A later render can see the previous
+    // payload while its new parameters are waiting to send or complete.
+    if (backendTableDashboard) {
+      const committed = tableExecutionStore.observeBackendProducer(backendTableDashboard.id, card, backend, widget,
+        runButton ? liveQuestion : undefined);
+      // Switch to this producer's committed question before any validation,
+      // calendar hold or GET can use this mount's editable parameters.
+      if (committed !== armed) {
+        setArmed(committed);
+        lastKeyRef.current = paramsKey(committed?.params ?? params);
+        setCompletedRequest(undefined);
+        setPayload({ data: null });
+        setHeldBounds(committed?.progress.bounds);
+        setWireStale(false);
+        return;
+      }
+    }
+    const beginRequest = () => backendTableDashboard
+      ? tableExecutionStore.beginBackendRequest(backendTableDashboard.id, card, backendTableDashboard, runButton ? armed?.sourceParams : undefined)
+      : undefined;
     const missing = missingRequiredParams(widget, fetchParams);
     if (missing.length > 0) {
+      setCompletedRequest(beginRequest());
       setStatus("incomplete");
-      setData(null);
+      setPayload({ data: null });
       setError(`Enter ${missing.join(", ")} to load this widget.`);
       return;
     }
@@ -463,7 +488,7 @@ export function useWidgetData(
     // question's rows up under the new parameters for the whole round trip.
     if (lastKeyRef.current !== key) {
       lastKeyRef.current = key;
-      setData(null);
+      setPayload({ data: null });
       setHeldBounds(undefined);
       // `bounds` is still the cleared rows' -- this render computed it before
       // the clear. Sending now would ask the new question with the old data's
@@ -483,42 +508,42 @@ export function useWidgetData(
     // or, with a run button, when the release effect below bumps `released`.
     if (calendarsPending) {
       setStatus("loading");
-      if (runButton) heldRef.current = true;
+      if (runButton && armed) armed.progress.held = true;
       return;
     }
-    heldRef.current = false;
+    // A successor may mount after the fiscal/calendar lookup landed. Release
+    // its held intent below before resolving any provisional wire parameters.
+    if (runButton && armed?.progress.held) return;
 
     // Review I2: after an un-run edit a card's bundle calendars are the EDIT's (useBundleCalendars reads the live
     // params), so the armed params it re-sends resolve on their own, from the shared cache, as preview showed them:
     // all of a bound card's, and a legacy card's overnight ones laid over its per-year map (2026-10-24).
-    const armed =
+    const armedCalendars =
       backend && key !== paramsKey(params)
         ? peekWidgetCalendars(backend, widget, fetchParams, exchange, new Date()).calendars
         : undefined;
-    const sendMap = !armed ? calendarMap : widget.calendarBinding ? armed : { ...calendarMap, ...armed };
+    const sendMap = !armedCalendars ? calendarMap : widget.calendarBinding ? armedCalendars : { ...calendarMap, ...armedCalendars };
 
     // runButton: re-resolve, and refuse to send a resolution the user has not
     // run. The comparison is on the WIRE values — what wireParams would put on
     // the query string right now — so a `T` that crossed midnight and a
     // calendar that just landed are both caught, and a literal never is.
-    if (runButton) {
+    if (runButton && armed) {
       const live = paramsKey(
         wireParams(widget, fetchParams, { fiscalYearEnd: fetchFiscal, calendars: sendMap, exchange, bounds }),
       );
-      if (armedWireRef.current !== null && armedWireRef.current !== live) {
+      if (armed.progress.wire !== null && armed.progress.wire !== live) {
         setWireStale(true);
-        // v5.4.0 final-review fix: a HELD trigger released here (a ⌘R held on
-        // a pending lookup after a dropped hold left the " dropped" sentinel,
-        // or a clock move while a lookup was pending) arrives with the hold's
-        // "loading" still set, and nothing is sent — so leave it, exactly as
-        // the drop does. Only from "loading": a ready or error card whose wire
-        // moved keeps what it shows, as it always has.
-        if (status === "loading") settleUnsent();
+        // A held trigger or a fresh mount has no completed outcome of its own.
+        // Show the Run prompt when there are no rows to retain.
+        if (status === "loading" || status === "unresolved") settleUnsent();
         return;
       }
-      armedWireRef.current = live;
+      armed.progress.wire = live;
+      armed.progress.bounds = bounds;
     }
 
+    const request = beginRequest();
     let cancelled = false;
     /** The one timer this card ever has in flight. */
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -603,6 +628,7 @@ export function useWidgetData(
       if (!backend) {
         if (cancelled) return;
         setStatus("error");
+        setCompletedRequest(request);
         setError("Backend not configured");
         // Deliberately NOT armed: no request was ever issued, and a card
         // naming a backend that does not exist cannot be fixed by asking
@@ -613,23 +639,31 @@ export function useWidgetData(
 
       try {
         let received: string[] = [];
+        let completedAcquisition: BackendAcquisition | undefined;
         const result = await fetchWidgetData(backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.
           calendars: sendMap,
           exchange,
           bounds,
-        }, undefined, (w) => { received = w; });
+        }, undefined, (w) => { received = w; }, (context) => { completedAcquisition = context; },
+          request ? (url, headers) => tableExecutionStore.identifyBackendRequest(request, url, headers, widget.dataKey) : undefined);
         if (cancelled) return;
+        setCompletedRequest(request);
         setWarnings(received);
-        setData(result);
-        if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
-        setFetchedAt(Date.now());
+        setPayload({ data: result, acquisition: completedAcquisition });
+        if (wantsBounds && bounds === undefined) {
+          const nextBounds = dataBounds(result);
+          if (armed) armed.progress.bounds = nextBounds;
+          setHeldBounds(nextBounds);
+        }
+        setFetchedAt(completedAcquisition?.retrievedAt ?? Date.now());
         setError(undefined);
         setStatus("ready");
         armAfterCompletion();
       } catch (err) {
         if (cancelled) return;
+        setCompletedRequest(request);
         const message = err instanceof Error ? err.message : String(err);
         setError(message);
         setWarnings([]);
@@ -657,7 +691,7 @@ export function useWidgetData(
     // timer, refreshEpoch, retry) refetches what was last run, never an
     // un-run edit. Nothing in this list changed to make that true. Since
     // v5.3.0 each of those triggers also re-resolves the armed params, and a
-    // resolution that moved (see `armedWireRef`) marks the card stale and
+    // resolution that moved (see `armed.progress.wire`) marks the card stale and
     // sends nothing — what was last run is the WIRE values, not just the
     // stored ones.
     //
@@ -679,6 +713,9 @@ export function useWidgetData(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     linked,
+    tableDashboardId,
+    armed,
+    runButton,
     widget,
     backend,
     backendStatus,
@@ -696,66 +733,27 @@ export function useWidgetData(
     themeKey,
   ]);
 
-  // runButton: release a send a real trigger held while a consulted year was
-  // pending, once it is not — landed or failed. Declared after the fetch
-  // effect, so a trigger that sent in the same flush has already cleared
-  // `heldRef` and this sends nothing twice.
-  //
-  // v5.4.0 (spec §1.3): WidgetCard folds a pending fiscal lookup into the same
-  // hold, and until the lookup lands the map it passes is the PROVISIONAL one
-  // (December). Whatever armed the held send — the first arm, or Run — armed
-  // that provisional map, and a calendar never had this problem only because
-  // calendars are read live (`calendarMap`), never armed. So the release
-  // re-arms the map from the live one first: the send a trigger held goes
-  // out under the year end that landed. Only while the armed params still
-  // ARE the live params, though — the live map is computed for the live
-  // params, so after an un-run edit it belongs to the edit, and pairing it
-  // with the armed params is the very mismatch `armedFiscalYearEnd` exists
-  // to prevent. Then nothing is released: the card stays stale and sends
-  // nothing until Run, as it would for any other un-run edit.
-  //
-  // v5.4.0 fix round 2: the premise above is wrong for a grouped quarter or
-  // fiscal_year. effectiveParams relabels a group's value under the map, so
-  // the lookup landing moves the live params with no edit at all; comparing
-  // them dropped the very send the hold existed to release, and the card
-  // hung on "Loading…" until Run. What is compared now is the INTENT the
-  // send was armed under (see `armedIntent`): the params before any relabel
-  // plus the FY ends override, a card field no params check sees. Only for
-  // a send ARMED and never sent (`armedWireRef` null: the first arm or Run);
-  // a held ⌘R, ↻ or interval tick is released as before and meets its own
-  // armed-wire check.
-  //   Unchanged: the live params and map ARE the armed intent under the
-  //   landed year end — re-arm both together and release once.
-  //   Changed: an un-run edit or override. Nothing is sent. The card is
-  //   marked stale (`wireStale`, which only Run clears, so an override that
-  //   happens to leave the map equal still shows it) and leaves "loading",
-  //   since nothing is in flight: the payload it holds, else the ask for Run.
+  // A first arm or Run can be waiting on a provisional fiscal map. Only a
+  // matching pre-relabel intent may adopt the landed params and fiscal map.
+  // A refresh of an already-sent question instead compares its original wire.
+  // On handoff the pending lookup may already have landed before this mount.
   useEffect(() => {
-    if (!heldRef.current || calendarsPending) return;
-    if (armedWireRef.current === null) {
+    if (!runButton || !armed?.progress.held || calendarsPending) return;
+    armed.progress.held = false;
+    if (armed.progress.wire === null) {
       if (armedIntent !== intent) {
-        heldRef.current = false;
         setWireStale(true);
-        // v5.4.0 fix round 3: leaving the ref null let any OTHER trigger
-        // (⌘R, ↻, a backendStatus change, a theme flip — none of them Run)
-        // run the fetch effect's armed-wire check at `armedWireRef.current
-        // !== null` above, find it null, and quietly arm-and-send the
-        // params still armed under the provisional (December) map — the
-        // very send this branch just dropped. paramsKey (src/lib/params.ts)
-        // always returns a JSON.stringify object, so this sentinel can never
-        // equal a live wire fingerprint: every such trigger now takes the
-        // "wire moved" path instead and sends nothing. Run already nulls the
-        // ref itself (`run`, above) before re-arming, so Run is unaffected.
-        armedWireRef.current = " dropped";
+        // paramsKey always returns a JSON object, so this cannot match any
+        // refresh. Only an explicit Run starts a question with a clear wire.
+        armed.progress.wire = " dropped";
         settleUnsent();
         return;
       }
-      setArmedParams(params);
-      setArmedFiscalYearEnd(fiscalYearEnd);
+      armRequest();
     }
     setReleased((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarsPending]);
+  }, [calendarsPending, armed, runButton]);
 
   // The stale tint (stale-time.md): set once staleTime has passed since the
   // last successful fetch, cleared by the next one.
@@ -787,6 +785,8 @@ export function useWidgetData(
   return {
     status,
     data,
+    completedRequest,
+    acquisition: status === "error" ? undefined : acquisition,
     error,
     warnings,
     retry,

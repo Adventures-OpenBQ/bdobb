@@ -2,8 +2,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { backendTableSource, createTableExecutionStore } from './tableExecutionStore';
+import { createTableExecutionStore } from './tableExecutionStore';
 import { useWidgetRegistryStore } from './widgetRegistryStore';
+import { preparePrices } from '../lib/widgetData/chartRecipes/input';
+import { fetchWidgetData } from '../lib/dataClient';
+import { backend, card as fixtureCard, widget } from '../test/fixtures';
+import { startMockServer } from '../test/mockServer';
+import { readFinancialEvidence, type BackendAcquisition } from '../lib/widgetData/chartRecipes/financialEvidence';
+import { dividendEvidence, dividendRow } from '../test/fixtures/financialEvidence';
+import { readEtfEvidence, type BackendEtfAcquisition } from '../lib/widgetData/chartRecipes/etfEvidence';
+vi.mock('@tauri-apps/plugin-http', () => ({ fetch: globalThis.fetch }));
+import { priceFields } from '../lib/widgetData/chartRecipes/fixtures';
 import { WORKER_MAX_CELLS } from '../lib/tableExecution/eligibility';
 import { createTableProvider } from '../lib/tableExecution/rust/providerFactory';
 import { providerHandler } from '../test/tableProviderBoundary';
@@ -891,12 +900,12 @@ it('runs a backend table on the worker from the rows its card fetched', async ()
     const register = e.registerInput.bind(e);
     e.registerInput = async (data, rev, signal) => { if (id === 'bt') registered.push(structuredClone(data)); await register(data, rev, signal); };
     return e;
-  }, source: backendTableSource });
+  } });
   const bt: DashboardCard = { id: 'bt', widgetId: 'quotes', backendId: 'b1', params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } };
   try {
     store.syncDashboard(dashboard([bt, card('child', 'bt')]));
     store.ensureTable('d', 'bt');
-    store.setBackendRows('d', 'bt', [{ sym: 'A', px: 1 }, { sym: 'B' }]);
+    store.setBackendRows(store.beginBackendRequest('d', bt), [{ sym: 'A', px: 1 }, { sym: 'B' }]);
     await store.settled('d');
     expect(store.readView('d', 'bt').status).toBe('ready');
     expect(registered).toHaveLength(1);
@@ -911,20 +920,21 @@ it('runs a backend table on the worker from the rows its card fetched', async ()
     expect(store.readView('d', 'child').status).toBe('ready');
     // New rows re-acquire once; the same payload again does nothing.
     const same = [{ sym: 'C', px: 3 }];
-    store.setBackendRows('d', 'bt', same);
+    const refresh = store.beginBackendRequest('d', bt);
+    store.setBackendRows(refresh, same);
     await store.settled('d');
     expect(registered).toHaveLength(2);
     expect(registered[1].rows.map(r => r.values.sym)).toEqual(['C']);
-    store.setBackendRows('d', 'bt', same);
+    store.setBackendRows(refresh, same);
     await store.settled('d');
     expect(registered).toHaveLength(2);
-    store.setBackendRows('d', 'bt', Array.from({ length: WORKER_MAX_CELLS + 1 }, () => ({ x: 1 })));
+    store.setBackendRows(store.beginBackendRequest('d', bt), Array.from({ length: WORKER_MAX_CELLS + 1 }, () => ({ x: 1 })));
     await store.settled('d');
     expect(store.readView('d', 'bt').error).toBe('This table is too large for the table engine');
     // A failed fetch replaces the rows rather than leaving the child on the previous ones.
-    store.setBackendRows('d', 'bt', [{ sym: 'D', px: 4 }]);
+    store.setBackendRows(store.beginBackendRequest('d', bt), [{ sym: 'D', px: 4 }]);
     await store.settled('d');
-    store.setBackendRows('d', 'bt', new Error('HTTP 404'));
+    store.setBackendRows(store.beginBackendRequest('d', bt), new Error('HTTP 404'));
     await store.settled('d');
     expect(store.readView('d', 'bt').error).toBe('HTTP 404');
     expect(store.readView('d', 'child').error).toBe('Source bt: HTTP 404');
@@ -934,16 +944,186 @@ it('runs a backend table on the worker from the rows its card fetched', async ()
   }
 });
 
+it.each(['bounded', 'paged'] as const)('preserves the explicit %s receipt from a backend table through chart projection', async completeness => {
+  useWidgetRegistryStore.setState({ widgets: [{ id: 'prices', backendId: 'b1', type: 'table', name: 'Prices', endpoint: '', params: [] } as never] });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker) });
+  const bt = { ...card('bt'), widgetId: 'prices', backendId: 'b1', params: {} };
+  try {
+    store.syncDashboard(dashboard([bt]));
+    store.ensureTable('d', 'bt');
+    const receipt = { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' };
+    store.setBackendRows(store.beginBackendRequest('d', bt), { completeness, receipt, rows: [
+      { symbol: 'A', date: '2026-01-02', adjusted_close: 100 },
+      { symbol: 'A', date: '2026-01-05', adjusted_close: 90 },
+    ] });
+    await store.settled('d');
+    const revision = store.readView('d', 'bt').active!;
+    const dataset = await store.readExecutor('d', 'bt')!.chartData(revision, Object.values(priceFields), new AbortController().signal);
+    expect(dataset.provenance.receipt).toEqual(receipt);
+    expect(dataset.completeness.kind).toBe(completeness);
+    expect(preparePrices(dataset, priceFields).ok).toBe(completeness === 'bounded');
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+  }
+});
+
+it('delivers the acquired dotted HTTP ETF payload through a second table', async () => {
+  const path = '/api/v1/eodhd/etf/holdings';
+  const rows = [{ symbol: 'HOLDING.US', weight: .125 }, { symbol: 'OTHER.US', weight: 0 }];
+  const receipt = { fund_symbol: 'FUND_A.US', etf_kind: 'holdings', weight_basis: 'fund-assets' };
+  const server = await startMockServer({ [path]: { results: { rows, receipt, completeness: 'paged' } } });
+  const definition = widget({ id: 'holdings', endpoint: path, dataKey: 'results.rows' });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker) });
+  const source = { ...card('etf-root'), widgetId: definition.id, backendId: definition.backendId, params: { symbol: 'FUND_B.US' } };
+  const child = card('etf-child', source.id);
+  try {
+    useWidgetRegistryStore.setState({ widgets: [definition] });
+    store.syncDashboard(dashboard([source, child]));
+    let acquisition: BackendEtfAcquisition | undefined;
+    const data = await fetchWidgetData(backend({ baseUrl: server.url }), definition, { symbol: 'FUND_A.US', token: 'private' },
+      undefined, undefined, undefined, evidence => { acquisition = evidence; });
+    expect(acquisition?.parameters).toEqual({ symbol: 'FUND_A.US' });
+    store.setBackendRows(store.beginBackendRequest('d', source), data, acquisition);
+    store.ensureTable('d', child.id);
+    await store.settled('d');
+    const signal = new AbortController().signal;
+    const raw = await store.backendSource('d', source).acquire(signal);
+    if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+    const projected = await store.readExecutor('d', child.id)!.chartData(store.readView('d', child.id).active!, ['symbol', 'weight'], signal);
+    expect(projected.provenance.metadata?.etfEvidence).toMatchObject({ fund: 'FUND_A.US', basis: 'fund-assets' });
+    expect(projected.provenance.metadata?.etfEvidence).toEqual(raw.dataset.provenance.metadata?.etfEvidence);
+    expect(readEtfEvidence(projected, 'holdings').ok).toBe(true);
+    expect(projected.rows.map(r => r.values)).toEqual(rows);
+    expect(projected.completeness.kind).toBe('paged');
+    store.updateDefinition('d', source.id, { search: 'HOLDING.US', table: { hidden: ['fund_symbol', 'weight_basis'] } }, { kind: 'none' });
+    for (const conflict of [{ fund_symbol: 'FUND_B.US' }, { weight_basis: 'equity-exposure' }, { weight: -1 }]) {
+      const explicit = { fund_symbol: 'FUND_A.US', weight_basis: 'fund-assets' };
+      store.setBackendRows(store.beginBackendRequest('d', source), { completeness: 'paged', receipt, rows: [
+        { ...rows[0], ...explicit }, { ...rows[1], ...explicit, ...conflict },
+      ] }, acquisition);
+      await store.settled('d');
+      const view = store.readView('d', child.id);
+      const chart = await store.readExecutor('d', child.id)!.chartData(view.active!, ['symbol', 'weight'], signal);
+      expect(chart.rows.map(r => r.values)).toEqual([rows[0]]);
+      expect(readEtfEvidence(chart, 'holdings').ok).toBe(false);
+    }
+
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+    await server.close();
+  }
+});
+
+it.each([
+  ['/api/v1/eodhd/equity/fundamental/dividends', 'false', false],
+  ['/api/v1/unrelated', 'true', false],
+  ['/api/v1/eodhd/equity/fundamental/dividends', 'true', true],
+] as const)('binds financial certification to the completed backend acquisition at %s (chart_source=%s)', async (path, chart_source, certified) => {
+  const rows = [dividendRow];
+  const server = await startMockServer({ [path]: {
+    results: { rows, completeness: 'bounded', chart_evidence: dividendEvidence },
+    extra: { results_metadata: { chart_evidence: dividendEvidence } },
+  } });
+  const definition = widget({ id: 'dividends', endpoint: path, dataKey: 'results.rows' });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker) });
+  const source = { ...card('dividend-root'), widgetId: definition.id, backendId: definition.backendId };
+  try {
+    useWidgetRegistryStore.setState({ widgets: [definition] });
+    store.syncDashboard(dashboard([source]));
+    let acquisition: BackendAcquisition | undefined;
+    const params = { chart_source, symbol: 'SHEL.LSE', start_date: '2026-01-01', end_date: '2026-06-30' };
+    const data = await fetchWidgetData(backend({ baseUrl: server.url }), definition, params,
+      undefined, undefined, undefined, completed => { acquisition = completed; });
+    expect(acquisition?.financialEvidence).toEqual(certified ? dividendEvidence : undefined);
+    store.setBackendRows(store.beginBackendRequest('d', source), data, acquisition);
+    const raw = await store.backendSource('d', source).acquire(new AbortController().signal);
+    if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+    expect(raw.dataset.rows.map(row => row.values)).toEqual(rows);
+    expect(readFinancialEvidence(raw.dataset.provenance)).toEqual(certified ? dividendEvidence : undefined);
+    expect(raw.dataset.completeness.kind).toBe('unknown');
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({ widgets: [] });
+    await server.close();
+  }
+});
+
+it('attaches matched chart sources to the exact backend dataset and rejects a remote snapshot as local proof', async () => {
+  const { sourcePath, sourceResponse, sourceRows, sourceEnvelope, sourceReceipt } = await import('../test/fixtures/chartSources');
+  const forged = { ...sourceResponse.results, completeness:'bounded', chart_sources:sourceEnvelope };
+  const server = await startMockServer({ [sourcePath]: { ...sourceResponse, results:forged }, '/unmatched': {results:forged} });
+  const store = createTableExecutionStore({});
+  const source = { ...card('test-chart-source'), widgetId:'fixture', backendId:'b1' };
+  try {
+    store.syncDashboard(dashboard([source]));
+    for (const path of [sourcePath, '/unmatched']) {
+      const definition = widget({id:'fixture',endpoint:path,dataKey:'results.rows'});
+      useWidgetRegistryStore.setState({widgets:[definition]});
+      let acquired: BackendAcquisition | undefined;
+      const rows = await fetchWidgetData(backend({baseUrl:server.url}),definition,{symbol:'A',chart_source:'true'},
+        undefined,undefined,undefined,value => { acquired=value; });
+      store.setBackendRows(store.beginBackendRequest('d', source),rows,acquired);
+      const raw = await store.backendSource('d', source).acquire(new AbortController().signal);
+      if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+      expect(raw.dataset.rows.map(row => row.values)).toEqual(sourceRows);
+      expect(raw.dataset.provenance.metadata?.chartSources).toEqual(path === sourcePath ? {metric:sourceReceipt} : undefined);
+    }
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({widgets:[]});
+    await server.close();
+  }
+});
+
+it('carries estimate safety checks across a linked table without transferring hidden cells', async () => {
+  const { buildBulletFigure, bulletRequestIds } = await import('../lib/widgetData/bulletFigure');
+  const { runRecipe } = await import('../lib/widgetData/chartRecipes/run');
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker) });
+  useWidgetRegistryStore.setState({ widgets: [{ id: 'estimate-test', backendId: 'b1', type: 'table', name: 'Estimates', endpoint: '', params: [] } as never] });
+  const root = { ...card('estimates'), backendId: 'b1', widgetId: 'estimate-test' };
+  const child = card('presented-estimates', root.id);
+  try {
+    store.syncDashboard(dashboard([root, child]));
+    store.ensureTable('d', child.id);
+    store.setBackendRows(store.beginBackendRequest('d', root), [
+      { symbol: 'A', currency: 'USD', period_ending: '2026-03-31', band_status: 'ok', eps_actual: 2, eps_low: 1, eps_avg: 2, eps_high: 3 },
+      { symbol: 'A', currency: 'EUR', period_ending: '2026-06-30', band_status: 'withheld', eps_actual: 4, eps_low: 1, eps_avg: 2, eps_high: 3 },
+    ]);
+    await store.settled('d');
+    const hide = async (field: string) => {
+      store.updateDefinition('d', root.id, { table: { hidden: [field] }, search: '' }, { kind: 'none' });
+      await store.settled('d');
+      const current = store.readView('d', child.id);
+      const ready = current.ready!;
+      const fields = ready.columns.map(c => c.id);
+      expect(fields).not.toContain(field);
+      return store.readExecutor('d', child.id)!.chartData(current.active!, fields, new AbortController().signal);
+    };
+    const noCurrency = await hide('currency');
+    expect(noCurrency.rows[0].values).not.toHaveProperty('currency');
+    expect(JSON.stringify(noCurrency.provenance.metadata)).not.toMatch(/USD|EUR/);
+    expect(runRecipe(noCurrency, { kind: 'estimate-range', version: 1, metric: 'eps',
+      fields: { periodEnd: 'period_ending', status: 'band_status', low: 'eps_low', average: 'eps_avg', high: 'eps_high' } },
+    { theme: 'light', maxDecimals: 2, today: '2026-11-19' })).toMatchObject({ ok: false, message: expect.stringMatching(/currency/i) });
+    const hiddenGuard = await hide('band_status');
+    expect(bulletRequestIds(['eps_actual'], hiddenGuard.columns)).not.toContain('band_status');
+    expect(buildBulletFigure(hiddenGuard, { type: 'bullet', category: 'period_ending', display: 'grouped', measures: ['eps_actual'] }, 'light', 2))
+      .toMatchObject({ ok: false, message: expect.stringContaining('band_status') });
+  } finally { store.disposeDashboard('d'); useWidgetRegistryStore.setState({ widgets: [] }); }
+});
+
 // V9-P2: a column's widgets.json aggregation hint reaches a linked table's input, where Rita's table-model tools read it.
 it('carries a backend column aggregation hint into a linked table input as metadata', async () => {
   const hint = { time: 'sum', frequencies: ['quarter', 'annual'], entity: 'require_selection', status: 'conditional', ruleset: 'eodhd-1' };
   useWidgetRegistryStore.setState({ widgets: [{ id: 'inc', backendId: 'b1', type: 'table', name: 'Income', endpoint: '', params: [], table: { columns: [{ field: 'revenue', aggregation: hint }, { field: 'date' }] } } as never] });
-  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker), source: backendTableSource });
+  const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new WorkerBoundary() as unknown as Worker) });
   const bt: DashboardCard = { id: 'bt', widgetId: 'inc', backendId: 'b1', params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } };
   try {
     store.syncDashboard(dashboard([bt, card('child', 'bt')]));
     store.ensureTable('d', 'bt');
-    store.setBackendRows('d', 'bt', [{ date: '2025-03-31', revenue: 1 }]);
+    store.setBackendRows(store.beginBackendRequest('d', bt), [{ date: '2025-03-31', revenue: 1 }]);
     store.ensureTable('d', 'child');
     await store.settled('d');
     const input = store.readView('d', 'child').ready!.inspection.inputColumns;
@@ -956,17 +1136,127 @@ it('carries a backend column aggregation hint into a linked table input as metad
 });
 });
 it('disposing a dashboard releases the backend rows its tables were handed', async () => {
-  const store = createTableExecutionStore({ source: backendTableSource });
+  const store = createTableExecutionStore({});
   const bt: DashboardCard = { id: 'released-bt', widgetId: 'quotes', backendId: 'b1', params: {}, layout: { x: 0, y: 0, w: 1, h: 1 } };
   useWidgetRegistryStore.setState({ widgets: [{ id: 'quotes', backendId: 'b1', type: 'table', name: 'Quotes', endpoint: '', params: [] } as never] });
   try {
     store.syncDashboard({ id: 'd', tabs: [{ id: 'tab', name: 'Tab', cards: [bt] }] } as Dashboard);
-    store.setBackendRows('d', bt.id, [{ px: 1 }]);
+    store.setBackendRows(store.beginBackendRequest('d', bt), [{ px: 1 }]);
     store.disposeDashboard('d');
     // Released: a fresh acquisition waits for rows instead of reading the old ones.
-    const outcome = await Promise.race([backendTableSource(bt).acquire(new AbortController().signal).then(() => 'old rows'), new Promise(r => setTimeout(() => r('waiting'), 20))]);
+    const outcome = await Promise.race([store.backendSource('d', bt).acquire(new AbortController().signal).then(() => 'old rows'), new Promise(r => setTimeout(() => r('waiting'), 20))]);
     expect(outcome).toBe('waiting');
   } finally {
+    useWidgetRegistryStore.setState({ widgets: [] });
+  }
+});
+
+vi.mock('../lib/widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+
+it('hydrates only a matching dashboard, card and request, including repeated symbol replacement', async () => {
+  const store = createTableExecutionStore({});
+  const a = fixtureCard({ id: 'backend', widgetId: 'quotes', backendId: 'b1', params: { symbol: 'A' } });
+  const b = { ...a, params: { symbol: 'B' } };
+  const read = async (dashboardId: string, source: DashboardCard) => {
+    const data = await store.backendSource(dashboardId, source).acquire(new AbortController().signal);
+    if (data.kind !== 'dataset') throw Error('Expected handed-off backend rows');
+    return data.dataset.rows[0].values.symbol;
+  };
+  const firstA = store.beginBackendRequest('one', a);
+  const other = store.beginBackendRequest('two', a);
+  const sibling = { ...a, id: 'second-card' };
+  const sameDashboard = store.beginBackendRequest('one', sibling);
+  store.setBackendRows(firstA, [{ symbol: 'one-A' }]);
+  store.setBackendRows(other, [{ symbol: 'two-A' }]);
+  store.setBackendRows(sameDashboard, [{ symbol: 'sibling' }]);
+  try {
+    // A newly mounted consumer reads the compatible completed source without another producer request.
+    expect(await read('one', { ...a, title: 'Renamed' })).toBe('one-A');
+    expect(await read('one', sibling)).toBe('sibling');
+    expect(await read('two', a)).toBe('two-A');
+    const firstB = store.beginBackendRequest('one', b);
+    const lastA = store.beginBackendRequest('one', a);
+    let resolved = false;
+    const pending = read('one', a).then(symbol => { resolved = true; return symbol; });
+    store.setBackendRows(firstB, new Error('late B'));
+    store.setBackendRows(firstA, [{ symbol: 'obsolete A' }]);
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+    store.setBackendRows(lastA, [{ symbol: 'new A' }]);
+    expect(await pending).toBe('new A');
+    store.disposeDashboard('one');
+    store.setBackendRows(lastA, [{ symbol: 'late after disposal' }]);
+    expect(await read('two', a)).toBe('two-A');
+  } finally {
+    store.disposeDashboard('one');
+    store.disposeDashboard('two');
+  }
+});
+
+it('fences a waiting producer before GET and compares header fields by HTTP semantics', async () => {
+  const store = createTableExecutionStore({});
+  const root = fixtureCard({ id: 'waiting-root', widgetId: 'quotes' });
+  const source = widget({ id: 'quotes', endpoint: '/quotes', dataKey: 'results' });
+  const connection = backend({ authLocation: 'cookie', headerName: 'Session', headerValue: 'demo' });
+  const revision = () => store.backendWireRevision('d', root.id);
+  const wire = (req: ReturnType<typeof store.beginBackendRequest>, headers: Record<string,string>) =>
+    store.identifyBackendRequest(req, 'https://example.invalid/quotes?symbol=A', headers, 'results');
+  try {
+    store.observeBackendProducer('d', root, connection, source);
+    const a = store.beginBackendRequest('d', root);
+    wire(a, { 'X-Desk': 'A', 'X-Book': 'B' });
+    const initial = revision();
+    wire(a, { 'x-book': 'B', 'x-desk': 'A' });
+    expect(revision()).toBe(initial);
+    wire(a, { 'x-book': 'b', 'x-desk': 'A' });
+    expect(revision()).toBeGreaterThan(initial);
+    store.setBackendRows(a, [{ value: 'A' }]);
+    const prior = revision();
+    // Cookie names are wire values inside Cookie, and remain case-sensitive.
+    store.observeBackendProducer('d', root, { ...connection, headerName: 'session' }, source);
+    expect(revision()).toBeGreaterThan(prior);
+    let ready = false;
+    const waiting = store.backendSource('d', root).acquire(new AbortController().signal).then(answer => {
+      ready = true;
+      return answer;
+    });
+    store.setBackendRows(a, new Error('late A'));
+    await Promise.resolve();
+    expect(ready).toBe(false);
+    const b = store.beginBackendRequest('d', root);
+    store.setBackendRows(b, [{ value: 'B' }]);
+    const answer = await waiting;
+    expect(answer.kind === 'dataset' && answer.dataset.rows[0].values.value).toBe('B');
+  } finally {
+    store.disposeDashboard('d');
+  }
+});
+
+it('retires the saved question when an idle backend card is removed or repurposed', () => {
+  const store = createTableExecutionStore({});
+  const source = widget({ id: 'quotes', runButton: true });
+  const replacement = { ...source, id: 'alternate' };
+  const c = fixtureCard({ id: 'source', widgetId: source.id });
+  const sync = (...cards: DashboardCard[]) => store.syncDashboard({ id: 'scope', name: 'Test', tabs: [{ id: 'tab', name: 'Tab', cards }] });
+  const observe = (symbol: string) => store.observeBackendProducer('scope', c, backend(), source, () => ({
+    params: { symbol }, intent: symbol, progress: { wire: null, held: false },
+  }));
+  useWidgetRegistryStore.setState({ widgets: [source, replacement] });
+  try {
+    sync(c);
+    const first = observe('AAPL');
+    sync({ ...c, widgetId: replacement.id });
+    sync(c);
+    const second = observe('TSLA');
+    expect(second?.params.symbol).toBe('TSLA');
+    expect(second).not.toBe(first);
+    sync();
+    sync(c);
+    expect(observe('MSFT')?.params.symbol).toBe('MSFT');
+  } finally {
+    store.disposeDashboard('scope');
     useWidgetRegistryStore.setState({ widgets: [] });
   }
 });

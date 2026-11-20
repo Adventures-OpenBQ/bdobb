@@ -24,18 +24,23 @@ It has its own sorting, filters, columns and **Pivot** drawer, saved with the ca
 
 ## A linked chart
 
-Its controls sit above the plot and save as you change them:
+Use the card’s **Show parameters** chevron to open **Parameters**, where you can choose the source, chart type and settings. Examples open with the panel closed. Closing it keeps the draft and the applied chart.
 
-- **Chart type** — **Columns (vertical)** (the default), **Bars (horizontal)** or **Lines**.
-- **Category** — the column along the axis.
-- **Measures** — a checkbox for each numeric column.
-- **Display** — **Grouped** or **Stacked**; not offered for Lines.
+For Columns, Bars, Lines and Pie, choose a **Category** and one or more **Measures**. Columns and Bars support grouped, stacked and percentage displays. The controls for each financial chart depend on its source.
 
-Until a category and at least one measure are chosen it reads *Choose chart fields: select a category and numeric measures.*
+- **Drawdown** measures the percentage decline from the highest adjusted close seen in the loaded history for each chosen symbol. The area breaks at a missing price.
+- **Yield curve** compares observed dates using normalized rates and maturities in months. A missing tenor leaves a gap. The legend identifies the observation date.
+- **Monthly returns** uses the final observed adjusted close in each completed calendar month and the immediately preceding month. A missing month-end price and an incomplete month each explain the blank in their hover text. A zero return displays zero.
+- **Correlation** compares consecutive daily adjusted-close returns for up to 25 selected symbols. Lookback counts return-date positions through their common cutoff. Hover over a pair for its overlap count (N) and first and last paired return dates. Insufficient overlap and zero variance leave a blank cell.
+- **Estimate range** shows the low, average and high for a reported fiscal quarter. The provider checks whether its trend EPS average is within 10% of the recorded consensus as a matching heuristic. Use the fiscal period end to identify each quarter. A withheld quarter keeps its label and reason. Present the instrument and consistent currency or units when the chart asks for them. The source table gives each quarter’s full provider note.
+- **Bullet** compares actual EPS or revenue with available estimates and the previous quarter in the filtered table. A multi-row source must identify one instrument through its presented symbol or acquisition receipt. Each period end must identify one row. Choose **Quarter** for a specific period or the latest. Withheld and missing estimates leave the recorded consensus available as the beat comparison when supplied.
+- **Waterfall** uses the pinned income Statement model’s reported period columns and line identities. Expenses decrease the running balance even when you move them to another section. **Other** reconciles the steps shown with the next reported subtotal. Hover for the residual amount.
+
+For the five recipe charts, select the presented fields and choose **Apply chart settings**. History calculations need evidence of a complete or explicitly bounded acquisition. Daily prices require the acquired date bounds, daily interval and identifiable instrument. Ordinary backend results arrays carry unknown acquisition scope. They remain available in the table. Supply a complete snapshot or one with bounded dates to use them for history. A partial, paged, sampled or unknown acquisition shows a refusal. Filtering can also remove continuity evidence. Widening a chart’s lookback uses only data already delivered to its source.
 
 ## Changing or losing the source
 
-**Choose source** — in the `⋯` menu of a linked card, and as a button in its body — opens the same dialog to point it at another table. There is no unlink: to stop following a source, remove the card.
+In a linked chart or metric, open **Parameters** and select **Choose source**. In a linked table, select **Choose source** from its body or `⋯` menu. Both open the source table dialog. To stop following a source, remove the linked card.
 
 While the source is updating, the card keeps showing *Showing completed data (stale).* If the source is removed or stops being eligible, the card reads *Source unavailable* until you choose another.
 

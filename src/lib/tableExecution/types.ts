@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { RuntimeParams, ParamMatch } from './runtimeParams';
-export type { RuntimeParams, RuntimeParam, ParamMatch } from './runtimeParams';
+export type { RuntimeParams, ParamMatch } from './runtimeParams';
 import type { Periodicity } from "../periodicity";
 import type { TableCardState, AggName } from "../types";
 import type { CloneSafeValue, DatasetColumn, DatasetRow, DatasetProvenance, DatasetCompleteness, DatasetFreshness, DatasetCellError, WidgetDataset } from "../widgetData/types";

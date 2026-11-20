@@ -1,0 +1,100 @@
+[
+  {
+    "name": "ETF sunburst example",
+    "description": "Requires BDOBB 9.0.0 or later with ETF sunburst. Attach the separately supplied fictional holdings file.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "holdings": {
+        "id": "holdings",
+        "name": "ETF holdings",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "ETF composition"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "ETF snapshot source"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "holdings"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "holdings",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "etf-sunburst",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "etf-sunburst",
+                  "fund": "CANOPY.US",
+                  "depth": 2,
+                  "snapshot": "latest",
+                  "fields": {
+                    "holding": "symbol",
+                    "sector": "sector",
+                    "weight": "weight"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "holdings",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

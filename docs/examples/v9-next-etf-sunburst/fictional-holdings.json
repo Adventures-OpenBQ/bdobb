@@ -1,0 +1,81 @@
+{
+  "rows": [
+    {
+      "symbol": "ALDER.US",
+      "fund_symbol": "CANOPY.US",
+      "snapshot": "2026-09-30",
+      "sector": "Technology",
+      "weight": 0.2,
+      "weight_basis": "fund-assets",
+      "weight_unit": "fraction"
+    },
+    {
+      "symbol": "BIRCH.US",
+      "fund_symbol": "CANOPY.US",
+      "snapshot": "2026-09-30",
+      "sector": null,
+      "weight": 0.149999,
+      "weight_basis": "fund-assets",
+      "weight_unit": "fraction"
+    },
+    {
+      "symbol": "CEDAR.US",
+      "fund_symbol": "CANOPY.US",
+      "snapshot": "2026-09-30",
+      "sector": "Industrial",
+      "weight": 1e-06,
+      "weight_basis": "fund-assets",
+      "weight_unit": "fraction"
+    },
+    {
+      "symbol": "WILLOW.US",
+      "fund_symbol": "CANOPY.US",
+      "snapshot": "2026-09-30",
+      "sector": "Industrial",
+      "weight": 0,
+      "weight_basis": "fund-assets",
+      "weight_unit": "fraction"
+    }
+  ],
+  "completeness": "partial",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "etf-hierarchy",
+        "origin": "acquired-snapshot",
+        "fund": "CANOPY.US",
+        "snapshot": "2026-09-30",
+        "retrieved_at": "2026-11-20T04:16:45Z",
+        "as_of": "2026-09-30",
+        "weight_basis": "fund-assets-fraction",
+        "coverage": "partial",
+        "coverage_reference": "fixture:canopy-holdings",
+        "rounding_bound_fraction": null,
+        "rounding_reference": null,
+        "missing_mass": {
+          "status": "unknown"
+        },
+        "raw_count": 4,
+        "normalized_count": 4,
+        "delivered_count": 4,
+        "holding_keys": [
+          "ALDER.US",
+          "BIRCH.US",
+          "CEDAR.US",
+          "WILLOW.US"
+        ],
+        "diagnostics": [],
+        "unsafe": {
+          "fund_conflict": false,
+          "basis_conflict": false,
+          "duplicate_conflict": false,
+          "classification_conflict": false,
+          "negative_weight": false,
+          "excess_weight": false
+        }
+      }
+    ]
+  }
+}

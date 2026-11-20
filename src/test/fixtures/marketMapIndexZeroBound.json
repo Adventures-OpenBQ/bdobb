@@ -1,0 +1,124 @@
+{
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "market-map",
+        "retrieved_at": "2026-11-13T22:00:00Z",
+        "raw_count": 3,
+        "normalized_count": 3,
+        "delivered_count": 3,
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "session_conflict": false,
+          "denomination_conflict": false,
+          "membership_conflict": false,
+          "duplicate_conflict": false,
+          "excess_weight": false
+        },
+        "listing_keys": [
+          "ALFA.US",
+          "BETA.US",
+          "GAMMA.US"
+        ],
+        "exact_repeats": 0,
+        "rejected_count": 0,
+        "excluded_areas": {
+          "zero": 0,
+          "negative": 0,
+          "invalid": 0
+        },
+        "origin": "acquired-snapshot",
+        "acquisition_ref": "example/acquisition",
+        "session": "2026-11-13",
+        "prior_session": "2026-11-12",
+        "return_basis": "completed-close-to-close-fraction",
+        "price_basis": "split-adjusted-price",
+        "session_ref": "example/completed-sessions",
+        "area_ref": "example/index-weights",
+        "coverage_reference": "example/component-roster",
+        "mode": "index-weight",
+        "universe": "EXAMPLE.INDX",
+        "area_basis": "index-weight-fraction",
+        "denomination": null,
+        "cap_retrieved_at": null,
+        "membership_as_of": "2026-11-12",
+        "weight_valid_for": "2026-11-13",
+        "weight_reference": "example/valid-for-session",
+        "members": [
+          "ALFA.US",
+          "BETA.US",
+          "GAMMA.US"
+        ],
+        "coverage": "complete",
+        "rounding_bound_fraction": 0.0,
+        "rounding_reference": "example/exact-weights"
+      }
+    ]
+  },
+  "rows": [
+    {
+      "listing": "ALFA.US",
+      "sector": "Technology",
+      "area": 0.08,
+      "change": 0,
+      "acquisition_ref": "example/acquisition",
+      "universe": "EXAMPLE.INDX",
+      "session": "2026-11-13",
+      "prior_session": "2026-11-12",
+      "return_basis": "completed-close-to-close-fraction",
+      "price_basis": "split-adjusted-price",
+      "session_ref": "example/completed-sessions",
+      "area_basis": "index-weight-fraction",
+      "area_ref": "example/index-weights",
+      "denomination": null,
+      "cap_retrieved_at": null,
+      "membership_as_of": "2026-11-12",
+      "weight_valid_for": "2026-11-13",
+      "weight_reference": "example/valid-for-session"
+    },
+    {
+      "listing": "BETA.US",
+      "sector": "Technology",
+      "area": 0.69,
+      "change": 0,
+      "acquisition_ref": "example/acquisition",
+      "universe": "EXAMPLE.INDX",
+      "session": "2026-11-13",
+      "prior_session": "2026-11-12",
+      "return_basis": "completed-close-to-close-fraction",
+      "price_basis": "split-adjusted-price",
+      "session_ref": "example/completed-sessions",
+      "area_basis": "index-weight-fraction",
+      "area_ref": "example/index-weights",
+      "denomination": null,
+      "cap_retrieved_at": null,
+      "membership_as_of": "2026-11-12",
+      "weight_valid_for": "2026-11-13",
+      "weight_reference": "example/valid-for-session"
+    },
+    {
+      "listing": "GAMMA.US",
+      "sector": "Technology",
+      "area": 0.23,
+      "change": 0,
+      "acquisition_ref": "example/acquisition",
+      "universe": "EXAMPLE.INDX",
+      "session": "2026-11-13",
+      "prior_session": "2026-11-12",
+      "return_basis": "completed-close-to-close-fraction",
+      "price_basis": "split-adjusted-price",
+      "session_ref": "example/completed-sessions",
+      "area_basis": "index-weight-fraction",
+      "area_ref": "example/index-weights",
+      "denomination": null,
+      "cap_retrieved_at": null,
+      "membership_as_of": "2026-11-12",
+      "weight_valid_for": "2026-11-13",
+      "weight_reference": "example/valid-for-session"
+    }
+  ]
+}

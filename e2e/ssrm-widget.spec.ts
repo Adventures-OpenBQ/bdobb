@@ -45,7 +45,11 @@ test('authenticated native upload, full consumers, refresh, saved reopen and err
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked table'}).click();
   await expect.poll(()=>page.evaluate(async()=>{const p='/src/stores/tableExecutionStore.ts',d='/src/stores/dashboardStore.ts';const ds=(await import(d)).useDashboardStore.getState();const child=ds.dashboards[0].tabs[0].cards.find((c:{linkedSource?:unknown})=>c.linkedSource);return child&&(await import(p)).tableExecutionStore.readView('d1',child.id).ready?.topLevelCount;})).toBe(1204);
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked chart'}).click();
-  await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');await page.getByRole('checkbox',{name:'revenue',exact:true}).check();
+  const chartCard=page.locator('.widget-card').filter({has:page.locator('.linked-chart-renderer')});
+  await chartCard.getByRole('button',{name:'Show parameters',exact:true}).click();
+  const parameters=chartCard.getByRole('region',{name:'Parameters',exact:true});
+  await parameters.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
+  await parameters.getByRole('checkbox',{name:'revenue',exact:true}).check();
   await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(1204);
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Export ▸'}).click();await page.getByRole('menuitem',{name:'CSV',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>window.__bdobb!.list!().find(p=>p.startsWith('exports/')&&p.endsWith('.csv')))).toBeTruthy();

@@ -1,0 +1,105 @@
+[
+  {
+    "name": "Return summary fixtures",
+    "description": "Requires BDOBB 9.0.0 or later with Return summaries. Synthetic adjusted prices supplied separately as a local JSON snapshot.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "returns": {
+        "id": "returns",
+        "name": "Returns",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 27,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Return summaries"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 27,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Daily price snapshot"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "returns"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "returns",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "return-summary",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "return-summary",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "CANOPY.US",
+                    "ALDER.US"
+                  ],
+                  "view": "box",
+                  "window": {
+                    "mode": "own"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "returns",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

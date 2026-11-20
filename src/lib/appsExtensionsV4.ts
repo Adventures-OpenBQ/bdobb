@@ -5,11 +5,14 @@ import { AppExtensionError, decodeV3AppExtension, extensionError, unwrapExtensio
 import type { ExtensionResult, V3AppExtension } from './appsExtensionsV3';
 import type { App, ImportResult } from './appsJson';
 import { isRecord } from './isRecord';
+import { isLinkedMetricCard } from './builtins';
+import { decodeLinkedKpiOptions } from './widgetData/kpi/settings';
 import { reservedPivotName } from './paramGroups';
 import { AGG_NAMES, BUCKETS } from './types';
 import type { Dashboard, DashboardCard, PivotConfig } from './types';
+import { decodeLinkedChartRecipe, isAcquiredFinancialRecipeType, isLegacyLinkedChartType, isRecipeOnlyLinkedChartType, isRecipeType, LINKED_CHART_FIELDS, RECIPE_ONLY_LINKED_CHART_FIELDS } from './widgetData/chartRecipes/settings';
 
-type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
+type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 'tableSelection' | 'linkedChart' | 'linkedMetric' | 'fiscalYearEnd' | 'hideTitleParams' | 'paramsOpen' | 'calendar'>> & {
   view?: 'calendar';
   pivot?: PivotConfig;
   sourceRef?: string;
@@ -17,7 +20,7 @@ type Extras = Partial<Pick<DashboardCard, 'managedSource' | 'tableDefinition' | 
 };
 type PortableCard = { ref: string; tab: string; index: number; extras: Extras };
 export type V4AppExtension = { schemaVersion: 1; profile: 'v4'; base: V3AppExtension; cards: PortableCard[] };
-export const EXTRA_FIELDS = ['managedSource', 'tableDefinition', 'tableSelection', 'linkedChart', 'fiscalYearEnd', 'hideTitleParams', 'paramsOpen', 'calendar'] as const;
+export const EXTRA_FIELDS = ['managedSource', 'tableDefinition', 'tableSelection', 'linkedChart', 'linkedMetric', 'fiscalYearEnd', 'hideTitleParams', 'paramsOpen', 'calendar'] as const;
 const BASE_FIELDS = ['id', 'widgetId', 'backendId', 'params', 'layout', 'title', 'view', 'minimized', 'bindings', 'table', 'groupIds', 'extensions'];
 export function keys(value: Record<string, unknown>, allowed: readonly string[], path: string, profile = 'v4') {
   if (Object.keys(value).some(key => !allowed.includes(key))) extensionError(path, `Unknown ${profile} extension field.`);
@@ -30,8 +33,11 @@ function checkedJson(value: unknown, path: string, depth = 0, seen = new Set<obj
   if (typeof value !== 'object' || value === null || seen.has(value)) extensionError(path, 'Expected finite acyclic JSON.');
   if (!Array.isArray(value) && (!isRecord(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value)))) extensionError(path, 'Expected plain JSON.');
   seen.add(value);
-  for (const [key, child] of Object.entries(value)) {
+  for (const key of Object.keys(value)) {
     if (['__proto__', 'constructor', 'prototype'].includes(key)) extensionError(path, 'Unsafe extension key.');
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !('value' in descriptor)) extensionError(`${path}.${key}`, 'Expected JSON data.');
+    const child: unknown = descriptor.value;
     if (child === undefined && !Array.isArray(value)) continue; // JSON omits optional object fields.
     checkedJson(child, `${path}.${key}`, depth + 1, seen);
   }
@@ -81,10 +87,32 @@ export function extras(value: unknown, path: string): Extras {
     if (isRecord(s)) keys(s, ['kind', 'ids', 'excludedIds'], `${path}.tableSelection`);
     if (!isRecord(s) || !['none', 'explicit', 'allMatching'].includes(s.kind as string) || (s.kind === 'explicit' && !strings(s.ids)) || (s.kind === 'allMatching' && !strings(s.excludedIds))) extensionError(path, 'Invalid symbolic selection.');
   }
+  let chartWithoutMeasures: Record<string, unknown> | undefined;
   if (value.linkedChart !== undefined) {
     const c = value.linkedChart;
-    if (!isRecord(c) || !['bar', 'column', 'line'].includes(c.type as string) || (c.category !== undefined && typeof c.category !== 'string') || !strings(c.measures) || !['grouped', 'stacked'].includes(c.display as string)) extensionError(path, 'Invalid linked chart.');
+    const chartPath = `${path}.linkedChart`;
+    if (!isRecord(c) || typeof c.type !== 'string' || (!isLegacyLinkedChartType(c.type) && !isRecipeType(c.type)))
+      extensionError(chartPath, 'Invalid linked chart type. Choose a supported chart type.');
+    if (isRecipeOnlyLinkedChartType(c.type)) {
+      keys(c, RECIPE_ONLY_LINKED_CHART_FIELDS, chartPath);
+      if (c.display !== 'grouped' || (c.measures !== undefined && (!Array.isArray(c.measures) || c.measures.length)))
+        extensionError(chartPath, c.type === 'dual-axis-overlay'
+          ? 'Dual-axis overlays use only the two measures defined by the selected recipe.'
+          : c.type === 'market-map' ? 'Market maps use only the five acquired fields defined by the recipe.'
+            : 'Estimate revisions use only the fields defined by the selected recipe.');
+    } else if (isAcquiredFinancialRecipeType(c.type)) keys(c, LINKED_CHART_FIELDS, chartPath);
+    const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
+    if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
+      || (!needsMeasuresDefault && !strings(c.measures)) || !['grouped', 'stacked', 'percent'].includes(c.display as string)
+      || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string)))
+      extensionError(chartPath, 'Invalid linked chart settings.');
+    const recipe = decodeLinkedChartRecipe(c, c.type);
+    if (recipe && !recipe.ok) extensionError(`${chartPath}.recipe`, recipe.message);
+    if (needsMeasuresDefault) chartWithoutMeasures = c;
   }
+  const metric = Object.hasOwn(value, 'linkedMetric') ? decodeLinkedKpiOptions(value.linkedMetric) : undefined;
+  if (metric && (!metric.ok || value.linkedChart !== undefined || typeof value.sourceRef !== 'string'))
+    extensionError(`${path}.linkedMetric`, metric.ok ? 'A linked metric requires a table source and metric widget.' : metric.message);
   if (value.calendar !== undefined) {
     const c = value.calendar;
     if (!isRecord(c)) extensionError(path, 'Invalid calendar state.');
@@ -99,7 +127,12 @@ export function extras(value: unknown, path: string): Extras {
   }
   if (value.pivot !== undefined) pivot(value.pivot, `${path}.pivot`);
   if (value.pivotBindings !== undefined && (!Array.isArray(value.pivotBindings) || value.pivotBindings.some(b => !isRecord(b) || typeof b.group !== 'string' || typeof b.paramName !== 'string' || !reservedPivotName(b.paramName)))) extensionError(path, 'Invalid Pivot binding.');
-  return structuredClone(value) as Extras;
+  const normalized = {
+    ...value,
+    ...(chartWithoutMeasures && { linkedChart: { ...chartWithoutMeasures, measures: [] } }),
+    ...(metric?.ok && { linkedMetric: metric.options }),
+  };
+  return structuredClone(normalized) as Extras;
 }
 export function needsV4(dashboard: Dashboard): boolean {
   return dashboard.tabs.some(tab => tab.cards.some(card => EXTRA_FIELDS.some(k => card[k] !== undefined) || card.linkedSource !== undefined || card.view === 'calendar' || card.table?.pivot !== undefined || card.bindings?.some(b => reservedPivotName(b.paramName))));
@@ -112,6 +145,8 @@ export function exportV4(dashboard: Dashboard, baseExport: (dashboard: Dashboard
     const portable: PortableCard[] = [];
     const base: Dashboard = { ...dashboard, tabs: dashboard.tabs.map(tab => ({ ...tab, cards: tab.cards.map((card, index) => {
       for (const [key, value] of Object.entries(card)) if (value !== undefined && ![...BASE_FIELDS, ...EXTRA_FIELDS, 'linkedSource'].includes(key)) extensionError('$.cards', 'Unsupported card state.');
+      if (card.linkedMetric !== undefined && !isLinkedMetricCard(card))
+        extensionError('$.cards.extras.linkedMetric', 'Settings require the built-in linked metric widget.');
       const extra: Extras = {};
       for (const field of EXTRA_FIELDS) if (card[field] !== undefined) Object.assign(extra, { [field]: card[field] });
       if (card.linkedSource) {
@@ -214,6 +249,8 @@ export function prepareV4(json: unknown): { plain: unknown; restore: (result: Im
       for (const item of batch.items) {
         const card = dashboard.tabs[batch.tabOrder.indexOf(item.tab)].cards[item.index];
         const { sourceRef, pivotBindings, pivot: legacyPivot, ...state } = item.extras;
+        if (state.linkedMetric && !isLinkedMetricCard(card))
+          extensionError('$.cards.extras.linkedMetric', 'Settings require the built-in linked metric widget.');
         Object.assign(card, structuredClone(state));
         if (legacyPivot) card.table = { ...card.table, pivot: legacyPivot };
         if (sourceRef !== undefined) card.linkedSource = { kind: 'widget', sourceWidgetId: refIds.get(sourceRef)! };

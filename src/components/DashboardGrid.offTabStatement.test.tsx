@@ -27,10 +27,11 @@ import { Boundary } from "../test/tableWorkerBoundary";
 afterEach(() => __resetStatementYearEndsForTests());
 
 /** The last rows handed to the table runtime for the source card. */
-async function handed(sourceTab: "a" | "b") {
+async function handed(sourceTab: "a" | "b", snapshot = false) {
   vi.stubGlobal("Worker", Boundary);
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
-  const s = await startMockServer({ "/income": [{ symbol: "AAPL", period_ending: "2025-12-27", fiscal_period: "Q4", fiscal_year: 2025, revenue: 1 }] });
+  const rows = [{ symbol: "AAPL", period_ending: "2025-12-27", fiscal_period: "Q4", fiscal_year: 2025, revenue: 1 }];
+  const s = await startMockServer({ "/income": snapshot ? { rows, receipt: { symbol: "AAPL" }, completeness: "complete" } : rows });
   const spy = vi.spyOn(tableExecutionStore, "setBackendRows");
   const view = render(<></>);
   try {
@@ -47,10 +48,10 @@ async function handed(sourceTab: "a" | "b") {
       : [{ id: "a", name: "A", cards: [child] }, { id: "b", name: "B", cards: [source] }];
     useDashboardStore.setState({ dashboards: [{ id: "d1", name: "Main", tabs }], activeId: "d1", activeTabId: "a" });
     view.rerender(<><TableExecutionRuntime /><DashboardGrid onOpenLibrary={() => {}} /></>);
-    await waitFor(() => expect(spy.mock.calls.some((c) => c[1] === "src")).toBe(true));
+    await waitFor(() => expect(spy.mock.calls.some((c) => c[0].cardId === "src")).toBe(true));
     await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
-    const calls = spy.mock.calls.filter((c) => c[1] === "src");
-    return { last: calls.at(-1)?.[2] as Array<Record<string, unknown>>, notes: view.queryAllByText("Fiscal labels as reported").length };
+    const calls = spy.mock.calls.filter((c) => c[0].cardId === "src");
+    return { acquisition: calls.at(-1)?.[2], last: calls.at(-1)?.[1] as Array<Record<string, unknown>>, notes: view.queryAllByText("Fiscal labels as reported").length };
   } finally { view.unmount(); spy.mockRestore(); tableExecutionStore.disposeDashboard("d1"); vi.unstubAllGlobals(); await s.close(); }
 }
 
@@ -62,4 +63,72 @@ describe("off-tab backend statement source", () => {
     expect(offTab.last).toEqual(onTab.last);
     expect(offTab.notes).toBe(onTab.notes);
   });
+});
+
+it("retains the selected snapshot receipt beside corrected fiscal rows on either tab", async () => {
+  const on = await handed("a", true);
+  const off = await handed("b", true);
+  expect(on.last).toMatchObject({ rows: [{ fiscal_period: "FQ1", fiscal_year: "FY2026" }],
+    receipt: { symbol: "AAPL" }, completeness: "complete" });
+  expect(off.last).toEqual(on.last);
+});
+
+it("hands off-tab rows and their completed acquisition over together", async () => {
+  const off = await handed("b");
+  expect(off.acquisition).toMatchObject({ endpoint: "/income", parameters: { symbol: "AAPL" } });
+});
+
+vi.mock('../lib/widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+it('fences a late matched off-tab acquisition after source replacement and clears context on failure', async () => {
+  const { sourcePath, sourceResponse, sourceReceipt } = await import('../test/fixtures/chartSources');
+  vi.stubGlobal('Worker', Boundary);
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+  let matchedRequests = 0;
+  const server = await startMockServer({ [sourcePath]: (url: URL) => {
+    const symbol = url.searchParams.get('symbol');
+    if (symbol === 'error') return { __status: 500 };
+    if (symbol !== 'A') return {results:{rows:[{id:symbol}]}};
+    return { __status: 200, __delayMs: matchedRequests++ ? 180 : 0, __body: sourceResponse };
+  }});
+  const handoff = vi.spyOn(tableExecutionStore, 'setBackendRows');
+  const child = makeCard({ id:'chart-child', widgetId:'linked_table', backendId:'builtin', linkedSource:{kind:'widget',sourceWidgetId:'chart-root'} });
+  const question = (symbol: string) => {
+    const root = makeCard({ id:'chart-root',widgetId:'chart-fixture',params:{symbol,chart_source:'true'} });
+    useDashboardStore.setState({ dashboards:[{ id:'off-chart',name:'Chart',tabs:[
+      {id:'a',name:'A',cards:[child]}, {id:'b',name:'B',cards:[root]},
+    ]}], activeId:'off-chart',activeTabId:'a' });
+  };
+  const latest = () => handoff.mock.calls.filter(call => call[0].cardId === 'chart-root').at(-1);
+  const view = render(<></>);
+  try {
+    useBackendsStore.setState({backends:[backend({baseUrl:server.url})],statuses:{b1:'online'}});
+    useWidgetRegistryStore.getState().seedBuiltins();
+    useWidgetRegistryStore.setState(st => ({widgets:[...st.widgets,makeWidget({
+      id:'chart-fixture',type:'table',endpoint:sourcePath,dataKey:'results.rows',
+      params:[{paramName:'symbol',label:'Symbol',type:'text'},{paramName:'chart_source',label:'Opt in',type:'text'}],
+    })]}));
+    question('A');
+    view.rerender(<><TableExecutionRuntime /><DashboardGrid onOpenLibrary={() => {}} /></>);
+    await waitFor(() => expect(latest()?.[2]?.chartSources).toEqual({metric:sourceReceipt}));
+    act(() => question('B'));
+    await waitFor(() => expect(latest()?.[1]).toEqual([{id:'B'}]));
+    act(() => question('A'));
+    await waitFor(() => expect(matchedRequests).toBe(2));
+    act(() => question('C'));
+    await waitFor(() => expect(latest()?.[1]).toEqual([{id:'C'}]));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve,200)); });
+    expect(latest()?.[1]).toEqual([{id:'C'}]);
+    expect(latest()?.[2]?.chartSources).toBeUndefined();
+    act(() => question('error'));
+    await waitFor(() => expect(latest()?.[1]).toBeInstanceOf(Error));
+    expect(latest()?.[2]).toBeUndefined();
+  } finally {
+    view.unmount();
+    handoff.mockRestore();
+    tableExecutionStore.disposeDashboard('off-chart');
+    vi.unstubAllGlobals();
+    await server.close();
+  }
 });

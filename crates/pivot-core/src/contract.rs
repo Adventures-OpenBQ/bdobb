@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Records are ordered entries. Absence of an entry differs from an explicit Missing value.
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -810,6 +810,98 @@ pub struct Provenance {
     pub parameters: Option<ValueRecord>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ValueRecord>,
+}
+impl Provenance {
+    /// Retain presentation scope separately from the original acquisition certification.
+    pub(crate) fn mark_presentation_filtered(&mut self, filtered: bool) {
+        self.mark_chart_filtered(filtered);
+        if !filtered {
+            return;
+        }
+        if let Some(metadata) = self.metadata.as_mut() {
+            if metadata.contains_key("etfEvidence") {
+                metadata.insert("etfSourceFiltered".into(), WireValue::Bool(true));
+            }
+            if metadata.contains_key("financialEvidence") {
+                metadata.insert("financialSourceFiltered".into(), WireValue::Bool(true));
+            }
+        }
+    }
+
+    /// The source receipt stays intact. A linked table can only add missing dates.
+    pub(crate) fn project_financial_evidence<'a>(
+        &mut self,
+        rows: impl IntoIterator<Item = &'a DatasetRow>,
+        columns: &[DatasetColumn],
+    ) {
+        let Some(metadata) = self.metadata.as_mut() else {
+            return;
+        };
+        let Some(WireValue::Record(evidence)) = metadata.get("financialEvidence") else {
+            return;
+        };
+        let fact = |key: &str| {
+            evidence
+                .iter()
+                .find(|(k, _)| k == key)
+                .map(|(_, value)| value)
+        };
+        if !matches!(fact("kind"), Some(WireValue::String(kind)) if kind == "dividends") {
+            return;
+        }
+        let Some(WireValue::Array(events)) = fact("event_dates") else {
+            return;
+        };
+        let mut visible = BTreeSet::new();
+        if self.input_may_contain_aggregates != Some(true) {
+            let aliases: Vec<_> = columns
+                .iter()
+                .filter(|column| {
+                    column.source_field_id.as_deref().unwrap_or(&column.id) == "ex_dividend_date"
+                        && column.analytical.is_none()
+                        && column.measure_id.is_none()
+                        && column.aggregation.is_none()
+                        && column.split_path.as_ref().is_none_or(Vec::is_empty)
+                })
+                .map(|column| &column.id)
+                .collect();
+            if !aliases.is_empty() {
+                for row in rows {
+                    for field in &aliases {
+                        if let Some(WireValue::String(date)) = row.values.get(*field) {
+                            if !row
+                                .cell_errors
+                                .as_ref()
+                                .is_some_and(|errors| errors.contains_key(*field))
+                            {
+                                visible.insert(date.as_str());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(WireValue::Array(previous)) = metadata.get("financialOmittedEventDates") {
+            for date in previous {
+                if let WireValue::String(date) = date {
+                    visible.remove(date.as_str());
+                }
+            }
+        }
+        let omitted: Vec<_> = events
+            .iter()
+            .filter(
+                |date| matches!(date, WireValue::String(date) if !visible.contains(date.as_str())),
+            )
+            .cloned()
+            .collect();
+        if !omitted.is_empty() {
+            metadata.insert(
+                "financialOmittedEventDates".into(),
+                WireValue::Array(omitted),
+            );
+        }
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

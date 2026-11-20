@@ -1,0 +1,289 @@
+{
+  "rows": [
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "price",
+      "observation_id": "alder-price",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": "2026-11-11",
+      "as_of_unknown": false,
+      "period_start": null,
+      "period_end": null,
+      "period_kind": null,
+      "adjustment_basis": "as-traded",
+      "reporting_basis": null,
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "money-per-share",
+      "currency": "USD",
+      "price": 82.415
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "market_cap",
+      "observation_id": "alder-market_cap",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": "2026-11-11",
+      "as_of_unknown": false,
+      "period_start": null,
+      "period_end": null,
+      "period_kind": null,
+      "adjustment_basis": "issuer-all-classes",
+      "reporting_basis": null,
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "money",
+      "currency": "USD",
+      "market_cap": 8241500000
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "dividend_yield",
+      "observation_id": "alder-dividend_yield",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": "2026-11-11",
+      "as_of_unknown": false,
+      "period_start": null,
+      "period_end": null,
+      "period_kind": "TTM",
+      "adjustment_basis": "trailing-dividend-per-share",
+      "reporting_basis": null,
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "fraction",
+      "currency": null,
+      "dividend_yield": 0.00428
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "pe_ratio",
+      "observation_id": "alder-pe_ratio",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": "2026-11-11",
+      "as_of_unknown": false,
+      "period_start": null,
+      "period_end": null,
+      "period_kind": "TTM",
+      "adjustment_basis": "trailing-diluted-earnings",
+      "reporting_basis": null,
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "multiple",
+      "currency": null,
+      "pe_ratio": 18.125
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "eps_ttm",
+      "observation_id": "alder-eps_ttm",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": null,
+      "as_of_unknown": true,
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "period_kind": "TTM",
+      "adjustment_basis": "diluted-as-reported",
+      "reporting_basis": "US-GAAP",
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "money-per-share",
+      "currency": "USD",
+      "eps_ttm": 4.546
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "eps_ttm",
+      "observation_id": "alder-eps-initial",
+      "vintage": "2026-11-02T13:00:00Z",
+      "as_of": null,
+      "as_of_unknown": true,
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "period_kind": "TTM",
+      "adjustment_basis": "diluted-as-reported",
+      "reporting_basis": "US-GAAP",
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "money-per-share",
+      "currency": "USD",
+      "eps_ttm": 4.2
+    },
+    {
+      "issuer": "ALDER.US",
+      "listing": "ALDR.NYSE",
+      "share_class": "Ordinary-A",
+      "metric": "revenue_ttm",
+      "observation_id": "alder-revenue_ttm",
+      "vintage": "2026-11-12T13:00:00Z",
+      "as_of": null,
+      "as_of_unknown": true,
+      "period_start": "2025-10-01",
+      "period_end": "2026-09-30",
+      "period_kind": "TTM",
+      "adjustment_basis": "as-reported",
+      "reporting_basis": "US-GAAP",
+      "basis_reference": "alder-ordinary-2026",
+      "unit_kind": "money",
+      "currency": "USD",
+      "revenue_ttm": 2901200000
+    }
+  ],
+  "completeness": "complete",
+  "chart_sources": {
+    "version": 1,
+    "receipts": [
+      {
+        "version": 1,
+        "kind": "metric",
+        "origin": "acquired-snapshot",
+        "retrieved_at": "2026-11-20T04:16:46Z",
+        "issuer": "ALDER.US",
+        "listing": "ALDR.NYSE",
+        "share_class": "Ordinary-A",
+        "raw_count": 7,
+        "normalized_count": 7,
+        "delivered_count": 7,
+        "diagnostics": [],
+        "unsafe": {
+          "identity_conflict": false,
+          "unit_conflict": false,
+          "period_conflict": false,
+          "basis_conflict": false,
+          "duplicate_conflict": false
+        },
+        "metrics": {
+          "price": {
+            "observation_id": "alder-price",
+            "origin": "price",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "money-per-share",
+              "currency": "USD"
+            },
+            "as_of": "2026-11-11",
+            "as_of_unknown": false,
+            "period_start": null,
+            "period_end": null,
+            "period_kind": null,
+            "adjustment_basis": "as-traded",
+            "reporting_basis": null,
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": []
+          },
+          "market_cap": {
+            "observation_id": "alder-market_cap",
+            "origin": "market_cap",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "money",
+              "currency": "USD"
+            },
+            "as_of": "2026-11-11",
+            "as_of_unknown": false,
+            "period_start": null,
+            "period_end": null,
+            "period_kind": null,
+            "adjustment_basis": "issuer-all-classes",
+            "reporting_basis": null,
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": []
+          },
+          "dividend_yield": {
+            "observation_id": "alder-dividend_yield",
+            "origin": "dividend_yield",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "fraction"
+            },
+            "as_of": "2026-11-11",
+            "as_of_unknown": false,
+            "period_start": null,
+            "period_end": null,
+            "period_kind": "TTM",
+            "adjustment_basis": "trailing-dividend-per-share",
+            "reporting_basis": null,
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": []
+          },
+          "pe_ratio": {
+            "observation_id": "alder-pe_ratio",
+            "origin": "pe_ratio",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "multiple"
+            },
+            "as_of": "2026-11-11",
+            "as_of_unknown": false,
+            "period_start": null,
+            "period_end": null,
+            "period_kind": "TTM",
+            "adjustment_basis": "trailing-diluted-earnings",
+            "reporting_basis": null,
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": []
+          },
+          "eps_ttm": {
+            "observation_id": "alder-eps_ttm",
+            "origin": "eps_ttm",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "money-per-share",
+              "currency": "USD"
+            },
+            "as_of": null,
+            "as_of_unknown": true,
+            "period_start": "2025-10-01",
+            "period_end": "2026-09-30",
+            "period_kind": "TTM",
+            "adjustment_basis": "diluted-as-reported",
+            "reporting_basis": "US-GAAP",
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": [
+              {
+                "observation_id": "alder-eps-initial",
+                "origin": "eps_ttm",
+                "vintage": "2026-11-02T13:00:00Z",
+                "unit": {
+                  "kind": "money-per-share",
+                  "currency": "USD"
+                },
+                "as_of": null,
+                "as_of_unknown": true,
+                "period_start": "2025-10-01",
+                "period_end": "2026-09-30",
+                "period_kind": "TTM",
+                "adjustment_basis": "diluted-as-reported",
+                "reporting_basis": "US-GAAP",
+                "basis_reference": "alder-ordinary-2026"
+              }
+            ]
+          },
+          "revenue_ttm": {
+            "observation_id": "alder-revenue_ttm",
+            "origin": "revenue_ttm",
+            "vintage": "2026-11-12T13:00:00Z",
+            "unit": {
+              "kind": "money",
+              "currency": "USD"
+            },
+            "as_of": null,
+            "as_of_unknown": true,
+            "period_start": "2025-10-01",
+            "period_end": "2026-09-30",
+            "period_kind": "TTM",
+            "adjustment_basis": "as-reported",
+            "reporting_basis": "US-GAAP",
+            "basis_reference": "alder-ordinary-2026",
+            "additional_observations": []
+          }
+        }
+      }
+    ]
+  }
+}

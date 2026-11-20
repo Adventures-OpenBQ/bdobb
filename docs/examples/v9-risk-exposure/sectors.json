@@ -1,0 +1,33 @@
+{
+  "completeness": "complete",
+  "receipt": {
+    "fund_symbol": "CANOPY",
+    "etf_kind": "sector",
+    "weight_basis": "equity-exposure",
+    "as_of": "2026-03-17",
+    "retrieved_at": "2026-03-18T12:00:00Z",
+    "unit": "fraction"
+  },
+  "rows": [
+    {
+      "sector": "Industrials",
+      "weight": 0.4
+    },
+    {
+      "sector": "Technology",
+      "weight": 0.32
+    },
+    {
+      "sector": "Materials",
+      "weight": 0.21
+    },
+    {
+      "sector": "Financials",
+      "weight": 0.07
+    },
+    {
+      "sector": "Utilities",
+      "weight": 0
+    }
+  ]
+}

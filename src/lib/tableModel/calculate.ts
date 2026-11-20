@@ -19,6 +19,9 @@ import { dataIds } from './layoutValues';
 import { evaluateSourceFormulas } from './formulaEvaluation';
 import { eligiblePool, activePage, categoryFacets, type EligiblePool, type MemberFacet } from './facets';
 import { calculateTotals, temporalContext, type CalculatedTotals } from './totals';
+import { chartPresentationProvenance } from '../widgetData/chartRecipes/chartSourceContracts';
+import { financialPresentationProvenance } from '../widgetData/chartRecipes/financialEvidence';
+import { etfPresentationProvenance } from '../widgetData/chartRecipes/etfEvidence';
 import { qualifyGroups, type CalculatedGroup } from './resultFilters';
 import { pivotTable, compareSorted, KEY_SEP, LABEL_FIELD } from '../pivotTable';
 import { prepareCategoryPivot } from './categories';
@@ -451,5 +454,8 @@ export function calculateTable(input: {
     columns = columns.filter(column => !hidden.has(column.id));
     const rank = (id: string) => { const index = order.indexOf(id); return index < 0 ? order.length : index; };
     columns.sort((a, b) => rank(a.id) - rank(b.id));
-    return { paramDiagnostics, groupResolutions, compiled, pool, recordIds, groups, rows, columns, totals, totalCells, facets, errors, warnings, complete: (!execution || errors.length===0) && sourceQualificationErrors.length === 0 && renderComplete && requiredErrors.length === 0 && page.errors.length === 0 && scopeErrors(pool, totals.scope).length === 0 && qualification.complete && requiredValid && !errors.some(e => e.code === 'missing-reference' || e.code === 'invalid-date' || e.code === 'fiscal-context'), selectionNamespace, eligibleRows, provenance: { ...input.source.provenance, ...(grouped ? { inputMayContainAggregates: true } : {}) } };
+    const filtered = !!input.search || !!input.table.columnFilters?.length || !!model.checklists.length || !!model.layout.page || !!model.resultFilters.length;
+    const financial = financialPresentationProvenance(etfPresentationProvenance(input.source.provenance, filtered), filtered);
+    const provenance = chartPresentationProvenance(financial, filtered);
+    return { paramDiagnostics, groupResolutions, compiled, pool, recordIds, groups, rows, columns, totals, totalCells, facets, errors, warnings, complete: (!execution || errors.length===0) && sourceQualificationErrors.length === 0 && renderComplete && requiredErrors.length === 0 && page.errors.length === 0 && scopeErrors(pool, totals.scope).length === 0 && qualification.complete && requiredValid && !errors.some(e => e.code === 'missing-reference' || e.code === 'invalid-date' || e.code === 'fiscal-context'), selectionNamespace, eligibleRows, provenance: { ...provenance, ...(grouped ? { inputMayContainAggregates: true } : {}) } };
 }

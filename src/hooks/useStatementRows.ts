@@ -3,7 +3,7 @@
 
 import { useMemo } from "react";
 import { correctStatementRows, isStatementPeriodParam } from "../lib/statementFiscal";
-import { tableRows } from "../lib/tableColumns";
+import { isTableSnapshotEnvelope, tableRows } from "../lib/tableRowValues";
 import type { BackendConfig, WidgetDef } from "../lib/types";
 import { statementSymbolsOf, useStatementYearEnds } from "./useStatementYearEnds";
 
@@ -27,12 +27,13 @@ export function useStatementRows(
   const statementSymbols = statement ? statementSymbolsOf(query) : [];
   const yearEnds = useStatementYearEnds(statement ? backend : undefined, statementSymbols);
   return useMemo(() => {
-    const rows = statement ? tableRows(rawData) : null;
+    const envelope = widget?.type === "table" && isTableSnapshotEnvelope(rawData) ? rawData : undefined;
+    const rows = statement ? tableRows(envelope ? envelope.rows : rawData) : null;
     if (rows === null || yearEnds.pending) return { data: rawData, asReported: false };
     const out = correctStatementRows(rows, query.period ?? "", yearEnds.months, statementSymbols);
-    return { data: out.rows, asReported: out.asReported };
+    return { data: envelope ? { ...envelope, rows: out.rows } : out.rows, asReported: out.asReported };
     // yearEnds.months / .pending, not `yearEnds` (a new object every render);
     // statementSymbols is rebuilt every render, so its joined text stands in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawData, statement, yearEnds.months, yearEnds.pending, query.period, statementSymbols.join(",")]);
+  }, [rawData, widget?.type, statement, yearEnds.months, yearEnds.pending, query.period, statementSymbols.join(",")]);
 }

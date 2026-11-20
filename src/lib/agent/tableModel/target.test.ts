@@ -45,7 +45,7 @@ describe("table tool targets (adaptation 1a)", () => {
     try {
       tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]);
       tableExecutionStore.ensureTable("d", "c");
-      tableExecutionStore.setBackendRows("d", "c", Array.from({ length: WORKER_MAX_CELLS + 1 }, () => ({ x: 1 })));
+      tableExecutionStore.setBackendRows(tableExecutionStore.beginBackendRequest("d", c), Array.from({ length: WORKER_MAX_CELLS + 1 }, () => ({ x: 1 })));
       await tableExecutionStore.settled("d");
       expect(await describeTable({ card_id: "c" })).toMatchObject({ status: "unavailable", reason: "runtime-not-ready", message: expect.stringContaining("too large for the table engine") });
     } finally {

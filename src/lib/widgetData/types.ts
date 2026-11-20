@@ -3,6 +3,9 @@
 import type { CellFormat } from "../format";
 import type { Row } from "../tableColumns";
 import type { AggName, Bucket, ColumnSpec } from "../types";
+import type { RecipeOptions } from "./chartRecipes/types";
+
+export type LinkedPresentation = "table" | "chart" | "metric";
 
 /** Structural group metadata preserves the source field and typed member value. */
 export type DatasetGroupMember = {
@@ -87,9 +90,13 @@ export type WidgetDataset = {
   freshness: DatasetFreshness;
 };
 export type LinkedSource = { kind: "widget"; sourceWidgetId: string };
+export const LEGACY_LINKED_CHART_TYPES = ["bar", "column", "line", "pie", "bullet", "waterfall"] as const;
 export type LinkedChartSettings = {
-  type: "bar" | "column" | "line";
+  type: (typeof LEGACY_LINKED_CHART_TYPES)[number] | RecipeOptions["kind"];
   category?: string;
   measures: string[];
-  display: "grouped" | "stacked";
+  display: "grouped" | "stacked" | "percent";
+  seriesFrom?: "columns" | "rows"; // absent means "columns"
+  period?: string; // bullet only: the fiscal period shown; absent means the latest
+  recipe?: RecipeOptions;
 };

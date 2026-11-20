@@ -1,0 +1,109 @@
+[
+  {
+    "name": "Delivered news examples",
+    "description": "Fictional CompanyNews page. Requires BDOBB 9.0.0 or later. Connect the companion news calendar fixture server before importing.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "news-calendar": {
+        "id": "news-calendar",
+        "name": "News sentiment calendar",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 26,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "News sentiment calendar"
+                }
+              }
+            }
+          },
+          {
+            "i": "news_calendar_demo_company",
+            "x": 0,
+            "y": 26,
+            "w": 40,
+            "h": 17,
+            "state": {
+              "params": {
+                "chart_source": "true",
+                "symbol": "CANOPY.US",
+                "start_date": "2025-11-19",
+                "end_date": "2026-11-19",
+                "limit": "10",
+                "offset": "0"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Canopy CompanyNews page"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "news-calendar"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "news-calendar",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "news-sentiment-calendar",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "news-sentiment-calendar",
+                  "fields": {
+                    "timestamp": "date",
+                    "articleId": "url",
+                    "instrument": "symbols",
+                    "polarity": "polarity"
+                  },
+                  "instrument": "CANOPY.US",
+                  "window": {
+                    "mode": "latest-12-months"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "news-calendar",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

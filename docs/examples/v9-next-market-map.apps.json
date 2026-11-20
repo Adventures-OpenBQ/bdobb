@@ -1,0 +1,176 @@
+[
+  {
+    "name": "Market map examples",
+    "description": "Requires BDOBB 9.0.0 or later with Market Map. Drop the matching fictional prepared snapshot and choose it as the chart source.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "delivered-cap": {
+        "id": "delivered-cap",
+        "name": "Delivered capitalization",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Delivered capitalization market map"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Prepared snapshot placeholder"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "named-index": {
+        "id": "named-index",
+        "name": "Named index",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Named index market map"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Prepared snapshot placeholder"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "delivered-cap",
+            "named-index"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "delivered-cap",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "market-map",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "market-map",
+                  "mode": "delivered-cap",
+                  "universe": "delivered-sample",
+                  "session": "latest",
+                  "fields": {
+                    "listing": "listing",
+                    "sector": "sector",
+                    "area": "area",
+                    "change": "change",
+                    "session": "session"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "delivered-cap",
+            "index": 1,
+            "extras": {}
+          },
+          {
+            "ref": "c2",
+            "tab": "named-index",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "market-map",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "market-map",
+                  "mode": "index-weight",
+                  "universe": "EXAMPLE.INDX",
+                  "session": "2026-11-13",
+                  "fields": {
+                    "listing": "listing",
+                    "sector": "sector",
+                    "area": "area",
+                    "change": "change",
+                    "session": "session"
+                  }
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "named-index",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

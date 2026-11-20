@@ -1,0 +1,16 @@
+{
+  "completeness": "bounded",
+  "receipt": {"start_date": "2026-01-01", "end_date": "2026-03-31"},
+  "rows": [
+    {"date": "2026-01-30", "maturity": "month_3", "rate": 0.034},
+    {"date": "2026-01-30", "maturity": "year_2", "rate": 0.032},
+    {"date": "2026-01-30", "maturity": "year_5", "rate": 0.038},
+    {"date": "2026-01-30", "maturity": "year_10", "rate": 0.041},
+    {"date": "2026-01-30", "maturity": "year_30", "rate": 0.043},
+    {"date": "2026-03-31", "maturity": "month_3", "rate": 0.037},
+    {"date": "2026-03-31", "maturity": "year_2", "rate": 0.035},
+    {"date": "2026-03-31", "maturity": "year_5", "rate": 0.041},
+    {"date": "2026-03-31", "maturity": "year_10", "rate": 0.044},
+    {"date": "2026-03-31", "maturity": "year_30", "rate": 0.046}
+  ]
+}
