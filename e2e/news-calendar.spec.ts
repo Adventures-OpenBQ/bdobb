@@ -285,3 +285,65 @@ test('lets touch scroll a short calendar and still inspect its cells after movin
     await context.close();
   }
 });
+
+function pinnedNews(start: string, end: string) {
+  const manifest = JSON.parse(newsManifest);
+  manifest[0].extensions.bdobb.cards[0].extras.linkedChart.recipe.window = { mode: 'pinned', start, end };
+  return JSON.stringify(manifest);
+}
+
+async function expectDraftRefused(page: Page, reason: string, savedWindow: string, end: string) {
+  const widget = card(page, newsChart);
+  const graph = plot(page, newsChart);
+  await ready(graph);
+  await expect(apply(widget)).toBeEnabled();
+  const revision = await graph.evaluate(node => (node as Graph)._fullLayout.uirevision);
+  await expect.poll(() => widget.evaluate(node => node.querySelector('.news-calendar-width-probe')!.clientWidth
+    - node.querySelector('.chart-scroll-viewport')!.clientWidth)).toBe(0);
+  const details = widget.getByText('Calendar day details', { exact: true });
+  await details.click();
+  const day = widget.getByRole('combobox', { name: 'Calendar day', exact: true });
+  await expect(day).toHaveValue(end);
+  const window = widget.getByLabel('Calendar window');
+  await window.selectOption('latest-12-months');
+  await expect(apply(widget)).toBeDisabled();
+  await expect(widget).toContainText(reason);
+  await expect(widget).toContainText(savedWindow);
+  await expect(day).toHaveValue(end);
+  expect(await graph.evaluate(node => (node as Graph)._fullLayout.uirevision)).toBe(revision);
+
+  // Returning to the valid dates should recover Apply without closing details
+  // or fetching a different source page.
+  await window.selectOption('pinned');
+  await expect(apply(widget)).toBeEnabled();
+  await expect(widget).not.toContainText(reason);
+  await expect(widget).toContainText(savedWindow);
+  await expect(day).toHaveValue(end);
+  expect(await graph.evaluate(node => (node as Graph)._fullLayout.uirevision)).toBe(revision);
+}
+
+test('a narrow calendar keeps its fitting applied pin while a draft exceeds the measured width', async ({ page }) => {
+  await page.setViewportSize({ width: 240, height: 950 });
+  const acquisitions = await importNews(page, pinnedNews('2026-11-15', '2026-11-19'));
+  await ready(plot(page, newsChart));
+  const requests = acquisitions.length;
+  await expectDraftRefused(page, 'Narrow the calendar window or widen the chart',
+    'Calendar dates 2026-11-15 to 2026-11-19 UTC, inclusive.', '2026-11-19');
+  expect(acquisitions).toHaveLength(requests);
+});
+
+test('a draft with an unrepresentable mean preserves the applied pin and its day details', async ({ page }) => {
+  const payload = newsPayload();
+  payload.results[4].polarity = Number.MIN_VALUE;
+  const extra = { ...payload.results[4], url: 'https://example.com/canopy/extra', polarity: 0 };
+  payload.results.push(extra);
+  const receipt = payload.extra.results_metadata.chart_sources.receipts[0];
+  receipt.coordinates.push({ article_id: extra.url, utc_day: '2026-11-19', scored: true });
+  receipt.raw_count = receipt.normalized_count = receipt.delivered_count = 6;
+  const acquisitions = await importNews(page, pinnedNews('2026-11-15', '2026-11-18'), () => payload);
+  await ready(plot(page, newsChart));
+  const requests = acquisitions.length;
+  await expectDraftRefused(page, 'The mean for 2026-11-19 cannot be represented at chart polarity precision.',
+    'Calendar dates 2026-11-15 to 2026-11-18 UTC, inclusive.', '2026-11-18');
+  expect(acquisitions).toHaveLength(requests);
+});

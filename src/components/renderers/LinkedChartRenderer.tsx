@@ -13,9 +13,9 @@ import { ChartRenderer } from './ChartRenderer';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
-import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
+import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
-import { bindingCandidates, bindingRoles, bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
+import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
@@ -29,6 +29,14 @@ import { LinkedChartRecipeControls, recipeAvailability, recipeLabels, type Sourc
 
 function revisionKey({ widgetId, input, model, output }: Revision) {
     return JSON.stringify([widgetId, input, model, output]);
+}
+
+function recipeInputFields(options: RecipeOptions, ready: NonNullable<ViewState['ready']>) {
+    let fields = requiredRecipeFields(options);
+    if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
+        fields = fields.filter(field => ready.columns.some(column => column.id === field));
+    if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
+    return [...new Set(fields)];
 }
 
 type Completed = {
@@ -106,9 +114,23 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             throw new Error('The selected source revision changed. Reload the chart choices.');
         return data;
     }, [executor, source, view.ready, view.sourceRevision, view.status]);
-    const loadNewsInput = useCallback((signal: AbortSignal) => chartChoicesInput(ready =>
-        bindingRoles('news-sentiment-calendar', 'eps').flatMap(role => bindingCandidates(role, ready.columns).map(column => column.id)),
-    signal), [chartChoicesInput]);
+    const loadNewsInput = useCallback((signal: AbortSignal) => chartChoicesInput(() => [], signal), [chartChoicesInput]);
+    const loadNewsDraft = useCallback((options: NewsCalendarOptions, signal: AbortSignal) =>
+        chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
+    const [draftWidth, setDraftWidth] = useState<number>();
+    const observeNewsDraftWidth = useCallback((viewport: HTMLDivElement | null) => {
+        if (!viewport) return;
+        const measure = () => {
+            if (viewport.clientWidth > 0) setDraftWidth(Math.min(viewport.clientWidth, 10_000));
+        };
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(viewport);
+        return () => observer.disconnect();
+    }, []);
+    const today = todayLocal();
+    const newsDraftContext = useMemo<RecipeContext | undefined>(() => draftWidth === undefined
+        ? undefined : { theme, maxDecimals, today, viewportWidth: draftWidth }, [theme, maxDecimals, today, draftWidth]);
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
@@ -256,6 +278,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
     return <div className={editing === 'news-sentiment-calendar' ? 'linked-chart-renderer linked-chart-renderer--news' : 'linked-chart-renderer'}>
+    {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
+      className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
     {!viewer ? <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={editing} onChange={e => {
         const type = e.target.value as LinkedChartSettings['type'];
@@ -272,7 +296,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
       {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
-        columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
+        loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
@@ -373,12 +398,8 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   useEffect(() => {
     if (!available) return;
     const controller = new AbortController();
-    let fields = requiredRecipeFields(options);
-    if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
-      fields = fields.filter(field => ready.columns.some(column => column.id === field));
-    if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
     setReadError(undefined);
-    void executor.chartData(revision, [...new Set(fields)], controller.signal).then(data => {
+    void executor.chartData(revision, recipeInputFields(options, ready), controller.signal).then(data => {
       if (controller.signal.aborted) return;
       if (revisionKey(data.revision) !== active || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
         throw new Error('The selected source revision changed. Refresh the chart.');

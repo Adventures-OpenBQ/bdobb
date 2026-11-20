@@ -1,17 +1,20 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { bindingRoles, bindingCandidates, isIncomePeriodColumn } from '../../lib/widgetData/chartRecipes/bindings';
 import { decodeRecipeOptions } from '../../lib/widgetData/chartRecipes/settings';
-import type { RecipeOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { NewsCalendarOptions, RecipeContext, RecipeOptions } from '../../lib/widgetData/chartRecipes/types';
 import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
-import { acquiredNewsWindow, inspectNewsPresentation, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
+import type { ChartResult } from '../../lib/tableExecution/types';
+import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
+import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 
 type Kind = RecipeOptions['kind'];
 type Metric = 'eps' | 'revenue';
 type Mode = 'sector' | 'region';
 type LoadNewsInput = (signal: AbortSignal) => Promise<WidgetDataset>;
+type LoadNewsDraft = (options: NewsCalendarOptions, signal: AbortSignal) => Promise<ChartResult>;
 type LoadSymbols = (field: string | undefined, signal: AbortSignal) => Promise<string[]>;
 export type SourceChoiceKind = 'bubble-regression' | 'dividend-steps' | 'income-sankey';
 export type SourceChoice = { value: string; label: string; issue?: string };
@@ -58,9 +61,10 @@ function defaults(kind: Kind, metric: Metric, columns: DatasetColumn[], mode?: M
   }));
 }
 
-export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, disabled, onApply }: {
+export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
-  loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadNewsInput; disabled: boolean; onApply: (options: RecipeOptions) => void;
+  loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadNewsInput;
+  loadNewsDraft?: LoadNewsDraft; newsDraftContext?: RecipeContext; disabled: boolean; onApply: (options: RecipeOptions) => void;
 }) {
   const [metric, setMetric] = useState<Metric>(() => saved?.kind === 'estimate-range' ? saved.metric
     : kind === 'estimate-range' && !missingRoles(kind, columns, 'revenue').length && missingRoles(kind, columns, 'eps').length ? 'revenue' : 'eps');
@@ -81,7 +85,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   }, [news, loadNewsInput]);
   const newsReadCurrent = newsRead?.load === loadNewsInput ? newsRead : undefined;
   const newsDataset = newsReadCurrent?.dataset;
-  const newsAdmission = newsDataset && inspectNewsSource(newsDataset);
+  const newsAdmission = useMemo(() => newsDataset && inspectNewsSource(newsDataset), [newsDataset]);
   const newsSource = newsAdmission?.ok ? newsAdmission.value.source : undefined;
   const newsProblem = news && (newsReadCurrent?.error ?? (newsAdmission && !newsAdmission.ok ? newsAdmission.message : undefined)
     ?? (!newsSource ? 'Loading acquired CompanyNews evidence…' : undefined));
@@ -169,17 +173,42 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     ...(kind === 'etf-exposure' ? { mode } : {}),
     ...(kind === 'correlation' ? { lookback: Number(lookback), minOverlap: Number(overlap) } : {}) };
   const decoded = decodeRecipeOptions(candidate, kind);
-  let newsDraftIssue: string | undefined;
-  if (decoded.ok && decoded.options.kind === 'news-sentiment-calendar' && newsDataset && newsSource) {
-    const window = resolveNewsWindow(newsSource, decoded.options.window);
-    if (!window.ok) newsDraftIssue = window.message;
-    else {
-      const draft = inspectNewsPresentation(newsDataset, decoded.options);
-      if (!draft.ok) newsDraftIssue = draft.message;
-    }
-  }
+  const newsOptions = decoded.ok && decoded.options.kind === 'news-sentiment-calendar' ? decoded.options : undefined;
+  const resolvedWindow = newsSource && newsOptions && resolveNewsWindow(newsSource, newsOptions.window);
+  const windowIssue = resolvedWindow && !resolvedWindow.ok ? resolvedWindow.message : undefined;
+  const requestedOptions = newsOptions && newsSource && !fieldIssue && !windowIssue ? JSON.stringify(newsOptions) : undefined;
+  const request = useMemo(() => requestedOptions && loadNewsDraft && newsDraftContext?.viewportWidth !== undefined
+    ? { options: JSON.parse(requestedOptions) as NewsCalendarOptions, load: loadNewsDraft, context: newsDraftContext }
+    : undefined, [requestedOptions, loadNewsDraft, newsDraftContext]);
+  const draftWorker = useRef<ReturnType<typeof createRecipeWorker> | undefined>(undefined);
+  const [checked, setChecked] = useState<{ request: NonNullable<typeof request>; issue?: string }>();
+  useEffect(() => {
+    if (!news) return;
+    return () => { draftWorker.current?.dispose(); draftWorker.current = undefined; };
+  }, [news]);
+  useEffect(() => {
+    if (!request) return;
+    const controller = new AbortController();
+    const { signal } = controller;
+    void request.load(request.options, signal).then(input => {
+      signal.throwIfAborted();
+      const worker = draftWorker.current ??= createRecipeWorker();
+      return worker.run(input, request.options, request.context, signal);
+    }).then(result => {
+      if (!signal.aborted) setChecked({ request, issue: result.ok ? undefined : result.message });
+    }).catch(error => {
+      if (!signal.aborted) {
+        const message = error instanceof Error ? error.message : String(error);
+        setChecked({ request, issue: message || 'Could not validate calendar draft.' });
+      }
+    });
+    return () => controller.abort();
+  }, [request]);
+  const checkingDraft = news && (!request || checked?.request !== request);
+  const validationIssue = request && checked?.request === request ? checked.issue : undefined;
   const problem = newsProblem || (fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.'
-    : choiceIssue || sourceIssue || newsDraftIssue || (!decoded.ok && decoded.message));
+    : choiceIssue || sourceIssue || windowIssue || (!decoded.ok ? decoded.message : validationIssue));
+  const announcingDraftCheck = checkingDraft && !problem;
   const bindingInputs = roleList.map(role => {
     const available = bindingCandidates(role, columns);
     const value = fields[role.key] ?? '';
@@ -247,6 +276,8 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
       <div>{bindingInputs}</div>
     </details>}
     {problem && <p role="status">{problem}</p>}
-    <button type="button" disabled={!!problem} onClick={() => { if (!problem && decoded.ok) onApply(decoded.options); }}>Apply chart settings</button>
+    {announcingDraftCheck && <span className="sr-only" role="status">Checking calendar draft…</span>}
+    <button type="button" disabled={!!problem || checkingDraft} aria-busy={announcingDraftCheck || undefined}
+      onClick={() => { if (!problem && !checkingDraft && decoded.ok) onApply(decoded.options); }}>Apply chart settings</button>
   </fieldset>;
 }

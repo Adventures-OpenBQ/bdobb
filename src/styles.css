@@ -2415,7 +2415,8 @@ body {
 .iframe-hint button { padding: 2px 6px; color: var(--text); }
 
 .chart-plot { width: 100%; height: 100%; }
-.chart-scroll-viewport { width: 100%; height: 100%; overflow-y: auto; }
+.chart-scroll-viewport, .news-calendar-width-probe { width: 100%; overflow-y: auto; }
+.chart-scroll-viewport { height: 100%; }
 .chart-scroll-viewport--measured { scrollbar-gutter: stable; }
 .chart-scroll-viewport--measured > .chart-plot { min-height: 100%; }
 .chart-scroll-viewport--touch-scroll { touch-action: pan-y pinch-zoom; }
@@ -2436,6 +2437,8 @@ body {
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
+/* Match the news plot viewport's stable scrollbar gutter without occupying card height. */
+.news-calendar-width-probe { flex: 0 0 0; height: 0; visibility: hidden; }
 .linked-chart-renderer--news .chart-controls > label { width: min(100%, 320px); }
 .linked-chart-renderer--news .chart-controls > label > select { flex: 1; min-width: 0; }
 .news-calendar-fields { flex: 1 0 100%; }

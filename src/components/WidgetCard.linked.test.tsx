@@ -337,14 +337,26 @@ function LiveRiskChart() {
 }
 function riskRuntime() {
   vi.stubGlobal('Worker', Boundary);
-  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const resizeListeners = new Set<(entries: ResizeObserverEntry[]) => void>();
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private readonly notify: (entries: ResizeObserverEntry[]) => void) {}
+    observe() { resizeListeners.add(this.notify); }
+    disconnect() { resizeListeners.delete(this.notify); }
+  });
+  let measured = 900;
   const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
-    return this.classList.contains('chart-scroll-viewport--measured') ? 900 : 0;
+    return this.classList.contains('chart-scroll-viewport--measured') ? measured : 0;
   });
   restoreViewportWidth = () => width.mockRestore();
-  const run = vi.fn(async (...args: Parameters<typeof runRecipe>) => runRecipe(...args));
+  const run = vi.fn<ReturnType<typeof recipeWorkers.createRecipeWorker>['run']>(
+    async (dataset, options, context) => runRecipe(dataset, options, context),
+  );
   const factory = vi.spyOn(recipeWorkers, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
-  return { run, factory };
+  function resize(next: number) {
+    measured = next;
+    for (const notify of resizeListeners) notify([]);
+  }
+  return { run, factory, resize };
 }
 async function chooseRiskSource(id: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Choose source' }));
@@ -372,8 +384,8 @@ it.each(riskRecipes)('fences $kind across a failed relink, late calculation and 
     expect(screen.getByLabelText('Chart type')).toHaveValue(recipe.kind);
     expect(screen.getByText(/^Source A ·/)).toBeVisible();
     let release!: () => void;
-    run.mockImplementationOnce(async (...args) => {
-      const result = runRecipe(...args);
+    run.mockImplementationOnce(async (dataset, options, context) => {
+      const result = runRecipe(dataset, options, context);
       await new Promise<void>(resolve => { release = resolve; });
       return result;
     });
@@ -994,5 +1006,45 @@ it('clears a completed news chart immediately for an unsupported applied declara
     expect(plot).not.toBeInTheDocument();
     expect(screen.queryByText('Calendar day details')).toBeNull();
     expect(screen.getAllByText(/version 1 recipe options/i).length).toBeGreaterThan(0);
+  } finally { factory.mockRestore(); }
+});
+
+it.each(['options', 'source revision', 'width'] as const)('fences an obsolete news draft check after changing %s', async change => {
+  const { run, factory, resize } = riskRuntime();
+  const root = await acquiredSource(calendarOptions, 'A');
+  const linkedChart = { type: 'column' as const, category: 'url', measures: ['polarity'], display: 'grouped' as const };
+  installDashboard(riskDashboard([root, { ...riskChart(calendarOptions), linkedChart }]));
+  const requests: { width?: number; signal: AbortSignal; resolve: () => void }[] = [];
+  run.mockImplementation(async (dataset, options, context, signal) => {
+    const result = runRecipe(dataset, options, context);
+    await new Promise<void>(resolve => requests.push({ width: context.viewportWidth, signal, resolve }));
+    return result;
+  });
+  try {
+    render(<LiveRiskChart/>);
+    const applied = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
+    const apply = screen.getByRole('button', { name: /apply chart settings/i });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(apply).toBeDisabled();
+    expect(apply).toHaveAttribute('aria-busy', 'true');
+
+    if (change === 'options') fireEvent.change(screen.getByLabelText('Calendar window'), { target: { value: 'pinned' } });
+    else if (change === 'width') act(() => resize(320));
+    else await act(async () => {
+      tableExecutionStore.updateDefinition('d', root.id, { table: {}, search: 'first' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests.map(request => request.width)).toEqual([900, change === 'width' ? 320 : 900]);
+    expect(requests[0].signal.aborted).toBe(true);
+    await act(async () => requests[0].resolve());
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(applied);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+
+    await act(async () => requests[1].resolve());
+    expect(apply).toBeEnabled();
+    expect(apply).not.toHaveAttribute('aria-busy');
   } finally { factory.mockRestore(); }
 });
