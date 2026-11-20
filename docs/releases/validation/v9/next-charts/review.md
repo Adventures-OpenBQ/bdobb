@@ -54,3 +54,6 @@ The amendment's scoped independent review and the final whole-group review are p
 
 
 The first scoped Parameters review found three Important issues. A same-source stale plot disappeared when the panel changed body dimensions. News could Apply at zero width and three recipe families could save after their drawing size changed while queued. A basic chart could omit its Parameters repair action when it retained an old plot or its selected series were filtered out. The follow-up addresses these three findings. Scoped re-review and final whole-group review remain pending.
+
+
+The independent re-review at `9ff0c4ba` accepted all three corrections. It found one new Important touch issue. A fitting retained plot lost drag-to-zoom when its fractional drawing dimensions were compared with the viewport's rounded client dimensions. The second follow-up compares rounded pixels for touch overflow while keeping the full measured dimensions for worker checks. Scoped re-review and final whole-group review are pending.

@@ -407,6 +407,45 @@ it('releases coarse watchlist drags only while its viewport overflows and restor
   expect(figureFromLastCall()).toEqual(data);
 });
 
+it('keeps touch zoom for a fitting fractional retained figure and scrolls when its admitted pixels overflow', () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const retainedSurface = { width: 600.25, height: 400.25 };
+  const data = { data: [{ type: 'scatter' }], layout: { width: 600, height: 400, dragmode: 'zoom' } };
+  const measure = vi.fn();
+  const props = { data, scrollHeight: 210, touchScroll: 'overflow' as const, onDrawingSurfaceChange: measure };
+  const { rerender } = render(<ChartRenderer {...props}/>);
+  const plot = screen.getByTestId('chart-plot');
+  const viewport = plot.parentElement!;
+  let width = 600, height = 400;
+  for (const element of [plot, viewport]) {
+    Object.defineProperties(element, { clientWidth: { get: () => width }, clientHeight: { get: () => height } });
+  }
+  vi.spyOn(plot, 'getBoundingClientRect').mockImplementation(() => new DOMRect(0, 0, width + .25, height + .25));
+
+  rerender(<ChartRenderer {...props} retainedSurface={retainedSurface}/>);
+  expect(measure).toHaveBeenLastCalledWith(retainedSurface);
+  expect(viewport).not.toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toEqual(data);
+
+  const resize = () => act(() => {
+    for (const observer of ResizeObserverStub.instances.filter(o => !o.disconnected))
+      observer.callback(sizeEntry(width, height), observer as unknown as ResizeObserver);
+  });
+  width = 590;
+  resize();
+  expect(viewport).toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toMatchObject({ layout: { width: 600, height: 400, dragmode: false } });
+  width = 600;
+  height = 380;
+  resize();
+  expect(viewport).toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(measure).toHaveBeenLastCalledWith({ width: 600.25, height: 380.25 });
+  height = 400;
+  resize();
+  expect(viewport).not.toHaveClass('chart-scroll-viewport--touch-scroll');
+  expect(figureFromLastCall()).toEqual(data);
+});
+
 it('inspects Sankey nodes and links on tap and lets touch drags or unrelated taps pass through', () => {
   const data = { data: [{ type: 'sankey' }], layout: { width: 390, height: 680 } };
   render(<ChartRenderer data={data} scrollHeight={680} touchScroll="overflow" inspectSankeyOnTouch/>);

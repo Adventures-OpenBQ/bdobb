@@ -38,3 +38,6 @@ The TypeScript browser sweep recorded 86 of 88 passes. The corrected news and re
 
 
 A measured plot that remains eligible after its source refresh fails keeps the width and height that its worker admitted. The viewport can scroll around the previous drawing while the source is stale. Relinking or changing the applied question retires that drawing. News, returns and ownership compare the live body probe to the admitted geometry before requesting Apply and when the queued write runs. News keeps its layout cap and compares uncapped viewport widths for the save guard. Zero width or a detached probe cannot authorize a queued save. The body offers Open Parameters for missing chart bindings and filtered-out series.
+
+
+Touch overflow compares the retained drawing and the viewport in rounded CSS pixels. A fitting retained plot keeps drag-to-zoom. A smaller viewport lets touch swipe scroll the same admitted drawing. Worker measurements retain their fractional dimensions.

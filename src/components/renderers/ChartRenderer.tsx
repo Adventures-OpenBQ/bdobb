@@ -250,9 +250,10 @@ export function ChartRenderer({
       if (measureOverflow) {
         // An old Plotly SVG can still overflow while the CSS surface is
         // shrinking. Its DOM overflow may settle without another resize event.
-        const requiredHeight = Math.max(retainedSurface?.height ?? 0,
+        // Compare the retained box in the same rounded pixels as CSSOM client dimensions.
+        const requiredHeight = Math.max(Math.round(retainedSurface?.height ?? 0),
           (onDrawingSurfaceChange ? surface?.clientHeight : scrollHeight) ?? 0);
-        const requiredWidth = Math.max(retainedSurface?.width ?? 0,
+        const requiredWidth = Math.max(Math.round(retainedSurface?.width ?? 0),
           onDrawingSurfaceChange ? surface?.clientWidth ?? 0 : viewport.clientWidth);
         setOverflows(hasPlot && (requiredHeight > viewport.clientHeight || requiredWidth > viewport.clientWidth));
       }

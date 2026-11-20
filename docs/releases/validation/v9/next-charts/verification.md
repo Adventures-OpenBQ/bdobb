@@ -99,6 +99,10 @@ The follow-up passed 499 tests in five affected files, plus typecheck, lint and 
 
 The seven selected Chromium cases passed on each table engine. A real ETF refresh remained in flight while the panel reduced the visible height. The admitted drawing kept its exact size, the same Plotly node and the expanded holdings. The failed refresh kept one diagnostic and a scrollable plot. Relinking retired that node. News, return and ownership also exercised a delayed store commit after a real viewport resize. After the final uncapped width check was added, the news case passed a further rerun on each engine. The full-client and bundle figures above and below remain attributed to the earlier Parameters implementation.
 
+## Retained-chart touch follow-up
+
+The next scoped correction passed the 149 ChartRenderer and linked-card unit tests, typecheck, lint and scrub. Six Chromium cases passed on each table engine. The new case forces a fractional overlay surface, fails a real File refresh, and verifies that equal scroll and viewport dimensions leave the existing Plotly node in zoom mode. An actual touch drag zooms it. Reducing the viewport height makes an actual swipe scroll the old admitted SVG at its original size. Restoring the viewport restores touch zoom. Unit coverage also checks genuine horizontal overflow and full-precision measurements.
+
 ## Bundle cost
 
 Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The measured Parameters implementation at `caf36e08` contains 15 assets. The Parameters change adds 2,991 raw and 1,192 gzip bytes relative to the previous measured paired candidate.

@@ -16,7 +16,7 @@ const hover = (graph: Locator) => graph.locator('.hoverlayer');
 const marker = (graph: Locator, side: number, index = 0) => graph.locator('.scatterlayer .trace').nth(side).locator('.point').nth(index);
 type Axis = { range: [string | number, string | number]; _rangeInitial0: string | number; _rangeInitial1: string | number };
 type Graph = HTMLElement & { _fullLayout: Record<'xaxis' | 'yaxis' | 'yaxis2', Axis>
-  & { width: number; height: number; uirevision: string; paper_bgcolor: string } };
+  & { width: number; height: number; uirevision: string; paper_bgcolor: string; dragmode: string | false } };
 
 async function drawing(graph: Locator) {
   return graph.evaluate(node => {
@@ -219,6 +219,76 @@ test('inspects on touch, zooms in a fitting card and scrolls an actual narrow ov
     await expect(graph.locator('.y2title')).toBeVisible();
     await widget.screenshot({ path: info.outputPath('overlay-dark-narrow.png') });
     expect(requests).toEqual([]);
+  } finally { await context.close(); }
+});
+
+test('retains touch zoom at fractional dimensions after refresh fails and scrolls when the admitted plot overflows', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ hasTouch: true, isMobile: true, baseURL,
+    viewport: { width: 900, height: 1050 } });
+  try {
+    const page = await context.newPage();
+    await seedOverlay(page, priceRecipe);
+    await attachOverlay(page, prepared['price-eps']);
+    const widget = card(page, chartName), graph = plot(page, chartName);
+    const viewport = widget.locator('.linked-chart-plot--overlay .chart-scroll-viewport');
+    await viewport.evaluate(element => {
+      element.style.width = '600.25px';
+      element.style.height = '400.25px';
+    });
+    const state = () => graph.evaluate(node => {
+      const { width, height } = node.getBoundingClientRect();
+      const layout = (node as Graph)._fullLayout;
+      return { admitted: [width, height], layout: [layout.width, layout.height], dragmode: layout.dragmode, revision: layout.uirevision };
+    });
+    await expect.poll(async () => (await state()).layout[1]).toBe(400);
+    const before = await state();
+    expect(before.admitted[0] % 1).toBe(.25);
+    expect(before.admitted[1]).toBe(400.25);
+    expect(before.layout).toEqual(before.admitted.map(Math.round));
+    const capacity = () => viewport.evaluate(element => ({
+      client: [element.clientWidth, element.clientHeight], scroll: [element.scrollWidth, element.scrollHeight],
+    }));
+    expect(await capacity()).toEqual({ client: before.layout, scroll: before.layout });
+    expect(before.dragmode).toBe('zoom');
+    const original = await graph.elementHandle();
+
+    const dashboard = JSON.parse((await read(page, 'dashboards/d1.json'))!);
+    const file: string = dashboard.tabs[0].cards.find((card: { title: string }) => card.title === sampleName).params.file;
+    await page.evaluate(async ({ entry, path }) => {
+      const fs = await import(entry) as typeof import('../src/browser-shim/fs');
+      await fs.writeFile(path, new TextEncoder().encode('{'));
+    }, { entry: '/src/browser-shim/fs.ts', path: 'files/' + file });
+    await card(page, sampleName).getByRole('button', { name: 'Refresh', exact: true }).tap();
+    await expect(widget.getByRole('alert')).toBeVisible();
+    await expect(widget.getByText('Showing completed data (stale).', { exact: true })).toBeVisible();
+    expect(await capacity()).toEqual({ client: before.layout, scroll: before.layout });
+    await expect(viewport).not.toHaveClass(/touch-scroll/);
+    expect(await state()).toEqual(before);
+    expect(await graph.evaluate((element, previous) => element === previous, original)).toBe(true);
+
+    const drag = graph.locator('.nsewdrag');
+    await drag.scrollIntoViewIfNeeded();
+    const box = (await drag.boundingBox())!;
+    const unzoomed = (await drawing(graph)).ranges;
+    await touchDrag(page, { x: box.x + box.width * .36, y: box.y + box.height * .36 },
+      { x: box.x + box.width * .65, y: box.y + box.height * .65 });
+    await expect.poll(async () => (await drawing(graph)).ranges).not.toEqual(unzoomed);
+
+    await viewport.evaluate(element => { element.style.height = '300.25px'; });
+    await expect(viewport).toHaveClass(/touch-scroll/);
+    await expect.poll(async () => (await state()).dragmode).toBe(false);
+    expect((await state()).layout).toEqual(before.layout);
+    expect(await capacity()).toEqual({ client: [before.layout[0], 300], scroll: before.layout });
+    await viewport.scrollIntoViewIfNeeded();
+    const short = (await viewport.boundingBox())!;
+    const x = short.x + short.width / 2;
+    await touchDrag(page, { x, y: short.y + 210 }, { x, y: short.y + 110 });
+    await expect.poll(() => viewport.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+
+    await viewport.evaluate(element => { element.style.height = '400.25px'; });
+    await expect(viewport).not.toHaveClass(/touch-scroll/);
+    await expect.poll(async () => (await state()).dragmode).toBe('zoom');
+    expect(await graph.evaluate((element, previous) => element === previous, original)).toBe(true);
   } finally { await context.close(); }
 });
 
