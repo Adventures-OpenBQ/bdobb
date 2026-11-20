@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchesData } from "../lib/builtins";
 import { fetchWidgetData } from "../lib/dataClient";
 import { cronMatches, cronNext, parseCron, type Cron } from "../lib/cron";
@@ -158,6 +158,17 @@ export function useWidgetData(
   // would refetch on every such churn; a value-derived key does not.
   const key = paramsKey(fetchParams);
 
+  // A ready payload belongs to one acquisition, including refreshes of the
+  // same query. Consumers can reject old rows in the render before the fetch
+  // effect runs. Un-run parameter edits deliberately keep this identity.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Identity deliberately tracks the existing acquisition inputs.
+  const acquisition = useMemo(() => ({}), [
+    widget, backend, backendStatus, card.id, card.backendId, card.widgetId,
+    key, attempt, intervalMs, refreshEpoch,
+  ]);
+  const [acceptedAcquisition, setAcceptedAcquisition] = useState<object | null>(null);
+
+
   /**
    * Are there parameter edits the card has not run? Compared through
    * paramsKey, not a separate shallow compare, so the marker and the fetch key
@@ -201,6 +212,7 @@ export function useWidgetData(
       // Discovery that simply hasn't run yet ("unknown", or the backend
       // isn't even loaded) stays unresolved.
       if (backendStatus === "offline") {
+        setAcceptedAcquisition(acquisition);
         setStatus("error");
         setError("Backend is offline");
         return;
@@ -319,6 +331,7 @@ export function useWidgetData(
       if (!backend) {
         if (cancelled) return;
         setStatus("error");
+        setAcceptedAcquisition(acquisition);
         setError("Backend not configured");
         // Deliberately NOT armed: no request was ever issued, and a card
         // naming a backend that does not exist cannot be fixed by asking
@@ -331,6 +344,7 @@ export function useWidgetData(
         let received: string[] = [];
         const result = await fetchWidgetData(backend, widget, fetchParams, (w) => { received = w; });
         if (cancelled) return;
+        setAcceptedAcquisition(acquisition);
         setWarnings(received);
         setData(result);
         setFetchedAt(Date.now());
@@ -339,6 +353,7 @@ export function useWidgetData(
         armAfterCompletion();
       } catch (err) {
         if (cancelled) return;
+        setAcceptedAcquisition(acquisition);
         const message = err instanceof Error ? err.message : String(err);
         setError(message);
         setWarnings([]);
@@ -377,6 +392,7 @@ export function useWidgetData(
     attempt,
     intervalMs,
     refreshEpoch,
+    acquisition,
   ]);
 
   // The stale tint (stale-time.md): set once staleTime has passed since the
@@ -400,5 +416,5 @@ export function useWidgetData(
   // same reason: an rss card polls its own feed, and it must poll on exactly
   // the interval every other card uses. Returning the value already computed
   // above is what makes a second, drifting call site impossible.
-  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs, dataStale };
+  return { status, data, error, warnings, retry, attempt, run: runButton ? run : retry, stale, intervalMs, dataStale, acquisition, queryKey: key, responseCurrent: acceptedAcquisition === acquisition };
 }

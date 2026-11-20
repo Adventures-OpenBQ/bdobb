@@ -23,10 +23,12 @@
 ## Tasks
 
 - [x] 1. RED numerical/shape tests; port narrow pure PR65 surface builder and register Plotly surface trace. GREEN tests; commit.
-- [ ] 2. RED projection/publication tests. Extract shared projection semantics from TableRenderer, add dashboard/card-scoped publication independent of rendered source view. GREEN tests for filters/sorting, two cards, loading/error/empty and ownership cleanup; commit.
+- [x] 2. RED projection/publication tests. Extract shared projection semantics from TableRenderer, add dashboard/card-scoped publication independent of rendered source view. GREEN tests for filters/sorting, two cards, loading/error/empty and ownership cleanup; commit.
 - [ ] 3. RED local and transport identity tests. Add bounded linked settings and source metadata to V3 types/store/extension codec; implement two-pass mapping for duplicate/apps/Workspace. Preserve unrelated extension refusals. GREEN round-trip and missing-source tests; commit.
 - [ ] 4. RED renderer/source-action tests. Create linked surface from source table action; expose source/category/measures settings; subscribe without independent acquisition; show explicit unavailable/refused/loading state. GREEN source/renderer tests; commit.
 - [ ] 5. Real FX source plus surface browser exercise: filter/refetch, two source instances, empty state, save/reload, export/import and duplicate. Update help/recipe/source offers and qualification matrix.
 - [ ] 6. Typecheck/lint/unit/build, applicable browser/native regressions and one independent whole-branch review; repair findings with reproducing tests. Only final complete assembly may become Ready.
 
 Task1 verification: eight shape/numeric tests and the surface registry test were observed RED then GREEN; combined16 focused tests pass. Full tracked suite3362passes(8opt-in skips), typecheck/lint/build pass. Source publication and transport/UI remain incomplete.
+
+Task2 verification: publication/lease/projection/acquisition tests observed RED then GREEN;74focused tests pass. Full suite3376passes(8opt-in skips); typecheck/lint/build pass. Runtime publication hook is independent of source renderer; WidgetCard wiring remains Task4, and transport/state remains Task3.

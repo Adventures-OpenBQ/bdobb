@@ -12,10 +12,10 @@ import {
   type ColumnFiltersState,
   type ColumnPinningState,
   type ColumnSizingState,
-  type SortingFn,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
+import { projectionColumn } from "../../hooks/useTableProjection";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cellVisual, titleCase, type CellVisual } from "../../lib/columnRender";
@@ -40,7 +40,7 @@ import type { PinSide, TableCardState, TableSpec } from "../../lib/types";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { isMenuKey, RowContextMenu, type MenuItem } from "../RowContextMenu";
 import { RawJsonView } from "./RawJsonView";
-import { FilterControl, filterFnFor, filterKindFor, type DateBounds } from "./TableFilterRow";
+import { FilterControl, filterKindFor, type DateBounds } from "./TableFilterRow";
 
 /**
  * Shallow. `b` is always the null-prototype map built below, so a field named
@@ -271,41 +271,6 @@ function useTableState(
  * in one Collator because building a fresh one per comparison is the slow
  * path on a table of any size.
  */
-const TEXT_ORDER = new Intl.Collator(undefined, { sensitivity: "base" });
-
-/**
- * Every column's sort, stated rather than left to table-core's `auto`, which
- * sniffs a column's type from its rows AFTER the first ten
- * (`flatRows.slice(10)`) and so hands a short table `basic` -- a bare `>`,
- * under which null compares like 0 and lands in the middle of a signed
- * column (change %, say).
- *
- * Missing -- null or undefined -- sorts last in BOTH directions, which is why
- * the direction is an input: table-core flips a sortingFn's answer for a
- * descending sort, so this pre-flips it. The column's `sortUndefined: false`
- * sends undefined here too; table-core's own `"last"` covers undefined but
- * not null, and folding null into undefined in the accessor would change
- * what an `eq: null` colour rule matches.
- *
- * `numeric` is the column's filter kind -- cellDataType when the spec gives
- * one, otherwise the type of its first value. A stray non-number in a numeric
- * column falls back to the text order rather than comparing as NaN.
- */
-function sortingFnFor(numeric: boolean, desc: boolean): SortingFn<Row> {
-  return (a, b, id) => {
-    const x = a.getValue(id);
-    const y = b.getValue(id);
-    const xMissing = x === null || x === undefined;
-    const yMissing = y === null || y === undefined;
-    if (xMissing || yMissing) {
-      if (xMissing && yMissing) return 0;
-      return xMissing !== desc ? 1 : -1;
-    }
-    if (numeric && typeof x === "number" && typeof y === "number") return x - y;
-    return TEXT_ORDER.compare(String(x), String(y));
-  };
-}
-
 function VirtualTable({
   rows,
   spec,
@@ -527,38 +492,11 @@ function VirtualTable({
   const columnDefs = useMemo<ColumnDef<Row>[]>(
     () =>
       columns.map((column) => ({
-        id: column.field,
-        // accessorFn, never accessorKey: table-core reads a dotted key as a
-        // nested path, and a transposed table's keys are the data's own
-        // first-column values -- `BRK.B`, `AAPL.US`, `1.5` -- so every cell,
-        // sort and filter of such a column read undefined. Object.hasOwn, as
-        // everywhere else a row is read by a computed key: `row` came back
-        // from JSON.parse and inherits Object.prototype.
-        accessorFn: (row: Row) => {
-          const value = Object.hasOwn(row, column.field) ? row[column.field] : undefined;
-          // A hoverCard cell holds an object; the value it displays, sorts
-          // and filters by is the one under cellField. The whole object is
-          // read back from row.original for the card itself.
-          const field = column.hoverCard?.cellField;
-          if (field !== undefined && typeof value === "object" && value !== null) {
-            const record = value as Record<string, unknown>;
-            return Object.hasOwn(record, field) ? record[field] : undefined;
-          }
-          return value;
-        },
+        ...projectionColumn(column, filterKinds.get(column.field) ?? "none", sorting),
         header: column.header,
         size: column.size,
         minSize: column.minSize,
         maxSize: column.maxSize,
-        filterFn: filterFnFor(filterKinds.get(column.field) ?? "none"),
-        enableColumnFilter: filterKinds.get(column.field) !== "none",
-        // The direction is an input to the comparator (see sortingFnFor), so
-        // this array also rebuilds on a sort change.
-        sortingFn: sortingFnFor(
-          filterKinds.get(column.field) === "number",
-          sorting.some((s) => s.id === column.field && s.desc),
-        ),
-        sortUndefined: false,
         cell: (ctx) => {
           const value = ctx.getValue();
           if (column.sparkline && Array.isArray(value)) {

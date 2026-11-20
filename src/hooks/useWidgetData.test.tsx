@@ -66,6 +66,42 @@ async function serve(routes: Record<string, unknown>) {
 }
 
 describe("useWidgetData", () => {
+  it("associates missing-backend errors with the current acquisition", async () => {
+    registerWidget();
+    const { result } = renderHook(() => useWidgetData(card, card.params));
+    await waitFor(() => expect(result.current.status).toBe("error"));
+    expect(result.current.error).toBe("Backend not configured");
+    expect(result.current.responseCurrent).toBe(true);
+  });
+
+  it("binds ready data to its acquisition and invalidates it immediately on refresh", async () => {
+    await serve({ "/equity/price": { results: [{ close: 1 }] } });
+    registerWidget();
+    const { result, rerender } = renderHook(({ params }) => useWidgetData(card, params), { initialProps: { params: card.params } });
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(result.current.responseCurrent).toBe(true);
+    const first = result.current.acquisition;
+    rerender({ params: { symbol: "MSFT" } });
+    expect(result.current.responseCurrent).toBe(false);
+    expect(result.current.acquisition).not.toBe(first);
+    await waitFor(() => expect(result.current.responseCurrent).toBe(true));
+    act(() => result.current.retry());
+    expect(result.current.responseCurrent).toBe(false);
+    await waitFor(() => expect(result.current.responseCurrent).toBe(true));
+  });
+
+  it("keeps the accepted acquisition for parameter edits waiting for Run", async () => {
+    await serve({ "/equity/price": { results: [{ close: 1 }] } });
+    registerWidget();
+    const { result, rerender } = renderHook(({ params }) => useWidgetData(card, params, true), { initialProps: { params: card.params } });
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    const first = result.current.acquisition;
+    rerender({ params: { symbol: "MSFT" } });
+    expect(result.current.acquisition).toBe(first);
+    expect(result.current.responseCurrent).toBe(true);
+    expect(result.current.stale).toBe(true);
+  });
+
   it("reports unresolved while the widget is not yet in the registry", () => {
     const { result } = renderHook(() => useWidgetData(card, card.params));
     expect(result.current.status).toBe("unresolved");
