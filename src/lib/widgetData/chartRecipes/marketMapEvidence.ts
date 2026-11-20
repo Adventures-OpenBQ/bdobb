@@ -3,6 +3,7 @@
 import type { ChartSourceAdapter, ChartSourceReceipt } from './chartSourceContracts';
 import { isChartSourceArray, isChartSourceRecord } from './chartSourceShape';
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
+import { sumMarketMapAreas } from './marketMapAreaSum';
 import { isChartCurrency, metricVintageKey } from './metricEvidence';
 import { isOverlayReference as reference } from './overlayEvidence';
 
@@ -49,6 +50,7 @@ function validCounts(v: Record<string, unknown>) {
     && v.raw_count === v.delivered_count + v.rejected_count + v.exact_repeats + zero + negative + invalid
     && (!v.exact_repeats || v.exact_repeats + v.rejected_count < v.raw_count) && new Set(diagnostics).size === diagnostics.length
     && (!unsafe.duplicate_conflict || v.raw_count >= 2)
+    && (!unsafe.excess_weight || v.delivered_count > 0 || v.rejected_count > 0 || invalid > 0)
     && diagnostics.every(d => flags.some(k => k === d)) && flags.every(k => unsafe[k] === diagnostics.includes(k))
     && (!v.rejected_count || diagnostics.some(d => d !== 'excess_weight'))
     && (v.rejected_count > 0 || diagnostics.every(d => d === 'membership_conflict' || d === 'excess_weight'));
@@ -82,21 +84,17 @@ export function parseMarketMapSource(value: unknown): MarketMapSource | undefine
 function rowsAgree(s: MarketMapSource, rows: readonly Record<string, unknown>[], scope: unknown): boolean {
   if (scope !== s.coverage || rows.length !== s.delivered_count) return false;
   const remaining = new Set(s.listing_keys);
-  let sum = 0, correction = 0;
+  const weights: number[] = [];
   for (const row of rows) {
     if (!exact(row, rowKeys) || !listing(row.listing) || !remaining.delete(row.listing)
       || !identityFields.every(k => row[k] === s[k])
       || (row.sector !== null && (typeof row.sector !== 'string' || !row.sector || row.sector.trim() !== row.sector))
       || !finite(row.area) || row.area <= 0 || (row.change !== null && (!finite(row.change) || row.change < -1))) return false;
-    if (s.mode === 'index-weight') {
-      // Compare only against the admission boundary; keep all presented weights in their original units.
-      const add = Math.min(2, row.area) - correction;
-      const next = sum + add;
-      correction = (next - sum) - add;
-      sum = next;
-    }
+    // A contribution of two already proves excess. Preserve the original value in the row.
+    if (s.mode === 'index-weight') weights.push(Math.min(2, row.area));
   }
   if (s.mode === 'delivered-cap') return true;
+  const sum = sumMarketMapAreas(weights);
   const bound = s.rounding_bound_fraction ?? 1e-12;
   return (sum <= 1 + bound || s.unsafe.excess_weight)
     && (s.coverage !== 'complete' || sum >= 1 - bound || s.unsafe.membership_conflict);

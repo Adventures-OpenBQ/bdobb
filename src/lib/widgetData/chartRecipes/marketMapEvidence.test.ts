@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
 import cap from '../../../test/fixtures/marketMapCap.json';
+import zeroBound from '../../../test/fixtures/marketMapIndexZeroBound.json';
 import index from '../../../test/fixtures/marketMapIndex.json';
 import { datasetFromBytes } from '../../localTableData';
 import { parseTableSnapshot } from '../../tableRowValues';
@@ -61,4 +62,21 @@ it('rejects impossible repetition, collision and partial membership diagnostics'
     rejected_count: 1, diagnostics: ['membership_conflict'], unsafe: { ...base.unsafe, membership_conflict: true } };
   for (const patch of [{ raw_count: 2, exact_repeats: 1 }, { diagnostics: [...r.diagnostics, 'duplicate_conflict'], unsafe: { ...r.unsafe, duplicate_conflict: true } },
     { rejected_count: 0, raw_count: 0 }]) expect(decode({ ...r, ...patch })).toBeUndefined();
+});
+it('imports the exact provider-prepared zero-bound index and honors both sides of the binary64 tie', async () => {
+  const source = zeroBound.chart_sources.receipts[0];
+  expect(source.rounding_bound_fraction).toBe(0);
+  const d = await datasetFromBytes('index.json', new TextEncoder().encode(JSON.stringify(zeroBound)), 'index', 1);
+  expect(d.provenance.metadata?.chartSources).toEqual({ 'market-map': source });
+  expect(d.rows.map(row => row.values.area)).toEqual([.08, .69, .23]);
+  for (const [weights, excess] of [[[1, 2 ** -54, 2 ** -54], false], [[1, 2 ** -53, Number.MIN_VALUE], true]] as const) {
+    const file = { ...zeroBound, rows: zeroBound.rows.map((r, i) => ({ ...r, area: weights[i] })) };
+    if (excess) expect(() => parseTableSnapshot(file, 'local-file')).toThrow();
+    else expect(parseTableSnapshot(file, 'local-file').snapshot?.chartSources).toBeDefined();
+  }
+});
+it.each([[0, 0], [1, 2]])('requires a possible positive raw contribution for excess with %s zeros and %s negatives', (zero, negative) => {
+  const r = index.chart_sources.receipts[0];
+  expect(decode({ ...r, coverage: 'partial', raw_count: zero + negative, normalized_count: 0, delivered_count: 0, listing_keys: [],
+    diagnostics: ['excess_weight'], unsafe: { ...r.unsafe, excess_weight: true }, excluded_areas: { zero, negative, invalid: 0 } })).toBeUndefined();
 });
