@@ -14,6 +14,7 @@ import type { DashboardCard, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
+import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
@@ -1434,4 +1435,80 @@ it('clears a previously matched chart context when its refresh fails', async () 
   act(() => result.current.retry());
   await waitFor(() => expect(result.current.status).toBe('error'));
   expect(result.current.acquisition).toBeUndefined();
+});
+
+it.each([true, false])("releases a transferred fiscal hold only for the committed intent (matching=%s)", async matching => {
+  const server = await serve({ "/equity/price": { results: [] } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: "w1", endpoint: "equity/price", runButton: true,
+    params: [{ paramName: "symbol", type: "text" }, { paramName: "quarter", type: "quarter" }] })] });
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 7, 26, 12));
+  const dashboard = { id: "fiscal-handoff", name: "Fiscal", tabs: [] };
+  const mount = (symbol: string, pending: boolean) => renderHook(() => {
+    const params = { symbol, quarter: "T" };
+    return useWidgetData({ ...card, params }, params, true, { quarter: pending ? 12 : 9 },
+      { calendars: {}, pending, key: pending ? "waiting" : "ready", intent: symbol }, undefined, dashboard);
+  });
+  const sent = () => server.requests.map(r => {
+    const query = new URLSearchParams(r.search);
+    return [query.get("symbol"), query.get("quarter")];
+  });
+  try {
+    const initial = mount("AAPL", true);
+    await waitFor(() => expect(initial.result.current.status).toBe("loading"));
+    initial.unmount();
+    const symbol = matching ? "AAPL" : "TSLA";
+    const successor = mount(symbol, false);
+    if (!matching) {
+      await waitFor(() => expect(successor.result.current.status).toBe("incomplete"));
+      expect(sent()).toEqual([]);
+      successor.unmount();
+      const retry = mount(symbol, false);
+      await waitFor(() => expect(retry.result.current.status).toBe("incomplete"));
+      expect(sent()).toEqual([]);
+      act(() => retry.result.current.run());
+      await waitFor(() => expect(retry.result.current.status).toBe("ready"));
+      retry.unmount();
+    } else {
+      await waitFor(() => expect(successor.result.current.status).toBe("ready"));
+      successor.unmount();
+    }
+    expect(sent()).toEqual([[symbol, "2026-Q4"]]);
+  } finally {
+    tableExecutionStore.disposeDashboard(dashboard.id);
+  }
+});
+
+it("isolates backend Run questions by dashboard, card, producer and disposal", async () => {
+  const server = await serve({ "/first": { results: [] }, "/replacement": { results: [] } });
+  const register = (endpoint: string) => useWidgetRegistryStore.setState({ widgets: [
+    makeWidget({ id: "w1", endpoint, runButton: true, params: [{ paramName: "symbol", type: "text" }] }),
+  ] });
+  register("/first");
+  const mount = async (dashboardId: string, cardId: string, symbol: string) => {
+    const params = { symbol };
+    const dashboard = { id: dashboardId, name: dashboardId, tabs: [] };
+    const hook = renderHook(() => useWidgetData({ ...card, id: cardId, params }, params, true, undefined, undefined, undefined, dashboard));
+    await waitFor(() => expect(hook.result.current.status).toBe("ready"));
+    hook.unmount();
+  };
+  try {
+    await mount("one", "source", "AAPL");
+    await mount("one", "source", "TSLA");
+    await mount("two", "source", "MSFT");
+    await mount("one", "sibling", "NVDA");
+    register("/replacement");
+    await mount("one", "source", "TSLA");
+    register("/first");
+    await mount("one", "source", "AMD");
+    tableExecutionStore.disposeDashboard("one");
+    await mount("one", "source", "INTC");
+    expect(server.requests.map(r => [r.path, new URLSearchParams(r.search).get("symbol")])).toEqual([
+      ["/first", "AAPL"], ["/first", "AAPL"], ["/first", "MSFT"], ["/first", "NVDA"],
+      ["/replacement", "TSLA"], ["/first", "AMD"], ["/first", "INTC"],
+    ]);
+  } finally {
+    tableExecutionStore.disposeDashboard("one");
+    tableExecutionStore.disposeDashboard("two");
+  }
 });

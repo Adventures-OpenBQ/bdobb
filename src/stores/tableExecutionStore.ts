@@ -106,7 +106,17 @@ type BackendRows = {
   ready: Promise<void>;
   resolve: () => void;
 };
-type BackendOwner = { slots: BackendRows[]; producer?: string; wire?: string; revision: number };
+// The question outlives its mounted or off-tab fetch hook. Each actual GET
+// still owns a distinct BackendRequest, and only that ticket can deliver rows.
+export type RunQuestion = {
+  params: Record<string, string>;
+  fiscalYearEnd?: Record<string, number>;
+  intent: string;
+  sourceParams?: Record<string, string>;
+  progress: { wire: string | null; held: boolean; bounds?: { min: Date; max: Date } };
+};
+type BackendProducer = { backendId: string; widgetId: string; identity: string };
+type BackendOwner = { slots: BackendRows[]; producer?: BackendProducer; armed?: RunQuestion; wire?: string; revision: number };
 function canonicalHeaders(headers: Record<string, string>) {
   return Object.entries(headers).map(([name, value]) => [name.toLowerCase(), value])
     .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
@@ -608,8 +618,12 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
             if (owner) {
               // The most recent Run owns its result while the user edits a draft.
               // An incompatible draft waits separately. A new Run retires the old ticket.
-              const keepArmed = existing.card.widgetId === card.widgetId && existing.card.backendId === card.backendId
-                && isBackendTable(card) && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.runButton === true;
+              const runButtonTable = isBackendTable(card) && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId)?.runButton === true;
+              const keepArmed = runButtonTable && existing.card.widgetId === card.widgetId && existing.card.backendId === card.backendId;
+              // The new hook may already have observed the replacement before sync.
+              if (!runButtonTable || owner.producer?.backendId !== card.backendId || owner.producer.widgetId !== card.widgetId) {
+                owner.armed = undefined;
+              }
               owner.slots = owner.slots.filter(slot => (keepArmed && slot.request)
                 || sameConfig(slot.configuration, backendConfiguration(card, runtime)));
             }
@@ -650,21 +664,29 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           void ensure(dashboard.id, card.id);
     },
     /** A new producer may wait for a calendar or refuse validation before any URL is sent. */
-    observeBackendProducer(d: string, cardId: string, backend: BackendConfig | undefined, widget: WidgetDef) {
-      const owner = ownerFor(d, cardId);
+    observeBackendProducer(d: string, card: DashboardCard, backend: BackendConfig | undefined, widget: WidgetDef,
+      initialQuestion?: () => RunQuestion) {
+      const owner = ownerFor(d, card.id);
       const queryCredential = backend?.authLocation === 'query' && backend.headerName && backend.headerValue
         ? [backend.headerName, backend.headerValue] : undefined;
-      const producer = JSON.stringify([backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
+      const identity = JSON.stringify([widget.runButton === true, backend?.id, backend && canonicalRequestUrl(joinUrl(backend.baseUrl, widget.endpoint)), widget.dataKey,
         queryCredential, backend && canonicalHeaders(authHeaders(backend))]);
-      if (producer === owner.producer) return;
-      const replaced = owner.producer !== undefined;
-      owner.producer = producer;
-      if (replaced) retireBackendInput(d, cardId, owner);
+      const producer = { backendId: card.backendId, widgetId: card.widgetId, identity };
+      if (!sameConfig(producer, owner.producer)) {
+        const replaced = owner.producer !== undefined;
+        owner.producer = producer;
+        owner.armed = undefined;
+        if (replaced) retireBackendInput(d, card.id, owner);
+      }
+      return owner.armed ??= initialQuestion?.();
     },
     /** Commit a changed Run-button question even if its GET must wait for a calendar. */
-    replaceArmedBackendRequest(d: string, cardId: string) {
+    replaceArmedBackendRequest(d: string, cardId: string, previous: RunQuestion, next: RunQuestion) {
       const owner = backendRows.get(d)?.get(cardId);
-      if (owner?.slots.some(slot => slot.request)) retireBackendInput(d, cardId, owner);
+      if (owner?.armed !== previous) return false;
+      owner.armed = next;
+      if (owner.slots.some(slot => slot.request)) retireBackendInput(d, cardId, owner);
+      return true;
     },
     /** The source card owns the request; consumers only wait for this particular completion. */
     beginBackendRequest(d: string, card: DashboardCard, scope: SourceGroups | undefined = dashboards.get(d), committedParams?: Record<string,string>): BackendRequest {

@@ -13,7 +13,7 @@ import { paramsKey, wireParams } from "../lib/params";
 import { dataBounds } from "../lib/dataBounds";
 import { isPeriodType, namesBounds } from "../lib/dateExpressions";
 import type { Dashboard, DashboardCard, WidgetDef } from "../lib/types";
-import { tableExecutionStore, type BackendRequest } from "../stores/tableExecutionStore";
+import { tableExecutionStore, type BackendRequest, type RunQuestion } from "../stores/tableExecutionStore";
 import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
@@ -80,15 +80,14 @@ const armedRequests = new Map<string, ArmedRequest>();
 /**
  * A mounted Run-button card's last-run request, for Rita's get_widget_data
  * (cardRequestSync): she must read what the card shows, not an un-run edit.
- * Undefined for any other card, and for one that is not mounted -- it arms
- * its live params when it mounts, so those are what it would show.
+ * Undefined when no fetch hook currently publishes this card to the agent.
  */
 export function armedRequestOf(cardId: string): ArmedRequest | undefined {
   return armedRequests.get(cardId);
 }
 
 /**
- * Ephemeral per-card state. Never persisted, never in a store.
+ * Backend tables keep their last Run in the dashboard runtime across tab handoffs.
  *
  * `runButton` is the widget manifest's own flag, passed straight through: with
  * it, the hook stops keying the fetch on the live params and keys it on the
@@ -200,7 +199,7 @@ export function useWidgetData(
    */
   // v5.4.0 fix round 2: that release now re-arms the params and the map
   // together, so the rule above holds without the exception.
-  const [armed, setArmed] = useState<(ArmedRequest & { intent: string; sourceParams?: Record<string, string> })>();
+  const [armed, setArmed] = useState<RunQuestion>();
   const armedParams = armed?.params ?? null;
   const armedFiscalYearEnd = armed?.fiscalYearEnd;
   /**
@@ -213,10 +212,15 @@ export function useWidgetData(
    */
   const intent = calendars?.intent ?? paramsKey(params);
   const armedIntent = armed?.intent;
+  const liveQuestion = useCallback((): RunQuestion => ({
+    params, fiscalYearEnd, intent, progress: { wire: null, held: false },
+    sourceParams: backendTableDashboard ? acquisitionParams(card, backendTableDashboard) : undefined,
+  }), [params, fiscalYearEnd, intent, card, backendTableDashboard]);
   const armRequest = useCallback(() => {
-    setArmed({ params, fiscalYearEnd, intent,
-      sourceParams: backendTableDashboard ? acquisitionParams(card, backendTableDashboard) : undefined });
-  }, [params, fiscalYearEnd, intent, card, backendTableDashboard]);
+    const next = liveQuestion();
+    if (tableDashboardId && armed && !tableExecutionStore.replaceArmedBackendRequest(tableDashboardId, card.id, armed, next)) return;
+    setArmed(next);
+  }, [liveQuestion, armed, tableDashboardId, card.id]);
   useEffect(() => {
     if (!runButton || armedParams === null) return;
     const entry: ArmedRequest = { params: armedParams, fiscalYearEnd: armedFiscalYearEnd };
@@ -233,7 +237,7 @@ export function useWidgetData(
    * `bd` offset) re-resolves on every trigger; when the resolution differs
    * from what was armed, the card goes stale and sends nothing until Run
    * (spec §5) — the extension of v5.2.0's "never send an un-run request" to
-   * requests the clock, not the user, would have changed. A ref, not state:
+   * requests the clock, not the user, would have changed. Shared with the committed question:
    * it is written inside the fetch effect and must not re-run it.
    *
    * It is recorded from exactly what the effect sends — the armed params, the
@@ -241,7 +245,6 @@ export function useWidgetData(
    * fingerprint is the resolved wire of the request that went out, never of
    * a live edit.
    */
-  const armedWireRef = useRef<string | null>(null);
   const [wireStale, setWireStale] = useState(false);
   /**
    * The calendars are not armed with the params: a calendar only ever
@@ -271,8 +274,6 @@ export function useWidgetData(
   const calendarsPending = calendars?.pending === true;
   const calendarsKey = calendars?.key ?? "";
   const calendarTrigger = runButton ? "" : calendarsKey;
-  /** runButton only: a real trigger found a consulted year pending and sent nothing yet. */
-  const heldRef = useRef(false);
   const [released, setReleased] = useState(0);
   // Adjusting state during render, deliberately: React discards this pass and
   // re-renders with the value set BEFORE committing, so the fetch effect below
@@ -281,7 +282,7 @@ export function useWidgetData(
   // with the old closure — issue one request against them first, which is
   // exactly the request a run button exists to prevent. Until then the effect
   // returns early on `!widget` and nothing has been requested at all.
-  if (runButton && armedParams === null && widget) {
+  if (runButton && !backendTableDashboard && armedParams === null && widget) {
     armRequest();
   }
 
@@ -380,15 +381,13 @@ export function useWidgetData(
       // Forget the armed wire so the next effect run records what Run sends,
       // and bump `attempt` too: when only the CLOCK moved, the params key is
       // unchanged and nothing else would make the effect re-run.
-      armedWireRef.current = null;
       setWireStale(false);
-      if (tableDashboardId) tableExecutionStore.replaceArmedBackendRequest(tableDashboardId, card.id);
       armRequest();
       setAttempt((n) => n + 1);
       return;
     }
     retry();
-  }, [stale, armRequest, retry, tableDashboardId, card.id]);
+  }, [stale, armRequest, retry]);
 
   /**
    * The `key` the payload currently in `data` was fetched under. WidgetCard
@@ -449,7 +448,21 @@ export function useWidgetData(
 
     // Capture the owner in this fetch closure. A later render can see the previous
     // payload while its new parameters are waiting to send or complete.
-    if (backendTableDashboard) tableExecutionStore.observeBackendProducer(backendTableDashboard.id, card.id, backend, widget);
+    if (backendTableDashboard) {
+      const committed = tableExecutionStore.observeBackendProducer(backendTableDashboard.id, card, backend, widget,
+        runButton ? liveQuestion : undefined);
+      // Switch to this producer's committed question before any validation,
+      // calendar hold or GET can use this mount's editable parameters.
+      if (committed !== armed) {
+        setArmed(committed);
+        lastKeyRef.current = paramsKey(committed?.params ?? params);
+        setCompletedRequest(undefined);
+        setPayload({ data: null });
+        setHeldBounds(committed?.progress.bounds);
+        setWireStale(false);
+        return;
+      }
+    }
     const beginRequest = () => backendTableDashboard
       ? tableExecutionStore.beginBackendRequest(backendTableDashboard.id, card, backendTableDashboard, runButton ? armed?.sourceParams : undefined)
       : undefined;
@@ -496,10 +509,12 @@ export function useWidgetData(
     // or, with a run button, when the release effect below bumps `released`.
     if (calendarsPending) {
       setStatus("loading");
-      if (runButton) heldRef.current = true;
+      if (runButton && armed) armed.progress.held = true;
       return;
     }
-    heldRef.current = false;
+    // A successor may mount after the fiscal/calendar lookup landed. Release
+    // its held intent below before resolving any provisional wire parameters.
+    if (runButton && armed?.progress.held) return;
 
     // Review I2: after an un-run edit a card's bundle calendars are the EDIT's (useBundleCalendars reads the live
     // params), so the armed params it re-sends resolve on their own, from the shared cache, as preview showed them:
@@ -514,22 +529,19 @@ export function useWidgetData(
     // run. The comparison is on the WIRE values — what wireParams would put on
     // the query string right now — so a `T` that crossed midnight and a
     // calendar that just landed are both caught, and a literal never is.
-    if (runButton) {
+    if (runButton && armed) {
       const live = paramsKey(
         wireParams(widget, fetchParams, { fiscalYearEnd: fetchFiscal, calendars: sendMap, exchange, bounds }),
       );
-      if (armedWireRef.current !== null && armedWireRef.current !== live) {
+      if (armed.progress.wire !== null && armed.progress.wire !== live) {
         setWireStale(true);
-        // v5.4.0 final-review fix: a HELD trigger released here (a ⌘R held on
-        // a pending lookup after a dropped hold left the " dropped" sentinel,
-        // or a clock move while a lookup was pending) arrives with the hold's
-        // "loading" still set, and nothing is sent — so leave it, exactly as
-        // the drop does. Only from "loading": a ready or error card whose wire
-        // moved keeps what it shows, as it always has.
-        if (status === "loading") settleUnsent();
+        // A held trigger or a fresh mount has no completed outcome of its own.
+        // Show the Run prompt when there are no rows to retain.
+        if (status === "loading" || status === "unresolved") settleUnsent();
         return;
       }
-      armedWireRef.current = live;
+      armed.progress.wire = live;
+      armed.progress.bounds = bounds;
     }
 
     const request = beginRequest();
@@ -641,7 +653,11 @@ export function useWidgetData(
         setCompletedRequest(request);
         setWarnings(received);
         setPayload({ data: result, acquisition: completedAcquisition });
-        if (wantsBounds && bounds === undefined) setHeldBounds(dataBounds(result));
+        if (wantsBounds && bounds === undefined) {
+          const nextBounds = dataBounds(result);
+          if (armed) armed.progress.bounds = nextBounds;
+          setHeldBounds(nextBounds);
+        }
         setFetchedAt(completedAcquisition?.retrievedAt ?? Date.now());
         setError(undefined);
         setStatus("ready");
@@ -676,7 +692,7 @@ export function useWidgetData(
     // timer, refreshEpoch, retry) refetches what was last run, never an
     // un-run edit. Nothing in this list changed to make that true. Since
     // v5.3.0 each of those triggers also re-resolves the armed params, and a
-    // resolution that moved (see `armedWireRef`) marks the card stale and
+    // resolution that moved (see `armed.progress.wire`) marks the card stale and
     // sends nothing — what was last run is the WIRE values, not just the
     // stored ones.
     //
@@ -699,6 +715,8 @@ export function useWidgetData(
   }, [
     linked,
     tableDashboardId,
+    armed,
+    runButton,
     widget,
     backend,
     backendStatus,
@@ -716,57 +734,19 @@ export function useWidgetData(
     themeKey,
   ]);
 
-  // runButton: release a send a real trigger held while a consulted year was
-  // pending, once it is not — landed or failed. Declared after the fetch
-  // effect, so a trigger that sent in the same flush has already cleared
-  // `heldRef` and this sends nothing twice.
-  //
-  // v5.4.0 (spec §1.3): WidgetCard folds a pending fiscal lookup into the same
-  // hold, and until the lookup lands the map it passes is the PROVISIONAL one
-  // (December). Whatever armed the held send — the first arm, or Run — armed
-  // that provisional map, and a calendar never had this problem only because
-  // calendars are read live (`calendarMap`), never armed. So the release
-  // re-arms the map from the live one first: the send a trigger held goes
-  // out under the year end that landed. Only while the armed params still
-  // ARE the live params, though — the live map is computed for the live
-  // params, so after an un-run edit it belongs to the edit, and pairing it
-  // with the armed params is the very mismatch `armedFiscalYearEnd` exists
-  // to prevent. Then nothing is released: the card stays stale and sends
-  // nothing until Run, as it would for any other un-run edit.
-  //
-  // v5.4.0 fix round 2: the premise above is wrong for a grouped quarter or
-  // fiscal_year. effectiveParams relabels a group's value under the map, so
-  // the lookup landing moves the live params with no edit at all; comparing
-  // them dropped the very send the hold existed to release, and the card
-  // hung on "Loading…" until Run. What is compared now is the INTENT the
-  // send was armed under (see `armedIntent`): the params before any relabel
-  // plus the FY ends override, a card field no params check sees. Only for
-  // a send ARMED and never sent (`armedWireRef` null: the first arm or Run);
-  // a held ⌘R, ↻ or interval tick is released as before and meets its own
-  // armed-wire check.
-  //   Unchanged: the live params and map ARE the armed intent under the
-  //   landed year end — re-arm both together and release once.
-  //   Changed: an un-run edit or override. Nothing is sent. The card is
-  //   marked stale (`wireStale`, which only Run clears, so an override that
-  //   happens to leave the map equal still shows it) and leaves "loading",
-  //   since nothing is in flight: the payload it holds, else the ask for Run.
+  // A first arm or Run can be waiting on a provisional fiscal map. Only a
+  // matching pre-relabel intent may adopt the landed params and fiscal map.
+  // A refresh of an already-sent question instead compares its original wire.
+  // On handoff the pending lookup may already have landed before this mount.
   useEffect(() => {
-    if (!heldRef.current || calendarsPending) return;
-    if (armedWireRef.current === null) {
+    if (!runButton || !armed?.progress.held || calendarsPending) return;
+    armed.progress.held = false;
+    if (armed.progress.wire === null) {
       if (armedIntent !== intent) {
-        heldRef.current = false;
         setWireStale(true);
-        // v5.4.0 fix round 3: leaving the ref null let any OTHER trigger
-        // (⌘R, ↻, a backendStatus change, a theme flip — none of them Run)
-        // run the fetch effect's armed-wire check at `armedWireRef.current
-        // !== null` above, find it null, and quietly arm-and-send the
-        // params still armed under the provisional (December) map — the
-        // very send this branch just dropped. paramsKey (src/lib/params.ts)
-        // always returns a JSON.stringify object, so this sentinel can never
-        // equal a live wire fingerprint: every such trigger now takes the
-        // "wire moved" path instead and sends nothing. Run already nulls the
-        // ref itself (`run`, above) before re-arming, so Run is unaffected.
-        armedWireRef.current = " dropped";
+        // paramsKey always returns a JSON object, so this cannot match any
+        // refresh. Only an explicit Run starts a question with a clear wire.
+        armed.progress.wire = " dropped";
         settleUnsent();
         return;
       }
@@ -774,7 +754,7 @@ export function useWidgetData(
     }
     setReleased((n) => n + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarsPending]);
+  }, [calendarsPending, armed, runButton]);
 
   // The stale tint (stale-time.md): set once staleTime has passed since the
   // last successful fetch, cleared by the next one.

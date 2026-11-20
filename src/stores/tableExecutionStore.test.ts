@@ -1204,7 +1204,7 @@ it('fences a waiting producer before GET and compares header fields by HTTP sema
   const wire = (req: ReturnType<typeof store.beginBackendRequest>, headers: Record<string,string>) =>
     store.identifyBackendRequest(req, 'https://example.invalid/quotes?symbol=A', headers, 'results');
   try {
-    store.observeBackendProducer('d', root.id, connection, source);
+    store.observeBackendProducer('d', root, connection, source);
     const a = store.beginBackendRequest('d', root);
     wire(a, { 'X-Desk': 'A', 'X-Book': 'B' });
     const initial = revision();
@@ -1215,7 +1215,7 @@ it('fences a waiting producer before GET and compares header fields by HTTP sema
     store.setBackendRows(a, [{ value: 'A' }]);
     const prior = revision();
     // Cookie names are wire values inside Cookie, and remain case-sensitive.
-    store.observeBackendProducer('d', root.id, { ...connection, headerName: 'session' }, source);
+    store.observeBackendProducer('d', root, { ...connection, headerName: 'session' }, source);
     expect(revision()).toBeGreaterThan(prior);
     let ready = false;
     const waiting = store.backendSource('d', root).acquire(new AbortController().signal).then(answer => {
@@ -1231,5 +1231,32 @@ it('fences a waiting producer before GET and compares header fields by HTTP sema
     expect(answer.kind === 'dataset' && answer.dataset.rows[0].values.value).toBe('B');
   } finally {
     store.disposeDashboard('d');
+  }
+});
+
+it('retires the saved question when an idle backend card is removed or repurposed', () => {
+  const store = createTableExecutionStore({});
+  const source = widget({ id: 'quotes', runButton: true });
+  const replacement = { ...source, id: 'alternate' };
+  const c = fixtureCard({ id: 'source', widgetId: source.id });
+  const sync = (...cards: DashboardCard[]) => store.syncDashboard({ id: 'scope', name: 'Test', tabs: [{ id: 'tab', name: 'Tab', cards }] });
+  const observe = (symbol: string) => store.observeBackendProducer('scope', c, backend(), source, () => ({
+    params: { symbol }, intent: symbol, progress: { wire: null, held: false },
+  }));
+  useWidgetRegistryStore.setState({ widgets: [source, replacement] });
+  try {
+    sync(c);
+    const first = observe('AAPL');
+    sync({ ...c, widgetId: replacement.id });
+    sync(c);
+    const second = observe('TSLA');
+    expect(second?.params.symbol).toBe('TSLA');
+    expect(second).not.toBe(first);
+    sync();
+    sync(c);
+    expect(observe('MSFT')?.params.symbol).toBe('MSFT');
+  } finally {
+    store.disposeDashboard('scope');
+    useWidgetRegistryStore.setState({ widgets: [] });
   }
 });

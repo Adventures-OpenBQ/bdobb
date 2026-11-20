@@ -282,3 +282,70 @@ it('retires the old result and reports an invalid replacement URL through the so
   expect(view.queryByText('Showing completed data (stale).')).toBeNull();
   expect(server.requests).toHaveLength(1);
 });
+
+it('keeps the committed GET through both tab handoffs until Run', async () => {
+  const { next, value, board, server, view } = await mountKpi('off-tab', { runButton: true });
+  const tab = (activeTabId: string) => act(() => useDashboardStore.setState({ activeTabId }));
+  const edit = (symbol: string) => act(() => useDashboardStore.setState({ dashboards: [board(symbol)] }));
+  const sent = () => server.requests.map(r => new URLSearchParams(r.search).get('symbol'));
+  const matches = (symbol: string) => tableExecutionStore.sourceMatches('backend-kpi', 'kpi', board(symbol).tabs.flatMap(t => t.cards));
+  const finish = await next('AAPL');
+  act(() => finish());
+  await waitFor(() => expect(value()).toBe('19.875×'));
+
+  tab('b');
+  const lateSuccess = await next('AAPL');
+  edit('TSLA');
+  expect(sent()).toEqual(['AAPL', 'AAPL']);
+  tab('a');
+  const lateError = await next('AAPL');
+  await act(async () => lateSuccess());
+  expect(matches('TSLA')).toBe(false);
+  expect(value()).toBeUndefined();
+
+  tab('b');
+  const refresh = await next('AAPL');
+  await act(async () => lateError(true));
+  expect(matches('TSLA')).toBe(false);
+  await act(async () => refresh());
+  edit('AAPL');
+  await waitFor(() => expect(matches('AAPL')).toBe(true));
+  expect(sent()).toEqual(Array(4).fill('AAPL'));
+
+  edit('TSLA');
+  fireEvent.click(within(view.container.querySelector<HTMLElement>('[data-card-id="source"]')!).getByRole('button', { name: 'Run' }));
+  const formerOwner = await next('TSLA');
+  tab('a');
+  const current = await next('TSLA');
+  await act(async () => formerOwner());
+  expect(matches('TSLA')).toBe(false);
+  await act(async () => current());
+  await waitFor(() => expect(value()).toBe('33.25×'));
+  expect(matches('TSLA')).toBe(true);
+  expect(sent()).toEqual([...Array(4).fill('AAPL'), 'TSLA', 'TSLA']);
+});
+
+it('keeps the last wire date when a successor releases a calendar hold', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-12-30T17:00:00Z'));
+  onTestFinished(() => { vi.useRealTimers(); });
+  const { next, board, server, view, releaseCalendar } = await mountKpi('off-tab', { runButton: true, dated: true });
+  const sent = () => server.requests.filter(r => r.path.endsWith('/metrics')).map(r => {
+    const query = new URLSearchParams(r.search);
+    return [query.get('symbol'), query.get('date')];
+  });
+  const first = await next('AAPL');
+  await act(async () => first());
+  expect(sent()).toEqual([['AAPL', '2026-12-29']]);
+  vi.setSystemTime(new Date('2027-01-06T17:00:00Z'));
+  act(() => useDashboardStore.setState({ dashboards: [board('TSLA')], activeTabId: 'b' }));
+  await waitFor(() => expect(server.requests.some(r => r.path.endsWith('/trading') && r.search.includes('2027'))).toBe(true));
+  await act(async () => releaseCalendar());
+  const run = within(view.container.querySelector<HTMLElement>('[data-card-id="source"]')!).getByRole('button', { name: 'Run' });
+  await waitFor(() => expect(view.getByText(/Parameters changed.*press Run/)).toBeVisible());
+  expect(sent()).toEqual([['AAPL', '2026-12-29']]);
+  fireEvent.click(run);
+  const second = await next('TSLA');
+  await act(async () => second());
+  expect(sent()).toEqual([['AAPL', '2026-12-29'], ['TSLA', '2027-01-05']]);
+});
