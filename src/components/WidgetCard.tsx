@@ -27,6 +27,9 @@ import { useDashboardStore } from "../stores/dashboardStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { InlineRename } from "./InlineRename";
+import { RefreshIcon } from "./RefreshIcon";
+import { ChevronIcon } from "./ChevronIcon";
+import { FilterIcon } from "./FilterIcon";
 import { ParamControls } from "./ParamControls";
 import { MenuPanel } from "./RowContextMenu";
 import { WidgetFormPanel } from "./WidgetFormPanel";
@@ -1197,7 +1200,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
         ) : null}
         {hasControls ? (
           <button type="button" aria-label={paramsOpen ? "Hide parameters" : "Show parameters"} aria-expanded={paramsOpen} onClick={toggleParams}>
-            {paramsOpen ? "▾" : "▸"}
+            <ChevronIcon direction={paramsOpen ? "down" : "right"} />
           </button>
         ) : null}
         {hasControls && widget && dashboard ? (
@@ -1229,7 +1232,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
               aria-expanded={controlsOpen}
               onClick={() => setControlsOpen((v) => !v)}
             >
-              ⌄
+              <ChevronIcon direction={controlsOpen ? "up" : "down"} />
             </button>
           ) : null}
           <div className="card-controls-icons">
@@ -1253,7 +1256,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
                 aria-pressed={filterRowOpen}
                 onClick={() => setFilterRowOpen((v) => !v)}
               >
-                {"⌕"}
+                <FilterIcon />
               </button>
             ) : null}
             {widget?.runButton ? (
@@ -1263,6 +1266,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
               <button
                 type="button"
                 className="card-action"
+                aria-label="Refresh"
                 title={refreshTitle()}
                 data-stale={dataStale || undefined}
                 onPointerEnter={stampTitle}
@@ -1270,7 +1274,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
                 onClick={retry}
                 disabled={widget?.type === "linked_chart" && !linkedPublication?.refresh}
               >
-                Refresh
+                <RefreshIcon />
               </button>
             )}
             {hasMenu ? (

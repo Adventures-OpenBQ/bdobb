@@ -36,8 +36,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const TOPICS_DIR = resolve(ROOT, "src/help/topics");
 const SHOTS_DIR = resolve(ROOT, "src/help/shots");
 
-const VITE_PORT = 4173;
-const MOCK_PORT = 4174;
+const VITE_PORT = Number(process.env.BDOBB_BROWSER_PORT ?? 4173);
+const MOCK_PORT = Number(process.env.BDOBB_MOCK_PORT ?? 4174);
 const APP_URL = `http://localhost:${VITE_PORT}/`;
 
 /** Matches src/help/shots.ts's PENDING_MARKER. Re-stated rather than imported:

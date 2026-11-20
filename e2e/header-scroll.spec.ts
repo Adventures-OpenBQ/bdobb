@@ -28,6 +28,8 @@ test("PR88: compact header scrolls without moving title or actions", async ({pag
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   await card.evaluate(async el => { await Promise.all((el.closest(".react-grid-item") ?? el).getAnimations({subtree: true}).filter(a => a.effect?.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => undefined))); });
   const title = await card.locator(".card-title").boundingBox();
+  const textWidth = await card.locator('.card-title').evaluate(el => { const range=document.createRange();range.selectNodeContents(el);return range.getBoundingClientRect().width; });
+  expect(title!.width).toBeLessThanOrEqual(textWidth + 2);
   const close = card.getByRole("button", {name: "Remove card", exact: true});
   const action = await close.boundingBox();
   expect((await card.locator(".card-header").boundingBox())!.height).toBeLessThanOrEqual(48);
