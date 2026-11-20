@@ -128,3 +128,24 @@ it('reopens explicit local JSON and keeps sibling metadata and independent field
   expect(unrelated.provenance.receipt).toEqual({ interval: '1d', unit: 'USD', currency: 'USD' });
   await expect(reopen({ fund_symbol: 'SPY.US', unit: 'fraction' })).rejects.toThrow('Could not parse local table');
 });
+
+it.each([
+  { weight_unit: 'percent-points' }, { basis: 'equity-exposure' }, { etf_ticker: 'SPY.US' },
+  { exposure_kind: 'sector' }, { WeightUnit: 'percent-points' }, { weight_measure: 'equity-share' },
+])('checks all ETF-marked sibling assertions before live or local certification: %o', delta => {
+  const receipt = { fund_symbol: 'VTI.US', etf_kind: 'holdings', unit: 'fraction', ...delta };
+  expect(captureChartSources(context, { ...response(live), receipt }, rows)).toBeUndefined();
+  expect(() => parseTableSnapshot({ ...file(local), receipt }, 'local-file')).toThrow();
+  const localSource = parseTableSnapshot(file(local), 'local-file').snapshot!;
+  const direct = datasetFromRows(structuredClone(rows), 'local', 1, 'localFile', undefined, [], {
+    ...localSource, receipt: Object.fromEntries(Object.entries(receipt)),
+  });
+  expect(direct.provenance.metadata?.chartSources).toBeUndefined();
+});
+
+it('honors compatible declared weight_unit and basis on the completed holdings response', () => {
+  expect(captureChartSources(context, { ...response(live),
+    receipt: { fund_symbol: 'VTI.US', unit: 'fraction', weight_unit: 'fraction', basis: 'fund-assets' },
+  }, rows)).toEqual({ 'etf-hierarchy': live });
+  expect(captureChartSources(context, { ...response(live), receipt: { weight_unit: 'percent-points' } }, rows)).toBeUndefined();
+});

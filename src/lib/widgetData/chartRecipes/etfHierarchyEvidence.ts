@@ -107,17 +107,28 @@ function rowsAgree(source: EtfHierarchySource, rows: readonly Record<string, unk
   return true;
 }
 
+const fundKeys = new Set(['fund', 'fundsymbol', 'fundticker', 'etfsymbol', 'etfticker']);
+const etfKeys = new Set([...fundKeys, 'etfkind', 'exposurekind', 'weightbasis', 'weightunit', 'holdingscoverage']);
+
 function legacyReceiptAgrees(source: EtfHierarchySource, legacy: unknown): boolean {
   if (!isChartSourceRecord(legacy)) return false;
-  // Generic legacy price receipts also have a unit and retrieval time. Only ETF declarations
-  // make those properties assertions about these holdings.
-  if (!['fund_symbol', 'etf_kind', 'weight_basis', 'holdings_coverage'].some(k => Object.hasOwn(legacy, k))) return true;
-  const agrees = (key: string, value: unknown) => !Object.hasOwn(legacy, key) || legacy[key] === value;
-  return agrees('fund_symbol', source.fund) && agrees('etf_kind', 'holdings') && agrees('weight_basis', 'fund-assets')
-    && agrees('holdings_coverage', source.coverage) && agrees('as_of', source.as_of)
-    && (!Object.hasOwn(legacy, 'unit') || ['fraction', 'fractional', 'ratio'].some(unit => legacy.unit === unit))
-    && (!Object.hasOwn(legacy, 'retrieved_at') || (utcTimestamp(legacy.retrieved_at)
-      && stampKey(legacy.retrieved_at) === stampKey(source.retrieved_at)));
+  const fields = Object.entries(legacy).map(([key, value]) => [key.replace(/_/g, '').toLowerCase(), value] as const);
+  // An independent price receipt may also have a unit, observation date and retrieval time.
+  if (!fields.some(([key, value]) => etfKeys.has(key)
+    || (key === 'basis' && (value === 'equity-exposure' || value === 'fund-assets')))) return true;
+  return fields.every(([key, value]) => {
+    if (fundKeys.has(key) || key === 'symbol' || key === 'ticker') return value === source.fund;
+    switch (key) {
+      case 'etfkind': case 'exposurekind': return value === 'holdings';
+      case 'basis': case 'weightbasis': return value === 'fund-assets';
+      case 'unit': case 'weightunit': return value === 'fraction' || value === 'fractional' || value === 'ratio';
+      case 'holdingscoverage': return value === source.coverage;
+      case 'asof': return value === source.as_of;
+      case 'retrievedat': return utcTimestamp(value) && stampKey(value) === stampKey(source.retrieved_at);
+      case 'currency': return true; // Currency denomination does not determine the unit of a weight.
+      default: return false;
+    }
+  });
 }
 
 function matches(source: EtfHierarchySource, params: Readonly<Record<string, string>>, mirror: boolean): boolean {
