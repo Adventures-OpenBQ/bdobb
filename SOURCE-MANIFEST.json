@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "f130f1d31834858e83f70f164a16326a4c63b2f4",
-  "sourceId": "5f60cc21a5329b8fbd05ffc5975b7cf09ebbe60e0a5243675f3ab75ecea66114",
+  "baseCommit": "4957284e364a7983059a89766bab5671353d093a",
+  "sourceId": "30bb6bd5bf529bfdc7a430a3b8b067c15d06288b51e696c75b3bde384177f1b3",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "b6ddd0a937355ed3a890b29eb8615161e5e728b204867c0ced646e153e6e6b8f"
+      "sha256": "e924810cb7f4084f2347e52159d628ea5b423cf9a07a9854a82a8cfe38bf5de6"
     },
     {
       "path": "source_bundle.py",
@@ -7874,15 +7874,15 @@
       "path": "src/lib/dataClient.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 47110,
-      "sha256": "2dd6b97eaed7cf725d8862f164c893dea68c2a569ca80602ac69cec6a8f26f25"
+      "size": 48283,
+      "sha256": "6feddb37e7ed265253ab35820b0797c8c653dd2321e5a78b733fa3303d49715b"
     },
     {
       "path": "src/lib/dataClient.ts",
       "type": "file",
       "mode": 420,
-      "size": 31017,
-      "sha256": "27e93175c66df9b6064080aaf35dfa44a339d26b5523c33851315de099173cf7"
+      "size": 31213,
+      "sha256": "bff358c2178b90a8539f5eb5969a57b74ae698ee5c7160258a47066a3b6b1b72"
     },
     {
       "path": "src/lib/discovery.test.ts",
@@ -8303,6 +8303,20 @@
       "mode": 420,
       "size": 6892,
       "sha256": "8672d9ebc9b97dea6fe8d0feec7619ba4b57beb85250deb3c2b750cc870decd1"
+    },
+    {
+      "path": "src/lib/requestQueue.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1474,
+      "sha256": "cca94e3a2f61153009098a9e83cf917999be172944c1b96fb804ae198c4f9f55"
+    },
+    {
+      "path": "src/lib/requestQueue.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1880,
+      "sha256": "5e8bc5a1f7d341a4fc25bbc0c9ab42c9d71d24e9cbb2b42f95e4cc362a93c9db"
     },
     {
       "path": "src/lib/safeUrl.test.ts",
@@ -8763,8 +8777,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 74199,
-      "sha256": "51c857fca82fbc304757db38fb80d800ff59d04418bb21fe6db91711272e6153"
+      "size": 74583,
+      "sha256": "dab08bc5e4b185f512118038660c239dfc9818fb640e94f4602693a4ad1a731a"
     },
     {
       "path": "src/test/fakeSocket.ts",
