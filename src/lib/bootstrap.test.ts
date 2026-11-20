@@ -29,6 +29,16 @@ import { runStartupPrompt } from "../components/runWorkspaceSync";
 import { useWorkspaceSyncStore } from "../stores/workspaceSyncStore";
 import { bootstrap } from "./bootstrap";
 
+// Zustand copies action references when replacing state. Vitest 4 restores
+// the property originally spied on, but a later state object can still hold
+// that spy. Restore real actions explicitly before each independent boot.
+const originalLoads = {
+  settings: useSettingsStore.getState().load,
+  backends: useBackendsStore.getState().load,
+  dashboards: useDashboardStore.getState().load,
+  folders: useFoldersStore.getState().load,
+};
+
 /** A minimal dashboard file, as loadDashboards expects to find it. */
 function dashboardFile(id: string, name: string): string {
   return JSON.stringify({ id, name, tabs: [{ id: `${id}-t1`, name: "Main", cards: [] }] });
@@ -38,15 +48,17 @@ beforeEach(() => {
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
-  useBackendsStore.setState({ backends: [], statuses: {}, issues: {} });
+  useSettingsStore.setState({ load: originalLoads.settings });
+  useBackendsStore.setState({ backends: [], statuses: {}, issues: {}, load: originalLoads.backends });
   useDashboardStore.setState({
     dashboards: [],
     activeId: null,
     previousId: null,
     activeTabId: null,
     viewer: false,
+    load: originalLoads.dashboards,
   });
-  useFoldersStore.setState(makeEmptyFolders());
+  useFoldersStore.setState({ ...makeEmptyFolders(), load: originalLoads.folders });
   vi.mocked(runStartupPrompt).mockClear();
   vi.mocked(startDashboardAutoUpload).mockClear();
   useWorkspaceSyncStore.setState({ links: [], tombstones: [] });

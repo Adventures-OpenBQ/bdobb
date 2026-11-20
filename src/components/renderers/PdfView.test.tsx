@@ -257,6 +257,9 @@ describe("PdfView", () => {
     // AnnotationEditorType.DISABLE: no editor UI manager, no document-level
     // drop/keydown listeners.
     expect(vw.state.viewerOptions.annotationEditorMode).toBe(-1);
+    // PDFViewer enables scripting only when a manager is supplied. Cards
+    // deliberately omit it; enableScripting is a getter, not an option.
+    expect(vw.state.viewerOptions.scriptingManager).toBeUndefined();
     // LinkTarget.NONE: no `target` attribute on any anchor pdf.js builds.
     expect(vw.state.linkOptions.externalLinkTarget).toBe(0);
     expect(vw.state.findOptions.linkService).toBe(vw.state.viewerOptions.linkService);
