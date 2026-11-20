@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { dashboardSeed, openRail, read, seedApp } from './fixtures';
-import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters, refuseQueuedChartApplyAfterResize } from './fixtures/chart-recipes';
 import { chooseReturnSource, closes, dropFile, placeholder, prepareReturns, returnChart, returnRecipe, returnSnapshot, sampleName, workspace } from './fixtures/return-summary';
 
 type Axis = { _offset: number; range: number[]; tickvals?: number[]; c2p: (coordinate: number) => number };
@@ -107,6 +107,7 @@ test('uses the same drawing dimensions to validate a draft and draws shared dens
   await expect(boxes(graph)).toHaveCount(2);
   await widget.getByLabel('Start date').fill('2026-01-01');
   await expect(apply(widget)).toBeEnabled();
+  await refuseQueuedChartApplyAfterResize(page, widget, widget.locator('.return-summary-draft-probe .chart-plot'));
   await apply(widget).click();
   const paths = graph.locator('.scatterlayer path.js-fill');
   await expect(paths).toHaveCount(2);

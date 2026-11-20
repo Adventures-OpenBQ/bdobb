@@ -15,7 +15,7 @@ import type { DualAxisOverlayOptions, RecipeContext } from '../../lib/widgetData
 import { dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import type { DatasetColumn } from '../../lib/widgetData/types';
 import { ChartRenderer } from './ChartRenderer';
-import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe,
+import { recipeErrorText, retainsStaleMeasuredRecipe, useMeasuredRecipe,
   useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
 import { createPortal } from 'react-dom';
 import { OpenLinkedParameters } from './LinkedParametersPortal';
@@ -158,11 +158,10 @@ export function LinkedDualAxisOverlay({ view, job, options, context, parentRepor
 }) {
   const surface = useMeasuredRecipeSurface(context);
   const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
-  const pending = view.status === 'pending' || view.status === 'updating';
-  const retained = completed?.result.ok && view.stale && (pending || view.status === 'blocked' || view.status === 'failed')
-    && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained || remeasuring ? completed?.result : checked;
-  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
+  const retained = retainsStaleMeasuredRecipe(completed, view, options, context);
+  const keepDrawing = retained || remeasuring;
+  const result = keepDrawing ? completed?.result : checked;
+  const drawing = (keepDrawing ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.overlay ? result : undefined;
   const pair = output?.overlay;
   const leftUnit = pair?.left.fact.unit, rightUnit = pair?.right.fact.unit;
@@ -171,11 +170,10 @@ export function LinkedDualAxisOverlay({ view, job, options, context, parentRepor
   const drawable = useMemo(() => {
     if (!output || !drawing) return;
     const box = drawing;
-    if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     return { ...output.figure, layout: {
       ...output.figure.layout, width: Math.round(box.width), height: Math.round(box.height), autosize: false,
     } };
-  }, [output, drawing, retained, completed]);
+  }, [output, drawing]);
   return <>
     <div className="linked-chart-status">
       {retained && <p role="status">Showing completed data (stale).</p>}
@@ -188,7 +186,7 @@ export function LinkedDualAxisOverlay({ view, job, options, context, parentRepor
     {pair && <OverlayObservations pair={pair}/>}
     <div className="linked-chart-plot linked-chart-plot--overlay" ref={surface.element}>
       <ChartRenderer data={drawable} uirevision={output?.revision} scrollHeight={dualAxisOverlayMinPlotHeight}
-        minPlotWidth={dualAxisOverlayMinPlotWidth} onDrawingSurfaceChange={surface.observe} touchScroll="overflow"
+        minPlotWidth={dualAxisOverlayMinPlotWidth} onDrawingSurfaceChange={surface.observe} retainedSurface={retained ? drawing : undefined} touchScroll="overflow"
         formatYAxisTicks={formatLeft} formatSecondYAxisTicks={formatRight} preserveCartesianZoom/>
     </div>
   </>;

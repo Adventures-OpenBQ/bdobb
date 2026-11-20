@@ -64,6 +64,17 @@ type Measured = { box: DrawingSurface; context: RecipeContext; baseContext: Reci
 type Sequence<T> = { job: MeasuredRecipeJob<T>; options: T };
 type Request<T> = Sequence<T> & { measured: Measured };
 
+type Completed<T> = { request: Request<T>; result: RecipeResult };
+
+export function retainsStaleMeasuredRecipe<T extends RecipeOptions>(
+  completed: Completed<T> | undefined, view: ViewState, options: T, context: RecipeContext,
+) {
+  return completed?.result.ok === true && completed.request.options === options
+    && completed.request.measured.baseContext === context && view.stale
+    && (view.status === 'pending' || view.status === 'updating' || view.status === 'blocked' || view.status === 'failed')
+    && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
+}
+
 export function useMeasuredRecipeSurface(context: RecipeContext) {
   const element = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<DrawingSurface>();
@@ -97,7 +108,7 @@ export function useMeasuredRecipe<T extends RecipeOptions>(job: MeasuredRecipeJo
   }, [request]);
   const current = useCallback(() => Boolean(request && committedRequest.current === request
     && request.job.current() && matches(request.measured.box)), [request, matches]);
-  const [completed, setCompleted] = useState<{ request: Request<T>; result: RecipeResult }>();
+  const [completed, setCompleted] = useState<Completed<T>>();
   // A sizing reply belongs to the calculation, while each reply still has to
   // arrive for the exact current measurement. Remeasuring must retain the hint.
   const [sizing, setSizing] = useState<{ sequence: Sequence<T>; minimum: EstimateRevisionsSurface }>();

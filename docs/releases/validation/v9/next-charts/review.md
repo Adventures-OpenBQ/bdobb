@@ -51,3 +51,6 @@ Client `94e58600` retires the prior backend request when a different explicit Ru
 The approved baseline is `4669b763`. Regression tests first found visible controls on closed linked chart cards and an empty Parameters region in the viewer. Browser checks also found an applied ETF plot and expanded holdings remounting during a geometry change. The chart now keeps its admitted drawing at the original measured dimensions during a same-source, same-settings recheck. The exact new size still needs worker admission before a redraw or Apply.
 
 The amendment's scoped independent review and the final whole-group review are pending.
+
+
+The first scoped Parameters review found three Important issues. A same-source stale plot disappeared when the panel changed body dimensions. News could Apply at zero width and three recipe families could save after their drawing size changed while queued. A basic chart could omit its Parameters repair action when it retained an old plot or its selected series were filtered out. The follow-up addresses these three findings. Scoped re-review and final whole-group review remain pending.

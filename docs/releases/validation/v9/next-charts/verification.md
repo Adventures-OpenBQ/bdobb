@@ -77,7 +77,7 @@ The saved captures show the original return-density hover, per-day news score, i
 
 The native compilation, Rust core and packaging counts come from the original paired product gate. The backend correction changed the client request handoff. The full-client runs include the production WASM verification step and browser execution with the compiled Rust engine.
 
-## Linked Parameters candidate
+## Linked Parameters implementation at `caf36e08`
 
 Implementation baseline `4669b763`. The existing panel contains the linked chart and KPI settings and source picker. The eight portable manifests import with the panel closed. Opening a card shows a single Parameters region, moves focus into it and retains the same chart question and acquired data. The existing native flag persists an open panel. The source-picker case for linked tables and the ordinary parameter form still use their established controls.
 
@@ -93,9 +93,15 @@ Implementation baseline `4669b763`. The existing panel contains the linked chart
 
 The unit and browser regressions cover draft retention, an unchanged source request count and question revision, repair when closed and current measurement before Apply. ETF opened at a smaller measured height and closed at its original height while retaining the same Plotly element and expanded holdings. The narrower revision case kept its exact 379 by 230 drawing after the toggle and rechecked the 320 by 352 rank surface. React keeps the editor mounted through panel toggles. The body keeps the measurement probes, source and chart status, original values and runtime chart navigation. The inspected light, dark and narrow captures show the panel closed and open across all eight families. The touch-only Sankey fixture uses a shorter card to preserve real plot overflow and the original swipe and tap checks after the control relocation. Provider and Docker qualification uses the prior accepted heads.
 
+## Scoped Parameters review correction
+
+The follow-up passed 499 tests in five affected files, plus typecheck, lint and scrub. The 13 added parent cases cover stale figures in ETF, overlay, revisions and market map, zero width and a detached news probe, queued geometry changes, and both basic-chart repair diagnoses. The queued tests also accept a save when the measured geometry stays the same after closing the panel.
+
+The seven selected Chromium cases passed on each table engine. A real ETF refresh remained in flight while the panel reduced the visible height. The admitted drawing kept its exact size, the same Plotly node and the expanded holdings. The failed refresh kept one diagnostic and a scrollable plot. Relinking retired that node. News, return and ownership also exercised a delayed store commit after a real viewport resize. After the final uncapped width check was added, the news case passed a further rerun on each engine. The full-client and bundle figures above and below remain attributed to the earlier Parameters implementation.
+
 ## Bundle cost
 
-Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The Parameters candidate contains 15 assets. The Parameters change adds 2,991 raw and 1,192 gzip bytes relative to the previous measured paired candidate.
+Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The measured Parameters implementation at `caf36e08` contains 15 assets. The Parameters change adds 2,991 raw and 1,192 gzip bytes relative to the previous measured paired candidate.
 
 | JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
 |---|---:|---:|---:|

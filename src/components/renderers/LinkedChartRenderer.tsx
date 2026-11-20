@@ -157,19 +157,28 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
         return [...new Set(values)].sort();
     }, [chartChoicesInput]);
     const [draftWidth, setDraftWidth] = useState<number>();
+    const newsDraftProbe = useRef<HTMLDivElement | null>(null);
+    const readNewsDraftWidth = useCallback(() => {
+        const width = newsDraftProbe.current?.clientWidth;
+        return width || undefined;
+    }, []);
     const observeNewsDraftWidth = useCallback((viewport: HTMLDivElement | null) => {
         if (!viewport) return;
-        const measure = () => {
-            if (viewport.clientWidth > 0) setDraftWidth(Math.min(viewport.clientWidth, 10_000));
-        };
+        newsDraftProbe.current = viewport;
+        const measure = () => setDraftWidth(readNewsDraftWidth());
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(viewport);
-        return () => observer.disconnect();
-    }, []);
+        return () => {
+            observer.disconnect();
+            newsDraftProbe.current = null;
+            setDraftWidth(undefined);
+        };
+    }, [readNewsDraftWidth]);
     const today = todayLocal();
+    const matchesNewsDraftWidth = () => draftWidth !== undefined && readNewsDraftWidth() === draftWidth;
     const newsDraftContext = useMemo<RecipeContext | undefined>(() => draftWidth === undefined
-        ? undefined : { theme, maxDecimals, today, viewportWidth: draftWidth }, [theme, maxDecimals, today, draftWidth]);
+        ? undefined : { theme, maxDecimals, today, viewportWidth: Math.min(draftWidth, 10_000) }, [theme, maxDecimals, today, draftWidth]);
     const measuredDraftContext = useMemo<RecipeContext>(() => ({ theme, maxDecimals, today }), [theme, maxDecimals, today]);
     const etfForm = editing === 'etf-sunburst';
     const etfChart = settings.type === 'etf-sunburst';
@@ -346,10 +355,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
-    function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions) {
+    function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions, matchesDrawing?: () => boolean) {
         const stillCurrent = () => {
             const current = readAcquiredSource();
-            return !!source && current.sourceCurrent && current.executor === executor && current.view.ready === view.ready
+            return matchesDrawing?.() === true && !!source && current.sourceCurrent
+                && current.executor === executor && current.view.ready === view.ready
                 && !!current.view.sourceRevision && !!view.sourceRevision
                 && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
                 && JSON.stringify(current.card?.linkedChart) === JSON.stringify(settings);
@@ -375,8 +385,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     // Draft probes measure this drawing body even while their settings are hidden.
     const [probeTarget, setProbeTarget] = useState<HTMLDivElement | null>(null);
     const openRepair = viewer ? undefined : onOpenParameters;
-    const needsFieldRepair = legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused
-        && view.status !== 'pending' && view.status !== 'updating';
+    const needsFieldRepair = legacy && (error || refused || noMatches
+        || (!figure && !(carried && view.error) && view.status !== 'pending' && view.status !== 'updating'));
     return <div ref={setProbeTarget} className={'linked-chart-renderer'
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
@@ -415,11 +425,11 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
-        loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext}
+        loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} matchesNewsDraftWidth={matchesNewsDraftWidth}
         loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={options => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
-          ? applyAcquired(options) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
+        onApply={(options, matchesDrawing) => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
+          ? applyAcquired(options, matchesDrawing) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}
@@ -435,7 +445,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     {legacy && noMatches ? <p role="status">No selected series match the current filter.</p> : null}
     {legacy && refused ? <p role="status">{refused}</p> : null}
     {legacy && !figure && !error && !(carried && view.error) && !noMatches && !refused ? <p role="status">{carried && source && (view.sourceRevision?.widgetId !== source || view.status === 'pending' || view.status === 'updating') ? `Loading source ${source}…` : view.status === 'pending' ? 'Loading…' : 'Choose chart fields'}</p> : null}
-    {(needsFieldRepair || (legacy && (error || refused) && !figure) || (recipe && !recipe.ok)) &&
+    {(needsFieldRepair || (recipe && !recipe.ok)) &&
       <OpenLinkedParameters onOpen={openRepair}/>}
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>

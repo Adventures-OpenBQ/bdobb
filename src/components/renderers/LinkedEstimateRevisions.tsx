@@ -17,7 +17,7 @@ import type { EstimateRevisionsOptions, EstimateRevisionsSurface, RecipeContext 
 import { estimateRevisionMinPlotHeight, estimateRevisionMinPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import type { DatasetColumn } from '../../lib/widgetData/types';
 import { ChartRenderer } from './ChartRenderer';
-import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
+import { recipeErrorText, retainsStaleMeasuredRecipe, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
 import { createPortal } from 'react-dom';
 import { OpenLinkedParameters } from './LinkedParametersPortal';
 
@@ -230,22 +230,20 @@ export function LinkedEstimateRevisions({ view, job, options, context, parentRep
 }) {
   const surface = useMeasuredRecipeSurface(context);
   const { completed, checked, remeasuring, minimum } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
-  const retained = completed?.result.ok && completed.request.options === options && view.stale
-    && (view.status === 'pending' || view.status === 'updating' || view.status === 'blocked' || view.status === 'failed')
-    && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained || remeasuring ? completed?.result : checked;
-  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
+  const retained = retainsStaleMeasuredRecipe(completed, view, options, context);
+  const keepDrawing = retained || remeasuring;
+  const result = keepDrawing ? completed?.result : checked;
+  const drawing = (keepDrawing ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.estimateRevisions ? result : undefined;
   const hint = retained ? output?.estimateRevisionsSurface : minimum;
   const resizing = result && !result.ok && result.estimateRevisionsSurface;
   const drawable = useMemo(() => {
     if (!output || !drawing) return;
     const box = drawing;
-    if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     return { ...output.figure, layout: {
       ...output.figure.layout, width: Math.round(box.width), height: Math.round(box.height), autosize: false,
     } };
-  }, [output, drawing, retained, completed]);
+  }, [output, drawing]);
   return <>
     <div className="linked-chart-status">
       {retained && <p role="status">Showing completed data (stale).</p>}
@@ -258,7 +256,7 @@ export function LinkedEstimateRevisions({ view, job, options, context, parentRep
     {output?.estimateRevisions && <EstimateObservations data={output.estimateRevisions}/>}
     <div className="linked-chart-plot linked-chart-plot--revisions" ref={surface.element}>
       <ChartRenderer data={drawable} uirevision={output?.revision} {...estimateSurface(options.vintages.length, hint)}
-        onDrawingSurfaceChange={surface.observe} touchScroll="overflow" preserveCartesianZoom
+        onDrawingSurfaceChange={surface.observe} retainedSurface={retained ? drawing : undefined} touchScroll="overflow" preserveCartesianZoom
         formatYAxisTicks={options.view === 'bump' ? undefined : formatLinearTicks}/>
     </div>
   </>;

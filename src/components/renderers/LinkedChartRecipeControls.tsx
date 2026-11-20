@@ -117,13 +117,25 @@ function useAcquiredInput(load: LoadAcquiredInput | undefined) {
   return read?.load === load ? read : undefined;
 }
 
-export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext,
+function readDraftSurface(probe: HTMLDivElement | null) {
+  const element = probe?.querySelector('.chart-plot');
+  if (!element) return;
+  const size = readDrawingSurface(element);
+  if (size.width > 0 && size.height > 0) return size;
+}
+
+function matchesDraftSurface(probe: HTMLDivElement | null, admitted: DrawingSurface) {
+  const live = readDraftSurface(probe);
+  return live?.width === admitted.width && live.height === admitted.height;
+}
+
+export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext, matchesNewsDraftWidth,
   loadReturnListings, loadReturnDraft, returnDraftContext, probeTarget, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
   loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadAcquiredInput;
-  loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext;
+  loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext; matchesNewsDraftWidth?: () => boolean;
   loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
-  probeTarget?: HTMLElement | null; disabled: boolean; onApply: (options: RecipeOptions) => void;
+  probeTarget?: HTMLElement | null; disabled: boolean; onApply: (options: RecipeOptions, matchesDrawing?: () => boolean) => void;
 }) {
   const draftWorker = useRef<DraftWorker | undefined>(undefined);
   useEffect(() => () => { draftWorker.current?.dispose(); draftWorker.current = undefined; }, []);
@@ -366,15 +378,19 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     <button type="button" disabled={!!problem || checkingDraft} aria-busy={announcingDraftCheck || undefined}
       onClick={() => {
         if (problem || checkingDraft || !decoded.ok) return;
+        if (news) {
+          if (matchesNewsDraftWidth?.()) onApply(decoded.options, matchesNewsDraftWidth);
+          return;
+        }
         if (returns) {
-          const surface = returnProbe.current?.querySelector('.chart-plot');
-          if (!surface) return;
-          const size = readDrawingSurface(surface);
-          if (size.width <= 0 || size.height <= 0) return;
+          const size = readDraftSurface(returnProbe.current);
+          if (!size) return;
           if (size.width !== returnSize?.width || size.height !== returnSize?.height) {
             measureReturn(size);
             return;
           }
+          onApply(decoded.options, () => matchesDraftSurface(returnProbe.current, size));
+          return;
         }
         onApply(decoded.options);
       }}>Apply chart settings</button>
@@ -384,7 +400,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
 export function OwnershipRecipeControls({ probeTarget, saved, columns, loadInput, loadDraft, context, disabled, onApply }: {
   probeTarget: HTMLElement | null; saved?: OwnershipSnapshotOptions; columns: DatasetColumn[]; loadInput: LoadAcquiredInput;
   loadDraft: LoadDraft<OwnershipSnapshotOptions>; context: RecipeContext;
-  disabled: boolean; onApply: (options: OwnershipSnapshotOptions) => void;
+  disabled: boolean; onApply: (options: OwnershipSnapshotOptions, matchesDrawing: () => boolean) => void;
 }) {
   const [view, setView] = useState(saved?.view ?? 'bars');
   const [selectedIssuer, setSelectedIssuer] = useState(saved?.issuer);
@@ -463,15 +479,13 @@ export function OwnershipRecipeControls({ probeTarget, saved, columns, loadInput
     {checking && <span className="sr-only" role="status">Checking ownership draft…</span>}
     <button type="button" disabled={!checked?.ok} aria-busy={checking || undefined} onClick={() => {
       if (disabled || !candidate || !checked?.ok) return;
-      const surface = probe.current?.querySelector('.chart-plot');
-      if (!surface) return;
-      const measured = readDrawingSurface(surface);
-      if (measured.width <= 0 || measured.height <= 0) return;
+      const measured = readDraftSurface(probe.current);
+      if (!measured) return;
       if (measured.width !== size?.width || measured.height !== size?.height) {
         measure(measured);
         return;
       }
-      onApply(candidate);
+      onApply(candidate, () => matchesDraftSurface(probe.current, measured));
     }}>Apply chart settings</button>
   </fieldset>;
 }

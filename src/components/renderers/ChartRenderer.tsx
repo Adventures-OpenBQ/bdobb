@@ -121,6 +121,7 @@ export function ChartRenderer({
   onViewportWidthChange,
   minPlotWidth,
   onDrawingSurfaceChange,
+  retainedSurface,
   formatYAxisTicks,
   formatSecondYAxisTicks,
   preserveCartesianZoom,
@@ -140,6 +141,8 @@ export function ChartRenderer({
   minPlotWidth?: number;
   /** Measure the actual drawing surface after minimum dimensions and scrollbar gutters. */
   onDrawingSurfaceChange?: (size: DrawingSurface) => void;
+  /** An admitted figure may outsize its viewport while its source is stale. */
+  retainedSurface?: DrawingSurface;
   formatYAxisTicks?: AxisTickFormatter;
   formatSecondYAxisTicks?: AxisTickFormatter;
   preserveCartesianZoom?: boolean;
@@ -247,8 +250,10 @@ export function ChartRenderer({
       if (measureOverflow) {
         // An old Plotly SVG can still overflow while the CSS surface is
         // shrinking. Its DOM overflow may settle without another resize event.
-        const requiredHeight = (onDrawingSurfaceChange ? surface?.clientHeight : scrollHeight) ?? 0;
-        const requiredWidth = onDrawingSurfaceChange ? surface?.clientWidth ?? 0 : viewport.clientWidth;
+        const requiredHeight = Math.max(retainedSurface?.height ?? 0,
+          (onDrawingSurfaceChange ? surface?.clientHeight : scrollHeight) ?? 0);
+        const requiredWidth = Math.max(retainedSurface?.width ?? 0,
+          onDrawingSurfaceChange ? surface?.clientWidth ?? 0 : viewport.clientWidth);
         setOverflows(hasPlot && (requiredHeight > viewport.clientHeight || requiredWidth > viewport.clientWidth));
       }
       if (viewport.clientWidth > 0) onViewportWidthChange?.(viewport.clientWidth);
@@ -267,7 +272,7 @@ export function ChartRenderer({
     // Plot height changes when the watchlist reflows, even if its viewport stays the same size.
     if (surface && (hasPlot || onDrawingSurfaceChange)) observer.observe(surface);
     return () => observer.disconnect();
-  }, [hasPlot, measureOverflow, onDrawingSurfaceChange, onViewportWidthChange, scrollHeight]);
+  }, [hasPlot, measureOverflow, onDrawingSurfaceChange, onViewportWidthChange, retainedSurface, scrollHeight]);
   useEffect(() => {
     const el = node.current;
     const figure = draw.figure;

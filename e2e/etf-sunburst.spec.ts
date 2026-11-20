@@ -253,3 +253,53 @@ test('inspects a wedge on a real touch viewport and uses handled sector navigati
     await widget.screenshot({ path: info.outputPath('etf-dark-narrow.png') });
   } finally { await context.close(); }
 });
+
+test('keeps a pending and failed ETF refresh at the admitted size through Parameters toggles', async ({ page }) => {
+  await page.setViewportSize({ width: 1010, height: 1070 });
+  const acquisitions = await prepareEtf(page, { backend: true, options: recipe });
+  const widget = card(page, chartName), graph = plot(page, chartName);
+  const before = await drawing(widget);
+  const original = await graph.elementHandle();
+  await widget.getByText('ETF holdings details', { exact: true }).click();
+  await expect(holdings(widget)).toContainText('AAPL.US');
+  const acquired = acquisitions.length;
+  let fail!: () => void;
+  const refresh = new Promise<void>(resolve => { fail = resolve; });
+  let requests = 0;
+  await page.route(url => url.origin === backendOrigin && url.pathname === backendPath, async route => {
+    requests++;
+    await refresh;
+    await route.fulfill({ status: 500, json: { detail: 'Holdings refresh failed' }, headers: { 'Access-Control-Allow-Origin': '*' } });
+  });
+  try {
+    await card(page, 'Fictional ETF holdings').getByRole('button', { name: 'Refresh' }).click();
+    await expect(widget.getByText('Showing completed data (stale).', { exact: true })).toBeVisible();
+    const viewport = widget.locator('.linked-chart-plot--etf .chart-scroll-viewport');
+    const exactDrawing = () => graph.evaluate(node => {
+      const { width, height, uirevision } = (node as HTMLElement & { _fullLayout: { width: number; height: number; uirevision: string } })._fullLayout;
+      return { layout: [width, height], revision: uirevision };
+    });
+    const admitted = { layout: before.layout, revision: before.revision };
+    await openParameters(widget);
+    await expect.poll(() => viewport.evaluate(node => node.clientHeight)).toBeLessThan(before.css[1]);
+    await expect.poll(exactDrawing).toEqual(admitted);
+    expect(await graph.evaluate((node, previous) => node === previous, original)).toBe(true);
+    fail();
+    await expect(widget.getByRole('alert')).toContainText('Holdings refresh failed');
+    await widget.getByRole('button', { name: 'Hide parameters' }).click();
+    await openParameters(widget);
+    await expect.poll(exactDrawing).toEqual(admitted);
+    expect(await graph.evaluate((node, previous) => node === previous, original)).toBe(true);
+    await viewport.evaluate(element => { element.scrollTop = 20; });
+    await expect.poll(() => viewport.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
+    await expect(holdings(widget)).toContainText('AAPL.US');
+    expect(requests).toBe(1);
+    expect(acquisitions).toHaveLength(acquired);
+
+    await dropFile(page, 'different-holdings.json', JSON.stringify(snapshot({ weights: [.125, .125, .0625, 0] })));
+    await chooseEtfSource(page, 'different-holdings.json');
+    await expect(widget).toContainText('31.25% of fund assets');
+    expect(await graph.evaluate((node, previous) => node === previous, original)).toBe(false);
+    await expect(widget.getByText('Showing completed data (stale).', { exact: true })).toHaveCount(0);
+  } finally { fail(); }
+});

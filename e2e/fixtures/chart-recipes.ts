@@ -53,6 +53,44 @@ export async function captureParameters(widget: Locator, field: string, outputPa
   await expect(graph).toBeVisible();
 }
 
+export async function refuseQueuedChartApplyAfterResize(page: Page, widget: Locator, probe: Locator) {
+  const apply = widget.getByRole('button', { name: 'Apply chart settings', exact: true });
+  await expect(apply).toBeEnabled();
+  const width = (await probe.boundingBox())!.width;
+  const initial = page.viewportSize()!;
+  type Gate = Window & { releaseChartSave?: () => void };
+  await page.evaluate(async (storePath) => {
+    const { useDashboardStore }: typeof import('../../src/stores/dashboardStore') = await import(storePath);
+    const commit = useDashboardStore.getState().commitLinkedChartSettings;
+    const gate = window as Gate;
+    const pending = new Promise<void>(resolve => { gate.releaseChartSave = resolve; });
+    useDashboardStore.setState({
+      commitLinkedChartSettings: async (...args) => {
+        useDashboardStore.setState({ commitLinkedChartSettings: commit });
+        await pending;
+        return commit(...args);
+      },
+    });
+  }, '/src/stores/dashboardStore.ts');
+  try {
+    await apply.click();
+    await expect(apply).toBeDisabled();
+    await page.setViewportSize({ width: initial.width - 120, height: initial.height });
+    await expect.poll(async () => (await probe.boundingBox())!.width).toBeLessThan(width);
+    await page.evaluate(() => (window as Gate).releaseChartSave?.());
+    await expect(widget.getByRole('alert')).toContainText('source or drawing size changed');
+  } finally {
+    await page.evaluate(() => {
+      const gate = window as Gate;
+      gate.releaseChartSave?.();
+      delete gate.releaseChartSave;
+    });
+    await page.setViewportSize(initial);
+  }
+  await expect.poll(async () => (await probe.boundingBox())!.width).toBe(width);
+  await expect(apply).toBeEnabled();
+}
+
 export async function importExample(page: Page, manifest = example) {
   const overrides = new Map<string, { body: string; status?: number; }>();
   await page.route(origin + '/**', route => {

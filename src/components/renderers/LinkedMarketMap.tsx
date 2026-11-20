@@ -13,7 +13,7 @@ import { decodeMarketMapOptions, marketMapFieldOrigins } from '../../lib/widgetD
 import type { MarketMapOptions, RecipeContext } from '../../lib/widgetData/chartRecipes/types';
 import { marketMapMinPlotHeight, marketMapMinPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import { ChartRenderer } from './ChartRenderer';
-import { recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
+import { recipeErrorText, retainsStaleMeasuredRecipe, useMeasuredRecipe, useMeasuredRecipeSurface, type MeasuredRecipeJob } from './useMeasuredRecipe';
 import { createPortal } from 'react-dom';
 import { OpenLinkedParameters } from './LinkedParametersPortal';
 
@@ -150,11 +150,10 @@ export function LinkedMarketMap({ view, job, options, context, parentReportsSour
 }) {
   const surface = useMeasuredRecipeSurface(context);
   const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
-  const retained = completed?.result.ok && completed.request.options === options && view.stale
-    && ['pending', 'updating', 'blocked', 'failed'].includes(view.status)
-    && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained || remeasuring ? completed?.result : checked;
-  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
+  const retained = retainsStaleMeasuredRecipe(completed, view, options, context);
+  const keepDrawing = retained || remeasuring;
+  const result = keepDrawing ? completed?.result : checked;
+  const drawing = (keepDrawing ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok ? result : undefined;
   const map = output?.marketMap;
   const revision = output?.revision;
@@ -170,12 +169,11 @@ export function LinkedMarketMap({ view, job, options, context, parentReportsSour
   const drawable = useMemo(() => {
     if (!output || !drawing) return;
     const box = drawing;
-    if (retained && !sameRecipeSurface(box, completed?.request.measured.box)) return;
     const [trace] = output.figure.data as Record<string, unknown>[];
     return { data: [{ ...trace, level }], layout: {
       ...output.figure.layout, width: box.width, height: box.height, autosize: false,
     } };
-  }, [output, drawing, level, retained, completed]);
+  }, [output, drawing, level]);
 
   return <>
     <div className="linked-chart-status">
@@ -199,7 +197,7 @@ export function LinkedMarketMap({ view, job, options, context, parentReportsSour
     {map && <MarketMapDetails map={map} level={selected}/>}
     <div className="linked-chart-plot linked-chart-plot--market" ref={surface.element}>
       <ChartRenderer data={drawable} uirevision={revision} scrollHeight={marketMapMinPlotHeight} minPlotWidth={marketMapMinPlotWidth}
-        touchScroll="overflow" onDrawingSurfaceChange={surface.observe} onTreemapLevelChange={navigate}/>
+        touchScroll="overflow" onDrawingSurfaceChange={surface.observe} retainedSurface={retained ? drawing : undefined} onTreemapLevelChange={navigate}/>
     </div>
   </>;
 }

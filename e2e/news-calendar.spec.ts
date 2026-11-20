@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters, refuseQueuedChartApplyAfterResize } from './fixtures/chart-recipes';
 import { importNews, newsChart, newsManifest, newsPayload, newsTable, newsWorkspace } from './fixtures/news-calendar';
 
 type Axis = { _offset: number; range: number[]; c2p: (coordinate: number) => number };
@@ -120,6 +120,7 @@ test('keeps the applied window through an incompatible draft, then reacquires a 
   await start.fill('2026-11-15');
   await end.fill('2026-11-18');
   await expect(apply(widget)).toBeEnabled();
+  await refuseQueuedChartApplyAfterResize(page, widget, widget.locator('.news-calendar-width-probe'));
   await apply(widget).click();
   await expect(widget).toContainText('Calendar dates 2026-11-15 to 2026-11-18 UTC, inclusive.');
   expect(acquisitions).toHaveLength(initiallyAcquired);

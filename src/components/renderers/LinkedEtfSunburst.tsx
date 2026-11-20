@@ -13,7 +13,7 @@ import type { EtfSunburstOptions, RecipeContext } from '../../lib/widgetData/cha
 import type { DatasetColumn } from '../../lib/widgetData/types';
 import { ChartRenderer } from './ChartRenderer';
 import {
-  recipeErrorText, sameRecipeRevision, sameRecipeSurface, useMeasuredRecipe, useMeasuredRecipeJob,
+  recipeErrorText, retainsStaleMeasuredRecipe, useMeasuredRecipe, useMeasuredRecipeJob,
   useMeasuredRecipeSurface, type MeasuredRecipeJob,
 } from './useMeasuredRecipe';
 import { createPortal } from 'react-dom';
@@ -164,11 +164,10 @@ export function LinkedEtfSunburst({ view, job, options, sourceId, context, paren
 }) {
   const surface = useMeasuredRecipeSurface(context);
   const { completed, checked, remeasuring } = useMeasuredRecipe(job, options, surface.measured, surface.matches);
-  const pending = view.status === 'pending' || view.status === 'updating';
-  const retained = completed?.result.ok && view.stale && (pending || view.status === 'blocked' || view.status === 'failed')
-    && completed.request.job.ready === view.ready && sameRecipeRevision(view.sourceRevision, completed.request.job.revision);
-  const result = retained || remeasuring ? completed?.result : checked;
-  const drawing = (remeasuring ? completed?.request.measured : surface.measured)?.box;
+  const retained = retainsStaleMeasuredRecipe(completed, view, options, context);
+  const keepDrawing = retained || remeasuring;
+  const result = keepDrawing ? completed?.result : checked;
+  const drawing = (keepDrawing ? completed?.request.measured : surface.measured)?.box;
   const output = result?.ok && result.etfHierarchy ? result : undefined;
   const hierarchy = output?.etfHierarchy;
   const [drill, setDrill] = useState<{ revision: string; id: string }>();
@@ -182,14 +181,11 @@ export function LinkedEtfSunburst({ view, job, options, sourceId, context, paren
   const drawable = useMemo(() => {
     if (!output?.figure.data.length || !drawing) return;
     const { width, height } = drawing;
-    // During a stale refresh keep the last admitted geometry only at its
-    // verified dimensions. A new CSS size needs a new current worker result.
-    if (retained && !sameRecipeSurface(drawing, completed?.request.measured.box)) return;
     const [trace] = output.figure.data as Record<string, unknown>[];
     return { data: [{ ...trace, level }], layout: {
       ...output.figure.layout, width: Math.round(width), height: Math.round(height), autosize: false,
     } };
-  }, [output, drawing, level, retained, completed]);
+  }, [output, drawing, level]);
 
   return <>
     <div className="linked-chart-status">
@@ -215,7 +211,7 @@ export function LinkedEtfSunburst({ view, job, options, sourceId, context, paren
     {hierarchy && <EtfDetails hierarchy={hierarchy} level={level}/>}
     <div className="linked-chart-plot linked-chart-plot--etf" ref={surface.element}>
       <ChartRenderer data={drawable} uirevision={revision} scrollHeight={plotHeight} minPlotWidth={plotWidth}
-        onDrawingSurfaceChange={surface.observe} touchScroll="overflow" onSunburstLevelChange={navigate}/>
+        onDrawingSurfaceChange={surface.observe} retainedSurface={retained ? drawing : undefined} touchScroll="overflow" onSunburstLevelChange={navigate}/>
     </div>
   </>;
 }

@@ -3,7 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
-import { card, plot, captureParameters, openParameters } from './fixtures/chart-recipes';
+import { card, plot, captureParameters, openParameters, refuseQueuedChartApplyAfterResize } from './fixtures/chart-recipes';
 import { dropFile } from './fixtures/return-summary';
 import {
   attachPartition, backendOrigin, backendPath, backendPayload, backendTable, bars, chartName, chooseOwnershipSource,
@@ -114,6 +114,7 @@ test('defaults to independently labeled bars and exports a backend question that
   await expect(widget.getByLabel('Insider ownership')).toHaveValue('percent_insiders');
   await expect(widget.getByLabel('Institutional ownership')).toHaveValue('percent_institutions');
   await expect(widget.getByLabel('Free float')).toHaveCount(0);
+  await refuseQueuedChartApplyAfterResize(page, widget, widget.locator('.ownership-draft-probe .chart-plot'));
   await apply(widget).click();
   await expect(barsDrawn(graph)).toHaveCount(2);
   await widget.getByRole('button', { name: 'Hide parameters' }).click();

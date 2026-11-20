@@ -368,9 +368,9 @@ function installDashboard(dashboard: Dashboard) {
 function riskDashboard(cards: DashboardCard[]) {
   return { id: 'd', name: 'Analysis', tabs: [{ id: 't', name: 'Main', cards }] };
 }
-function LiveRiskChart() {
+function LiveRiskChart({ viewer = false }: { viewer?: boolean }) {
   const current = useDashboardStore(s => s.dashboards[0].tabs[0].cards.find(c => c.widgetId === 'linked_chart')!);
-  return <><TableExecutionRuntime /><WidgetCard card={current} onRemove={() => {}} /></>;
+  return <><TableExecutionRuntime /><WidgetCard card={current} viewer={viewer} onRemove={() => {}} /></>;
 }
 function riskRuntime() {
   vi.stubGlobal('Worker', Boundary);
@@ -2871,4 +2871,197 @@ it.each([calendarOptions, returnOptions, ownershipOptions])('retires $kind when 
     expect(screen.getByTestId('chart-plot')).toBeVisible();
     expect(screen.getAllByText(/showing completed data \(stale\)/i)).toHaveLength(1);
   } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it.each([
+  { recipe: etfOptions, details: 'ETF holdings details', acquire: (id: string) => etfSource(id, .27) },
+  { recipe: overlayOptions, details: 'Overlay observations', acquire: (id: string) => overlaySource(id, 310) },
+  { recipe: revisionSlope, details: 'Estimate revision observations', acquire: (id: string) => estimateHistorySource(id, revisionHistory([[10, null, 12]])) },
+  { recipe: capMap, details: 'Market map details', acquire: (id: string) => estimateHistorySource(id, marketSession()) },
+])('keeps stale $recipe.kind at the admitted size while Parameters toggles', async ({ recipe, details, acquire }) => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await acquire('A'), b = await acquire('B');
+  installDashboard(riskDashboard([a, b, riskChart(recipe)]));
+  const readFile = fs.readFile;
+  let rejectRefresh!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+  const read = vi.spyOn(fs, 'readFile');
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const draw = vi.mocked(renderPlot);
+    const admitted = draw.mock.lastCall!;
+    const summary = screen.getByText(details, { exact: true });
+    fireEvent.click(summary);
+    const requests = run.mock.calls.length;
+    read.mockImplementation((path, options) => path === 'files/' + a.params.file ? held : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    openParameters();
+    act(() => resize(660, 310));
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(draw.mock.lastCall).toEqual(admitted);
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Refresh failed');
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    act(() => resize(850, 390));
+    openParameters();
+    act(() => resize(660, 310));
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(screen.getByText(details, { exact: true })).toBe(summary);
+    expect(summary.closest('details')).toHaveAttribute('open');
+    expect(draw.mock.lastCall).toEqual(admitted);
+    expect(run).toHaveBeenCalledTimes(requests);
+    read.mockImplementation(readFile);
+    await chooseRiskSource('B');
+    expect(plot).not.toBeInTheDocument();
+    expect(screen.queryByText('Showing completed data (stale).')).toBeNull();
+  } finally { read.mockRestore(); factory.mockRestore(); }
+});
+
+it.each(['before observer', 'after observer'])('rejects a zero-width news draft %s', async timing => {
+  const { factory, resize, setSize } = riskRuntime();
+  const a = await acquiredSource(calendarOptions, 'A');
+  const linkedChart = { type: 'column' as const, category: 'url', measures: ['polarity'], display: 'grouped' as const };
+  installDashboard(riskDashboard([a, { ...riskChart(calendarOptions), linkedChart }]));
+  const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings');
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const parameters = openParameters();
+    fireEvent.change(parameters.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
+    const apply = parameters.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    if (timing === 'before observer') setSize(0);
+    else act(() => resize(0));
+    fireEvent.click(apply);
+    expect(save).not.toHaveBeenCalled();
+    act(() => resize(0));
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    act(() => resize(900));
+    await waitFor(() => expect(apply).toBeEnabled());
+  } finally { save.mockRestore(); factory.mockRestore(); }
+});
+
+it('rejects a queued news draft when its probe unmounts with the source still ready', async () => {
+  const { factory } = riskRuntime();
+  const a = await acquiredSource(calendarOptions, 'A');
+  const linkedChart = { type: 'column' as const, category: 'url', measures: ['polarity'], display: 'grouped' as const };
+  installDashboard(riskDashboard([a, { ...riskChart(calendarOptions), linkedChart }]));
+  const commit = useDashboardStore.getState().commitLinkedChartSettings;
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => { finish = resolve; });
+  const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings').mockImplementationOnce(async (...args) => {
+    await pending;
+    return commit(...args);
+  });
+  try {
+    const { container, rerender } = render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const parameters = openParameters();
+    fireEvent.change(parameters.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
+    const apply = parameters.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+    expect(save).toHaveBeenCalledTimes(1);
+    rerender(<LiveRiskChart viewer/>);
+    expect(container.querySelector('.news-calendar-width-probe')).toBeNull();
+    expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
+    await act(async () => finish());
+    expect(screen.getByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart).toEqual(linkedChart);
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+  } finally { finish(); save.mockRestore(); factory.mockRestore(); }
+});
+
+it.each([
+  { recipe: calendarOptions, category: 'url', measure: 'polarity', initialWidth: 900, changedSize: [800, 430] as const },
+  { recipe: calendarOptions, category: 'url', measure: 'polarity', initialWidth: 10_010, changedSize: [10_020, 430] as const },
+  { recipe: returnOptions, category: 'date', measure: 'adjusted_close', initialWidth: 900, changedSize: [900, 380] as const },
+  { recipe: ownershipOptions, category: 'symbol', measure: 'percent_insiders', initialWidth: 900, changedSize: [900, 380] as const },
+])('fences $recipe.kind queued Apply against the live drawing size from width $initialWidth', async ({ recipe, category, measure, initialWidth, changedSize }) => {
+  const { factory, resize, setSize } = riskRuntime();
+  setSize(initialWidth);
+  const a = await acquiredSource(recipe, 'A');
+  const linkedChart = { type: 'column' as const, category, measures: [measure], display: 'grouped' as const };
+  installDashboard(riskDashboard([a, { ...riskChart(recipe), linkedChart }]));
+  const commit = useDashboardStore.getState().commitLinkedChartSettings;
+  const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings');
+  let finish: (() => void) | undefined;
+  const holdSave = () => {
+    const pending = new Promise<void>(resolve => { finish = resolve; });
+    save.mockImplementationOnce(async (...args) => { await pending; return commit(...args); });
+  };
+  const current = () => useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart;
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    const parameters = openParameters();
+    fireEvent.change(parameters.getByLabelText('Chart type'), { target: { value: recipe.kind } });
+    if (recipe.kind === 'return-summary') fireEvent.click(await parameters.findByRole('checkbox', { name: 'A.US' }));
+    const apply = parameters.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    holdSave();
+    fireEvent.click(apply);
+    expect(save).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    setSize(changedSize[0], changedSize[1]);
+    await act(async () => finish?.());
+    expect(current()).toEqual(linkedChart);
+    expect(screen.getByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+
+    act(() => resize(changedSize[0], changedSize[1]));
+    openParameters();
+    await waitFor(() => expect(apply).toBeEnabled());
+    holdSave();
+    fireEvent.click(apply);
+    expect(save).toHaveBeenCalledTimes(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
+    await act(async () => finish?.());
+    expect(current()?.type).toBe(recipe.kind);
+  } finally { finish?.(); save.mockRestore(); factory.mockRestore(); }
+});
+
+it.each(['missing binding', 'filtered series'])('opens Parameters from the basic chart diagnosis for %s', async failure => {
+  const { factory } = riskRuntime();
+  const file = await saveLocalFile(new File(['region,team,revenue\n2024,AMD,100\n2024,AVGO,200\n'], 'prices.csv'));
+  const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [
+    { id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const },
+  ] };
+  const root = { ...source, id: 'A', params: { file }, table: { pivot } };
+  const draft = riskChart(capMap);
+  const workspace = riskDashboard([root, draft]);
+  installDashboard(workspace);
+  try {
+    tableExecutionStore.syncDashboard(workspace);
+    tableExecutionStore.ensureTable('d', draft.id);
+    await tableExecutionStore.settled('d');
+    const columns = tableExecutionStore.readView('d', draft.id).ready!.columns;
+    const measures = columns.filter(column => column.measureId === 'sales').map(column => column.id);
+    expect(measures).toHaveLength(2);
+    const linkedChart = { type: 'column' as const, category: columns[0].id, measures, display: 'grouped' as const };
+    act(() => installDashboard(riskDashboard([root, { ...draft, linkedChart }])));
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    await act(async () => {
+      const definition = failure === 'missing binding'
+        ? { table: { pivot: { ...pivot, measures: [{ ...pivot.measures[0], id: 'new-sales' }] } }, search: '' }
+        : { table: { pivot }, search: 'no matching company' };
+      tableExecutionStore.updateDefinition('d', root.id, definition, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    if (failure === 'missing binding') {
+      expect(await screen.findByRole('alert')).toHaveTextContent('Repair chart fields');
+      expect(screen.getByTestId('chart-plot')).toBe(plot);
+    } else {
+      expect(await screen.findByText('No selected series match the current filter.')).toBeVisible();
+      expect(screen.queryByTestId('chart-plot')).toBeNull();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Open Parameters' }));
+    const parameters = screen.getByRole('region', { name: 'Parameters' });
+    expect(within(parameters).getByRole('button', { name: 'Choose source' })).toHaveFocus();
+    expect(within(parameters).getByRole('group', { name: 'Measures' })).toBeVisible();
+  } finally { factory.mockRestore(); }
 });
