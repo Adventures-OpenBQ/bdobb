@@ -12,7 +12,7 @@ async function run(mode:string,wire:string,options:any={}){
  });
  let rev={widgetId:'source',input:c.dataset.resultRevision,model:1,output:1};
  const audits:any[]=[];
- let definition=structuredClone(c.definition),runtime=c.runtimeParams??{};
+ const definition=structuredClone(c.definition),runtime=c.runtimeParams??{};
  if(options.scenario==='runtime'){
   const category=definition.analytical.categories[0].id;
   definition.analytical.params.filters=[{id:'audit-runtime',categoryId:category,label:'Audit runtime',multiSelect:true}];

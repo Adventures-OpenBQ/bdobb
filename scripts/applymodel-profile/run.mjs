@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {build} from 'esbuild';
 import {readFile,writeFile,mkdir,cp,mkdtemp,rm} from 'node:fs/promises';
-import {resolve,join,extname,dirname} from 'node:path';
+import {resolve,join,dirname} from 'node:path';
 import {tmpdir,cpus,platform} from 'node:os';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
