@@ -6,7 +6,7 @@ set -euo pipefail
 export OPENBB_RITA_URL="${OPENBB_RITA_URL:-http://127.0.0.1:18012}"
 export OPENBB_MCP_URLS="${OPENBB_MCP_URLS:-http://127.0.0.1:16911/mcp}"
 export OPENBB_LIVE=1
-check_report() { node -e 'const r=JSON.parse(process.argv[1]);const bad=r.numFailedTests+r.numPendingTests+(r.numTodoTests||0)+(r.numFailedTestSuites||0);if(r.numTotalTests===0||bad>0){console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, ${r.numPendingTests} skipped, ${r.numFailedTests} failed, ${r.numFailedTestSuites||0} files failed to load`);process.exit(1)}console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, 0 skipped, 0 failed`)' "$1"; }
+check_report() { node -e 'const r=JSON.parse(process.argv[1]);const bad=r.numFailedTests+r.numPendingTests+(r.numTodoTests||0)+(r.numFailedTestSuites||0);if(r.numTotalTests===0||bad>0){console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, ${r.numPendingTests} skipped, ${r.numFailedTests} failed, ${r.numFailedTestSuites||0} failed suites (including load failures)`);process.exit(1)}console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, 0 skipped, 0 failed`)' "$1"; }
 if [ -n "${RITA_LIVE_REPORT_FIXTURE:-}" ]; then check_report "$RITA_LIVE_REPORT_FIXTURE"; exit 0; fi
 [ -n "${OPENBB_BACKEND_URL:-}" ] || { echo "live gate: OPENBB_BACKEND_URL is required" >&2; exit 2; }
 export OPENBB_NAS_URL="${OPENBB_NAS_URL:-$OPENBB_BACKEND_URL}"

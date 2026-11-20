@@ -698,7 +698,10 @@ export async function executeLocalTool(
     }
     // #40: the view, from the ones this card's view menu could offer.
     const views = possibleViews(def, card);
-    if (args.view !== undefined && args.view !== "default" && !views.includes(args.view as CardView)) {
+    // A chart widget already renders its chart in the default view. Do not
+    // refuse its valid parameters when Rita explicitly asks for that chart.
+    const nativeChartView = def.type === "chart" && args.view === "chart";
+    if (args.view !== undefined && args.view !== "default" && !nativeChartView && !views.includes(args.view as CardView)) {
       problems.push(`view "${String(args.view)}" must be one of: ${["default", ...views].join(", ")}`);
     }
     if (problems.length > 0) {
@@ -720,7 +723,7 @@ export async function executeLocalTool(
       }
     }
     const viewBefore = card.view;
-    const viewAfter = args.view === "default" ? undefined : (args.view as CardView | undefined);
+    const viewAfter = args.view === "default" || nativeChartView ? undefined : (args.view as CardView | undefined);
     // Through splitParamEdit, as the card's own controls write: a grouped
     // param lands on its group, or the group would mask it on the next render.
     const split = (edits: Record<string, string>, c: DashboardCard) => {
@@ -752,7 +755,7 @@ export async function executeLocalTool(
         if (args.view !== undefined) await useDashboardStore.getState().patchCardField(cardId, "view", viewBefore ?? null);
       },
     });
-    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: args.view } : {}) };
+    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: viewAfter ?? "default" } : {}) };
   }
 
   if (name === "remove_widget") {
