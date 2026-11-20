@@ -51,3 +51,8 @@ A genuinely different backend producer uses the existing first-acquisition polic
 ## Final residual finding
 
 Ruling: I2 is real and load-bearing: Rita and a remounted Run-button source must agree on the committed question unless the agent explicitly overrides parameters. Do not waive the discrepancy or call the candidate finalized. The Superpowers final-review contract permits one fix wave and one scoped re-review, both consumed; retain all work and evidence for a follow-up correction. Cost if wrong: finalization is delayed for an observer path; proceeding instead risks issuer-mismatched agent data.
+
+
+## Rita reads the source's last Run
+
+The user authorized the I2 follow-up on November 20. A context-shared backend Run-button table supplies the same committed question to the visible source, the off-tab source runner and Rita. The observer checks the existing dashboard/card/producer ownership and the resolved wire. An explicit agent override applies to that agent query alone. Independent review of the correction is pending. [Verification](verification.md)

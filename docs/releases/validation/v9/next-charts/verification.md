@@ -120,13 +120,13 @@ The Chromium selection exercised source-owned requests for KPI, ownership, ETF a
 
 ## Bundle cost
 
-Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The final source-ownership correction at `e16783c6` contains 15 assets and adds 614 raw and 150 gzip bytes relative to the reviewed `9bafd2f4` build. The earlier Parameters implementation at `caf36e08` totaled 8,581,579 raw and 2,696,078 gzip bytes.
+Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline contains 14 assets from the original eight-chart base. The source-ownership correction at `e16783c6` contained 15 assets, totalling 8,582,101 raw and 2,696,294 gzip bytes. The table gives the Rita follow-up at `4e6c50c0`, an increase of 692 raw and 260 gzip bytes over that build. The earlier Parameters implementation at `caf36e08` totaled 8,581,579 raw and 2,696,078 gzip bytes.
 
 | JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
 |---|---:|---:|---:|
-| HelpDialog | 732,146 / 246,573 | 751,263 / 253,051 | 19,117 / 6,478 |
-| MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,434 | 0 / -4 |
-| index | 3,515,697 / 1,136,886 | 3,741,412 / 1,210,472 | 225,715 / 73,586 |
+| HelpDialog | 732,146 / 246,573 | 751,263 / 253,050 | 19,117 / 6,477 |
+| MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,437 | 0 / -1 |
+| index | 3,515,697 / 1,136,886 | 3,742,104 / 1,210,730 | 226,407 / 73,844 |
 | kpi.worker | 0 / 0 | 57,604 / 18,478 | 57,604 / 18,478 |
 | lightweight-charts.production | 180,254 / 57,062 | 180,254 / 57,062 | 0 / 0 |
 | module | 77,311 / 27,623 | 77,311 / 27,623 | 0 / 0 |
@@ -139,7 +139,7 @@ Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript fil
 | table.worker | 274,519 / 86,350 | 322,028 / 100,556 | 47,509 / 14,206 |
 | xlsx 1 | 499,905 / 161,705 | 499,905 / 161,705 | 0 / 0 |
 | xlsx 2 | 499,909 / 161,707 | 499,909 / 161,707 | 0 / 0 |
-| Total | 8,041,112 / 2,519,860 | 8,582,101 / 2,696,294 | 540,989 / 176,434 |
+| Total | 8,041,112 / 2,519,860 | 8,582,793 / 2,696,554 | 541,681 / 176,694 |
 
 The build added the existing Plotly package's box, sunburst and treemap registrations. The isolated production registration deltas for box and sunburst were **14,405 / 5,811** and **40,999 / 14,956** raw/gzip bytes respectively. Treemap's isolated registered-trace bundle delta was **23,547 / 7,577** bytes. Its standalone entry including shared dependencies was **766,659 / 262,526** bytes. These isolated numbers measure different builds and do not add directly to the final main chunk. Violin density uses scatter and worker calculations. There is no full Plotly bundle or version change.
 
@@ -199,3 +199,12 @@ An initial catalog command used the generator's default checkout. It wrote the 1
 ## Final independent review status
 
 Reviewed evidence head `8d7ea55d`, product `e16783c6`: 10,173 full unit passes and 47 opt-in skips, 57 web passes, typecheck/lint/scrub/production build passed, nine source-related Chromium cases on each engine passed. Independent review accepted tab-transfer I1, then reproduced new Important I2 in the unmounted Rita request path. These green suites do not establish I2 correctness. Final release sign-off is withheld; see independent-final-fix-review.md. Provider/Docker qualification and Parameters acceptance remain as recorded. All work remains local.
+
+
+## Rita source consistency at `4e6c50c0`
+
+The HTTP regression drives a chat turn through the real request builder. With AAPL armed and TSLA still a draft, the server observed AAPL, TSLA, AAPL on the reviewed code, and AAPL, AAPL, AAPL after the correction. An explicit NVDA query returned NVDA, the following ordinary query returned AAPL, and a deliberate TSLA Run changed both readers to TSLA. Coverage exercises dashboard/card identity, endpoint and selector changes, rotation of a credential during the agent turn, disposal, a pending and a dropped fiscal intent, a landed year end and a relative date that moves after unmount. An XLON date stayed December 24 across an XNYS draft; after the clock moved, the agent sent no financial GET.
+
+The 14 affected suites passed all 1,050 tests. The full client passed 10,175 across 543 files with 47 opt-in tests in seven files skipped. Web passed 57/57. Typecheck, lint and scrub/header checks passed. The production sourcemap build verified the existing WASM and compiled 3,983 modules. The bundle-cost table measures every emitted JavaScript file. The provider at `f8f01666` and Docker at `a0efab23` retain the earlier qualifications. Independent review of the client correction is pending.
+
+The eleven selected Chromium cases covered the source-related chart, calendar and statement cases from I1 plus the Rita conversation round trip and table-arrangement round trip. TypeScript passed 10/11 on the first sweep. The news fixture hovered an adjacent November 16 cell while asserting the unscored day; the isolated rerun passed 1/1 on identical code. Compiled Rust passed all 11 on its first sweep. Both engines used one worker, zero automatic retries and zero skipped cases. The original failed trace and screenshot were retained. This wave did not rerun unrelated geometry or production-provider suites.
