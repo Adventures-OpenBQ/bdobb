@@ -1,22 +1,30 @@
 # V9 screening and income chart review
 
-## Independent whole-change review pending
+## Independent re-review pending
 
-The final reviewer should assess the approved three-chart design, the verification evidence and all three candidate changes. The commits in this table identify the review inputs. Review findings and their severities are pending.
+The independent whole-change review returned **With fixes**, with seven Important findings. The original candidate was BDOBB `b371605869db9a70476a44b7fd600ed1db39b1cd` (product `fd5edb848a3ffe0e3f6bc78a4065e310640206c5`), canonical provider `5c54b403513ef5759a9c1d461da54669e2a6d91c` and Docker `fb2df569e30c618652a9eec00db95c7ec7d4ad86`. The implementer reproduced the findings, committed fixes and ran the paired acceptance checks. The controller owns independent review of these fix ranges.
 
-| Repository | Review base | Candidate |
+| Repository | Fix base | Corrected product |
 | --- | --- | --- |
-| BDOBB | `c6911588ac5d7dba748008abe6aec1ab09ab2204` | `fd5edb848a3ffe0e3f6bc78a4065e310640206c5` |
-| Canonical openbq-eodhd | `349f2de40773cf2e1d9e2993ebabf3184871c07d` | `5c54b403513ef5759a9c1d461da54669e2a6d91c` |
-| openbq-docker | `f1ff723e66ece8bf404a8211716a62591d464581` | `fb2df569e30c618652a9eec00db95c7ec7d4ad86` |
+| BDOBB | `b371605869db9a70476a44b7fd600ed1db39b1cd` | `4f5e254eeccb4daad55cb70c6616f7b205e5c5dd` |
+| Canonical openbq-eodhd | `5c54b403513ef5759a9c1d461da54669e2a6d91c` | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
+| openbq-docker | `fb2df569e30c618652a9eec00db95c7ec7d4ad86` | `0e843db5465725f124075709528ea485618c87ad` |
 
-The reviewer should cover acquisition before normalization, contradiction and omission survival through both engines and linked projections, regression limits and bubble area, dividend window and gap semantics, typed Statement currency and scale, Sankey reconciliation, source ownership and asynchronous rendering, visual evidence, and the limits of the paired package proof. Include the documentation commit in the evidence review. The two next-eight documentation commits in the BDOBB range belong to their own review.
+| # | Reproduction on the earlier behavior | Change and verified result |
+| --- | --- | --- |
+| 1 | The generated screener field named the percent formatter. The old packaged HTTP row held 0.05 and the actual Chromium table cell displayed 0.05 %. | The provider now emits `normalizedPercent`. The same upstream 5 percentage points, paired packaged row 0.05, and generated widget column produce a 5 % cell in the real source table. |
+| 2 | The local loader accepted verified dividend coverage with paged, partial and sample delivery. The matched HTTP receipt previously omitted scope reconciliation. | Local ingress rejects the contradictory file. HTTP ingress withholds proof for negative delivery on the envelope or its results object. Normal HTTP arrays with verified evidence and generic unknown table scope still draw. A real HTTP dotted selector test preserves the negative envelope and withholds its receipt. |
+| 3 | A qualified listing suffix could contradict the exchange. Delivered unadjusted dividend basis, a diagnostic claiming an absent raw conflict, incompatible FY/FQ labels and a mismatched fiscal year were accepted. | Both acquisition paths check delivered rows and closed receipt facts before projection. Consistent unsafe facts remain available for repair. TypeScript and compiled Rust retain the amount-basis refusal through another link after removing the field. Source-line aliases and display-period renaming remain supported. |
+| 4 | At 2025-02-01 with nominal January year end, the provider returned 2026/FY and 2026/Q1. | The opted-in provider preserves actual end and FY/FQ kind. Only the annual bucket supplies an FY label. Fiscal years and numbered quarters remain unknown from a nominal month. Legacy callers keep the old labels. The canonical quarter snapshot crossed both actual Statement engines and its chart title read “FQ · 2025-02-01 · USD × 1000”. |
+| 5 | A mounted chart offered Apply for a valid dividend receipt with unknown coverage. | Workers and draft choices share the static receipt, selected-cohort and selected-period checks. The draft identifies the repair, disables Apply and keeps the applied chart. Changing from an unsafe cohort or incomplete period to an eligible one enables Apply. |
+| 6 | A newly linked chart disabled Dividend steps for a genuine zero-row, zero-column, verified source. | The parent checks evidence from the current executor revision. The draft uses the acquired instrument and canonical bindings for a new chart and keeps existing field aliases on verified-empty refresh. A first-use mounted test applies the settings and displays the covered no-events result. Unknown coverage, filtered-to-zero and invalid-event sources retain separate outcomes. |
+| 7 | In the 780 × 480 Chromium plot the acquired fractional yields 0.1, 0.10000000000000002 and 0.10000000000000003 landed at X pixels 0, 512 and 1024 in a 695 px plot. The fitted endpoint was also clipped. | When coordinate offset and span risk pixel cancellation, the chart widens the display range and preserves each original value and the observed fit endpoints. DOM geometry checks compare all marker centers and both line ends with the real plot domain at 780 × 480, 390 × 440 and 1100 × 620. |
 
 [Approved design](../../../../superpowers/specs/2026-11-19-v9-screening-income-design.md) · [Implementation plan](../../../../superpowers/plans/2026-11-19-v9-screening-income.md) · [Verification and limits](verification.md) · [Controller rulings](rulings.md)
 
 ## Scoped review history
 
-The task reviews closed the findings below. Whole-change review remains open.
+The task reviews closed the findings below. Independent re-review of the seven subsequent fixes remains open.
 
 | Task | Finding and disposition | Scoped confirmation |
 | --- | --- | --- |
