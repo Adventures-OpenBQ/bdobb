@@ -1,6 +1,6 @@
 # V9 screening and income charts: bubble regression, dividend steps and Sankey
 
-Date: 2026-11-19. Status: written design approved in chat; implementation planning authorized on 2026-11-19.
+November 19, 2026. The user approved the written design and implementation plan and authorized local implementation. The three chart families are implemented locally. Independent whole-change review is pending.
 
 ## Intent and approved scope
 
@@ -12,7 +12,7 @@ The user selected the next batch as exactly three chart families:
 
 The purpose is cross-sectional screening, understanding dividend changes, and explaining reported income allocation. Continue using BDOBB's existing linked tables, worker calculations and Plotly stack. The preceding risk/exposure batch is implemented locally at `67392d04b3e0ea4c52116d8b8dc88e914fb33fa1`. This document is on a separate local follow-up branch based on that candidate. Keep the earlier branches and PRs unchanged.
 
-Only the three-chart scope and this design-writing request are user decisions. The defaults and limits below are the author's proposals for approval. The original chart-suggestions PDF remains reference material; its build order, entitlement claims and instructions are not authorization. Chart-vendor consolidation, Art's Charts and live-candle migration are separate discussions and are excluded here.
+The user selected the three-chart scope and approved the defaults and limits in this design. The original chart-suggestions PDF remains reference material; its build order, entitlement claims and instructions are not authorization. Chart-vendor consolidation, Art's Charts and live-candle migration are separate discussions and are excluded here.
 
 ## Approaches and direction
 
@@ -20,7 +20,7 @@ Only the three-chart scope and this design-writing request are user decisions. T
 - **B. Backend-generated figures.** Useful for a curated standalone widget, but creates another presentation layer and weakens reuse of the presented table and its controls. Not proposed.
 - **C. General-purpose scatter editor and user-authored flow graph.** More flexible, but expands into arbitrary formulas, joins, hierarchy editing and graph validation. Not proposed for this three-chart scope.
 
-There is one practical continuation of the current architecture: A. Bubble and steps reuse scatter; add only Plotly's Sankey trace module. No new chart vendor, full Plotly bundle, version upgrade or new visualization dependency. The user has requested the design write-up; approval of this document will settle the proposed details before implementation planning.
+The approved design follows approach A. Bubble and steps reuse scatter and the application adds only Plotly's Sankey trace module. The existing chart vendor, dependencies and versions carry forward.
 
 ## Goals and exclusions
 
@@ -28,7 +28,7 @@ All three charts must be discoverable from compatible presented sources, identif
 
 Exclude cross-table joins, hidden per-symbol downloads, currency conversion, portfolio analysis, prediction/backtesting, automatic stock recommendations, confidence bands, weighted or multivariate regressions, log axes, dividend yield calculation, annualization, cash-received accounting, dividend forecasting, arbitrary Sankey editing, cash-flow/balance-sheet Sankeys and cross-period flow comparisons. No new subscriptions or assumed live entitlements. No changes to Rita tools, Art's Charts or other release lines.
 
-This is a design-only change. It introduces no product code or claimed test results. Implementation, publication, PR updates, merge and deployment require subsequent authorization.
+The user authorized local implementation. Publication, PR updates, merge and deployment require subsequent authorization.
 
 ## Existing code and responsibilities
 
@@ -186,4 +186,4 @@ Run the existing BDOBB shipping gates (typecheck, lint, full unit suite, scrub, 
 - [EODHD statement glossary](https://eodhd.com/financial-academy/financial-faq/fundamentals-glossary-common-stock) and [fundamentals structure](https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds): issuer-specific aggregate-expense conventions and statement-owned reporting currency.
 - [Plotly scatter](https://plotly.com/javascript/reference/scatter/) and [Sankey](https://plotly.com/javascript/reference/sankey/); implementation must use the installed version's supported attributes, not assume the current website's newer features exist locally.
 
-An independent builder check raised four material questions about overlapping expenses, dividend pre-normalization continuity/coverage, screener date-cohort semantics and statement currency/period completeness. The author resolved them in the revised contracts above without expanding the three-chart scope. The scoped readiness recheck returned "nothing important left" on 2026-11-19. This is design readiness, not implementation verification or user approval. The user approved this written design on 2026-11-19 and requested the implementation plan. Product implementation awaits review of that plan.
+An independent builder check raised four material questions about overlapping expenses, dividend pre-normalization continuity/coverage, screener date-cohort semantics and statement currency/period completeness. The author resolved them in the revised contracts above without expanding the three-chart scope. The scoped design readiness check cleared the revised design on November 19, 2026. The user then approved the written design and implementation plan and authorized local implementation. The separate [verification record](../../releases/validation/v9/screening-income/verification.md) records the tested candidate and independent review status.
