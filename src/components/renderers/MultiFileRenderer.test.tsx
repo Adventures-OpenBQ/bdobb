@@ -106,11 +106,11 @@ describe("MultiFileRenderer", () => {
   it("shows a duplicated document URL once and counts distinct available files", async () => {
     const connection = await serve({ "/file_choices": [CHOICES[0], { label: "Report A repeated", value: A }, CHOICES[1]] });
     const { container } = render(<MultiFileRenderer widget={widget()} backend={connection} params={{ chamber: "house" }} refreshKey={0} />);
-    await screen.findByRole("checkbox", { name: "Report A", exact: true });
+    await screen.findByRole("checkbox", { name: "Report A" });
     expect(screen.getAllByRole("checkbox")).toHaveLength(2);
     expect(container.querySelector(".file-rail-count")).toHaveTextContent("2");
-    fireEvent.click(screen.getByRole("checkbox", { name: "Report A", exact: true }));
-    fireEvent.click(screen.getByRole("button", { name: "Open", exact: true }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Report A" }));
+    await userEvent.click(screen.getByRole("button", { name: "Open" }));
     await waitFor(() => expect(posts()).toHaveLength(1));
     expect(JSON.parse(posts()[0].body)).toEqual({ files: [A] });
   });
