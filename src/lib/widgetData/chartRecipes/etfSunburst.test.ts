@@ -173,6 +173,24 @@ it('attributes a collapsed sector to its original fraction and offers only a rel
   expect(buildEtfSunburst(sameSector, { ...options, depth: 1 }, context).ok).toBe(true);
 });
 
+it('refuses a holding when rounded endpoints move radially and miss the intended wedge', () => {
+  const weights = [.08726681249999999, 3.899296105751436e-9, .26273318360070386];
+  const leaves = [
+    { ...holdings[0], weight: weights[0] },
+    { ...holdings[1], sector: holdings[0].sector, weight: weights[1] },
+    { ...holdings[0], symbol: 'OTHER.US', weight: weights[2] },
+  ];
+  const dataset = acquire(leaves, { ...local, raw_count: 3, normalized_count: 3, delivered_count: 3,
+    holding_keys: leaves.map(({ symbol }) => symbol) });
+  const built = requireSuccess(buildEtfHierarchy(dataset, options));
+  expect(built.value.holdings[1]).toMatchObject({ symbol: 'AAYA.F', value: weights[1] });
+  const result = buildEtfSunburst(dataset, options, context);
+  expect(result).toMatchObject({ ok: false,
+    message: expect.stringContaining('Original fund weight 3.899296105751436e-9. Select sector depth') });
+  const sectors = requireSuccess(buildEtfSunburst(dataset, { ...options, depth: 1 }, context));
+  expect(sectors.etfHierarchy?.holdings[1].value).toBe(weights[1]);
+});
+
 it('stable_node_ids_disambiguate_equal_labels_and_keep_exact_small_values', () => {
   const tiny = .000001;
   const duplicateLabels = [{ ...holdings[0], sector: 'Sector unavailable' }, { ...holdings[1], weight: tiny },

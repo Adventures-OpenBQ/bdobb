@@ -213,11 +213,30 @@ function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, cont
     return 1 + (children.get(parent.id) ?? []).reduce((height, child) => Math.max(height, rings(child)), 0);
   }
 
-  // The SVG engine stores path coordinates in single precision. At either
-  // radius, equal endpoints make the corresponding non-full SVG arc disappear.
-  function endpointsCoincide(r: number, from: number, to: number): boolean {
-    return Math.fround(r * Math.cos(from) + cx) === Math.fround(r * Math.cos(to) + cx)
-      && Math.fround(cy - r * Math.sin(from)) === Math.fround(cy - r * Math.sin(to));
+  type Point = readonly [number, number];
+  const pathPoint = (r: number, a: number): Point =>
+    [Math.fround(r * Math.cos(a) + cx), Math.fround(cy - r * Math.sin(a))];
+  const halfStep = (coordinate: number) => 2 ** Math.max(-150, Math.floor(Math.log2(Math.abs(coordinate))) - 24);
+
+  function preservesWedge(inner: number, outer: number, from: number, to: number): boolean {
+    const midpoint = (from + to) / 2;
+    const [x, y] = pathPoint((inner + outer) / 2, midpoint);
+    const innerStart = pathPoint(inner, from), innerEnd = pathPoint(inner, to);
+    const outerStart = pathPoint(outer, from), outerEnd = pathPoint(outer, to);
+    const tangentX = -Math.sin(midpoint), tangentY = -Math.cos(midpoint);
+    const xHalfStep = halfStep(x), yHalfStep = halfStep(y);
+    // Positive tangential order keeps both arcs distinct and correctly oriented.
+    const forward = ([x0, y0]: Point, [x1, y1]: Point) =>
+      (x1 - x0) * tangentX + (y1 - y0) * tangentY > 0;
+    // Distinct pairs can still round almost radially. Both radial sides must
+    // enclose the intended midpoint at the local SVG coordinate resolution.
+    const inside = ([x0, y0]: Point, [x1, y1]: Point) => {
+      const dx = x1 - x0, dy = y1 - y0;
+      const uncertainty = Math.abs(dx) * yHalfStep + Math.abs(dy) * xHalfStep;
+      return dx * (y - y0) - dy * (x - x0) < -uncertainty;
+    };
+    return forward(innerStart, innerEnd) && forward(outerStart, outerEnd)
+      && inside(innerStart, outerStart) && inside(outerEnd, innerEnd);
   }
 
   function partition(parent: PlotNode, from: number, to: number, ring: number, ringCount: number, full: boolean): GeometryFailure | undefined {
@@ -234,7 +253,7 @@ function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, cont
       const childIsFull = full && siblings.length === 1;
       // Plotly's pathAnnulus treats spans within 1e-14 radians of a turn as full circles.
       const plotlyFull = angle > fullTurn - 1e-14;
-      const collapsedPath = !plotlyFull && (endpointsCoincide(inner, from, end) || endpointsCoincide(outer, from, end));
+      const collapsedPath = !plotlyFull && !preservesWedge(inner, outer, from, end);
       if (plotlyFull !== childIsFull || collapsedPath) {
         // A near-full branch with a collapsed gap is a failure to show its
         // narrow peers. Report the smallest weight in that partition.

@@ -8,10 +8,11 @@ import type { EtfSunburstOptions } from '../src/lib/widgetData/chartRecipes/type
 type Datum = { x0: number; x1: number; rpx0: number; rpx1: number; data: { data: { label: string; v: number } } };
 type Graph = HTMLElement & { calcdata: { cx: number; cy: number }[][]; _transitioning?: boolean };
 
-async function draw(page: Page, weights: number[], theme: 'light' | 'dark', depth: 1 | 2 = 2) {
+async function draw(page: Page, weights: number[], theme: 'light' | 'dark', depth: 1 | 2 = 2, sameSector = false) {
   await page.goto('/');
-  const holdings = weights.map((weight, i) => i < 2 ? { ...rows[i], weight } : {
-    ...rows[0], symbol: 'OTHER' + i + '.US', weight,
+  const holdings = weights.map((weight, i) => {
+    const row = i < 2 ? rows[i] : { ...rows[0], symbol: 'OTHER' + i + '.US' };
+    return { ...row, weight, sector: sameSector ? rows[0].sector : row.sector };
   });
   const source = { ...local, raw_count: holdings.length, normalized_count: holdings.length,
     delivered_count: holdings.length, holding_keys: holdings.map(row => row.symbol) };
@@ -155,6 +156,26 @@ for (const depth of [1, 2] as const) {
     await test.info().attach('narrow-sector-geometry', { body: JSON.stringify({ overview, drills }), contentType: 'application/json' });
   });
 }
+
+test('the real worker refuses a narrow holding whose intended angular fill collapses', async ({ page }) => {
+  const weights = [.08726681249999999, 3.899296105751436e-9, .26273318360070386];
+  const { result, graph } = await draw(page, weights, 'light', 2, true);
+  if (result.ok) {
+    const slices = await inspect(graph);
+    await test.info().attach('unexpected-narrow-holding-paths', { body: JSON.stringify(slices), contentType: 'application/json' });
+  }
+  expect(result).toMatchObject({ ok: false, refused: true,
+    message: expect.stringContaining('Original fund weight 3.899296105751436e-9. Select sector depth') });
+  await expect(graph).toHaveCount(0);
+
+  const sector = await draw(page, weights, 'light', 1, true);
+  expect(sector.result).toMatchObject({ ok: true, etfHierarchy: {
+    holdings: expect.arrayContaining([expect.objectContaining({ symbol: 'AAYA.F', value: weights[1] })]),
+  } });
+  const paths = await inspect(sector.graph);
+  expect(paths).toHaveLength(2);
+  expect(paths.every(slice => slice.angle === 2 * Math.PI && slice.containsMidpoint)).toBe(true);
+});
 
 test('real worker refuses a weight that would collapse before calling Plotly', async ({ page }) => {
   const { result, graph } = await draw(page, [.2, Number.MIN_VALUE], 'dark');
