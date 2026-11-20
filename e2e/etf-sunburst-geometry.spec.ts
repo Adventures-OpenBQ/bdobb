@@ -6,16 +6,16 @@ import { local, rows } from '../src/test/fixtures/etfHierarchyEvidence';
 import type { EtfSunburstOptions } from '../src/lib/widgetData/chartRecipes/types';
 
 type Datum = { x0: number; x1: number; rpx0: number; rpx1: number; data: { data: { label: string; v: number } } };
-type Graph = HTMLElement & { calcdata: { cx: number; cy: number }[][] };
+type Graph = HTMLElement & { calcdata: { cx: number; cy: number }[][]; _transitioning?: boolean };
 
-async function draw(page: Page, weights: number[], theme: 'light' | 'dark') {
+async function draw(page: Page, weights: number[], theme: 'light' | 'dark', depth: 1 | 2 = 2) {
   await page.goto('/');
   const holdings = weights.map((weight, i) => i < 2 ? { ...rows[i], weight } : {
     ...rows[0], symbol: 'OTHER' + i + '.US', weight,
   });
   const source = { ...local, raw_count: holdings.length, normalized_count: holdings.length,
     delivered_count: holdings.length, holding_keys: holdings.map(row => row.symbol) };
-  const result = await page.evaluate(async ({ holdings, source, theme }) => {
+  const result = await page.evaluate(async ({ holdings, source, theme, depth }) => {
     const tablePath = '/src/lib/localTableData.ts';
     const workerPath = '/src/lib/widgetData/chartRecipes/workerClient.ts';
     const plotlyPath = '/src/lib/plotly.ts';
@@ -24,7 +24,7 @@ async function draw(page: Page, weights: number[], theme: 'light' | 'dark') {
     const { renderPlot } = await import(plotlyPath) as typeof import('../src/lib/plotly');
     const snapshot = { rows: holdings, completeness: 'partial', chart_sources: { version: 1, receipts: [source] } };
     const input = await datasetFromBytes('holdings.json', new TextEncoder().encode(JSON.stringify(snapshot)), 'holdings', 1);
-    const options: EtfSunburstOptions = { version: 1, kind: 'etf-sunburst', fund: 'VTI.US', depth: 2, snapshot: 'latest',
+    const options: EtfSunburstOptions = { version: 1, kind: 'etf-sunburst', fund: 'VTI.US', depth, snapshot: 'latest',
       fields: { holding: 'symbol', sector: 'sector', weight: 'weight' } };
     const width = theme === 'light' ? 600 : 340;
     const height = theme === 'light' ? 460 : 320;
@@ -42,7 +42,7 @@ async function draw(page: Page, weights: number[], theme: 'light' | 'dark') {
       }
       return result;
     } finally { worker.dispose(); }
-  }, { holdings, source, theme });
+  }, { holdings, source, theme, depth });
   return { result, graph: page.locator('#etf-geometry') };
 }
 
@@ -115,6 +115,46 @@ test('installed Plotly keeps a distinct SVG wedge below one pixel with its exact
   expect(tiny.containsMidpoint).toBe(true);
   await test.info().attach('etf-subpixel-svg', { body: JSON.stringify(slices), contentType: 'application/json' });
 });
+
+for (const depth of [1, 2] as const) {
+  test(`installed Plotly draws the narrow two-sector allocation at depth ${depth}`, async ({ page }) => {
+    const weights = [.34999995, .00000005];
+    const { result, graph } = await draw(page, weights, 'light', depth);
+    expect(result).toMatchObject({ ok: true, etfHierarchy: {
+      holdings: expect.arrayContaining([expect.objectContaining({ symbol: 'AAYA.F', value: weights[1] })]),
+    } });
+    const paths = graph.locator('.sunburstlayer path.surface');
+    const overview = await inspect(graph);
+    expect(overview).toHaveLength(depth === 1 ? 3 : 5);
+    expect(overview.every(slice => slice.bounds.height > 0 && slice.bounds.width > 0 && slice.containsMidpoint)).toBe(true);
+    const narrowSector = overview.find(slice => slice.label === 'Sector unavailable')!;
+    expect(narrowSector.value).toBe(weights[1]);
+    expect(narrowSector.angle).toBeCloseTo(2 * Math.PI * weights[1] / .35, 14);
+    expect(narrowSector.bounds.height).toBeLessThan(.001);
+    const drills = [];
+    if (depth === 2) {
+      const waitForTransition = () => expect.poll(() => graph.evaluate(node => (node as Graph)._transitioning === true)).toBe(false);
+      for (const [sectorLabel, holdingLabel, expected] of [
+        ['Technology', 'AAPL.US', weights[0]], ['Sector unavailable', 'AAYA.F', weights[1]],
+      ] as const) {
+        // The subpixel path cannot be targeted by a pixel pointer. Dispatch the real Plotly click to its SVG element.
+        await paths.nth(overview.findIndex(slice => slice.label === sectorLabel)).dispatchEvent('click');
+        await expect(paths).toHaveCount(2);
+        await waitForTransition();
+        const rendered = await inspect(graph);
+        const holding = rendered.find(slice => slice.label === holdingLabel)!;
+        expect(holding.value).toBe(expected);
+        expect(holding.angle).toBeCloseTo(2 * Math.PI, 14);
+        expect(rendered.every(slice => slice.bounds.height > 0 && slice.bounds.width > 0 && slice.containsMidpoint)).toBe(true);
+        drills.push(rendered);
+        await paths.nth(rendered.findIndex(slice => slice.label === sectorLabel)).dispatchEvent('click');
+        await expect(paths).toHaveCount(5);
+        await waitForTransition();
+      }
+    }
+    await test.info().attach('narrow-sector-geometry', { body: JSON.stringify({ overview, drills }), contentType: 'application/json' });
+  });
+}
 
 test('real worker refuses a weight that would collapse before calling Plotly', async ({ page }) => {
   const { result, graph } = await draw(page, [.2, Number.MIN_VALUE], 'dark');

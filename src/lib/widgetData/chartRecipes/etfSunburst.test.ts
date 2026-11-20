@@ -133,6 +133,46 @@ it('mixed_basis refuses a separate sector exposure acquisition and contradictory
     .toBe(.35);
 });
 
+it('accepts sparse optional declarations after strict source acquisition and still checks contradictory values', () => {
+  const date = '2026-10-31';
+  const source = { ...local, as_of: date, snapshot: date };
+  const sparse = [
+    { ...holdings[0], snapshot: date, as_of: date, basis: 'fund-assets', unit: 'fraction',
+      etf_kind: 'holdings', holdings_coverage: 'partial' },
+    { ...holdings[1], snapshot: date },
+  ];
+  const dataset = acquire(sparse, source);
+  expect(dataset.provenance.metadata?.chartSources).toEqual({ 'etf-hierarchy': source });
+  expect(dataset.rows[1].values).toMatchObject({ basis: null, unit: null, etf_kind: null, holdings_coverage: null, as_of: null });
+  expect(requireSuccess(buildEtfHierarchy(dataset, options)).value.root.value).toBe(.35);
+
+  const second = dataset.rows[1];
+  for (const values of [{ basis: 'equity-exposure' }, { unit: 'percent-points' },
+    { etf_kind: 'sector' }, { holdings_coverage: 'complete' }, { as_of: '2026-10-30' },
+    { weight_basis: null }, { weight_unit: null }]) {
+    const changed = { ...dataset, rows: [dataset.rows[0], { ...second, values: { ...second.values, ...values } }] };
+    expect(buildEtfHierarchy(changed, options)).toMatchObject({ ok: false });
+  }
+  const error = { ...dataset, rows: [dataset.rows[0], { ...second, cellErrors: { basis: { code: 'ERROR', message: 'bad basis' } } }] };
+  expect(buildEtfHierarchy(error, options)).toMatchObject({ ok: false });
+
+  const withAsOf = acquire(holdings.map(row => ({ ...row, as_of: date })), { ...local, as_of: date });
+  withAsOf.rows[1].values.as_of = null;
+  expect(buildEtfHierarchy(withAsOf, options)).toMatchObject({ ok: false });
+});
+
+it('attributes a collapsed sector to its original fraction and offers only a relevant depth repair', () => {
+  const small = 1e-10;
+  const narrow = [{ ...holdings[0], weight: .35 - small }, { ...holdings[1], weight: small }];
+  const separate = buildEtfSunburst(acquire(narrow), options, context);
+  expect(separate).toMatchObject({ ok: false, message: expect.stringMatching(/geometry.*Sector unavailable.*1e-10/i) });
+  if (!separate.ok) expect(separate.message).not.toMatch(/sector depth/i);
+  const sameSector = acquire([narrow[0], { ...narrow[1], sector: narrow[0].sector }]);
+  expect(buildEtfSunburst(sameSector, options, context)).toMatchObject({ ok: false,
+    message: expect.stringMatching(/geometry.*AAYA\.F.*1e-10.*sector depth/i) });
+  expect(buildEtfSunburst(sameSector, { ...options, depth: 1 }, context).ok).toBe(true);
+});
+
 it('stable_node_ids_disambiguate_equal_labels_and_keep_exact_small_values', () => {
   const tiny = .000001;
   const duplicateLabels = [{ ...holdings[0], sector: 'Sector unavailable' }, { ...holdings[1], weight: tiny },

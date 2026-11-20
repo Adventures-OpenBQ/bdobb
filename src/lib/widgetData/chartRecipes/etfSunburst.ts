@@ -112,9 +112,12 @@ export function buildEtfHierarchy(dataset: WidgetDataset, options: EtfSunburstOp
   if (weightIssue(weight) || badWeightFormat(weight.format?.formatterFn)) return refuse(sourceIssue);
 
   const declarations = [
-    ['weight_basis', 'fund-assets'], ['weight_unit', 'fraction'], ['unit', 'fraction'],
-    ['basis', 'fund-assets'], ['etf_kind', 'holdings'], ['as_of', source.as_of], ['holdings_coverage', source.coverage],
-  ].flatMap(([origin, value]) => columns.filter(column => acquiredColumnOrigin(column) === origin).map(({ id }) => ({ id, value })));
+    ['weight_basis', 'fund-assets', true], ['weight_unit', 'fraction', true],
+    ['unit', 'fraction', false], ['basis', 'fund-assets', false], ['etf_kind', 'holdings', false],
+    ['as_of', source.as_of, source.as_of !== null && source.snapshot !== source.as_of],
+    ['holdings_coverage', source.coverage, false],
+  ].flatMap(([origin, expected, required]) => columns.filter(column => acquiredColumnOrigin(column) === origin)
+    .map(({ id }) => ({ id, expected, required })));
   const remaining = new Set(source.holding_keys);
   const omitted = new Set(projection.omitted);
   const groups = new Map<string | null, { symbol: string; weight: number }[]>();
@@ -130,8 +133,12 @@ export function buildEtfHierarchy(dataset: WidgetDataset, options: EtfSunburstOp
       return refuse('Each holding needs a raw sector label or an explicit unavailable sector. Repair the source.');
     if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
       return refuse('Each delivered holding needs a finite, nonnegative original fund weight. Repair the source.');
-    if (badWeightFormat(row.cellFormats?.[weight.id]?.formatterFn) || declarations.some(({ id, value }) => read(row, id) !== value))
-      return refuse(sourceIssue);
+    if (badWeightFormat(row.cellFormats?.[weight.id]?.formatterFn) || declarations.some(({ id, expected, required }) => {
+      if (Object.hasOwn(row.cellErrors ?? {}, id)) return true;
+      const actual = read(row, id);
+      // The table fills fields absent from individual acquired rows with null.
+      return (required || actual != null) && actual !== expected;
+    })) return refuse(sourceIssue);
     const group = groups.get(sector) ?? [];
     group.push({ symbol, weight: value });
     groups.set(sector, group);
@@ -191,38 +198,52 @@ const margin = { l: 12, r: 12, t: 64, b: 12, autoexpand: false };
 const fullTurn = 2 * Math.PI;
 type PlotNode = EtfHierarchy['root'] | Sector | Holding | Residual;
 
-/** Check the actual partition operations and the SVG endpoint resolution at each available drill level. */
-function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, context: RecipeContext): PlotNode | undefined {
-  const width = (context.viewportWidth ?? 360) - margin.l - margin.r;
-  const height = (context.viewportHeight ?? 280) - margin.t - margin.b;
-  // Reserve one pixel for Plotly's independent rounding of layout dimensions and margins.
-  const radius = (Math.min(width, height) - 1) / 2;
-  // Browser path coordinates use single precision. An endpoint displacement above
-  // two coordinate steps is distinguishable even at the far edge of the plot.
-  const step = Math.max(width + margin.l + margin.r, height + margin.t + margin.b) * 2 ** -22;
-  if (!Number.isFinite(radius) || radius <= 0 || !Number.isFinite(step)) return root;
+type GeometryFailure = { node: PlotNode; reason: 'viewport' | 'partition' | 'path' };
+
+/** Check the installed partition and the SVG endpoint coordinates at each available drill level. */
+function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, context: RecipeContext): GeometryFailure | undefined {
+  const width = Math.round(context.viewportWidth ?? 360) - margin.l - margin.r;
+  const height = Math.round(context.viewportHeight ?? 280) - margin.t - margin.b;
+  const radius = Math.min(width, height) / 2;
+  if (!Number.isFinite(radius) || radius <= 0) return { node: root, reason: 'viewport' };
+  const cx = margin.l + width / 2;
+  const cy = margin.t + height / 2;
 
   function rings(parent: PlotNode): number {
     return 1 + (children.get(parent.id) ?? []).reduce((height, child) => Math.max(height, rings(child)), 0);
   }
 
-  function partition(parent: PlotNode, from: number, to: number, ring: number, ringWidth: number, full: boolean): PlotNode | undefined {
+  // The SVG engine stores path coordinates in single precision. At either
+  // radius, equal endpoints make the corresponding non-full SVG arc disappear.
+  function endpointsCoincide(r: number, from: number, to: number): boolean {
+    return Math.fround(r * Math.cos(from) + cx) === Math.fround(r * Math.cos(to) + cx)
+      && Math.fround(cy - r * Math.sin(from)) === Math.fround(cy - r * Math.sin(to));
+  }
+
+  function partition(parent: PlotNode, from: number, to: number, ring: number, ringCount: number, full: boolean): GeometryFailure | undefined {
     const siblings = children.get(parent.id);
     if (!siblings?.length) return;
     const scale = (to - from) / parent.value;
-    if (!Number.isFinite(scale)) return parent;
+    if (!Number.isFinite(scale)) return { node: parent, reason: 'partition' };
+    const inner = ring / ringCount * radius;
+    const outer = (ring + 1) / ringCount * radius;
     for (const child of siblings) {
       const end = from + child.value * scale;
       const angle = end - from;
+      if (!Number.isFinite(angle) || angle <= 0) return { node: child, reason: 'partition' };
       const childIsFull = full && siblings.length === 1;
       // Plotly's pathAnnulus treats spans within 1e-14 radians of a turn as full circles.
       const plotlyFull = angle > fullTurn - 1e-14;
-      if (plotlyFull && !childIsFull)
-        return siblings.reduce((smallest, sibling) => sibling.value < smallest.value ? sibling : smallest);
-      if (!Number.isFinite(angle) || angle <= 0 || plotlyFull !== childIsFull ||
-        (!plotlyFull && 2 * ring * ringWidth * Math.sin(Math.min(angle, fullTurn - angle) / 2) <= step))
-        return child;
-      const failed = partition(child, from, end, ring + 1, ringWidth, childIsFull);
+      const collapsedPath = !plotlyFull && (endpointsCoincide(inner, from, end) || endpointsCoincide(outer, from, end));
+      if (plotlyFull !== childIsFull || collapsedPath) {
+        // A near-full branch with a collapsed gap is a failure to show its
+        // narrow peers. Report the smallest weight in that partition.
+        const node = angle > Math.PI && !childIsFull
+          ? siblings.reduce((smallest, sibling) => sibling.value < smallest.value ? sibling : smallest)
+          : child;
+        return { node, reason: collapsedPath ? 'path' : 'partition' };
+      }
+      const failed = partition(child, from, end, ring + 1, ringCount, childIsFull);
       if (failed) return failed;
       from = end;
     }
@@ -230,7 +251,7 @@ function geometryFailure(root: PlotNode, children: Map<string, PlotNode[]>, cont
 
   const views = [root, ...(children.get(root.id) ?? []).filter(child => children.has(child.id))];
   for (const view of views) {
-    const failed = partition(view, 0, fullTurn, 1, radius / rings(view), true);
+    const failed = partition(view, 0, fullTurn, 1, rings(view), true);
     if (failed) return failed;
   }
 }
@@ -269,8 +290,15 @@ export function buildEtfSunburst(dataset: WidgetDataset, options: RecipeOptions,
     children.set(item.parentId, siblings);
   }
   const failed = root.value > 0 && geometryFailure(root, children, context);
-  if (failed) return refuse(`Plotly cannot draw the required sunburst geometry for ${failed.label.slice(0, 100)} at this size. `
-    + `Original fund weight ${failed.value}. Enlarge the chart or select sector depth.`);
+  if (failed) {
+    const canDrawSectors = options.depth === 2
+      && !geometryFailure(root, new Map([[root.id, children.get(root.id) ?? []]]), context);
+    const repair = canDrawSectors ? 'Select sector depth to show sectors with exact holding weights in the details.'
+      : failed.reason === 'partition' ? 'Use the exact weights in the source table.'
+        : 'Try a larger drawing area or use the exact weights in the source table.';
+    return refuse(`Plotly cannot draw the required sunburst geometry for ${failed.node.label.slice(0, 100)} at this size. `
+      + `Original fund weight ${failed.node.value}. ${repair}`);
+  }
   const flatten = (item: PlotNode): PlotNode[] => [item, ...(children.get(item.id) ?? []).flatMap(flatten)];
   const plotNodes = root.value ? flatten(root) : [];
   const dark = context.theme === 'dark';
