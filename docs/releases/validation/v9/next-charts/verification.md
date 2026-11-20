@@ -1,0 +1,145 @@
+# Next eight charts · paired candidate verification
+
+This local group has eight explicit acquired-data chart families. Four families also have narrowly qualified EODHD source modes. The installed-image checks used synthetic upstream responses with networking disabled. A completed real response that meets the contract, together with the user's access to the endpoint, is necessary to use those modes live.
+
+## Per-family readiness
+
+| Family and inspected Chromium capture | Source mode qualified on the pair | Explicit local acquisition and remaining gates |
+|---|---|---|
+| [News sentiment calendar](screenshots/news-calendar-light-hover.png) | CompanyNews, one qualified instrument and one delivered page. Typed polarity, stable article identity and UTC day. | Declared acquired pages supported. No all-news or continuous-coverage claim. Empty, unscored and neutral days remain distinct. |
+| [Return box/violin](screenshots/return-light-density.png) | Historical bars currently lack a route-bound receipt that retains raw drops and continuity. AAPL adjusted prices exist upstream. | Documented daily adjusted-close snapshots and linked descendants supported. Each listing requires at least five finite adjacent returns within the window. |
+| [Ownership bars/waffle](screenshots/ownership-waffle-dark-overflow-tap.png) | Insider and institutional percentage-point bars for US primary common stock. Field dates, class and denominator remain unknown. | Independently evidenced partition enables waffle. Comparable float/outstanding counts require matching class, basis and date. Live headlines supply neither condition. |
+| [KPI cards/gauges](screenshots/kpi-gauge-dark-touch.png) | US primary common-stock reported trailing P/E and dividend yield, standalone or against a clearly marked user assumption. | Six typed preset contracts supported locally. Live price, market cap, EPS and revenue lack metric-specific facts. All live acquired-reference comparisons lack comparable acquired observations. |
+| [ETF sunburst](screenshots/etf-dark-touch.png) | Delivered holdings of a qualified US ETF. The source supplies original acquisition time and fund-assets weights. | Complete/report-dated displays, certified residuals and rounding authority require independent evidence. Original weights remain unchanged and unknown mass stays unknown. |
+| [Dual-axis overlays](screenshots/overlay-touch.png) | Neither prepared pair currently qualifies through a backend route. Both need one explicit acquisition carrying the two series and their availability. | Equity needs EPS/share, dilution, split and currency facts. Macro needs the exact CPI series/units and release alignment. No hidden joins or auxiliary requests. |
+| [Estimate revisions](screenshots/revisions-six-member-tie.png) | Target fiscal quarter/year and relative EPS fields do not identify actual UTC observation batches. Slope, path and bump have no qualified live route. | Explicit observed vintages and matching target/issuer/unit/share basis support slope/path. Bump additionally requires independently complete common roster and comparable positive baseline. |
+| [Market map](screenshots/market-index-original-fraction.png) | Neither screener nor index route establishes the prepared return-session and area facts. | Cap mode requires a fixed delivered sample and same-acquisition cap in a common currency. Index mode requires authoritative components, weights and validity for the completed return session. |
+
+The app checks a local file's declarations and consistency. It cannot independently authenticate the publisher or establish that a claimed universe is complete in the outside world. An explicit snapshot supports only the mode its evidence qualifies. The common source validator keeps negative raw facts through linked descendants and never serializes receipts in presentation settings. [Source rulings](rulings.md)
+
+## Candidate and package identity
+
+| Repository or artifact | Value |
+|---|---|
+| Client baseline | `0283dce2bb45afdfc2e6c422a4f77f4b70bb8c48` |
+| Prior isolated archive-reproducer repair | `73154c8082a78d78c79f3be799ca195f0a7142b6` |
+| Reviewed family group before paired source fix | `0c43dd6178f87e72ff1f521af68b0490966c02e7` |
+| Tested client | `4b8751a6e6035fe75802e24f581516088ba40d38` |
+| Provider baseline | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
+| Canonical provider | `f8f0166603f0b59f3f879b704b23582bd893e67d`, distribution 9.0.1 |
+| Canonical root / Docker vendor tree | `aad6d9c74450cfc5ae9f7fa38c4697b85f58e93c`, 149 tracked paths |
+| Docker baseline | `0e843db5465725f124075709528ea485618c87ad` |
+| Docker candidate | `a0efab23ab2be34b4a3b15e5641aa39d3a42df59` |
+| Local target and platform | `v3`, `linux/arm64`, Docker 29.9.3 |
+| Baseline image OCI index | `sha256:44976f3671e5642c30808316d147e40bd841404455bad9c29aa1dbbd8f18d74b` |
+| Candidate OCI index | `sha256:6c329ce23329217f504876c910031d15afbad7f73196a084775850e4b7f61e7a` |
+| Candidate platform manifest | `sha256:b7469f9d933c610d372c2af668a23bd7bbfc8700b2449fb5634acd1a8c60c1d6` |
+| Candidate image config | `sha256:03fef1a6122ca379feea41653c0927d3d6a1f4e707a828cf81a5c6a982bbc101` |
+
+The vendor copy came from `git archive` of the canonical commit. The checked Git trees match every path, mode and blob. SHA-256 and byte comparisons cover all 149 physical files and the complete inventory. The installed distribution matches all 94 canonical provider package files. The prior pair had 121 tracked paths and 86 installed files. The published web preview keeps its existing Docker/policy pin. This local candidate was not published. The stack retains 53 EODHD mirrors and its eight-card provider app. Generating the example catalog from client baseline and candidate yields byte-identical 16-app outputs. All eight source-dependent examples remain outside the default catalog.
+
+## Source and build verification
+
+- Previous installed image, corrected offline RED. Five generated routes lacked the opt-in and five responses lacked the new receipt. The output was 10 failed, two passed, seven subtests passed, one existing aiohttp warning. The prior attempt exposed a placeholder rejected by the old SDK and an old L2 metadata-read method. The corrected fixtures use the SDK's public demo token in the offline test and support both reads.
+- Canonical offline pytest with socket connections denied. **891 passed, one skipped**, one existing OpenBB Core aiohttp ClientSession deprecation warning. The optional `openbb_arcticdb.utils` integration was unavailable. Whole-provider Ruff reported three F401s in baseline-identical currency, government and treasury files. The earlier KPI review recorded four. The ETF source task removed the fourth while changing that module. No unrelated cleanup was included.
+- Local Docker build. The build-time EODHD verifier ran **19 tests**. The package is installed alongside locked OpenBB Core/Platform API 2.0.1 with the vendored EODHD SDK. Build-time pip root-user and upgrade notices and intentionally unsuccessful EconDB fixture responses are known diagnostics. The verifier also checks authentication-enabled app construction.
+- Candidate image with networking disabled. Installed route/pin pytest reported **20 passed, 18 subtests passed**, one baseline warning, in 152.82 s. The runtime verifier reported **19 passed** in 149.754 s. An additional stack wiring check passed **10 tests and four subtests**. The five routes reuse their generated OpenAPI parameter and widget definitions. No new API endpoint was added.
+- The installed image has neither `arcticdb` nor `openbb_arcticdb`. Its normal cache uses L1. Tests exercise the installed versioned-library adapter with a versioned-record fixture, including original timestamp reuse across requests and withholding evidence for legacy entries. They do not verify a real ArcticDB deployment or a production subscription. The canonical suite also exercises the standard routes in its separate router-equipped environment. Only the EODHD mirrors are mounted in this image.
+
+## Client, native and browser gates
+
+| Gate on the tested product | Result |
+|---|---|
+| `pnpm typecheck`, `pnpm lint`, `pnpm scrub` | All passed. |
+| `pnpm test:run` | 542 files passed, seven opt-in files skipped. 10,123 tests passed, 47 skipped. |
+| `pnpm test:web` | 57 passed. The authentication error diagnostic belongs to an intentional invalid-authentication test. |
+| `pnpm pivot:build`, `pnpm pivot:verify` | Rust 1.98.1, wasm-bindgen 0.2.128. Compiled release WASM passed emitted-module protocol negotiation. Verification passed. |
+| `pnpm pivot:test`, `pnpm test:pivot:packaging` | 199 core tests, one WASM native test, 19 wire codec tests and three packaging cases passed. Packaging includes rejection of intentionally stale or missing artifacts. |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap` | Production build passed, 3,982 modules transformed. Vite reported mixed static/dynamic imports for logger and dashboardStore and the existing large-chunk advisory. |
+| Chromium, TypeScript | All **88/88** passed on a single worker and controlled server, zero skips or retries. All eight families plus geometry, teardown, and affected earlier chart families. |
+| Chromium, compiled Rust | All **45/45** family integration cases passed, zero skips or retries. |
+| Installed metadata to client | **1/1** passed with 14 installed HTTP responses. Five generated widgets advertised the flag, selected `results`, and delivered exactly five qualifying receipts across four families. Plain and unstamped-cache responses yielded no client proof. |
+
+The parent regression suite reproduced seven old-acquisition displays and passed all 145 parent/renderer cases after the shared correction. The full unit run emitted the existing React act and jsdom canvas diagnostics. Chromium covered actual pointer and emulated touch events, fitting zoom, bounded overflow, original values, missing pins, re-selection, teardown and late-work fencing. Physical hardware and native app interaction remain unverified. [Scoped review record](review.md)
+
+The four portable current-worker probes passed on the final checkout. The ETF comparison recorded zero canvas/SVG disagreements at 961 samples for each of 12 fixture/radius combinations in both Chromium and WebKit. Removing Path2D produced an explicit refusal, and the valid sector-depth repair retained weights 0.069985 and 0.002345. At 320 × 260 the market-map probe measured a 0.00002956 CSS-pixel positive tile, refused the collapsed 5e−324 cap, and kept the exact 1.2345678901234568e−128 listing and sector weights in bounds.
+
+The saved captures show the original return-density hover, per-day news score, individual waffle and ETF touch hovers, the extreme finite KPI gauge, the overlay's reported and availability facts, the revision cohort and the original index fraction on a narrow surface. Exact details remain accessible within scrollable surfaces. The browser tests also examine real SVG areas, bounds and text, and inspect gesture outcomes. [Geometry and installed-pair reproduction](reproduce/README.md)
+
+## Bundle cost
+
+Node v26.13.0 `gzipSync` defaults were applied to each production JavaScript file. The total is the sum of each file's individual compressed size, including lazy chunks and workers. These figures measure emitted assets, rather than a first-load network transfer. The baseline is the original eight-chart project baseline, before its archive-only fix.
+
+| JS role | Baseline raw / gzip | Candidate raw / gzip | Delta raw / gzip |
+|---|---:|---:|---:|
+| HelpDialog | 732,146 / 246,573 | 750,445 / 252,779 | 18,299 / 6,206 |
+| MarkdownEditorRenderer | 916,400 / 275,438 | 916,400 / 275,440 | 0 / 2 |
+| index | 3,515,697 / 1,136,886 | 3,735,890 / 1,207,703 | 220,193 / 70,817 |
+| kpi.worker | 0 / 0 | 57,604 / 18,478 | 57,604 / 18,478 |
+| lightweight-charts.production | 180,254 / 57,062 | 180,254 / 57,062 | 0 / 0 |
+| module | 77,311 / 27,623 | 77,311 / 27,623 | 0 / 0 |
+| native | 432,798 / 83,212 | 432,798 / 83,212 | 0 / 0 |
+| pdf | 474,222 / 143,486 | 474,222 / 143,486 | 0 / 0 |
+| pdf_viewer | 223,231 / 69,087 | 223,231 / 69,087 | 0 / 0 |
+| pivot_wasm | 4,689 / 1,971 | 4,689 / 1,971 | 0 / 0 |
+| recipe.worker | 99,770 / 33,951 | 244,051 / 83,960 | 144,281 / 50,009 |
+| rust.worker | 110,261 / 34,809 | 157,024 / 48,490 | 46,763 / 13,681 |
+| table.worker | 274,519 / 86,350 | 322,028 / 100,556 | 47,509 / 14,206 |
+| xlsx 1 | 499,905 / 161,705 | 499,905 / 161,705 | 0 / 0 |
+| xlsx 2 | 499,909 / 161,707 | 499,909 / 161,707 | 0 / 0 |
+| Total | 8,041,112 / 2,519,860 | 8,575,761 / 2,693,259 | 534,649 / 173,399 |
+
+The build added the existing Plotly package's box, sunburst and treemap registrations. The isolated production registration deltas for box and sunburst were **14,405 / 5,811** and **40,999 / 14,956** raw/gzip bytes respectively. Treemap's isolated registered-trace bundle delta was **23,547 / 7,577** bytes. Its standalone entry including shared dependencies was **766,659 / 262,526** bytes. These isolated numbers measure different builds and do not add directly to the final main chunk. Violin density uses scatter and worker calculations. There is no full Plotly bundle or version change.
+
+
+## Reproduce the shipping gates
+
+In the canonical checkout, use the provider's prepared Python environment, which includes the standard router packages. The offline run permits local sockets to be constructed and blocks network connections.
+
+```bash
+python - <<'PYTEST'
+import sys
+import pytest
+
+def offline(event, args):
+    if event == "socket.connect":
+        raise OSError("Offline verification: network disabled")
+
+sys.addaudithook(offline)
+raise SystemExit(pytest.main(["-q", "-rs"]))
+PYTEST
+```
+
+From the Docker checkout, set `PYTEST_DEPS` to a directory containing pytest and its Python dependencies. The stack tests run against the wheel installed in the image.
+
+```bash
+docker build --progress=plain --platform linux/arm64 --target v3 \
+  --metadata-file /tmp/next-eight-image-metadata.json -t openbq-next-eight-candidate .
+docker run --rm --network none -e PYTHONPATH=/testdeps -v "$PYTEST_DEPS:/testdeps:ro" \
+  -v "$PWD/v9/eodhd:/qualification/v9/eodhd:ro" -w /qualification openbq-next-eight-candidate \
+  python -m pytest v9/eodhd/tests -q -p no:cacheprovider
+docker run --rm --network none -v "$PWD/v9/eodhd:/check:ro" openbq-next-eight-candidate python /check/verify.py
+git rev-parse HEAD:v9/eodhd/source
+```
+
+From BDOBB, run the compiled artifact and packaging gates before the server-backed suites. Each Playwright invocation owns a single controlled server, one worker and zero retries. The TypeScript sweep includes affected older chart suites. Eight family integration specs then exercise the compiled Rust engine.
+
+```bash
+pnpm typecheck && pnpm lint && pnpm test:run && pnpm scrub && pnpm test:web
+pnpm pivot:build && pnpm pivot:verify && pnpm pivot:test && pnpm test:pivot:packaging
+PIVOT_WASM_VERIFY_ONLY=1 pnpm build --sourcemap
+features=(e2e/{market-map,estimate-revisions,dual-axis-overlay,etf-sunburst,linked-kpi,ownership-snapshot,return-summary,news-calendar}.spec.ts)
+geometry=(e2e/{etf-sunburst-geometry,etf-sunburst-teardown,kpi-gauge-geometry,ownership-snapshot-geometry,return-summary-geometry,news-calendar-geometry}.spec.ts)
+previous=(e2e/{chart-recipes,risk-exposure,screening-income}.spec.ts)
+env -u NO_COLOR FORCE_COLOR=0 PIVOT_WASM_VERIFY_ONLY=1 VITE_TABLE_ENGINE=typescript \
+  BDOBB_BROWSER_PORT=4323 BDOBB_MOCK_PORT=4324 pnpm exec playwright test \
+  "${features[@]}" "${geometry[@]}" "${previous[@]}" --project=chromium --workers=1 --retries=0 \
+  --output=/tmp/next-eight-final-ts --reporter=list
+env -u NO_COLOR FORCE_COLOR=0 PIVOT_WASM_VERIFY_ONLY=1 VITE_TABLE_ENGINE=rust \
+  BDOBB_BROWSER_PORT=4333 BDOBB_MOCK_PORT=4334 pnpm exec playwright test "${features[@]}" \
+  --project=chromium --workers=1 --retries=0 --output=/tmp/next-eight-final-rust --reporter=list
+```
+
+## Catalog working-copy incident
+
+An initial catalog command used the generator's default checkout. It wrote the 16-app output to `~/Developer/openbq-docker/examples/bdobb/apps.json` on the separate v10 branch. That branch's index and HEAD contain nine apps. The working-copy contents immediately before the write are unknown. The generated output remains there. Both the tracked index file and the generated file, their diff and filesystem metadata were retained in the local paired client checkout under `.superpowers/recovery/2026-11-20-external-v10-app-catalog/`, outside the disposable SDD directory. The saved SHA-256 values are `7ea2925a15693d20fd8b4fcddb7a059b64081c1ec80ae55a2681c04ee17f06e3` (tracked) and `2078bfeb26e109a32cd3be1e5bcc238826150c92e509c0bc60123a699425c9ed` (generated). The candidate catalog check was repeated in isolated directories with an explicit destination and the paired logo. The existing Docker v9 catalog has its prior distinct content and was untouched.

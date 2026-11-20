@@ -1,0 +1,36 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import { readFileSync } from 'node:fs';
+import { test, expect } from '@playwright/test';
+import { MOCK_URL, dashboardSeed, seedApp } from './fixtures';
+
+test('pairs installed widgets and completed mirror responses with the desktop acquisition callback', async ({ page }) => {
+  const captures = JSON.parse(readFileSync(new URL('./paired-sources.json', import.meta.url), 'utf8'));
+  await seedApp(page, dashboardSeed([]));
+  const capturedKinds: string[] = [];
+  for (const { widget, params, body } of captures) {
+    await page.route(MOCK_URL + widget.endpoint + '**', route => route.fulfill({ json: body }));
+    const result = await page.evaluate(async ({ widget, params, mock }) => {
+      // Vite serves the live application modules to this browser-only check.
+      const { normalizeWidgets } = await import('/src/lib/widgetsJson.ts');
+      const { fetchWidgetData } = await import('/src/lib/dataClient.ts');
+      const normalized = normalizeWidgets({ paired: widget }, 'b1').widgets[0];
+      let facts;
+      const rows = await fetchWidgetData({ id: 'b1', baseUrl: mock }, normalized, params, undefined, undefined, undefined,
+        acquired => { facts = acquired.chartSources; });
+      return { rows, facts, selector: normalized.dataKey, params: normalized.params.map(p => p.paramName) };
+    }, { widget, params, mock: MOCK_URL });
+    expect(result.selector).toBe('results');
+    expect(result.params).toContain('chart_source');
+    expect(result.rows).toEqual(body.results);
+    const receipt = body.extra?.results_metadata?.chart_sources?.receipts[0];
+    if (receipt) {
+      expect(result.facts?.[receipt.kind]).toEqual(receipt);
+      capturedKinds.push(receipt.kind);
+    } else {
+      expect(result.facts).toBeUndefined();
+    }
+    await page.unroute(MOCK_URL + widget.endpoint + '**');
+  }
+  expect(capturedKinds.sort()).toEqual(['etf-hierarchy', 'metric', 'metric', 'news', 'ownership']);
+});
