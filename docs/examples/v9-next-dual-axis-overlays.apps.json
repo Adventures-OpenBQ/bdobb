@@ -1,0 +1,172 @@
+[
+  {
+    "name": "Dual-axis overlay examples",
+    "description": "Requires BDOBB 9.0.0 or later with dual-axis overlays. Each tab uses a separate synthetic prepared snapshot. Drop the matching JSON file and choose it as the chart source.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "price-eps": {
+        "id": "price-eps",
+        "name": "Price and EPS",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Adjusted close and diluted EPS"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Prepared overlay source"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "cpi-ten-year": {
+        "id": "cpi-ten-year",
+        "name": "CPI and Treasury yield",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 30,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "US CPI-U and ten-year Treasury yield"
+                }
+              }
+            }
+          },
+          {
+            "i": "local_table",
+            "x": 0,
+            "y": 30,
+            "w": 40,
+            "h": 11,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Prepared overlay source"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "price-eps",
+            "cpi-ten-year"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "price-eps",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "dual-axis-overlay",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "dual-axis-overlay",
+                  "recipe": "price-eps",
+                  "fields": {
+                    "series": "series",
+                    "date": "date",
+                    "value": "value",
+                    "availableAt": "available_at",
+                    "targetStart": "target_start",
+                    "targetEnd": "target_end"
+                  }
+                }
+              },
+              "sourceRef": "c1"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "price-eps",
+            "index": 1,
+            "extras": {}
+          },
+          {
+            "ref": "c2",
+            "tab": "cpi-ten-year",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "dual-axis-overlay",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "dual-axis-overlay",
+                  "recipe": "cpi-ten-year",
+                  "fields": {
+                    "series": "series",
+                    "date": "date",
+                    "value": "value",
+                    "availableAt": "available_at"
+                  }
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "cpi-ten-year",
+            "index": 1,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]

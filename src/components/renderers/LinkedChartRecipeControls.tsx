@@ -44,13 +44,14 @@ export const recipeLabels: Partial<Record<Kind, string>> = {
   'return-summary': 'Return summaries',
   'ownership-snapshot': 'Ownership snapshot',
   'etf-sunburst': 'ETF sunburst',
+  'dual-axis-overlay': 'Dual-axis overlay',
 };
 
 function missingRoles(kind: Kind, columns: DatasetColumn[], metric: Metric, mode?: Mode) {
   return bindingRoles(kind, metric, mode).filter(r => !r.optional && !bindingCandidates(r, columns).length).map(r => r.label.toLowerCase());
 }
 export function recipeAvailability(kind: Kind, columns: DatasetColumn[], verifiedEmpty = false): string | null {
-  if (kind === 'news-sentiment-calendar' || kind === 'return-summary' || kind === 'ownership-snapshot' || kind === 'etf-sunburst') return null; // The draft loads and checks the acquisition, including a columnless empty result.
+  if (kind === 'news-sentiment-calendar' || kind === 'return-summary' || kind === 'ownership-snapshot' || kind === 'etf-sunburst' || kind === 'dual-axis-overlay') return null; // The draft loads and checks the acquisition, including a columnless empty result.
   if (kind === 'dividend-steps' && verifiedEmpty) return null;
   if (kind === 'income-sankey') return columns.some(isIncomePeriodColumn) ? null
     : 'Present actual FY or FQ columns from an income Statement table.';

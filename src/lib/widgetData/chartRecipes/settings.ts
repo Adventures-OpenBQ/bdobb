@@ -24,6 +24,7 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'return-summary': { options: ['symbols', 'view', 'window'], ...priceFields, distinctBindings: true },
   'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
+  'dual-axis-overlay': { options: ['recipe'] },
   'etf-sunburst': { options: ['fund', 'depth', 'snapshot'], required: ['holding', 'sector', 'weight'], distinctBindings: true },
   'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
   'bubble-regression': { options: ['priceDate', 'regression'],
@@ -39,9 +40,11 @@ export function isRecipeType(type: unknown): type is RecipeKind {
   return typeof type === 'string' && Object.hasOwn(recipeShapes, type);
 }
 
-export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' | 'ownership-snapshot' | 'etf-sunburst' {
-  return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey' || type === 'news-sentiment-calendar' || type === 'return-summary' || type === 'ownership-snapshot' || type === 'etf-sunburst';
+export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' | 'ownership-snapshot' | 'etf-sunburst' | 'dual-axis-overlay' {
+  return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey' || type === 'news-sentiment-calendar' || type === 'return-summary' || type === 'ownership-snapshot' || type === 'etf-sunburst' || type === 'dual-axis-overlay';
 }
+
+export const OVERLAY_LINKED_CHART_FIELDS = ['type', 'measures', 'display', 'recipe'] as const;
 
 export const LINKED_CHART_FIELDS = ['type', 'category', 'measures', 'display', 'seriesFrom', 'period', 'recipe'] as const;
 
@@ -120,6 +123,7 @@ function decodeRecipeShape(value: unknown, chartType: string, shape: RecipeShape
 /** The same closed schema supplies repair messages on import and at runtime. */
 export function decodeRecipeOptions(candidate: unknown, chartType: string): RecipeOptionsResult {
   if (!isRecipeType(chartType)) return invalid('Recipe options require a financial recipe chart type.');
+  if (chartType === 'dual-axis-overlay') return decodeDualAxisOverlayOptions(candidate);
   const shape = chartType === 'ownership-snapshot' && isRecord(candidate) && Object.getOwnPropertyDescriptor(candidate, 'view')?.value === 'waffle'
     ? ownershipWaffleShape : recipeShapes[chartType];
   const decoded = decodeRecipeShape(candidate, chartType, shape);
@@ -222,7 +226,6 @@ export function decodeDualAxisOverlayOptions(value: unknown): RecipeOptionsResul
 
 export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult<RecipeRequestOptions> {
   const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
-  if (kind === 'dual-axis-overlay') return decodeDualAxisOverlayOptions(value);
   return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 

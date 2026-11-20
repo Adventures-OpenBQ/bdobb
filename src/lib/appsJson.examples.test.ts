@@ -85,6 +85,7 @@ describe("docs/examples", () => {
     "v9-next-ownership-snapshot.apps.json",
     "v9-next-kpi-gauges.apps.json",
     "v9-next-etf-sunburst.apps.json",
+    "v9-next-dual-axis-overlays.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -249,6 +250,29 @@ describe("docs/examples", () => {
         expect.objectContaining({ symbol: "CEDAR.US", value: .000001 }),
         expect.objectContaining({ symbol: "WILLOW.US", value: 0 }),
       ]) } });
+  });
+
+  it("v9-next-dual-axis-overlays acquires both prepared local recipe examples", async () => {
+    const name = "v9-next-dual-axis-overlays";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Price and EPS", "CPI and Treasury yield"]);
+    for (const [i, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      const file = i === 0 ? "fictional-price-eps.json" : "fictional-cpi-ten-year.json";
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const options = chart.linkedChart?.recipe;
+      if (options?.kind !== "dual-axis-overlay") throw new Error("Missing imported overlay recipe.");
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      const result = runRecipe(dataset, options, { theme: "light", maxDecimals: 2, today: "2026-11-20" });
+      expect(result).toMatchObject({ ok: true, overlay: { recipe: i === 0 ? "price-eps" : "cpi-ten-year",
+        left: { unitLabel: i === 0 ? "USD/share" : "1982–84 = 100" },
+        right: { unitLabel: i === 0 ? "USD/share" : "%" },
+      } });
+    }
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {

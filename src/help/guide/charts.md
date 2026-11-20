@@ -68,6 +68,18 @@ The opted-in EODHD holdings endpoint uses `chart_source=true`, a qualified US ET
 
 For a portable Workspace, relink to an empty local table and remove the dropped file card before saving. An attached file triggers `MISSING_LOCAL_ASSET`. After import, drop the original holdings file and choose it as the source.
 
+## Dual-axis overlay
+
+Drop one prepared local JSON snapshot into the workspace, then use **Choose source** to link that table to a linked chart. Choose **Dual-axis overlay** and select **Adjusted closing price and reported diluted EPS** or **CPI and ten-year Treasury yield**. Apply after the source and its field bindings pass the chart check. If the chart reports missing evidence or unavailable fields, link the matching prepared file or restore the physical fields in the table.
+
+Adjusted close uses the exchange session date and reflects splits and dividends. Diluted fiscal-quarter EPS appears as markers at the acquired release date or time. Hover or tap to read the fiscal period, session timing when known, and the original value. A date-only release gives no ordering against the same day's close. The restatement and vintage disclosures apply to the current acquisition. They do not establish what was known at an earlier date.
+
+CPI uses the measurement month for the monthly, seasonally adjusted all-items US city average CPI-U, series CUSR0000SA0, with the 1982–84 index base. DGS10 is the independent daily nominal ten-year US Treasury constant-maturity yield. The plot formats its fraction as a percent. A release date appears where acquired. Missing or filtered observations remain gaps.
+
+Open **Overlay observations** for original values, units and dates. Zoom when the plot fits or swipe to reach the axes when it overflows. Each y axis scales independently, so apparent movement together depends on the chosen ranges. Both live recipes are unavailable. The examples use synthetic prepared files to demonstrate the local workflow.
+
+An attached local file triggers `MISSING_LOCAL_ASSET` when saving a portable Workspace. Relink the chart to an empty local table, remove the dropped file card and export. After import, drop the matching file and use **Choose source** to attach it.
+
 ## Linked metric
 
 From a source table’s **Card menu**, choose **Create linked metric**, then select a KPI preset and its original numeric field. **Follow latest acquired** uses the newest eligible vintage. To keep one observation, choose it explicitly. If that pin disappears, reacquire it or choose another available observation. Apply saves the question after checking the source.

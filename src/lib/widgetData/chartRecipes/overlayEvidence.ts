@@ -110,6 +110,14 @@ export function isSupportedOverlayQuarter(start: string, end: string): boolean {
 }
 
 /** Source-owned declarations can be cross-checked wherever their physical fields remain visible. */
+export const overlayBindingOrigins = {
+  series: 'series', date: 'date', value: 'value', availableAt: 'available_at',
+  targetStart: 'target_start', targetEnd: 'target_end',
+} as const;
+
+export const overlaySourceIssue = 'Acquire an explicitly prepared overlay snapshot with verified pair, series and availability evidence.';
+export const overlayPairIssue = 'Choose the recipe certified by this prepared snapshot or relink the appropriate source.';
+
 export function overlayRowFacts(source: OverlaySource, side: Side) {
   const series = source.series[side];
   return {

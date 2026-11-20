@@ -1,11 +1,12 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isPlotlyFigure, rowFigure, rowsOf, type PlotlyFigure } from "../../lib/chartShapes";
 import type { ColumnSpec } from "../../lib/types";
 import { logError } from "../../lib/logger";
-import { followSunburstLevel, followPlotYAxisTicks, purgePlot, REGISTERED_TRACE_TYPES, renderPlot, resizePlot, type AxisTickFormatter } from "../../lib/plotly";
+import { followSunburstLevel, followPlotYAxisTicks, followPlotZoom, purgePlot, REGISTERED_TRACE_TYPES,
+  renderPlot, resizePlot, restorePlotZoom, type AxisTickFormatter, type PlotZoomRanges } from "../../lib/plotly";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useResolvedTheme } from "../../hooks/useResolvedTheme";
 
@@ -120,6 +121,8 @@ export function ChartRenderer({
   minPlotWidth,
   onDrawingSurfaceChange,
   formatYAxisTicks,
+  formatSecondYAxisTicks,
+  preserveCartesianZoom,
   onSunburstLevelChange,
 }: {
   data: unknown;
@@ -136,6 +139,8 @@ export function ChartRenderer({
   /** Measure the actual drawing surface after minimum dimensions and scrollbar gutters. */
   onDrawingSurfaceChange?: (size: DrawingSurface) => void;
   formatYAxisTicks?: AxisTickFormatter;
+  formatSecondYAxisTicks?: AxisTickFormatter;
+  preserveCartesianZoom?: boolean;
   onSunburstLevelChange?: (id: string) => void;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
@@ -219,6 +224,12 @@ export function ChartRenderer({
     figure: coarseScroll && drawable ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable,
     id: Symbol(), uirevision, scrolling,
   }), [drawable, uirevision, scrolling, coarseScroll]);
+  const liveDraw = useRef<symbol>(undefined);
+  const zoom = useRef<{ revision: string; ranges: PlotZoomRanges }>(undefined);
+  useLayoutEffect(() => {
+    liveDraw.current = draw.id;
+    return () => { liveDraw.current = undefined; };
+  }, [draw.id]);
   const [failure, setFailure] = useState<{ id: symbol; message: string }>();
   const hasPlot = Boolean(drawable && failure?.id !== draw.id);
   const measured = Boolean(onViewportWidthChange || onDrawingSurfaceChange);
@@ -259,14 +270,23 @@ export function ChartRenderer({
     let active = true;
     let stopFollowingTicks: (() => void) | undefined;
     let stopFollowingLevel: (() => void) | undefined;
-    const axis = formatYAxisTicks
-      ? figure.layout.yaxis as { range?: number[]; tickvals?: number[]; ticktext?: string[] } | undefined
-      : undefined;
+    let stopFollowingZoom: (() => void) | undefined;
+    const current = () => active && liveDraw.current === draw.id && node.current === el && el.isConnected;
+    function initialTicks(axis: 'yaxis' | 'yaxis2', side: 'l' | 'r') {
+      const value = figure?.layout[axis] as { range?: number[]; tickvals?: number[]; ticktext?: string[] } | undefined;
+      if (value?.range && value.tickvals && value.ticktext) return {
+        range: value.range, tickvals: value.tickvals, ticktext: value.ticktext,
+        ...(formatSecondYAxisTicks && { margin: (figure?.layout.margin as Partial<{ l: number; r: number }> | undefined)?.[side] }),
+      };
+    }
+    const firstTicks = formatYAxisTicks && initialTicks('yaxis', 'l');
+    const secondTicks = formatSecondYAxisTicks && initialTicks('yaxis2', 'r');
     const failDraw = (error: unknown) => {
-      if (!active || node.current !== el || !el.isConnected) return;
+      if (!current()) return;
       active = false;
       stopFollowingTicks?.();
       stopFollowingLevel?.();
+      stopFollowingZoom?.();
       const message = (error instanceof Error ? error.message : String(error)).slice(0, 400);
       void logError(`chart render failed: ${message}`);
       setFailure({ id: draw.id, message });
@@ -277,19 +297,27 @@ export function ChartRenderer({
         // touch mode. Plotly mutates nested ranges during gestures and react.
         const chart = onDrawingSurfaceChange ? { ...figure, layout: structuredClone(figure.layout) } : figure;
         await renderPlot(el, chart, draw.uirevision);
-        if (active && node.current === el && onSunburstLevelChange) {
+        if (!current()) return;
+        if (preserveCartesianZoom) {
+          if (zoom.current?.revision !== draw.uirevision) zoom.current = { revision: draw.uirevision, ranges: {} };
+          const { ranges } = zoom.current;
+          stopFollowingZoom = followPlotZoom(el, ranges);
+          await restorePlotZoom(el, ranges);
+          if (!current()) return;
+        }
+        if (onSunburstLevelChange) {
           stopFollowingLevel = followSunburstLevel(el, onSunburstLevelChange);
         }
-        if (active && node.current === el && formatYAxisTicks && axis?.range && axis.tickvals && axis.ticktext) {
-          const initial = { range: axis.range, tickvals: axis.tickvals, ticktext: axis.ticktext };
-          stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, initial, failDraw);
+        if (formatYAxisTicks && firstTicks) {
+          const second = formatSecondYAxisTicks && secondTicks ? { initial: secondTicks, format: formatSecondYAxisTicks } : undefined;
+          stopFollowingTicks = followPlotYAxisTicks(el, formatYAxisTicks, firstTicks, failDraw, second);
           if (!active) stopFollowingTicks();
         }
       } catch (error) { failDraw(error); }
     };
     void render();
-    return () => { active = false; stopFollowingTicks?.(); stopFollowingLevel?.(); };
-  }, [draw, formatYAxisTicks, onDrawingSurfaceChange, onSunburstLevelChange]);
+    return () => { active = false; stopFollowingTicks?.(); stopFollowingLevel?.(); stopFollowingZoom?.(); };
+  }, [draw, formatYAxisTicks, formatSecondYAxisTicks, onDrawingSurfaceChange, onSunburstLevelChange, preserveCartesianZoom]);
 
   const problem = failure?.id === draw.id ? <p role="alert">Chart could not be drawn. {failure.message}</p>
     : !figure ? (measured ? null : <p className="empty-state">Nothing chartable in this payload.</p>)

@@ -189,3 +189,34 @@ describe("sunburst level listener lifetime", () => {
     expect(onLevel.mock.calls).toEqual([["Technology"]]);
   });
 });
+
+it('relayouts both y ranges in one original-unit update and safely retires after purge', () => {
+  const events = new EventEmitter();
+  const initial = { range: [0, 2], tickvals: [1], ticktext: ['1'], margin: 62 };
+  const oldYield = { range: [0, 1e-12], tickvals: [5e-13], ticktext: ['5e-11%'], margin: 72 };
+  const left = { ...initial };
+  const right = { ...oldYield };
+  const graph = Object.assign(document.createElement('div'), {
+    _fullLayout: { yaxis: left, yaxis2: right, margin: { l: 62, r: 72 } },
+    on: events.on.bind(events), removeListener: events.removeListener.bind(events),
+  });
+  const onError = vi.fn();
+  const stop = followPlotYAxisTicks(graph,
+    () => ({ tickvals: [.5], ticktext: ['0.5'], margin: 62 }), initial, onError,
+    { initial: oldYield, format: () => ({ tickvals: [5e-14], ticktext: ['5e-12%'], margin: 86 }) });
+  const listener = events.listeners('plotly_relayout')[0];
+  relayout.mockClear();
+  left.range = [.2, .8];
+  right.range = [3e-14, 7e-14];
+  events.emit('plotly_relayout');
+  expect(relayout.mock.calls).toEqual([[graph, {
+    'yaxis.tickvals': [.5], 'yaxis.ticktext': ['0.5'],
+    'yaxis2.tickvals': [5e-14], 'yaxis2.ticktext': ['5e-12%'], 'margin.r': 86,
+  }]]);
+  Reflect.deleteProperty(graph, 'removeListener');
+  stop();
+  stop();
+  listener();
+  expect(relayout).toHaveBeenCalledTimes(1);
+  expect(onError).not.toHaveBeenCalled();
+});

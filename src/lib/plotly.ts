@@ -64,30 +64,59 @@ export function renderPlot(node: HTMLElement, figure: PlotlyFigure, uirevision?:
   return Plotly.react(node, figure.data as Data[], layout, CONFIG) as unknown as Promise<void>;
 }
 
-type TickLabels = { tickvals: number[]; ticktext: string[] };
+type TickLabels = { tickvals: number[]; ticktext: string[]; margin?: number };
 export type AxisTickFormatter = (range: readonly [number, number]) => TickLabels;
+type TickStyle = { format: AxisTickFormatter; initial: TickLabels & { range: readonly number[] } };
+type CartesianAxis = 'xaxis' | 'yaxis' | 'yaxis2';
+type AxisRange = readonly [number | string, number | string];
+export type PlotZoomRanges = Partial<Record<CartesianAxis, AxisRange>>;
 
-/** Keep native zoom/pan while relabeling an affine coordinate range in original units. */
+type LiveAxis = Partial<TickLabels> & { range?: AxisRange; _rangeInitial0?: string | number; _rangeInitial1?: string | number };
+type RelayoutListener = (changes: Record<string, unknown>) => void;
+type LiveGraph = HTMLElement & {
+  _fullLayout?: Partial<Record<CartesianAxis, LiveAxis>> & { margin?: { l: number; r: number } };
+  on: (type: 'plotly_relayout', listener: RelayoutListener) => void;
+  removeListener?: (type: 'plotly_relayout', listener: RelayoutListener) => void;
+};
+
+const zoomAxes = ['xaxis', 'yaxis', 'yaxis2'] as const;
+const sameRange = (left: AxisRange | undefined, right: AxisRange | undefined) =>
+  left?.[0] === right?.[0] && left?.[1] === right?.[1];
+
+function plotRelayout(node: HTMLElement, changes: Record<string, unknown>) {
+  return Plotly.relayout(node, changes as Partial<PlotlyHTMLElement['layout']>);
+}
+
+/** Keep native zoom/pan while relabeling coordinates in their original units. */
 export function followPlotYAxisTicks(
-  node: HTMLElement, formatter: AxisTickFormatter, initial: TickLabels & { range: readonly number[] },
-  onError: (error: unknown) => void,
+  node: HTMLElement, formatter: AxisTickFormatter, initial: TickStyle['initial'],
+  onError: (error: unknown) => void, second?: TickStyle,
 ): () => void {
-  type LiveGraph = PlotlyHTMLElement & {
-    _fullLayout?: { yaxis?: TickLabels & { range: [number, number] } };
-    removeListener?: (type: string, listener: () => void) => void;
-  };
   const graph = node as LiveGraph;
+  const styles = [
+    { axis: 'yaxis', margin: 'l', style: { format: formatter, initial } },
+    ...(second ? [{ axis: 'yaxis2', margin: 'r', style: second }] as const : []),
+  ] as const;
   let following = true;
   async function update() {
     if (!following) return;
     try {
-      const axis = graph._fullLayout?.yaxis;
-      if (!axis?.range || !axis.range.every(Number.isFinite)) return;
-      const [low, high] = axis.range;
-      const labels = low === initial.range[0] && high === initial.range[1] ? initial : formatter(axis.range);
-      if (axis.tickvals?.length === labels.tickvals.length && axis.ticktext?.length === labels.ticktext.length
-        && labels.tickvals.every((value, i) => axis.tickvals[i] === value && axis.ticktext[i] === labels.ticktext[i])) return;
-      await Plotly.relayout(node, { 'yaxis.tickvals': labels.tickvals, 'yaxis.ticktext': labels.ticktext } as Partial<PlotlyHTMLElement['layout']>);
+      const changes: Record<string, unknown> = {};
+      for (const { axis, margin, style } of styles) {
+        const live = graph._fullLayout?.[axis];
+        const [low, high] = live?.range ?? [];
+        if (typeof low !== 'number' || typeof high !== 'number' || !Number.isFinite(low) || !Number.isFinite(high)) continue;
+        const labels = low === style.initial.range[0] && high === style.initial.range[1] ? style.initial : style.format([low, high]);
+        if (live?.tickvals?.length !== labels.tickvals.length || live.ticktext?.length !== labels.ticktext.length
+          || !labels.tickvals.every((value, i) => live.tickvals?.[i] === value && live.ticktext?.[i] === labels.ticktext[i])) {
+          changes[axis + '.tickvals'] = labels.tickvals;
+          changes[axis + '.ticktext'] = labels.ticktext;
+        }
+        if (labels.margin !== undefined && labels.margin !== graph._fullLayout?.margin?.[margin]) {
+          changes['margin.' + margin] = labels.margin;
+        }
+      }
+      if (Object.keys(changes).length) await plotRelayout(node, changes);
     } catch (error) {
       if (following) onError(error);
     }
@@ -99,6 +128,41 @@ export function followPlotYAxisTicks(
     following = false;
     graph.removeListener?.('plotly_relayout', update);
   };
+}
+
+/** Remember only user-edited axes, including a reset back to the current plotted defaults. */
+export function followPlotZoom(node: HTMLElement, edited: PlotZoomRanges): () => void {
+  const graph = node as LiveGraph;
+  let following = true;
+  function capture(changes: Record<string, unknown>) {
+    if (!following) return;
+    for (const id of zoomAxes) {
+      if (changes[id + '.autorange'] === true) {
+        delete edited[id];
+        continue;
+      }
+      if (!Object.hasOwn(changes, id + '.range') && !Object.hasOwn(changes, id + '.range[0]') && !Object.hasOwn(changes, id + '.range[1]')) continue;
+      const axis = graph._fullLayout?.[id], range = axis?.range;
+      if (!range || (range[0] === axis._rangeInitial0 && range[1] === axis._rangeInitial1)) delete edited[id];
+      else edited[id] = [range[0], range[1]];
+    }
+  }
+  graph.on('plotly_relayout', capture);
+  return () => {
+    if (!following) return;
+    following = false;
+    graph.removeListener?.('plotly_relayout', capture);
+  };
+}
+
+/** Restore zoom after Plotly has established the newly drawn defaults as its reset target. */
+export async function restorePlotZoom(node: HTMLElement, edited: PlotZoomRanges) {
+  const graph = node as LiveGraph;
+  const changes: Record<string, unknown> = {};
+  for (const id of zoomAxes) {
+    if (edited[id] && !sameRange(graph._fullLayout?.[id]?.range, edited[id])) changes[id + '.range'] = edited[id];
+  }
+  if (Object.keys(changes).length) await plotRelayout(node, changes);
 }
 
 /** Keep mouse/touch drill and the keyboard sector selector in the same view. */

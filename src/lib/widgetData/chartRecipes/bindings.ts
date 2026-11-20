@@ -80,7 +80,7 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     { ...adjustedPriceRole, strictOrigin: 'ignore-case' },
     { key: 'symbol', label: 'Qualified listing field', names: ['symbol', 'ticker'], optional: true, strictOrigin: 'ignore-case' },
   ];
-  if (kind === 'income-sankey' || kind === 'ownership-snapshot') return [];
+  if (kind === 'income-sankey' || kind === 'ownership-snapshot' || kind === 'dual-axis-overlay') return [];
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
   if (kind === 'estimate-range') return [

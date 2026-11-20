@@ -244,16 +244,17 @@ it('keeps the question revision across viewport, theme and reacquired vintages a
     { ...equityOptions, fields: { ...equityOptions.fields, value: 'rawValue' } }, context)).revision).not.toBe(first.revision);
 });
 
-it('accepts only the closed worker options without registering an authoring chart type', async () => {
+it('shares closed overlay options across authoring and the worker', async () => {
   const dataset = await acquire(equity);
   expect(decodeRecipeRequestOptions(equityOptions)).toEqual({ ok: true, options: equityOptions });
-  expect(decodeRecipeOptions(equityOptions, equityOptions.kind)).toMatchObject({ ok: false });
+  expect(decodeRecipeOptions(equityOptions, equityOptions.kind)).toEqual({ ok: true, options: equityOptions });
   for (const options of [
     { ...equityOptions, version: 2 }, { ...equityOptions, recipe: 'custom' }, { ...equityOptions, origin: 'acquired-snapshot' },
     { ...equityOptions, fields: { ...equityOptions.fields, measure3: 'other' } },
     { ...equityOptions, fields: { ...equityOptions.fields, value: 'date' } },
     { ...equityOptions, fields: { ...equityOptions.fields, availableAt: undefined } },
   ]) {
+    expect(decodeRecipeOptions(options, equityOptions.kind)).toMatchObject({ ok: false });
     expect(decodeRecipeRequestOptions(options)).toMatchObject({ ok: false });
     expect(runRecipe(dataset, options as DualAxisOverlayOptions, context)).toMatchObject({ ok: false, refused: true });
   }

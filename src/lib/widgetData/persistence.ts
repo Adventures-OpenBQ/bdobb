@@ -53,6 +53,10 @@ function persistedExtensions(extensions: unknown): DashboardCard['extensions'] {
 function persistedChart(chart: DashboardCard['linkedChart']): DashboardCard['linkedChart'] {
   if (!chart || !isAcquiredFinancialRecipeType(chart.type)) return chart;
   const validated = decodeLinkedChartRecipe(chart, chart.type);
+  if (chart.type === 'dual-axis-overlay') {
+    return { type: chart.type, display: 'grouped', measures: [],
+      ...(validated?.ok && { recipe: plainData(validated.options, []) as typeof validated.options }) };
+  }
   const fields = LINKED_CHART_FIELDS.flatMap(field => {
     if (field === 'recipe') return validated?.ok ? [[field, plainData(validated.options, [])]] : [];
     const property = Object.getOwnPropertyDescriptor(chart, field);

@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst']) }));
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, followPlotYAxisTicks: () => () => {}, followPlotZoom: () => () => {}, restorePlotZoom: async () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst']) }));
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
@@ -27,7 +27,7 @@ import { KEY_SEP, LABEL_FIELD } from '../lib/pivotTable';
 import { pivotValueKey } from '../lib/pivotKeys';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { exportCompatibleApp, importApps } from '../lib/appsJson';
-import type { EtfSunburstOptions, OwnershipSnapshotOptions, RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
+import type { DualAxisOverlayOptions, EtfSunburstOptions, OwnershipSnapshotOptions, RecipeOptions, ReturnSummaryOptions } from '../lib/widgetData/chartRecipes/types';
 import { priceFields, dailyPriceRows } from '../lib/widgetData/chartRecipes/fixtures';
 import * as recipeWorkers from '../lib/widgetData/chartRecipes/workerClient';
 import { runRecipe } from '../lib/widgetData/chartRecipes/run';
@@ -45,6 +45,7 @@ import type { LinkedKpiOptions } from '../lib/widgetData/kpi/types';
 import * as kpiWorkers from '../lib/widgetData/kpi/workerClient';
 import { metricReceipt, metricRows } from '../test/fixtures/metricEvidence';
 import { local as etfReceipt, rows as etfRows } from '../test/fixtures/etfHierarchyEvidence';
+import overlaySnapshots from '../test/fixtures/overlaySnapshots.json';
 class Boundary {
   static failChild = false;
   onmessage: ((e: MessageEvent) => void) | null = null;
@@ -1870,4 +1871,215 @@ it('fences obsolete ETF draft results and applies only at the exact checked view
     await act(async () => held[4].release());
     await screen.findByTestId('chart-plot');
   } finally { factory.mockRestore(); }
+});
+
+
+const overlayOptions: DualAxisOverlayOptions = {
+  kind: 'dual-axis-overlay', version: 1, recipe: 'price-eps',
+  fields: { series: 'series', date: 'date', value: 'value', availableAt: 'available_at', targetStart: 'target_start', targetEnd: 'target_end' },
+};
+async function overlaySource(id: string, value: number, withEvidence = true) {
+  const snapshot = structuredClone(overlaySnapshots['price-eps']);
+  snapshot.rows[0].value = snapshot.rows[0].source_value = value;
+  const file = await saveLocalFile(new File([JSON.stringify(withEvidence ? snapshot : snapshot.rows)], id + '.json'));
+  return card({ id, widgetId: 'local_table', backendId: 'builtin', params: { file } });
+}
+
+it('requires prepared overlay evidence and clears invalid applied options', async () => {
+  const { factory } = riskRuntime();
+  const ordinary = await overlaySource('A', 310, false);
+  const prepared = await overlaySource('B', 365);
+  const chart = riskChart(overlayOptions);
+  installDashboard(riskDashboard([ordinary, prepared, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/Acquire an explicitly prepared overlay snapshot/i)).toBeVisible();
+    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await chooseRiskSource('B');
+    await screen.findByTestId('chart-plot');
+    expect(screen.getByText(/currently restated/i)).toBeVisible();
+    const invalid = { ...chart.linkedChart!, recipe: { ...overlayOptions, version: 2 } as unknown as RecipeOptions };
+    act(() => installDashboard(riskDashboard([ordinary, prepared, { ...chart, linkedSource: { kind: 'widget', sourceWidgetId: 'B' }, linkedChart: invalid }])));
+    expect(await screen.findByText(/plain version 1 recipe options/i)).toBeVisible();
+    expect(screen.queryByText(/currently restated/i)).toBeNull();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('keeps the applied overlay on an incompatible draft and fences checked settings at an exact drawing size', async () => {
+  const { factory, run, setSize, resize } = riskRuntime();
+  const a = await overlaySource('A', 310);
+  const chart = riskChart(overlayOptions);
+  // Use an unavailable saved alias, then repair it and an incompatible draft in the same source.
+  const repair = { ...overlayOptions, fields: { ...overlayOptions.fields, value: 'gone' } } as unknown as RecipeOptions;
+  installDashboard(riskDashboard([a, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const original = await screen.findByTestId('chart-plot');
+    const settings = screen.getByText('Dual-axis overlay settings', { exact: true });
+    fireEvent.click(settings);
+    const pair = screen.getByLabelText('Overlay recipe');
+    fireEvent.change(pair, { target: { value: 'cpi-ten-year' } });
+    expect(await screen.findByText(/recipe certified by this prepared snapshot/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(original);
+    expect(screen.getByText(/currently restated/i)).toBeVisible();
+    act(() => installDashboard(riskDashboard([a, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: repair } }])));
+    expect(await screen.findByText(/Repair the overlay bindings/i)).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    fireEvent.change(screen.getByLabelText('Value'), { target: { value: 'value' } });
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    setSize(319.5, 210);
+    fireEvent.click(apply);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    act(() => resize(319.5, 210));
+    await waitFor(() => expect(apply).toBeDisabled());
+    await waitFor(() => expect(run.mock.calls.some(([, , context]) => context.viewportWidth === 319.5 && context.viewportHeight === 210)).toBe(true));
+    act(() => resize(420.5, 220.5));
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+    await screen.findByTestId('chart-plot');
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(overlayOptions);
+  } finally { factory.mockRestore(); }
+});
+
+it('fences recursive overlay relinks before runtime sync, then keeps only same-chain stale output', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await overlaySource('A', 310), b = await overlaySource('B', 365);
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const chart = { ...riskChart(overlayOptions), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, b, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const pathB = 'files/' + b.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === pathB ? held : readFile(path, options));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    sync.mockImplementation(() => {});
+    const previousJobs = run.mock.calls.length;
+    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/currently restated/i)).toBeNull();
+    expect(run).toHaveBeenCalledTimes(previousJobs);
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall?.[1].data[0]).toMatchObject({ y: [365] });
+    let rejectRefresh!: (error: Error) => void;
+    const refresh = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+    read.mockImplementation((path, options) => path === pathB ? refresh : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getByText(/currently restated/i)).toBeVisible();
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it('drops an overlay from the outgoing ready revision and ignores its late draw or worker failure', async () => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await overlaySource('A', 310), b = await overlaySource('B', 365);
+  installDashboard(riskDashboard([a, b, riskChart(overlayOptions)]));
+  const plot = vi.mocked(renderPlot);
+  let rejectDraw!: (error: Error) => void;
+  plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    let release!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      const result = runRecipe(data, options, context);
+      await new Promise<void>(done => { release = done; });
+      return result;
+    });
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: 'sample' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/currently restated/i)).toBeNull();
+    await act(async () => release());
+    let rejectWorker!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, reject) => { rejectWorker = reject; }));
+    act(() => resize(498.5, 379.5));
+    await waitFor(() => expect(rejectWorker).toBeDefined());
+    plot.mockRejectedValueOnce(new Error('Current overlay draw failed'));
+    await chooseRiskSource('B');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Current overlay draw failed');
+    await act(async () => {
+      rejectDraw(new Error('Obsolete draw'));
+      rejectWorker(new Error('Obsolete calculation'));
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText(/Obsolete/i)).toBeNull();
+    run.mockRejectedValueOnce(new Error('Current overlay calculation failed'));
+    act(() => resize(483.5, 364.5));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Current overlay calculation failed');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('retains an omitted optional overlay binding and fences pending drafts and queued saves', async () => {
+  const { factory, run, setSize } = riskRuntime();
+  const file = await saveLocalFile(new File([JSON.stringify(overlaySnapshots['cpi-ten-year'])], 'macro.json'));
+  const input = card({ id: 'A', widgetId: 'local_table', backendId: 'builtin', params: { file } });
+  const macro: DualAxisOverlayOptions = { kind: 'dual-axis-overlay', version: 1, recipe: 'cpi-ten-year',
+    fields: { series: 'series', date: 'date', value: 'value' } };
+  installDashboard(riskDashboard([input, riskChart(macro)]));
+  let releaseSave!: () => void;
+  const waitForSave = new Promise<void>(resolve => { releaseSave = resolve; });
+  const write = fs.writeTextFile;
+  const pendingSave = vi.spyOn(fs, 'writeTextFile').mockImplementation(async (path, data, options) => {
+    if (data.includes('Held display name')) await waitForSave;
+    return write(path, data, options);
+  });
+  try {
+    render(<LiveRiskChart/>);
+    const original = await screen.findByTestId('chart-plot');
+    fireEvent.click(screen.getByText('Dual-axis overlay settings', { exact: true }));
+    const field = screen.getByRole('combobox', { name: 'Release availability' });
+    expect(field).toHaveValue('');
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    expect(apply).toBeDisabled();
+    let reject!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }));
+    fireEvent.change(field, { target: { value: 'available_at' } });
+    await waitFor(() => expect(reject).toBeDefined());
+    expect(apply).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(original);
+    expect(screen.getByText(/^US CPI-U.*Release date\/time unavailable for 2 shown observations/i)).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: '' } });
+    await act(async () => reject(new Error('Superseded draft error')));
+    expect(screen.queryByText(/Superseded/)).toBeNull();
+    expect(screen.getByTestId('chart-plot')).toBe(original);
+    fireEvent.change(field, { target: { value: 'available_at' } });
+    await waitFor(() => expect(apply).toBeEnabled());
+    const saving = useDashboardStore.getState().renameDashboard('d', 'Held display name');
+    await waitFor(() => expect(pendingSave.mock.calls.some(([, data]) => data.includes('Held display name'))).toBe(true));
+    fireEvent.click(apply);
+    // The click saw a matching surface. The durable guard must see this change
+    // even before a ResizeObserver report and refuse the queued write.
+    setSize(480.5, 230);
+    await act(async () => { releaseSave(); await saving; });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/source or drawing size changed/i);
+    expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(macro);
+    expect(screen.getByTestId('chart-plot')).toBe(original);
+  } finally { releaseSave(); pendingSave.mockRestore(); factory.mockRestore(); }
 });

@@ -123,3 +123,14 @@ it('keeps only closed linked KPI settings on built-in metric cards', () => {
   expect(persistedCard({ ...metric, linkedMetric: forged })).not.toHaveProperty('linkedMetric');
   expect(persistedCard({ ...metric, widgetId: 'linked_chart', linkedMetric })).not.toHaveProperty('linkedMetric');
 });
+
+it('persists only the closed dual-axis overlay settings', () => {
+  const recipe = { version: 1, kind: 'dual-axis-overlay', recipe: 'cpi-ten-year',
+    fields: { series: 'series', date: 'date', value: 'value' } } satisfies RecipeOptions;
+  const authored = { type: recipe.kind, recipe, display: 'grouped' as const, measures: [] };
+  const injected = { ...authored, measures: ['unknown'], category: 'legacy_category', period: 'latest',
+    chart_sources: { receipts: ['injected'] }, overlay: { points: [] }, viewportHeight: 460 };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(authored);
+  const invalid = { ...recipe, version: 2 } as unknown as RecipeOptions;
+  expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: invalid } }).linkedChart?.recipe).toBeUndefined();
+});

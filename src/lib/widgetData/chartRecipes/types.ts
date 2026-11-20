@@ -76,10 +76,11 @@ export type RecipeOptions =
   | NewsCalendarOptions
   | ReturnSummaryOptions
   | OwnershipSnapshotOptions
-  | EtfSunburstOptions;
+  | EtfSunburstOptions
+  | DualAxisOverlayOptions;
 
-/** Worker-ready recipes may precede registration in linked chart authoring and persistence. */
-export type RecipeRequestOptions = RecipeOptions | DualAxisOverlayOptions;
+/** Closed recipe options accepted by the worker boundary. */
+export type RecipeRequestOptions = RecipeOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 

@@ -492,3 +492,36 @@ it('rejects portable KPI settings hosted by a backend metric with the same widge
   const impostor = { ...builtIn, backendId: 'external' };
   expect(() => importApps([result.value], [impostor])).toThrow(/built-in linked metric widget/);
 });
+
+
+it('roundtrips only authored dual-axis overlay options in a v4 workspace', () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = { kind: 'dual-axis-overlay', version: 1, recipe: 'cpi-ten-year',
+    fields: { series: 'series', date: 'date', value: 'value', availableAt: 'available_at' } } satisfies RecipeOptions;
+  const chart = card({ id: 'overlay-chart', widgetId: 'linked_chart',
+    linkedSource: { kind: 'widget', sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: 'grouped', recipe } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, overlay] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(overlay.linkedChart?.recipe).toEqual(recipe);
+  expect(overlay.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const invalid of [
+    { overlay: { points: [] } }, { viewportHeight: 450 }, { chart_sources: {} },
+    { category: 'old_category' }, { measures: ['measure3'] },
+    { recipe: { ...recipe, version: 2 } }, { recipe: { ...recipe, recipe: 'generic' } },
+    { recipe: { ...recipe, snapshot: '2026-11-01' } },
+    { recipe: { ...recipe, fields: { series: 'series', date: 'date', value: 'value', extraSeries: 'extra' } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, invalid);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(invalid)).toBe(false);
+    Object.assign(chart.linkedChart!, invalid);
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(invalid)).toBe(false);
+    chart.linkedChart = { type: recipe.kind, measures: [], display: 'grouped', recipe };
+  }
+});

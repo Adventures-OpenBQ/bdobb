@@ -8,12 +8,16 @@ import { readChartSource, readChartSourceProjection, type ChartBuildResult } fro
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate } from './financialEvidence';
 import {
-  isOverlayReference, isSupportedOverlayQuarter, overlayAdapter, overlayCoordinateByVintage, overlayCoordinateKey, overlayRowFacts,
+  isOverlayReference, isSupportedOverlayQuarter, overlayAdapter, overlayBindingOrigins, overlayCoordinateByVintage,
+  overlayCoordinateKey, overlayPairIssue, overlayRowFacts, overlaySourceIssue,
   parseOverlaySource, type OverlaySeriesFact, type OverlaySource,
 } from './overlayEvidence';
+import { overlayAxisTicks, overlayOriginalValue } from './overlayDisplay';
 import { decodeDualAxisOverlayOptions } from './settings';
 import type { DualAxisOverlayOptions, RecipeContext, RecipeRefusal, RecipeRequestOptions, RecipeResult } from './types';
 import { dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth } from './viewport';
+
+export { overlayAxisTicks } from './overlayDisplay';
 
 type Side = 'left' | 'right';
 type SessionTiming = 'before-market' | 'during-market' | 'after-market';
@@ -48,11 +52,6 @@ export type OverlaySeriesPair = {
 };
 
 const sides = ['left', 'right'] as const;
-const bindingOrigins = {
-  series: 'series', date: 'date', value: 'value', availableAt: 'available_at',
-  targetStart: 'target_start', targetEnd: 'target_end',
-} as const;
-
 const hazards = {
   identity_conflict: 'conflicting series or issuer identities',
   unit_conflict: 'conflicting units or currencies',
@@ -62,14 +61,13 @@ const hazards = {
 } satisfies Record<keyof OverlaySource['unsafe'], string>;
 
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
-const sourceIssue = 'Acquire an explicitly prepared overlay snapshot with verified pair, series and availability evidence.';
 const bindingIssue = 'Present each required physical series, date, value and fiscal field once. Repair the overlay bindings.';
 const factsIssue = 'The visible rows disagree with the prepared overlay acquisition. Repair the source or field bindings.';
 
 function physicalColumns(columns: readonly DatasetColumn[], rowFacts: ReturnType<typeof overlayRowFacts>): Map<string, string> | undefined {
   const seenIds = new Set<string>();
   const origins = new Map<string, string>();
-  const relevant = new Set<string>([...Object.values(bindingOrigins), 'release_ref', 'session_timing', ...Object.keys(rowFacts)]);
+  const relevant = new Set<string>([...Object.values(overlayBindingOrigins), 'release_ref', 'session_timing', ...Object.keys(rowFacts)]);
   for (const column of columns) {
     if (seenIds.has(column.id)) return;
     seenIds.add(column.id);
@@ -174,7 +172,7 @@ function describeSide(series: OverlaySeries) {
   const first = series.points[0].coordinate, last = series.points[series.points.length - 1].coordinate;
   const range = first === last ? first : first + ' to ' + last;
   const coverage = `${series.title} (${series.fact.id}), acquired ${series.vintage}: ${values} shown, ${missing} explicit missing, ${omitted} omitted. Acquired coordinates: ${range}.`;
-  const release = missingRelease ? ` Release date/time unavailable for ${missingRelease} shown observations.` : '';
+  const release = missingRelease ? ` Release date/time unavailable for ${missingRelease} shown ${missingRelease === 1 ? 'observation' : 'observations'}.` : '';
   return coverage + release;
 }
 
@@ -187,10 +185,10 @@ export function prepareOverlaySeries(dataset: WidgetDataset, options: DualAxisOv
   const source = readChartSource(provenance, 'overlay', parseOverlaySource);
   const projection = readChartSourceProjection(provenance, 'overlay');
   if (!source || !projection || (provenance.receipt !== undefined && !overlayAdapter.legacyReceiptAgrees?.(source, provenance.receipt)))
-    return refuse(sourceIssue);
+    return refuse(overlaySourceIssue);
   const unsafe = Object.entries(hazards).filter(([flag]) => source.unsafe[flag]).map(([, label]) => label);
   if (unsafe.length) return refuse(`The overlay acquisition reports ${unsafe.join(', ')}. Repair the source.`);
-  if (source.recipe !== recipe) return refuse('Choose the recipe certified by this prepared snapshot or relink the appropriate source.');
+  if (source.recipe !== recipe) return refuse(overlayPairIssue);
   if (provenance.inputMayContainAggregates || rows.some(row => row.groupPath !== undefined)
     || columns.some(column => column.aggregation || column.measureId || column.splitPath?.length || column.analytical?.scope === 'aggregate'))
     return refuse('Present raw acquired overlay rows before grouping, pivoting or aggregation.');
@@ -198,8 +196,8 @@ export function prepareOverlaySeries(dataset: WidgetDataset, options: DualAxisOv
   const leftFacts = overlayRowFacts(source, 'left');
   const expectedFacts = { left: Object.entries(leftFacts), right: Object.entries(overlayRowFacts(source, 'right')) };
   const origins = physicalColumns(columns, leftFacts);
-  if (!origins || (Object.keys(bindingOrigins) as (keyof typeof bindingOrigins)[]).some(role =>
-    fields[role] !== undefined && origins.get(bindingOrigins[role]) !== fields[role])) return refuse(bindingIssue);
+  if (!origins || (Object.keys(overlayBindingOrigins) as (keyof typeof overlayBindingOrigins)[]).some(role =>
+    fields[role] !== undefined && origins.get(overlayBindingOrigins[role]) !== fields[role])) return refuse(bindingIssue);
 
   const omitted = new Set(projection.omitted);
   const acquired = { left: new Set(source.coordinates.left), right: new Set(source.coordinates.right) };
@@ -232,17 +230,17 @@ export function prepareOverlaySeries(dataset: WidgetDataset, options: DualAxisOv
   ];
   if (projection.filtered) notes.push('The presented source is filtered. Traced excluded coordinates remain gaps.');
   if (source.identity) {
-    notes.push(`${source.identity.listing} uses split- and dividend-adjusted closing prices and fiscal-quarter diluted EPS on the same current split-share basis.`);
-    notes.push('Adjusted close uses the exchange session date. Same-day release ordering needs session timing evidence.');
-    notes.push(source.series.right.restated
+    notes.unshift(source.series.right.restated
       ? 'Diluted EPS is currently restated; not historical as-known.'
       : 'Diluted EPS reflects the current acquisition; not historical as-known.');
+    notes.push(`${source.identity.listing} uses split- and dividend-adjusted closing prices and fiscal-quarter diluted EPS on the same current split-share basis.`);
+    notes.push('Adjusted close uses the exchange session date. Same-day release ordering needs session timing evidence.');
     if (right.points.some(point => point.availableAt && isoDate(point.availableAt)))
       notes.push('Date-only EPS availability establishes no ordering against the same day’s close.');
   } else {
     notes.push('US CPI-U is the monthly seasonally adjusted all-items US city average index. Its x coordinate encodes the measurement month. DGS10 is the daily nominal US ten-year constant-maturity Treasury yield.');
     if (left.points.some(point => point.state === 'value' && point.availableAt === null))
-      notes.push('CPI publication timing is unknown where release dates are unavailable.');
+      notes.unshift('CPI publication timing is unknown where release dates are unavailable.');
   }
 
   return { ok: true, notes, value: { recipe, identity: source.identity, preparationReference: source.preparation.reference,
@@ -296,38 +294,9 @@ function drawableValues(values: readonly number[], range: Range, height: number)
   });
 }
 
-function numberLabeler(percent: boolean, digits: number) {
-  const options: Intl.NumberFormatOptions = { style: percent ? 'percent' : 'decimal', maximumSignificantDigits: digits, useGrouping: false };
-  const decimal = new Intl.NumberFormat('en-US', options);
-  const scientific = new Intl.NumberFormat('en-US', { ...options, notation: 'scientific' });
-  return (value: number) => {
-    const shown = Math.abs(value) * (percent ? 100 : 1);
-    return ((shown !== 0 && shown < 0.001) || shown >= 100_000 ? scientific : decimal).format(value);
-  };
-}
-
-const originalPercent = numberLabeler(true, 17);
-
-/** Exact-unit tick labels for the default range and subsequent Plotly relayouts. */
-export function overlayAxisTicks(range: readonly [number, number], unit: OverlaySeriesFact['unit']) {
-  const percent = unit === 'yield-fraction';
-  const [lo, hi] = range;
-  const step = (hi - lo) / 6;
-  const tickvals = [...new Set([1, 2, 3, 4, 5].map(i => lo + i * step))];
-  let ticktext: string[];
-  let digits = 3;
-  do {
-    ticktext = tickvals.map(numberLabeler(percent, digits));
-    digits++;
-  } while (new Set(ticktext).size < tickvals.length && digits <= 17);
-  return { tickvals, ticktext, margin: Math.max(62, 30 + 7 * Math.max(...ticktext.map(label => label.length))) };
-}
-
 function seriesText(series: OverlaySeries, point: OverlayPoint): string {
   const value = point.value === null ? 'Missing observation'
-    : series.fact.unit === 'yield-fraction'
-      ? `${originalPercent(point.value)} (original fraction ${point.value})`
-      : `${point.value} ${series.unitLabel}`;
+    : overlayOriginalValue(point.value, series.fact.unit, series.unitLabel);
   const lines = [series.title, value];
   if (point.targetStart && point.targetEnd) {
     lines.push(`Fiscal quarter: ${point.targetStart} to ${point.targetEnd}`);

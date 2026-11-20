@@ -46,6 +46,7 @@ const SERVED = {
   "v9-next-ownership-snapshot": false,
   "v9-next-kpi-gauges": false,
   "v9-next-etf-sunburst": false,
+  "v9-next-dual-axis-overlays": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,
