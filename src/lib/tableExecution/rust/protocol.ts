@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { etfAcquisitionProvenance } from '../../widgetData/chartRecipes/etfEvidence';
+import { chartCoordinatePlan, validatedChartProvenance } from '../../widgetData/chartRecipes/chartSourceContracts';
 import { validatedFinancialProvenance } from '../../widgetData/chartRecipes/financialEvidence';
 import { estimateProvenance } from '../../widgetData/chartRecipes/estimateEvidence';
 import type { ExecutionRequest, ExecutionResponse, TableDefinition, Revision } from '../types';
@@ -18,8 +19,11 @@ const dataset = (value:WidgetDataset) => {
  // cannot preserve shared keys; distinct equal objects and nested aliases work.
  const seen=new WeakSet<object>();
  for(const row of value.rows){if(seen.has(row.values))throw new ExecutionProtocolError('INVALID_REQUEST','Unsupported input representation: shared top-level row.values object identity; clone values per row');seen.add(row.values);}
- const certified = { ...value, provenance: validatedFinancialProvenance(etfAcquisitionProvenance(value)) };
- return {...value,columns:value.columns.map(column),provenance:provenance(estimateProvenance(certified)),rows:value.rows.map(row=>({...row,values:record(row.values),...(row.groupPath!==undefined?{groupPath:members(row.groupPath)}:{})}))};
+ const certified = { ...value, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(value))) };
+ const projected = estimateProvenance(certified);
+ const chartSourceCoordinatePlan = chartCoordinatePlan(projected);
+ return {...value,columns:value.columns.map(column),provenance:provenance(chartSourceCoordinatePlan
+   ? {...projected,metadata:{...projected.metadata,chartSourceCoordinatePlan:JSON.stringify(chartSourceCoordinatePlan)}} : projected),rows:value.rows.map(row=>({...row,values:record(row.values),...(row.groupPath!==undefined?{groupPath:members(row.groupPath)}:{})}))};
 };
 const definition = (value:TableDefinition,locale:string) => ({
  protocolVersion:PIVOT_PROTOCOL_VERSION,locale,

@@ -368,6 +368,7 @@ pub fn calculate_view(
             || view.pool.page.is_some()
             || !active.result_filters.is_empty(),
     );
+    view.provenance.mark_chart_filtered(!params.is_empty());
     if let Some(presentation) = presentation {
         view.provenance
             .metadata

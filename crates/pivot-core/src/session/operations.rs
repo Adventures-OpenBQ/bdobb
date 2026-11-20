@@ -281,6 +281,8 @@ impl Session {
                     .collect();
                 let mut provenance = v.provenance.clone();
                 provenance.project_financial_evidence(&rows, &columns);
+                provenance.mark_chart_filtered(!matches!(v.selection, SelectionSpec::None));
+                provenance.project_chart_sources(|| rows.iter(), &columns);
                 let dataset = SourceDataset {
                     rows,
                     columns,

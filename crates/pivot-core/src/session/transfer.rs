@@ -53,6 +53,8 @@ impl Session {
         let provenance = (sequence == 0).then(|| {
             let mut provenance = v.provenance.clone();
             provenance.project_financial_evidence(presented_rows(), &v.columns);
+            provenance.mark_chart_filtered(!t.ignore_selection && !matches!(v.selection, SelectionSpec::None));
+            provenance.project_chart_sources(presented_rows, &v.columns);
             provenance.presentation = Some(PresentationProvenance {
                 scope: PresentedScope::Presented,
                 row_count: count as u64,

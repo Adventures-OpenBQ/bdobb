@@ -814,6 +814,7 @@ pub struct Provenance {
 impl Provenance {
     /// Retain presentation scope separately from the original acquisition certification.
     pub(crate) fn mark_presentation_filtered(&mut self, filtered: bool) {
+        self.mark_chart_filtered(filtered);
         if !filtered {
             return;
         }

@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { captureChartSources, chartRequestContext, chartResponseRows } from "./widgetData/chartRecipes/chartSourceContracts";
 import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
@@ -316,11 +317,13 @@ async function request(
     parse = true,
     allow404 = false,
     onHeaders,
+    onResponseUrl,
     signal,
   }: {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
+    onResponseUrl?: (url: string) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
@@ -352,6 +355,7 @@ async function request(
     throw new HttpError(describeHttpError(res.status, text), res.status, text);
   }
   onHeaders?.(res.headers);
+  onResponseUrl?.(res.url);
   if (!parse) {
     // Read to the end even though nothing is parsed: an unread body holds the
     // connection open, which is why the !res.ok branch above reads it too.
@@ -501,13 +505,18 @@ export async function fetchWidgetData(
     ctx = { ...ctx, now, calendars: { ...ctx?.calendars, ...loaded.calendars } };
   }
   const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
+  let responseUrl: string | undefined;
   const payload = await request("GET", requestUrl, authHeaders(backend), undefined, {
-    signal,
+    signal, onResponseUrl: value => { responseUrl = value; },
   });
   const table = widget.type === "table";
   const url = table && onAcquisition ? new URL(requestUrl) : undefined;
   const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
   const financial = url && backendFinancialResponse(payload, url, credentialKey);
+  const retrievedAt = Date.now();
+  const chartRequest = url && responseUrl === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
+  const fullRows = chartRequest && chartResponseRows(payload, chartRequest.selector);
+  const sources = chartRequest && fullRows && captureChartSources(chartRequest, payload, fullRows);
   const selected = extractData(payload, widget.dataKey, table);
   if (url && onAcquisition) {
     // Use the completed request and only its selected, complete result array.
@@ -518,7 +527,7 @@ export async function fetchWidgetData(
       if (values.length) parameters[key] = values.join(",");
     }
     const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
-    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt: Date.now(),
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(sources && fullRows === selectedRows ? { ...chartRequest, chartSources: sources } : {}),
       ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
   }
   onWarnings?.(obbjectWarnings(payload));

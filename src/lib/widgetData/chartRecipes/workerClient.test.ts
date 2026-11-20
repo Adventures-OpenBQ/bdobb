@@ -164,3 +164,14 @@ it('refuses executable options before a structured clone can invoke the accessor
     .resolves.toMatchObject({ ok: false, refused: true });
   client.dispose();
 });
+
+it('rejects a receipt injected into cloned recipe options at the actual worker entry', async () => {
+  const scope = { onmessage: undefined as ((event: { data: RecipeRequest }) => void) | undefined, postMessage: vi.fn() };
+  vi.stubGlobal('self', scope);
+  vi.resetModules();
+  await import('./recipe.worker');
+  const identity = { requestId: 13, sourceWidgetId: 'source', resultRevision: 1, outputRevision: 1 };
+  const options = { ...drawdownOptions, chartSources: { metric: { version:1 } } };
+  scope.onmessage!({ data: structuredClone({ identity, dataset, options, context }) });
+  expect(structuredClone(scope.postMessage.mock.lastCall![0])).toMatchObject({ ...identity, result: { ok:false, refused:true } });
+});

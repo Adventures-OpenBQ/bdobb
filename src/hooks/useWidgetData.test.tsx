@@ -1405,3 +1405,33 @@ it('stale_request_cannot_attach_receipt', async () => {
   expect(result.current.data).toMatchObject([{ symbol: 'HSBA.LSE' }]);
   expect(result.current.acquisition).toMatchObject({ financialEvidence: { qualified_symbol: 'HSBA.LSE' } });
 });
+
+vi.mock('../lib/widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+it('late_request_cannot_attach_context', async () => {
+  const { sourcePath, sourceResponse } = await import('../test/fixtures/chartSources');
+  const server = await serve({ [sourcePath]: (url: URL) => url.searchParams.get('symbol') === 'A'
+    ? { __delayMs: 150, __status: 200, __body: sourceResponse } : { results: { rows: [{ id: 'replacement' }] } } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: sourcePath, dataKey: 'results.rows' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, { symbol, chart_source:'true' }), { initialProps:{symbol:'A'} });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({symbol:'B'});
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 170)); });
+  expect(result.current.data).toEqual([{ id:'replacement' }]);
+  expect(result.current.acquisition).not.toHaveProperty('chartSources');
+});
+
+it('clears a previously matched chart context when its refresh fails', async () => {
+  const { sourcePath, sourceResponse, sourceReceipt } = await import('../test/fixtures/chartSources');
+  let failed = false;
+  await serve({[sourcePath]: () => failed ? {__status:500} : sourceResponse});
+  useWidgetRegistryStore.setState({widgets:[makeWidget({id:card.widgetId,endpoint:sourcePath,dataKey:'results.rows'})]});
+  const {result} = renderHook(() => useWidgetData(card,{symbol:'A',chart_source:'true'}));
+  await waitFor(() => expect(result.current.acquisition?.chartSources).toEqual({metric:sourceReceipt}));
+  failed = true;
+  act(() => result.current.retry());
+  await waitFor(() => expect(result.current.status).toBe('error'));
+  expect(result.current.acquisition).toBeUndefined();
+});

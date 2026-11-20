@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { ChartSourceMap } from './chartSourceContracts';
 import { asRecord } from '../../isRecord';
 import type { DatasetColumn, DatasetProvenance, DatasetRow } from '../types';
 import type { BackendEtfAcquisition } from './etfEvidence';
@@ -49,7 +50,7 @@ const integer: Check<number> = (value): value is number => finite(value) && Numb
 const count: Check<number> = (value): value is number => integer(value) && value >= 0;
 const positive: Check<number> = (value): value is number => finite(value) && value > 0;
 export const isoDate: Check<string> = (value): value is string => text(value) && value.length === 10 && !value.startsWith('0000') && calendarDate(value) === value;
-const utcTimestamp: Check<string> = (value): value is string => text(value)
+export const utcTimestamp: Check<string> = (value): value is string => text(value)
   && /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,6})?(?:Z|\+00:00)$/.test(value)
   && isoDate(value.slice(0, 10)) && Number.isFinite(Date.parse(value));
 const currency: Check<string> = (value): value is string => text(value) && /^[A-Z]{3}$/.test(value);
@@ -167,7 +168,7 @@ export type DividendFinancialEvidence = Checked<typeof dividends> & {
 };
 export type IncomeFinancialEvidence = Checked<typeof income>;
 export type FinancialEvidence = ScreenerFinancialEvidence | DividendFinancialEvidence | IncomeFinancialEvidence;
-export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence };
+export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence; chartSources?: ChartSourceMap; selector?: string };
 
 function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
   const { cohorts, raw_count, normalized_count, delivered_count, unsafe } = evidence;

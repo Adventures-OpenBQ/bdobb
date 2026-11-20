@@ -8,6 +8,7 @@ import { INCOME_CHART_PROOF, incomeChartProof, withoutIncomeChartProof } from '.
 import { unpivotDatasetWithDescriptors } from '../tableModel/unpivot';
 import { estimateProvenance } from '../widgetData/chartRecipes/estimateEvidence';
 import { etfAcquisitionProvenance, etfPresentationProvenance } from '../widgetData/chartRecipes/etfEvidence';
+import { chartPresentationProvenance, validatedChartProvenance } from '../widgetData/chartRecipes/chartSourceContracts';
 import { financialPresentationProvenance, validatedFinancialProvenance } from '../widgetData/chartRecipes/financialEvidence';
 import { priceAcquisitionProvenance } from '../widgetData/chartRecipes/priceEvidence';
 import { validateRuntimeParams, runtimeMatches, type RuntimeParams } from './runtimeParams';
@@ -38,7 +39,7 @@ function member(key: string, field: string, bucket: DatasetGroupMember['bucket']
 }
 /** Calculate once from the complete acquired input, never from delivery blocks. */
 export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
-  const source = { ...input, provenance: validatedFinancialProvenance(etfAcquisitionProvenance(input)) };
+  const source = { ...input, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(input))) };
   return calculate({ ...source, provenance: estimateProvenance({ ...source, provenance: priceAcquisitionProvenance(source) }) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
 }
 function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
@@ -205,7 +206,8 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
       ? column : { ...column, dtype: kind };
   };
   const filteredByPresentation = !!search || !!state.columnFilters?.length;
-  const provenance = financialPresentationProvenance(etfPresentationProvenance(input.provenance, filteredByPresentation), filteredByPresentation);
+  const financial = financialPresentationProvenance(etfPresentationProvenance(input.provenance, filteredByPresentation), filteredByPresentation);
+  const provenance = chartPresentationProvenance(financial, filteredByPresentation);
   const view: CalculatedView = {
     modelWarnings: input.modelWarnings, modelWarningCount: input.modelWarningCount,
     inputColumns: input.columns.map(column => withKind(column)), inputPeriodicity: Object.fromEntries(input.columns.filter(c => kinds.get(c.id) === 'date').map(c => [c.id, detectPeriodicity(input.rows.map(r => r.values[c.id]))])), columns: outputColumns.map(column => withKind(column, result?.ok ? column.sourceBindingId ?? column.id : column.id)),

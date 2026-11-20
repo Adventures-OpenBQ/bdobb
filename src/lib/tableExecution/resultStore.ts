@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { chartPresentationProvenance, projectChartSources } from '../widgetData/chartRecipes/chartSourceContracts';
 import { financialProjectionProvenance } from '../widgetData/chartRecipes/financialEvidence';
 import { priceOmissionEvidence } from '../widgetData/chartRecipes/priceEvidence';
 import { filterKindFor } from '../tableFiltering';
@@ -78,7 +79,8 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
       if (fields.some(f => !view.columns.some(c => c.id === f))) throw new ExecutionProtocolError('INVALID_REQUEST', 'Unknown chart field');
       const priceProvenance = priceOmissionEvidence(view, view.selectionIdentityRows, view.presentedRows, fields);
       const columns = view.columns.filter(c => fields.includes(c.id));
-      const provenance = financialProjectionProvenance(priceProvenance, view.presentedRows, columns);
+      const financial = financialProjectionProvenance(priceProvenance, view.presentedRows, columns);
+      const provenance = projectChartSources(chartPresentationProvenance(financial, view.selection.kind !== 'none'), columns, view.presentedRows);
       return structuredClone({ ...envelope, kind: 'chartData', columns, rows: projection(view.presentedRows, fields), resultRevision: revision.model, outputRevision: revision.output, provenance, freshness: view.freshness });
     },
     presented(requestId, requested, transferId, batchSize = 500, ignoreSelection = false) {
@@ -87,7 +89,8 @@ export function createResultStore(view: CalculatedView, revision: Revision): Res
         throw new ExecutionProtocolError('INVALID_REQUEST', 'Transfer ID and positive safe batch size required');
       const fields = view.columns.map(c => c.id);
       const rows = projection(ignoreSelection ? eligiblePresentedRows(view) : view.presentedRows, fields);
-      const provenance = financialProjectionProvenance(view.provenance, rows, view.columns);
+      const financial = financialProjectionProvenance(view.provenance, rows, view.columns);
+      const provenance = projectChartSources(chartPresentationProvenance(financial, !ignoreSelection && view.selection.kind !== 'none'), view.columns, rows);
       return (function* () { for (let offset = 0, sequence = 0; offset < Math.max(1, rows.length); offset += batchSize, sequence++)
         yield structuredClone({ ...envelope, kind: 'subset' as const, transferId, sequence, ...(sequence === 0 ? { columns: view.columns, provenance: { ...provenance, presentation: { scope: 'presented' as const, rowCount: rows.length, revision } }, freshness: view.freshness } : {}), rows: rows.slice(offset, offset + batchSize), final: offset + batchSize >= rows.length }); })();
     },

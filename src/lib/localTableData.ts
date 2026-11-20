@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { etfAcquisitionProvenance } from './widgetData/chartRecipes/etfEvidence';
+import { acquiredChartSources } from './widgetData/chartRecipes/chartSourceContracts';
 import { financialRowsAgree, parseFinancialEvidence, type BackendAcquisition } from './widgetData/chartRecipes/financialEvidence';
 import { estimateProvenance } from './widgetData/chartRecipes/estimateEvidence';
 import { priceAcquisitionProvenance } from './widgetData/chartRecipes/priceEvidence';
@@ -161,6 +162,9 @@ export async function datasetFromBytes(name: string, bytes: Uint8Array, widgetId
  */
 export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: number, sourceKind: string,
   formats?: NonNullable<DatasetRow['cellFormats']>[], columns: DatasetColumn[] = [], snapshot?: Snapshot, acquisition?: BackendAcquisition): WidgetDataset {
+  const chartSources = sourceKind === 'localFile'
+    ? acquiredChartSources(snapshot?.chartSources, rows, snapshot?.completeness)
+    : acquiredChartSources(acquisition?.chartSources, rows, snapshot?.completeness, acquisition);
   const receipt = parseFinancialEvidence(sourceKind === 'localFile' ? snapshot?.financialEvidence : acquisition?.financialEvidence);
   const evidence = receipt && financialRowsAgree(receipt, rows) ? receipt : undefined;
   if (evidence?.kind === 'income') {
@@ -189,6 +193,7 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     dataset.provenance = priceAcquisitionProvenance(dataset);
   }
   dataset.provenance = etfAcquisitionProvenance(dataset, acquisition);
+  if (chartSources) dataset.provenance.metadata = { ...dataset.provenance.metadata, chartSources: structuredClone(chartSources) };
   if (evidence)
     dataset.provenance = { ...dataset.provenance, metadata: { ...dataset.provenance.metadata, financialEvidence: structuredClone(evidence) } };
   dataset.provenance = estimateProvenance(dataset);

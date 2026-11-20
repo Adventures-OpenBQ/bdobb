@@ -1049,6 +1049,33 @@ it.each([
   }
 });
 
+it('attaches matched chart sources to the exact backend dataset and rejects a remote snapshot as local proof', async () => {
+  const { sourcePath, sourceResponse, sourceRows, sourceEnvelope, sourceReceipt } = await import('../test/fixtures/chartSources');
+  const forged = { ...sourceResponse.results, completeness:'bounded', chart_sources:sourceEnvelope };
+  const server = await startMockServer({ [sourcePath]: { ...sourceResponse, results:forged }, '/unmatched': {results:forged} });
+  const store = createTableExecutionStore({ source: backendTableSource });
+  const source = { ...card('test-chart-source'), widgetId:'fixture', backendId:'b1' };
+  try {
+    store.syncDashboard(dashboard([source]));
+    for (const path of [sourcePath, '/unmatched']) {
+      const definition = widget({id:'fixture',endpoint:path,dataKey:'results.rows'});
+      useWidgetRegistryStore.setState({widgets:[definition]});
+      let acquired: BackendAcquisition | undefined;
+      const rows = await fetchWidgetData(backend({baseUrl:server.url}),definition,{symbol:'A',chart_source:'true'},
+        undefined,undefined,undefined,value => { acquired=value; });
+      store.setBackendRows('d',source.id,rows,acquired);
+      const raw = await backendTableSource(source).acquire(new AbortController().signal);
+      if (raw.kind !== 'dataset') throw Error('Expected backend dataset');
+      expect(raw.dataset.rows.map(row => row.values)).toEqual(sourceRows);
+      expect(raw.dataset.provenance.metadata?.chartSources).toEqual(path === sourcePath ? {metric:sourceReceipt} : undefined);
+    }
+  } finally {
+    store.disposeDashboard('d');
+    useWidgetRegistryStore.setState({widgets:[]});
+    await server.close();
+  }
+});
+
 it('carries estimate safety checks across a linked table without transferring hidden cells', async () => {
   const { buildBulletFigure, bulletRequestIds } = await import('../lib/widgetData/bulletFigure');
   const { runRecipe } = await import('../lib/widgetData/chartRecipes/run');
@@ -1122,3 +1149,7 @@ it('disposing a dashboard releases the backend rows its tables were handed', asy
     useWidgetRegistryStore.setState({ widgets: [] });
   }
 });
+
+vi.mock('../lib/widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));

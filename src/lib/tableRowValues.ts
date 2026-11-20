@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { WidgetDataset } from './widgetData/types';
 import { isRecord } from './isRecord';
+import { localChartSources, type ChartSourceMap } from './widgetData/chartRecipes/chartSourceContracts';
 import { financialRowsAgree, financialScopeAgrees, parseFinancialEvidence, type FinancialEvidence } from './widgetData/chartRecipes/financialEvidence';
 /** One record of a table payload. */
 export type Row = Record<string, unknown>;
@@ -17,6 +18,7 @@ export function isTableSnapshotEnvelope(data: unknown): data is Record<string, u
 
 export type Snapshot = {
   receipt?: Record<string, string>;
+  chartSources?: ChartSourceMap;
   financialEvidence?: FinancialEvidence;
   completeness: WidgetDataset['completeness']['kind'];
 };
@@ -26,24 +28,27 @@ export function parseTableSnapshot(data: unknown, source: 'backend' | 'local-fil
   if (!isRecord(data)) return { data };
   const legacy = Object.hasOwn(data, 'receipt');
   const financial = source === 'local-file' && Object.hasOwn(data, 'chart_evidence');
-  if (!legacy && !financial && !isTableSnapshotEnvelope(data)) return { data };
+  const chart = source === 'local-file' && Object.hasOwn(data, 'chart_sources');
+  if (!legacy && !financial && !chart && !isTableSnapshotEnvelope(data)) return { data };
   const { rows, receipt, completeness } = data;
   const kinds = ['complete', 'bounded', 'paged', 'partial', 'sample', 'unknown'] as const;
   const kind = kinds.find(k => k === completeness);
   const keys = ['interval', 'start_date', 'end_date', 'symbol', 'currency', 'unit', 'date',
     'fund_symbol', 'etf_kind', 'weight_basis', 'holdings_coverage', 'as_of', 'retrieved_at'];
   const records = tableRows(rows);
-  if (!legacy && !financial && records) {
+  if (!legacy && !financial && !chart && records) {
     // An explicit negative scope is meaningful on its own. An affirmative one needs its receipt.
     const scope = kind && kind !== 'complete' && kind !== 'bounded' ? kind : 'unknown';
     return { data: rows, snapshot: { completeness: scope } };
   }
-  if (!kind || !records || Object.keys(data).some(k => !['rows', 'receipt', 'completeness', 'chart_evidence'].includes(k))
+  if (!kind || !records || Object.keys(data).some(k => !['rows', 'receipt', 'completeness', 'chart_evidence', ...(chart ? ['chart_sources'] : [])].includes(k))
     || (legacy && (!isRecord(receipt) || !Object.entries(receipt).every(([k, v]) => keys.includes(k) && typeof v === 'string' && v.trim() && v.length <= 4096))))
     throw new Error('Invalid table snapshot');
   const financialEvidence = financial ? parseFinancialEvidence(data.chart_evidence) : undefined;
   if (financial && (!financialEvidence || !financialScopeAgrees(financialEvidence, kind) || !financialRowsAgree(financialEvidence, records)))
     throw new Error('Invalid table snapshot');
-  return { data: rows, snapshot: { ...(legacy ? { receipt: receipt as Record<string, string> } : {}), completeness: kind,
+  const chartSources = chart ? localChartSources(data.chart_sources, records, kind) : undefined;
+  if (chart && !chartSources) throw new Error('Invalid table snapshot');
+  return { data: rows, snapshot: { ...(chartSources ? { chartSources } : {}), ...(legacy ? { receipt: receipt as Record<string, string> } : {}), completeness: kind,
     ...(financialEvidence ? { financialEvidence } : {}) } };
 }

@@ -1346,3 +1346,37 @@ it.each([
     await server.close();
   }
 });
+
+vi.mock('./widgetData/chartRecipes/chartSourceRegistry', async () => ({
+  chartSourceRegistry: (await import('../test/fixtures/chartSources')).fixtureSources,
+}));
+it('dotted_selection_keeps_matched_receipt', async () => {
+  const { sourcePath, sourceResponse, sourceRows, sourceReceipt } = await import('../test/fixtures/chartSources');
+  const server = await startMockServer({ [sourcePath]: sourceResponse, '/other': sourceResponse, '/legacy': { results: {rows: sourceRows} } });
+  const acquired = vi.fn();
+  const get = (endpoint: string, params: Record<string,string>, b = { ...backend, baseUrl: server.url }) =>
+    fetchWidgetData(b, widget({ type: 'table', endpoint, dataKey: 'results.rows' }), params, undefined, undefined, undefined, acquired);
+  try {
+    const params = {symbol:'A', chart_source:'true'};
+    expect(await get(sourcePath, params)).toEqual(sourceRows);
+    expect(acquired.mock.lastCall?.[0].chartSources).toEqual({ metric: sourceReceipt });
+    for (const [path, options] of [['/other',params],[sourcePath,{...params, chart_source:'false'}],
+      [sourcePath,{...params, unexpected_scope:'subset'}], ['/legacy',params]] as const) {
+      expect(await get(path, options)).toEqual(sourceRows);
+      expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+    }
+    await get(sourcePath, params, { ...backend, baseUrl: server.url, authLocation:'query', headerName:'symbol', headerValue:'A' });
+    expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+  } finally { await server.close(); }
+});
+
+it('refuses a chart receipt when a matched URL redirected to a different source', async () => {
+  const {sourcePath,sourceResponse,sourceRows} = await import('../test/fixtures/chartSources');
+  const server = await startMockServer({[sourcePath]:{__status:302,__headers:{location:'/other'}}, '/other':sourceResponse});
+  try {
+    const context = vi.fn();
+    expect(await fetchWidgetData({...backend,baseUrl:server.url},widget({type:'table',endpoint:sourcePath,dataKey:'results.rows'}),
+      { chart_source:'true',symbol:'A' },undefined,undefined,undefined,context)).toEqual(sourceRows);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
+  } finally { await server.close(); }
+});
