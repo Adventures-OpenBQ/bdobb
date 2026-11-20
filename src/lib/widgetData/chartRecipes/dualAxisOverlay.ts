@@ -15,7 +15,9 @@ import {
 import { overlayAxisTicks, overlayOriginalValue } from './overlayDisplay';
 import { decodeDualAxisOverlayOptions } from './settings';
 import type { DualAxisOverlayOptions, RecipeContext, RecipeRefusal, RecipeRequestOptions, RecipeResult } from './types';
-import { dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth } from './viewport';
+import {
+  axisPixels, drawableValues, dualAxisOverlayMinPlotHeight, dualAxisOverlayMinPlotWidth, extents, valueRange, type Range,
+} from './viewport';
 
 export { overlayAxisTicks } from './overlayDisplay';
 
@@ -247,51 +249,13 @@ export function prepareOverlaySeries(dataset: WidgetDataset, options: DualAxisOv
     retrievedAt: source.retrieved_at, filtered: projection.filtered, left, right } };
 }
 
-type Range = [number, number];
 const day = 86_400_000;
-// Plotly 3.7 cartesian cleanRange clamps linear coordinates to constants/numerical.js FP_SAFE.
-const plotlySafeMagnitude = Number.MAX_VALUE * 1e-4;
 
 // Plotly parses the fractional seconds into a binary64 millisecond coordinate after constructing the UTC minute.
 function plotlyDateCoordinate(value: string): number {
   if (value.length === 10) return Date.parse(value);
   const seconds = Number(value.slice(17).replace(/(?:Z|\+00:00)$/, ''));
   return Date.parse(value.slice(0, 16) + ':00Z') + seconds * 1000;
-}
-
-function extents(values: readonly number[]): Range {
-  let min = Infinity, max = -Infinity;
-  for (const value of values) { min = Math.min(min, value); max = Math.max(max, value); }
-  return [min, max];
-}
-
-function valueRange(values: readonly number[], zeroScale: number): Range | undefined {
-  const [min, max] = extents(values);
-  const scale = Math.max(Math.abs(min), Math.abs(max));
-  if (!Number.isFinite(scale) || scale >= plotlySafeMagnitude) return;
-  const span = max - min;
-  const padding = span === 0 ? (scale || zeroScale) * 0.1 : span * 0.08;
-  const lo = Math.max(min - padding, -plotlySafeMagnitude), hi = Math.min(max + padding, plotlySafeMagnitude);
-  if (lo < min && max < hi) return [lo, hi];
-}
-
-// Plotly's cartesian c2p uses this arithmetic and rounds the SVG coordinate to hundredths of a pixel.
-function axisPixels([lo, hi]: Range, length: number, vertical: boolean) {
-  const slope = length / (vertical ? lo - hi : hi - lo);
-  const offset = -slope * (vertical ? hi : lo);
-  return (value: number) => Math.round((offset + slope * value) * 100) / 100;
-}
-
-function drawableValues(values: readonly number[], range: Range, height: number) {
-  const pixel = axisPixels(range, height, true);
-  const [low, high] = extents(values);
-  if (low !== high && !(pixel(low) > pixel(high))) return false;
-  return values.every(value => {
-    const position = pixel(value);
-    const stablePosition = ((range[1] - value) / (range[1] - range[0])) * height;
-    // A loss greater than one SVG quantization step indicates cancellation in the renderer.
-    return position > 0 && position < height && Math.abs(position - stablePosition) <= .01;
-  });
 }
 
 function seriesText(series: OverlaySeries, point: OverlayPoint): string {

@@ -10,6 +10,7 @@ import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
 import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
+import { buildEstimateRevisions } from './estimateRevisions';
 import { buildIncomeSankey } from './incomeSankey';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
@@ -67,6 +68,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   }
 
   const recipe = decoded.options;
+  if (recipe.kind === 'estimate-revisions') return buildEstimateRevisions(dataset, recipe, context);
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);

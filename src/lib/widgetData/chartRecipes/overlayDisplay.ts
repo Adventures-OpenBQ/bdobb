@@ -20,8 +20,7 @@ export function overlayOriginalValue(value: number, unit: OverlaySeriesFact['uni
 }
 
 /** Exact-unit tick labels for the default range and subsequent Plotly relayouts. */
-export function overlayAxisTicks(range: readonly [number, number], unit: OverlaySeriesFact['unit']) {
-  const percent = unit === 'yield-fraction';
+export function linearAxisTicks(range: readonly [number, number], percent = false) {
   const [lo, hi] = range;
   const step = (hi - lo) / 6;
   const tickvals = [...new Set([1, 2, 3, 4, 5].map(i => lo + i * step))];
@@ -32,4 +31,8 @@ export function overlayAxisTicks(range: readonly [number, number], unit: Overlay
     digits++;
   } while (new Set(ticktext).size < tickvals.length && digits <= 17);
   return { tickvals, ticktext, margin: Math.max(62, 30 + 7 * Math.max(...ticktext.map(label => label.length))) };
+}
+
+export function overlayAxisTicks(range: readonly [number, number], unit: OverlaySeriesFact['unit']) {
+  return linearAxisTicks(range, unit === 'yield-fraction');
 }

@@ -4,6 +4,7 @@
 import type { LinkedFigureResult } from '../chartFigure';
 import type { EtfHierarchy } from './etfSunburst';
 import type { OverlaySeriesPair } from './dualAxisOverlay';
+import type { EstimateRevisionData } from './estimateRevisions';
 import type { NewsCalendarDay } from './newsCalendar';
 import type { ReturnSummaryWindow } from './priceSamples';
 import type { ReturnSummaryDetails } from './returnSummary';
@@ -60,6 +61,16 @@ export type DualAxisOverlayOptions = {
   fields: { series: string; date: string; value: string; availableAt?: string; targetStart?: string; targetEnd?: string };
 };
 
+export type EstimateRevisionsOptions = {
+  version: 1;
+  kind: 'estimate-revisions';
+  metric: 'eps' | 'revenue';
+  view: 'slope' | 'path' | 'bump';
+  target: { start: string; end: string; kind: 'FY' | 'FQ' };
+  vintages: string[];
+  fields: { issuer: string; vintage: string; targetStart: string; targetEnd: string; targetKind: string; value: string };
+};
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -80,7 +91,7 @@ export type RecipeOptions =
   | DualAxisOverlayOptions;
 
 /** Closed recipe options accepted by the worker boundary. */
-export type RecipeRequestOptions = RecipeOptions;
+export type RecipeRequestOptions = RecipeOptions | EstimateRevisionsOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
@@ -90,6 +101,7 @@ export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & {
   daySummaries?: NewsCalendarDay[];
   etfHierarchy?: EtfHierarchy;
   overlay?: OverlaySeriesPair;
+  estimateRevisions?: EstimateRevisionData;
   returnSummary?: ReturnSummaryDetails;
   ownershipSnapshot?: OwnershipSnapshotDetails;
 }) | RecipeRefusal;

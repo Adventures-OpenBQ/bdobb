@@ -6,7 +6,7 @@ import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
 import { ownershipBarRoles } from './ownershipEvidence';
-import type { DualAxisOverlayOptions, RecipeOptions, RecipeRequestOptions } from './types';
+import type { DualAxisOverlayOptions, EstimateRevisionsOptions, RecipeOptions, RecipeRequestOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
 type RecipeShape = { options: readonly string[]; required?: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
@@ -224,8 +224,34 @@ export function decodeDualAxisOverlayOptions(value: unknown): RecipeOptionsResul
   return decoded.ok ? { ok: true, options: decoded.options as DualAxisOverlayOptions } : decoded;
 }
 
+export const estimateRevisionFieldOrigins = {
+  issuer: 'issuer', vintage: 'vintage', targetStart: 'target_start', targetEnd: 'target_end', targetKind: 'target_kind', value: 'value',
+} as const;
+
+const estimateRevisionsShape = {
+  options: ['metric', 'view', 'target', 'vintages'], distinctBindings: true, required: Object.keys(estimateRevisionFieldOrigins),
+} as const;
+
+export function decodeEstimateRevisionsOptions(value: unknown): RecipeOptionsResult<EstimateRevisionsOptions> {
+  const decoded = decodeRecipeShape(value, 'estimate-revisions', estimateRevisionsShape);
+  if (!decoded.ok) return decoded;
+  const { metric, view, target, vintages } = decoded.options;
+  if (metric !== 'eps' && metric !== 'revenue') return invalid('Choose consensus EPS or revenue.');
+  if (view !== 'slope' && view !== 'path' && view !== 'bump') return invalid('Choose a revision slope, time path or bump chart.');
+  if (!declarativeRecord(target) || Object.keys(target).length !== 3
+    || !['start', 'end', 'kind'].every(key => Object.hasOwn(target, key))
+    || !isoDate(target.start) || !isoDate(target.end) || target.start > target.end || (target.kind !== 'FQ' && target.kind !== 'FY'))
+    return invalid('Choose a pinned acquired fiscal target with exact start, end and FY or FQ kind.');
+  if (!distinctSymbols(vintages) || !Array.isArray(vintages)) return invalid('Select distinct acquired vintage IDs.');
+  if (view === 'slope' && vintages.length !== 2) return invalid('Select exactly two acquired vintages for the slope.');
+  if (view === 'path' && vintages.length < 3) return invalid('Select at least three acquired vintages for the time path.');
+  if (view === 'bump' && vintages.length < 2) return invalid('Select the acquired baseline and current vintages for the bump chart.');
+  return { ok: true, options: decoded.options as EstimateRevisionsOptions };
+}
+
 export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult<RecipeRequestOptions> {
   const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
+  if (kind === 'estimate-revisions') return decodeEstimateRevisionsOptions(value);
   return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 

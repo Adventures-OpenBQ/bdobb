@@ -16,9 +16,55 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
   return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
 }
 
+export const estimateRevisionMinPlotHeight = 230;
+
+/** Reserve room for the full UTC labels on each ordinal vintage position. */
+export function estimateRevisionMinPlotWidth(vintages: number): number {
+  return Math.max(320, 130 + 60 * vintages);
+}
+
 // Browser-verified drawing surface for both unit-bearing overlay axis titles.
 export const dualAxisOverlayMinPlotWidth = 320;
 export const dualAxisOverlayMinPlotHeight = 210;
+
+export type Range = [number, number];
+// Plotly 3.7 cartesian cleanRange clamps linear coordinates to constants/numerical.js FP_SAFE.
+const plotlySafeMagnitude = Number.MAX_VALUE * 1e-4;
+
+export function extents(values: readonly number[]): Range {
+  let min = Infinity, max = -Infinity;
+  for (const value of values) { min = Math.min(min, value); max = Math.max(max, value); }
+  return [min, max];
+}
+
+export function valueRange(values: readonly number[], zeroScale: number): Range | undefined {
+  const [min, max] = extents(values);
+  const scale = Math.max(Math.abs(min), Math.abs(max));
+  if (!Number.isFinite(scale) || scale >= plotlySafeMagnitude) return;
+  const span = max - min;
+  const padding = span === 0 ? (scale || zeroScale) * 0.1 : span * 0.08;
+  const lo = Math.max(min - padding, -plotlySafeMagnitude), hi = Math.min(max + padding, plotlySafeMagnitude);
+  if (lo < min && max < hi) return [lo, hi];
+}
+
+// Plotly's cartesian c2p uses this arithmetic and rounds the SVG coordinate to hundredths of a pixel.
+export function axisPixels([lo, hi]: Range, length: number, vertical: boolean) {
+  const slope = length / (vertical ? lo - hi : hi - lo);
+  const offset = -slope * (vertical ? hi : lo);
+  return (value: number) => Math.round((offset + slope * value) * 100) / 100;
+}
+
+export function drawableValues(values: readonly number[], range: Range, height: number) {
+  const pixel = axisPixels(range, height, true);
+  const [low, high] = extents(values);
+  if (low !== high && !(pixel(low) > pixel(high))) return false;
+  return values.every(value => {
+    const position = pixel(value);
+    const stablePosition = ((range[1] - value) / (range[1] - range[0])) * height;
+    // A loss greater than one SVG quantization step indicates cancellation in the renderer.
+    return position > 0 && position < height && Math.abs(position - stablePosition) <= .01;
+  });
+}
 
 export const newsCalendarPlotHeight = 260;
 export const returnSummaryPlotHeight = 280;
