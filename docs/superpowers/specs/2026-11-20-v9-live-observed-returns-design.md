@@ -1,6 +1,6 @@
 # Live observed-return box and violin charts — design proposal
 
-20 November 2026. User chose general NYSE/Nasdaq support and a fixed October–November 2026 example. Written design approval remains pending. This design supersedes the calendar-qualified AAPL pilot proposal and preserves the existing approved statistical question.
+20 November 2026. User chose general NYSE/Nasdaq support and a fixed October–November 2026 example. User approved this written design on 20 November 2026. This design supersedes the calendar-qualified AAPL pilot proposal and preserves the existing approved statistical question.
 
 ## Intent and exact question
 
@@ -72,4 +72,4 @@ The builder chooses the narrow receipt signatures and registration hooks consist
 - EODHD daily data and adjustment documentation: https://eodhd.com/financial-apis/api-for-historical-data-and-volumes
 - Fixed public examples: https://eodhd.com/api/eod/AAPL.US?api_token=demo&from=2026-10-12&to=2026-11-19&period=d&order=a&fmt=json and corresponding MCD.US request.
 
-Status: user selected general NYSE/Nasdaq support and fixed example; this exact written observed-return design awaits approval. No feature code has been written.
+Status: approved by the user on 20 November 2026; implementation planning authorized. No feature code has been written.
