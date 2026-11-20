@@ -35,7 +35,7 @@ function observedAxis(points: DividendPoint[], currency: string) {
     ? [min - pad, Math.min(plotLimit, max + pad)] : undefined;
   return {
     type: 'linear', title: { text: `${currency} per share` }, automargin: true,
-    autorangeoptions: { maxallowed: plotLimit },
+    autorangeoptions: { clipmax: plotLimit },
     ...(range ? { range } : {}),
   };
 }
@@ -87,8 +87,11 @@ export function buildDividendSteps(dataset: WidgetDataset, options: RecipeOption
     return { ok: true, revision, notes, figure: { data: [], layout } };
   }
 
-  const bindingIssue = savedBindingIssue(options, dataset.columns, dataset.rows);
-  if (bindingIssue) return refuse(bindingIssue);
+  // Normalization can deliver no columns while the receipt still accounts for dated events.
+  if (dataset.rows.length || evidence.delivered_count > 0) {
+    const bindingIssue = savedBindingIssue(options, dataset.columns, dataset.rows);
+    if (bindingIssue) return refuse(bindingIssue);
+  }
   const acquiredDates = new Set(evidence.event_dates);
   const omitted = new Set(evidence.omitted_event_dates);
   const invalid = new Set(evidence.invalid_amount_dates);

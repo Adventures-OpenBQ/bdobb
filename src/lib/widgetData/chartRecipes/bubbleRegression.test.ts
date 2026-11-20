@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 import { screenerEvidence } from '../../../test/fixtures/financialEvidence';
 import { datasetFromRows } from '../../localTableData';
+import { purgePlot, renderPlot } from '../../plotly';
 import type { Row } from '../../tableColumns';
 import { buildBubbleRegression, fitUnweightedOls } from './bubbleRegression';
 import { parseFinancialEvidence, type ScreenerFinancialEvidence } from './financialEvidence';
@@ -137,6 +138,27 @@ describe('fitUnweightedOls', () => {
 });
 
 describe('buildBubbleRegression', () => {
+  it('autoscales both actual Plotly axes around ordinary screener fractions', async () => {
+    const source = screen([row('A', 0, -.02, 10), row('B', .01, .01, 50), row('C', .02, .02, 100)]);
+    const { figure } = chart(buildBubbleRegression(source, options, context));
+    const node = document.body.appendChild(document.createElement('div'));
+    try {
+      await renderPlot(node, figure);
+      const { _fullLayout } = node as HTMLDivElement & { _fullLayout: Record<'xaxis' | 'yaxis', { range: [number, number] }> };
+      const [xMin, xMax] = _fullLayout.xaxis.range;
+      const [yMin, yMax] = _fullLayout.yaxis.range;
+      expect(xMin).toBeLessThan(0);
+      expect(xMax).toBeGreaterThan(.02);
+      expect(xMax - xMin).toBeLessThan(.05);
+      expect(yMin).toBeLessThan(-.02);
+      expect(yMax).toBeGreaterThan(.02);
+      expect(yMax - yMin).toBeLessThan(.1);
+    } finally {
+      purgePlot(node);
+      node.remove();
+    }
+  });
+
   it('fits the one plotted sample without weights and draws only the observed X interval', () => {
     const source = screen([
       row('A', 0, 0, 1), row('B', .01, .01, 1000000), row('C', .02, .01, 1),

@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { clippedDividendEvidence, dividendEvidence, dividendRow, emptyDividendEvidence } from '../../../test/fixtures/financialEvidence';
 import { datasetFromBytes, datasetFromRows } from '../../localTableData';
+import { purgePlot, renderPlot } from '../../plotly';
 import type { Row } from '../../tableColumns';
 import type { WidgetDataset } from '../types';
 import { backendFinancialResponse, financialProjectionProvenance, parseFinancialEvidence, type DividendFinancialEvidence } from './financialEvidence';
@@ -254,6 +255,22 @@ describe('dividend steps', () => {
     ]);
     const { range } = result.figure.layout.yaxis as { range: number[] };
     expect(range.map(value => value / large)).toEqual([expect.closeTo(.95, 14), expect.closeTo(1.05, 14)]);
+  });
+
+  it('autoscales the actual Plotly dividend axis around ordinary payments', async () => {
+    const { figure } = history(snapshot([event(first, .2), event(second, .5)]));
+    const node = document.body.appendChild(document.createElement('div'));
+    try {
+      await renderPlot(node, figure);
+      const { _fullLayout } = node as HTMLDivElement & { _fullLayout: { yaxis: { range: [number, number] } } };
+      const [low, high] = _fullLayout.yaxis.range;
+      expect(low).toBeLessThan(.2);
+      expect(high).toBeGreaterThan(.5);
+      expect(high - low).toBeLessThan(.6);
+    } finally {
+      purgePlot(node);
+      node.remove();
+    }
   });
 
   it('keeps revision stable across viewport and same-question data refreshes', () => {

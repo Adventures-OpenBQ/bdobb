@@ -99,7 +99,7 @@ it('dispatches the bubble recipe through the actual worker without the legacy ob
   expect(reply.result.notes.join(' ')).not.toMatch(/Presented observation dates/);
 });
 
-it('dispatches verified dividends through the actual worker, including a covered empty refresh', async () => {
+it('dispatches verified dividends and distinguishes a covered empty refresh from invalid acquired events', async () => {
   const scope = { onmessage: undefined as ((event: { data: RecipeRequest }) => void) | undefined, postMessage: vi.fn() };
   vi.stubGlobal('self', scope);
   vi.resetModules();
@@ -109,6 +109,7 @@ it('dispatches verified dividends through the actual worker, including a covered
     const source = datasetFromRows(rows, 'dividends', 1, 'localFile', undefined, [], {
       completeness: 'bounded', financialEvidence: parseFinancialEvidence(receipt),
     });
+    if (!rows.length) expect(source.columns).toEqual([]);
     scope.onmessage!({ data: structuredClone({
       identity, dataset: source, context: { ...context, today: '2026-02-12' },
       options: { kind: 'dividend-steps', version: 1, instrument: 'SHEL.LSE',
@@ -124,6 +125,16 @@ it('dispatches verified dividends through the actual worker, including a covered
   const empty = send([], emptyDividendEvidence);
   expect(empty).toMatchObject({ ...identity, result: { ok: true, figure: { data: [] } } });
   expect(empty.result.notes.join(' ')).toMatch(/no dividend events were supplied.*2026-01-01.*2026-06-30/i);
+  const invalid = send([], {
+    ...dividendEvidence, raw_count: 2, normalized_count: 0, delivered_count: 0,
+    event_dates: ['2026-02-12', '2026-05-10'], invalid_amount_dates: ['2026-02-12', '2026-05-10'],
+    diagnostics: ['invalid_amount'],
+  });
+  expect(invalid).toMatchObject({ ...identity, result: { ok: false, refused: true,
+    message: expect.stringMatching(/no usable historical dividends/i),
+  } });
+  expect(invalid.result.message).toMatch(/2 acquired events.*0 delivered.*1 invalid amount.*1 scheduled\/future/i);
+  expect(invalid.result.message).toMatch(/retrieved 2026-11-19T16:00:00Z.*window 2026-01-01 to 2026-06-30 inclusive/i);
 });
 
 it('sends layout width in context and fences a superseded arrangement of the same source revision', async () => {

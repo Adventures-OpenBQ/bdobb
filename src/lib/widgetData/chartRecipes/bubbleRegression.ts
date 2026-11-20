@@ -151,7 +151,7 @@ function percentAxis(title: string, { min, max }: Bounds) {
     ? [Math.max(-plotLimit, min - pad), Math.min(plotLimit, max + pad)] : undefined;
   return {
     type: 'linear', title: { text: title }, tickformat: '.2%', automargin: true,
-    autorangeoptions: { minallowed: -plotLimit, maxallowed: plotLimit },
+    autorangeoptions: { clipmin: -plotLimit, clipmax: plotLimit },
     ...(range ? { range } : {}),
   };
 }
