@@ -532,7 +532,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
    */
   function messagingFor(w: WidgetDef | undefined): WidgetMessaging | undefined {
     if (!w) return undefined;
-    const frameOrigin = originOf(w.endpoint);
+    const frameOrigin = originOf(w.type === "iframe" ? buildIframeWidgetUrl(backend, w, query) : w.endpoint);
     return {
       headers:
         backend && frameOrigin !== null && frameOrigin === originOf(backend.baseUrl)
@@ -1037,7 +1037,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
     if (view === "chart") return <ChartRenderer
-        data={data}
+        data={tableRows(data, widget?.table) ?? data}
         uirevision={paramsKey(query)}
         columns={widget?.table?.columns}
         chartType={widget?.chartView?.chartType}

@@ -141,7 +141,7 @@ vi.mock("../lib/plotly", () => ({
   renderPlot: () => Promise.resolve(),
   purgePlot: () => {},
   resizePlot: () => {},
-  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick"]),
+  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "surface"]),
 }));
 
 // jsdom implements no ResizeObserver; ChartRenderer needs one to mount at
@@ -1180,6 +1180,13 @@ describe("WidgetCard renderer dispatch", () => {
     expect(screen.getByRole("columnheader", { name: "USD" })).toBeInTheDocument();
     rendered.rerender(<WidgetCard card={{ ...card, view: "raw" }} onRemove={vi.fn()} />);
     expect(JSON.parse(screen.getByTestId("raw-json").textContent!)).toEqual(record);
+  });
+
+  it("draws the advertised Chart view of a declared singleton table", () => {
+    setUp({ type: "table", table: { columns: [{ field: "date", chartDataType: "category" }, { field: "USD", chartDataType: "series" }] } }, { date: "2026-11-19", USD: 1.0992 });
+    render(<WidgetCard card={{ ...card, view: "chart" }} onRemove={vi.fn()} />);
+    expect(screen.getByTestId("chart-plot")).toBeInTheDocument();
+    expect(screen.queryByText("Nothing chartable in this payload.")).toBeNull();
   });
 
   it("dispatches metric to the metric renderer", () => {
@@ -3193,6 +3200,20 @@ describe("WidgetCard iframe widget messages", () => {
   function paramsFor(id: string): unknown {
     return useWidgetData.mock.calls.filter(([c]) => (c as DashboardCard).id === id).at(-1)![1];
   }
+
+  it.each(["header", "cookie"] as const)("authenticates a resolved relative iframe using %s credentials", async (authLocation) => {
+    seedIframe({});
+    useWidgetRegistryStore.setState(state => ({ widgets: state.widgets.map(w => w.id === "w1" ? { ...w, endpoint: "/tool" } : w) }));
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://embed.example", authLocation, headerName: "X-Key", headerValue: "synthetic-frame-secret" })] });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    render(<TwoCards />);
+    await settleFrameEffects();
+    const { win, postMessage } = stubFrame(screen.getByTitle("Embedded page"));
+    sendToFrame(win, { type: "openbb-connect" }, "https://embed.example");
+    expect(postMessage).toHaveBeenCalledWith({ type: "openbb-auth", headers: authLocation === "header" ? { "X-Key": "synthetic-frame-secret" } : { Cookie: "X-Key=synthetic-frame-secret" } }, "https://embed.example");
+    expect(document.body.innerHTML).not.toContain("synthetic-frame-secret");
+    expect(__read("logs/bdobb.log") ?? "").not.toContain("synthetic-frame-secret");
+  });
 
   it("hands the frame the backend's own auth headers, and nothing else", async () => {
     seedIframe({});
