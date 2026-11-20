@@ -235,7 +235,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
   /** A `.catch` for one of this card's store writes: logs "failed to <what> for card <id>". */
   const logFail = (what: string) => (err: unknown) => logError(`failed to ${what} for card ${card.id}: ${err}`);
   /**
-   * The Parameters panel — the chips row again, with labels showing, docked
+   * The Parameters panel — later rows, plus row zero when its title controls
+   * are hidden, with labels showing, docked
    * under the title bar. v5.5.1 (user ruling 2026-09-30): opened and closed
    * from the title bar's ▸/▾ chevron (and the ⋯ menu's Parameters item),
    * closed by default, and saved per card in `paramsOpen`. It was a
@@ -1273,8 +1274,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     }
   }
 
-  // The two ParamControls instances (chips row, Parameters panel) differ
-  // only in idPrefix; everything else is built once here.
+  // Both control instances observe every field for cascades; the panel omits
+  // row zero while those fields are visible in the title strip.
   const controlProps: ComponentProps<typeof ParamControls> | null =
     widget && dashboard
       ? {
@@ -1751,7 +1752,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             )}
           </div>
         </div>
-        {/* The Parameters panel: the chips row again, as a form with its
+        {/* The Parameters panel: later rows, plus row zero when title controls are hidden, with its
             labels showing (styles.css makes .param-label-hidden static inside
             .card-params-panel). A child of <header>, after .card-controls,
             on a line of its own under the bar (the header wraps). Docked,
@@ -1763,6 +1764,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
               // Same viewer read-only contract as the chips instance.
               // Distinguishes this panel's ids from the chips row's (both mount ParamControls for the same card while the panel is open).
               idPrefix="params-"
+              omitRowZero={!hideTitleParams && (!collapseControls || controlsOpen)}
             />
             {/* v5.5.1: whether the chips also sit on the title bar. Unchecked,
                 this panel is the only place they are edited. Viewer

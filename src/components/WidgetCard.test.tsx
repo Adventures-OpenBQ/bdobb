@@ -256,8 +256,8 @@ function renderReadyCard() {
 /** A resolved, ready table card with one visible param -- what the menu-order
  * and Parameters-popover tests need (hasControls, showsTable and canExport
  * all true). */
-function renderReadyTableCardWithParams() {
-  register({ type: "table", params: [{ paramName: "symbol", label: "Symbol", type: "text" }] });
+function renderReadyTableCardWithParams(laterRows = false) {
+  register({ type: "table", params: [{ paramName: "symbol", label: "Symbol", type: "text" }, ...(laterRows ? [{paramName: "market", label: "Market", type: "text", row: 1}] : [])] });
   const withParams = { ...card, params: { symbol: "AAPL" } };
   useWidgetData.mockReturnValue({ status: "ready", data: [{ symbol: "AAPL" }], retry: vi.fn() });
   useDashboardStore.setState({
@@ -302,6 +302,23 @@ describe("WidgetCard", () => {
     await userEvent.setup().click(screen.getByRole("button", {name: "Show parameters"}));
     expect(screen.getByRole("region", {name: "Parameters"})).toContainElement(screen.getByRole("textbox", {name: "Start"}));
     expect(container.querySelector(".card-chips")).not.toContainElement(screen.getByRole("textbox", {name: "Start"}));
+    expect(screen.getAllByLabelText("Symbol")).toHaveLength(1);
+    expect(within(screen.getByRole("region", {name: "Parameters"})).queryByLabelText("Symbol")).toBeNull();
+  });
+
+  it("keeps row zero editable in the panel while title controls are collapsed", async () => {
+    register(normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "market", label: "Market", type: "text", row: 1}]}}, "b1").widgets[0]);
+    useSettingsStore.setState({settings: {...DEFAULT_SETTINGS, collapseWidgetControls: true}});
+    useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
+    const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", {name: "Show parameters"}));
+    const panel = screen.getByRole("region", {name: "Parameters"});
+    expect(within(panel).getByLabelText("Symbol")).toBeInTheDocument();
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", {name: "Show widget controls"}));
+    expect(within(panel).queryByLabelText("Symbol")).toBeNull();
+    expect(container.querySelector(".card-chips")).toContainElement(screen.getByLabelText("Symbol"));
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
   });
 
   it("renders the widget name as the drag handle", () => {
@@ -4260,13 +4277,14 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     ]);
   });
 
-  it("Parameters opens the full control row in a docked panel with visible labels; Escape leaves it open", async () => {
-    renderReadyTableCardWithParams();
+  it("Parameters opens later rows in a docked panel with visible labels; Escape leaves it open", async () => {
+    renderReadyTableCardWithParams(true);
     await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Parameters" }));
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
-    expect(within(dialog).getByText("Symbol")).toBeVisible();
+    expect(within(dialog).getByText("Market")).toBeVisible();
+    expect(within(dialog).queryByLabelText("Symbol")).toBeNull();
 
     // v5.5.1: docked and saved, so only its own toggles close it.
     await userEvent.keyboard("{Escape}");
@@ -4342,14 +4360,14 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
   });
 
-  it("the panel's controls carry their own ids, distinct from the chips row's", async () => {
-    renderReadyTableCardWithParams();
+  it("the later-row panel controls carry their own ids, distinct from the title row", async () => {
+    renderReadyTableCardWithParams(true);
     await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Parameters" }));
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
     expect(document.querySelectorAll(`[id="${CARD_ID}-symbol"]`)).toHaveLength(1);
-    const popoverField = document.getElementById(`params-${CARD_ID}-symbol`);
+    const popoverField = document.getElementById(`params-${CARD_ID}-market`);
     expect(popoverField).not.toBeNull();
     expect(dialog.contains(popoverField)).toBe(true);
   });

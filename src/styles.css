@@ -2535,3 +2535,16 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
 
 /* Vector header controls stay centred without font-glyph baselines or clipping. */
 .card-header button:has(> svg) { display: inline-flex; align-items: center; justify-content: center; padding: 0; min-width: 20px; min-height: 22px; }
+
+/* Numeric title controls reserve digits and native steppers, not text-field width. */
+.card-chips .param-field input[type="number"] {
+  width: 6ch;
+  min-width: 6ch;
+  max-width: 16ch;
+}
+@supports (field-sizing: content) {
+  .card-chips .param-field input[type="number"] {
+    field-sizing: content;
+    width: auto;
+  }
+}
