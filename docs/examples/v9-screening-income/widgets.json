@@ -1,0 +1,35 @@
+{
+  "screening_demo_screener": {
+    "name": "US screener page",
+    "description": "Fictional screening and income example.",
+    "type": "table",
+    "endpoint": "/api/v1/eodhd/equity/screener",
+    "params": [],
+    "refetchInterval": false,
+    "data": {
+      "dataKey": "results"
+    }
+  },
+  "screening_demo_dividends": {
+    "name": "Canopy dividends",
+    "description": "Fictional screening and income example.",
+    "type": "table",
+    "endpoint": "/api/v1/eodhd/equity/fundamental/dividends",
+    "params": [],
+    "refetchInterval": false,
+    "data": {
+      "dataKey": "results"
+    }
+  },
+  "screening_demo_income": {
+    "name": "Canopy income statements",
+    "description": "Fictional screening and income example.",
+    "type": "table",
+    "endpoint": "/api/v1/eodhd/equity/fundamental/income",
+    "params": [],
+    "refetchInterval": false,
+    "data": {
+      "dataKey": "results"
+    }
+  }
+}

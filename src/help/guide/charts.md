@@ -28,7 +28,7 @@ With no date-shaped column, the x-axis is the one non-numeric column if there is
 
 "Numeric" means every non-null value in those first five rows is a number. A mostly-text column with one stray number does not qualify, and a bare year like `2026` is not date-shaped and will not become an x-axis. If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator and waterfall traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator, waterfall and Sankey traces. A ready-made figure asking for anything else says so and names the trace type it wanted.
 
 Two other chart widget types render here as well. A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or Vega-Lite specification instead of a Plotly figure; the app translates the common cases — line, area, bar, column and scatter — into the same bundled Plotly, so they draw as ordinary chart cards rather than raw JSON. A spec that uses something the translation does not cover falls back to the card's **Raw** view.
 
@@ -47,6 +47,16 @@ Choose **Small multiples** and select up to twelve symbols in panel order. Every
 **ETF holdings Pareto** ranks delivered constituents by reported weight of fund assets. The bars show individual weights and the line accumulates the displayed holdings on the same scale. The chart shows at most 50 and separately reports the count and weight of all distinct holdings delivered to it. Transport scope and provider holdings coverage appear separately. Filtering the source changes the rows in the calculation.
 
 **ETF exposure** draws a stem and dot for each reported sector or geographic category, including zero weights. Hover a dot for its percentage of equity exposure. Scroll inside a long list to reach every category. The source must establish one fund, the matching exposure kind and the weight basis. To switch from sectors to regions, use **Card menu → Choose source**, select the corresponding **Exposure mode**, check its category field and apply.
+
+## Screening, dividends and income flows
+
+These linked charts answer one question from one table’s presentation and its acquired source evidence. Set the source table’s parameters and filters, then use **Apply chart settings** to commit the chart’s field bindings and selection. Use **Card menu → Choose source** when the question needs a different table. For EODHD, the source request must opt in with `chart_source=true`.
+
+**Screening bubble** plots fractional dividend yield against fractional five-day price change. Bubble area represents market cap in one verified listing currency, up to 48 px diameter. Choose **Latest** or one presented **Price date**. **Show regression** fits an unweighted line with an intercept to the usable delivered listings for that date when there are at least three points and both variables vary. The card reports its acquired sort, filters, offset, limit, retrieval time and sample counts. Yield and market cap can have a different measurement date from the price-data date. An older date selects a cohort from this delivery. Universe coverage and random sampling are unverified. Conflicting acquired listings or denominations can prevent drawing even if a table filter hides them.
+
+**Dividend steps** uses one qualified instrument, an inclusive verified acquisition window and one payment currency. Hover an ex-date marker to read its split-adjusted amount per current share. Historical levels can restate after splits. A known invalid or filtered event interrupts the line, which ends at the last usable historical event. Unknown or clipped coverage prevents drawing. The paired live EODHD dividend route currently reports unknown coverage. The example’s explicit snapshot verifies its event interval.
+
+**Income Sankey** uses one actual FY or FQ period from a typed income **Statement** table. It requires full-record evidence, statement reporting currency and an explicitly verified monetary multiplier. Hover to read original values in the declared source units. Income bridges reconcile their adjacent anchors. In particular, operating and non-operating changes are derived differences. Cost of revenue and income tax expense appear as independent components when the source supports them. A loss in an anchor, nonpositive revenue or unknown monetary scale prevents drawing. The paired live EODHD income route currently reports unknown scale. The example snapshot declares its multiplier. Scroll the fixed diagram or tap a band or node on a touch screen.
 
 ## Zoom, pan and reset
 

@@ -270,9 +270,9 @@ export function buildBubbleRegression(dataset: WidgetDataset, options: RecipeOpt
       data,
       layout: {
         ...themedLayout(context.theme), uirevision: revision,
-        title: { text: 'Dividend yield versus five-day price change' }, showlegend: true,
-        legend: { orientation: 'h', itemclick: false, itemdoubleclick: false },
-        margin: { l: 58, r: 18, t: 48, b: 56 },
+        title: { text: 'Dividend yield versus<br>five-day price change', font: { size: 15 } }, showlegend: true,
+        legend: { orientation: 'h', yref: 'container', y: 0, yanchor: 'bottom', itemclick: false, itemdoubleclick: false },
+        margin: { l: 58, r: 18, t: 64, b: 90 },
         xaxis: percentAxis('Dividend yield', bounds.x),
         yaxis: percentAxis('Five-day price change', yBounds),
       },

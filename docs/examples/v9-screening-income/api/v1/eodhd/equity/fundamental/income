@@ -1,0 +1,125 @@
+{
+  "results": [
+    {
+      "symbol": "CANOPY.US",
+      "period_ending": "2026-06-30",
+      "fiscal_year": 2026,
+      "fiscal_period": "FY",
+      "period_kind": "FY",
+      "start": "2025-07-01",
+      "end": "2026-06-30",
+      "reporting_currency": "USD",
+      "revenue": 100,
+      "cost_of_revenue": 40,
+      "gross_profit": 60,
+      "operating_income": 30,
+      "income_before_tax": 25,
+      "net_income": 20,
+      "income_tax_expense": 5,
+      "total_operating_expenses": 70
+    },
+    {
+      "symbol": "CANOPY.US",
+      "period_ending": "2025-06-30",
+      "fiscal_year": 2025,
+      "fiscal_period": "FY",
+      "period_kind": "FY",
+      "start": "2024-07-01",
+      "end": "2025-06-30",
+      "reporting_currency": "USD",
+      "revenue": 80,
+      "cost_of_revenue": 35,
+      "gross_profit": 45,
+      "operating_income": 25,
+      "income_before_tax": 22,
+      "net_income": 17,
+      "income_tax_expense": 5,
+      "total_operating_expenses": 55
+    }
+  ],
+  "provider": "eodhd",
+  "warnings": null,
+  "extra": {
+    "results_metadata": {
+      "chart_evidence": {
+        "version": 1,
+        "retrieved_at": "2026-11-19T16:00:00Z",
+        "raw_count": 2,
+        "normalized_count": 2,
+        "delivered_count": 2,
+        "diagnostics": [],
+        "kind": "income",
+        "field_origins": {
+          "period_ending": "date",
+          "reporting_currency": "Financials.Income_Statement.currency_symbol",
+          "revenue": "totalRevenue",
+          "cost_of_revenue": "costOfRevenue",
+          "gross_profit": "grossProfit",
+          "operating_income": "operatingIncome",
+          "income_before_tax": "incomeBeforeTax",
+          "net_income": "netIncome",
+          "income_tax_expense": "incomeTaxExpense"
+        },
+        "qualified_symbol": "CANOPY.US",
+        "period_kind": "FY",
+        "reporting_currency": "USD",
+        "scale": {
+          "status": "verified",
+          "authority": "explicit-snapshot",
+          "multiplier": 1000.0,
+          "reference": "examples/canopy-income-fy2026-fy2025-v1"
+        },
+        "requested_limit": 2,
+        "available_period_count": 2,
+        "unsafe": {
+          "invalid_period_identity": false,
+          "scale_conflict": false
+        },
+        "periods": [
+          {
+            "period_end": "2026-06-30",
+            "period_kind": "FY",
+            "fiscal_year": 2026,
+            "fiscal_period": "FY",
+            "record_coverage": "full-record",
+            "declared_currency": "USD",
+            "currency_conflict": false,
+            "scale_conflict": false,
+            "identity_conflict": false,
+            "field_origin_conflict": false,
+            "present_fields": [
+              "cost_of_revenue",
+              "gross_profit",
+              "income_before_tax",
+              "income_tax_expense",
+              "net_income",
+              "operating_income",
+              "revenue"
+            ]
+          },
+          {
+            "period_end": "2025-06-30",
+            "period_kind": "FY",
+            "fiscal_year": 2025,
+            "fiscal_period": "FY",
+            "record_coverage": "full-record",
+            "declared_currency": "USD",
+            "currency_conflict": false,
+            "scale_conflict": false,
+            "identity_conflict": false,
+            "field_origin_conflict": false,
+            "present_fields": [
+              "cost_of_revenue",
+              "gross_profit",
+              "income_before_tax",
+              "income_tax_expense",
+              "net_income",
+              "operating_income",
+              "revenue"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

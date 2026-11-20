@@ -13,7 +13,7 @@ import type { RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from '
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
 const continuityIssue = 'Dividend event continuity is unverified. Use the fully loaded, unfiltered event source.';
 const duplicateIssue = 'Multiple distributions share the same ex-dividend date. Acquire an unambiguous event source.';
-const title = 'Last reported split-adjusted dividend per share';
+const title = 'Last reported split-adjusted<br>dividend per share';
 const plotLimit = Number.MAX_VALUE * 1e-4;
 
 type DividendPoint = { date: string; amount: number; distribution: string };
@@ -71,8 +71,8 @@ export function buildDividendSteps(dataset: WidgetDataset, options: RecipeOption
   const revision = JSON.stringify([dataset.provenance.sourceWidgetId, options.kind, options.version, instrument,
     fields.date, fields.amount, fields.currency, fields.frequency, start, end, currency, evidence.amount_basis]);
   const layout = {
-    ...themedLayout(context.theme), title: { text: title }, uirevision: revision, showlegend: false,
-    margin: { l: 64, r: 20, t: 54, b: 54 },
+    ...themedLayout(context.theme), title: { text: title, font: { size: 15 } }, uirevision: revision, showlegend: false,
+    margin: { l: 64, r: 20, t: 64, b: 54 },
     xaxis: { type: 'date', title: { text: 'Ex-dividend date' }, automargin: true },
   };
   const notes = [

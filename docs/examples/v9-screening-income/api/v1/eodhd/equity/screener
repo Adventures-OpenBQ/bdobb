@@ -1,0 +1,150 @@
+{
+  "results": [
+    {
+      "symbol": "CEDAR.US",
+      "name": "Cedar Works",
+      "sector": "Industrials",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-31",
+      "market_cap": 9600000000,
+      "dividend_yield": 0.04,
+      "price_change_5d": 0.07
+    },
+    {
+      "symbol": "ALDER.US",
+      "name": "Alder Systems",
+      "sector": "Technology",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-31",
+      "market_cap": 7200000000,
+      "dividend_yield": 0.03,
+      "price_change_5d": 0.02
+    },
+    {
+      "symbol": "BIRCH.US",
+      "name": "Birch Utilities",
+      "sector": "Utilities",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-31",
+      "market_cap": 2400000000,
+      "dividend_yield": 0.02,
+      "price_change_5d": 0.04
+    },
+    {
+      "symbol": "CANOPY.US",
+      "name": "Canopy Goods",
+      "sector": "Consumer Staples",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-31",
+      "market_cap": 1500000000,
+      "dividend_yield": 0.01,
+      "price_change_5d": 0.01
+    },
+    {
+      "symbol": "FIR.US",
+      "name": "Fir Services",
+      "sector": "Industrials",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-28",
+      "market_cap": 1000000000,
+      "dividend_yield": 0.025,
+      "price_change_5d": -0.01
+    },
+    {
+      "symbol": "PINE.US",
+      "name": "Pine Energy",
+      "sector": "Energy",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-28",
+      "market_cap": 800000000,
+      "dividend_yield": 0.018,
+      "price_change_5d": -0.025
+    },
+    {
+      "symbol": "ELM.US",
+      "name": "Elm Health",
+      "sector": "Health Care",
+      "exchange": "US",
+      "currency_symbol": "$",
+      "last_day_data_date": "2026-08-28",
+      "market_cap": 640000000,
+      "dividend_yield": 0.013,
+      "price_change_5d": 0.016
+    }
+  ],
+  "provider": "eodhd",
+  "warnings": null,
+  "extra": {
+    "results_metadata": {
+      "chart_evidence": {
+        "version": 1,
+        "retrieved_at": "2026-11-19T16:00:00Z",
+        "raw_count": 7,
+        "normalized_count": 7,
+        "delivered_count": 7,
+        "diagnostics": [],
+        "kind": "screener",
+        "field_origins": {
+          "symbol": "code+exchange",
+          "exchange": "exchange",
+          "currency_symbol": "currency_symbol",
+          "last_day_data_date": "last_day_data_date",
+          "market_cap": "market_capitalization",
+          "dividend_yield": "dividend_yield",
+          "price_change_5d": "refund_5d_p"
+        },
+        "units": {
+          "market_cap": "listing-currency",
+          "dividend_yield": "fraction",
+          "price_change_5d": "fraction"
+        },
+        "scope": {
+          "sort": "market_capitalization.desc",
+          "limit": 50,
+          "offset": 0,
+          "signals": null,
+          "filters": [
+            [
+              "exchange",
+              "=",
+              "us"
+            ]
+          ]
+        },
+        "unsafe": {
+          "unassignable_identity": false,
+          "unassignable_date": false,
+          "unit_conflict": false
+        },
+        "cohorts": [
+          {
+            "price_date": "2026-08-31",
+            "raw_count": 4,
+            "denominations": [
+              "USD"
+            ],
+            "unknown_denomination": false,
+            "conflicting_duplicates": false,
+            "exact_duplicate_count": 0
+          },
+          {
+            "price_date": "2026-08-28",
+            "raw_count": 3,
+            "denominations": [
+              "USD"
+            ],
+            "unknown_denomination": false,
+            "conflicting_duplicates": false,
+            "exact_duplicate_count": 0
+          }
+        ]
+      }
+    }
+  }
+}

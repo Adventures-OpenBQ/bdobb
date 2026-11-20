@@ -41,7 +41,8 @@ x-axis.
 
 If none of that applies, the card says *Nothing chartable in this payload.*
 
-The bundled Plotly draws scatter, candlestick, bar and heatmap traces. A
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, indicator,
+waterfall and Sankey traces. A
 ready-made figure asking for anything else says so and names the trace type it
 wanted.
 
@@ -55,6 +56,12 @@ Stacked. See Tables for what output it receives.
 For **Return distribution**, select adjusted daily prices, one symbol and 5–100 bins. Hover a bar for its interval, count and share. **Small multiples** compares up to twelve selected symbols from a shared base of 100. Gaps break both calculations. Both charts require complete or bounded daily history.
 
 **ETF holdings Pareto** compares individual and cumulative weight of fund assets for up to 50 delivered holdings. Read the delivered weight and provider coverage beneath the controls. **ETF exposure** shows the reported weight of equity exposure for every delivered sector or region. Scroll the plot to reach the last category. Use **Card menu → Choose source** to change tables, choose the matching exposure mode and category, then **Apply chart settings**.
+
+**Screening bubble** compares dividend yield and five-day price change for one price-data date. Area represents market cap. **Show regression** fits the usable presented rows of the delivered page. Read the sample size, acquisition scope and retrieval time in the card.
+
+**Dividend steps** shows split-adjusted amounts per current share on ex-dates for one instrument and payment currency. A filtered event can interrupt the line. Unknown or clipped coverage prevents drawing.
+
+**Income Sankey** reconciles the anchors of one actual income Statement period using the declared reporting currency and multiplier. Operating and non-operating changes come from adjacent anchors. Hover or tap to see original units. Loss anchors and unknown monetary scale prevent drawing. Use the table to change the acquired data and **Apply chart settings** to change the chart selection. Opt in with `chart_source=true` on EODHD source requests. The live paired routes currently leave dividend coverage and income scale unknown. The fictional example supplies explicit snapshot evidence for both.
 
 ## Highcharts, Vega-Lite and TradingView
 

@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
+import { backendFinancialResponse } from "./widgetData/chartRecipes/financialEvidence";
 
 /**
  * For stack-backed examples, `pnpm apps:sync` writes
@@ -72,6 +73,7 @@ describe("docs/examples", () => {
     "v8.0.0-pinned.apps.json",
     "v9-chart-expansion.apps.json",
     "v9-risk-exposure.apps.json",
+    "v9-screening-income.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -79,6 +81,39 @@ describe("docs/examples", () => {
   it("ships every known example file, and no file the list does not name", () => {
     expect(files).toEqual(expect.arrayContaining(KNOWN));
     expect([...files].sort()).toEqual([...KNOWN].sort());
+  });
+
+  it("v9-screening-income: imports three versioned questions and matches their source requests to the snapshot receipts", () => {
+    const name = "v9-screening-income";
+    const { apps } = load(name + ".apps.json");
+    const sources = JSON.parse(readFileSync(join(dir, name, "widgets.json"), "utf8")) as Record<string, { endpoint: string }>;
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...Object.keys(sources).map(widget)]);
+    expect(imported.unresolved).toBe(0);
+    const cards = imported.dashboards[0].tabs[0].cards;
+    expect(cards).toHaveLength(6);
+    const charts = cards.filter(card => card.widgetId === LINKED_CHART_ID);
+    expect(charts.map(card => card.linkedChart?.recipe)).toEqual([
+      { version: 1, kind: "bubble-regression", priceDate: "latest", regression: true, fields: {
+        symbol: "symbol", date: "last_day_data_date", dividendYield: "dividend_yield", priceChange: "price_change_5d",
+        marketCap: "market_cap", exchange: "exchange", currency: "currency_symbol", name: "name", sector: "sector",
+      } },
+      { version: 1, kind: "dividend-steps", instrument: "CANOPY.US", fields: {
+        date: "ex_dividend_date", amount: "amount", currency: "currency", frequency: "frequency",
+      } },
+      { version: 1, kind: "income-sankey", periodColumn: '["string","FY2026"]\u001fstatement/income/1.0.0/measure/value' },
+    ]);
+    const kinds = ["screener", "dividends", "income"];
+    for (const [index, chart] of charts.entries()) {
+      const source = cards.find(card => card.id === chart.linkedSource?.sourceWidgetId)!;
+      expect(source.widgetId).toBe("screening_demo_" + kinds[index]);
+      const endpoint = sources[source.widgetId].endpoint;
+      const url = new URL(endpoint, "http://127.0.0.1:17911");
+      for (const [key, value] of Object.entries(source.params)) url.searchParams.set(key, value);
+      expect(url.searchParams.get("chart_source")).toBe("true");
+      const payload: unknown = JSON.parse(readFileSync(join(dir, name, url.pathname), "utf8"));
+      expect(backendFinancialResponse(payload, url)?.evidence.kind).toBe(kinds[index]);
+      if (index === 2) expect(source).toMatchObject({ view: "statement", tableDefinition: { analytical: { kind: "statement" } } });
+    }
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {
