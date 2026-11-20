@@ -62,7 +62,10 @@ for(const entry of entries){
      if(process.env.OPENBQ_SOURCE_CONTROLS==="1" && entry.id==="usda_ers_chart_usda_obb") {
       const tableau=frame.contentFrame().locator("tableau-viz iframe").first();await expect(tableau).toBeVisible({timeout:70_000});const canvas=tableau.contentFrame().locator("canvas").first();await expect(canvas).toBeVisible({timeout:30_000});expect(await canvas.evaluate(el=>(el as HTMLCanvasElement).width>100&&(el as HTMLCanvasElement).height>100)).toBe(true);assertion="Live nested Tableau chart canvas rendered; screenshot retained for numeric plot review";result="PASS_FRAME_VISUAL_LIVE";break;
      }
-     await expect.poll(()=>frame.contentFrame().locator("body").innerText(),{timeout:70_000}).not.toBe("");const body=await frame.contentFrame().locator("body").innerText();expect(body.trim().length).toBeGreaterThan(20);save(join(dir,"frame-body.txt"),body);if(process.env.OPENBQ_SOURCE_CONTROLS==="1" && entry.id==="sec_filing_viewer_sec_obb") {
+     await expect.poll(()=>frame.contentFrame().locator("body").innerText(),{timeout:70_000}).not.toBe("");const body=await frame.contentFrame().locator("body").innerText();expect(body.trim().length).toBeGreaterThan(20);save(join(dir,"frame-body.txt"),body);if(process.env.OPENBQ_SOURCE_CONTROLS==="1" && ["tmx_equity_asset_info_obb","tmx_etf_fund_info_obb"].includes(entry.id)) {
+      expect(body).toContain(entry.id.includes("equity")?"Air Canada":"iShares S&P/TSX 60");expect(body).toContain("SESSION");expect(body).toMatch(/\d+\.\d+/);assertion="Actual instrument identity, session prices and profile render; external fallback verified";result="PASS_FRAME_CONTENT_LIVE";break;
+     }
+     if(process.env.OPENBQ_SOURCE_CONTROLS==="1" && entry.id==="sec_filing_viewer_sec_obb") {
       await expect(frame.contentFrame().locator("#ob-doc-scroll")).toContainText(/.{500}/s,{timeout:70_000});
       const filing=await frame.contentFrame().locator("#ob-doc-scroll").innerText();expect(filing).not.toContain("Could not load the document");save(join(dir,"filing-document-body.txt"),filing);
       assertion="Selected actual filing HTML renders inside the viewer";result="PASS_FRAME_CONTENT_LIVE";break;
