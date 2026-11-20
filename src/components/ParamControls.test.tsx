@@ -1825,3 +1825,11 @@ describe("chips", () => {
     expect(label).toHaveClass("param-label-hidden");
   });
 });
+
+it("keeps later parameter rows in the panel while header edits only row zero", () => {
+ const w=makeWidget({id:"rows",params:[{paramName:"first",label:"First",type:"text",row:0},{paramName:"later",label:"Later",type:"text",row:1}]});
+ const props={widget:w,card:makeCard({widgetId:"rows"}),groups:undefined,groupsDisabled:false,effective:{first:"a",later:"b"},backend:undefined,onApply:vi.fn()};
+ const view=render(<ParamControls {...props} rowZeroOnly />);
+ expect(screen.getByLabelText("First")).toBeTruthy();expect(screen.queryByLabelText("Later")).toBeNull();
+ view.rerender(<ParamControls {...props} />);expect(screen.getByLabelText("Later")).toBeTruthy();
+});

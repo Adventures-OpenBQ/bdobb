@@ -1406,9 +1406,9 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             the header itself. */}
         {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}${widget && visibleParams(widget).every((p) => (p.row ?? 0) > 0) ? " card-chips-below" : ""}`}
+            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            <ParamControls {...controlProps} />
+            <ParamControls {...controlProps} rowZeroOnly />
           </div>
         ) : null}
         <div
@@ -1779,7 +1779,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             </label>
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline /> : undefined} /> : null}
+        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline rowZeroOnly /> : undefined} /> : null}
       </header>
       {exportNotice ? (
         <p className="card-notice" role="status">

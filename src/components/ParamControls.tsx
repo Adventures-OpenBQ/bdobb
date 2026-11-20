@@ -39,6 +39,8 @@ export type FiscalControl = {
 
 type Props = {
   inline?: boolean;
+  /** Title bars expose only declared row zero; all hooks still observe every field. */
+  rowZeroOnly?: boolean;
   widget: WidgetDef;
   card: DashboardCard;
   groups: ParamGroup[] | undefined;
@@ -165,6 +167,7 @@ function kindOf(param: WidgetParam, monthParams: Set<string>): ControlKind {
 
 export function ParamControls({
   inline = false,
+  rowZeroOnly = false,
   widget,
   card,
   groups,
@@ -449,6 +452,7 @@ export function ParamControls({
   return (
     <Container {...(inline?{}:{className:"card-params"})}>
       {params.map((p, index) => {
+        if (rowZeroOnly && (p.row ?? 0) !== 0) return null;
         const kind = kindOf(p, monthParams);
         const id = `${idPrefix}${card.id}-${p.paramName}`;
         const label = p.label ?? p.paramName;
