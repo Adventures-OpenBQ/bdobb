@@ -71,10 +71,14 @@ XCD XCG XDR XEU XFO XFU XOF XPF XRE XSU XUA YDD YER YUD YUM YUN ZAL ZAR ZMK ZMW 
 ZWR
 `.trim().split(/\s+/));
 
+export function isChartCurrency(value: unknown): value is string {
+  return typeof value === 'string' && currencies.has(value);
+}
+
 function validUnit(value: unknown, metric: MetricPreset): value is MetricUnit {
   const kind = contract[metric][0];
   if (kind === 'money' || kind === 'money-per-share')
-    return exact(value, ['kind', 'currency']) && value.kind === kind && typeof value.currency === 'string' && currencies.has(value.currency);
+    return exact(value, ['kind', 'currency']) && value.kind === kind && isChartCurrency(value.currency);
   return exact(value, ['kind']) && value.kind === kind;
 }
 

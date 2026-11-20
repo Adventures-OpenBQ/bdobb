@@ -4,9 +4,11 @@ import type { ChartSourceRegistry } from './chartSourceContracts';
 import { etfHierarchyAdapter } from './etfHierarchyEvidence';
 import { metricSourceAdapter } from './metricEvidence';
 import { newsSourceAdapter } from './newsEvidence';
+import { overlayAdapter } from './overlayEvidence';
 import { ownershipSourceAdapter } from './ownershipEvidence';
 
 /** Only reviewed, source-specific adapters belong here. Local-only adapters have no routes. */
 export const chartSourceRegistry: ChartSourceRegistry = Object.freeze({
   'etf-hierarchy': etfHierarchyAdapter, news: newsSourceAdapter, ownership: ownershipSourceAdapter, metric: metricSourceAdapter,
+  overlay: overlayAdapter,
 });
