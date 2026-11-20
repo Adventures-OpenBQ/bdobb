@@ -433,6 +433,7 @@ it.each(riskRecipes)('fences $kind across a failed relink, late calculation and 
     read.mockImplementation(readFile);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     const second = await screen.findByTestId('chart-plot');
+    await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(second));
     const figureB = plot.mock.lastCall![1];
     expect(screen.getByText(/^Source B ·/)).toBeVisible();
     expect(screen.queryByRole('alert')).toBeNull();

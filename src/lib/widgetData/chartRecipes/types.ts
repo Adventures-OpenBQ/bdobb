@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { LinkedFigureResult } from '../chartFigure';
+import type { EtfHierarchy } from './etfSunburst';
 import type { NewsCalendarDay } from './newsCalendar';
 import type { ReturnSummaryWindow } from './priceSamples';
 import type { ReturnSummaryDetails } from './returnSummary';
@@ -42,6 +43,15 @@ export type OwnershipSnapshotOptions = {
   | { view: 'waffle'; fields: { bucket: string; share: string } }
 );
 
+export type EtfSunburstOptions = {
+  version: 1;
+  kind: 'etf-sunburst';
+  fund: string;
+  depth: 1 | 2;
+  snapshot: string; // 'latest' or an explicit acquired coordinate
+  fields: { holding: string; sector: string; weight: string };
+};
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -57,7 +67,8 @@ export type RecipeOptions =
   | { version: 1; kind: 'income-sankey'; periodColumn: string }
   | NewsCalendarOptions
   | ReturnSummaryOptions
-  | OwnershipSnapshotOptions;
+  | OwnershipSnapshotOptions
+  | EtfSunburstOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
@@ -65,6 +76,7 @@ export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; toda
 export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;
 export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & {
   daySummaries?: NewsCalendarDay[];
+  etfHierarchy?: EtfHierarchy;
   returnSummary?: ReturnSummaryDetails;
   ownershipSnapshot?: OwnershipSnapshotDetails;
 }) | RecipeRefusal;

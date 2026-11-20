@@ -3,7 +3,7 @@
 
 import { isRecord } from '../../isRecord';
 import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
-import { isoDate, qualifiedSymbol } from './financialEvidence';
+import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
 import { ownershipBarRoles } from './ownershipEvidence';
 import type { RecipeOptions } from './types';
@@ -24,6 +24,7 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'return-summary': { options: ['symbols', 'view', 'window'], ...priceFields, distinctBindings: true },
   'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
+  'etf-sunburst': { options: ['fund', 'depth', 'snapshot'], required: ['holding', 'sector', 'weight'], distinctBindings: true },
   'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
   'bubble-regression': { options: ['priceDate', 'regression'],
     required: ['symbol', 'date', 'dividendYield', 'priceChange', 'marketCap', 'exchange', 'currency'],
@@ -182,6 +183,12 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
     }
     case 'income-sankey':
       if (!nonblankString(value.periodColumn)) return invalid('Choose one presented income statement period column.');
+      break;
+    case 'etf-sunburst':
+      if (!qualifiedSymbol(value.fund)) return invalid('Select one fully qualified acquired fund.');
+      if (value.depth !== 1 && value.depth !== 2) return invalid('Choose sectors or sectors and holdings.');
+      if (value.snapshot !== 'latest' && !isoDate(value.snapshot) && !utcTimestamp(value.snapshot))
+        return invalid('Choose latest or a valid acquired ETF snapshot coordinate.');
       break;
     case 'etf-exposure':
       if (value.mode !== 'sector' && value.mode !== 'region') return invalid('Choose sector or region for ETF exposure.');

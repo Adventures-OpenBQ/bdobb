@@ -18,6 +18,7 @@ import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
 import { buildEtfExposure } from './etfExposure';
 import { buildEtfPareto } from './etfPareto';
+import { buildEtfSunburst } from './etfSunburst';
 import { buildReturnDistribution } from './returnDistribution';
 import { buildReturnSummary } from './returnSummary';
 import { buildSmallMultiples } from './smallMultiples';
@@ -65,7 +66,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
   }
 
   const recipe = decoded.options;
-  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar'
+  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
@@ -78,6 +79,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'return-summary': return buildReturnSummary(dataset, recipe, context);
     case 'small-multiples': return buildSmallMultiples(dataset, recipe, context);
     case 'etf-pareto': return buildEtfPareto(dataset, recipe, context);
+    case 'etf-sunburst': return buildEtfSunburst(dataset, recipe, context);
     case 'etf-exposure': return buildEtfExposure(dataset, recipe, context);
     case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
     case 'dividend-steps': return buildDividendSteps(dataset, recipe, context);
