@@ -40,6 +40,9 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { InlineRename } from "./InlineRename";
+import { RefreshIcon } from "./RefreshIcon";
+import { ChevronIcon } from "./ChevronIcon";
+import { FilterIcon } from "./FilterIcon";
 import { ParamControls } from "./ParamControls";
 import { MenuPanel } from "./RowContextMenu";
 import { WidgetFormPanel } from "./WidgetFormPanel";
@@ -1348,7 +1351,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
           onFocus={stampTitle}
           onClick={(e) => (widget?.runButton && !(e.metaKey || e.ctrlKey) ? run() : retry())}
         >
-          {widget?.runButton ? "▶" : "◷"}
+          {widget?.runButton ? "▶" : <RefreshIcon />}
         </button>
         ) : null}
         {/* The timer's tooltip, restated for assistive tech: `title` alone
@@ -1370,7 +1373,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             aria-label={paramsOpen ? "Hide parameters" : "Show parameters"}
             onClick={() => setParamsOpen(!paramsOpen)}
           >
-            {paramsOpen ? "▾" : "▸"}
+            <ChevronIcon direction={paramsOpen ? "down" : "right"} />
           </button>
         ) : null}
         {renaming ? (
@@ -1430,7 +1433,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
               aria-expanded={controlsOpen}
               onClick={() => setControlsOpen((v) => !v)}
             >
-              ⌄
+              <ChevronIcon direction={controlsOpen ? "up" : "down"} />
             </button>
           ) : null}
           <div className="card-controls-icons">
@@ -1452,7 +1455,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
                 aria-pressed={filterRowOpen}
                 onClick={() => setFilterRowOpen((v) => !v)}
               >
-                {"⌕"}
+                <FilterIcon />
               </button>
             ) : null}
             {hasMenu ? (

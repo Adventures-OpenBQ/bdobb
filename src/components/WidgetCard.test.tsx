@@ -4286,10 +4286,10 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     renderReadyTableCardWithParams();
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();
     const show = screen.getByRole("button", { name: "Show parameters" });
-    expect(show).toHaveTextContent("▸");
+    expect(show).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(show);
     expect(screen.getByRole("region", { name: "Parameters" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveTextContent("▾");
+    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveAttribute("aria-expanded", "true");
     await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true));
     await userEvent.click(screen.getByRole("button", { name: "Hide parameters" }));
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();

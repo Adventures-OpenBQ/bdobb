@@ -1268,6 +1268,9 @@ body {
   font-weight: 600;
 }
 
+/* Give the parameter scroller spare width; cap long titles without reserving empty space. */
+.card-header:has(.card-chips:not(.card-chips-hidden)) .card-title { flex: 0 1 auto; max-width: min(30%, 18rem); }
+
 /* A zero basis keeps parameters beside the title and actions instead of
    moving the whole strip to another line. Native overflow supports trackpads,
    scrollbars and iPadOS touch panning without intercepting control gestures. */
@@ -2529,3 +2532,6 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
    sized to the row's line, rounded like the table's .cell-logo, and hidden
    by its own onError rather than leaving a broken-image glyph. */
 .calendar-logo { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; border-radius: 2px; }
+
+/* Vector header controls stay centred without font-glyph baselines or clipping. */
+.card-header button:has(> svg) { display: inline-flex; align-items: center; justify-content: center; padding: 0; min-width: 20px; min-height: 22px; }
