@@ -36,6 +36,13 @@ it('exposes only validated presentation restrictions and treats accessors as inv
   expect(readChartSource({ sourceWidgetId: 'x', metadata }, 'metric', () => sourceReceipt)).toBeUndefined();
 });
 
+it('discards orphaned delivered price coordinates beside another family receipt', () => {
+  const provenance = { sourceWidgetId: 'x', metadata: {
+    chartSources: { metric: sourceReceipt }, dailyPriceCoordinates: [['AAPL.US', '2026-10-13']],
+  } };
+  expect(validatedChartProvenance(provenance).metadata).toEqual({ chartSources: { metric: sourceReceipt } });
+});
+
 it('refuses a label alias, ambiguous bindings and calculated coordinates', async () => {
   const { projectChartSources } = await import('./chartSourceContracts');
   const base = { sourceWidgetId: 'x', metadata: { chartSources: { metric: sourceReceipt } } };

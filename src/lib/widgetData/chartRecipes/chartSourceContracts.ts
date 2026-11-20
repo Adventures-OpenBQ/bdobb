@@ -9,7 +9,7 @@ import type { RecipeRefusal } from './types';
 
 export type ChartSourceReceipt = {
   version: 1;
-  kind: 'news' | 'ownership' | 'overlay' | 'estimate-vintages' | 'market-map' | 'etf-hierarchy' | 'metric';
+  kind: 'news' | 'ownership' | 'overlay' | 'estimate-vintages' | 'market-map' | 'etf-hierarchy' | 'metric' | 'daily-price';
   retrieved_at: string;
   raw_count: number;
   normalized_count: number;
@@ -28,6 +28,8 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
   decode(value: unknown): T | undefined;
   /** Some families reserve specific receipt origins for a completed backend request. */
   allowsLocal?(receipt: T): boolean;
+  /** Check declarations outside the selected row array on a backend response. */
+  responseAgrees?(receipt: T, response: unknown): boolean;
   rowsAgree(receipt: T, rows: readonly Record<string, unknown>[], scope: unknown): boolean;
   /** Check relevant declarations on a sibling legacy table receipt, when present. */
   legacyReceiptAgrees?(receipt: T, legacy: unknown): boolean;
@@ -38,6 +40,8 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
     matches(receipt: T, parameters: Readonly<Record<string, string>>): boolean;
   }[];
   coordinates(receipt: T): ChartCoordinateGroup[];
+  /** A family whose receipt carries only counts can use coordinates captured at acquisition. */
+  acquiredCoordinates?(receipt: T, provenance: DatasetProvenance): ChartCoordinateGroup[] | undefined;
 };
 export type ChartSourceRegistry = Readonly<Partial<Record<Kind, ChartSourceAdapter>>>;
 
@@ -90,11 +94,12 @@ export function chartRequestContext(url: URL, selector: string | undefined, retr
     .filter(route => route.endpoint === url.pathname && route.selector === selector);
   if (!routes.length) return;
   const names = new Set(['chart_source', ...routes.flatMap(route => route.parameters)]);
-  if (credentialKey && names.has(credentialKey)) return;
+  if (credentialKey && [...names].some(name => name.toLowerCase() === credentialKey.toLowerCase())) return;
   const entries: [string, string][] = [];
   for (const [key, value] of url.searchParams) {
+    if (url.searchParams.getAll(key).length !== 1) return;
     if (key === credentialKey) continue;
-    if (!names.has(key) || url.searchParams.getAll(key).length !== 1) return;
+    if (!names.has(key)) return;
     entries.push([key, value]);
   }
   return { endpoint: url.pathname, selector, parameters: Object.fromEntries(entries), retrievedAt };
@@ -118,6 +123,7 @@ export function captureMatchedChartSources(context: BackendAcquisition, response
   const result: ChartSourceMap = {};
   for (const { receipt, adapter } of entries) {
     if (!requestMatches(context, receipt, adapter) || receipt.delivered_count !== selectedRows.length) continue;
+    if (adapter.responseAgrees?.(receipt, response) === false) continue;
     const scopes = new Set([asRecord(parent)?.completeness, asRecord(response)?.completeness]);
     const legacyReceipts = new Set([asRecord(parent)?.receipt, asRecord(response)?.receipt]);
     if ([...legacyReceipts].some(legacy => legacy !== undefined && adapter.legacyReceiptAgrees?.(receipt, legacy) === false)) continue;
@@ -167,7 +173,10 @@ function sourceState(provenance: DatasetProvenance) {
   for (const [kind, value] of Object.entries(sources)) {
     const entry = decode(value, chartSourceRegistry);
     if (!entry || kind !== entry.receipt.kind) return;
-    const coordinates = entry.adapter.coordinates(entry.receipt);
+    const coordinates = entry.adapter.acquiredCoordinates
+      ? entry.adapter.acquiredCoordinates(entry.receipt, provenance)
+      : entry.adapter.coordinates(entry.receipt);
+    if (!coordinates) return;
     const omitted = asRecord(omissions)?.[kind];
     if (omitted !== undefined) {
       const ids = new Set(coordinates.flatMap(group => group.points.map(point => point.id)));
@@ -193,10 +202,13 @@ export function readChartSourceProjection(provenance: DatasetProvenance, kind: K
 export function validatedChartProvenance(provenance: DatasetProvenance): DatasetProvenance {
   const metadata = provenance.metadata;
   if (!metadata) return provenance;
-  const keys = ['chartSources', 'chartSourceFiltered', 'chartSourceOmissions', 'chartSourcePresentationProof', 'chartSourceCoordinatePlan'];
+  const evidenceKeys = ['chartSources', 'chartSourceFiltered', 'chartSourceOmissions', 'dailyPriceCoordinates'];
+  const presentationKeys = ['chartSourcePresentationProof', 'chartSourceCoordinatePlan'];
+  const keys = [...evidenceKeys, ...presentationKeys];
   if (!keys.some(key => Object.hasOwn(metadata, key))) return provenance;
   const valid = sourceState(provenance);
-  const removed = valid ? keys.slice(3) : keys;
+  const removed = valid ? [...presentationKeys,
+    ...(valid.some(({ receipt }) => receipt.kind === 'daily-price') ? [] : ['dailyPriceCoordinates'])] : keys;
   const retained = Object.fromEntries(Object.keys(metadata).flatMap(key => {
     const field = Object.getOwnPropertyDescriptor(metadata, key);
     return !removed.includes(key) && field && 'value' in field ? [[key, field.value]] : [];

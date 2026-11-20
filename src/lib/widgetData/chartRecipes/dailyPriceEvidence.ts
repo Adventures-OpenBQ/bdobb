@@ -1,0 +1,229 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import type { DatasetProvenance, WidgetDataset } from '../types';
+import {
+  readChartSource, readChartSourceProjection, type ChartSourceAdapter, type ChartSourceReceipt,
+} from './chartSourceContracts';
+import { isChartSourceArray as array, isChartSourceRecord as record } from './chartSourceShape';
+import { acquiredColumnOrigin, isoDate, utcTimestamp } from './financialEvidence';
+import type { PriceCoordinate, PriceScope } from './priceEvidence';
+
+// Keep this order in sync with the provider's sorted unsafe diagnostics.
+const unsafeKeys = ['conflicting_duplicates', 'identity_conflict', 'invalid_response',
+  'missing_adjusted_basis', 'partial_acquisition', 'undatable_loss'] as const;
+type UnsafeKey = typeof unsafeKeys[number];
+
+export type DailyPriceListingFacts = {
+  symbol: string;
+  raw_count: number;
+  normalized_count: number;
+  delivered_count: number;
+  duplicate_count: number;
+  omissions: PriceCoordinate[];
+};
+export type DailyPriceReceipt = ChartSourceReceipt & {
+  kind: 'daily-price';
+  interval: '1d';
+  start_date: string;
+  end_date: string;
+  symbols: string[];
+  date_field: 'date';
+  price_field: 'adjusted_close';
+  symbol_field: 'symbol' | null;
+  listings: DailyPriceListingFacts[];
+  diagnostics: UnsafeKey[];
+  unsafe: Record<UnsafeKey, boolean>;
+};
+
+const countKeys = ['raw_count', 'normalized_count', 'delivered_count'] as const;
+const receiptKeys = ['version', 'kind', 'retrieved_at', ...countKeys, 'diagnostics', 'unsafe',
+  'interval', 'start_date', 'end_date', 'symbols', 'date_field', 'price_field', 'symbol_field', 'listings'] as const;
+const listingKeys = ['symbol', ...countKeys, 'duplicate_count', 'omissions'] as const;
+const exact = <K extends string>(value: unknown, keys: readonly K[]): value is Record<K, unknown> =>
+  record(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const usListing = (value: unknown): value is string => typeof value === 'string' && value.length <= 128
+  && value.endsWith('.US') && /^[A-Z0-9][A-Z0-9_/-]*(?:\.[A-Z0-9_/-]+)*\.US$/.test(value);
+const inWindow = (date: unknown, start: string, end: string): date is string => isoDate(date) && date >= start && date <= end;
+const coordinateId = (point: PriceCoordinate) => JSON.stringify(point);
+
+function coordinate(value: unknown, start: string, end: string): value is PriceCoordinate {
+  return array(value) && value.length === 2 && usListing(value[0]) && inWindow(value[1], start, end);
+}
+
+function listingFacts(value: unknown, symbol: string, start: string, end: string, allowUnaccounted: boolean): value is DailyPriceListingFacts {
+  if (!exact(value, listingKeys) || value.symbol !== symbol
+    || !count(value.raw_count) || !count(value.normalized_count) || !count(value.delivered_count)
+    || !count(value.duplicate_count) || value.normalized_count !== value.delivered_count
+    || !array(value.omissions) || !value.omissions.every(
+      (point): point is PriceCoordinate => coordinate(point, start, end) && point[0] === symbol,
+    )) return false;
+  const accounted = value.normalized_count + value.duplicate_count + value.omissions.length;
+  return Number.isSafeInteger(accounted) && accounted <= value.raw_count && (allowUnaccounted || accounted === value.raw_count)
+    && new Set(value.omissions.map(([, date]) => date)).size === value.omissions.length;
+}
+
+function parseDailyPriceReceipt(value: unknown): DailyPriceReceipt | undefined {
+  if (!exact(value, receiptKeys) || value.version !== 1 || value.kind !== 'daily-price' || !utcTimestamp(value.retrieved_at)
+    || !countKeys.every(key => count(value[key]))
+    || value.interval !== '1d' || !isoDate(value.start_date) || !isoDate(value.end_date) || value.start_date > value.end_date
+    || value.date_field !== 'date' || value.price_field !== 'adjusted_close'
+    || !array(value.symbols) || !value.symbols.length || value.symbols.length > 12 || !value.symbols.every(usListing)
+    || new Set(value.symbols).size !== value.symbols.length || value.symbol_field !== (value.symbols.length > 1 ? 'symbol' : null)
+    || !array(value.listings) || value.listings.length !== value.symbols.length
+    || !exact(value.unsafe, unsafeKeys)
+    || !array(value.diagnostics)) return;
+  const { start_date: start, end_date: end, symbols, unsafe, diagnostics, listings } = value;
+  if (!unsafeKeys.every(key => typeof unsafe[key] === 'boolean')) return;
+  const declared = unsafeKeys.filter(key => unsafe[key] === true);
+  if (declared.length !== diagnostics.length || declared.some((key, i) => key !== diagnostics[i])) return;
+  // A flagged provider receipt may report losses it could not assign a coordinate.
+  // The safe ledger must account for every raw row before the source is admitted.
+  const allowUnaccounted = declared.some(key => key !== 'missing_adjusted_basis');
+  if (!listings.every((facts, i): facts is DailyPriceListingFacts => listingFacts(facts, symbols[i], start, end, allowUnaccounted))) return;
+  if (!countKeys.every(key => listings.reduce((total, facts) => total + facts[key], 0) === value[key])) return;
+  return value as DailyPriceReceipt;
+}
+
+const symbolAliases = ['symbol', 'ticker', 'code', '_symbol'] as const;
+const exchangeAliases = ['exchange', 'exchange_code'] as const;
+
+// Python str.strip() accepts these characters, excluding U+FEFF.
+// eslint-disable-next-line no-control-regex -- Match the provider's symbol qualification.
+const pythonWhitespace = /^[\p{White_Space}\u001c-\u001f]+|[\p{White_Space}\u001c-\u001f]+$/gu;
+const normalizedTicker = (value: string) => value.replace(pythonWhitespace, '').toUpperCase();
+
+function readObservation(receipt: DailyPriceReceipt, read: (origin: string) => unknown): PriceCoordinate | undefined {
+  const symbol = receipt.symbol_field ? read(receipt.symbol_field) : receipt.symbols[0];
+  const date = read(receipt.date_field);
+  const price = read(receipt.price_field);
+  if (typeof symbol !== 'string' || !receipt.symbols.includes(symbol) || !inWindow(date, receipt.start_date, receipt.end_date)
+    || typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return;
+  const base = symbol.slice(0, -3);
+  for (const aliases of [symbolAliases, exchangeAliases]) {
+    for (const alias of aliases) {
+      const value = read(alias);
+      if (value == null) continue;
+      if (typeof value !== 'string') return;
+      const normalized = normalizedTicker(value);
+      if (aliases === symbolAliases ? normalized !== symbol && normalized !== base : normalized !== 'US') return;
+    }
+  }
+  return [symbol, date];
+}
+
+function deliveredCoordinatesAgree(receipt: DailyPriceReceipt, value: unknown): value is PriceCoordinate[] {
+  if (!array(value) || value.length !== receipt.delivered_count) return false;
+  const remaining = new Map(receipt.listings.map(listing => [listing.symbol, listing.delivered_count]));
+  const forbidden = new Set(receipt.listings.flatMap(listing => listing.omissions.map(coordinateId)));
+  for (const point of value) {
+    if (!coordinate(point, receipt.start_date, receipt.end_date)) return false;
+    const amount = remaining.get(point[0]);
+    const id = coordinateId(point);
+    if (!amount || forbidden.has(id)) return false;
+    remaining.set(point[0], amount - 1);
+    forbidden.add(id);
+  }
+  return true;
+}
+
+function rowCoordinates(receipt: DailyPriceReceipt, rows: readonly Record<string, unknown>[]): PriceCoordinate[] | undefined {
+  if (receipt.diagnostics.length || rows.length !== receipt.delivered_count) return;
+  const points: PriceCoordinate[] = [];
+  for (const row of rows) {
+    if (!record(row)) return;
+    const point = readObservation(receipt, key => Object.hasOwn(row, key) ? row[key] : undefined);
+    if (!point) return;
+    points.push(point);
+  }
+  if (deliveredCoordinatesAgree(receipt, points)) return points;
+}
+
+/** Record the delivered coordinates only after the backend acquisition has been checked. */
+export function acquiredDailyPriceCoordinates(value: unknown, rows: readonly Record<string, unknown>[]): PriceCoordinate[] | undefined {
+  const receipt = parseDailyPriceReceipt(value);
+  return receipt && rowCoordinates(receipt, rows);
+}
+
+function capturedCoordinates(receipt: DailyPriceReceipt, provenance: DatasetProvenance) {
+  if (provenance.sourceKind !== 'backend' || receipt.diagnostics.length || !record(provenance.metadata)) return;
+  const points = provenance.metadata.dailyPriceCoordinates;
+  if (deliveredCoordinatesAgree(receipt, points)) return points;
+}
+
+const parameters = ['provider', 'symbol', 'exchange', 'start_date', 'end_date', 'interval'] as const;
+function matchesRequest(receipt: DailyPriceReceipt, query: Readonly<Record<string, string>>, defaultProvider?: 'eodhd') {
+  if ((query.provider ?? defaultProvider) !== 'eodhd' || (query.interval ?? '1d') !== receipt.interval
+    || query.start_date !== receipt.start_date || query.end_date !== receipt.end_date || typeof query.symbol !== 'string') return false;
+  const exchange = (query.exchange ?? 'US').toUpperCase();
+  const symbols = query.symbol.split(',').map(normalizedTicker).filter(Boolean)
+    .map(symbol => symbol.includes('.') ? symbol : `${symbol}.${exchange}`);
+  return symbols.length === receipt.symbols.length && symbols.every((symbol, i) => symbol === receipt.symbols[i]);
+}
+
+function routes(endpoints: string[], defaultProvider?: 'eodhd'): ChartSourceAdapter<DailyPriceReceipt>['routes'] {
+  return endpoints.map(endpoint => ({
+    endpoint, selector: 'results', parameters,
+    matches: (receipt, query) => matchesRequest(receipt, query, defaultProvider),
+  }));
+}
+
+export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
+  kind: 'daily-price',
+  decode: parseDailyPriceReceipt,
+  allowsLocal: () => false,
+  responseAgrees: (_receipt, response) => record(response) && response.provider === 'eodhd',
+  rowsAgree: (receipt, rows, scope) => (scope === undefined || scope === 'unknown') && !!rowCoordinates(receipt, rows),
+  routes: [
+    ...routes(['/api/v1/equity/price/historical', '/api/v1/etf/historical']),
+    ...routes(['/api/v1/eodhd/equity/price/historical', '/api/v1/eodhd/etf/historical'], 'eodhd'),
+  ],
+  coordinates: () => [],
+  acquiredCoordinates(receipt, provenance) {
+    const points = capturedCoordinates(receipt, provenance);
+    return points && [{
+      fields: receipt.symbol_field ? [receipt.symbol_field, receipt.date_field] : [receipt.date_field],
+      points: points.map(point => ({ id: coordinateId(point), values: receipt.symbol_field ? point : [point[1]] })),
+    }];
+  },
+};
+
+export function readLiveDailyPriceSource(dataset: WidgetDataset): {
+  receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[];
+} | undefined {
+  const { provenance, completeness, columns, rows } = dataset;
+  if (provenance.sourceKind !== 'backend' || provenance.inputMayContainAggregates || completeness.kind !== 'unknown') return;
+  const receipt = readChartSource(provenance, 'daily-price', parseDailyPriceReceipt);
+  const projection = readChartSourceProjection(provenance, 'daily-price');
+  if (!receipt || !projection || receipt.delivered_count !== completeness.acquiredRowCount) return;
+  const acquired = capturedCoordinates(receipt, provenance);
+  if (!acquired || rows.length !== acquired.length - projection.omitted.length) return;
+
+  const fields = new Map<string, string>();
+  const origins = [receipt.date_field, receipt.price_field, ...symbolAliases, ...exchangeAliases];
+  for (const column of columns) {
+    const origin = acquiredColumnOrigin(column);
+    if (!origin || !origins.some(field => field === origin)) continue;
+    if (fields.has(origin)) return;
+    fields.set(origin, column.id);
+  }
+  if (new Set(fields.values()).size !== fields.size || (acquired.length > 0
+    && (!fields.has(receipt.date_field) || !fields.has(receipt.price_field) || (receipt.symbol_field && !fields.has(receipt.symbol_field))))) return;
+
+  const remaining = new Set(acquired.map(coordinateId));
+  for (const omitted of projection.omitted) remaining.delete(omitted);
+  for (const row of rows) {
+    if (row.groupPath !== undefined || !record(row.values)) return;
+    const point = readObservation(receipt, origin => {
+      const field = fields.get(origin);
+      if (field === undefined || !Object.hasOwn(row.values, field)) return undefined;
+      return row.cellErrors?.[field] ? false : row.values[field];
+    });
+    if (!point || !remaining.delete(coordinateId(point))) return;
+  }
+  return {
+    receipt, scope: { start: receipt.start_date, end: receipt.end_date, interval: receipt.interval },
+    symbols: [...receipt.symbols],
+    rawOmissions: receipt.listings.flatMap(listing => listing.omissions.map(([symbol, date]): PriceCoordinate => [symbol, date])),
+  };
+}

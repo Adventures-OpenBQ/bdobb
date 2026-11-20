@@ -3,6 +3,7 @@
 
 import { etfAcquisitionProvenance } from './widgetData/chartRecipes/etfEvidence';
 import { acquiredChartSources } from './widgetData/chartRecipes/chartSourceContracts';
+import { acquiredDailyPriceCoordinates } from './widgetData/chartRecipes/dailyPriceEvidence';
 import { financialRowsAgree, parseFinancialEvidence, type BackendAcquisition } from './widgetData/chartRecipes/financialEvidence';
 import { estimateProvenance } from './widgetData/chartRecipes/estimateEvidence';
 import { priceAcquisitionProvenance } from './widgetData/chartRecipes/priceEvidence';
@@ -193,7 +194,11 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     dataset.provenance = priceAcquisitionProvenance(dataset);
   }
   dataset.provenance = etfAcquisitionProvenance(dataset, acquisition);
-  if (chartSources) dataset.provenance.metadata = { ...dataset.provenance.metadata, chartSources: structuredClone(chartSources) };
+  if (chartSources) {
+    const dailyPriceCoordinates = sourceKind === 'backend' ? acquiredDailyPriceCoordinates(chartSources['daily-price'], rows) : undefined;
+    dataset.provenance.metadata = { ...dataset.provenance.metadata, chartSources: structuredClone(chartSources),
+      ...(dailyPriceCoordinates ? { dailyPriceCoordinates } : {}) };
+  }
   if (evidence)
     dataset.provenance = { ...dataset.provenance, metadata: { ...dataset.provenance.metadata, financialEvidence: structuredClone(evidence) } };
   dataset.provenance = estimateProvenance(dataset);
