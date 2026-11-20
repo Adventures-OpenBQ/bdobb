@@ -1,12 +1,12 @@
 # V9 screening and income chart verification
 
-November 19, 2026. The local candidate adds screening bubble regression, historical dividend steps and an income-statement Sankey. The independent whole-change review identified seven Important findings. The corrected candidate passed the shipping checks below. Independent re-review of the fix range is pending. [Review findings and dispositions](review.md)
+November 19, 2026. The local candidate adds screening bubble regression, historical dividend steps and an income-statement Sankey. The independent whole-change review identified seven Important findings. Independent re-review closed findings 1–4, 6 and 7. Finding 5 required a follow-up for an income period missing a mandatory anchor. The follow-up passed the application and browser checks below and awaits independent confirmation. [Review findings and dispositions](review.md)
 
 ## Candidate pins
 
 | Repository | Pre-feature baseline | Tested commit |
 | --- | --- | --- |
-| BDOBB | `c6911588ac5d7dba748008abe6aec1ab09ab2204` | `4f5e254eeccb4daad55cb70c6616f7b205e5c5dd` |
+| BDOBB | `c6911588ac5d7dba748008abe6aec1ab09ab2204` | `2d95868da701f9fa698d6f25f8c25f7a5217cbf8` |
 | Canonical openbq-eodhd | `349f2de40773cf2e1d9e2993ebabf3184871c07d` | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | openbq-docker | `f1ff723e66ece8bf404a8211716a62591d464581` | `0e843db5465725f124075709528ea485618c87ad` |
 
@@ -14,16 +14,16 @@ The listed product heads include the review fixes. The subsequent BDOBB evidence
 
 ## BDOBB shipping checks
 
-Node 26.13.0, pnpm 10.34.4 and Vite 6.4.3 ran the final application checks. The native test command used Rust 1.98.1.
+Node 26.13.0, pnpm 10.34.4 and Vite 6.4.3 ran the final application checks. The selected-period follow-up reran typecheck, lint, all Vitest tests, scrub, the production build and all 15 Chromium cases. The focused parent, controls, renderer, input, builder and worker suites passed 158 tests. ESLint initially raced the concurrent build deleting its temporary Vite config. The standalone rerun passed. The 57 web tests, native verification and Rust 1.98.1 results below are from the previous correction. Its provider, Docker, installed wheel and source-table cell evidence apply to the same package pins.
 
 | Command | Exit | Result |
 | --- | ---: | --- |
 | `pnpm typecheck` | 0 | TypeScript passed. |
 | `pnpm lint` | 0 | ESLint passed. |
-| `pnpm test:run` | 0 | 9,596 passed in 515 files, 47 skipped in seven files, zero failed. Includes ten paired TypeScript and compiled Rust/Wasm financial-evidence projection tests. |
+| `pnpm test:run` | 0 | 9,597 passed in 515 files, 47 skipped in seven files, zero failed. Includes ten paired TypeScript and compiled Rust/Wasm financial-evidence projection tests. |
 | `pnpm scrub` | 0 | Content and source header scans passed. |
 | `pnpm test:web` | 0 | 57 passed, zero failed or skipped. |
-| `pnpm build` | 0 | 3,873 modules transformed. Production assets and source maps emitted in 15.81 s. |
+| `pnpm build` | 0 | 3,873 modules transformed. Production assets and source maps emitted in 30.71 s. |
 | `pnpm pivot:verify` | 0 | The packaged Wasm artifacts matched the pinned build inputs and artifact hashes. |
 | `pnpm pivot:test` | 0 | 200 native tests and 19 wire codec tests passed, zero failed or skipped. |
 
@@ -33,7 +33,7 @@ The seven opt-in integration suites under `src/test/integration` account for all
 
 ## Chromium acceptance
 
-Playwright drove the real BDOBB UI against the companion fixture backend. The final run passed 14 tests in 55.8 s, with five screening and income cases, four existing chart-recipe cases and five existing risk-exposure cases. Zero tests failed or skipped. Node emitted the existing warning that `FORCE_COLOR` overrides `NO_COLOR`.
+Playwright drove the real BDOBB UI against the companion fixture backend. The final run passed 15 tests in 1.1 minutes, with six screening and income cases, four existing chart-recipe cases and five existing risk-exposure cases. Zero tests failed or skipped. Node emitted the existing warning that `FORCE_COLOR` overrides `NO_COLOR`.
 
 Run these from the BDOBB root in separate terminals. The output paths designate writable scratch directories.
 
@@ -41,14 +41,15 @@ Run these from the BDOBB root in separate terminals. The output paths designate 
 BDOBB_BROWSER_PORT=17419 BDOBB_MOCK_PORT=17420 node scripts/browser.mjs
 
 BDOBB_BROWSER_PORT=17419 BDOBB_MOCK_PORT=17420 \
-  PLAYWRIGHT_HTML_OUTPUT_DIR=/tmp/fix-browser-report \
+  PLAYWRIGHT_HTML_OUTPUT_DIR=/tmp/anchor-browser-report \
   pnpm exec playwright test e2e/screening-income.spec.ts e2e/chart-recipes.spec.ts \
-  e2e/risk-exposure.spec.ts --project=chromium --output /tmp/fix-browser-results
+  e2e/risk-exposure.spec.ts --project=chromium --output /tmp/anchor-browser-results
 ```
 
 - The explicit US screener fixture delivered seven rows. The August 31 cohort plotted four with unweighted N = 4 and R² = 0.609524. The actual SVG diameters of 48 px and 24 px correspond to a fourfold difference in capitalization. Hover exposed the original capitalization, both percentages and the qualified listing. Filtering to one point withheld the fit. Filtering away a conflicting acquired row still refused the cohort until a clean refresh. [Desktop light capture](screenshots/bubble-desktop-light.png)
 - The verified dividend fixture displayed split-adjusted GBP per current share within the inclusive January–June window. Hover showed the March 17 special distribution at 0.375 GBP. Filtering to quarterly payments left three markers and two disconnected step segments. The omitted ex-date ended the first hold. An unknown-coverage refresh cleared the plot. Verified reacquisition and relinking repaired it. [Filtered gap capture](screenshots/dividend-filtered-gap.png)
 - The USD × 1000 FY 2026 Sankey drew ten nodes and nine ribbons. Revenue was 100, cost of revenue 40 and gross profit 60. The derived operating deduction was 30 with an aggregate operating-expense value of 70 in the Statement. Mouse and touch hover exposed the original values. Unknown scale cleared the plot and a verified snapshot restored it. Conservative tooltip contrast bounds at the native opacity were 10.90:1 and 5.32:1 for dark nodes and links, and 11.18:1 and 6.50:1 for light nodes and links. [Desktop dark capture](screenshots/income-desktop-dark.png) · [Touch link capture](screenshots/income-touch-link.png)
+- In the follow-up, Chromium selected full-record FY 2025 with verified units and a missing net-income anchor. The chart showed the missing-anchor repair and disabled Apply. The applied FY 2026 setting on disk and ten rendered FY 2026 nodes persisted. Selecting FY 2026 re-enabled Apply. A refresh then removed the applied period’s anchor and cleared the graph. [FY 2025 draft beside the applied FY 2026 chart](screenshots/income-ineligible-draft.png)
 - A 390 px emulated touch viewport tapped Sankey links and nodes and scrolled the overflowing plot to net income at 20 USD × 1000. Resizing preserved the analysis revision and node order. Finger drags zoomed the fitting bubble and dividend plots. [Scrolled touch capture](screenshots/income-touch-net-income.png)
 - Native export preserved the applied price cohort, disabled fit and selected fiscal column. A second page imported it, made three new opted-in source requests and plotted changed response values. The export excluded rows, receipts, retrieval timestamps and snapshot certification. [Fixture workspace and HTTP server](../../../../examples/v9-screening-income/README.md)
 
@@ -57,16 +58,16 @@ BDOBB_BROWSER_PORT=17419 BDOBB_MOCK_PORT=17420 \
 
 ## Production JavaScript bytes
 
-Baseline and candidate used `pnpm build`. This comparison includes all 14 emitted JavaScript files and excludes source maps, CSS, Wasm binaries and other assets. Raw counts are file lengths and gzip counts use Node's default `gzipSync` on the file bytes. The paired fix build emitted `recipe.worker-DNrVM__9.js` and `index-PxkeL3Sv.js`.
+Baseline and candidate used `pnpm build`. This comparison includes all 14 emitted JavaScript files and excludes source maps, CSS, Wasm binaries and other assets. Raw counts are file lengths and gzip counts use Node's default `gzipSync` on the file bytes. The selected-period follow-up emitted `recipe.worker-BlSwUJg1.js` and `index-CkLKDwiT.js`.
 
 | Vite output | Baseline raw | Candidate raw | Raw change | Baseline gzip | Candidate gzip | Gzip change |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Application index | 3,397,908 | 3,513,473 | +115,565 | 1,099,644 | 1,135,944 | +36,300 |
-| Recipe worker | 51,200 | 99,687 | +48,487 | 17,507 | 33,925 | +16,418 |
+| Application index | 3,397,908 | 3,515,697 | +117,789 | 1,099,644 | 1,136,886 | +37,242 |
+| Recipe worker | 51,200 | 99,770 | +48,570 | 17,507 | 33,951 | +16,444 |
 | TypeScript table worker | 253,414 | 274,519 | +21,105 | 79,835 | 86,350 | +6,515 |
 | Rust table worker bridge | 100,220 | 110,261 | +10,041 | 31,593 | 34,809 | +3,216 |
-| Help dialog | 728,512 | 732,146 | +3,634 | 245,303 | 246,576 | +1,273 |
-| All JavaScript | 7,839,973 | 8,038,805 | +198,832 | 2,455,175 | 2,518,895 | +63,720 |
+| Help dialog | 728,512 | 732,146 | +3,634 | 245,303 | 246,573 | +1,270 |
+| All JavaScript | 7,839,973 | 8,041,112 | +201,139 | 2,455,175 | 2,519,860 | +64,685 |
 
 Task 7 separately bundled the Plotly wrapper and recipe worker with the same local esbuild options at the pre-Sankey and Task 7 heads. The Plotly wrapper with traces grew from 1,238,815 to 1,366,659 minified bytes with CSS excluded, a change of **127,844 raw and 35,957 gzip bytes**. The standalone worker grew from 75,507 to 97,911 minified bytes, a change of **22,404 raw and 8,028 gzip bytes**. The standalone wrapper measures the Sankey trace registration in isolation. The production index measures the output of Vite's whole application build, and the recipe worker is separately emitted. The sole added registration is `plotly.js/lib/sankey`. The package manifest and pnpm lockfile match the pre-feature baseline.
 
