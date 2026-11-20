@@ -4,7 +4,7 @@
 import type { ChartOptions, DeepPartial, UTCTimestamp } from "lightweight-charts";
 import { CARD_BG, GRID, TEXT } from "./chartShapes";
 import type { CandleColors } from "./types";
-import type { UdfBar } from "./udf";
+import { hasOhlc, type UdfBar } from "./udf";
 
 /**
  * The one module that touches lightweight-charts (TradingView's open-source
@@ -46,7 +46,7 @@ export type CandleChartHandle = {
  */
 export async function mountCandleChart(
   el: HTMLElement,
-  { theme, colors, showVolume }: { theme: "dark" | "light"; colors: CandleColors; showVolume: boolean },
+  { theme, colors, showVolume, closeOnly = false }: { theme: "dark" | "light"; colors: CandleColors; showVolume: boolean; closeOnly?: boolean },
 ): Promise<CandleChartHandle> {
   const lw = await import("lightweight-charts");
   const themed = (t: "dark" | "light"): DeepPartial<ChartOptions> => ({
@@ -70,26 +70,28 @@ export async function mountCandleChart(
   // The volume colours are not candlestick options; everything else in
   // CandleColors is, under the same names the widget's chartConfig uses.
   const { volumeUpColor = UP, volumeDownColor = DOWN, ...candleColors } = colors;
-  const candles = chart.addSeries(lw.CandlestickSeries, candleColors);
+  const candles = closeOnly ? null : chart.addSeries(lw.CandlestickSeries, candleColors);
+  const line = closeOnly ? chart.addSeries(lw.LineSeries, { color: "#4d9de0" }) : null;
   const volume = showVolume
     ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "" })
     : null;
   if (volume) {
     volume.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
-    candles.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.25 } });
+    (candles ?? line)!.priceScale().applyOptions({ scaleMargins: { top: 0.1, bottom: 0.25 } });
   }
 
   let fitted = false;
   return {
     setBars(bars) {
-      candles.setData(
-        bars.map((b) => ({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close })),
+      line?.setData(bars.map(b => ({ time: b.time as UTCTimestamp, value: b.close })));
+      candles?.setData(
+        bars.filter(hasOhlc).map((b) => ({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close })),
       );
       volume?.setData(
-        bars.map((b) => ({
+        bars.map((b, index) => ({
           time: b.time as UTCTimestamp,
           value: b.volume,
-          color: b.close >= b.open ? volumeUpColor : volumeDownColor,
+          color: b.close >= (b.open ?? bars[Math.max(0, index - 1)].close) ? volumeUpColor : volumeDownColor,
         })),
       );
       if (!fitted && bars.length > 0) {

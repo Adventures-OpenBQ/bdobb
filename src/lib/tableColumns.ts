@@ -21,8 +21,17 @@ export const COLUMN_DRAG_TYPE = "application/x-bdobb-column";
  * half of it. Shared by TableRenderer and by WidgetCard's Columns menu so
  * they can never disagree about whether a payload is a table.
  */
-export function tableRows(data: unknown): Row[] | null {
-  return Array.isArray(data) && data.every(isRecord) ? data : null;
+export function tableRows(data: unknown, spec?: TableSpec): Row[] | null {
+  if (Array.isArray(data)) return data.every(isRecord) ? data : null;
+  // Some model endpoints (ECB reference rates) return one record. Only a
+  // declared schema can establish that an object is a row, not an envelope
+  // or error. Preserve exact wire keys and leave the source object untouched.
+  if (isRecord(data) && spec?.columns.length) {
+    const keys = Object.keys(data);
+    const declared = new Set(spec.columns.map(c => c.field));
+    if (keys.length > 0 && keys.every(key => declared.has(key))) return [data];
+  }
+  return null;
 }
 
 /**

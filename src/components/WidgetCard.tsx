@@ -12,7 +12,7 @@ import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
 import { rowChartAxes, rowsOf } from "../lib/chartShapes";
 import { dataUpdateText } from "../lib/cron";
-import { authHeaders } from "../lib/dataClient";
+import { authHeaders, buildIframeWidgetUrl } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
 import { logError, logOnce } from "../lib/logger";
@@ -353,7 +353,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
     const type = widget?.type ?? "table";
     const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
     if (type !== "chart") {
-      const rows = rowsOf(data);
+      const rows = rowsOf(tableRows(data, widget?.table) ?? data);
       if (rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
     }
     // Raw shows the payload useWidgetData fetched. iframe/note/clock/keys
@@ -372,7 +372,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
       // ([[1,2],[3,4]]) that the transposed view cannot render at all, and
       // offering the option there would dead-end in the empty state with
       // every export disabled. This gate must be the renderer's own.
-      const rows = tableRows(data);
+      const rows = tableRows(data, widget?.table);
       // A local_table card's rows live in its renderer, not in `data`, so the
       // option is offered unconditionally there -- the same reason showsTable
       // treats that type separately.
@@ -404,12 +404,12 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
    */
   const transposed = useMemo(() => {
     if (!isTransposed) return null;
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows ? transposeRows(rows) : null;
-  }, [isTransposed, data]);
+  }, [isTransposed, data, widget?.table]);
   const exportRows = useMemo(
-    () => (isTransposed ? (transposed?.rows ?? null) : rowsForExport(data)),
-    [isTransposed, transposed, data],
+    () => (isTransposed ? (transposed?.rows ?? null) : rowsForExport(tableRows(data, widget?.table) ?? data)),
+    [isTransposed, transposed, data, widget?.table],
   );
   // Explicit order for the exporters; undefined lets them derive it as today.
   const exportColumns = isTransposed ? transposed?.columns : undefined;
@@ -436,7 +436,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
       view !== "raw" &&
       view !== "chart" &&
       !isTransposed &&
-      tableRows(data) !== null) ||
+      tableRows(data, widget?.table) !== null) ||
     // A local-file card's rows live inside its renderer, not in `data`: it
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
@@ -449,7 +449,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
    * disagree about which columns exist.
    */
   const menuColumns = useMemo(() => {
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows && rows.length > 0 ? tableColumns(rows, widget?.table) : [];
   }, [data, widget?.table]);
   const menuOrder = orderFields(menuColumns, card.table?.columnOrder);
@@ -797,7 +797,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
       const isBuiltin = widget.backendId === BUILTIN_BACKEND_ID;
       return (
         <IframeRenderer
-          url={isBuiltin ? (card.params.url ?? "") : widget.endpoint}
+          url={isBuiltin ? (card.params.url ?? "") : buildIframeWidgetUrl(backend, widget, query)}
           emptyHint={isBuiltin ? "Enter a URL in Parameters to frame a page." : undefined}
           messaging={messagingFor(widget)}
         />
@@ -1311,7 +1311,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
                       setExportOpen(false);
                       const category = widget.table?.columns.find(c => c.chartDataType === "category")?.field ?? menuColumns.find(c => c.field.toLowerCase() === "strike")?.field ?? menuColumns[0]?.field;
                       const hinted = widget.table?.columns.filter(c => c.chartDataType === "series").map(c => c.field) ?? [];
-                      const measures = hinted.length ? hinted : menuColumns.filter(c => c.field !== category && (c.cellDataType === "number" || (tableRows(data) ?? []).some(r => typeof r[c.field] === "number"))).map(c => c.field);
+                      const measures = hinted.length ? hinted : menuColumns.filter(c => c.field !== category && (c.cellDataType === "number" || (tableRows(data, widget?.table) ?? []).some(r => typeof r[c.field] === "number"))).map(c => c.field);
                       void useDashboardStore.getState().addLinkedSurface(card.id,{type:"surface",display:"grouped",category,measures:measures.length<=64?measures:[]}).catch(err => logError(`failed to create linked surface: ${err}`));
                     }}>Create linked surface</button> : null}
                     <button

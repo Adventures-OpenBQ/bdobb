@@ -180,7 +180,7 @@ export function TableRenderer({
   /** Plain mode's column order. Never derived from the rows' keys: see transposeRows. */
   columns?: string[];
 }) {
-  const rows = tableRows(data);
+  const rows = tableRows(data, view.spec);
 
   // An unexpected shape always falls through to raw JSON, never to nothing.
   if (!rows) return <RawJsonView data={data} />;

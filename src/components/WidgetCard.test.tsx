@@ -1135,6 +1135,53 @@ describe("WidgetCard renderer dispatch", () => {
     expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://example.com/page");
   });
 
+  it("resolves a relative iframe endpoint against its backend and forwards its current parameters", () => {
+    setUp({ type: "iframe", endpoint: "/api/v1/tmx/etf/fund_info" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://backend.example/prefix" })] });
+    render(<WidgetCard card={{ ...card, params: { symbol: "XIU", theme: "dark" } }} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://backend.example/prefix/api/v1/tmx/etf/fund_info?symbol=XIU&theme=dark");
+  });
+
+  it("keeps external iframe endpoints verbatim without forwarding backend credentials or parameters", () => {
+    setUp({ type: "iframe", endpoint: "https://external.example/page?fixed=1" }, null);
+    useBackendsStore.setState({ backends: [backend({ authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={{ ...card, params: { private: "synthetic-private-param" } }} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://external.example/page?fixed=1");
+  });
+
+  it("keeps query credentials on a relative iframe's backend origin", () => {
+    setUp({ type: "iframe", endpoint: "/api/tool" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://own.example", authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://own.example/api/tool?token=synthetic-private-token");
+  });
+
+  it("refuses a protocol-relative iframe without exposing backend credentials", () => {
+    setUp({ type: "iframe", endpoint: "//external.example/page" }, null);
+    useBackendsStore.setState({ backends: [backend({ authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByTitle("Embedded page")).toBeNull();
+    expect(screen.getByText("This address is not a valid http or https URL.")).toBeInTheDocument();
+  });
+
+  it("shows a refusal instead of crashing on a malformed saved iframe backend", () => {
+    setUp({ type: "iframe", endpoint: "/api/tool" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "not a URL" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByTitle("Embedded page")).toBeNull();
+    expect(screen.getByText("This address is not a valid http or https URL.")).toBeInTheDocument();
+  });
+
+  it("keeps singleton table controls and preserves the actual object in Raw view", () => {
+    const record = { date: "2026-11-19", USD: 1.0992 };
+    setUp({ type: "table", table: { columns: [{ field: "date" }, { field: "USD" }] } }, record);
+    const rendered = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Filter rows" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "USD" })).toBeInTheDocument();
+    rendered.rerender(<WidgetCard card={{ ...card, view: "raw" }} onRemove={vi.fn()} />);
+    expect(JSON.parse(screen.getByTestId("raw-json").textContent!)).toEqual(record);
+  });
+
   it("dispatches metric to the metric renderer", () => {
     setUp({ type: "metric" }, { value: 42, label: "Answer" });
     render(<WidgetCard card={card} onRemove={vi.fn()} />);

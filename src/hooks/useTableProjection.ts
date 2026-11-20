@@ -66,7 +66,7 @@ export function projectionColumn(column: TableColumn, kind: FilterKind, sorting:
 
 /** Headless and unvirtualized, so source view switches cannot change the linked scope. */
 export function useTableProjection(data: unknown, spec: TableSpec|undefined, state:TableCardState|undefined, enabled:boolean): SurfaceDataset {
-  const rows=useMemo(()=>enabled?(tableRows(data)??NO_ROWS):NO_ROWS,[data,enabled]);
+  const rows=useMemo(()=>enabled?(tableRows(data,spec)??NO_ROWS):NO_ROWS,[data,enabled,spec]);
   const columns=useMemo(()=>tableColumns(rows,spec),[rows,spec]);
   const sorting=enabled?(state?.sorting??NO_SORTING):NO_SORTING;
   const columnFilters=enabled?(state?.columnFilters??NO_FILTERS):NO_FILTERS;
