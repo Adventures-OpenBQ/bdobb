@@ -16,7 +16,8 @@ const engines = [
 
 it.each(engines)('%s retains pre-drop conflicts and per-series omissions through a linked grandchild and aggregate', async (_, make) => {
   const file = files['price-eps'], clean = file.chart_sources.receipts[0];
-  const source = { ...clean, raw_count: 3, unsafe: { ...clean.unsafe, basis_conflict: true }, diagnostics: ['basis_conflict'] };
+  const source = { ...clean, raw_count: 4, unsafe: { ...clean.unsafe, basis_conflict: true, coordinate_conflict: true },
+    diagnostics: ['basis_conflict', 'coordinate_conflict'] };
   const bytes = new TextEncoder().encode(JSON.stringify({ ...file, chart_sources: { version: 1, receipts: [source] } }));
   let input = await datasetFromBytes('pair.json', bytes, 'acquisition', 1);
   expect(input.provenance.metadata?.chartSources).toEqual({ overlay: source });

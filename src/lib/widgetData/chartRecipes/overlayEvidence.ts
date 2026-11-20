@@ -98,6 +98,17 @@ function valueAgrees(id: string, raw: unknown, value: unknown) {
   return value === raw && ((id !== 'CUSR0000SA0' && id !== 'adjusted_close') || value > 0);
 }
 
+function supportedQuarter(start: string, end: string): boolean {
+  const first = new Date(start), exclusiveEnd = Date.parse(end) + 86_400_000;
+  const days = (exclusiveEnd - first.getTime()) / 86_400_000;
+  if (days === 13 * 7 || days === 14 * 7) return true;
+  // Day zero of the fourth following month is the last day of the anniversary month.
+  const anniversary = new Date(first);
+  anniversary.setUTCMonth(first.getUTCMonth() + 4, 0);
+  anniversary.setUTCDate(Math.min(first.getUTCDate(), anniversary.getUTCDate()));
+  return exclusiveEnd === anniversary.getTime();
+}
+
 function rowsAgree(source: OverlaySource, rows: readonly Record<string, unknown>[]): boolean {
   if (rows.length !== source.delivered_count) return false;
   const remaining = { left: new Set(source.coordinates.left), right: new Set(source.coordinates.right) };
@@ -115,9 +126,13 @@ function rowsAgree(source: OverlaySource, rows: readonly Record<string, unknown>
     const at = row.available_at;
     if (at === null ? row.release_ref !== null :
       !byVintage(at, vintage, true) || !reference(row.release_ref) || at.slice(0, 10) < row.date) return false;
-    if (s.id === 'CUSR0000SA0' && (!row.date.endsWith('-01') || (typeof at === 'string' && at.slice(0, 7) <= row.date.slice(0, 7)))) return false;
+    if (s.id === 'CUSR0000SA0') {
+      const month = row.date.slice(0, 7);
+      if (!row.date.endsWith('-01') || (row.value !== null && vintage.slice(0, 7) <= month)
+        || (typeof at === 'string' && at.slice(0, 7) <= month)) return false;
+    }
     if (eps) {
-      if (typeof at !== 'string' || !isoDate(row.target_start) || row.target_end !== row.date || row.target_start >= row.date
+      if (typeof at !== 'string' || !isoDate(row.target_start) || row.target_end !== row.date || !supportedQuarter(row.target_start, row.date)
         || fiscalEnds.has(row.date) || ![null, 'before-market', 'during-market', 'after-market'].some(v => v === row.session_timing)) return false;
       fiscalEnds.add(row.date);
     } else if (row.target_start !== null || row.target_end !== null || row.session_timing !== null) return false;

@@ -72,3 +72,29 @@ it('admits both exact decimal and binary yield conversion from source percent', 
     expect(parseTableSnapshot({ ...macro, rows }, 'local-file').snapshot?.chartSources).toBeDefined();
   }
 });
+
+it.each([
+  ['2025-10-01', '2026-09-30', false], ['2000-10-01', '2026-09-30', false], ['2026-09-28', '2026-09-30', false],
+  ['2025-01-31', '2025-04-30', false], ['2025-07-09', '2025-09-30', false], ['2025-05-01', '2025-07-31', true],
+  ['2024-01-31', '2024-04-29', true], ['2025-01-31', '2025-04-29', true], ['2023-10-01', '2023-12-30', true],
+  ['2022-09-25', '2022-12-31', true],
+] as const)('checks the actual prepared FQ interval %s through %s (%s)', (start, end, valid) => {
+  const rows = [equity.rows[0], { ...equity.rows[1], date: end, target_start: start, target_end: end }];
+  const parse = () => parseTableSnapshot({ ...equity, rows }, 'local-file');
+  if (valid) expect(parse().snapshot?.chartSources).toEqual({ overlay: source });
+  else expect(parse).toThrow();
+});
+
+it.each([
+  ['2026-10-01T00:00:00Z', 337.476, false], ['2026-10-31T23:59:59.999999Z', 337.476, false],
+  ['2026-11-01T00:00:00Z', 337.476, true], ['2026-11-15T00:00:00Z', 337.476, true],
+  ['2026-10-01T00:00:00Z', null, true],
+] as const)('checks the CPI input vintage %s against the observed month, with value %s', (vintage, value, valid) => {
+  const receipt = macro.chart_sources.receipts[0];
+  const source = { ...receipt, vintages: { ...receipt.vintages, left: vintage } };
+  const rows = macro.rows.map((r, i) => r.series === 'CUSR0000SA0' ? { ...r, input_vintage: vintage, available_at: null,
+    release_ref: null, ...(i === 1 && { value, source_value: value }) } : r);
+  const parse = () => parseTableSnapshot({ ...macro, rows, chart_sources: { version: 1, receipts: [source] } }, 'local-file');
+  if (valid) expect(parse().snapshot?.chartSources).toEqual({ overlay: source });
+  else expect(parse).toThrow();
+});
