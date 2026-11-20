@@ -6,18 +6,25 @@ import { isWorkerTableProducer } from '../tableExecution/eligibility';
 import { validateGraph } from './graph';
 
 /** Validate the proposed ancestry without preventing repair of unrelated invalid cards. */
-export function canUseLinkedSource(dashboard: Dashboard, targetId: string, sourceId: string): boolean {
+export function linkedSourceAncestry(dashboard: Dashboard, targetId: string, sourceId: string): string[] | undefined {
   const cards = new Map(dashboard.tabs.flatMap(t => t.cards).map(c => [c.id, c]));
   const source = cards.get(sourceId);
-  if (!source || !isWorkerTableProducer(source)) return false;
+  if (!source) return;
   const nodes: { id: string; source?: string; producer: boolean }[] = [{ id: targetId, source: sourceId, producer: true }];
   const seen = new Set<string>([targetId]);
   let current: DashboardCard | undefined = source;
   while (current && !seen.has(current.id)) {
-    if (!isWorkerTableProducer(current)) return false;
+    if (!isWorkerTableProducer(current)) return;
     seen.add(current.id);
     nodes.push({ id: current.id, source: current.linkedSource?.sourceWidgetId, producer: true });
     current = current.linkedSource ? cards.get(current.linkedSource.sourceWidgetId) : undefined;
   }
-  try { validateGraph(nodes); return true; } catch { return false; }
+  try {
+    validateGraph(nodes);
+    return nodes.slice(1).map(node => node.id);
+  } catch { return; }
+}
+
+export function canUseLinkedSource(dashboard: Dashboard, targetId: string, sourceId: string): boolean {
+  return linkedSourceAncestry(dashboard, targetId, sourceId) !== undefined;
 }

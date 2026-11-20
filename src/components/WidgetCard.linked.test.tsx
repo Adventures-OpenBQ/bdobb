@@ -1509,26 +1509,91 @@ it('announces a current KPI draw failure locally while retaining the exact value
   } finally { factory.mockRestore(); }
 });
 
-it('clears a latest KPI when its acquired observation is filtered and leaves the earlier observation available for repair', async () => {
+it('clears the prior gauge while a ready revision checks a filtered latest KPI and leaves the earlier observation for repair', async () => {
   const factory = mockKpiWorker();
   const a = await localKpiSource('A', 0);
-  installDashboard(riskDashboard([a, kpiCard({ ...focusedKpi, view: 'card' })]));
+  installDashboard(riskDashboard([a, kpiCard()]));
   try {
     render(<LiveKpi/>);
     expect(await screen.findByText('0 USD per share', { selector: '.metric-value' })).toBeVisible();
+    await screen.findByTestId('chart-plot');
+    const worker: ReturnType<typeof kpiWorkers.createKpiWorker> = factory.mock.results.find(result => vi.mocked(result.value.run).mock.calls.length)!.value;
+    let release!: () => void;
+    vi.mocked(worker.run).mockImplementationOnce(async (dataset, options) => {
+      const result = buildKpiSnapshot(dataset, options);
+      await new Promise<void>(done => { release = done; });
+      return result;
+    });
     await act(async () => {
       tableExecutionStore.updateDefinition('d', 'A', { table: {}, search: 'first-report' }, { kind: 'none' });
       await tableExecutionStore.settled('d');
     });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(tableExecutionStore.readView('d', 'kpi')).toMatchObject({ status: 'ready', stale: false });
+    const heldOutput = {
+      value: screen.queryByText('0 USD per share', { selector: '.metric-value' })?.textContent,
+      gauge: !!screen.queryByTestId('chart-plot'),
+      status: screen.queryByText('Calculating linked KPI…')?.textContent,
+    };
+    await act(async () => release());
+    expect(heldOutput).toEqual({ value: undefined, gauge: false, status: 'Calculating linked KPI…' });
     expect(await screen.findByRole('alert')).toHaveTextContent(/latest KPI observation is unavailable in the source presentation/i);
-    expect(screen.queryByText('0 USD per share', { selector: '.metric-value' })).toBeNull();
     expect(screen.queryByText('76.544 USD per share', { selector: '.metric-value' })).toBeNull();
     expect(screen.getByLabelText('Observation', { exact: true })).toHaveValue('@latest');
     fireEvent.change(screen.getByLabelText('Observation', { exact: true }), { target: { value: 'first-report' } });
+    fireEvent.change(screen.getByLabelText('KPI view', { exact: true }), { target: { value: 'card' } });
     await waitFor(() => expect(screen.getByRole('button', { name: 'Apply KPI settings' })).toBeEnabled());
     fireEvent.click(screen.getByRole('button', { name: 'Apply KPI settings' }));
     expect(await screen.findByText('76.544 USD per share', { selector: '.metric-value' })).toBeVisible();
   } finally { factory.mockRestore(); }
+});
+
+it('clears the KPI when its linked table relinks upstream, then retains a same-ancestry refresh', async () => {
+  const factory = mockKpiWorker();
+  const a = await localKpiSource('A', 18.125), b = await localKpiSource('B', 33.25);
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const metric = { ...kpiCard(), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, b, table, metric]));
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const pathB = 'files/' + b.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === pathB ? held : readFile(path, options));
+  const oldPresentation = () => ({
+    value: screen.queryByText('18.125 USD per share', { selector: '.metric-value' })?.textContent,
+    gauge: !!screen.queryByTestId('chart-plot'),
+    stale: !!screen.queryByText('Showing completed data (stale).'),
+  });
+  const cleared = { value: undefined, gauge: false, stale: false };
+  try {
+    render(<LiveKpi/>);
+    await screen.findByText('18.125 USD per share');
+    await screen.findByTestId('chart-plot');
+    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(tableExecutionStore.readView('d', 'kpi').status).toBe('updating');
+    const pending = oldPresentation();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect({ pending, failed: oldPresentation() }).toEqual({ pending: cleared, failed: cleared });
+
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('33.25 USD per share')).toBeVisible();
+    const gauge = await screen.findByTestId('chart-plot');
+    let rejectRefresh!: (error: Error) => void;
+    const refresh = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+    read.mockImplementation((path, options) => path === pathB ? refresh : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(gauge);
+    expect(screen.getByText('33.25 USD per share', { selector: '.metric-value' })).toBeVisible();
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(el => el.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getByText('Showing completed data (stale).')).toBeVisible();
+    expect(screen.getByTestId('chart-plot')).toBe(gauge);
+    expect(screen.getByText('33.25 USD per share', { selector: '.metric-value' })).toBeVisible();
+  } finally { read.mockRestore(); factory.mockRestore(); }
 });
 
 it('reports a current KPI worker failure locally and clears its previously completed presentation', async () => {

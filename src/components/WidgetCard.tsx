@@ -65,7 +65,7 @@ import { ErrorState } from "./renderers/ErrorState";
 import { HtmlRenderer } from "./renderers/HtmlRenderer";
 import { IframeRenderer } from "./renderers/IframeRenderer";
 import { LinkedWidgetDialog } from "./LinkedWidgetDialog";
-import { canUseLinkedSource } from "../lib/widgetData/sources";
+import { linkedSourceAncestry } from "../lib/widgetData/sources";
 import { tableExecutionStore } from "../stores/tableExecutionStore";
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
 import { SsrmTableRenderer } from "./renderers/SsrmTableRenderer";
@@ -2224,26 +2224,32 @@ function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChang
     if (metric && previousRefresh.current !== refreshKey) tableExecutionStore.refresh(dashboardId, card.id);
     previousRefresh.current = refreshKey;
   }, [metric, refreshKey, dashboardId, card.id]);
-  const readKpiSource = useCallback(() => ({
-    view: tableExecutionStore.readView(dashboardId, card.id),
-    executor: sourceId ? tableExecutionStore.readExecutor(dashboardId, sourceId) : undefined,
-    card: useDashboardStore.getState().dashboards.find(d => d.id === dashboardId)?.tabs
-      .flatMap(t => t.cards).find(c => c.id === card.id),
-  }), [dashboardId, card.id, sourceId]);
-  useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, card.linkedSource?.sourceWidgetId]);
+  const readKpiSource = useCallback(() => {
+    const cards = useDashboardStore.getState().dashboards.find(d => d.id === dashboardId)?.tabs.flatMap(t => t.cards) ?? [];
+    const currentView = tableExecutionStore.readView(dashboardId, card.id);
+    return {
+      view: currentView,
+      executor: sourceId ? tableExecutionStore.readExecutor(dashboardId, sourceId) : undefined,
+      card: cards.find(c => c.id === card.id),
+      // Dashboard edits can arrive before the table runtime has synchronized them.
+      sourceCurrent: (currentView.status === 'ready' || currentView.status === 'empty')
+        && tableExecutionStore.sourceMatches(dashboardId, card.id, cards),
+    };
+  }, [dashboardId, card.id, sourceId]);
+  useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, sourceId]);
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
+  const ancestry = dashboard && sourceId ? linkedSourceAncestry(dashboard, card.id, sourceId) : undefined;
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
-  const unavailable = view.status === 'unavailable' || !dashboard || !card.linkedSource
-    || !canUseLinkedSource(dashboard, card.id, card.linkedSource.sourceWidgetId);
+  const unavailable = view.status === 'unavailable' || !ancestry;
   const content = <>
     {!viewer ? <button type="button" className={metric ? "bd-button" : undefined} onClick={chooseSource}>Choose source</button> : null}
     {!unavailable && view.stale && !metric ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && (card.linkedChart || metric) && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
-      : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, sourceId])}
+      : metric && sourceId ? <LinkedKpiRenderer key={JSON.stringify([dashboardId, card.id, ancestry])}
         sourceId={sourceId} executor={executor} view={view} persisted={card.linkedMetric} viewer={viewer}
-        readCurrent={readKpiSource}
+        readCurrent={readKpiSource} sourceCurrent={readKpiSource().sourceCurrent}
         onSettingsChange={(settings, guard) => useDashboardStore.getState().commitLinkedMetricSettings(dashboardId, card.id, settings, guard)} />
       : card.linkedChart ? <LinkedChartRenderer parentReportsSourceStatus dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}

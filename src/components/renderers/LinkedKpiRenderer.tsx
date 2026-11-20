@@ -25,7 +25,8 @@ type Props = {
   view: ViewState;
   persisted?: LinkedKpiOptions;
   viewer: boolean;
-  readCurrent: () => { view: ViewState; executor?: LocalWorkerExecutor; card?: DashboardCard };
+  sourceCurrent: boolean;
+  readCurrent: () => { view: ViewState; executor?: LocalWorkerExecutor; card?: DashboardCard; sourceCurrent: boolean };
   onSettingsChange: (options: LinkedKpiOptions, guard: () => boolean) => Promise<boolean>;
 };
 
@@ -69,19 +70,18 @@ async function evaluateKpi(worker: KpiWorker, job: NonNullable<SourceJob>, optio
 
 type SourceJob = ReturnType<typeof useSourceJob>;
 
-function useSourceJob({ sourceId, executor, view, readCurrent }: Props, key: string) {
-  const { sourceRevision: revision, ready, status } = view;
-  const usable = (status === 'ready' || status === 'empty') && revision?.widgetId === sourceId;
+function useSourceJob({ sourceId, executor, view, sourceCurrent, readCurrent }: Props, key: string) {
+  const { sourceRevision: revision, ready } = view;
+  const usable = sourceCurrent && revision?.widgetId === sourceId;
   return useMemo(() => {
     if (!usable || !revision || !executor || !ready) return;
     function current() {
       const live = readCurrent();
-      return live.card?.linkedSource?.sourceWidgetId === sourceId && settingsKey(live.card.linkedMetric) === key
-        && live.executor === executor && live.view.ready === ready && revisionIs(live.view.sourceRevision, revision)
-        && (live.view.status === 'ready' || live.view.status === 'empty');
+      return live.sourceCurrent && live.card?.linkedSource?.sourceWidgetId === sourceId && settingsKey(live.card.linkedMetric) === key
+        && live.executor === executor && live.view.ready === ready && revisionIs(live.view.sourceRevision, revision);
     }
     return {
-      columns: ready.columns, current,
+      columns: ready.columns, current, revision, ready,
       async load(field: string | undefined, signal: AbortSignal) {
         const data = await executor.chartData(revision, kpiInputFields(ready.columns, field), signal);
         signal.throwIfAborted();
@@ -153,7 +153,7 @@ function KpiOutput({ result, observeSurface }: { result: Extract<KpiResult, { ok
   </>;
 }
 
-type AppliedState = { key: string; job: SourceJob; result: KpiResult };
+type AppliedState = { key: string; job: NonNullable<SourceJob>; result: KpiResult };
 type EditorProps = {
   job: SourceJob;
   settings?: LinkedKpiOptions;
@@ -267,9 +267,12 @@ export function LinkedKpiRenderer(props: Props) {
     return () => controller.abort();
   }, [worker, job, key, settings]);
 
-  const result = applied?.key === key && (applied.job === job || applied.result.ok) ? applied.result : undefined;
-  const problem = decoded && !decoded.ok ? decoded.message : result && !result.ok ? result.message : undefined;
   const pending = view.status === 'pending' || view.status === 'updating';
+  const retainCompleted = applied?.key === key && applied.result.ok && view.stale
+    && (pending || view.status === 'blocked' || view.status === 'failed')
+    && applied.job.ready === view.ready && revisionIs(applied.job.revision, view.sourceRevision);
+  const result = applied?.key === key && (applied.job === job || retainCompleted) ? applied.result : undefined;
+  const problem = decoded && !decoded.ok ? decoded.message : result && !result.ok ? result.message : undefined;
   return <section className="linked-kpi-renderer" aria-label="Linked KPI">
     {!viewer ? <>
       <div className="linked-kpi-surface-probe" ref={probe} aria-hidden="true">
@@ -280,7 +283,7 @@ export function LinkedKpiRenderer(props: Props) {
         surface={readSurface} onSettingsChange={onSettingsChange}/>
     </> : null}
     {problem ? <p role="alert">{problem}</p> : null}
-    {view.stale && result?.ok ? <p role="status">Showing completed data (stale).</p> : null}
+    {retainCompleted ? <p role="status">Showing completed data (stale).</p> : null}
     {pending && !result?.ok ? <p role="status">Loading source {sourceId}…</p> : null}
     {job && settings && !result && !problem ? <p role="status">Calculating linked KPI…</p> : null}
     {viewer && !decoded && !pending && !view.error ? <p>Choose a verified KPI preset in edit mode.</p> : null}
