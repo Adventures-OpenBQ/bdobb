@@ -41,7 +41,7 @@ assert status == 200, status
 print(json.dumps({"widget": MirrorNamespace.widgets[widget_id], "row": body["results"][0]}))
 PY
 
-  cp docs/releases/validation/v9/screening-income/reproduce/paired-table-cell.spec.ts "$spec"
+  cp docs/releases/validation/v9/screening-income/reproduce/paired-table-cell.spec.ts.example "$spec"
   pnpm exec playwright test "$spec" --project=chromium --reporter=list \
     --output "$work/playwright-results"
   printf 'Capture and run artifacts: %s\n' "$work"
