@@ -1,0 +1,50 @@
+{
+  "news_calendar_demo_company": {
+    "name": "Canopy CompanyNews page",
+    "description": "Fictional acquired CompanyNews article page.",
+    "type": "table",
+    "endpoint": "/api/v1/eodhd/news/company",
+    "params": [
+      {
+        "paramName": "symbol",
+        "label": "Symbol",
+        "type": "text",
+        "value": "CANOPY.US"
+      },
+      {
+        "paramName": "start_date",
+        "label": "Start date",
+        "type": "text",
+        "value": "2025-11-19"
+      },
+      {
+        "paramName": "end_date",
+        "label": "End date",
+        "type": "text",
+        "value": "2026-11-19"
+      },
+      {
+        "paramName": "limit",
+        "label": "Limit",
+        "type": "text",
+        "value": "10"
+      },
+      {
+        "paramName": "offset",
+        "label": "Offset",
+        "type": "text",
+        "value": "0"
+      },
+      {
+        "paramName": "chart_source",
+        "label": "Chart source",
+        "type": "text",
+        "value": "true"
+      }
+    ],
+    "refetchInterval": false,
+    "data": {
+      "dataKey": "results"
+    }
+  }
+}

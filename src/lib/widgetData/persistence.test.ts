@@ -6,6 +6,7 @@ import { remapWidgetReferences, persistedCard } from './persistence';
 import type { DashboardCard } from '../types';
 import { decodeLinkedChartRecipe } from './chartRecipes/settings';
 import type { RecipeOptions } from './chartRecipes/types';
+import { calendarOptions } from '../../test/fixtures/newsCalendar';
 const source: DashboardCard = { id: 'source', widgetId: 'local_table', backendId: 'builtin', params: { file: 'import.csv' }, layout: { x: 0, y: 0, w: 2, h: 2 } };
 const child: DashboardCard = { ...source, id: 'child', widgetId: 'linked_table', linkedSource: { kind: 'widget', sourceWidgetId: 'source' }, tableSelection: { kind: 'explicit', ids: ['r0'] }, linkedChart: { type: 'line', category: 'date', measures: ['close'], display: 'grouped' } };
 it('remaps all dashboard owners and links without mutating settings or native file references', () => {
@@ -78,4 +79,14 @@ it('persists a selected income period and refuses injected scale after reopening
   expect(JSON.stringify(edited)).not.toContain('multiplier');
   expect(persistedCard({ ...child, linkedChart: { ...linkedChart, chart_evidence: { coverage: 'full-record' } } as typeof linkedChart }).linkedChart)
     .toEqual(linkedChart);
+});
+
+it('keeps the news window declaration and strips attempted runtime evidence on saved cards', () => {
+  const recipe = { ...calendarOptions, window: { mode: 'pinned', start: '2026-11-17', end: '2026-11-19' } } satisfies RecipeOptions;
+  const linkedChart = { type: recipe.kind, display: 'grouped', measures: [], recipe } as const;
+  const authored = { ...linkedChart, measures: [] };
+  const injected = { ...authored, chart_sources: { receipts: ['forged'] }, daySummaries: [{}], viewportWidth: 300 };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(authored);
+  const unsupported = { ...recipe, version: 2 } as unknown as RecipeOptions;
+  expect(persistedCard({ ...child, linkedChart: { ...authored, recipe: unsupported } }).linkedChart?.recipe).toBeUndefined();
 });

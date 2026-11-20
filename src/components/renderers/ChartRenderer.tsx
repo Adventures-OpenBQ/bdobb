@@ -100,6 +100,7 @@ export function ChartRenderer({
   touchScroll = false,
   inspectSankeyOnTouch = false,
   onPlotWidthChange,
+  onViewportWidthChange,
 }: {
   data: unknown;
   uirevision?: string;
@@ -108,6 +109,8 @@ export function ChartRenderer({
   inspectSankeyOnTouch?: boolean;
   /** Explicitly sized figures rebuild their layout at the measured width. */
   onPlotWidthChange?: (width: number) => void;
+  /** Measure a retained scrolling viewport, even when no figure can be drawn. */
+  onViewportWidthChange?: (width: number) => void;
   /** The widget's columnsDefs, for their chartDataType. */
   columns?: ColumnSpec[];
   /** The widget's chartView.chartType. */
@@ -166,7 +169,9 @@ export function ChartRenderer({
     return () => {
       observer.disconnect();
       stopInspecting?.();
-      purgePlot(el);
+      if (node.current === el) node.current = null;
+      // React can immediately reattach the same node, including during a draw.
+      queueMicrotask(() => { if (node.current !== el) purgePlot(el); });
     };
   }, [inspectSankeyOnTouch, onPlotWidthChange]);
 
@@ -180,22 +185,29 @@ export function ChartRenderer({
   const coarsePointer = useMediaQuery(scrolling && touchScroll ? "(pointer: coarse)" : null) === true;
   const measureOverflow = coarsePointer && touchScroll === 'overflow';
   const [overflows, setOverflows] = useState(false);
-  const observeViewport = useCallback((viewport: HTMLDivElement | null) => {
-    if (!viewport || !measureOverflow) return;
-    const measure = () => setOverflows(viewport.scrollHeight > viewport.clientHeight);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(viewport);
-    // Plot height changes when the watchlist reflows, even if its viewport stays the same size.
-    if (viewport.firstElementChild) observer.observe(viewport.firstElementChild);
-    return () => observer.disconnect();
-  }, [measureOverflow]);
   const coarseScroll = coarsePointer && (touchScroll === true || overflows);
   const draw = useMemo(() => ({
     figure: coarseScroll && drawable ? { ...drawable, layout: { ...drawable.layout, dragmode: false } } : drawable,
     id: Symbol(), uirevision, scrolling,
   }), [drawable, uirevision, scrolling, coarseScroll]);
   const [failure, setFailure] = useState<{ id: symbol; message: string }>();
+  const hasPlot = Boolean(drawable && failure?.id !== draw.id);
+  const observeViewport = useCallback((viewport: HTMLDivElement | null) => {
+    if (!viewport || (!measureOverflow && !onViewportWidthChange)) return;
+    const measure = () => {
+      if (measureOverflow) {
+        const requiredHeight = onViewportWidthChange ? scrollHeight ?? 0 : viewport.scrollHeight;
+        setOverflows(hasPlot && requiredHeight > viewport.clientHeight);
+      }
+      if (viewport.clientWidth > 0) onViewportWidthChange?.(viewport.clientWidth);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(viewport);
+    // Plot height changes when the watchlist reflows, even if its viewport stays the same size.
+    if (hasPlot && viewport.firstElementChild) observer.observe(viewport.firstElementChild);
+    return () => observer.disconnect();
+  }, [hasPlot, measureOverflow, onViewportWidthChange, scrollHeight]);
   useEffect(() => {
     const el = node.current;
     const figure = draw.figure;
@@ -215,17 +227,18 @@ export function ChartRenderer({
     return () => { active = false; };
   }, [draw]);
 
-  if (failure?.id === draw.id) return <p role="alert">Chart could not be drawn. {failure.message}</p>;
-  if (!figure) return <p className="empty-state">Nothing chartable in this payload.</p>;
-  if (unregisteredType !== null) {
-    return (
-      <p className="empty-state">
+  const problem = failure?.id === draw.id ? <p role="alert">Chart could not be drawn. {failure.message}</p>
+    : !figure ? (onViewportWidthChange ? null : <p className="empty-state">Nothing chartable in this payload.</p>)
+      : unregisteredType !== null ? <p className="empty-state">
         This chart needs a trace type this build does not include: {unregisteredType}.
-      </p>
-    );
-  }
-  const plot = <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>;
+      </p> : null;
+  const plot = drawable && !problem
+    ? <div className="chart-plot" ref={attachNode} data-testid="chart-plot" style={scrolling ? { height: scrollHeight } : undefined}/>
+    : problem;
+  if (!scrolling || (!onViewportWidthChange && (!drawable || problem))) return plot;
+  const viewportClass = 'chart-scroll-viewport' + (onViewportWidthChange ? ' chart-scroll-viewport--measured' : '')
+    + (measureOverflow && overflows ? ' chart-scroll-viewport--touch-scroll' : '');
   // Plotly handles a tap on touchend. A second synthetic mouse sequence clears its hover label.
-  return scrolling ? <div className={measureOverflow && overflows ? "chart-scroll-viewport chart-scroll-viewport--touch-scroll" : "chart-scroll-viewport"}
-    ref={observeViewport} onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div> : plot;
+  return <div className={viewportClass} ref={observeViewport}
+    onTouchEnd={coarseScroll && !inspectSankeyOnTouch ? event => event.preventDefault() : undefined}>{plot}</div>;
 }

@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey']) }));
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap']) }));
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../hooks/useWidgetData', async () => {
@@ -37,6 +37,7 @@ import { fixture as incomeFixture } from '../lib/statementModel/compileFixtures'
 import { intent as statementIntent } from '../lib/statementModel/testFixtures';
 import { incomeStatementIds } from '../lib/statementModel/incomeChartProof';
 import { dividendEvidence, dividendRow, emptyDividendEvidence, incomeEvidence, incomeRow, screenerEvidence } from '../test/fixtures/financialEvidence';
+import { calendarArticle, calendarOptions, calendarSnapshot } from '../test/fixtures/newsCalendar';
 import * as fs from '@tauri-apps/plugin-fs';
 class Boundary {
   static failChild = false;
@@ -51,7 +52,8 @@ class Boundary {
   }
   terminate() {}
 }
-afterEach(() => { cleanup(); tableExecutionStore.disposeDashboard('d'); Boundary.failChild = false; vi.unstubAllGlobals(); });
+let restoreViewportWidth: (() => void) | undefined;
+afterEach(() => { restoreViewportWidth?.(); restoreViewportWidth = undefined; cleanup(); tableExecutionStore.disposeDashboard('d'); Boundary.failChild = false; vi.unstubAllGlobals(); });
 const source = card({ id: 's', widgetId: 'local_table', backendId: 'builtin', title: 'Prices', params: { file: 'missing.csv' } });
 beforeEach(() => { __reset(); __resetJsonStoreForTests(); useWidgetRegistryStore.getState().seedBuiltins(); useDashboardStore.setState({ dashboards: [{ id: 'd', name: 'D', tabs: [{ id: 't', name: 'First', cards: [source] }] }], activeId: 'd', activeTabId: 't', viewer: false, pendingCardRemoval: null }); });
 it.each(['chart', 'table'] as const)('source menu creates a linked %s with the automatic source', async presentation => {
@@ -255,7 +257,7 @@ const screeningRecipes = [
   { version: 1, kind: 'income-sankey', periodColumn: incomeColumn(2026) },
 ] as const satisfies readonly RecipeOptions[];
 
-function screeningSnapshot(recipe: RecipeOptions, id: string) {
+function acquiredSnapshot(recipe: RecipeOptions, id: string) {
   const first = id === 'A';
   if (recipe.kind === 'bubble-regression') {
     const dates = ['2026-08-28', '2026-08-31'];
@@ -299,8 +301,15 @@ async function riskSource(recipe: RecipeOptions, id: string) {
   const file = await saveLocalFile(new File([JSON.stringify(snapshotFor(recipe, id))], 'snapshot.json'));
   return { ...source, id, title: id, params: { file } };
 }
-async function screeningSource(recipe: RecipeOptions, id: string) {
-  const file = await saveLocalFile(new File([JSON.stringify(screeningSnapshot(recipe, id))], 'screening.json'));
+function newsSnapshot(first: boolean) {
+  return calendarSnapshot([
+    [calendarArticle('first', '2026-11-17T12:00:00Z', first ? .1 : .2), '2026-11-17'],
+    [calendarArticle('last', '2026-11-19T00:30:00+01:00', null), '2026-11-18'],
+  ]);
+}
+async function acquiredSource(recipe: RecipeOptions, id: string) {
+  const snapshot = recipe.kind === 'news-sentiment-calendar' ? newsSnapshot(id === 'A') : acquiredSnapshot(recipe, id);
+  const file = await saveLocalFile(new File([JSON.stringify(snapshot)], 'acquired.json'));
   const root = { ...source, id, title: id, params: { file } };
   if (recipe.kind !== 'income-sankey') return root;
   const analytical = statementIntent();
@@ -329,6 +338,10 @@ function LiveRiskChart() {
 function riskRuntime() {
   vi.stubGlobal('Worker', Boundary);
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+    return this.classList.contains('chart-scroll-viewport--measured') ? 900 : 0;
+  });
+  restoreViewportWidth = () => width.mockRestore();
   const run = vi.fn(async (...args: Parameters<typeof runRecipe>) => runRecipe(...args));
   const factory = vi.spyOn(recipeWorkers, 'createRecipeWorker').mockReturnValue({ run, dispose: vi.fn() });
   return { run, factory };
@@ -509,12 +522,12 @@ it('revalidates exposure mode against the linked snapshot without acquiring anot
   } finally { reads.mockRestore(); factory.mockRestore(); }
 });
 
-it.each(screeningRecipes)('fences $kind on a failed source change and retains only same-source completed output', async recipe => {
+it.each([...screeningRecipes, calendarOptions])('fences $kind on a failed source change and retains only same-source completed output', async recipe => {
   const { run, factory } = riskRuntime();
   const plot = vi.mocked(renderPlot);
   let rejectDraw!: (error: Error) => void;
   plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
-  const a = await screeningSource(recipe, 'A'), b = await screeningSource(recipe, 'B');
+  const a = await acquiredSource(recipe, 'A'), b = await acquiredSource(recipe, 'B');
   installDashboard(riskDashboard([a, b, riskChart(recipe)]));
   const readFile = fs.readFile;
   let rejectB!: (error: Error) => void;
@@ -525,8 +538,9 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
     const first = await screen.findByTestId('chart-plot');
     await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(first));
     const figureA = plot.mock.lastCall![1];
-    expect(first.style.height).toBe(recipe.kind === 'income-sankey' ? figureA.layout.height + 'px' : '');
-    expect(screen.getByText(/^Source A ·/)).toBeVisible();
+    expect(first.style.height).toBe(recipe.kind === 'news-sentiment-calendar' ? '260px' : recipe.kind === 'income-sankey' ? figureA.layout.height + 'px' : '');
+    if (recipe.kind === 'news-sentiment-calendar') expect(screen.getByText(/^AAPL.US · Delivered news sentiment ·/)).toBeVisible();
+    else expect(screen.getByText(/^Source A ·/)).toBeVisible();
     let rejectWorker!: (error: Error) => void;
     run.mockImplementationOnce(async () => new Promise((_, reject) => { rejectWorker = reject; }));
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
@@ -545,7 +559,7 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
     const second = await screen.findByTestId('chart-plot');
     await waitFor(() => expect(plot.mock.lastCall?.[0]).toBe(second));
     const figureB = plot.mock.lastCall![1];
-    expect(screen.getByText(/^Source B ·/)).toBeVisible();
+    if (recipe.kind !== 'news-sentiment-calendar') expect(screen.getByText(/^Source B ·/)).toBeVisible();
     expect(figureB.data).not.toEqual(figureA.data);
     expect(figureB.layout.uirevision).not.toEqual(figureA.layout.uirevision);
     const count = plot.mock.calls.length;
@@ -576,9 +590,9 @@ it.each(screeningRecipes)('fences $kind on a failed source change and retains on
 it('keeps the applied bubble visible through an incompatible draft and clears it for an invalid applied binding', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[0];
-  const root = await screeningSource(recipe, 'A');
+  const root = await acquiredSource(recipe, 'A');
   const chart = riskChart(recipe);
-  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const snapshot = acquiredSnapshot(recipe, 'A')!;
   await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
     ...snapshot, rows: snapshot.rows.map(row => ({ ...row, ...dividendRow })),
   })));
@@ -672,7 +686,7 @@ it.each([
 it('projects only presented fiscal periods and defaults Sankey to the newest actual report date', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[2];
-  const root = await screeningSource(recipe, 'A');
+  const root = await acquiredSource(recipe, 'A');
   const chart = riskChart(recipe);
   installDashboard(riskDashboard([root, { ...chart, linkedChart: { type: 'column', display: 'grouped', measures: [] } }]));
   try {
@@ -709,7 +723,7 @@ it.each([
 ] as const)('keeps %s dividend status through a columnless result without drawing empty traces', async (_, evidence, message) => {
   const { run, factory } = riskRuntime();
   const recipe = screeningRecipes[1];
-  const root = await screeningSource(recipe, 'A');
+  const root = await acquiredSource(recipe, 'A');
   installDashboard(riskDashboard([root, riskChart(recipe)]));
   try {
     render(<LiveRiskChart/>);
@@ -740,7 +754,7 @@ it('rebuilds the income flow for measured plot width without changing its questi
     disconnect() {}
   });
   const recipe = screeningRecipes[2];
-  const root = await screeningSource(recipe, 'A');
+  const root = await acquiredSource(recipe, 'A');
   installDashboard(riskDashboard([root, riskChart(recipe)]));
   try {
     render(<LiveRiskChart/>);
@@ -764,7 +778,7 @@ it('rebuilds the income flow for measured plot width without changing its questi
 it('requires repairing the dividend instrument after reacquisition and resets the question when applied', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[1];
-  const root = await screeningSource(recipe, 'A');
+  const root = await acquiredSource(recipe, 'A');
   installDashboard(riskDashboard([root, riskChart(recipe)]));
   try {
     render(<LiveRiskChart/>);
@@ -790,7 +804,7 @@ it('requires repairing the dividend instrument after reacquisition and resets th
 
 it('keeps a working chart while a valid dividend receipt requires verified coverage', async () => {
   const { factory } = riskRuntime();
-  const root = await screeningSource(screeningRecipes[1], 'A');
+  const root = await acquiredSource(screeningRecipes[1], 'A');
   const linkedChart = { type: 'column', category: 'ex_dividend_date', display: 'grouped', measures: ['amount'] } as const;
   const chart = { ...riskChart(screeningRecipes[1]), linkedChart: { ...linkedChart, measures: [...linkedChart.measures] } };
   await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
@@ -812,7 +826,7 @@ it('keeps a working chart while a valid dividend receipt requires verified cover
 
 it('applies Dividend steps to a newly linked columnless verified-empty file', async () => {
   const { factory } = riskRuntime();
-  const root = await screeningSource(screeningRecipes[1], 'A');
+  const root = await acquiredSource(screeningRecipes[1], 'A');
   const chart = { ...riskChart(screeningRecipes[1]), linkedChart: { type: 'column' as const, display: 'grouped' as const, measures: [] } };
   await fs.writeFile('files/' + root.params.file, new TextEncoder().encode(JSON.stringify({
     completeness: 'bounded', rows: [], chart_evidence: emptyDividendEvidence,
@@ -835,8 +849,8 @@ it('applies Dividend steps to a newly linked columnless verified-empty file', as
 it('checks the selected screening cohort before applying a draft over a working chart', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[0];
-  const root = await screeningSource(recipe, 'A');
-  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const root = await acquiredSource(recipe, 'A');
+  const snapshot = acquiredSnapshot(recipe, 'A')!;
   const evidence = snapshot.chart_evidence;
   if (!('cohorts' in evidence)) throw new Error('Expected screener evidence');
   Object.assign(snapshot, { rows: [...snapshot.rows, { ...snapshot.rows.at(-1), market_cap: 1 }] });
@@ -866,8 +880,8 @@ it('checks the selected screening cohort before applying a draft over a working 
 it('checks record coverage for the selected income period before saving its draft', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[2];
-  const root = await screeningSource(recipe, 'A');
-  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const root = await acquiredSource(recipe, 'A');
+  const snapshot = acquiredSnapshot(recipe, 'A')!;
   const evidence = snapshot.chart_evidence;
   if (!('periods' in evidence)) throw new Error('Expected income evidence');
   evidence.periods[0].record_coverage = 'unknown';
@@ -891,8 +905,8 @@ it('checks record coverage for the selected income period before saving its draf
 it('keeps the applied income plot and period when another full record lacks its net-income anchor', async () => {
   const { factory } = riskRuntime();
   const recipe = screeningRecipes[2];
-  const root = await screeningSource(recipe, 'A');
-  const snapshot = screeningSnapshot(recipe, 'A')!;
+  const root = await acquiredSource(recipe, 'A');
+  const snapshot = acquiredSnapshot(recipe, 'A')!;
   const evidence = snapshot.chart_evidence;
   if (!('periods' in evidence)) throw new Error('Expected income evidence');
   const omitAnchor = async (index: number) => {
@@ -921,5 +935,64 @@ it('keeps the applied income plot and period when another full record lacks its 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
     await waitFor(() => expect(screen.queryByTestId('chart-plot')).toBeNull());
     expect(screen.getAllByText(repair).length).toBeGreaterThan(0);
+  } finally { factory.mockRestore(); }
+});
+
+it('discovers a news calendar draft on a table of unverified article-shaped rows and preserves the applied columns', async () => {
+  const { factory } = riskRuntime();
+  const snapshot = newsSnapshot(true);
+  const file = await saveLocalFile(new File([JSON.stringify(snapshot.rows)], 'unverified.json'));
+  const root = { ...source, id: 'A', params: { file } };
+  const chart = { ...riskChart(calendarOptions), linkedChart: {
+    type: 'column' as const, category: 'url', display: 'grouped' as const, measures: ['polarity'],
+  } };
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const applied = await screen.findByTestId('chart-plot');
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: calendarOptions.kind } });
+    await screen.findByRole('group', { name: 'News sentiment calendar settings' });
+    expect(await screen.findByText(/acquire CompanyNews with verified article identity/i)).toBeVisible();
+    expect(screen.getByRole('button', { name: /apply chart settings/i })).toBeDisabled();
+    expect(screen.getByLabelText('Acquired instrument')).toHaveValue('');
+    expect(screen.getByTestId('chart-plot')).toBe(applied);
+  } finally { factory.mockRestore(); }
+});
+
+it('lets a newly linked chart use a verified columnless empty news acquisition', async () => {
+  const { factory } = riskRuntime();
+  const file = await saveLocalFile(new File([JSON.stringify(calendarSnapshot([], {
+    scope: { kind: 'sample', start: null, end: null, limit: 50, offset: 0 },
+  }))], 'empty-news.json'));
+  const root = { ...source, id: 'A', params: { file } };
+  const chart = { ...riskChart(calendarOptions), linkedChart: { type: 'column' as const, display: 'grouped' as const, measures: [] } };
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const type = screen.getByLabelText('Chart type');
+    await waitFor(() => expect(within(type).getByRole('option', { name: 'News sentiment calendar' })).toBeEnabled());
+    fireEvent.change(type, { target: { value: calendarOptions.kind } });
+    const apply = screen.getByRole('button', { name: /apply chart settings/i });
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+    expect(await screen.findByText('0 delivered articles · 0 scored in this calendar view.')).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('clears a completed news chart immediately for an unsupported applied declaration', async () => {
+  const { factory } = riskRuntime();
+  const root = await acquiredSource(calendarOptions, 'A');
+  const chart = riskChart(calendarOptions);
+  installDashboard(riskDashboard([root, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    const plot = await screen.findByTestId('chart-plot');
+    expect(screen.getByText('Calendar day details')).toBeVisible();
+    const invalid = { ...calendarOptions, version: 2 } as unknown as RecipeOptions;
+    act(() => installDashboard(riskDashboard([root, { ...chart, linkedChart: { ...chart.linkedChart!, recipe: invalid } }])));
+    expect(plot).not.toBeInTheDocument();
+    expect(screen.queryByText('Calendar day details')).toBeNull();
+    expect(screen.getAllByText(/version 1 recipe options/i).length).toBeGreaterThan(0);
   } finally { factory.mockRestore(); }
 });

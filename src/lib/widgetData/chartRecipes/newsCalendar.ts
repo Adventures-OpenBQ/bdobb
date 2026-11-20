@@ -5,23 +5,20 @@ import { themedLayout } from '../../chartShapes';
 import { escape } from '../figureHelpers';
 import type { WidgetDataset } from '../types';
 import { doubleUnitExponent, roundedRatio, scaledInteger } from './binary64';
-import { savedBindingIssue } from './bindings';
-import { readChartSource, readChartSourceProjection, type ChartBuildResult } from './chartSourceContracts';
-import { read } from './estimateEvidence';
-import { acquiredColumnOrigin } from './financialEvidence';
-import { isNewsPolarity, newsInstrumentMatches, newsUtcDay, parseNewsSource, type NewsSource } from './newsEvidence';
+import type { ChartBuildResult } from './chartSourceContracts';
+import { inspectNewsPresentation, resolveNewsWindow, type CalendarWindow, type NewsArticle } from './newsCalendarInput';
+import { isNewsPolarity } from './newsEvidence';
 import { decodeRecipeOptions } from './settings';
 import type { NewsCalendarOptions, RecipeContext, RecipeOptions, RecipeRefusal, RecipeResult } from './types';
 
-type NewsArticle = { timestamp: string; polarity: number | null };
+export { acquiredNewsWindow } from './newsCalendarInput';
+
 export type NewsCalendarDay = {
   date: string; mean: number | null; delivered: number; scored: number; articles: NewsArticle[];
 };
-type CalendarWindow = { start: string; end: string };
 export type NewsCalendarData = (CalendarWindow | { start: null; end: null }) & { days: Record<string, NewsCalendarDay> };
 
 const refuse = (message: string): RecipeRefusal => ({ ok: false, refused: true, message });
-const projectionIssue = 'Inconsistent article presentation for the acquired news. Repair the source and chart fields.';
 const geometryIssue = 'Narrow the calendar window or widen the chart to keep every displayed day visible.';
 const dayMs = 86_400_000;
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -30,83 +27,11 @@ const supportedWidth = 10_000;
 const defaultWidth = 900;
 // Plotly rounds cell edges to raster pixels and subtracts the one-pixel gap.
 const hasRoomForWeeks = (weeks: number, width: number) => width - margin.l - margin.r >= 2 * weeks;
-const unsafeMessage = {
-  invalid_identity: 'The acquired news has an invalid or ambiguous article identity. Repair the source.',
-  invalid_timestamp: 'The acquired news has an invalid article timestamp. Repair the source.',
-  duplicate_conflict: 'The acquired news has conflicting duplicate article records. Repair the source.',
-  unit_conflict: 'The acquired news has a conflicting polarity unit. Repair the source.',
-} satisfies Record<keyof NewsSource['unsafe'], string>;
-
-export function acquiredNewsWindow(source: NewsSource): CalendarWindow | null {
-  let start: string | undefined;
-  let end: string | undefined;
-  for (const { utc_day: date } of source.coordinates) {
-    if (start === undefined || date < start) start = date;
-    if (end === undefined || date > end) end = date;
-  }
-  if (start && end) return { start, end };
-  if (source.scope.start && source.scope.end) return { start: source.scope.start, end: source.scope.end };
-  return null;
-}
-
-function priorCalendarYear(end: string): string {
-  const year = Number(end.slice(0, 4));
-  if (year === 1) return '0001-01-01';
-  // The year preceding a leap year has no February 29.
-  const date = end.endsWith('-02-29') ? '-02-28' : end.slice(4);
-  return String(year - 1).padStart(4, '0') + date;
-}
-
 function dayGeometry({ start, end }: CalendarWindow) {
   const first = Date.parse(start);
   const mondayOffset = (new Date(first).getUTCDay() + 6) % 7;
   const length = (Date.parse(end) - first) / dayMs + 1;
   return { first, mondayOffset, length, weeks: Math.ceil((mondayOffset + length) / 7) };
-}
-
-type PresentedArticle = NewsArticle & { day: string; symbols: string };
-
-function presentation(
-  dataset: WidgetDataset, options: NewsCalendarOptions, source: NewsSource, omitted: Set<string>,
-): ChartBuildResult<Map<string, PresentedArticle>> {
-  const { fields } = options;
-  if (dataset.provenance.inputMayContainAggregates || dataset.rows.some(row => row.groupPath !== undefined))
-    return refuse('Present the raw news articles before grouping, pivoting or aggregation.');
-
-  if (dataset.rows.length || source.delivered_count) {
-    const bindingIssue = savedBindingIssue(options, dataset.columns, dataset.rows);
-    if (bindingIssue) return refuse(bindingIssue);
-    for (const key of Object.keys(source.field_origins) as (keyof typeof fields)[]) {
-      const matches = dataset.columns.filter(column => column.id === fields[key]);
-      if (matches.length !== 1 || acquiredColumnOrigin(matches[0]) !== source.field_origins[key]) return refuse(projectionIssue);
-    }
-  }
-
-  const coordinates = new Map(source.coordinates.map(coordinate => [coordinate.article_id, coordinate]));
-  const articles = new Map<string, PresentedArticle>();
-  for (const row of dataset.rows) {
-    const id = read(row, fields.articleId);
-    const timestamp = read(row, fields.timestamp);
-    const day = newsUtcDay(timestamp);
-    const symbols = read(row, fields.instrument);
-    const polarity = read(row, fields.polarity);
-    if (typeof id !== 'string' || typeof timestamp !== 'string' || typeof symbols !== 'string'
-      || !day || !newsInstrumentMatches(symbols, source.instrument)) return refuse(projectionIssue);
-    const coordinate = coordinates.get(id);
-    if (!coordinate || omitted.has(id) || day !== coordinate.utc_day) return refuse(projectionIssue);
-
-    const previous = articles.get(id);
-    if (previous) {
-      if (previous.timestamp !== timestamp || previous.symbols !== symbols || previous.polarity !== polarity)
-        return refuse(unsafeMessage.duplicate_conflict);
-      continue;
-    }
-    if (!(isNewsPolarity(polarity) || polarity === null) || (polarity !== null) !== coordinate.scored)
-      return refuse('Presented article polarity disagrees with the acquired score classification. Repair the source and chart fields.');
-    articles.set(id, { timestamp, symbols, polarity, day });
-  }
-  if (articles.size !== coordinates.size - omitted.size) return refuse(projectionIssue);
-  return { ok: true, value: articles, notes: [] };
 }
 
 function summarize(date: string, articles: NewsArticle[], scoreBits: DataView): NewsCalendarDay | undefined {
@@ -126,30 +51,12 @@ function summarize(date: string, articles: NewsArticle[], scoreBits: DataView): 
 export function aggregateNewsDays(dataset: WidgetDataset, options: NewsCalendarOptions): ChartBuildResult<NewsCalendarData> {
   const decoded = decodeRecipeOptions(options, 'news-sentiment-calendar');
   if (!decoded.ok) return refuse(decoded.message);
-  if (dataset.freshness && dataset.freshness.availability !== 'available')
-    return { ok: false, message: dataset.freshness.error ?? 'CompanyNews is unavailable. Reload the source table.' };
-
-  const source = readChartSource(dataset.provenance, 'news', parseNewsSource);
-  const projection = readChartSourceProjection(dataset.provenance, 'news');
-  if (!source || !projection) return refuse('Acquire CompanyNews with verified article identity, dates and polarity evidence.');
-  const unsafe = Object.entries(unsafeMessage).filter(([key]) => source.unsafe[key]).map(([, message]) => message);
-  if (unsafe.length) return refuse(unsafe.join(' '));
-  if (options.instrument !== source.instrument) return refuse(`Choose the acquired instrument ${source.instrument}.`);
-
-  const observed = presentation(dataset, options, source, new Set(projection.omitted));
-  if (!observed.ok) return observed;
-
-  const acquired = acquiredNewsWindow(source);
-  let window = acquired;
-  if (options.window.mode === 'pinned') {
-    const { start, end } = options.window;
-    if (!acquired || start < acquired.start || end > acquired.end)
-      return refuse('The pinned window is outside the acquired calendar dates. Repair the window or reload its source.');
-    window = { start, end };
-  } else if (acquired) {
-    const cap = priorCalendarYear(acquired.end);
-    window = { start: acquired.start < cap ? cap : acquired.start, end: acquired.end };
-  }
+  const presented = inspectNewsPresentation(dataset, options);
+  if (!presented.ok) return presented;
+  const { source, projection, articles } = presented.value;
+  const resolved = resolveNewsWindow(source, options.window);
+  if (!resolved.ok) return resolved;
+  const window = resolved.value;
 
   const days: Record<string, NewsCalendarDay> = {};
   let delivered = 0;
@@ -158,7 +65,7 @@ export function aggregateNewsDays(dataset: WidgetDataset, options: NewsCalendarO
     const { first, length, weeks } = dayGeometry(window);
     if (!hasRoomForWeeks(weeks, supportedWidth)) return refuse(geometryIssue);
     const grouped = new Map<string, NewsArticle[]>();
-    for (const { day, timestamp, polarity } of observed.value.values()) {
+    for (const { day, timestamp, polarity } of articles.values()) {
       if (day < window.start || day > window.end) continue;
       if (!grouped.has(day)) grouped.set(day, []);
       grouped.get(day)!.push({ timestamp, polarity });
@@ -175,7 +82,10 @@ export function aggregateNewsDays(dataset: WidgetDataset, options: NewsCalendarO
   }
 
   const { scope } = source;
-  const notes = [`${source.instrument} · Delivered news sentiment · Retrieved ${source.retrieved_at}.`];
+  const notes = [
+    `${delivered} delivered articles · ${scored} scored in this calendar view.`,
+    `${source.instrument} · Delivered news sentiment · Retrieved ${source.retrieved_at}.`,
+  ];
   if (scope.start || scope.end)
     notes.push(`Acquired query dates ${scope.start ?? 'open start'} to ${scope.end ?? 'open end'} UTC.`);
   if (scope.limit !== null)
@@ -189,7 +99,6 @@ export function aggregateNewsDays(dataset: WidgetDataset, options: NewsCalendarO
   if (source.diagnostics.includes('missing_title')) notes.push('The acquisition included articles without titles.');
   if (source.diagnostics.includes('unscored')) notes.push('The acquisition included articles without valid polarity.');
   if (window) notes.push(`Calendar dates ${window.start} to ${window.end} UTC, inclusive.`);
-  notes.push(`${delivered} delivered articles · ${scored} scored in this calendar view.`);
   if (!source.delivered_count) notes.push('The acquired result supplied no articles.');
   return { ok: true, value: { ...(window ?? { start: null, end: null }), days }, notes };
 }
@@ -224,6 +133,8 @@ export function buildNewsCalendar(dataset: WidgetDataset, options: RecipeOptions
   const frame = {
     ...themedLayout(context.theme), title: { text: 'Delivered news sentiment', font: { size: 15 } }, uirevision: revision,
     margin, showlegend: false, hovermode: 'closest',
+    hoverlabel: { bgcolor: context.theme === 'dark' ? '#202937' : '#ffffff',
+      font: { color: context.theme === 'dark' ? '#f1f5f9' : '#152034' } },
   };
   const daySummaries = Object.values(value.days);
   if (value.start === null) return { ok: true, revision, notes, daySummaries, figure: { data: [], layout: frame } };
@@ -266,17 +177,17 @@ export function buildNewsCalendar(dataset: WidgetDataset, options: RecipeOptions
     {
       ...hover, ...scored, zmin: -1, zmax: 1, colorscale: [[0, '#a23955'], [0.5, '#fff3cf'], [1, '#167862']],
       showscale: true, colorbar: { title: { text: 'Polarity', side: 'top' }, tickmode: 'array', tickvals: [-1, 0, 1],
-        thickness: 10, x: 1.02, xpad: 3, ypad: 4 },
+        thickness: 10, x: 1.005, xpad: 3, ypad: 4 },
     },
   ];
-  const axis = { type: 'linear', tickmode: 'array', showgrid: false, zeroline: false, fixedrange: true };
+  const axis = { type: 'linear', tickmode: 'array', showgrid: false, zeroline: false };
   return {
     ok: true, revision, notes, daySummaries,
     figure: { data, layout: {
       ...frame,
-      xaxis: { ...axis, range: [-.5, weeks - .5], tickangle: 0, tickvals: monthTicks.map(({ week }) => week),
+      xaxis: { ...axis, range: [-.5, weeks - .5], minallowed: -.5, maxallowed: weeks - .5, tickangle: 0, tickvals: monthTicks.map(({ week }) => week),
         ticktext: monthTicks.map(({ label }) => escape(label)) },
-      yaxis: { ...axis, range: [6.5, -.5], tickvals: weekdays.map((_, i) => i), ticktext: weekdays },
+      yaxis: { ...axis, range: [6.5, -.5], minallowed: -.5, maxallowed: 6.5, tickvals: weekdays.map((_, i) => i), ticktext: weekdays },
     } },
   };
 }

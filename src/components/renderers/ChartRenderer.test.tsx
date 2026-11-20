@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { StrictMode } from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -177,10 +178,10 @@ describe("ChartRenderer", () => {
     expect(figureFromLastCall().data[0].type).toBe("candlestick");
   });
 
-  it("purges the plot on unmount so plotly does not leak the node", () => {
+  it("purges the plot on unmount so plotly does not leak the node", async () => {
     const { unmount } = render(<ChartRenderer data={ohlc} />);
     unmount();
-    expect(purgePlot).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(purgePlot).toHaveBeenCalledTimes(1));
   });
 
   it("logs rather than throwing when renderPlot rejects", async () => {
@@ -318,7 +319,7 @@ describe("ChartRenderer", () => {
   });
 });
 
-it('sizes only a scoped scroll plot and reconciles its height without purging it', () => {
+it('sizes only a scoped scroll plot and reconciles its height without purging it', async () => {
   const data = { data: [{ type: 'scatter' }], layout: { height: 9999 } };
   const { rerender, container, unmount } = render(<ChartRenderer data={data}/>);
   expect(screen.getByTestId('chart-plot').parentElement).toBe(container);
@@ -333,7 +334,7 @@ it('sizes only a scoped scroll plot and reconciles its height without purging it
   expect(node.style.height).toBe('500px');
   expect(purgePlot).toHaveBeenCalledTimes(purgeCount);
   unmount();
-  expect(purgePlot).toHaveBeenCalledWith(node);
+  await waitFor(() => expect(purgePlot).toHaveBeenCalledWith(node));
 });
 
 it('releases vertical drag only for a touch-scroll plot on a coarse pointer', () => {
@@ -429,4 +430,19 @@ it('inspects Sankey nodes and links on tap and lets touch drags or unrelated tap
   fireEvent.touchStart(link, { touches: [touch, { ...touch, identifier: 2 }] });
   expect(fireEvent.touchEnd(link, { changedTouches: [touch], touches: [] })).toBe(true);
   expect(handlers).toHaveBeenCalledTimes(4);
+});
+
+it('keeps a plot intact when Strict Mode reattaches the same newly drawable node', async () => {
+  const onViewportWidthChange = vi.fn();
+  const { rerender } = render(<StrictMode><ChartRenderer data={undefined} scrollHeight={260} onViewportWidthChange={onViewportWidthChange}/></StrictMode>);
+  const viewport = document.querySelector('.chart-scroll-viewport');
+  expect(viewport).not.toBeNull();
+  renderPlot.mockImplementationOnce(async node => {
+    await Promise.resolve();
+    if (purgePlot.mock.calls.some(([removed]) => removed === node)) throw new Error('Plotly lost its layout during drawing');
+  });
+  rerender(<StrictMode><ChartRenderer data={ohlc} scrollHeight={260} onViewportWidthChange={onViewportWidthChange}/></StrictMode>);
+  await act(async () => {});
+  expect(purgePlot).not.toHaveBeenCalled();
+  expect(screen.getByTestId('chart-plot').parentElement).toBe(viewport);
 });

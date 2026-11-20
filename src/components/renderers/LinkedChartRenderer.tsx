@@ -15,13 +15,14 @@ import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
 import type { RecipeOptions, RecipeResult } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
-import { bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
+import { bindingCandidates, bindingRoles, bubblePriceDates, isIncomePeriodColumn, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
 import { acquiredWindow, symbolList, observationSymbol } from '../../lib/widgetData/chartRecipes/priceEvidence';
-import { nextMultiplesWidth, recipePlotHeight } from '../../lib/widgetData/chartRecipes/viewport';
+import { newsCalendarPlotHeight, nextMultiplesWidth, recipePlotHeight } from '../../lib/widgetData/chartRecipes/viewport';
+import type { NewsCalendarDay } from '../../lib/widgetData/chartRecipes/newsCalendar';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { todayLocal } from '../../lib/calendarView';
 import { LinkedChartRecipeControls, recipeAvailability, recipeLabels, type SourceChoiceKind } from './LinkedChartRecipeControls';
@@ -91,7 +92,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         }
         return [...symbols].sort();
     }, [executor, source, view.ready, view.sourceRevision, view.status]);
-    const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
+    const chartChoicesInput = useCallback(async (fields: (ready: NonNullable<ViewState['ready']>) => string[], signal: AbortSignal) => {
         const revision = view.sourceRevision;
         const ready = view.ready;
         if (!executor || !revision || revision.widgetId !== source || !ready || !['ready', 'empty'].includes(view.status)) {
@@ -99,12 +100,18 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
             throw new Error(pending ? 'Wait for the selected source table to finish loading.'
                 : 'Fix the source or choose another table to load chart choices.');
         }
-        const fields = kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
-            : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [];
-        const data = await executor.chartData(revision, fields, signal);
+        const data = await executor.chartData(revision, fields(ready), signal);
         signal.throwIfAborted();
         if (revisionKey(data.revision) !== revisionKey(revision) || data.resultRevision !== revision.model || data.outputRevision !== revision.output)
             throw new Error('The selected source revision changed. Reload the chart choices.');
+        return data;
+    }, [executor, source, view.ready, view.sourceRevision, view.status]);
+    const loadNewsInput = useCallback((signal: AbortSignal) => chartChoicesInput(ready =>
+        bindingRoles('news-sentiment-calendar', 'eps').flatMap(role => bindingCandidates(role, ready.columns).map(column => column.id)),
+    signal), [chartChoicesInput]);
+    const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
+        const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
+            : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
         const evidence = readFinancialEvidence(data.provenance);
         if (kind === 'income-sankey') {
             if (evidence?.kind !== 'income') return [];
@@ -130,7 +137,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const admission = admitDividendWindow(evidence);
         return [{ value: evidence.qualified_symbol, label: evidence.qualified_symbol, verifiedEmpty: admission.ok && evidence.raw_count === 0
             && !data.rows.length && !data.provenance.inputMayContainAggregates, issue: admission.ok ? undefined : admission.message }];
-    }, [executor, source, view.ready, view.sourceRevision, view.status]);
+    }, [chartChoicesInput]);
     const columnless = !viewer && !!view.ready && view.ready.topLevelCount === 0 && !presented.length;
     const [emptyProof, setEmptyProof] = useState<typeof loadSourceChoices>();
     useEffect(() => {
@@ -248,7 +255,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
-    return <div className="linked-chart-renderer">
+    return <div className={editing === 'news-sentiment-calendar' ? 'linked-chart-renderer linked-chart-renderer--news' : 'linked-chart-renderer'}>
     {!viewer ? <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={editing} onChange={e => {
         const type = e.target.value as LinkedChartSettings['type'];
@@ -265,7 +272,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
       {financial ? <LinkedChartRecipeControls key={JSON.stringify([editScope, editing])} kind={editing}
-        columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
+        columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput} disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={options => void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
@@ -291,14 +298,14 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
   </div>;
 }
 
-function DatasetStatus({ dataset, notes, source }: { dataset: WidgetDataset; notes: string[]; source?: string }) {
+function DatasetStatus({ dataset, notes, source, showCompleteness = true }: { dataset: WidgetDataset; notes: string[]; source?: string; showCompleteness?: boolean }) {
   const bounds = acquiredWindow(dataset.provenance);
   const { freshness, completeness } = dataset;
   return <div role="status">
     {source && <p>Source {source} · {dataset.rows.length} presented {dataset.rows.length === 1 ? 'row' : 'rows'} · {freshness.availability}{freshness.stale ? ' (stale)' : ''}
       {freshness.lastSuccessAt !== undefined && ' · Last success ' + new Date(freshness.lastSuccessAt).toLocaleString()}
       {bounds && ' · Acquisition ' + bounds.start + ' to ' + bounds.end}</p>}
-    {completeness.kind !== 'complete' && <p>{completeness.kind} data</p>}
+    {showCompleteness && completeness.kind !== 'complete' && <p>{completeness.kind} data</p>}
     {[...completeness.warnings, ...(dataset.diagnostics ?? []).map(d => d.message), ...(freshness.diagnostics ?? []), ...notes].map((text, i) => <p key={i}>{text}</p>)}
     {freshness.error && <p>{freshness.error}</p>}
     {dataset.provenance.sample && <p>{dataset.provenance.sample}</p>}
@@ -315,8 +322,8 @@ function FinancialChart(props: FinancialProps) {
     if (view.error) return props.parentReportsSourceStatus ? null : <p role="alert">{view.error}</p>;
     return <p role="status">{source ? `Loading source ${source}…` : 'Select an available source table.'}</p>;
   }
-  const emptyDividend = options.kind === 'dividend-steps' && view.ready.topLevelCount === 0;
-  const issue = emptyDividend ? undefined : savedBindingIssue(options, view.ready.columns);
+  const emptyAllowed = (options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && view.ready.topLevelCount === 0;
+  const issue = emptyAllowed ? undefined : savedBindingIssue(options, view.ready.columns);
   if (issue) return <p role="alert">{issue}</p>;
   const completeness = view.ready.completeness.kind;
   switch (options.kind) {
@@ -343,8 +350,11 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   const [workerError, setWorkerError] = useState<string>();
   const today = todayLocal();
   const sankey = options.kind === 'income-sankey';
+  const news = options.kind === 'news-sentiment-calendar';
   const [width, setWidth] = useState(sankey ? 390 : 900);
+  const [newsWidth, setNewsWidth] = useState<number>();
   const measureSankey = useCallback((width: number) => setWidth(Math.min(width, 10_000)), []);
+  const measureNews = useCallback((width: number) => setNewsWidth(Math.min(width, 10_000)), []);
   const panels = options.kind === 'small-multiples' ? options.symbols.length : 0;
   const observePlot = useCallback((element: HTMLDivElement | null) => {
     if (!element || panels < 2) return;
@@ -355,7 +365,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     observer.observe(element);
     return () => observer.disconnect();
   }, [panels]);
-  const viewportWidth = panels || sankey ? width : undefined;
+  const viewportWidth = news ? newsWidth : panels || sankey ? width : undefined;
   const context = JSON.stringify([theme, maxDecimals, today, viewportWidth]);
   const mapping = JSON.stringify(options);
   const active = revisionKey(revision);
@@ -364,7 +374,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
     if (!available) return;
     const controller = new AbortController();
     let fields = requiredRecipeFields(options);
-    if (options.kind === 'dividend-steps' && ready.topLevelCount === 0)
+    if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
       fields = fields.filter(field => ready.columns.some(column => column.id === field));
     if (options.kind === 'estimate-range') fields.push(...estimateRangeIdentityFields(ready.columns));
     setReadError(undefined);
@@ -380,7 +390,7 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   }, [available, executor, ready, active, mapping]);
   const current = available && loaded?.ready === ready && revisionKey(loaded.data.revision) === active ? loaded.data : undefined;
   useEffect(() => {
-    if (!current || !worker.current) return;
+    if (!current || !worker.current || (news && viewportWidth === undefined)) return;
     const controller = new AbortController();
     setWorkerError(undefined);
     void worker.current.run(current, options, { theme, maxDecimals, today, ...(viewportWidth === undefined ? {} : { viewportWidth }) }, controller.signal).then(result => {
@@ -397,6 +407,8 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
   }, [worker, current, mapping, context, source]);
   const error = readError ?? workerError ?? (parentReportsSourceStatus ? undefined : view.error);
   const stale = completed?.result.ok && (!available || view.stale || completed.data !== current || completed.context !== context || error);
+  const result = completed?.result.ok ? completed.result : undefined;
+  const drawable = result?.figure.data.length ? result : undefined;
   return <><div className="linked-chart-status">
     {error && <p role="alert">{error}</p>}
     {stale && !(parentReportsSourceStatus && view.stale) && <p role="status">Updating chart — showing completed data (stale).</p>}
@@ -407,12 +419,40 @@ function WorkerChart({ view, source, executor, ready, revision, options, theme, 
       {completed.data.completeness.acquiredRowCount !== undefined && completed.data.rows.length < completed.data.completeness.acquiredRowCount &&
         <p>Filtered source delivered {completed.data.rows.length} of {completed.data.completeness.acquiredRowCount} acquired rows.</p>}
     </>}
-    {completed && <DatasetStatus dataset={completed.data} source={source} notes={completed.result.ok ? completed.result.notes : []}/>}
+    {completed && <DatasetStatus dataset={completed.data} source={news ? undefined : source} showCompleteness={!news}
+      notes={result?.notes ?? []}/>}
   </div>
-  {completed?.result.ok && completed.result.figure.data.length > 0 && <div className="linked-chart-plot" ref={observePlot}>
-    <ChartRenderer data={completed.result.figure} uirevision={completed.result.revision}
-      scrollHeight={recipePlotHeight(options.kind, completed.result.figure)}
-      touchScroll={sankey || panels ? 'overflow' : options.kind === 'etf-exposure'}
-      inspectSankeyOnTouch={sankey} onPlotWidthChange={sankey ? measureSankey : undefined}/>
+  {news && !!result?.daySummaries?.length && <NewsCalendarDetails days={result.daySummaries}/>}
+  {(news || drawable) && <div className="linked-chart-plot" ref={observePlot}>
+    <ChartRenderer data={drawable?.figure} uirevision={drawable?.revision}
+      scrollHeight={news ? newsCalendarPlotHeight : drawable && recipePlotHeight(options.kind, drawable.figure)}
+      touchScroll={news || sankey || panels ? 'overflow' : options.kind === 'etf-exposure'}
+      inspectSankeyOnTouch={sankey} onPlotWidthChange={sankey ? measureSankey : undefined}
+      onViewportWidthChange={news ? measureNews : undefined}/>
   </div>}</>;
+}
+
+function NewsCalendarDetails({ days }: { days: NewsCalendarDay[] }) {
+  const [selection, setSelection] = useState<string>();
+  const selectedIndex = days.findIndex(day => day.date === selection);
+  const index = selectedIndex < 0 ? days.length - 1 : selectedIndex;
+  const selected = days[index];
+  if (!selected) return null;
+  const { date, mean, delivered, scored, articles } = selected;
+  return <details className="news-calendar-details">
+    <summary>Calendar day details</summary>
+    <div className="news-calendar-day-controls">
+      <label>Calendar day <select value={date} onChange={event => setSelection(event.target.value)}>
+        {days.map(day => <option key={day.date} value={day.date}>{day.date} UTC</option>)}
+      </select></label>
+      <button type="button" disabled={index === 0} onClick={() => setSelection(days[index - 1].date)}>Previous day</button>
+      <button type="button" disabled={index === days.length - 1} onClick={() => setSelection(days[index + 1].date)}>Next day</button>
+    </div>
+    <p aria-live="polite">{delivered} delivered · {scored} scored · {mean !== null ? `Mean polarity ${mean}`
+      : delivered ? 'No scored articles delivered' : 'No delivered articles in this view'}</p>
+    {articles.length > 0 && <ul aria-label="Presented article values">
+      {articles.map(({ timestamp, polarity }, index) =>
+        <li key={index}>{timestamp} · {polarity === null ? 'Unscored' : `Polarity ${polarity}`}</li>)}
+    </ul>}
+  </details>;
 }

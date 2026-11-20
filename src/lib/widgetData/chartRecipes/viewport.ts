@@ -16,6 +16,8 @@ export function nextMultiplesWidth(current: number, measured: number, panels: nu
   return smallMultiplesGrid(width, panels).columns === smallMultiplesGrid(current, panels).columns ? current : width;
 }
 
+export const newsCalendarPlotHeight = 260;
+
 /** These recipe builders supply a plot height for the card’s scroll viewport. */
 export function recipePlotHeight(kind: RecipeOptions['kind'], figure: PlotlyFigure): number | undefined {
   if (kind !== 'small-multiples' && kind !== 'etf-exposure' && kind !== 'income-sankey') return;

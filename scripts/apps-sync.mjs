@@ -40,6 +40,7 @@ const SERVED = {
   // These dashboards import against their companion fixture connections.
   "v9-risk-exposure": false,
   "v9-screening-income": false,
+  "v9-next-news-sentiment-calendar": false,
   // Built-ins only.
   "v3.1.0-builtins": true,
   // openbq-docker v3's keyless BLS, CFTC, EconDB, Nasdaq and Videos widgets,

@@ -305,3 +305,34 @@ it("round trips screening and income recipes through the v4 envelope and refuses
   const forgedChart = JSON.stringify(payload);
   expect(planAppsImport(forgedChart, forgedChart.length, [], []).ok).toBe(false);
 });
+
+it("preserves a pinned news calendar and strictly rejects unknown settings and versions on import", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const recipe = {
+    version: 1, kind: "news-sentiment-calendar", instrument: "CANOPY.US",
+    fields: { timestamp: "date", articleId: "url", instrument: "symbols", polarity: "polarity" },
+    window: { mode: "pinned", start: "2024-02-29", end: "2024-03-01" },
+  } satisfies RecipeOptions;
+  tab.cards.push(card({ id: "news", widgetId: "linked_chart", linkedSource: { kind: "widget", sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [producer, news] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(news.linkedChart?.recipe).toEqual(recipe);
+  expect(news.linkedSource?.sourceWidgetId).toBe(producer.id);
+  for (const change of [
+    { chart_sources: { version: 1, receipts: [] } },
+    { daySummaries: [] },
+    { recipe: { ...recipe, version: 2 } },
+    { recipe: { ...recipe, fields: { ...recipe.fields, title: "title" } } },
+    { recipe: { ...recipe, window: { ...recipe.window, resolved: "2024-03-01" } } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+  }
+});

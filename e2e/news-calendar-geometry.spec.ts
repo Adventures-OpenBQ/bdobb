@@ -95,7 +95,6 @@ test('Plotly renders separate neutral, missing and unscored calendar cells with 
   expect(raster.images).toHaveLength(3);
   expect(raster.pixels.map(cell => cell.length)).toEqual([1, 1, 1, 0]);
   expect(new Set(raster.pixels.slice(0, 3).map(cell => cell[0].join(','))).size).toBe(3);
-  console.log('Ordinary Plotly calendar geometry', JSON.stringify(raster));
   const original = await hover(page, graph, { week: 1, weekday: 2 });
   await expect(original).toContainText('2026-11-18');
   await expect(original).toContainText('2026-11-19T00:30:00+01:00');
@@ -118,7 +117,7 @@ test('Plotly paints the first and last weeks of a full extreme-date calendar at 
   expect(raster.ranges).toEqual([[-.5, 52.5], [6.5, -.5]]);
   expect(raster.weekWidth).toBeGreaterThan(2);
   expect(raster.pixels.map(cell => cell.length)).toEqual([1, 1, 1]);
-  expect(new Set(raster.pixels.map(cell => cell[0].join(','))).size).toBe(3);
+  expect(raster.pixels.map(cell => cell[0])).toEqual([[162, 57, 85, 255], [22, 120, 98, 255], [52, 64, 85, 255]]);
   const monthLabelsFit = await graph.evaluate(node => {
     const bounds = node.getBoundingClientRect();
     const ticks = [...node.querySelectorAll('.xtick text')].map(label => label.getBoundingClientRect());
@@ -126,10 +125,9 @@ test('Plotly paints the first and last weeks of a full extreme-date calendar at 
       && tick.left >= bounds.left && tick.right <= bounds.right && (!ticks[i + 1] || tick.right < ticks[i + 1].left));
   });
   expect(monthLabelsFit, 'the month labels fit inside the narrow plot without overlap').toBe(true);
-  console.log('Extreme Plotly calendar geometry', JSON.stringify(raster));
   const earliest = await hover(page, graph, first);
   await expect(earliest).toContainText('9998-12-31');
-  await expect(earliest).toContainText('-1');
+  await expect(earliest).toContainText('Mean polarity: -1');
   const latest = await hover(page, graph, last);
   await expect(latest).toContainText('9999-12-31');
   await expect(latest).toContainText('Mean polarity: 1');

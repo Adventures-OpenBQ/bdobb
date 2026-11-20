@@ -63,6 +63,8 @@ For **Return distribution**, select adjusted daily prices, one symbol and 5–10
 
 **Income Sankey** reconciles the anchors of one actual income Statement period using the declared reporting currency and multiplier. Operating and non-operating changes come from adjacent anchors. Hover or tap to see original units. Loss anchors and unknown monetary scale prevent drawing. Use the table to change the acquired data and **Apply chart settings** to change the chart selection. Opt in with `chart_source=true` on EODHD source requests. The live paired routes currently leave dividend coverage and income scale unknown. The fictional example supplies explicit snapshot evidence for both.
 
+**News sentiment calendar** displays the daily mean polarity of one acquired CompanyNews page in UTC. Hover or tap a day for original timestamps and scores. Use **Calendar day details** to inspect any date with the keyboard. Choose the latest acquired 12 months or pin dates within the acquired range. The card shows its query, retrieval scope and delivered and scored article counts. Use `chart_source=true` on the paired EODHD CompanyNews table. A missing receipt or out-of-range pin requires repair.
+
 ## Highcharts, Vega-Lite and TradingView
 
 A `chart-highcharts` or `chart-vegalite` widget carries a Highcharts or

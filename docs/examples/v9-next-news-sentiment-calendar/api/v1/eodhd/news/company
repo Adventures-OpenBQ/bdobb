@@ -1,0 +1,107 @@
+{
+  "results": [
+    {
+      "url": "https://example.com/canopy/opening",
+      "date": "2025-11-19T12:30:00Z",
+      "polarity": -1,
+      "title": "Canopy opens its research centre",
+      "symbols": "CANOPY.US"
+    },
+    {
+      "url": "https://example.com/canopy/neutral",
+      "date": "2026-11-15T03:00:00Z",
+      "polarity": 0,
+      "title": "Canopy publishes its conference schedule",
+      "symbols": "CANOPY.US"
+    },
+    {
+      "url": "https://example.com/canopy/unscored",
+      "date": "2026-11-17T03:00:00Z",
+      "polarity": null,
+      "title": "Canopy names a new director",
+      "symbols": "CANOPY.US"
+    },
+    {
+      "url": "https://example.com/canopy/original",
+      "date": "2026-11-19T00:30:00+01:00",
+      "polarity": 0.123456789,
+      "title": "Canopy and Alder announce a partnership",
+      "symbols": "CANOPY.US,ALDER.US"
+    },
+    {
+      "url": "https://example.com/canopy/closing",
+      "date": "2026-11-19T12:30:00Z",
+      "polarity": 1,
+      "title": "Canopy completes its research programme",
+      "symbols": "CANOPY.US"
+    }
+  ],
+  "extra": {
+    "results_metadata": {
+      "chart_sources": {
+        "version": 1,
+        "receipts": [
+          {
+            "version": 1,
+            "kind": "news",
+            "retrieved_at": "2026-11-19T16:00:00Z",
+            "raw_count": 5,
+            "normalized_count": 5,
+            "delivered_count": 5,
+            "diagnostics": [
+              "unscored"
+            ],
+            "unsafe": {
+              "invalid_identity": false,
+              "invalid_timestamp": false,
+              "duplicate_conflict": false,
+              "unit_conflict": false
+            },
+            "field_origins": {
+              "timestamp": "date",
+              "articleId": "url",
+              "instrument": "symbols",
+              "polarity": "polarity"
+            },
+            "instrument": "CANOPY.US",
+            "polarity_unit": "polarity[-1,1]",
+            "scope": {
+              "kind": "sample",
+              "start": "2025-11-19",
+              "end": "2026-11-19",
+              "limit": 10,
+              "offset": 0
+            },
+            "coordinates": [
+              {
+                "article_id": "https://example.com/canopy/opening",
+                "utc_day": "2025-11-19",
+                "scored": true
+              },
+              {
+                "article_id": "https://example.com/canopy/neutral",
+                "utc_day": "2026-11-15",
+                "scored": true
+              },
+              {
+                "article_id": "https://example.com/canopy/unscored",
+                "utc_day": "2026-11-17",
+                "scored": false
+              },
+              {
+                "article_id": "https://example.com/canopy/original",
+                "utc_day": "2026-11-18",
+                "scored": true
+              },
+              {
+                "article_id": "https://example.com/canopy/closing",
+                "utc_day": "2026-11-19",
+                "scored": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

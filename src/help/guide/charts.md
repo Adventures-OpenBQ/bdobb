@@ -58,6 +58,10 @@ These linked charts answer one question from one table’s presentation and its 
 
 **Income Sankey** uses one actual FY or FQ period from a typed income **Statement** table. It requires full-record evidence, statement reporting currency and an explicitly verified monetary multiplier. Hover to read original values in the declared source units. Income bridges reconcile their adjacent anchors. In particular, operating and non-operating changes are derived differences. Cost of revenue and income tax expense appear as independent components when the source supports them. A loss in an anchor, nonpositive revenue or unknown monetary scale prevents drawing. The paired live EODHD income route currently reports unknown scale. The example snapshot declares its multiplier. Scroll the fixed diagram or tap a band or node on a touch screen.
 
+**News sentiment calendar** groups one qualified instrument's delivered CompanyNews articles by UTC day. Each scored cell is the unweighted mean of the presented article polarities on a fixed −1 to +1 scale. A zero is neutral. Hover or tap to distinguish a day with unscored articles from a gap, or open **Calendar day details** for the original publication times, scores and counts. The card shows the query bounds, page, retrieval time and active presentation scope. **Latest acquired 12 months** uses the source table's acquired dates. Use **Pinned dates** and **Apply chart settings** to narrow that window. If a saved pin is outside a newly acquired window, repair the bounds or choose the latest acquired window.
+
+The paired EODHD CompanyNews source needs a qualified symbol, `chart_source=true`, and a widget that selects `results`. The shared `/api/v1/news/company` route also requires `provider=eodhd`. Change query dates or page parameters on the source table. Chart changes reuse that acquisition. When the route, receipt or article data cannot verify the sample, the chart shows the repair needed.
+
 ## Zoom, pan and reset
 
 There is no chart toolbar — the mode bar is off.

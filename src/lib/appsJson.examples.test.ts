@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { BUILTIN_WIDGETS, LOCAL_TABLE_ID, LINKED_TABLE_ID, LINKED_CHART_ID } from "./builtins";
 import { importApps, isAppsJson, type App } from "./appsJson";
 import type { WidgetDef } from "./types";
+import { normalizeWidgets } from "./widgetsJson";
+import { captureChartSources, chartRequestContext } from "./widgetData/chartRecipes/chartSourceContracts";
 import { backendFinancialResponse } from "./widgetData/chartRecipes/financialEvidence";
 
 /**
@@ -74,6 +76,7 @@ describe("docs/examples", () => {
     "v9-chart-expansion.apps.json",
     "v9-risk-exposure.apps.json",
     "v9-screening-income.apps.json",
+    "v9-next-news-sentiment-calendar.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -114,6 +117,29 @@ describe("docs/examples", () => {
       expect(backendFinancialResponse(payload, url)?.evidence.kind).toBe(kinds[index]);
       if (index === 2) expect(source).toMatchObject({ view: "statement", tableDefinition: { analytical: { kind: "statement" } } });
     }
+  });
+
+  it("v9-next-news-sentiment-calendar imports with its explicit fixture connection and validates the request scope", () => {
+    const name = "v9-next-news-sentiment-calendar";
+    const { apps } = load(name + ".apps.json");
+    const { widgets, issues } = normalizeWidgets(JSON.parse(readFileSync(join(dir, name, "widgets.json"), "utf8")), "news-fixtures");
+    expect(issues).toEqual([]);
+    const imported = importApps(apps, [...BUILTIN_WIDGETS, ...widgets]);
+    expect(imported.unresolved).toBe(0);
+    const [chart, source] = imported.dashboards[0].tabs[0].cards;
+    expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+    expect(chart.linkedChart?.recipe).toMatchObject({
+      version: 1, kind: "news-sentiment-calendar", instrument: "CANOPY.US", window: { mode: "latest-12-months" },
+    });
+    expect(source.widgetId).toBe(widgets[0].id);
+    const url = new URL(widgets[0].endpoint, "http://127.0.0.1:17912");
+    for (const [key, value] of Object.entries(source.params)) url.searchParams.set(key, value);
+    const payload = JSON.parse(readFileSync(join(dir, name, url.pathname), "utf8"));
+    const acquisition = chartRequestContext(url, "results", Date.parse("2026-11-19T16:00:00Z"));
+    expect(captureChartSources(acquisition!, payload, payload.results)?.news).toMatchObject({
+      kind: "news", instrument: "CANOPY.US", delivered_count: 5, scope: { kind: "sample", limit: 10, offset: 0 },
+    });
+    expect(importApps(apps, BUILTIN_WIDGETS).unresolved).toBe(1);
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {
