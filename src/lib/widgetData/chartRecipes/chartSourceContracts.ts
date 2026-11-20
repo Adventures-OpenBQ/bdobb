@@ -42,6 +42,8 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
   coordinates(receipt: T): ChartCoordinateGroup[];
   /** A family whose receipt carries only counts can use coordinates captured at acquisition. */
   acquiredCoordinates?(receipt: T, provenance: DatasetProvenance): ChartCoordinateGroup[] | undefined;
+  /** Validate original field bindings before a table presentation can hide an ambiguity. */
+  acquiredColumnsAgree?(receipt: T, columns: readonly DatasetColumn[]): boolean;
 };
 export type ChartSourceRegistry = Readonly<Partial<Record<Kind, ChartSourceAdapter>>>;
 
@@ -162,7 +164,7 @@ export function acquiredChartSources(sources: ChartSourceMap | undefined, rows: 
 }
 
 /** Runtime data is revalidated after every structured-clone or linked-input boundary. */
-function sourceState(provenance: DatasetProvenance) {
+function sourceState(provenance: DatasetProvenance, inputColumns?: readonly DatasetColumn[]) {
   const metadata = provenance.metadata;
   if (!plain(metadata)) return;
   const sources = metadata.chartSources;
@@ -173,6 +175,7 @@ function sourceState(provenance: DatasetProvenance) {
   for (const [kind, value] of Object.entries(sources)) {
     const entry = decode(value, chartSourceRegistry);
     if (!entry || kind !== entry.receipt.kind) return;
+    if (inputColumns && entry.adapter.acquiredColumnsAgree?.(entry.receipt, inputColumns) === false) return;
     const coordinates = entry.adapter.acquiredCoordinates
       ? entry.adapter.acquiredCoordinates(entry.receipt, provenance)
       : entry.adapter.coordinates(entry.receipt);
@@ -199,14 +202,14 @@ export function readChartSourceProjection(provenance: DatasetProvenance, kind: K
 }
 
 /** Recalculation accepts acquired facts and additive restrictions only. Presentation proof belongs to its producing view. */
-export function validatedChartProvenance(provenance: DatasetProvenance): DatasetProvenance {
+export function validatedChartProvenance(provenance: DatasetProvenance, inputColumns?: readonly DatasetColumn[]): DatasetProvenance {
   const metadata = provenance.metadata;
   if (!metadata) return provenance;
   const evidenceKeys = ['chartSources', 'chartSourceFiltered', 'chartSourceOmissions', 'dailyPriceCoordinates'];
   const presentationKeys = ['chartSourcePresentationProof', 'chartSourceCoordinatePlan'];
   const keys = [...evidenceKeys, ...presentationKeys];
   if (!keys.some(key => Object.hasOwn(metadata, key))) return provenance;
-  const valid = sourceState(provenance);
+  const valid = sourceState(provenance, inputColumns);
   const removed = valid ? [...presentationKeys,
     ...(valid.some(({ receipt }) => receipt.kind === 'daily-price') ? [] : ['dailyPriceCoordinates'])] : keys;
   const retained = Object.fromEntries(Object.keys(metadata).flatMap(key => {

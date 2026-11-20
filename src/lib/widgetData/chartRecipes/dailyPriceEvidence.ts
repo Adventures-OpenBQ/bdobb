@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import type { DatasetProvenance, WidgetDataset } from '../types';
+import type { DatasetColumn, DatasetProvenance, WidgetDataset } from '../types';
 import {
   readChartSource, readChartSourceProjection, type ChartSourceAdapter, type ChartSourceReceipt,
 } from './chartSourceContracts';
@@ -154,6 +154,20 @@ function capturedCoordinates(receipt: DailyPriceReceipt, provenance: DatasetProv
   if (deliveredCoordinatesAgree(receipt, points)) return points;
 }
 
+function acquiredFields(receipt: DailyPriceReceipt, columns: readonly DatasetColumn[]) {
+  const fields = new Map<string, string>();
+  const origins = [receipt.date_field, receipt.price_field, ...symbolAliases, ...exchangeAliases];
+  for (const column of columns) {
+    const origin = acquiredColumnOrigin(column);
+    if (!origin || !origins.some(field => field === origin)) continue;
+    if (fields.has(origin)) return;
+    fields.set(origin, column.id);
+  }
+  if (new Set(fields.values()).size !== fields.size || (receipt.delivered_count > 0
+    && (!fields.has(receipt.date_field) || !fields.has(receipt.price_field) || (receipt.symbol_field && !fields.has(receipt.symbol_field))))) return;
+  return fields;
+}
+
 const parameters = ['provider', 'symbol', 'exchange', 'start_date', 'end_date', 'interval'] as const;
 function matchesRequest(receipt: DailyPriceReceipt, query: Readonly<Record<string, string>>, defaultProvider?: 'eodhd') {
   if ((query.provider ?? defaultProvider) !== 'eodhd' || (query.interval ?? '1d') !== receipt.interval
@@ -182,6 +196,7 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
     ...routes(['/api/v1/eodhd/equity/price/historical', '/api/v1/eodhd/etf/historical'], 'eodhd'),
   ],
   coordinates: () => [],
+  acquiredColumnsAgree: (receipt, columns) => acquiredFields(receipt, columns) !== undefined,
   acquiredCoordinates(receipt, provenance) {
     const points = capturedCoordinates(receipt, provenance);
     return points && [{
@@ -202,16 +217,8 @@ export function readLiveDailyPriceSource(dataset: WidgetDataset): {
   const acquired = capturedCoordinates(receipt, provenance);
   if (!acquired || rows.length !== acquired.length - projection.omitted.length) return;
 
-  const fields = new Map<string, string>();
-  const origins = [receipt.date_field, receipt.price_field, ...symbolAliases, ...exchangeAliases];
-  for (const column of columns) {
-    const origin = acquiredColumnOrigin(column);
-    if (!origin || !origins.some(field => field === origin)) continue;
-    if (fields.has(origin)) return;
-    fields.set(origin, column.id);
-  }
-  if (new Set(fields.values()).size !== fields.size || (acquired.length > 0
-    && (!fields.has(receipt.date_field) || !fields.has(receipt.price_field) || (receipt.symbol_field && !fields.has(receipt.symbol_field))))) return;
+  const fields = acquiredFields(receipt, columns);
+  if (!fields) return;
 
   const remaining = new Set(acquired.map(coordinateId));
   for (const omitted of projection.omitted) remaining.delete(omitted);

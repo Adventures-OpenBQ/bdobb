@@ -6,6 +6,7 @@ import type { WidgetDataset } from '../types';
 import { savedBindingIssue } from './bindings';
 import { buildBubbleRegression } from './bubbleRegression';
 import { buildCorrelation } from './correlation';
+import { readLiveDailyPriceSource } from './dailyPriceEvidence';
 import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
 import { buildDualAxisOverlay } from './dualAxisOverlay';
@@ -73,7 +74,9 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   if (recipe.kind === 'market-map') return buildMarketMap(dataset, recipe, context);
   if (recipe.kind === 'estimate-revisions') return buildEstimateRevisions(dataset, recipe, context);
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
-  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
+  // A counted empty live history can have no columns. Return admission reports its missing observations.
+  const emptyLiveReturn = recipe.kind === 'return-summary' && dataset.rows.length === 0 && readLiveDailyPriceSource(dataset);
+  const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst' || emptyLiveReturn
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   if (issue) return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {

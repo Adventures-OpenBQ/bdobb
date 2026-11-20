@@ -7,6 +7,7 @@ import { datasetFromBytes, datasetFromRows } from '../../localTableData';
 import { parseTableSnapshot } from '../../tableRowValues';
 import { startMockServer } from '../../../test/mockServer';
 import { backend, widget } from '../../../test/fixtures';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import type { BackendAcquisition } from './financialEvidence';
 import { priceOmissionEvidence } from './priceEvidence';
 import { dailyPriceRows, priceFields } from './fixtures';
@@ -338,4 +339,89 @@ it('rejects violin extents below renderer pixel precision and preserves scale wh
     .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry.*AAA\.US/i) });
   expect(runRecipe(data, selection, { ...measured, viewportHeight: 260 }))
     .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry.*BBB\.US/i) });
+});
+
+it('clips live prices before differencing, preserves selected order and refuses an absent listing', () => {
+  const peer = dailyPriceRows([10, 30, 60, 120, 240, 480, 960, 1920], 'BBB.US');
+  const [before, ...rest] = daily;
+  const data = liveDailyPriceDataset([{ ...before, adjusted_close: 1 }, ...rest, ...peer], ['AAA.US', 'BBB.US', 'EMPTY.US']);
+  const window = { mode: 'common', start: day(2), end: day(7) } as const;
+  const result = admitReturnSummary(data, priceFields, ['BBB.US', 'AAA.US'], window);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.value.series.map(({ symbol, samples }) => [symbol, samples])).toEqual([
+    ['BBB.US', [3, 4, 5, 6, 7].map(d => ({ date: day(d), value: 1 }))],
+    ['AAA.US', [3, 4, 5, 6, 7].map(d => ({ date: day(d), value: 1 }))],
+  ]);
+  expect(data.completeness.kind).toBe('unknown');
+  expect(prepareSelectedPrices(data, priceFields, ['AAA.US'])).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/acquisition is unknown/i),
+  });
+  for (const absent of ['EMPTY.US', 'ABSENT.US']) {
+    expect(admitReturnSummary(data, priceFields, ['AAA.US', absent], window)).toMatchObject({
+      ok: false, refused: true, message: expect.stringContaining(absent),
+    });
+  }
+});
+
+it.each([
+  { count: 4, view: 'box', drawn: false },
+  { count: 5, view: 'box', drawn: 'box' },
+  { count: 19, view: 'violin', drawn: 'box' },
+  { count: 20, view: 'violin', drawn: 'violin' },
+] as const)('gates the live $view view at N = $count', ({ count, view, drawn }) => {
+  const rows = fromReturns(varied.slice(0, count));
+  const data = liveDailyPriceDataset(rows, ['AAA.US', 'BBB.US']);
+  const result = runRecipe(data, { ...options, view }, context);
+  if (!drawn) {
+    expect(result).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/5.*AAA\.US.*4/) });
+    return;
+  }
+  expect(result).toMatchObject({
+    ok: true, notes: expect.arrayContaining(['Observed quote-to-quote returns; exchange-session completeness unknown.']),
+    returnSummary: { view: drawn, series: [{ symbol: 'AAA.US', samples: expect.any(Array) }] },
+  });
+  if (result.ok) expect(result.returnSummary?.series[0].samples).toHaveLength(count);
+});
+
+it('preserves exact live zero returns, zero IQR and extreme finite observations', () => {
+  const constant = liveDailyPriceDataset(fromReturns(Array(20).fill(0)), ['AAA.US', 'BBB.US']);
+  const zero = runRecipe(constant, { ...options, view: 'violin' }, context);
+  expect(zero).toMatchObject({ ok: true, returnSummary: {
+    view: 'box', series: [{ summary: { iqr: 0 }, samples: Array.from({ length: 20 }, (_, i) => ({ date: day(i + 2), value: 0 })) }],
+  } });
+  const extreme = liveDailyPriceDataset(dailyPriceRows(extremePrices, 'AAA.US'), ['AAA.US', 'BBB.US']);
+  const result = runRecipe(extreme, { ...options, view: 'violin' }, context);
+  if (!result.ok) throw new Error(result.message);
+  expect(result.returnSummary?.series[0].samples.slice(0, 2)).toEqual([
+    { date: day(2), value: extremePrices[1] }, { date: day(3), value: -1 },
+  ]);
+});
+
+it('binds live returns only to the acquired date, adjusted price and listing origins', () => {
+  const rows = daily.map(row => ({ ...row, observation_date: row.date, adj_close: row.adjusted_close, ticker: row.symbol }));
+  const data = liveDailyPriceDataset(rows, ['AAA.US', 'BBB.US']);
+  expect(admitReturnSummary(data, priceFields, ['AAA.US'], own).ok).toBe(true);
+  for (const fields of [
+    { ...priceFields, date: 'observation_date' },
+    { ...priceFields, price: 'adj_close' },
+    { ...priceFields, symbol: 'ticker' },
+    { date: priceFields.date, price: priceFields.price },
+  ]) {
+    expect(admitReturnSummary(data, fields, ['AAA.US'], own)).toMatchObject({ ok: false, refused: true });
+  }
+});
+
+it.each(['box', 'violin'] as const)('reports insufficient observed prices for a counted empty live %s source', view => {
+  const data = liveDailyPriceDataset([], ['AAA.US']);
+  const emptyOptions = { ...options, view, fields: { date: 'date', price: 'adjusted_close' } };
+  expect(admitReturnSummary(data, emptyOptions.fields, ['AAA.US'], own)).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/no valid daily prices/i),
+  });
+  expect(runRecipe(data, emptyOptions, context)).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/no valid daily prices/i),
+  });
+  const unqualified = liveDailyPriceDataset([], ['AAA.US'], { unsafe: { invalid_response: true } });
+  expect(runRecipe(unqualified, emptyOptions, context)).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/field .* unavailable/i),
+  });
 });
