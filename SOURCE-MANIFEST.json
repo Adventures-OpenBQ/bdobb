@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "6ef33e33a928e8a5567b7c4d98d5fc6b41f2589c",
-  "sourceId": "fc2a3ed8bcb15b98e44055057afb2190a7144933b3ff6f2222ad40a3b0a44262",
+  "baseCommit": "aec9f5019f44c3d79ba60342f46d03c1c427642b",
+  "sourceId": "0f972a64db90d4bb0fdc42ccaacb686bffb6886c9575b87ebd2bca4dbd2f4a3b",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3849,8 +3849,8 @@
       "path": "crates/pivot-core/src/session/resource_types.rs",
       "type": "file",
       "mode": 420,
-      "size": 28206,
-      "sha256": "195b86c99ceaf46e4eac3462792f029e8772b0d6ebbac6cc672c7f846d6a4771"
+      "size": 28219,
+      "sha256": "9d8e119ae99ab6636ce549adabd6f3e658d6eb6831ce7b1471deb80e355980ad"
     },
     {
       "path": "crates/pivot-core/src/session/resources.rs",
@@ -3891,8 +3891,8 @@
       "path": "crates/pivot-core/src/statement/compile.rs",
       "type": "file",
       "mode": 420,
-      "size": 14670,
-      "sha256": "9ccaec6b93c08488f60d2bd4dacd17dc056dcbc0f4754cf445cb69fa0c87e3a6"
+      "size": 14654,
+      "sha256": "0e000d890818f049267c1d491956c78499e0c5afc3dd946c10475c372a9da6fd"
     },
     {
       "path": "crates/pivot-core/src/statement/policy.rs",
@@ -3912,15 +3912,15 @@
       "path": "crates/pivot-core/src/statement/validation.rs",
       "type": "file",
       "mode": 420,
-      "size": 11075,
-      "sha256": "3f9303013fc09d84bc04c9d3516f18446f42001d75264e619cf8dbb89ac293a2"
+      "size": 11402,
+      "sha256": "1626989e86c571268f75f605f6141e396732de89520afe4000c5b4debc764ef4"
     },
     {
       "path": "crates/pivot-core/src/statement.rs",
       "type": "file",
       "mode": 420,
-      "size": 6308,
-      "sha256": "28710f10eff0f61c96760d1a18f4336c7709e097da0bc0aacc2cc91fafce51ed"
+      "size": 7361,
+      "sha256": "7cecd7fd0b8f68f2c5c6df704ff02ced98a4c177f925dc1dbaffffc9b9b3fbb2"
     },
     {
       "path": "crates/pivot-core/src/validation.rs",
@@ -4026,6 +4026,13 @@
       "mode": 420,
       "size": 20716,
       "sha256": "4a5b222f169e2c2bb65c811901e65b5075a57abd15589b7056e4508fc38ca3e4"
+    },
+    {
+      "path": "crates/pivot-core/tests/statement_placement.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 6794,
+      "sha256": "e25743da8caf2bc32f8952c8114110fe3cc57f6f5c168b12c3066a973101b4c1"
     },
     {
       "path": "crates/pivot-core/tests/support/mod.rs",
@@ -4490,6 +4497,13 @@
       "sha256": "e693aeaf8e68662470b9725961a4b702899d5b29d66954c98fa2999884ec3e85"
     },
     {
+      "path": "crates/table-service/tests/statement_placement.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 3791,
+      "sha256": "ab9b5cab3cd1b8562ccf4893c7a8b93f39553ff634fee7faa403c2bf80a5e9e1"
+    },
+    {
       "path": "crates/table-service/tests/support/mod.rs",
       "type": "file",
       "mode": 420,
@@ -4698,6 +4712,13 @@
       "mode": 420,
       "size": 7506,
       "sha256": "7903a7f2f221f50717facd8168e43b6a35690defd938c7e81da3a511779eaab7"
+    },
+    {
+      "path": "deploy/table-service/statement-placement.fixture.json",
+      "type": "file",
+      "mode": 420,
+      "size": 17235,
+      "sha256": "492e4a78ea0838abb46ced9520f27b71ad1bfd88580f49c4c4c9dacbbac24ae8"
     },
     {
       "path": "docs/app-icons.md",
@@ -10395,7 +10416,7 @@
       "type": "file",
       "mode": 420,
       "size": 4507,
-      "sha256": "ca6c2db793f43da872dba6da8a3b373f7d612b53e232e1eb761ec072ac583566"
+      "sha256": "5b607d99dbd60428c64f379af668e0d639ce949f29e3e9c37aaad431cf87cc62"
     },
     {
       "path": "playwright.config.ts",
@@ -11410,7 +11431,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "ca15910570e82d8601718f003305c0290d512470f5fcced85dfc0e2f166425ec"
+      "sha256": "9d59db6ae6795cc4a3cf8ab7e3af5bdc5127dff4e4751f309f84e246470440c9"
     },
     {
       "path": "source_bundle.py",
@@ -16463,8 +16484,8 @@
       "path": "src/lib/tableExecution/rust/session.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 10939,
-      "sha256": "1021d913790a41895d6bd66719c3c5e2ccec99d5ac8ebf106496406047ca3745"
+      "size": 12674,
+      "sha256": "33f95517c0c4a07d42958b383d0921382ba7a1604ae36d9cba81ad908924c2e9"
     },
     {
       "path": "src/lib/tableExecution/rust/wireCodec.test.ts",
