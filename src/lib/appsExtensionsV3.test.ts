@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { revisionSlope } from '../test/fixtures/estimateRevisions';
+import { capMap } from '../test/fixtures/marketMap';
 import { beforeEach, describe, expect, it } from "vitest";
 import * as appsJson from "./appsJson";
 import { card } from "../test/fixtures";
@@ -543,6 +544,32 @@ it('roundtrips the authored estimate revision question and refuses injected work
   for (const injected of [
     { figure: { data: [] } }, { chart_sources: {} }, { estimateRevisionsSurface: {} }, { category: 'issuer' },
     { measures: ['value'] }, { recipe: { ...revisionSlope, version: 2 } }, { recipe: { ...revisionSlope, issuer: 'ALFA.US' } },
+  ]) {
+    const payload = JSON.parse(serialized);
+    Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, injected);
+    const text = JSON.stringify(payload);
+    expect(planAppsImport(text, text.length, [], []).ok, JSON.stringify(injected)).toBe(false);
+    chart.linkedChart = { ...linked.linkedChart!, ...injected } as typeof chart.linkedChart;
+    expect(appsJson.exportCompatibleApp(input).ok, JSON.stringify(injected)).toBe(false);
+  }
+});
+
+it('roundtrips the authored market map question and refuses injected workspace data', () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const chart = card({ id: 'market-chart', widgetId: 'linked_chart',
+    linkedSource: { kind: 'widget', sourceWidgetId: tab.cards[0].id },
+    linkedChart: { type: capMap.kind, measures: [], display: 'grouped', recipe: capMap } });
+  tab.cards.push(chart);
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const serialized = JSON.stringify([exported.value]);
+  const [source, linked] = importApps(JSON.parse(serialized), []).dashboards[0].tabs[0].cards;
+  expect(linked.linkedChart?.recipe).toEqual(capMap);
+  expect(linked.linkedSource?.sourceWidgetId).toBe(source.id);
+  for (const injected of [
+    { figure: { data: [] } }, { chart_sources: {} }, { viewport: {} }, { category: 'issuer' },
+    { measures: ['value'] }, { recipe: { ...capMap, version: 2 } }, { recipe: { ...capMap, depth: 2 } },
   ]) {
     const payload = JSON.parse(serialized);
     Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, injected);

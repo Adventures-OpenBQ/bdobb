@@ -90,6 +90,8 @@ rather than Plotly: daily candles for the widget's default symbol, with volume
 bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
 The mouse wheel scrolls the card rather than zooming the chart.
 
+**Market map** uses a verified local snapshot with a completed close-to-close price session. Areas show delivered capitalization in one currency or acquired weights for a named index. Both live modes are unavailable. **Latest acquired** follows the selected snapshot. To keep one session, select its date and apply. If a pin is missing, relink or select an acquired session explicitly. Hover or tap for original values, drill a sector by clicking or tapping it again, and use the breadcrumb or **Home** to reset. **Market map details** lists original areas and return fractions, including tiny tiles.
+
 ## Zoom, pan and reset
 
 There is no chart toolbar — the mode bar is off.

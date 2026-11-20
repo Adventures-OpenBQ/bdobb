@@ -221,3 +221,22 @@ it('relayouts both y ranges in one original-unit update and safely retires after
   expect(relayout).toHaveBeenCalledTimes(1);
   expect(onError).not.toHaveBeenCalled();
 });
+
+it('forwards both native treemap Home representations and retires a purged listener', async () => {
+  const events = new EventEmitter();
+  const graph = Object.assign(document.createElement('div'), {
+    on: events.on.bind(events), removeListener: events.removeListener.bind(events),
+  });
+  const { followTreemapLevel } = await import('./plotly');
+  const navigate = vi.fn();
+  const retire = followTreemapLevel(graph, navigate);
+  const select = events.listeners('plotly_treemapclick')[0];
+  const root = '["market-root","delivered-sample"]';
+  expect(select({ nextLevel: '' })).toBe(false);
+  expect(select({ nextLevel: root })).toBe(false);
+  expect(navigate.mock.calls).toEqual([[''], [root]]);
+  Reflect.deleteProperty(graph, 'removeListener');
+  expect(retire).not.toThrow();
+  expect(select({ nextLevel: '["market-sector","Technology"]' })).toBeUndefined();
+  expect(navigate).toHaveBeenCalledTimes(2);
+});

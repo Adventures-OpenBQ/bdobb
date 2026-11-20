@@ -167,12 +167,14 @@ export async function restorePlotZoom(node: HTMLElement, edited: PlotZoomRanges)
 }
 
 /** Keep mouse/touch drill and the keyboard sector selector in the same view. */
-export function followSunburstLevel(node: HTMLElement, onLevel: (id: string) => void): () => void {
+type HierarchyClick = 'plotly_sunburstclick' | 'plotly_treemapclick';
+
+function followHierarchyLevel(node: HTMLElement, event: HierarchyClick, onLevel: (id: string) => void): () => void {
   type Click = { nextLevel?: string };
   type Listener = (event: Click) => false | undefined;
   const graph = node as HTMLElement & {
-    on: (event: 'plotly_sunburstclick', listener: Listener) => void;
-    removeListener?: (event: 'plotly_sunburstclick', listener: Listener) => void;
+    on: (event: HierarchyClick, listener: Listener) => void;
+    removeListener?: (event: HierarchyClick, listener: Listener) => void;
   };
   let following = true;
   const select: Listener = event => {
@@ -181,13 +183,21 @@ export function followSunburstLevel(node: HTMLElement, onLevel: (id: string) => 
     // The same checked trace redraws at the new level through Plotly.react.
     return false;
   };
-  graph.on('plotly_sunburstclick', select);
+  graph.on(event, select);
   return () => {
     if (!following) return;
     following = false;
     // Plotly.purge may run from the ref cleanup before the effect is retired.
-    graph.removeListener?.('plotly_sunburstclick', select);
+    graph.removeListener?.(event, select);
   };
+}
+
+export function followSunburstLevel(node: HTMLElement, onLevel: (id: string) => void): () => void {
+  return followHierarchyLevel(node, 'plotly_sunburstclick', onLevel);
+}
+
+export function followTreemapLevel(node: HTMLElement, onLevel: (id: string) => void): () => void {
+  return followHierarchyLevel(node, 'plotly_treemapclick', onLevel);
 }
 
 export function purgePlot(node: HTMLElement): void {

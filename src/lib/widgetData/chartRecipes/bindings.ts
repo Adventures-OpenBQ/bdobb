@@ -5,7 +5,7 @@ import { statementOwnedIds } from '../../statementModel/types';
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate } from './financialEvidence';
 import { ownershipBarRoles, type OwnershipSource } from './ownershipEvidence';
-import { estimateRevisionFieldOrigins } from './settings';
+import { estimateRevisionFieldOrigins, marketMapFieldOrigins } from './settings';
 import { adjustedPriceOrigins, priceDateOrigins } from './priceEvidence';
 import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
 import type { RecipeOptions } from './types';
@@ -59,6 +59,13 @@ export const estimateRevisionFieldLabels = {
 
 const estimateRevisionRoles = Object.keys(estimateRevisionFieldOrigins) as (keyof typeof estimateRevisionFieldOrigins)[];
 
+const marketMapFieldLabels = {
+  listing: 'Qualified listing', sector: 'Sector', area: 'Area value', change: 'Price change fraction', session: 'Price session field',
+} as const;
+
+export const marketMapBindingRoles = marketMapFieldOrigins.map(role =>
+  ({ ...acquiredRole(role, marketMapFieldLabels[role], role, role === 'area' || role === 'change' ? 'numeric' : undefined), key: role }));
+
 export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue', mode: 'sector' | 'region' = 'sector'): Role[] {
   if (kind === 'bubble-regression') return [
     acquiredRole('symbol', 'Qualified listing', 'symbol'),
@@ -88,6 +95,7 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     { ...adjustedPriceRole, strictOrigin: 'ignore-case' },
     { key: 'symbol', label: 'Qualified listing field', names: ['symbol', 'ticker'], optional: true, strictOrigin: 'ignore-case' },
   ];
+  if (kind === 'market-map') return marketMapBindingRoles;
   if (kind === 'estimate-revisions') return estimateRevisionRoles.map(role =>
     acquiredRole(role, estimateRevisionFieldLabels[role], estimateRevisionFieldOrigins[role], role === 'value' ? 'numeric' : undefined));
   if (kind === 'income-sankey' || kind === 'ownership-snapshot' || kind === 'dual-axis-overlay') return [];

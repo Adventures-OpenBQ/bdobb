@@ -22,6 +22,9 @@ const estimateRevisionsShape = {
   options: ['metric', 'view', 'target', 'vintages'], distinctBindings: true, required: Object.keys(estimateRevisionFieldOrigins),
 } as const;
 
+export const marketMapFieldOrigins = ['listing', 'sector', 'area', 'change', 'session'] as const;
+const marketMapShape = { options: ['mode', 'universe', 'session'], required: marketMapFieldOrigins, distinctBindings: true } as const;
+
 const recipeShapes: Record<RecipeKind, RecipeShape> = {
   drawdown: { options: ['symbols'], ...priceFields },
   'yield-curve': { options: [], required: ['date', 'maturity', 'rate'] },
@@ -35,6 +38,7 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
   'dual-axis-overlay': { options: ['recipe'] },
   'estimate-revisions': estimateRevisionsShape,
+  'market-map': marketMapShape,
   'etf-sunburst': { options: ['fund', 'depth', 'snapshot'], required: ['holding', 'sector', 'weight'], distinctBindings: true },
   'etf-exposure': { options: ['mode'], required: ['category', 'weight'], distinctBindings: true },
   'bubble-regression': { options: ['priceDate', 'regression'],
@@ -50,12 +54,12 @@ export function isRecipeType(type: unknown): type is RecipeKind {
   return typeof type === 'string' && Object.hasOwn(recipeShapes, type);
 }
 
-export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' | 'ownership-snapshot' | 'etf-sunburst' | 'dual-axis-overlay' | 'estimate-revisions' {
+export function isAcquiredFinancialRecipeType(type: unknown): type is 'bubble-regression' | 'dividend-steps' | 'income-sankey' | 'news-sentiment-calendar' | 'return-summary' | 'ownership-snapshot' | 'etf-sunburst' | 'dual-axis-overlay' | 'estimate-revisions' | 'market-map' {
   return type === 'bubble-regression' || type === 'dividend-steps' || type === 'income-sankey' || type === 'news-sentiment-calendar' || type === 'return-summary' || type === 'ownership-snapshot' || type === 'etf-sunburst' || isRecipeOnlyLinkedChartType(type);
 }
 
-export function isRecipeOnlyLinkedChartType(type: unknown): type is 'dual-axis-overlay' | 'estimate-revisions' {
-  return type === 'dual-axis-overlay' || type === 'estimate-revisions';
+export function isRecipeOnlyLinkedChartType(type: unknown): type is 'dual-axis-overlay' | 'estimate-revisions' | 'market-map' {
+  return type === 'dual-axis-overlay' || type === 'estimate-revisions' || type === 'market-map';
 }
 
 export const RECIPE_ONLY_LINKED_CHART_FIELDS = ['type', 'measures', 'display', 'recipe'] as const;
@@ -139,6 +143,7 @@ export function decodeRecipeOptions(candidate: unknown, chartType: string): Reci
   if (!isRecipeType(chartType)) return invalid('Recipe options require a financial recipe chart type.');
   if (chartType === 'dual-axis-overlay') return decodeDualAxisOverlayOptions(candidate);
   if (chartType === 'estimate-revisions') return decodeEstimateRevisionsOptions(candidate);
+  if (chartType === 'market-map') return decodeMarketMapOptions(candidate);
   const shape = chartType === 'ownership-snapshot' && isRecord(candidate) && Object.getOwnPropertyDescriptor(candidate, 'view')?.value === 'waffle'
     ? ownershipWaffleShape : recipeShapes[chartType];
   const decoded = decodeRecipeShape(candidate, chartType, shape);
@@ -256,9 +261,6 @@ export function decodeEstimateRevisionsOptions(value: unknown): RecipeOptionsRes
   return { ok: true, options: decoded.options as EstimateRevisionsOptions };
 }
 
-export const marketMapFieldOrigins = ['listing', 'sector', 'area', 'change', 'session'] as const;
-const marketMapShape = { options: ['mode', 'universe', 'session'], required: marketMapFieldOrigins, distinctBindings: true } as const;
-
 export function decodeMarketMapOptions(value: unknown): RecipeOptionsResult<MarketMapOptions> {
   const decoded = decodeRecipeShape(value, 'market-map', marketMapShape);
   if (!decoded.ok) return decoded;
@@ -272,7 +274,6 @@ export function decodeMarketMapOptions(value: unknown): RecipeOptionsResult<Mark
 
 export function decodeRecipeRequestOptions(value: unknown): RecipeOptionsResult<RecipeRequestOptions> {
   const kind: unknown = isRecord(value) ? Object.getOwnPropertyDescriptor(value, 'kind')?.value : undefined;
-  if (kind === 'market-map') return decodeMarketMapOptions(value);
   return decodeRecipeOptions(value, typeof kind === 'string' ? kind : '');
 }
 

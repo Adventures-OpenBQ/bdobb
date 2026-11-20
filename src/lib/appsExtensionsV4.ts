@@ -98,7 +98,8 @@ export function extras(value: unknown, path: string): Extras {
       if (c.display !== 'grouped' || (c.measures !== undefined && (!Array.isArray(c.measures) || c.measures.length)))
         extensionError(chartPath, c.type === 'dual-axis-overlay'
           ? 'Dual-axis overlays use only the two measures defined by the selected recipe.'
-          : 'Estimate revisions use only the fields defined by the selected recipe.');
+          : c.type === 'market-map' ? 'Market maps use only the five acquired fields defined by the recipe.'
+            : 'Estimate revisions use only the fields defined by the selected recipe.');
     } else if (isAcquiredFinancialRecipeType(c.type)) keys(c, LINKED_CHART_FIELDS, chartPath);
     const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
     if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { revisionSlope } from '../../../test/fixtures/estimateRevisions';
+import { capMap } from '../../../test/fixtures/marketMap';
 import { expect, it } from 'vitest';
 import type { DatasetColumn, LinkedChartSettings } from '../types';
 import { bubblePriceDates, savedBindingIssue } from './bindings';
@@ -322,4 +323,15 @@ it('only decodes metric, view, fiscal target, pins and the six acquired estimate
     { ...revisionSlope, view: 'path' }, { ...revisionSlope, vintages: ['snap-a', 'snap-a'] },
     { ...revisionSlope, estimateRevisionsSurface: { width: 320, height: 352 } },
   ]) expect(decodeRecipeOptions(options, revisionSlope.kind)).toMatchObject({ ok: false });
+});
+
+it('decodes only the closed acquired market map declaration at the public linked chart boundary', () => {
+  expect(validateRecipeOptions(capMap, 'market-map')).toEqual(capMap);
+  for (const invalid of [
+    { ...capMap, version: 2 }, { ...capMap, depth: 2 }, { ...capMap, universe: 'EXAMPLE.INDX' },
+    { ...capMap, session: '2026-02-30' }, { ...capMap, session: '2026-11-13T21:00:00Z' },
+    { ...capMap, fields: { ...capMap.fields, universe: 'universe' } },
+    { ...capMap, fields: { ...capMap.fields, listing: 'sector' } },
+    { ...capMap, chart_sources: { version: 1 } }, { ...capMap, viewportWidth: 320 },
+  ]) expect(validateRecipeOptions(invalid, 'market-map')).toBeNull();
 });

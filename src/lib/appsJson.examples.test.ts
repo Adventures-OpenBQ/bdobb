@@ -87,6 +87,7 @@ describe("docs/examples", () => {
     "v9-next-etf-sunburst.apps.json",
     "v9-next-dual-axis-overlays.apps.json",
     "v9-next-estimate-revisions.apps.json",
+    "v9-next-market-map.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
     "v5-financial-demo/apps.json",
@@ -295,6 +296,34 @@ describe("docs/examples", () => {
         ok: true, estimateRevisions: { view: ["slope", "path", "bump"][index], target: { start: "2027-01-01", end: "2027-03-31", kind: "FQ" } },
       });
     }
+  });
+
+  it("v9-next-market-map reacquires each authored mode through its matching local example", async () => {
+    const name = "v9-next-market-map";
+    const { apps } = load(name + ".apps.json");
+    const imported = importApps(apps, BUILTIN_WIDGETS);
+    expect(imported.unresolved).toBe(0);
+    const tabs = imported.dashboards[0].tabs;
+    expect(tabs.map(tab => tab.name)).toEqual(["Delivered capitalization", "Named index"]);
+    const expected = [
+      { file: "fictional-capitalization.json", mode: "delivered-cap", session: "latest", value: 103365.4321, denomination: "USD" },
+      { file: "fictional-index.json", mode: "index-weight", session: "2026-11-13", value: 1, denomination: null },
+    ];
+    for (const [index, tab] of tabs.entries()) {
+      const [chart, source] = tab.cards;
+      expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
+      expect(source.params).toEqual({});
+      const recipe = chart.linkedChart?.recipe;
+      if (recipe?.kind !== "market-map") throw new Error("Missing imported market-map recipe.");
+      const { file, mode, session, value, denomination } = expected[index];
+      expect(recipe).toMatchObject({ mode, session });
+      const dataset = await datasetFromBytes(file, readFileSync(join(dir, name, file)), source.id, 1);
+      expect(runRecipe(dataset, recipe, { theme: "light", maxDecimals: 2, today: "2026-11-20" })).toMatchObject({
+        ok: true, marketMap: { mode, denomination, session: "2026-11-13", root: { value } },
+      });
+    }
+    const template = readFileSync(join(dir, name + ".apps.json"), "utf8");
+    expect(template).not.toMatch(/chart_sources|viewport|ALFA\.US|example\/acquisition/);
   });
 
   it("v9-risk-exposure: remaps each saved financial question to its single source table", () => {

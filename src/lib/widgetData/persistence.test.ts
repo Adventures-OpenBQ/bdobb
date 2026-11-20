@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { revisionSlope } from '../../test/fixtures/estimateRevisions';
+import { capMap } from '../../test/fixtures/marketMap';
 import { expect, it } from 'vitest';
 import { remapWidgetReferences, persistedCard } from './persistence';
 import type { DashboardCard } from '../types';
@@ -141,5 +142,13 @@ it('keeps original revision pins in native settings and drops runtime state', ()
   const injected = { ...settings, figure: { data: [] }, chart_sources: {}, estimateRevisionsSurface: { height: 352, width: 320 } };
   expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(settings);
   const invalid = { ...injected, recipe: { ...revisionSlope, issuer: 'ALFA.US' } };
+  expect(persistedCard({ ...child, linkedChart: invalid }).linkedChart).toEqual({ ...settings, recipe: undefined });
+});
+
+it('persists only the closed market map declaration', () => {
+  const settings = { type: capMap.kind, measures: [], display: 'grouped' as const, recipe: capMap };
+  const injected = { ...settings, figure: { data: [] }, chart_sources: {}, viewport: { height: 352, width: 320 } };
+  expect(persistedCard({ ...child, linkedChart: injected }).linkedChart).toEqual(settings);
+  const invalid = { ...injected, recipe: { ...capMap, depth: 2 } };
   expect(persistedCard({ ...child, linkedChart: invalid }).linkedChart).toEqual({ ...settings, recipe: undefined });
 });

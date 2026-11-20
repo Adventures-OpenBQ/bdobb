@@ -12,12 +12,13 @@ import { useResolvedTheme } from '../../hooks/useResolvedTheme';
 import { ChartRenderer, type DrawingSurface } from './ChartRenderer';
 import { DualAxisOverlayControls, LinkedDualAxisOverlay, overlayInputFields } from './LinkedDualAxisOverlay';
 import { EstimateRevisionsControls, LinkedEstimateRevisions, estimateRevisionInputFields } from './LinkedEstimateRevisions';
+import { LinkedMarketMap, MarketMapControls, marketMapInputFields } from './LinkedMarketMap';
 import { useMeasuredRecipeJob } from './useMeasuredRecipe';
 import { EtfSunburstControls, LinkedEtfSunburst, useEtfSunburstJob } from './LinkedEtfSunburst';
 import type { PlotlyFigure } from '../../lib/chartShapes';
 import type { ViewState } from '../../stores/tableExecutionStore';
 import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/tableExecution/types';
-import type { DualAxisOverlayOptions, EstimateRevisionsOptions, EtfSunburstOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
+import type { DualAxisOverlayOptions, EstimateRevisionsOptions, EtfSunburstOptions, MarketMapOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
 import { qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
@@ -67,6 +68,7 @@ type LinkedChartProps = {
     parentReportsSourceStatus?: boolean;
     store?: typeof tableExecutionStore;
     sourceAncestry?: string[];
+    sourceAcquisitionKey?: string;
     readCurrentSource?: () => { view: ViewState; executor?: LocalWorkerExecutor; sourceCurrent: boolean; card?: DashboardCard };
     onSettingsChange: (settings: LinkedChartSettings, guard?: () => boolean) => Promise<boolean>;
 };
@@ -76,7 +78,7 @@ export function LinkedChartRenderer(props: LinkedChartProps) {
     return <LinkedChartView key={JSON.stringify([props.dashboardId, props.card.id, source])} {...props}/>;
 }
 
-function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, sourceAncestry, readCurrentSource, onSettingsChange }: LinkedChartProps) {
+function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parentReportsSourceStatus = false, store = tableExecutionStore, sourceAncestry, sourceAcquisitionKey, readCurrentSource, onSettingsChange }: LinkedChartProps) {
     const view = useSyncExternalStore(store.subscribe, () => store.readView(dashboardId, card.id));
     const theme = useResolvedTheme();
     const maxDecimals = useSettingsStore(s => s.settings.maxDecimalPlaces);
@@ -173,6 +175,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const revisionsForm = editing === 'estimate-revisions';
     const revisionsChart = settings.type === 'estimate-revisions';
     const acquiredScope = JSON.stringify([editScope, sourceAncestry]);
+    const marketForm = editing === 'market-map';
+    const marketChart = settings.type === 'market-map';
+    const marketScope = JSON.stringify([acquiredScope, sourceAcquisitionKey]);
     const revisionsScope = JSON.stringify([identity, source, sourceAncestry]);
     const readAcquiredSource = useCallback(() => {
         if (readCurrentSource) return readCurrentSource();
@@ -187,6 +192,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     const revisionsJob = useMeasuredRecipeJob<EstimateRevisionsOptions>(
         (revisionsChart || revisionsForm) && readAcquiredSource().sourceCurrent, view, executor, source, readAcquiredSource,
         estimateRevisionInputFields, 'estimate history');
+    const marketJob = useMeasuredRecipeJob<MarketMapOptions>(
+        (marketChart || marketForm) && readAcquiredSource().sourceCurrent, view, executor, source, readAcquiredSource, marketMapInputFields, 'market-map');
     const loadSourceChoices = useCallback(async (kind: SourceChoiceKind, dateField: string | undefined, signal: AbortSignal) => {
         const data = await chartChoicesInput(ready => kind === 'income-sankey' ? ready.columns.filter(isIncomePeriodColumn).map(column => column.id)
             : kind === 'bubble-regression' && dateField && ready.columns.some(column => column.id === dateField) ? [dateField] : [], signal);
@@ -320,7 +327,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
-        const sourceLabel = next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : 'ETF holdings';
+        const sourceLabel = next.type === 'market-map' ? 'market-map' : next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : 'ETF holdings';
         const sourceChanged = `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
         if (guard && !guard()) throw new Error(sourceChanged);
         const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
@@ -348,7 +355,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
         void commit({ ...withRecipeType(settings, options.kind), recipe: options }, canSave);
     }
-    function applyClosedRecipe(options: DualAxisOverlayOptions | EstimateRevisionsOptions, current: () => boolean) {
+    function applyClosedRecipe(options: DualAxisOverlayOptions | EstimateRevisionsOptions | MarketMapOptions, current: () => boolean) {
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
         void commit({ type: options.kind, measures: [], display: 'grouped', recipe: options }, canSave);
     }
@@ -362,7 +369,8 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
       + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
       + (etfForm || etfChart ? ' linked-chart-renderer--etf' : '')
       + (overlayForm || overlayChart ? ' linked-chart-renderer--overlay' : '')
-      + (revisionsForm || revisionsChart ? ' linked-chart-renderer--revisions' : '')}>
+      + (revisionsForm || revisionsChart ? ' linked-chart-renderer--revisions' : '')
+      + (marketForm || marketChart ? ' linked-chart-renderer--market' : '')}>
     {!viewer && editing === 'news-sentiment-calendar' && <div aria-hidden="true"
       className="chart-scroll-viewport--measured news-calendar-width-probe" ref={observeNewsDraftWidth}/>}
     {!viewer ? <div className="chart-controls">
@@ -380,7 +388,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
         const issue = recipeAvailability(kind as RecipeOptions['kind'], presented, verifiedEmpty);
         return <option key={kind} value={kind} disabled={!!issue}>{label}{issue ? ' — ' + issue : ''}</option>;
       })}</select></label>
-      {revisionsForm ? <EstimateRevisionsControls key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
+      {marketForm ? <MarketMapControls key={marketScope} job={marketJob} context={measuredDraftContext}
+        disabled={saving} saved={recipe?.ok && recipe.options.kind === 'market-map' ? recipe.options : undefined}
+        onApply={applyClosedRecipe}/> : revisionsForm ? <EstimateRevisionsControls key={acquiredScope} job={revisionsJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'estimate-revisions' ? recipe.options : undefined}
         onApply={applyClosedRecipe}/> : overlayForm ? <DualAxisOverlayControls key={acquiredScope} job={overlayJob} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === 'dual-axis-overlay' ? recipe.options : undefined}
@@ -413,7 +423,10 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parent
     {delivered ? <DatasetStatus dataset={delivered.dataset} notes={notes} source={carried ? source : undefined}/> : null}
     </div>
     {isRecipeType(settings.type) && (recipe?.ok
-      ? (recipe.options.kind === 'etf-sunburst'
+      ? (recipe.options.kind === 'market-map'
+        ? <LinkedMarketMap key={marketScope} view={view} job={marketJob} options={recipe.options}
+            context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
+        : recipe.options.kind === 'etf-sunburst'
         ? <LinkedEtfSunburst key={acquiredScope} view={view} job={etfJob} options={recipe.options} sourceId={source}
             context={measuredDraftContext} parentReportsSourceStatus={parentReportsSourceStatus}/>
         : recipe.options.kind === 'dual-axis-overlay'

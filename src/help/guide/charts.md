@@ -92,6 +92,16 @@ All live revision views remain unavailable. The live analyst estimates route rep
 
 For a portable Workspace, relink to an empty local table and remove the dropped file card before saving. An attached file triggers `MISSING_LOCAL_ASSET`. Drop and relink the recorded file after import. Reacquire a missing saved pin or explicitly replace it with an available vintage.
 
+## Market map
+
+Drop a prepared local JSON market snapshot and use **Choose source** to attach it to a linked chart. Choose **Market map** and check the five physical fields for listing, sector, area, price change fraction and completed session. Keep the acquired universe column in the table. **Delivered-sample capitalization** uses absolute capitalization in one verified listing currency. **Named index weights** is enabled by a compatible source with verified membership and weights valid for the completed price session. A live screener or index-history table cannot establish either source contract. Both live modes are unavailable.
+
+**Latest acquired** follows the compatible session in the selected snapshot. To keep one session, select its acquired date and apply. If a refresh or import cannot supply that pin, reacquire the matching snapshot or explicitly select the newly acquired session. The chart shows the completed close-to-close date range separately from capitalization retrieval or index membership and weight dates.
+
+Click a sector to drill. On a touch screen, tap a tile to inspect it and tap the sector again to drill. Use the breadcrumb or **Home** to return to the root, or choose **Sector view** with the keyboard. **Market map details** lists original qualified listings, areas and return fractions, including tiny tiles. Gray-blue indicates an unavailable return and beige indicates exactly zero. The symmetric return legend is fixed across drills and depends on the visible sample. Filtered index weights retain their original fractions and the root reports delivered components.
+
+An attached file triggers `MISSING_LOCAL_ASSET` when saving a portable Workspace. Relink to an empty local table and remove the dropped file card before exporting. After import, drop the compatible prepared file again and relink. The Workspace preserves your area basis, universe, session choice and five field bindings.
+
 ## Linked metric
 
 From a source table’s **Card menu**, choose **Create linked metric**, then select a KPI preset and its original numeric field. **Follow latest acquired** uses the newest eligible vintage. To keep one observation, choose it explicitly. If that pin disappears, reacquire it or choose another available observation. Apply saves the question after checking the source.

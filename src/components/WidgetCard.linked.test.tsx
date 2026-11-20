@@ -1,7 +1,9 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, followPlotYAxisTicks: () => () => {}, followPlotZoom: () => () => {}, restorePlotZoom: async () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst']) }));
+vi.mock('../lib/plotly', () => ({ renderPlot: vi.fn(async () => {}), purgePlot: () => {}, resizePlot: () => {}, followSunburstLevel: () => () => {}, followTreemapLevel: () => () => {}, followPlotYAxisTicks: () => () => {}, followPlotZoom: () => () => {}, restorePlotZoom: async () => {}, REGISTERED_TRACE_TYPES: new Set(['bar', 'scatter', 'indicator', 'waterfall', 'sankey', 'heatmap', 'box', 'sunburst', 'treemap']) }));
+import { capMap, marketSession } from '../test/fixtures/marketMap';
+import marketIndex from '../test/fixtures/marketMapIndex.json';
 import { revisionBump, revisionDenseValues, revisionHistory, revisionSlope, revisionTieValues } from '../test/fixtures/estimateRevisions';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -2372,4 +2374,231 @@ it('discards sizing from a relinked estimate draft and rechecks the drawing size
     expect(await screen.findByRole('alert')).toHaveTextContent(/estimate history source or drawing size changed/i);
     expect(useDashboardStore.getState().dashboards[0].tabs[0].cards.at(-1)?.linkedChart?.recipe).toEqual(revisionSlope);
   } finally { releaseSave(); pendingSave.mockRestore(); factory.mockRestore(); }
+});
+
+const marketSettings = () => screen.getByText('Market map settings', { exact: true });
+
+it('requires a prepared market-map receipt and keeps the applied map and details through a pending or refused draft', async () => {
+  const { factory, run } = riskRuntime();
+  const cap = marketSession();
+  const ordinary = await estimateHistorySource('A', cap.rows), recorded = await estimateHistorySource('B', cap);
+  const saved = { ...capMap, session: '2026-11-11' };
+  const chart = riskChart(saved);
+  installDashboard(riskDashboard([ordinary, recorded, chart]));
+  try {
+    render(<LiveRiskChart/>);
+    expect(await screen.findByText(/Relink a verified local market-map acquisition/i)).toBeVisible();
+    fireEvent.click(marketSettings());
+    expect(revisionApply()).toBeDisabled();
+    const mode = screen.getByLabelText('Area basis');
+    expect(within(mode).getByRole('option', { name: 'Named index weights' })).toBeDisabled();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await chooseRiskSource('B');
+    expect(await screen.findByText(/pinned market-map session is unavailable/i)).toBeVisible();
+    fireEvent.click(marketSettings());
+    fireEvent.change(screen.getByLabelText('Completed session'), { target: { value: 'latest' } });
+    await waitFor(() => expect(revisionApply()).toBeEnabled());
+    fireEvent.click(revisionApply());
+    const plot = await screen.findByTestId('chart-plot');
+    fireEvent.click(screen.getByText('Market map details', { exact: true }));
+    expect(await screen.findByRole('table', { name: 'Original listing values' })).toHaveTextContent('98765.4321 USD');
+    fireEvent.click(marketSettings());
+    let rejectDraft!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, reject) => { rejectDraft = reject; }));
+    fireEvent.change(screen.getByLabelText('Completed session'), { target: { value: '2026-11-13' } });
+    await waitFor(() => expect(rejectDraft).toBeDefined());
+    expect(revisionApply()).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    fireEvent.change(screen.getByLabelText('Area value'), { target: { value: '' } });
+    await act(async () => rejectDraft(new Error('Obsolete market-map draft')));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(revisionApply()).toBeDisabled();
+    expect(screen.getByTestId('chart-plot')).toBe(plot);
+    expect(screen.getByRole('table', { name: 'Original listing values' })).toHaveTextContent('98765.4321 USD');
+    act(() => useDashboardStore.setState({ dashboards: [riskDashboard([ordinary, recorded, {
+      ...chart, linkedSource: { kind: 'widget', sourceWidgetId: 'B' },
+      linkedChart: { ...chart.linkedChart!, recipe: { ...capMap, version: 2 } as unknown as RecipeOptions },
+    }])] }));
+    expect(await screen.findByText(/Supply plain version 1 recipe options/i)).toBeVisible();
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+it('preflights a market-map draft at the exact applied drawing size and discards a queued Apply when it changes', async () => {
+  const { factory, run, setSize, resize } = riskRuntime();
+  setSize(319.5, 260);
+  const a = await estimateHistorySource('A', marketIndex);
+  const linked = riskChart(capMap);
+  installDashboard(riskDashboard([a, linked]));
+  try {
+    const { container } = render(<LiveRiskChart/>);
+    fireEvent.click(marketSettings());
+    const mode = screen.getByLabelText('Area basis');
+    await waitFor(() => expect(within(mode).getByRole('option', { name: 'Named index weights' })).toBeEnabled());
+    fireEvent.change(mode, { target: { value: 'index-weight' } });
+    expect(await screen.findAllByText(/at least 320 × 260/i)).not.toHaveLength(0);
+    expect(revisionApply()).toBeDisabled();
+    const probe = container.querySelector<HTMLElement>('.market-map-draft-probe .chart-plot')!;
+    expect(probe.style.minWidth).toBe('320px');
+    expect(probe.style.height).toBe('260px');
+    act(() => resize(320.5, 260));
+    await waitFor(() => expect(revisionApply()).toBeEnabled());
+    const draftCall = run.mock.lastCall!;
+    expect(draftCall[2]).toMatchObject({ viewportWidth: 320.5, viewportHeight: 260 });
+    expect(draftCall[0].columns.map(c => c.id)).toEqual(expect.arrayContaining(['listing', 'sector', 'area', 'change', 'session', 'universe', 'weight_valid_for', 'membership_as_of']));
+    const commit = useDashboardStore.getState().commitLinkedChartSettings;
+    let release!: () => void;
+    const pending = new Promise<void>(done => { release = done; });
+    const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings').mockImplementationOnce(async (...args) => {
+      await pending;
+      return commit(...args);
+    });
+    try {
+      fireEvent.click(revisionApply());
+      setSize(337.5, 260);
+      await act(async () => release());
+      expect(await screen.findByRole('alert')).toHaveTextContent(/market-map source or drawing size changed/i);
+      expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[1].linkedChart?.recipe).toEqual(capMap);
+      act(() => resize(337.5, 260));
+      await waitFor(() => expect(revisionApply()).toBeEnabled());
+      const checked = run.mock.calls.filter(([, options]) => options.kind === 'market-map' && options.mode === 'index-weight').at(-1)!;
+      fireEvent.click(revisionApply());
+      await screen.findByTestId('chart-plot');
+      const applied = run.mock.lastCall!;
+      expect(applied[0].revision).toEqual(checked[0].revision);
+      expect(applied[1]).toEqual(checked[1]);
+      expect(applied[2]).toEqual(checked[2]);
+      const draw = vi.mocked(renderPlot);
+      const question = draw.mock.lastCall![2];
+      act(() => resize(490.5, 311.5));
+      await waitFor(() => expect(draw.mock.lastCall![1].layout.width).toBe(490.5));
+      expect(draw.mock.lastCall![2]).toBe(question);
+    } finally { release(); save.mockRestore(); }
+  } finally { factory.mockRestore(); }
+});
+
+it('fences recursive market map relinks before runtime sync, then keeps only same-chain stale output', async () => {
+  const { factory, run } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession()), b = await estimateHistorySource('B', marketSession('2026-11-12', '2026-11-11'));
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const chart = { ...riskChart(capMap), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, b, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  let rejectB!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectB = reject; });
+  const pathB = 'files/' + b.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((path, options) => path === pathB ? held : readFile(path, options));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    sync.mockImplementation(() => {});
+    const previousJobs = run.mock.calls.length;
+    await act(async () => { expect(await useDashboardStore.getState().replaceLinkedSource('T', 'B')).toBe(true); });
+    expect(tableExecutionStore.readView('d', 'chart').status).toBe('ready');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/Capitalization retrieved/i)).toBeNull();
+    expect(run).toHaveBeenCalledTimes(previousJobs);
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([path]) => path === pathB)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    await act(async () => { rejectB(new Error('File read failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: File read failed']);
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall?.[1].layout.title).toMatchObject({ text: expect.stringContaining('2026-11-12') });
+    let rejectRefresh!: (error: Error) => void;
+    const refresh = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectRefresh = reject; });
+    read.mockImplementation((path, options) => path === pathB ? refresh : readFile(path, options));
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    expect(await screen.findByText('Showing completed data (stale).')).toBeVisible();
+    await act(async () => { rejectRefresh(new Error('Refresh failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(element => element.textContent)).toEqual(['Source T: Source B: Refresh failed']);
+    expect(screen.getByText(/Capitalization retrieved/i)).toBeVisible();
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
+});
+
+it('drops an market map chart from the outgoing ready revision and ignores its late draw or worker failure', async () => {
+  const { factory, run, resize } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession()), b = await estimateHistorySource('B', marketSession('2026-11-12', '2026-11-11'));
+  installDashboard(riskDashboard([a, b, riskChart(capMap)]));
+  const plot = vi.mocked(renderPlot);
+  let rejectDraw!: (error: Error) => void;
+  plot.mockReturnValueOnce(new Promise<void>((_, reject) => { rejectDraw = reject; }));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    let release!: () => void;
+    run.mockImplementationOnce(async (data, options, context) => {
+      const result = runRecipe(data, options, context);
+      await new Promise<void>(done => { release = done; });
+      return result;
+    });
+    await act(async () => {
+      tableExecutionStore.updateDefinition('d', a.id, { table: {}, search: 'ALFA.US' }, { kind: 'none' });
+      await tableExecutionStore.settled('d');
+    });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText(/Capitalization retrieved/i)).toBeNull();
+    await act(async () => release());
+    let rejectWorker!: (error: Error) => void;
+    run.mockImplementationOnce(() => new Promise((_, reject) => { rejectWorker = reject; }));
+    act(() => resize(498.5, 379.5));
+    await waitFor(() => expect(rejectWorker).toBeDefined());
+    plot.mockRejectedValueOnce(new Error('Current revision draw failed'));
+    await chooseRiskSource('B');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chart could not be drawn. Current revision draw failed');
+    await act(async () => {
+      rejectDraw(new Error('Obsolete draw'));
+      rejectWorker(new Error('Obsolete calculation'));
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText(/Obsolete/i)).toBeNull();
+    run.mockRejectedValueOnce(new Error('Current revision calculation failed'));
+    act(() => resize(483.5, 364.5));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Current revision calculation failed');
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+  } finally { factory.mockRestore(); }
+});
+
+
+
+it('does not retain chart data when a market-map acquisition File changes under the same root card ID', async () => {
+  const { factory } = riskRuntime();
+  const a = await estimateHistorySource('A', marketSession());
+  const replacement = await estimateHistorySource('A', marketSession('2026-11-12', '2026-11-11'));
+  const table = card({ id: 'T', widgetId: 'linked_table', backendId: 'builtin', linkedSource: { kind: 'widget', sourceWidgetId: 'A' } });
+  const chart = { ...riskChart(capMap), linkedSource: { kind: 'widget' as const, sourceWidgetId: table.id } };
+  installDashboard(riskDashboard([a, table, chart]));
+  const originalSync = tableExecutionStore.syncDashboard;
+  const sync = vi.spyOn(tableExecutionStore, 'syncDashboard');
+  const readFile = fs.readFile;
+  let rejectReplacement!: (error: Error) => void;
+  const held = new Promise<Uint8Array<ArrayBuffer>>((_, reject) => { rejectReplacement = reject; });
+  const path = 'files/' + replacement.params.file;
+  const read = vi.spyOn(fs, 'readFile').mockImplementation((name, options) => name === path ? held : readFile(name, options));
+  try {
+    render(<LiveRiskChart/>);
+    await screen.findByTestId('chart-plot');
+    sync.mockImplementation(() => {});
+    act(() => installDashboard(riskDashboard([replacement, table, chart])));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    sync.mockImplementation(originalSync);
+    act(() => tableExecutionStore.syncDashboard(useDashboardStore.getState().dashboards[0]));
+    await waitFor(() => expect(read.mock.calls.some(([name]) => name === path)).toBe(true));
+    expect(screen.queryByTestId('chart-plot')).toBeNull();
+    expect(screen.queryByText('Showing completed data (stale).')).toBeNull();
+    await act(async () => { rejectReplacement(new Error('Replacement failed')); await tableExecutionStore.settled('d'); });
+    expect(screen.getAllByRole('alert').map(node => node.textContent)).toEqual(['Source T: Source A: Replacement failed']);
+    expect(screen.queryByText(/Capitalization retrieved/)).toBeNull();
+    read.mockImplementation(readFile);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    await screen.findByTestId('chart-plot');
+    expect(vi.mocked(renderPlot).mock.lastCall?.[1].layout.title).toMatchObject({ text: expect.stringContaining('2026-11-12') });
+  } finally { read.mockRestore(); sync.mockRestore(); factory.mockRestore(); }
 });
