@@ -1,20 +1,24 @@
 # V9 screening and income chart review
 
-## Independent finding 5 confirmation pending
+## Final independent disposition
 
-The independent whole-change review returned **With fixes**, with seven Important findings. The original candidate was BDOBB `b371605869db9a70476a44b7fd600ed1db39b1cd` (product `fd5edb848a3ffe0e3f6bc78a4065e310640206c5`), canonical provider `5c54b403513ef5759a9c1d461da54669e2a6d91c` and Docker `fb2df569e30c618652a9eec00db95c7ec7d4ad86`. The implementer reproduced the findings, committed fixes and ran the paired acceptance checks. The first independent re-review of the following ranges closed findings 1–4, 6 and 7. It returned **With fixes** on finding 5 because a full-record period missing net income still allowed Apply.
+**All seven Important findings are closed.** The independent reviewer confirmed the remaining Sankey draft fix and found no new regression. The local candidate is ready from code review. Open findings at closure were zero Critical, zero Important and zero Minor.
 
-| Repository | Fix base | Corrected product |
+The original whole-change review examined the approved three-chart design, the acquisition and projection paths, financial calculations, chart lifecycle, actual Chromium rendering and the paired package evidence. The first fix re-review closed findings 1–4, 6 and 7 and reproduced a remaining case under finding 5. The final re-review closed that case. [Original review and reproducers](original-review.md) · [First and final fix re-reviews](fix-review.md)
+
+| Review pass | BDOBB range | Canonical provider range | Docker range |
+| --- | --- | --- | --- |
+| Original whole-change review | `c6911588ac5d7dba748008abe6aec1ab09ab2204..b371605869db9a70476a44b7fd600ed1db39b1cd`. Tested product `fd5edb848a3ffe0e3f6bc78a4065e310640206c5`. | `349f2de40773cf2e1d9e2993ebabf3184871c07d..5c54b403513ef5759a9c1d461da54669e2a6d91c` | `f1ff723e66ece8bf404a8211716a62591d464581..fb2df569e30c618652a9eec00db95c7ec7d4ad86` |
+| First fix re-review | `b371605869db9a70476a44b7fd600ed1db39b1cd..cbbb1269bdebfc25e012ca48b726c9d865666524`. Tested product `4f5e254eeccb4daad55cb70c6616f7b205e5c5dd`. | `5c54b403513ef5759a9c1d461da54669e2a6d91c..6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` | `fb2df569e30c618652a9eec00db95c7ec7d4ad86..0e843db5465725f124075709528ea485618c87ad` |
+| Final finding 5 re-review | `cbbb1269bdebfc25e012ca48b726c9d865666524..b6dcaea30941f8180134429a3d35d8ce4bf12dc7`. Tested product `2d95868da701f9fa698d6f25f8c25f7a5217cbf8`. | Previously approved pin `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` | Previously approved pin `0e843db5465725f124075709528ea485618c87ad` |
+
+The final re-review checked that the draft and worker use the same presented-period resolver. It requires finite, source-verified mandatory anchors, accepts the authorized gross-profit formula and handles absent optional expenses as disclosed reconciliation. The original Chromium case produced ten FY 2026 nodes, then allowed Apply on a fully acquired FY 2025 record with `net_income=null` and `net_income` absent from `present_fields`. The corrected case kept the saved FY 2026 setting and ten nodes while the draft showed the exact anchor repair and disabled Apply. Returning to FY 2026 re-enabled Apply. A later refresh removing its anchor cleared the applied plot. [Browser capture](screenshots/income-ineligible-draft.png)
+
+## Finding dispositions
+
+| # | Reproduction on the earlier behavior | Verified result, all closed |
 | --- | --- | --- |
-| BDOBB | `b371605869db9a70476a44b7fd600ed1db39b1cd` | `4f5e254eeccb4daad55cb70c6616f7b205e5c5dd` |
-| Canonical openbq-eodhd | `5c54b403513ef5759a9c1d461da54669e2a6d91c` | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
-| openbq-docker | `fb2df569e30c618652a9eec00db95c7ec7d4ad86` | `0e843db5465725f124075709528ea485618c87ad` |
-
-The finding 5 follow-up spans BDOBB `cbbb1269bdebfc25e012ca48b726c9d865666524..2d95868da701f9fa698d6f25f8c25f7a5217cbf8`. The draft and worker now use the same presented-period resolver. Both require finite, source-verified mandatory anchors, accept the existing unmodified gross-profit calculation and allow absent optional expenses. Mounted-parent and Chromium tests preserved the applied FY 2026 settings and plot while FY 2025 displayed a repair. A subsequent refresh invalidating FY 2026 cleared the plot. The controller owns independent confirmation of this follow-up. [Browser capture](screenshots/income-ineligible-draft.png)
-
-| # | Reproduction on the earlier behavior | Change and verified result |
-| --- | --- | --- |
-| 1 | The generated screener field named the percent formatter. The old packaged HTTP row held 0.05 and the actual Chromium table cell displayed 0.05 %. | The provider now emits `normalizedPercent`. The same upstream 5 percentage points, paired packaged row 0.05, and generated widget column produce a 5 % cell in the real source table. |
+| 1 | The generated screener field named the percent formatter. The old packaged HTTP row held 0.05 and the actual Chromium table cell displayed 0.05 %. | The provider now emits `normalizedPercent`. The same upstream 5 percentage points, paired packaged row 0.05, and generated widget column produce a 5 % cell in the real source table. [Opt-in paired-cell reproducer](reproduce/README.md) |
 | 2 | The local loader accepted verified dividend coverage with paged, partial and sample delivery. The matched HTTP receipt previously omitted scope reconciliation. | Local ingress rejects the contradictory file. HTTP ingress withholds proof for negative delivery on the envelope or its results object. Normal HTTP arrays with verified evidence and generic unknown table scope still draw. A real HTTP dotted selector test preserves the negative envelope and withholds its receipt. |
 | 3 | A qualified listing suffix could contradict the exchange. Delivered unadjusted dividend basis, a diagnostic claiming an absent raw conflict, incompatible FY/FQ labels and a mismatched fiscal year were accepted. | Both acquisition paths check delivered rows and closed receipt facts before projection. Consistent unsafe facts remain available for repair. TypeScript and compiled Rust retain the amount-basis refusal through another link after removing the field. Source-line aliases and display-period renaming remain supported. |
 | 4 | At 2025-02-01 with nominal January year end, the provider returned 2026/FY and 2026/Q1. | The opted-in provider preserves actual end and FY/FQ kind. Only the annual bucket supplies an FY label. Fiscal years and numbered quarters remain unknown from a nominal month. Legacy callers keep the old labels. The canonical quarter snapshot crossed both actual Statement engines and its chart title read “FQ · 2025-02-01 · USD × 1000”. |
@@ -40,4 +44,10 @@ The task reviews closed the findings below. The whole-change review and follow-u
 | 8. Controls and lifecycle | The screening draft exposed cohort choices without a valid acquisition receipt, and repair copy claimed a wait on a settled view. The mounted parent now gates the draft on valid acquired evidence and gives repair guidance with one source notice. | `b32c4925` → `b35e62f1` |
 | 9. Browser and examples | Dark Sankey tooltip contrast fell below 4.5:1 and the terminal capture overlapped the import notice. The scoped palette passes the conservative 4.5:1 bound in both themes with native opacity. The repositioned card capture shows the full terminal tooltip. | `896118e9` → `fd5edb84` |
 
-Record subsequent whole-change findings, reviewed fixes, exact reviewed SHAs and final independent disposition here.
+## Accepted review scope
+
+- Live EODHD entitlement, payment-history completeness, actual monetary scale and the economic accuracy of upstream measurements require external evidence. The current live dividend path reports unknown coverage and the income path reports unknown scale. Both recipes refuse those receipts. Positive chart examples use independently evidenced fixture snapshots.
+- The approved platform check covers actual desktop Chromium and its touch emulation. Physical touch hardware, Safari and native Tauri interaction are outside this acceptance.
+- Authentication of a snapshot author's real-world assertions is outside the snapshot contract. Finding 3 closed the in-contract contradictions visible in acquired rows and receipts, including cases that presentation filters could hide.
+- The eight follow-up chart families, general fiscal-calendar support beyond the new receipt, publication, PR updates, merge and deployment were outside the batch. The prior PRs were preserved.
+- The independent reviewer checked the diffs, pins, source identity, logged runs and focused reproducers, and ran an additional real Chromium probe for finding 5. The complete suites and image build were run by the implementer and controller. The controller accepted those execution logs and confirmed the candidate pins. The recorded final gates include 9,597 unit tests with 47 opt-in skips, 57 web tests, 15 Chromium cases, 200 native and 19 codec tests, 539 offline provider passes with one optional skip, 17 Docker tests with two subtests and 16 runtime verifier checks. [Commands, pin and evidence details](verification.md)

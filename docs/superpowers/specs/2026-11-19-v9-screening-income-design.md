@@ -1,6 +1,6 @@
 # V9 screening and income charts: bubble regression, dividend steps and Sankey
 
-November 19, 2026. The user approved the written design and implementation plan and authorized local implementation. The three chart families are implemented locally. Independent whole-change review is pending.
+November 19, 2026. The user approved the written design and implementation plan and authorized local implementation. The three chart families are implemented and tested on the local paired candidate. Independent whole-change review is complete and all seven findings are closed.
 
 ## Intent and approved scope
 

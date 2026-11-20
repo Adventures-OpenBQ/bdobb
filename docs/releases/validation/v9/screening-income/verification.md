@@ -1,6 +1,6 @@
 # V9 screening and income chart verification
 
-November 19, 2026. The local candidate adds screening bubble regression, historical dividend steps and an income-statement Sankey. The independent whole-change review identified seven Important findings. Independent re-review closed findings 1–4, 6 and 7. Finding 5 required a follow-up for an income period missing a mandatory anchor. The follow-up passed the application and browser checks below and awaits independent confirmation. [Review findings and dispositions](review.md)
+November 19, 2026. The local candidate adds screening bubble regression, historical dividend steps and an income-statement Sankey. The independent whole-change review identified seven Important findings. The independent re-reviews confirmed all seven fixes on the recorded local candidate. [Review findings and dispositions](review.md)
 
 ## Candidate pins
 
@@ -10,7 +10,7 @@ November 19, 2026. The local candidate adds screening bubble regression, histori
 | Canonical openbq-eodhd | `349f2de40773cf2e1d9e2993ebabf3184871c07d` | `6f9f1cb20475c3204867bf03c3f3dc5f7141ca96` |
 | openbq-docker | `f1ff723e66ece8bf404a8211716a62591d464581` | `0e843db5465725f124075709528ea485618c87ad` |
 
-The listed product heads include the review fixes. The subsequent BDOBB evidence commit updates these records and screenshots. Two historical documentation-only commits in the BDOBB product history, `a1083ea57364b29015824e6561f5ab698e63169f` and `5e0430a1b5e4cf52fd5d36d74a0b108b48700205`, concern the separately planned eight chart families. The three candidate branches are local `codex/v9-screening-income` branches. The earlier BDOBB #87, provider #5 and Docker #32 PRs were preserved.
+The listed product heads include the review fixes. BDOBB evidence commit `b6dcaea30941f8180134429a3d35d8ce4bf12dc7` records the tested follow-up and was included in the final re-review. The subsequent closure commit records the independent verdict. Two historical documentation-only commits in the BDOBB product history, `a1083ea57364b29015824e6561f5ab698e63169f` and `5e0430a1b5e4cf52fd5d36d74a0b108b48700205`, concern the separately planned eight chart families. The three candidate branches are local `codex/v9-screening-income` branches. The earlier BDOBB #87, provider #5 and Docker #32 PRs were preserved.
 
 ## BDOBB shipping checks
 
@@ -53,7 +53,7 @@ BDOBB_BROWSER_PORT=17419 BDOBB_MOCK_PORT=17420 \
 - A 390 px emulated touch viewport tapped Sankey links and nodes and scrolled the overflowing plot to net income at 20 USD × 1000. Resizing preserved the analysis revision and node order. Finger drags zoomed the fitting bubble and dividend plots. [Scrolled touch capture](screenshots/income-touch-net-income.png)
 - Native export preserved the applied price cohort, disabled fit and selected fiscal column. A second page imported it, made three new opted-in source requests and plotted changed response values. The export excluded rows, receipts, retrieval timestamps and snapshot certification. [Fixture workspace and HTTP server](../../../../examples/v9-screening-income/README.md)
 
-- The paired image generated the screening widget and normalized the fixture return from 5 percentage points to a stored 0.05. Chromium rendered the actual source-table cell as **5 %**. The same test on the earlier paired image rendered **0.05 %**. [Generated source table](screenshots/paired-formatted-table.png)
+- The paired image generated the screening widget and normalized the fixture return from 5 percentage points to a stored 0.05. Chromium rendered the actual source-table cell as **5 %**. The same test on the earlier paired image rendered **0.05 %**. [Generated source table](screenshots/paired-formatted-table.png) · [Opt-in paired-cell reproducer](reproduce/README.md)
 - The narrow-span case admitted three listings with X values 0.1, 0.10000000000000002 and 0.10000000000000003. At 780 × 480, all three marker centers fell at x = 347.5 inside the 695 px domain and at distinct y coordinates 282.87, 163 and 43.13. Both fitted endpoints coincided with the sample extremes. At widths 390 and 1100, the three centers fell at 152.5 and 507.5 respectively. The fit retained the input fractions and R² of 1. [780 × 480 plot](screenshots/narrow-span-regression.png)
 
 ## Production JavaScript bytes
@@ -85,7 +85,7 @@ def deny_network(event, args):
         raise OSError("Offline verification: network disabled")
 
 sys.addaudithook(deny_network)
-raise SystemExit(pytest.main(["-q"]))
+raise SystemExit(pytest.main(["-q", "-rs"]))
 PY
 ```
 
