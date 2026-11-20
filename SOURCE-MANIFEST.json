@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "cd77babc0b3ca46793bbbd6f4ac5231147e29097",
-  "sourceId": "6f371088fb990e450674ed66057d546fc8ff68973838fb93d2d015841c8682eb",
+  "baseCommit": "b3857398c50a39cb6f744c548b1b29449b929c6f",
+  "sourceId": "4901c09df3980a6eb56d3beac861a6a8c4590f1336e178e1041a11c1953bc80f",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -55,8 +55,8 @@
       "path": "DEPENDENCY-SOURCES.json",
       "type": "file",
       "mode": 420,
-      "size": 403,
-      "sha256": "3e9445312a6028f803a66422c2d38f74c1e0571d08d1356db51498d8d5d1bda9"
+      "size": 874,
+      "sha256": "ba7cfd91c988fac7569b79c5882cdf3d3305454c1ed6347d8d2498934886655a"
     },
     {
       "path": "DOCUMENTATION_TERMS.md",
@@ -3527,8 +3527,8 @@
       "path": "SOURCE_README.md",
       "type": "file",
       "mode": 420,
-      "size": 4041,
-      "sha256": "15627c17fa7526b6c33acefa835971703fa090ecb77db494c9dacf9f8760122c"
+      "size": 5017,
+      "sha256": "811b46634241bae9964d29778d802f86254551f43166fac4accc43d2890b80bc"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "12555636872f47083401206ca218b534c1a3432a02b7f01fb36ed6dd5044f932"
+      "sha256": "ded91d779dde4158ed56074513b4c44cf19ea39d8ebb65ce5fdb84b50bc6e28e"
     },
     {
       "path": "source_bundle.py",
@@ -9213,7 +9213,16 @@
     "sha256": "64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941",
     "bytes": 643211895,
     "manifest_sha256": "a1b2ab0d108e6dbb704425177cdbe8a9f91e7d0745f5aa4b37a2ffe902a628b0",
-    "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz"
+    "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz",
+    "additionalPacks": [
+      {
+        "filename": "dependency-supplement-e386090b3420933f229b.tar.gz",
+        "sha256": "3cc05062fa8ba94e005d5038400f4bf2a0193461a11a93c01b70276c8e3eec69",
+        "bytes": 153067687,
+        "manifest_sha256": "e386090b3420933f229bd817c0284d5c260043a0c787f4e4e79b93b7cb107532",
+        "url": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-e386090b3420/dependency-supplement-e386090b3420933f229b.tar.gz"
+      }
+    ]
   },
   "publicationStatus": "prepared-local-not-published"
 }
