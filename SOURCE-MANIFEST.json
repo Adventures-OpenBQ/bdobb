@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "5bc7f02940143b23d3c9cb9576a3f42bc29b6d13",
-  "sourceId": "d226882ce67219b27ecb2b72d91587853d1275fab718a4d84967a112f6d8a1c7",
+  "baseCommit": "7c3e14a541476f5000290022ba17d03def5dd4d3",
+  "sourceId": "291ae7208cd32f1e8b987c471d25dace7fe45eae4f6a6ec1ef6cb35d401a1b00",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5242,8 +5242,8 @@
       "path": "e2e/header-scroll.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 4707,
-      "sha256": "b5dbe77822cb0a79778d35d37123df8b7baf8bf0d92862f3acef8bac1f390ee5"
+      "size": 4949,
+      "sha256": "d9812c4a713d70eed76a0da1c2ccef4e39483063362dec94effa0318ce5455b1"
     },
     {
       "path": "e2e/help.spec.ts",
@@ -5599,8 +5599,8 @@
       "path": "scripts/help-shots.mjs",
       "type": "file",
       "mode": 420,
-      "size": 21332,
-      "sha256": "66c54115ef4c70f5900054928c1fa015a747f1f8798de552e17331577ce52f5a"
+      "size": 21413,
+      "sha256": "5a5e4ad159373493fdf0714607ac5403acc579e894b84510fbddc9001e41e92f"
     },
     {
       "path": "scripts/help-shots.test.mjs",
@@ -5712,7 +5712,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "e522b288b9bd8b381faf52a7bcde3785e2d510af0615bf5fa3a250ee1ad36afc"
+      "sha256": "db4588b95d00175709f4b82044eadd12adbfa4d82777e168bf9da014a952dc27"
     },
     {
       "path": "source_bundle.py",
@@ -5890,6 +5890,13 @@
       "sha256": "d6f4366fb850a3cd39df6ab838e482a610c276cbf854ee481e4c673ec5fea95a"
     },
     {
+      "path": "src/components/ChevronIcon.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 623,
+      "sha256": "d820e641cda2225d7bda01828032552023adf5c1b18280cf2e86b47a0ea975ec"
+    },
+    {
       "path": "src/components/DashboardGrid.layout.test.tsx",
       "type": "file",
       "mode": 420,
@@ -5923,6 +5930,13 @@
       "mode": 420,
       "size": 10727,
       "sha256": "cbb7ccf067c4b055864165bac5a7d7ab3604cbfeea57a32e6da02de1129c7cc7"
+    },
+    {
+      "path": "src/components/FilterIcon.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 548,
+      "sha256": "fbca1563dda3222275bd127a7a2ccc8c05e6beaab9d954bb76fd5105596f2737"
     },
     {
       "path": "src/components/GroupLink.test.tsx",
@@ -6037,6 +6051,13 @@
       "sha256": "bdfd65348e9c177af547e61fcb08623487143aab979e7b712844905e08502ade"
     },
     {
+      "path": "src/components/RefreshIcon.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 583,
+      "sha256": "ef51b9a3678a450551c47eab8509900afbd2388b41ad67b661d3b7817fde0ba3"
+    },
+    {
       "path": "src/components/RowContextMenu.test.tsx",
       "type": "file",
       "mode": 420,
@@ -6096,8 +6117,8 @@
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 74269,
-      "sha256": "e3ddddaab25c92576d570ccb799042718e4f84e6bab4a94196bae3b844f1e67c"
+      "size": 74536,
+      "sha256": "2e63194eae65269ab7794f1fd9ba1c28a21c99d478a80458c92d4fdfc4893927"
     },
     {
       "path": "src/components/WidgetFormPanel.tsx",
@@ -7139,15 +7160,15 @@
       "path": "src/help/shots/card-parameters-dark.png",
       "type": "file",
       "mode": 420,
-      "size": 35418,
-      "sha256": "4b1eff7c407346f63fb77162d92fca2a333da44b55461b3c458677cdec00330b"
+      "size": 36374,
+      "sha256": "8f22e40a4bc45dcdd8291516db0dc18c2e3c218647e70ad6c8f50e3127867327"
     },
     {
       "path": "src/help/shots/card-parameters-light.png",
       "type": "file",
       "mode": 420,
-      "size": 34892,
-      "sha256": "be1bb791ab99ebc18b1e0d87bf03374b33b7c4969f7ff930f53e17ddc8f8614d"
+      "size": 35871,
+      "sha256": "b00d93bc0b35866d9512bb640ed3c47e58099b7e30ca1a1c40d3d1c05ac2cef6"
     },
     {
       "path": "src/help/shots/charts-dark.png",
@@ -8742,8 +8763,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 73593,
-      "sha256": "e6e295555b8a031282132cc081c94868cf86e65006373a99ec4f275ef967b1c3"
+      "size": 73874,
+      "sha256": "07a1f5f3129bf3dd00dafb75314fd23f56ca9b57e2fe8e8f30c4d7432fb35cf3"
     },
     {
       "path": "src/test/fakeSocket.ts",
