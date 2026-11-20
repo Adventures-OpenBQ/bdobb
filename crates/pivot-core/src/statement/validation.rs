@@ -176,10 +176,18 @@ pub fn validate_intent(i: &StatementIntent) -> Result<(), Diagnostic> {
             ));
         }
     }
+    for (line, section) in &o.line_section {
+        if !lines.contains(line.as_str()) || !sections.contains(section.as_str()) {
+            return Err(problem(
+                "missing-reference",
+                "overrides.lineSection",
+                "Unknown or unowned reference.",
+            ));
+        }
+    }
+    let displayed = displayed_sections(i);
     for (section, order) in &o.line_order {
-        let s = i
-            .template
-            .sections
+        let s = displayed
             .iter()
             .find(|s| &s.id == section)
             .ok_or_else(|| fail("overrides.lineOrder", "Unknown section or invalid order."))?;

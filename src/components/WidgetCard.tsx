@@ -26,7 +26,7 @@ import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { BUILTIN_BACKEND_ID, SSRM_TYPES, fetchesData } from "../lib/builtins";
 import { rowChartAxes, rowsOf } from "../lib/chartShapes";
 import { dataUpdateText } from "../lib/cron";
-import { authHeaders } from "../lib/dataClient";
+import { authHeaders, buildIframeWidgetUrl } from "../lib/dataClient";
 import { originOf } from "../lib/iframeProtocol";
 import { exportFilename, collectPresentedExport, rowsForExport, toCsv, toJson, toJsonRows, toXlsx } from "../lib/export";
 import { logError, logOnce } from "../lib/logger";
@@ -46,6 +46,9 @@ import { useSettingsStore } from "../stores/settingsStore";
 import { useWidgetRegistryStore } from "../stores/widgetRegistryStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { InlineRename } from "./InlineRename";
+import { RefreshIcon } from "./RefreshIcon";
+import { ChevronIcon } from "./ChevronIcon";
+import { FilterIcon } from "./FilterIcon";
 import { ParamControls } from "./ParamControls";
 import { MenuPanel } from "./RowContextMenu";
 import { WidgetFormPanel } from "./WidgetFormPanel";
@@ -243,7 +246,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   /** A `.catch` for one of this card's store writes: logs "failed to <what> for card <id>". */
   const logFail = (what: string) => (err: unknown) => logError(`failed to ${what} for card ${card.id}: ${err}`);
   /**
-   * The Parameters panel — the chips row again, with labels showing, docked
+   * The Parameters panel — later rows, plus row zero when its title controls
+   * are hidden, with labels showing, docked
    * under the title bar. v5.5.1 (user ruling 2026-09-30): opened and closed
    * from the title bar's ▸/▾ chevron (and the ⋯ menu's Parameters item),
    * closed by default, and saved per card in `paramsOpen`. It was a
@@ -286,7 +290,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    * not about the card.
    */
   const [exportNotice, setExportNotice] = useState<string | null>(null);
-  const paramsRef = useRef<HTMLDivElement | null>(null);
+  const [paramsHost, setParamsHost] = useState<HTMLDivElement | null>(null);
 
   /**
    * The ⋯ toggle, kept so the menu can hang from it. The menu is portalled
@@ -314,12 +318,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    * hand focus to whichever card mounted last.
    */
   useEffect(() => {
-    if (!paramsOpen || !focusParamsOnOpen.current) return;
+    if (!paramsOpen || !paramsHost || !focusParamsOnOpen.current) return;
     focusParamsOnOpen.current = false;
-    paramsRef.current
-      ?.querySelector<HTMLElement>("input, select, button, [tabindex]")
+    paramsHost
+      .querySelector<HTMLElement>("input, select, button, [tabindex]")
       ?.focus();
-  }, [paramsOpen]);
+  }, [paramsOpen, paramsHost]);
 
   /**
    * Escape restores. Registered only while THIS card is the maximized one, so
@@ -421,6 +425,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const tabs = widget ? bodyParams(widget, "tabs") : [];
   const forms = widget ? bodyParams(widget, "form") : [];
   const hasControls = widget ? visibleParams(widget).length > 0 : false;
+  const hasChartParameters = !viewer && Boolean(card.linkedChart && card.linkedSource);
+  const hasParameters = hasControls || hasChartParameters;
   // Does the ◷ do anything on this card? Yes when the hook has a request to
   // repeat (fetchesData), or when the renderer takes `refreshKey` and does
   // its own reload. Otherwise -- a framed page, a note, the clock, the keys
@@ -462,7 +468,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // get here. The rest pivot in-thread with TableRenderer's own panel.
   const backendTable = isBackendTable(card);
   // Memoised: the table's date filters start from these rows, recomputed per payload.
-  const backendRows = useMemo(() => (backendTable ? tableRows(data) ?? undefined : undefined), [backendTable, data]);
+  const backendRows = useMemo(() => (backendTable ? tableRows(data, widget?.table) ?? undefined : undefined), [backendTable, data, widget?.table]);
   const workerTable = isWorkerTableProducer(card) && (!backendTable || fitsTableWorker(data));
   const backendPivot =
     widget?.type === "table" && !isTransposed && (view === undefined || view === "table") && !card.linkedSource && !workerTable;
@@ -484,7 +490,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     const type = widget?.type ?? "table";
     const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
     if (type !== "chart") {
-      const rows = rowsOf(data);
+      const rows = rowsOf(tableRows(data, widget?.table) ?? data);
       if (rows && rowChartAxes(rows, widget?.table?.columns) !== null) list.push({ value: "chart", label: "Chart" });
     }
     const statementData = tableRows(data);
@@ -507,7 +513,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       // ([[1,2],[3,4]]) that the transposed view cannot render at all, and
       // offering the option there would dead-end in the empty state with
       // every export disabled. This gate must be the renderer's own.
-      const rows = tableRows(data);
+      const rows = tableRows(data, widget?.table);
       // A local_table card's rows live in its renderer, not in `data`, so the
       // option is offered unconditionally there -- the same reason showsTable
       // treats that type separately.
@@ -544,12 +550,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const transposed = useMemo(() => {
     if (!isTransposed) return null;
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows ? transposeRows(rows) : null;
-  }, [isTransposed, data]);
+  }, [isTransposed, data, widget?.table]);
   const exportRows = useMemo(
-    () => (isStatement ? (statementSnapshot?.statement?.rows ?? null) : isTransposed ? (transposed?.rows ?? null) : rowsForExport(data)),
-    [isStatement, statementSnapshot, isTransposed, transposed, data],
+    () => (isStatement ? (statementSnapshot?.statement?.rows ?? null) : isTransposed ? (transposed?.rows ?? null) : rowsForExport(tableRows(data, widget?.table) ?? data)),
+    [isStatement, statementSnapshot, isTransposed, transposed, data, widget?.table],
   );
   // Explicit order for the exporters; undefined lets them derive it as today.
   const exportColumns = isStatement ? statementSnapshot?.statement?.columns : isTransposed ? transposed?.columns : undefined;
@@ -576,7 +582,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       view !== "raw" &&
       view !== "chart" &&
       !isTransposed && !isStatement &&
-      tableRows(data) !== null) ||
+      tableRows(data, widget?.table) !== null) ||
     // A local-file card's rows live inside its renderer, not in `data`: it
     // fetches nothing. The ⌕ toggle is the only thing this gate reaches for
     // such a card -- the Columns and Reset items below sit inside the ⋯ menu,
@@ -590,7 +596,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const menuColumns = useMemo(() => {
     if (workerTable && executionView.ready) return schemaColumns(executionView.ready.inspection.inputColumns, widget?.table);
-    const rows = tableRows(data);
+    const rows = tableRows(data, widget?.table);
     return rows && rows.length > 0 ? tableColumns(rows, widget?.table) : [];
   }, [data, widget?.table, workerTable, executionView.ready]);
   const menuOrder = orderFields(menuColumns, card.table?.columnOrder);
@@ -669,7 +675,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   function messagingFor(w: WidgetDef | undefined): WidgetMessaging | undefined {
     if (!w) return undefined;
-    const frameOrigin = originOf(w.endpoint);
+    const frameOrigin = originOf(w.type === "iframe" ? buildIframeWidgetUrl(backend, w, query) : w.endpoint);
     return {
       headers:
         backend && frameOrigin !== null && frameOrigin === originOf(backend.baseUrl)
@@ -959,7 +965,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         const collapsed = folded.includes(section) ? folded.filter(name => name !== section) : [...folded, section];
         void patchCardField(card.id, "statement", collapsed.length ? { collapsed } : null).catch(() => setExportNotice("Could not save Statement sections."));
       }} />;
-    if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} />;
+    if (card.linkedSource && dashboard) return <LinkedCardBody dashboardId={dashboard.id} card={card} refreshKey={attempt} filterRow={filterRowOpen} onStateChange={(patch) => void saveTable(patch)} chooseSource={() => setChooseSource(true)} viewer={viewer} controlsHost={paramsOpen ? paramsHost : null} />;
 
     if (status === "unresolved" && widget && WAITS_FOR_WIDGET.has(widget.type)) {
       return <p className="empty-state">Waiting for widget…</p>;
@@ -975,7 +981,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       const isBuiltin = widget.backendId === BUILTIN_BACKEND_ID;
       return (
         <IframeRenderer
-          url={isBuiltin ? (card.params.url ?? "") : widget.endpoint}
+          url={isBuiltin ? (card.params.url ?? "") : buildIframeWidgetUrl(backend, widget, query)}
           emptyHint={isBuiltin ? "Enter a URL in Parameters to frame a page." : undefined}
           messaging={messagingFor(widget)}
         />
@@ -1212,7 +1218,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // must suppress the raw view has to do so explicitly (SP5's keys widget).
     if (view === "raw") return <RawJsonView data={data} />;
     if (view === "chart") return <ChartRenderer
-        data={data}
+        data={tableRows(data, widget?.table) ?? data}
         uirevision={paramsKey(query)}
         columns={widget?.table?.columns}
         chartType={widget?.chartView?.chartType}
@@ -1306,8 +1312,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     }
   }
 
-  // The two ParamControls instances (chips row, Parameters panel) differ
-  // only in idPrefix; everything else is built once here.
+  // Both control instances observe every field for cascades; the panel omits
+  // row zero while those fields are visible in the title strip.
   const controlProps: ComponentProps<typeof ParamControls> | null =
     widget && dashboard
       ? {
@@ -1384,7 +1390,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           onFocus={stampTitle}
           onClick={(e) => (widget?.runButton && !(e.metaKey || e.ctrlKey) ? run() : retry())}
         >
-          {widget?.runButton ? "▶" : "◷"}
+          {widget?.runButton ? "▶" : <RefreshIcon />}
         </button>
         ) : null}
         {/* The timer's tooltip, restated for assistive tech: `title` alone
@@ -1397,7 +1403,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         {/* v5.5.1 (user ruling 2026-09-30): the Parameters panel's own
             toggle, on every card with parameters. ▸ is closed, ▾ is open;
             the state is saved on the card (see paramsOpen). */}
-        {hasControls && !minimized ? (
+        {hasParameters && !minimized ? (
           <button
             type="button"
             className="card-params-chevron"
@@ -1406,7 +1412,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             aria-label={paramsOpen ? "Hide parameters" : "Show parameters"}
             onClick={() => setParamsOpen(!paramsOpen)}
           >
-            {paramsOpen ? "▾" : "▸"}
+            <ChevronIcon direction={paramsOpen ? "down" : "right"} />
           </button>
         ) : null}
         {renaming ? (
@@ -1440,11 +1446,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
+        {!minimized && hasControls && !hideTitleParams && controlProps ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}${widget && visibleParams(widget).every((p) => (p.row ?? 0) > 0) ? " card-chips-below" : ""}`}
+            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            <ParamControls {...controlProps} />
+            <ParamControls {...controlProps} rowZeroOnly />
           </div>
         ) : null}
         <div
@@ -1466,7 +1472,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
               aria-expanded={controlsOpen}
               onClick={() => setControlsOpen((v) => !v)}
             >
-              ⌄
+              <ChevronIcon direction={controlsOpen ? "up" : "down"} />
             </button>
           ) : null}
           <div className="card-controls-icons">
@@ -1488,7 +1494,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                 aria-pressed={filterRowOpen}
                 onClick={() => setFilterRowOpen((v) => !v)}
               >
-                {"⌕"}
+                <FilterIcon />
               </button>
             ) : null}
             {hasMenu ? (
@@ -1532,6 +1538,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                     // every dashboard.
                     layoutKey={`${exportSubOpen} ${columnsSubOpen} ${copySubOpen} ${quickSubOpen}`}
                   >
+
                     <button
                       type="button"
                       role="menuitem"
@@ -1545,7 +1552,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
                     >
                       {"Rename…"}
                     </button>
-                    {hasControls ? (
+                    {hasParameters ? (
                       <button
                         type="button"
                         role="menuitem"
@@ -1783,18 +1790,20 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             )}
           </div>
         </div>
-        {/* The Parameters panel: the chips row again, as a form with its
+        {/* The Parameters panel: later rows, plus row zero when title controls are hidden, with its
             labels showing (styles.css makes .param-label-hidden static inside
             .card-params-panel). A child of <header>, after .card-controls,
             on a line of its own under the bar (the header wraps). Docked,
             not floating, since v5.5.1 -- see paramsOpen. */}
-        {paramsOpen && !minimized && controlProps ? (
-          <div className="card-params-panel" role="region" aria-label="Parameters" ref={paramsRef}>
+        {paramsOpen && !minimized && (hasControls && controlProps || hasChartParameters) ? (
+          <div className="card-params-panel" role="region" aria-label="Parameters" ref={setParamsHost}>
+            {hasControls && controlProps ? <>
             <ParamControls
               {...controlProps}
               // Same viewer read-only contract as the chips instance.
               // Distinguishes this panel's ids from the chips row's (both mount ParamControls for the same card while the panel is open).
               idPrefix="params-"
+              omitRowZero={!hideTitleParams && (!collapseControls || controlsOpen)}
             />
             {/* v5.5.1: whether the chips also sit on the title bar. Unchecked,
                 this panel is the only place they are edited. Viewer
@@ -1813,9 +1822,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
               />
               Display on title bar
             </label>
+            </> : null}
+            {hasChartParameters ? <button type="button" onClick={() => setChooseSource(true)}>Choose source</button> : null}
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline /> : undefined} /> : null}
+        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} /> : null}
       </header>
       {exportNotice ? (
         <p className="card-notice" role="status">
@@ -1912,23 +1923,32 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 }
 
 /** Linked presentations share the dashboard runtime status and source repair action. */
-function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer }: {
+function LinkedCardBody({ dashboardId, card, refreshKey, filterRow, onStateChange, chooseSource, viewer, controlsHost }: {
   dashboardId: string; card: DashboardCard; refreshKey: number; filterRow: boolean;
-  onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean;
+  onStateChange: (patch: TableStatePatch) => void; chooseSource: () => void; viewer: boolean; controlsHost: HTMLElement | null;
 }) {
   const view = useSyncExternalStore(tableExecutionStore.subscribe, () => tableExecutionStore.readView(dashboardId, card.id));
   useEffect(() => { tableExecutionStore.ensureTable(dashboardId, card.id); }, [dashboardId, card.id, card.linkedSource?.sourceWidgetId]);
   const dashboard = useDashboardStore(s => s.dashboards.find(d => d.id === dashboardId));
+  const widgets = useWidgetRegistryStore(s => s.widgets);
+  // The widget at the head of the source chain declares the chartDataType hints a linked chart can start from.
+  const hints = useMemo(() => {
+    const cards = dashboard?.tabs.flatMap(t => t.cards) ?? [];
+    const seen = new Set<string>();
+    let root: DashboardCard | undefined = card;
+    while (root?.linkedSource && !seen.has(root.id)) { seen.add(root.id); const id: string = root.linkedSource.sourceWidgetId; root = cards.find(c => c.id === id); }
+    return root && widgets.find(w => w.id === root.widgetId && w.backendId === root.backendId)?.table?.columns;
+  }, [dashboard, card, widgets]);
   // Recoverable model/worker failures retain the mounted presentation and its
   // completed result. Missing, cyclic, foreign and legacy source ancestry does not.
   const unavailable = view.status === 'unavailable' || !dashboard || !card.linkedSource
     || !canUseLinkedSource(dashboard, card.id, card.linkedSource.sourceWidgetId);
   const content = <>
-    {!viewer ? <button type="button" onClick={chooseSource}>Choose source</button> : null}
+    {!viewer && !card.linkedChart ? <button type="button" onClick={chooseSource}>Choose source</button> : null}
     {!unavailable && view.stale ? <p role="status">Showing completed data (stale).</p> : null}
     {!unavailable && card.linkedChart && view.error ? <p role="alert">{view.error}</p> : null}
     {unavailable ? <div><p className="empty-state">Source unavailable</p><p role="status">{view.error}</p></div>
-      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
+      : card.linkedChart ? <LinkedChartRenderer dashboardId={dashboardId} card={card} refreshKey={refreshKey} viewer={viewer} controlsHost={controlsHost} hints={hints || undefined} onSettingsChange={settings => useDashboardStore.getState().commitLinkedChartSettings(dashboardId, card.id, settings)} />
       : <LocalTableRenderer executionIdentity={{ dashboardId, widgetId: card.id }} file="" label={card.title ?? card.widgetId} refreshKey={refreshKey} state={card.table} onStateChange={onStateChange} filterRow={filterRow} />}
   </>;
   return card.linkedChart ? <div className="linked-chart-card">{content}</div> : content;

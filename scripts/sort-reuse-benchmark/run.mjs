@@ -10,6 +10,7 @@ import {pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 import {chromium,webkit} from '@playwright/test';
 import {workloads} from '../matched-executors-workloads.mjs';
+import {addCardinalityCases} from './cardinality.mjs';
 const root=resolve(new URL('../..',import.meta.url).pathname),dir=await mkdtemp(join(tmpdir(),'indexed-browser-')),output=resolve(process.argv[2]??'/tmp/openbq-indexed-browser.json');
 let server,browser;
 try{
@@ -17,14 +18,7 @@ try{
  await build({absWorkingDir:root,entryPoints:['scripts/sort-reuse-benchmark/page.mjs'],outfile:join(dir,'page.js'),bundle:true,format:'esm',platform:'browser',logLevel:'silent'});
  await build({stdin:{contents:`export {encodeWire,decodeWire} from ${JSON.stringify(join(root,'src/lib/tableExecution/rust/wireCodec.ts'))};`,resolveDir:root},outfile:join(dir,'tools.mjs'),bundle:true,format:'esm',platform:'node',logLevel:'silent'});
  const tools=await import(pathToFileURL(join(dir,'tools.mjs')).href),cases=await workloads(tools);
- if(process.env.SORT_REUSE_CARDINALITY)for(const count of [500,2000]){
-  const c=structuredClone(cases.formula),m=c.definition.analytical;
-  m.formulas=m.formulas.filter(f=>f.id==='ratio0');m.layout.values=['ratio0'];
-  const category=m.categories.find(c=>c.id===m.layout.rows[0]);
-  assert(category?.sourceFieldId,'Cardinality fixture needs a source category');
-  c.dataset.rows=Array.from({length:count},(_,i)=>{const row=structuredClone(cases.formula.dataset.rows[i%cases.formula.dataset.rows.length]);row.id=`cardinality-${i}`;row.values[category.sourceFieldId]=`group-${i}`;return row;});
-  cases[`groups${count}`]=c;
- }
+ if(process.env.SORT_REUSE_CARDINALITY)addCardinalityCases(cases);
  server=createServer(async(req,res)=>{const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';if(!['index.html','worker.js','page.js'].includes(name)){res.writeHead(404).end();return;}res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');res.end(name==='index.html'?'<script type="module" src="/page.js"></script>':await readFile(join(dir,name)));});
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const normalize=value=>Array.isArray(value)?value.map(normalize):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([key])=>!['requestId','transferId'].includes(key)).map(([key,v])=>[key,normalize(v)])):value;

@@ -14,7 +14,7 @@ Measures choose an aggregation per data column, and two measures may aggregate t
 
 ## Linked tables and charts
 
-**Create linked table** and **Create linked chart** on a table's **⋯** menu, or the Linked table and Linked chart entries in the library, add a card that follows a source table's presented rows and selection. **Choose source** relinks it. A missing source shows a diagnostic, never unrelated data, and when the source's scope is successfully empty the linked chart clears its figure.
+**Create linked table** and **Create linked chart** on a table's **⋯** menu, or the Linked table and Linked chart entries in the library, add a card that follows a source table's presented rows and selection. For a linked chart, open its title-bar **Parameters** chevron (or **⋯ → Parameters**) to use **Choose source**, **Chart type**, **Category**, **Measures** and **Series from**. The panel starts closed; closing it leaves the chart rendered and its configuration saved. **Choose source** relinks it. A missing source shows a diagnostic, never unrelated data, and when the source's scope is successfully empty the linked chart clears its figure.
 
 ## Server-paged tables
 
@@ -22,7 +22,7 @@ A widget its backend serves as an SSRM table opens as **LIVE · paged**: 100-row
 
 ## Parameters, dates and calendars
 
-A widget's parameters can be laid out in rows, as in OpenBB Workspace: row 0 shares the title line and each later row gets a line of its own. The **▸** chevron or **⋯ ▸ Parameters** docks the labeled controls under the title bar; the panel stays until you close it (Escape or a click outside does not dismiss it). **Display on title bar** turns a card's chips off. Both choices save with the card.
+A widget's parameters can be laid out in rows, as in OpenBB Workspace: row 0 shares the title line and later rows appear only in the Parameters panel. Row 0 is not repeated there while it remains visible in the title. The **▸** chevron or **⋯ ▸ Parameters** docks the labeled controls under the title bar; the panel stays until you close it (Escape or a click outside does not dismiss it). **Display on title bar** turns a card's chips off. Both choices save with the card.
 
 Date expressions resolve against an **As of** value: `T` is the reference date and `T-5bd` moves back five business sessions. A dashboard's **Exchange ▸** menu sets its calendar (**Default (XNYS)** otherwise). Without a backend calendar the app uses its bundled NYSE calendar for 2026–2028 and plain weekdays elsewhere, and says so with a badge. Fiscal controls use the symbol's fiscal year-end, falling back to December with a warning.
 

@@ -5,9 +5,10 @@ tags: [bdobb, help, interface, parameters, groups, forms, periods, dates, fiscal
 
 # Card Parameters
 
-Most widgets take parameters — a symbol, a date range, a provider. The card's header carries them as **chips on the title line itself**, one per visible parameter. There is nothing to open: what a card is asking for is always in view. A card with many parameters wraps the chips onto a second line rather than clipping them.
-
-**Rows.** A widget can lay its parameters out in rows, the way OpenBB Workspace's parameter positioning does. In the widget's `params` list a bare parameter sits on row 0, wherever in the list it appears; each nested array is the next row, counting from 1 when the list opens with a bare parameter and from 0 otherwise; and an empty array `[]` still takes a row number, which is how a widget pushes the parameters after it down a line. Row 0's chips share the title line; each further row starts a line of its own under it, keeping its declared order, and a row with nothing in it draws nothing. A widget with nothing on row 0 — its list opens with `[]` — puts all its chips under the title line. A flat `params` list is one row, as it always was. The rows are the title line's only: the **Parameters** panel below lists every field as one form, in row order.
+Most widgets take parameters — a symbol, date range or provider. Only row 0
+appears in the compact title strip, which scrolls horizontally when needed.
+Rows 1 and above are edited in the docked Parameters panel and never add lines
+to the title bar. The panel includes every visible field in declared order.
 
 A chip shows its **value**, not its name — the name is its tooltip, and remains the control's accessible name, so nothing is lost to a screen reader. That is the whole trade: a row of values is readable at a glance where a row of `Symbol: AAPL` pairs was not. Parameters whose value says nothing by itself keep their label on screen instead: **text**, **number**, suggest-style, **form** and **tabs** controls are not chips, because a bare number or a half-typed string means nothing without the word beside it.
 

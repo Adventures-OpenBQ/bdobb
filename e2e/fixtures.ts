@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export const MOCK_URL = `http://127.0.0.1:${process.env.BDOBB_MOCK_PORT ?? 4174}`;
 
@@ -163,4 +163,17 @@ export async function openSettingsTab(
 ): Promise<void> {
   await openSettings(page);
   await page.getByRole("tab", { name }).click();
+}
+/**
+ * Ticks measures on a linked chart: opens its Measures checklist (the button
+ * inside `scope`, a chart card or the page when there is one chart), ticks
+ * each name, and applies. The checklist is a popup on the page, not inside
+ * the card.
+ */
+export async function tickChartMeasures(page: Page, scope: Page | Locator, ...names: (string | RegExp)[]): Promise<void> {
+  await scope.getByRole("button", { name: /^Measures/ }).click();
+  const list = page.getByRole("dialog", { name: "Measures", exact: true });
+  for (const name of names) await list.getByRole("checkbox", { name, exact: true }).check();
+  await list.getByRole("button", { name: "Apply", exact: true }).click();
+  await expect(list).toBeHidden();
 }

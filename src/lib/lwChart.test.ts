@@ -22,6 +22,7 @@ vi.mock("lightweight-charts", () => ({
   ColorType: { Solid: "solid" },
   CandlestickSeries: { type: "Candlestick" },
   HistogramSeries: { type: "Histogram" },
+  LineSeries: { type: "Line" },
   createChart: (el: HTMLElement, opts: unknown) => createChart(el, opts),
 }));
 
@@ -97,6 +98,14 @@ describe("mountCandleChart", () => {
     handle.setBars(bars);
     // A refetch must not throw away the reader's zoom and pan.
     expect(fitContent).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws close-only prices as a line, never fabricated candles", async () => {
+    const handle = await mountCandleChart(document.createElement("div"), { theme: "dark", colors: {}, showVolume: false, closeOnly: true });
+    expect(chart.addSeries.mock.calls[0][0]).toEqual({ type: "Line" });
+    handle.setBars([{ time: 10, close: 100, volume: 0 }, { time: 20, close: 101.5, volume: 0 }]);
+    expect(chart.addSeries.mock.results[0].value.setData).toHaveBeenCalledWith([{ time: 10, value: 100 }, { time: 20, value: 101.5 }]);
+    expect(chart.addSeries).toHaveBeenCalledTimes(1);
   });
 
   it("re-themes in place and removes the chart on dispose", async () => {

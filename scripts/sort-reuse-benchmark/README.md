@@ -23,3 +23,11 @@ SORT_REUSE_CARDINALITY=1 node scripts/sort-reuse-benchmark/run.mjs /tmp/sort-car
 ```
 
 This mode verifies that the baseline produces the expected group count and a complete result before comparing responses. It retains the lifecycle checks on the formula workload. Use it to detect work that grows with both group count and source row count.
+
+The same distinct-group fixtures are available to the retained-heap probe:
+
+```sh
+SORT_REUSE_CARDINALITY=1 node scripts/sort-reuse-benchmark/memory.mjs /tmp/sort-cardinality-memory.json
+```
+
+This keeps the five-trial, 1/25/100-sort and disposal checkpoints, and asserts complete results with the expected group count before sampling. Timing and memory probes share `cardinality.mjs` so their fixture construction cannot drift.

@@ -4,7 +4,7 @@ import type { ExecutionRequest, ExecutionResponse, TableDefinition, Revision } f
 import { ExecutionProtocolError, validateExecutionRequest, validateExecutionResponse } from '../validation';
 import { encodeWire, decodeWire, assertUnicodeScalarGraph, PIVOT_PROTOCOL_VERSION, type WireValue } from './wireCodec';
 import type { DatasetColumn, DatasetRow, WidgetDataset, DatasetProvenance } from '../../widgetData/types';
-const record = (values:Record<string,unknown>) => Object.fromEntries(Object.entries(values).map(([key,value])=>[key,encodeWire(value)]));
+const record = (values:Record<string,unknown>) => Object.fromEntries(Object.keys(values).map(key=>[key,encodeWire(values[key])]));
 const members = (path:DatasetRow['groupPath']) => path?.map(member=>({...member,value:encodeWire(member.value)}));
 const column = (value:DatasetColumn) => ({...value,...(value.metadata!==undefined?{metadata:record(value.metadata)}:{}),...(value.splitPath!==undefined?{splitPath:members(value.splitPath)}:{})});
 const provenance = (value:DatasetProvenance) => {

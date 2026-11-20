@@ -35,7 +35,7 @@ const sameIdentity=(a:RemoteIdentity,b:RemoteIdentity)=>a.sessionId===b.sessionI
 function parseCapabilities(raw:unknown):ProviderCapabilities {
  const c=object(raw);
  const list=(key:string,allowed:readonly unknown[])=>{if(!Array.isArray(c[key])||(c[key] as unknown[]).some(x=>!allowed.includes(x)))invalid('Malformed managed capabilities');};
- list('protocolVersions',[1]);list('definitionVersions',[1,2]);list('aggregations',AGG_NAMES);list('formulaFunctions',[...AGG_NAMES,'IF']);
+ list('protocolVersions',[1]);list('definitionVersions',[1,2]);list('aggregations',AGG_NAMES);list('formulaFunctions',[...AGG_NAMES,'IF','LN','SQRT']);
  list('features',['grouping','splits','sourceFormulas','aggregateFormulas','memberScope','runtimeParams','checklists','resultFilters','statement','preview','bindFormula','memberDomain','chart','export']);
  for(const name of ['fiscal','inspection','selection','identityWitness','remoteAcquisition'])if(typeof c[name]!=='boolean')invalid('Malformed managed capabilities');
  if(c.linkedDerivation!==undefined&&typeof c.linkedDerivation!=='boolean')invalid('Malformed managed capabilities');

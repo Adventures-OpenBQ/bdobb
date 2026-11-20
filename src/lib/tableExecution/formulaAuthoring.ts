@@ -7,7 +7,7 @@ import {eligiblePool,type EligiblePool} from '../tableModel/facets';
 import {validateFiscalContext} from '../tableModel/fiscalContext';
 import {categoryAuthoringRecipe} from '../tableModel/categoryAuthoringRecipe';
 import {bindFormula} from '../tableModel/formulaBinding';
-import {parseFormula,validateFormulaAst,type FormulaDiagnostic} from '../tableModel/formulaSyntax';
+import {isAggregateFunction,parseFormula,validateFormulaAst,type FormulaDiagnostic} from '../tableModel/formulaSyntax';
 import {rememberFormulaBindings,rememberMembers,applyBindings,chronological} from '../tableModel/formulaProvenance';
 import {validateFormulaGraph} from '../tableModel/formulaGraph';
 import type {FormulaAst} from '../tableModel/types';
@@ -42,7 +42,7 @@ function diagnosticsProjection(diagnostics:FormulaDiagnostic[]):Pick<FormulaBind
  return {bindingDiagnostics:rows,diagnosticCount:diagnostics.length,truncated:rows.length<diagnostics.length};
 }
 function operators(ast:FormulaAst,compiled:AnalyticalModel):AggName[]{
- const result=new Set<AggName>(),nodes=[ast],seen=new Set<string>();while(nodes.length){const n=nodes.pop()!;switch(n.kind){case'reference':if(n.target==='measure'){const m=compiled.model.measures.find(m=>m.id===n.id);if(m?.aggregation)result.add(m.aggregation);}else if(n.target==='formula'&&!seen.has(n.id)){seen.add(n.id);const f=compiled.graph.entries.find(e=>e.value?.id===n.id)?.value;if(f)nodes.push(f.ast);}break;case'call':if(n.function!=='IF')result.add(n.function);nodes.push(...n.args);break;case'binary':nodes.push(n.left,n.right);break;case'unary':nodes.push(n.operand);break;case'member':nodes.push(n.value);break;}}
+ const result=new Set<AggName>(),nodes=[ast],seen=new Set<string>();while(nodes.length){const n=nodes.pop()!;switch(n.kind){case'reference':if(n.target==='measure'){const m=compiled.model.measures.find(m=>m.id===n.id);if(m?.aggregation)result.add(m.aggregation);}else if(n.target==='formula'&&!seen.has(n.id)){seen.add(n.id);const f=compiled.graph.entries.find(e=>e.value?.id===n.id)?.value;if(f)nodes.push(f.ast);}break;case'call':if(isAggregateFunction(n.function))result.add(n.function);nodes.push(...n.args);break;case'binary':nodes.push(n.left,n.right);break;case'unary':nodes.push(n.operand);break;case'member':nodes.push(n.value);break;}}
  return [...result];
 }
 export function bindObservedFormula(input:WidgetDataset,request:FormulaBindRequest):Omit<FormulaBindResult,'kind'|'requestId'|'revision'|'completeness'|'diagnostics'>{

@@ -1,15 +1,21 @@
 # BDOBB — Adventures in OpenBQ
 
-This repository reconstructs a clean release sequence. Version 3.0.0 provides the reference-build desktop: ordinary tables and charts, documents, grouped controls, Run and numeric refresh, backend Apps discovery, and compatible JSON interchange.
+This is the version 4.0.0 release: the reference-build desktop plus analytical Pivot, managed server tables, linked charts, waterfall charts and Statement editing. It retains documents, grouped controls, backend Apps discovery and compatible JSON interchange.
 
-Cron refetch is deferred. Analytical Pivot, workspaces and Statement are not part of v3.
+Cron refetch is deferred.
 
 Read the [user guide](docs/user-guide.md) and [v5 reference manual](docs/reference-manual/v5/README.md) (and the [v4](docs/reference-manual/v4/README.md) and [v3](docs/reference-manual/v3/README.md) ones), also available through the app’s Help menu.
 
 ## Run and verify
 
+The Pivot Wasm module is generated from the included Rust source; it is not checked into the repository or source archive. Install the pinned toolchain once, then generate it before running TypeScript checks. Native desktop builds also require the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
+
 ```sh
+rustup toolchain install 1.98.1
+rustup target add --toolchain 1.98.1 wasm32-unknown-unknown
+cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
 pnpm install --frozen-lockfile
+pnpm pivot:build
 pnpm typecheck
 pnpm lint
 pnpm test:run

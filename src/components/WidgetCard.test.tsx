@@ -167,7 +167,7 @@ vi.mock("../lib/plotly", () => ({
   renderPlot: () => Promise.resolve(),
   purgePlot: () => {},
   resizePlot: () => {},
-  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick"]),
+  REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick", "bar", "heatmap", "surface"]),
 }));
 
 // jsdom implements no ResizeObserver; ChartRenderer needs one to mount at
@@ -187,6 +187,7 @@ import { UNRESOLVED_BACKEND_ID } from "../lib/appsJson";
 import { __failPath, __read, __readBytes, __reset, __seed, __writes } from "../test/memfs";
 import { __resetLoggerForTests, logInfo } from "../lib/logger";
 import { DEFAULT_SETTINGS } from "../lib/settingsFile";
+import { normalizeWidgets } from "../lib/widgetsJson";
 import { NOTHING_TO_TRANSPOSE } from "../lib/transpose";
 import type { DashboardCard, WidgetDef } from "../lib/types";
 import { backend, card as makeCard, widget as makeWidget } from "../test/fixtures";
@@ -267,8 +268,8 @@ function renderReadyCard() {
 /** A resolved, ready table card with one visible param -- what the menu-order
  * and Parameters-popover tests need (hasControls, showsTable and canExport
  * all true). */
-function renderReadyTableCardWithParams() {
-  register({ type: "table", params: [{ paramName: "symbol", label: "Symbol", type: "text" }] });
+function renderReadyTableCardWithParams(laterRows = false) {
+  register({ type: "table", params: [{ paramName: "symbol", label: "Symbol", type: "text" }, ...(laterRows ? [{paramName: "market", label: "Market", type: "text", row: 1}] : [])] });
   const withParams = { ...card, params: { symbol: "AAPL" } };
   useWidgetData.mockReturnValue({ status: "ready", data: [{ symbol: "AAPL" }], retry: vi.fn() });
   useDashboardStore.setState({
@@ -318,6 +319,35 @@ beforeEach(() => {
 });
 
 describe("WidgetCard", () => {
+  it("keeps only row zero in the compact title and exposes later rows in the parameter card", async () => {
+    register(normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "start", label: "Start", type: "date", row: 1}]}}, "b1").widgets[0]);
+    useWidgetData.mockReturnValue({status: "ready", data: [], retry: vi.fn()});
+    useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
+    const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(container.querySelector(".card-chips")).toContainElement(screen.getByLabelText("Symbol"));
+    expect(screen.queryByRole("textbox", {name: "Start"})).toBeNull();
+    await userEvent.setup().click(screen.getByRole("button", {name: "Show parameters"}));
+    expect(screen.getByRole("region", {name: "Parameters"})).toContainElement(screen.getByRole("textbox", {name: "Start"}));
+    expect(container.querySelector(".card-chips")).not.toContainElement(screen.getByRole("textbox", {name: "Start"}));
+    expect(screen.getAllByLabelText("Symbol")).toHaveLength(1);
+    expect(within(screen.getByRole("region", {name: "Parameters"})).queryByLabelText("Symbol")).toBeNull();
+  });
+
+  it("keeps row zero editable in the panel while title controls are collapsed", async () => {
+    register(normalizeWidgets({w1: {name: "One", endpoint: "/a", params: [{paramName: "symbol", label: "Symbol", type: "text"}, {paramName: "market", label: "Market", type: "text", row: 1}]}}, "b1").widgets[0]);
+    useSettingsStore.setState({settings: {...DEFAULT_SETTINGS, collapseWidgetControls: true}});
+    useDashboardStore.setState({dashboards: [{id: "d1", name: "D", tabs: [{id: "t1", name: "Main", cards: [card]}]}], activeId: "d1", activeTabId: "t1"});
+    const {container} = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", {name: "Show parameters"}));
+    const panel = screen.getByRole("region", {name: "Parameters"});
+    expect(within(panel).getByLabelText("Symbol")).toBeInTheDocument();
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", {name: "Show widget controls"}));
+    expect(within(panel).queryByLabelText("Symbol")).toBeNull();
+    expect(container.querySelector(".card-chips")).toContainElement(screen.getByLabelText("Symbol"));
+    expect(within(panel).getByLabelText("Market")).toBeInTheDocument();
+  });
+
   it("renders the widget name as the drag handle", () => {
     register();
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
@@ -1230,6 +1260,60 @@ describe("WidgetCard renderer dispatch", () => {
     setUp({ type: "iframe", endpoint: "https://example.com/page" }, null);
     render(<WidgetCard card={card} onRemove={vi.fn()} />);
     expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://example.com/page");
+  });
+
+  it("resolves a relative iframe endpoint against its backend and forwards its current parameters", () => {
+    setUp({ type: "iframe", endpoint: "/api/v1/tmx/etf/fund_info" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://backend.example/prefix" })] });
+    render(<WidgetCard card={{ ...card, params: { symbol: "XIU", theme: "dark" } }} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://backend.example/prefix/api/v1/tmx/etf/fund_info?symbol=XIU&theme=dark");
+  });
+
+  it("keeps external iframe endpoints verbatim without forwarding backend credentials or parameters", () => {
+    setUp({ type: "iframe", endpoint: "https://external.example/page?fixed=1" }, null);
+    useBackendsStore.setState({ backends: [backend({ authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={{ ...card, params: { private: "synthetic-private-param" } }} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://external.example/page?fixed=1");
+  });
+
+  it("keeps query credentials on a relative iframe's backend origin", () => {
+    setUp({ type: "iframe", endpoint: "/api/tool" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://own.example", authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByTitle("Embedded page")).toHaveAttribute("src", "https://own.example/api/tool?token=synthetic-private-token");
+  });
+
+  it("refuses a protocol-relative iframe without exposing backend credentials", () => {
+    setUp({ type: "iframe", endpoint: "//external.example/page" }, null);
+    useBackendsStore.setState({ backends: [backend({ authLocation: "query", headerName: "token", headerValue: "synthetic-private-token" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByTitle("Embedded page")).toBeNull();
+    expect(screen.getByText("This address is not a valid http or https URL.")).toBeInTheDocument();
+  });
+
+  it("shows a refusal instead of crashing on a malformed saved iframe backend", () => {
+    setUp({ type: "iframe", endpoint: "/api/tool" }, null);
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "not a URL" })] });
+    render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.queryByTitle("Embedded page")).toBeNull();
+    expect(screen.getByText("This address is not a valid http or https URL.")).toBeInTheDocument();
+  });
+
+  it("keeps singleton table controls and preserves the actual object in Raw view", () => {
+    const record = { date: "2026-11-19", USD: 1.0992 };
+    setUp({ type: "table", table: { columns: [{ field: "date" }, { field: "USD" }] } }, record);
+    const rendered = render(<WidgetCard card={card} onRemove={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Filter rows" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "USD" })).toBeInTheDocument();
+    rendered.rerender(<WidgetCard card={{ ...card, view: "raw" }} onRemove={vi.fn()} />);
+    expect(JSON.parse(screen.getByTestId("raw-json").textContent!)).toEqual(record);
+  });
+
+  it("draws the advertised Chart view of a declared singleton table", () => {
+    setUp({ type: "table", table: { columns: [{ field: "date", chartDataType: "category" }, { field: "USD", chartDataType: "series" }] } }, { date: "2026-11-19", USD: 1.0992 });
+    render(<WidgetCard card={{ ...card, view: "chart" }} onRemove={vi.fn()} />);
+    expect(screen.getByTestId("chart-plot")).toBeInTheDocument();
+    expect(screen.queryByText("Nothing chartable in this payload.")).toBeNull();
   });
 
   it("dispatches metric to the metric renderer", () => {
@@ -3333,6 +3417,20 @@ describe("WidgetCard iframe widget messages", () => {
     return useWidgetData.mock.calls.filter(([c]) => (c as DashboardCard).id === id).at(-1)![1];
   }
 
+  it.each(["header", "cookie"] as const)("authenticates a resolved relative iframe using %s credentials", async (authLocation) => {
+    seedIframe({});
+    useWidgetRegistryStore.setState(state => ({ widgets: state.widgets.map(w => w.id === "w1" ? { ...w, endpoint: "/tool" } : w) }));
+    useBackendsStore.setState({ backends: [backend({ baseUrl: "https://embed.example", authLocation, headerName: "X-Key", headerValue: "synthetic-frame-secret" })] });
+    useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
+    render(<TwoCards />);
+    await settleFrameEffects();
+    const { win, postMessage } = stubFrame(screen.getByTitle("Embedded page"));
+    sendToFrame(win, { type: "openbb-connect" }, "https://embed.example");
+    expect(postMessage).toHaveBeenCalledWith({ type: "openbb-auth", headers: authLocation === "header" ? { "X-Key": "synthetic-frame-secret" } : { Cookie: "X-Key=synthetic-frame-secret" } }, "https://embed.example");
+    expect(document.body.innerHTML).not.toContain("synthetic-frame-secret");
+    expect(__read("logs/bdobb.log") ?? "").not.toContain("synthetic-frame-secret");
+  });
+
   it("hands the frame the backend's own auth headers, and nothing else", async () => {
     seedIframe({});
     useWidgetData.mockReturnValue({ status: "ready", data: null, retry: vi.fn() });
@@ -4217,13 +4315,14 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     ]);
   });
 
-  it("Parameters opens the full control row in a docked panel with visible labels; Escape leaves it open", async () => {
-    renderReadyTableCardWithParams();
+  it("Parameters opens later rows in a docked panel with visible labels; Escape leaves it open", async () => {
+    renderReadyTableCardWithParams(true);
     await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Parameters" }));
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
-    expect(within(dialog).getByText("Symbol")).toBeVisible();
+    expect(within(dialog).getByText("Market")).toBeVisible();
+    expect(within(dialog).queryByLabelText("Symbol")).toBeNull();
 
     // v5.5.1: docked and saved, so only its own toggles close it.
     await userEvent.keyboard("{Escape}");
@@ -4256,10 +4355,10 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     renderReadyTableCardWithParams();
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();
     const show = screen.getByRole("button", { name: "Show parameters" });
-    expect(show).toHaveTextContent("▸");
+    expect(show).toHaveAttribute("aria-expanded", "false");
     await userEvent.click(show);
     expect(screen.getByRole("region", { name: "Parameters" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveTextContent("▾");
+    expect(screen.getByRole("button", { name: "Hide parameters" })).toHaveAttribute("aria-expanded", "true");
     await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true));
     await userEvent.click(screen.getByRole("button", { name: "Hide parameters" }));
     expect(screen.queryByRole("region", { name: "Parameters" })).not.toBeInTheDocument();
@@ -4299,14 +4398,14 @@ describe("the ⋯ menu, v5.5.0 items", () => {
     expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
   });
 
-  it("the panel's controls carry their own ids, distinct from the chips row's", async () => {
-    renderReadyTableCardWithParams();
+  it("the later-row panel controls carry their own ids, distinct from the title row", async () => {
+    renderReadyTableCardWithParams(true);
     await userEvent.click(screen.getByRole("button", { name: "Card menu" }));
     await userEvent.click(screen.getByRole("menuitem", { name: "Parameters" }));
 
     const dialog = screen.getByRole("region", { name: "Parameters" });
     expect(document.querySelectorAll(`[id="${CARD_ID}-symbol"]`)).toHaveLength(1);
-    const popoverField = document.getElementById(`params-${CARD_ID}-symbol`);
+    const popoverField = document.getElementById(`params-${CARD_ID}-market`);
     expect(popoverField).not.toBeNull();
     expect(dialog.contains(popoverField)).toBe(true);
   });
@@ -4729,4 +4828,23 @@ describe("fiscal labels on worker and server tables", () => {
     expect(screen.queryByRole("combobox", { name: "FY ends from" })).toBeNull();
     vi.restoreAllMocks();
   });
+});
+
+it('treats linked-chart source selection as saved Parameters, closed by default', async () => {
+  const {tableExecutionStore} = await import('../stores/tableExecutionStore');
+  const ensure = vi.spyOn(tableExecutionStore, 'ensureTable').mockImplementation(() => {});
+  try {
+    register({params: []});
+    const linked = {...card, linkedSource: {kind: 'widget' as const, sourceWidgetId: 'missing'}, linkedChart: {type: 'surface' as const, display: 'grouped' as const, measures: []}};
+    useDashboardStore.setState({dashboards: [{id: 'd1', name: 'D', tabs: [{id: 't1', name: 'Main', cards: [linked]}]}], activeId: 'd1', activeTabId: 't1'});
+    render(<WidgetCard card={linked} onRemove={vi.fn()}/>);
+    expect(screen.queryByRole('region', {name: 'Parameters'})).toBeNull();
+    expect(screen.queryByRole('button', {name: 'Choose source'})).toBeNull();
+    await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+    expect(within(screen.getByRole('region', {name: 'Parameters'})).getByRole('button', {name: 'Choose source'})).toBeVisible();
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0].paramsOpen).toBe(true));
+    await userEvent.click(screen.getByRole('button', {name: 'Hide parameters'}));
+    expect(screen.queryByRole('button', {name: 'Choose source'})).toBeNull();
+    await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0]).not.toHaveProperty('paramsOpen'));
+  } finally {ensure.mockRestore();}
 });
