@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BackendEtfAcquisition } from "../lib/widgetData/chartRecipes/etfEvidence";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { fetchesData } from "../lib/builtins";
 import { peekWidgetCalendars } from "../lib/calendars/bundles";
 import { fetchWidgetData, THEMED_TYPES } from "../lib/dataClient";
@@ -139,7 +139,7 @@ export function useWidgetData(
   const themeKey = widget && THEMED_TYPES.has(widget.type) ? resolved : "";
 
   const [status, setStatus] = useState<Status>("unresolved");
-  const [{ data, acquisition }, setPayload] = useState<{ data: unknown; acquisition?: BackendEtfAcquisition }>({ data: null });
+  const [{ data, acquisition }, setPayload] = useState<{ data: unknown; acquisition?: BackendAcquisition }>({ data: null });
   /** The bounds of the last answer to a request sent WITHOUT bounds. See `bounds`. */
   const [heldBounds, setHeldBounds] = useState<{ min: Date; max: Date } | undefined>(undefined);
   // OBBject warnings from the last successful fetch (e.g. a truncated result).
@@ -614,7 +614,7 @@ export function useWidgetData(
 
       try {
         let received: string[] = [];
-        let completedAcquisition: BackendEtfAcquisition | undefined;
+        let completedAcquisition: BackendAcquisition | undefined;
         const result = await fetchWidgetData(backend, widget, fetchParams, {
           fiscalYearEnd: fetchFiscal,
           // A bound card's map is useBundleCalendars' (useCardRequest), so the GET resolves on what preview showed.

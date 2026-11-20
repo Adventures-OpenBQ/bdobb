@@ -1380,3 +1380,28 @@ it('excludes a query credential using the symbol key and clears acquisition on f
   await waitFor(() => expect(result.current.status).toBe('error'));
   expect(result.current.acquisition).toBeUndefined();
 });
+
+it('stale_request_cannot_attach_receipt', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const path = '/api/v1/eodhd/equity/fundamental/dividends';
+  const server = await serve({ [path]: (url: URL) => {
+    const first = url.searchParams.get('symbol') === 'SHEL.LSE';
+    const qualified_symbol = first ? 'SHEL.LSE' : 'HSBA.LSE';
+    return { __status: 200, __delayMs: first ? 150 : 0, __body: {
+      results: [{ ...dividendRow, symbol: qualified_symbol }],
+      extra: { results_metadata: { chart_evidence: { ...dividendEvidence, qualified_symbol } } },
+    } };
+  } });
+  useWidgetRegistryStore.setState({ widgets: [makeWidget({ id: card.widgetId, endpoint: path, dataKey: 'results' })] });
+  const { result, rerender } = renderHook(({ symbol }) => useWidgetData(card, {
+    symbol, chart_source: 'true', start_date: '2026-01-01', end_date: '2026-06-30',
+  }), { initialProps: { symbol: 'SHEL.LSE' } });
+  await waitFor(() => expect(server.requests).toHaveLength(1));
+  rerender({ symbol: 'HSBA.LSE' });
+  await waitFor(() => expect(result.current.status).toBe('ready'));
+  expect(result.current.data).toMatchObject([{ symbol: 'HSBA.LSE' }]);
+  expect(result.current.acquisition).toMatchObject({ financialEvidence: { qualified_symbol: 'HSBA.LSE' } });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 170)); });
+  expect(result.current.data).toMatchObject([{ symbol: 'HSBA.LSE' }]);
+  expect(result.current.acquisition).toMatchObject({ financialEvidence: { qualified_symbol: 'HSBA.LSE' } });
+});

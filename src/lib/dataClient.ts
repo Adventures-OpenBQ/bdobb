@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import type { BackendEtfAcquisition } from "./widgetData/chartRecipes/etfEvidence";
+import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
@@ -480,7 +480,7 @@ export async function fetchWidgetData(
   // an agent fetch has no card context to resolve, so it passes `undefined`.
   signal?: AbortSignal,
   onWarnings?: (warnings: string[]) => void,
-  onAcquisition?: (acquisition: BackendEtfAcquisition) => void,
+  onAcquisition?: (acquisition: BackendAcquisition) => void,
 ): Promise<unknown> {
   // Hookless callers (including Rita's synchronous card facade) may supply the legacy map while still needing
   // overnight bundles. Keep that map and load missing bundle calendars through the hooks' shared cache. A supplied
@@ -504,24 +504,29 @@ export async function fetchWidgetData(
   const payload = await request("GET", requestUrl, authHeaders(backend), undefined, {
     signal,
   });
-  if (widget.type === "table" && onAcquisition) {
-    // Read the actual wire question, including any endpoint defaults. Never retain URL
-    // credentials, arbitrary query values or a credential placed under an identity key.
-    const url = new URL(requestUrl);
+  const table = widget.type === "table";
+  const url = table && onAcquisition ? new URL(requestUrl) : undefined;
+  const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
+  const financial = url && backendFinancialResponse(payload, url, credentialKey);
+  const selected = extractData(payload, widget.dataKey, table);
+  if (url && onAcquisition) {
+    // Use the completed request and only its selected, complete result array.
     const parameters: Record<string, string> = {};
     for (const key of ["symbol", "exchange", "provider"]) {
-      if (backend.authLocation === "query" && backend.headerName === key && backend.headerValue) continue;
+      if (credentialKey === key) continue;
       const values = url.searchParams.getAll(key);
       if (values.length) parameters[key] = values.join(",");
     }
-    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt: Date.now() });
+    const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt: Date.now(),
+      ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
   }
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own
   // `data.dataKey: "rows"` must not strip it.
   if (widget.type === "keys") return payload;
-  return extractData(payload, widget.dataKey, widget.type === "table");
+  return selected;
 }
 
 /**

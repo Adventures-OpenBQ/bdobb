@@ -361,7 +361,7 @@ pub fn calculate_view(
         selection_namespace: None,
     };
     let constraints = &view.pool.constraints;
-    view.provenance.mark_filtered_etf(
+    view.provenance.mark_presentation_filtered(
         !constraints.search.is_empty()
             || !constraints.filters.is_empty()
             || !constraints.checklists.is_empty()

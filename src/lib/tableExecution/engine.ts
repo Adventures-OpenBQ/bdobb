@@ -7,6 +7,7 @@ import { statementPresentation } from '../statementPresentation';
 import { unpivotDatasetWithDescriptors } from '../tableModel/unpivot';
 import { estimateProvenance } from '../widgetData/chartRecipes/estimateEvidence';
 import { etfAcquisitionProvenance, etfPresentationProvenance } from '../widgetData/chartRecipes/etfEvidence';
+import { financialPresentationProvenance, validatedFinancialProvenance } from '../widgetData/chartRecipes/financialEvidence';
 import { priceAcquisitionProvenance } from '../widgetData/chartRecipes/priceEvidence';
 import { validateRuntimeParams, runtimeMatches, type RuntimeParams } from './runtimeParams';
 import { countColumn, countValues } from './counts';
@@ -36,7 +37,7 @@ function member(key: string, field: string, bucket: DatasetGroupMember['bucket']
 }
 /** Calculate once from the complete acquired input, never from delivery blocks. */
 export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
-  const source = { ...input, provenance: etfAcquisitionProvenance(input) };
+  const source = { ...input, provenance: validatedFinancialProvenance(etfAcquisitionProvenance(input)) };
   return calculate({ ...source, provenance: estimateProvenance({ ...source, provenance: priceAcquisitionProvenance(source) }) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
 }
 function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
@@ -202,6 +203,8 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
     return column.dtype !== undefined || kind === undefined || kind === 'none'
       ? column : { ...column, dtype: kind };
   };
+  const filteredByPresentation = !!search || !!state.columnFilters?.length;
+  const provenance = financialPresentationProvenance(etfPresentationProvenance(input.provenance, filteredByPresentation), filteredByPresentation);
   const view: CalculatedView = {
     modelWarnings: input.modelWarnings, modelWarningCount: input.modelWarningCount,
     inputColumns: input.columns.map(column => withKind(column)), inputPeriodicity: Object.fromEntries(input.columns.filter(c => kinds.get(c.id) === 'date').map(c => [c.id, detectPeriodicity(input.rows.map(r => r.values[c.id]))])), columns: outputColumns.map(column => withKind(column, result?.ok ? column.sourceBindingId ?? column.id : column.id)),
@@ -215,7 +218,7 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
     },
     diagnostics: [...(input.diagnostics ?? []), ...pivotFoldWarnings(config).map(message => ({ code: 'LEGACY_FOLDS', message, severity: 'warning' as const }))],
     completeness: input.completeness,
-    provenance: { ...etfPresentationProvenance(input.provenance, !!search || !!state.columnFilters?.length), ...(result?.ok ? { inputMayContainAggregates: true } : {}) },
+    provenance: { ...provenance, ...(result?.ok ? { inputMayContainAggregates: true } : {}) },
   };
   // Reconciliation uses the unfiltered source hierarchy, never delivery blocks or
   // filtered survivors. The private second calculation cannot recursively reconcile.

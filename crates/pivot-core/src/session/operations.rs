@@ -272,8 +272,11 @@ impl Session {
                 {
                     return Err(problem("INVALID_REQUEST", "Unknown chart field"));
                 }
+                let rows = project(selection::presented(v, &v.selection), fields);
+                let mut provenance = v.provenance.clone();
+                provenance.project_financial_evidence(&rows, fields);
                 let dataset = SourceDataset {
-                    rows: project(selection::presented(v, &v.selection), fields),
+                    rows,
                     columns: v
                         .columns
                         .iter()
@@ -282,7 +285,7 @@ impl Session {
                         .collect(),
                     result_revision: q.revision.model,
                     output_revision: q.revision.output,
-                    provenance: v.provenance.clone(),
+                    provenance,
                     completeness: v.completeness.clone(),
                     freshness: v.freshness.clone(),
                     diagnostics: Some(v.diagnostics.clone()),

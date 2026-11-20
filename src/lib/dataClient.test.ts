@@ -1294,3 +1294,25 @@ describe("obbjectWarnings", () => {
     expect(obbjectWarnings(null)).toEqual([]);
   });
 });
+
+it('dotted_selector_retains_envelope_evidence', async () => {
+  const { dividendEvidence, dividendRow } = await import('../test/fixtures/financialEvidence');
+  const path = '/api/v1/eodhd/equity/fundamental/dividends';
+  const results = { rows: [dividendRow] };
+  const body = { results, extra: { results_metadata: { chart_evidence: dividendEvidence } } };
+  const server = await startMockServer({ [path]: body });
+  try {
+    const b = { ...backend, baseUrl: server.url };
+    const w = widget({ type: 'table', endpoint: path, dataKey: 'results.rows' });
+    const params = { chart_source: 'true', symbol: 'SHEL', exchange: 'LSE', start_date: '2026-01-01', end_date: '2026-06-30' };
+    const context = vi.fn();
+    expect(await fetchWidgetData(b, w, params, undefined, undefined, undefined, context)).toEqual([dividendRow]);
+    expect(context.mock.lastCall?.[0]).toMatchObject({ financialEvidence: dividendEvidence });
+    await fetchWidgetData(b, w, { ...params, start_date: '2026-01-02' }, undefined, undefined, undefined, context);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+    await fetchWidgetData(b, w, { ...params, chart_source: 'false' }, undefined, undefined, undefined, context);
+    expect(context.mock.lastCall?.[0]).not.toHaveProperty('financialEvidence');
+  } finally {
+    await server.close();
+  }
+});

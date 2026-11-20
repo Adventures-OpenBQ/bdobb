@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Records are ordered entries. Absence of an entry differs from an explicit Missing value.
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -813,11 +813,82 @@ pub struct Provenance {
 }
 impl Provenance {
     /// Retain presentation scope separately from the original acquisition certification.
-    pub(crate) fn mark_filtered_etf(&mut self, filtered: bool) {
+    pub(crate) fn mark_presentation_filtered(&mut self, filtered: bool) {
+        if !filtered {
+            return;
+        }
         if let Some(metadata) = self.metadata.as_mut() {
-            if filtered && metadata.contains_key("etfEvidence") {
+            if metadata.contains_key("etfEvidence") {
                 metadata.insert("etfSourceFiltered".into(), WireValue::Bool(true));
             }
+            if metadata.contains_key("financialEvidence") {
+                metadata.insert("financialSourceFiltered".into(), WireValue::Bool(true));
+            }
+        }
+    }
+
+    /// The source receipt stays intact. A linked table can only add missing dates.
+    pub(crate) fn project_financial_evidence<'a>(
+        &mut self,
+        rows: impl IntoIterator<Item = &'a DatasetRow>,
+        fields: &[String],
+    ) {
+        let Some(metadata) = self.metadata.as_mut() else {
+            return;
+        };
+        let Some(WireValue::Record(evidence)) = metadata.get("financialEvidence") else {
+            return;
+        };
+        let fact = |key: &str| {
+            evidence
+                .iter()
+                .find(|(k, _)| k == key)
+                .map(|(_, value)| value)
+        };
+        if !matches!(fact("kind"), Some(WireValue::String(kind)) if kind == "dividends") {
+            return;
+        }
+        let Some(WireValue::Array(events)) = fact("event_dates") else {
+            return;
+        };
+        const DATE: &str = "ex_dividend_date";
+        let mut visible = BTreeSet::new();
+        if self.input_may_contain_aggregates != Some(true)
+            && fields.iter().any(|field| field == DATE)
+        {
+            visible.extend(rows.into_iter().filter_map(|row| {
+                match row.values.get(DATE) {
+                    Some(WireValue::String(date))
+                        if !row
+                            .cell_errors
+                            .as_ref()
+                            .is_some_and(|errors| errors.contains_key(DATE)) =>
+                    {
+                        Some(date.as_str())
+                    }
+                    _ => None,
+                }
+            }));
+        }
+        if let Some(WireValue::Array(previous)) = metadata.get("financialOmittedEventDates") {
+            for date in previous {
+                if let WireValue::String(date) = date {
+                    visible.remove(date.as_str());
+                }
+            }
+        }
+        let omitted: Vec<_> = events
+            .iter()
+            .filter(
+                |date| matches!(date, WireValue::String(date) if !visible.contains(date.as_str())),
+            )
+            .cloned()
+            .collect();
+        if !omitted.is_empty() {
+            metadata.insert(
+                "financialOmittedEventDates".into(),
+                WireValue::Array(omitted),
+            );
         }
     }
 }

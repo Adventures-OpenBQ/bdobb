@@ -11,7 +11,7 @@ import { validateLinkedBindings } from '../lib/tableModel/linkedBindings';
 import type { TableCommitGuard } from './dashboardStore';
 import type { Dashboard, DashboardCard } from '../lib/types';
 import { fitsTableWorker, isBackendTable, isManagedTable, isWorkerTableProducer } from "../lib/tableExecution/eligibility";
-import type { BackendEtfAcquisition } from "../lib/widgetData/chartRecipes/etfEvidence";
+import type { BackendAcquisition } from "../lib/widgetData/chartRecipes/financialEvidence";
 import { datasetFromRows, parseTableSnapshot } from "../lib/localTableData";
 import { tableColumns, tableRows } from "../lib/tableColumns";
 import { useWidgetRegistryStore } from "./widgetRegistryStore";
@@ -90,7 +90,7 @@ export type ExecutionDependencies = {
  * The rows each backend table card fetched, handed over by its WidgetCard so
  * the worker never fetches a second time. `ready` settles on the first rows.
  */
-const backendRows = new Map<string, { data?: unknown; acquisition?: BackendEtfAcquisition; ready: Promise<void>; resolve: () => void }>();
+const backendRows = new Map<string, { data?: unknown; acquisition?: BackendAcquisition; ready: Promise<void>; resolve: () => void }>();
 function rowsEntry(id: string) {
   let entry = backendRows.get(id);
   if (!entry) {
@@ -567,7 +567,7 @@ export function createTableExecutionStore(deps: ExecutionDependencies) {
           void ensure(dashboard.id, card.id);
     },
     /** A backend table card's newly fetched rows; a change re-acquires the table. */
-    setBackendRows(d: string, id: string, data: unknown, acquisition?: BackendEtfAcquisition) {
+    setBackendRows(d: string, id: string, data: unknown, acquisition?: BackendAcquisition) {
       const entry = rowsEntry(id);
       if (entry.data === data && entry.acquisition === acquisition) return;
       const replaced = 'data' in entry;
