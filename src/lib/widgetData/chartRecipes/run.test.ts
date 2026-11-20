@@ -85,6 +85,12 @@ describe('runRecipe', () => {
     });
   });
 
+  it.each([0, -1, 10_001, Infinity, NaN, '400', null])('refuses invalid viewport height %s', viewportHeight => {
+    expect(runRecipe(prices, drawdownOptions, { ...context, viewportHeight } as RecipeContext)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/viewport height/i),
+    });
+  });
+
   it.each([undefined, 0.5, 900, 10_000])('accepts optional viewport width %s without changing the existing result', viewportWidth => {
     const sized = { ...context, viewportWidth };
     expect(runRecipe(prices, drawdownOptions, sized)).toEqual(runRecipe(prices, drawdownOptions, context));

@@ -47,7 +47,7 @@ export type RecipeOptions =
   | NewsCalendarOptions
   | ReturnSummaryOptions;
 
-export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number };
+export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;

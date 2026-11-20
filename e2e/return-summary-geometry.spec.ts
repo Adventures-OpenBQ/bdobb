@@ -4,15 +4,16 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import type { ReturnSummaryOptions } from '../src/lib/widgetData/chartRecipes/types';
 
-type Axis = { _offset: number; range: number[]; tickvals?: number[]; c2p: (coordinate: number) => number };
-type Graph = HTMLElement & { _fullLayout: { xaxis: Axis; yaxis: Axis } };
+type Axis = { _offset: number; _length: number; range: number[]; tickvals?: number[]; c2p: (coordinate: number) => number };
+type Graph = HTMLElement & { _fullLayout: { xaxis: Axis; yaxis: Axis; minreducedwidth: number; minreducedheight: number } };
 
-async function plot(
+async function draw(
   page: Page, prices: number[], view: ReturnSummaryOptions['view'], theme: 'light' | 'dark' = 'light', peerPrices?: number[],
 ) {
   await page.goto('/');
   const plotWidth = theme === 'dark' ? 420 : 740;
-  await page.evaluate(async ({ prices, view, theme, plotWidth, peerPrices }) => {
+  const plotHeight = 400;
+  const outcome = await page.evaluate(async ({ prices, view, theme, plotWidth, plotHeight, peerPrices }) => {
     const tablePath = '/src/lib/localTableData.ts';
     const workerPath = '/src/lib/widgetData/chartRecipes/workerClient.ts';
     const plotlyPath = '/src/lib/plotly.ts';
@@ -33,19 +34,31 @@ async function plot(
     };
     const worker = createRecipeWorker();
     try {
-      const result = await worker.run(dataset, options, { theme, maxDecimals: 2, today, viewportWidth: plotWidth }, new AbortController().signal);
-      if (!result.ok) throw new Error(result.message);
+      const result = await worker.run(dataset, options, {
+        theme, maxDecimals: 2, today, viewportWidth: plotWidth, viewportHeight: plotHeight,
+      }, new AbortController().signal);
+      if (!result.ok) return result;
       const node = document.createElement('div');
       node.id = 'return-geometry';
-      node.style.cssText = `position: fixed; top: 12px; left: 12px; width: ${plotWidth}px; height: 400px; z-index: 10000`;
+      node.style.cssText = `position: fixed; top: 12px; left: 12px; width: ${plotWidth}px; height: ${plotHeight}px; z-index: 10000`;
       document.body.append(node);
       await renderPlot(node, result.figure, result.revision);
+      return { ok: true } as const;
     } finally {
       worker.dispose();
     }
-  }, { prices, view, theme, plotWidth, peerPrices });
-  return page.locator('#return-geometry');
+  }, { prices, view, theme, plotWidth, plotHeight, peerPrices });
+  return { outcome, graph: page.locator('#return-geometry') };
 }
+
+async function plot(...args: Parameters<typeof draw>) {
+  const { outcome, graph } = await draw(...args);
+  if (!outcome.ok) throw new Error(outcome.message);
+  return graph;
+}
+
+const closes = (scale: number) => Array.from({ length: 20 }, (_, i) => (i % 5) * scale)
+  .reduce((values, value) => [...values, values.at(-1)! * (1 + value)], [1]);
 
 async function hover(page: Page, graph: Locator, x: number, y: number) {
   const point = await graph.evaluate((node, [x, y]) => {
@@ -95,12 +108,14 @@ test('installed Plotly draws a non-collapsed extreme violin between the observed
   const prices = Array.from({ length: 21 }, (_, i) => i % 2 === 0 ? 1 : (1 + (i % 7) / 8) * 2 ** 1023);
   const graph = await plot(page, prices, 'violin', 'dark');
   const actual = await graph.evaluate(node => {
-    const { xaxis, yaxis } = (node as Graph)._fullLayout;
+    const { xaxis, yaxis, minreducedwidth, minreducedheight } = (node as Graph)._fullLayout;
     const path = node.querySelector<SVGPathElement>('.scatterlayer path.js-fill')!;
     const ticks = [...node.querySelectorAll('.ytick text')].map(tick => tick.textContent);
     const { x, y, width, height } = path.getBBox();
     return {
       ranges: [xaxis.range, yaxis.range],
+      declaredMinimum: [minreducedwidth, minreducedheight],
+      axisLengths: [xaxis._length, yaxis._length],
       bounds: { x, y, width, height },
       d: path.getAttribute('d'),
       observedMaxY: yaxis.c2p(yaxis.tickvals!.at(-1)!),
@@ -110,6 +125,8 @@ test('installed Plotly draws a non-collapsed extreme violin between the observed
     };
   });
   expect(actual.ranges.every(range => range.every(Number.isFinite) && range[0] < range[1])).toBe(true);
+  expect(actual.declaredMinimum).toEqual([169, 142]);
+  actual.axisLengths.forEach((length, i) => expect(length).toBeGreaterThanOrEqual(actual.declaredMinimum[i] - 1));
   expect(actual.bounds.width).toBeCloseTo(actual.expectedWidth, 1);
   expect(actual.bounds.height).toBeGreaterThan(180);
   expect(actual.bounds.y).toBeCloseTo(actual.observedMaxY, 1);
@@ -121,20 +138,23 @@ test('installed Plotly draws a non-collapsed extreme violin between the observed
 });
 
 test('installed Plotly paints different widths on one density scale and hovers a grid endpoint', async ({ page }) => {
-  const closes = (scale: number) => Array.from({ length: 20 }, (_, i) => (i % 5) * scale)
-    .reduce((values, value) => [...values, values.at(-1)! * (1 + value)], [1]);
   const graph = await plot(page, closes(.125), 'violin', 'light', closes(.0625));
   const actual = await graph.evaluate(node => {
-    const { xaxis, yaxis } = (node as Graph)._fullLayout;
+    const { xaxis, yaxis, minreducedwidth, minreducedheight } = (node as Graph)._fullLayout;
     const paths = [...node.querySelectorAll<SVGPathElement>('.scatterlayer path.js-fill')];
     const start = paths[0].getPointAtLength(0);
     const bounds = node.getBoundingClientRect();
     return {
-      ranges: [xaxis.range, yaxis.range], widths: paths.map(path => path.getBBox().width),
+      ranges: [xaxis.range, yaxis.range],
+      declaredMinimum: [minreducedwidth, minreducedheight],
+      axisLengths: [xaxis._length, yaxis._length],
+      widths: paths.map(path => path.getBBox().width),
       heights: paths.map(path => path.getBBox().height),
       hover: { x: bounds.x + xaxis._offset + start.x, y: bounds.y + yaxis._offset + start.y },
     };
   });
+  expect(actual.declaredMinimum).toEqual([329, 142]);
+  actual.axisLengths.forEach((length, i) => expect(length).toBeGreaterThanOrEqual(actual.declaredMinimum[i] - 1));
   expect(actual.widths).toHaveLength(2);
   expect(actual.widths[0] / actual.widths[1]).toBeCloseTo(.5, 2);
   expect(actual.heights[1] / actual.heights[0]).toBeCloseTo(.5, 2);
@@ -144,4 +164,19 @@ test('installed Plotly paints different widths on one density scale and hovers a
   await expect(tooltip).toContainText('0% (0)');
   await expect(tooltip).toContainText('Gaussian bandwidth');
   await test.info().attach('shared-violin-geometry', { body: JSON.stringify(actual, null, 2), contentType: 'application/json' });
+});
+
+test('real worker refuses a shared scale that collapses the installed renderer polygons', async ({ page }) => {
+  const { outcome, graph } = await draw(page, closes(.125), 'violin', 'light', closes(.125e-10));
+  if (outcome.ok) {
+    const bounds = await graph.locator('.scatterlayer path.js-fill').evaluateAll(paths =>
+      paths.map(path => {
+        const { width, height } = (path as SVGPathElement).getBBox();
+        return { width, height };
+      }),
+    );
+    await test.info().attach('unexpected-drawn-svg-bounds', { body: JSON.stringify(bounds), contentType: 'application/json' });
+  }
+  expect(outcome).toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry.*plot listings separately/i) });
+  await expect(graph).toHaveCount(0);
 });

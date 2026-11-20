@@ -56,9 +56,12 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     return { ok: false, refused: true, message: 'Reload the source table to supply a valid chart dataset.' };
   if (!hasRecipeContext(context))
     return { ok: false, refused: true, message: 'Supply a valid chart context with theme, precision and a YYYY-MM-DD calendar date.' };
-  const { viewportWidth } = context;
-  if (viewportWidth !== undefined && (!Number.isFinite(viewportWidth) || viewportWidth <= 0 || viewportWidth > 10_000))
-    return { ok: false, refused: true, message: 'Supply a viewport width greater than 0 and at most 10,000.' };
+  const { viewportWidth, viewportHeight } = context;
+  for (const [dimension, size] of [['width', viewportWidth], ['height', viewportHeight]] as const) {
+    if (size !== undefined && (!Number.isFinite(size) || size <= 0 || size > 10_000)) {
+      return { ok: false, refused: true, message: `Supply a viewport ${dimension} greater than 0 and at most 10,000.` };
+    }
+  }
 
   const recipe = decoded.options;
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar'

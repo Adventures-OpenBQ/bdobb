@@ -322,3 +322,20 @@ it('runs with aliases from acquired case-insensitive price origins and rejects a
   expect(runRecipe(data, { ...options, fields }, context).ok).toBe(true);
   expect(runRecipe(data, { ...options, fields: { ...fields, price: 'custom' } }, context).ok).toBe(false);
 });
+
+it('rejects violin extents below renderer pixel precision and preserves scale when the plot is large enough', async () => {
+  const data = await source([...fromReturns(varied), ...fromReturns(varied.map(value => value * 1e-4), 'BBB.US')]);
+  const selection: ReturnSummaryOptions = { ...options, view: 'violin', symbols: ['AAA.US', 'BBB.US'] };
+  const measured = { ...context, viewportWidth: 740, viewportHeight: 400 };
+  const ordinary = runRecipe(data, selection, measured);
+  const larger = runRecipe(data, selection, { ...measured, viewportWidth: 900, viewportHeight: 500 });
+  if (!ordinary.ok) throw new Error(ordinary.message);
+  if (!larger.ok) throw new Error(larger.message);
+  expect(ordinary.returnSummary?.view).toBe('violin');
+  expect(larger.revision).toBe(ordinary.revision);
+  expect(larger.figure.data).toEqual(ordinary.figure.data);
+  expect(runRecipe(data, selection, { ...measured, viewportWidth: 420 }))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry.*AAA\.US/i) });
+  expect(runRecipe(data, selection, { ...measured, viewportHeight: 260 }))
+    .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/geometry.*BBB\.US/i) });
+});

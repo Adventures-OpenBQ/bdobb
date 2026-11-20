@@ -33,6 +33,9 @@ export type ReturnSummaryDetails = Omit<Admitted, 'series'> & {
 const densityMinimum = 20;
 const evaluationCount = 128;
 const maximumHalfWidth = .34;
+const plotMargins = { l: 70, r: 12, t: 44, b: 72 };
+const pathPixelStep = .01; // Plotly Cartesian c2p rounds SVG coordinates to two decimal places.
+const minimumAxisPixels = 2; // Plotly's smallest supported inner axis dimension.
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17 });
 const scientificPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximumSignificantDigits: 17, notation: 'scientific' });
 
@@ -150,6 +153,21 @@ function extrema(sequences: readonly (readonly number[])[]) {
   return { min, max };
 }
 
+function reducedAxisMinimum(canvasPixels: number | undefined, baseMargins: number): number {
+  // Let labels use half of the area left by the base margins. With no measured
+  // dimension, only Plotly's absolute minimum is guaranteed.
+  return canvasPixels === undefined ? minimumAxisPixels
+    : Math.max(minimumAxisPixels, Math.floor((canvasPixels - baseMargins) / 2));
+}
+
+function hasDrawableSpan(coordinates: readonly number[], range: readonly [number, number], reducedAxisPixels: number): boolean {
+  const { min, max } = extrema([coordinates]);
+  // The two auto margins round separately. Use a one-pixel lower allowance.
+  // A full coordinate step survives SVG rounding at every subpixel position.
+  const pixels = ((max - min) / (range[1] - range[0])) * (reducedAxisPixels - 1);
+  return Number.isFinite(pixels) && pixels > pathPixelStep;
+}
+
 function returnAxis(
   observations: readonly (readonly number[])[],
   summaryCoordinates: readonly (readonly number[])[],
@@ -167,7 +185,7 @@ function returnAxis(
   const coordinate = (value: number) => (value - origin) / scale;
   const first = coordinate(min), last = coordinate(max);
   const padding = min === max ? Math.max(Math.abs(first) * .05, exceptional ? .05 : .0001) : (last - first) * .06;
-  const range = [first - padding, last + padding];
+  const range = [first - padding, last + padding] as const;
   if (!range.every(Number.isFinite) || range[0] >= range[1]) return undefined;
 
   // The coordinate transform must preserve the original admitted values. Plotly's
@@ -324,14 +342,17 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
 
   const maxDensity = extrema(activeEstimates.map(estimate => estimate.points.map(point => point.density))).max;
   const { coordinate } = yaxis;
+  const xRange = [-.5, series.length - .5] as const;
+  const minreducedwidth = reducedAxisMinimum(context.viewportWidth, plotMargins.l + plotMargins.r);
+  const minreducedheight = reducedAxisMinimum(context.viewportHeight, plotMargins.t + plotMargins.b);
   const data: unknown[] = [];
   for (const [index, item] of series.entries()) {
     const { summary, symbol } = item;
     if (view === 'box') data.push(...boxTraces(summary, index, symbol, coordinate));
     else {
       const trace = violinTrace(activeEstimates[index], maxDensity, index, symbol, coordinate);
-      if (trace.x.some(value => !Number.isFinite(value)) || !trace.x.some(value => value > index)) {
-        return refusal(`The shared density scale cannot preserve finite violin geometry for ${symbol}. Plot listings separately.`);
+      if (!hasDrawableSpan(trace.x, xRange, minreducedwidth) || !hasDrawableSpan(trace.y, yaxis.layout.range, minreducedheight)) {
+        return refusal(`The shared density scale cannot preserve violin geometry for ${symbol} at this plot size. Enlarge the plot or plot listings separately.`);
       }
       data.push(trace);
     }
@@ -357,9 +378,10 @@ export function buildReturnSummary(dataset: WidgetDataset, options: ReturnSummar
       layout: {
         ...themedLayout(context.theme), uirevision: revision, hovermode: 'closest', showlegend: false,
         title: { text: view === 'box' ? 'Daily return boxes' : 'Daily return density' },
-        margin: { l: 70, r: 12, t: 44, b: 72 },
+        margin: { ...plotMargins },
+        ...(view === 'violin' ? { minreducedwidth, minreducedheight } : {}),
         xaxis: {
-          type: 'linear', range: [-.5, series.length - .5], autorange: false, automargin: true, tickmode: 'array',
+          type: 'linear', range: xRange, autorange: false, automargin: true, tickmode: 'array',
           tickvals: series.map((_, index) => index),
           ticktext: series.map(item => `${escape(item.symbol)}<br>N = ${item.samples.length}<br>${escape(item.start)} to ${escape(item.end)}`),
         },
