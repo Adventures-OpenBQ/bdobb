@@ -5,6 +5,8 @@ import type { LinkedFigureResult } from '../chartFigure';
 import type { NewsCalendarDay } from './newsCalendar';
 import type { ReturnSummaryWindow } from './priceSamples';
 import type { ReturnSummaryDetails } from './returnSummary';
+import type { OwnershipBarRole } from './ownershipEvidence';
+import type { OwnershipSnapshotDetails } from './ownershipSnapshot';
 
 export type PriceBindings = { date: string; price: string; symbol?: string };
 
@@ -31,6 +33,15 @@ export type ReturnSummaryOptions = {
   window: ReturnSummaryWindow;
 };
 
+export type OwnershipSnapshotOptions = {
+  version: 1;
+  kind: 'ownership-snapshot';
+  issuer: string;
+} & (
+  | { view: 'bars'; fields: Partial<Record<OwnershipBarRole, string>> }
+  | { view: 'waffle'; fields: { bucket: string; share: string } }
+);
+
 export type RecipeOptions =
   | { version: 1; kind: 'drawdown'; fields: PriceBindings; symbols: string[] }
   | { version: 1; kind: 'yield-curve'; fields: { date: string; maturity: string; rate: string } }
@@ -45,10 +56,15 @@ export type RecipeOptions =
   | { version: 1; kind: 'dividend-steps'; fields: DividendBindings; instrument: string }
   | { version: 1; kind: 'income-sankey'; periodColumn: string }
   | NewsCalendarOptions
-  | ReturnSummaryOptions;
+  | ReturnSummaryOptions
+  | OwnershipSnapshotOptions;
 
 export type RecipeContext = { theme: 'light' | 'dark'; maxDecimals: number; today: string; viewportWidth?: number; viewportHeight?: number };
 
 /** A successful revision identifies the chart question and stays stable across data refreshes. */
 export type RecipeRefusal = Extract<LinkedFigureResult, { ok: false }>;
-export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & { daySummaries?: NewsCalendarDay[]; returnSummary?: ReturnSummaryDetails }) | RecipeRefusal;
+export type RecipeResult = (Extract<LinkedFigureResult, { ok: true }> & {
+  daySummaries?: NewsCalendarDay[];
+  returnSummary?: ReturnSummaryDetails;
+  ownershipSnapshot?: OwnershipSnapshotDetails;
+}) | RecipeRefusal;

@@ -4,6 +4,7 @@
 import { statementOwnedIds } from '../../statementModel/types';
 import { read } from './estimateEvidence';
 import { acquiredColumnOrigin, isoDate } from './financialEvidence';
+import { ownershipBarRoles, type OwnershipSource } from './ownershipEvidence';
 import { adjustedPriceOrigins, priceDateOrigins } from './priceEvidence';
 import type { DatasetColumn, DatasetRow, WidgetDataset } from '../types';
 import type { RecipeOptions } from './types';
@@ -28,6 +29,27 @@ export function bubblePriceDates(dataset: WidgetDataset, dateField: string): str
 
 const acquiredRole = (key: string, label: string, field: string, variant?: 'numeric' | 'date' | 'optional'): Role =>
   ({ key, label, names: [field], strictOrigin: true, ...(variant ? { [variant]: true } : {}) });
+
+export const ownershipBarLabels = {
+  insiders: 'Insider ownership', institutions: 'Institutional ownership', freeFloat: 'Free float',
+} as const;
+
+/** Ownership bindings are driven by the decoded acquisition's physical origins. */
+export function ownershipBindingRoles(source: OwnershipSource): Role[] {
+  if ('bucket_keys' in source) return [
+    acquiredRole('bucket', 'Ownership bucket', source.field_origins.bucket),
+    acquiredRole('share', 'Reported share', source.field_origins.share, 'numeric'),
+  ];
+  return ownershipBarRoles.flatMap(role => {
+    const origin = source.field_origins[role];
+    return origin ? [{ ...acquiredRole(role, ownershipBarLabels[role], origin, 'numeric'), optional: true }] : [];
+  });
+}
+
+export function ownershipInputFields(columns: readonly DatasetColumn[]): string[] {
+  const coordinates = ['symbol', 'share_class', 'as_of', 'denominator'];
+  return columns.filter(column => coordinates.some(field => acquiredColumnOrigin(column) === field)).map(column => column.id);
+}
 
 export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'revenue', mode: 'sector' | 'region' = 'sector'): Role[] {
   if (kind === 'bubble-regression') return [
@@ -58,7 +80,7 @@ export function bindingRoles(kind: RecipeOptions['kind'], metric: 'eps' | 'reven
     { ...adjustedPriceRole, strictOrigin: 'ignore-case' },
     { key: 'symbol', label: 'Qualified listing field', names: ['symbol', 'ticker'], optional: true, strictOrigin: 'ignore-case' },
   ];
-  if (kind === 'income-sankey') return [];
+  if (kind === 'income-sankey' || kind === 'ownership-snapshot') return [];
   if (kind === 'yield-curve') return [dateRole, { key: 'maturity', label: 'Maturity', names: ['maturity', 'tenor'] },
     { key: 'rate', label: 'Normalized rate', names: ['rate', 'yield'], numeric: true }];
   if (kind === 'estimate-range') return [
@@ -104,7 +126,7 @@ export function acceptsBinding(role: Role, c: DatasetColumn, rows?: DatasetRow[]
       return observed;
     }
   }
-  return role.names.includes(origin.toLowerCase());
+  return !!role.strictOrigin || role.names.includes(origin.toLowerCase());
 }
 
 export function bindingCandidates(role: Role, columns: DatasetColumn[]): DatasetColumn[] {

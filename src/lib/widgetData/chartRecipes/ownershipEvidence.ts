@@ -5,14 +5,14 @@ import type { ChartSourceAdapter, ChartSourceReceipt } from './chartSourceContra
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 
 const unsafeNames = ['identity_conflict', 'unit_conflict', 'date_conflict', 'partition_conflict'] as const;
-const barRoles = ['insiders', 'institutions', 'freeFloat'] as const;
+export const ownershipBarRoles = ['insiders', 'institutions', 'freeFloat'] as const;
 const receiptKeys = ['version', 'kind', 'origin', 'issuer', 'share_class', 'retrieved_at', 'raw_count',
   'normalized_count', 'delivered_count', 'diagnostics', 'unsafe', 'measures', 'field_origins', 'partition'];
 const reservedFields = ['symbol', 'share_class', 'as_of', 'denominator', 'constructor', 'prototype'];
 const headlineOrigins = { insiders: 'percent_insiders', institutions: 'percent_institutions' } as const;
 
 type OwnershipUnsafe = typeof unsafeNames[number];
-export type OwnershipBarRole = typeof barRoles[number];
+export type OwnershipBarRole = typeof ownershipBarRoles[number];
 export type OwnershipMeasure = { unit: 'percent-points' | 'fraction'; basis: 'shares-outstanding' | null; as_of: string | null };
 type CommonOwnershipSource = ChartSourceReceipt & {
   kind: 'ownership';
@@ -116,7 +116,7 @@ export function parseOwnershipSource(value: unknown): OwnershipSource | undefine
   const measureNames = Object.keys(measures);
   if (!exact(partition, ['status']) || partition.status !== 'unavailable' || value.delivered_count !== 1
     || (value.share_class !== null && !classId(value.share_class)) || !measureNames.length || !exact(origins, measureNames)
-    || measureNames.some(name => !barRoles.some(role => role === name) || !ownershipMeasure(measures[name]) || !origin(origins[name]))
+    || measureNames.some(name => !ownershipBarRoles.some(role => role === name) || !ownershipMeasure(measures[name]) || !origin(origins[name]))
     || new Set(Object.values(origins)).size !== measureNames.length) return;
 
   if (value.origin === 'eodhd-share-statistics' && (
@@ -145,7 +145,7 @@ function rowsAgree(source: OwnershipSource, rows: readonly Record<string, unknow
   const [row] = rows;
   const classMatches = source.origin === 'eodhd-share-statistics'
     ? row.share_class === undefined || row.share_class === null : row.share_class === source.share_class;
-  return row.symbol === source.issuer && classMatches && barRoles.every(role => {
+  return row.symbol === source.issuer && classMatches && ownershipBarRoles.every(role => {
     const measure = source.measures[role];
     const field = source.field_origins[role];
     if (!measure || !field) return true;

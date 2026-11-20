@@ -12,6 +12,7 @@ import { buildEstimateRange } from './estimateRange';
 import { buildIncomeSankey } from './incomeSankey';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
+import { buildOwnershipSnapshot } from './ownershipSnapshot';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeOptions, RecipeResult } from './types';
@@ -81,6 +82,7 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeOptions, contex
     case 'bubble-regression': return buildBubbleRegression(dataset, recipe, context);
     case 'dividend-steps': return buildDividendSteps(dataset, recipe, context);
     case 'income-sankey': return buildIncomeSankey(dataset, recipe, context);
+    case 'ownership-snapshot': return buildOwnershipSnapshot(dataset, recipe, context);
     case 'news-sentiment-calendar': return buildNewsCalendar(dataset, recipe, context);
   }
 }

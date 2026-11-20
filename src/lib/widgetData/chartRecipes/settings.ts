@@ -5,11 +5,14 @@ import { isRecord } from '../../isRecord';
 import { LEGACY_LINKED_CHART_TYPES, type LinkedChartSettings } from '../types';
 import { isoDate, qualifiedSymbol } from './financialEvidence';
 import { observationSymbol } from './priceEvidence';
+import { ownershipBarRoles } from './ownershipEvidence';
 import type { RecipeOptions } from './types';
 
 type RecipeKind = RecipeOptions['kind'];
 type RecipeShape = { options: readonly string[]; required?: readonly string[]; optional?: readonly string[]; distinctBindings?: true };
 const priceFields = { required: ['date', 'price'], optional: ['symbol'] };
+const ownershipBarShape = { options: ['issuer', 'view'], required: [], optional: ownershipBarRoles, distinctBindings: true } as const;
+const ownershipWaffleShape = { options: ['issuer', 'view'], required: ['bucket', 'share'], distinctBindings: true } as const;
 const recipeShapes: Record<RecipeKind, RecipeShape> = {
   drawdown: { options: ['symbols'], ...priceFields },
   'yield-curve': { options: [], required: ['date', 'maturity', 'rate'] },
@@ -17,6 +20,7 @@ const recipeShapes: Record<RecipeKind, RecipeShape> = {
   'monthly-returns': { options: ['symbol'], ...priceFields },
   correlation: { options: ['symbols', 'lookback', 'minOverlap'], ...priceFields },
   'return-distribution': { options: ['symbol', 'bins'], ...priceFields, distinctBindings: true },
+  'ownership-snapshot': ownershipBarShape,
   'return-summary': { options: ['symbols', 'view', 'window'], ...priceFields, distinctBindings: true },
   'small-multiples': { options: ['symbols'], ...priceFields, distinctBindings: true },
   'etf-pareto': { options: [], required: ['holding', 'weight'], optional: ['label'], distinctBindings: true },
@@ -83,7 +87,8 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
   if (!Object.hasOwn(value, 'kind') || chartType !== value.kind)
     return invalid('Recipe kind must match the linked chart type.');
 
-  const shape = recipeShapes[chartType];
+  const shape: RecipeShape = chartType === 'ownership-snapshot' && value.view === 'waffle'
+    ? ownershipWaffleShape : recipeShapes[chartType];
   const allowed = ['version', 'kind', ...(shape.required ? ['fields'] : []), ...shape.options];
   const extra = Object.keys(value).find(key => !allowed.includes(key));
   if (extra !== undefined) return invalid(`Remove unsupported recipe option "${extra}".`);
@@ -137,6 +142,10 @@ export function decodeRecipeOptions(value: unknown, chartType: string): RecipeOp
         return invalid('Set return distribution bins to an integer between 5 and 100.');
       break;
     }
+    case 'ownership-snapshot':
+      if (!qualifiedSymbol(value.issuer)) return invalid('Select one fully qualified acquired issuer.');
+      if (value.view !== 'bars' && value.view !== 'waffle') return invalid('Choose ownership bars or waffle.');
+      break;
     case 'return-summary': {
       if (!distinctSymbols(value.symbols, 12, qualifiedSymbol)) return invalid('Select 1 to 12 distinct qualified return listings.');
       if (value.view !== 'box' && value.view !== 'violin') return invalid('Choose box or violin for return summaries.');
