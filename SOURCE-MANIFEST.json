@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v6.0.0",
-  "baseCommit": "d8cfb96e4da3606b2bd11d4d73bbadaba4c635d2",
-  "sourceId": "835647d6694a874c40d50924963d3301815f811b231eb3798790ecd5578c8530",
+  "baseCommit": "ed3d9ed7be94403a3e9983a4e4ddc7034ee28673",
+  "sourceId": "62bedfafa071d0fb99ce798d2b2ebcf6c76d70a46e585b7298e51fef1d0f1411",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20069,7 +20069,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "dc47b874b1aa09c2d9fc607b873fd9c4be0cd1c6956a4360ae853c5a0b16031c"
+      "sha256": "bc5ea7cdd450ae84d375a35b8b68f03d3b75732b5898f97528cb64d510d0d5ce"
     },
     {
       "path": "source_bundle.py",
@@ -23729,15 +23729,15 @@
       "path": "src/lib/agent/localTools.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 61260,
-      "sha256": "23f77a8f54f50388be17c10db8d8d5f4589b0782bef4415fffb79ca497b993d5"
+      "size": 62257,
+      "sha256": "c0242e1273e88e20846f24c8755151f0e64740037eaec2122ad3c830c1875f83"
     },
     {
       "path": "src/lib/agent/localTools.ts",
       "type": "file",
       "mode": 420,
-      "size": 53363,
-      "sha256": "e51214bfbd3013a0161af171b99f26f3817e1a3609276c4964f3e1ba8cb95531"
+      "size": 53743,
+      "sha256": "16278018c473478b3d53b24817686f12ac12ed0edeb9a7b9e80fdf33b9a9d5ef"
     },
     {
       "path": "src/lib/agent/mcp.test.ts",
@@ -23890,15 +23890,15 @@
       "path": "src/lib/agent/tableModel/capabilities.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 4104,
-      "sha256": "649d49eafbf7e3906678e7632744db2b2409e97e21f805db5beafd3163b8c6c5"
+      "size": 4668,
+      "sha256": "0ea6ecb7817f9ec954606dcc1885912630d98bc6910229f0d71e202b25f60ad1"
     },
     {
       "path": "src/lib/agent/tableModel/capabilities.ts",
       "type": "file",
       "mode": 420,
-      "size": 5326,
-      "sha256": "85000e4d83cd4f796abb02c3b6f942fb99e997e36098d3dd55ed74c03320d261"
+      "size": 5972,
+      "sha256": "df39d7d5e55f8c63fbab13d28134b0b5298f06ddf163f55aac9be6bfd440b9f4"
     },
     {
       "path": "src/lib/agent/tableModel/contract.test.ts",
@@ -23911,8 +23911,8 @@
       "path": "src/lib/agent/tableModel/contract.ts",
       "type": "file",
       "mode": 420,
-      "size": 10667,
-      "sha256": "3760feb9be340260931493ec048da095d8eb777eb2f75704cf6f63e8c161c915"
+      "size": 10674,
+      "sha256": "2d809752ae4bbe36634b3a01d2df822bc57b34796aa3601d3aa5aee8d2243945"
     },
     {
       "path": "src/lib/agent/tableModel/describe.test.tsx",
@@ -23934,6 +23934,13 @@
       "mode": 420,
       "size": 6230,
       "sha256": "0eccf989d578d8901ffef7c68fd2a06bfb63f2ade66046cf61353ec3b292639f"
+    },
+    {
+      "path": "src/lib/agent/tableModel/operationSchema.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1829,
+      "sha256": "166716aaac6466503f7fa439b0098160e395d4bb09efdf0ee7e905307fd29ce1"
     },
     {
       "path": "src/lib/agent/tableModel/parity.test.tsx",
@@ -27208,8 +27215,8 @@
       "path": "src/skills/arrange-table/SKILL.md",
       "type": "file",
       "mode": 420,
-      "size": 12401,
-      "sha256": "9a3906f39c63defeeacdf50d7b7badc71fadf52528889b522f82b5452c80c73c"
+      "size": 13859,
+      "sha256": "e93e3fbaea89ab70d94da0c2a6a2c13b249f08b53d4cf7f7b6fdbfc2102e6700"
     },
     {
       "path": "src/skills/build-dashboard/SKILL.md",
@@ -28167,15 +28174,29 @@
       "path": "src/test/integration/rita-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 8941,
-      "sha256": "ab979766597a6ad4738143b20d1eb7c6cbf8cc97b10aad070dfee28c457bc8a6"
+      "size": 8996,
+      "sha256": "330c9c82d19e3f7a3ab951c663422134111066feed756d99da4ee669658e55c7"
     },
     {
       "path": "src/test/integration/rita-table-model-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 11352,
-      "sha256": "94a0095e061da966ee5cd81a4269805c6c1afde3b8fd4b2d08e71e99b5248a7e"
+      "size": 11246,
+      "sha256": "95d97784f7cc5865714e44ff1919c0ef2c189818acca8bb89a336530b55d7e12"
+    },
+    {
+      "path": "src/test/integration/textSumRefusal.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 944,
+      "sha256": "5d8da3378483249dd3b6967c68ae55dd0cb349045131b01641011343607a6d00"
+    },
+    {
+      "path": "src/test/integration/textSumRefusal.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 647,
+      "sha256": "ec6f68eca9089c38a23f684c03856d9f5cd766206b3a31da63f88df7d64ca79b"
     },
     {
       "path": "src/test/integration/workspace-login.test.ts",
