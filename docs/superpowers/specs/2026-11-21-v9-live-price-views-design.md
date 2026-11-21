@@ -1,6 +1,8 @@
 # V9 live-data histogram, drawdown and small multiples
 
-Status: proposed design for user approval. No implementation is authorized by this document alone.
+Status: functional design approved by the user on 21 November 2026; implementation planning requested. Implementation awaits plan review.
+
+Release packaging proposal during planning: ship these three additions with v10, keeping the reviewed v9 work separate. The user asked whether v10 is appropriate; the controller recommended it. The implementation plan targets v10 for approval. This file retains its original v9 filename to preserve the approved design reference.
 
 Independent Superpowers builder check, 21 November 2026: a fresh reviewer read this design and reported “nothing important left” to clarify before implementation planning. This is a design review, not implementation validation.
 
