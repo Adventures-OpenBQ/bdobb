@@ -1605,7 +1605,7 @@ function VirtualTable({
                     <button type="button" aria-expanded={sectionGroup.open}
                       aria-label={`${sectionGroup.open ? "Collapse" : "Expand"} ${String(row.getValue(LABEL_FIELD) ?? "")}`}
                       onClick={() => execution.toggle(sectionGroup.path)}>
-                      <span aria-hidden="true">{sectionGroup.open ? "▾" : "▸"}</span>{" "}{String(row.getValue(LABEL_FIELD) ?? "")}
+                      <span className="statement-section-label" style={{ left: (execution.selection ? totalGutterWidth : 0) + 8 }}><span aria-hidden="true">{sectionGroup.open ? "▾" : "▸"}</span>{" "}{String(row.getValue(LABEL_FIELD) ?? "")}</span>
                     </button>
                   </td>
                 ) : row.getVisibleCells().map((cell) => {
