@@ -39,7 +39,7 @@ function member(key: string, field: string, bucket: DatasetGroupMember['bucket']
 }
 /** Calculate once from the complete acquired input, never from delivery blocks. */
 export function calculateView(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcileMissing = true, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {
-  const source = { ...input, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(input))) };
+  const source = { ...input, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(input)), input) };
   return calculate({ ...source, provenance: estimateProvenance({ ...source, provenance: priceAcquisitionProvenance(source) }) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, validateRuntimeParams(runtimeParams,definition));
 }
 function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams): CalculatedView {

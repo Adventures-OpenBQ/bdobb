@@ -22,7 +22,11 @@ test.use({ viewport: { width: 1600, height: 1000 }, actionTimeout: 7000 });
 test.beforeEach(() => test.setTimeout(90000));
 
 async function ready(page: Page) {
-  for (const name of riskNames) await expect(plot(page, name).locator('svg.main-svg').first()).toBeAttached();
+  for (const name of riskNames) {
+    // Acquisition and the recipe worker finish before the drawable surface mounts.
+    await card(page, name).getByTestId('chart-plot').waitFor({ state: 'attached', timeout: 0 });
+    await expect(plot(page, name).locator('svg.main-svg').first()).toBeAttached();
+  }
 }
 
 async function hoverMark(page: Page, graph: Locator, mark: Locator) {

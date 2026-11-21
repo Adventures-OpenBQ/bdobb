@@ -6,6 +6,7 @@ import type { WidgetDataset } from '../types';
 import { savedBindingIssue } from './bindings';
 import { buildBubbleRegression } from './bubbleRegression';
 import { buildCorrelation } from './correlation';
+import { readLiveDailyPriceSource } from './dailyPriceEvidence';
 import { buildDividendSteps } from './dividendSteps';
 import { buildDrawdown } from './drawdown';
 import { buildDualAxisOverlay } from './dualAxisOverlay';
@@ -16,6 +17,7 @@ import { buildMarketMap } from './marketMap';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
 import { buildOwnershipSnapshot } from './ownershipSnapshot';
+import { snapshotDailyPriceIssue } from './input';
 import { calendarDate } from './priceEvidence';
 import { decodeRecipeRequestOptions } from './settings';
 import type { RecipeContext, RecipeRequestOptions, RecipeResult } from './types';
@@ -75,7 +77,11 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
-  if (issue) return { ok: false, refused: true, message: issue };
+  // Qualified live returns bind against acquired field origins. Their admission also handles empty acquisitions.
+  if (issue && !(recipe.kind === 'return-summary' && readLiveDailyPriceSource(dataset))) {
+    const sourceIssue = recipe.kind === 'return-summary' ? snapshotDailyPriceIssue(dataset) : undefined;
+    return { ok: false, refused: true, message: sourceIssue ?? issue };
+  }
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);
     case 'yield-curve': return buildYieldCurve(dataset, recipe, context);

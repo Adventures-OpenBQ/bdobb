@@ -1,0 +1,19 @@
+Unused files (16)
+dist/assets/HelpDialog-C6Y87Yjl.js
+dist/assets/index-Cb2d8_uP.js
+dist/assets/kpi.worker-D61Cz-SF.js
+dist/assets/lightweight-charts.production-ClhRhmPB.js
+dist/assets/MarkdownEditorRenderer-Dqv7GNeV.js
+dist/assets/module-RjUF93sV.js
+dist/assets/native-48B9X9Wg.js
+dist/assets/pdf_viewer-D9A2Yh6Q.js
+dist/assets/pdf-lPevIYiG.js
+dist/assets/pdf.worker.min-Dr1KORA9.mjs
+dist/assets/pivot_wasm-D077-0h8.js
+dist/assets/recipe.worker-DivA-SKI.js
+dist/assets/rust.worker-DSDxYDTq.js
+dist/assets/table.worker-BFoGpA9A.js
+dist/assets/xlsx-DBvuKzsv.js
+dist/assets/xlsx-DT5WGBCc.js
+Unused exported types (1)
+Monitor  type  src/browser-shim/window.ts:46:13

@@ -10,6 +10,10 @@ import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
 import { inspectOwnershipSource, ownershipPartitionRepair } from '../../lib/widgetData/chartRecipes/ownershipSnapshotInput';
+import { readLiveDailyPriceSource } from '../../lib/widgetData/chartRecipes/dailyPriceEvidence';
+import { snapshotDailyPriceIssue } from '../../lib/widgetData/chartRecipes/input';
+import { acquiredColumnOrigin } from '../../lib/widgetData/chartRecipes/financialEvidence';
+import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot } from '../../lib/widgetData/chartRecipes/priceEvidence';
 import { createRecipeWorker } from '../../lib/widgetData/chartRecipes/workerClient';
 import { ownershipPlotHeight, ownershipPlotWidth, returnSummaryPlotHeight, returnSummaryPlotWidth } from '../../lib/widgetData/chartRecipes/viewport';
 import { ChartRenderer, readDrawingSurface, type DrawingSurface } from './ChartRenderer';
@@ -130,11 +134,11 @@ function matchesDraftSurface(probe: HTMLDivElement | null, admitted: DrawingSurf
 }
 
 export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty, loadSymbols, loadSourceChoices, loadNewsInput, loadNewsDraft, newsDraftContext, matchesNewsDraftWidth,
-  loadReturnListings, loadReturnDraft, returnDraftContext, probeTarget, disabled, onApply }: {
+  loadReturnInput, loadReturnListings, loadReturnDraft, returnDraftContext, probeTarget, disabled, onApply }: {
   kind: Kind; saved?: RecipeOptions; columns: DatasetColumn[]; verifiedEmpty?: boolean; loadSymbols: LoadSymbols;
   loadSourceChoices?: LoadSourceChoices; loadNewsInput?: LoadAcquiredInput;
   loadNewsDraft?: LoadDraft<NewsCalendarOptions>; newsDraftContext?: RecipeContext; matchesNewsDraftWidth?: () => boolean;
-  loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
+  loadReturnInput?: LoadAcquiredInput; loadReturnListings?: LoadSymbols; loadReturnDraft?: LoadDraft<ReturnSummaryOptions>; returnDraftContext?: RecipeContext;
   probeTarget?: HTMLElement | null; disabled: boolean; onApply: (options: RecipeOptions, matchesDrawing?: () => boolean) => void;
 }) {
   const draftWorker = useRef<DraftWorker | undefined>(undefined);
@@ -146,6 +150,20 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const [editedFields, setFields] = useState<Record<string, string> | undefined>(() => saved && 'fields' in saved ? { ...saved.fields } : undefined);
   const news = kind === 'news-sentiment-calendar';
   const returns = kind === 'return-summary';
+  const returnRead = useAcquiredInput(returns ? loadReturnInput : undefined);
+  const returnDataset = returnRead?.dataset;
+  const liveReturn = useMemo(() => returnDataset && readLiveDailyPriceSource(returnDataset), [returnDataset]);
+  const liveOrigins: Record<string, string | null> | undefined = liveReturn && {
+    date: liveReturn.receipt.date_field, price: liveReturn.receipt.price_field, symbol: liveReturn.receipt.symbol_field,
+  };
+  const snapshotIssue = returnDataset && !liveReturn ? snapshotDailyPriceIssue(returnDataset) : undefined;
+  const returnSourceProblem = returns && (returnRead?.error ?? snapshotIssue
+    ?? (!returnDataset ? 'Loading acquired price history…'
+      : liveReturn && !returnDataset.rows.length ? 'No valid daily prices remain.'
+      : !liveReturn && !hasDocumentedDailySnapshot(returnDataset.provenance)
+        ? returnDataset.provenance.sourceKind === 'localFile' ? documentedDailySnapshotMessage
+          : 'Choose a verified EODHD daily-price acquisition or a documented local adjusted-price snapshot.'
+        : undefined));
   const savedReturn = saved?.kind === 'return-summary' ? saved : undefined;
   const [returnView, setReturnView] = useState(savedReturn?.view ?? 'box');
   const [returnWindow, setReturnWindow] = useState(savedReturn?.window.mode ?? 'own');
@@ -171,9 +189,15 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const pinEnd = end ?? defaultPins?.end ?? '';
   const emptyAcquisition = (kind === 'dividend-steps' && verifiedEmpty)
     || (news && !!newsSource && newsSource.delivered_count === 0 && !columns.length);
+  const roleList = emptyAcquisition ? [] : bindingRoles(kind, metric, mode);
+  const candidatesFor = (role: typeof roleList[number]) => liveOrigins
+    ? columns.filter(column => acquiredColumnOrigin(column) === liveOrigins[role.key]) : bindingCandidates(role, columns);
   const fields = editedFields ?? (emptyAcquisition
     ? Object.fromEntries(bindingRoles(kind, metric).filter(role => !role.optional).map(role => [role.key, role.names[0]]))
-    : defaults(kind, metric, columns, mode));
+    : liveOrigins ? Object.fromEntries(roleList.flatMap(role => {
+      const column = candidatesFor(role)[0];
+      return column ? [[role.key, column.id]] : [];
+    })) : defaults(kind, metric, columns, mode));
   const [symbols, setSymbols] = useState<string[]>(() => saved && 'symbols' in saved ? saved.symbols : saved && 'symbol' in saved ? [saved.symbol] : []);
   const minimumPlotWidth = returnSummaryPlotWidth(symbols.length);
   const returnProbe = useRef<HTMLDivElement>(null);
@@ -192,10 +216,9 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const singleSymbol = kind === 'monthly-returns' || kind === 'return-distribution';
   const multipleSymbols = kind === 'drawdown' || kind === 'correlation' || kind === 'small-multiples';
   const needsSymbols = singleSymbol || multipleSymbols || returns;
-  const loadListings = returns ? loadReturnListings : loadSymbols;
-  const roleList = emptyAcquisition ? [] : bindingRoles(kind, metric, mode);
+  const loadListings = returns ? (returnDataset && !returnSourceProblem && !liveReturn ? loadReturnListings : undefined) : loadSymbols;
   const fieldIssue = roleList.find(role => (
-    !fields[role.key] ? !role.optional : !bindingCandidates(role, columns).some(c => c.id === fields[role.key])
+    !fields[role.key] ? !role.optional || !!liveOrigins?.[role.key] : !candidatesFor(role).some(c => c.id === fields[role.key])
   ));
   const fieldsReady = !fieldIssue;
   const symbolField = fields.symbol;
@@ -210,14 +233,15 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
     });
     return () => controller.abort();
   }, [needsSymbols, fieldsReady, loadListings, symbolField]);
-  const current = choices && choices.load === loadListings && choices.field === symbolField ? choices : undefined;
+  const current = liveReturn ? { values: liveReturn.symbols, error: undefined }
+    : choices && choices.load === loadListings && choices.field === symbolField ? choices : undefined;
   const choiceIssue = needsSymbols && (!current ? (returns ? 'Loading acquired listings…' : 'Loading source symbols…') : current.error ??
     (!current.values.length ? (returns ? 'No qualified listings in the presented source. Bind the listing field or document a single listing in the snapshot.'
       : 'No identified symbols in the presented source. Bind a symbol field or document a single acquisition symbol.') :
       symbols.some(symbol => !current.values.includes(symbol)) ? (returns ? 'Repair the unavailable listing selection.' : 'Repair the unavailable symbol selection.') : undefined));
   const returnBase = { version: 1, kind, fields, symbols };
   const defaultReturn = returnWindow === 'common' && (returnStart === undefined || returnEnd === undefined)
-    && returns && fieldsReady && !choiceIssue
+    && returns && fieldsReady && !choiceIssue && !returnSourceProblem
     ? decodeRecipeOptions({ ...returnBase, view: 'box', window: { mode: 'own' } }, kind) : undefined;
   const defaultReturnOptions = defaultReturn?.ok && defaultReturn.options.kind === 'return-summary' ? defaultReturn.options : undefined;
   const defaultReturnResult = useDraftCheck(defaultReturnOptions, loadReturnDraft, returnContext, draftWorker);
@@ -271,7 +295,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const windowIssue = resolvedWindow && !resolvedWindow.ok ? resolvedWindow.message : undefined;
   const checkNews = newsOptions && newsSource && !fieldIssue && !windowIssue ? newsOptions : undefined;
   const checkedNews = useDraftCheck(checkNews, loadNewsDraft, newsDraftContext, draftWorker);
-  const checkReturn = decoded.ok && decoded.options.kind === 'return-summary' && !fieldIssue && !choiceIssue ? decoded.options : undefined;
+  const checkReturn = decoded.ok && decoded.options.kind === 'return-summary' && !fieldIssue && !choiceIssue && !returnSourceProblem ? decoded.options : undefined;
   const checkedReturn = useDraftCheck(checkReturn, loadReturnDraft, returnContext, draftWorker);
   const checked = news ? checkedNews : checkedReturn;
   const checkingDraft = (news || returns) && !checked;
@@ -279,11 +303,11 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const pendingBounds = defaultReturnOptions && !defaultReturnResult;
   const boundsIssue = defaultReturnResult && !defaultReturnResult.ok ? defaultReturnResult.message
     : defaultReturnResult?.ok && !overlapBounds ? 'The selected histories have no common acquired bounds. Choose different listings or use their own windows.' : undefined;
-  const problem = newsProblem || (fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.'
+  const problem = newsProblem || returnSourceProblem || (fieldIssue ? 'Choose a presented ' + fieldIssue.label.toLowerCase() + ' field.'
     : choiceIssue || sourceIssue || windowIssue || boundsIssue || (!decoded.ok ? (pendingBounds ? undefined : decoded.message) : validationIssue));
   const announcingDraftCheck = checkingDraft && !problem;
   const bindingInputs = roleList.map(role => {
-    const available = bindingCandidates(role, columns);
+    const available = candidatesFor(role);
     const value = fields[role.key] ?? '';
     return <label key={role.key}>{role.label}<select value={value} onChange={e => {
       const next = { ...fields };
@@ -348,7 +372,7 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
             {symbol}{unavailable && ' (unavailable)'}</label>;
         })}
       </fieldset>
-      <label>Return view<select value={returnView} onChange={event => setReturnView(event.target.value === 'violin' ? 'violin' : 'box')}>
+      <label>Return view<select value={returnView} disabled={!!returnSourceProblem} onChange={event => setReturnView(event.target.value === 'violin' ? 'violin' : 'box')}>
         <option value="box">Box</option><option value="violin">Violin</option>
       </select></label>
       <label>Return window<select value={returnWindow} onChange={event => setReturnWindow(event.target.value === 'common' ? 'common' : 'own')}>

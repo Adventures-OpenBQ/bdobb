@@ -11,8 +11,10 @@ import type { Dashboard } from '../../lib/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { DEFAULT_SETTINGS } from '../../lib/settingsFile';
-import { useState, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
+import { liveDailyPriceDataset } from '../../test/fixtures/liveDailyPrices';
+import type { ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 
 function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'>) {
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
@@ -22,9 +24,19 @@ function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'param
   </>;
 }
 
-vi.mock('./ChartRenderer', () => ({ ChartRenderer: ({ data }: {
-        data: unknown;
-    }) => <pre data-testid="figure">{JSON.stringify(data)}</pre> }));
+vi.mock('./ChartRenderer', () => {
+    const size = { width: 900, height: 540 };
+    return {
+        ChartRenderer: ({ data, onDrawingSurfaceChange }: {
+            data: unknown;
+            onDrawingSurfaceChange?: (size: { width: number; height: number }) => void;
+        }) => {
+            useEffect(() => onDrawingSurfaceChange?.(size), [onDrawingSurfaceChange]);
+            return <div className="chart-plot">{data === undefined && onDrawingSurfaceChange ? null : <pre data-testid="figure">{JSON.stringify(data)}</pre>}</div>;
+        },
+        readDrawingSurface: () => size,
+    };
+});
 const settings = { type: 'column' as const, category: 'region', measures: ['revenue'], display: 'grouped' as const };
 const chart = { id: 'c', widgetId: 'linked_chart', backendId: 'builtin', params: {}, layout: { x: 0, y: 0, w: 1, h: 1 }, linkedSource: { kind: 'widget' as const, sourceWidgetId: 's' }, linkedChart: settings };
 async function setup(context = {}) { const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, ...context, rows: Array.from({ length: 1600 }, (_, i) => ({ id: `r${i}`, values: { region: 'A', revenue: i } })) } }) }) }); store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard); store.ensureTable('d', 'c'); await store.settled('d'); return store; }
@@ -457,6 +469,103 @@ async function setupCurve(inputDataset?: import('../../lib/widgetData/types').Wi
   const change = async (hidden?: string[]) => act(async () => { store.updateDefinition('d', 's', { table: { hidden }, search: '' }, { kind: 'none' }); await store.settled('d'); });
   return { store, run, props, change, factory, read, actualRead, acquire };
 }
+
+const returnsRecipe: ReturnSummaryOptions = {
+  version: 1, kind: 'return-summary', view: 'box', fields: { date: 'date', price: 'close' },
+  symbols: ['AAPL.US'], window: { mode: 'own' },
+};
+const returnsRows = Array.from({ length: 21 }, (_, index) => ({
+  date: '2026-01-' + String(index + 1).padStart(2, '0'), adjusted_close: 100 + 10 * (index % 5),
+}));
+function liveReturnsWithAlias() {
+  const data = liveDailyPriceDataset(returnsRows, ['AAPL.US']);
+  return { ...data,
+    columns: data.columns.map(column => column.id === 'adjusted_close'
+      ? { ...column, id: 'close', label: 'Presented price', sourceFieldId: 'adjusted_close' } : column),
+    rows: data.rows.map(({ values: { adjusted_close, ...values }, ...row }) => ({ ...row, values: { ...values, close: adjusted_close } })),
+  };
+}
+
+it('drafts and renders box and violin from the same verified live prices through a presented alias', async () => {
+  const { store, props, factory, run } = await setupCurve(liveReturnsWithAlias());
+  const save = vi.fn(async () => true);
+  const withQuestion = (recipe: ReturnSummaryOptions) => ({
+    ...props, onSettingsChange: save, viewer: false,
+    card: { ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe } },
+  });
+  try {
+    const { rerender } = render(<LinkedChartRenderer {...withQuestion(returnsRecipe)}/>);
+    expect(await screen.findByText('Observed quote-to-quote returns; exchange-session completeness unknown.')).toBeVisible();
+    fireEvent.click(screen.getByText('Return listing details'));
+    expect(screen.getByText(/pair may span multiple exchange sessions/i)).toBeVisible();
+    expect(screen.getByText(/20 observed adjusted-price returns/)).toBeVisible();
+    expect(screen.getByLabelText('Adjusted price')).toHaveValue('close');
+    expect(screen.getByLabelText('AAPL.US')).toBeChecked();
+    const initial = await run.mock.results.find(call => call.type === 'return')!.value;
+    fireEvent.change(screen.getByLabelText('Return view'), { target: { value: 'violin' } });
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    await waitFor(() => expect(apply).toBeEnabled());
+    fireEvent.click(apply);
+    const violin = { ...returnsRecipe, view: 'violin' } as const;
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ recipe: violin }), expect.any(Function));
+    rerender(<LinkedChartRenderer {...withQuestion(violin)}/>);
+    await waitFor(() => expect(screen.getByTestId('figure')).toHaveTextContent('Observed return density'));
+    const latest = await run.mock.results.at(-1)!.value;
+    expect(initial.ok && initial.returnSummary?.series[0].samples).toHaveLength(20);
+    expect(latest.ok && latest.returnSummary?.series[0].samples)
+      .toEqual(initial.ok && initial.returnSummary?.series[0].samples);
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('keeps an ordinary price table ineligible for both return views', async () => {
+  const { datasetFromRows } = await import('../../lib/localTableData');
+  const data = datasetFromRows(returnsRows, 's', 1, 'backend');
+  const { store, props, factory, run } = await setupCurve(data);
+  try {
+    render(<LinkedChartRenderer {...props} viewer={false} card={chart}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'return-summary' } });
+    expect(await screen.findByText(/verified EODHD daily-price acquisition/)).toBeVisible();
+    expect(screen.getByLabelText('Return view')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+    expect(run).not.toHaveBeenCalled();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('passes a columnless counted-empty live acquisition to the recipe for the insufficient-prices result', async () => {
+  const { store, props, factory, read } = await setupCurve(liveDailyPriceDataset([], ['AAPL.US']));
+  try {
+    render(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: { ...settings, type: returnsRecipe.kind, recipe: returnsRecipe } }}/>);
+    expect(await screen.findByText(/No valid daily prices remain/)).toBeVisible();
+    expect(read.mock.calls[0][1]).toEqual([]);
+    expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it('retires a completed live chart and fences a held worker projection after acquisition replacement', async () => {
+  const { store, props, factory, read, actualRead } = await setupCurve(liveReturnsWithAlias());
+  const card = { ...props.card, linkedChart: { ...settings, type: returnsRecipe.kind, recipe: returnsRecipe } };
+  let release: (() => void) | undefined;
+  let signal: AbortSignal | undefined;
+  try {
+    const { rerender } = render(<LinkedChartRenderer {...props} card={card} sourceAcquisitionKey="original"/>);
+    await waitFor(() => expect(screen.getByTestId('figure')).toHaveTextContent('Observed return boxes'));
+    read.mockImplementation(async (...args) => {
+      const result = await actualRead(...args);
+      signal = args[2];
+      return new Promise(resolve => { release = () => resolve(result); });
+    });
+    await act(async () => { store.refresh('d', 'c'); await store.settled('d'); });
+    await waitFor(() => expect(release).toBeDefined());
+    expect(screen.getByText(/showing completed data \(stale\)/i)).toBeVisible();
+    const readCurrentSource = () => ({ view: store.readView('d', 'c'), sourceCurrent: false, card });
+    rerender(<LinkedChartRenderer {...props} card={card} sourceAcquisitionKey="replacement" readCurrentSource={readCurrentSource}/>);
+    expect(signal?.aborted).toBe(true);
+    expect(screen.queryByTestId('figure')).toBeNull();
+    await act(async () => release?.());
+    expect(screen.queryByTestId('figure')).toBeNull();
+  } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
 it('runs worker-only financial charts without legacy measures, preserves refresh zoom, clears hidden binding and limits source reads', async () => {
   const { store, props, run, change, factory, read, acquire } = await setupCurve();
   try {

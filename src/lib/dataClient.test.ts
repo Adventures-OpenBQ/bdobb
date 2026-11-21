@@ -1380,3 +1380,19 @@ it('refuses a chart receipt when a matched URL redirected to a different source'
     expect(context.mock.lastCall?.[0]).not.toHaveProperty('chartSources');
   } finally { await server.close(); }
 });
+
+it('preserves another chart family receipt under the daily-price transport restriction', async () => {
+  const { sourcePath, sourceResponse, sourceRows, sourceReceipt } = await import('../test/fixtures/chartSources');
+  const server = await startMockServer({
+    [sourcePath]: { __status: 206, __headers: { 'Content-Range': 'items 0-1/10' }, __body: sourceResponse },
+  });
+  try {
+    const acquired = vi.fn();
+    const result = await fetchWidgetData({ ...backend, baseUrl: server.url },
+      widget({ type: 'table', endpoint: sourcePath, dataKey: 'results.rows' }),
+      { chart_source: 'true', symbol: 'A' }, undefined, undefined, undefined, acquired);
+    expect(result).toEqual(sourceRows);
+    expect(acquired.mock.lastCall?.[0].chartSources).toEqual({ metric: sourceReceipt });
+    expect(acquired.mock.lastCall?.[0]).not.toHaveProperty('dailyPriceRejected');
+  } finally { await server.close(); }
+});

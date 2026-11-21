@@ -2,9 +2,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
+import { dailyPriceParameters } from '../../../test/fixtures/chartSources';
 import { dailyPriceRows, priceDataset, priceFields } from './fixtures';
 import { priceAcquisitionProvenance, priceOmissionEvidence } from './priceEvidence';
-import { dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
+import { admitReturnSummary, dailyReturnSamples, prepareSelectedPrices } from './priceSamples';
 
 it('preserves zero returns and breaks known gaps', () => {
   const dataset = priceDataset(dailyPriceRows([100, 100, 110, 99]));
@@ -51,4 +53,31 @@ it('rejects any unavailable selection while retaining the order of usable select
   expect(prepareSelectedPrices(dataset, priceFields, ['A', 'ABSENT'])).toMatchObject({
     ok: false, refused: true, message: expect.stringMatching(/selected symbol.*ABSENT/i),
   });
+});
+
+it.each([
+  { first: '2026-10-13', second: '2026-10-15', price: 121, missing: undefined, expected: .21 },
+  { first: '2026-10-13', second: '2026-10-15', price: 121, missing: '2026-10-14', expected: undefined },
+  { first: '2026-10-16', second: '2026-10-19', price: 110, missing: undefined, expected: .10 },
+])('pairs observed live quotes from $first through $second with known omission $missing', ({ first, second, price, missing, expected }) => {
+  const bounds = { start_date: dailyPriceParameters.start_date, end_date: dailyPriceParameters.end_date };
+  const symbol = 'AAA.US';
+  const pair = [{ date: first, adjusted_close: 100 }, { date: second, adjusted_close: price }];
+  const omissions = missing ? [[symbol, missing] as [string, string]] : [];
+  const fields = { date: 'date', price: 'adjusted_close' };
+  const short = liveDailyPriceDataset(pair, [symbol], { bounds, omissions });
+  expect(admitReturnSummary(short, fields, [symbol], { mode: 'own' })).toMatchObject({
+    ok: false, refused: true, message: expect.stringContaining(`Found ${expected === undefined ? 0 : 1}`),
+  });
+
+  const tailDates = ['2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-26'];
+  const tail = tailDates.map(date => ({ date, adjusted_close: price }));
+  const source = liveDailyPriceDataset([...pair, ...tail], [symbol], { bounds, omissions });
+  const result = admitReturnSummary(source, fields, [symbol], { mode: 'own' });
+  if (!result.ok) throw new Error(result.message);
+  const { samples, gapCount, excludedOpportunities } = result.value.series[0];
+  expect(samples.map(sample => sample.date)).toEqual(expected === undefined ? tailDates : [second, ...tailDates]);
+  if (expected !== undefined) expect(samples[0].value).toBeCloseTo(expected, 14);
+  expect(gapCount).toBe(missing ? 1 : 0);
+  expect(excludedOpportunities).toBe(missing ? 2 : 0);
 });

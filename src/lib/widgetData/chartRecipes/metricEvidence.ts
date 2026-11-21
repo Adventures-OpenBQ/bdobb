@@ -208,7 +208,7 @@ function routes(origin: LiveOrigin, path: string): ChartSourceAdapter<MetricSour
   }));
 }
 
-export const metricSourceAdapter: ChartSourceAdapter<MetricSource> = {
+export const metricSourceAdapter = {
   kind: 'metric', decode: parseMetricSource, allowsLocal: source => source.origin === 'acquired-snapshot', rowsAgree,
   routes: [...routes('eodhd-key-metrics', 'metrics'), ...routes('eodhd-financial-ratios', 'ratios')],
   coordinates(source) {
@@ -221,4 +221,4 @@ export const metricSourceAdapter: ChartSourceAdapter<MetricSource> = {
         : [source.issuer, source.listing, ...classValues, metric, obs.observation_id, obs.vintage],
     }))) }];
   },
-};
+} satisfies ChartSourceAdapter<MetricSource>;

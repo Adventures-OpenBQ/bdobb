@@ -157,7 +157,7 @@ describe("docs/examples", () => {
     const name = "v9-next-return-box-violin";
     const { apps } = load(name + ".apps.json");
     const imported = importApps(apps, BUILTIN_WIDGETS);
-    expect(imported.unresolved).toBe(0);
+    expect(imported.unresolved).toBe(1); // The separate live tab resolves after its EODHD widget connects.
     const [chart, source] = imported.dashboards[0].tabs[0].cards;
     expect(chart.linkedSource?.sourceWidgetId).toBe(source.id);
     expect(source.params).toEqual({});

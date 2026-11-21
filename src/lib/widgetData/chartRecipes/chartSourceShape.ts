@@ -17,3 +17,7 @@ export function isChartSourceArray(value: unknown): value is unknown[] {
   }
   return true;
 }
+
+export const exact = <K extends string>(value: unknown, keys: readonly K[]): value is Record<K, unknown> =>
+  isChartSourceRecord(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+export const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;

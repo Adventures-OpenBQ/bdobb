@@ -121,7 +121,7 @@ function rowsAgree(s: EstimateVintageSource, rows: readonly Record<string, unkno
   });
 }
 
-export const estimateVintageAdapter: ChartSourceAdapter<EstimateVintageSource> = {
+export const estimateVintageAdapter = {
   kind: 'estimate-vintages', decode: parseEstimateVintageSource, allowsLocal: s => s.origin === 'acquired-snapshot', routes: [], rowsAgree,
   legacyReceiptAgrees: (s, legacy) => isChartSourceRecord(legacy) && Object.entries(legacy).every(([k, v]) => {
     switch (k) {
@@ -136,4 +136,4 @@ export const estimateVintageAdapter: ChartSourceAdapter<EstimateVintageSource> =
     const values = [c.issuer, s.target.start, s.target.end, s.target.kind, c.vintage];
     return { id: values.join('|'), values };
   }) }],
-};
+} satisfies ChartSourceAdapter<EstimateVintageSource>;
