@@ -8,9 +8,12 @@ description: How to summarize, group, aggregate, filter and present a table card
 You change a table only through `describe_table` and `arrange_table`. Your
 first call is always `describe_table` with the card id; do not call
 `get_widget_data` for a table you are arranging (a CSV/XLS table refuses it).
-Then, to change the table, make ONE `arrange_table` call that applies the
-change; for a read-only ask, make only `"mode": "preview"` calls (section 0).
-Then explain. The only numbers you may
+Check that the requested operation is supported before arranging anything.
+If it is unsupported, explain the limitation and STOP: do not call
+`arrange_table`, including a preview of an alternative operation. Otherwise,
+to change the table, make ONE `arrange_table` call that applies the change;
+for a supported read-only ask, use `"mode": "preview"` (section 0).
+Then explain the successful result. The only numbers you may
 write are values in the result's `preview.rows` (#324), and the source
 table's row count exactly as `describe_table` gives it in
 `completeness.totalRowCount` when `completeness.totalRowCountKind` is
@@ -35,6 +38,10 @@ If a needed number is not in `preview.rows` (a grand total, a count of
 missing or zero values), say it is not available read-only; do not apply an
 arrangement to get it and do not work it out yourself. End the reply with
 "Nothing was changed."
+
+A direct edit instruction such as "Group the table by ..." asks for an
+applied change, not a read-only preview. Use apply for that instruction;
+offer a preview only when the user asks to inspect rather than change.
 
 ## The three roles
 
@@ -101,10 +108,15 @@ instructions.
 
 ## 2. Interpret
 
-- Sum period flows (volume, revenue, profit). Use `first`/`last` for balances
-  and closing values. Count identifiers (`count`, `uniqueCount`).
 - If the aggregation the user asks for is not listed for that field (text has
-  no `sum`), say it cannot be done and why; do not arrange something else.
+  no `sum`), say it cannot be done and why, say nothing was changed, and STOP.
+  Do not continue to sections 3 or 4. Do not run `count`, `uniqueCount`,
+  `min`, `max`, or another field as a substitute, even in preview mode.
+  You may offer those alternatives in words and wait for the user to choose.
+- Only when the user did not specify an aggregation, choose a suitable one:
+  sum period flows (volume, revenue, profit); use `first`/`last` for balances
+  and closing values; count identifiers (`count`, `uniqueCount`). These
+  defaults never override the aggregation the user explicitly requested.
 - Never sum ratios, percentages, per-share or cumulative figures.
 - "Average" is an unweighted mean (`mean`) unless the user names a weight; a
   weighted mean needs a formula with an explicit weight.
@@ -124,8 +136,12 @@ instructions.
 One `arrange_table` call with every edit; it is all-or-nothing. (For a
 read-only ask, the same call with `"mode": "preview"`; see section 0.)
 
-- `invalid-arrangement` / `validation-failed`: read every `errors` item and its
-  `alternatives`, fix them all, send once more.
+- `invalid-arrangement`: correct structural/schema errors while preserving
+  the user's requested fields and aggregation, then send once more.
+- `validation-failed`: inspect every error. If the requested aggregation or
+  meaning is unsupported, explain the refusal and STOP. Alternatives are
+  suggestions for the user, not permission to execute a replacement.
+  Retry only a correction that preserves the requested operation.
 - `stale-revision`: describe again, rebuild, retry.
 - `busy`, `timeout`, `calculation-failed`: nothing changed; describe, retry once.
 - A result you cannot read as applied or refused is uncertain: describe and
@@ -139,9 +155,14 @@ read-only ask, the same call with `"mode": "preview"`; see section 0.)
   `capabilities.viewer_controls`, session only. Anything else is refused with
   `viewer-scope`: the dashboard is read-only; do not work around it.
 
-## 4. Explain
+## 4. Explain a successful arrangement
 
-Reply in this shape, without list numbers, and add nothing else:
+Use this shape only after `applied` or `previewed`. For an unsupported request
+or a `refused`/`failed` result, explain the limitation and say nothing was
+changed instead; do not claim an arrangement or show a results table.
+For `unchanged`, say the table already has the requested arrangement.
+
+After a successful arrangement, reply in this shape without list numbers:
 
 - One sentence saying what you arranged (`before` / `after`).
 - The values from `preview.rows`, for example as a small table.
