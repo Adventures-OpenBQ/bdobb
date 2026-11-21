@@ -111,7 +111,7 @@ live("Rita live", () => {
       if (event.type === "chunk" && typeof event.delta === "string") text += event.delta;
       if (event.type === "status" && event.status?.eventType === "WARNING") warnings.push(event.status.message ?? "");
     }
-    expect(calls).toBeGreaterThan(0);
+    expect(calls, JSON.stringify({ reply: text, warnings, widget: id })).toBeGreaterThan(0);
     // Hitting the round limit also returns history ending on a tool message, with a WARNING status: that is not a finished answer.
     // Only that WARNING counts: Rita's own per-tool status (e.g. "get_widget_data: no usable data returned") is a WARNING too and is not a limit hit.
     expect(warnings.filter(m => /-round tool limit/.test(m)), "no round-limit WARNING").toEqual([]);
