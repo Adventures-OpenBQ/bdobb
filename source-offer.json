@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "release": "v7.0.0",
-  "baseCommit": "1cf97afce8ac684a8558197f54738cd972b5d354",
-  "sourceId": "fd9a1dfca4a63b5f49e30e1e657c918c11671b05828f7200b42ccd5cfba7bf54",
-  "archiveFilename": "bdobb-v7.0.0-agpl-fd9a1dfca4a6-source.tar.gz",
-  "archiveUrl": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v7.0.0-fd9a1dfca4a6/bdobb-v7.0.0-agpl-fd9a1dfca4a6-source.tar.gz",
+  "baseCommit": "dfed36773fe4bc1d3cbd0d55635bf85f1ddfa2f9",
+  "sourceId": "d5789d4dc01dca089874a2e8a60522d07a8683b4db1718d85dd11ea2b8d32f3a",
+  "archiveFilename": "bdobb-v7.0.0-agpl-d5789d4dc01d-source.tar.gz",
+  "archiveUrl": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v7.0.0-d5789d4dc01d/bdobb-v7.0.0-agpl-d5789d4dc01d-source.tar.gz",
   "license": "AGPL-3.0-only",
   "status": "prepared"
 }

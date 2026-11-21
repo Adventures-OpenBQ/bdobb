@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v7.0.0",
-  "baseCommit": "1cf97afce8ac684a8558197f54738cd972b5d354",
-  "sourceId": "fd9a1dfca4a63b5f49e30e1e657c918c11671b05828f7200b42ccd5cfba7bf54",
+  "baseCommit": "dfed36773fe4bc1d3cbd0d55635bf85f1ddfa2f9",
+  "sourceId": "d5789d4dc01dca089874a2e8a60522d07a8683b4db1718d85dd11ea2b8d32f3a",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -19964,7 +19964,7 @@
       "type": "file",
       "mode": 420,
       "size": 4904,
-      "sha256": "6523bba23057abb0bd4a14a508eae26ef22ba1b56b08384b01c1231d2ec0ee2c"
+      "sha256": "e6d07cbe7f5ea43a61f309ca2939faddd709b468088a50b5114dc4efc97e5ace"
     },
     {
       "path": "playwright.config.ts",
@@ -21063,7 +21063,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "d327f0c067449fed9b64d7ed81e9a4d358c9e37e31bbe4c1792c63ba7bc28183"
+      "sha256": "2311101a878adcd55501bb4ba909ada10822adae836073c46837e5095f731646"
     },
     {
       "path": "source_bundle.py",
@@ -30758,7 +30758,7 @@
       "type": "file",
       "mode": 420,
       "size": 267,
-      "sha256": "967b14229d4c46fe7021a1c19e2f56dc019f4b3fff97db10dc782c288db57b8e"
+      "sha256": "a96049c44921cf8862abf1c479c9c65e86ea020087f5ba4b7329b1edee4b47ee"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
