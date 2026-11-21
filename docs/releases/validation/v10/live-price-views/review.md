@@ -2,7 +2,9 @@
 
 ## Review status
 
-The five scoped implementation reviews approved qualified preparation, numerical consumers, Parameters and renderer admission, both-engine filtered lineage, and examples and browser replay. The whole-change Superpowers review at `7dca3c02` found three Important issues and assessed the work as ready with fixes. Ponytail identified six simplifications and confirmed the clipping. The final fix wave has completed its implementation self-review. Independent scoped review of the fixes is pending. [Approved design](../../../../superpowers/specs/2026-11-21-v9-live-price-views-design.md) · [Implementation plan](../../../../superpowers/plans/2026-11-21-v10-live-price-views.md)
+**Approved for local handoff on November 21, 2026.** The independent whole-change Superpowers review at `7dca3c02` found three Important issues. The independent Ponytail review recommended six simplifications and corroborated the clipped disclosures. The independent scoped review of `7dca3c02..de267011` confirmed all three findings were addressed in `750f7831`, verified all six simplifications, and found no new Critical or Important issues. [Whole-change review](independent-whole-change-review.md) · [Ponytail review](independent-ponytail-review.md) · [Final fix review](independent-final-fix-review.md)
+
+The five scoped implementation reviews approved qualified preparation, numerical consumers, Parameters and renderer admission, both-engine filtered lineage, and examples and browser replay. [Approved design](../../../../superpowers/specs/2026-11-21-v9-live-price-views-design.md) · [Implementation plan](../../../../superpowers/plans/2026-11-21-v10-live-price-views.md)
 
 | Scoped review | Disposition |
 | --- | --- |
@@ -18,12 +20,12 @@ The five scoped implementation reviews approved qualified preparation, numerical
 | Finding at the reviewed revision | Fix and verification |
 | --- | --- |
 | An explicit partial response or cursor qualified as live history. | Capture checks the recognized partial and paging markers and declared scope at the root, in `extra` and in `extra.results_metadata`. The public mirror replay exercises these boundaries on both executors. |
-| A rejected opted-in selection containing a legacy snapshot qualified the three charts. | The acquisition records a refusal that survives registration and linked transfer. The table preserves its reported completeness. The three charts refuse the history and their Parameters disable Apply. Qualified input, plain backend snapshots and documented local files retain their respective behavior. |
+| A rejected opted-in selection containing a legacy snapshot qualified the three charts. | The acquisition records a refusal that survives registration and linked transfer. The table preserves its rows and reported completeness. All four price-history recipes refuse the invalid history. The three new views also disable Apply in Parameters. Qualified input, plain backend snapshots and documented local files retain their respective behavior. |
 | The default closed example clipped disclosure text. | The three price view cards allow up to half the renderer height for scrollable status. The browser checks the text rectangles of the financial scope, the shared baseline and end, and the acquisition window. The histogram window is also fully readable. |
 
 The six Ponytail changes share installed capture and replay setup, use the shared recipe worker observer, consolidate Apply while preserving its guards, reuse validated projection omissions, and remove the duplicate file check and Rita fixture argument. The installed specs retain their independent numerical comparisons. [Verification](verification.md) · [Executor regression](../../../../../src/lib/tableExecution/rust/dailyPriceEvidence.test.ts) · [Closed-example and refusal checks](../../../../../e2e/live-price-views.spec.ts)
 
-The capture and refusal fixes also apply to the inherited v9 live Return Summary foundation. Release integration should include these fixes when shipping that foundation, including a backport if it ships separately. The existing v9 branches and PRs were outside this local v10 fix wave.
+The capture and refusal fixes also apply to the inherited v9 live Return Summary foundation. The v10 release depends on the v9 foundation. A separate v9 release requires backporting these shared fixes into its own integration branch.
 
 ## Remaining review observations
 
@@ -32,4 +34,4 @@ The capture and refusal fixes also apply to the inherited v9 live Return Summary
 - The installed replay arrays contain positive delivered adjusted prices. The local small-multiples test specifically pins the end date on a still-visible null-price row and verifies that a later omission coordinate cannot extend it. [Small-multiples tests](../../../../../src/lib/widgetData/chartRecipes/smallMultiples.test.ts)
 - Task 5 logs contain Node warnings from simultaneous `NO_COLOR` and `FORCE_COLOR` settings. The Task 6 regression runner cleared both variables.
 
-Release handoff awaits independent scoped review of the final fix wave. The implementation, verification and scoped review record are local to `codex/v10-live-price-views`.
+The handoff retains the reviewed implementation on the local `codex/v10-live-price-views` branch. The final evidence records 10,358 passing client tests, 47 opt-in skips, and 90 passing browser executions. Four of those browser executions recorded geometry checks for 24 disclosure notes. [Final verification](verification.md#final-review-fixes)

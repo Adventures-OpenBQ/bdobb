@@ -7,6 +7,7 @@
 | BDOBB product and browser tests, `codex/v10-live-price-views` | `e3ca1f18b9bf17671aafecb3b5ede224722a7c98` |
 | BDOBB with the example inventory correction | `614c217735b36575486b13b15cf767f7bcbf9959` |
 | BDOBB final acquisition, Parameters and disclosure corrections | `750f7831630f77fd075d2fa90f3d242738053e56` |
+| BDOBB evidence reviewed in final closeout | `de267011cb3dd334010cb515c87be8a857087afc` |
 | Paired EODHD provider | `75a902664054b3afbd23c5b6328efe7eedcf429c` |
 | Paired OpenBQ Docker | `2c5464675090c73f0c52cf8482ccf454e07b7704` |
 
@@ -34,9 +35,9 @@ The permanent regression runs 11 cases against each executor, from loopback HTTP
 | Installed Return Summary | 5 | 5 | 5 | 5 |
 | Risk Exposure | 5 | 4 | 5 | 4 |
 
-The browser geometry rerun checks at least one nonempty line-box collection per note. Each line fits inside the status scrollport on both axes. The six notes per example cover the histogram scope and window, drawdown scope, and small-multiples scope, baseline/end and window. In Chromium the small-multiples scope occupied y=672–689 inside a scrollport spanning y=563–714 CSS pixels. WebKit measured approximately y=672.26–688.74 in the same scrollport. The archived Chromium screenshot from before this fix clips that line and the histogram window.
+The final browser matrix totals 90 passing executions with zero retries. The four targeted geometry reruns checked 24 notes. Each check requires at least one nonempty line-box collection. Each line fits inside the status scrollport on both axes. The six notes per example cover the histogram scope and window, drawdown scope, and small-multiples scope, baseline/end and window. In Chromium the small-multiples scope occupied y=672–689 inside a scrollport spanning y=563–714 CSS pixels. WebKit measured approximately y=672.26–688.74 in the same scrollport. The archived Chromium screenshot from before this fix clips that line and the histogram window.
 
-The browser commands used the configurations in the original verification section below. The geometry rerun selected `-g "imports the fixed example"` on each engine-specific server. Every final price-view run recorded the expected engine and WASM response behavior. The local `final-fix-evidence` directory contains expanded commands, RED failures, screenshots, per-note rectangles, output assertions, build logs and Playwright reports. The three archived capture hashes and the example bytes still match the original records. [Review status](review.md)
+The browser commands used the configurations in the original verification section below. The geometry rerun selected `-g "imports the fixed example"` on each engine-specific server. Every final price-view run recorded the expected engine and WASM response behavior. The archive listed below contains `final-fix-evidence/commands.tsv`, failure and rerun logs, screenshots, per-note rectangles, output assertions, build logs and Playwright reports. The three archived capture hashes and the example bytes still match the original records. [Review status](review.md)
 
 ## Original client gates
 
@@ -112,4 +113,6 @@ This v10 record covers archived installed HTTP replay and synthetic source tests
 
 Inspection and the scrub check found no credentials in the new example files. The workspace specifies chart settings and the fixed request on the generated mirror widget. A compatible-app round trip preserves the recipe settings and source reference and rejects injected receipts or price coordinates. The executor matrix also verifies presented JSON export on both engines. A browser export followed by a fresh import holds the reacquisition response and confirms all three charts wait for fresh source data. The branch adds only the two v10 example files under `docs/examples`. Existing snapshot examples and installed capture files compare byte-for-byte with the implementation base. [Example workspace](../../../../examples/v10-live-price-views.apps.json) · [Portable round-trip coverage](../../../../../src/lib/appsExtensionsV3.test.ts) · [Executor matrix](../../../../../src/lib/tableExecution/rust/dailyPriceEvidence.test.ts) · [Browser lifecycle coverage](../../../../../e2e/live-price-views.spec.ts)
 
-Machine-local raw command logs, Playwright reports, screenshots, assertions, and capture hashes are in the Task 5 and Task 6 evidence directories under `.superpowers/sdd/2026-11-21-v10-live-price-views/`. [Review record](review.md)
+## Local evidence archive
+
+The handoff archive path is `.superpowers/archives/2026-11-21-v10-live-price-views-sdd.tar.gz` relative to the client root. The full SDD evidence tree includes Task 5, Task 6, and final-fix command logs, reports, screenshots, assertions and capture hashes. [Review record](review.md)
