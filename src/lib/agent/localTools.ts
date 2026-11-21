@@ -152,7 +152,10 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "an out-of-range value refuses the whole call and lists what is valid. This is not for a table's grouping/sort " +
       "— use arrange_table for that. The params go NESTED under `params`: " +
       '{"card_id": "…", "params": {"symbol": "MSFT"}}, never beside card_id. For a note or markdown card\'s body, ' +
-      "use set_markdown_content. To change how the card is shown (e.g. as a chart), pass view, with or without params.",
+      "prefer set_markdown_content when available. If it is not exposed, this tool also writes a declared text param " +
+      'with {"card_id": "…", "params": {"text": "the complete note body"}}. A refused call saves nothing; ' +
+      "correct its arguments using the returned retry_with and retry the same requested edit. " +
+      "To change how the card is shown (e.g. as a chart), pass view, with or without params.",
     input_schema: {
       type: "object",
       properties: {
