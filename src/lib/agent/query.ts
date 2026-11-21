@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describeHttpError } from "../dataClient";
+import { isRecord } from "../isRecord";
 import { logError } from "../logger";
 import { toAgentEvent } from "./events";
 import { normalizeFunctionRounds } from "./limits";
@@ -51,6 +52,19 @@ function abortError(): Error {
   return new DOMException("The query was aborted", "AbortError");
 }
 
+/** executeFunction leads a refused tool result with this typed client error. */
+function userDeclined(message: AgentMessage): boolean {
+  if (message.role !== "tool" || message.function !== "execute_agent_tool" || !Array.isArray(message.data)) return false;
+  const block: unknown = message.data[0];
+  if (!isRecord(block) || !Array.isArray(block.items)) return false;
+  const first: unknown = block.items[0];
+  if (!isRecord(first) || typeof first.text !== "string") return false;
+  try {
+    const value: unknown = JSON.parse(first.text);
+    return isRecord(value) && value.$rita_kind === "error" && isRecord(value.error) && value.error.code === "user_declined";
+  } catch { return false; }
+}
+
 /**
  * POSTs the conversation, streams the answer, and runs function rounds until
  * Rita answers in text. Yields every mapped event; returns the history
@@ -64,6 +78,7 @@ export async function* runAgentQuery(
   const maxFunctionRounds = normalizeFunctionRounds(opts.maxFunctionRounds);
   const url = queryUrl(opts.ritaUrl);
   const history = [...opts.messages];
+  let answered = false;
 
   // One extra response can summarize the last result, but cannot execute a tool.
   for (let round = 0; round <= maxFunctionRounds; round++) {
@@ -101,6 +116,9 @@ export async function* runAgentQuery(
         const event = toAgentEvent(raw);
         if (event === null) continue;
         sawEvent = true;
+        if ((event.type === "chunk" && event.delta.trim() !== "") || event.type === "artifact" ||
+          (event.type === "citations" && Array.isArray(event.payload.citations) && event.payload.citations.length > 0) ||
+          (event.type === "status" && event.status.eventType === "ERROR")) answered = true;
         yield event;
         if (event.type === "error") throw new Error(event.message);
         if (event.type === "functionCall") call = event.payload;
@@ -117,6 +135,7 @@ export async function* runAgentQuery(
 
     if (call === null) {
       if (!sawEvent) void logError(`agent: round ${round} ended with no events (truncated turn?)`);
+      if (!answered && round === 0) throw new Error("Rita ended the turn without an answer or a client tool result. Review the dashboard before retrying.");
       return history;
     }
     if (opts.signal?.aborted) throw abortError();
@@ -133,8 +152,15 @@ export async function* runAgentQuery(
       return history;
     }
     history.push({ role: "ai", content: { function: call.function, input_arguments: call.input_arguments } });
-    history.push(await opts.executeFunction(call, opts.signal ?? new AbortController().signal));
+    const result = await opts.executeFunction(call, opts.signal ?? new AbortController().signal);
+    history.push(result);
     opts.onHistory?.([...history]);
+    // A user's denial ends this turn in the client. The model cannot ask again
+    // or retry the refused action; earlier completed results remain recorded.
+    if (userDeclined(result)) {
+      yield { type: "chunk", delta: "\n\nThe requested action was declined. I stopped this turn." };
+      return history;
+    }
   }
   return history;
 }
