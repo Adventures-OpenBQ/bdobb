@@ -33,11 +33,11 @@
 
 **Interfaces:** Keep production store/worker APIs and original scenario outcomes. If a test-only helper is needed, name and document its page lifetime and exact use in the report.
 
-- [ ] Retrieve the original hosted error, inspect the relevant evaluation and working patterns, and record a falsifiable hypothesis.
-- [ ] Reproduce the original error or a controlled equivalent using the actual browser boundary. Record original/controlled differences and instrument navigation/context lifetime when relevant.
-- [ ] Apply the smallest proven correction, preserving all existing behavioral assertions. Inspect directly related occurrences of the faulty pattern and fix only those sharing the demonstrated cause.
-- [ ] Demonstrate RED/GREEN or a mutation removing the correction, then run the affected variants/specs without retries. Repetition is justified for this intermittent failure; record exact count, engine, ports and browser version.
-- [ ] Run affected static checks and the project test command once, plus any checks required by changed production code. Self-review and commit. Obtain a fresh independent whole-fix review, address blockers and verify before publication.
+- [x] Retrieve the original hosted error, inspect the relevant evaluation and working patterns, and record a falsifiable hypothesis.
+- [x] Reproduce the original error or a controlled equivalent using the actual browser boundary. Record original/controlled differences and instrument navigation/context lifetime when relevant.
+- [x] Apply the smallest proven correction, preserving all existing behavioral assertions. Inspect directly related occurrences of the faulty pattern and fix only those sharing the demonstrated cause.
+- [x] Demonstrate RED/GREEN or a mutation removing the correction, then run the affected variants/specs without retries. Repetition is justified for this intermittent failure; record exact count, engine, ports and browser version.
+- [x] Run affected static checks and the project test command once, plus any checks required by changed production code. Self-review and commit. Obtain a fresh independent whole-fix review, address blockers and verify before publication.
 
 ### Task 2: Publish the reviewed fix and finish CI
 
