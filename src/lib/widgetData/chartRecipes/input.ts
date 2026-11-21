@@ -5,7 +5,7 @@ import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
 import { acquiredWindow, dailyScope, indexPriceObservations, priceIdentityFields, priceDimensionIssue, readPriceOmissions, symbolList, type PriceCoordinate, type PriceScope } from './priceEvidence';
 import { acceptsBinding, adjustedPriceRole } from './bindings';
-import { readChartSourceProjection } from './chartSourceContracts';
+import { hasDailyPriceDeclaration } from './chartSourceContracts';
 import { readLiveDailyPriceSource } from './dailyPriceEvidence';
 import { acquiredColumnOrigin } from './financialEvidence';
 import { requiredRecipeFields } from './settings';
@@ -16,6 +16,7 @@ export type PriceSeries = { symbol: string; points: { date: string; price: numbe
 type RecipeKind = RecipeOptions['kind'];
 export type PreparedPrices = { ok: true; sourceMode: 'snapshot' | 'live'; scope: PriceScope; series: PriceSeries[]; notes: string[] }
   | { ok: false; message: string; refused: true };
+const invalidDailyPrice = 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.';
 const refuse = (message: string) => ({ ok: false, message, refused: true }) as const;
 
 export function acceptsLiveDailyPriceRecipe(kind: RecipeKind): boolean {
@@ -44,10 +45,15 @@ function sourceIssue(dataset: WidgetDataset, fields: string[], history: boolean)
   return null;
 }
 
+export function snapshotDailyPriceIssue(dataset: WidgetDataset): string | undefined {
+  if (dataset.provenance.metadata?.dailyPriceRejected === true || hasDailyPriceDeclaration(dataset.provenance.metadata))
+    return invalidDailyPrice;
+}
+
 function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | null {
   const bindings = Object.values(fields).filter((id): id is string => id !== undefined);
   if (new Set(bindings).size !== bindings.length) return 'Use distinct date, adjusted-price and symbol fields.';
-  const issue = sourceIssue(dataset, bindings, true);
+  const issue = sourceIssue(dataset, bindings, true) ?? snapshotDailyPriceIssue(dataset);
   if (issue) return issue;
   if (!dailyScope(dataset.provenance)) return 'Choose a source with documented daily interval and acquisition dates.';
   const price = dataset.columns.find(c => c.id === fields.price)!;
@@ -107,15 +113,11 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
 export function prepareLiveDailyPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
   const live = readLiveDailyPriceSource(dataset);
   if (!live) {
-    const metadata = dataset.provenance.metadata;
-    const sources: unknown = metadata && Object.getOwnPropertyDescriptor(metadata, 'chartSources')?.value;
     // A recognized receipt without valid live evidence cannot qualify through snapshot metadata.
-    if (typeof sources === 'object' && sources !== null && Object.hasOwn(sources, 'daily-price')) {
-      return refuse('The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.');
-    }
+    if (hasDailyPriceDeclaration(dataset.provenance.metadata)) return refuse(invalidDailyPrice);
     return;
   }
-  const { receipt, scope, symbols, rawOmissions } = live;
+  const { receipt, scope, symbols, rawOmissions, tableOmissions } = live;
   if (!dataset.rows.length) return refuse('No valid daily prices remain.');
   const origin = (id: string) => acquiredColumnOrigin(dataset.columns.find(c => c.id === id));
   if (origin(fields.date) !== receipt.date_field) return refuse('Bind the acquired trading-date field.');
@@ -125,9 +127,6 @@ export function prepareLiveDailyPrices(dataset: WidgetDataset, fields: PriceBind
       : 'Use the single listing identified by the acquired source.');
   }
 
-  // The source reader has reconciled this projection against the acquired coordinate ledger.
-  const tableOmissions = readChartSourceProjection(dataset.provenance, 'daily-price')!.omitted
-    .map((id): PriceCoordinate => JSON.parse(id));
   const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
   if (typeof indexed === 'string') return refuse(indexed);
   const notes: string[] = [];

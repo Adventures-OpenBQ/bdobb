@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { card, openParameters, plot } from './fixtures/chart-recipes';
 import {
-  alternateLiveOrigin, chooseReturnSource, dropFile, holdResponse, liveBackendId, liveOrigin, livePath, livePayload, liveRecipe, liveSourceId,
+  alternateLiveOrigin, chooseReturnSource, dropFile, holdResponse, liveBackendId, liveOrigin, livePath, livePayload, liveRecipe,
   liveTable, liveWorkspace, mockRitaPriceReads, prepareLiveReturns, returnChart, saveWorkspace, test,
 } from './fixtures/return-summary';
 
@@ -251,7 +251,7 @@ test('imports the fixed live examples against the generated mirror widget', asyn
 
 for (const pinned of [false, true]) {
   test(`Rita reads the committed ${pinned ? 'pinned' : 'configured'} source off-tab and preserves explicit overrides across Run`, async ({ page }) => {
-    const { ritaUrl, readWithRita } = await mockRitaPriceReads(page, liveSourceId);
+    const { ritaUrl, readWithRita } = await mockRitaPriceReads(page);
     const { acquisitions } = await prepareLiveReturns(page, { options: liveRecipe, sourceOffTab: true,
       runButton: true, pinned, ritaUrl });
     const widget = card(page, returnChart), graph = plot(page, returnChart), source = card(page, liveTable);

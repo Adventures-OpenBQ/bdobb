@@ -230,7 +230,13 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
   kind: 'daily-price',
   decode: parseDailyPriceReceipt,
   allowsLocal: () => false,
-  responseAgrees: (_receipt, response) => record(response) && response.provider === 'eodhd',
+  responseAgrees(_receipt, response) {
+    if (!record(response) || response.provider !== 'eodhd' || !record(response.extra)) return false;
+    const metadata = response.extra.results_metadata;
+    return record(metadata) && [response, response.extra, metadata].every(envelope =>
+      !Object.keys(envelope).some(partialMarker)
+      && (envelope.completeness === undefined || envelope.completeness === 'unknown'));
+  },
   rowsAgree: (receipt, rows, scope) => (scope === undefined || scope === 'unknown') && !!rowCoordinates(receipt, rows),
   routes: [
     ...routes(['/api/v1/equity/price/historical', '/api/v1/etf/historical']),
@@ -247,10 +253,11 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
 };
 
 export function readLiveDailyPriceSource(dataset: WidgetDataset): {
-  receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[];
+  receipt: DailyPriceReceipt; scope: PriceScope; symbols: string[]; rawOmissions: PriceCoordinate[]; tableOmissions: PriceCoordinate[];
 } | undefined {
   const { provenance, completeness } = dataset;
-  if (provenance.sourceKind !== 'backend' || provenance.inputMayContainAggregates || completeness.kind !== 'unknown') return;
+  if (provenance.sourceKind !== 'backend' || provenance.metadata?.dailyPriceRejected === true
+    || provenance.inputMayContainAggregates || completeness.kind !== 'unknown') return;
   const receipt = readChartSource(provenance, 'daily-price', parseDailyPriceReceipt);
   const projection = readChartSourceProjection(provenance, 'daily-price');
   if (!receipt || !projection || receipt.delivered_count !== completeness.acquiredRowCount) return;
@@ -258,6 +265,7 @@ export function readLiveDailyPriceSource(dataset: WidgetDataset): {
   return {
     receipt, scope: { start: receipt.start_date, end: receipt.end_date, interval: receipt.interval },
     symbols: [...receipt.symbols],
+    tableOmissions: projection.omitted.map((id): PriceCoordinate => JSON.parse(id)),
     rawOmissions: receipt.listings.flatMap(listing => listing.omissions.map(([symbol, date]): PriceCoordinate => [symbol, date])),
   };
 }

@@ -2447,6 +2447,7 @@ body {
 .linked-chart-card { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .linked-chart-renderer { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 .linked-chart-status { flex: 0 1 auto; max-height: 25%; overflow: auto; }
+.linked-chart-renderer--price-views .linked-chart-status { max-height: 50%; }
 .linked-chart-status p { margin: 4px 0; }
 .linked-chart-plot { flex: 1; min-height: 0; overflow: hidden; }
 /* Match the news plot viewport's stable scrollbar gutter without occupying card height. */

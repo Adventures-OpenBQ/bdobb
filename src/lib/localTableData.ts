@@ -199,6 +199,10 @@ export function datasetFromRows(rows: Row[], widgetId: string, inputRevision: nu
     dataset.provenance.metadata = { ...dataset.provenance.metadata, chartSources: structuredClone(chartSources),
       ...(dailyPriceCoordinates ? { dailyPriceCoordinates } : {}) };
   }
+  if (sourceKind === 'backend' && (acquisition?.dailyPriceRejected
+    || (acquisition?.chartSources?.['daily-price'] && !chartSources?.['daily-price']))) {
+    dataset.provenance.metadata = { ...dataset.provenance.metadata, dailyPriceRejected: true };
+  }
   if (evidence)
     dataset.provenance = { ...dataset.provenance, metadata: { ...dataset.provenance.metadata, financialEvidence: structuredClone(evidence) } };
   dataset.provenance = estimateProvenance(dataset);

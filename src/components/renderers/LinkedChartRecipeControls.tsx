@@ -10,7 +10,7 @@ import type { DatasetColumn, WidgetDataset } from '../../lib/widgetData/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { acquiredNewsWindow, inspectNewsSource, resolveNewsWindow } from '../../lib/widgetData/chartRecipes/newsCalendarInput';
 import { inspectOwnershipSource, ownershipPartitionRepair } from '../../lib/widgetData/chartRecipes/ownershipSnapshotInput';
-import { acceptsLiveDailyPriceRecipe } from '../../lib/widgetData/chartRecipes/input';
+import { acceptsLiveDailyPriceRecipe, snapshotDailyPriceIssue } from '../../lib/widgetData/chartRecipes/input';
 import { readLiveDailyPriceSource } from '../../lib/widgetData/chartRecipes/dailyPriceEvidence';
 import { acquiredColumnOrigin } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot } from '../../lib/widgetData/chartRecipes/priceEvidence';
@@ -160,7 +160,8 @@ export function LinkedChartRecipeControls({ kind, saved, columns, verifiedEmpty,
   const liveOrigins: Record<string, string | null> | undefined = livePrice && {
     date: livePrice.receipt.date_field, price: livePrice.receipt.price_field, symbol: livePrice.receipt.symbol_field,
   };
-  const priceSourceProblem = (returns || loadAcquiredPrices) && (priceRead?.error
+  const snapshotIssue = priceDataset && !livePrice ? snapshotDailyPriceIssue(priceDataset) : undefined;
+  const priceSourceProblem = (returns || loadAcquiredPrices) && (priceRead?.error ?? snapshotIssue
     ?? (!priceDataset ? 'Loading acquired price history…'
       : livePrice && !priceDataset.rows.length ? 'No valid daily prices remain.'
       : returns && !livePrice && !hasDocumentedDailySnapshot(priceDataset.provenance)

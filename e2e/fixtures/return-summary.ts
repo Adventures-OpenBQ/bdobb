@@ -84,7 +84,7 @@ export const livePath = '/api/v1/eodhd/equity/price/historical';
 export const liveWidget = 'eodhd_equity_price_historical_eodhd_obb';
 export const liveTable = 'EODHD daily prices';
 export const liveWorkspace = 'Observed return fixtures';
-export const liveSourceId = 'dddddddd-2222-4333-8444-555555555555';
+const liveSourceId = 'dddddddd-2222-4333-8444-555555555555';
 export const liveRecipe: ReturnSummaryOptions = { ...returnRecipe, symbols: ['MCD.US', 'AAPL.US'] };
 
 // Synthetic prices on the fixed dates. A separate installed-provider check
@@ -181,7 +181,7 @@ export async function saveWorkspace(page: Page, name: string) {
   return (await read(page, path))!;
 }
 
-export async function mockRitaPriceReads(page: Page, sourceId: string) {
+export async function mockRitaPriceReads(page: Page) {
   const ritaUrl = 'http://127.0.0.1:17917';
   let round = 0;
   let override: Record<string, string> | undefined;
@@ -200,7 +200,7 @@ export async function mockRitaPriceReads(page: Page, sourceId: string) {
     if (!firstRound) lastTool = messages.filter(message => message.role === 'tool').at(-1);
     const event = firstRound ? 'copilotFunctionCall' : 'copilotMessageChunk';
     const body = firstRound ? { function: 'get_widget_data', input_arguments: {
-      data_sources: [{ widget_uuid: sourceId, origin: liveBackendId, input_args: override }],
+      data_sources: [{ widget_uuid: liveSourceId, origin: liveBackendId, input_args: override }],
     } } : { delta: 'Fixture read ' + round / 2 + '.' };
     await route.fulfill({ headers, contentType: 'text/event-stream', body: 'event: ' + event + '\ndata: ' + JSON.stringify(body) + '\n\n' });
   });

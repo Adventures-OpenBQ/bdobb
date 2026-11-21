@@ -1,38 +1,13 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { readFileSync } from 'node:fs';
 import { expect } from '@playwright/test';
 import type { RecipeOptions } from '../src/lib/widgetData/chartRecipes/types';
-import { dashboardSeed, seedApp } from './fixtures';
+import { readCapture, replayInstalledPrices, sourceId, table, type CaptureRoute } from './fixtures/installed-prices';
 import { card, openParameters, plot, plotlyTraces, recordRecipeReplies, type PlotlyTrace } from './fixtures/chart-recipes';
 import { test } from './fixtures/return-summary';
 
-type PriceRow = { symbol: string; date: string; adjusted_close: number };
 type Point = { date: string; price: number | null };
-type CaptureRoute = {
-  method: string;
-  query: Record<string, string>;
-  status: number;
-  widgetId: string;
-  selector: string;
-  widget: { data: { dataKey: string } };
-  body: {
-    results: PriceRow[];
-    extra: { results_metadata: { chart_sources: { receipts: {
-      listings: { symbol: string; omissions: [symbol: string, date: string][] }[];
-    }[] } } };
-  };
-};
-type Capture = {
-  qualification: object;
-  routes: Record<string, CaptureRoute>;
-  directPublicCaptures?: Record<string, { response: Omit<PriceRow, 'symbol'>[] }>;
-};
-
-const origin = 'http://127.0.0.1:17926';
-const table = 'Captured EODHD prices';
-const sourceId = 'aaaaaaaa-2222-4333-8444-555555555555';
 const histogram = 'Captured return distribution';
 const drawdown = 'Captured drawdown';
 const comparison = 'Captured indexed prices';
@@ -119,22 +94,11 @@ const captureCases = [
 
 for (const [name, endpoint] of captureCases) {
   test(`installed mirror replay: ${name} GET ${endpoint} reproduces the raw histories in all three views`, async ({ page, engineEvidence }, info) => {
-    const capture = JSON.parse(readFileSync(
-      new URL(`./fixtures/installed-observed-returns/75a9026/${name}.json`, import.meta.url), 'utf8',
-    )) as Capture;
+    const capture = readCapture(name);
     const route = capture.routes[endpoint];
     expect(route.selector).toBe('results');
     expect(route.widget.data.dataKey).toBe('results');
     const readReplies = await recordRecipeReplies(page);
-    const requests: { method: string; query: Record<string, string> }[] = [];
-    await page.route(`${origin}/**`, async intercepted => {
-      const request = intercepted.request(), url = new URL(request.url());
-      const source = url.pathname === endpoint && request.method() === 'GET';
-      if (source) requests.push({ method: request.method(), query: Object.fromEntries(url.searchParams) });
-      const body = source ? route.body : url.pathname === '/widgets.json' ? { [route.widgetId]: route.widget } : {};
-      await intercepted.fulfill({ json: body, status: source ? route.status : 200, headers: { 'Access-Control-Allow-Origin': '*' } });
-    });
-
     const names = [histogram, drawdown, comparison];
     const charts = options.map((recipe, i) => ({
       id: recipe.kind, widgetId: 'linked_chart', backendId: 'builtin', title: names[i], params: {},
@@ -142,12 +106,7 @@ for (const [name, endpoint] of captureCases) {
       linkedChart: { type: recipe.kind, recipe, measures: [], display: 'grouped' },
       layout: { x: i === 1 ? 20 : 0, y: i === 2 ? 23 : 0, w: i === 2 ? 40 : 20, h: 23 },
     }));
-    const seed = dashboardSeed([...charts, { id: sourceId, widgetId: route.widgetId, backendId: 'captured-eodhd',
-      title: table, params: route.query, layout: { x: 0, y: 46, w: 40, h: 14 } }]);
-    seed['backends.json'] = JSON.stringify([
-      { id: 'captured-eodhd', name: 'Captured EODHD', baseUrl: origin, authLocation: 'header', validateWidgets: false },
-    ]);
-    await seedApp(page, seed);
+    const requests = await replayInstalledPrices(page, endpoint, route, charts, 46);
     await expect(card(page, table).getByRole('columnheader', { name: /adjusted.close/i })).toBeAttached();
     for (const [i, recipe] of options.entries()) {
       await expect(plot(page, names[i])).toBeVisible();

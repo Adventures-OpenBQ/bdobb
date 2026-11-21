@@ -369,16 +369,12 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
             && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
             && JSON.stringify(current.card.linkedChart) === JSON.stringify(settings);
     }
-    function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions, matchesDrawing?: () => boolean) {
-        const stillCurrent = () => matchesDrawing?.() === true && draftSourceIsCurrent();
-        void commit({ ...withRecipeType(settings, options.kind), recipe: options }, stillCurrent);
-    }
     function applyRecipe(options: RecipeOptions, matchesDrawing?: () => boolean) {
-        if (options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary') {
-            applyAcquired(options, matchesDrawing);
+        const next = { ...withRecipeType(settings, options.kind), recipe: options };
+        if (options.kind === 'ownership-snapshot' || options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary') {
+            void commit(next, () => matchesDrawing?.() === true && draftSourceIsCurrent());
             return;
         }
-        const next = { ...withRecipeType(settings, options.kind), recipe: options };
         if (acceptsLiveDailyPriceRecipe(options.kind)) {
             void commit(next, draftSourceIsCurrent, 'The chart source or settings changed. Review the settings and try again.');
             return;
@@ -409,6 +405,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     const needsFieldRepair = legacy && (error || refused || noMatches
         || (!figure && !(carried && view.error) && view.status !== 'pending' && view.status !== 'updating'));
     return <div ref={setProbeTarget} className={'linked-chart-renderer'
+      + (priceChart && !returnChart ? ' linked-chart-renderer--price-views' : '')
       + (editing === 'news-sentiment-calendar' ? ' linked-chart-renderer--news' : '')
       + (returnForm || returnChart ? ' linked-chart-renderer--return' : '')
       + (ownershipForm || ownershipChart ? ' linked-chart-renderer--ownership' : '')
@@ -444,7 +441,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
         onApply={applyEtf}/> : ownershipForm ? <OwnershipRecipeControls probeTarget={probeTarget} key={acquiredScope} columns={presented}
         loadInput={loadOwnershipInput} loadDraft={loadOwnershipDraft} context={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([basicAcquiredForm ? acquiredScope : editScope, editing])} kind={editing}
+        onApply={applyRecipe}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([basicAcquiredForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} matchesNewsDraftWidth={matchesNewsDraftWidth}
         loadPriceInput={loadPriceInput} loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}

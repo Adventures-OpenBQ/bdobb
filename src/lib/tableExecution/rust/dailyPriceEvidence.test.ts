@@ -1,7 +1,14 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it, vi } from 'vitest';
+import { backend, widget } from '../../../test/fixtures';
+import { startMockServer } from '../../../test/mockServer';
+import { fetchWidgetData } from '../../dataClient';
+import { datasetFromBytes, datasetFromRows } from '../../localTableData';
+import { parseTableSnapshot, tableRows } from '../../tableRowValues';
+import type { BackendAcquisition } from '../../widgetData/chartRecipes/financialEvidence';
 import { dailyPriceParameters } from '../../../test/fixtures/chartSources';
 import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
@@ -17,6 +24,10 @@ import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
 import type { LocalWorkerExecutor, Revision } from '../types';
 import { createWorkerExecutor } from '../workerClient';
 import { createRustExecutor } from './runtime';
+
+vi.mock('@tauri-apps/plugin-http', () => ({
+  fetch: (...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args),
+}));
 
 const engines = [
   ['TypeScript', (id: string) => createWorkerExecutor(id, () => new ProviderBoundary('table.worker') as unknown as Worker)],
@@ -86,6 +97,75 @@ async function linkedSubset(executor: LocalWorkerExecutor, revision: Revision) {
 }
 
 describe.each(engines)('%s daily-price evidence', (_, make) => {
+  it.each([
+    'qualified', 'partial response', 'result cursor', 'extra pagination', 'result completeness', 'nested snapshot',
+    'wrong selector snapshot', 'wrong route snapshot', 'invalidated snapshot', 'plain snapshot', 'local snapshot',
+  ] as const)(
+    'checks %s from acquisition through linked chart data', async variant => {
+      const endpoint = '/api/v1/eodhd/equity/price/historical';
+      const capture = JSON.parse(readFileSync('e2e/fixtures/installed-observed-returns/75a9026/public-demo.json', 'utf8')).routes[endpoint];
+      const { body, query } = capture;
+      const { start_date, end_date, interval } = query;
+      const snapshot = { rows: body.results, completeness: 'complete', receipt: { start_date, end_date, interval } };
+      if (variant.endsWith('snapshot')) body.results = snapshot;
+      if (variant === 'plain snapshot' || variant === 'invalidated snapshot') delete query.chart_source;
+      if (variant === 'partial response') body.isPartial = true;
+      if (variant === 'extra pagination') body.extra.pagination = { page: 1 };
+      if (variant === 'result cursor') body.extra.results_metadata.nextCursor = 'page-2';
+      if (variant === 'result completeness') body.extra.results_metadata.completeness = 'partial';
+
+      let input: WidgetDataset;
+      if (variant === 'local snapshot') {
+        input = await datasetFromBytes('prices.json', new TextEncoder().encode(JSON.stringify(snapshot)), 'root', 1);
+      } else {
+        const path = variant === 'wrong route snapshot' ? '/other/prices' : endpoint;
+        const dataKey = variant === 'wrong selector snapshot' ? 'results.rows' : 'results';
+        const server = await startMockServer({ [path]: body });
+        try {
+          let acquisition: BackendAcquisition | undefined;
+          const selected = await fetchWidgetData(backend({ baseUrl: server.url }), widget({ endpoint: path, dataKey }),
+            query, undefined, undefined, undefined, value => { acquisition = value; });
+          const parsed = parseTableSnapshot(selected);
+          input = datasetFromRows(tableRows(parsed.data)!, 'root', 1, 'backend', undefined, [], parsed.snapshot, acquisition);
+        } finally { await server.close(); }
+      }
+
+      if (variant === 'invalidated snapshot') {
+        // An attached receipt without its coordinate ledger will be stripped at registration.
+        input.provenance.metadata = { ...input.provenance.metadata,
+          chartSources: { 'daily-price': body.extra.results_metadata.chart_sources.receipts[0] } };
+      }
+
+      const fields = { ...nativeFields, symbol: 'symbol' };
+      const symbols = ['AAPL.US', 'MCD.US'];
+      const views = [
+        { kind: 'return-distribution', version: 1, fields, symbol: symbols[0], bins: 12 },
+        { kind: 'drawdown', version: 1, fields, symbols },
+        { kind: 'small-multiples', version: 1, fields, symbols },
+        { kind: 'return-summary', version: 1, fields, symbols, view: 'box', window: own },
+      ] satisfies RecipeOptions[];
+      const qualified = variant === 'qualified';
+      for (const widgetId of ['root', 'child']) {
+        const executor = make(widgetId);
+        const revision = { widgetId, input: 1, model: 1, output: 1 };
+        try {
+          await executor.registerInput(input, 1, signal);
+          await executor.applyModel({ search: '', table: {} }, { kind: 'none' }, revision, signal);
+          const chart = await executor.chartData(revision, Object.values(fields), signal);
+          expect(chart.rows).toHaveLength(58);
+          expect(chart.completeness.kind).toBe(variant.endsWith('snapshot') ? 'complete' : 'unknown');
+          expect(Boolean(readLiveDailyPriceSource(chart))).toBe(qualified);
+          for (const options of views) {
+            const snapshotAllowed = variant === 'local snapshot' || variant === 'plain snapshot' && options.kind !== 'return-summary';
+            expect(runRecipe(chart, options, context)).toMatchObject(qualified || snapshotAllowed
+              ? { ok: true } : { ok: false, refused: true });
+          }
+          if (widgetId === 'root') input = await linkedSubset(executor, revision);
+        } finally { executor.dispose(); }
+      }
+    },
+  );
+
   it.each([
     ['close', 'box'], ['close', 'violin'],
     ['revenue_adjusted', 'box'], ['revenue_adjusted', 'violin'],
@@ -280,7 +360,7 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
       const exported = await collectPresentedExport(executor, revision, signal);
       const json = toJsonRows(exported.rows, exported.columns);
       expect(JSON.parse(json)).toEqual(rows.filter(row => row.tag === 'kept always'));
-      expect(json).not.toMatch(/chartSources|chart_sources|dailyPriceCoordinates|chartSourceOmissions|priceOmissions/);
+      expect(json).not.toMatch(/chartSources|chart_sources|dailyPriceCoordinates|dailyPriceRejected|chartSourceOmissions|priceOmissions/);
 
       await executor.importFile('prices.json', new TextEncoder().encode(json), replacement.input, signal);
       await expect(executor.chartData(revision, fields, signal)).rejects.toMatchObject({

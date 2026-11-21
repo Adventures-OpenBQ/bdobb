@@ -1,11 +1,11 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { card, openParameters, plot, plotlyTraces, recordRecipeReplies } from './fixtures/chart-recipes';
 import {
-  dropFile, holdResponse, livePayload, liveSourceId, liveTable, mockRitaPriceReads,
+  dropFile, holdResponse, livePayload, liveTable, mockRitaPriceReads,
   prepareLiveReturns, returnChart, saveWorkspace, test,
 } from './fixtures/return-summary';
 
@@ -40,7 +40,6 @@ const queries = (acquisitions: URL[]) => acquisitions.map(url => Object.fromEntr
 const binTotal = (y: (number | null)[]) => y.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 
 async function importPriceViews(page: Page, manifest?: string) {
-  if (manifest === undefined) expect(existsSync(example), 'The importable v10 Live Price Views example exists').toBe(true);
   await dropFile(page, 'v10-live-price-views.apps.json', manifest ?? readFileSync(example, 'utf8'));
   await tab(page, viewsTab);
 }
@@ -55,6 +54,24 @@ test('synthetic transport: imports the fixed example and applies all three forms
     await expect(status(widget, scope)).toBeVisible();
     await expect(widget.getByRole('button', { name: 'Show parameters', exact: true })).toBeVisible();
     await expect(widget.getByRole('region', { name: 'Parameters' })).toHaveCount(0);
+    const notes = kind === 'small-multiples'
+      ? [scope, 'Shared baseline 100 on 2026-10-12. All panels end on 2026-11-19.', 'Acquisition window 2026-10-12 to 2026-11-19.']
+      : kind === 'return-distribution' ? [scope, 'Acquisition window 2026-10-12 to 2026-11-19.'] : [scope];
+    for (const note of notes) {
+      const geometry = await status(widget, note).evaluate(element => {
+        const scrollport = element.closest('.linked-chart-status')!;
+        const bounds = scrollport.getBoundingClientRect();
+        const top = bounds.top + scrollport.clientTop, left = bounds.left + scrollport.clientLeft;
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return { top, left, bottom: top + scrollport.clientHeight, right: left + scrollport.clientWidth,
+          lines: Array.from(range.getClientRects(), rect => rect.toJSON()) };
+      });
+      await info.attach(`${kind}-note`, { body: JSON.stringify({ note, ...geometry }), contentType: 'application/json' });
+      expect.soft(geometry.lines.length, note).toBeGreaterThan(0);
+      expect.soft(geometry.lines.filter(rect => rect.top < geometry.top || rect.bottom > geometry.bottom
+        || rect.left < geometry.left || rect.right > geometry.right), note).toEqual([]);
+    }
     const panel = await openParameters(widget);
     await expect(panel.getByLabel('Chart type')).toHaveValue(kind);
     await hide(widget);
@@ -134,21 +151,36 @@ test('synthetic transport: imports the fixed example and applies all three forms
   await info.attach('synthetic-worker-replies', { body: JSON.stringify(worker), contentType: 'application/json' });
 });
 
-test('synthetic transport: refuses ordinary rows without qualified acquisition evidence', async ({ page }) => {
-  const { acquisitions } = await prepareLiveReturns(page, {
-    empty: true, response: url => ({ results: livePayload(url).results }),
+for (const nested of [false, true]) {
+  const reason = nested ? 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.'
+    : 'The source must be fully loaded. Acquisition is unknown.';
+  test(`synthetic transport: refuses ${nested ? 'an opted-in legacy snapshot' : 'ordinary rows'} without qualified acquisition evidence`, async ({ page }) => {
+    const { acquisitions } = await prepareLiveReturns(page, {
+      empty: true, response: url => {
+        const payload = livePayload(url);
+        const { start_date, end_date, interval } = fixedQuery;
+        return nested ? { ...payload, results: { rows: payload.results, completeness: 'complete', receipt: { start_date, end_date, interval } } }
+          : { results: payload.results };
+      },
+    });
+    await importPriceViews(page);
+    for (const [title, , scope] of chartTypes) {
+      const widget = card(page, title);
+      await expect(widget.getByRole('status').filter({ hasText: reason })).toBeVisible();
+      await expect(status(widget, scope)).toHaveCount(0);
+      await expect(plot(page, title)).toHaveCount(0);
+      if (nested) {
+        const panel = await openParameters(widget);
+        await expect(panel.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
+        await expect(panel.getByText(reason, { exact: true })).toBeVisible();
+        await hide(widget);
+      }
+    }
+    await expect(card(page, sourceTable).getByRole('columnheader', { name: /adjusted.close/i })).toBeVisible();
+    expect(acquisitions.length).toBeGreaterThan(0);
+    expect(queries(acquisitions)).toEqual(Array(acquisitions.length).fill(fixedQuery));
   });
-  await importPriceViews(page);
-  for (const [title, , scope] of chartTypes) {
-    const widget = card(page, title);
-    await expect(widget.getByRole('status').filter({ hasText: /^The source must be fully loaded\. Acquisition is unknown\.$/ })).toBeVisible();
-    await expect(status(widget, scope)).toHaveCount(0);
-    await expect(plot(page, title)).toHaveCount(0);
-  }
-  await expect(card(page, sourceTable).getByRole('columnheader', { name: /adjusted.close/i })).toBeVisible();
-  expect(acquisitions.length).toBeGreaterThan(0);
-  expect(queries(acquisitions)).toEqual(Array(acquisitions.length).fill(fixedQuery));
-});
+}
 
 test('synthetic transport: retains stale charts on matching failure and retires a held GET after bounds replacement', async ({ page }) => {
   let failing = false;
@@ -214,7 +246,7 @@ test('synthetic transport: exports chart questions and waits for reacquisition a
   await importPriceViews(page);
   await expect(count(card(page, histogram), 28, 'AAPL.US')).toBeVisible();
   const exported = await saveWorkspace(page, workspace);
-  expect(exported).not.toMatch(/chart_sources|daily-price|retrieved_at|raw_count|acquiredRowCount|priceOmissions|adjusted_close":\d/);
+  expect(exported).not.toMatch(/chart_sources|daily-price|dailyPriceRejected|retrieved_at|raw_count|acquiredRowCount|priceOmissions|adjusted_close":\d/);
   const fresh = await context.newPage();
   const delivery = holdResponse();
   try {
@@ -244,7 +276,7 @@ test('synthetic transport: exports chart questions and waits for reacquisition a
 });
 
 test('synthetic transport: off-tab histogram and Rita follow Run while Rita retains explicit arguments', async ({ page }) => {
-  const { ritaUrl, readWithRita } = await mockRitaPriceReads(page, liveSourceId);
+  const { ritaUrl, readWithRita } = await mockRitaPriceReads(page);
   const { acquisitions } = await prepareLiveReturns(page, {
     options: { kind: 'return-distribution', version: 1, fields: { date: 'date', price: 'adjusted_close', symbol: 'symbol' },
       symbol: 'AAPL.US', bins: 12 },

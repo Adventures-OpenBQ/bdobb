@@ -147,7 +147,7 @@ const makeDataset = (receipt: unknown = dailyPriceReceipt, rows: Record<string, 
 
 const expectedLiveSource = {
   receipt: dailyPriceReceipt, scope: { interval: '1d', start: '2026-10-12', end: '2026-11-19' },
-  symbols: ['MCD.US', 'AAPL.US'], rawOmissions: [['MCD.US', '2026-10-14'], ['AAPL.US', '2026-10-14']],
+  symbols: ['MCD.US', 'AAPL.US'], tableOmissions: [], rawOmissions: [['MCD.US', '2026-10-14'], ['AAPL.US', '2026-10-14']],
 };
 
 it('carries the completed HTTP acquisition into the table and keeps ordinary rows available', async () => {
@@ -184,7 +184,7 @@ it('test_live_authority_cannot_be_imported_or_filtered_clean', async () => {
   expect(preparePriceChartInput({ ...valid, provenance: forgedLocal }, priceFields, 'drawdown')).toMatchObject({
     ok: false, refused: true,
   });
-  expect(validatedChartProvenance(forgedLocal).metadata).toEqual({});
+  expect(validatedChartProvenance(forgedLocal).metadata).toEqual({ dailyPriceRejected: true });
 
   const envelope = { version: 1, receipts: [dailyPriceReceipt] };
   const file = (input: unknown) => datasetFromBytes('quotes.json',
@@ -266,7 +266,7 @@ it('reconciles original columns and the exact presented coordinates after an ali
   const rows = [{ ...mcd, values: { day: mcd.values.date, price: mcd.values.adjusted_close, listing: mcd.values.symbol } }];
   const provenance = projectChartSources(full.provenance, columns, rows);
   const projected = { ...full, rows, columns, provenance };
-  expect(readLiveDailyPriceSource(projected)).toEqual(expectedLiveSource);
+  expect(readLiveDailyPriceSource(projected)).toEqual({ ...expectedLiveSource, tableOmissions: [['AAPL.US', '2026-10-13']] });
   expect(readChartSourceProjection(provenance, 'daily-price')).toEqual({
     filtered: false, omitted: ['["AAPL.US","2026-10-13"]'],
   });
