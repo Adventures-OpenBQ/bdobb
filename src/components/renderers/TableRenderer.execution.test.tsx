@@ -86,3 +86,22 @@ it.each(['typescript','rust'] as const)('%s activated store output retains rende
   expect([...container.querySelectorAll('tbody [data-field="revenue"]')].map(cell=>cell.textContent)).toEqual(['90','20']);
  }finally{store.disposeDashboard('renderer');vi.unstubAllGlobals();}
 });
+
+it('statement section headings span all value columns and fold from the full row button', async () => {
+ const {LABEL_FIELD}=await import('../../lib/pivotTable');
+ const user=(await import('@testing-library/user-event')).default.setup();
+ const toggle=vi.fn();
+ const execution:ExecutionTableView={statement:true,columns:[LABEL_FIELD,'fy24','fy25'].map(field=>({field,header:field,cellDataType:'text',renderFn:[],colorRules:[],hiddenByDefault:false})),count:2,rowIds:['income','revenue'],slot:i=>({rowId:i?'revenue':'income',groupPath:[],offset:i,group:{path:i?['income','revenue']:['income'],childCount:1,open:true}}),requestRange:()=>{},toggle,totals:{},showTotals:false};
+ const {container,rerender}=render(<TableRenderer data={[{[LABEL_FIELD]:'Income'},{[LABEL_FIELD]:'Revenue',fy24:1000,fy25:2000}]} execution={execution}/>);
+ const heading=screen.getByRole('button',{name:'Collapse Income'});
+ expect(heading).toHaveTextContent('Income');
+ expect(heading.closest('td')).toHaveAttribute('colspan','3');
+ expect(heading.closest('tr')).toHaveClass('statement-section');
+ expect(heading.closest('tr')?.querySelectorAll('td')).toHaveLength(1);
+ await user.click(heading);
+ expect(toggle).toHaveBeenCalledWith(['income']);
+ expect(screen.getByText('1K')).toBeInTheDocument();
+ expect(screen.getByText('2K')).toBeInTheDocument();
+ rerender(<TableRenderer data={[{[LABEL_FIELD]:'Income'},{[LABEL_FIELD]:'Revenue',fy24:1000,fy25:2000}]} execution={{...execution,statement:false}}/>);
+ expect(container.querySelector('tr.statement-section')).toBeNull();
+});

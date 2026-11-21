@@ -333,3 +333,30 @@ it('without line placement the compiled statement is unchanged', () => {
     const f = withGrossProfit();
     expect(compileStatement(f.statement, f.source.columns)).toMatchSnapshot();
 });
+
+it('readable statement labels preserve pinned templates, member identity and arithmetic', () => {
+    const f = fixture();
+    const snapshot = structuredClone(f.statement.template);
+    const compiled = compileStatement(f.statement, f.source.columns);
+    const labels = compiled.execution.memberLabels![f.ids.item];
+    expect(labels[JSON.stringify(['string', f.ids.line('revenue')])]).toBe('Revenue');
+    expect(labels[JSON.stringify(['string', f.ids.line('cost_of_revenue')])]).toBe('Cost of Revenue');
+    expect(labels[JSON.stringify(['string', f.ids.line('ebitda')])]).toBe('EBITDA');
+    expect(f.statement.template).toEqual(snapshot);
+    expect(compiled.templateIdentity).toEqual({id: 'income', version: '1.0.0'});
+    const view = run(f);
+    const value = view.columns.find(c => c.measureId === f.ids.value)!;
+    expect(view.logicalRows.find(r => r.groupPath?.at(-1)?.memberKey === JSON.stringify(['string', f.ids.line('calculated_gross_profit')]))?.values[value.id]).toBe(40);
+});
+it('provider titles improve default statement labels while authored labels remain authoritative', () => {
+    const f = fixture();
+    f.source.columns.find(c => c.id === 'revenue')!.label = 'Revenue from Contracts with Customers';
+    const label = () => compileStatement(f.statement, f.source.columns).execution.memberLabels![f.ids.item][JSON.stringify(['string', f.ids.line('revenue')])];
+    expect(label()).toBe('Revenue from Contracts with Customers');
+    f.statement.overrides.labels[f.ids.line('revenue')] = 'Sales';
+    expect(label()).toBe('Sales');
+    delete f.statement.overrides.labels[f.ids.line('revenue')];
+    f.statement.template = structuredClone(f.statement.template);
+    f.statement.template.lines.find(l => l.id === f.ids.line('revenue'))!.label = 'Authored sales';
+    expect(label()).toBe('Authored sales');
+});

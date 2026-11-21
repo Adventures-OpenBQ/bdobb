@@ -7,6 +7,7 @@ import { compileAnalyticalModel } from '../tableModel/calculate';
 import { pivotValueKey } from '../pivotKeys';
 import { validateStatementIntent } from './validation';
 import { displayedSections } from './placement';
+import { statementTemplate } from './catalog';
 import { statementOwnedIds, type EffectiveStatement, type StatementIntent } from './types';
 import type { AnalyticalExecutionDescriptor } from '../tableModel/executionDescriptor';
 export class StatementCompilationError extends Error {
@@ -132,12 +133,28 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
         unitFieldId: b.unitFieldId,
         fiscal: b.fiscal,
     };
+    // Keep the versioned template and member keys intact. Only the unedited
+    // built-in raw field labels get a display title; authored labels win.
+    const templateId = intent.template.id;
+    const installed = templateId === 'income' || templateId === 'balance' || templateId === 'cashflow'
+        ? statementTemplate(templateId, intent.template.version) : undefined;
+    const defaults = new Map(installed?.lines.map(line => [line.id, line.label]));
+    const displayLabel = (line: StatementIntent['template']['lines'][number]): string => {
+        if (intent.overrides.labels[line.id] !== undefined) return intent.overrides.labels[line.id];
+        if (defaults.get(line.id) !== line.label || !/^[a-z]+(?:_[a-z]+)*$/.test(line.label)) return line.label;
+        const binding = b.shape === 'wide' ? b.mappings.find(mapping => mapping.lineId === line.id) : undefined;
+        const source = binding && columns.find(column => column.id === binding.sourceFieldId);
+        if (source?.label.trim() && source.label !== source.id && source.label !== line.label) return source.label;
+        return line.label.split('_').map((word, index) => ['ebit', 'ebitda', 'eps', 'ppe'].includes(word)
+            ? word.toUpperCase() : index && ['of', 'and', 'in', 'to', 'from', 'at', 'the'].includes(word)
+                ? word : word[0].toUpperCase() + word.slice(1)).join(' ');
+    };
     const memberLabels = {
         [sectionId]: Object.fromEntries(intent.template.sections.map(section => [
             pivotValueKey(section.id), intent.overrides.labels[section.id] ?? section.label,
         ])),
         [ids.item]: Object.fromEntries(intent.template.lines.map(line => [
-            pivotValueKey(line.id), intent.overrides.labels[line.id] ?? line.label,
+            pivotValueKey(line.id), displayLabel(line),
         ])),
     };
     const execution: AnalyticalExecutionDescriptor = {
