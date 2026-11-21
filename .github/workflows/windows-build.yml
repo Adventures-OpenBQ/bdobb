@@ -76,6 +76,8 @@ jobs:
           $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
           "major=$major" >> $env:GITHUB_OUTPUT
       - run: pnpm pivot:build
+      - name: Verify Windows native player ownership and restoration
+        run: cargo test --manifest-path src-tauri/Cargo.toml picture_in_picture -- --test-threads=1
       - name: Build debug-only MCP installer
         shell: pwsh
         run: pnpm tauri build --debug --features mcp-bridge --bundles nsis --config "$env:RUNNER_TEMP/windows-mcp.json"

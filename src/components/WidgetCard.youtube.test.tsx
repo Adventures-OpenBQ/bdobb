@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event';
 import {beforeEach,expect,it,vi} from 'vitest';
 vi.mock('../lib/plotly',()=>({renderPlot:async()=>{},purgePlot:()=>{},resizePlot:()=>{},REGISTERED_TRACE_TYPES:new Set()}));
 vi.mock('../hooks/useWidgetData',()=>({useWidgetData:()=>({status:'ready',data:'https://youtu.be/uYyhswnZkSw',loading:false,error:null,attempt:0,retry:()=>{},query:{channel:'bloomberg'}})}));
-vi.mock('../lib/youtubePip',()=>({desktopVideoPipAvailable:()=>false,closeYoutubePip:vi.fn(),openYoutubePip:vi.fn(),youtubePipIsOpen:vi.fn()}));
+const {native}=vi.hoisted(()=>({native:{available:false}}));
+vi.mock('../lib/youtubePip',()=>({desktopVideoPipAvailable:()=>native.available,closeYoutubePip:vi.fn(async()=>{}),openYoutubePip:vi.fn(),youtubePipIsOpen:vi.fn()}));
 import {WidgetCard} from './WidgetCard';
 import {useDashboardStore} from '../stores/dashboardStore';
 import {useWidgetRegistryStore} from '../stores/widgetRegistryStore';
@@ -14,7 +15,7 @@ import {backend,card,widget} from '../test/fixtures';
 import {__reset} from '../test/memfs';
 import {__resetJsonStoreForTests} from '../lib/jsonStore';
 beforeEach(()=>{
- __reset();__resetJsonStoreForTests();
+ native.available=false;__reset();__resetJsonStoreForTests();
  useBackendsStore.setState({backends:[backend()],statuses:{b1:'online'}});
  useWidgetRegistryStore.setState({widgets:[widget({type:'youtube'})]});
  useDashboardStore.setState({dashboards:[{id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[card()]}]}],activeId:'d',activeTabId:'t',viewer:false});
@@ -34,4 +35,16 @@ it('does not expose writable playback configuration in a viewer',async()=>{
  expect(screen.queryByRole('checkbox',{name:'Start muted'})).toBeNull();
  expect(screen.queryByRole('button',{name:'Picture in Picture'})).toBeNull();
  await screen.findByTitle('YouTube video');
+});
+
+it('starts Live TV with configuration hidden and no outgoing picture-in-picture even with old saved playback',async()=>{
+ native.available=true;
+ useWidgetRegistryStore.setState({widgets:[widget({id:'live_tv',type:'youtube'})]});
+ const saved=card({widgetId:'live_tv',video:{display:'pip',autoplay:true,muted:true}});
+ useDashboardStore.setState({dashboards:[{id:'d',name:'D',tabs:[{id:'t',name:'T',cards:[saved]}]}]});
+ render(<LiveCard/>);
+ await screen.findByTitle('YouTube video');
+ expect(screen.queryByRole('button',{name:/^Picture in Picture$|^Return video to card$/})).toBeNull();
+ expect(screen.getByRole('button',{name:'Show parameters'})).toHaveAttribute('aria-expanded','false');
+ expect(screen.queryByRole('checkbox',{name:'Start muted'})).toBeNull();
 });

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { create } from "zustand";
+import { isClientArtifact } from "../lib/agent/clientArtifact";
 import { dashboardMcpUrls } from "../lib/agent/dashboardMcp";
 import { agentToolInput, buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool, type ToolRequest } from "../lib/agent/execute";
 import { LOCAL_TOOLS, forgetRitaCards } from "../lib/agent/localTools";
@@ -32,9 +33,7 @@ import { useWidgetRegistryStore } from "./widgetRegistryStore";
 export type ArtifactMessage = { role: "ai"; content: ClientArtifact[] };
 export type ChatMessage = AgentMessage | ArtifactMessage;
 
-export function isClientArtifact(v: unknown): v is ClientArtifact {
-  return isRecord(v) && typeof v.type === "string" && typeof v.uuid === "string" && "content" in v;
-}
+export { isClientArtifact } from "../lib/agent/clientArtifact";
 
 export function isArtifactMessage(m: ChatMessage): m is ArtifactMessage {
   return m.role === "ai" && Array.isArray(m.content) && m.content.every(isClientArtifact);

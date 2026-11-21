@@ -298,33 +298,32 @@ pub fn ask_for_permission() {
 /// Chrome's `Picture in Picture` window, cached while it answers.
 #[derive(Default)]
 pub struct AxWindow {
-    player: Option<Cf>,
+    player: super::binding::PlayerBinding<Cf>,
 }
 
 impl AxWindow {
     /// Ok(None): no floating player. Err: Chrome did not answer in time.
     fn player(&mut self) -> Result<Option<CFTypeRef>, String> {
-        if let Some(player) = &self.player {
-            match attr_checked(player.0, "AXPosition") {
-                Ok(_) => return Ok(Some(player.0)),
-                Err(code) => {
-                    if let Some(reason) = ax_failure_reason(code) {
-                        return Err(reason.to_owned());
-                    }
-                }
-            }
-        }
-        self.player = match chrome() {
-            Some((app, _)) => elements_checked(app.0, "AXWindows")?
-                .into_iter()
-                .find(|w| string_attr(w.0, "AXTitle").as_deref() == Some(PLAYER_TITLE)),
-            None => None,
-        };
-        Ok(self.player.as_ref().map(|p| p.0))
+        self.player.get(
+            |player| match attr_checked(player.0, "AXPosition") {
+                Ok(_) => Ok(true),
+                Err(code) => match ax_failure_reason(code) {
+                    Some(reason) => Err(reason.to_owned()),
+                    None => Ok(false),
+                },
+            },
+            || Ok(match chrome() {
+                Some((app, _)) => elements_checked(app.0, "AXWindows")?
+                    .into_iter()
+                    .find(|w| string_attr(w.0, "AXTitle").as_deref() == Some(PLAYER_TITLE)),
+                None => None,
+            }),
+        ).map(|player| player.map(|p| p.0))
     }
 }
 
 impl PlayerWindow for AxWindow {
+    fn reset_binding(&mut self) { self.player.reset(); }
     fn trusted(&self) -> bool {
         // SAFETY: no arguments.
         unsafe { AXIsProcessTrusted() != 0 }

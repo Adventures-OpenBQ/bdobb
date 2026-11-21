@@ -13,6 +13,8 @@ import { handleAuth, identity } from "./auth.mjs";
 import { newsSubscription, socketTarget, socketTicket, stateFile, upstreamPath, tableRoute, tableControlRoute, TABLE_CONTROL_CONCURRENCY, TABLE_DEADLINE_MS, TABLE_RESPONSE_BYTES } from "./policy.mjs";
 import { bootstrap } from "./bootstrap.mjs";
 
+// Full feed lists include inline icons; browser requests and articles stay 64 KiB.
+const MAX_NEWS_REPLY = 2 * 1024 * 1024;
 const MIME = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json",
@@ -379,12 +381,17 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
           // upgrade only from its own origin); never a browser credential.
           upstream = connectUpstream(target.toString(), {
             headers: { Authorization: `Bearer ${cfg.token}`, Origin: cfg.backend },
-            followRedirects: false, handshakeTimeout: 10000, maxPayload: 65536,
+            followRedirects: false, handshakeTimeout: 10000, maxPayload: MAX_NEWS_REPLY,
             perMessageDeflate: false,
           });
         } catch { return close(); }
         upstream.on("message", (message, isBinary) => {
-          if (isBinary || client.readyState !== WebSocket.OPEN || client.bufferedAmount > 262144) return close();
+          if (isBinary || message.length > MAX_NEWS_REPLY || client.readyState !== WebSocket.OPEN || client.bufferedAmount > MAX_NEWS_REPLY) return close();
+          if (message.length > 65536) {
+            let reply;
+            try { reply = JSON.parse(message.toString()); } catch { return close(); }
+            if (!reply || Object.keys(reply).join() !== "feeds") return close();
+          }
           client.send(message, { binary: false });
         });
         upstream.on("error", close);

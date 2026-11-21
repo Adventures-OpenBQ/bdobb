@@ -5,6 +5,7 @@ import { describeHttpError } from "../dataClient";
 import { isRecord } from "../isRecord";
 import { logError } from "../logger";
 import { toAgentEvent } from "./events";
+import { isClientArtifact } from "./clientArtifact";
 import { normalizeFunctionRounds } from "./limits";
 import { buildQueryRequest, queryUrl, type ContextItem, type WidgetRef } from "./request";
 import { sseEvents } from "./sse";
@@ -116,8 +117,8 @@ export async function* runAgentQuery(
         const event = toAgentEvent(raw);
         if (event === null) continue;
         sawEvent = true;
-        if ((event.type === "chunk" && event.delta.trim() !== "") || event.type === "artifact" ||
-          (event.type === "citations" && Array.isArray(event.payload.citations) && event.payload.citations.length > 0) ||
+        if ((event.type === "chunk" && event.delta.trim() !== "") || (event.type === "artifact" && isClientArtifact(event.payload)) ||
+          (event.type === "citations" && Array.isArray(event.payload.citations) && event.payload.citations.some(isRecord)) ||
           (event.type === "status" && event.status.eventType === "ERROR")) answered = true;
         yield event;
         if (event.type === "error") throw new Error(event.message);

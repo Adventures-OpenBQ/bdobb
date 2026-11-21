@@ -1086,3 +1086,13 @@ test('disconnect cancels an ordinary API acquisition before its deadline',async 
   const f=await fixture(t,{fetchUpstream:async(_url,options)=>new Promise((_resolve,reject)=>{options.signal.addEventListener('abort',()=>{aborted();reject(new Error('disconnected'));},{once:true});entered();})});
   const req=request({hostname:'127.0.0.1',port:f.port,path:'/api/api/v1/cftc/fx_forward_points?pair=USDJPY',headers:{Host:'preview.example.com',Cookie:await cookie()}},res=>res.resume());req.on('error',()=>{});req.end();await started;req.destroy();await cancelled;
 });
+
+
+test("News relays a full fifteen-feed favicon reply without dropping the connection",async t=>{
+ const payload=JSON.stringify({feeds:Array.from({length:15},(_,id)=>({id:id+1,url:`https://feeds.example.com/${id}.xml`,title:`Source ${id}`,favicon:'data:image/png;base64,'+'A'.repeat(7000)}))});
+ assert.ok(Buffer.byteLength(payload)>65536);
+ const {client}=await newsRelay(t,up=>up.send(payload));
+ const message=Promise.race([once(client,'message'),once(client,'close').then(()=>{throw Error('Full favicon reply closed the relay');})]);
+ client.send('{"subscribe":[{"url":"https://feeds.example.com/news.xml"}]}');
+ const [received]=await message;assert.equal(received.toString(),payload);
+});

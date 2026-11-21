@@ -71,6 +71,29 @@ fn near(a: Rect, b: Rect) -> bool {
     .iter()
     .all(|(x, y)| (x - y).abs() <= 1.)
 }
+/// Preserve a usable original physical frame; after undocking, return it
+/// wholly to the nearest remaining display rather than an absent monitor.
+fn restore_target(saved: Rect, displays: &[Rect]) -> Rect {
+    if displays.is_empty() || displays.iter().any(|d|
+        saved.x < d.x + d.width && saved.x + saved.width > d.x &&
+        saved.y < d.y + d.height && saved.y + saved.height > d.y) {
+        return saved;
+    }
+    let distance = |d: &&Rect| {
+        let dx = saved.x + saved.width / 2. - (d.x + d.width / 2.);
+        let dy = saved.y + saved.height / 2. - (d.y + d.height / 2.);
+        dx * dx + dy * dy
+    };
+    let Some(display) = displays.iter().filter(|d| d.width > 0. && d.height > 0.)
+        .min_by(|a,b| distance(a).total_cmp(&distance(b))) else { return saved };
+    let scale = (display.width / saved.width).min(display.height / saved.height).min(1.);
+    let (width,height) = (saved.width * scale, saved.height * scale);
+    Rect {
+        x: saved.x.max(display.x).min(display.x + display.width - width),
+        y: saved.y.max(display.y).min(display.y + display.height - height),
+        width, height,
+    }
+}
 impl<W: Windows> Grab<W> {
     pub fn new(windows: W) -> Self {
         Self {
@@ -228,13 +251,11 @@ impl<W: Windows> Grab<W> {
                 if !parked && !near(actual, expected) {
                     actual = match self.windows.place(key, expected) {
                         Ok(frame) => frame,
-                        Err(reason) => return Status::Failed { reason },
+                        Err(reason) => return self.failed_move(reason),
                     };
                 }
                 if !near(actual, expected) {
-                    return Status::Failed {
-                        reason: "Chrome did not accept the requested player position".into(),
-                    };
+                    return self.failed_move("Chrome did not accept the requested player position".into());
                 }
                 if parked {
                     Status::Parked
@@ -242,8 +263,12 @@ impl<W: Windows> Grab<W> {
                     Status::Fitted
                 }
             }
-            Err(reason) => Status::Failed { reason },
+            Err(reason) => self.failed_move(reason),
         }
+    }
+    fn failed_move(&mut self, reason: String) -> Status {
+        self.release_all();
+        Status::Failed { reason }
     }
     pub fn release(&mut self, card: &str) {
         if self.hold.as_ref().is_some_and(|h| h.card == card) {
@@ -256,10 +281,11 @@ impl<W: Windows> Grab<W> {
             return;
         };
         h.releasing = true;
+        let restore = restore_target(h.saved, &self.windows.displays());
         if self
             .windows
-            .place(h.player, h.saved)
-            .is_ok_and(|r| near(r, h.saved))
+            .place(h.player, restore)
+            .is_ok_and(|r| near(r, restore))
         {
             self.forget();
         }
@@ -289,6 +315,8 @@ mod tests {
         relinquished: Vec<PlayerKey>,
         fail: bool,
         ignore: bool,
+        partial_failure: bool,
+        displays: Vec<Rect>,
     }
     impl Default for Desktop {
         fn default() -> Self {
@@ -301,6 +329,8 @@ mod tests {
                 relinquished: vec![],
                 fail: false,
                 ignore: false,
+                partial_failure: false,
+                displays: vec![r(-1920., 0., 1920., 1080.), r(0., 0., 2560., 1440.)],
             }
         }
     }
@@ -312,6 +342,11 @@ mod tests {
             self.player.filter(|p| p.key == key).map(|p| p.frame)
         }
         fn place(&mut self, key: PlayerKey, frame: Rect) -> Result<Rect, String> {
+            if self.partial_failure {
+                self.partial_failure = false;
+                self.player.as_mut().unwrap().frame = r(frame.x + 20., frame.y + 10., frame.width, frame.height);
+                return Err("partially moved".into());
+            }
             if self.fail {
                 return Err("refused".into());
             }
@@ -328,7 +363,7 @@ mod tests {
             Ok(frame)
         }
         fn displays(&self) -> Vec<Rect> {
-            vec![r(-1920., 0., 1920., 1080.), r(0., 0., 2560., 1440.)]
+            self.displays.clone()
         }
         fn relinquish(&mut self, key: PlayerKey) {
             self.relinquished.push(key)
@@ -489,4 +524,32 @@ mod tests {
         assert_eq!(g.player_key(), None);
         assert_eq!(g.windows.player.unwrap().frame, r(-800., 50., 320., 180.));
     }
+    #[test]
+    fn a_partly_failed_fit_restores_the_original_and_frees_the_owner() {
+        let mut g = Grab::new(Desktop::default());
+        g.windows.partial_failure = true;
+        assert!(matches!(g.fit("a", r(100., 200., 640., 400.), 1., false), Status::Failed { .. }));
+        assert_eq!(g.windows.player.unwrap().frame, r(-800., 50., 320., 180.));
+        assert_eq!(g.player_key(), None);
+        assert_eq!(g.fit("b", r(300., 100., 640., 400.), 1., false), Status::Fitted);
+    }
+    #[test]
+    fn restore_after_display_removal_places_the_player_on_a_remaining_display() {
+        let mut g = Grab::new(Desktop::default());
+        g.fit("a", r(100., 200., 640., 400.), 1., false);
+        g.windows.displays = vec![r(0., 0., 2560., 1440.)];
+        g.release_all();
+        assert_eq!(g.windows.player.unwrap().frame, r(0., 50., 320., 180.));
+        assert_eq!(g.player_key(), None);
+    }
+    #[test]
+    fn restore_to_a_smaller_remaining_display_keeps_the_player_accessible() {
+        let mut g = Grab::new(Desktop::default());
+        g.fit("a", r(100., 200., 640., 400.), 1., false);
+        g.windows.displays = vec![r(0., 0., 160., 90.)];
+        g.release_all();
+        assert_eq!(g.windows.player.unwrap().frame, r(0., 0., 160., 90.));
+        assert_eq!(g.player_key(), None);
+    }
+
 }

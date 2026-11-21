@@ -35,6 +35,7 @@ import { effectiveParams, nextGroupName, type ParamEdit } from "../lib/paramGrou
 import { fiscalChain } from "../lib/fiscalChain";
 import { isFiscalType, parseFyEndMonth, relabel } from "../lib/periods";
 import { bindableKeys, seedParams } from "../lib/params";
+import {PIP_GRAB_CHANNEL} from "../lib/youtubePlayback";
 import { cardSourceIdentity } from "../lib/cardSourceIdentity";
 import { withOptional } from "../lib/collections";
 import type {
@@ -1288,6 +1289,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
         : { x: 0, y: nextY(tab.cards), w: widget.gridData.w, h: widget.gridData.h };
 
       const cardId = crypto.randomUUID();
+      const seededParams = {...seedParams(widget), ...paramsOverride};
+      // A manifest is not permission to move another app's floating window.
+      // The reserved mode requires an explicit local source choice.
+      if (widget.type === "youtube" && seededParams.channel === PIP_GRAB_CHANNEL && paramsOverride?.channel !== PIP_GRAB_CHANNEL) {
+        seededParams.channel = "bloomberg-tv";
+      }
       const updated = await mutateDashboard(dashboardId, (d) => ({
         ...d,
         tabs: d.tabs.map((t) =>
@@ -1300,7 +1307,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     id: cardId,
                     widgetId: widget.id,
                     backendId: widget.backendId,
-                    params: { ...seedParams(widget), ...paramsOverride },
+                    params: seededParams,
                     layout,
                     // chartView.enabled opens a NEW card on its chart; an
                     // imported or existing card keeps the view it saved.
