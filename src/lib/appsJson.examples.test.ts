@@ -90,6 +90,7 @@ describe("docs/examples", () => {
     "v9-next-market-map.apps.json",
     "v9.0.0-calendars.apps.json",
     "v9.0.0-openbb-workspace-analysis.apps.json",
+    "v10-live-price-views.apps.json",
     "v5-financial-demo/apps.json",
   ];
   it("ships every known example file, and no file the list does not name", () => {
