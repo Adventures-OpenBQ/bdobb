@@ -14,6 +14,7 @@ import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool }
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
 import { liveWorkspaceOptions } from "./liveModel";
+import { TEXT_SUM_REFUSAL } from "./textSumRefusal";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
 import { mountCsv } from "../../lib/agent/tableModel/testHarness";
@@ -169,7 +170,7 @@ live("Rita arranges a CSV table through table-model/1", () => {
     } else {
       // Declined without the tool refusing: the reply must say a text column cannot be summed.
       // Claude words it as "a text field ... can only be counted or min/maxed, not summed".
-      expect(text, "reply says it cannot sum").toMatch(/cannot|can't|can not|unable|not (?:possible|supported|available|numeric|summ)|isn't (?:possible|supported|numeric)|(?:do|does)(?: not|n't) (?:support|make sense)|can only be/);
+      expect(text, "reply says it cannot sum").toMatch(TEXT_SUM_REFUSAL);
       expect(text, "reply says why: the column is text").toMatch(/text|non-numeric|not numeric|isn't numeric|categorical|string/);
       expect(text, "reply is about summing").toMatch(/sum/);
     }
