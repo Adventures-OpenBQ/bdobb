@@ -88,7 +88,7 @@ the card does about that and what **Open externally ↗** is for.
 
 ## Live TV
 
-The companion RSS backend's **Live TV** widget plays Bloomberg or Schwab in one YouTube card. On macOS and Windows, **Picture in Picture** opens BDOBB's floating player and **Return video to card** brings it back. The card's **Parameters** panel contains **Start muted** and **Autoplay**. iPad and viewer windows play inline. Saved workspace and sync settings retain the desktop choice. See **Picture in Picture** in the guide for ownership and playback limits.
+The companion RSS backend's **Live TV** widget offers YouTube - Bloomberg Live, YouTube - Schwab Network Live, YouTube - Yahoo Finance 24/7 Stream, and **Picture in Picture grab** in one source picker. On the Mac the grab choice fits Chrome's existing floating player over the card, which can also be added in **Settings ▸ Locked Widgets**. Switching sources releases the grabbed player. For YouTube playback, **Picture in Picture** opens BDOBB's own floating player on macOS and Windows, and **Return video to card** brings it back. **Start muted** and **Autoplay** are in Parameters. iPad and viewer windows play YouTube inline. See **Picture in Picture** in the guide for permission and platform limits.
 
 ## Picture in Picture
 

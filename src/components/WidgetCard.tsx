@@ -1418,7 +1418,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       case "metric":
         return <MetricRenderer data={data} />;
       case "youtube":
-        return <YouTubeRenderer data={data} cardId={card.id} settings={card.video} viewer={viewer} controlsHost={paramsOpen && !readOnly ? paramsHost : null} onSettingsChange={readOnly ? undefined : settings => patchCardField(card.id, "video", settings)} />;
+        return <YouTubeRenderer data={data} cardId={card.id} settings={card.video} viewer={viewer} readOnly={readOnly} menuOpen={exportOpen || (collapseControls && controlsOpen)} controlsHost={paramsOpen && !readOnly ? paramsHost : null} onSettingsChange={readOnly ? undefined : settings => patchCardField(card.id, "video", settings)} />;
       case "newsfeed":
         return <NewsfeedRenderer data={data} />;
       case "chart-vegalite":

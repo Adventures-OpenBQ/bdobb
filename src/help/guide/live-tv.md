@@ -5,19 +5,22 @@ tags: [bdobb, help, widgets, youtube, live-tv, rss-ticker]
 
 # Live TV
 
-**Live TV** plays a YouTube channel's live stream in a card: pick a channel from the card's **Channel** parameter and the card plays whatever that channel is streaming now. It is not a built-in. It is a widget that the companion stack's **rss-ticker** server — the same server the [[news-widget|News widget]] calls the *RSS Aggregator* — publishes once you list channels for it, so you add it the way you add any backend's widget: connect the server, then pick the widget from the library.
+**Live TV** puts YouTube live streams and **Picture in Picture grab** in one card. Pick a source from **Channel**: a YouTube choice plays that channel's current stream; the grab choice uses Chrome's existing floating player. The companion stack's **rss-ticker** server — the same server used by [[news-widget|News]] — publishes this widget. Connect the server, then add **Live TV** from the library.
 
 ## Turning it on in the server
 
-Live TV is **off** until you list channels. openbq-docker's `rss-ticker-config/config.yaml.example` carries a commented-out `live_tv:` list; copy the lines into your `rss-ticker-config/config.yaml`, uncomment them, and keep the channels you want. Each channel has a `key` (the value the card saves), a `label` (what the picker shows) and a `handle`, the channel's YouTube `@handle`. The first channel is the card's default.
+Copy openbq-docker's `rss-ticker-config/config.yaml.example` to `rss-ticker-config/config.yaml`. Its `live_tv:` list includes the three YouTube sources below. Each channel has a stable `key`, a picker `label` and a YouTube `@handle`. The first channel is the default. Removing the list, or setting it to `[]`, turns Live TV off.
 
 ```yaml
 live_tv:
   - key: bloomberg-tv
-    label: Bloomberg TV
+    label: YouTube - Bloomberg Live
     handle: "@markets"
+  - key: schwab-network
+    label: YouTube - Schwab Network Live
+    handle: "@SchwabNetwork"
   - key: yahoo-finance
-    label: Yahoo Finance
+    label: YouTube - Yahoo Finance 24/7 Stream
     handle: "@YahooFinance"
 ```
 
@@ -31,8 +34,12 @@ In **Connections**, add a backend whose URL is the rss-ticker server: `https://o
 
 Open the widget library, find **Live TV** under the rss-ticker connection, and add it. The card's **Channel** parameter lists your channels by label; change it and the card switches stream.
 
+The picker also includes **Picture in Picture grab**. On the Mac, pop a video out in Chrome, then choose this source to fit that floating player over the card. Switching to a YouTube source releases Chrome's player. See [[picture-in-picture|Picture in Picture]] for permission, ownership and platform limits.
+
+To keep the video across dashboards, open **Settings ▸ Locked Widgets**, edit **Locked at Top…** or **Locked at Bottom…**, and add a Live TV card there. Choose its source while editing the band, make the band tall enough for the player, and choose **OK**. A locked card plays without changing its saved height. See [[locked-and-pinned-widgets|Locked and Pinned Widgets]].
+
 - **When a channel is live**, the card shows its live stream in YouTube's player.
-- **When a channel is off-air** — between shows, or before an upcoming stream starts — the server has no video to give and the card reads *Select a video in the widget's parameters.* That is not an error: pick another channel, or come back when it is on.
+- **When a channel is off-air** — between shows, or before an upcoming stream starts — the card reads *No video is currently available for the selected source.* Pick another channel, or come back when it is on.
 - The server remembers each channel's live video for five minutes. A stream that has just started may need up to that long, and a **Refresh**, to appear.
 
 In the desktop app the card frames a small page the app serves itself on `127.0.0.1`, which embeds the stream; YouTube refuses an embed framed straight from the app's own pages. The iPad app does the same.

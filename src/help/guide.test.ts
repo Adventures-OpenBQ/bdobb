@@ -300,7 +300,7 @@ describe("v8 guide pages", () => {
     const widgets = GUIDE_SECTIONS.find((s) => s.title === "Widgets");
     expect(widgets?.pages.map((p) => p.slug)).toContain(`${GUIDE_PREFIX}live-tv`);
     const body = page("live-tv");
-    for (const s of ["`live_tv:`", "`rss-ticker-config/config.yaml`", "8088", "**Channel**", "*Select a video in the widget's parameters.*", "`127.0.0.1`"]) expect(body).toContain(s);
+    for (const s of ["`live_tv:`", "`rss-ticker-config/config.yaml`", "8088", "**Channel**", "*No video is currently available for the selected source.*", "`127.0.0.1`"]) expect(body).toContain(s);
   });
   it("lists pin_card among Rita's tools", () => {
     expect(page("rita-ai-agent-setup")).toContain("| `pin_card` |");
