@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "ed9eb76c22b2102a271ea07920e84da02b5abd8e",
-  "sourceId": "fe0f64d1168eabb4b69d518d4e07a9b4b6472ef18c084b90d4e01fbf4ff5059b",
+  "baseCommit": "2369d2e1b7d3ebddedb4e481d33e6a6fdabf045c",
+  "sourceId": "3e7f87c81313e8d20bfb83a6d7ce82bdd7465cff5320ec169db9158371c73793",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -11431,7 +11431,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "308ecad49bc8e6e70d4a90f3636c2e2b27728f78a91afae086bde183cabf71d7"
+      "sha256": "9e96b4df42726270d583f7a2e0a90091f88a86580661c281a80cb1b376dc5204"
     },
     {
       "path": "source_bundle.py",
@@ -12746,15 +12746,15 @@
       "path": "src/components/renderers/OmniRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 10726,
-      "sha256": "b05ddee19e0125456463eab3bf128d2a73e868fa9ca2e82474bfdb15bd61d451"
+      "size": 12276,
+      "sha256": "322d79fda97eee9e7bd589ae16916febe59977ad4ed328c90a71ee6dd1f49434"
     },
     {
       "path": "src/components/renderers/OmniRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 4497,
-      "sha256": "6dcf4d3cc99301386182fe2ea7414a672723db08e1738c444f8a1ee58f5ff490"
+      "size": 4669,
+      "sha256": "568d7e0ef4b8d354c8db9c03e36ddeb979d2e3a31f35392a80d99d76f5498cb6"
     },
     {
       "path": "src/components/renderers/ParamEchoRenderer.test.tsx",
