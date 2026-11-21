@@ -3,6 +3,7 @@
 
 import { beforeEach, describe, it, expect } from "vitest";
 import { LOCAL_TOOL_SERVER_ID, LOCAL_TOOLS, resolveWidgetMatch, executeLocalTool } from "./localTools";
+import { OPERATIONS } from "./tableModel/contract";
 import type { DashboardCard, WidgetDef } from "../types";
 import { __read, __reset } from "../../test/memfs";
 import { widget } from "../../test/fixtures";
@@ -85,6 +86,20 @@ describe("the local tool declaration", () => {
     // D-012: a read-only ask previews; nothing commits.
     expect((arrange.input_schema.properties as Record<string, { enum?: string[] }>).mode.enum).toEqual(["apply", "preview"]);
     for (const must of ["mode \"preview\"", "previewed", "committed false", "summarize", "totalRowCount"]) expect(arrange.description, must).toContain(must);
+  });
+
+  it("advertises complete required and optional fields for each actual table operation", () => {
+    const schema = LOCAL_TOOLS.find(t => t.name === "arrange_table")!.input_schema as {
+      properties: { arrangement: { properties: { operations: { items: { anyOf?: Array<{ required: string[]; properties: Record<string, unknown> & { op: { enum: string[] } } }> } } } } };
+    };
+    const variants = schema.properties.arrangement.properties.operations.items.anyOf;
+    expect(variants?.map(v => v.properties.op.enum[0])).toEqual(Object.keys(OPERATIONS));
+    for (const variant of variants!) {
+      const name = variant.properties.op.enum[0] as keyof typeof OPERATIONS;
+      const operation = OPERATIONS[name];
+      expect(variant.required).toEqual(["op", ...Object.keys(operation.required)]);
+      expect(Object.keys(variant.properties)).toEqual(["op", ...Object.keys(operation.required), ...Object.keys(operation.optional)]);
+    }
   });
 
   it("gives every tool the reserved server id and an object schema", () => {

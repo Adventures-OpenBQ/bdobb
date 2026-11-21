@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from "vitest";
 import { capabilitiesFor } from "./capabilities";
-import { OPERATIONS } from "./contract";
+import { OPERATIONS, parseArrangement } from "./contract";
 import { measureEligibility } from "../../../components/renderers/table-model/measureEligibility";
 import { statementTemplate } from "../../statementModel/catalog";
 import type { DatasetColumn } from "../../widgetData/types";
@@ -50,4 +50,13 @@ it("tells the model how first/last become available: date categories on one fiel
   expect(text).toMatch(/first\/last/);
   expect(text).toMatch(/\(Y\/Q\/M\/FY\/FQ\) all sit on exactly one field/);
   expect(text).toMatch(/same call/);
+});
+
+it("provides a complete flat-operation example accepted by the actual arrangement parser", () => {
+  const instructions = capabilitiesFor(undefined, columns, "authoring").how_to_arrange!;
+  const examples = instructions.filter(t => t.startsWith("Example: "));
+  expect(examples).toHaveLength(1);
+  const example = JSON.parse(examples[0].slice("Example: ".length));
+  expect(parseArrangement(example).errors).toEqual([]);
+  expect(example.operations.map((op: { op: string }) => op.op)).toEqual(["category.add", "measure.add", "layout.set"]);
 });
