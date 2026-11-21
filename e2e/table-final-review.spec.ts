@@ -3,6 +3,7 @@
 
 import { test, expect } from '@playwright/test';
 import { seedCards, read } from './fixtures';
+import { checkChartMeasures } from './fixtures/chart-recipes';
 const file = '00000000-0000-0000-0000-000000000099.csv';
 const source = { id: 'root', widgetId: 'local_table', backendId: 'builtin', params: { file }, layout: { x: 0, y: 0, w: 40, h: 20 } };
 const csv = { [`files/${file}`]: 'region,team,revenue,date\nA,Alpha,10,2026-01-01\nA,Beta,20,2026-01-02\nB,Beta,90,2026-01-03\n' };
@@ -18,8 +19,7 @@ test('ordinary text counts reach actual worker linked chart as numeric measures'
   await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
   await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'region' });
-  await parameters.getByRole('checkbox', { name: 'team — Count', exact: true }).check();
-  await parameters.getByRole('checkbox', { name: 'team — Unique Count', exact: true }).check();
+  await checkChartMeasures(page, parameters, ['team — Count', 'team — Unique Count']);
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data.map(t => t.y))).toEqual([[2, 1], [2, 1]]);
 });

@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { isDiscoveryRequest, MOCK_URL, read, seedApp, seedCards } from './fixtures';
+import { checkChartMeasures } from './fixtures/chart-recipes';
 
 test('file pivot duplicate measures survive linked table chart and reopening saved files', async ({ page, context }) => {
   await seedCards(page, []);
@@ -55,8 +56,7 @@ test('file pivot duplicate measures survive linked table chart and reopening sav
   await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
   await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'Region' });
-  await parameters.getByRole('checkbox', { name: 'Volume — Average', exact: true }).check();
-  await parameters.getByRole('checkbox', { name: 'Volume — Total', exact: true }).check();
+  await checkChartMeasures(page, parameters, ['Volume — Average', 'Volume — Total']);
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { name: string; y: number[] }[] }).data.map(t => ({ name: t.name, y: t.y })))).toEqual([
     { name: 'Volume — Average', y: [15, 90] }, { name: 'Volume — Total', y: [30, 90] },
@@ -141,7 +141,7 @@ for (const theme of ['dark', 'light']) {
     await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
     const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
     await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'Sector' });
-    await parameters.getByRole('checkbox', { name: 'Revenue', exact: true }).check();
+    await checkChartMeasures(page, parameters, ['Revenue']);
     await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
     await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y)).toEqual([80, 20, 40, 70, 35]);
     expect(acquisitionRequests).toEqual([]);
@@ -344,7 +344,7 @@ test('report Year Quarter page and level filters recompute ratio totals while Bu
   await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
   await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'Year › Quarter' });
-  await parameters.getByRole('checkbox', { name: 'Margin', exact: true }).check();
+  await checkChartMeasures(page, parameters, ['Margin']);
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y)).toEqual([0.75]);
   const model = JSON.parse((await read(page, 'dashboards/d1.json'))!).tabs[0].cards[0].tableDefinition.analytical;
@@ -380,7 +380,7 @@ test('unloaded Select all feeds complete chart output through the library source
   await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
   await parameters.getByLabel('Category', { exact: true }).selectOption({ label: 'Sector' });
-  await parameters.getByRole('checkbox', { name: 'Revenue', exact: true }).check();
+  await checkChartMeasures(page, parameters, ['Revenue']);
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y.length)).toBe(1200);
   expect(await chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data[0].y.at(-1))).toBe(1199);

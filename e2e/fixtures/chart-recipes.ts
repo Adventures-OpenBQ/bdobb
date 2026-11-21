@@ -23,6 +23,13 @@ export async function openParameters(widget: Locator) {
   return panel;
 }
 
+export async function checkChartMeasures(page: Page, parameters: Locator, labels: string[]) {
+  await parameters.getByRole('button', { name: /^Measures/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Measures', exact: true });
+  for (const name of labels) await dialog.getByRole('checkbox', { name, exact: true }).check();
+  await dialog.getByRole('button', { name: 'Apply', exact: true }).click();
+}
+
 export async function chooseLinkedSource(page: Page, widget: Locator, label: string) {
   await page.mouse.move(360, 200);
   await expect(page.locator('nav.left-rail')).toHaveAttribute('data-expanded', 'false');

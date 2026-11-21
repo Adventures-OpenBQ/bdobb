@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {expect,test} from '@playwright/test';
 import {dashboardSeed,seedApp,read} from './fixtures';
+import { checkChartMeasures } from './fixtures/chart-recipes';
 
 /** Browser orchestration/UI qualification with the real compiled Rust fixture provider.
  * This deliberately injects the provider seam; Task 11 must qualify the combined
@@ -52,7 +53,7 @@ test('managed full-scope consumers, header actions and persisted linked reopen',
  await chartCard.getByRole('button',{name:'Show parameters',exact:true}).click();
  const parameters=chartCard.getByRole('region',{name:'Parameters',exact:true});
  await parameters.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
- await parameters.getByRole('checkbox',{name:'Revenue',exact:true}).check();
+ await checkChartMeasures(page, parameters, ['Revenue']);
  await expect(page.getByTestId('chart-plot')).toBeVisible();
  await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(204);
  const toolsProof=await page.evaluate(async()=>{

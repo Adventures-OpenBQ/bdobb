@@ -19,7 +19,7 @@ async function point(graph: Locator, week: number, weekday: number) {
   await expect.poll(() => graph.evaluate(node => {
     const layout = (node as Graph)._fullLayout;
     const box = node.getBoundingClientRect();
-    return layout?.width === Math.round(box.width) && layout?.height === Math.round(box.height);
+    return !!layout && Math.abs(layout.width - box.width) <= 1 && Math.abs(layout.height - box.height) <= 1;
   })).toBe(true);
   return graph.evaluate((node, [x, y]) => {
     const { xaxis, yaxis } = (node as Graph)._fullLayout;

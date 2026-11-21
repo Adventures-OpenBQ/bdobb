@@ -4,6 +4,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { useLayoutEffect } from "react";
 
 import { InlineRename } from "./InlineRename";
 
@@ -17,6 +18,19 @@ function setup(value = "First") {
 }
 
 describe("InlineRename", () => {
+  it("focuses and selects the full name before the newly visible field can accept typing", () => {
+    const observations: { focused: boolean; selection: (number | null)[] }[] = [];
+    function FirstPaint() {
+      useLayoutEffect(() => {
+        const field = document.querySelector<HTMLInputElement>('input[aria-label="Rename tab"]')!;
+        observations.push({ focused: document.activeElement === field, selection: [field.selectionStart, field.selectionEnd] });
+      }, []);
+      return <InlineRename value="First" ariaLabel="Rename tab" onCommit={vi.fn()} onCancel={vi.fn()}/>;
+    }
+    render(<FirstPaint/>);
+    expect(observations[0]).toEqual({ focused: true, selection: [0, 5] });
+  });
+
   it("mounts focused with its text selected, so typing replaces the old name", () => {
     const { input } = setup();
     expect(input).toHaveFocus();

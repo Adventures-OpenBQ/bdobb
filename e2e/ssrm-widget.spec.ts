@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {test,expect} from '@playwright/test';
 import {seedApp,dashboardSeed,read} from './fixtures';
+import { checkChartMeasures } from './fixtures/chart-recipes';
 // @ts-expect-error JavaScript qualification harness has no public TypeScript API.
 import {startNativeHarness} from '../scripts/ssrm-native-harness.mjs';
 test('authenticated native upload, full consumers, refresh, saved reopen and errors',async({page,context},info)=>{
@@ -49,7 +50,7 @@ test('authenticated native upload, full consumers, refresh, saved reopen and err
   await chartCard.getByRole('button',{name:'Show parameters',exact:true}).click();
   const parameters=chartCard.getByRole('region',{name:'Parameters',exact:true});
   await parameters.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
-  await parameters.getByRole('checkbox',{name:'revenue',exact:true}).check();
+  await checkChartMeasures(page, parameters, ['revenue']);
   await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(1204);
   await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Export ▸'}).click();await page.getByRole('menuitem',{name:'CSV',exact:true}).click();
   await expect.poll(()=>page.evaluate(()=>window.__bdobb!.list!().find(p=>p.startsWith('exports/')&&p.endsWith('.csv')))).toBeTruthy();
