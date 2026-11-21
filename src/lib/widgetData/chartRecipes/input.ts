@@ -113,9 +113,8 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
 export function prepareLiveDailyPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
   const live = readLiveDailyPriceSource(dataset);
   if (!live) {
-    // A recognized receipt without valid live evidence cannot qualify through snapshot metadata.
-    if (hasDailyPriceDeclaration(dataset.provenance.metadata)) return refuse(invalidDailyPrice);
-    return;
+    const issue = snapshotDailyPriceIssue(dataset);
+    return issue ? refuse(issue) : undefined;
   }
   const { receipt, scope, symbols, rawOmissions, tableOmissions } = live;
   if (!dataset.rows.length) return refuse('No valid daily prices remain.');

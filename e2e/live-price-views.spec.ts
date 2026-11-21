@@ -151,25 +151,31 @@ test('synthetic transport: imports the fixed example and applies all three forms
   await info.attach('synthetic-worker-replies', { body: JSON.stringify(worker), contentType: 'application/json' });
 });
 
-for (const nested of [false, true]) {
-  const reason = nested ? 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.'
+const refusedPriceSources = [
+  { description: 'ordinary rows', optIn: false, nested: false },
+  { description: 'opted-in rows without a receipt', optIn: true, nested: false },
+  { description: 'an opted-in legacy snapshot', optIn: true, nested: true },
+] as const;
+for (const { description, optIn, nested } of refusedPriceSources) {
+  const reason = optIn ? 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.'
     : 'The source must be fully loaded. Acquisition is unknown.';
-  test(`synthetic transport: refuses ${nested ? 'an opted-in legacy snapshot' : 'ordinary rows'} without qualified acquisition evidence`, async ({ page }) => {
+  test(`synthetic transport: refuses ${description} without qualified acquisition evidence`, async ({ page }) => {
     const { acquisitions } = await prepareLiveReturns(page, {
-      empty: true, response: url => {
+      empty: true, optIn, response: url => {
         const payload = livePayload(url);
         const { start_date, end_date, interval } = fixedQuery;
         return nested ? { ...payload, results: { rows: payload.results, completeness: 'complete', receipt: { start_date, end_date, interval } } }
           : { results: payload.results };
       },
     });
-    await importPriceViews(page);
+    const manifest = optIn ? undefined : readFileSync(example, 'utf8').replace(/("chart_source"\s*:\s*)"true"/, '$1"false"');
+    await importPriceViews(page, manifest);
     for (const [title, , scope] of chartTypes) {
       const widget = card(page, title);
       await expect(widget.getByRole('status').filter({ hasText: reason })).toBeVisible();
       await expect(status(widget, scope)).toHaveCount(0);
       await expect(plot(page, title)).toHaveCount(0);
-      if (nested) {
+      if (optIn) {
         const panel = await openParameters(widget);
         await expect(panel.getByRole('button', { name: 'Apply chart settings' })).toBeDisabled();
         await expect(panel.getByText(reason, { exact: true })).toBeVisible();
@@ -178,7 +184,8 @@ for (const nested of [false, true]) {
     }
     await expect(card(page, sourceTable).getByRole('columnheader', { name: /adjusted.close/i })).toBeVisible();
     expect(acquisitions.length).toBeGreaterThan(0);
-    expect(queries(acquisitions)).toEqual(Array(acquisitions.length).fill(fixedQuery));
+    const expectedQuery = { ...fixedQuery, chart_source: String(optIn) };
+    expect(queries(acquisitions)).toEqual(Array(acquisitions.length).fill(expectedQuery));
   });
 }
 

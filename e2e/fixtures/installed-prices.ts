@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { seedCards, type SeedCard } from '../fixtures';
+import { dailyPriceCorsHeaders } from './return-summary';
 
 type PriceRow = { symbol: string; date: string; adjusted_close: number };
 export type CaptureRoute = {
@@ -35,6 +36,12 @@ export const readCapture = (name: string) => JSON.parse(readFileSync(
   new URL(`./installed-observed-returns/75a9026/${name}.json`, import.meta.url), 'utf8',
 )) as Capture;
 
+export async function seedInstalledPrices(page: Page, route: CaptureRoute, charts: SeedCard[], tableY: number, baseUrl: string) {
+  const backend = { id: 'captured-eodhd', name: 'Captured EODHD', baseUrl, authLocation: 'header', validateWidgets: false };
+  await seedCards(page, [...charts, { id: sourceId, widgetId: route.widgetId, backendId: backend.id, title: table,
+    params: route.query, layout: { x: 0, y: tableY, w: 40, h: 14 } }], { 'backends.json': JSON.stringify([backend]) });
+}
+
 export async function replayInstalledPrices(page: Page, endpoint: string, route: CaptureRoute, charts: SeedCard[], tableY: number) {
   const requests: { method: string; query: Record<string, string> }[] = [];
   await page.route(`${origin}/**`, async intercepted => {
@@ -42,10 +49,11 @@ export async function replayInstalledPrices(page: Page, endpoint: string, route:
     const source = url.pathname === endpoint && request.method() === 'GET';
     if (source) requests.push({ method: request.method(), query: Object.fromEntries(url.searchParams) });
     const body = source ? route.body : url.pathname === '/widgets.json' ? { [route.widgetId]: route.widget } : {};
-    await intercepted.fulfill({ json: body, status: source ? route.status : 200, headers: { 'Access-Control-Allow-Origin': '*' } });
+    await intercepted.fulfill({
+      json: body, status: source ? route.status : 200,
+      headers: { 'Access-Control-Allow-Origin': '*', ...dailyPriceCorsHeaders },
+    });
   });
-  const backend = { id: 'captured-eodhd', name: 'Captured EODHD', baseUrl: origin, authLocation: 'header', validateWidgets: false };
-  await seedCards(page, [...charts, { id: sourceId, widgetId: route.widgetId, backendId: backend.id, title: table,
-    params: route.query, layout: { x: 0, y: tableY, w: 40, h: 14 } }], { 'backends.json': JSON.stringify([backend]) });
+  await seedInstalledPrices(page, route, charts, tableY, origin);
   return requests;
 }

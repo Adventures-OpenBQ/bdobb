@@ -13,7 +13,7 @@ import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
 import { buildEstimateRevisions } from './estimateRevisions';
 import { buildIncomeSankey } from './incomeSankey';
-import { acceptsLiveDailyPriceRecipe } from './input';
+import { acceptsLiveDailyPriceRecipe, snapshotDailyPriceIssue } from './input';
 import { buildMarketMap } from './marketMap';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
@@ -78,8 +78,13 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
   // Qualified live prices bind against acquired field origins. Their admission also handles empty acquisitions.
-  if (issue && !(acceptsLiveDailyPriceRecipe(recipe.kind) && readLiveDailyPriceSource(dataset)))
-    return { ok: false, refused: true, message: issue };
+  if (issue) {
+    const livePriceRecipe = acceptsLiveDailyPriceRecipe(recipe.kind);
+    if (!livePriceRecipe || !readLiveDailyPriceSource(dataset)) {
+      const sourceIssue = livePriceRecipe ? snapshotDailyPriceIssue(dataset) : undefined;
+      return { ok: false, refused: true, message: sourceIssue ?? issue };
+    }
+  }
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);
     case 'yield-curve': return buildYieldCurve(dataset, recipe, context);
