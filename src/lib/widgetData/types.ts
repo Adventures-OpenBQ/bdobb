@@ -90,7 +90,7 @@ export type WidgetDataset = {
   freshness: DatasetFreshness;
 };
 export type LinkedSource = { kind: "widget"; sourceWidgetId: string };
-export const LEGACY_LINKED_CHART_TYPES = ["bar", "column", "line", "pie", "bullet", "waterfall"] as const;
+export const LEGACY_LINKED_CHART_TYPES = ["bar", "column", "line", "pie", "bullet", "waterfall", "surface"] as const;
 export type LinkedChartSettings = {
   type: (typeof LEGACY_LINKED_CHART_TYPES)[number] | RecipeOptions["kind"];
   category?: string;
@@ -99,4 +99,8 @@ export type LinkedChartSettings = {
   seriesFrom?: "columns" | "rows"; // absent means "columns"
   period?: string; // bullet only: the fiscal period shown; absent means the latest
   recipe?: RecipeOptions;
+  /** Surface on a pivoted source: report value ids (`measureId`). */
+  height?: string;
+  spaceRowsBy?: string;
+  spaceColumnsBy?: string;
 };

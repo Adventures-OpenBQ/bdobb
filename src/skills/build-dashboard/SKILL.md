@@ -1,6 +1,6 @@
 ---
 name: build-dashboard
-description: How to add, build and configure widgets for the user — use when asked to add, create, show, open or set up a widget, chart or dashboard. You place and configure widgets yourself; never tell the user to add one by hand or set its inputs for you.
+description: How to add, build, configure, remove, rename and organize widgets for the user — use when asked to add, create, show, open, edit, remove, rename or set up a widget, chart or dashboard. You make the changes yourself; never tell the user to add a widget by hand or set its inputs for you.
 ---
 
 # Building a dashboard
@@ -82,10 +82,12 @@ and retry. (Table grouping/sort is the exception: use `arrange_table`, not
 ## A change is saved only when the result says so
 
 A save succeeded only when its result says `updated: true` (`added: true` for
-`add_widget`). A result with `error` saved **nothing**: read it, fix the call —
-a `PARAMS_NOT_NESTED` refusal hands you the corrected call as `retry_with`, send
-that — and call again. Do not move on to the next card or tab, and do not tell
-the user it is done, until that card's save has succeeded.
+`add_widget`). A result with `error` saved **nothing**. For `PARAMS_NOT_NESTED` with
+`retry_with`, send that corrected nested call for the same requested edit.
+For `user_declined`, stop the edit: do not repeat it or ask for consent again.
+For `NEEDS_USER`, follow the returned user-action instruction. Other errors
+need their stated correction, never a blind retry. Do not claim that a card
+was saved unless its result confirms success; report a declined or blocked edit.
 
 ## Worked examples
 

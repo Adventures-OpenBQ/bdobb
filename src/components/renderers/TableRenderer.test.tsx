@@ -132,6 +132,15 @@ describe("TableRenderer", () => {
     expect(within(first).getByText("AAPL")).toBeInTheDocument();
   });
 
+  it("renders a declared singleton record as an actual table without changing the source", () => {
+    const record = Object.freeze({ date: "2026-11-19", USD: 1.0992 });
+    render(<TableRenderer data={record} spec={{ columns: [{ field: "date" }, { field: "USD" }] }} />);
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    expect(screen.getByText("2026-11-19")).toBeInTheDocument();
+    expect(screen.getByText("1.1")).toBeInTheDocument();
+    expect(screen.queryByTestId("raw-json")).toBeNull();
+  });
+
   it("shows an empty state for an empty array", () => {
     render(<TableRenderer data={[]} />);
     expect(screen.getByText(/no rows/i)).toBeInTheDocument();

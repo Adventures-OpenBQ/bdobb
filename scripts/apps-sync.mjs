@@ -58,6 +58,7 @@ const SERVED = {
   "v3.2.0-video-library": true,
   // Built-ins only (the v4 date-expression and period cards among them).
   "v4.0.0-builtins": true,
+  "v4.0.0-fx-linked-surface": true,
   "v4.0.0-parameters": true,
   // The synthetic Statement fixture widget, synthetic_cash_flow, which
   // openbq-docker v5+ serves under the same id; its fixture (widgets.json,

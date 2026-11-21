@@ -16,11 +16,12 @@ import { createPreviewServer } from '../web/server.mjs';
 import { readConfig, SESSION_COOKIE } from '../web/config.mjs';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 export async function startNativeHarness() {
+    const image = process.env.TABLE_QUAL_IMAGE;
     const root = process.env.TABLE_QUAL_LINUX_ROOT;
     const target = process.env.TABLE_QUAL_LINUX_TARGET;
     const gatewayPath = process.env.TABLE_QUAL_GATEWAY;
-    if (!root || !target || !gatewayPath)
-        throw new Error('Set TABLE_QUAL_LINUX_ROOT, TABLE_QUAL_LINUX_TARGET and TABLE_QUAL_GATEWAY; actual Linux artifacts required');
+    if ((!image && (!root || !target)) || !gatewayPath)
+        throw new Error('Set TABLE_QUAL_IMAGE (or TABLE_QUAL_LINUX_ROOT and TABLE_QUAL_LINUX_TARGET) and TABLE_QUAL_GATEWAY; actual Linux artifacts required');
     const dir = await mkdtemp(join(tmpdir(), 'ssrm-native-'));
     const name = 'ssrm-native-' + randomBytes(5).toString('hex');
     const token = randomBytes(32).toString('base64url');
@@ -50,13 +51,13 @@ export async function startNativeHarness() {
         },
         "ingestion": {
             "node": "/task/node-measured",
-            "entry": "/work/server/table-ingest/dist/child.mjs",
+            "entry": image ? "/app/server/table-ingest/dist/child.mjs" : "/work/server/table-ingest/dist/child.mjs",
             "backend_config": null,
             "max_concurrent_children": 1,
             "max_child_heap_mb": 128
         },
         "worker": {
-            "executable": "/target/debug/pivot-native-worker",
+            "executable": image ? "/app/bin/pivot-native-worker" : "/target/debug/pivot-native-worker",
             "memory_budget_bytes": 536870912,
             "max_frame_bytes": 8392704,
             "max_starting_workers": 2
@@ -148,9 +149,14 @@ export async function startNativeHarness() {
             mode: 0o600
         });
         const args = ['run', '--rm', '--name', name, '--read-only', '--user', String(process.getuid()), '--memory', '8g', '--cpus', '2', '--pids-limit', '128', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '-p', '127.0.0.1::8080'];
+        if (image) {
+            // Qualify the actual source-pinned production image without a copied Linux root.
+            args.push('-v', `${resolve('.')}:/work:ro`, '-v', `${dir}:/task`, '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m', '-e', 'TABLE_SERVICE_CONFIG=/task/config.json', image, '/app/bin/table-service');
+        } else {
         for (const part of ['usr', 'var', 'etc'])
             args.push('-v', `${root}/${part}:/${part}:ro`);
         args.push('-v', `${root}/root/node-v26.10.0-linux-arm64:/opt/node:ro`, '-v', `${target}:/target:ro`, '-v', `${resolve('.')}:/work:ro`, '-v', `${dir}:/task`, '--tmpfs', '/tmp:rw,noexec,nosuid,size=32m', '-e', 'TABLE_SERVICE_CONFIG=/task/config.json', 'rust:1.98.1-slim-trixie', '/target/debug/table-service');
+        }
         native = spawn('docker', args, {
             stdio: ['ignore', 'ignore', 'inherit']
         });

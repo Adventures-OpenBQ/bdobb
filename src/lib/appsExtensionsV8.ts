@@ -7,15 +7,16 @@ import type { App, ImportResult } from './appsJson';
 import { DOCKS_ID, clampDockRows, isDocks, makeDefaultDocks } from './dashboardsFile';
 import { readDockSeeThrough, type DockSeeThrough } from './dockSeeThrough';
 import { isRecord } from './isRecord';
+import {parseYoutubePlayback,type YoutubePlayback} from './youtubePlayback';
 import { safeUrl } from './safeUrl';
 import { PIN_EDGES } from './types';
 import type { Dashboard, DashboardCard, NewsCardState, PinEdge } from './types';
 
 /**
- * A card's v8 state (ruling R1): the pinned edge and a News card's feeds.
+ * A card's v8 state: pinned edge, News feeds and client video playback choices.
  * Each is a strict key with its own validator; nothing else is read.
  */
-type V8CardState = { pinned?: PinEdge; news?: NewsCardState };
+type V8CardState = { pinned?: PinEdge; news?: NewsCardState; video?: YoutubePlayback };
 type Overlay = V8CardState & { tab: string; index: number };
 /**
  * App-level v8 state beside `cards`, as strict: `docks` marks the app that IS
@@ -26,7 +27,7 @@ type Overlay = V8CardState & { tab: string; index: number };
 /** `seeThrough`: the bands' See-through where empty, only the edges that are on, and only when one is. */
 type V8Docks = { rows: Record<PinEdge, number>; seeThrough?: DockSeeThrough };
 export type V8AppExtension = { schemaVersion: 1; profile: 'v8'; base: V3AppExtension | V4AppExtension | V5AppExtension; cards: Overlay[]; docks?: V8Docks };
-const CARD_STATE = ['pinned', 'news'] as const;
+const CARD_STATE = ['pinned', 'news', 'video'] as const;
 
 const keys = (value: Record<string, unknown>, allowed: readonly string[], path: string) => checkKeys(value, allowed, path, 'v8');
 const json = (value: unknown, path: string) => checkJson(value, path, 'v8');
@@ -39,6 +40,11 @@ function v8CardState(value: Record<string, unknown>, path: string, extra: readon
     out.pinned = value.pinned as PinEdge;
   }
   if (value.news !== undefined) out.news = newsState(value.news, `${path}.news`);
+  if (value.video !== undefined) {
+    const video=parseYoutubePlayback(value.video);
+    if(video===null)extensionError(`${path}.video`,'Invalid video playback state.');
+    out.video=video;
+  }
   return out;
 }
 const isStrings = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
@@ -70,6 +76,7 @@ function cardV8State(card: DashboardCard): V8CardState | undefined {
   const state: V8CardState = {};
   if (card.pinned !== undefined) state.pinned = card.pinned;
   if (card.news !== undefined) state.news = structuredClone(card.news);
+  if (card.video !== undefined) state.video = structuredClone(card.video);
   return Object.keys(state).length > 0 ? state : undefined;
 }
 /** The card without its v8 state: what the v3-v5 profiles, which stay strict, are handed. */

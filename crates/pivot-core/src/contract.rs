@@ -24,42 +24,7 @@ pub enum WireValue {
     #[serde(rename = "record")]
     Record(Vec<(String, WireValue)>),
 }
-// Struct variants keep presence of `value` observable: serde's adjacent unit
-// variants otherwise accept null content and erase it before validation.
-impl<'de> Deserialize<'de> for WireValue {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        #[derive(Deserialize)]
-        #[serde(tag = "tag", deny_unknown_fields)]
-        enum StrictValue {
-            #[serde(rename = "missing")]
-            Missing {},
-            #[serde(rename = "null")]
-            Null {},
-            #[serde(rename = "bool")]
-            Bool { value: bool },
-            #[serde(rename = "string")]
-            String { value: String },
-            #[serde(rename = "f64")]
-            F64 { value: WireNumber },
-            #[serde(rename = "bigint-string")]
-            BigIntString { value: String },
-            #[serde(rename = "array")]
-            Array { value: Vec<WireValue> },
-            #[serde(rename = "record")]
-            Record { value: Vec<(String, WireValue)> },
-        }
-        Ok(match StrictValue::deserialize(deserializer)? {
-            StrictValue::Missing {} => Self::Missing,
-            StrictValue::Null {} => Self::Null,
-            StrictValue::Bool { value } => Self::Bool(value),
-            StrictValue::String { value } => Self::String(value),
-            StrictValue::F64 { value } => Self::F64(value),
-            StrictValue::BigIntString { value } => Self::BigIntString(value),
-            StrictValue::Array { value } => Self::Array(value),
-            StrictValue::Record { value } => Self::Record(value),
-        })
-    }
-}
+mod wire_value;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -227,6 +192,9 @@ pub struct Category {
     pub fiscal_binding: Option<FiscalBinding>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub legacy_bucket: Option<LegacyBucket>,
+    /// Orders members by this field or source formula; the label still comes from `source_field_id`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sort_field_id: Option<String>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Transform {
@@ -372,6 +340,16 @@ pub enum FormulaFunction {
     Last,
     #[serde(rename = "IF")]
     If,
+    #[serde(rename = "LN")]
+    Ln,
+    #[serde(rename = "SQRT")]
+    Sqrt,
+}
+impl FormulaFunction {
+    /// Aggregate functions take a source-scope argument; IF, LN and SQRT stay in the caller's scope.
+    pub fn is_aggregate(self) -> bool {
+        !matches!(self, Self::If | Self::Ln | Self::Sqrt)
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

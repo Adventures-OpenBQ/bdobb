@@ -74,6 +74,14 @@ describe("TradingViewRenderer", () => {
     expect(mountCandleChart.mock.calls[0][1]).toEqual({ theme: "dark", colors: { upColor: "#0a0" }, showVolume: true });
   });
 
+  it("selects line rendering for actual close-only data and names the missing OHLC", async () => {
+    fetchMock.mockResolvedValue({ s: "ok", t: [10], c: [101.5] });
+    show();
+    await waitFor(() => expect(handle.setBars).toHaveBeenCalledWith([{ time: 10, close: 101.5, volume: 0 }]));
+    expect(mountCandleChart.mock.calls[0][1]).toMatchObject({ closeOnly: true });
+    expect(screen.getByText("Close prices (OHLC not supplied).")).toBeInTheDocument();
+  });
+
   it("honours showVolume: false", async () => {
     fetchMock.mockResolvedValue(ok);
     show({ showVolume: false });

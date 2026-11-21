@@ -46,7 +46,7 @@ All pnpm commands run in this worktree. Vitest uses the authorized sandbox escal
 - `cargo ... clippy --lib --test provider_contract -- -D warnings`: pass, `/private/tmp/task9-clippy-final.log`.
 - `pnpm exec tsc --noEmit`: final pass, `/private/tmp/task9-types-complete.log`.
 - `pnpm exec eslint . --ignore-pattern 'src/lib/tableExecution/rust/generated/**'`: pass, `/private/tmp/task9-lint-final.log`; changed authored files rechecked after coordinate corrections, `/private/tmp/task9-lint-complete.log`. Persistent generated-glue lint exclusions remain Task 11.
-- `npm_config_store_dir=/Users/artcashin/Library/pnpm/store pnpm notices:check`: up to date, `/private/tmp/task9-notices-final.log`. No dependency changes.
+- `npm_config_store_dir=<pnpm-store> pnpm notices:check`: up to date, `/private/tmp/task9-notices-final.log`. No dependency changes.
 - Final full Vitest/header/diff evidence is appended below after completion.
 
 No renderer migration, UI default switch, production remote provider, transport endpoints, authentication, SQL/DuckDB pushdown or TypeScript analytical calculation shim was added. This fixture proves complete-scope calculation and delivery invariance for static controlled snapshots, not production server security, performance, query pushdown or iPad acceptance. Existing native wire Clippy/direct-native inspection ledgers remain unchanged. Full-state/resource accounting and regular midrange iPad device acceptance remain Task 12, with iPad Pro only secondary smoke. Optional provider binding/member-domain/witness forwarding is typed and delegates to the existing executor; this task does not relabel all existing core-authoring tests as new provider-level traces.

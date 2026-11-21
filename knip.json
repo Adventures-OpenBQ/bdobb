@@ -15,7 +15,9 @@
     "docs/releases/validation/v9/next-charts/reproduce/overlay-2-native-probe.mjs",
     "docs/releases/validation/v9/next-charts/reproduce/overlay-2-renderer.mjs",
     "docs/releases/validation/v9/next-charts/reproduce/revision-2-renderer.mjs",
-    "playwright.*.config.ts"
+    "playwright.*.config.ts",
+    "scripts/pivot-qualification/**/*.{ts,mjs}",
+    "scripts/sort-reuse-benchmark/*.mjs"
   ],
   "paths": {
     "/src/*": ["./src/*"]

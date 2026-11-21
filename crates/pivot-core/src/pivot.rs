@@ -44,6 +44,7 @@ pub struct CategoryMetadata {
     pub source_field_id: String,
     pub bucket: Bucket,
     pub periodicity: Periodicity,
+    pub sort_field_id: Option<String>,
 }
 #[derive(Debug, Clone, Copy)]
 pub enum Periodicity {
@@ -426,11 +427,28 @@ impl Engine<'_> {
                 });
             }
         }
+        let sorted = self
+            .input
+            .category_metadata
+            .get(field)
+            .and_then(|c| c.sort_field_id.as_ref())
+            .map(|_| crate::categories::category_sort_key(field));
         let keys = groups
             .iter()
-            .map(|g| vec![g.raw.clone()])
+            .map(|g| match &sorted {
+                Some(key) => vec![
+                    read(&self.input.rows[g.indices[0]], key).clone(),
+                    g.raw.clone(),
+                ],
+                None => vec![g.raw.clone()],
+            })
             .collect::<Vec<_>>();
-        sort_by_keys(&mut groups, &keys, &[false], self.order)?;
+        let descending: &[bool] = if sorted.is_some() {
+            &[false, false]
+        } else {
+            &[false]
+        };
+        sort_by_keys(&mut groups, &keys, descending, self.order)?;
         Ok(groups)
     }
     fn describe(

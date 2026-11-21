@@ -5,6 +5,7 @@ import { captureChartSources, chartRequestContext, chartResponseRows } from "./w
 import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
+import { withRequestSlot } from "./requestQueue";
 import type { BackendConfig, ParamOption, WidgetDef, WidgetForm } from "./types";
 import { calendarIdsOf, sendParams, type WireContext } from "./params";
 import { toOptions } from "./widgetsJson";
@@ -71,6 +72,27 @@ export function buildWidgetUrl(
     ...sendParams(widget, params, ctx),
     ...(THEMED_TYPES.has(widget.type) ? { theme: resolvedTheme() } : {}),
   });
+}
+
+/**
+ * Framed backend tools may use relative API endpoints. Resolve only those
+ * against their own backend, including their current query parameters.
+ * Absolute/protocol-relative addresses are handed to IframeRenderer verbatim:
+ * its safeUrl gate validates them, and no backend credential goes off-site.
+ */
+export function buildIframeWidgetUrl(
+  backend: BackendConfig | undefined,
+  widget: WidgetDef,
+  params: Record<string, string>,
+): string {
+  if (!backend || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(widget.endpoint)) return widget.endpoint;
+  try {
+    return buildWidgetUrl(backend, widget, params);
+  } catch {
+    // An invalid saved backend must produce the renderer's invalid-URL hint,
+    // not throw while rendering the whole dashboard.
+    return widget.endpoint;
+  }
 }
 
 /**
@@ -165,8 +187,8 @@ function isLeadingLocSegment(segment: unknown): boolean {
 /**
  * The OpenBB API server (`openbb-api`, FastAPI; the openbq-api service in
  * openbq-docker) answers every failure with `{"detail": ...}` — a
- * string for OpenBBError/unexpected errors, an array of `{loc, msg}` for 422
- * validation. Render it after the status so the card names the problem
+ * string for OpenBBError/unexpected errors, an array of `{loc, msg}` (or a
+ * single one) for 422 validation. Render it after the status so the card names the problem
  * instead of just the number; cap it so a stack trace cannot flood the card.
  */
 export function describeHttpError(status: number, body: string): string {
@@ -181,8 +203,9 @@ export function describeHttpError(status: number, body: string): string {
   let text: string | undefined;
   if (typeof detail === "string") {
     text = detail;
-  } else if (Array.isArray(detail)) {
-    const parts = detail.flatMap((item) => {
+  } else if (typeof detail === "object" && detail !== null) {
+    // openbb-core answers a missing provider input with ONE { loc, msg } object, not a list.
+    const parts = (Array.isArray(detail) ? detail : [detail]).flatMap((item) => {
       // The API server also answers with a bare list of strings (e.g. its JSON
       // serialiser rejecting a NaN), not only pydantic's { loc, msg } items.
       if (typeof item === "string") return [item];
@@ -327,51 +350,54 @@ async function request(
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  const hasBody = method !== "GET";
-  let res: Response;
-  try {
-    res = await fetch(url, {
-      method,
-      headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
-      ...(hasBody ? { body: JSON.stringify(body) } : {}),
-      connectTimeout: CONNECT_TIMEOUT_MS,
-      ...(signal ? { signal } : {}),
-    });
-  } catch (err) {
-    throw new Error(safeNetworkErrorMessage(url, err));
-  }
-  if (res.status === 204) return null;
-  if (res.status === 404 && allow404) {
-    // Read and discard: a body left unconsumed holds its connection out of
-    // the pool until it is collected, and this 404 is the ORDINARY case for
-    // an optional document — every discovery of a backend serving no
-    // apps.json takes this path. Voided deliberately; the answer is "no
-    // document", whatever the backend chose to say alongside it.
-    void res.text().catch(() => {});
-    return null;
-  }
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new HttpError(describeHttpError(res.status, text), res.status, text);
-  }
-  onHeaders?.(res.headers);
-  onResponseUrl?.(res.url);
-  if (!parse) {
-    // Read to the end even though nothing is parsed: an unread body holds the
-    // connection open, which is why the !res.ok branch above reads it too.
-    await res.text().catch(() => "");
-    return null;
-  }
-  // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
-  // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
-  // only an application/json response is parsed; anything else is read as text
-  // and the renderer decides what it means. A malformed application/json body
-  // still throws here, as before, so a broken data widget stays an error card.
-  // A structured-syntax suffix (application/problem+json, a vendor
-  // application/vnd.x+json) is JSON as well, and media types are
-  // case-insensitive.
-  const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  return withRequestSlot(url, signal, async () => {
+    const hasBody = method !== "GET";
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
+        ...(hasBody ? { body: JSON.stringify(body) } : {}),
+        connectTimeout: CONNECT_TIMEOUT_MS,
+        ...(signal ? { signal } : {}),
+      });
+    } catch (err) {
+      throw new Error(safeNetworkErrorMessage(url, err));
+    }
+    if (res.status === 204) return null;
+    if (res.status === 404 && allow404) {
+      // Read and discard: a body left unconsumed holds its connection out of
+      // the pool until it is collected, and this 404 is the ORDINARY case for
+      // an optional document — every discovery of a backend serving no
+      // apps.json takes this path. Await the drain to retain the queue slot;
+      // the answer is "no
+      // document", whatever the backend chose to say alongside it.
+      await res.text().catch(() => {});
+      return null;
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new HttpError(describeHttpError(res.status, text), res.status, text);
+    }
+    onHeaders?.(res.headers);
+    onResponseUrl?.(res.url);
+    if (!parse) {
+      // Read to the end even though nothing is parsed: an unread body holds the
+      // connection open, which is why the !res.ok branch above reads it too.
+      await res.text().catch(() => "");
+      return null;
+    }
+    // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
+    // widget returns a bare watch URL, not JSON. res.json() would throw on it, so
+    // only an application/json response is parsed; anything else is read as text
+    // and the renderer decides what it means. A malformed application/json body
+    // still throws here, as before, so a broken data widget stays an error card.
+    // A structured-syntax suffix (application/problem+json, a vendor
+    // application/vnd.x+json) is JSON as well, and media types are
+    // case-insensitive.
+    const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  });
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */

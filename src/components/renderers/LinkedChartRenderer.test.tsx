@@ -14,11 +14,12 @@ import { DEFAULT_SETTINGS } from '../../lib/settingsFile';
 import { useState, type ComponentProps } from 'react';
 import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
 
-function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'>) {
+function LinkedChartRenderer(props: Omit<ComponentProps<typeof Renderer>, 'parametersTarget' | 'onOpenParameters'> & { controlsHost?: HTMLElement | null }) {
+  const { controlsHost, ...rest } = props;
   const [target, setTarget] = useState<HTMLDivElement | null>(null);
   return <>
     <div ref={setTarget}/>
-    <Renderer {...props} parametersTarget={target} onOpenParameters={() => {}}/>
+    <Renderer {...rest} parametersTarget={controlsHost === undefined ? target : controlsHost} onOpenParameters={() => {}}/>
   </>;
 }
 
@@ -62,10 +63,16 @@ it('failed chart transport retains its completed figure and exposes the delivery
     render(<LinkedChartRenderer {...props}/>);
     await screen.findByTestId('figure');
     const old = screen.getByTestId('figure').textContent;
+    const delivery = screen.getByTestId('figure').closest('.linked-chart-renderer')!;
+    const priorRevision = store.readView('d', 'c').sourceRevision;
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
     await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'A' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     expect(screen.getByTestId('figure').textContent).toBe(old);
+    expect(store.readView('d', 'c').sourceRevision).not.toEqual(priorRevision);
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     cleanup();
     store.disposeDashboard('d');
 });
@@ -96,6 +103,8 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     expect(figure.data.map((t: { name: string; y: number[] }) => ({ name: t.name, y: t.y }))).toEqual([{ name: 'Revenue — Average', y: [15, 90] }, { name: 'Revenue — Total', y: [30, 90] }]);
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -151,6 +160,96 @@ it.each([false, true])('keeps split bindings through filters and fresh reopen wi
     cleanup(); store.disposeDashboard('d');
 });
 
+it('clears a completed figure when a successful empty linked scope loses its generated series, then restores fresh data', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: [{ id: 'nvda', values: { region: 'FY2024', team: 'NVDA', revenue: 60922000000 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    const selected = { ...chart, id: 'selected', widgetId: 'local_table', linkedChart: undefined };
+    const target = { ...chart, linkedSource: { kind: 'widget' as const, sourceWidgetId: 'selected' } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, selected, target] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    const columns = store.readView('d', 'selected').ready!.columns;
+    const category = columns[0].id, measures = columns.filter(column => column.measureId === 'sales').map(column => column.id);
+    expect(measures).toHaveLength(1);
+    const bound = { ...target, linkedChart: { ...settings, category, measures } };
+    render(<LinkedChartRenderer dashboardId="d" card={bound} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    const apply = async (search: string) => act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search }, { kind: 'none' }); await store.settled('d'); });
+    await apply('no matching company');
+    const empty = store.readView('d', 'c');
+    expect(empty.status).toBe('empty');
+    expect(empty.ready!.columns.some(column => column.id === measures[0])).toBe(false);
+    expect((empty.ready!.chartColumns ?? empty.ready!.columns).some(column => column.id === measures[0])).toBe(false);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('No selected series match the current filter.')).toBeVisible();
+    await apply(''); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+
+// These seams hold only delivery: the real executor has already computed each chart.
+it('late_A_cannot_replace_completed_B', async () => {
+    const store = await setup();
+    const executor = store.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    let release!: () => void;
+    executor.chartData = async (...args) => {
+        const result = await real(...args);
+        executor.chartData = real;
+        await new Promise<void>(resolve => { release = resolve; });
+        return result;
+    };
+    const apply = async (id: string) => act(async () => { store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: [id] }); await store.settled('d'); });
+    await apply('r1'); await waitFor(() => expect(release).toBeDefined());
+    expect(screen.getByText(/Updating chart/)).toBeVisible();
+    await apply('r2');
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([2]));
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    expect(store.readView('d', 's').active).toEqual(revision);
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('disposed_generation_cannot_publish into remounted reused widget IDs', async () => {
+    const oldStore = await setup(), executor = oldStore.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    let release!: () => void;
+    executor.chartData = async (...args) => { const result = await real(...args); await new Promise<void>(resolve => { release = resolve; }); return result; };
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, onSettingsChange: async () => true };
+    const mounted = render(<LinkedChartRenderer {...props} store={oldStore}/>);
+    await waitFor(() => expect(release).toBeDefined());
+    mounted.unmount(); oldStore.disposeDashboard('d');
+    const store = await setup();
+    store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: ['r7'] }); await store.settled('d');
+    render(<LinkedChartRenderer {...props} store={store}/>); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([7]);
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    cleanup(); store.disposeDashboard('d');
+});
+it('missing_series_marks_old_figure_stale and repairing settings restores current data', async () => {
+    const store = await setup();
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    const completed = screen.getByTestId('figure').textContent;
+    rerender(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: { ...settings, measures: ['missing'] } }}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Field missing is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    rerender(<LinkedChartRenderer {...props}/>);
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
 async function setupRows(rows: { region: string; revenue: number | null; cost?: number }[]) {
     const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, columns: [...input.columns, { id: 'cost', label: 'Cost', dtype: 'number' as const }], rows: rows.map((r, i) => ({ id: `r${i}`, values: { cost: 1, ...r } })) } }) }) });
     store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard);
@@ -289,6 +388,7 @@ it('bullet lists only *_actual metrics, offers the delivered quarters, and commi
     const commit = vi.fn(async () => true);
     render(<LinkedChartRenderer dashboardId="d" card={card} refreshKey={0} store={store} onSettingsChange={commit}/>);
     await screen.findByTestId('figure');
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
     expect(screen.getAllByRole('checkbox').map(c => c.parentElement!.textContent)).toEqual(['eps_actual', 'revenue_actual']);
     const select = screen.getByLabelText('Quarter');
     expect([...select.querySelectorAll('option')].map(o => o.textContent)).toEqual(['Latest', 'Q1', 'Q2']);
@@ -756,4 +856,184 @@ it('reflows small multiples only when the panel grid changes, retaining zoom and
     expect(await screen.findByText('Filtered source delivered 6 of 9 acquired rows.')).toBeVisible();
     expect(screen.getByTestId('figure')).toBeVisible();
   } finally { cleanup(); vi.unstubAllGlobals(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+it('labels split measures with their period, as the legend names them', async () => { const store = await setup({ columns: [{ id: 'region', label: 'region' }, { id: 'revenue', label: 'Value', splitPath: [{ field: 'period', value: 'FY2024', label: 'FY2024' }] }] }); render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={vi.fn(async () => true)}/>); fireEvent.click(await screen.findByRole('button', { name: /^Measures/ })); expect(await screen.findByRole('checkbox', { name: 'FY2024 — Value' })).toBeTruthy(); cleanup(); store.disposeDashboard('d'); });
+
+it('picking Surface with no fields chosen takes them from the source chartDataType hints, and never overwrites a choice', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    const hints = [{ field: 'region', chartDataType: 'category' as const }, { field: 'revenue', chartDataType: 'series' as const }, { field: 'gone', chartDataType: 'series' as const }, { field: 'note', chartDataType: 'excluded' as const }];
+    render(<LinkedChartRenderer {...withSettings(store, { category: undefined, measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: 'region', measures: ['revenue'] })));
+    cleanup(); commit.mockClear();
+    render(<LinkedChartRenderer {...withSettings(store, { measures: [] }, commit)} hints={hints}/>);
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Revenue' })).toBeTruthy());
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'surface' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'surface', category: settings.category, measures: [] })));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('lists the measures in source column order in a checklist that publishes once, in that order', async () => {
+    const store = await setupRows([{ region: 'A', revenue: 1, cost: 2 }, { region: 'B', revenue: 3, cost: 4 }]); const commit = vi.fn(async (_: unknown) => true);
+    const labels = () => [...screen.getByRole('dialog', { name: 'Measures' }).querySelectorAll('.opts label')].map(l => l.textContent);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, { measures: ['cost'] }, commit)}/>);
+    await screen.findByTestId('figure');
+    // Unticked Revenue keeps its place ahead of Cost; the button says what is chosen.
+    expect(screen.getByRole('button', { name: 'Measures: Cost' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(labels()).toEqual(['Revenue', 'Cost']);
+    expect(screen.getByRole('checkbox', { name: 'Cost' })).toBeChecked(); expect(screen.getByRole('checkbox', { name: 'Revenue' })).not.toBeChecked();
+    // Ticking does not publish; Apply publishes once, in listed order whatever order the boxes were ticked in.
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Revenue' }));
+    expect(commit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+    expect(commit.mock.lastCall![0]).toMatchObject({ measures: ['revenue', 'cost'] });
+    expect(screen.queryByRole('dialog', { name: 'Measures' })).toBeNull();
+    rerender(<LinkedChartRenderer {...withSettings(store, { measures: ['revenue', 'cost'] }, commit)}/>);
+    expect(screen.getByRole('button', { name: 'Measures: All (2)' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ })); fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => expect(commit.mock.lastCall![0]).toMatchObject({ measures: [] }));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('a Surface on a pivoted source offers Height and spacing values and requests the label plus their columns', async () => {
+    const { LABEL_FIELD } = await import('../../lib/pivotTable');
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: [{ id: 'amd', values: { region: '2024', team: 'AMD', revenue: 100 } }, { id: 'avgo', values: { region: '2024', team: 'AVGO', revenue: 200 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const sales = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const surface = { type: 'surface' as const, measures: [], display: 'grouped' as const };
+    const commit = vi.fn(async (_: unknown) => true);
+    const props = (s: object) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...surface, ...s } }, refreshKey: 0, store, onSettingsChange: commit });
+    const { rerender } = render(<LinkedChartRenderer {...props({})}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Choose chart fields: select a value for Height.');
+    expect(screen.queryByLabelText('Category')).toBeNull();
+    expect([...(screen.getByLabelText('Space rows by') as HTMLSelectElement).options].map(o => [o.value, o.text])).toEqual([['', 'Default'], ['sales', expect.any(String)]]);
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: 'sales' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, height: 'sales' }));
+    const e = store.readExecutor('d', 's')!; const request = vi.spyOn(e, 'chartData');
+    rerender(<LinkedChartRenderer {...props({ height: 'sales', spaceRowsBy: 'sales' })}/>);
+    await waitFor(() => expect(request).toHaveBeenCalled());
+    expect(request.mock.calls.at(-1)![1]).toEqual([LABEL_FIELD, ...sales]);
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(screen.getAllByRole('checkbox').map(b => b.parentElement!.textContent)).toEqual(['AMD', 'AVGO']);
+    fireEvent.change(screen.getByLabelText('Space rows by'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, height: 'sales' }));
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'line' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...surface, type: 'line' }));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('changing Height clears the ticked expiries; changing a spacing value keeps them', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }, { id: 'peak', sourceFieldId: 'revenue', aggregation: 'max' as const }] };
+    const data = { ...input, rows: [{ id: 'amd', values: { region: '2024', team: 'AMD', revenue: 100 } }, { id: 'avgo', values: { region: '2024', team: 'AVGO', revenue: 200 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const ticked = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const settings = { type: 'surface' as const, measures: ticked, display: 'grouped' as const, height: 'sales', spaceRowsBy: 'peak' };
+    const commit = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer dashboardId="d" card={{ ...chart, linkedChart: settings }} refreshKey={0} store={store} onSettingsChange={commit}/>);
+    await screen.findByLabelText('Height');
+    fireEvent.change(screen.getByLabelText('Space rows by'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ type: 'surface', measures: ticked, display: 'grouped', height: 'sales' }));
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: 'peak' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, height: 'peak', measures: [] }));
+    fireEvent.change(screen.getByLabelText('Height'), { target: { value: '' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ type: 'surface', measures: [], display: 'grouped', spaceRowsBy: 'peak' }));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('on a pivoted Surface, All saves "every expiry the report offers" (an empty list) and an empty list reads and ticks as all', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: ['2024', '2025'].flatMap((region, r) => ['AMD', 'AVGO'].map((team, t) => ({ id: region + team, values: { region, team, revenue: 100 * (r + 1) + t } }))) };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search: '' }, { kind: 'none' }); await store.settled('d'); });
+    const [amd] = store.readView('d', 's').ready!.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    const base = { type: 'surface' as const, display: 'grouped' as const, height: 'sales' };
+    const commit = vi.fn(async (_: unknown) => true);
+    const props = (measures: string[]) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...base, measures } }, refreshKey: 0, store, onSettingsChange: commit });
+    const { rerender } = render(<LinkedChartRenderer {...props([])}/>);
+    // No explicit list: every expiry is drawn, so the button and the checklist say all.
+    expect(await screen.findByRole('button', { name: 'Measures: All (2)' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    expect(screen.getAllByRole('checkbox').map(b => (b as HTMLInputElement).checked)).toEqual([true, true]);
+    // All does not freeze the current ids; unticking one and Apply still saves an explicit list.
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [] }));
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'AVGO' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [amd] }));
+    rerender(<LinkedChartRenderer {...props([amd])}/>);
+    expect(screen.getByRole('button', { name: 'Measures: AMD' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Measures/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...base, measures: [] }));
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('a Surface on a report whose checklist hides a column member requests only the columns the report offers', async () => {
+    const { LABEL_FIELD } = await import('../../lib/pivotTable');
+    const { pivotValueKey } = await import('../../lib/pivotKeys');
+    const analytical = { schemaVersion: 1, enabled: true, params: { promotePage: true, filters: [] }, formulas: [], resultFilters: [], subtotals: { grandTotal: false, groups: false },
+        categories: [{ id: 'region_cat', name: 'Region', sourceFieldId: 'region', transform: 'native' }, { id: 'team_cat', name: 'Team', sourceFieldId: 'team', transform: 'native' }],
+        measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' }],
+        layout: { rows: ['region_cat'], columns: ['team_cat'], values: ['sales'] },
+        checklists: [{ categoryId: 'team_cat', memberKeys: [pivotValueKey('AMD'), pivotValueKey('AVGO')] }] };
+    const data = { ...input, rows: ['2024', '2025'].flatMap((region, r) => ['AMD', 'AVGO', 'NVDA'].map((team, t) => ({ id: `${region}${team}`, values: { region, team, revenue: 100 * (r + 1) + t } }))) };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    await act(async () => { store.updateDefinition('d', 's', { table: {}, search: '', analytical } as never, { kind: 'none' }); await store.settled('d'); });
+    const ready = store.readView('d', 's').ready!;
+    const sales = ready.columns.filter(c => c.measureId === 'sales').map(c => c.id);
+    expect(sales).toHaveLength(2);
+    expect(ready.chartColumns!.filter(c => c.measureId === 'sales')).toHaveLength(3);
+    const request = vi.spyOn(store.readExecutor('d', 's')!, 'chartData');
+    render(<LinkedChartRenderer dashboardId="d" card={{ ...chart, linkedChart: { type: 'surface', measures: [], display: 'grouped', height: 'sales' } }} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await screen.findByTestId('figure');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(request.mock.calls.at(-1)![1]).toEqual([LABEL_FIELD, ...sales]);
+    cleanup(); store.disposeDashboard('d');
+});
+
+it('moves chart configuration into Parameters without resetting the delivered figure', async () => {
+    const store = await setup();
+    const commit = vi.fn(async () => true);
+    const panel = document.createElement('div');
+    panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', 'Parameters');
+    document.body.appendChild(panel);
+    try {
+        const props = {dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: commit};
+        const {rerender} = render(<LinkedChartRenderer {...props} controlsHost={null}/>);
+        await screen.findByTestId('figure');
+        const completed = screen.getByTestId('figure').textContent;
+        const source = store.readView('d', 's');
+        expect(screen.queryByLabelText('Chart type')).toBeNull();
+        rerender(<LinkedChartRenderer {...props} controlsHost={panel}/>);
+        expect(panel).toContainElement(screen.getByLabelText('Chart type'));
+        fireEvent.change(screen.getByLabelText('Chart type'), {target: {value: 'line'}});
+        await waitFor(() => expect(commit).toHaveBeenCalledWith({...settings, type: 'line'}));
+        await waitFor(() => expect(screen.getByRole('button', {name: /^Measures:/})).not.toBeDisabled());
+        fireEvent.click(screen.getByRole('button', {name: /^Measures:/}));
+        expect(screen.getByRole('dialog', {name: 'Measures'})).toBeVisible();
+        rerender(<LinkedChartRenderer {...props} controlsHost={null}/>);
+        expect(screen.queryByRole('dialog', {name: 'Measures'})).toBeNull();
+        expect(screen.queryByLabelText('Chart type')).toBeNull();
+        expect(screen.getByTestId('figure').textContent).toBe(completed);
+        expect(store.readView('d', 's')).toBe(source);
+    } finally {cleanup(); panel.remove(); store.disposeDashboard('d');}
 });

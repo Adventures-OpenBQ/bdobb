@@ -221,7 +221,10 @@ Budget with a source filter or checklist makes a Budget comparison unavailable;
 it does not fetch missing records or treat them as zero.
 
 Formulas support numeric/string/boolean literals, arithmetic, comparisons,
-SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Use the
+SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT, IF, LN and SQRT, in any
+letter case (`first(...)` and `FIRST(...)` are the same). IF takes three
+arguments, the others one. Strings are double-quoted; `true`, `false` and
+`null` are lower case. Use the
 reference picker to insert bracketed fields, measures, formulas and comparison
 members. Source-row formulas operate on individual records; aggregate formulas
 need bound measure instances or explicit aggregations. Expressions are bounded
@@ -314,6 +317,18 @@ overrides** clears all placements. Resets preserve source mappings and Page
 selections. Line identities and formula bindings stay the same when a line
 moves. Formula overrides keep their stable formula ID and explicit AST
 references.
+
+Labels, section/line ordering, visibility and bound formula definitions are local
+overrides. Each section has a **Visible** control; hidden sections mark child lines
+as **Hidden by section**, retaining their individual visibility choices. Origin
+badges distinguish local settings from template defaults. Labels you type in the Statement panel are limited to 4096 characters.
+Resetting overrides preserves source mappings and Page selections. Renaming or
+reordering does not rebind a formula. Formula overrides keep their stable formula
+ID and explicit AST references.
+Each line has a **Section** select and **Move up** / **Move down**
+buttons. Use Section to show a line in another section, for example a
+profit subtotal inside Expenses so a waterfall can draw it; **Reset line**
+puts it back in its home section.
 
 The embedded snapshot is pinned and read-only. There is no newer bundled release
 currently. **Explicit template update** accepts a supplied validated snapshot for

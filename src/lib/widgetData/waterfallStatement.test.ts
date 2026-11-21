@@ -37,12 +37,12 @@ it('walks a compiled income statement: revenue up, costs down, profit absolute a
     expect(traces.map(t => t.name).sort()).toEqual(['FY2024', 'FY2025']);
     const fy25 = traces.find(t => t.name === 'FY2025')!, fy24 = traces.find(t => t.name === 'FY2024')!;
     for (const t of traces) expect(t.type).toBe('waterfall');
-    expect(at(fy25, 'revenue')).toEqual({ measure: 'relative', y: 100 });
+    expect(at(fy25, 'Revenue')).toEqual({ measure: 'relative', y: 100 });
     expect(at(fy25, 'Cost of revenue')).toEqual({ measure: 'relative', y: -60 });
-    expect(at(fy25, 'gross_profit')).toEqual({ measure: 'absolute', y: 40 });
-    expect(at(fy24, 'revenue')).toEqual({ measure: 'relative', y: 90 });
+    expect(at(fy25, 'Gross Profit')).toEqual({ measure: 'absolute', y: 40 });
+    expect(at(fy24, 'Revenue')).toEqual({ measure: 'relative', y: 90 });
     expect(at(fy24, 'Cost of revenue')).toEqual({ measure: 'relative', y: -50 });
-    expect(at(fy24, 'gross_profit')).toEqual({ measure: 'absolute', y: 40 });
+    expect(at(fy24, 'Gross Profit')).toEqual({ measure: 'absolute', y: 40 });
 });
 
 it('keeps a line moved into Income stepping down, by its home section', () => {
@@ -50,5 +50,5 @@ it('keeps a line moved into Income stepping down, by its home section', () => {
     expect(shownIn('cost_of_revenue')).toBe('Income');
     const fy25 = traces.find(t => t.name === 'FY2025')!;
     expect(at(fy25, 'Cost of revenue')).toEqual({ measure: 'relative', y: -60 });
-    expect(at(fy25, 'gross_profit')).toEqual({ measure: 'absolute', y: 40 });
+    expect(at(fy25, 'Gross Profit')).toEqual({ measure: 'absolute', y: 40 });
 });

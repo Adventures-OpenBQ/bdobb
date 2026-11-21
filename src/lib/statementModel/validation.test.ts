@@ -96,6 +96,7 @@ it('bounds override labels to 4096 UTF-16 units, as presentation does', () => {
   expect(over.value).toBeUndefined();
   expect(over.diagnostics.map(d => d.path)).toContain('overrides.labels');
 });
+
 it('accepts line placement and checks line order against displayed section members', () => {
   const v = structuredClone(intent());
   const [, expenses, profit] = v.template.sections;

@@ -6,7 +6,7 @@ set -euo pipefail
 export OPENBB_RITA_URL="${OPENBB_RITA_URL:-http://127.0.0.1:18012}"
 export OPENBB_MCP_URLS="${OPENBB_MCP_URLS:-http://127.0.0.1:16911/mcp}"
 export OPENBB_LIVE=1
-check_report() { node -e 'const r=JSON.parse(process.argv[1]);const bad=r.numFailedTests+r.numPendingTests+(r.numTodoTests||0)+(r.numFailedTestSuites||0);if(r.numTotalTests===0||bad>0){console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, ${r.numPendingTests} skipped, ${r.numFailedTests} failed, ${r.numFailedTestSuites||0} files failed to load`);process.exit(1)}console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, 0 skipped, 0 failed`)' "$1"; }
+check_report() { node -e 'const r=JSON.parse(process.argv[1]);const bad=r.numFailedTests+r.numPendingTests+(r.numTodoTests||0)+(r.numFailedTestSuites||0);if(r.numTotalTests===0||bad>0){console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, ${r.numPendingTests} skipped, ${r.numFailedTests} failed, ${r.numFailedTestSuites||0} failed suites (including load failures)`);process.exit(1)}console.error(`live gate: ${r.numPassedTests}/${r.numTotalTests} passed, 0 skipped, 0 failed`)' "$1"; }
 if [ -n "${RITA_LIVE_REPORT_FIXTURE:-}" ]; then check_report "$RITA_LIVE_REPORT_FIXTURE"; exit 0; fi
 [ -n "${OPENBB_BACKEND_URL:-}" ] || { echo "live gate: OPENBB_BACKEND_URL is required" >&2; exit 2; }
 export OPENBB_NAS_URL="${OPENBB_NAS_URL:-$OPENBB_BACKEND_URL}"
@@ -28,11 +28,13 @@ retry_url="${RITA_LIVE_RETRY_URL:-$OPENBB_RITA_URL}"
 [ "${1:-}" = "--self-check" ] && exit 0
 out="$(mktemp)"
 files=("$@"); [ ${#files[@]} -gt 0 ] || files=(src/test/integration/rita-live.test.ts src/test/integration/rita-authoring-live.test.ts src/test/integration/real-endpoints.test.ts src/test/integration/rita-table-model-live.test.ts)
-pnpm exec vitest run "${files[@]}" --maxWorkers=1 --minWorkers=1 --testTimeout=300000 --reporter=default --reporter=json --outputFile="$out" || true
+pnpm exec vitest run "${files[@]}" --maxWorkers=1 --testTimeout=300000 --reporter=default --reporter=json --outputFile="$out" || true
+[ -s "$out" ] || { echo "live gate: Vitest did not produce a report" >&2; exit 1; }
 check_report "$(cat "$out")" && exit 0
 [ -n "${RITA_LIVE_RETRY_MODEL:-}" ] || exit 1
 plan="$(node scripts/rita-live-retry.mjs plan "$out")" || { echo "live gate: not retried (skips or a file failed to load)" >&2; exit 1; }
 retry_out="$(mktemp)"
 files=(); while IFS= read -r f; do files+=("$f"); done < <(node -e 'for (const f of JSON.parse(process.argv[1]).files) console.log(f)' "$plan")
-OPENBB_RITA_URL="$retry_url" RITA_LIVE_MODEL="$RITA_LIVE_RETRY_MODEL" pnpm exec vitest run "${files[@]}" -t "$(node -e 'console.log(JSON.parse(process.argv[1]).pattern)' "$plan")" --maxWorkers=1 --minWorkers=1 --testTimeout=300000 --reporter=default --reporter=json --outputFile="$retry_out" || true
+OPENBB_RITA_URL="$retry_url" RITA_LIVE_MODEL="$RITA_LIVE_RETRY_MODEL" pnpm exec vitest run "${files[@]}" -t "$(node -e 'console.log(JSON.parse(process.argv[1]).pattern)' "$plan")" --maxWorkers=1 --testTimeout=300000 --reporter=default --reporter=json --outputFile="$retry_out" || true
+[ -s "$retry_out" ] || { echo "live gate: Vitest did not produce a retry report" >&2; exit 1; }
 node scripts/rita-live-retry.mjs verdict "$plan" "$retry_out" "$RITA_LIVE_RETRY_MODEL"

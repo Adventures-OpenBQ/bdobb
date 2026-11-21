@@ -10,6 +10,7 @@ import {
   findKeyMaintWidget,
   needsKey,
   normalizeProvider,
+  OPTIONAL_KEY_PROVIDERS,
   pickProbeWidget,
   probeResult,
   probeTone,
@@ -211,6 +212,8 @@ async function refreshOnce(set: SetState, get: GetState): Promise<void> {
   const tasks: Array<() => Promise<void>> = [];
 
   for (const [provider, own] of byProvider) {
+    // Optional credentials cannot be verified by a data request; do not probe or tone them.
+    if (OPTIONAL_KEY_PROVIDERS.has(provider)) { status[provider] = "keyed"; continue; }
     probe[provider] = "grey";
     // Absent from key-maint's registry means no credential is required.
     if (!needsKey(provider)) {

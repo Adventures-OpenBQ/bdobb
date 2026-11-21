@@ -13,6 +13,7 @@ import { effectiveParams, splitParamEdit } from "../paramGroups";
 import { isPeriodType, resolveValue } from "../dateExpressions";
 import { fieldContext } from "../params";
 import { arrangeTable, describeTable } from "./tableModel/tools";
+import { TABLE_OPERATION_SCHEMA } from "./tableModel/operationSchema";
 import type { CardView, DashboardCard, WidgetDef } from "../types";
 import { PIN_EDGES } from "../types";
 import { possibleViews } from "../cardViews";
@@ -102,10 +103,12 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "pick source fields. Use it to choose categories, measures and filters and to answer questions without reading rows, and say which " +
       "scope a quoted number covers. section 'members:<category_id>' pages a category's observed members and 'formula:<formula_id>' lists " +
       "a formula's references; pass the returned cursor to continue and search to filter members by label. If the table's tab is not open " +
-      "it asks you to navigate to it. " +
-      "A field from a data provider may carry the provider's aggregation hint, suggested and suggestion_note: leave aggregation out of measure.add on such a field and arrange_table applies the provider's operator when the arrangement meets its rule (the arrange-table skill says how).",
+      "it asks you to navigate to it. card_id is the exact uuid of the placed card in widget context, never widget_id, a definition id or a title. " +
+      "On unknown, check that supplied uuid and retry only with the corrected instance id; do not infer that its tab is closed. " +
+      "If the supplied instance still answers unknown, report that it is unavailable. Only runtime-not-ready asks you to open its tab." +
+            "A field from a data provider may carry the provider's aggregation hint, suggested and suggestion_note: leave aggregation out of measure.add on such a field and arrange_table applies the provider's operator when the arrangement meets its rule (the arrange-table skill says how).",
     input_schema: { type: "object", properties: {
-      card_id: { type: "string", description: "The table card (its uuid in the widget context)" },
+      card_id: { type: "string", description: "Exact placed-card uuid from widget context, not widget_id or a definition id" },
       section: { type: "string", description: "summary (default), profile, members:<category_id> or formula:<formula_id>" },
       scope: { type: "string", enum: ["input", "filtered"], description: "profile only: input (default, every row the card receives) or filtered (the rows its calculations use)" },
       fields: { type: "array", items: { type: "string" }, description: "profile only: 1–100 source field ids to profile, in this order" },
@@ -126,7 +129,9 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "Address existing objects by {id} and new ones by a request-local {alias}; an applied result's ids maps each alias to its new id. " +
       "The engine validates and calculates: quote only numbers that are values in the result's preview.rows; the grand total and the row count " +
       "are not there, so do not add anything up yourself: state the source table's row count only as describe_table's exact completeness.totalRowCount, " +
-      "never the grand total. Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
+      "never the grand total. A refused or failed result has no successful preview: explain the refusal without invented rows, labels or numbers. " +
+      "Do not substitute another aggregation for an unsupported request; offer alternatives without executing them. Correct schema errors only while preserving the requested operation. " +
+      "Results are applied, previewed, unchanged, refused or failed. Unknown arguments are refused. Refusals: invalid-arrangement or validation-failed (read every errors item and " +
       "its alternatives), stale-revision (describe again), busy, timeout or calculation-failed (nothing changed; describe, then retry once). " +
       "view.set switches the card's view to one of describe_table's views (\"table\" is the default) in the same request and Undo. " +
       "An applied result may have revision null and recalculating true while the table settles, and lists each linked table with its status; " +
@@ -136,12 +141,12 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "An operator that conflicts with a conditional provider rule is refused with provider-override-required unless the measure operation explicitly marks aggregation_intent user_override for an operator requested by the user. A marked override applies with a provider-aggregation-hint warning to report; the intent is not saved and does not authorize other measures or later calls. " +
       "An apply adding a hinted measure without an operator is refused if the provider rule cannot apply yet; nothing is saved. Read the refusal, add all required categories and leave aggregation out of measure.add when retrying. Do not substitute a different operator unless the user explicitly named an operator. A requested date category does not mean only that category: add the provider-required entity categories too and explain them. Ask before proceeding only if the user explicitly excludes those categories or asks to combine the entities.",
     input_schema: { type: "object", properties: {
-      card_id: { type: "string", description: "The table card (its uuid in the widget context)" },
+      card_id: { type: "string", description: "Exact placed-card uuid from widget context, not widget_id or a definition id" },
       expected_revision: { type: "string", description: "The revision returned by describe_table" },
       mode: { type: "string", enum: ["apply", "preview"], description: "preview: calculate only, never commit (use for read-only asks). apply (default): commit with Undo." },
       arrangement: { type: "object", properties: {
         contract: { type: "string", enum: ["table-model/1"] },
-        operations: { type: "array", description: "Operation objects as listed in describe_table's capabilities", items: { type: "object" } },
+        operations: { type: "array", description: "Operation objects as listed in describe_table's capabilities", items: TABLE_OPERATION_SCHEMA },
       }, required: ["contract", "operations"] },
     }, required: ["card_id", "expected_revision", "arrangement"] },
   },
@@ -154,7 +159,11 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "an out-of-range value refuses the whole call and lists what is valid. This is not for a table's grouping/sort " +
       "— use arrange_table for that. The params go NESTED under `params`: " +
       '{"card_id": "…", "params": {"symbol": "MSFT"}}, never beside card_id. For a note or markdown card\'s body, ' +
-      "use set_markdown_content. To change how the card is shown (e.g. as a chart), pass view, with or without params.",
+      "prefer set_markdown_content when available. If it is not exposed, this tool also writes a declared text param " +
+      'with {"card_id": "…", "params": {"text": "the complete note body"}}. A refused call saves nothing; ' +
+      "Only error.code PARAMS_NOT_NESTED with retry_with authorizes correcting the nesting and retrying the same requested edit. " +
+      "For user_declined, stop: do not repeat the edit or request consent again. For NEEDS_USER, follow the returned user-action instruction. " +
+      "To change how the card is shown (e.g. as a chart), pass view, with or without params.",
     input_schema: {
       type: "object",
       properties: {
@@ -185,7 +194,9 @@ export const LOCAL_TOOLS: AgentTool[] = ([
   },
   {
     name: "remove_widget",
-    description: "Remove a widget card from the dashboard. Undoable. Use when the user asks to remove, delete or close a widget.",
+    description: "Remove a widget card from the dashboard. Undoable. Use when the user asks to remove, delete or close a widget. " +
+      "Widgets in the supplied context are actual dashboard cards, including primary/added-to-context widgets: " +
+      "that context label is not a pin and does not prevent removal. Use the card's uuid as card_id.",
     input_schema: {
       type: "object",
       properties: { card_id: { type: "string", description: "The card to remove (its uuid in the widget context)" } },
@@ -716,7 +727,10 @@ export async function executeLocalTool(
     }
     // #40: the view, from the ones this card's view menu could offer.
     const views = possibleViews(def, card);
-    if (args.view !== undefined && args.view !== "default" && !views.includes(args.view as CardView)) {
+    // A chart widget already renders its chart in the default view. Do not
+    // refuse its valid parameters when Rita explicitly asks for that chart.
+    const nativeChartView = def.type === "chart" && args.view === "chart";
+    if (args.view !== undefined && args.view !== "default" && !nativeChartView && !views.includes(args.view as CardView)) {
       problems.push(`view "${String(args.view)}" must be one of: ${["default", ...views].join(", ")}`);
     }
     if (problems.length > 0) {
@@ -738,7 +752,7 @@ export async function executeLocalTool(
       }
     }
     const viewBefore = card.view;
-    const viewAfter = args.view === "default" ? undefined : (args.view as CardView | undefined);
+    const viewAfter = args.view === "default" || nativeChartView ? undefined : (args.view as CardView | undefined);
     // Through splitParamEdit, as the card's own controls write: a grouped
     // param lands on its group, or the group would mask it on the next render.
     const split = (edits: Record<string, string>, c: DashboardCard) => {
@@ -770,7 +784,7 @@ export async function executeLocalTool(
         if (args.view !== undefined) await useDashboardStore.getState().patchCardField(cardId, "view", viewBefore ?? null);
       },
     });
-    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: args.view } : {}) };
+    return { updated: true, card_id: cardId, applied: Object.keys(next), ...(args.view !== undefined ? { view: viewAfter ?? "default" } : {}) };
   }
 
   if (name === "remove_widget") {

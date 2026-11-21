@@ -57,10 +57,41 @@ it('v4 accepts omitted optional chart fields and refuses malformed chart/calenda
   const exported = exportCompatibleApp(d);
   expect(exported.ok).toBe(true);
   if (!exported.ok) throw new Error(exported.issue.message);
-  for (const invalid of [{ linkedChart: { type: 'unknown', display: 'grouped', measures: [] } }, { linkedChart: { type: 'column', display: 'percentage', measures: [] } }, { linkedChart: { type: 'column', display: 'grouped', measures: [], seriesFrom: 'diagonal' } }, { linkedChart: { type: 'bullet', display: 'grouped', measures: [], period: 3 } }, { linkedChart: { type: 'gauge', display: 'grouped', measures: [] } }, { calendar: { businessDays: [0, 8] } }, { calendar: { cursor: 'not-a-date' } }, { calendar: { mode: 'future' } }, { calendar: { future: true } }]) {
+  for (const invalid of [{ linkedChart: { type: 'surface', display: 'grouped', measures: [], height: 4 } }, { linkedChart: { type: 'surface', display: 'grouped', measures: [], spaceRowsBy: 1 } }, { linkedChart: { type: 'surface', display: 'grouped', measures: [], spaceColumnsBy: false } }, { linkedChart: { type: 'unknown', display: 'grouped', measures: [] } }, { linkedChart: { type: 'column', display: 'percentage', measures: [] } }, { linkedChart: { type: 'column', display: 'grouped', measures: [], seriesFrom: 'diagonal' } }, { linkedChart: { type: 'bullet', display: 'grouped', measures: [], period: 3 } }, { linkedChart: { type: 'gauge', display: 'grouped', measures: [] } }, { calendar: { businessDays: [0, 8] } }, { calendar: { cursor: 'not-a-date' } }, { calendar: { mode: 'future' } }, { calendar: { future: true } }]) {
     const bad = structuredClone(exported.value);
     Object.assign((bad.extensions!.bdobb as { cards: Array<{ extras: object }> }).cards[0].extras, invalid);
     expect(() => importApps([bad], [])).toThrow(/Invalid|Unknown/);
+  }
+  const bad = structuredClone(exported.value);
+  Object.assign((bad.extensions!.bdobb as { cards: Array<{ extras: object }> }).cards[0].extras, { linkedChart: { type: 'surface', display: 'grouped', measures: [], spaceRowsBy: 3 } });
+  expect(() => importApps([bad], [])).toThrow(/Invalid linked chart(?: settings)?\./);
+});
+it('v4 round-trips every new linked chart value, in any combination', () => {
+  const cases: LinkedChartSettings[] = [
+    { type: 'pie', display: 'grouped', category: 'region', measures: ['revenue'] },
+    { type: 'column', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' },
+    { type: 'pie', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // leftover combination still imports
+    { type: 'waterfall', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // any valid display/seriesFrom imports
+    { type: 'line', display: 'percent', measures: ['revenue'], seriesFrom: 'columns' },
+    { type: 'surface', display: 'grouped', measures: [], height: 'iv', spaceRowsBy: 'lm', spaceColumnsBy: 'rt' },
+  ];
+  for (const linkedChart of cases) {
+    const exported = exportCompatibleApp({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [card({ linkedChart, paramsOpen: true })] }] });
+    if (!exported.ok) throw new Error(exported.issue.message);
+    expect(importApps([JSON.parse(JSON.stringify(exported.value))], []).dashboards[0].tabs[0].cards[0].linkedChart).toEqual(linkedChart);
+  }
+});
+it('v4 round-trips every new linked chart value, in any combination', () => {
+  const cases: LinkedChartSettings[] = [
+    { type: 'pie', display: 'grouped', category: 'region', measures: ['revenue'] },
+    { type: 'column', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' },
+    { type: 'pie', display: 'percent', category: 'region', measures: ['revenue'], seriesFrom: 'rows' }, // leftover combination still imports
+    { type: 'line', display: 'percent', measures: ['revenue'], seriesFrom: 'columns' },
+  ];
+  for (const linkedChart of cases) {
+    const exported = exportCompatibleApp({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [card({ linkedChart, paramsOpen: true })] }] });
+    if (!exported.ok) throw new Error(exported.issue.message);
+    expect(importApps([JSON.parse(JSON.stringify(exported.value))], []).dashboards[0].tabs[0].cards[0].linkedChart).toEqual(linkedChart);
   }
 });
 it('v4 round-trips every new linked chart value, in any combination', () => {
@@ -246,4 +277,11 @@ it('v4 export refuses a hidden recipe property that would be lost when cloned', 
   });
   const exported = exportCompatibleApp({ id: 'd', name: 'Recipes', tabs: [{ id: 't', name: 'T', cards: [card({ linkedChart })] }] });
   expect(exported).toMatchObject({ ok: false, issue: { message: expect.stringMatching(/recipe options.*enumerable JSON data/i) } });
+});
+it('v4 round-trips a category sort field unchanged', () => {
+  const analytical = { ...migratePivot({ enabled: true, grouping: [], split: [] }), categories: [{ id: 'expiry', name: 'Expiry', sourceFieldId: 'tenor', transform: 'native' as const, sortFieldId: 'tenor_months' }], layout: { rows: [], columns: ['expiry'], values: [] } };
+  const d: Dashboard = { id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [card({ tableDefinition: { table: {}, search: '', analytical } })] }] };
+  const exported = exportCompatibleApp(d);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  expect(importApps([JSON.parse(JSON.stringify(exported.value))], []).dashboards[0].tabs[0].cards[0].tableDefinition?.analytical).toEqual(analytical);
 });

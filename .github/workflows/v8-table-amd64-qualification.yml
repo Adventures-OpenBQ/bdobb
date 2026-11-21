@@ -1,0 +1,44 @@
+name: V8 managed table AMD64 qualification
+on:
+  push:
+    branches: [codex/v8-release-assembly]
+    paths:
+      - .github/workflows/v8-table-amd64-qualification.yml
+      - scripts/qualify-v8-table-amd64-ci.py
+      - deploy/table-service/runtime-smoke.mjs
+permissions:
+  contents: read
+concurrency:
+  group: v8-table-amd64-qualification
+  cancel-in-progress: false
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          ref: 944c6d725a29beed8d577e64fc2d8330d4260241
+          path: input-source
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: Adventures-OpenBQ/openbq-docker
+          ref: 58264ff8c8f22fe4c3b8949e1122786297dc1d14
+          path: backend
+          persist-credentials: false
+      - name: Prepare the exact recipe source
+        run: node backend/table-service/prepare-source.mjs input-source table-context
+      - name: Build and qualify actual AMD64 images
+        run: python3 scripts/qualify-v8-table-amd64-ci.py
+      - name: Preserve qualification receipts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: v8-table-amd64-${{ github.run_id }}
+          path: qualification-evidence/
+          retention-days: 14
+          if-no-files-found: error

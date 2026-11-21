@@ -37,6 +37,9 @@ import { useSettingsStore } from "../../stores/settingsStore";
 import { useSkillsStore } from "../../stores/skillsStore";
 import { AILibrary, commitSkills, type DraftSkill } from "./AILibrary";
 
+// Zustand updates copy action references; restore the real actions as well as spy descriptors.
+const originalSkillActions = { ...useSkillsStore.getState() };
+
 function renderLibrary(props?: { onClose?: () => void }) {
   return render(<AILibrary onClose={props?.onClose ?? vi.fn()} />);
 }
@@ -46,11 +49,12 @@ function skill(overrides: Partial<Skill> = {}): Skill {
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS }, draft: null });
-  useSkillsStore.setState({ skills: [] });
+  useSkillsStore.setState({ ...originalSkillActions, skills: [] });
 });
 
 describe("commitSkills", () => {

@@ -207,12 +207,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     // Artifact messages are a client-side rendering; Rita never sent them as messages.
     const outgoing: AgentMessage[] = [...prior.filter((m): m is AgentMessage => !isArtifactMessage(m)), human];
     const turn: ChatMessage[] = [];
+    let completedRounds: AgentMessage[] = [];
     const trail: AgentStatus[] = [];
     const calls: AgentCall[] = [];
     const seen = new Set<string>();
     const show = () => {
       if (!live()) return;
-      set({ messages: [...prior, human, ...turn], trail: [...trail] });
+      set({ messages: [...prior, human, ...completedRounds, ...turn], trail: [...trail] });
     };
     const noticed = () => {
       if (!get().paneOpen) set({ hasUnread: true });
@@ -442,7 +443,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
           return result;
         },
-        signal: controller.signal,
+        onHistory: (history) => {
+          completedRounds = history.slice(outgoing.length);
+          show();
+        },
+        signal: mine.signal,
         workspaceOptions,
         skillsCatalog: catalog,
         selectedSkills,
@@ -494,7 +499,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // DOMException (the abort case) is not an instanceof Error in jsdom,
       // so the name check has to stand on its own rather than gate on that.
       if (isRecord(err) && err.name === "AbortError") {
-        // Stop pressed: keep whatever streamed, no error.
+        // Keep completed calls so the next turn cannot mistake them for work
+        // still to do, and explicitly close the interrupted request.
+        turn.push({ role: "ai", content: "Stopped by the user. Completed tool actions are recorded above. Do not resume this interrupted request unless the user asks." });
+        show();
       } else if (err instanceof TypeError) {
         set({ error: `Rita offline. ${err.message} (${settings.ritaUrl})` });
         noticed();

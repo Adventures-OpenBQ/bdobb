@@ -15,6 +15,8 @@ import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
 import { dashboardContext } from "../../lib/agent/request";
 import { liveWorkspaceOptions } from "./liveModel";
+import { numericClaims, numericValues } from "./liveEvidence";
+import { TEXT_SUM_REFUSAL } from "./textSumRefusal";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
 import { mountCsv } from "../../lib/agent/tableModel/testHarness";
@@ -109,10 +111,6 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   return { rounds, reply };
 }
 
-/** Every number in `text`, commas and a trailing .0 removed. */
-const numbersIn = (text: string): string[] =>
-  (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, "").replace(/\.0+$/, ""));
-
 beforeEach(() => {
   useSettingsStore.setState({ settings: { ...useSettingsStore.getState().settings, contextSharing: true } });
   useWidgetRegistryStore.getState().seedBuiltins();
@@ -142,16 +140,18 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(model?.measures, "one Amount sum measure").toHaveLength(1);
     expect(model?.measures[0]).toMatchObject({ sourceFieldId: "Amount", aggregation: "sum" });
     // Rita's final text may quote only numbers the engine returned.
-    const engine = new Set(numbersIn(JSON.stringify(out.preview.rows)));
-    expect(engine.has("615") && engine.has("360") && engine.has("210"), "engine totals present in preview.rows").toBe(true);
+    const totals = new Set(numericValues(out.preview.rows));
+    const engine = new Set(totals);
+    expect(totals.has(615) && totals.has(360) && totals.has(210), "engine totals present in preview.rows").toBe(true);
     // arrange_table's description (capabilities.ts) lets Rita state the source row count, but only as
     // describe_table's exact completeness.totalRowCount; that number is an engine number too.
-    for (const r of rounds.filter((r) => r.tool === "describe_table")) {
-      const count = (r.result as { completeness?: { totalRowCount?: unknown } }).completeness?.totalRowCount;
-      if (typeof count === "number") engine.add(String(count));
+    for (const r of rounds.filter((r) => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok")) {
+      const count = (r.result as { completeness?: { totalRowCount?: unknown; totalRowCountKind?: unknown } }).completeness?.totalRowCount;
+      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") engine.add(count);
     }
-    const quoted = numbersIn(reply);
-    expect(quoted.length, "Rita's reply quotes at least one total").toBeGreaterThan(0);
+    const quoted = numericClaims(reply);
+    expect(quoted.some(number => totals.has(number)), "Rita's reply quotes at least one actual group total").toBe(true);
     for (const n of quoted) expect(engine.has(n), `reply number ${n} is in preview.rows`).toBe(true);
   }, 300_000);
 
@@ -166,15 +166,27 @@ live("Rita arranges a CSV table through table-model/1", () => {
     // Names the text column as the thing to sum: "Sum the Region column" was read as "sum Amount by Region".
     const { rounds, reply } = await turn(`${SKILL}Add up the Region column's own values (the region names, not Amount).`);
     const results = rounds.filter((r) => r.tool === "arrange_table").map((r) => r.result as { status: string; code?: string });
-    expect(results.some((r) => r.status === "applied"), "no arrange applied").toBe(false);
+    expect(results.some((r) => r.status === "applied" || r.status === "previewed"), "no successful substitute arrangement").toBe(false);
     expect(tableCard().tableDefinition).toEqual(before);
+    // A refusal has no preview: invented counts must not pass even if the
+    // answer also says that summing text is impossible.
+    const described = rounds.filter(r => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok");
+    expect(described.length, "the intended placed table was successfully inspected").toBeGreaterThan(0);
+    const evidencedCounts = new Set<number>();
+    for (const r of rounds.filter((r) => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok")) {
+      const count = (r.result as { completeness?: { totalRowCount?: unknown; totalRowCountKind?: unknown } }).completeness?.totalRowCount;
+      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") evidencedCounts.add(count);
+    }
+    for (const number of numericClaims(reply)) expect(evidencedCounts.has(number), `refusal reply number ${number} has engine evidence`).toBe(true);
     const text = reply.toLowerCase();
     if (results.some((r) => r.status === "refused" && r.code === "validation-failed")) {
       expect(text).toMatch(/refus|cannot|can't|can not|unable|not (?:possible|valid|supported)|text/);
     } else {
       // Declined without the tool refusing: the reply must say a text column cannot be summed.
       // Claude words it as "a text field ... can only be counted or min/maxed, not summed".
-      expect(text, "reply says it cannot sum").toMatch(/cannot|can't|can not|unable|not (?:possible|supported|available|numeric|summ)|isn't (?:possible|supported|numeric)|(?:do|does)(?: not|n't) support|can only be/);
+      expect(text, "reply says it cannot sum").toMatch(TEXT_SUM_REFUSAL);
       expect(text, "reply says why: the column is text").toMatch(/text|non-numeric|not numeric|isn't numeric|categorical|string/);
       expect(text, "reply is about summing").toMatch(/sum/);
     }

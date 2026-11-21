@@ -88,7 +88,7 @@ The header and panel show set counts, titles and details without using the first
 
 Source filters and search first constrain the acquired universe. Category checklists and Page constrain the report. Result filters then qualify groups at their chosen category level; the surviving source records are deduplicated before totals and formulas are evaluated again. A grand-total margin is a ratio of the underlying totals, not an average of displayed margins. Removing Budget with a source filter or checklist makes a Budget comparison unavailable; the engine does not fetch missing records or substitute zero.
 
-Formulas support numeric/string/boolean literals, arithmetic, comparisons, SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT and IF. Source-row formulas operate on individual records; aggregate formulas bind independent measures or explicit aggregations. Use the reference picker to insert stable field, measure, formula and comparison-member references. An ambiguous label with duplicate measures requires the explicit instance; changing a label does not change its identity.
+Formulas support numeric/string/boolean/null literals, arithmetic, comparisons, SUM, MEAN, MEDIAN, MIN, MAX, FIRST, LAST, COUNT, UNIQUECOUNT, IF, LN and SQRT. Function names are accepted in any letter case — `first([Open])`, `First([Open])` and `FIRST([Open])` are the same; IF takes three arguments and the others one. Strings are double-quoted, `true`, `false` and `null` are lower case, and a name that is not a plain identifier goes in brackets, such as `[Net income]`. Source-row formulas operate on individual records; aggregate formulas bind independent measures or explicit aggregations. Use the reference picker to insert stable field, measure, formula and comparison-member references. An ambiguous label with duplicate measures requires the explicit instance; changing a label does not change its identity.
 
 The worker binds comparison members against observed typed identities, including members excluded by source constraints. Its picker pages the observed domain and distinguishes missing, excluded, ambiguous and partial evidence. Binding is not permission to bypass the source filters. Formulas keep visible errors for those cases, division by zero and invalid bindings. Expressions are bounded at 16 KiB UTF-8, 1,024 AST nodes and depth 64 (parser nesting 256); an oversized expression is refused rather than truncated into a different calculation.
 
@@ -154,6 +154,7 @@ badges distinguish local settings from template defaults. Labels you type in the
 Resetting overrides preserves source mappings and Page selections. Renaming or
 reordering does not rebind a formula. Formula overrides keep their stable formula
 ID and explicit AST references.
+Each line has a **Section** select and **Move up** / **Move down** buttons. Use Section to show a line in another section, for example a profit subtotal inside Expenses so a waterfall can draw it; **Reset line** puts it back in its home section.
 
 The embedded snapshot is pinned and read-only. There is no newer bundled release
 currently. **Explicit template update** accepts a supplied validated snapshot for

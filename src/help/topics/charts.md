@@ -52,6 +52,9 @@ A chart created from a table's card menu draws that table's output. Open **Param
 **Measures** to plot and, for columns and bars, **Display** as Grouped or
 Stacked. See Tables for what output it receives.
 
+The bundled Plotly draws scatter, candlestick, bar, heatmap, pie, waterfall and surface traces. A ready-made
+figure asking for anything else says so and names the trace type it wanted.
+
 For **Return distribution**, select adjusted daily prices, one symbol and 5–100 bins. Hover a bar for its interval, count and share. **Small multiples** compares up to twelve selected symbols from a shared base of 100. Gaps break both calculations. Both charts require complete or bounded daily history.
 
 **Return summaries** compares up to twelve qualified listings from a documented local daily adjusted-price snapshot. Boxes show R7 quartiles, observed whiskers and outliers. Violin uses Gaussian density smoothing on the same returns and a shared scale. Hover, tap, or open **Return listing details** for original returns, dates and counts. Use **Common inclusive dates** to compare within explicit bounds. After importing a source-free template, drop the snapshot and select it with **Choose source**.
@@ -85,8 +88,9 @@ ordinary chart cards. A specification the translation does not cover shows as
 raw JSON.
 
 An `advanced_charting` widget is drawn with TradingView Lightweight Charts
-rather than Plotly: daily candles for the widget's default symbol, with volume
-bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
+rather than Plotly: daily candles when OHLC data is supplied, or a close-price
+line when the feed supplies only closes. The chart uses the widget's default
+symbol, with optional volume bars underneath, a *Rendered by TradingView* credit, and the light/dark theme.
 The mouse wheel scrolls the card rather than zooming the chart.
 
 **Market map** uses a verified local snapshot with a completed close-to-close price session. Areas show delivered capitalization in one currency or acquired weights for a named index. Both live modes are unavailable. **Latest acquired** follows the selected snapshot. To keep one session, select its date and apply. If a pin is missing, relink or select an acquired session explicitly. Hover or tap for original values, drill a sector by clicking or tapping it again, and use the breadcrumb or **Home** to reset. **Market map details** lists original areas and return fractions, including tiny tiles.

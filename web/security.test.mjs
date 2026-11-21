@@ -1059,3 +1059,30 @@ test("SSRM relays get their own deadline (default 170 s, at most 300 s); managed
   assert.equal((await call("/api/api/v1/test/rows",{method:"POST",headers,body:"{}"})).status,200);
   assert.equal((await call("/table/sessions",{method:"POST",headers,body:"{}"})).status,502);
 });
+
+test('ordinary API proxy allows a cold fifteen-second acquisition while reference stays bounded', async t => {
+  const auth = await cookie();
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const deadlines=[];
+  t.mock.method(AbortSignal,'timeout',ms=>{deadlines.push(ms);const controller=new AbortController();setTimeout(()=>controller.abort(),ms);return controller.signal;});
+  let entered;let started=new Promise(resolve=>entered=resolve);
+  const f=await fixture(t,{fetchUpstream:async(_url,options)=>new Promise((resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new Error('deadline')),{once:true});setTimeout(()=>resolve(new Response('{"results":[{"value":42}]}',{headers:{'Content-Type':'application/json'}})),15000);entered();})});
+  const api=f.call('/api/api/v1/cftc/fx_forward_points?pair=USDJPY',{headers:{Cookie:auth}});await started;t.mock.timers.tick(15000);assert.equal((await api).status,200);assert.equal(deadlines.at(-1),170000);
+  started=new Promise(resolve=>entered=resolve);const ref=f.call('/ref/metric_widget',{headers:{Cookie:auth}});await started;t.mock.timers.tick(15000);assert.equal((await ref).status,502);assert.equal(deadlines.at(-1),12000);
+});
+test('API_TIMEOUT_MS is validated and applied to ordinary API proxy',async t=>{
+  assert.equal(readConfig(env).apiTimeoutMs,170000);
+  for(const API_TIMEOUT_MS of ['0','999','170001','1.5','invalid',''])assert.throws(()=>readConfig({...env,API_TIMEOUT_MS}),/API_TIMEOUT_MS/);
+  const cfg=readConfig({...env,API_TIMEOUT_MS:'1000'});assert.equal(cfg.apiTimeoutMs,1000);
+  const auth=await cookie();t.mock.timers.enable({apis:['setTimeout']});
+  let deadline; t.mock.method(AbortSignal,'timeout',ms=>{deadline=ms;const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal;});
+  let entered;const started=new Promise(resolve=>entered=resolve);
+  const f=await fixture(t,{config:cfg,fetchUpstream:async(_url,options)=>new Promise((resolve,reject)=>{options.signal.addEventListener('abort',()=>reject(new Error('deadline')),{once:true});setTimeout(()=>resolve(new Response('{"results":[]}',{headers:{'Content-Type':'application/json'}})),2000);entered();})});
+  const response=f.call('/api/api/v1/cftc/fx_forward_points?pair=USDJPY',{headers:{Cookie:auth}});await started;t.mock.timers.tick(2000);assert.equal((await response).status,502);assert.equal(deadline,1000);
+});
+
+test('disconnect cancels an ordinary API acquisition before its deadline',async t=>{
+  let entered,aborted;const started=new Promise(resolve=>entered=resolve);const cancelled=new Promise(resolve=>aborted=resolve);
+  const f=await fixture(t,{fetchUpstream:async(_url,options)=>new Promise((_resolve,reject)=>{options.signal.addEventListener('abort',()=>{aborted();reject(new Error('disconnected'));},{once:true});entered();})});
+  const req=request({hostname:'127.0.0.1',port:f.port,path:'/api/api/v1/cftc/fx_forward_points?pair=USDJPY',headers:{Host:'preview.example.com',Cookie:await cookie()}},res=>res.resume());req.on('error',()=>{});req.end();await started;req.destroy();await cancelled;
+});

@@ -65,7 +65,8 @@ class Boundary {
 let restoreViewportWidth: (() => void) | undefined;
 afterEach(() => { restoreViewportWidth?.(); restoreViewportWidth = undefined; cleanup(); tableExecutionStore.disposeDashboard('d'); Boundary.failChild = false; vi.unstubAllGlobals(); });
 const source = card({ id: 's', widgetId: 'local_table', backendId: 'builtin', title: 'Prices', params: { file: 'missing.csv' } });
-beforeEach(() => { __reset(); __resetJsonStoreForTests(); useWidgetRegistryStore.getState().seedBuiltins(); useDashboardStore.setState({ dashboards: [{ id: 'd', name: 'D', tabs: [{ id: 't', name: 'First', cards: [source] }] }], activeId: 'd', activeTabId: 't', viewer: false, pendingCardRemoval: null }); });
+// A store update copies a spied method into its next state; restore that property too, not only the old spy target.
+beforeEach(() => { __reset(); __resetJsonStoreForTests(); useWidgetRegistryStore.getState().seedBuiltins(); useDashboardStore.setState({ commitLinkedChartSettings: useDashboardStore.getInitialState().commitLinkedChartSettings, dashboards: [{ id: 'd', name: 'D', tabs: [{ id: 't', name: 'First', cards: [source] }] }], activeId: 'd', activeTabId: 't', viewer: false, pendingCardRemoval: null }); });
 it.each(['chart', 'table'] as const)('source menu creates a linked %s with the automatic source', async presentation => {
   render(<WidgetCard card={source} onRemove={() => {}} />);
   fireEvent.click(screen.getByRole('button', { name: 'Card menu' }));
@@ -169,7 +170,7 @@ it('keeps the chart presentation branch and completed metadata during recoverabl
   const parameters = openParameters();
   expect(parameters.getByLabelText('Chart type')).toHaveValue('column');
   expect(parameters.getByLabelText('Category')).toHaveValue('region');
-  expect(parameters.getByRole('group', { name: 'Measures' })).toBeVisible();
+  expect(parameters.getByRole('button', { name: /^Measures/ })).toBeVisible();
   expect(parameters.getByLabelText('Series from')).toHaveValue('columns');
   fireEvent.click(screen.getByRole('button', { name: 'Hide parameters' }));
   expect(screen.getByTestId('chart-plot')).toBe(plot);
@@ -226,7 +227,7 @@ it.each(['bullet', 'waterfall'] as const)('announces a failed %s relink once and
     const parameters = openParameters();
     expect(parameters.getByLabelText('Chart type')).toHaveValue(type);
     expect(parameters.getByLabelText('Category')).toHaveValue(mapping.category);
-    expect(parameters.getByRole('group', { name: 'Measures' })).toBeVisible();
+    expect(parameters.getByRole('button', { name: /^Measures/ })).toBeVisible();
     if (type === 'bullet') expect(parameters.getByLabelText('Quarter')).toHaveValue('Q2');
     fireEvent.click(parameters.getByRole('button', { name: 'Choose source' }));
     const dialog = within(screen.getByRole('dialog', { name: 'Choose source' }));
@@ -2986,6 +2987,7 @@ it.each([
   const a = await acquiredSource(recipe, 'A');
   const linkedChart = { type: 'column' as const, category, measures: [measure], display: 'grouped' as const };
   installDashboard(riskDashboard([a, { ...riskChart(recipe), linkedChart }]));
+  expect(vi.isMockFunction(useDashboardStore.getState().commitLinkedChartSettings), 'fresh test state must use the real commit method').toBe(false);
   const commit = useDashboardStore.getState().commitLinkedChartSettings;
   const save = vi.spyOn(useDashboardStore.getState(), 'commitLinkedChartSettings');
   let finish: (() => void) | undefined;
@@ -3062,6 +3064,6 @@ it.each(['missing binding', 'filtered series'])('opens Parameters from the basic
     fireEvent.click(screen.getByRole('button', { name: 'Open Parameters' }));
     const parameters = screen.getByRole('region', { name: 'Parameters' });
     expect(within(parameters).getByRole('button', { name: 'Choose source' })).toHaveFocus();
-    expect(within(parameters).getByRole('group', { name: 'Measures' })).toBeVisible();
+    expect(within(parameters).getByRole('button', { name: /^Measures/ })).toBeVisible();
   } finally { factory.mockRestore(); }
 });

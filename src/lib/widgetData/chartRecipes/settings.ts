@@ -303,6 +303,7 @@ export function withRecipeType(settings: LinkedChartSettings, type: LinkedChartS
   if (type === 'bullet') next.display = 'grouped';
   else if (next.display === 'percent' && type !== 'column' && type !== 'bar') next.display = 'stacked';
   if (type !== 'bullet' || settings.type !== 'bullet') delete next.period;
+  if (type !== 'surface') { delete next.height; delete next.spaceRowsBy; delete next.spaceColumnsBy; }
   if (type !== 'column' && type !== 'bar' && type !== 'line') delete next.seriesFrom;
   if (type !== settings.type || !validateRecipeOptions(settings.recipe, type)) delete next.recipe;
   return next;

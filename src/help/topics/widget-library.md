@@ -87,6 +87,9 @@ recolours the library without a restart. A second (viewer) window never
 probes. With a **Key Maintenance** connection, the app sends a single request
 and the key service tests every provider at once, server-side; without one,
 the app tests a few vendors at a time itself, never blocking the window.
+Vendors whose key is optional (CFTC and EconDB) are not probed at startup.
+Their badge stays plain unless Key Maintenance reports a result for the key.
+
 On the Key Maintenance path the colours are the results that service reports,
 and it only reports them from tier 2 up: below that every badge stays the plain
 outlined state no matter how many times you refresh.

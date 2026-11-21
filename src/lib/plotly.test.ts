@@ -31,17 +31,29 @@ vi.mock("plotly.js/lib/sunburst", () => ({ default: { name: "sunburst" } }));
 vi.mock("plotly.js/lib/treemap", () => ({ default: { name: "treemap" } }));
 vi.mock("plotly.js/lib/box", () => ({ default: { name: "box" } }));
 vi.mock("plotly.js/lib/sankey", () => ({ default: { name: "sankey" } }));
+vi.mock("plotly.js/lib/surface", () => ({ default: { name: "surface" } }));
 
 import { followPlotYAxisTicks, followSunburstLevel, REGISTERED_TRACE_TYPES, renderPlot } from "./plotly";
 
 describe("REGISTERED_TRACE_TYPES", () => {
-  it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey", "box", "sunburst", "treemap"])("includes the registered %s trace", (type) => {
+  it.each(["scatter", "candlestick", "bar", "heatmap", "pie", "indicator", "waterfall", "sankey", "box", "sunburst", "treemap", "surface"])("includes the registered %s trace", (type) => {
     expect(REGISTERED_TRACE_TYPES.has(type)).toBe(true);
   });
 
   it("excludes unsupported trace types", () => {
-    expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(false);
+    expect(REGISTERED_TRACE_TYPES.has("mesh3d")).toBe(false);
     expect(REGISTERED_TRACE_TYPES.has("violin")).toBe(false);
+  });
+
+  it("registers pie so the linked chart's Pie type renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("pie")).toBe(true);
+  });
+
+  it("registers waterfall so the linked chart's Waterfall type renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("waterfall")).toBe(true);
+  });
+  it("registers surface so the linked chart's Surface type renders", () => {
+    expect(REGISTERED_TRACE_TYPES.has("surface")).toBe(true);
   });
 });
 

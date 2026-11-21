@@ -9,6 +9,7 @@ import scatter from "plotly.js/lib/scatter";
 import heatmap from "plotly.js/lib/heatmap";
 import pie from "plotly.js/lib/pie";
 import indicator from "plotly.js/lib/indicator";
+import surface from "plotly.js/lib/surface";
 import waterfall from "plotly.js/lib/waterfall";
 import sankey from "plotly.js/lib/sankey";
 import box from "plotly.js/lib/box";
@@ -17,7 +18,7 @@ import treemap from "plotly.js/lib/treemap";
 import type { Data, PlotlyHTMLElement } from "plotly.js/lib/core";
 import type { PlotlyFigure } from "./chartShapes";
 
-const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall, sankey, box, sunburst, treemap];
+const REGISTERED_TRACES = [scatter, candlestick, bar, heatmap, pie, indicator, waterfall, sankey, box, sunburst, treemap, surface];
 
 Plotly.register(REGISTERED_TRACES);
 

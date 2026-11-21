@@ -30,6 +30,21 @@ describe("tableRows", () => {
     expect(tableRows([])).toEqual([]);
   });
 
+  it("accepts one model record only when its exact keys are declared table fields", () => {
+    const record = { date: "2026-11-19", USD: 1.0992 };
+    const spec: TableSpec = { columns: [{ field: "date" }, { field: "USD" }, { field: "EUR" }] };
+    expect(tableRows(record, spec)).toEqual([record]);
+    expect(tableRows(record)).toBeNull();
+    expect(tableRows(record, { columns: [{ field: "date" }, { field: "usd" }] })).toBeNull();
+  });
+
+  it("keeps unexpected objects and empty records in raw view even with declared columns", () => {
+    const spec: TableSpec = { columns: [{ field: "date" }, { field: "USD" }] };
+    expect(tableRows({ error: "unexpected" }, spec)).toBeNull();
+    expect(tableRows({ date: "2026-11-19", unexpected: 3 }, spec)).toBeNull();
+    expect(tableRows({}, spec)).toBeNull();
+  });
+
   it("refuses anything else, so the caller can fall back to the raw view", () => {
     expect(tableRows({ error: "nope" })).toBeNull();
     expect(tableRows([1, 2])).toBeNull();

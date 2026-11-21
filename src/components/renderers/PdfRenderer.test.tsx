@@ -31,6 +31,9 @@ const fetchDocumentBytes = vi.hoisted(() =>
 );
 vi.mock("../../lib/dataClient", () => ({ fetchDocumentBytes }));
 
+const openUrl = vi.hoisted(() => vi.fn< (url: string) => Promise<void>>());
+vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl }));
+
 import { PdfRenderer } from "./PdfRenderer";
 
 /** "hi" as base64 — two decoded bytes, which the stub above reports. */
@@ -97,6 +100,20 @@ describe("PdfRenderer", () => {
       />,
     );
     expect(await screen.findByRole("alert")).toHaveTextContent("Sample.pdf: HTTP 403");
+  });
+
+  it("opens the official linked document externally after a denied download and allows retry", async () => {
+    const url = "https://example.com/official.pdf";
+    fetchDocumentBytes.mockRejectedValueOnce(new Error("HTTP 403"));
+    openUrl.mockResolvedValueOnce(undefined);
+    render(<PdfRenderer data={{ url, data_format: { data_type: "pdf", filename: "Official.pdf" } }} onRetry={vi.fn()} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("HTTP 403");
+    await userEvent.click(screen.getByRole("button", { name: /Open externally/ }));
+    expect(openUrl).toHaveBeenCalledWith(url);
+    fetchDocumentBytes.mockResolvedValueOnce(new Uint8Array([1, 2, 3]));
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByTestId("pdf-view")).toHaveTextContent("Official.pdf (3 bytes)");
+    expect(screen.queryByRole("button", { name: /Open externally/ })).not.toBeInTheDocument();
   });
 
   it("takes the first document when the payload is a list", () => {

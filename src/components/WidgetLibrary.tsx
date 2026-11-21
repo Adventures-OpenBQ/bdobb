@@ -10,7 +10,7 @@ import { buildPresenceIndex, presenceOf } from "../lib/libraryPresence";
 import { logError } from "../lib/logger";
 import { clampLogName } from "../lib/logNames";
 import { resolveSymbolOverride } from "../lib/params";
-import { needsKey, normalizeProvider, worstTone, type ProbeTone } from "../lib/providerKeys";
+import { OPTIONAL_KEY_PROVIDERS, needsKey, normalizeProvider, worstTone, type ProbeTone } from "../lib/providerKeys";
 import { useBackendsStore } from "../stores/backendsStore";
 import { DOCKS_ID } from "../lib/dashboardsFile";
 import { useDashboardStore } from "../stores/dashboardStore";
@@ -64,7 +64,8 @@ const TONE_MEANING: Record<ProbeTone, string> = {
 function toneOf(provider: string, probe: Record<string, ProbeTone>): ProbeTone | null {
   if (!needsKey(provider)) return null;
   const key = normalizeProvider(provider);
-  return Object.hasOwn(probe, key) ? probe[key] : "grey";
+  if (Object.hasOwn(probe, key)) return probe[key];
+  return OPTIONAL_KEY_PROVIDERS.has(key) ? null : "grey";
 }
 
 /**

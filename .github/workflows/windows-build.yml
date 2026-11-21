@@ -6,12 +6,18 @@ name: Windows build
 # runs bill per minute, so nothing here starts on a push.
 on:
   workflow_dispatch:
+    inputs:
+      mcp_test:
+        description: Build an isolated debug-only MCP test application
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   nsis:
+    if: ${{ !inputs.mcp_test }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,4 +47,37 @@ jobs:
         with:
           name: bdobb-windows-nsis
           path: src-tauri/target/release/bundle/nsis/*.exe
+          retention-days: 7
+
+  debug-installer:
+    if: ${{ inputs.mcp_test }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@1.98.1
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install pinned Wasm glue generator
+        run: cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
+      - name: Prepare isolated application identity
+        shell: pwsh
+        run: |
+          $config = Get-Content src-tauri/tauri.mcp.conf.json -Raw | ConvertFrom-Json
+          $config | Add-Member productName 'BDOBB v8 MCP'
+          $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v8.windows.mcp'
+          $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
+      - name: Build debug-only MCP installer
+        shell: pwsh
+        run: pnpm tauri build --debug --features mcp-bridge --bundles nsis --config "$env:RUNNER_TEMP/windows-mcp.json"
+      - name: Upload isolated installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdobb-v8-windows-mcp
+          path: src-tauri/target/debug/bundle/nsis/*.exe
           retention-days: 7

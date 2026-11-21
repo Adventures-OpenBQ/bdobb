@@ -1066,6 +1066,56 @@ describe("chatStore.load and clear", () => {
     expect(__list()).not.toContain("chat.json");
   });
 
+  it("Stop preserves completed tool history across save/reload and marks the turn stopped", async () => {
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
+    useBackendsStore.setState({ backends: [backend({ id: "reference", name: "Reference", baseUrl: "http://x" })] });
+    useWidgetRegistryStore.setState({
+      widgets: [widget({ id: "historical_prices", backendId: "reference", name: "Historical Prices", endpoint: "/historical" })],
+    });
+    useDashboardStore.setState({
+      dashboards: [
+        {
+          id: "d1",
+          name: "Main",
+          tabs: [{ id: "t1", name: "Tab", cards: [card({ id: UUID, widgetId: "historical_prices", backendId: "reference" })] }],
+        },
+      ],
+      activeId: "d1",
+      activeTabIds: { d1: "t1" },
+    });
+    // Round 1 answers with a function call (yields one widget_data ledger
+    // entry via onCall); round 2 hangs until Stop aborts it --
+    // by which point that entry already sits in send()'s local `calls`.
+    let n = 0;
+    let resolveSecondCall = () => {};
+    const secondCallStarted = new Promise<void>((resolve) => {
+      resolveSecondCall = resolve;
+    });
+    route((url, init) => {
+      if (url.endsWith("/v1/query")) {
+        if (n++ === 0) return sse(fixture("rita/function-call.sse"));
+        resolveSecondCall();
+        return new Promise((_, reject) =>
+          init.signal?.addEventListener("abort", () => reject(new DOMException("x", "AbortError"))),
+        );
+      }
+      return new Response(JSON.stringify([{ close: 1 }]), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    const turn = useChatStore.getState().send("show AAPL");
+    await secondCallStarted;
+    useChatStore.getState().abort();
+    await turn;
+    expect(useChatStore.getState().messages.filter((m) => m.role === "tool")).toHaveLength(1);
+    expect(useChatStore.getState().messages.at(-1)).toMatchObject({ role: "ai", content: expect.stringMatching(/stopped/i) });
+    await useChatStore.getState().load();
+    expect(useChatStore.getState().messages.filter((m) => m.role === "tool")).toHaveLength(1);
+    replies(fixture("rita/simple-text.sse"));
+    await useChatStore.getState().send("A new request, without resuming the old one");
+    const nextMessages = bodies.at(-1)!.messages as Array<{ role: string; content: unknown }>;
+    expect(nextMessages.filter((m) => m.role === "tool")).toHaveLength(1);
+    expect(nextMessages.some((m) => m.role === "ai" && /Stopped by the user/.test(String(m.content)))).toBe(true);
+  });
+
   it("clear() mid-turn does not resurrect the aborted turn's ledger", async () => {
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example", contextSharing: true } });
     useBackendsStore.setState({ backends: [backend({ id: "reference", name: "Reference", baseUrl: "http://x" })] });

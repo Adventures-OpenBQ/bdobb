@@ -104,7 +104,8 @@ export function extras(value: unknown, path: string): Extras {
     const needsMeasuresDefault = c.measures === undefined && isRecipeType(c.type);
     if ((c.period !== undefined && typeof c.period !== 'string') || (c.category !== undefined && typeof c.category !== 'string')
       || (!needsMeasuresDefault && !strings(c.measures)) || !['grouped', 'stacked', 'percent'].includes(c.display as string)
-      || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string)))
+      || (c.seriesFrom !== undefined && !['columns', 'rows'].includes(c.seriesFrom as string))
+      || ['height', 'spaceRowsBy', 'spaceColumnsBy'].some(k => c[k] !== undefined && typeof c[k] !== 'string'))
       extensionError(chartPath, 'Invalid linked chart settings.');
     const recipe = decodeLinkedChartRecipe(c, c.type);
     if (recipe && !recipe.ok) extensionError(`${chartPath}.recipe`, recipe.message);

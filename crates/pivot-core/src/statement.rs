@@ -116,10 +116,19 @@ pub struct StatementOverrides {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub section_order: Option<Vec<String>>,
     pub line_order: BTreeMap<String, Vec<String>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "deserialize_line_section")]
     pub line_section: Option<BTreeMap<String, String>>,
     pub hidden_ids: Vec<String>,
     pub formulas: Vec<Formula>,
+}
+
+// Omission is optional; an explicitly supplied placement must be a string map,
+// matching the TypeScript intent validator rather than accepting JSON null.
+fn deserialize_line_section<'de, D>(deserializer: D) -> Result<Option<BTreeMap<String, String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    BTreeMap::<String, String>::deserialize(deserializer).map(Some)
 }
 #[derive(Clone, Debug)]
 pub struct OutputMember {

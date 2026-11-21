@@ -64,6 +64,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ["scripts/applymodel-profile/**/*.ts"],
+    // Recovered profiling glue deliberately observes untyped experimental worker globals.
+    // Runtime application sources retain the normal no-explicit-any gate.
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
+  {
     files: ["src/**/*.{ts,tsx}"],
     languageOptions: { globals: { ...globals.browser } },
     plugins: { "react-hooks": reactHooks },
