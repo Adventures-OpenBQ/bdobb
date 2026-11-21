@@ -66,18 +66,22 @@ jobs:
       - name: Install pinned Wasm glue generator
         run: cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools
       - name: Prepare isolated application identity
+        id: identity
         shell: pwsh
         run: |
           $config = Get-Content src-tauri/tauri.mcp.conf.json -Raw | ConvertFrom-Json
-          $config | Add-Member productName 'BDOBB v8 MCP'
-          $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v8.windows.mcp'
+          $major = (Get-Content package.json -Raw | ConvertFrom-Json).version.Split('.')[0]
+          $config | Add-Member productName "BDOBB v$major MCP"
+          $config | Add-Member identifier "com.artcashin.bdobb.regwalk.v$major.windows.mcp"
           $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
+          "major=$major" >> $env:GITHUB_OUTPUT
+      - run: pnpm pivot:build
       - name: Build debug-only MCP installer
         shell: pwsh
         run: pnpm tauri build --debug --features mcp-bridge --bundles nsis --config "$env:RUNNER_TEMP/windows-mcp.json"
       - name: Upload isolated installer
         uses: actions/upload-artifact@v4
         with:
-          name: bdobb-v8-windows-mcp
+          name: bdobb-v${{ steps.identity.outputs.major }}-windows-mcp
           path: src-tauri/target/debug/bundle/nsis/*.exe
           retention-days: 7
