@@ -18,10 +18,10 @@
 
 ### Task 1: Strengthen and verify row visibility
 
-- [ ] Demonstrate the existing refusal cases still pass with rendered body rows hidden but headers visible, using a temporary browser-only diagnostic.
-- [ ] Add the data-cell assertion and demonstrate the same diagnostic fails specifically at that assertion. Remove all diagnostic changes.
-- [ ] Run all three affected cases on Chromium and WebKit with both TypeScript and compiled Rust engines, retries zero; check runtime/WASM evidence. Run typecheck, lint, scrub and the project unit suite once; retain outputs and first failures.
-- [ ] Record exact evidence and limitations in portable validation notes. Commit and obtain an independent review of the whole correction and diagnostic proof; resolve blocking findings.
+- [x] Demonstrate the existing refusal cases still pass with rendered body rows hidden but headers visible, using a temporary browser-only diagnostic.
+- [x] Add the data-cell assertion and demonstrate the same diagnostic fails specifically at that assertion. Remove all diagnostic changes.
+- [x] Run all three affected cases on Chromium and WebKit with both TypeScript and compiled Rust engines, retries zero; check runtime/WASM evidence. Run typecheck, lint, scrub and the project unit suite once; retain outputs and first failures.
+- [x] Record exact evidence and limitations in portable validation notes. Commit and obtain an independent review of the whole correction and diagnostic proof; resolve blocking findings.
 
 ### Task 2: Publish and finish CI
 

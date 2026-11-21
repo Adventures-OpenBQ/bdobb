@@ -23,4 +23,4 @@ BDOBB_BROWSER_PORT=18843 BDOBB_MOCK_PORT=18844 VITE_TABLE_ENGINE=rust PIVOT_WASM
   --grep 'synthetic transport: refuses' --retries=0
 ```
 
-The client unit suite passed **10,387 tests, with 47 existing optional skips**. This remains synthetic/browser qualification and inherited installed replay evidence; it establishes no fresh vendor acquisition or image build. All four PRs must remain unmerged. Independent review and exact published-head CI are recorded in the PR follow-up.
+The client unit suite passed **10,387 tests, with 47 existing optional skips**. This remains synthetic/browser qualification and inherited installed replay evidence; it establishes no fresh vendor acquisition or image build. All four PRs must remain unmerged. Typecheck, lint and scrub/header checks passed. [Independent review](independent-row-visibility-review.md) approved the correction and portable-command follow-up at `66540fc4`, with all findings closed. Exact published-head CI is recorded in the PR follow-up.

@@ -1,5 +1,9 @@
 # v10 live price views review
 
+## Row-visibility review
+
+The fresh [independent correction review](independent-row-visibility-review.md) approved the visible-cell assertion and portable verification commands at `66540fc4`. The prior row-visibility Minor is closed; no review findings remain for this correction. [Coverage proof and results](row-visibility.md). This is independent agent review, not a human GitHub approval.
+
 ## Stacked reconciliation review — November 21, 2026
 
 Fresh independent Superpowers review of the complete stacked change and reconciliation at `3808e73e` approved publication with no Critical or Important findings. It verified v9 `bf67cf72` as an ancestor, preserved acquisition and pivot contracts, and independently counted the test evidence. [Independent stacked review](independent-stacked-review.md) · [Reconciliation verification](verification.md)
