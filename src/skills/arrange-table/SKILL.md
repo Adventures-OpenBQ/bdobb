@@ -6,18 +6,22 @@ description: How to summarize, group, aggregate, filter and present a table card
 # Arranging a table card
 
 You change a table only through `describe_table` and `arrange_table`. Your
-first call is always `describe_table` with the card id; do not call
+first call is always `describe_table` with the exact placed-card `uuid` from
+widget context, never its `widget_id`, definition id or title (even when the
+instance id is short); do not call
 `get_widget_data` for a table you are arranging (a CSV/XLS table refuses it).
 Check that the requested operation is supported before arranging anything.
 If it is unsupported, explain the limitation and STOP: do not call
 `arrange_table`, including a preview of an alternative operation. Otherwise,
 to change the table, make ONE `arrange_table` call that applies the change;
 for a supported read-only ask, use `"mode": "preview"` (section 0).
-Then explain the successful result. The only numbers you may
-write are values in the result's `preview.rows` (#324), and the source
+Then explain the successful result. In an arrangement reply, numerical
+claims must be values in the result's `preview.rows` (#324), and the source
 table's row count exactly as `describe_table` gives it in
 `completeness.totalRowCount` when `completeness.totalRowCountKind` is
 `exact`: no number of groups, no grand total, nothing you work out.
+A successful read-only `profile` response also supports its returned statistics
+with their reported scope, as described in section 1; do not calculate new ones.
 
 A `refused` or `failed` result contains no successful preview. State the
 refusal; do not display calculated rows, member labels, or numbers as its
@@ -34,9 +38,11 @@ the same validation and worker calculation and answers `previewed` with
 `committed: false`; it changes nothing and adds no Undo. Never call
 `arrange_table` without `"mode": "preview"` unless the user asked for the
 table to change; if a preview answer is useful, offer to apply it and wait.
-If a needed number is not in `preview.rows` (a grand total, a count of
-missing or zero values), say it is not available read-only; do not apply an
-arrangement to get it and do not work it out yourself. End the reply with
+For an arrangement reply, if a needed number is not in `preview.rows` or an
+exact source row count, do not apply an arrangement to get it or work it out
+yourself. For a data-profile question, a successful scoped `profile` can supply
+its returned statistics (including missing counts and min/max); quote those
+with their scope. If neither response supplies the number, say it is unavailable. End the reply with
 "Nothing was changed."
 
 A direct edit instruction such as "Group the table by ..." asks for an
@@ -79,7 +85,11 @@ Sector / Total Volume values from `preview.rows`, and "Undo is available."
 
 ## 1. Inspect
 
-Call `describe_table` with the card id. Read `capabilities.how_to_arrange`. Use
+Call `describe_table` with the exact card `uuid` supplied in widget context.
+If the result is `unknown`, verify that you used this instance id rather than
+`widget_id` and retry with the corrected supplied uuid. If that instance still
+answers `unknown`, report it unavailable; do not infer a closed tab or search
+for protected/foreign cards. Only `runtime-not-ready` calls for opening its tab. Read `capabilities.how_to_arrange`. Use
 only its field ids, operations, transforms and per-field aggregations, and pass
 its `revision` as `expected_revision`.
 
