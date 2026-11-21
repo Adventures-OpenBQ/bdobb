@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v6.0.0",
-  "baseCommit": "88ced1ffd50cff9aff3d0494ed87b4f7e49d8d98",
-  "sourceId": "1a3630b2bda79f359c4e174760581593d742d7a4525881349c5c485f3385824d",
+  "baseCommit": "af6cad2af4569354e877e4b77fe3279f2d7927d7",
+  "sourceId": "b0d79698bf11ef6eda292fa8b9fc84091db5f7d8cf0c99946f11a1105887f247",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20069,7 +20069,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "418672755b70bc425eb3b3a9aed664acaf524cf4f5ae3845cf916c2bcd444193"
+      "sha256": "9c35f9aea35d711c44da053a44578d493c916ced5aed0ea92395e200d2ca43f3"
     },
     {
       "path": "source_bundle.py",
@@ -23736,8 +23736,8 @@
       "path": "src/lib/agent/localTools.ts",
       "type": "file",
       "mode": 420,
-      "size": 53963,
-      "sha256": "77320cc6af98017cc1bce50e8719c8975a738407b93d1e2fdcf1a07709bdeffd"
+      "size": 54582,
+      "sha256": "39928b27c586e20206a459c572acdaaf1db91357d8d3f4fe1551cd7dbeef2e7b"
     },
     {
       "path": "src/lib/agent/mcp.test.ts",
@@ -27215,15 +27215,15 @@
       "path": "src/skills/arrange-table/SKILL.md",
       "type": "file",
       "mode": 420,
-      "size": 13859,
-      "sha256": "e93e3fbaea89ab70d94da0c2a6a2c13b249f08b53d4cf7f7b6fdbfc2102e6700"
+      "size": 14698,
+      "sha256": "002cfa2d98e702c77031e359fc0212dc41b228fac1679565c156c86ae3fb8bba"
     },
     {
       "path": "src/skills/build-dashboard/SKILL.md",
       "type": "file",
       "mode": 420,
-      "size": 6242,
-      "sha256": "af2494ee23c961263d79e22c4ca51ea8e7a2c78b89bbac737a8cfab6ac13ac63"
+      "size": 6411,
+      "sha256": "b42dfc69297ea31d11af34c9e826c88ef1b48ddd4d5d69d5e8db38231c3c2c73"
     },
     {
       "path": "src/skills/openbb-html-chart/SKILL.md",
@@ -28143,6 +28143,20 @@
       "sha256": "5726f11634327c993600c30543dac02e2e9cd597133b412ff16015feab2fc979"
     },
     {
+      "path": "src/test/integration/liveEvidence.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 2671,
+      "sha256": "1a02654669d1ecda3aa7730bab4252877ceff89b82c13323101783b2a6310e93"
+    },
+    {
+      "path": "src/test/integration/liveEvidence.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1948,
+      "sha256": "737ff5a73a150482e5e826d989cbbc7a2255c4d11b6d5a092969e03e6fa89554"
+    },
+    {
       "path": "src/test/integration/liveModel.ts",
       "type": "file",
       "mode": 420,
@@ -28167,22 +28181,22 @@
       "path": "src/test/integration/rita-authoring-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 18261,
-      "sha256": "49fcf1d095f027bf783da5a93234dd75ac3f9ad776d9c228fb319d0bc9e4d432"
+      "size": 19594,
+      "sha256": "95347165e06d61973a1ada45d9411d149d28a0671c59e7bca89792dbaff6a573"
     },
     {
       "path": "src/test/integration/rita-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 9898,
-      "sha256": "c05058319e05164a076733e15e6f4224455f62b4735d7794e45c426f1cf4cb58"
+      "size": 10299,
+      "sha256": "8de1905762118c04a7c9ed88dbd743acc4a8daca1473d14e48b9af46e9841643"
     },
     {
       "path": "src/test/integration/rita-table-model-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 11246,
-      "sha256": "95d97784f7cc5865714e44ff1919c0ef2c189818acca8bb89a336530b55d7e12"
+      "size": 11606,
+      "sha256": "bbafd9928cb5d4569515f2c216bce8a18d92d72df8598e80673255c9c8231f13"
     },
     {
       "path": "src/test/integration/textSumRefusal.test.ts",
