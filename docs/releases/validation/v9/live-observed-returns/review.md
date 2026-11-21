@@ -1,5 +1,7 @@
 # Live observed returns qualification review
 
+The published-PR reviews subsequently identified mixed-case identity and partial-acquisition findings. The follow-up records the fixes and their verification. [Published-PR reviews](published-pr-reviews.md) · [Follow-up qualification](published-pr-follow-up.md)
+
 Tasks 1–6 completed independent task review against the approved design.
 The first independent whole-change review then found two Important admission
 errors. The consolidated fix completed implementation and independent scoped re-review.
@@ -70,7 +72,7 @@ fixture paths.
 
 The implementation and its requalification are recorded in [paired verification](verification.md#final-declaration-fix-and-requalification). The controller owns the independent scoped re-review.
 
-## Final independent verdict
+## Independent verdict on the earlier interval and denomination fixes
 
 The reviewer checked client `bfb38a8f154a8bcfb23bc56023d432dfeba2928c`, canonical provider `adb2e2e410552863bcbfbd5584e3e7c9720d0cbc` and Docker `52436dd8a1a6a13eaf142a8486a7f0bda7f1db5b`. The final local arm64 image is `openbq-v9-live-observed-returns:final-adb2e2e-20261120`, OCI index `sha256:068944e7bded0471cb222399db083ffeb6306ae30fe14954907fa0dd8dfc2acc`. Subsequent bookkeeping changes only the plan and these review records.
 

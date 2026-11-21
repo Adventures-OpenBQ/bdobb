@@ -6,6 +6,8 @@ The fixed examples use AAPL.US and MCD.US from 2026-10-12 through
 2026-11-19 inclusive. The acquisition contract also accepts other eligible
 bounded daily US listing requests when the backend account has access.
 
+The current provider revision and installed-image results are recorded in the [published-PR follow-up](published-pr-follow-up.md).
+
 The following history records the first qualification. The final fixes have a
 separate provider pin, image, captures and test results. [Final qualification](#final-declaration-fix-and-requalification)
 
