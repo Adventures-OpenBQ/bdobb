@@ -13,9 +13,19 @@ import type { PriceBindings, RecipeOptions } from './types';
 
 export type { PriceScope } from './priceEvidence';
 export type PriceSeries = { symbol: string; points: { date: string; price: number | null }[] };
-type PreparedPrices = { ok: true; scope: PriceScope; series: PriceSeries[]; notes: string[] }
+type RecipeKind = RecipeOptions['kind'];
+export type PreparedPrices = { ok: true; sourceMode: 'snapshot' | 'live'; scope: PriceScope; series: PriceSeries[]; notes: string[] }
   | { ok: false; message: string; refused: true };
 const refuse = (message: string) => ({ ok: false, message, refused: true }) as const;
+
+export function acceptsLiveDailyPriceRecipe(kind: RecipeKind): boolean {
+  return kind === 'return-summary' || kind === 'return-distribution' || kind === 'drawdown' || kind === 'small-multiples';
+}
+
+export function preparePriceChartInput(dataset: WidgetDataset, fields: PriceBindings, kind: RecipeKind): PreparedPrices {
+  const live = acceptsLiveDailyPriceRecipe(kind) ? prepareLiveDailyPrices(dataset, fields) : undefined;
+  return live ?? preparePrices(dataset, fields);
+}
 
 function sourceIssue(dataset: WidgetDataset, fields: string[], history: boolean): string | null {
   const columns = new Map(dataset.columns.map(c => [c.id, c]));
@@ -90,15 +100,21 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
     }
   }
   const notes = omitted.length ? [`Preserved gaps for ${omitted.length} excluded price observation(s).`] : [];
-  return finishPrices(scope, indexed, omitted, notes);
+  return finishPrices('snapshot', scope, indexed, omitted, notes);
 }
 
-export const observedReturnScope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
-
-/** Live evidence establishes an acquired window for return summaries alone. */
-export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
+/** Live evidence establishes an acquired window and the known observation gaps. */
+export function prepareLiveDailyPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
   const live = readLiveDailyPriceSource(dataset);
-  if (!live) return;
+  if (!live) {
+    const metadata = dataset.provenance.metadata;
+    const sources: unknown = metadata && Object.getOwnPropertyDescriptor(metadata, 'chartSources')?.value;
+    // A recognized receipt without valid live evidence cannot qualify through snapshot metadata.
+    if (typeof sources === 'object' && sources !== null && Object.hasOwn(sources, 'daily-price')) {
+      return refuse('The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.');
+    }
+    return;
+  }
   const { receipt, scope, symbols, rawOmissions } = live;
   if (!dataset.rows.length) return refuse('No valid daily prices remain.');
   const origin = (id: string) => acquiredColumnOrigin(dataset.columns.find(c => c.id === id));
@@ -114,14 +130,15 @@ export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBin
     .map((id): PriceCoordinate => JSON.parse(id));
   const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
   if (typeof indexed === 'string') return refuse(indexed);
-  const notes = [observedReturnScope];
+  const notes: string[] = [];
   if (rawOmissions.length) notes.push(`Preserved ${rawOmissions.length} price gap(s) from provider omissions.`);
   if (tableOmissions.length) notes.push(`Preserved ${tableOmissions.length} price gap(s) from table filtering.`);
-  return finishPrices(scope, indexed, [...rawOmissions, ...tableOmissions], notes);
+  return finishPrices('live', scope, indexed, [...rawOmissions, ...tableOmissions], notes);
 }
 
 function finishPrices(
-  scope: PriceScope, { prices, conflicts, duplicates }: Exclude<ReturnType<typeof indexPriceObservations>, string>,
+  sourceMode: 'snapshot' | 'live', scope: PriceScope,
+  { prices, conflicts, duplicates }: Exclude<ReturnType<typeof indexPriceObservations>, string>,
   omitted: PriceCoordinate[], sourceNotes: string[],
 ): PreparedPrices {
   for (const [symbol, date] of omitted) prices.get(symbol)?.set(date, null);
@@ -141,5 +158,5 @@ function finishPrices(
   if (!series.some(item => item.points.some(point => point.price !== null)))
     return refuse(['No valid daily prices remain.', ...notes].join(' '));
   series.sort((a, b) => a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0);
-  return { ok: true, series, notes, scope };
+  return { ok: true, sourceMode, series, notes, scope };
 }

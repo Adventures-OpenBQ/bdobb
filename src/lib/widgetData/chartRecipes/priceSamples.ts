@@ -6,17 +6,20 @@ import type { ChartBuildResult } from './chartSourceContracts';
 import { isoDate, qualifiedSymbol } from './financialEvidence';
 import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot, priceBasisFields, priceDateFields, priceIdentityFields } from './priceEvidence';
 import type { WidgetDataset } from '../types';
-import { observedReturnScope, prepareLiveReturnPrices, preparePrices, type PriceScope, type PriceSeries } from './input';
+import { prepareLiveDailyPrices, preparePriceChartInput, preparePrices, type PreparedPrices, type PriceScope, type PriceSeries } from './input';
 import type { PriceBindings } from './types';
+
+const observedReturnScope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
 
 /** Apply strict selection after the shared source and continuity checks. */
 export function prepareSelectedPrices(
-  dataset: WidgetDataset, fields: PriceBindings, symbols: readonly string[],
-): ReturnType<typeof preparePrices> {
-  return selectPrices(preparePrices(dataset, fields), symbols);
+  dataset: WidgetDataset, fields: PriceBindings, symbols: readonly string[], kind?: 'return-distribution' | 'small-multiples',
+): PreparedPrices {
+  const prepared = kind ? preparePriceChartInput(dataset, fields, kind) : preparePrices(dataset, fields);
+  return selectPrices(prepared, symbols);
 }
 
-function selectPrices(prepared: ReturnType<typeof preparePrices>, symbols: readonly string[]): ReturnType<typeof preparePrices> {
+function selectPrices(prepared: PreparedPrices, symbols: readonly string[]): PreparedPrices {
   if (!prepared.ok) return prepared;
 
   const bySymbol = new Map(prepared.series.map(series => [series.symbol, series]));
@@ -88,12 +91,13 @@ export function admitReturnSummary(
   if (!symbols.length || symbols.length > 12 || new Set(symbols).size !== symbols.length || !symbols.every(qualifiedSymbol)) {
     return refuse('Choose 1 to 12 distinct qualified listings from the acquired price history.');
   }
-  const live = prepareLiveReturnPrices(dataset, fields);
+  const live = prepareLiveDailyPrices(dataset, fields);
   if (!live) {
     const issue = localSnapshotIssue(dataset, fields);
     if (issue) return refuse(issue);
   }
-  const prepared = selectPrices(live ?? preparePrices(dataset, fields), symbols);
+  const prices = live?.ok ? { ...live, notes: [observedReturnScope, ...live.notes] } : live ?? preparePrices(dataset, fields);
+  const prepared = selectPrices(prices, symbols);
   if (!prepared.ok) return prepared;
   const { scope, notes } = prepared;
   if (window.mode === 'common' && (!isoDate(window.start) || !isoDate(window.end) || window.start > window.end
