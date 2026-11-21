@@ -13,7 +13,7 @@ vi.mock('@tauri-apps/api/event',()=>({listen:async(_event:string,handler:(e:{pay
 import {YouTubeRenderer} from './YouTubeRenderer';
 import {useDashboardStore} from '../../stores/dashboardStore';
 import {card} from '../../test/fixtures';
-import {makeDefaultDocks} from '../../lib/dashboardsFile';
+import {loadDashboard,makeDefaultDocks} from '../../lib/dashboardsFile';
 import {__reset} from '../../test/memfs';
 import {__resetJsonStoreForTests} from '../../lib/jsonStore';
 let cardId='';let serial=0;
@@ -29,6 +29,7 @@ it('persists native user close after navigation unmount before the polling inter
  act(()=>{native.present=false;for(const listener of native.listeners)listener({payload:cardId});});
  view.unmount();
  await waitFor(()=>expect(saved().video?.display).toBe('inline'));
+ expect((await loadDashboard('d'))?.tabs[0].cards[0].video?.display).toBe('inline');
  render(<Connected/>);await screen.findByTitle('YouTube video');expect(native.opens).toBe(1);
 });
 it('retains the floating preference for ordinary navigation while the player was still open',async()=>{
