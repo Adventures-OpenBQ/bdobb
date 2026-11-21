@@ -34,12 +34,12 @@
 
 **Interfaces:** Consume both fixed branch heads. Produce a committed branch containing v9 as ancestor and the original v10 behavior, with raw test evidence and a self-review report.
 
-- [ ] Inspect both sides of each overlapping change, then merge the exact v9 head with normal history. Resolve conflicts by preserving both tested contracts rather than selecting one side wholesale.
-- [ ] Run existing regression tests that distinguish the transport/refusal and optional-adapter behaviors. If a regression is discovered, follow systematic debugging and demonstrate RED/GREEN before its minimal fix.
-- [ ] Run `pnpm test:run`, typecheck, lint, Knip, scrub, web tests, WASM verification/packaging and both production builds; record counts, warnings and failures honestly.
-- [ ] Run v10 synthetic and installed-replay price-view suites on Chromium/WebKit and both table engines, plus the affected v9 transport/return-summary tests and 17 pivot inspector/cascade cases with retries disabled. Use isolated ports/servers; preserve first-failure evidence.
-- [ ] Update portable verification and pairing notes, inspect the stacked diff, commit and report exact heads, commands, results and limitations. Do not push or create PRs; controller owns publication.
-- [ ] Obtain fresh independent review of the combined source, stacked diff, conflict resolutions and evidence. Address blocking findings and verify corrections before publication.
+- [x] Inspect both sides of each overlapping change, then merge the exact v9 head with normal history. Resolve conflicts by preserving both tested contracts rather than selecting one side wholesale.
+- [x] Run existing regression tests that distinguish the transport/refusal and optional-adapter behaviors. If a regression is discovered, follow systematic debugging and demonstrate RED/GREEN before its minimal fix.
+- [x] Run `pnpm test:run`, typecheck, lint, Knip, scrub, web tests, WASM verification/packaging and both production builds; record counts, warnings and failures honestly.
+- [x] Run v10 synthetic and installed-replay price-view suites on Chromium/WebKit and both table engines, plus the affected v9 transport/return-summary tests and 17 pivot inspector/cascade cases with retries disabled. Use isolated ports/servers; preserve first-failure evidence.
+- [x] Update portable verification and pairing notes, inspect the stacked diff, commit and report exact heads, commands, results and limitations. Do not push or create PRs; controller owns publication.
+- [x] Obtain fresh independent review of the combined source, stacked diff, conflict resolutions and evidence. Address blocking findings and verify corrections before publication.
 
 ### Task 2: Publish the stacked PR and finish hosted CI
 

@@ -1,5 +1,13 @@
 # v10 live price views review
 
+## Stacked reconciliation review — November 21, 2026
+
+Fresh independent Superpowers review of the complete stacked change and reconciliation at `3808e73e` approved publication with no Critical or Important findings. It verified v9 `bf67cf72` as an ancestor, preserved acquisition and pivot contracts, and independently counted the test evidence. [Independent stacked review](independent-stacked-review.md) · [Reconciliation verification](verification.md)
+
+One nonblocking Minor remains: synthetic refusal browser cases assert a visible column header rather than an individual data cell. The dual-executor cases independently verify 58 retained rows. Browser row visibility is therefore not independently asserted in each synthetic refusal case. The recorded initial failures remain part of the verification history. This is independent agent review, not a human GitHub approval.
+
+The publication target is a stacked PR against `codex/v9-live-observed-returns`. Release integration, release version changes and merge decisions are separate. Existing client #89, provider #6 and Docker #33 remain unmerged. The historical local-handoff status below describes the earlier revision.
+
 ## Review status
 
 **Approved for local handoff on November 21, 2026.** The independent whole-change Superpowers review at `7dca3c02` found three Important issues. The independent Ponytail review recommended six simplifications and corroborated the clipped disclosures. The independent scoped review of `7dca3c02..de267011` confirmed all three findings were addressed in `750f7831`, verified all six simplifications, and found no new Critical or Important issues. [Whole-change review](independent-whole-change-review.md) · [Ponytail review](independent-ponytail-review.md) · [Final fix review](independent-final-fix-review.md)
