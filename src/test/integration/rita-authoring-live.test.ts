@@ -216,8 +216,8 @@ live("Rita authors a dashboard", () => {
 
   it("removes a widget by name", async () => {
     await reset();
-    const { rounds } = await turn("Remove the World Clock widget from my dashboard.");
-    expect(rounds.map((r) => r.tool)).toContain("remove_widget");
+    const { rounds, reply, statuses } = await turn("Remove the World Clock widget from my dashboard.");
+    expect(rounds.map((r) => r.tool), JSON.stringify({ reply, statuses, rounds })).toContain("remove_widget");
     expect(activeCards().some((c) => c.title === "World Clock")).toBe(false);
   }, 200_000);
 

@@ -4,6 +4,7 @@
 // @vitest-environment node
 // Runs only when OPENBB_RITA_URL points at a live Rita. Never in CI.
 import { describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
 
 // Node has no native Tauri invoke bridge. Keep the real HTTP/data-client path,
 // using Node's transport rather than treating a missing WebView as fetched data.
@@ -83,7 +84,9 @@ live("Rita live", () => {
     // a param-less widget.
     const widget = { ...raw, id, backendId: backend.id, params: Array.isArray(raw.params) ? raw.params : [] } as WidgetDef;
     const card: DashboardCard = {
-      id: "card-1",
+      // A real newly installed card gets a fresh identity. Reusing card-1
+      // lets Rita's widget cache bypass the cold fetch this check must prove.
+      id: randomUUID(),
       widgetId: id,
       backendId: backend.id,
       params: {},
