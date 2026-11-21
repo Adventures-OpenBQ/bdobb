@@ -14,6 +14,7 @@ import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher, runAgentTool }
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
 import { liveWorkspaceOptions } from "./liveModel";
+import { numericClaims, numericValues } from "./liveEvidence";
 import { TEXT_SUM_REFUSAL } from "./textSumRefusal";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage } from "../../lib/agent/types";
@@ -99,10 +100,6 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
   return { rounds, reply };
 }
 
-/** Every number in `text`, commas and a trailing .0 removed. */
-const numbersIn = (text: string): string[] =>
-  (text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, "").replace(/\.0+$/, ""));
-
 beforeEach(() => {
   useSettingsStore.setState({ settings: { ...useSettingsStore.getState().settings, contextSharing: true } });
   useWidgetRegistryStore.getState().seedBuiltins();
@@ -130,16 +127,18 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(model?.measures, "one Amount sum measure").toHaveLength(1);
     expect(model?.measures[0]).toMatchObject({ sourceFieldId: "Amount", aggregation: "sum" });
     // Rita's final text may quote only numbers the engine returned.
-    const engine = new Set(numbersIn(JSON.stringify(out.preview.rows)));
-    expect(engine.has("615") && engine.has("360") && engine.has("210"), "engine totals present in preview.rows").toBe(true);
+    const totals = new Set(numericValues(out.preview.rows));
+    const engine = new Set(totals);
+    expect(totals.has(615) && totals.has(360) && totals.has(210), "engine totals present in preview.rows").toBe(true);
     // arrange_table's description (capabilities.ts) lets Rita state the source row count, but only as
     // describe_table's exact completeness.totalRowCount; that number is an engine number too.
-    for (const r of rounds.filter((r) => r.tool === "describe_table")) {
+    for (const r of rounds.filter((r) => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok")) {
       const count = (r.result as { completeness?: { totalRowCount?: unknown; totalRowCountKind?: unknown } }).completeness?.totalRowCount;
-      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") engine.add(String(count));
+      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") engine.add(count);
     }
-    const quoted = numbersIn(reply);
-    expect(quoted.length, "Rita's reply quotes at least one total").toBeGreaterThan(0);
+    const quoted = numericClaims(reply);
+    expect(quoted.some(number => totals.has(number)), "Rita's reply quotes at least one actual group total").toBe(true);
     for (const n of quoted) expect(engine.has(n), `reply number ${n} is in preview.rows`).toBe(true);
   }, 300_000);
 
@@ -158,12 +157,16 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(tableCard().tableDefinition).toEqual(before);
     // A refusal has no preview: invented counts must not pass even if the
     // answer also says that summing text is impossible.
-    const evidencedCounts = new Set<string>();
-    for (const r of rounds.filter((r) => r.tool === "describe_table")) {
+    const described = rounds.filter(r => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok");
+    expect(described.length, "the intended placed table was successfully inspected").toBeGreaterThan(0);
+    const evidencedCounts = new Set<number>();
+    for (const r of rounds.filter((r) => r.tool === "describe_table" && r.args.card_id === tableCard().id &&
+      (r.result as { status?: string }).status === "ok")) {
       const count = (r.result as { completeness?: { totalRowCount?: unknown; totalRowCountKind?: unknown } }).completeness?.totalRowCount;
-      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") evidencedCounts.add(String(count));
+      if (typeof count === "number" && (r.result as { completeness?: { totalRowCountKind?: unknown } }).completeness?.totalRowCountKind === "exact") evidencedCounts.add(count);
     }
-    for (const number of numbersIn(reply)) expect(evidencedCounts.has(number), `refusal reply number ${number} has engine evidence`).toBe(true);
+    for (const number of numericClaims(reply)) expect(evidencedCounts.has(number), `refusal reply number ${number} has engine evidence`).toBe(true);
     const text = reply.toLowerCase();
     if (results.some((r) => r.status === "refused" && r.code === "validation-failed")) {
       expect(text).toMatch(/refus|cannot|can't|can not|unable|not (?:possible|valid|supported)|text/);

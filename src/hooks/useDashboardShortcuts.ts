@@ -78,10 +78,10 @@ export function useDashboardShortcuts(
       // menu event (useWindowMenuPins). wry's WKWebView hands ⌘-keys to JS
       // first and forwards only UNHANDLED ones to the main menu, so the event
       // is left alone there: preventDefault would stop the accelerator firing.
-      // The browser build has no native menu, so the toggle stays here for it.
+      // Browser and mobile builds have no native menu, so they handle the toggle here.
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && !event.altKey && event.code === "KeyA") {
         if (event.repeat) return;
-        if (isTauri()) return;
+        if (isTauri() && !["ios", "android", "androideabi"].includes(import.meta.env.TAURI_ENV_PLATFORM ?? "")) return;
         event.preventDefault();
         useChatStore.getState().togglePinned();
         return;

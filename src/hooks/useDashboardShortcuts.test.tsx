@@ -496,6 +496,21 @@ describe("Command+? opens Help", () => {
     expect(useChatStore.getState().pinned).toBe(false);
   });
 
+  it("handles ⌘⇧A in the native iPad app, which has no desktop Window menu", () => {
+    vi.stubEnv("TAURI_ENV_PLATFORM", "ios");
+    try {
+      native.on = true;
+      useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example" } });
+      useChatStore.setState({ pinned: false });
+      render(<Harness />);
+      const event = pressCommandShift("KeyA");
+      expect(event.defaultPrevented).toBe(true);
+      expect(useChatStore.getState().pinned).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("in the desktop app leaves ⌘⇧A to Window ▸ Keep Rita Open (no double toggle)", () => {
     native.on = true;
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example" } });

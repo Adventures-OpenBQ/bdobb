@@ -101,9 +101,11 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "pick source fields. Use it to choose categories, measures and filters and to answer questions without reading rows, and say which " +
       "scope a quoted number covers. section 'members:<category_id>' pages a category's observed members and 'formula:<formula_id>' lists " +
       "a formula's references; pass the returned cursor to continue and search to filter members by label. If the table's tab is not open " +
-      "it asks you to navigate to it.",
+      "it asks you to navigate to it. card_id is the exact uuid of the placed card in widget context, never widget_id, a definition id or a title. " +
+      "On unknown, check that supplied uuid and retry only with the corrected instance id; do not infer that its tab is closed. " +
+      "If the supplied instance still answers unknown, report that it is unavailable. Only runtime-not-ready asks you to open its tab.",
     input_schema: { type: "object", properties: {
-      card_id: { type: "string", description: "The table card (its uuid in the widget context)" },
+      card_id: { type: "string", description: "Exact placed-card uuid from widget context, not widget_id or a definition id" },
       section: { type: "string", description: "summary (default), profile, members:<category_id> or formula:<formula_id>" },
       scope: { type: "string", enum: ["input", "filtered"], description: "profile only: input (default, every row the card receives) or filtered (the rows its calculations use)" },
       fields: { type: "array", items: { type: "string" }, description: "profile only: 1–100 source field ids to profile, in this order" },
@@ -134,7 +136,7 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       "can be undone with Undo. A standard LIVE table is refused with server-execution-pending, and a table whose tab is not open asks you to " +
       "navigate there. In viewer mode only the existing viewer controls can change, for this session only; any authoring change is refused with viewer-scope.",
     input_schema: { type: "object", properties: {
-      card_id: { type: "string", description: "The table card (its uuid in the widget context)" },
+      card_id: { type: "string", description: "Exact placed-card uuid from widget context, not widget_id or a definition id" },
       expected_revision: { type: "string", description: "The revision returned by describe_table" },
       mode: { type: "string", enum: ["apply", "preview"], description: "preview: calculate only, never commit (use for read-only asks). apply (default): commit with Undo." },
       arrangement: { type: "object", properties: {
@@ -154,7 +156,8 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       '{"card_id": "…", "params": {"symbol": "MSFT"}}, never beside card_id. For a note or markdown card\'s body, ' +
       "prefer set_markdown_content when available. If it is not exposed, this tool also writes a declared text param " +
       'with {"card_id": "…", "params": {"text": "the complete note body"}}. A refused call saves nothing; ' +
-      "correct its arguments using the returned retry_with and retry the same requested edit. " +
+      "Only error.code PARAMS_NOT_NESTED with retry_with authorizes correcting the nesting and retrying the same requested edit. " +
+      "For user_declined, stop: do not repeat the edit or request consent again. For NEEDS_USER, follow the returned user-action instruction. " +
       "To change how the card is shown (e.g. as a chart), pass view, with or without params.",
     input_schema: {
       type: "object",

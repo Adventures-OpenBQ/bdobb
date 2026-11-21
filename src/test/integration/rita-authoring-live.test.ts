@@ -21,6 +21,7 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 import { LOCAL_TOOLS } from "../../lib/agent/localTools";
 import { runAgentQuery } from "../../lib/agent/query";
 import { liveWorkspaceOptions } from "./liveModel";
+import { liveTurnEvidence } from "./liveEvidence";
 import { forcedSkills, skillsCatalog } from "../../lib/agent/skills";
 import type { AgentMessage, AgentStatus } from "../../lib/agent/types";
 import { BUILTIN_WIDGETS } from "../../lib/builtins";
@@ -114,7 +115,7 @@ const activeCards = (): DashboardCard[] =>
   useDashboardStore.getState().activeDashboard()?.tabs.flatMap((t) => t.cards) ?? [];
 
 /** One turn, wired as chatStore.send wires it: all LOCAL_TOOLS, real executeLocalTool. */
-async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Round[]; reply: string; statuses: AgentStatus[] }> {
+async function turn(text: string, firstSaveFlat = false, confirm?: () => Promise<boolean>): Promise<{ rounds: Round[]; reply: string; statuses: AgentStatus[] }> {
   const skills = bundledSkills();
   const rounds: Round[] = [];
   const deps = {
@@ -135,7 +136,7 @@ async function turn(text: string, firstSaveFlat = false): Promise<{ rounds: Roun
       }
       // No AbortSignal here: the signal parameter ExecuteDeps declares has
       // nothing to pass it to.
-      const result = await runAgentTool(serverId, tool, args, [], [], localCall);
+      const result = await runAgentTool(serverId, tool, args, [], [], localCall, { confirm });
       rounds.push({ tool, args, result });
       console.log("[tool]", tool, JSON.stringify(args).slice(0, 300), "→", JSON.stringify(result).slice(0, 400));
       return result;
@@ -217,8 +218,25 @@ live("Rita authors a dashboard", () => {
   it("removes a widget by name", async () => {
     await reset();
     const { rounds, reply, statuses } = await turn("Remove the World Clock widget from my dashboard.");
-    expect(rounds.map((r) => r.tool), JSON.stringify({ reply, statuses, rounds })).toContain("remove_widget");
+    expect(rounds.map((r) => r.tool), JSON.stringify(liveTurnEvidence(reply, statuses, rounds, "remove_widget"))).toContain("remove_widget");
     expect(activeCards().some((c) => c.title === "World Clock")).toBe(false);
+  }, 200_000);
+
+  it("stops a URL edit after the user declines consent", async () => {
+    await reset();
+    const website = BUILTIN_WIDGETS.find(widget => widget.type === "iframe" && widget.params.some(param => param.paramName === "url"))!;
+    expect(website, "a real URL-loading widget").toBeDefined();
+    const original = "https://example.invalid/original";
+    const replacement = "https://example.invalid/replacement";
+    const id = (await useDashboardStore.getState().addCard(website, { url: original })) as string;
+    await useDashboardStore.getState().patchCardField(id, "title", "Consent Control");
+    const deny = vi.fn(async () => false);
+    const { rounds } = await turn(`/skill:build-dashboard Change the existing Consent Control website card URL to ${replacement}.`, false, deny);
+    expect(deny, "one confirmation, no repeat after denial").toHaveBeenCalledTimes(1);
+    const attempts = rounds.filter(round => round.tool === "set_widget_params" && round.args.card_id === id);
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0].result).toMatchObject({ error: { code: "user_declined" } });
+    expect(activeCards().find(card => card.id === id)?.params.url).toBe(original);
   }, 200_000);
 
   it("discovers, adds and configures a widget in one turn", async () => {
