@@ -63,7 +63,11 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
       const focus = focusNext.current;
       focusNext.current = false;
       openYoutubePip(cardId, id, {display: "pip", autoplay: prefs.autoplay, muted: prefs.muted}, focus).then(
-        () => { if (live) { setPhase("pip"); setError(""); } },
+        opened => { if (live) {
+          if (opened === false) { setPrefs(current => ({...current, display: "inline"})); setPhase("inline"); }
+          else setPhase("pip");
+          setError("");
+        } },
         reason => { if (live) { setPhase("error"); setError(`Could not open video: ${String(reason)}`); } },
       );
     } else if (requested.current) {
@@ -123,7 +127,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
   const inline = !wantPip && phase === "inline";
   return <>
     {controls}
-    {direct === null ? <p className="empty-state">Select a video in the widget's parameters.</p> : <div className="youtube-player">
+    {direct === null ? <p className="empty-state">{cardId ? "No video is currently available for the selected source." : "Select a video in the widget's parameters."}</p> : <div className="youtube-player">
       {native ? <div className="video-playback-actions"><button type="button" disabled={saving || phase === "closing"} onClick={() => void change({...prefs, display: wantPip ? "inline" : "pip"}, !wantPip)}>{wantPip ? "Return video to card" : "Picture in Picture"}</button></div> : null}
       {inline ? <div className="iframe-wrap">{port !== undefined && src ? <iframe className="widget-frame" title="YouTube video" src={src}
         sandbox={isYouTubeEmbed(src) ? undefined : `${SRC_FRAME_SANDBOX} allow-presentation`}

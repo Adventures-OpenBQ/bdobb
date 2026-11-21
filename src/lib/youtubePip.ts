@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import {invoke,isTauri} from '@tauri-apps/api/core';
+import {mayOpenYoutubePip} from './youtubePipEvents';
 import type {YoutubePlayback} from './youtubePlayback';
 
 export function desktopVideoPipAvailable():boolean {
@@ -20,8 +21,12 @@ function owned<T>(card:string, action:()=>Promise<T>):Promise<T> {
   void result.finally(()=>{if(pending.get(card)===result)pending.delete(card);}).catch(()=>undefined);
   return result;
 }
-export function openYoutubePip(card:string,id:string,prefs:YoutubePlayback,focus=false):Promise<void> {
-  return owned(card,()=>invoke('youtube_pip_open',{card,id,muted:prefs.muted,autoplay:prefs.autoplay,focus}));
+export function openYoutubePip(card:string,id:string,prefs:YoutubePlayback,focus=false):Promise<boolean> {
+  return owned(card,async()=>{
+    if(!await mayOpenYoutubePip(card,focus))return false;
+    await invoke('youtube_pip_open',{card,id,muted:prefs.muted,autoplay:prefs.autoplay,focus});
+    return true;
+  });
 }
 export function closeYoutubePip(card:string):Promise<void> {
   return owned(card,async()=>{

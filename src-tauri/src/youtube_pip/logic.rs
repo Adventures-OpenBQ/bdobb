@@ -9,6 +9,10 @@ pub fn card_label(card: &str) -> Result<String, &'static str> {
 pub fn is_owned_label(label: &str) -> bool {
     label.strip_prefix("youtube-pip-").is_some_and(|card|card_label(card).is_ok())
 }
+pub fn user_close_card(label: &str) -> Option<&str> {
+    if !is_owned_label(label) {return None;}
+    label.strip_prefix("youtube-pip-")
+}
 pub fn validate_owner(label: &str) -> Result<(), &'static str> {
     if label == "main" {Ok(())} else {Err("Only the main app can control video windows")}
 }
@@ -31,6 +35,13 @@ mod tests {
         assert!(is_owned_label("youtube-pip-abc-123"));
         for label in ["main", "dash-x", "youtube-pip-", "youtube-pip-../main"] {
             assert!(!is_owned_label(label));
+        }
+    }
+    #[test]
+    fn user_close_notification_contains_only_a_validated_card() {
+        assert_eq!(user_close_card("youtube-pip-a-123"), Some("a-123"));
+        for label in ["main", "dash-1", "youtube-pip-", "youtube-pip-../main"] {
+            assert_eq!(user_close_card(label), None);
         }
     }
     #[test]

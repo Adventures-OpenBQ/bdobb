@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 mod logic;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 /// Only the trusted main app requests these windows. The player receives a
 /// fixed loopback URL; no remote native-IPC capability is granted to it.
@@ -41,7 +41,7 @@ pub async fn youtube_pip_close(window: tauri::WebviewWindow, card: String) -> Re
     logic::validate_owner(window.label()).map_err(String::from)?;
     let label = logic::card_label(&card).map_err(String::from)?;
     if let Some(player) = window.app_handle().get_webview_window(&label) {
-        player.close().map_err(|e|e.to_string())?;
+        player.destroy().map_err(|e|e.to_string())?;
     }
     Ok(())
 }
@@ -55,6 +55,14 @@ pub async fn youtube_pip_is_open(window: tauri::WebviewWindow, card: String) -> 
 
 pub fn close_all(app: &tauri::AppHandle) {
     for (label, player) in app.webview_windows() {
-        if logic::is_owned_label(&label) {let _ = player.close();}
+        if logic::is_owned_label(&label) {let _ = player.destroy();}
+    }
+}
+
+/// Only OS/user close requests publish this event. App-requested cleanup uses
+/// destroy(), which skips CloseRequested, retaining the saved floating choice.
+pub fn user_close_requested(app: &tauri::AppHandle, label: &str) {
+    if let Some(card) = logic::user_close_card(label) {
+        let _ = app.emit_to("main", "youtube-pip-user-closed", card);
     }
 }

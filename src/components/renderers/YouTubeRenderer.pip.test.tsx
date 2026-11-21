@@ -111,3 +111,8 @@ it('preserves the requested focus when the store echoes its saved setting before
  await userEvent.click(screen.getByRole('button',{name:'Picture in Picture'}));
  await waitFor(()=>expect(calls.open).toHaveBeenCalledWith('tv-store-echo','uYyhswnZkSw',{display:'pip',autoplay:false,muted:false},true));
 });
+it('reports the selected source as unavailable when its channel is off-air',()=>{
+ render(<YouTubeRenderer data="" cardId="off-air"/>);
+ expect(screen.getByText('No video is currently available for the selected source.')).toBeInTheDocument();
+ expect(screen.queryByTitle('YouTube video')).toBeNull();
+});

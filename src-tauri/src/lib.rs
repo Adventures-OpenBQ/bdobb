@@ -249,8 +249,12 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running BDOBB")
         .run(|app, event| {
-            if let tauri::RunEvent::WindowEvent {label, event: tauri::WindowEvent::Destroyed, ..} = &event {
-                if label == "main" {youtube_pip::close_all(app);}
+            if let tauri::RunEvent::WindowEvent {label, event, ..} = &event {
+                match event {
+                    tauri::WindowEvent::Destroyed if label == "main" => youtube_pip::close_all(app),
+                    tauri::WindowEvent::CloseRequested {..} => youtube_pip::user_close_requested(app, label),
+                    _ => {}
+                }
             }
             // Quit hands Chrome's floating player back (picture_in_picture, spec Flow 4).
             if let tauri::RunEvent::Exit = event {

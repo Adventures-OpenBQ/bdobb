@@ -1,3 +1,5 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
 import {afterEach, describe, expect, it, vi} from 'vitest';
 const {platform} = vi.hoisted(() => ({platform:{native:true}}));
 vi.mock('@tauri-apps/api/core',()=>({isTauri:()=>platform.native,invoke:vi.fn()}));

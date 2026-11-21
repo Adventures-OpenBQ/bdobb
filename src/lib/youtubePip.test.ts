@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {expect,it,vi} from 'vitest';
 const invoke=vi.hoisted(()=>vi.fn());
+vi.mock('@tauri-apps/api/event',()=>({listen:async()=>()=>{}}));
 vi.mock('@tauri-apps/api/core',()=>({invoke,isTauri:()=>true}));
 import {closeYoutubePip,openYoutubePip} from './youtubePip';
 it('serializes close after an in-flight open so removing a card cannot orphan its player',async()=>{
