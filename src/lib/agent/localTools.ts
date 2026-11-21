@@ -13,6 +13,7 @@ import { effectiveParams, splitParamEdit } from "../paramGroups";
 import { isPeriodType, resolveValue } from "../dateExpressions";
 import { fieldContext } from "../params";
 import { arrangeTable, describeTable } from "./tableModel/tools";
+import { TABLE_OPERATION_SCHEMA } from "./tableModel/operationSchema";
 import type { CardView, DashboardCard, WidgetDef } from "../types";
 import { possibleViews } from "../cardViews";
 import { isRecord } from "../isRecord";
@@ -138,7 +139,7 @@ export const LOCAL_TOOLS: AgentTool[] = ([
       mode: { type: "string", enum: ["apply", "preview"], description: "preview: calculate only, never commit (use for read-only asks). apply (default): commit with Undo." },
       arrangement: { type: "object", properties: {
         contract: { type: "string", enum: ["table-model/1"] },
-        operations: { type: "array", description: "Operation objects as listed in describe_table's capabilities", items: { type: "object" } },
+        operations: { type: "array", description: "Operation objects as listed in describe_table's capabilities", items: TABLE_OPERATION_SCHEMA },
       }, required: ["contract", "operations"] },
     }, required: ["card_id", "expected_revision", "arrangement"] },
   },
