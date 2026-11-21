@@ -1,6 +1,6 @@
 # Published-PR follow-up for observed daily returns
 
-The published-head reviews found that contradictory listing declarations and partial acquisitions could qualify an observed-return chart. The follow-up checks these facts at the original daily SDK array, the selected HTTP rows and the acquired field origins used by both executors. Independent scoped review of these replacement commits is pending. [Original review reports and probe output](published-pr-reviews.md)
+The published-head reviews found that contradictory listing declarations and partial acquisitions could qualify an observed-return chart. The follow-up checks these facts at the original daily SDK array, the selected HTTP rows and the acquired field origins used by both executors. Independent scoped re-review is complete. Both Superpowers reviewers closed their findings with no new Critical or Important breakage; Ponytail confirmed all eight simplifications and 38 fewer hand-maintained lines. [Scoped review records](published-pr-rereviews.md). [Original review reports and probe output](published-pr-reviews.md)
 
 ## Corrections
 
@@ -63,3 +63,7 @@ The development browser replays recorded two source GETs per case and zero addit
 The standalone source-pin test first caught a stale expected commit. The corrected test passed, and qualification uses the subsequent Docker revision and image above. The first full lint invocation overlapped a Vitest Vite configuration file and got ENOENT. An isolated full lint run passed. The original review probe stopped at the newly rejected orphan receipt, and a second copy explicitly expecting that validation error completed the remaining cases. Earlier captures, warnings and the previously reported narrow-touch hover failure remain in the historical verification. [Earlier qualification](verification.md)
 
 The image and public runtime evidence cover the local arm64 mirrors and the two sampled listings. The standard-router dependency limitation, optional integration skips and historical geometry evidence retain their existing scope. The separate Minor about which refusal message appears on a fully filtered table remains open.
+
+## Publication and CI
+
+The reviewed fixes are being published to the existing [provider PR #6](https://github.com/Adventures-OpenBQ/openbq-eodhd/pull/6), [Docker PR #33](https://github.com/Adventures-OpenBQ/openbq-docker/pull/33) and [client PR #89](https://github.com/Adventures-OpenBQ/bdobb/pull/89). Current-head CI is reported on those PRs separately from local qualification. No merge or deployment is included.

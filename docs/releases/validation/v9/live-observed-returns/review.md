@@ -79,3 +79,7 @@ The reviewer checked client `bfb38a8f154a8bcfb23bc56023d432dfeba2928c`, canonica
 Explicit weekly interval/period declarations and within-listing currency/unit contradictions now invalidate evidence before normalization or filtering can hide them. Missing declarations, sparse observed data and different stable denominations on separate listings remain eligible. The reviewer recomputed all five final capture variants and both public 29-quote/28-return series. The recorded 26 focused browser checks passed.
 
 Ready for integration review. Known diagnostic-priority and transient touch-hover qualifications remain documented in verification; this verdict does not authorize publication, merging or deployment. All worktrees and raw evidence are preserved.
+
+## Fresh published-PR reviews
+
+A subsequent user-requested Ponytail full review and fresh Superpowers reviews across all three PRs found mixed-case identity and partial-marker naming bypasses. Both were fixed, alongside the Python safe-ledger invariant. All eight Ponytail reductions were applied. The independent scoped re-reviews passed with no new Critical or Important findings. [Follow-up verification and dispositions](published-pr-follow-up.md) · [Full reviews](published-pr-reviews.md) · [Scoped re-reviews](published-pr-rereviews.md).
