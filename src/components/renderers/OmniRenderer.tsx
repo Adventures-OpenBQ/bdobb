@@ -29,7 +29,9 @@ export function OmniRenderer({
   backend: BackendConfig;
   params: Record<string, string>;
 }) {
-  const [prompt, setPrompt] = useState("");
+  // Effective params include the backend's supplied SQL/Python prompt.
+  // Seed the draft only: parameter rerenders must not overwrite typed code.
+  const [prompt, setPrompt] = useState(() => params.prompt ?? "");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [result, setResult] = useState<OmniResult | null>(null);
