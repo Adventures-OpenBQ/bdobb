@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v7.0.0",
-  "baseCommit": "6e43415b4527a47e500542e8d181710ba02a8e15",
-  "sourceId": "c592458758bb3a11d5fe872b748253df62bebed34f5f7f96603ed4a6d72599ed",
+  "baseCommit": "1cf97afce8ac684a8558197f54738cd972b5d354",
+  "sourceId": "fd9a1dfca4a63b5f49e30e1e657c918c11671b05828f7200b42ccd5cfba7bf54",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21063,7 +21063,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "5c4590c4641b74ed9d179ac16e52874664880dda6bc49a46298ec11dabcff644"
+      "sha256": "d327f0c067449fed9b64d7ed81e9a4d358c9e37e31bbe4c1792c63ba7bc28183"
     },
     {
       "path": "source_bundle.py",
@@ -22448,8 +22448,8 @@
       "path": "src/components/renderers/LocalTableRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 35214,
-      "sha256": "550fcca592fcab78ca525bea5e5bb0696975fdba7e9039af2d70cf5689690f34"
+      "size": 35246,
+      "sha256": "cae7eec1a6947839e5224ed8e07bb961def97b56e7b64e7c3ebd03499291a726"
     },
     {
       "path": "src/components/renderers/ManagedSourceForm.test.tsx",
@@ -22707,8 +22707,8 @@
       "path": "src/components/renderers/StatementRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 3234,
-      "sha256": "b0f39184d08391b65b8b1949371cc8d73e9ff9c810fd13d70ad4452989aa0700"
+      "size": 3283,
+      "sha256": "b54d8c18506e9803f46a9afbe0916e79ffe65285f2f621f74cd39447494eb4a6"
     },
     {
       "path": "src/components/renderers/StatementWorkerView.test.tsx",
@@ -22742,8 +22742,8 @@
       "path": "src/components/renderers/TableRenderer.execution.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 8444,
-      "sha256": "cff3eb5f72c9cf17f7ce20e784f7d4857bfad710474bcdbcb65a9e82b19aa75d"
+      "size": 10148,
+      "sha256": "f0d34b71242e0bd4855474bbba2b4e2eb8cb176c5cc0c3c752a0a65b87c34351"
     },
     {
       "path": "src/components/renderers/TableRenderer.frame.test.tsx",
@@ -22770,8 +22770,8 @@
       "path": "src/components/renderers/TableRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 83974,
-      "sha256": "151c1558235f18acd688f123fd7a8982971c73fa4367dfe61b78b533a055362e"
+      "size": 85222,
+      "sha256": "b54c15658ba511be5b342deca3789855e485da7b040c63ed41dcf264bf024a5e"
     },
     {
       "path": "src/components/renderers/TradingViewRenderer.test.tsx",
@@ -26782,7 +26782,7 @@
       "type": "file",
       "mode": 420,
       "size": 37910,
-      "sha256": "c5f11a23cc4389fb9bc26e80bf64ae5a7acdf7dfdc4f03938afc0eee9d7254b7"
+      "sha256": "0365e4e19779b424745dec4dc6ef995e04b2d48fcffe5542ce8abc7bebd48ac9"
     },
     {
       "path": "src/lib/statementModel/catalog.test.ts",
@@ -26802,15 +26802,15 @@
       "path": "src/lib/statementModel/compile.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 16730,
-      "sha256": "b032c239c2438c1b7fcfb9b979a9e2afd746d5773d4047cce59ae5a98961e291"
+      "size": 18566,
+      "sha256": "e9fcb65c0fb429b27912686e5842c9f84aa9640ff37abda8eb5c75b321c692fb"
     },
     {
       "path": "src/lib/statementModel/compile.ts",
       "type": "file",
       "mode": 420,
-      "size": 11133,
-      "sha256": "19116e2161e0c6d623952ad334a6721418849cd064d714817e2971aec992d5cc"
+      "size": 12534,
+      "sha256": "47dc913953e5de0feb08a41a9afc456fd944e56ce498c89cc3e66c3cd60580c7"
     },
     {
       "path": "src/lib/statementModel/compileFixtures.ts",
@@ -26852,7 +26852,7 @@
       "type": "file",
       "mode": 420,
       "size": 4952,
-      "sha256": "9a247e6f37efcdf2d07776058091cff4d3d9a0b26a2b7799c092721b425ced7b"
+      "sha256": "48e96e17689f62e97b6a0e7a8967f76e7ca9579279472e290361ab436f7f6237"
     },
     {
       "path": "src/lib/statementModel/nestedFormulas.test.ts",
@@ -27306,8 +27306,8 @@
       "path": "src/lib/tableExecution/rust/oracle.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 11002,
-      "sha256": "08a73e0fb02745f231aa17af19ddea1bc3717bdb45ceff4c6fad44c2341996b2"
+      "size": 12521,
+      "sha256": "6dd9c1d28aad319d9d85e907083b4adf7ebd5172e77f4acd665bdd88d4348de3"
     },
     {
       "path": "src/lib/tableExecution/rust/oracle.ts",
@@ -28161,7 +28161,7 @@
       "type": "file",
       "mode": 420,
       "size": 3716,
-      "sha256": "a6e2024948047c182b33373b3462505cf760e24eecd87026888f377bb052d861"
+      "sha256": "47d761b169a4252f606054ce23f47e9e18374bc0a73e029fafad689ec54cc509"
     },
     {
       "path": "src/lib/widgetTypes.test.ts",
@@ -28692,8 +28692,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 146962,
-      "sha256": "ff02e3faa1a3e5e4ad14dbfb16b3a40800d64ffee7c539adcaa6035c424ef4b7"
+      "size": 147889,
+      "sha256": "56659a1b3054b9a61c16ec1cf3783980b3368738f327e94d2a5701c475542f26"
     },
     {
       "path": "src/test/fakeSocket.ts",
