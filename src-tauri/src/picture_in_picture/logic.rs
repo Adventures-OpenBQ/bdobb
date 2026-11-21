@@ -181,6 +181,8 @@ pub fn should_park_on_blur(frontmost_is_self: bool, frontmost_is_chrome: bool, c
 /// The floating player, behind whatever reaches it on this platform.
 pub trait PlayerWindow {
     fn trusted(&self) -> bool;
+    /// End the claimed window generation before another acquisition.
+    fn reset_binding(&mut self) {}
     /// None while no floating player is open.
     fn frame(&mut self) -> Result<Option<Rect>, String>;
     fn apply(&mut self, op: Op) -> Result<(), String>;
@@ -418,6 +420,7 @@ impl<W: PlayerWindow> Placement<W> {
     }
 
     fn forget(&mut self) {
+        self.window.reset_binding();
         self.handed_back |= self.holder.is_some();
         self.holder = None;
         self.saved = None;
@@ -811,6 +814,42 @@ mod tests {
         fn displays(&self) -> Vec<Rect> {
             vec![DISPLAY]
         }
+    }
+
+
+    struct Generations {
+        current: (u64, Rect),
+        binding: super::super::binding::PlayerBinding<u64>,
+    }
+    impl PlayerWindow for Generations {
+        fn trusted(&self) -> bool { true }
+        fn frame(&mut self) -> Result<Option<Rect>, String> {
+            let current = self.current;
+            Ok(self.binding.get(|id|Ok(*id == current.0), ||Ok(Some(current.0)))?.map(|_|current.1))
+        }
+        fn apply(&mut self, op: Op) -> Result<(), String> {
+            if self.frame()?.is_none() { return Err("claimed player closed".into()); }
+            match op {
+                Op::Move(x,y) => { self.current.1.x=x; self.current.1.y=y; },
+                Op::Size(w,h) => { self.current.1.width=w; self.current.1.height=h; },
+            }
+            Ok(())
+        }
+        fn display_bounds(&self, _: Rect) -> Rect { DISPLAY }
+        fn displays(&self) -> Vec<Rect> { vec![DISPLAY] }
+        fn reset_binding(&mut self) { self.binding.reset(); }
+    }
+    #[test]
+    fn replacement_between_fit_and_release_keeps_its_own_original_frame() {
+        let mut placement=Placement::new(Generations {current:(1,ORIGINAL),binding:Default::default()});
+        assert_eq!(placement.fit("a",r(20.,30.,640.,400.),(0.,0.)),Status::Fitted);
+        let next=r(100.,50.,400.,225.);
+        placement.window.current=(2,next);
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.current,(2,next));
+        assert_eq!(placement.fit("a",r(20.,30.,640.,400.),(0.,0.)),Status::Fitted);
+        assert!(placement.release("a"));
+        assert_eq!(placement.window.current,(2,next));
     }
 
     #[test]

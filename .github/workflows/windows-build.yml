@@ -72,6 +72,8 @@ jobs:
           $config | Add-Member productName 'BDOBB v8 MCP'
           $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v8.windows.mcp'
           $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
+      - name: Verify Windows native player ownership and restoration
+        run: cargo test --manifest-path src-tauri/Cargo.toml picture_in_picture -- --test-threads=1
       - name: Build debug-only MCP installer
         shell: pwsh
         run: pnpm tauri build --debug --features mcp-bridge --bundles nsis --config "$env:RUNNER_TEMP/windows-mcp.json"

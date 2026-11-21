@@ -41,6 +41,8 @@ The tabs along the bottom of the card are yours. **All** is always first and sho
 
 ## Reading the wire
 
+The card keeps at most 300 headlines in memory, preserving the newest item from every subscribed source before filling the remaining space. Busy wires therefore cannot remove a quiet newsletter entirely. Icons arrive with the subscription; a larger publisher icon can load from its public URL.
+
 Each headline shows its time — followed by `[-1]`, `[-2]`… for a story dated before today, which a weekly newsletter often is — the publisher's icon and the title. A story whose link is a video (a `video` or `videos` segment in its path, which is how most publishers mark one) carries a small **▶** — at the end of the title on the list, beside the time on a strip card. A newsletter post with a distinct author reads *Title - Author*. A headline holding any highlight keyword is coloured. A title its publisher escaped twice is decoded once before it is drawn, so `&amp;` reads as the ampersand that was meant.
 
 **Scrolling, four ways.** The wheel works; over the strip a vertical wheel turns into sideways travel. You can **drag** the list or the strip with the mouse. A finger scrolls both natively. And the **four buttons at the right end of the tab bar** page and jump — **Beginning**, **Page back**, **Page forward** and **End** on the strip; **Top**, **Page up**, **Page down** and **Bottom** on the list. On the list a page is nine tenths of what is in view, so the headline at the edge carries over. On the strip a page lands on a card's left edge, so the first card in view is always whole: the card the right edge cut off leads the next page, and paging back stops at the first card that fits.

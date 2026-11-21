@@ -44,6 +44,7 @@ struct FileTime {
 extern "system" {
     fn EnumWindows(callback: unsafe extern "system" fn(Handle, isize) -> i32, data: isize) -> i32;
     fn IsWindowVisible(hwnd: Handle) -> i32;
+    fn IsWindow(hwnd: Handle) -> i32;
     fn IsIconic(hwnd: Handle) -> i32;
     fn IsHungAppWindow(hwnd: Handle) -> i32;
     fn GetWindowTextW(hwnd: Handle, text: *mut u16, length: i32) -> i32;
@@ -68,6 +69,9 @@ extern "system" {
 }
 #[link(name = "kernel32")]
 extern "system" {
+    fn CreateMutexW(attributes: *const c_void, owner: i32, name: *const u16) -> Handle;
+    fn WaitForSingleObject(handle: Handle, timeout: u32) -> u32;
+    fn ReleaseMutex(handle: Handle) -> i32;
     fn OpenProcess(access: u32, inherit: i32, pid: u32) -> Handle;
     fn CloseHandle(handle: Handle) -> i32;
     fn QueryFullProcessImageNameW(
@@ -105,16 +109,15 @@ fn text(hwnd: Handle, class: bool) -> String {
     };
     String::from_utf16_lossy(&value[..count.max(0) as usize])
 }
-fn chrome_identity(hwnd: Handle) -> Option<(u32, u64)> {
-    // SAFETY: Win32 validates the opaque HWND; no pointer is dereferenced here.
-    if unsafe { IsWindowVisible(hwnd) } == 0 || unsafe { GetWindowLongPtrW(hwnd, -20) } & 8 == 0 {
-        return None;
-    }
+/// Discovery/movement eligibility may change without ending this HWND's lifetime.
+fn eligible(hwnd: Handle) -> bool {
     let title = text(hwnd, false);
-    if !(title.eq_ignore_ascii_case("Picture in picture")
-        || title.eq_ignore_ascii_case("Picture-in-Picture"))
-        || text(hwnd, true) != "Chrome_WidgetWin_1"
-    {
+    let shown = unsafe { IsWindowVisible(hwnd) != 0 && GetWindowLongPtrW(hwnd, -20) & 8 != 0 };
+    shown && (title.eq_ignore_ascii_case("Picture in picture") || title.eq_ignore_ascii_case("Picture-in-Picture"))
+        && text(hwnd, true) == "Chrome_WidgetWin_1"
+}
+fn chrome_identity(hwnd: Handle) -> Option<(u32, u64)> {
+    if unsafe { IsWindow(hwnd) } == 0 || text(hwnd, true) != "Chrome_WidgetWin_1" {
         return None;
     }
     let mut pid = 0;
@@ -183,12 +186,29 @@ fn next_token() -> usize {
     .fetch_add(1, Ordering::SeqCst)
     .max(1)
 }
+/// Serialize the property check/set/original-frame capture across app instances.
+struct ClaimGuard(Handle);
+impl ClaimGuard {
+    fn acquire() -> Result<Self, String> {
+        let name: Vec<u16> = "Local\\BDOBB.ChromePiP.Claim".encode_utf16().chain(Some(0)).collect();
+        let handle = unsafe { CreateMutexW(ptr::null(), 0, name.as_ptr()) };
+        if handle.is_null() { return Err("Could not coordinate Chrome player ownership".into()); }
+        match unsafe { WaitForSingleObject(handle, 0) } {
+            0 | 0x80 => Ok(Self(handle)),
+            _ => { unsafe { CloseHandle(handle); } Err("Another BDOBB app is checking Chrome’s player; try again".into()) }
+        }
+    }
+}
+impl Drop for ClaimGuard {
+    fn drop(&mut self) { unsafe { ReleaseMutex(self.0); CloseHandle(self.0); } }
+}
 struct Win32;
 impl Windows for Win32 {
     fn select(&mut self) -> Result<Option<Player>, String> {
+        let _claim = ClaimGuard::acquire()?;
         unsafe extern "system" fn collect(hwnd: Handle, data: isize) -> i32 {
             // SAFETY: EnumWindows calls synchronously with our live Vec pointer.
-            if let Some(identity) = chrome_identity(hwnd) {
+            if let Some(identity) = eligible(hwnd).then(|| chrome_identity(hwnd)).flatten() {
                 unsafe {
                     (&mut *(data as *mut Vec<(usize, u32, u64)>)).push((
                         hwnd as usize,
@@ -258,6 +278,9 @@ impl Windows for Win32 {
             return Err("Chrome's floating player has closed or changed".into());
         }
         let hwnd = key.handle as Handle;
+        if !eligible(hwnd) {
+            return Err("Chrome’s player is temporarily unavailable; its original frame is retained".into());
+        }
         if unsafe { IsHungAppWindow(hwnd) } != 0 {
             return Err("Chrome is not responding; try again in a moment".into());
         }
@@ -434,4 +457,16 @@ pub fn release(window: &WebviewWindow, card: &str) {
 pub fn release_all() {
     QUITTING.store(true, Ordering::SeqCst);
     state(|s| s.grab.release_all());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn competing_app_claims_are_serialized() {
+        let first = ClaimGuard::acquire().expect("first claim");
+        assert!(std::thread::spawn(|| ClaimGuard::acquire().is_err()).join().unwrap());
+        drop(first);
+        assert!(ClaimGuard::acquire().is_ok());
+    }
 }

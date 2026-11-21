@@ -13,11 +13,15 @@ On macOS or Windows, start a video in Chrome and pop it out with Chrome's pictur
 
 The same choice works in a locked band: open **Settings ▸ Locked Widgets**, edit the top or bottom band, add **Live TV**, choose **Picture in Picture grab**, and choose **OK**. A locked card keeps its stored height. Make the band large enough for the player. Chrome's own controls operate playback and sound; Live TV's **Start muted** and **Autoplay** preferences apply to its YouTube sources.
 
-The incoming Chrome grab currently uses the macOS controller and its Accessibility permission. The iPadOS sandbox prevents moving another app's player. See the platform notes below; the separate outgoing player on macOS and Windows is described next.
+The incoming Chrome grab works on macOS and Windows. macOS requires Accessibility permission. The iPadOS sandbox prevents moving another app's player; choose a YouTube source for inline playback instead.
 
-## Live TV on macOS and Windows
+## Live TV controls
 
-Choose **Picture in Picture** on the video card to move playback to BDOBB's own resizable, always-on-top player. Choose **Return video to card**, or close the floating window, to return inline. Only one player for that card is active at a time. A source change updates its floating player. Removing the card, changing dashboards or tabs, or quitting BDOBB closes it. A saved floating choice can reopen when you return to the card.
+Live TV opens with its parameter panel hidden. **Show parameters** reveals playback preferences. Its row 0 speaker button mutes or unmutes a YouTube stream; Chrome grab uses Chrome's own sound controls. Live TV has no outgoing Picture in Picture button. Older saved floating preferences return to inline playback.
+
+## Other YouTube cards on macOS and Windows
+
+On other YouTube video cards, choose **Picture in Picture** to move playback to BDOBB's own resizable, always-on-top player. Choose **Return video to card**, or close the floating window, to return inline. Only one player for that card is active at a time. A source change updates its floating player. Removing the card, changing dashboards or tabs, or quitting BDOBB closes it. A saved floating choice can reopen when you return to the card.
 
 Open the card's **Parameters** panel to change **Start muted** and **Autoplay**. The playback choices are saved with the dashboard and travel in BDOBB workspace exports and dashboard sync; they are never sent to the data provider as query parameters. Autoplay can be restricted by YouTube or the platform; use the player's Play control when necessary. Returning a recorded video may restart it; this is intended for live streams, whose player resumes at the current live position.
 
@@ -27,7 +31,7 @@ On iPad, in a browser and on other platforms, the same card plays inline. iPad's
 
 In **Live TV**, choose **Picture in Picture grab** after popping a video out in Chrome. Chrome and BDOBB must run as the same Windows user with the same privilege level. The grab uses Chrome's English **Picture in picture** window; other browser players and non-English window titles are not selected. Leave only one Chrome floating player open.
 
-The player follows the card and BDOBB's window, parks while the card or app is hidden, and returns to its original position and size when released. Display scaling is applied to the card; restoring uses the original physical position even after a display-scale change. Use Chrome's own playback and sound controls. No Chrome-tab accessibility or volume-slider control is used by the combined grab.
+The player follows the card and BDOBB's window, parks while the card or app is hidden, and returns to its original position and size when released. Display scaling is applied to the card; restoring uses the original physical position after a display-scale change. If that display has been removed, the player returns within an available display instead. Use Chrome's own playback and sound controls. No Chrome-tab accessibility or volume-slider control is used by the combined grab.
 
 If BDOBB is force-terminated while holding the player, close and reopen Chrome's floating player before grabbing it again. This prevents another app instance from taking over a window still marked as held. Normal release and quit remove that marker. The standalone legacy card's macOS-specific mute options remain separate.
 
@@ -73,7 +77,7 @@ Chrome shows BDOBB only the selected tab of each window. If the stream's tab is 
 
 ## On iPad, Windows, Linux and the web preview
 
-On iPad the card is an empty space with the hint *Park a picture-in-picture video here*. iPadOS gives an app no way to move another app's player, so drag the picture-in-picture video onto the card yourself. There is no mute button on iPad. The Windows app, Linux and the [[web-preview|Web Preview]] show *Available in the macOS desktop app*.
+On iPad the card is an empty space with the hint *Park a picture-in-picture video here*. iPadOS gives an app no way to move another app's player, so drag the picture-in-picture video onto the card yourself. There is no mute button on iPad. Windows supports Chrome player placement as described above, with Chrome's own audio controls. Linux and the [[web-preview|Web Preview]] show *Available in the macOS desktop app*.
 
 ## Limits
 

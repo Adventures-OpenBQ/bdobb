@@ -88,7 +88,7 @@ the card does about that and what **Open externally ↗** is for.
 
 ## Live TV
 
-The companion RSS backend's **Live TV** widget offers YouTube - Bloomberg Live, YouTube - Schwab Network Live, YouTube - Yahoo Finance 24/7 Stream, and **Picture in Picture grab** in one source picker. On the Mac the grab choice fits Chrome's existing floating player over the card, which can also be added in **Settings ▸ Locked Widgets**. Switching sources releases the grabbed player. For YouTube playback, **Picture in Picture** opens BDOBB's own floating player on macOS and Windows, and **Return video to card** brings it back. **Start muted** and **Autoplay** are in Parameters. iPad and viewer windows play YouTube inline. See **Picture in Picture** in the guide for permission and platform limits.
+The companion RSS backend's **Live TV** widget offers YouTube - Bloomberg Live, YouTube - Schwab Network Live, YouTube - Yahoo Finance 24/7 Stream, and **Picture in Picture grab** in one source picker. On macOS and Windows the grab choice fits Chrome's existing floating player over the card, which can also be added in **Settings ▸ Locked Widgets**. Switching sources releases the grabbed player. YouTube playback stays inline; Live TV has no outgoing Picture in Picture button. Parameters start hidden. The row 0 speaker button mutes or unmutes YouTube; Chrome grab uses Chrome's audio controls. **Start muted** and **Autoplay** are in Parameters. iPad and viewer windows play YouTube inline. See **Picture in Picture** in the guide for permission and platform limits.
 
 ## Picture in Picture
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {useParameterDropdownOpen} from "../../hooks/useParameterDropdownOpen";
 import { modalStack } from "../../hooks/modalStack";
 import {
   cancelScheduledRelease,
@@ -28,7 +29,7 @@ import type { PinEdge } from "../../lib/types";
 import { GRID_ROW_HEIGHT, ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../../stores/settingsStore";
 import { useWidgetRegistryStore } from "../../stores/widgetRegistryStore";
-import { effectiveParams } from "../../lib/paramGroups";
+import { effectiveParams,groupedParamNames,groupFor } from "../../lib/paramGroups";
 
 /**
  * How often the card fits again (a player opened, closed or dragged away,
@@ -48,13 +49,16 @@ const dashboardData: CardData = {
 
 /** A combined video card stops owning Chrome when its selected source changes,
  * including changes made by sync while its tab is hidden. */
-function channelCardData(channel: string): CardData {
+export function channelCardData(channel: string): CardData {
   return {
     has: id => {
       const owner = ownerOfCard(useDashboardStore.getState(), id);
       const card = owner?.tabs.flatMap(tab => tab.cards).find(card => card.id === id);
       const widget = card && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId);
-      return Boolean(owner && card && widget && effectiveParams(card, owner.groups, widget, owner.groupsDisabled === true).channel === channel);
+      if (!owner || !card || !widget) return false;
+      const grouped = groupedParamNames(card, owner.groups, widget, owner.groupsDisabled === true).has("channel");
+      const explicit = grouped ? groupFor(card, owner.groups, "channel")?.value !== undefined : Object.hasOwn(card.params, "channel");
+      return explicit && effectiveParams(card, owner.groups, widget, owner.groupsDisabled === true).channel === channel;
     },
     subscribe: listener => {
       const dashboard = useDashboardStore.subscribe(listener);
@@ -108,7 +112,7 @@ export function PictureInPictureRenderer({
   requiredChannel?: string;
 }) {
   const platform = pipPlatform();
-  if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
+  if (platform === "ipad") return <p className="empty-state">{requiredChannel === undefined ? "Park a picture-in-picture video here" : "iPadOS cannot move Chrome’s floating player. Choose a YouTube stream for inline playback."}</p>;
   if (platform === "other" || (platform === "windows" && requiredChannel === undefined)) return <p className="empty-state">{MESSAGES.not_supported}</p>;
   const { source, label } = pipSettings(params);
   return <DesktopPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} requiredChannel={requiredChannel} />;
@@ -151,7 +155,8 @@ function DesktopPlayer({
   // below, so a card scrolled out of view is not fitted for a frame each time
   // a menu or a dialog closes, before the new observer has reported.
   const inView = useRef(true);
-  const aside = menuOpen || dialogOpen;
+  const dropdownOpen = useParameterDropdownOpen();
+  const aside = menuOpen || dialogOpen || dropdownOpen;
 
   // The card's height follows its width: it takes the fewest rows that hold
   // the player when the card is first mounted this session, when its grid

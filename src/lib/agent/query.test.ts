@@ -74,6 +74,8 @@ describe("runAgentQuery", () => {
 
   it.each([
     "",
+    'event: copilotMessageArtifact\ndata: {"type":"table"}\n\nevent: done\ndata: {}\n\n',
+    'event: copilotCitationCollection\ndata: {"citations":[null,"not a citation",7]}\n\nevent: done\ndata: {}\n\n',
     'event: copilotPromptSuggestions\ndata: {"suggestions":["Add another note"]}\n\nevent: done\ndata: {}\n\n',
     'event: copilotMessageChunk\ndata: {"delta":"  \\n"}\n\nevent: copilotStatusUpdate\ndata: {"eventType":"INFO","message":"Thinking"}\n\n',
   ])("reports an empty turn instead of treating ancillary events as an answer (%#)", async wire => {

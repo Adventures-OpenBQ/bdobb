@@ -2,13 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { isYouTubeEmbed, youtubeEmbedUrl } from "../../lib/youtube";
 import { PIP_GRAB_CHANNEL, PIP_GRAB_MARKER, youtubePlayback, youtubePlaybackUrl, type YoutubePlayback } from "../../lib/youtubePlayback";
 import { closeYoutubePip, desktopVideoPipAvailable, openYoutubePip, youtubePipIsOpen } from "../../lib/youtubePip";
 import { SRC_FRAME_SANDBOX } from "./HtmlRenderer";
-import { PictureInPictureRenderer } from "./PictureInPictureRenderer";
+import { channelCardData, PictureInPictureRenderer } from "./PictureInPictureRenderer";
+
+const grabSelection = channelCardData(PIP_GRAB_CHANNEL);
 
 type Props = {
   data: unknown;
@@ -19,29 +21,33 @@ type Props = {
   viewer?: boolean;
   readOnly?: boolean;
   menuOpen?: boolean;
+  /** Live TV plays streams inline; Chrome grab is a separate selected source. */
+  inlineOnly?: boolean;
+  rowZeroHost?: HTMLElement | null;
 };
 
 /** Only validated YouTube ids reach either player. Client playback preferences
  * stay out of provider parameters. Old data-only callers retain their URL contract.
  * The native bridge serializes ownership changes; inline playback waits for close.
  */
-export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettingsChange, viewer = false, readOnly = false, menuOpen = false }: Props) {
+export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettingsChange, viewer = false, readOnly = false, menuOpen = false, inlineOnly = false, rowZeroHost }: Props) {
   const text = typeof data === "string" ? data : "";
-  const grab = Boolean(cardId && text === PIP_GRAB_MARKER);
+  const locallySelected = useSyncExternalStore(grabSelection.subscribe, () => !!cardId && grabSelection.has(cardId));
+  const grab = Boolean(cardId && locallySelected && text === PIP_GRAB_MARKER);
   const direct = youtubeEmbedUrl(text);
   const wantPort = direct !== null;
   const id = direct?.split("/embed/")[1] ?? null;
   const native = Boolean(cardId && !viewer && desktopVideoPipAvailable());
   const [prefs, setPrefs] = useState(() => youtubePlayback(settings));
   const [port, setPort] = useState<number | null | undefined>(undefined);
-  const [phase, setPhase] = useState<"inline" | "opening" | "pip" | "closing" | "error">(() => native && prefs.display === "pip" ? "opening" : "inline");
+  const [phase, setPhase] = useState<"inline" | "opening" | "pip" | "closing" | "error">(() => native && (inlineOnly || grab) ? "closing" : native && prefs.display === "pip" ? "opening" : "inline");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const requested = useRef(false);
   const saveRef = useRef(onSettingsChange);
   saveRef.current = onSettingsChange;
-  const wantPip = native && prefs.display === "pip";
+  const wantPip = native && !inlineOnly && !grab && prefs.display === "pip";
   const focusNext = useRef(false);
 
   const savedDisplay = settings?.display;
@@ -61,7 +67,15 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
   useEffect(() => {
     if (!native || !cardId) { setPhase("inline"); return; }
     let live = true;
-    if (wantPip && id) {
+    if (inlineOnly || grab) {
+      // Also runs on a fresh mount after the loading screen. The card-keyed
+      // native queue waits for any cleanup started by the prior renderer.
+      setPhase("closing");
+      closeYoutubePip(cardId).then(
+        () => { if (live) { requested.current = false; setPhase("inline"); setError(""); } },
+        reason => { if (live) { setPhase("error"); setError(`Could not close video: ${String(reason)}`); } },
+      );
+    } else if (wantPip && id) {
       requested.current = true;
       setPhase("opening");
       const focus = focusNext.current;
@@ -82,7 +96,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
       );
     } else setPhase("inline");
     return () => { live = false; };
-  }, [native, cardId, id, wantPip, prefs.autoplay, prefs.muted]);
+  }, [native, cardId, id, wantPip, prefs.autoplay, prefs.muted, inlineOnly, grab]);
 
   useEffect(() => () => {
     if (cardId && requested.current) void closeYoutubePip(cardId).catch(() => undefined);
@@ -113,8 +127,9 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
     setError("");
     focusNext.current = focus;
     try {
-      await saveRef.current?.(next);
-      setPrefs(next);
+      const saved = inlineOnly ? {...next, display: "inline" as const} : next;
+      await saveRef.current?.(saved);
+      setPrefs(saved);
     } catch (reason) { focusNext.current = false; setError(`Could not save playback choice: ${String(reason)}`); }
     finally { savingRef.current = false; setSaving(false); }
   }
@@ -125,20 +140,31 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
       <label><input type="checkbox" checked={prefs.autoplay} disabled={saving} onChange={e => void change({...prefs, autoplay: e.target.checked})} /> Autoplay</label>
     </div>, controlsHost,
   ) : null;
+  const audio = rowZeroHost ? createPortal(
+    <button type="button" className="card-action video-mute" aria-label={prefs.muted ? "Unmute" : "Mute"}
+      title={grab ? "Control this floating player’s audio in Chrome" : prefs.muted ? "Unmute" : "Mute"}
+      disabled={saving || grab} onClick={() => void change({...prefs, muted: !prefs.muted})}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4V5Z"/>{prefs.muted ? <path d="m16 9 5 6m0-6-5 6"/> : <><path d="M15 8a6 6 0 0 1 0 8"/><path d="M18 5a10 10 0 0 1 0 14"/></>}
+      </svg>
+    </button>, rowZeroHost,
+  ) : null;
   const src = cardId
     ? port ? youtubePlaybackUrl(text, port, prefs) : direct ? `${direct}?autoplay=${prefs.autoplay ? 1 : 0}&mute=${prefs.muted ? 1 : 0}&playsinline=1` : null
     : youtubeEmbedUrl(text, port ?? undefined);
   const inline = !wantPip && phase === "inline";
   if (grab && cardId) return <>
+    {audio}
     {phase === "inline"
       ? <PictureInPictureRenderer cardId={cardId} readOnly={viewer || readOnly} menuOpen={menuOpen} requiredChannel={PIP_GRAB_CHANNEL} />
       : <p className="empty-state">{phase === "error" ? "Player unavailable" : "Returning video to card…"}</p>}
     {error ? <p role="alert">{error}</p> : null}
   </>;
   return <>
+    {audio}
     {controls}
     {direct === null ? <p className="empty-state">{cardId ? "No video is currently available for the selected source." : "Select a video in the widget's parameters."}</p> : <div className="youtube-player">
-      {native ? <div className="video-playback-actions"><button type="button" disabled={saving || phase === "closing"} onClick={() => void change({...prefs, display: wantPip ? "inline" : "pip"}, !wantPip)}>{wantPip ? "Return video to card" : "Picture in Picture"}</button></div> : null}
+      {native && !inlineOnly ? <div className="video-playback-actions"><button type="button" disabled={saving || phase === "closing"} onClick={() => void change({...prefs, display: wantPip ? "inline" : "pip"}, !wantPip)}>{wantPip ? "Return video to card" : "Picture in Picture"}</button></div> : null}
       {inline ? <div className="iframe-wrap">{port !== undefined && src ? <iframe className="widget-frame" title="YouTube video" src={src}
         sandbox={isYouTubeEmbed(src) ? undefined : `${SRC_FRAME_SANDBOX} allow-presentation`}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /> : null}</div>

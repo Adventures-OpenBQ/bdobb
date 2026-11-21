@@ -77,6 +77,8 @@ import { NoteRenderer } from "./renderers/NoteRenderer";
 import { DateProbeRenderer } from "./renderers/DateProbeRenderer";
 import { ParamEchoRenderer } from "./renderers/ParamEchoRenderer";
 import { YouTubeRenderer } from "./renderers/YouTubeRenderer";
+import {releaseNow} from "../lib/pictureInPicture";
+import {PIP_GRAB_MARKER} from "../lib/youtubePlayback";
 import { PictureInPictureMute, PictureInPictureRenderer } from "./renderers/PictureInPictureRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
@@ -320,6 +322,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
    */
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [paramsHost, setParamsHost] = useState<HTMLDivElement | null>(null);
+  const [videoRowZeroHost,setVideoRowZeroHost] = useState<HTMLSpanElement | null>(null);
 
   /**
    * The ⋯ toggle, kept so the menu can hang from it. The menu is portalled
@@ -466,6 +469,16 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   // Drawn while the widget is still resolving, as before.
   const refreshable = !!card.linkedSource || widget === undefined || fetchesData(widget) || SELF_REFRESHING_TYPES.has(widget.type);
   const view = card.view;
+  const rendersChromeGrab = widget?.type === "youtube" && data === PIP_GRAB_MARKER &&
+    (view !== "raw" && view !== "chart") && !["error", "incomplete", "unresolved"].includes(status);
+  const previousChromeGrab = useRef(false);
+  useEffect(() => {
+    // The card stayed mounted, but an error/empty/raw body replaced its grab.
+    // Tab hiding unmounts this component and retains the renderer's park grace.
+    if (previousChromeGrab.current && !rendersChromeGrab) releaseNow(card.id);
+    previousChromeGrab.current = rendersChromeGrab;
+  }, [card.id, rendersChromeGrab]);
+
   /**
    * What the card's own error boundary calls this region — and, through
    * `componentDidCatch`, what it writes to the log. The widget's name, NOT
@@ -1402,7 +1415,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       case "metric":
         return <MetricRenderer data={data} />;
       case "youtube":
-        return <YouTubeRenderer data={data} cardId={card.id} settings={card.video} viewer={viewer} readOnly={readOnly} menuOpen={exportOpen || (collapseControls && controlsOpen)} controlsHost={paramsOpen && !readOnly ? paramsHost : null} onSettingsChange={readOnly ? undefined : settings => patchCardField(card.id, "video", settings)} />;
+        return <YouTubeRenderer data={data} inlineOnly={widget?.id === "live_tv"} rowZeroHost={widget?.id === "live_tv" ? videoRowZeroHost : null} cardId={card.id} settings={card.video} viewer={viewer} readOnly={readOnly} menuOpen={exportOpen || (collapseControls && controlsOpen)} controlsHost={paramsOpen && !readOnly ? paramsHost : null} onSettingsChange={readOnly ? undefined : settings => patchCardField(card.id, "video", settings)} />;
       case "newsfeed":
         return <NewsfeedRenderer data={data} />;
       case "chart-vegalite":
@@ -1910,11 +1923,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && card.tableDefinition?.analytical === undefined && hasControls && !hideTitleParams && controlProps ? (
+        {!minimized && card.tableDefinition?.analytical === undefined && !hideTitleParams && ((hasControls && controlProps) || (widget?.type === "youtube" && widget.id === "live_tv")) ? (
           <div
             className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            <ParamControls {...controlProps} rowZeroOnly />
+            {hasControls && controlProps ? <ParamControls {...controlProps} rowZeroOnly /> : null}
+            {widget?.type === "youtube" && widget.id === "live_tv" ? <span className="video-row-zero" ref={setVideoRowZeroHost} /> : null}
           </div>
         ) : null}
         {sharedWithRita && canShare ? (

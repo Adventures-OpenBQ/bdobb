@@ -38,7 +38,7 @@ export type NewsArticle = {
   sort_at: number;
 };
 
-/** One feed record from the subscribe reply. `favicon` is a data URI or null. */
+/** One feed record from the subscribe reply. `favicon` is a data URI, public URL or null. */
 export type NewsFeedRecord = {
   id: number;
   url: string;
@@ -141,10 +141,25 @@ export function mergeArticles(current: NewsArticle[], incoming: NewsArticle[]): 
   const byId = new Map<number, NewsArticle>();
   for (const a of current) byId.set(a.id, a);
   for (const a of incoming) byId.set(a.id, a);
-  // ponytail: a full re-sort per frame; O(n log n) at n<=300 is nothing.
-  return Array.from(byId.values())
-    .sort((a, b) => b.sort_at - a.sort_at || b.id - a.id)
-    .slice(0, NEWS_CAP);
+  const sorted = Array.from(byId.values()).sort((a, b) => b.sort_at - a.sort_at || b.id - a.id);
+  if (sorted.length <= NEWS_CAP) return sorted;
+  // Keep the newest item from each source before filling the remaining slots
+  // with recent headlines. Otherwise busy wires evict a weekly newsletter's
+  // entire seed page, leaving its tab empty despite a successful subscription.
+  // At most 50 sources are subscribed; total retained history stays bounded.
+  const represented = new Set<number>();
+  const kept = new Set<number>();
+  for (const a of sorted) {
+    if (!represented.has(a.feed_id) && kept.size < NEWS_CAP) {
+      represented.add(a.feed_id);
+      kept.add(a.id);
+    }
+  }
+  for (const a of sorted) {
+    if (kept.size >= NEWS_CAP) break;
+    kept.add(a.id);
+  }
+  return sorted.filter(a => kept.has(a.id));
 }
 
 /**
