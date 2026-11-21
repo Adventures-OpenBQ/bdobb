@@ -95,11 +95,12 @@ export function DualAxisOverlayControls({ probeTarget, job, saved, context, disa
   }), [fields, pair]);
   const candidate = decoded.ok ? decoded.options : undefined;
   const changed = !saved || pair !== saved.recipe || fields.some(({ role, selected }) => (saved.fields[role] ?? '') !== selected);
-  const { checked, current } = useMeasuredRecipe(job, compatible && changed ? candidate : undefined, surface.measured, surface.matches);
+  const { checked, current, pendingRefusal } = useMeasuredRecipe(job, compatible && changed ? candidate : undefined, surface.measured, surface.matches);
+  const diagnostic = checked ?? pendingRefusal;
   const canApply = checked?.ok === true;
   const checking = !!job && compatible && changed && !!candidate && !checked;
   const issue = read?.error ?? (read && changed && (!read.source ? overlaySourceIssue : !compatible ? overlayPairIssue
-    : !decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined));
+    : !decoded.ok ? decoded.message : diagnostic && !diagnostic.ok ? diagnostic.message : undefined));
   return <>
     {probeTarget && createPortal(<div className="dual-axis-overlay-draft-probe" aria-hidden="true" ref={surface.element}>
       <ChartRenderer data={null} scrollHeight={dualAxisOverlayMinPlotHeight} minPlotWidth={dualAxisOverlayMinPlotWidth}

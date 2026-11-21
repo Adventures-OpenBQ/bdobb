@@ -3,6 +3,7 @@
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { MOCK_URL, defaultSeed, read, seedApp } from './fixtures';
+import { openParameters } from './fixtures/chart-recipes';
 import { pivotValueKey } from '../src/lib/pivotKeys';
 import { parseFormula } from '../src/lib/tableModel/formulaSyntax';
 import { bindFormula } from '../src/lib/tableModel/formulaBinding';
@@ -285,6 +286,7 @@ test('stock: one surface per underlying, spaced by ln(K/S) and √T; checklist, 
   const iv0 = out.columns.find(c => c.measureId === 'iv')!;
   expect(out.rows.find(r => r.groupPath?.length === 2 && r.groupPath[0].value === 'AAA' && r.groupPath[1].value === 90)!.values[iv0.id]).toBeCloseTo(0.21); // placeholder excluded
 
+  await openParameters(chart);
   for (const name of ['Height', 'Space rows by', 'Space columns by']) await expect(chart.getByLabel(name, { exact: true })).toBeVisible();
   await expect(chart.getByLabel('Category', { exact: true })).toHaveCount(0);
   const measures = chart.getByRole('button', { name: /^Measures/ });
@@ -345,6 +347,7 @@ test('stock: an underlying left with one expiry draws as a line beside the other
   const titles = chart.locator('.linked-chart-plot .annotation-text');
   await expect(titles).toHaveText(['AAA', 'BBB']);
   // Tick 2027-01-15 and 2027-03-19: AAA keeps two expiries, BBB (no 2027-03-19) keeps one.
+  await openParameters(chart);
   const measures = chart.getByRole('button', { name: /^Measures/ });
   const list = page.getByRole('dialog', { name: 'Measures', exact: true });
   await measures.click();

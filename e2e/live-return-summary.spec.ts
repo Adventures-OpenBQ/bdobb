@@ -131,7 +131,7 @@ test('retains one stale chart on matching failure and retires a held result afte
   await refresh(page);
   await expect.poll(() => acquisitions.length).toBe(before + 1);
   const retired = requests.at(-1)!;
-  await edit(await openParameters(source), 'Source start', '2026-10-13');
+  await edit(source.locator('header'), 'Source start', '2026-10-13');
   await expect.poll(() => acquisitions.at(-1)?.searchParams.get('start_date')).toBe('2026-10-13');
   await expect(boxes(graph)).toHaveCount(0);
   original.resolve();
@@ -164,8 +164,8 @@ for (const replacementKind of ['symbol', 'interval', 'backend', 'selector', 'cre
     await refresh(page);
     await expect.poll(() => held).toBe(1);
     const retired = requests.at(-1)!;
-    if (replacementKind === 'symbol') await edit(await openParameters(source), 'Symbol', 'AAPL.US,MCD.US');
-    if (replacementKind === 'interval') await edit(await openParameters(source), 'Interval', '1W');
+    if (replacementKind === 'symbol') await edit(source.locator('header'), 'Symbol', 'AAPL.US,MCD.US');
+    if (replacementKind === 'interval') await edit(source.locator('header'), 'Interval', '1W');
     if (replacementKind === 'selector') {
       // Change the discovering widget definition as a server catalogue update
       // would. The existing card ID and URL are preserved.
@@ -299,12 +299,13 @@ for (const pinned of [false, true]) {
     await expect(boxes(graph)).toHaveCount(2);
     await expect(source).toHaveCount(0);
     await tab(page, 'Prices');
-    const controls = await openParameters(source);
+    // Row-zero source parameters live once in the title bar.
+    const controls = source.locator('header');
     await edit(controls, 'Source start', '2026-10-13');
     await expect(source.locator('.card-stale')).toBeVisible();
     await tab(page, 'Returns');
     await tab(page, 'Prices');
-    await expect((await openParameters(source)).getByLabel('Source start', { exact: true })).toHaveValue('2026-10-13');
+    await expect(source.locator('header').getByLabel('Source start', { exact: true })).toHaveValue('2026-10-13');
     await tab(page, 'Returns');
     expect(acquisitions.every(url => url.searchParams.get('start_date') === fixedQuery.start_date)).toBe(true);
 
@@ -347,6 +348,8 @@ for (const pinned of [false, true]) {
     await expect(listings(graph)).toHaveText([/MCD\.US.*N = 27/, /AAPL\.US.*N = 27/]);
     await expect(widget.getByText(scope, { exact: true })).toBeVisible();
     await pane.hover();
+    await pane.getByRole('button', { name: 'Lock', exact: true }).click();
+    await expect(pane.getByRole('button', { name: 'Lock', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await ask('2026-10-13', [{ symbol: 'AAPL.US', adjusted_close: 108 }, { symbol: 'MCD.US', adjusted_close: 105 }]);
   });
 }

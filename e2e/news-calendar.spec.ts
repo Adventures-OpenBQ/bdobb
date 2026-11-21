@@ -7,13 +7,20 @@ import { card, plot, captureParameters, openParameters, refuseQueuedChartApplyAf
 import { importNews, newsChart, newsManifest, newsPayload, newsTable, newsWorkspace } from './fixtures/news-calendar';
 
 type Axis = { _offset: number; range: number[]; c2p: (coordinate: number) => number };
-type Graph = HTMLElement & { _fullLayout: { xaxis: Axis; yaxis: Axis; uirevision: string; width: number } };
+type Graph = HTMLElement & { _fullLayout: { xaxis: Axis; yaxis: Axis; uirevision: string; width: number; height: number } };
 const tip = (graph: Locator) => graph.locator('.hoverlayer');
 const ready = (graph: Locator) => expect(graph.locator('.heatmaplayer .hm image').first()).toBeVisible();
 const apply = (widget: Locator) => widget.getByRole('button', { name: 'Apply chart settings' });
 const refresh = (page: Page) => card(page, newsTable).getByRole('button', { name: 'Refresh' }).click();
 
 async function point(graph: Locator, week: number, weekday: number) {
+  // Closing Parameters changes the drawing box before Plotly's debounced
+  // resize settles. Coordinates from its old axes can hit the adjacent day.
+  await expect.poll(() => graph.evaluate(node => {
+    const layout = (node as Graph)._fullLayout;
+    const box = node.getBoundingClientRect();
+    return layout?.width === Math.round(box.width) && layout?.height === Math.round(box.height);
+  })).toBe(true);
   return graph.evaluate((node, [x, y]) => {
     const { xaxis, yaxis } = (node as Graph)._fullLayout;
     const bounds = node.getBoundingClientRect();
@@ -166,7 +173,7 @@ test('keeps the applied window through an incompatible draft, then reacquires a 
   const table = card(reopened, newsTable);
   await table.getByRole('button', { name: 'Card menu' }).click();
   await reopened.getByRole('menuitem', { name: 'Parameters', exact: true }).click();
-  const offset = table.getByRole('region', { name: 'Parameters' }).getByLabel('Offset', { exact: true });
+  const offset = table.locator('header').getByLabel('Offset', { exact: true });
   await offset.fill('10');
   await offset.press('Tab');
   await expect(reopenedPlot).toHaveCount(0);

@@ -91,11 +91,12 @@ export function EtfSunburstControls({ probeTarget, saved, context, job, disabled
   const candidate = decoded.ok && decoded.options.kind === 'etf-sunburst' ? decoded.options : undefined;
   const changed = Boolean(candidate && (!saved || candidate.fund !== saved.fund || candidate.snapshot !== saved.snapshot
     || candidate.depth !== saved.depth || recipeRoles.some(role => candidate.fields[role] !== saved.fields[role])));
-  const { checked } = useMeasuredRecipe(job, source && changed ? candidate : undefined, surface.measured, surface.matches);
+  const { checked, pendingRefusal } = useMeasuredRecipe(job, source && changed ? candidate : undefined, surface.measured, surface.matches);
+  const diagnostic = checked ?? pendingRefusal;
   const checking = !!job && !!source && changed && !checked;
   const canApply = checked?.ok === true;
   const problem = !currentRead ? undefined : currentRead.error ?? (!source ? (saved ? undefined : sourceProblem)
-    : !decoded.ok ? decoded.message : checked && !checked.ok ? checked.message : undefined);
+    : !decoded.ok ? decoded.message : diagnostic && !diagnostic.ok ? diagnostic.message : undefined);
   const snapshotLabel = acquiredSnapshot === source?.as_of ? `As of ${acquiredSnapshot}` : `Acquired vintage ${acquiredSnapshot}`;
   return <>
     {probeTarget && createPortal(<div className="etf-sunburst-draft-probe" aria-hidden="true" ref={surface.element}>

@@ -98,7 +98,10 @@ for(const [shape,extension] of [['wide','xls'],['wide','csv'],['long','xls'],['l
   await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
   const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
   await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
-  await parameters.getByRole('checkbox',{name:/Value/}).click();
+  await parameters.getByRole('button',{name:/^Measures/}).click();
+  const measures = page.getByRole('dialog',{name:'Measures',exact:true});
+  await measures.getByRole('checkbox',{name:/Value/}).click();
+  await measures.getByRole('button',{name:'Apply',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
   await statement.getByRole('button',{name:'Collapse Profit',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
@@ -246,6 +249,10 @@ test('formatted XLS Statement keeps ratio numeric across actual worker linked ta
  const chartCard = page.locator('.widget-card').filter({ has: chart });
  await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
  const parameters = chartCard.getByRole('region', { name: 'Parameters', exact: true });
- await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await parameters.getByRole('checkbox',{name:/Value/}).click();
+ await parameters.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
+ await parameters.getByRole('button',{name:/^Measures/}).click();
+ const measures=page.getByRole('dialog',{name:'Measures',exact:true});
+ await measures.getByRole('checkbox',{name:/Value/}).click();
+ await measures.getByRole('button',{name:'Apply',exact:true}).click();
  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([0.4]);
 });

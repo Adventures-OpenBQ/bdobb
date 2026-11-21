@@ -136,6 +136,13 @@ export function useMeasuredRecipe<T extends RecipeOptions>(job: MeasuredRecipeJo
   const remeasuring = !!request && !checked && completed?.result.ok === true
     && completed.request.job === request.job && completed.request.options === request.options
     && completed.request.measured.baseContext === request.measured.baseContext;
-  return { completed, current, checked, remeasuring,
+  // Removing a draft refusal during a size-only check changes the Parameters
+  // height, which changes the measured plot again. Keep that diagnostic until
+  // its replacement arrives; only checked may authorize Apply.
+  const pendingRefusal = request && !checked && completed?.result.ok === false
+    && completed.request.job === request.job && completed.request.options === request.options
+    && completed.request.measured.baseContext === request.measured.baseContext
+    ? completed.result : undefined;
+  return { completed, current, checked, remeasuring, pendingRefusal,
     minimum: sizing?.sequence === sequence ? sizing?.minimum : undefined };
 }

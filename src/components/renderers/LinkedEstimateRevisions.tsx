@@ -130,14 +130,15 @@ export function EstimateRevisionsControls({ probeTarget, job, saved, context, di
     || fields.some(({ key, selected }) => saved.fields[key] !== selected);
   const canCheck = compatible && changed && decoded.ok && (view !== 'bump' || read?.bump) && !missingVintages.length;
   const candidate = canCheck && decoded.ok ? decoded.options : undefined;
-  const { checked, current, minimum } = useMeasuredRecipe(job, candidate, surface.measured, surface.matches);
+  const { checked, current, minimum, pendingRefusal } = useMeasuredRecipe(job, candidate, surface.measured, surface.matches);
+  const diagnostic = checked ?? pendingRefusal;
   const canApply = checked?.ok === true;
   const checking = !!candidate && (!checked || !checked.ok && !!checked.estimateRevisionsSurface);
   const issue = read?.error ?? (read && (changed || !saved) && (!source ? estimateVintageSourceIssue
     : !compatible ? 'Choose the exact metric and fiscal target from the acquired history.'
       : missingVintages.length ? 'A pinned acquired vintage is unavailable. Clear unavailable pins and choose recorded vintages.'
         : view === 'bump' && !read.bump ? 'Bump requires a verified complete universe and a positive common baseline estimate for every member.'
-          : !decoded.ok ? decoded.message : checked && !checked.ok && !checking ? checked.message : undefined));
+          : !decoded.ok ? decoded.message : diagnostic && !diagnostic.ok && !diagnostic.estimateRevisionsSurface ? diagnostic.message : undefined));
   const toggleVintage = (id: string, checked: boolean) => setVintages(checked
     ? [...(vintages ?? []), id]
     : (vintages ?? []).filter(vintage => vintage !== id));

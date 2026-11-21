@@ -73,11 +73,12 @@ export function MarketMapControls({ probeTarget, saved, context, job, disabled, 
   const changed = candidate && (!saved || candidate.mode !== saved.mode || candidate.universe !== saved.universe
     || candidate.session !== saved.session || marketMapFieldOrigins.some(key => candidate.fields[key] !== saved.fields[key]));
   const canCheck = !!source && !!changed && !!candidate;
-  const { checked, current } = useMeasuredRecipe(job, canCheck ? candidate : undefined, surface.measured, surface.matches);
+  const { checked, current, pendingRefusal } = useMeasuredRecipe(job, canCheck ? candidate : undefined, surface.measured, surface.matches);
+  const diagnostic = checked ?? pendingRefusal;
   const checking = canCheck && !checked;
   const problem = read?.error ?? (read && !source && !saved ? sourceProblem
     : source && !decoded.ok ? decoded.message
-      : checked && !checked.ok ? checked.message : undefined);
+      : diagnostic && !diagnostic.ok ? diagnostic.message : undefined);
 
   return <>
     {probeTarget && createPortal(<div className="market-map-draft-probe" aria-hidden="true" ref={surface.element}>

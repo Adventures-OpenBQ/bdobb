@@ -270,8 +270,11 @@ test("narrow viewer: every header control stays inside its card (#13)", async ({
     const edge = (await card.boundingBox())!;
     const right = edge.x + edge.width + 1;
     for (const el of await card
-      .locator("header :is(button, input, select, .param-field, .react-aria-Group):visible")
+      .locator("header :is(button, input, select, .param-field, .react-aria-Group, .card-chips):visible")
       .all()) {
+      // Row-zero parameters intentionally scroll inside their bounded strip.
+      // Check that viewport and the fixed actions, rather than offscreen children.
+      if (await el.evaluate(node => !!node.parentElement?.closest('.card-chips'))) continue;
       const box = (await el.boundingBox())!;
       if (box.x + box.width > right || box.x < edge.x - 1)
         overflow.push(`${await el.evaluate((n) => n.outerHTML.slice(0, 80))}: ${box.x + box.width} > ${right}`);

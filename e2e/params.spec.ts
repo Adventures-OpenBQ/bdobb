@@ -16,6 +16,15 @@ function trackCommitteeRequests(page: Page): string[] {
   return seen;
 }
 
+async function putFieldsInPanel(page: Page, widget: string) {
+  await page.route('**/widgets.json', async route => {
+    const response = await route.fetch();
+    const widgets = await response.json();
+    widgets[widget].params = [[], widgets[widget].params];
+    await route.fulfill({ response, json: widgets });
+  });
+}
+
 test("the committee options follow the chamber selection, fetched exactly once per chamber", async ({
   page,
 }) => {
@@ -58,6 +67,7 @@ test("the committee options follow the chamber selection, fetched exactly once p
 });
 
 test("the Parameters panel lays its fields out as a grid on a wide card", async ({ page }) => {
+  await putFieldsInPanel(page, 'congress');
   await seedCards(page, [
     {
       id: "c-congress",
@@ -78,6 +88,7 @@ test("the Parameters panel lays its fields out as a grid on a wide card", async 
 });
 
 test("in the Parameters panel a date's box, picker chip and ◷ badge stay on one line", async ({ page }) => {
+  await putFieldsInPanel(page, 'calendar_table');
   await seedCards(page, [
     {
       id: "c-cal",
@@ -98,6 +109,7 @@ test("in the Parameters panel a date's box, picker chip and ◷ badge stay on on
 });
 
 test("on a narrow card no Parameters panel entry spills out of its cell or the panel", async ({ page }) => {
+  await putFieldsInPanel(page, 'calendar_table');
   await seedCards(page, [
     {
       id: "c-cal",
@@ -122,7 +134,7 @@ test("on a narrow card no Parameters panel entry spills out of its cell or the p
   }
 });
 
-test("a widget's parameter rows stack on the title line (OpenBB parameter positioning)", async ({ page }) => {
+test("row zero stays in the title line and later parameter rows appear once in the panel", async ({ page }) => {
   // The mock backend's congress widget declares a flat list; here its second
   // param is moved into a nested array, which is row 1.
   await page.route("**/widgets.json", async (route) => {
@@ -143,10 +155,14 @@ test("a widget's parameter rows stack on the title line (OpenBB parameter positi
     },
   ]);
   const card = page.locator(".widget-card").filter({ hasText: "Congress Committees" });
+  await expect(card.locator('.card-chips').getByLabel('Chamber', { exact: true })).toBeVisible();
+  await expect(card.getByLabel('Committee', { exact: true })).toBeHidden();
+  await card.getByRole('button', { name: 'Show parameters', exact: true }).click();
+  const panel = card.getByRole('region', { name: 'Parameters', exact: true });
+  await expect(panel.getByLabel('Committee', { exact: true })).toBeVisible();
+  await expect(panel.getByLabel('Chamber', { exact: true })).toHaveCount(0);
   const chamber = (await card.getByLabel("Chamber", { exact: true }).boundingBox())!;
-  const committee = (await card.getByLabel("Committee", { exact: true }).boundingBox())!;
-  // Row 1 starts a line of its own, under row 0 and from the same left edge.
+  const committee = (await panel.getByLabel("Committee", { exact: true }).boundingBox())!;
   expect(committee.y).toBeGreaterThanOrEqual(chamber.y + chamber.height);
-  expect(Math.abs(committee.x - chamber.x)).toBeLessThan(30);
   await card.screenshot({ path: "e2e-results/param-rows.png" });
 });

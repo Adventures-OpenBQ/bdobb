@@ -3,6 +3,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { MOCK_URL, defaultSeed, seedApp } from './fixtures';
+import { openParameters } from './fixtures/chart-recipes';
 
 // The shape of the CFTC FX implied-vol table: a row per strike, a vol column per expiry, pair and date on every row.
 const file = '00000000-0000-0000-0000-0000000000f1.csv';
@@ -44,6 +45,7 @@ test('picking Surface on an empty chart takes its fields from the source widget 
   const empty = { ...chart, linkedChart: { type: 'column', measures: [], display: 'grouped' } };
   await seedApp(page, { ...defaultSeed(), 'dashboards/d1.json': JSON.stringify({ id: 'd1', name: 'Main', tabs: [{ id: 't1', name: 'Main', cards: [source, empty] }] }) });
   const card = page.locator('.widget-card').filter({ has: page.locator('header').getByText('Vol surface', { exact: true }) });
+  await openParameters(card);
   await expect(card.getByLabel('Category').getByRole('option', { name: 'strike', exact: true })).toBeAttached();
   await card.getByLabel('Chart type').selectOption('surface');
   await expect(card.getByLabel('Category')).toHaveValue('strike');
@@ -75,6 +77,7 @@ test('filtering the source to one pair redraws a single surface, and one ticked 
   await expect(card.locator('.linked-chart-plot canvas')).toHaveCount(1);
   await expect.poll(() => zRanges(page)).toEqual([[7, 11]]);
   // Unticking and re-ticking an expiry keeps the checklist and the surface's expiry axis in the table's column order.
+  await openParameters(card);
   const measures = card.getByRole('button', { name: /^Measures/ });
   const list = page.getByRole('dialog', { name: 'Measures', exact: true });
   const apply = list.getByRole('button', { name: 'Apply', exact: true });
