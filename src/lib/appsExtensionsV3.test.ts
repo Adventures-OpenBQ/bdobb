@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { revisionSlope } from '../test/fixtures/estimateRevisions';
 import { capMap } from '../test/fixtures/marketMap';
+import { dailyPriceParameters, dailyPriceReceipt } from '../test/fixtures/chartSources';
 import { beforeEach, describe, expect, it } from "vitest";
 import * as appsJson from "./appsJson";
 import { card } from "../test/fixtures";
@@ -369,6 +370,45 @@ it("preserves a return summary’s explicit order and bounds and rejects runtime
     Object.assign(payload[0].extensions.bdobb.cards[1].extras.linkedChart, change);
     const text = JSON.stringify(payload);
     expect(planAppsImport(text, text.length, [], []).ok).toBe(false);
+  }
+});
+
+it("round trips the three live price view settings and rejects imported acquisition evidence", () => {
+  const input = dashboard();
+  const tab = input.tabs[0];
+  const source = tab.cards[0];
+  source.params = { ...dailyPriceParameters };
+  const fields = { date: "date", price: "adjusted_close", symbol: "symbol" };
+  const symbols = ["MCD.US", "AAPL.US"];
+  const recipes = [
+    { version: 1, kind: "return-distribution", fields, symbol: "AAPL.US", bins: 10 },
+    { version: 1, kind: "drawdown", fields, symbols },
+    { version: 1, kind: "small-multiples", fields, symbols },
+  ] satisfies RecipeOptions[];
+  for (const recipe of recipes) tab.cards.push(card({ id: recipe.kind, widgetId: "linked_chart",
+    linkedSource: { kind: "widget", sourceWidgetId: source.id },
+    linkedChart: { type: recipe.kind, measures: [], display: "grouped", recipe },
+  }));
+
+  const exported = appsJson.exportCompatibleApp(input);
+  if (!exported.ok) throw new Error(exported.issue.message);
+  const text = JSON.stringify([exported.value]);
+  expect(text).not.toMatch(/daily-price|chartSources|dailyPriceCoordinates|chartSourceOmissions/);
+  const [producer, ...charts] = importApps(JSON.parse(text), []).dashboards[0].tabs[0].cards;
+  expect(producer.params).toEqual(dailyPriceParameters);
+  expect(charts.map(chart => chart.linkedChart?.recipe)).toEqual(recipes);
+  expect(charts.map(chart => chart.linkedSource?.sourceWidgetId)).toEqual(recipes.map(() => producer.id));
+
+  for (const [index, recipe] of recipes.entries()) {
+    for (const evidence of [
+      { chartSources: { "daily-price": dailyPriceReceipt } },
+      { dailyPriceCoordinates: [["MCD.US", "2026-10-13"], ["AAPL.US", "2026-10-13"]] },
+    ]) {
+      const forged = JSON.parse(text);
+      forged[0].extensions.bdobb.cards[index + 1].extras.linkedChart.recipe = { ...recipe, ...evidence };
+      const forgedText = JSON.stringify(forged);
+      expect(planAppsImport(forgedText, forgedText.length, [], []).ok).toBe(false);
+    }
   }
 });
 

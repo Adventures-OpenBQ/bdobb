@@ -5,11 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { dailyPriceParameters } from '../../../test/fixtures/chartSources';
 import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { ProviderBoundary } from '../../../test/tableProviderBoundary';
+import { collectPresentedExport, toJsonRows } from '../../export';
+import { LABEL_FIELD } from '../../pivotTable';
 import { readChartSourceProjection } from '../../widgetData/chartRecipes/chartSourceContracts';
 import { readLiveDailyPriceSource } from '../../widgetData/chartRecipes/dailyPriceEvidence';
 import { admitReturnSummary } from '../../widgetData/chartRecipes/priceSamples';
 import { runRecipe } from '../../widgetData/chartRecipes/run';
-import type { PriceBindings, ReturnSummaryOptions } from '../../widgetData/chartRecipes/types';
+import type { PriceBindings, RecipeOptions, ReturnSummaryOptions } from '../../widgetData/chartRecipes/types';
 import type { WidgetDataset } from '../../widgetData/types';
 import { appendSubset, beginSubset, commitSubset } from '../subsetTransfer';
 import type { LocalWorkerExecutor, Revision } from '../types';
@@ -28,19 +30,36 @@ const bounds = { start_date: dailyPriceParameters.start_date, end_date: dailyPri
 const own = { mode: 'own' } as const;
 const firstFilteredPrice = 765432.12345;
 const secondFilteredPrice = 987654.321;
+const finalFilteredPrice = 456789.654321;
 const rows = [
-  { date: date(13), adjusted_close: 100 }, { date: date(15), adjusted_close: 121 },
-  { date: date(16), adjusted_close: 242 }, { date: date(19), adjusted_close: 484 },
-  { date: date(20), adjusted_close: firstFilteredPrice }, { date: date(21), adjusted_close: 968 },
-  { date: date(22), adjusted_close: 1936 }, { date: date(23), adjusted_close: 3872 },
-  { date: date(26), adjusted_close: secondFilteredPrice }, { date: date(27), adjusted_close: 7744 },
-  { date: date(28), adjusted_close: 15488 }, { date: date(29), adjusted_close: 30976 },
+  { date: date(13), adjusted_close: 100 }, { date: date(15), adjusted_close: 25 },
+  { date: date(16), adjusted_close: 50 }, { date: date(19), adjusted_close: 100 },
+  { date: date(20), adjusted_close: firstFilteredPrice }, { date: date(21), adjusted_close: 25 },
+  { date: date(22), adjusted_close: 50 }, { date: date(23), adjusted_close: 100 },
+  { date: date(26), adjusted_close: secondFilteredPrice }, { date: date(27), adjusted_close: 200 },
+  { date: date(28), adjusted_close: 400 }, { date: date(29), adjusted_close: 800 },
 ].map(row => ({ ...row, tag: row.date === date(20) ? 'removed at root' : row.date === date(26) ? 'kept until child' : 'kept always' }));
+const peerRows = [
+  { date: date(12), adjusted_close: 400, tag: 'kept always' },
+  { date: date(13), adjusted_close: 200, tag: 'kept always' },
+  { date: date(19), adjusted_close: 100, tag: 'kept always' },
+  { date: date(27), adjusted_close: 300, tag: 'kept always' },
+  { date: date(29), adjusted_close: finalFilteredPrice, tag: 'kept until child' },
+];
 const omissions: [string, string][] = [[symbol, date(14)]];
 
 const singleFields = { date: 'session', price: 'adjusted' };
 const multiFields = { ...singleFields, symbol: 'listing' };
 const nativeFields = { date: 'date', price: 'adjusted_close' };
+const context = { theme: 'light', today: '2026-11-21', maxDecimals: 2 } as const;
+
+function priceViewOptions(fields: PriceBindings, symbols: string[]) {
+  return {
+    distribution: { version: 1, kind: 'return-distribution', fields, symbol, bins: 5 },
+    drawdown: { version: 1, kind: 'drawdown', fields, symbols },
+    panels: { version: 1, kind: 'small-multiples', fields, symbols },
+  } satisfies Record<string, RecipeOptions>;
+}
 
 function aliasColumns(input: WidgetDataset, fields: PriceBindings) {
   const aliases = new Map([['date', fields.date], ['adjusted_close', fields.price], ['symbol', fields.symbol]]);
@@ -87,7 +106,6 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
       expect(chart.columns.find(column => column.id === price)?.sourceFieldId).toBe('adjusted_close');
       const admitted = admitReturnSummary(chart, fields, [symbol], own);
       if (!admitted.ok) throw new Error(admitted.message);
-      const context = { theme: 'light', today: '2026-01-31', maxDecimals: 2 } as const;
       const options = { version: 1, kind: 'return-summary', fields, symbols: [symbol], view, window: own } satisfies ReturnSummaryOptions;
       const result = runRecipe(chart, options, context);
       if (!result.ok) throw new Error(result.message);
@@ -101,32 +119,46 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
     } finally { executor.dispose(); }
   });
 
-  it.each([false, true])('retains raw and projected omissions through a linked grandchild (multiple listings: %s)', async multiple => {
+  it.each([false, true])('renders live price views with both types of gap through a linked grandchild (multiple listings: %s)', async multiple => {
     const selected = multiple ? [peer, symbol] : [symbol];
-    const fields: PriceBindings = multiple ? multiFields : singleFields;
+    const fields: PriceBindings = { ...(multiple ? multiFields : singleFields), price: 'close' };
     const inputRows = multiple
-      ? [...rows.map(row => ({ ...row, symbol })), ...rows.slice(0, 1).map(row => ({ ...row, symbol: peer }))]
+      ? [...rows.map(row => ({ ...row, symbol })), ...peerRows.map(row => ({ ...row, symbol: peer }))]
       : rows;
-    let input = liveDailyPriceDataset(inputRows, selected, { bounds, omissions });
+    let input = liveDailyPriceDataset(inputRows.map(row => ({ ...row, open: 11 })), selected, { bounds, omissions });
     const delivered = inputRows.map(row => ['symbol' in row ? row.symbol : symbol, row.date]);
     aliasColumns(input, fields);
-    const columnOrder = Object.values(fields).reverse();
+    // The real adjusted series looks unadjusted, and the unadjusted field claims its name.
+    input.columns = input.columns.map(column => column.id === 'open'
+      ? { ...column, id: 'adjusted_close', label: 'Adjusted Close', sourceFieldId: 'open' } : column);
+    for (const row of input.rows) {
+      row.values.adjusted_close = row.values.open;
+      delete row.values.open;
+    }
+    const columnOrder = ['adjusted_close', ...Object.values(fields).reverse()];
     const names = ['root', 'child', 'grandchild'];
     for (const [index, widgetId] of names.entries()) {
       const executor = make(widgetId);
       const revision: Revision = { widgetId, input: 1, model: 1, output: 1 };
       try {
         await executor.registerInput(input, 1, signal);
-        const table = index === 0 ? { columnOrder, columnFilters: [{ id: 'tag', value: 'kept' }] } : {};
+        const table = index === 0 ? { columnOrder, columnFilters: [{ id: 'tag', value: 'kept' }] }
+          : index === 2 ? { sorting: [{ id: fields.date, desc: true }] } : {};
         await executor.applyModel({ search: index === 1 ? 'kept always' : '', table }, { kind: 'none' }, revision, signal);
         const chart = await executor.chartData(revision, columnOrder, signal);
-        const omittedDates = index === 0 ? [date(20)] : [date(20), date(26)];
-        const expectedOmissions = omittedDates.map(day => JSON.stringify([symbol, day]));
+        const filteredCoordinates = [[symbol, date(20)]];
+        if (index > 0) {
+          filteredCoordinates.push([symbol, date(26)]);
+          if (multiple) filteredCoordinates.push([peer, date(29)]);
+        }
+        const expectedOmissions = filteredCoordinates.map(point => JSON.stringify(point));
         expect(readLiveDailyPriceSource(chart)).toMatchObject({ symbols: selected, rawOmissions: omissions });
         expect(readChartSourceProjection(chart.provenance, 'daily-price')).toEqual({ filtered: true, omitted: expectedOmissions });
         expect(chart.completeness).toMatchObject({ kind: 'unknown', acquiredRowCount: inputRows.length });
         expect(chart.provenance.metadata?.dailyPriceCoordinates).toEqual(delivered);
-        expect(JSON.stringify(chart.provenance)).not.toMatch(/765432\.12345|987654\.321|chartSourceCoordinatePlan|priceOmissions/);
+        const evidence = JSON.stringify(chart.provenance);
+        for (const price of [firstFilteredPrice, secondFilteredPrice, finalFilteredPrice]) expect(evidence).not.toContain(String(price));
+        expect(evidence).not.toMatch(/chartSourceCoordinatePlan|priceOmissions/);
         if (index < 2) {
           input = await linkedSubset(executor, revision);
           expect(input.columns.slice(0, columnOrder.length).map(column => column.id)).toEqual(columnOrder);
@@ -134,23 +166,138 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
           expect(readChartSourceProjection(input.provenance, 'daily-price')?.omitted).toEqual(expectedOmissions);
           continue;
         }
-        expect(chart.provenance.lineage).toHaveLength(2);
-        expect(chart.columns.map(column => [column.id, column.sourceFieldId])).toEqual(columnOrder.map(alias => [
-          alias, alias === fields.date ? 'date' : alias === fields.price ? 'adjusted_close' : 'symbol',
-        ]));
+        expect(chart.provenance.lineage).toEqual(['root', 'child'].map(widgetId => ({ widgetId, resultRevision: 1, outputRevision: 1 })));
+        expect(chart.columns.map(column => [column.id, column.sourceFieldId])).toEqual([
+          ['adjusted_close', 'open'], ...(multiple ? [['listing', 'symbol']] : []),
+          ['close', 'adjusted_close'], ['session', 'date'],
+        ]);
         expect(chart.rows.filter(row => !fields.symbol || row.values[fields.symbol] === symbol).map(row => row.values.session))
-          .toEqual([13, 15, 16, 19, 21, 22, 23, 27, 28, 29].map(date));
+          .toEqual([29, 28, 27, 23, 22, 21, 19, 16, 15, 13].map(date));
         const result = admitReturnSummary(chart, fields, [symbol], own);
         if (!result.ok) throw new Error(result.message);
         expect(result.value.series[0]).toMatchObject({
           samples: [16, 19, 22, 23, 28, 29].map(day => ({ date: date(day), value: 1 })),
           gapCount: 3, excludedOpportunities: 6,
         });
-        expect(result.notes).toEqual(expect.arrayContaining([
-          expect.stringMatching(/1.*provider/i), expect.stringMatching(/2.*table/i),
+        const gapNotes = [
+          'Preserved 1 price gap(s) from provider omissions.',
+          `Preserved ${multiple ? 3 : 2} price gap(s) from table filtering.`,
+        ];
+        expect(result.notes).toEqual(expect.arrayContaining(gapNotes));
+
+        const views = priceViewOptions(fields, selected);
+        for (const options of Object.values(views)) {
+          const wrongFields = { ...fields, price: 'adjusted_close' };
+          expect(runRecipe(chart, { ...options, fields: wrongFields }, context)).toMatchObject({
+            ok: false, refused: true, message: expect.stringContaining('source-documented adjusted-price field'),
+          });
+        }
+
+        expect(runRecipe(chart, views.distribution, context)).toMatchObject({
+          ok: true,
+          notes: expect.arrayContaining([
+            ...gapNotes, 'Observed quote-to-quote returns; exchange-session completeness unknown.',
+            `N = 6 observed quote-to-quote returns for ${symbol} from ${date(16)} to ${date(29)}.`,
+          ]),
+          figure: { data: [{ type: 'bar', y: [6] }] },
+        });
+
+        const drawdown = runRecipe(chart, views.drawdown, context);
+        expect(drawdown).toMatchObject({ ok: true, notes: expect.arrayContaining([
+          ...gapNotes,
+          'Drawdown uses observed adjusted prices in the loaded history; exchange-session completeness and peaks during missing observations are unknown.',
+        ]) });
+        if (!drawdown.ok) throw new Error(drawdown.message);
+        expect(drawdown.figure.data).toEqual(expect.arrayContaining([
+          expect.objectContaining({ name: symbol, connectgaps: false,
+            x: [13, 14, 15, 16, 19, 20, 21, 22, 23, 26, 27, 28, 29].map(date),
+            y: [0, null, -.75, -.5, 0, null, -.75, -.5, 0, null, 0, 0, 0] }),
+          expect.objectContaining({ legendgroup: symbol, fill: 'toself', connectgaps: false,
+            y: [0, 0, 0, null, 0, -.75, -.5, 0, 0, null, 0, -.75, -.5, 0, 0, null, 0, 0, 0, 0, 0] }),
         ]));
+
+        const end = multiple ? date(27) : date(29);
+        expect(runRecipe(chart, views.panels, context)).toMatchObject({
+          ok: true,
+          notes: expect.arrayContaining([
+            ...gapNotes, 'Indexed observed adjusted prices; exchange-session completeness unknown.',
+            `Shared baseline 100 on ${date(13)}. All panels end on ${end}.`,
+          ]),
+          figure: {
+            data: [
+              ...(multiple ? [{ name: peer, x: [13, 19, 27].map(date), y: [100, 50, 150], connectgaps: false }] : []),
+              { name: symbol, connectgaps: false,
+                x: [13, 14, 15, 16, 19, 20, 21, 22, 23, 26, 27, ...(multiple ? [] : [28, 29])].map(date),
+                y: [100, null, 25, 50, 100, null, 25, 50, 100, null, 200, ...(multiple ? [] : [400, 800])] },
+            ],
+            layout: { xaxis: { range: [date(13), end] }, ...(multiple ? { xaxis2: { range: [date(13), end] } } : {}) },
+          },
+        });
       } finally { executor.dispose(); }
     }
+  });
+
+  it('names a fully filtered listing in drawdown and refuses its small-multiple panel', async () => {
+    const selected = [peer, symbol];
+    const inputRows = [...rows.map(row => ({ ...row, symbol })), ...peerRows.map(row => ({ ...row, symbol: peer }))];
+    const input = liveDailyPriceDataset(inputRows, selected, { bounds, omissions });
+    const fields = { ...nativeFields, symbol: 'symbol' };
+    const executor = make('root');
+    const revision: Revision = { widgetId: 'root', input: 1, model: 1, output: 1 };
+    try {
+      await executor.registerInput(input, 1, signal);
+      await executor.applyModel({ search: '', table: { columnFilters: [{ id: 'symbol', value: symbol }] } },
+        { kind: 'none' }, revision, signal);
+      const chart = await executor.chartData(revision, Object.values(fields), signal);
+      expect(readLiveDailyPriceSource(chart)).toMatchObject({ symbols: selected });
+      expect(readChartSourceProjection(chart.provenance, 'daily-price')).toEqual({
+        filtered: true, omitted: peerRows.map(row => JSON.stringify([peer, row.date])),
+      });
+      const views = priceViewOptions(fields, selected);
+      expect(runRecipe(chart, views.drawdown, context)).toMatchObject({
+        ok: true, notes: expect.arrayContaining([expect.stringMatching(/Omitted.*BBB\.US.*no valid daily prices/)]),
+        figure: { data: [{ legendgroup: symbol, showlegend: false }, { name: symbol }] },
+      });
+      expect(runRecipe(chart, views.panels, context)).toMatchObject({
+        ok: false, refused: true, message: expect.stringMatching(/No usable delivered daily price series.*BBB\.US/),
+      });
+    } finally { executor.dispose(); }
+  });
+
+  it('exports only visible rows and invalidates chart tickets when the export replaces the source', async () => {
+    const input = liveDailyPriceDataset(rows, [symbol], { bounds, omissions });
+    const executor = make('root');
+    const revision: Revision = { widgetId: 'root', input: 1, model: 1, output: 1 };
+    const replacement = { widgetId: 'root', input: 2, model: 2, output: 2 };
+    const fields = Object.values(nativeFields);
+    const views = Object.values(priceViewOptions(nativeFields, [symbol]));
+    try {
+      await executor.registerInput(input, 1, signal);
+      await executor.applyModel({ search: 'kept always', table: {} }, { kind: 'none' }, revision, signal);
+      const live = await executor.chartData(revision, fields, signal);
+      for (const options of views) expect(runRecipe(live, options, context)).toMatchObject({ ok: true });
+
+      const exported = await collectPresentedExport(executor, revision, signal);
+      const json = toJsonRows(exported.rows, exported.columns);
+      expect(JSON.parse(json)).toEqual(rows.filter(row => row.tag === 'kept always'));
+      expect(json).not.toMatch(/chartSources|chart_sources|dailyPriceCoordinates|chartSourceOmissions|priceOmissions/);
+
+      await executor.importFile('prices.json', new TextEncoder().encode(json), replacement.input, signal);
+      await expect(executor.chartData(revision, fields, signal)).rejects.toMatchObject({
+        descriptor: { code: 'INVALID_REQUEST', message: 'No calculated view' },
+      });
+      await executor.applyModel({ search: '', table: {} }, { kind: 'none' }, replacement, signal);
+      await expect(executor.chartData(revision, fields, signal)).rejects.toMatchObject({
+        descriptor: { code: 'REVISION_MISMATCH' },
+      });
+      const imported = await executor.chartData(replacement, fields, signal);
+      expect(imported.rows.map(row => row.values)).toEqual(live.rows.map(row => row.values));
+      expect(imported.provenance.sourceKind).toBe('localFile');
+      expect(imported.provenance).not.toHaveProperty('metadata.chartSources');
+      expect(imported.provenance).not.toHaveProperty('metadata.dailyPriceCoordinates');
+      expect(readLiveDailyPriceSource(imported)).toBeUndefined();
+      for (const options of views) expect(runRecipe(imported, options, context)).toMatchObject({ ok: false, refused: true });
+    } finally { executor.dispose(); }
   });
 
   it.each([
@@ -178,7 +325,9 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
     } finally { executor.dispose(); }
   });
 
-  it.each(['raw conflicting duplicate', 'mixed listing identity', 'ambiguous date origins', 'ambiguous price origins', 'aggregate'] as const)(
+  it.each([
+    'raw conflicting duplicate', 'mixed listing identity', 'mixed acquired sources', 'ambiguous date origins', 'ambiguous price origins', 'aggregate',
+  ] as const)(
     'refuses %s after table presentation', async variant => {
       const conflicting = variant === 'raw conflicting duplicate';
       const mixed = variant === 'mixed listing identity';
@@ -187,6 +336,11 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
       const input = liveDailyPriceDataset(conflicting ? withConflict : original, [symbol], {
         bounds, omissions, unsafe: conflicting ? { conflicting_duplicates: true } : {},
       });
+      if (variant === 'mixed acquired sources') {
+        const unrelated = liveDailyPriceDataset([{ ...rows[4], date: date(12) }], [peer], { bounds });
+        input.rows[4].values = unrelated.rows[0].values;
+        expect(readLiveDailyPriceSource(input)).toBeUndefined();
+      }
       if (variant === 'ambiguous date origins' || variant === 'ambiguous price origins') {
         const field = variant === 'ambiguous date origins' ? 'date' : 'adjusted_close';
         input.columns.push({ id: 'copy', label: 'Copy', sourceFieldId: field });
@@ -200,16 +354,19 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
           ? { pivot: { enabled: true, grouping: ['date'], split: [], aggregationFns: { adjusted_close: 'sum' as const } } }
           : { columnFilters: [{ id: 'tag', value: 'kept' }] };
         await executor.applyModel({ search: '', table }, { kind: 'none' }, revision, signal);
-        const chart = variant === 'aggregate' ? await linkedSubset(executor, revision)
-          : await executor.chartData(revision, Object.values(nativeFields), signal);
+        const fields = variant === 'aggregate' ? { ...nativeFields, date: LABEL_FIELD } : nativeFields;
+        const chart = await executor.chartData(revision, Object.values(fields), signal);
         expect(chart.rows.length).toBeGreaterThan(6);
-        if (conflicting || mixed) {
+        if (conflicting || mixed || variant === 'mixed acquired sources') {
           expect(chart.rows.some(row => row.values.adjusted_close === 999 || row.values.adjusted_close === firstFilteredPrice)).toBe(false);
           expect(chart.provenance.metadata?.chartSources).toBeUndefined();
         }
         if (variant === 'aggregate') expect(chart.provenance.inputMayContainAggregates).toBe(true);
         expect(readLiveDailyPriceSource(chart)).toBeUndefined();
-        expect(admitReturnSummary(chart, nativeFields, [symbol], own)).toMatchObject({ ok: false, refused: true });
+        expect(admitReturnSummary(chart, fields, [symbol], own)).toMatchObject({ ok: false, refused: true });
+        for (const options of Object.values(priceViewOptions(fields, [symbol]))) {
+          expect(runRecipe(chart, options, context)).toMatchObject({ ok: false, refused: true });
+        }
       } finally { executor.dispose(); }
     },
   );
