@@ -1,5 +1,9 @@
 # v10 live price views verification
 
+## Refused-source row visibility follow-up
+
+The remaining stacked-review test-coverage note is addressed by a real source-table listing-cell assertion in all three refusal cases. [Coverage proof and affected test results](row-visibility.md) records the controlled old-test/RED/GREEN comparison and the distinction between representative rendered cells and complete row counts.
+
 ## Stacked reconciliation
 
 The normal merge combines v10 implementation head `9bbb593ab6726a595cebbaa6620682c60849db1c`, through publication-plan commit `9a304073fa0539747658878e2b87c5333cfe5cd9`, with reviewed v9 head `bf67cf72eb9c926627e30ac6ab166ee5361714bd`. The merge has those plan and v9 commits as its parents. The v9 branch supplies the HTTP status, range, continuation and CORS checks, the affirmative-opt-in refusal, and the reviewed pivot test helper. The combined client uses those checks for all four live-price recipe kinds and preserves separate provider and table-filter omissions. [Plan](../../../../superpowers/plans/2026-11-21-v10-stacked-publication.md) · [v9 acquisition verification](../../v9/live-observed-returns/acquisition-backport.md) · [v9 pivot verification](../../v9/live-observed-returns/pivot-inspector-flake.md)

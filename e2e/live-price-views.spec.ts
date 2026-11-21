@@ -183,6 +183,7 @@ for (const { description, optIn, nested } of refusedPriceSources) {
       }
     }
     await expect(card(page, sourceTable).getByRole('columnheader', { name: /adjusted.close/i })).toBeVisible();
+    await expect(card(page, sourceTable).getByRole('cell', { name: 'AAPL.US', exact: true }).first()).toBeVisible();
     expect(acquisitions.length).toBeGreaterThan(0);
     const expectedQuery = { ...fixedQuery, chart_source: String(optIn) };
     expect(queries(acquisitions)).toEqual(Array(acquisitions.length).fill(expectedQuery));
