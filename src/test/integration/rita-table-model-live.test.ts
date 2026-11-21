@@ -80,7 +80,7 @@ async function turn(text: string): Promise<{ rounds: Round[]; reply: string }> {
     runAgentTool: async (serverId: string, tool: string, args: Record<string, unknown>) => {
       const result = await runAgentTool(serverId, tool, args, [], [], localCall);
       rounds.push({ tool, args, result });
-      console.log("[tool]", tool, JSON.stringify(args).slice(0, 300), "→", JSON.stringify(result).slice(0, 500));
+      console.log("[tool]", tool, JSON.stringify(args), "→", JSON.stringify(result).slice(0, 500));
       return result;
     },
     readSkill: (slug: string) => skills.find((s) => s.slug === slug && s.enabled),
@@ -216,6 +216,7 @@ live("Rita arranges a CSV table through table-model/1", () => {
     expect(applied, "one applied arrange_table").toHaveLength(1);
     const model = tableCard().tableDefinition?.analytical as TableModelV1 | undefined;
     expect(model?.measures.find((m) => m.sourceFieldId === "Units")?.aggregation, "Units uses the provider's last").toBe("last");
+    expect(model?.measures.filter((m) => m.sourceFieldId === "Units").every((m) => m.aggregation === "last"), "no unrequested summed measure remains").toBe(true);
     expect(applied[0].warnings?.some((w) => w.code === "provider-aggregation-hint"), "no contradiction warning").toBe(false);
   }, 300_000);
 

@@ -141,6 +141,24 @@ instructions.
   request, applies only to that measure and operator in this call, and is not saved.
   An accepted override returns a `provider-aggregation-hint` warning: report it.
   With no hint, choose by meaning, as below.
+- Build the complete grouping, measure and `layout.set` before the apply call.
+  Creating categories without placing them does not group the table. Do not
+  save an intermediate measure and repair it in another apply. In particular,
+  “add Units” means include the field, not sum its observations. With a `last`
+  hint requiring an annual date bucket and Account, the complete request is:
+
+  ```json
+  {"contract":"table-model/1","operations":[
+    {"op":"category.add","alias":"year","name":"Year","source_field_id":"Quarter end","transform":"Y"},
+    {"op":"category.add","alias":"account","name":"Account","source_field_id":"Account","transform":"native"},
+    {"op":"measure.add","alias":"units","source_field_id":"Units"},
+    {"op":"layout.set","rows":[{"alias":"year"},{"alias":"account"}],"values":[{"alias":"units"}]}
+  ]}
+  ```
+
+  Use the actual field ids and provider prerequisites from `describe_table`.
+  This request deliberately omits both `aggregation` and `aggregation_intent`:
+  there is no user-requested override. Do not add a second summed measure.
 - Sum period flows (volume, revenue, profit). Use `first`/`last` for balances
   and closing values. Count identifiers (`count`, `uniqueCount`).
 - If the aggregation the user asks for is not listed for that field (text has
