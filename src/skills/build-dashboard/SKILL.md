@@ -1,6 +1,6 @@
 ---
 name: build-dashboard
-description: How to add, build and configure widgets for the user — use when asked to add, create, show, open or set up a widget, chart or dashboard. You place and configure widgets yourself; never tell the user to add one by hand or set its inputs for you.
+description: How to add, build, configure, remove, rename and organize widgets for the user — use when asked to add, create, show, open, edit, remove, rename or set up a widget, chart or dashboard. You make the changes yourself; never tell the user to add a widget by hand or set its inputs for you.
 ---
 
 # Building a dashboard
