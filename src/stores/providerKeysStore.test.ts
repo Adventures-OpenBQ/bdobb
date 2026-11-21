@@ -204,6 +204,8 @@ describe("optional-key providers", () => {
     expect(fetchWidgetData.mock.calls.map((c) => (c[1] as WidgetDef).id)).toEqual(["p"]);
     // Read exactly as a keyless provider is.
     expect(useProviderKeysStore.getState().status).toEqual({ cftc: "keyed", econdb: "keyed", fmp: "keyed" });
+    expect(useProviderKeysStore.getState().probe).not.toHaveProperty("cftc");
+    expect(useProviderKeysStore.getState().probe).not.toHaveProperty("econdb");
   });
 
   it("leave BLS probed: its series route does require the key", async () => {
