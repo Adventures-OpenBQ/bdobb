@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
+import { projectChartSources } from './chartSourceContracts';
 import { dailyPriceRows, priceDataset, priceFields } from './fixtures';
 import { buildSmallMultiples, smallMultiplesGrid } from './smallMultiples';
 import type { RecipeOptions, RecipeResult } from './types';
@@ -13,6 +15,9 @@ const closes = (symbol: string, prices: (number | null)[], first = 1) =>
   dailyPriceRows(prices, symbol).map((row, index) => ({ ...row, date: date(first + index) }));
 const source = (a: (number | null)[], b: (number | null)[]) => priceDataset([...closes('A', a), ...closes('B', b)]);
 const build = (dataset = source([100, 110, 90], [200, 180, 220])) => buildSmallMultiples(dataset, options, context);
+const liveSymbols = ['AAPL.US', 'MCD.US'];
+const liveOptions = { ...options, symbols: liveSymbols };
+const liveRows = [...closes('MCD.US', [50, 55], 6), ...closes('AAPL.US', [100, 110, 121], 5)];
 
 function plotted(result: RecipeResult) {
   if (!result.ok) throw new Error(result.message);
@@ -20,6 +25,58 @@ function plotted(result: RecipeResult) {
     uid: string; name: string; x: string[]; y: (number | null)[]; xaxis: string; yaxis: string; connectgaps: boolean;
   }[];
 }
+
+it('indexes live listings in selection order with the same shared baseline as a snapshot', () => {
+  const result = buildSmallMultiples(liveDailyPriceDataset(liveRows, liveSymbols), liveOptions, context);
+  const traces = plotted(result);
+  expect(traces).toMatchObject([
+    { name: 'AAPL.US', x: [date(6), date(7)], y: [100, expect.closeTo(110)] },
+    { name: 'MCD.US', x: [date(6), date(7)], y: [100, expect.closeTo(110)] },
+  ]);
+  expect(traces).toEqual(plotted(buildSmallMultiples(priceDataset(liveRows), liveOptions, context)));
+  expect(result).toMatchObject({
+    notes: expect.arrayContaining([
+      'Shared baseline 100 on 2026-01-06. All panels end on 2026-01-07.',
+      'Indexed observed adjusted prices; exchange-session completeness unknown.',
+    ]),
+    figure: { layout: { xaxis: { range: [date(6), date(7)] }, xaxis2: { range: [date(6), date(7)] } } },
+  });
+});
+
+it('uses the last visible live row for the shared end after table filtering', () => {
+  const dataset = liveDailyPriceDataset(liveRows, liveSymbols);
+  const rows = dataset.rows.filter(({ values }) => !(values.symbol === 'MCD.US' && values.date === date(7)));
+  const projected = { ...dataset, rows, provenance: projectChartSources(dataset.provenance, dataset.columns, rows) };
+  const result = buildSmallMultiples(projected, liveOptions, context);
+  expect(result).toMatchObject({
+    ok: false, refused: true,
+    message: expect.stringMatching(/later positive price.*table filtering.*All panels end on 2026-01-06/),
+  });
+});
+
+it('does not extend the live shared end to a provider omission', () => {
+  const rows = [...liveRows, ...closes('AAPL.US', [125], 8)];
+  const dataset = liveDailyPriceDataset(rows, liveSymbols, { omissions: [['MCD.US', date(8)]] });
+  const result = buildSmallMultiples(dataset, liveOptions, context);
+  expect(plotted(result).map(trace => trace.x)).toEqual([[date(6), date(7)], [date(6), date(7)]]);
+  expect(result).toMatchObject({ figure: { layout: { xaxis: { range: [date(6), date(7)] } } } });
+});
+
+it('uses the verified listing identity for a single live panel without a symbol field', () => {
+  const rows = [{ date: date(5), adjusted_close: 100 }, { date: date(6), adjusted_close: 110 }];
+  const dataset = liveDailyPriceDataset(rows, ['AAPL.US']);
+  const result = buildSmallMultiples(dataset, {
+    ...liveOptions, symbols: ['AAPL.US'], fields: { date: 'date', price: 'adjusted_close' },
+  }, context);
+  expect(plotted(result)).toMatchObject([{ name: 'AAPL.US', x: [date(5), date(6)], y: [100, 110] }]);
+});
+
+it('refuses a missing selected live listing instead of rendering fewer panels', () => {
+  const dataset = liveDailyPriceDataset(liveRows.filter(row => row.symbol === 'AAPL.US'), liveSymbols);
+  expect(buildSmallMultiples(dataset, liveOptions, context)).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/No usable delivered daily price series.*MCD\.US/),
+  });
+});
 
 it('indexes selected symbols on one shared baseline', () => {
   const result = build();

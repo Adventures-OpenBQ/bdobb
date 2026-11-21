@@ -13,6 +13,7 @@ import { buildDualAxisOverlay } from './dualAxisOverlay';
 import { buildEstimateRange } from './estimateRange';
 import { buildEstimateRevisions } from './estimateRevisions';
 import { buildIncomeSankey } from './incomeSankey';
+import { acceptsLiveDailyPriceRecipe } from './input';
 import { buildMarketMap } from './marketMap';
 import { buildMonthlyReturns } from './monthlyReturns';
 import { buildNewsCalendar } from './newsCalendar';
@@ -76,8 +77,8 @@ export function runRecipe(dataset: WidgetDataset, options: RecipeRequestOptions,
   if (recipe.kind === 'dual-axis-overlay') return buildDualAxisOverlay(dataset, recipe, context);
   const issue = recipe.kind === 'dividend-steps' || recipe.kind === 'news-sentiment-calendar' || recipe.kind === 'etf-sunburst'
     ? undefined : savedBindingIssue(recipe, dataset.columns, dataset.rows);
-  // Qualified live returns bind against acquired field origins. Their admission also handles empty acquisitions.
-  if (issue && !(recipe.kind === 'return-summary' && readLiveDailyPriceSource(dataset)))
+  // Qualified live prices bind against acquired field origins. Their admission also handles empty acquisitions.
+  if (issue && !(acceptsLiveDailyPriceRecipe(recipe.kind) && readLiveDailyPriceSource(dataset)))
     return { ok: false, refused: true, message: issue };
   switch (recipe.kind) {
     case 'drawdown': return buildDrawdown(dataset, recipe, context);

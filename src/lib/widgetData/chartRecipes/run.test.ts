@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, it } from 'vitest';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { datasetFromRows } from '../../localTableData';
 import type { WidgetDataset } from '../types';
-import { drawdownOptions, priceDataset, priceFields } from './fixtures';
+import { dailyPriceRows, drawdownOptions, priceDataset, priceFields } from './fixtures';
 import { runRecipe } from './run';
 import type { RecipeContext, RecipeOptions } from './types';
 
@@ -52,12 +53,75 @@ const cases: [RecipeOptions, WidgetDataset, unknown][] = [
     expect.objectContaining({ type: 'scatter', mode: 'markers', x: [.25], y: ['Utilities'] })],
 ];
 
+const liveSymbol = 'AAPL.US';
+const liveFields = { date: 'date', price: 'close' };
+const liveCases: [RecipeOptions, unknown][] = [
+  [{ version: 1, kind: 'return-distribution', fields: liveFields, symbol: liveSymbol, bins: 5 },
+    expect.objectContaining({ type: 'bar', y: [1, 0, 1, 0, 1] })],
+  [{ version: 1, kind: 'drawdown', fields: liveFields, symbols: [liveSymbol] },
+    expect.objectContaining({ name: liveSymbol, y: [0, 0, 0, expect.closeTo(-.1)] })],
+  [{ version: 1, kind: 'small-multiples', fields: liveFields, symbols: [liveSymbol] },
+    expect.objectContaining({ name: liveSymbol, y: [100, 100, 110, 99] })],
+];
+const snapshotCases: RecipeOptions[] = [
+  { version: 1, kind: 'correlation', fields: liveFields, symbols: [liveSymbol], lookback: 252, minOverlap: 3 },
+  { version: 1, kind: 'monthly-returns', fields: liveFields, symbol: liveSymbol },
+];
+
+function aliasedLivePrices(quotes: number[], unsafe?: { invalid_response: boolean }): WidgetDataset {
+  const dataset = liveDailyPriceDataset(dailyPriceRows(quotes, liveSymbol), [liveSymbol], { unsafe });
+  return {
+    ...dataset,
+    columns: dataset.columns.map(column => column.id === 'adjusted_close'
+      ? { ...column, id: 'close', sourceFieldId: 'adjusted_close' } : column),
+    rows: dataset.rows.map(row => {
+      const { adjusted_close, ...values } = row.values;
+      return { ...row, values: { ...values, close: adjusted_close } };
+    }),
+  };
+}
+
 describe('runRecipe', () => {
   it.each(cases)('dispatches %o to its financial builder', (options, dataset, trace) => {
     const result = runRecipe(dataset, options, context);
     if (!result.ok) throw new Error(result.message);
     expect(result.figure.data).toEqual(expect.arrayContaining([trace]));
     expect(result.figure.layout.uirevision).toBe(result.revision);
+  });
+
+  it.each(liveCases)('accepts an acquired live price alias for %j', (options, trace) => {
+    const dataset = aliasedLivePrices([100, 100, 110, 99]);
+    const result = runRecipe(dataset, options, context);
+    expect(result).toMatchObject({ ok: true, figure: { data: expect.arrayContaining([trace]) } });
+
+    const wrongOrigin = { ...options, fields: { ...liveFields, price: 'symbol' } } as RecipeOptions;
+    expect(runRecipe(dataset, wrongOrigin, context)).toMatchObject({
+      ok: false, refused: true, message: 'Choose the source-documented adjusted-price field.',
+    });
+    const unqualified = aliasedLivePrices([100, 100, 110, 99], { invalid_response: true });
+    expect(runRecipe(unqualified, options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringContaining('Field close cannot supply adjusted price'),
+    });
+  });
+
+  it.each(snapshotCases)('continues to require snapshot inputs for $kind', options => {
+    expect(runRecipe(aliasedLivePrices([100, 110, 99, 121]), options, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringContaining('Field close cannot supply adjusted price'),
+    });
+
+    const qualified = liveDailyPriceDataset(dailyPriceRows([100, 110, 99, 121], liveSymbol), [liveSymbol]);
+    const canonicalOptions = { ...options, fields: { date: 'date', price: 'adjusted_close' } } as RecipeOptions;
+    expect(runRecipe(qualified, canonicalOptions, context)).toMatchObject({
+      ok: false, refused: true, message: expect.stringMatching(/fully loaded.*unknown/i),
+    });
+  });
+
+  it.each(['box', 'violin'] as const)('continues to accept live %s plots through the worker', view => {
+    const dataset = aliasedLivePrices(Array.from({ length: 21 }, (_, index) => 100 + index ** 2));
+    const result = runRecipe(dataset, {
+      version: 1, kind: 'return-summary', fields: liveFields, symbols: [liveSymbol], view, window: { mode: 'own' },
+    }, context);
+    expect(result).toMatchObject({ ok: true, returnSummary: { view } });
   });
 
   it.each([

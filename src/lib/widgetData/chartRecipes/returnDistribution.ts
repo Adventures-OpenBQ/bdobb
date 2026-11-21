@@ -63,27 +63,30 @@ export function buildReturnDistribution(
   const decoded = decodeRecipeOptions(options, 'return-distribution');
   if (!decoded.ok) return { ok: false, refused: true, message: decoded.message };
   const { fields, symbol, bins } = options;
-  const prepared = prepareSelectedPrices(dataset, fields, [symbol]);
+  const prepared = prepareSelectedPrices(dataset, fields, [symbol], options.kind);
   if (!prepared.ok) return prepared;
 
   const { samples, excludedNonfinite, gapCount } = dailyReturnSamples(prepared.series[0]);
-  const { scope } = prepared;
+  const { scope, sourceMode } = prepared;
+  const observed = sourceMode === 'live';
+  const returnKind = observed ? 'observed quote-to-quote' : 'daily';
   const notes = [...prepared.notes, `${gapCount} known price gap(s) for ${symbol} break adjacent returns.`];
-  if (excludedNonfinite) notes.push(`Excluded ${excludedNonfinite} nonfinite daily return(s).`);
+  if (observed) notes.unshift('Observed quote-to-quote returns; exchange-session completeness unknown.');
+  if (excludedNonfinite) notes.push(`Excluded ${excludedNonfinite} nonfinite ${returnKind} return(s).`);
   const acquiredRows = dataset.completeness.acquiredRowCount;
   if (acquiredRows !== undefined && acquiredRows > dataset.rows.length)
     notes.push(`Filtered source delivered ${dataset.rows.length} of ${acquiredRows} acquired rows.`);
   if (samples.length < 2) return { ok: false, refused: true, message: [
-    `At least 2 finite daily returns are required for ${symbol}. Found ${samples.length}.`, ...notes,
+    `At least 2 finite ${returnKind} returns are required for ${symbol}. Found ${samples.length}.`, ...notes,
   ].join(' ') };
 
   const distribution = histogram(samples, bins);
   if (typeof distribution === 'string') return { ok: false, refused: true, message: [distribution, ...notes].join(' ') };
 
-  notes.unshift(`N = ${samples.length} daily returns for ${symbol} from ${samples[0].date} to ${samples[samples.length - 1].date}.`);
-  notes.push(`Acquisition window ${scope.start} to ${scope.end}.`,
-    'Unreported provider gaps cannot always be distinguished from market holidays.');
-  if (distribution.length === 1) notes.push(`Constant daily return of ${formatBoundary(samples[0].value)}.`);
+  notes.unshift(`N = ${samples.length} ${returnKind} returns for ${symbol} from ${samples[0].date} to ${samples[samples.length - 1].date}.`);
+  notes.push(`Acquisition window ${scope.start} to ${scope.end}.`);
+  if (!observed) notes.push('Unreported provider gaps cannot always be distinguished from market holidays.');
+  if (distribution.length === 1) notes.push(`Constant ${returnKind} return of ${formatBoundary(samples[0].value)}.`);
 
   const revision = JSON.stringify([
     dataset.provenance.sourceWidgetId, options.kind, options.version, fields.date, fields.price,
@@ -95,7 +98,7 @@ export function buildReturnDistribution(
   // axis padding and use exact binary scaling for exceptional magnitudes.
   const scale = Math.max(Math.abs(first), Math.abs(last)) >= 1e300 ? 2 ** 512 : 1;
   const axis = {
-    type: 'linear', title: { text: 'Daily return' }, automargin: true,
+    type: 'linear', title: { text: observed ? 'Observed quote-to-quote return' : 'Daily return' }, automargin: true,
     uirevision: JSON.stringify([revision, scale]), tickformat: `.${context.maxDecimals}%`,
   };
   let xaxis: Record<string, unknown> = axis;
@@ -122,7 +125,8 @@ export function buildReturnDistribution(
       }],
       layout: {
         ...themedLayout(context.theme), uirevision: revision, bargap: 0, showlegend: false,
-        title: { text: 'Daily return distribution' }, margin: { l: 60, r: 12, t: 44, b: 48 },
+        title: { text: observed ? 'Observed return distribution' : 'Daily return distribution' },
+        margin: { l: 60, r: 12, t: 44, b: 48 },
         xaxis,
         yaxis: { type: 'linear', title: { text: 'Observation count' }, rangemode: 'tozero', automargin: true },
       },

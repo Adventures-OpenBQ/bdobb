@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, it } from 'vitest';
+import { liveDailyPriceDataset } from '../../../test/fixtures/liveDailyPrices';
 import { dailyPriceRows, priceDataset, priceFields } from './fixtures';
 import { buildReturnDistribution } from './returnDistribution';
 import type { RecipeOptions, RecipeResult } from './types';
@@ -10,6 +11,10 @@ const context = { theme: 'light', maxDecimals: 2, today: '2026-02-01' } as const
 const options = { version: 1, kind: 'return-distribution', fields: priceFields, symbol: 'A', bins: 5 } satisfies RecipeOptions;
 const build = (prices: (number | null)[], bins = options.bins) =>
   buildReturnDistribution(priceDataset(dailyPriceRows(prices)), { ...options, bins }, context);
+const liveSymbol = 'AAPL.US';
+const liveFields = { date: 'date', price: 'adjusted_close' };
+const liveOptions = { ...options, symbol: liveSymbol, fields: liveFields };
+const liveScope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
 
 function plotted(result: RecipeResult) {
   if (!result.ok) throw new Error(result.message);
@@ -31,9 +36,71 @@ it('conserves samples at both range endpoints', () => {
   expect(trace.y).toEqual([1, 0, 1, 0, 1]);
   expect(trace.y.reduce((total, count) => total + count, 0)).toBe(3);
   expect(result).toMatchObject({
-    notes: expect.arrayContaining([expect.stringMatching(/N = 3.*2026-01-02.*2026-01-04/)]),
-    figure: { layout: { xaxis: { tickformat: '.2%' }, yaxis: { title: { text: 'Observation count' } } } },
+    notes: expect.arrayContaining([
+      'N = 3 daily returns for A from 2026-01-02 to 2026-01-04.',
+      'Unreported provider gaps cannot always be distinguished from market holidays.',
+    ]),
+    figure: { layout: {
+      title: { text: 'Daily return distribution' }, xaxis: { tickformat: '.2%', title: { text: 'Daily return' } },
+      yaxis: { title: { text: 'Observation count' } },
+    } },
   });
+});
+
+it('bins only observed quote-to-quote returns from live history', () => {
+  const dataset = liveDailyPriceDataset(dailyPriceRows([100, 100, 110, 99], liveSymbol), [liveSymbol]);
+  const result = buildReturnDistribution(dataset, liveOptions, context);
+  const trace = plotted(result);
+  expect(trace.y).toEqual([1, 0, 1, 0, 1]);
+  expect(trace.y.reduce((total, count) => total + count, 0)).toBe(3);
+  expect(result).toMatchObject({
+    notes: expect.arrayContaining([
+      'N = 3 observed quote-to-quote returns for AAPL.US from 2026-01-02 to 2026-01-04.', liveScope,
+    ]),
+    figure: { layout: {
+      title: { text: 'Observed return distribution' }, xaxis: { title: { text: 'Observed quote-to-quote return' } },
+    } },
+  });
+});
+
+it('pairs sparse Tuesday through Friday quotes until a Wednesday omission is evidenced', () => {
+  const rows = [
+    { date: '2026-01-06', adjusted_close: 100 }, { date: '2026-01-08', adjusted_close: 121 },
+    { date: '2026-01-09', adjusted_close: 133.1 },
+  ];
+  const sparse = buildReturnDistribution(liveDailyPriceDataset(rows, [liveSymbol]), liveOptions, context);
+  expect(plotted(sparse).y).toEqual([1, 0, 0, 0, 1]);
+  expect(sparse).toMatchObject({ notes: expect.arrayContaining([
+    'N = 2 observed quote-to-quote returns for AAPL.US from 2026-01-08 to 2026-01-09.',
+  ]) });
+
+  const gapped = liveDailyPriceDataset(rows, [liveSymbol], { omissions: [[liveSymbol, '2026-01-07']] });
+  expect(buildReturnDistribution(gapped, liveOptions, context)).toMatchObject({
+    ok: false, refused: true,
+    message: expect.stringMatching(/At least 2 finite observed quote-to-quote returns.*Found 1.*provider omissions/),
+  });
+});
+
+it('pairs Friday with Monday using only quotes inside the acquisition', () => {
+  const rows = [
+    { date: '2026-01-09', adjusted_close: 100 }, { date: '2026-01-12', adjusted_close: 110 },
+    { date: '2026-01-13', adjusted_close: 132 },
+  ];
+  const bounds = { start_date: '2026-01-09', end_date: '2026-01-13' };
+  const twoQuotes = liveDailyPriceDataset(rows.slice(0, 2), [liveSymbol], { bounds });
+  const insufficient = buildReturnDistribution(twoQuotes, liveOptions, context);
+  expect(insufficient).toMatchObject({
+    ok: false, refused: true, message: expect.stringMatching(/At least 2 finite observed quote-to-quote returns.*Found 1/),
+  });
+  if (insufficient.ok) throw new Error('Expected insufficient returns');
+  expect(insufficient.message).toContain(liveScope);
+
+  const threeQuotes = liveDailyPriceDataset(rows, [liveSymbol], { bounds });
+  const result = buildReturnDistribution(threeQuotes, liveOptions, context);
+  expect(plotted(result).y).toEqual([1, 0, 0, 0, 1]);
+  expect(result).toMatchObject({ notes: expect.arrayContaining([
+    'N = 2 observed quote-to-quote returns for AAPL.US from 2026-01-12 to 2026-01-13.',
+  ]) });
 });
 
 it('assigns exact interior edges to the right and shows endpoint inclusion and share', () => {
