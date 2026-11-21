@@ -281,5 +281,4 @@ including the eight previously failing declaration subtests, next-source
 regressions and the source pin. There were zero skips and one OpenBB aiohttp
 inheritance deprecation. The pinned WASM packaging suite passed all three
 cases. Scope remains the local arm64 image, the two installed mirrors and the
-desktop-hosted browsers above. The controller's scoped re-review of the
-consolidated fix is pending.
+desktop-hosted browsers above. The independent scoped re-review of the consolidated fix is complete: both Important findings are addressed and no new Critical or Important breakage was found. [Final independent fix review](independent-final-fix-review.md).

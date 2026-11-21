@@ -129,10 +129,10 @@ Client exports `dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt>` 
 
 - [x] Run client `pnpm test:run`, `pnpm test:web`, `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm knip`, `pnpm scrub`, `pnpm build`, plus actual compiled-engine/browser gates above. Compare bundle raw/gzip measurements against this branch's pre-implementation baseline; no new trace registration/vendor expected.
 - [x] Run full provider `python -m pytest -q`, installed transport tests and Docker source parity checks. Distinguish pre-existing optional skips/warnings from regressions; never report fixture coverage as real ArcticDB or physical-device validation.
-- [ ] Request fresh independent whole-change review of exact base-to-head diffs across all three repos, approved spec, test evidence and actual runtime captures. Check no hidden numeric proof, no global trust promotion, gap composition, caller ordering, ordinary-route compatibility and source replacement races. Fix Critical/Important findings with targeted RED/GREEN and fresh review.
-- [ ] Report exact commits, checks, remaining limitations and any blocked installed-image proof. Preserve release worktrees/catalog recovery evidence; no destructive cleanup. Present results for user review before integration.
+- [x] Request fresh independent whole-change review of exact base-to-head diffs across all three repos, approved spec, test evidence and actual runtime captures. Check no hidden numeric proof, no global trust promotion, gap composition, caller ordering, ordinary-route compatibility and source replacement races. Fix Critical/Important findings with targeted RED/GREEN and fresh review.
+- [x] Report exact commits, checks, remaining limitations and any blocked installed-image proof. Preserve release worktrees/catalog recovery evidence; no destructive cleanup. Present results for user review before integration.
 
-The release-check evidence is recorded in [verification](../../releases/validation/v9/live-observed-returns/verification.md). The fresh whole-change review and review handoff remain pending.
+The release-check evidence is recorded in [verification](../../releases/validation/v9/live-observed-returns/verification.md). The whole-change review and single scoped fix review are complete; both Important findings are addressed. Results are ready for the user’s integration choice.
 
 ## Plan self-review
 
@@ -140,4 +140,4 @@ Spec coverage: source/receipt and loss accounting → Tasks 1–2; both-engine a
 
 ## Execution handoff
 
-Preserved execution preference: subagent-driven implementation with independent task reviews and final whole-change review. User review of this plan is required before execution. No product code, dependency installation or qualification image build was performed while writing it.
+Preserved execution preference: subagent-driven implementation with independent task reviews and final whole-change review. The user approved the plan and selected subagent execution. Implementation, task reviews, the independent whole-change review and its single fix-wave re-review are complete. Branches and qualification images remain local for integration review.

@@ -1,9 +1,10 @@
 # Live observed returns qualification review
 
-Tasks 1–5 completed independent task review against the approved design.
+Tasks 1–6 completed independent task review against the approved design.
 The first independent whole-change review then found two Important admission
-errors. The consolidated fix has completed implementation. Independent scoped
-re-review of the fixes across the three branches is pending.
+errors. The consolidated fix completed implementation and independent scoped re-review.
+Both Important findings are addressed; no new Critical or Important breakage was found.
+[Whole-change review](independent-whole-change-review.md) · [Final fix review](independent-final-fix-review.md).
 
 | Task | Reviewed change |
 | --- | --- |
@@ -49,7 +50,7 @@ of coordinate loss, caller order, ordinary routes and source replacement races. 
   the history for a return summary.
 - The public capture received HTTP 200, verified the data and wrote the
   fixture before an aiohttp shutdown callback raised an ignored
-  cross-event-loop `RuntimeError`. The provider full-suite result is
+  cross-event-loop `RuntimeError`. The earlier provider full-suite result was
   inherited from Task 1, with 948 passes and one optional ArcticDB cache
   skip.
 - The existing narrow-touch median hover failed once concurrently in
@@ -68,3 +69,11 @@ fixture paths.
 - Mixed paging and message wrappers can report the generic invalid-response reason. Fully filtered sources can prioritize insufficiency over invalid binding guidance. Both continue to refuse. The earlier narrow-touch hover failure and all environment limits remain open as described above.
 
 The implementation and its requalification are recorded in [paired verification](verification.md#final-declaration-fix-and-requalification). The controller owns the independent scoped re-review.
+
+## Final independent verdict
+
+The reviewer checked client `bfb38a8f154a8bcfb23bc56023d432dfeba2928c`, canonical provider `adb2e2e410552863bcbfbd5584e3e7c9720d0cbc` and Docker `52436dd8a1a6a13eaf142a8486a7f0bda7f1db5b`. The final local arm64 image is `openbq-v9-live-observed-returns:final-adb2e2e-20261120`, OCI index `sha256:068944e7bded0471cb222399db083ffeb6306ae30fe14954907fa0dd8dfc2acc`. Subsequent bookkeeping changes only the plan and these review records.
+
+Explicit weekly interval/period declarations and within-listing currency/unit contradictions now invalidate evidence before normalization or filtering can hide them. Missing declarations, sparse observed data and different stable denominations on separate listings remain eligible. The reviewer recomputed all five final capture variants and both public 29-quote/28-return series. The recorded 26 focused browser checks passed.
+
+Ready for integration review. Known diagnostic-priority and transient touch-hover qualifications remain documented in verification; this verdict does not authorize publication, merging or deployment. All worktrees and raw evidence are preserved.
