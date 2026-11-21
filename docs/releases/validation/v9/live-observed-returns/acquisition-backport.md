@@ -67,3 +67,24 @@ The first concurrent browser runs also included `e2e/return-summary.spec.ts` and
 - Chromium and TypeScript missed the median tooltip in `keeps original-percent ticks on a real narrow touch zoom and preserves the zoom on resize`. The trace shows the local snapshot box mounted and the touch action completed, followed by an empty hover layer during the five-second assertion. Chromium and Rust passed the same case in the concurrent run. An isolated Chromium and TypeScript rerun passed all three executions with `--repeat-each=3 --retries=0`. The cause of the transient missing hover remains unconfirmed. [Prior observation](verification.md#client-browser-behavior)
 - WebKit rejected the Chromium CDP touch calls in `keeps original-percent ticks on a real narrow touch zoom and preserves the zoom on resize` and `scrolls a wide return comparison by touch` on both engines. For an additional WebKit legacy run, exclude those two tests with `--grep-invert 'keeps original-percent ticks|scrolls a wide return comparison by touch'`. Chromium exercised both.
 - WebKit also reported same-origin development worker modules as fetch traffic in `exports authored pins after detaching the local asset, and reacquires with explicit repair on a new page`. The final empty-request assertion listed 414 development module GETs with TypeScript and 348 with Rust. The TypeScript attempt on archived pre-backport `b5b471ef` reproduced the same 414 GETs and failure. The requests were all to the loopback Vite origin. Chromium passed the test on both engines.
+
+## Transport review follow-up
+
+Daily-price capture also refuses HTTP 206, a `Content-Range` header, or an HTTP `Link` declaring the `next` relation. Ordinary help links remain eligible. The transport check supplies a restriction to daily-price capture and keeps the returned rows, their existing completeness, and independently verified chart-source evidence for other recipe families.
+
+Cross-origin browser Fetch needs the response to expose `Link`, `Content-Range`, and `Access-Control-Expose-Headers` itself. The client checks the observable exposure list before granting live authority. A cross-origin browser acquisition with missing or incomplete exposure keeps the table rows and refuses the recipe. The paired v9 Docker API overlay is required for direct cross-origin browser qualification. Native desktop transport reads the response head directly and has no CORS exposure requirement.
+
+The provider also accepts `yes`, `on`, `y` and `t` as affirmative opt-ins. These forms now preserve refusal in a failed acquisition. The positive contract continues to admit only its established `true` and `1` spellings and requires the same exact route, selector, receipt and row checks. A genuine false spelling such as `off` takes the ordinary snapshot path. Return Summary now prioritizes its acquisition repair over a generic saved-binding repair for an adjusted-price alias when the source is rejected.
+
+The private preview's configured `/api` base prefixes the generated `/api/v1` widget endpoint. Both executors refused live proof for an otherwise qualifying response at `/api/api/v1/eodhd/equity/price/historical`, while preserving its rows and attached refusal. That prefixed route is outside the existing live route allowlist. The preview proxy's status normalization therefore cannot grant live authority there.
+
+| Review-fix verification | Result |
+| --- | --- |
+| Focused data client, table, recipe and Parameters tests | 427 passed. |
+| Full client suite | 10,326 passed and 47 optional integration tests skipped. |
+| Chromium and WebKit with TypeScript and compiled Rust | 25 passed per browser and engine, 100 total and zero retries. Each run included 12 live cases, five installed-response replays and eight actual cross-origin HTTP cases. |
+| Production app and private web package, typecheck, lint, Knip and scrub | All passed. Knip reported the already recorded unused `Monitor` type. |
+| Pivot browser conformance | 16 passed. |
+| Pinned WASM validation, Rust tests and packaging | Passed. The existing 199 Rust core, one WASM crate and 19 wire-codec tests and three packaging cases passed. |
+
+The new browser cases serve the captured installed price body from a separate loopback HTTP origin. They verify ordinary 200, 206, a range on 200, next and help links, hidden paging headers, an incomplete exposure list, and a list that does not expose itself. The unexposed case also reads Fetch's filtered response headers inside the browser. Before the exposure check, the three incomplete-exposure cases qualified incorrectly. The final matrix preserves valid adjusted-price charts when the full exposure policy is visible.

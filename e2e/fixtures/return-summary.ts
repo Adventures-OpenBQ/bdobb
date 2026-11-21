@@ -78,6 +78,9 @@ export async function prepareReturns(page: Page, snapshot?: string, options = re
 }
 
 export const liveBackendId = 'daily-prices';
+export const dailyPriceCorsHeaders = {
+  'Access-Control-Expose-Headers': 'Link, Content-Range, Access-Control-Expose-Headers',
+};
 export const liveOrigin = 'http://127.0.0.1:17916';
 export const alternateLiveOrigin = 'http://127.0.0.1:17918';
 export const livePath = '/api/v1/eodhd/equity/price/historical';
@@ -141,6 +144,7 @@ export async function prepareLiveReturns(page: Page, {
     try {
       await route.fulfill({ contentType: 'application/json', headers: {
         'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        ...dailyPriceCorsHeaders,
       }, status: payload instanceof Error ? 500 : 200, json: payload instanceof Error ? { detail: payload.message } : payload });
     } finally {
       if (isSource) completed.push(request);

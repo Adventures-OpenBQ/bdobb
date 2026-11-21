@@ -91,7 +91,8 @@ export function chartResponseRows(response: unknown, selector: string | undefine
 // An opted-in daily-price response cannot supply legacy price history when live capture fails.
 // Recognize the attempted route or declaration even if the selector, redirect or parameters invalidate it.
 export function requestsDailyPriceSource(url: URL, response: unknown): boolean {
-  if (!url.searchParams.getAll('chart_source').some(value => /^(true|1)$/i.test(value))) return false;
+  // The provider accepts these boolean spellings. Positive capture keeps its own stricter check.
+  if (!url.searchParams.getAll('chart_source').some(value => /^(1|true|yes|on|y|t)$/i.test(value))) return false;
   const receipts = pathValue(response, 'extra.results_metadata.chart_sources.receipts');
   return chartSourceRegistry['daily-price']?.routes.some(route => route.endpoint === url.pathname)
     || (Array.isArray(receipts) && receipts.some(receipt => plain(receipt) && receipt.kind === 'daily-price'));

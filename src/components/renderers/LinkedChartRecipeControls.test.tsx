@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { datasetFromRows } from '../../lib/localTableData';
-import { admitReturnSummary } from '../../lib/widgetData/chartRecipes/priceSamples';
+import { runRecipe } from '../../lib/widgetData/chartRecipes/run';
 import { LinkedChartRecipeControls, recipeAvailability } from './LinkedChartRecipeControls';
 import type { DatasetColumn } from '../../lib/widgetData/types';
 const columns = ['date', 'adjusted_close', 'symbol', 'close'].map(id => ({ id, label: id }));
@@ -166,23 +166,24 @@ it('preserves applied dividend field aliases on a verified-empty refresh', async
   expect(save).toHaveBeenCalledWith(saved);
 });
 
-it.each(['rejected acquisition', 'invalid declaration'] as const)('refuses Return Summary Parameters for a %s', async reason => {
+it.each(['rejected acquisition', 'invalid declaration'] as const)('matches the Return Summary worker and Parameters refusal for %s', async reason => {
   const input = datasetFromRows(Array.from({ length: 8 }, (_, i) => ({
-    date: `2026-01-0${i + 1}`, adjusted_close: 100 + i, symbol: 'AAA.US',
+    date: `2026-01-0${i + 1}`, revenue_adjusted: 100 + i, symbol: 'AAA.US',
   })), 'prices', 1, 'localFile', undefined, [], { completeness: 'complete',
     receipt: { interval: '1d', start_date: '2026-01-01', end_date: '2026-01-31' } });
-  const fields = { date: 'date', price: 'adjusted_close', symbol: 'symbol' };
+  const fields = { date: 'date', price: 'revenue_adjusted', symbol: 'symbol' };
+  input.columns = input.columns.map(column => column.id === fields.price ? { ...column, sourceFieldId: 'adjusted_close' } : column);
   const symbols = ['AAA.US'];
-  const window = { mode: 'own' } as const;
+  const recipe = { version: 1, kind: 'return-summary', view: 'box', fields, symbols, window: { mode: 'own' } } as const;
   input.provenance.metadata = { ...input.provenance.metadata,
     ...(reason === 'rejected acquisition' ? { dailyPriceRejected: true } : { chartSources: { 'daily-price': null } }) };
   const save = vi.fn();
   render(<LinkedChartRecipeControls kind="return-summary"
-    saved={{ version: 1, kind: 'return-summary', view: 'box', fields, symbols, window }} columns={input.columns}
+    saved={recipe} columns={input.columns}
     loadSymbols={loadSymbols} loadReturnInput={async () => input} loadReturnListings={async () => symbols}
     disabled={false} onApply={save}/>);
   const refusal = await screen.findByText(/cannot verify its daily-price acquisition/i);
-  expect(admitReturnSummary(input, fields, symbols, window)).toMatchObject({
+  expect(runRecipe(input, recipe, { theme: 'light', today: '2026-01-31', maxDecimals: 2 })).toMatchObject({
     ok: false, refused: true, message: refusal.textContent,
   });
   expect(screen.getByLabelText('Return view')).toBeDisabled();

@@ -78,11 +78,21 @@ async function linkedSubset(executor: LocalWorkerExecutor, revision: Revision) {
   return commitSubset(transfer!);
 }
 
+const httpVariants = new Map<string, { status?: number; headers?: Record<string, string> }>([
+  ['partial HTTP status', { status: 206 }],
+  ['HTTP content range', { headers: { 'Content-Range': 'items 0-57/100' } }],
+  ['unquoted next link', { headers: { Link: '</prices?page=2>; rel=Next' } }],
+  ['quoted next link', { headers: { Link: '</help>; rel="help", </prices?page=2>; title="More, please"; rel="prev next"' } }],
+  ['benign link', { headers: { Link: '</help;rel=next>; rel="help"; title="Example; rel=next, details"' } }],
+]);
+
 describe.each(engines)('%s daily-price evidence', (_, make) => {
   it.each([
     'qualified', 'partial response', 'result cursor', 'extra pagination', 'result completeness',
+    ...httpVariants.keys(), 'preview prefixed response',
     'nested snapshot', 'wrong selector snapshot', 'wrong route snapshot', 'invalidated snapshot',
-    'plain rows', 'plain snapshot', 'local snapshot',
+    'yes snapshot', 'on snapshot', 'y snapshot', 't snapshot', 'yes live response',
+    'plain rows', 'plain snapshot', 'off snapshot', 'local snapshot',
   ] as const)('checks %s from acquisition through linked chart data', async variant => {
     const endpoint = '/api/v1/eodhd/equity/price/historical';
     const { body, query } = JSON.parse(readFileSync(
@@ -93,6 +103,10 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
     const isSnapshot = variant.endsWith('snapshot');
     if (isSnapshot) body.results = snapshot;
     if (variant === 'plain rows' || variant === 'plain snapshot' || variant === 'invalidated snapshot') delete query.chart_source;
+    if (['yes snapshot', 'on snapshot', 'y snapshot', 't snapshot', 'off snapshot'].includes(variant)) {
+      query.chart_source = variant.split(' ')[0];
+    }
+    if (variant === 'yes live response') query.chart_source = 'yes';
     if (variant === 'partial response') body.isPartial = true;
     if (variant === 'result cursor') body.extra.results_metadata.nextCursor = 'page-2';
     if (variant === 'extra pagination') body.extra.pagination = { page: 1 };
@@ -102,13 +116,20 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
     if (variant === 'local snapshot') {
       input = await datasetFromBytes('prices.json', new TextEncoder().encode(JSON.stringify(snapshot)), 'root', 1);
     } else {
-      const path = variant === 'wrong route snapshot' ? '/other/prices' : endpoint;
+      let path = endpoint;
+      if (variant === 'wrong route snapshot') path = '/other/prices';
+      if (variant === 'preview prefixed response') path = '/api' + endpoint;
       const dataKey = variant === 'wrong selector snapshot' ? 'results.rows' : 'results';
-      const server = await startMockServer({ [path]: body });
+      const transport = httpVariants.get(variant);
+      const server = await startMockServer({ [path]: transport
+        ? { __status: transport.status ?? 200, __headers: transport.headers, __body: body }
+        : body });
       try {
         let acquisition: BackendAcquisition | undefined;
         const selected = await fetchWidgetData(backend({ baseUrl: server.url }), widget({ endpoint: path, dataKey }),
           query, undefined, undefined, undefined, value => { acquisition = value; });
+        if (transport && variant !== 'benign link')
+          expect(acquisition?.chartSources?.['daily-price']).toBeUndefined();
         const parsed = parseTableSnapshot(selected);
         input = datasetFromRows(tableRows(parsed.data)!, 'root', 1, 'backend', undefined, [], parsed.snapshot, acquisition);
       } finally { await server.close(); }
@@ -128,8 +149,9 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
       { kind: 'return-summary', version: 1, fields, symbols, view: 'box', window: own },
       { kind: 'return-summary', version: 1, fields, symbols, view: 'violin', window: own },
     ] satisfies RecipeOptions[];
-    const qualified = variant === 'qualified';
-    const ordinary = variant === 'plain rows' || variant === 'plain snapshot' || variant === 'local snapshot';
+    const qualified = variant === 'qualified' || variant === 'benign link';
+    const ordinarySnapshot = variant === 'plain snapshot' || variant === 'off snapshot';
+    const ordinary = variant === 'plain rows' || ordinarySnapshot || variant === 'local snapshot';
     const context = { theme: 'light', today: '2026-11-21', maxDecimals: 2 } as const;
     for (const widgetId of ['root', 'child']) {
       const executor = make(widgetId);
@@ -143,7 +165,7 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
         expect(Boolean(readLiveDailyPriceSource(chart))).toBe(qualified);
         for (const options of views) {
           const liveAllowed = qualified && options.kind === 'return-summary';
-          const snapshotAllowed = variant === 'local snapshot' || variant === 'plain snapshot' && options.kind !== 'return-summary';
+          const snapshotAllowed = variant === 'local snapshot' || ordinarySnapshot && options.kind !== 'return-summary';
           const result = runRecipe(chart, options, context);
           expect(result, options.kind).toMatchObject(liveAllowed || snapshotAllowed ? { ok: true } : { ok: false, refused: true });
           if (liveAllowed && result.ok) {
