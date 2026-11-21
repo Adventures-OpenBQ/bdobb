@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v7.0.0",
-  "baseCommit": "b82c6afcfe93e1d26128fea996ae6093140f1821",
-  "sourceId": "02a1986dcbf803b9482cc49c47be0cbc6f4f2242f12c0aa50f47431c77983d17",
+  "baseCommit": "e196b298dbb5f160f65c43335d8986e071e2d444",
+  "sourceId": "0090043451c3c4153c7a0b2e742fe99384e90daf2fcc2d6cbb3af7e18349f756",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21063,7 +21063,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "6973d84e6cbe7cb98e88275404bf1133b1e2b493f3d9bc910692ad59bc45f878"
+      "sha256": "7c7e89d03335224b899f1450e873616cef03d56b544cebd6f6d7ee6790892921"
     },
     {
       "path": "source_bundle.py",
@@ -24800,8 +24800,8 @@
       "path": "src/lib/agent/localTools.ts",
       "type": "file",
       "mode": 420,
-      "size": 53743,
-      "sha256": "16278018c473478b3d53b24817686f12ac12ed0edeb9a7b9e80fdf33b9a9d5ef"
+      "size": 53963,
+      "sha256": "77320cc6af98017cc1bce50e8719c8975a738407b93d1e2fdcf1a07709bdeffd"
     },
     {
       "path": "src/lib/agent/mcp.test.ts",
@@ -28328,8 +28328,8 @@
       "path": "src/skills/build-dashboard/SKILL.md",
       "type": "file",
       "mode": 420,
-      "size": 6200,
-      "sha256": "1332f3384e18508c4c074e29acd7697a518f477acb3978c8eaabc399ab8c25f8"
+      "size": 6242,
+      "sha256": "af2494ee23c961263d79e22c4ca51ea8e7a2c78b89bbac737a8cfab6ac13ac63"
     },
     {
       "path": "src/skills/openbb-html-chart/SKILL.md",
@@ -29273,15 +29273,15 @@
       "path": "src/test/integration/rita-authoring-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 18199,
-      "sha256": "e1c078a404f1002807dc950e73a5ffb1797c1151592850cf6b9a740b8408e348"
+      "size": 18261,
+      "sha256": "49fcf1d095f027bf783da5a93234dd75ac3f9ad776d9c228fb319d0bc9e4d432"
     },
     {
       "path": "src/test/integration/rita-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 8996,
-      "sha256": "330c9c82d19e3f7a3ab951c663422134111066feed756d99da4ee669658e55c7"
+      "size": 9898,
+      "sha256": "c05058319e05164a076733e15e6f4224455f62b4735d7794e45c426f1cf4cb58"
     },
     {
       "path": "src/test/integration/rita-table-model-live.test.ts",
