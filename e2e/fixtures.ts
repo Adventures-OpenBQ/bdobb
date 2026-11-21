@@ -97,6 +97,17 @@ export function memfs(page: Page) {
 export const read = (page: Page, path: string): Promise<string | undefined> =>
   memfs(page).read(path);
 
+/**
+ * Load the real store through a document-owned ES module. The subsequent
+ * evaluation delivers the update synchronously in this viewer page.
+ */
+export async function deliverSharedGroupValue(page: Page, dashboardId: string, groupId: string, value: string): Promise<void> {
+  await page.addScriptTag({ type: 'module', url: '/e2e/fixtures/pivot-shared-group.ts' });
+  await page.evaluate(({ dashboardId, groupId, value }) => {
+    window.deliverPivotGroupValue(dashboardId, groupId, value);
+  }, { dashboardId, groupId, value });
+}
+
 export async function seedApp(
   page: Page,
   files: Record<string, string | number[]> = defaultSeed(),
