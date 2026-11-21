@@ -5,9 +5,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { isYouTubeEmbed, youtubeEmbedUrl } from "../../lib/youtube";
-import { youtubePlayback, youtubePlaybackUrl, type YoutubePlayback } from "../../lib/youtubePlayback";
+import { PIP_GRAB_CHANNEL, PIP_GRAB_MARKER, youtubePlayback, youtubePlaybackUrl, type YoutubePlayback } from "../../lib/youtubePlayback";
 import { closeYoutubePip, desktopVideoPipAvailable, openYoutubePip, youtubePipIsOpen } from "../../lib/youtubePip";
 import { SRC_FRAME_SANDBOX } from "./HtmlRenderer";
+import { PictureInPictureRenderer } from "./PictureInPictureRenderer";
 
 type Props = {
   data: unknown;
@@ -16,14 +17,17 @@ type Props = {
   controlsHost?: HTMLElement | null;
   onSettingsChange?: (settings: YoutubePlayback) => Promise<unknown>;
   viewer?: boolean;
+  readOnly?: boolean;
+  menuOpen?: boolean;
 };
 
 /** Only validated YouTube ids reach either player. Client playback preferences
  * stay out of provider parameters. Old data-only callers retain their URL contract.
  * The native bridge serializes ownership changes; inline playback waits for close.
  */
-export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettingsChange, viewer = false }: Props) {
+export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettingsChange, viewer = false, readOnly = false, menuOpen = false }: Props) {
   const text = typeof data === "string" ? data : "";
+  const grab = Boolean(cardId && text === PIP_GRAB_MARKER);
   const direct = youtubeEmbedUrl(text);
   const wantPort = direct !== null;
   const id = direct?.split("/embed/")[1] ?? null;
@@ -115,7 +119,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
     finally { savingRef.current = false; setSaving(false); }
   }
 
-  const controls = controlsHost && onSettingsChange && !viewer ? createPortal(
+  const controls = controlsHost && onSettingsChange && !viewer && !grab ? createPortal(
     <div className="video-playback-config">
       <label><input type="checkbox" checked={prefs.muted} disabled={saving} onChange={e => void change({...prefs, muted: e.target.checked})} /> Start muted</label>
       <label><input type="checkbox" checked={prefs.autoplay} disabled={saving} onChange={e => void change({...prefs, autoplay: e.target.checked})} /> Autoplay</label>
@@ -125,6 +129,12 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
     ? port ? youtubePlaybackUrl(text, port, prefs) : direct ? `${direct}?autoplay=${prefs.autoplay ? 1 : 0}&mute=${prefs.muted ? 1 : 0}&playsinline=1` : null
     : youtubeEmbedUrl(text, port ?? undefined);
   const inline = !wantPip && phase === "inline";
+  if (grab && cardId) return <>
+    {phase === "inline"
+      ? <PictureInPictureRenderer cardId={cardId} readOnly={viewer || readOnly} menuOpen={menuOpen} requiredChannel={PIP_GRAB_CHANNEL} />
+      : <p className="empty-state">{phase === "error" ? "Player unavailable" : "Returning video to card…"}</p>}
+    {error ? <p role="alert">{error}</p> : null}
+  </>;
   return <>
     {controls}
     {direct === null ? <p className="empty-state">{cardId ? "No video is currently available for the selected source." : "Select a video in the widget's parameters."}</p> : <div className="youtube-player">

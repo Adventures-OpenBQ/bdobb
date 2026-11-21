@@ -5,7 +5,15 @@ tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 
 # Picture in Picture
 
-The **Live TV** widget combines channel selection, inline YouTube playback and a floating **Picture in Picture** player in one card. Connect the companion RSS server as a backend, then add **Live TV**. The public recipe includes **Bloomberg TV** and **Schwab Network**; the Channel parameter selects which stream to resolve. A channel can be off-air and is reported as unavailable rather than silently playing a recording.
+The **Live TV** widget combines YouTube playback and incoming Chrome **Picture in Picture grab** in one card. Connect the companion RSS server as a backend, then add **Live TV**. Its **Channel** picker offers **YouTube - Bloomberg Live**, **YouTube - Schwab Network Live**, **YouTube - Yahoo Finance 24/7 Stream**, and **Picture in Picture grab**. A YouTube channel can be off-air and is reported as unavailable rather than silently playing a recording.
+
+## Bringing Chrome's floating video into the card
+
+On the Mac, start a video in Chrome and pop it out with Chrome's picture-in-picture control. Choose **Picture in Picture grab** in the Live TV card's **Channel** picker. BDOBB uses the existing Chrome parking controller described below to fit the player over the card; Chrome keeps playing the video. Switching back to a YouTube source releases Chrome's player, including when the card is hidden.
+
+The same choice works in a locked band: open **Settings ▸ Locked Widgets**, edit the top or bottom band, add **Live TV**, choose **Picture in Picture grab**, and choose **OK**. A locked card keeps its stored height. Make the band large enough for the player. Chrome's own controls operate playback and sound; Live TV's **Start muted** and **Autoplay** preferences apply to its YouTube sources.
+
+The incoming Chrome grab currently uses the macOS controller and its Accessibility permission. The iPadOS sandbox prevents moving another app's player. See the platform notes below; the separate outgoing player on macOS and Windows is described next.
 
 ## Live TV on macOS and Windows
 
@@ -17,7 +25,7 @@ On iPad, in a browser and on other platforms, the same card plays inline. iPad's
 
 ## Legacy Chrome parking cards
 
-Existing **Picture in Picture** cards remain compatible. They keep a place on a dashboard for a video playing in Chrome; the following controls apply to those older macOS cards. They do not provide the app-owned Live TV player described above.
+Existing standalone **Picture in Picture** cards remain compatible. The placement, hiding and permission rules below also apply to Live TV's incoming Chrome grab. Source-title and mute-slider settings belong to the standalone card.
 
 ## On the Mac
 

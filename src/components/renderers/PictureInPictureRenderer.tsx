@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { modalStack } from "../../hooks/modalStack";
 import {
   cancelScheduledRelease,
@@ -13,6 +13,7 @@ import {
   pipPlatform,
   pipSettings,
   readMuteState,
+  releaseNow,
   rowsForPlayer,
   sameRect,
   scheduleLeave,
@@ -26,6 +27,8 @@ import { DEFAULT_DOCK_ROWS, DOCKS_ID } from "../../lib/dashboardsFile";
 import type { PinEdge } from "../../lib/types";
 import { GRID_ROW_HEIGHT, ownerOfCard, useDashboardStore } from "../../stores/dashboardStore";
 import { selectEffective, useSettingsStore } from "../../stores/settingsStore";
+import { useWidgetRegistryStore } from "../../stores/widgetRegistryStore";
+import { effectiveParams } from "../../lib/paramGroups";
 
 /**
  * How often the card fits again (a player opened, closed or dragged away,
@@ -42,6 +45,24 @@ const dashboardData: CardData = {
   has: (id) => ownerOfCard(useDashboardStore.getState(), id) !== undefined,
   subscribe: (listener) => useDashboardStore.subscribe(listener),
 };
+
+/** A combined video card stops owning Chrome when its selected source changes,
+ * including changes made by sync while its tab is hidden. */
+function channelCardData(channel: string): CardData {
+  return {
+    has: id => {
+      const owner = ownerOfCard(useDashboardStore.getState(), id);
+      const card = owner?.tabs.flatMap(tab => tab.cards).find(card => card.id === id);
+      const widget = card && useWidgetRegistryStore.getState().find(card.backendId, card.widgetId);
+      return Boolean(owner && card && widget && effectiveParams(card, owner.groups, widget, owner.groupsDisabled === true).channel === channel);
+    },
+    subscribe: listener => {
+      const dashboard = useDashboardStore.subscribe(listener);
+      const registry = useWidgetRegistryStore.subscribe(listener);
+      return () => { dashboard(); registry(); };
+    },
+  };
+}
 
 /** Cards that have been snapped this app session: a remount (every dashboard switch) does not snap again. */
 const snapped = new Set<string>();
@@ -75,6 +96,7 @@ export function PictureInPictureRenderer({
   params = {},
   menuOpen = false,
   readOnly = false,
+  requiredChannel,
 }: {
   cardId: string;
   params?: Record<string, string>;
@@ -82,12 +104,14 @@ export function PictureInPictureRenderer({
   readOnly?: boolean;
   /** The card's own header menu is open: the player steps aside until it closes. */
   menuOpen?: boolean;
+  /** Live TV owns the player only while this group-resolved channel is selected. */
+  requiredChannel?: string;
 }) {
   const platform = pipPlatform();
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
   if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
   const { source, label } = pipSettings(params);
-  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} />;
+  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} requiredChannel={requiredChannel} />;
 }
 
 /** `muteSource` is undefined unless "Mute while hidden" is on. */
@@ -97,13 +121,27 @@ function MacPlayer({
   muteLabel,
   menuOpen,
   readOnly,
+  requiredChannel,
 }: {
   cardId: string;
   muteSource?: string;
   muteLabel: string;
   menuOpen: boolean;
   readOnly: boolean;
+  requiredChannel?: string;
 }) {
+  const lifetime = useMemo(() => requiredChannel === undefined ? dashboardData : channelCardData(requiredChannel), [requiredChannel]);
+  const eligible = useRef(true);
+  useEffect(() => {
+    if (requiredChannel === undefined) { eligible.current = true; return; }
+    const check = () => {
+      const next = lifetime.has(cardId);
+      if (eligible.current && !next) releaseNow(cardId);
+      eligible.current = next;
+    };
+    check();
+    return lifetime.subscribe(check);
+  }, [cardId, lifetime, requiredChannel]);
   const body = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<PipStatus | null>(null);
   // Chrome's player floats above every window, so it would cover a dialog as
@@ -208,14 +246,15 @@ function MacPlayer({
     cancelScheduledRelease(cardId);
     // The menu and a dialog are drawn over the card, and the player would cover them: step aside, fit again on close.
     if (aside) {
-      parkNow(cardId, true);
-      return () => scheduleLeave(cardId, dashboardData);
+      if (eligible.current) parkNow(cardId, true);
+      return () => scheduleLeave(cardId, lifetime);
     }
     const measure = (): CssRect => {
       const r = el.getBoundingClientRect();
       return { x: r.left, y: r.top, width: r.width, height: r.height };
     };
     const fit = (rect: CssRect) => {
+      if (!eligible.current) return;
       busy = true;
       sent = rect;
       enqueuePlayerOp(cardId, () =>
@@ -266,9 +305,9 @@ function MacPlayer({
       cancelAnimationFrame(frame);
       clearInterval(recheck);
       observer?.disconnect();
-      scheduleLeave(cardId, dashboardData);
+      scheduleLeave(cardId, lifetime);
     };
-  }, [cardId, muteSource, muteLabel, aside]);
+  }, [cardId, muteSource, muteLabel, aside, lifetime]);
 
   return (
     <div ref={body} className="picture-in-picture" data-state={status?.state ?? "looking"} style={{ width: "100%", height: "100%" }}>

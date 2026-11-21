@@ -3,6 +3,10 @@
 import {isRecord} from './isRecord';
 import {youtubeEmbedUrl} from './youtube';
 
+/** Reserved Live TV selection and response; neither is a URL to fetch. */
+export const PIP_GRAB_CHANNEL = 'picture-in-picture';
+export const PIP_GRAB_MARKER = 'bdobb:picture-in-picture';
+
 /** Client preferences only: never add these to a data provider's parameters. */
 export type YoutubePlayback = {display:'inline'|'pip';autoplay:boolean;muted:boolean};
 export const DEFAULT_YOUTUBE_PLAYBACK:Readonly<YoutubePlayback>={display:'inline',autoplay:false,muted:false};
