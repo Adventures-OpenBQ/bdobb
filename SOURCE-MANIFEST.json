@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v6.0.0",
-  "baseCommit": "af6cad2af4569354e877e4b77fe3279f2d7927d7",
-  "sourceId": "b0d79698bf11ef6eda292fa8b9fc84091db5f7d8cf0c99946f11a1105887f247",
+  "baseCommit": "4ce5be43f5b607cbb10b37f644c8cb3c82425961",
+  "sourceId": "ff2954c4ba3fa96889e7b1aa00d796baba1c467f76270b41b841cf77dbfbb132",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20069,7 +20069,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "9c35f9aea35d711c44da053a44578d493c916ced5aed0ea92395e200d2ca43f3"
+      "sha256": "9820ff5b4f62967892477707f04cc221dc04a61d624ba21523534e650c77d308"
     },
     {
       "path": "source_bundle.py",
@@ -28188,8 +28188,8 @@
       "path": "src/test/integration/rita-live.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 10299,
-      "sha256": "8de1905762118c04a7c9ed88dbd743acc4a8daca1473d14e48b9af46e9841643"
+      "size": 10486,
+      "sha256": "3df6b5ddee7b66c07322f31831dca1352ff054048af558f6257fae003685be80"
     },
     {
       "path": "src/test/integration/rita-table-model-live.test.ts",
