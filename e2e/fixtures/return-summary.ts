@@ -1,11 +1,28 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, type Page, type Request } from '@playwright/test';
+import { expect, test as base, type Page, type Request } from '@playwright/test';
 import type { ReturnSummaryOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dailyPriceParameters, dailyPriceReceipt, dailyPriceResponse } from '../../src/test/fixtures/chartSources';
 import { dashboardSeed, seedApp } from '../fixtures';
 import { card, chooseLinkedSource } from './chart-recipes';
+
+export const test = base.extend<{ engineEvidence: { engine: string; wasm: string[] } }>({
+  engineEvidence: [async ({ page, browser, browserName }, use, info) => {
+    await page.setViewportSize({ width: 1250, height: 930 });
+    const wasm: string[] = [];
+    page.on('response', response => {
+      if (response.ok() && /\/pivot_wasm_bg(?:-[\w-]+)?\.wasm$/.test(new URL(response.url()).pathname)
+        && response.headers()['content-type']?.includes('application/wasm')) wasm.push(response.url());
+    });
+    const engine = process.env.VITE_TABLE_ENGINE || 'typescript';
+    await use({ engine, wasm });
+    await info.attach('return-runtime', {
+      body: JSON.stringify({ engine, browserName, browserVersion: browser.version(), wasm }), contentType: 'application/json',
+    });
+    if (info.status === 'passed') expect(wasm.length > 0).toBe(engine === 'rust');
+  }, { auto: true }],
+});
 
 export const returnChart = 'Return summaries example';
 export const placeholder = 'Daily price snapshot';

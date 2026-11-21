@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { readFileSync } from 'node:fs';
-import { expect, test as base, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { openRail, read } from './fixtures';
 import { card, openParameters, plot } from './fixtures/chart-recipes';
 import {
   alternateLiveOrigin, chooseReturnSource, dropFile, liveBackendId, liveOrigin, livePath, livePayload, liveRecipe, liveSourceId,
-  liveTable, liveWorkspace, prepareLiveReturns, returnChart,
+  liveTable, liveWorkspace, prepareLiveReturns, returnChart, test,
 } from './fixtures/return-summary';
 
 const scope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
@@ -25,23 +25,6 @@ const edit = async (source: Locator, field: string, value: string) => {
 const fixedQuery = {
   provider: 'eodhd', symbol: 'MCD.US,AAPL.US', interval: '1d', start_date: '2026-10-12', end_date: '2026-11-19', chart_source: 'true',
 };
-
-const test = base.extend<{ engineEvidence: void }>({
-  engineEvidence: [async ({ page, browser, browserName }, use, info) => {
-    await page.setViewportSize({ width: 1250, height: 930 });
-    const wasm: string[] = [];
-    page.on('response', response => {
-      if (response.ok() && /\/pivot_wasm_bg(?:-[\w-]+)?\.wasm$/.test(new URL(response.url()).pathname)
-        && response.headers()['content-type']?.includes('application/wasm')) wasm.push(response.url());
-    });
-    await use();
-    const engine = process.env.VITE_TABLE_ENGINE || 'typescript';
-    await info.attach('return-runtime', {
-      body: JSON.stringify({ engine, browserName, browserVersion: browser.version(), wasm }), contentType: 'application/json',
-    });
-    if (info.status === 'passed') expect(wasm.length > 0).toBe(engine === 'rust');
-  }, { auto: true }],
-});
 
 test('authors observed boxes and violins from the daily-price source and measures filtered common pins without another GET', async ({ page }, info) => {
   const { acquisitions, requests } = await prepareLiveReturns(page);

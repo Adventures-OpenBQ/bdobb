@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { ChartSourceAdapter, ChartSourceReceipt } from './chartSourceContracts';
-import { isChartSourceArray, isChartSourceRecord } from './chartSourceShape';
+import { exact, count, isChartSourceArray, isChartSourceRecord } from './chartSourceShape';
 import { isoDate, qualifiedSymbol, utcTimestamp } from './financialEvidence';
 
 const unsafeKeys = ['fund_conflict', 'basis_conflict', 'duplicate_conflict', 'classification_conflict',
@@ -25,9 +25,6 @@ export type EtfHierarchySource = Common & ({
 const receiptKeys = ['version', 'kind', 'origin', 'retrieved_at', 'raw_count', 'normalized_count', 'delivered_count',
   'diagnostics', 'unsafe', 'fund', 'snapshot', 'as_of', 'weight_basis', 'holding_keys', 'coverage', 'coverage_reference',
   'rounding_bound_fraction', 'rounding_reference', 'missing_mass'];
-const exact = (v: unknown, keys: readonly string[]): v is Record<string, unknown> =>
-  isChartSourceRecord(v) && Object.keys(v).length === keys.length && keys.every(k => Object.hasOwn(v, k));
-const count = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
 const qualified = (v: unknown): v is string => qualifiedSymbol(v) && !/^\d+\.\d+(?:E[+-]?\d+)?$/.test(v);
 const reference = (v: unknown): v is string => typeof v === 'string'
   && /^[A-Za-z][A-Za-z0-9._:/-]{0,255}$/.test(v)

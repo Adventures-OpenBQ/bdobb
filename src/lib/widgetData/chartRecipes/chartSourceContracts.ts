@@ -39,9 +39,7 @@ export type ChartSourceAdapter<T extends ChartSourceReceipt = ChartSourceReceipt
     parameters: readonly string[];
     matches(receipt: T, parameters: Readonly<Record<string, string>>): boolean;
   }[];
-  coordinates(receipt: T): ChartCoordinateGroup[];
-  /** A family whose receipt carries only counts can use coordinates captured at acquisition. */
-  acquiredCoordinates?(receipt: T, provenance: DatasetProvenance): ChartCoordinateGroup[] | undefined;
+  coordinates(receipt: T, provenance: DatasetProvenance): ChartCoordinateGroup[] | undefined;
   /** Recheck the incoming rows and their acquired field origins before a table can filter or project them. */
   acquiredInputAgrees?(receipt: T, input: Pick<WidgetDataset, 'columns' | 'rows'>,
     provenance: DatasetProvenance, omitted: readonly string[]): boolean;
@@ -176,9 +174,7 @@ function sourceState(provenance: DatasetProvenance, input?: Pick<WidgetDataset, 
   for (const [kind, value] of Object.entries(sources)) {
     const entry = decode(value, chartSourceRegistry);
     if (!entry || kind !== entry.receipt.kind) return;
-    const coordinates = entry.adapter.acquiredCoordinates
-      ? entry.adapter.acquiredCoordinates(entry.receipt, provenance)
-      : entry.adapter.coordinates(entry.receipt);
+    const coordinates = entry.adapter.coordinates(entry.receipt, provenance);
     if (!coordinates) return;
     const omitted = asRecord(omissions)?.[kind];
     if (omitted !== undefined) {

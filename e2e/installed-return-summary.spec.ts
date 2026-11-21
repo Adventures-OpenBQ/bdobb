@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
 import type { ReturnSummaryDetails } from '../src/lib/widgetData/chartRecipes/returnSummary';
 import type { RecipeReply } from '../src/lib/widgetData/chartRecipes/workerClient';
 import { dashboardSeed, seedApp } from './fixtures';
 import { card, openParameters, plot } from './fixtures/chart-recipes';
-import { liveRecipe } from './fixtures/return-summary';
+import { liveRecipe, test } from './fixtures/return-summary';
 
 type Sample = { date: string; value: number };
 type InstalledCapture = {
@@ -41,15 +41,9 @@ const captures = [
 
 for (const [name, endpoints] of captures) {
   for (const endpoint of endpoints) {
-    test(`replays installed ${name} GET ${endpoint} through the table and recipe worker`, async ({ page, browser }, info) => {
-      await page.setViewportSize({ width: 1250, height: 930 });
+    test(`replays installed ${name} GET ${endpoint} through the table and recipe worker`, async ({ page, browser, engineEvidence }, info) => {
       const capture = readCapture(name).routes[endpoint];
       expect(capture.widget.data.dataKey).toBe(capture.selector);
-      const wasm: string[] = [];
-      page.on('response', response => {
-        if (response.ok() && /\/pivot_wasm_bg(?:-[\w-]+)?\.wasm$/.test(new URL(response.url()).pathname)
-          && response.headers()['content-type']?.includes('application/wasm')) wasm.push(response.url());
-      });
       await page.addInitScript(() => {
         const observedReturns: ReturnSummaryDetails[] = [];
         Object.defineProperty(window, 'observedReturns', { value: observedReturns });
@@ -119,10 +113,8 @@ for (const [name, endpoints] of captures) {
         await assertSamples('violin');
         expect(requests).toHaveLength(requestCount);
       }
-      const engine = process.env.VITE_TABLE_ENGINE || 'typescript';
-      expect(wasm.length > 0).toBe(engine === 'rust');
       await info.attach('installed-replay-runtime', {
-        body: JSON.stringify({ engine, version: browser.version(), wasm, requests }), contentType: 'application/json',
+        body: JSON.stringify({ ...engineEvidence, version: browser.version(), requests }), contentType: 'application/json',
       });
     });
   }

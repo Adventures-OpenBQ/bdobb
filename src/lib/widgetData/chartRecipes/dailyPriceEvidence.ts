@@ -4,7 +4,7 @@ import type { DatasetColumn, DatasetProvenance, WidgetDataset } from '../types';
 import {
   readChartSource, readChartSourceProjection, type ChartSourceAdapter, type ChartSourceReceipt,
 } from './chartSourceContracts';
-import { isChartSourceArray as array, isChartSourceRecord as record } from './chartSourceShape';
+import { exact, count, isChartSourceArray as array, isChartSourceRecord as record } from './chartSourceShape';
 import { acquiredColumnOrigin, isoDate, utcTimestamp } from './financialEvidence';
 import type { PriceCoordinate, PriceScope } from './priceEvidence';
 
@@ -39,9 +39,6 @@ const countKeys = ['raw_count', 'normalized_count', 'delivered_count'] as const;
 const receiptKeys = ['version', 'kind', 'retrieved_at', ...countKeys, 'diagnostics', 'unsafe',
   'interval', 'start_date', 'end_date', 'symbols', 'date_field', 'price_field', 'symbol_field', 'listings'] as const;
 const listingKeys = ['symbol', ...countKeys, 'duplicate_count', 'omissions'] as const;
-const exact = <K extends string>(value: unknown, keys: readonly K[]): value is Record<K, unknown> =>
-  record(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
-const count = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const usListing = (value: unknown): value is string => typeof value === 'string' && value.length <= 128
   && value.endsWith('.US') && /^[A-Z0-9][A-Z0-9_/-]*(?:\.[A-Z0-9_/-]+)*\.US$/.test(value);
 const inWindow = (date: unknown, start: string, end: string): date is string => isoDate(date) && date >= start && date <= end;
@@ -239,9 +236,8 @@ export const dailyPriceSourceAdapter: ChartSourceAdapter<DailyPriceReceipt> = {
     ...routes(['/api/v1/equity/price/historical', '/api/v1/etf/historical']),
     ...routes(['/api/v1/eodhd/equity/price/historical', '/api/v1/eodhd/etf/historical'], 'eodhd'),
   ],
-  coordinates: () => [],
   acquiredInputAgrees: presentedRowsAgree,
-  acquiredCoordinates(receipt, provenance) {
+  coordinates(receipt, provenance) {
     const points = capturedCoordinates(receipt, provenance);
     return points && [{
       fields: receipt.symbol_field ? [receipt.symbol_field, receipt.date_field] : [receipt.date_field],
