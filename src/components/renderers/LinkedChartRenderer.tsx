@@ -340,13 +340,13 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     }, [built, carried, source]);
     const notes = built?.ok ? built.notes : [];
     const lagging = delivered && (delivered.revision !== active || JSON.stringify(delivered.settings) !== mapping || view.status === 'updating' || view.stale || Boolean(error));
-    async function commit(next: LinkedChartSettings, guard?: () => boolean) {
+    async function commit(next: LinkedChartSettings, guard?: () => boolean, staleDraftMessage?: string) {
         if (viewer || saving) return;
         setSaving(true); try {
         const validated = decodeLinkedChartRecipe(next, next.type);
         if (validated && !validated.ok) throw new Error(validated.message);
         const sourceLabel = next.type === 'market-map' ? 'market-map' : next.type === 'estimate-revisions' ? 'estimate history' : next.type === 'dual-axis-overlay' ? 'prepared overlay' : next.type === 'etf-sunburst' ? 'ETF holdings' : 'chart';
-        const sourceChanged = `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
+        const sourceChanged = staleDraftMessage ?? `The ${sourceLabel} source or drawing size changed. Review the settings and try again.`;
         if (guard && !guard()) throw new Error(sourceChanged);
         const committed = guard ? await onSettingsChange(next, guard) : await onSettingsChange(next);
         if (!committed) throw new Error(guard ? sourceChanged : 'Chart settings could not be saved.');
@@ -361,16 +361,29 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
     const columns = (delivered?.dataset.columns ?? view.ready?.columns ?? []);
     const fields = [...new Map([...columns, ...(view.ready?.chartColumns ?? view.ready?.columns ?? [])].map(c => [c.id, c])).values()];
     const quarters = quarterChoices?.scope === quarterScope ? quarterChoices.values : [];
+    function draftSourceIsCurrent() {
+        const current = readAcquiredSource();
+        return !!source && current.sourceCurrent && current.card?.linkedSource?.sourceWidgetId === source
+            && current.executor === executor && current.view.ready === view.ready
+            && !!current.view.sourceRevision && !!view.sourceRevision
+            && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
+            && JSON.stringify(current.card.linkedChart) === JSON.stringify(settings);
+    }
     function applyAcquired(options: OwnershipSnapshotOptions | ReturnSummaryOptions | NewsCalendarOptions, matchesDrawing?: () => boolean) {
-        const stillCurrent = () => {
-            const current = readAcquiredSource();
-            return matchesDrawing?.() === true && !!source && current.sourceCurrent
-                && current.executor === executor && current.view.ready === view.ready
-                && !!current.view.sourceRevision && !!view.sourceRevision
-                && revisionKey(current.view.sourceRevision) === revisionKey(view.sourceRevision)
-                && JSON.stringify(current.card?.linkedChart) === JSON.stringify(settings);
-        };
+        const stillCurrent = () => matchesDrawing?.() === true && draftSourceIsCurrent();
         void commit({ ...withRecipeType(settings, options.kind), recipe: options }, stillCurrent);
+    }
+    function applyRecipe(options: RecipeOptions, matchesDrawing?: () => boolean) {
+        if (options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary') {
+            applyAcquired(options, matchesDrawing);
+            return;
+        }
+        const next = { ...withRecipeType(settings, options.kind), recipe: options };
+        if (acceptsLiveDailyPriceRecipe(options.kind)) {
+            void commit(next, draftSourceIsCurrent, 'The chart source or settings changed. Review the settings and try again.');
+            return;
+        }
+        void commit(next);
     }
     function applyEtf(options: EtfSunburstOptions, current: () => boolean) {
         const canSave = () => current() && JSON.stringify(readAcquiredSource().card?.linkedChart) === JSON.stringify(settings);
@@ -436,8 +449,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, parame
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} matchesNewsDraftWidth={matchesNewsDraftWidth}
         loadPriceInput={loadPriceInput} loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
-        onApply={(options, matchesDrawing) => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
-          ? applyAcquired(options, matchesDrawing) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
+        onApply={applyRecipe}/> : <>
       <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>
       <fieldset disabled={saving}><legend>Measures</legend>{[...new Set([...fields.filter(c => (!c.dtype || c.dtype === 'number') && (settings.type !== 'bullet' || c.id.endsWith('_actual'))).map(c => c.id), ...settings.measures])].map(id => <label key={id}><input type="checkbox" checked={settings.measures.includes(id)} onChange={e => void commit({ ...settings, measures: e.target.checked ? [...settings.measures, id] : settings.measures.filter(m => m !== id) })}/>{fields.find(c => c.id === id)?.label ?? `${id} (unavailable)`}</label>)}</fieldset>
       {settings.type === 'bullet' ? <label>Quarter<select aria-label="Quarter" disabled={saving} value={settings.period ?? ''} onChange={e => { const { period: _drop, ...rest } = settings; void commit(e.target.value ? { ...rest, period: e.target.value } : rest); }}><option value="">Latest</option>{settings.period && !quarters.includes(settings.period) ? <option value={settings.period}>{settings.period} (unavailable)</option> : null}{quarters.map(q => <option key={q} value={q}>{q}</option>)}</select></label> : null}

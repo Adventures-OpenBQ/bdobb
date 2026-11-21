@@ -10,6 +10,9 @@ import { input } from '../../lib/tableExecution/fixtures';
 import type { Dashboard, DashboardCard } from '../../lib/types';
 import type { ChartResult } from '../../lib/tableExecution/types';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { useDashboardStore } from '../../stores/dashboardStore';
+import { __resetJsonStoreForTests } from '../../lib/jsonStore';
+import { __read, __reset } from '../../test/memfs';
 import { DEFAULT_SETTINGS } from '../../lib/settingsFile';
 import { useEffect, useState, type ComponentProps } from 'react';
 import { LinkedChartRenderer as Renderer } from './LinkedChartRenderer';
@@ -619,7 +622,7 @@ it.each(liveViewCases)('sends a columnless empty live %s to the worker', async (
   const { store, props, factory, read, run } = await setupCurve(liveDailyPriceDataset([], ['AAPL.US']));
   try {
     render(<ToggleableParameters {...props} viewer={false} card={{ ...props.card, linkedChart: { ...settings, type, recipe } }}/>);
-    expect(await screen.findByText('No valid daily prices remain.')).toHaveAttribute('role', 'status');
+    expect(await screen.findByText('No valid daily prices remain.', { ignore: '[hidden] *' })).toHaveAttribute('role', 'status');
     expect(read.mock.calls[0][1]).toEqual([]);
     expect(run).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('figure')).toBeNull();
@@ -644,8 +647,9 @@ it.each([
 it('keeps a new live view as a draft across closing and reopening Parameters', async () => {
   const { store, props, factory } = await setupCurve(livePricesWithCloseAlias());
   const recipe = liveViewOptions[1];
+  const save = vi.fn(async (...[, guard]: Parameters<ComponentProps<typeof Renderer>['onSettingsChange']>) => guard?.() ?? true);
   try {
-    render(<ToggleableParameters {...props} viewer={false} card={{
+    render(<ToggleableParameters {...props} onSettingsChange={save} viewer={false} card={{
       ...props.card, linkedChart: { ...settings, type: recipe.kind, recipe },
     }}/>);
     const figure = await screen.findByTestId('figure');
@@ -665,13 +669,63 @@ it('keeps a new live view as a draft across closing and reopening Parameters', a
     expect(screen.getByLabelText('Bins')).toHaveValue(17);
     expect(screen.getByLabelText('Symbol')).toHaveValue('AAPL.US');
     expect(screen.getByTestId('figure').textContent).toBe(drawn);
-    expect(props.onSettingsChange).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Apply chart settings' }));
-    expect(props.onSettingsChange).toHaveBeenCalledWith(expect.objectContaining({
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({
       recipe: { ...liveViewOptions[0], bins: 17 },
-    }));
+    }), expect.any(Function));
     await waitFor(() => expect(screen.getByLabelText('Chart type')).toBeEnabled());
+    expect(await save.mock.results[0].value).toBe(true);
   } finally { cleanup(); factory.mockRestore(); store.disposeDashboard('d'); }
+});
+
+it.each(liveViewCases)('refuses a queued %s Apply after a source replacement commits', async type => {
+  __reset();
+  __resetJsonStoreForTests();
+  const { store, props, factory, source } = await setupCurve(livePricesWithCloseAlias());
+  const previous = useDashboardStore.getState();
+  const replacement = { ...source, id: 'replacement', params: { file: 'replacement.csv' } };
+  const dashboard: Dashboard = { id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, replacement, chart] }] };
+  useDashboardStore.setState({ dashboards: [dashboard], viewer: false });
+  const readCurrentSource = () => {
+    const cards = useDashboardStore.getState().dashboards[0].tabs[0].cards;
+    return { view: store.readView('d', 'c'), executor: store.readExecutor('d', 's'),
+      sourceCurrent: store.sourceMatches('d', 'c', cards), card: cards.find(card => card.id === chart.id) };
+  };
+  const save = vi.fn((...args: Parameters<ComponentProps<typeof Renderer>['onSettingsChange']>) =>
+    useDashboardStore.getState().commitLinkedChartSettings('d', 'c', ...args));
+  try {
+    render(<LinkedChartRenderer {...props} viewer={false} card={chart} readCurrentSource={readCurrentSource} onSettingsChange={save}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: type } });
+    if (type === 'return-distribution') {
+      await screen.findByRole('option', { name: 'AAPL.US' });
+      fireEvent.change(screen.getByLabelText('Symbol'), { target: { value: 'AAPL.US' } });
+    } else {
+      fireEvent.click(await screen.findByLabelText('AAPL.US'));
+    }
+    const apply = screen.getByRole('button', { name: 'Apply chart settings' });
+    expect(apply).toBeEnabled();
+
+    await act(async () => {
+      const replaced = useDashboardStore.getState().replaceLinkedSource('c', replacement.id);
+      fireEvent.click(apply);
+      expect(await replaced).toBe(true);
+      await save.mock.results[0].value;
+    });
+    const persisted = JSON.parse(__read('dashboards/d.json')!) as Dashboard;
+    expect(persisted.tabs[0].cards.find(card => card.id === chart.id)).toMatchObject({
+      linkedSource: { kind: 'widget', sourceWidgetId: replacement.id },
+      linkedChart: settings,
+    });
+    expect(screen.getByText(/chart source or settings changed/i)).toBeVisible();
+  } finally {
+    cleanup();
+    factory.mockRestore();
+    store.disposeDashboard('d');
+    useDashboardStore.setState(previous);
+    __reset();
+    __resetJsonStoreForTests();
+  }
 });
 
 it('cannot restore a held old live chart projection after replacing bounds, symbols and backend', async () => {
