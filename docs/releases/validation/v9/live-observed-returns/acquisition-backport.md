@@ -88,3 +88,7 @@ The private preview's configured `/api` base prefixes the generated `/api/v1` wi
 | Pinned WASM validation, Rust tests and packaging | Passed. The existing 199 Rust core, one WASM crate and 19 wire-codec tests and three packaging cases passed. |
 
 The new browser cases serve the captured installed price body from a separate loopback HTTP origin. They verify ordinary 200, 206, a range on 200, next and help links, hidden paging headers, an incomplete exposure list, and a list that does not expose itself. The unexposed case also reads Fetch's filtered response headers inside the browser. Before the exposure check, the three incomplete-exposure cases qualified incorrectly. The final matrix preserves valid adjusted-price charts when the full exposure policy is visible.
+
+## Independent client review closeout
+
+A fresh independent scoped review approved client product commit `776c82f8992faac6b7e125144ea42cb0593d4395` after checking HTTP partial/continuation handling, affirmative opt-in refusal, actual worker repair guidance, and the latest v9-only publication scope. No new blocking issue was found. [Full independent review](acquisition-backport-review.md). Direct cross-origin qualification requires the separately reviewed paired Docker API exposure update; these client tests use recorded installed bodies and a real loopback CORS server, not a new provider image or entitled network acquisition.
