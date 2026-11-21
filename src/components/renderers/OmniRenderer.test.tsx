@@ -214,3 +214,29 @@ describe("OmniRenderer resolves on the card's calendars (final review I-A)", () 
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+
+describe("reference Omni prompt defaults", () => {
+  it.each([
+    ["sql", "SELECT * FROM DATA LIMIT 5"],
+    ["python", "fig = go.Figure()\nfig.add_bar(x=['Q1'], y=[100])"],
+  ])("prefills the %s query but submits it only on request", async (language, prompt) => {
+    const definition = { ...widget, params: [{paramName:"prompt", type:"text", language, value:prompt}] } as unknown as WidgetDef;
+    fetchOmniData.mockResolvedValueOnce(omni("text", "reference query completed"));
+    render(<OmniRenderer widget={definition} backend={backend} params={{prompt}}/>);
+    expect(screen.getByPlaceholderText(/enter a prompt/i)).toHaveValue(prompt);
+    expect(fetchOmniData).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", {name:"Submit"}));
+    await screen.findByText("reference query completed");
+    expect(fetchOmniData).toHaveBeenCalledWith(backend, definition, {prompt});
+  });
+
+  it("keeps an edited prompt when another effective parameter changes", () => {
+    const definition = { ...widget, params: [{paramName:"prompt",type:"text",value:"SELECT 1"}] } as WidgetDef;
+    const {rerender} = render(<OmniRenderer widget={definition} backend={backend} params={{prompt:"SELECT 1",symbol:"AAPL"}}/>);
+    type("SELECT symbol, price FROM DATA");
+    rerender(<OmniRenderer widget={definition} backend={backend} params={{prompt:"SELECT 1",symbol:"MSFT"}}/>);
+    expect(screen.getByPlaceholderText(/enter a prompt/i)).toHaveValue("SELECT symbol, price FROM DATA");
+    expect(fetchOmniData).not.toHaveBeenCalled();
+  });
+});
