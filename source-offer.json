@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "release": "v5.0.0",
-  "baseCommit": "b5df0efbb3ba50fa12a0929d9c45eed072f5687c",
-  "sourceId": "338ef4890ccae127ada2d948e4d1834d8991405111f4eafd6b57d3d18390d84c",
-  "archiveFilename": "bdobb-v5.0.0-agpl-338ef4890cca-source.tar.gz",
-  "archiveUrl": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v5.0.0-338ef4890cca/bdobb-v5.0.0-agpl-338ef4890cca-source.tar.gz",
+  "baseCommit": "b0500d5a3e00cad9d638548f4f7f6fedbfc46a9e",
+  "sourceId": "5f7e56fe6efc2ad9c3fdf12211c46bb28ef8651c3f6400848bfc215b96ef8ef4",
+  "archiveFilename": "bdobb-v5.0.0-agpl-5f7e56fe6efc-source.tar.gz",
+  "archiveUrl": "https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v5.0.0-5f7e56fe6efc/bdobb-v5.0.0-agpl-5f7e56fe6efc-source.tar.gz",
   "license": "AGPL-3.0-only",
   "status": "prepared"
 }
