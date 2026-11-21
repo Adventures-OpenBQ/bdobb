@@ -1,7 +1,7 @@
 [
   {
     "name": "Return summary fixtures",
-    "description": "Requires BDOBB 9.0.0 or later with Return summaries. Synthetic adjusted prices supplied separately as a local JSON snapshot.",
+    "description": "Requires BDOBB 9.0.0 or later with Return summaries. Compare fixed AAPL.US and MCD.US observed returns through a paired EODHD connection, or open the separate synthetic local snapshot.",
     "img": "",
     "img_dark": "",
     "img_light": "",
@@ -48,6 +48,53 @@
             }
           }
         ]
+      },
+      "live-returns": {
+        "id": "live-returns",
+        "name": "AAPL and MCD observed returns",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 29,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Observed return boxes and violins"
+                }
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 29,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {
+                "provider": "eodhd",
+                "symbol": "AAPL.US,MCD.US",
+                "interval": "1d",
+                "start_date": "2026-10-12",
+                "end_date": "2026-11-19",
+                "chart_source": "true"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "EODHD AAPL and MCD daily prices"
+                }
+              }
+            }
+          }
+        ]
       }
     },
     "extensions": {
@@ -58,7 +105,8 @@
           "schemaVersion": 1,
           "profile": "v3",
           "tabOrder": [
-            "returns"
+            "returns",
+            "live-returns"
           ]
         },
         "cards": [
@@ -95,6 +143,42 @@
           {
             "ref": "c1",
             "tab": "returns",
+            "index": 1,
+            "extras": {}
+          },
+          {
+            "ref": "c2",
+            "tab": "live-returns",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "return-summary",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "return-summary",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "AAPL.US",
+                    "MCD.US"
+                  ],
+                  "view": "box",
+                  "window": {
+                    "mode": "own"
+                  }
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "live-returns",
             "index": 1,
             "extras": {}
           }

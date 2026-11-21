@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { expect, it } from 'vitest';
 import { fixtureSources, sourcePath, sourceReceipt, sourceResponse, sourceRows } from '../../../test/fixtures/chartSources';
-import { captureChartSources, captureMatchedChartSources, readChartSource } from './chartSourceContracts';
+import {
+  captureChartSources, captureMatchedChartSources, readChartSource, type ChartSourceRegistry, type ChartSourceReceipt,
+} from './chartSourceContracts';
 import { decodeRecipeOptions } from './settings';
 
 const context = { endpoint: sourcePath, parameters: { chart_source: 'true', symbol: 'A' }, selector: 'results.rows', retrievedAt: 1 };
@@ -40,4 +42,19 @@ it('allows multiple independently matched families and withholds only the unmatc
   const payload = { ...sourceResponse, extra: { results_metadata: { chart_sources: { version: 1, receipts: [sourceReceipt, news] } } } };
   expect(captureMatchedChartSources(context, payload, sourceRows, registry)).toEqual({ metric: sourceReceipt, news });
   expect(captureMatchedChartSources(context, payload, sourceRows, { ...registry, news: { ...second, routes: [] } })).toEqual({ metric: sourceReceipt });
+});
+
+it('keeps the envelope limit at seven independently registered families', () => {
+  const kinds: ChartSourceReceipt['kind'][] = [
+    'metric', 'news', 'ownership', 'overlay', 'estimate-vintages', 'market-map', 'etf-hierarchy', 'daily-price',
+  ];
+  const receipts = kinds.map(kind => ({ ...sourceReceipt, kind }));
+  const registry: ChartSourceRegistry = Object.fromEntries(receipts.map(receipt => [receipt.kind, {
+    ...fixtureSources.metric, kind: receipt.kind, decode: (value: unknown) => value === receipt ? receipt : undefined,
+  }]));
+  const capture = (amount: number) => captureMatchedChartSources(context, { ...sourceResponse, extra: {
+    results_metadata: { chart_sources: { version: 1, receipts: receipts.slice(-amount) } },
+  } }, sourceRows, registry);
+  expect(Object.keys(capture(7) ?? {})).toEqual(kinds.slice(1));
+  expect(capture(8)).toBeUndefined();
 });

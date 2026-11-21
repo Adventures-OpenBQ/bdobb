@@ -1,0 +1,1705 @@
+{
+  "source": "deterministic-sdk",
+  "routes": {
+    "/api/v1/eodhd/equity/price/historical": {
+      "method": "GET",
+      "query": {
+        "provider": "eodhd",
+        "interval": "1d",
+        "symbol": "MCD.US,AAPL.US",
+        "start_date": "2026-10-12",
+        "end_date": "2026-11-19",
+        "exchange": "US",
+        "chart_source": "true"
+      },
+      "status": 200,
+      "selector": "results",
+      "widgetId": "eodhd_equity_price_historical_eodhd_obb",
+      "widget": {
+        "name": "Price Historical",
+        "description": "EODHD /equity/price/historical: the standard command's EODHD data (provider=eodhd), in the eodhd namespace.",
+        "category": "EODHD",
+        "type": "table",
+        "widgetId": "eodhd_equity_price_historical_eodhd_obb",
+        "mcp_tool": {
+          "mcp_server": "Open Data Platform",
+          "tool_id": "eodhd_equity_price_historical"
+        },
+        "params": [
+          {
+            "label": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed.",
+            "optional": false,
+            "type": "text",
+            "value": null,
+            "show": true,
+            "multiSelect": true,
+            "paramName": "symbol",
+            "multiple": true,
+            "style": {
+              "popupWidth": 400
+            }
+          },
+          {
+            "label": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "start_date"
+          },
+          {
+            "label": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "end_date"
+          },
+          {
+            "label": "Interval",
+            "description": "Time interval of the data to return.",
+            "optional": true,
+            "type": "text",
+            "value": "1d",
+            "show": true,
+            "options": [
+              {
+                "label": "1m",
+                "value": "1m"
+              },
+              {
+                "label": "5m",
+                "value": "5m"
+              },
+              {
+                "label": "1h",
+                "value": "1h"
+              },
+              {
+                "label": "1d",
+                "value": "1d"
+              },
+              {
+                "label": "1W",
+                "value": "1W"
+              },
+              {
+                "label": "1M",
+                "value": "1M"
+              }
+            ],
+            "paramName": "interval"
+          },
+          {
+            "label": "Exchange",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'.",
+            "optional": true,
+            "type": "text",
+            "value": "US",
+            "show": true,
+            "paramName": "exchange"
+          },
+          {
+            "label": "Chart Source",
+            "description": "Include acquisition evidence for bounded daily US prices.",
+            "optional": true,
+            "type": "boolean",
+            "value": false,
+            "show": true,
+            "paramName": "chart_source"
+          },
+          {
+            "paramName": "provider",
+            "value": "eodhd",
+            "show": false
+          }
+        ],
+        "endpoint": "/api/v1/eodhd/equity/price/historical",
+        "runButton": false,
+        "gridData": {
+          "w": 40,
+          "h": 15
+        },
+        "data": {
+          "dataKey": "results",
+          "table": {
+            "showAll": true,
+            "columnsDefs": [
+              {
+                "field": "date",
+                "pinned": "left",
+                "formatterFn": null,
+                "headerName": "Date",
+                "headerTooltip": "The date of the data.",
+                "cellDataType": "date",
+                "sort": "desc",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "dimension"
+                }
+              },
+              {
+                "field": "open",
+                "formatterFn": null,
+                "headerName": "Open",
+                "headerTooltip": "The open price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "first"
+                }
+              },
+              {
+                "field": "high",
+                "formatterFn": null,
+                "headerName": "High",
+                "headerTooltip": "The high price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "max"
+                }
+              },
+              {
+                "field": "low",
+                "formatterFn": null,
+                "headerName": "Low",
+                "headerTooltip": "The low price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "min"
+                }
+              },
+              {
+                "field": "close",
+                "formatterFn": null,
+                "headerName": "Close",
+                "headerTooltip": "The close price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              },
+              {
+                "field": "volume",
+                "formatterFn": null,
+                "headerName": "Volume",
+                "headerTooltip": "The trading volume.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "sum"
+                }
+              },
+              {
+                "field": "vwap",
+                "formatterFn": null,
+                "headerName": "Vwap",
+                "headerTooltip": "Volume Weighted Average Price over the period.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "requires_selection"
+                }
+              },
+              {
+                "field": "adjusted_close",
+                "formatterFn": null,
+                "headerName": "Adjusted Close",
+                "headerTooltip": "Split/dividend-adjusted closing price (EOD endpoint only).",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              }
+            ],
+            "enableAdvanced": true
+          }
+        },
+        "source": [
+          "EODHD"
+        ],
+        "subCategory": "Price"
+      },
+      "openapiParameters": [
+        {
+          "name": "provider",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "const": "eodhd",
+            "type": "string",
+            "default": "eodhd",
+            "title": "Provider"
+          }
+        },
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd.",
+            "eodhd": {
+              "multiple_items_allowed": true
+            },
+            "title": "Symbol"
+          },
+          "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd."
+        },
+        {
+          "name": "start_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "title": "Start Date"
+          },
+          "description": "Start date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "end_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "title": "End Date"
+          },
+          "description": "End date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "interval",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "enum": [
+              "1m",
+              "5m",
+              "1h",
+              "1d",
+              "1W",
+              "1M"
+            ],
+            "type": "string",
+            "title": "eodhd",
+            "description": "Time interval of the data to return. (provider: eodhd)",
+            "eodhd": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "1m",
+                "5m",
+                "1h",
+                "1d",
+                "1W",
+                "1M"
+              ]
+            },
+            "default": "1d"
+          },
+          "description": "Time interval of the data to return. (provider: eodhd)"
+        },
+        {
+          "name": "exchange",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "title": "eodhd",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)",
+            "default": "US"
+          },
+          "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)"
+        },
+        {
+          "name": "chart_source",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "title": "eodhd",
+            "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)",
+            "default": false
+          },
+          "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)"
+        }
+      ],
+      "capturedAt": "2026-11-20T23:27:36.828041+00:00",
+      "responseSha256": "4c4b6657aaa592a0e5670ec858c14c33db012ae1a71cdbe2fedc133559c53eae",
+      "sdkCalls": [
+        {
+          "symbol": "MCD.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        },
+        {
+          "symbol": "AAPL.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        }
+      ],
+      "body": {
+        "id": "06b00d76-8d9d-7b61-8000-a058d33c239c",
+        "results": [
+          {
+            "date": "2026-10-12",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 101.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-14",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 103.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 105.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 108.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 111.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 115.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 119.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 124.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 129.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-12",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 102.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 104.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 106.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 109.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 112.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 116.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 120.25,
+            "symbol": "MCD.US"
+          }
+        ],
+        "provider": "eodhd",
+        "warnings": null,
+        "chart": null,
+        "extra": {
+          "results_metadata": {
+            "chart_sources": {
+              "version": 1,
+              "receipts": [
+                {
+                  "version": 1,
+                  "kind": "daily-price",
+                  "retrieved_at": "2026-11-20T23:27:36.842147Z",
+                  "raw_count": 21,
+                  "normalized_count": 19,
+                  "delivered_count": 19,
+                  "diagnostics": [],
+                  "unsafe": {
+                    "undatable_loss": false,
+                    "conflicting_duplicates": false,
+                    "identity_conflict": false,
+                    "partial_acquisition": false,
+                    "invalid_response": false,
+                    "missing_adjusted_basis": false
+                  },
+                  "interval": "1d",
+                  "start_date": "2026-10-12",
+                  "end_date": "2026-11-19",
+                  "symbols": [
+                    "MCD.US",
+                    "AAPL.US"
+                  ],
+                  "date_field": "date",
+                  "price_field": "adjusted_close",
+                  "symbol_field": "symbol",
+                  "listings": [
+                    {
+                      "symbol": "MCD.US",
+                      "raw_count": 10,
+                      "normalized_count": 9,
+                      "delivered_count": 9,
+                      "duplicate_count": 0,
+                      "omissions": [
+                        [
+                          "MCD.US",
+                          "2026-10-14"
+                        ]
+                      ]
+                    },
+                    {
+                      "symbol": "AAPL.US",
+                      "raw_count": 11,
+                      "normalized_count": 10,
+                      "delivered_count": 10,
+                      "duplicate_count": 1,
+                      "omissions": []
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "metadata": {
+            "arguments": {
+              "provider_choices": {
+                "provider": "eodhd"
+              },
+              "standard_params": {
+                "symbol": "MCD.US,AAPL.US",
+                "start_date": "2026-10-12",
+                "end_date": "2026-11-19"
+              },
+              "extra_params": {
+                "interval": "1d",
+                "exchange": "US",
+                "chart_source": true
+              }
+            },
+            "duration": 15567000,
+            "route": "/eodhd/equity/price/historical",
+            "timestamp": "2026-11-20T23:27:36.835792"
+          }
+        }
+      },
+      "expected": {
+        "MCD.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              100.0
+            ],
+            [
+              "2026-10-13",
+              100.25
+            ],
+            [
+              "2026-10-15",
+              102.25
+            ],
+            [
+              "2026-10-16",
+              104.0
+            ],
+            [
+              "2026-10-19",
+              106.25
+            ],
+            [
+              "2026-10-20",
+              109.0
+            ],
+            [
+              "2026-10-21",
+              112.25
+            ],
+            [
+              "2026-10-22",
+              116.0
+            ],
+            [
+              "2026-10-23",
+              120.25
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.0024999999999999467
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.017114914425427896
+            },
+            {
+              "date": "2026-10-19",
+              "value": 0.02163461538461542
+            },
+            {
+              "date": "2026-10-20",
+              "value": 0.025882352941176467
+            },
+            {
+              "date": "2026-10-21",
+              "value": 0.029816513761467878
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.03340757238307357
+            },
+            {
+              "date": "2026-10-23",
+              "value": 0.03663793103448265
+            }
+          ]
+        },
+        "AAPL.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              100.0
+            ],
+            [
+              "2026-10-13",
+              101.25
+            ],
+            [
+              "2026-10-14",
+              103.0
+            ],
+            [
+              "2026-10-15",
+              105.25
+            ],
+            [
+              "2026-10-16",
+              108.0
+            ],
+            [
+              "2026-10-19",
+              111.25
+            ],
+            [
+              "2026-10-20",
+              115.0
+            ],
+            [
+              "2026-10-21",
+              119.25
+            ],
+            [
+              "2026-10-22",
+              124.0
+            ],
+            [
+              "2026-10-23",
+              129.25
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.012499999999999956
+            },
+            {
+              "date": "2026-10-14",
+              "value": 0.01728395061728394
+            },
+            {
+              "date": "2026-10-15",
+              "value": 0.02184466019417486
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.026128266033254244
+            },
+            {
+              "date": "2026-10-19",
+              "value": 0.03009259259259256
+            },
+            {
+              "date": "2026-10-20",
+              "value": 0.03370786516853941
+            },
+            {
+              "date": "2026-10-21",
+              "value": 0.03695652173913033
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.0398322851153039
+            },
+            {
+              "date": "2026-10-23",
+              "value": 0.04233870967741926
+            }
+          ]
+        }
+      }
+    },
+    "/api/v1/eodhd/etf/historical": {
+      "method": "GET",
+      "query": {
+        "provider": "eodhd",
+        "interval": "1d",
+        "symbol": "MCD.US,AAPL.US",
+        "start_date": "2026-10-12",
+        "end_date": "2026-11-19",
+        "exchange": "US",
+        "chart_source": "true"
+      },
+      "status": 200,
+      "selector": "results",
+      "widgetId": "eodhd_etf_historical_eodhd_obb",
+      "widget": {
+        "name": "Historical",
+        "description": "EODHD /etf/historical: the standard command's EODHD data (provider=eodhd), in the eodhd namespace.",
+        "category": "EODHD",
+        "type": "table",
+        "widgetId": "eodhd_etf_historical_eodhd_obb",
+        "mcp_tool": {
+          "mcp_server": "Open Data Platform",
+          "tool_id": "eodhd_etf_historical"
+        },
+        "params": [
+          {
+            "label": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed.",
+            "optional": false,
+            "type": "text",
+            "value": null,
+            "show": true,
+            "multiSelect": true,
+            "paramName": "symbol",
+            "multiple": true,
+            "style": {
+              "popupWidth": 400
+            }
+          },
+          {
+            "label": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "start_date"
+          },
+          {
+            "label": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "optional": true,
+            "type": "date",
+            "value": null,
+            "show": true,
+            "paramName": "end_date"
+          },
+          {
+            "label": "Interval",
+            "description": "Time interval of the data to return.",
+            "optional": true,
+            "type": "text",
+            "value": "1d",
+            "show": true,
+            "options": [
+              {
+                "label": "1m",
+                "value": "1m"
+              },
+              {
+                "label": "5m",
+                "value": "5m"
+              },
+              {
+                "label": "1h",
+                "value": "1h"
+              },
+              {
+                "label": "1d",
+                "value": "1d"
+              },
+              {
+                "label": "1W",
+                "value": "1W"
+              },
+              {
+                "label": "1M",
+                "value": "1M"
+              }
+            ],
+            "paramName": "interval"
+          },
+          {
+            "label": "Exchange",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'.",
+            "optional": true,
+            "type": "text",
+            "value": "US",
+            "show": true,
+            "paramName": "exchange"
+          },
+          {
+            "label": "Chart Source",
+            "description": "Include acquisition evidence for bounded daily US prices.",
+            "optional": true,
+            "type": "boolean",
+            "value": false,
+            "show": true,
+            "paramName": "chart_source"
+          },
+          {
+            "paramName": "provider",
+            "value": "eodhd",
+            "show": false
+          }
+        ],
+        "endpoint": "/api/v1/eodhd/etf/historical",
+        "runButton": false,
+        "gridData": {
+          "w": 40,
+          "h": 15
+        },
+        "data": {
+          "dataKey": "results",
+          "table": {
+            "showAll": true,
+            "columnsDefs": [
+              {
+                "field": "date",
+                "pinned": "left",
+                "formatterFn": null,
+                "headerName": "Date",
+                "headerTooltip": "The date of the data.",
+                "cellDataType": "date",
+                "sort": "desc",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "dimension"
+                }
+              },
+              {
+                "field": "open",
+                "formatterFn": null,
+                "headerName": "Open",
+                "headerTooltip": "The open price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "first"
+                }
+              },
+              {
+                "field": "high",
+                "formatterFn": null,
+                "headerName": "High",
+                "headerTooltip": "The high price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "max"
+                }
+              },
+              {
+                "field": "low",
+                "formatterFn": null,
+                "headerName": "Low",
+                "headerTooltip": "The low price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "min"
+                }
+              },
+              {
+                "field": "close",
+                "formatterFn": null,
+                "headerName": "Close",
+                "headerTooltip": "The close price.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              },
+              {
+                "field": "volume",
+                "formatterFn": null,
+                "headerName": "Volume",
+                "headerTooltip": "The trading volume.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "sum"
+                }
+              },
+              {
+                "field": "vwap",
+                "formatterFn": null,
+                "headerName": "Vwap",
+                "headerTooltip": "Volume Weighted Average Price over the period.",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "requires_selection"
+                }
+              },
+              {
+                "field": "adjusted_close",
+                "formatterFn": null,
+                "headerName": "Adjusted Close",
+                "headerTooltip": "Split/dividend-adjusted closing price (EOD endpoint only).",
+                "cellDataType": "number",
+                "aggregation": {
+                  "entity": "require_selection",
+                  "frequencies": [
+                    "1d",
+                    "1W",
+                    "1M"
+                  ],
+                  "ruleset": "2026-09-20.1",
+                  "status": "conditional",
+                  "time": "last"
+                }
+              }
+            ],
+            "enableAdvanced": true
+          }
+        },
+        "source": [
+          "EODHD"
+        ],
+        "subCategory": "Price"
+      },
+      "openapiParameters": [
+        {
+          "name": "provider",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "const": "eodhd",
+            "type": "string",
+            "default": "eodhd",
+            "title": "Provider"
+          }
+        },
+        {
+          "name": "symbol",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd.",
+            "eodhd": {
+              "multiple_items_allowed": true
+            },
+            "title": "Symbol"
+          },
+          "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): eodhd."
+        },
+        {
+          "name": "start_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Start date of the data, in YYYY-MM-DD format.",
+            "title": "Start Date"
+          },
+          "description": "Start date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "end_date",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "End date of the data, in YYYY-MM-DD format.",
+            "title": "End Date"
+          },
+          "description": "End date of the data, in YYYY-MM-DD format."
+        },
+        {
+          "name": "interval",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "enum": [
+              "1m",
+              "5m",
+              "1h",
+              "1d",
+              "1W",
+              "1M"
+            ],
+            "type": "string",
+            "title": "eodhd",
+            "description": "Time interval of the data to return. (provider: eodhd)",
+            "eodhd": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "1m",
+                "5m",
+                "1h",
+                "1d",
+                "1W",
+                "1M"
+              ]
+            },
+            "default": "1d"
+          },
+          "description": "Time interval of the data to return. (provider: eodhd)"
+        },
+        {
+          "name": "exchange",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "title": "eodhd",
+            "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)",
+            "default": "US"
+          },
+          "description": "EODHD exchange code appended to bare symbols (e.g. 'US', 'LSE', 'TO'). Ignored when the symbol is already qualified, like 'AAPL.US'. (provider: eodhd)"
+        },
+        {
+          "name": "chart_source",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "title": "eodhd",
+            "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)",
+            "default": false
+          },
+          "description": "Include acquisition evidence for bounded daily US prices. (provider: eodhd)"
+        }
+      ],
+      "capturedAt": "2026-11-20T23:27:36.855567+00:00",
+      "responseSha256": "4fbf5b1198618419412016a83b450d470ed089aeaa94144d99d9df93c749dbd7",
+      "sdkCalls": [
+        {
+          "symbol": "MCD.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        },
+        {
+          "symbol": "AAPL.US",
+          "period": "d",
+          "from_date": "2026-10-12",
+          "to_date": "2026-11-19",
+          "order": "a"
+        }
+      ],
+      "body": {
+        "id": "06b00d76-8df4-7999-8000-76eca63fd0ea",
+        "results": [
+          {
+            "date": "2026-10-12",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 101.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-14",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 103.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 105.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 108.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 111.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 115.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 119.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 124.0,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 129.25,
+            "symbol": "AAPL.US"
+          },
+          {
+            "date": "2026-10-12",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-13",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 100.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-15",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 102.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-16",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 104.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-19",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 106.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-20",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 109.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-21",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 112.25,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-22",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 116.0,
+            "symbol": "MCD.US"
+          },
+          {
+            "date": "2026-10-23",
+            "open": 100.0,
+            "high": 150.0,
+            "low": 90.0,
+            "close": 125.0,
+            "volume": 1000,
+            "adjusted_close": 120.25,
+            "symbol": "MCD.US"
+          }
+        ],
+        "provider": "eodhd",
+        "warnings": null,
+        "chart": null,
+        "extra": {
+          "results_metadata": {
+            "chart_sources": {
+              "version": 1,
+              "receipts": [
+                {
+                  "version": 1,
+                  "kind": "daily-price",
+                  "retrieved_at": "2026-11-20T23:27:36.866754Z",
+                  "raw_count": 21,
+                  "normalized_count": 19,
+                  "delivered_count": 19,
+                  "diagnostics": [],
+                  "unsafe": {
+                    "undatable_loss": false,
+                    "conflicting_duplicates": false,
+                    "identity_conflict": false,
+                    "partial_acquisition": false,
+                    "invalid_response": false,
+                    "missing_adjusted_basis": false
+                  },
+                  "interval": "1d",
+                  "start_date": "2026-10-12",
+                  "end_date": "2026-11-19",
+                  "symbols": [
+                    "MCD.US",
+                    "AAPL.US"
+                  ],
+                  "date_field": "date",
+                  "price_field": "adjusted_close",
+                  "symbol_field": "symbol",
+                  "listings": [
+                    {
+                      "symbol": "MCD.US",
+                      "raw_count": 10,
+                      "normalized_count": 9,
+                      "delivered_count": 9,
+                      "duplicate_count": 0,
+                      "omissions": [
+                        [
+                          "MCD.US",
+                          "2026-10-14"
+                        ]
+                      ]
+                    },
+                    {
+                      "symbol": "AAPL.US",
+                      "raw_count": 11,
+                      "normalized_count": 10,
+                      "delivered_count": 10,
+                      "duplicate_count": 1,
+                      "omissions": []
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "metadata": {
+            "arguments": {
+              "provider_choices": {
+                "provider": "eodhd"
+              },
+              "standard_params": {
+                "symbol": "MCD.US,AAPL.US",
+                "start_date": "2026-10-12",
+                "end_date": "2026-11-19"
+              },
+              "extra_params": {
+                "interval": "1d",
+                "exchange": "US",
+                "chart_source": true
+              }
+            },
+            "duration": 9084334,
+            "route": "/eodhd/etf/historical",
+            "timestamp": "2026-11-20T23:27:36.863450"
+          }
+        }
+      },
+      "expected": {
+        "MCD.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              100.0
+            ],
+            [
+              "2026-10-13",
+              100.25
+            ],
+            [
+              "2026-10-15",
+              102.25
+            ],
+            [
+              "2026-10-16",
+              104.0
+            ],
+            [
+              "2026-10-19",
+              106.25
+            ],
+            [
+              "2026-10-20",
+              109.0
+            ],
+            [
+              "2026-10-21",
+              112.25
+            ],
+            [
+              "2026-10-22",
+              116.0
+            ],
+            [
+              "2026-10-23",
+              120.25
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.0024999999999999467
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.017114914425427896
+            },
+            {
+              "date": "2026-10-19",
+              "value": 0.02163461538461542
+            },
+            {
+              "date": "2026-10-20",
+              "value": 0.025882352941176467
+            },
+            {
+              "date": "2026-10-21",
+              "value": 0.029816513761467878
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.03340757238307357
+            },
+            {
+              "date": "2026-10-23",
+              "value": 0.03663793103448265
+            }
+          ]
+        },
+        "AAPL.US": {
+          "quotes": [
+            [
+              "2026-10-12",
+              100.0
+            ],
+            [
+              "2026-10-13",
+              101.25
+            ],
+            [
+              "2026-10-14",
+              103.0
+            ],
+            [
+              "2026-10-15",
+              105.25
+            ],
+            [
+              "2026-10-16",
+              108.0
+            ],
+            [
+              "2026-10-19",
+              111.25
+            ],
+            [
+              "2026-10-20",
+              115.0
+            ],
+            [
+              "2026-10-21",
+              119.25
+            ],
+            [
+              "2026-10-22",
+              124.0
+            ],
+            [
+              "2026-10-23",
+              129.25
+            ]
+          ],
+          "returns": [
+            {
+              "date": "2026-10-13",
+              "value": 0.012499999999999956
+            },
+            {
+              "date": "2026-10-14",
+              "value": 0.01728395061728394
+            },
+            {
+              "date": "2026-10-15",
+              "value": 0.02184466019417486
+            },
+            {
+              "date": "2026-10-16",
+              "value": 0.026128266033254244
+            },
+            {
+              "date": "2026-10-19",
+              "value": 0.03009259259259256
+            },
+            {
+              "date": "2026-10-20",
+              "value": 0.03370786516853941
+            },
+            {
+              "date": "2026-10-21",
+              "value": 0.03695652173913033
+            },
+            {
+              "date": "2026-10-22",
+              "value": 0.0398322851153039
+            },
+            {
+              "date": "2026-10-23",
+              "value": 0.04233870967741926
+            }
+          ]
+        }
+      }
+    }
+  }
+}

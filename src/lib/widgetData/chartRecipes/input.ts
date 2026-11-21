@@ -3,8 +3,11 @@
 
 import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
-import { acquiredWindow, dailyScope, indexPriceObservations, priceIdentityFields, priceDimensionIssue, readPriceOmissions, symbolList, type PriceScope } from './priceEvidence';
+import { acquiredWindow, dailyScope, indexPriceObservations, priceIdentityFields, priceDimensionIssue, readPriceOmissions, symbolList, type PriceCoordinate, type PriceScope } from './priceEvidence';
 import { acceptsBinding, adjustedPriceRole } from './bindings';
+import { hasDailyPriceDeclaration, readChartSourceProjection } from './chartSourceContracts';
+import { readLiveDailyPriceSource } from './dailyPriceEvidence';
+import { acquiredColumnOrigin } from './financialEvidence';
 import { requiredRecipeFields } from './settings';
 import type { PriceBindings, RecipeOptions } from './types';
 
@@ -31,10 +34,16 @@ function sourceIssue(dataset: WidgetDataset, fields: string[], history: boolean)
   return null;
 }
 
+export function snapshotDailyPriceIssue(dataset: WidgetDataset): string | undefined {
+  const { metadata } = dataset.provenance;
+  if (metadata?.dailyPriceRejected === true || hasDailyPriceDeclaration(metadata))
+    return 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.';
+}
+
 function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | null {
   const bindings = Object.values(fields).filter((id): id is string => id !== undefined);
   if (new Set(bindings).size !== bindings.length) return 'Use distinct date, adjusted-price and symbol fields.';
-  const issue = sourceIssue(dataset, bindings, true);
+  const issue = sourceIssue(dataset, bindings, true) ?? snapshotDailyPriceIssue(dataset);
   if (issue) return issue;
   if (!dailyScope(dataset.provenance)) return 'Choose a source with documented daily interval and acquisition dates.';
   const price = dataset.columns.find(c => c.id === fields.price)!;
@@ -79,18 +88,55 @@ export function preparePrices(dataset: WidgetDataset, fields: PriceBindings): Pr
   const symbols = symbolList(dataset.provenance);
   const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
   if (typeof indexed === 'string') return refuse(indexed);
-  const { prices, conflicts, duplicates } = indexed;
   const acquiredConflicts = dataset.provenance.metadata?.priceDuplicateConflicts;
   if (Array.isArray(acquiredConflicts)) {
     for (const conflict of acquiredConflicts) {
       if (Array.isArray(conflict) && conflict.length === 3 && conflict[0] === fields.date && conflict[1] === fields.price
-        && typeof conflict[2] === 'string') conflicts.add(conflict[2]);
+        && typeof conflict[2] === 'string') indexed.conflicts.add(conflict[2]);
     }
   }
+  const notes = omitted.length ? [`Preserved gaps for ${omitted.length} excluded price observation(s).`] : [];
+  return finishPrices(scope, indexed, omitted, notes);
+}
+
+export const observedReturnScope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
+
+/** Live evidence establishes an acquired window for return summaries alone. */
+export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
+  const live = readLiveDailyPriceSource(dataset);
+  if (!live) {
+    const issue = snapshotDailyPriceIssue(dataset);
+    return issue ? refuse(issue) : undefined;
+  }
+  const { receipt, scope, symbols, rawOmissions } = live;
+  if (!dataset.rows.length) return refuse('No valid daily prices remain.');
+  const origin = (id: string) => acquiredColumnOrigin(dataset.columns.find(c => c.id === id));
+  if (origin(fields.date) !== receipt.date_field) return refuse('Bind the acquired trading-date field.');
+  if (origin(fields.price) !== receipt.price_field) return refuse('Choose the source-documented adjusted-price field.');
+  if ((fields.symbol === undefined ? null : origin(fields.symbol)) !== receipt.symbol_field) {
+    return refuse(receipt.symbol_field ? 'Bind the acquired field that identifies each qualified listing.'
+      : 'Use the single listing identified by the acquired source.');
+  }
+
+  // The source reader has reconciled this projection against the acquired coordinate ledger.
+  const tableOmissions = readChartSourceProjection(dataset.provenance, 'daily-price')!.omitted
+    .map((id): PriceCoordinate => JSON.parse(id));
+  const indexed = indexPriceObservations(dataset.rows, fields, scope, symbols);
+  if (typeof indexed === 'string') return refuse(indexed);
+  const notes = [observedReturnScope];
+  if (rawOmissions.length) notes.push(`Preserved ${rawOmissions.length} price gap(s) from provider omissions.`);
+  if (tableOmissions.length) notes.push(`Preserved ${tableOmissions.length} price gap(s) from table filtering.`);
+  return finishPrices(scope, indexed, [...rawOmissions, ...tableOmissions], notes);
+}
+
+function finishPrices(
+  scope: PriceScope, { prices, conflicts, duplicates }: Exclude<ReturnType<typeof indexPriceObservations>, string>,
+  omitted: PriceCoordinate[], sourceNotes: string[],
+): PreparedPrices {
   for (const [symbol, date] of omitted) prices.get(symbol)?.set(date, null);
   const notes: string[] = [];
   if (duplicates) notes.push(`Collapsed ${duplicates} identical duplicate price observation(s).`);
-  if (omitted.length) notes.push(`Preserved gaps for ${omitted.length} excluded price observation(s).`);
+  notes.push(...sourceNotes);
   if (conflicts.size) notes.push(`Conflicting duplicate prices excluded ${conflicts.size} symbol(s): ${[...conflicts].slice(0, 10).join(', ')}.`);
   const series: PriceSeries[] = [];
   let gaps = 0;

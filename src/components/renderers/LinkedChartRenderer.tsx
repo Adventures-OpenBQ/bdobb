@@ -23,7 +23,7 @@ import type { LocalWorkerExecutor, ChartResult, Revision } from '../../lib/table
 import type { DualAxisOverlayOptions, EstimateRevisionsOptions, EtfSunburstOptions, MarketMapOptions, NewsCalendarOptions, OwnershipSnapshotOptions, RecipeContext, RecipeOptions, RecipeResult, ReturnSummaryOptions } from '../../lib/widgetData/chartRecipes/types';
 import { decodeLinkedChartRecipe, isRecipeType, requiredRecipeFields, withRecipeType } from '../../lib/widgetData/chartRecipes/settings';
 import { bubblePriceDates, isIncomePeriodColumn, ownershipInputFields, savedBindingIssue } from '../../lib/widgetData/chartRecipes/bindings';
-import { qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
+import { acquiredColumnOrigin, qualifiedSymbol, readFinancialEvidence } from '../../lib/widgetData/chartRecipes/financialEvidence';
 import { admitDividendWindow, admitIncomeUnits, cohortIssue, screenerIssue } from '../../lib/widgetData/chartRecipes/financialAdmission';
 import { incomeSankeyPeriodChoices } from '../../lib/widgetData/chartRecipes/incomeSankeyInput';
 import { estimateRangeIdentityFields } from '../../lib/widgetData/chartRecipes/estimateEvidence';
@@ -47,6 +47,8 @@ function recipeInputFields(options: RecipeOptions, ready: NonNullable<ViewState[
     let fields = requiredRecipeFields(options);
     if ((options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && ready.topLevelCount === 0)
         fields = fields.filter(field => ready.columns.some(column => column.id === field));
+    if (options.kind === 'return-summary' && ready.topLevelCount === 0 && !ready.columns.length)
+        fields = []; // The recipe verifies counted-empty live evidence without demanding absent bindings.
     if (options.kind === 'ownership-snapshot') {
         // Let the recipe prioritize source or partition repair before checking unavailable bindings.
         fields = fields.filter(field => ready.columns.some(column => column.id === field));
@@ -217,6 +219,9 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
     const loadReturnDraft = useCallback((options: ReturnSummaryOptions, signal: AbortSignal) =>
         chartChoicesInput(ready => recipeInputFields(options, ready), signal), [chartChoicesInput]);
+    const loadReturnInput = useCallback((signal: AbortSignal) => chartChoicesInput(ready => ready.columns
+        .filter(column => ['date', 'adjusted_close', 'symbol'].some(origin => origin === acquiredColumnOrigin(column)))
+        .map(column => column.id), signal), [chartChoicesInput]);
     const loadOwnershipInput = useCallback((signal: AbortSignal) =>
         chartChoicesInput(() => [], signal), [chartChoicesInput]);
     const loadOwnershipDraft = useCallback((options: OwnershipSnapshotOptions, signal: AbortSignal) =>
@@ -544,7 +549,7 @@ function LinkedChartView({ dashboardId, card, refreshKey, viewer = false, hints 
         onApply={applyAcquired}/> : financial ? <LinkedChartRecipeControls probeTarget={probeTarget} key={JSON.stringify([editing === 'news-sentiment-calendar' || returnForm ? acquiredScope : editScope, editing])} kind={editing}
         columns={presented} verifiedEmpty={verifiedEmpty} loadSymbols={loadSymbols} loadSourceChoices={loadSourceChoices} loadNewsInput={loadNewsInput}
         loadNewsDraft={loadNewsDraft} newsDraftContext={newsDraftContext} matchesNewsDraftWidth={matchesNewsDraftWidth}
-        loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
+        loadReturnInput={loadReturnInput} loadReturnListings={loadReturnListings} loadReturnDraft={loadReturnDraft} returnDraftContext={measuredDraftContext}
         disabled={saving} saved={recipe?.ok && recipe.options.kind === editing ? recipe.options : undefined}
         onApply={(options, matchesDrawing) => options.kind === 'news-sentiment-calendar' || options.kind === 'return-summary'
           ? applyAcquired(options, matchesDrawing) : void commit({ ...withRecipeType(settings, options.kind), recipe: options })}/> : <>
@@ -612,7 +617,8 @@ function FinancialChart(props: FinancialProps) {
     return <p role="status">{source ? `Loading source ${source}…` : 'Select an available source table.'}</p>;
   }
   const emptyAllowed = (options.kind === 'dividend-steps' || options.kind === 'news-sentiment-calendar') && view.ready.topLevelCount === 0;
-  const issue = emptyAllowed ? undefined : savedBindingIssue(options, view.ready.columns);
+  // The return worker checks saved bindings against the acquisition, including live aliases.
+  const issue = emptyAllowed || options.kind === 'return-summary' ? undefined : savedBindingIssue(options, view.ready.columns);
   if (issue) return <><p role="alert">{issue}</p><OpenLinkedParameters onOpen={props.onOpenParameters}/></>;
   const completeness = view.ready.completeness.kind;
   switch (options.kind) {
@@ -778,7 +784,8 @@ function ReturnListingDetails({ details }: { details: ReturnSummaryDetails }) {
     <label>Return listing <select value={symbol} onChange={event => setSelection(event.target.value)}>
       {details.series.map(item => <option key={item.symbol} value={item.symbol}>{item.symbol}</option>)}
     </select></label>
-    <p aria-live="polite">{samples.length} daily adjusted-price returns · {start} to {end} · {excludedOpportunities} excluded opportunities
+    {details.observed && <p>A pair may span multiple exchange sessions when the provider did not deliver an intervening observation.</p>}
+    <p aria-live="polite">{samples.length} {details.observed ? 'observed' : 'daily'} adjusted-price returns · {start} to {end} · {excludedOpportunities} excluded opportunities
       ({gapCount} known price gaps, {excludedNonfinite} nonfinite returns)</p>
     <dl>
       <dt>Q1 (R7)</dt><dd>{originalValue(summary.q1)}</dd>

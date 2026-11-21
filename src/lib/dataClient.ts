@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { captureChartSources, chartRequestContext, chartResponseRows } from "./widgetData/chartRecipes/chartSourceContracts";
+import { captureChartSources, chartRequestContext, chartResponseRows, requestsDailyPriceSource } from "./widgetData/chartRecipes/chartSourceContracts";
 import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
@@ -293,6 +293,8 @@ export class HttpError extends Error {
   }
 }
 
+type ResponseHead = Pick<Response, "url" | "status" | "headers" | "type">;
+
 /**
  * The one HTTP path every consumer goes through, so that the discipline
  * below — the connect timeout, the network-error redaction, the 204 and
@@ -340,13 +342,13 @@ async function request(
     parse = true,
     allow404 = false,
     onHeaders,
-    onResponseUrl,
+    onResponse,
     signal,
   }: {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
-    onResponseUrl?: (url: string) => void;
+    onResponse?: (head: ResponseHead) => void;
     signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
@@ -380,7 +382,7 @@ async function request(
       throw new HttpError(describeHttpError(res.status, text), res.status, text);
     }
     onHeaders?.(res.headers);
-    onResponseUrl?.(res.url);
+    onResponse?.({ url: res.url, status: res.status, headers: res.headers, type: res.type });
     if (!parse) {
       // Read to the end even though nothing is parsed: an unread body holds the
       // connection open, which is why the !res.ok branch above reads it too.
@@ -499,6 +501,22 @@ export function obbjectWarnings(payload: unknown): string[] {
   });
 }
 
+function rejectsDailyPriceTransport({ status, headers, type }: ResponseHead): boolean {
+  if (status === 206 || headers.has("content-range")) return true;
+  if (type === "cors") {
+    // Fetch represents missing and hidden headers the same way. Require an observable exposure list.
+    const exposed = (headers.get("access-control-expose-headers") ?? "").toLowerCase().split(",").map(name => name.trim());
+    if (!["link", "content-range", "access-control-expose-headers"].every(name => exposed.includes(name))) return true;
+  }
+  // Scan URI references and whole parameter values so their contents cannot be mistaken for a relation.
+  const link = headers.get("link") ?? "";
+  const parameters = link.matchAll(/<[^>]*>|;\s*([^=;,\s]+)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|([^;,\s]+))/g);
+  for (const [, name, quoted, token] of parameters) {
+    if (name?.toLowerCase() === "rel" && /(?:^|\s)next(?:\s|$)/i.test(quoted?.replace(/\\(.)/g, "$1") ?? token)) return true;
+  }
+  return false;
+}
+
 export async function fetchWidgetData(
   backend: BackendConfig,
   widget: WidgetDef,
@@ -534,16 +552,16 @@ export async function fetchWidgetData(
   const requestUrl = buildWidgetUrl(backend, widget, params, ctx);
   const headers = authHeaders(backend);
   onRequest?.(requestUrl, headers);
-  let responseUrl: string | undefined;
+  let response: ResponseHead | undefined;
   const payload = await request("GET", requestUrl, headers, undefined, {
-    signal, onResponseUrl: value => { responseUrl = value; },
+    signal, onResponse: head => { response = head; },
   });
   const table = widget.type === "table";
   const url = table && onAcquisition ? new URL(requestUrl) : undefined;
   const credentialKey = backend.authLocation === "query" && backend.headerValue ? backend.headerName : undefined;
   const financial = url && backendFinancialResponse(payload, url, credentialKey);
   const retrievedAt = Date.now();
-  const chartRequest = url && responseUrl === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
+  const chartRequest = url && response?.url === url.href ? chartRequestContext(url, widget.dataKey, retrievedAt, credentialKey) : undefined;
   const fullRows = chartRequest && chartResponseRows(payload, chartRequest.selector);
   const sources = chartRequest && fullRows && captureChartSources(chartRequest, payload, fullRows);
   const selected = extractData(payload, widget.dataKey, table);
@@ -556,7 +574,13 @@ export async function fetchWidgetData(
       if (values.length) parameters[key] = values.join(",");
     }
     const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
-    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(sources && fullRows === selectedRows ? { ...chartRequest, chartSources: sources } : {}),
+    let captured = fullRows === selectedRows ? sources : undefined;
+    if (captured?.["daily-price"] && response && rejectsDailyPriceTransport(response)) {
+      delete captured["daily-price"];
+      if (!Object.keys(captured).length) captured = undefined;
+    }
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(captured ? { ...chartRequest, chartSources: captured } : {}),
+      ...(!captured?.['daily-price'] && requestsDailyPriceSource(url, payload) ? { dailyPriceRejected: true } : {}),
       ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
   }
   onWarnings?.(obbjectWarnings(payload));

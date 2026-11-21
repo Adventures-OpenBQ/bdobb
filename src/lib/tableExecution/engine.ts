@@ -47,7 +47,7 @@ export function calculateView(input: WidgetDataset, definition: TableDefinition,
     if(!sortReuseDefinition(definition)||!Number.isSafeInteger(capture)||capture<=0||capture>4294967295||input.rows.length*128>capture)capture=undefined;
     else {const ids=new Set<string>();for(const row of input.rows){if(ids.has(row.id)){capture=undefined;break;}ids.add(row.id);}}
   }
-  const source = { ...input, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(input))) };
+  const source = { ...input, provenance: validatedChartProvenance(validatedFinancialProvenance(etfAcquisitionProvenance(input)), input) };
   return calculate({ ...source, provenance: estimateProvenance({ ...source, provenance: priceAcquisitionProvenance(source) }) }, definition, selection, reconcileMissing, previousSelectionNamespace, provenAbsentIds, runtime,capture);
 }
 function calculate(input: WidgetDataset, definition: TableDefinition, selection: SelectionSpec, reconcile: boolean, previousSelectionNamespace?: string, provenAbsentIds: string[] = [], runtimeParams?: RuntimeParams, sortReuseBytes?:number): CalculatedView {

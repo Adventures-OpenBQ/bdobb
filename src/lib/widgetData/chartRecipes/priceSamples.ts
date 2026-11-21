@@ -6,14 +6,17 @@ import type { ChartBuildResult } from './chartSourceContracts';
 import { isoDate, qualifiedSymbol } from './financialEvidence';
 import { documentedDailySnapshotMessage, hasDocumentedDailySnapshot, priceBasisFields, priceDateFields, priceIdentityFields } from './priceEvidence';
 import type { WidgetDataset } from '../types';
-import { preparePrices, type PriceScope, type PriceSeries } from './input';
+import { observedReturnScope, prepareLiveReturnPrices, preparePrices, type PriceScope, type PriceSeries } from './input';
 import type { PriceBindings } from './types';
 
 /** Apply strict selection after the shared source and continuity checks. */
 export function prepareSelectedPrices(
   dataset: WidgetDataset, fields: PriceBindings, symbols: readonly string[],
-): { ok: true; series: PriceSeries[]; scope: PriceScope; notes: string[] } | { ok: false; refused: true; message: string } {
-  const prepared = preparePrices(dataset, fields);
+): ReturnType<typeof preparePrices> {
+  return selectPrices(preparePrices(dataset, fields), symbols);
+}
+
+function selectPrices(prepared: ReturnType<typeof preparePrices>, symbols: readonly string[]): ReturnType<typeof preparePrices> {
   if (!prepared.ok) return prepared;
 
   const bySymbol = new Map(prepared.series.map(series => [series.symbol, series]));
@@ -58,6 +61,25 @@ type ReturnSummarySamples = {
   series: ReturnSummarySeries[];
 };
 
+function localSnapshotIssue(dataset: WidgetDataset, fields: PriceBindings): string | undefined {
+  if (!hasDocumentedDailySnapshot(dataset.provenance)) return documentedDailySnapshotMessage;
+  if (!priceBasisFields(dataset.columns).includes(fields.price)) {
+    return 'Choose a source-documented adjusted-price field.';
+  }
+  if (!priceDateFields(dataset.columns).includes(fields.date)) {
+    return 'Bind the acquired trading-date field.';
+  }
+  if (fields.symbol && !priceIdentityFields(dataset.columns).includes(fields.symbol)) {
+    return 'Bind the acquired field that identifies each qualified listing.';
+  }
+  const { acquiredRowCount, totalRowCount, totalRowCountKind, kind } = dataset.completeness;
+  if (acquiredRowCount === undefined || !Number.isSafeInteger(acquiredRowCount) || acquiredRowCount < dataset.rows.length
+    || (totalRowCountKind === 'exact' && (typeof totalRowCount !== 'number' || !Number.isSafeInteger(totalRowCount)
+      || totalRowCount < acquiredRowCount || (kind === 'complete' && totalRowCount !== acquiredRowCount)))) {
+    return 'The source row counts do not prove continuity. Reload the fully acquired price history.';
+  }
+}
+
 /** Both presentations consume the same bounded, listing-specific daily samples. */
 export function admitReturnSummary(
   dataset: WidgetDataset, fields: PriceBindings, symbols: readonly string[], window: ReturnSummaryWindow,
@@ -66,24 +88,12 @@ export function admitReturnSummary(
   if (!symbols.length || symbols.length > 12 || new Set(symbols).size !== symbols.length || !symbols.every(qualifiedSymbol)) {
     return refuse('Choose 1 to 12 distinct qualified listings from the acquired price history.');
   }
-  if (!hasDocumentedDailySnapshot(dataset.provenance)) return refuse(documentedDailySnapshotMessage);
-  if (!priceBasisFields(dataset.columns).includes(fields.price)) {
-    return refuse('Choose a source-documented adjusted-price field.');
+  const live = prepareLiveReturnPrices(dataset, fields);
+  if (!live) {
+    const issue = localSnapshotIssue(dataset, fields);
+    if (issue) return refuse(issue);
   }
-  if (!priceDateFields(dataset.columns).includes(fields.date)) {
-    return refuse('Bind the acquired trading-date field.');
-  }
-  if (fields.symbol && !priceIdentityFields(dataset.columns).includes(fields.symbol)) {
-    return refuse('Bind the acquired field that identifies each qualified listing.');
-  }
-  const { acquiredRowCount, totalRowCount, totalRowCountKind, kind } = dataset.completeness;
-  if (acquiredRowCount === undefined || !Number.isSafeInteger(acquiredRowCount) || acquiredRowCount < dataset.rows.length
-    || (totalRowCountKind === 'exact' && (typeof totalRowCount !== 'number' || !Number.isSafeInteger(totalRowCount)
-      || totalRowCount < acquiredRowCount || (kind === 'complete' && totalRowCount !== acquiredRowCount)))) {
-    return refuse('The source row counts do not prove continuity. Reload the fully acquired price history.');
-  }
-
-  const prepared = prepareSelectedPrices(dataset, fields, symbols);
+  const prepared = selectPrices(live ?? preparePrices(dataset, fields), symbols);
   if (!prepared.ok) return prepared;
   const { scope, notes } = prepared;
   if (window.mode === 'common' && (!isoDate(window.start) || !isoDate(window.end) || window.start > window.end
@@ -106,7 +116,8 @@ export function admitReturnSummary(
     const result = dailyReturnSamples({ symbol: source.symbol, points });
     const { samples } = result;
     if (samples.length < 5) {
-      return refuse(`At least 5 finite daily returns are required for ${source.symbol}. Found ${samples.length}. Choose a wider window or a different listing.`);
+      const kind = live ? 'observed quote-to-quote' : 'daily';
+      return refuse(`At least 5 finite ${kind} returns are required for ${source.symbol}. Found ${samples.length}. Choose a wider window or a different listing.${live ? ` ${observedReturnScope}` : ''}`);
     }
     series.push({
       ...result, symbol: source.symbol, start: samples[0].date, end: samples[samples.length - 1].date,
