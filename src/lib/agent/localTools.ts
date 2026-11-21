@@ -186,7 +186,9 @@ export const LOCAL_TOOLS: AgentTool[] = ([
   },
   {
     name: "remove_widget",
-    description: "Remove a widget card from the dashboard. Undoable. Use when the user asks to remove, delete or close a widget.",
+    description: "Remove a widget card from the dashboard. Undoable. Use when the user asks to remove, delete or close a widget. " +
+      "Widgets in the supplied context are actual dashboard cards, including primary/added-to-context widgets: " +
+      "that context label is not a pin and does not prevent removal. Use the card's uuid as card_id.",
     input_schema: {
       type: "object",
       properties: { card_id: { type: "string", description: "The card to remove (its uuid in the widget context)" } },
