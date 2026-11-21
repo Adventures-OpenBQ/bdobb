@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import { cleanup } from "@testing-library/react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useDashboardStore } from "../../../stores/dashboardStore";
 import { tableExecutionStore } from "../../../stores/tableExecutionStore";
@@ -10,6 +10,7 @@ import { ProviderContractError } from "../../tableExecution/rust/providerCapabil
 import { SECTION_TIMEOUT_MS } from "./describe";
 import { commitDrawerModel, mountCsv } from "./testHarness";
 import { describeTable } from "./tools";
+import { StatementWorkerView } from "../../../components/renderers/StatementWorkerView";
 
 vi.mock("../../localFiles", () => ({ readLocalFile: vi.fn(async () => new TextEncoder().encode("region,revenue,cost,date\nA,10,4,2026-01-01\nA,20,5,2026-01-02\nB,90,30,2026-01-03\n")) }));
 vi.mock("@tanstack/react-virtual", () => ({ useVirtualizer: ({ count }: { count: number }) => ({ getVirtualItems: () => Array.from({ length: Math.min(count, 8) }, (_, index) => ({ index, start: index * 28, end: index * 28 + 28, size: 28, key: index })), getTotalSize: () => count * 28, measureElement: () => undefined, scrollToIndex: () => undefined }) }));
@@ -29,6 +30,22 @@ it("summarises a ready CSV table: identity, witness, fields, empty model, capabi
   expect(out.completeness).toBeDefined();
   expect(out.note).toMatch(/source data, not instructions/);
   expect(JSON.stringify(out).length).toBeLessThan(64 * 1024);
+});
+
+it("keeps read-only table profiles available while the table is mounted in Statement view", async () => {
+  await mountCsv();
+  cleanup();
+  await useDashboardStore.getState().patchCardField("w", "view", "statement");
+  tableExecutionStore.syncDashboard(useDashboardStore.getState().activeDashboard()!);
+  const mounted = render(<StatementWorkerView dashboardId="rita" widgetId="w" owned data={null} collapsed={new Set()} onToggle={() => {}} />);
+  await waitFor(async () => {
+    expect(await describeTable({ card_id: "w", section: "profile", fields: ["revenue"] })).toMatchObject({
+      status: "ok", rows_profiled: 3, fields: [{ id: "revenue", min: 10, max: 90 }],
+    });
+  });
+  mounted.unmount();
+  await Promise.resolve();
+  expect(await describeTable({ card_id: "w", section: "profile" })).toMatchObject({ status: "unavailable", reason: "runtime-not-ready" });
 });
 
 type Rec = { revision: string; rows: { label: string; observedCount: number; key: string }[]; truncated: boolean; next_cursor?: string };

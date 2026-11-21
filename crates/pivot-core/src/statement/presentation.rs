@@ -51,6 +51,7 @@ pub fn statement_presentation(
     layout: &Layout,
 ) -> Result<WireValue, Diagnostic> {
     let o = &i.overrides;
+    let displayed = super::displayed_sections(i);
     let template_ids: Vec<String> = i.template.sections.iter().map(|s| s.id.clone()).collect();
     let section_ids = ordered(o.section_order.as_ref(), &template_ids);
     if section_ids.len() > 256 {
@@ -59,12 +60,7 @@ pub fn statement_presentation(
     let label = |id: &String, fallback: &String| text(o.labels.get(id).unwrap_or(fallback));
     let (mut seen, mut count, mut sections) = (BTreeSet::new(), 0, vec![]);
     for id in section_ids {
-        let section = i
-            .template
-            .sections
-            .iter()
-            .find(|s| &s.id == id)
-            .ok_or_else(invalid)?;
+        let section = displayed.iter().find(|s| &s.id == id).ok_or_else(invalid)?;
         if !seen.insert(id) {
             return Err(invalid());
         }

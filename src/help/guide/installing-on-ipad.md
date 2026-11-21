@@ -7,7 +7,7 @@ tags: [bdobb, help, ipad, install, xcode, build, signing]
 
 From 7.0.0, BDOBB runs on iPadOS as a native app, built from the same source with Tauri's iOS target. There is no App Store listing and no downloadable `.ipa`: you build it on a Mac with Xcode and install it on your own device. This page covers that, including the gates Apple puts in the way, each of which reports a misleading error until you have cleared it.
 
-The v7 release receipts qualify the toolchain check and a simulator build (`pnpm ios:check` and `pnpm ios:sim`). Installing on a physical iPad follows the same scripts but is not part of those receipts.
+The v7 walk includes builds installed on a physical iPad as well as the toolchain and simulator checks. The platform-parity matrix records which native exercises have actually passed; an installed candidate alone does not establish complete parity.
 
 ## The toolchain wrapper
 
@@ -24,7 +24,7 @@ The v7 release receipts qualify the toolchain check and a simulator build (`pnpm
 
 Device names come from `xcrun devicectl list devices`, and simulator names from `xcrun simctl list devices available`. **The name must come first, before any other flag.** With none, Tauri waits on an interactive picker that cannot render outside a terminal and the command hangs with no output, so the script refuses to start without it.
 
-With Xcode 27 or later, `ios:build` and `ios:sim` relabel the built binary's SDK to 26.0 and re-sign it, because Tauri does not yet adopt the UIScene life cycle that apps linked against the iOS 27 SDK must use; without the relabel the app exits as soon as it launches.
+The locked Tauri/Tao version uses the UIScene life cycle and its scene configuration. Builds retain the real SDK version and Xcode signature. The former SDK 26.0 relabel workaround is obsolete.
 
 ## Dev build vs. release build
 
@@ -60,9 +60,10 @@ On the free tier the app stops launching after 7 days until you rebuild and rein
 1. `pnpm ios:check`, and fix whatever it names.
 2. Plug in the iPad. Enable **Developer Mode** when the toggle appears (Gate 1 below); the iPad reboots.
 3. Iterate with `pnpm ios:dev "<device name>"`.
-4. Make the release build with `pnpm ios:build`, then install the `.ipa` it writes under `src-tauri/gen/apple/build/`:
+4. Make the release build with `pnpm ios:build`, then extract the `.ipa` it writes under `src-tauri/gen/apple/build/` and install the app inside its `Payload` directory:
    ```bash
-   xcrun devicectl device install app --device <udid> src-tauri/gen/apple/build/<arch>/<name>.ipa
+   unzip "src-tauri/gen/apple/build/<arch>/<name>.ipa" -d /tmp/bdobb-ipad-install
+   xcrun devicectl device install app --device <udid> "/tmp/bdobb-ipad-install/Payload/<name>.app"
    ```
    with `<udid>` from `xcrun devicectl list devices`.
 

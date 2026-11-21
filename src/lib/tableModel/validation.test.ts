@@ -143,3 +143,13 @@ it('requires authored parameter metadata rather than defaulting missing saved mo
  expect(checked.model).toBeUndefined();expect(checked.raw).toBe(raw);
  expect(checked.diagnostics).toContainEqual(expect.objectContaining({path:'params',severity:'error'}));
 });
+
+it('accepts a named category sort field and refuses any other sortFieldId', () => {
+  const withSort = (sortFieldId: unknown) => validateTableModel({ ...model(), categories: [{ ...model().categories[0], sortFieldId }] });
+  expect(withSort('tenor_months').categories[0].value).toMatchObject({ sortFieldId: 'tenor_months' });
+  expect(withSort('tenor_months').model).toBeDefined();
+  for (const bad of [3, '']) {
+    expect(withSort(bad).categories[0].value).toBeUndefined();
+    expect(withSort(bad).model).toBeUndefined();
+  }
+});

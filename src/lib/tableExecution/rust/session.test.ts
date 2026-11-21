@@ -9,6 +9,7 @@ import type {ExecutionRequest,ExecutionResponse,Revision,TableDefinition,ViewRea
 import type {OracleCase,OracleResult} from './oracle';
 import type {DatasetRow} from '../../widgetData/types';
 import {input,definition,revision} from '../fixtures';
+import {fixture as statementFixture} from '../../statementModel/compileFixtures';
 let runtime:RustRuntime;
 beforeAll(async()=>{
  runtime=await loadRustRuntime(async()=>{
@@ -16,6 +17,29 @@ beforeAll(async()=>{
   await module.default({module_or_path:readFileSync(new URL('./generated/pivot_wasm_bg.wasm',import.meta.url))});
   return module as unknown as WasmModule;
  });
+});
+it('executes moved Statement inputs and formula references through the compiled wire',()=>{
+ const {source,statement,ids}=statementFixture();
+ const moved=structuredClone(statement),destination=moved.template.sections[1].id;
+ moved.overrides.lineSection={[ids.line('revenue')]:destination};
+ const handle=runtime.open_session({protocolVersion:1,locale:'en-US',batchRows:100});
+ let rev={...revision};
+ const call=(command:object)=>runtime.dispatch(handle,{requestId:'moved-statement',revision:rev,...command} as ExecutionRequest)!;
+ try{
+  expect(call({kind:'registerInput',input:source,inputRevision:rev.input}).kind).toBe('registered');
+  expect(call({kind:'applyModel',definition:{table:{},search:'',analytical:statement},selection:{kind:'none'}}).kind).toBe('viewReady');
+  for(const hideHome of [false,true]){
+   moved.overrides.hiddenIds=hideHome?[moved.template.sections[0].id]:[];
+   rev={...rev,model:rev.model+1,output:rev.output+1};
+   expect(call({kind:'applyModel',definition:{table:{},search:'',analytical:moved},selection:{kind:'none'}}).kind).toBe('viewReady');
+   const result=call({kind:'presented',transferId:`move-${rev.model}`,ignoreSelection:true});
+   if(result.kind!=='subset')throw new Error('Expected actual presented rows');
+   const revenue=result.rows.filter(row=>row.groupPath?.at(-1)?.value===ids.line('revenue'));
+   expect(revenue).toHaveLength(1);expect(revenue[0].groupPath?.[0].value).toBe(destination);
+   const profit=result.rows.find(row=>row.groupPath?.at(-1)?.value===ids.line('calculated_gross_profit'));
+   expect(Object.values(profit!.values)).toContain(40);
+  }
+ }finally{runtime.close_session(handle);}
 });
 it('uses actual compiled session exports, lossless values, bounded pull and closed handle refusal',()=>{
  const handle=runtime.open_session({protocolVersion:1,locale:'en-US',batchRows:1});

@@ -89,7 +89,7 @@ pnpm reference-backend      # one terminal
 pnpm test:reference         # another
 ```
 
-Seven checks, run in the Node environment against the live backend, calling the
+Six checks, run in the Node environment against the live backend, calling the
 same `normalizeWidgets`, `buildWidgetUrl`, `seedParams` and `extractData` the
 app calls:
 
@@ -102,8 +102,7 @@ app calls:
    remote `widgets.json` may steer a request elsewhere.
 5. **Every table, metric and chart widget actually fetches**, seeded from its
    declared defaults, and yields data at its `dataKey`.
-6. **The actual onboarding app round-trips** its cards, tabs and groups, and unsupported analytical apps are refused.
-7. **Every type is either rendered or named as known-unrendered** — see below.
+6. **Every type is either rendered or named as known-unrendered** — see below.
 
 ### Why it is opt-in and not skip-if-unreachable
 

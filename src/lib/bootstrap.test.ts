@@ -41,6 +41,19 @@ import { useWorkspaceSyncStore } from "../stores/workspaceSyncStore";
 import { bootstrap } from "./bootstrap";
 import { widget } from "../test/fixtures";
 
+// A Zustand replacement state can retain a spy after Vitest restores the
+// original object's property. Start each boot with the actual store actions.
+const originalActions = {
+  settingsLoad: useSettingsStore.getState().load,
+  backendsLoad: useBackendsStore.getState().load,
+  backendsRefresh: useBackendsStore.getState().refresh,
+  dashboardsLoad: useDashboardStore.getState().load,
+  setActive: useDashboardStore.getState().setActive,
+  foldersLoad: useFoldersStore.getState().load,
+  keysRefresh: useProviderKeysStore.getState().refresh,
+  seedBuiltins: useWidgetRegistryStore.getState().seedBuiltins,
+};
+
 /** A minimal dashboard file, as loadDashboards expects to find it. */
 function dashboardFile(id: string, name: string): string {
   return JSON.stringify({ id, name, tabs: [{ id: `${id}-t1`, name: "Main", cards: [] }] });
@@ -50,15 +63,20 @@ beforeEach(() => {
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
-  useBackendsStore.setState({ backends: [], statuses: {}, issues: {} });
+  useSettingsStore.setState({ load: originalActions.settingsLoad });
+  useBackendsStore.setState({ backends: [], statuses: {}, issues: {}, load: originalActions.backendsLoad, refresh: originalActions.backendsRefresh });
   useDashboardStore.setState({
     dashboards: [],
     activeId: null,
     previousId: null,
     activeTabId: null,
     viewer: false,
+    load: originalActions.dashboardsLoad,
+    setActive: originalActions.setActive,
   });
-  useFoldersStore.setState(makeEmptyFolders());
+  useFoldersStore.setState({ ...makeEmptyFolders(), load: originalActions.foldersLoad });
+  useProviderKeysStore.setState({ refresh: originalActions.keysRefresh });
+  useWidgetRegistryStore.setState({ seedBuiltins: originalActions.seedBuiltins });
   vi.mocked(runStartupPrompt).mockClear();
   vi.mocked(startDashboardAutoUpload).mockClear();
   useWorkspaceSyncStore.setState({ links: [], tombstones: [] });

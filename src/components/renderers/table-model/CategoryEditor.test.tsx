@@ -83,3 +83,13 @@ it('D-014: offers M as a transformation and saves it as a first-class transform'
  fireEvent.click(screen.getByRole('button',{name:'Quarter'}));fireEvent.change(screen.getByLabelText('Transformation'),{target:{value:'M'}});fireEvent.click(screen.getByRole('button',{name:'Save category'}));
  await waitFor(()=>expect(commit).toHaveBeenCalled());expect(commit.mock.calls[0][0].categories.find(c=>c.id==='quarter')).toEqual({id:'quarter',name:'Quarter',sourceFieldId:'date',transform:'M'});
 });
+it('sorts a category by another field or member value',async()=>{
+ function Editor(){const [value,setValue]=useState(model);return <><CategoryEditor model={value} columns={columns} readonly={false} onCommitModel={next=>{setValue(next);return Promise.resolve(true);}}/><output aria-label="Saved categories">{JSON.stringify(value.categories)}</output></>;}
+ render(<Editor/>);
+ const sort=screen.getByLabelText('Sort by');
+ expect([...sort.querySelectorAll('option')].map(o=>[o.value,o.textContent])).toEqual([['','Member value'],...[...screen.getByLabelText('Source field').querySelectorAll('option')].map(o=>[o.value,o.textContent])]);
+ fireEvent.change(sort,{target:{value:'value'}});fireEvent.click(screen.getByRole('button',{name:'Save category'}));
+ await waitFor(()=>expect(screen.getByLabelText('Saved categories')).toHaveTextContent('"id":"year","name":"Year","sourceFieldId":"date","transform":"Y","sortFieldId":"value"'));
+ fireEvent.change(sort,{target:{value:''}});fireEvent.click(screen.getByRole('button',{name:'Save category'}));
+ await waitFor(()=>expect(screen.getByLabelText('Saved categories')).not.toHaveTextContent('sortFieldId'));
+});

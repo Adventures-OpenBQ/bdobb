@@ -10,7 +10,7 @@ export const ARRANGE_LIMITS = { operations: 64, stringBytes: 4096, listItems: 10
 export type Ref = { id: string } | { alias: string };
 export const isAlias = (r: Ref): r is { alias: string } => "alias" in r;
 
-type Rule = "string" | "boolean" | "ref" | "refs" | "strings" | "stringsOrNull" | "scalar" | "object" | "array" | readonly string[];
+export type Rule = "string" | "boolean" | "ref" | "refs" | "strings" | "stringsOrNull" | "scalar" | "object" | "array" | readonly string[];
 export const SCOPES = ["source", "aggregate"] as const;
 const KINDS = ["measure", "formula"] as const;
 export const TEMPLATES = ["income", "balance", "cashflow"] as const;

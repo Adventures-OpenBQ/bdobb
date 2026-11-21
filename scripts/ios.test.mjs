@@ -277,6 +277,20 @@ function runTeam(box) {
 }
 
 describe("ios.sh team", () => {
+  it.each([
+    ["TEAM123456.*", true],
+    ["TEAM123456.com.example.*", true],
+    ["TEAM123456.com.other.*", false],
+    ["OTHER12345.*", false],
+  ])("matches wildcard profile %s only within its team and bundle prefix", async (app, accepted) => {
+    const result = await runTeam(profileSandbox({
+      profiles: ["wildcard.mobileprovision"],
+      fields: {"Entitlements.application-identifier": app, "TeamIdentifier.0": "TEAM123456", ExpirationDate: "2099-01-01T00:00:00Z"},
+    }));
+    expect(result.code).toBe(accepted ? 0 : 1);
+    if (accepted) expect(result.out).toMatch(/APPLE_DEVELOPMENT_TEAM=TEAM123456/);
+  });
+
   it("reports when no profile exists, and names the only thing that makes one", async () => {
     // A certificate is not a profile. The keychain can be full and the answer
     // still be "Xcode has not issued one".
@@ -454,10 +468,7 @@ describe("ios.sh init", () => {
   });
 });
 
-// Review S-nat-1: `sim` asked for xcode_major_version, which nothing
-// defined, so on Xcode 27 the relabel was skipped and the simulator app
-// exited on launch. The function body is lifted out of the script and run
-// against a stub xcodebuild.
+// Toolchain preflight parses the selected Xcode major version.
 describe("xcode_major_version", () => {
   const major = (version) =>
     new Promise((resolve) => {
@@ -474,5 +485,22 @@ describe("xcode_major_version", () => {
     expect(await major("Xcode 27.0")).toBe("27");
     expect(await major("Xcode 16.4")).toBe("16");
     expect(await major("not xcode")).toBe("");
+  });
+});
+
+describe('SDK27 scene-native packaging', () => {
+  it('preserves the signed SDK27 archive returned by Tauri', async () => {
+    const box = sandbox({
+      pnpm: 'mkdir -p src-tauri/gen/apple/build/arm64; printf signed-sdk27 > src-tauri/gen/apple/build/arm64/v7.ipa',
+      xcodebuild: 'echo "Xcode 27.2"',
+      vtool: 'echo unexpected-sdk-rewrite >&2; exit 99',
+    });
+    mkdirSync(join(box.root, 'scripts'));
+    copyFileSync(SCRIPT, join(box.root, 'scripts/ios.sh'));
+    const result = await new Promise(resolve => execFile('bash', [join(box.root, 'scripts/ios.sh'), 'build'],
+      {env: {PATH: `${box.bin}:/usr/bin:/bin`, HOME: box.root}},
+      (error, stdout, stderr) => resolve({code: error ? error.code ?? 1 : 0, out: stdout + stderr})));
+    expect(result.code, result.out).toBe(0);
+    expect(readFileSync(join(box.root, 'src-tauri/gen/apple/build/arm64/v7.ipa'), 'utf8')).toBe('signed-sdk27');
   });
 });

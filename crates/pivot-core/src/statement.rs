@@ -115,8 +115,35 @@ pub struct StatementOverrides {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub section_order: Option<Vec<String>>,
     pub line_order: BTreeMap<String, Vec<String>>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub line_section: BTreeMap<String, String>,
     pub hidden_ids: Vec<String>,
     pub formulas: Vec<Formula>,
+}
+/// Own lines not moved away, then moved-in lines in template line order.
+/// Matches statementModel/placement.ts; ordering is applied separately.
+pub(crate) fn displayed_sections(i: &StatementIntent) -> Vec<StatementSection> {
+    i.template
+        .sections
+        .iter()
+        .map(|section| {
+            let mut shown = section.clone();
+            shown.line_ids.retain(|line| {
+                i.overrides.line_section.get(line).unwrap_or(&section.id) == &section.id
+            });
+            shown.line_ids.extend(
+                i.template
+                    .lines
+                    .iter()
+                    .filter(|line| {
+                        i.overrides.line_section.get(&line.id) == Some(&section.id)
+                            && !section.line_ids.contains(&line.id)
+                    })
+                    .map(|line| line.id.clone()),
+            );
+            shown
+        })
+        .collect()
 }
 #[derive(Clone, Debug)]
 pub struct OutputMember {

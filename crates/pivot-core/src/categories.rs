@@ -19,7 +19,13 @@ pub struct CategoryMember {
     pub period: Option<(String, String)>,
     pub fiscal: Option<ResolvedFiscalPeriod>,
 }
+mod member_map;
+pub use member_map::RowCategoryMembers;
+
 pub type CategoryMemberResult = Result<CategoryMember, ModelError>;
+/// Shared after derivation; mutation uses copy-on-write to preserve snapshot isolation.
+pub type CategoryMembers = std::sync::Arc<BTreeMap<String, RowCategoryMembers>>;
+
 #[derive(Clone, Debug)]
 pub struct CategoryMetadata {
     pub id: String,
@@ -29,11 +35,16 @@ pub struct CategoryMetadata {
     pub recipe: Result<String, Diagnostic>,
     pub bucket: Bucket,
     pub periodicity: Periodicity,
+    pub sort_field_id: Option<String>,
+}
+/// Row key carrying a category's sort value beside its member.
+pub fn category_sort_key(id: &str) -> String {
+    format!("\u{1e}sort\u{1e}{id}")
 }
 #[derive(Clone, Debug)]
 pub struct CategorizedRows {
     pub evaluated: EvaluatedRows,
-    pub members: BTreeMap<String, BTreeMap<String, CategoryMemberResult>>,
+    pub members: CategoryMembers,
     pub categories: Vec<CategoryMetadata>,
     pub warnings: Vec<ScopeWarning>,
 }
@@ -94,7 +105,7 @@ pub fn derive_categories(
 ) -> CategorizedRows {
     let mut result = CategorizedRows {
         evaluated: input.clone(),
-        members: BTreeMap::new(),
+        members: Default::default(),
         categories: vec![],
         warnings: vec![],
     };
@@ -121,6 +132,7 @@ pub fn derive_categories(
             recipe,
             bucket,
             periodicity,
+            sort_field_id: c.sort_field_id.clone(),
         });
         if matches!(periodicity, Periodicity::Weekly)
             && matches!(bucket, Bucket::Month | Bucket::Quarter | Bucket::Year)
@@ -129,7 +141,7 @@ pub fn derive_categories(
         }
     }
     for (i, row) in input.rows.iter().enumerate() {
-        let mut members = BTreeMap::new();
+        let mut members = Vec::with_capacity(model.categories.len());
         for c in &model.categories {
             let fail = |code: &str, msg: String| Err(error(code, msg, &c.id, vec![row.id.clone()]));
             let mut member = (|| {
@@ -323,6 +335,14 @@ pub fn derive_categories(
                     result.evaluated.rows[i]
                         .values
                         .insert(c.id.clone(), m.value.clone());
+                    if let Some(sort) = &c.sort_field_id {
+                        let value = read(&result.evaluated.rows[i], Some(sort)).clone();
+                        if !matches!(value, WireValue::Missing) {
+                            result.evaluated.rows[i]
+                                .values
+                                .insert(category_sort_key(&c.id), value);
+                        }
+                    }
                     if let Some(p) = &m.fiscal {
                         fiscal_periods
                             .entry(c.id.clone())
@@ -339,9 +359,10 @@ pub fn derive_categories(
                         .insert(c.id.clone(), e.clone());
                 }
             }
-            members.insert(c.id.clone(), member);
+            members.push((c.id.clone(), member));
         }
-        result.members.insert(row.id.clone(), members);
+        std::sync::Arc::make_mut(&mut result.members)
+            .insert(row.id.clone(), RowCategoryMembers::from_entries(members));
     }
     for c in &model.categories {
         if let Some(periods) = fiscal_periods.get(&c.id) {

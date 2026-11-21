@@ -2208,3 +2208,17 @@ it("offers corresponding source in Help and opens the exact archived revision", 
   expect(openUrl).toHaveBeenCalledWith(sourceOffer.archiveUrl);
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
+
+
+it("labels Windows shortcuts with Control and Alt", async () => {
+  const platform=vi.spyOn(navigator,"platform","get").mockReturnValue("Win32");
+  try {
+    render(<LeftRail onOpenLibrary={vi.fn()} onOpenAI={vi.fn()} onOpenApps={() => {}} onOpenConnections={vi.fn()} onOpenSettings={vi.fn()} onOpenHelp={vi.fn()}/>);
+    // V8 intentionally removes the duplicate Add widget rail row.
+    expect(screen.getByRole("button",{name:"Widget Library"})).toBeInTheDocument();
+    expect(screen.queryByRole("button",{name:/^Add widget/})).toBeNull();
+    await userEvent.click(screen.getByRole("button",{name:"Help"}));
+    expect(screen.getByRole("menuitem",{name:"Quick Help (Ctrl+Shift+/)"})).toBeInTheDocument();
+    expect(screen.getByText("Alt+1")).toBeInTheDocument();
+  } finally {platform.mockRestore();}
+});

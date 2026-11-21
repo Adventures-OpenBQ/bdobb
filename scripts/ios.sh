@@ -53,9 +53,7 @@ load_env_local() {
   done < "$file"
 }
 
-# Xcode's MAJOR version, or nothing when Xcode is not usable. Two things key
-# off it and both apply only from 27 on: the llvm-objcopy preflight and the
-# post-build SDK relabel. Parsed once, here, rather than in each of them.
+# Xcode's major version controls the Swift symbol-tool preflight from SDK27.
 xcode_major_version() {
   local v
   v="$(xcodebuild -version 2>/dev/null | head -1)"
@@ -231,7 +229,20 @@ team() {
       # With no bundle id to match on, every profile is a candidate: a wrong
       # team is better caught by xcodebuild than by silently reporting none.
       if [ -n "$bundle_id" ]; then
-        case "$appid" in *".$bundle_id") ;; *) continue ;; esac
+        # A development wildcard profile is valid for every bundle beneath
+        # its prefix. Match its declared team first; do not infer a team from
+        # an unrelated certificate or a different app's scoped wildcard.
+        case "$appid" in "$team."*) ;; *) continue ;; esac
+        local profile_bundle="${appid#"$team."}" prefix
+        case "$profile_bundle" in
+          "$bundle_id") ;;
+          *\*)
+            prefix="${profile_bundle%\*}"
+            case "$prefix" in *\*) continue ;; esac
+            case "$bundle_id" in "$prefix"*) ;; *) continue ;; esac
+            ;;
+          *) continue ;;
+        esac
       fi
       found=1
       # An expired profile still names the right team, so it is a usable
@@ -280,114 +291,12 @@ dev() {
   ( cd "$ROOT" && pnpm tauri ios dev "$device" "$@" )
 }
 
-# An app LINKED against the iOS 27 SDK must adopt the UIScene life cycle, and
-# Tauri 2.11.5 -- the latest stable 2.x -- does not. Such a build installs,
-# launches, and exits IMMEDIATELY with exit code 0 (not a crash):
-#
-#   Application failed to launch: UIScene life cycle is required for apps
-#   built with this SDK.
-#
-# The gate keys off the SDK recorded in the binary's LC_BUILD_VERSION, not off
-# the OS -- proven 2026-09-19, when the same binary with only that field
-# rewritten to 26.0 launched and rendered fully on iOS 27.0. So this rewrites
-# it, which costs one `vtool` call and a re-sign.
-#
-# Adding `UIApplicationSceneManifest` to Info.plist is NOT an alternative and
-# has been tried twice: with it the process survives, but Tauri still builds
-# its UIWindow the pre-scene way and never attaches it to the UIWindowScene --
-# `currentApplicationKeyWindow: 0x0`, and a black screen. Real adoption is
-# upstream Tauri code; the generated app is only `ffi::start_app()`.
-#
-# Delete this function and its caller when Tauri adopts UIScene. Nothing else
-# depends on it.
-relabel_sdk() {
-  local ipa="$1" work app bin exe hash
-  command -v vtool >/dev/null 2>&1 || { echo "relabel: vtool not found" >&2; return 1; }
-  work="$(mktemp -d)" || return 1
-  ( cd "$work" && unzip -q "$ipa" ) || { rm -rf "$work"; return 1; }
-  app="$(echo "$work"/Payload/*.app)"
-  [ -d "$app" ] || { echo "relabel: no .app inside $ipa" >&2; rm -rf "$work"; return 1; }
-  exe="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist" 2>/dev/null)"
-  bin="$app/$exe"
-  [ -n "$exe" ] && [ -f "$bin" ] || { echo "relabel: no executable in $app" >&2; rm -rf "$work"; return 1; }
-
-  # Pulled from the app rather than written here: they are issued with the
-  # provisioning profile, and a hand-kept copy would drift from it silently.
-  codesign -d --entitlements :- --xml "$app" > "$work/entitlements.plist" 2>/dev/null \
-    || { echo "relabel: could not read entitlements from $app" >&2; rm -rf "$work"; return 1; }
-
-  # The signing identity is taken from the signature the build just made,
-  # NOT looked up by name. This keychain holds two live certificates with the
-  # IDENTICAL name "Apple Development: ... (AF2P7DB694)", so `--sign` by name
-  # is ambiguous and codesign refuses it; and hard-coding a SHA-1 would pin
-  # the script to one developer's keychain. The leaf certificate of the
-  # existing signature is by construction the one Xcode chose and the one the
-  # embedded profile names, and its SHA-1 fingerprint IS the identity hash.
-  codesign -d --extract-certificates="$work/cert" "$app" 2>/dev/null \
-    || { echo "relabel: could not read the signing certificate from $app" >&2; rm -rf "$work"; return 1; }
-  hash="$(openssl x509 -inform DER -in "$work/cert0" -noout -fingerprint -sha1 2>/dev/null \
-    | sed 's/.*=//; s/://g')"
-  [ -n "$hash" ] || { echo "relabel: could not fingerprint the signing certificate" >&2; rm -rf "$work"; return 1; }
-
-  # 2 = IOS (7 would be IOSSIMULATOR). minos stays at the real floor; only the
-  # sdk field moves. vtool warns that it has invalidated the signature -- that
-  # is expected, and the next line is the re-sign.
-  vtool -set-build-version 2 16.4 26.0 -replace -output "$bin" "$bin" >/dev/null 2>&1 \
-    || { echo "relabel: vtool failed on $bin" >&2; rm -rf "$work"; return 1; }
-  codesign --force --sign "$hash" --entitlements "$work/entitlements.plist" "$app" >/dev/null 2>&1 \
-    || { echo "relabel: re-signing failed" >&2; rm -rf "$work"; return 1; }
-  # Verified here and not left to the device: an .ipa that fails this installs
-  # and then refuses to launch with a message about trust, which sends the
-  # reader to the iPad's settings for a problem that is on this Mac.
-  codesign --verify --strict "$app" >/dev/null 2>&1 \
-    || { echo "relabel: the re-signed app does not verify" >&2; rm -rf "$work"; return 1; }
-
-  # rm first: zip ADDS to an existing archive, so zipping over the .ipa would
-  # leave the original, 27-linked Payload inside it alongside the new one.
-  ( cd "$work" && rm -f "$ipa" && zip -qry "$ipa" Payload ) \
-    || { echo "relabel: could not repack $ipa" >&2; rm -rf "$work"; return 1; }
-  rm -rf "$work"
-  echo "relabelled the linked SDK to 26.0 and re-signed: $ipa"
-}
-
-# A RELEASE build: the frontend is embedded in the binary, so the only network
-# dependency left is whatever backends the app is configured to reach.
+# Locked Tauri 2.12/Tao 0.37.2 uses UIScene and includes the scene-configuration
+# ownership repair. Info.ios.plist declares its delegate. Preserve the actual
+# SDK and Xcode signature; the former SDK26 relabel workaround is obsolete.
 build() {
   load_env_local
-  ( cd "$ROOT" && pnpm tauri ios build "$@" ) || return 1
-  # Only from Xcode 27 on: an older SDK does not trip the UIScene gate, and
-  # relabelling a 26-linked binary would be a no-op that still invalidates and
-  # re-signs it.
-  local major ipa
-  major="$(xcode_major_version)"
-  [ -n "$major" ] && [ "$major" -ge 27 ] || return 0
-  for ipa in "$ROOT"/src-tauri/gen/apple/build/*/*.ipa; do
-    [ -f "$ipa" ] || continue
-    relabel_sdk "$ipa" || return 1
-  done
-}
-
-# The simulator twin of relabel_sdk, run on a .app (not an .ipa). The
-# UIScene/iOS-27-SDK launch gate keys off the LINKED SDK, not the OS, so a
-# simulator build made with Xcode >= 27 exits on launch exactly as a device
-# build does. simctl runs the app unsigned, so this only rewrites
-# LC_BUILD_VERSION (platform 7 = IOSSIMULATOR, sdk 27 -> 26) and ad-hoc
-# re-signs -- no provisioning profile, no team. Edits the .app in place.
-relabel_sim() {
-  local app="$1" exe bin
-  command -v vtool >/dev/null 2>&1 || { echo "relabel_sim: vtool not found" >&2; return 1; }
-  exe="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Info.plist" 2>/dev/null)"
-  bin="$app/$exe"
-  [ -n "$exe" ] && [ -f "$bin" ] || { echo "relabel_sim: no executable in $app" >&2; return 1; }
-  # 7 = IOSSIMULATOR (device relabel uses 2 = IOS). minos stays at the floor;
-  # only the sdk field moves.
-  vtool -set-build-version 7 16.4 26.0 -replace -output "$bin" "$bin" >/dev/null 2>&1 \
-    || { echo "relabel_sim: vtool failed on $bin" >&2; return 1; }
-  # vtool invalidates the signature. The simulator does not verify one, but an
-  # ad-hoc signature keeps codesign and dyld from complaining.
-  codesign --force --sign - "$app" >/dev/null 2>&1 \
-    || { echo "relabel_sim: ad-hoc re-sign failed" >&2; return 1; }
-  echo "relabelled the linked SDK to 26.0 (simulator) and ad-hoc re-signed."
+  ( cd "$ROOT" && pnpm tauri ios build "$@" )
 }
 
 # A SIMULATOR build+install+launch. Separate from `dev` because Tauri's own
@@ -450,11 +359,6 @@ sim() {
   local app
   app="$(find "$proj/build" -type d -name '*.app' -path '*-sim/*' -prune 2>/dev/null | head -1)"
   [ -n "$app" ] && [ -d "$app" ] || { echo "ios.sh sim: no simulator .app under $proj/build/*-sim/" >&2; return 1; }
-
-  # Same UIScene gate as devices, from Xcode 27 on; a no-op relabel on 26 would
-  # only invalidate the signature, so it is skipped there.
-  local major; major="$(xcode_major_version)"
-  if [ -n "$major" ] && [ "$major" -ge 27 ]; then relabel_sim "$app" || return 1; fi
 
   local bundle_id
   bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist" 2>/dev/null)"

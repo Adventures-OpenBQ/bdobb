@@ -64,6 +64,7 @@ describe("docs/examples", () => {
     "v3.1.0-openbb-workspace.apps.json",
     "v3.2.0-video-library.apps.json",
     "v4.0.0-builtins.apps.json",
+    "v4.0.0-fx-linked-surface.apps.json",
     "v4.0.0-parameters.apps.json",
     "v5.0.0-treasury-calendar.apps.json",
     "v6.0.0-rita.apps.json",

@@ -371,3 +371,13 @@ fn response_wrapper_preserves_exact_legacy_bytes() {
         );
     }
 }
+
+#[test]
+fn raw_request_field_borrowing_preserves_duplicate_and_unknown_field_rules() {
+    let text = r#"{"protocolVersion":1,"sessionId":17,"request":{"kind":"not-an-operation","kind":"inputSchema","requestId":"first","requestId":"last","revision":{"widgetId":"widget","input":2,"model":3,"output":4}}}"#;
+    let decoded = decode_request(text).unwrap();
+    assert_eq!(decoded.request_id, "last");
+    assert!(matches!(decoded.operation, Operation::InputSchema));
+    let unknown = text.replace("\"kind\":\"not-an-operation\",", "\"extra\":null,");
+    assert!(decode_request(&unknown).unwrap_err().contains("Unknown request field extra"));
+}

@@ -4,7 +4,7 @@ import { expect, test, type Page, type Locator } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as XLSX from 'xlsx';
-import { isDiscoveryRequest, MOCK_URL, seedCards, seedApp, read } from './fixtures';
+import { isDiscoveryRequest, MOCK_URL, seedCards, seedApp, read, tickChartMeasures } from './fixtures';
 
 async function importStatement(page:Page, shape:'wide'|'long', extension:'csv'|'xls', fixtureName?:string, suppliedBytes?:number[]) {
   await seedCards(page,[]); await page.locator('.dashboard-grid').waitFor();
@@ -95,7 +95,7 @@ for(const [shape,extension] of [['wide','xls'],['wide','csv'],['long','xls'],['l
   await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();
   const chart=page.locator('.linked-chart-renderer');
   await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);
-  await chart.getByRole('checkbox',{name:/Value/}).click();
+  await tickChartMeasures(page, chart, /Value/);
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
   await statement.getByRole('button',{name:'Collapse Profit',exact:true}).click();
   await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([40]);
@@ -240,6 +240,6 @@ test('formatted XLS Statement keeps ratio numeric across actual worker linked ta
  await statement.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked table',exact:true}).click();
  const child=page.locator('.widget-card').nth(2);await expect(child.locator('tbody')).toContainText('40 %');
  await child.getByRole('button',{name:'Card menu',exact:true}).click();await page.getByRole('menuitem',{name:'Create linked chart',exact:true}).click();const chart=page.locator('.linked-chart-renderer');
- await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await chart.getByRole('checkbox',{name:/Value/}).click();
+ await chart.getByLabel('Category',{exact:true}).selectOption(result.columns![0].id);await tickChartMeasures(page, chart, /Value/);
  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(e=>(e as unknown as {data:{y:number[]}[]}).data[0].y)).toEqual([0.4]);
 });

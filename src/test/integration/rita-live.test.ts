@@ -3,11 +3,19 @@
 
 // @vitest-environment node
 // Runs only when OPENBB_RITA_URL points at a live Rita. Never in CI.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { randomUUID } from "node:crypto";
+
+// Node has no native Tauri invoke bridge. Keep the real HTTP/data-client path,
+// using Node's transport rather than treating a missing WebView as fetched data.
+vi.mock("@tauri-apps/plugin-http", () => ({
+  fetch: (input: string | URL, init?: RequestInit) => globalThis.fetch(input, init),
+}));
 import { fetchAgentsJson } from "../../lib/agent/agents-json";
 import { buildWidgetRefs, executeFunction, makeWidgetDataFetcher } from "../../lib/agent/execute";
 import { runAgentQuery } from "../../lib/agent/query";
 import { liveWorkspaceOptions } from "./liveModel";
+import { rowCountAnswer, widgetReadEvidence } from "./liveEvidence";
 import type { AgentMessage } from "../../lib/agent/types";
 import type { BackendConfig, DashboardCard, WidgetDef } from "../../lib/types";
 import { cardRequestSync } from "../../hooks/useCardRequest";
@@ -77,7 +85,9 @@ live("Rita live", () => {
     // a param-less widget.
     const widget = { ...raw, id, backendId: backend.id, params: Array.isArray(raw.params) ? raw.params : [] } as WidgetDef;
     const card: DashboardCard = {
-      id: "card-1",
+      // A real newly installed card gets a fresh identity. Reusing card-1
+      // lets Rita's widget cache bypass the cold fetch this check must prove.
+      id: randomUUID(),
       widgetId: id,
       backendId: backend.id,
       params: {},
@@ -86,18 +96,22 @@ live("Rita live", () => {
     const fetchWidget = makeWidgetDataFetcher({ cards: [card], backends: [backend], findWidget: () => widget, keyMaintBackends: new Set(), request: (c, w, b) => cardRequestSync(c, w, b, undefined) });
     const primary = buildWidgetRefs([card], () => widget, () => backend.name, new Set());
     let calls = 0;
+    const dataCalls: { ok: boolean; rows: number }[] = [];
     // runAgentQuery streams Rita's answer as `chunk` events and returns the history ending on the last
     // TOOL message (query.test.ts: "returns the history unchanged"); it never appends the ai text. The
     // donor asserted the last role was "ai", which this line's contract cannot produce after a tool round.
     const gen = runAgentQuery({
       ritaUrl,
       workspaceOptions: liveWorkspaceOptions,
-      messages: [{ role: "human", content: `Use get_widget_data on widget ${card.id} and tell me how many rows came back.` }],
+      messages: [{ role: "human", content: `Use get_widget_data on widget ${card.id} and report the measured row count. End your final answer with exactly ROWS=<integer> on its own line, replacing <integer> with the actual number returned.` }],
       refresh: () => ({ primary }),
       tools: [],
       executeFunction: (payload, signal) => {
         calls += 1;
-        return executeFunction(payload, { fetchWidget, runAgentTool: async () => null }, signal);
+        return executeFunction(payload, {
+          fetchWidget, runAgentTool: async () => null,
+          onCall: (call) => { if (call.kind === "widget_data") dataCalls.push(widgetReadEvidence(call)); },
+        }, signal);
       },
       timeoutMs: 120_000,
     });
@@ -111,12 +125,16 @@ live("Rita live", () => {
       if (event.type === "chunk" && typeof event.delta === "string") text += event.delta;
       if (event.type === "status" && event.status?.eventType === "WARNING") warnings.push(event.status.message ?? "");
     }
-    expect(calls).toBeGreaterThan(0);
+    expect(calls, JSON.stringify({ has_reply: text.trim().length > 0, warning_count: warnings.length })).toBeGreaterThan(0);
+    expect(dataCalls.some((call) => call.ok && call.rows > 0), JSON.stringify(dataCalls)).toBe(true);
+    expect(dataCalls.filter((call) => !call.ok), "the data read succeeded, not just the tool dispatch").toEqual([]);
     // Hitting the round limit also returns history ending on a tool message, with a WARNING status: that is not a finished answer.
     // Only that WARNING counts: Rita's own per-tool status (e.g. "get_widget_data: no usable data returned") is a WARNING too and is not a limit hit.
     expect(warnings.filter(m => /-round tool limit/.test(m)), "no round-limit WARNING").toEqual([]);
     expect(history[history.length - 1].role).toBe("tool");
-    expect(text.trim().length, "Rita answered after the tool round").toBeGreaterThan(0);
+    const answeredRows = rowCountAnswer(text);
+    expect(answeredRows, "one explicit final row-count answer").toBeDefined();
+    expect(dataCalls.filter(call => call.ok).every(call => call.rows === answeredRows), "answer matches the measured data rows").toBe(true);
   }, 300_000);
 
   const PDF_CARD: DashboardCard = { id: "7d3e9f10-2b4c-4e5a-8f60-1a2b3c4d5e6f", widgetId: "conformance_report", backendId: backend.id, params: {}, layout: { x: 0, y: 0, w: 4, h: 4 } };

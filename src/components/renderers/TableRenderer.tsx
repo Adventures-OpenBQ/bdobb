@@ -176,6 +176,8 @@ export type ExecutionSlot = {
   group?: { path: string[]; childCount: number; open: boolean };
 };
 export type ExecutionTableView = {
+  /** Financial section presentation; ordinary pivots retain their cell layout. */
+  statement?: boolean;
   columns: (TableColumn & { groupPath?: string[]; source?: string })[];
   count: number;
   rowIds: string[];
@@ -297,7 +299,7 @@ export function TableRenderer({
    */
   columns?: string[];
 }) {
-  const rows = tableRows(data);
+  const rows = tableRows(data, view.spec);
 
   // An unexpected shape always falls through to raw JSON, never to nothing.
   if (!rows) return <RawJsonView data={data} />;
@@ -1337,7 +1339,7 @@ function VirtualTable({
       </div> : null}
       {/* As wide as its columns (bdobb#10): widths are exact, a wide table
           scrolls in .table-scroll, a narrow one leaves space on the right. */}
-      <table className="widget-table sized" ref={tableRef} style={{ width: table.getTotalSize() + (execution?.selection ? totalGutterWidth : 0) }}>
+      <table className={`widget-table sized${execution?.statement ? " statement-model" : ""}`} ref={tableRef} style={{ width: table.getTotalSize() + (execution?.selection ? totalGutterWidth : 0) }}>
         {/* Fixed layout takes widths from the first row, which in a pivoted
             table is the group header row; the columns carry the leaf widths. */}
         <colgroup>
@@ -1349,7 +1351,7 @@ function VirtualTable({
               // and To fit; fixed layout takes the width from here.
               style={{
                 width:
-                  filterRow && filterKinds.get(h.column.id) === "date"
+                  execution?.statement && h.column.id === LABEL_FIELD ? "auto" : filterRow && filterKinds.get(h.column.id) === "date"
                     ? `max(${h.getSize()}px, var(--date-range-width))`
                     : h.getSize(),
               }}
@@ -1420,7 +1422,7 @@ function VirtualTable({
                       // To fit; the column's own size returns when it closes.
                       // table-layout: fixed grows the table to the wider sum.
                       width:
-                        filterRow && filterKinds.get(header.column.id) === "date"
+                        execution?.statement && header.column.id === LABEL_FIELD ? "auto" : filterRow && filterKinds.get(header.column.id) === "date"
                           ? `max(${header.getSize()}px, var(--date-range-width))`
                           : header.getSize(),
                       ...pinStyle(header.column),
@@ -1580,6 +1582,7 @@ function VirtualTable({
             // Manual sorting: table-core keeps the engine's order, and row.index
             // is the position in `rows`, i.e. in the engine's parallel `meta`.
             const rowMeta = pivotResult?.meta[row.index];
+            const sectionGroup = execution?.statement && slot?.group?.path.length === 1 ? slot.group : undefined;
             // row.index is the DATA index, which is what the showCellChange
             // effect keys by; item.index is the position after sort/filter.
             const original = row.original as Row;
@@ -1592,12 +1595,20 @@ function VirtualTable({
                 data-index={item.index}
                 data-row-id={row.id}
                 ref={virtualizer.measureElement}
-                className={rowMeta && rowMeta.kind !== "leaf" ? "pivot-group-row" : undefined}
+                className={sectionGroup ? "statement-section" : rowMeta && rowMeta.kind !== "leaf" ? "pivot-group-row" : undefined}
               >
                 {/* Named by position: a row id can be a content hash (the row's cells as JSON), which a
                     screen reader would read out. Tests that need one row use the tr's data-row-id. */}
                 {execution?.selection ? <td className="selection-cell pin-left" style={{ width: 32, left: 0 }}>{row.getCanSelect() ? <SelectionCheckbox label={`Select row ${item.index + 1}`} checked={row.getIsSelected()} indeterminate={selectionRows.get(row.id)?.indeterminate ?? false} disabled={execution.selectionPending} onChange={row.getToggleSelectedHandler()} /> : null}</td> : null}
-                {row.getVisibleCells().map((cell) => {
+                {sectionGroup && execution ? (
+                  <td colSpan={columnCount - (execution.selection ? 1 : 0)}>
+                    <button type="button" aria-expanded={sectionGroup.open}
+                      aria-label={`${sectionGroup.open ? "Collapse" : "Expand"} ${String(row.getValue(LABEL_FIELD) ?? "")}`}
+                      onClick={() => execution.toggle(sectionGroup.path)}>
+                      <span className="statement-section-label" style={{ left: (execution.selection ? totalGutterWidth : 0) + 8 }}><span aria-hidden="true">{sectionGroup.open ? "▾" : "▸"}</span>{" "}{String(row.getValue(LABEL_FIELD) ?? "")}</span>
+                    </button>
+                  </td>
+                ) : row.getVisibleCells().map((cell) => {
                   const column = byField.get(cell.column.id);
                   const side = cell.column.getIsPinned();
                   const errors = execution?.rowErrors?.get(row.id);
@@ -1611,7 +1622,7 @@ function VirtualTable({
                   // of which this codebase has none in product code.
                   const click = column?.cellClick;
                   const agentAction = column?.sendToAgent;
-                  const classes = [side ? `pin-${side}` : null, execution && side === "left" && cell.column.id === columnPinning.left?.at(-1) ? "pin-left-last" : null, error ? "cell-error" : visual.className ?? null].filter(
+                  const classes = [execution?.statement && cell.column.id === LABEL_FIELD ? "statement-label" : null, side ? `pin-${side}` : null, execution && side === "left" && cell.column.id === columnPinning.left?.at(-1) ? "pin-left-last" : null, error ? "cell-error" : visual.className ?? null].filter(
                     (c): c is string => c !== null,
                   );
                   /* The same pivot-leaf guard the cell-click branch below
@@ -1665,7 +1676,7 @@ function VirtualTable({
                     </td>
                   );
                 })}
-                {actionsCell("td")}
+                {!sectionGroup && actionsCell("td")}
               </tr>
             );
           })}

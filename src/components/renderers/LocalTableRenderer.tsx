@@ -283,7 +283,7 @@ function RuntimeTable({ identity, refreshKey, state: _state, filterRow, autosize
   const rowErrors = useMemo(() => new Map(blocks.flatMap(block => block.rows.flatMap(row => row.cellErrors ? [[row.id, row.cellErrors] as const] : []))), [blocks]);
   const rowFormats = useMemo(() => new Map(blocks.flatMap(block => block.rows.flatMap(row => row.cellFormats ? [[row.id, row.cellFormats] as const] : []))), [blocks]);
   const execution: ExecutionTableView = {
-    rowErrors, rowFormats,
+    rowErrors, rowFormats, statement: statementRecognized,
     columns: schemaColumns(view.ready?.columns ?? [], spec), ...index,
     formulaIds: new Map((view.ready?.columns??[]).flatMap(column=>{
       const measure=analytical?.measures.find(m=>m.id===column.measureId);

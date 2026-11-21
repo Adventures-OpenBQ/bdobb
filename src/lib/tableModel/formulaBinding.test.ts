@@ -125,3 +125,11 @@ it('binds a fiscal quarter by its displayed label FY2025-Q1 as well as its store
   const native: ModelSymbols = { ...symbols, categories: [{ ...quarters.categories[0], transform: 'native' }] };
   expect(draft('Revenue[Quarter="FY2025-Q1"]', 'aggregate', native).diagnostics[0]).toMatchObject({ code: 'missing-member' });
 });
+
+describe('scalar math function scope', () => {
+  it('binds LN in source scope without a scope diagnostic and LN(MEAN(x)) in aggregate scope', () => {
+    expect(draft('LN(Revenue)', 'source').diagnostics).toEqual([]);
+    expect(draft('LN(MEAN(Revenue))', 'aggregate').diagnostics).toEqual([]);
+    expect(draft('SUM(Revenue)', 'source').diagnostics[0]).toMatchObject({ code: 'scope' });
+  });
+});

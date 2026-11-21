@@ -38,6 +38,12 @@ impl<T: HeapBytes> HeapBytes for Box<T> {
         estimated(self.as_ref()).saturating_add(32)
     }
 }
+// Count each reference conservatively, even when another field shares its allocation.
+impl<T: HeapBytes> HeapBytes for std::sync::Arc<T> {
+    fn heap_bytes(&self) -> usize {
+        estimated(self.as_ref()).saturating_add(32)
+    }
+}
 impl<A: HeapBytes, B: HeapBytes> HeapBytes for (A, B) {
     fn heap_bytes(&self) -> usize {
         self.0.heap_bytes().saturating_add(self.1.heap_bytes())

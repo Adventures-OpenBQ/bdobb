@@ -285,9 +285,12 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       const path = upstreamPath(url, cfg);
       if (path) {
         if (!cfg.backend) return reply(res, 503, "Backend ingress is not configured.");
+        const disconnected = new AbortController();
+        res.once("close", () => disconnected.abort());
+        const deadline = path.startsWith("/api/") ? cfg.apiTimeoutMs ?? 170000 : 12000;
         const response = await fetchUpstream(cfg.backend + path, {
           headers: gatewayHeaders(cfg),
-          redirect: "error", signal: AbortSignal.timeout(12000),
+          redirect: "error", signal: AbortSignal.any([AbortSignal.timeout(deadline), disconnected.signal]),
         });
         // Never relay backend authentication challenges, redirects, cookies, or error bodies.
         if (!response.ok) { await response.body?.cancel(); return reply(res, 502, "Backend request failed."); }

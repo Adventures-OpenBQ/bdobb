@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import {expect,test} from '@playwright/test';
-import {dashboardSeed,seedApp,read} from './fixtures';
+import {dashboardSeed,seedApp,read,tickChartMeasures} from './fixtures';
 
 /** Browser orchestration/UI qualification with the real compiled Rust fixture provider.
  * This deliberately injects the provider seam; Task 11 must qualify the combined
@@ -49,7 +49,7 @@ test('managed full-scope consumers, header actions and persisted linked reopen',
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked table'}).click();
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked chart'}).click();
  await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
- await page.getByRole('checkbox',{name:'Revenue',exact:true}).check();
+ await tickChartMeasures(page,page,'Revenue');
  await expect(page.getByTestId('chart-plot')).toBeVisible();
  await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(204);
  const toolsProof=await page.evaluate(async()=>{

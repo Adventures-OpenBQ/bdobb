@@ -263,6 +263,30 @@ pub fn evaluate_expression(
                 ),
             }
         }
+        FormulaAst::Call {
+            function: function @ (FormulaFunction::Ln | FormulaFunction::Sqrt),
+            args,
+        } => match numeric(run(&args[0], resolver), row, definition_id) {
+            Ok(n) => {
+                let value = if *function == FormulaFunction::Ln {
+                    n.ln()
+                } else {
+                    n.sqrt()
+                };
+                if value.is_finite() {
+                    CellResult::Value(number(value))
+                } else {
+                    fail(
+                        "nonfinite",
+                        "Calculation result must be finite.",
+                        row,
+                        definition_id,
+                        vec![],
+                    )
+                }
+            }
+            Err(e) => e,
+        },
         FormulaAst::Call { .. } => fail(
             "scope",
             "Aggregate calls require aggregate scope.",
@@ -443,10 +467,14 @@ pub fn evaluate_source(rows: &[DatasetRow], model: &CompiledModel) -> EvaluatedR
         if !errors.is_empty() {
             result.errors.insert(row.id.clone(), errors);
         }
-        result.formula_cells.insert(row.id.clone(), cells);
-        result
-            .source_dependencies
-            .insert(row.id.clone(), dependencies);
+        // No source formulas means no per-row formula state; incoming errors remain above.
+        // With authored formulas, retain row entries even if evaluation was blocked.
+        if !sources.is_empty() {
+            result.formula_cells.insert(row.id.clone(), cells);
+            result
+                .source_dependencies
+                .insert(row.id.clone(), dependencies);
+        }
         result.rows.push(row);
     }
     for source in sources {

@@ -34,8 +34,8 @@ function isManaged(widget: WidgetDef | undefined): boolean {
 /** The views a card can offer for its widget and the data that arrived (moved verbatim from WidgetCard's `modes` memo). */
 export function availableViews(widget: WidgetDef | undefined, data: unknown, card: Pick<DashboardCard, "linkedSource">): ViewMode[] {
   const type = widget?.type ?? "table";
-  const rows = rowsOf(data);
-  const tableData = tableRows(data);
+  const rows = rowsOf(tableRows(data, widget?.table) ?? data);
+  const tableData = tableRows(data, widget?.table);
   const list: ViewMode[] = [{ value: undefined, label: TYPE_LABELS[type] ?? "Default" }];
   // Chart is offered when the widget is not already a chart and the rows that
   // actually arrived carry a time column — a property of the DATA, per the

@@ -17,8 +17,9 @@ import type { TableModelV1 } from '../../lib/tableModel/types';
 import type { ExecutionRequest } from '../../lib/tableExecution/types';
 vi.mock('../../lib/localFiles', () => ({ readLocalFile: vi.fn(async () => new TextEncoder().encode('region,revenue,date\nA,10,2026-01-01\nA,20,2026-01-02\nB,90,2026-01-03\n')) }));
 vi.mock('@tanstack/react-virtual', () => ({ useVirtualizer: ({ count }: { count: number }) => ({ getVirtualItems: () => Array.from({ length: Math.min(count, 8) }, (_, index) => ({ index, start: index * 28, end: (index + 1) * 28 })), getTotalSize: () => count * 28, measureElement: () => {}, scrollToIndex: () => {} }) }));
+const realCommitTableDefinition = useDashboardStore.getState().commitTableDefinition;
 describe.each(['typescript','rust'] as const)('%s provider',engine=>{
-beforeEach(()=>{vi.stubEnv('DEV',true);vi.stubEnv('VITE_TABLE_ENGINE',engine);});
+beforeEach(()=>{useDashboardStore.setState({commitTableDefinition:realCommitTableDefinition});vi.stubEnv('DEV',true);vi.stubEnv('VITE_TABLE_ENGINE',engine);});
 afterEach(()=>vi.unstubAllEnvs());
 afterEach(() => { cleanup(); clearDrawerDashboard('execution'); tableExecutionStore.disposeDashboard('execution'); vi.unstubAllGlobals(); });
 it('file pivot edits keep source schema and bounded expanded children use stable paths', async () => {

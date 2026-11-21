@@ -6,6 +6,8 @@ import type { FormulaAst, MemberSelector, ModelDiagnostic, TableModelV1 } from '
 import { compileAnalyticalModel } from '../tableModel/calculate';
 import { pivotValueKey } from '../pivotKeys';
 import { validateStatementIntent } from './validation';
+import { displayedSections } from './placement';
+import { statementTemplate } from './catalog';
 import { statementOwnedIds, type EffectiveStatement, type StatementIntent } from './types';
 import type { AnalyticalExecutionDescriptor } from '../tableModel/executionDescriptor';
 export class StatementCompilationError extends Error {
@@ -29,7 +31,8 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
     const sectionId = ids.prefix + 'category/section', sectionField = ids.prefix + 'field/section';
     const itemField = b.shape === 'long' ? b.longFields!.itemFieldId : ids.prefix + 'field/item';
     const valueField = b.shape === 'long' ? b.longFields!.valueFieldId : ids.prefix + 'field/value';
-    const sectionByLine = new Map(intent.template.sections.flatMap(s => s.lineIds.map(id => [id, s.id] as const)));
+    const sections = displayedSections(intent.template, intent.overrides);
+    const sectionByLine = new Map(sections.flatMap(s => s.lineIds.map(id => [id, s.id] as const)));
     const lineById = new Map(intent.template.lines.map(line => [line.id, line]));
     const selectorsForLine = (lineId: string): MemberSelector[] => [
         { categoryId: sectionId, memberKey: pivotValueKey(sectionByLine.get(lineId)) },
@@ -68,7 +71,7 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
     const formulas = [...new Map([...pinned, ...intent.overrides.formulas].map(f => [f.id, f])).values()].map(f => ({ ...f, ast: mapAst(f.ast) }));
     const sectionOrder = intent.overrides.sectionOrder ?? intent.template.sections.map(s => s.id);
     const orderedSections = [...sectionOrder, ...intent.template.sections.map(s => s.id).filter(id => !sectionOrder.includes(id))];
-    const lines = orderedSections.flatMap(id => { const section = intent.template.sections.find(s => s.id === id)!; const order = intent.overrides.lineOrder[id] ?? section.lineIds; return [...order, ...section.lineIds.filter(l => !order.includes(l))]; });
+    const lines = orderedSections.flatMap(id => { const section = sections.find(s => s.id === id)!; const order = intent.overrides.lineOrder[id] ?? section.lineIds; return [...order, ...section.lineIds.filter(l => !order.includes(l))]; });
     const memberOrders = { [sectionId]: orderedSections.map(pivotValueKey), [ids.item]: lines.map(pivotValueKey) };
     const linePolicies = Object.fromEntries(intent.template.lines.map(l => [pivotValueKey(l.id), l.policy]));
     const model: TableModelV1 = {
@@ -130,12 +133,28 @@ export function compileStatement(raw: StatementIntent, columns: readonly Dataset
         unitFieldId: b.unitFieldId,
         fiscal: b.fiscal,
     };
+    // Keep the versioned template and member keys intact. Only the unedited
+    // built-in raw field labels get a display title; authored labels win.
+    const templateId = intent.template.id;
+    const installed = templateId === 'income' || templateId === 'balance' || templateId === 'cashflow'
+        ? statementTemplate(templateId, intent.template.version) : undefined;
+    const defaults = new Map(installed?.lines.map(line => [line.id, line.label]));
+    const displayLabel = (line: StatementIntent['template']['lines'][number]): string => {
+        if (intent.overrides.labels[line.id] !== undefined) return intent.overrides.labels[line.id];
+        if (defaults.get(line.id) !== line.label || !/^[a-z]+(?:_[a-z]+)*$/.test(line.label)) return line.label;
+        const binding = b.shape === 'wide' ? b.mappings.find(mapping => mapping.lineId === line.id) : undefined;
+        const source = binding && columns.find(column => column.id === binding.sourceFieldId);
+        if (source?.label.trim() && source.label !== source.id && source.label !== line.label) return source.label;
+        return line.label.split('_').map((word, index) => ['ebit', 'ebitda', 'eps', 'ppe'].includes(word)
+            ? word.toUpperCase() : index && ['of', 'and', 'in', 'to', 'from', 'at', 'the'].includes(word)
+                ? word : word[0].toUpperCase() + word.slice(1)).join(' ');
+    };
     const memberLabels = {
         [sectionId]: Object.fromEntries(intent.template.sections.map(section => [
             pivotValueKey(section.id), intent.overrides.labels[section.id] ?? section.label,
         ])),
         [ids.item]: Object.fromEntries(intent.template.lines.map(line => [
-            pivotValueKey(line.id), intent.overrides.labels[line.id] ?? line.label,
+            pivotValueKey(line.id), displayLabel(line),
         ])),
     };
     const execution: AnalyticalExecutionDescriptor = {

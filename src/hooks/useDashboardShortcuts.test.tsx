@@ -496,6 +496,21 @@ describe("Command+? opens Help", () => {
     expect(useChatStore.getState().pinned).toBe(false);
   });
 
+  it("handles ⌘⇧A in the native iPad app, which has no desktop Window menu", () => {
+    vi.stubEnv("TAURI_ENV_PLATFORM", "ios");
+    try {
+      native.on = true;
+      useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example" } });
+      useChatStore.setState({ pinned: false });
+      render(<Harness />);
+      const event = pressCommandShift("KeyA");
+      expect(event.defaultPrevented).toBe(true);
+      expect(useChatStore.getState().pinned).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("in the desktop app leaves ⌘⇧A to Window ▸ Keep Rita Open (no double toggle)", () => {
     native.on = true;
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, ritaUrl: "https://rita.example" } });
@@ -505,5 +520,34 @@ describe("Command+? opens Help", () => {
     // Unhandled, so wry forwards it to the menu accelerator (which toggles).
     expect(event.defaultPrevented).toBe(false);
     expect(useChatStore.getState().pinned).toBe(false);
+  });
+});
+
+
+describe("Windows dashboard shortcut parity", () => {
+  it("uses Control for library, refresh and Help without claiming Windows keys", () => {
+    const platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+    try {
+      const library = vi.fn(); const help = vi.fn(); const refresh = vi.fn();
+      useDashboardStore.setState({refreshAll: refresh});
+      render(<Harness onOpenLibrary={library} onOpenHelp={help}/>);
+      for (const [code, shiftKey] of [["KeyK", false], ["KeyR", false], ["Slash", true]] as const) {
+        const event = new KeyboardEvent("keydown", {code, ctrlKey:true, shiftKey, bubbles:true, cancelable:true});
+        window.dispatchEvent(event); expect(event.defaultPrevented).toBe(true);
+      }
+      expect(library).toHaveBeenCalledTimes(1); expect(refresh).toHaveBeenCalledTimes(1); expect(help).toHaveBeenCalledTimes(1);
+      window.dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK", metaKey:true, bubbles:true}));
+      expect(library).toHaveBeenCalledTimes(1);
+    } finally {platform.mockRestore();}
+  });
+  it("keeps Control shortcuts inert in text fields and behind a modal", () => {
+    const platform = vi.spyOn(navigator, "platform", "get").mockReturnValue("Win32");
+    try {
+      const library=vi.fn();render(<Harness onOpenLibrary={library}/>);
+      screen.getByLabelText("typing target").dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK", ctrlKey:true,bubbles:true}));
+      const dialog=document.createElement("dialog");dialog.open=true;document.body.append(dialog);
+      try {window.dispatchEvent(new KeyboardEvent("keydown", {code:"KeyK",ctrlKey:true,bubbles:true})); expect(library).not.toHaveBeenCalled();}
+      finally {dialog.remove();}
+    } finally {platform.mockRestore();}
   });
 });

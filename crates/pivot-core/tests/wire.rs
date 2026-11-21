@@ -276,6 +276,7 @@ fn ast_text_limit_counts_cumulative_utf8_literal_reference_and_member_strings() 
             transform: Transform::Native,
             fiscal_binding: None,
             legacy_bucket: None,
+            sort_field_id: None,
         });
     assert_eq!(
         validate_definition(&member)
@@ -313,6 +314,7 @@ fn ast_selector_arrays_preserve_the_baseline_1024_entry_limit() {
                 transform: Transform::Native,
                 fiscal_binding: None,
                 legacy_bucket: None,
+                sort_field_id: None,
             })
             .collect();
         let result = validate_definition(&definition);
