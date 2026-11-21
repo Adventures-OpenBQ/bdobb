@@ -83,3 +83,5 @@ Ready for integration review. Known diagnostic-priority and transient touch-hove
 ## Fresh published-PR reviews
 
 A subsequent user-requested Ponytail full review and fresh Superpowers reviews across all three PRs found mixed-case identity and partial-marker naming bypasses. Both were fixed, alongside the Python safe-ledger invariant. All eight Ponytail reductions were applied. The independent scoped re-reviews passed with no new Critical or Important findings. [Follow-up verification and dispositions](published-pr-follow-up.md) · [Full reviews](published-pr-reviews.md) · [Scoped re-reviews](published-pr-rereviews.md).
+
+The later pass-with-retry in hosted CI was investigated separately and received a test-only synchronization correction, approved by independent Superpowers and Ponytail scoped reviews. [CI readiness evidence](ci-readiness-follow-up.md). New-head hosted qualification is tracked on the PR.

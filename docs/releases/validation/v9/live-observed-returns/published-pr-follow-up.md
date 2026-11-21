@@ -67,3 +67,7 @@ The image and public runtime evidence cover the local arm64 mirrors and the two 
 ## Publication and CI
 
 The reviewed fixes are being published to the existing [provider PR #6](https://github.com/Adventures-OpenBQ/openbq-eodhd/pull/6), [Docker PR #33](https://github.com/Adventures-OpenBQ/openbq-docker/pull/33) and [client PR #89](https://github.com/Adventures-OpenBQ/bdobb/pull/89). Current-head CI is reported on those PRs separately from local qualification. No merge or deployment is included.
+
+## Subsequent hosted browser retry
+
+Run [44856895677](https://github.com/Adventures-OpenBQ/bdobb/actions/runs/44856895677) passed all five jobs at client `4509fde6`, with **419 browser passes, one retry/flaky case and eight optional skips**. The saved-workspace risk/exposure test began its five-second SVG check before a recipe necessarily had a drawable result. A controlled delayed real-worker replay reproduced that failure and passed twice after the test-only readiness correction in `e5ccf376`. Chromium passed all five affected tests and WebKit the focused case without retries. Numerical, source, refusal and five-second SVG assertions remain intact. Both scoped reviewers approved the correction for a new hosted run. The exact hosted trigger remains unknown because no failed-job artifacts were uploaded. [Investigation and independent reviews](ci-readiness-follow-up.md). Provider, Docker and production client code are unchanged by this correction; current-head CI is tracked on PR #89.
