@@ -109,13 +109,13 @@ export function PictureInPictureRenderer({
 }) {
   const platform = pipPlatform();
   if (platform === "ipad") return <p className="empty-state">Park a picture-in-picture video here</p>;
-  if (platform === "other") return <p className="empty-state">{MESSAGES.not_supported}</p>;
+  if (platform === "other" || (platform === "windows" && requiredChannel === undefined)) return <p className="empty-state">{MESSAGES.not_supported}</p>;
   const { source, label } = pipSettings(params);
-  return <MacPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} requiredChannel={requiredChannel} />;
+  return <DesktopPlayer cardId={cardId} muteSource={muteWhileHidden(params) ? source : undefined} muteLabel={label} menuOpen={menuOpen} readOnly={readOnly} requiredChannel={requiredChannel} />;
 }
 
 /** `muteSource` is undefined unless "Mute while hidden" is on. */
-function MacPlayer({
+function DesktopPlayer({
   cardId,
   muteSource,
   muteLabel,

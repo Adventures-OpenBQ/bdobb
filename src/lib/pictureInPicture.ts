@@ -12,13 +12,14 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 export const DEFAULT_SOURCE = "";
 export const DEFAULT_VOLUME_LABEL = "Volume Level";
 
-export type PipPlatform = "macos" | "ipad" | "other";
+export type PipPlatform = "macos" | "windows" | "ipad" | "other";
 
-/** The macOS desktop app, the iPad app, or anything else (Windows, Linux, the web preview). */
+/** Native desktop placement platforms, the iPad sandbox, or an unsupported surface. */
 export function pipPlatform(): PipPlatform {
   if (!isTauri()) return "other";
   const platform = import.meta.env.TAURI_ENV_PLATFORM;
   if (platform === "darwin") return "macos";
+  if (platform === "windows") return "windows";
   if (platform === "ios") return "ipad";
   return "other";
 }
