@@ -1351,7 +1351,7 @@ function VirtualTable({
               // and To fit; fixed layout takes the width from here.
               style={{
                 width:
-                  filterRow && filterKinds.get(h.column.id) === "date"
+                  execution?.statement && h.column.id === LABEL_FIELD ? "auto" : filterRow && filterKinds.get(h.column.id) === "date"
                     ? `max(${h.getSize()}px, var(--date-range-width))`
                     : h.getSize(),
               }}
@@ -1422,7 +1422,7 @@ function VirtualTable({
                       // To fit; the column's own size returns when it closes.
                       // table-layout: fixed grows the table to the wider sum.
                       width:
-                        filterRow && filterKinds.get(header.column.id) === "date"
+                        execution?.statement && header.column.id === LABEL_FIELD ? "auto" : filterRow && filterKinds.get(header.column.id) === "date"
                           ? `max(${header.getSize()}px, var(--date-range-width))`
                           : header.getSize(),
                       ...pinStyle(header.column),

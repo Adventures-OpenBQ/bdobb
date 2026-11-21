@@ -95,6 +95,8 @@ it('statement section headings span all value columns and fold from the full row
  const {container,rerender}=render(<TableRenderer data={[{[LABEL_FIELD]:'Income'},{[LABEL_FIELD]:'Revenue',fy24:1000,fy25:2000}]} execution={execution}/>);
  const heading=screen.getByRole('button',{name:'Collapse Income'});
  expect(heading).toHaveTextContent('Income');
+ expect(container.querySelector('col')).toHaveStyle({width:'auto'});
+ expect(container.querySelector('th[data-field]')).toHaveStyle({width:'auto'});
  expect(heading.closest('td')).toHaveAttribute('colspan','3');
  expect(heading.closest('tr')).toHaveClass('statement-section');
  expect(heading.closest('tr')?.querySelectorAll('td')).toHaveLength(1);
