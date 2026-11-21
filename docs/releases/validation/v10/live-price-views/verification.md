@@ -6,12 +6,39 @@
 | --- | --- |
 | BDOBB product and browser tests, `codex/v10-live-price-views` | `e3ca1f18b9bf17671aafecb3b5ede224722a7c98` |
 | BDOBB with the example inventory correction | `614c217735b36575486b13b15cf767f7bcbf9959` |
+| BDOBB final acquisition, Parameters and disclosure corrections | `750f7831630f77fd075d2fa90f3d242738053e56` |
 | Paired EODHD provider | `75a902664054b3afbd23c5b6328efe7eedcf429c` |
 | Paired OpenBQ Docker | `2c5464675090c73f0c52cf8482ccf454e07b7704` |
 
 Verification ran November 21, 2026, on Node 26.13.0 and pnpm 10.34.4. The client branch starts at `327cbd5d641c4f4dfc9ab106ae2d8e6f37f8663f` and inherits the separately qualified v9 observed-returns work. That foundation is required for release integration. The provider and Docker worktrees were clean at the paired revisions. The v10 example requires released BDOBB 10.0.0 or later. These checks built the development package, still version 9.0.0. [Implementation plan](../../../../superpowers/plans/2026-11-21-v10-live-price-views.md) · [v9 paired verification](../../v9/live-observed-returns/verification.md)
 
-## Client gates
+## Final review fixes
+
+The original loopback probe reproduced three incorrect admissions on the pre-fix revision. Both explicit partial/paging variants qualified, and the opted-in nested snapshot produced 28 returns labeled daily. After correction the same probe refuses each altered response. The positive control still yields 28 observed AAPL.US returns with table completeness `unknown`. The nested snapshot retains its reported `complete` table status and its 58 rows.
+
+The permanent regression runs 11 cases against each executor, from loopback HTTP or documented local import through registration, chart data, a presented subset, linked child registration and chart calculation. It includes ordinary backend and local snapshot controls, both positive and rejected receipt paths, changed route/selector, and removal of invalid evidence during registration. The closed-example browser opens each invalid chart's Parameters and checks that Apply is disabled. [Executor suite](../../../../../src/lib/tableExecution/rust/dailyPriceEvidence.test.ts) · [Browser suite](../../../../../e2e/live-price-views.spec.ts)
+
+| Final gate | Result |
+| --- | --- |
+| Full client suite | 10,358 passed, 47 opt-in skips. An initial run found 19 failures in four suites with reduced chart registries. The optional adapter lookup correction passed all 330 affected tests before the successful full rerun. |
+| Focused chart, engine and UI suites | 191 passed. The original calibrated executor RED reproduced 10 failures. Removing the snapshot refusal during the fix wave reproduced eight executor failures and one Chromium browser failure. |
+| Typecheck, ESLint, Knip and scrub/header check | All exited 0. |
+| Web, pivot, packaging and both builds | All exited 0. The web suite passed 57 tests and packaging passed 3. The compiled WASM matches the pinned fingerprint. |
+
+| Final browser suite | TypeScript Chromium | TypeScript WebKit | Rust Chromium | Rust WebKit |
+| --- | ---: | ---: | ---: | ---: |
+| Synthetic live price views | 6 | 6 | 6 | 6 |
+| Installed price views | 3 | 3 | 3 | 3 |
+| Closed-example geometry rerun | 1 | 1 | 1 | 1 |
+| Live Return Summary | 12 | — | — | — |
+| Installed Return Summary | 5 | 5 | 5 | 5 |
+| Risk Exposure | 5 | 4 | 5 | 4 |
+
+The browser geometry rerun checks at least one nonempty line-box collection per note. Each line fits inside the status scrollport on both axes. The six notes per example cover the histogram scope and window, drawdown scope, and small-multiples scope, baseline/end and window. In Chromium the small-multiples scope occupied y=672–689 inside a scrollport spanning y=563–714 CSS pixels. WebKit measured approximately y=672.26–688.74 in the same scrollport. The archived Chromium screenshot from before this fix clips that line and the histogram window.
+
+The browser commands used the configurations in the original verification section below. The geometry rerun selected `-g "imports the fixed example"` on each engine-specific server. Every final price-view run recorded the expected engine and WASM response behavior. The local `final-fix-evidence` directory contains expanded commands, RED failures, screenshots, per-note rectangles, output assertions, build logs and Playwright reports. The three archived capture hashes and the example bytes still match the original records. [Review status](review.md)
+
+## Original client gates
 
 | Command | Result |
 | --- | --- |
@@ -32,7 +59,7 @@ The first full suite exited 1 with 10,335 passes and one failure. The exact exam
 
 The 47 skips were opt-in integrations for Rita authoring (12), Rita table model (4), example agents (13), Workspace sign-in (1), real endpoints (5), reference backend (6), and Rita live (6). The unit suite emitted React `act` and jsdom canvas diagnostics. Both Vite builds reported mixed static/dynamic imports and chunks over 500 kB.
 
-## Browser matrix
+## Original browser matrix
 
 Counts are passed test executions. Chromium was 151.0.7922.34 and WebKit was 26.5. All entries ran with zero retries.
 
