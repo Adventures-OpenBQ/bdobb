@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test as base, type Page, type Request } from '@playwright/test';
-import type { ReturnSummaryOptions } from '../../src/lib/widgetData/chartRecipes/types';
+import type { RecipeOptions, ReturnSummaryOptions } from '../../src/lib/widgetData/chartRecipes/types';
 import { dailyPriceParameters, dailyPriceReceipt, dailyPriceResponse } from '../../src/test/fixtures/chartSources';
-import { dashboardSeed, seedApp } from '../fixtures';
+import { dashboardSeed, openRail, read, seedApp } from '../fixtures';
 import { card, chooseLinkedSource } from './chart-recipes';
 
 export const test = base.extend<{ engineEvidence: { engine: string; wasm: string[] } }>({
@@ -115,7 +115,7 @@ export function livePayload(url: URL) {
 }
 
 type LiveOptions = {
-  options?: ReturnSummaryOptions; empty?: boolean; optIn?: boolean; runButton?: boolean; sourceOffTab?: boolean;
+  options?: RecipeOptions; empty?: boolean; optIn?: boolean; runButton?: boolean; sourceOffTab?: boolean;
   pinned?: boolean; ritaUrl?: string; sourceParams?: Record<string, string>; response?: (url: URL, request: Request) => unknown;
 };
 export async function prepareLiveReturns(page: Page, {
@@ -163,4 +163,59 @@ export async function prepareLiveReturns(page: Page, {
   ]);
   await seedApp(page, seed);
   return { acquisitions, requests, completed };
+}
+
+export function holdResponse() {
+  let release = () => {};
+  const promise = new Promise<void>(resolve => { release = resolve; });
+  return { promise, resolve: release };
+}
+
+export async function saveWorkspace(page: Page, name: string) {
+  await openRail(page);
+  await page.locator('nav.left-rail').getByRole('button', { name, exact: true }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Save…' }).click();
+  await page.getByRole('menuitem', { name: 'BDOBB Workspace', exact: true }).click();
+  const path = 'exports/' + name + '.apps.json';
+  await expect.poll(() => read(page, path)).toBeDefined();
+  return (await read(page, path))!;
+}
+
+export async function mockRitaPriceReads(page: Page, sourceId: string) {
+  const ritaUrl = 'http://127.0.0.1:17917';
+  let round = 0;
+  let override: Record<string, string> | undefined;
+  type RitaMessage = { role: string; function?: string; data?: { items?: { content: string }[] }[] };
+  let lastTool: RitaMessage | undefined;
+  await page.route(ritaUrl + '/**', async route => {
+    const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS' };
+    const request = route.request();
+    if (request.method() !== 'POST') {
+      await route.fulfill({ headers, json: {} });
+      return;
+    }
+    const { messages } = request.postDataJSON() as { messages: RitaMessage[] };
+    const firstRound = round++ % 2 === 0;
+    if (!firstRound) lastTool = messages.filter(message => message.role === 'tool').at(-1);
+    const event = firstRound ? 'copilotFunctionCall' : 'copilotMessageChunk';
+    const body = firstRound ? { function: 'get_widget_data', input_arguments: {
+      data_sources: [{ widget_uuid: sourceId, origin: liveBackendId, input_args: override }],
+    } } : { delta: 'Fixture read ' + round / 2 + '.' };
+    await route.fulfill({ headers, contentType: 'text/event-stream', body: 'event: ' + event + '\ndata: ' + JSON.stringify(body) + '\n\n' });
+  });
+  let turn = 0;
+  return {
+    ritaUrl,
+    async readWithRita(input?: Record<string, string>): Promise<RitaMessage | undefined> {
+      override = input;
+      lastTool = undefined;
+      const pane = page.getByRole('complementary', { name: 'Rita AI pane' });
+      const textbox = pane.getByRole('textbox', { name: 'Message Rita' });
+      await textbox.fill('Read the historical source ' + (++turn));
+      await textbox.press('Enter');
+      await expect(pane.getByText('Fixture read ' + turn + '.', { exact: true })).toBeVisible();
+      return lastTool;
+    },
+  };
 }

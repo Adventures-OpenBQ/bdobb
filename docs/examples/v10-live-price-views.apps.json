@@ -1,0 +1,192 @@
+[
+  {
+    "name": "Live price views",
+    "description": "Requires BDOBB 10.0.0 or later and a paired qualified EODHD backend. Explore fixed daily adjusted prices for AAPL.US and MCD.US.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "groups": [],
+    "prompts": [],
+    "tabs": {
+      "live-price-views": {
+        "id": "live-price-views",
+        "name": "AAPL and MCD price views",
+        "layout": [
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 0,
+            "w": 20,
+            "h": 16,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Observed return distribution"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 20,
+            "y": 0,
+            "w": 20,
+            "h": 16,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Observed drawdown"
+                }
+              }
+            }
+          },
+          {
+            "i": "linked_chart",
+            "x": 0,
+            "y": 16,
+            "w": 40,
+            "h": 18,
+            "state": {
+              "params": {},
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "Observed price comparison"
+                }
+              }
+            }
+          },
+          {
+            "i": "eodhd_equity_price_historical_eodhd_obb",
+            "x": 0,
+            "y": 34,
+            "w": 40,
+            "h": 14,
+            "state": {
+              "params": {
+                "provider": "eodhd",
+                "symbol": "AAPL.US,MCD.US",
+                "interval": "1d",
+                "start_date": "2026-10-12",
+                "end_date": "2026-11-19",
+                "chart_source": "true"
+              },
+              "extensions": {
+                "bdobb": {
+                  "schemaVersion": 1,
+                  "profile": "v3",
+                  "title": "EODHD AAPL and MCD daily prices"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "extensions": {
+      "bdobb": {
+        "schemaVersion": 1,
+        "profile": "v4",
+        "base": {
+          "schemaVersion": 1,
+          "profile": "v3",
+          "tabOrder": [
+            "live-price-views"
+          ]
+        },
+        "cards": [
+          {
+            "ref": "c0",
+            "tab": "live-price-views",
+            "index": 0,
+            "extras": {
+              "linkedChart": {
+                "type": "return-distribution",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "return-distribution",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbol": "AAPL.US",
+                  "bins": 12
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c1",
+            "tab": "live-price-views",
+            "index": 1,
+            "extras": {
+              "linkedChart": {
+                "type": "drawdown",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "drawdown",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "AAPL.US",
+                    "MCD.US"
+                  ]
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c2",
+            "tab": "live-price-views",
+            "index": 2,
+            "extras": {
+              "linkedChart": {
+                "type": "small-multiples",
+                "measures": [],
+                "display": "grouped",
+                "recipe": {
+                  "version": 1,
+                  "kind": "small-multiples",
+                  "fields": {
+                    "date": "date",
+                    "price": "adjusted_close",
+                    "symbol": "symbol"
+                  },
+                  "symbols": [
+                    "AAPL.US",
+                    "MCD.US"
+                  ]
+                }
+              },
+              "sourceRef": "c3"
+            }
+          },
+          {
+            "ref": "c3",
+            "tab": "live-price-views",
+            "index": 3,
+            "extras": {}
+          }
+        ]
+      }
+    }
+  }
+]
