@@ -17,7 +17,7 @@ describe("pipPlatform", () => {
   it.each([
     ["darwin", "macos"],
     ["ios", "ipad"],
-    ["windows", "other"],
+    ["windows", "windows"],
     ["linux", "other"],
   ])("reads TAURI_ENV_PLATFORM %s as %s", (platform, expected) => {
     vi.stubEnv("TAURI_ENV_PLATFORM", platform);

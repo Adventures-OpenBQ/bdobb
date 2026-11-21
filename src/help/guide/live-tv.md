@@ -34,7 +34,7 @@ In **Connections**, add a backend whose URL is the rss-ticker server: `https://o
 
 Open the widget library, find **Live TV** under the rss-ticker connection, and add it. The card's **Channel** parameter lists your channels by label; change it and the card switches stream.
 
-The picker also includes **Picture in Picture grab**. On the Mac, pop a video out in Chrome, then choose this source to fit that floating player over the card. Switching to a YouTube source releases Chrome's player. See [[picture-in-picture|Picture in Picture]] for permission, ownership and platform limits.
+The picker also includes **Picture in Picture grab**. On macOS or Windows, pop a video out in Chrome, then choose this source to fit that floating player over the card. Switching to a YouTube source releases Chrome's player. See [[picture-in-picture|Picture in Picture]] for permission, ownership and platform limits.
 
 To keep the video across dashboards, open **Settings ▸ Locked Widgets**, edit **Locked at Top…** or **Locked at Bottom…**, and add a Live TV card there. Choose its source while editing the band, make the band tall enough for the player, and choose **OK**. A locked card plays without changing its saved height. See [[locked-and-pinned-widgets|Locked and Pinned Widgets]].
 

@@ -3,13 +3,17 @@
 
 //! Picture in Picture: parks Chrome's floating video player over a card (spec
 //! docs/superpowers/specs/2026-11-12-picture-in-picture-card-design.md). The
-//! commands exist on every platform. Only macOS implements them; the others
+//! commands exist on every platform. macOS and Windows implement placement; others
 //! answer "not supported", which the card reads as its placeholder.
 
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod logic;
+#[cfg(any(target_os = "windows", test))]
+mod windows_grab;
 #[cfg(target_os = "macos")]
 mod ax;
+#[cfg(target_os = "windows")]
+mod windows;
 
 use logic::{MuteState, MuteTarget, Rect, Status};
 
@@ -27,7 +31,9 @@ pub async fn picture_in_picture_fit(
 ) -> Status {
     #[cfg(target_os = "macos")]
     return native::fit(&window, &card, rect, mute);
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    { let _ = mute; return windows::fit(&window, &card, rect); }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         let _ = (window, card, rect, mute);
         Status::NotSupported
@@ -40,7 +46,9 @@ pub async fn picture_in_picture_fit(
 pub async fn picture_in_picture_park(window: tauri::WebviewWindow, card: String, menu: bool) -> Status {
     #[cfg(target_os = "macos")]
     return native::park(&window, &card, menu);
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    return windows::park(&window, &card, menu);
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
         let _ = (window, card, menu);
         Status::NotSupported
@@ -51,7 +59,9 @@ pub async fn picture_in_picture_park(window: tauri::WebviewWindow, card: String,
 pub async fn picture_in_picture_release(window: tauri::WebviewWindow, card: String) {
     #[cfg(target_os = "macos")]
     native::release(&window, &card);
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    windows::release(&window, &card);
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     let _ = (window, card);
 }
 
@@ -96,6 +106,8 @@ pub fn keep_hide_mute_in(dir: &std::path::Path) {
 pub fn release_all() {
     #[cfg(target_os = "macos")]
     native::release_all();
+    #[cfg(target_os = "windows")]
+    windows::release_all();
 }
 
 #[cfg(target_os = "macos")]

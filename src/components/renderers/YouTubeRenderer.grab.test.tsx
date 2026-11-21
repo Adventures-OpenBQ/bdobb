@@ -108,3 +108,10 @@ it("parks the grabbed player while the card menu is open and refits after closin
   view.rerender(<YouTubeRenderer data={marker} cardId="grab" menuOpen={false} />);
   expect(await screen.findByText("Pop the video out in Chrome")).toBeInTheDocument();
 });
+
+it("fits the incoming Chrome player on Windows instead of a platform placeholder", async () => {
+  vi.stubEnv("TAURI_ENV_PLATFORM", "windows");
+  render(<YouTubeRenderer data={marker} cardId="grab" />);
+  expect(await screen.findByText("Pop the video out in Chrome")).toBeInTheDocument();
+  expect(invoke).toHaveBeenCalledWith("picture_in_picture_fit", expect.objectContaining({ card: "grab" }));
+});
