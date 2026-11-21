@@ -88,21 +88,30 @@ function parseDailyPriceReceipt(value: unknown): DailyPriceReceipt | undefined {
   return value as DailyPriceReceipt;
 }
 
-const symbolAliases = ['symbol', 'ticker', 'code', '_symbol'] as const;
-const exchangeAliases = ['exchange', 'exchange_code'] as const;
+const symbolAliases = ['symbol', 'ticker', 'code', '_symbol'];
+const exchangeAliases = ['exchange', 'exchange_code'];
+const partialKeys = new Set(['partial', 'ispartial', 'truncated', 'incomplete', 'paging', 'pagination',
+  'hasmore', 'next', 'nextpage', 'cursor', 'nextcursor', 'offset', 'page', 'pagesize', 'totalpages']);
+const partialMarker = (name: string) => partialKeys.has(name.toLowerCase().replaceAll('_', ''));
 
 // Python str.strip() accepts these characters, excluding U+FEFF.
 // eslint-disable-next-line no-control-regex -- Match the provider's symbol qualification.
 const pythonWhitespace = /^[\p{White_Space}\u001c-\u001f]+|[\p{White_Space}\u001c-\u001f]+$/gu;
 const normalizedTicker = (value: string) => value.replace(pythonWhitespace, '').toUpperCase();
 
-const declarationNames = ['interval', 'period', 'currency', 'unit'];
+const declarationNames = [...symbolAliases, ...exchangeAliases, 'interval', 'period', 'currency', 'unit'];
 type Denominations = Map<string, Map<string, string>>;
 
 function declarationsAgree(symbol: string, entries: Iterable<[string, unknown]>, denominations: Denominations): boolean {
   for (const [key, value] of entries) {
+    if (partialMarker(key)) return false;
     if (value == null) continue;
     const name = key.toLowerCase();
+    if (symbolAliases.includes(name) || exchangeAliases.includes(name)) {
+      if (typeof value !== 'string') return false;
+      const normalized = normalizedTicker(value);
+      if (symbolAliases.includes(name) ? normalized !== symbol && normalized !== symbol.slice(0, -3) : normalized !== 'US') return false;
+    }
     if (name === 'interval' && value !== '1d' || name === 'period' && value !== 'd') return false;
     if (name !== 'currency' && name !== 'unit') continue;
     if (typeof value !== 'string' || !value.trim()) return false;
@@ -120,16 +129,6 @@ function readObservation(receipt: DailyPriceReceipt, read: (origin: string) => u
   const price = read(receipt.price_field);
   if (typeof symbol !== 'string' || !receipt.symbols.includes(symbol) || !inWindow(date, receipt.start_date, receipt.end_date)
     || typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return;
-  const base = symbol.slice(0, -3);
-  for (const aliases of [symbolAliases, exchangeAliases]) {
-    for (const alias of aliases) {
-      const value = read(alias);
-      if (value == null) continue;
-      if (typeof value !== 'string') return;
-      const normalized = normalizedTicker(value);
-      if (aliases === symbolAliases ? normalized !== symbol && normalized !== base : normalized !== 'US') return;
-    }
-  }
   return [symbol, date];
 }
 
@@ -175,10 +174,10 @@ function capturedCoordinates(receipt: DailyPriceReceipt, provenance: DatasetProv
 
 function acquiredFields(receipt: DailyPriceReceipt, columns: readonly DatasetColumn[]) {
   const fields = new Map<string, string>();
-  const origins = [receipt.date_field, receipt.price_field, ...symbolAliases, ...exchangeAliases];
   for (const column of columns) {
     const origin = acquiredColumnOrigin(column);
-    if (!origin || (!origins.some(field => field === origin) && !declarationNames.includes(origin.toLowerCase()))) continue;
+    if (!origin || (origin !== receipt.date_field && origin !== receipt.price_field
+      && !declarationNames.includes(origin.toLowerCase()) && !partialMarker(origin))) continue;
     if (fields.has(origin)) return;
     fields.set(origin, column.id);
   }
@@ -198,7 +197,7 @@ function presentedRowsAgree(receipt: DailyPriceReceipt, { columns, rows }: Pick<
   const remaining = new Set(acquired.map(coordinateId));
   for (const id of omitted) remaining.delete(id);
   const denominations: Denominations = new Map();
-  const declarations = [...fields.keys()].filter(origin => declarationNames.includes(origin.toLowerCase()));
+  const declarations = [...fields.keys()].filter(origin => declarationNames.includes(origin.toLowerCase()) || partialMarker(origin));
   for (const row of rows) {
     if (row.groupPath !== undefined || !record(row.values)) return false;
     const read = (origin: string) => {

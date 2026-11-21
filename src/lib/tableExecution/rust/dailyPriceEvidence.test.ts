@@ -154,10 +154,14 @@ describe.each(engines)('%s daily-price evidence', (_, make) => {
   });
 
   it.each([
+    ['Code', 'AAA', 'BBB'], ['Ticker', 'AAA.US', 'BBB.US'], ['Exchange', 'US', 'TO'],
+    ['nextCursor', null, 'page2'], ['isPartial', null, true],
     ['interval', '1d', '1W'], ['period', 'd', 'w'], ['currency', 'USD', 'EUR'], ['unit', 'dollars', 'cents'],
   ])('checks the %s source origin before a worker filter removes the contradictory row', async (origin, stable, conflict) => {
     const input = liveDailyPriceDataset(rows, [symbol], { bounds });
     aliasColumns(input, singleFields);
+    input.columns.push({ id: 'code', label: 'Code', sourceFieldId: 'code' });
+    for (const row of input.rows) row.values.code = 'AAA';
     input.columns.push({ id: 'declaration', label: 'Declaration', sourceFieldId: origin });
     for (const row of input.rows) row.values.declaration = row.values.tag === 'removed at root' ? conflict : stable;
     const executor = make('root');

@@ -125,9 +125,16 @@ it('refuses a contradictory listing ledger and preserves exact duplicate account
 it.each([
   { date: '2026-10-13T00:00:00Z' }, { date: '2026-11-20' }, { symbol: 'MSFT.US' },
   { adjusted_close: '104' }, { adjusted_close: null }, { adjusted_close: 0 },
+  { code: 'AAPL', Code: 'MCD' }, { Symbol: 'MCD.US' }, { Exchange: 'TO' }, { Ticker: 'MSFT.US' },
+  { nextCursor: 'page2' }, { isPartial: true }, { NEXT_PAGE: null }, { has_more: false },
   { ticker: 'MCD.US' }, { code: 'AAPL.TO' }, { _symbol: 'AAPL.LSE' }, { exchange_code: 'TO' },
 ])('refuses row facts inconsistent with the original receipt: %j', change => {
   expect(capture(dailyPriceReceipt, [{ ...dailyPriceRows[0], ...change }, dailyPriceRows[1]])).toBeUndefined();
+});
+
+it('accepts agreeing case variants on the same delivered row', () => {
+  const rows = [{ ...dailyPriceRows[0], code: 'AAPL', Code: ' aapl ', Ticker: 'AAPL.US', Exchange: 'us' }, dailyPriceRows[1]];
+  expect(capture(dailyPriceReceipt, rows)).toEqual({ 'daily-price': dailyPriceReceipt });
 });
 
 const makeDataset = (receipt: unknown = dailyPriceReceipt, rows: Record<string, unknown>[] = dailyPriceRows,
