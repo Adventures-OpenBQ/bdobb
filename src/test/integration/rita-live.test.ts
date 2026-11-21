@@ -133,7 +133,8 @@ live("Rita live", () => {
     expect(warnings.filter(m => /-round tool limit/.test(m)), "no round-limit WARNING").toEqual([]);
     expect(history[history.length - 1].role).toBe("tool");
     const answeredRows = rowCountAnswer(text);
-    expect(answeredRows, "one explicit final row-count answer").toBeDefined();
+    console.info("[row-count evidence]", JSON.stringify({ reply: text, measured: dataCalls, answeredRows }));
+    expect(answeredRows, JSON.stringify({ requirement: "one explicit final row-count answer", reply: text, measured: dataCalls, warnings })).toBeDefined();
     expect(dataCalls.filter(call => call.ok).every(call => call.rows === answeredRows), "answer matches the measured data rows").toBe(true);
   }, 300_000);
 
