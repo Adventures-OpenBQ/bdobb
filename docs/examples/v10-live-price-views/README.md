@@ -10,7 +10,10 @@ The source table requests `AAPL.US,MCD.US` from
 from October 12 through November 19, 2026, inclusive. The generated widget
 selects `results` through `data.dataKey`. The table's **Refresh** button reacquires
 this fixed historical window. The backend connection supplies credentials and
-acquisition evidence.
+acquisition evidence. When the browser app and API use different origins, the
+API must expose `Link`, `Content-Range` and `Access-Control-Expose-Headers`
+through its CORS policy. The paired Docker API overlay supplies this policy.
+See [verification and paired revisions](../../releases/validation/v10/live-price-views/verification.md#stacked-reconciliation).
 
 - **Observed return distribution** starts with AAPL.US in 12 bins. Known price
   gaps break adjacent pairs. **Observed quote-to-quote returns; exchange-session

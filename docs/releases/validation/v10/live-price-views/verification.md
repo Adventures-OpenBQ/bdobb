@@ -1,5 +1,62 @@
 # v10 live price views verification
 
+## Stacked reconciliation
+
+The normal merge combines v10 implementation head `9bbb593ab6726a595cebbaa6620682c60849db1c`, through publication-plan commit `9a304073fa0539747658878e2b87c5333cfe5cd9`, with reviewed v9 head `bf67cf72eb9c926627e30ac6ab166ee5361714bd`. The merge has those plan and v9 commits as its parents. The v9 branch supplies the HTTP status, range, continuation and CORS checks, the affirmative-opt-in refusal, and the reviewed pivot test helper. The combined client uses those checks for all four live-price recipe kinds and preserves separate provider and table-filter omissions. [Plan](../../../../superpowers/plans/2026-11-21-v10-stacked-publication.md) · [v9 acquisition verification](../../v9/live-observed-returns/acquisition-backport.md) · [v9 pivot verification](../../v9/live-observed-returns/pivot-inspector-flake.md)
+
+| Reconciliation reference | Commit |
+| --- | --- |
+| Combined BDOBB merge | `6eced1d786a1b1604c0036477fd93ac60c84d29c` |
+| Paired EODHD provider | `75a902664054b3afbd23c5b6328efe7eedcf429c` |
+| Paired OpenBQ Docker | `3a9fc20e4b2257e98a0a4cb15ed8e924f2d6fe1d` |
+
+For direct cross-origin browser acquisition, the paired Docker API overlay exposes `Link`, `Content-Range` and `Access-Control-Expose-Headers`. The replay fixture applies the policy to the existing archived bodies. Those bodies and their metadata remain byte-for-byte identical to the earlier captures, which record their original image and Docker revision below. The reconciliation runs used synthetic responses, archived installed bodies and a separate loopback HTTP server exercising browser CORS. They establish combined-client behavior with the reviewed pairing. Fresh vendor traffic, provider builds and Docker image builds were outside the run.
+
+### Regression results
+
+Reconciliation ran November 21, 2026, on macOS arm64 with Node 26.13.0 and pnpm 10.34.4. The 19-file focused suite passed 773 tests. It covered HTTP admission, refusal through linked tables on both executors, chart calculations and Parameters, and suites with optional adapter registries. Both box and violin returned 28 return samples per listing on qualified fixtures. Histogram, drawdown and small multiples accepted those same acquisitions. Rejected acquisition forms preserved their rows and refused the recipes.
+
+| Reconciliation gate | Result |
+| --- | --- |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm test:run` | 10,387 passed and 47 existing opt-in skips across 545 passing and seven skipped files. |
+| `pnpm typecheck`, `pnpm lint`, `pnpm knip`, `pnpm scrub` | All exited zero. Knip reported the existing unused `Monitor` type. |
+| `pnpm test:web` | 57 passed. |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm pivot:test` | 199 Rust core, one WASM crate and 19 wire-codec tests passed. |
+| `pnpm pivot:verify`, `pnpm test:pivot:packaging` | Fingerprint verification and all three packaging tests passed. |
+| `PIVOT_WASM_VERIFY_ONLY=1 pnpm build`, `PIVOT_WASM_VERIFY_ONLY=1 pnpm build:web` | Both builds exited zero. |
+
+The unit suite emitted the existing React `act` and jsdom canvas diagnostics. Both Vite builds reported modules imported statically and dynamically and chunks over 500 kB.
+
+| Price and return suites | TypeScript Chromium | TypeScript WebKit | Rust Chromium | Rust WebKit |
+| --- | ---: | ---: | ---: | ---: |
+| Synthetic v10 price views | 7 | 7 | 7 | 7 |
+| Installed v10 price views | 3 | 3 | 3 | 3 |
+| Live Return Summary | 12 | 12 | 12 | 12 |
+| Installed Return Summary replay | 5 | 5 | 5 | 5 |
+| Installed Return Summary cross-origin HTTP | 8 | 8 | 8 | 8 |
+
+The final matrix covers 140 passing price and return executions in Chromium 151.0.7922.34 and WebKit 26.5. The pivot inspector and cascade run added 17 passing Chromium cases. All commands ran with zero retries. The initial matrix had one ordinary-row assertion failure in each browser and engine. The targeted rerun passed all three final refusal cases in each browser and engine. The counts above include each final case once.
+
+### First failures and corrections
+
+- An initial replay probe found a duplicate import from the merge. After resolving it, Chromium retained the 58 source rows and refused all three price views when the refactored replay fixture omitted the visible exposure list. Adding the reviewed policy to that fixture made the public-capture replay pass without changing the archived response body.
+- The existing v10 browser case labeled ordinary rows submitted `chart_source=true` with no receipt. The combined branch correctly issued acquisition-repair guidance for that request. The final cases check the original unknown-completeness message on a genuinely ordinary `chart_source=false` request and pin repair guidance and disabled Apply on opted-in rows without a receipt and on the opted-in legacy snapshot. Each verifies the exact GET, retained rows and the absence of a plot.
+- The first full unit run passed 10,386 tests, skipped 47 and failed the small-multiples linked-card relink test. A controlled test held the first ChartRenderer effect after the node mounted. The node had its expected 280 px style, while the global plot mock's latest call targeted a different node and had no layout height. The existing geometry assertion passed with the same held effect after waiting for the renderer call for the first mounted node, matching the test's existing wait for the second node. The controlled instrumentation stayed in local evidence.
+
+The combined run inherited `playwright.live-price-views.config.ts` and selected `live-price-views.spec.ts`, `installed-price-views.spec.ts`, `live-return-summary.spec.ts` and `installed-return-summary.spec.ts`. Each price-view and Return Summary test asserts successful WASM transport for Rust and zero WASM responses for TypeScript. The pivot run inherited the ordinary Chromium configuration and selected `pivot-page-runtime.spec.ts`, `pivot-group-inspection.spec.ts` and `pivot-page-cascade.spec.ts`. Both local configurations point their Vite server and test paths at the client root and start fresh servers. With those configurations in the evidence directory, run from the client root.
+
+~~~sh
+evidence=.superpowers/sdd/2026-11-21-v10-stacked-publication
+BDOBB_BROWSER_PORT=18821 BDOBB_MOCK_PORT=18822 VITE_TABLE_ENGINE=typescript PIVOT_WASM_VERIFY_ONLY=1 \
+  pnpm exec playwright test --config "$evidence/playwright-reconciliation.config.ts" --workers=1 --retries=0
+BDOBB_BROWSER_PORT=18823 BDOBB_MOCK_PORT=18824 VITE_TABLE_ENGINE=rust PIVOT_WASM_VERIFY_ONLY=1 \
+  pnpm exec playwright test --config "$evidence/playwright-reconciliation.config.ts" --workers=1 --retries=0
+BDOBB_BROWSER_PORT=18825 BDOBB_MOCK_PORT=18826 VITE_TABLE_ENGINE=typescript PIVOT_WASM_VERIFY_ONLY=1 \
+  pnpm exec playwright test --config "$evidence/playwright-pivot-reconciliation.config.ts" --workers=1 --retries=0
+~~~
+
+The local reconciliation evidence is in `.superpowers/sdd/2026-11-21-v10-stacked-publication/` relative to the client worktree. It includes the exact commands and configurations, first failures and traces, focused reruns, build logs, test counts, and capture/hash checks.
+
 ## Verified revisions
 
 | Repository | Commit |
