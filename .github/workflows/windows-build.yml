@@ -69,8 +69,8 @@ jobs:
         shell: pwsh
         run: |
           $config = Get-Content src-tauri/tauri.mcp.conf.json -Raw | ConvertFrom-Json
-          $config | Add-Member productName 'BDOBB v7 MCP'
-          $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v7.windows.mcp'
+          $config | Add-Member productName 'BDOBB v8 MCP'
+          $config | Add-Member identifier 'com.artcashin.bdobb.regwalk.v8.windows.mcp'
           $config | ConvertTo-Json -Depth 20 | Set-Content "$env:RUNNER_TEMP/windows-mcp.json"
       - name: Build debug-only MCP installer
         shell: pwsh
@@ -78,6 +78,6 @@ jobs:
       - name: Upload isolated installer
         uses: actions/upload-artifact@v4
         with:
-          name: bdobb-v7-windows-mcp
+          name: bdobb-v8-windows-mcp
           path: src-tauri/target/debug/bundle/nsis/*.exe
           retention-days: 7

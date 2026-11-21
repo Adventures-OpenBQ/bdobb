@@ -703,6 +703,8 @@ export type DashboardCard = {
   pinned?: PinEdge;
   /** v8: a News card's feed list, highlight keywords and tab order. Absent until configured. */
   news?: NewsCardState;
+  /** V8 client video display/start preferences; never provider parameters. */
+  video?: import("./youtubePlayback").YoutubePlayback;
   /** Set on a card that came from a dashboard server (workspaceDashboards.ts). Never in apps.json. */
   extensions?: { workspace?: CardWorkspaceState };
 };

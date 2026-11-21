@@ -289,3 +289,16 @@ it('Export all refuses, naming the dashboard, when one cannot be exported', () =
   expect(all.ok).toBe(false);
   if (!all.ok) expect(all.name).toBe('Pinned');
 });
+
+it('round-trips client video playback preferences without putting them in backend params',()=>{
+  const video={display:'pip' as const,autoplay:true,muted:true};
+  const d:Dashboard={id:'video-d',name:'Video',tabs:[{id:'t',name:'TV',cards:[card({id:'tv',widgetId:'live_tv',params:{channel:'bloomberg-tv'},video})]}]};
+  const result=exportCompatibleApp(d);
+  expect(result.ok).toBe(true);
+  if(!result.ok)throw Error(result.issue.message);
+  expect(result.value.extensions?.bdobb).toMatchObject({profile:'v8',cards:[{tab:'t',index:0,video}]});
+  const imported=importApps(JSON.parse(JSON.stringify([result.value])),[]).dashboards[0].tabs[0].cards[0];
+  expect(imported.video).toEqual(video);
+  expect(imported.params).toEqual({channel:'bloomberg-tv'});
+  expect(JSON.stringify(result.value.tabs)).not.toContain('autoplay');
+});

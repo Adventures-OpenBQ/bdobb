@@ -3814,3 +3814,11 @@ body {
   width: 100%;
   white-space: normal;
 }
+
+/* One owner of live video: either this frame or the native floating window. */
+.youtube-player { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.youtube-player > .iframe-wrap { flex: 1; min-height: 0; }
+.video-playback-actions { display: flex; justify-content: flex-end; padding: 3px 6px; }
+.video-playback-actions button { font-size: 11px; padding: 2px 6px; }
+.video-playback-config { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.video-playback-config label { display: inline-flex; gap: 4px; align-items: center; }

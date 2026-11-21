@@ -86,6 +86,10 @@ than an error.
 Plenty of sites refuse to be framed. See **HTML and iframe widgets** for what
 the card does about that and what **Open externally ↗** is for.
 
+## Live TV
+
+The companion RSS backend's **Live TV** widget plays Bloomberg or Schwab in one YouTube card. On macOS and Windows, **Picture in Picture** opens BDOBB's floating player and **Return video to card** brings it back. The card's **Parameters** panel contains **Start muted** and **Autoplay**. iPad and viewer windows play inline. Saved workspace and sync settings retain the desktop choice. See **Picture in Picture** in the guide for ownership and playback limits.
+
 ## Picture in Picture
 
 *A parking spot for Chrome's floating video player.* The card body is blank.

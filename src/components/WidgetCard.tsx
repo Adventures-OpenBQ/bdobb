@@ -455,7 +455,8 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   const forms = widget ? bodyParams(widget, "form") : [];
   const hasControls = widget ? visibleParams(widget).length > 0 : false;
   const hasChartParameters = !readOnly && Boolean(card.linkedChart && card.linkedSource);
-  const hasParameters = hasControls || hasChartParameters;
+  const hasVideoParameters = !readOnly && widget?.type === "youtube";
+  const hasParameters = hasControls || hasChartParameters || hasVideoParameters;
   // Does the ◷ do anything on this card? Yes when the hook has a request to
   // repeat (fetchesData), or when the renderer takes `refreshKey` and does
   // its own reload. Otherwise -- a framed page, a note, the clock, the keys
@@ -1401,7 +1402,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       case "metric":
         return <MetricRenderer data={data} />;
       case "youtube":
-        return <YouTubeRenderer data={data} />;
+        return <YouTubeRenderer data={data} cardId={card.id} settings={card.video} viewer={viewer} controlsHost={paramsOpen && !readOnly ? paramsHost : null} onSettingsChange={readOnly ? undefined : settings => patchCardField(card.id, "video", settings)} />;
       case "newsfeed":
         return <NewsfeedRenderer data={data} />;
       case "chart-vegalite":
@@ -2037,7 +2038,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             .card-params-panel). A child of <header>, after .card-controls,
             on a line of its own under the bar (the header wraps). Docked,
             not floating, since v5.5.1 -- see paramsOpen. */}
-        {paramsOpen && !minimized && (hasControls && controlProps || hasChartParameters) ? (
+        {paramsOpen && !minimized && (hasControls && controlProps || hasChartParameters || hasVideoParameters) ? (
           <div className="card-params-panel" role="region" aria-label="Parameters" ref={setParamsHost}>
             {hasControls && controlProps ? <>
             <ParamControls

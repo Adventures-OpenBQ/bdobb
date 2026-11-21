@@ -5,7 +5,19 @@ tags: [bdobb, help, widgets, built-in, picture-in-picture, video, chrome]
 
 # Picture in Picture
 
-**Picture in Picture** is a built-in card that keeps a place on a dashboard for a live video you are watching in Chrome. For example, you can park a Federal Reserve press conference video. BDOBB never loads or frames the stream. Chrome plays it in its own floating `Picture in Picture` window, and on the Mac BDOBB moves and sizes that window to sit exactly over the card. The floating window stays above every other window, so the video keeps playing over the card while you work.
+The **Live TV** widget combines channel selection, inline YouTube playback and a floating **Picture in Picture** player in one card. Connect the companion RSS server as a backend, then add **Live TV**. The public recipe includes **Bloomberg TV** and **Schwab Network**; the Channel parameter selects which stream to resolve. A channel can be off-air and is reported as unavailable rather than silently playing a recording.
+
+## Live TV on macOS and Windows
+
+Choose **Picture in Picture** on the video card to move playback to BDOBB's own resizable, always-on-top player. Choose **Return video to card**, or close the floating window, to return inline. Only one player for that card is active at a time. A source change updates its floating player. Removing the card, changing dashboards or tabs, or quitting BDOBB closes it. A saved floating choice can reopen when you return to the card.
+
+Open the card's **Parameters** panel to change **Start muted** and **Autoplay**. The playback choices are saved with the dashboard and travel in BDOBB workspace exports and dashboard sync; they are never sent to the data provider as query parameters. Autoplay can be restricted by YouTube or the platform; use the player's Play control when necessary. Returning a recorded video may restart it; this is intended for live streams, whose player resumes at the current live position.
+
+On iPad, in a browser and on other platforms, the same card plays inline. iPad's sandbox prevents this desktop floating-player integration. A desktop PiP preference is retained without opening an unsupported window on iPad. Viewer windows also play inline. Locked cards can play video but do not expose writable playback configuration.
+
+## Legacy Chrome parking cards
+
+Existing **Picture in Picture** cards remain compatible. They keep a place on a dashboard for a video playing in Chrome; the following controls apply to those older macOS cards. They do not provide the app-owned Live TV player described above.
 
 ## On the Mac
 

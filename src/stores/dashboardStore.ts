@@ -318,6 +318,7 @@ type CardFieldPatch = {
   /** v5.5.1: the Parameters panel is docked open; `null` (closed) deletes it. */
   paramsOpen: boolean;
   statement: { collapsed?: string[] };
+  video: import("../lib/youtubePlayback").YoutubePlayback;
   calendar: Partial<import("../lib/types").CalendarCardState>;
   /** v8: the News card's feeds, highlights and tab order, replaced whole (not merged); `null` deletes it. */
   news: import("../lib/types").NewsCardState;

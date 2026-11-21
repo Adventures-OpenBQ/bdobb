@@ -4,6 +4,7 @@
 mod migrate;
 mod save_panel;
 mod video_wrapper;
+mod youtube_pip;
 mod picture_in_picture;
 
 use tauri::Manager;
@@ -169,6 +170,9 @@ pub fn run() {
     let builder = builder
         .invoke_handler(tauri::generate_handler![
             video_wrapper::video_wrapper_port,
+            youtube_pip::youtube_pip_open,
+            youtube_pip::youtube_pip_close,
+            youtube_pip::youtube_pip_is_open,
             set_window_pin,
             save_panel::save_workspace_panel,
             picture_in_picture::picture_in_picture_fit,
@@ -244,7 +248,10 @@ pub fn run() {
     builder
         .build(tauri::generate_context!())
         .expect("error while running BDOBB")
-        .run(|_app, event| {
+        .run(|app, event| {
+            if let tauri::RunEvent::WindowEvent {label, event: tauri::WindowEvent::Destroyed, ..} = &event {
+                if label == "main" {youtube_pip::close_all(app);}
+            }
             // Quit hands Chrome's floating player back (picture_in_picture, spec Flow 4).
             if let tauri::RunEvent::Exit = event {
                 picture_in_picture::release_all();
