@@ -29,7 +29,7 @@ const chart = 'Captured return summaries';
 const sourceId = 'aaaaaaaa-2222-4333-8444-555555555555';
 const scope = 'Observed quote-to-quote returns; exchange-session completeness unknown.';
 const readCapture = (name: string) => JSON.parse(readFileSync(
-  new URL(`./fixtures/installed-observed-returns/adb2e2e/${name}.json`, import.meta.url), 'utf8',
+  new URL(`./fixtures/installed-observed-returns/75a9026/${name}.json`, import.meta.url), 'utf8',
 )) as InstalledCapture;
 
 const equity = '/equity/price/historical', etf = '/etf/historical';
