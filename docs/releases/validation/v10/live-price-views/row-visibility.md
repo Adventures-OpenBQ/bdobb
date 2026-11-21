@@ -12,14 +12,14 @@ The diagnostic was removed before qualification and is absent from the committed
 
 ## Local evidence
 
-The plan-specific evidence directory is `.superpowers/sdd/2026-11-21-v10-row-visibility/` relative to the client worktree. It preserves the original spec, diagnostic patch, three-case old-test control log, three-case RED log with traces/screenshots, and final engine-specific logs/JSON runtime attachments. The affected run uses a configuration inheriting `playwright.live-price-views.config.ts`, restricted to `live-price-views.spec.ts`, fresh servers and zero retries.
+The plan-specific evidence directory is `.superpowers/sdd/2026-11-21-v10-row-visibility/` relative to the client worktree. It preserves the original spec, diagnostic patch, three-case old-test control log, three-case RED log with traces/screenshots, and final engine-specific logs/JSON runtime attachments. The recorded runs used a local wrapper of `playwright.live-price-views.config.ts`, restricted to `live-price-views.spec.ts`, fresh servers and zero retries. These equivalent commands use the checked-in configuration and an explicit file filter, so they work without the ignored evidence wrapper.
 
 ```sh
 BDOBB_BROWSER_PORT=18841 BDOBB_MOCK_PORT=18842 VITE_TABLE_ENGINE=typescript PIVOT_WASM_VERIFY_ONLY=1 \
-  pnpm exec playwright test --config .superpowers/sdd/2026-11-21-v10-row-visibility/playwright-row-visibility.config.ts \
+  pnpm exec playwright test --config playwright.live-price-views.config.ts e2e/live-price-views.spec.ts \
   --grep 'synthetic transport: refuses' --retries=0
 BDOBB_BROWSER_PORT=18843 BDOBB_MOCK_PORT=18844 VITE_TABLE_ENGINE=rust PIVOT_WASM_VERIFY_ONLY=1 \
-  pnpm exec playwright test --config .superpowers/sdd/2026-11-21-v10-row-visibility/playwright-row-visibility.config.ts \
+  pnpm exec playwright test --config playwright.live-price-views.config.ts e2e/live-price-views.spec.ts \
   --grep 'synthetic transport: refuses' --retries=0
 ```
 
