@@ -201,8 +201,11 @@ for (const replacementKind of ['symbol', 'interval', 'backend', 'selector', 'cre
     next.resolve();
     if (replacementKind === 'interval' || replacementKind === 'selector') {
       await expect(card(page, liveTable).getByRole('columnheader', { name: /adjusted.close/i })).toBeVisible();
-      await expect(widget).toContainText(/local adjusted-price snapshot/i);
+      await expect(widget).toContainText(/cannot verify its daily-price acquisition/i);
       await expect(boxes(graph)).toHaveCount(0);
+      await openParameters(widget);
+      await expect(widget.getByLabel('Return view')).toBeDisabled();
+      await expect(apply(widget)).toBeDisabled();
     } else await expect(listings(graph)).toHaveText([/MCD\.US.*N = 28/, /AAPL\.US.*N = 28/]);
   });
 }

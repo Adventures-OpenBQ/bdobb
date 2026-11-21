@@ -88,6 +88,15 @@ export function chartResponseRows(response: unknown, selector: string | undefine
   return Array.isArray(rows) ? rows : undefined;
 }
 
+// An opted-in daily-price response cannot supply legacy price history when live capture fails.
+// Recognize the attempted route or declaration even if the selector, redirect or parameters invalidate it.
+export function requestsDailyPriceSource(url: URL, response: unknown): boolean {
+  if (!url.searchParams.getAll('chart_source').some(value => /^(true|1)$/i.test(value))) return false;
+  const receipts = pathValue(response, 'extra.results_metadata.chart_sources.receipts');
+  return chartSourceRegistry['daily-price']?.routes.some(route => route.endpoint === url.pathname)
+    || (Array.isArray(receipts) && receipts.some(receipt => plain(receipt) && receipt.kind === 'daily-price'));
+}
+
 /** Construct a transient view of the actual URL, excluding credentials and ambiguous or unknown parameters. */
 export function chartRequestContext(url: URL, selector: string | undefined, retrievedAt: number, credentialKey?: string): BackendAcquisition | undefined {
   if (!selector || !/^(true|1)$/i.test(url.searchParams.get('chart_source') ?? '')) return;
@@ -198,6 +207,11 @@ export function readChartSourceProjection(provenance: DatasetProvenance, kind: K
   return entry && { filtered: provenance.metadata?.chartSourceFiltered === true, omitted: [...entry.omitted] };
 }
 
+export function hasDailyPriceDeclaration(metadata: DatasetProvenance['metadata']): boolean {
+  const sources: unknown = metadata && Object.getOwnPropertyDescriptor(metadata, 'chartSources')?.value;
+  return typeof sources === 'object' && sources !== null && Object.hasOwn(sources, 'daily-price');
+}
+
 /** Recalculation accepts acquired facts and additive restrictions only. Presentation proof belongs to its producing view. */
 export function validatedChartProvenance(provenance: DatasetProvenance, input?: Pick<WidgetDataset, 'columns' | 'rows'>): DatasetProvenance {
   const metadata = provenance.metadata;
@@ -213,6 +227,8 @@ export function validatedChartProvenance(provenance: DatasetProvenance, input?: 
     const field = Object.getOwnPropertyDescriptor(metadata, key);
     return !removed.includes(key) && field && 'value' in field ? [[key, field.value]] : [];
   }));
+  if (!valid && hasDailyPriceDeclaration(metadata))
+    retained.dailyPriceRejected = true;
   return { ...provenance, metadata: retained };
 }
 

@@ -177,7 +177,7 @@ it('test_live_authority_cannot_be_imported_or_filtered_clean', async () => {
   expect(readLiveDailyPriceSource(valid)).toEqual(expectedLiveSource);
   const forgedLocal = { ...valid.provenance, sourceKind: 'localFile' };
   expect(readLiveDailyPriceSource({ ...valid, provenance: forgedLocal })).toBeUndefined();
-  expect(validatedChartProvenance(forgedLocal).metadata).toEqual({});
+  expect(validatedChartProvenance(forgedLocal).metadata).toEqual({ dailyPriceRejected: true });
 
   const envelope = { version: 1, receipts: [dailyPriceReceipt] };
   const file = (input: unknown) => datasetFromBytes('quotes.json',

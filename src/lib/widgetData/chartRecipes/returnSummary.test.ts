@@ -157,11 +157,11 @@ it('preserves the legacy fetched rows and refuses a request flag without acquire
       expect(result).toEqual(rows);
       return datasetFromRows(result as typeof rows, 'prices', 1, 'backend', undefined, [], undefined, acquisition);
     };
-    for (const query of [params, { ...params, chart_source: 'true' }]) {
-      const acquired = await read(query);
-      expect(admitReturnSummary(acquired, { date: 'date', price: 'adjusted_close' }, ['AAA.US'], own))
-        .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/acquisition receipt/i) });
-    }
+    const fields = { date: 'date', price: 'adjusted_close' };
+    expect(admitReturnSummary(await read(params), fields, ['AAA.US'], own))
+      .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/acquisition receipt/i) });
+    expect(admitReturnSummary(await read({ ...params, chart_source: 'true' }), fields, ['AAA.US'], own))
+      .toMatchObject({ ok: false, refused: true, message: expect.stringMatching(/cannot verify its daily-price acquisition/i) });
   } finally { await server.close(); }
 });
 

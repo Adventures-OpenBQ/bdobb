@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { captureChartSources, chartRequestContext, chartResponseRows } from "./widgetData/chartRecipes/chartSourceContracts";
+import { captureChartSources, chartRequestContext, chartResponseRows, requestsDailyPriceSource } from "./widgetData/chartRecipes/chartSourceContracts";
 import { backendFinancialResponse, type BackendAcquisition } from "./widgetData/chartRecipes/financialEvidence";
 import { isTableSnapshotEnvelope } from "./tableRowValues";
 import { fetch } from "@tauri-apps/plugin-http";
@@ -530,7 +530,9 @@ export async function fetchWidgetData(
       if (values.length) parameters[key] = values.join(",");
     }
     const selectedRows = isTableSnapshotEnvelope(selected) ? selected.rows : selected;
-    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(sources && fullRows === selectedRows ? { ...chartRequest, chartSources: sources } : {}),
+    const captured = fullRows === selectedRows ? sources : undefined;
+    onAcquisition({ endpoint: url.pathname, parameters, retrievedAt, ...(captured ? { ...chartRequest, chartSources: captured } : {}),
+      ...(!captured?.['daily-price'] && requestsDailyPriceSource(url, payload) ? { dailyPriceRejected: true } : {}),
       ...(financial && selectedRows === financial.rows ? { financialEvidence: financial.evidence } : {}) });
   }
   onWarnings?.(obbjectWarnings(payload));

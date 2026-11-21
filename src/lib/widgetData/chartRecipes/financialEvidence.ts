@@ -168,7 +168,7 @@ export type DividendFinancialEvidence = Checked<typeof dividends> & {
 };
 export type IncomeFinancialEvidence = Checked<typeof income>;
 export type FinancialEvidence = ScreenerFinancialEvidence | DividendFinancialEvidence | IncomeFinancialEvidence;
-export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence; chartSources?: ChartSourceMap; selector?: string };
+export type BackendAcquisition = BackendEtfAcquisition & { financialEvidence?: FinancialEvidence; chartSources?: ChartSourceMap; dailyPriceRejected?: true; selector?: string };
 
 function screenerFactsAgree(evidence: ScreenerFinancialEvidence): boolean {
   const { cohorts, raw_count, normalized_count, delivered_count, unsafe } = evidence;

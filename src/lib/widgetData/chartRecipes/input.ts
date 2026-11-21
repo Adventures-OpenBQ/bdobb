@@ -5,7 +5,7 @@ import { isRecord } from '../../isRecord';
 import type { WidgetDataset } from '../types';
 import { acquiredWindow, dailyScope, indexPriceObservations, priceIdentityFields, priceDimensionIssue, readPriceOmissions, symbolList, type PriceCoordinate, type PriceScope } from './priceEvidence';
 import { acceptsBinding, adjustedPriceRole } from './bindings';
-import { readChartSourceProjection } from './chartSourceContracts';
+import { hasDailyPriceDeclaration, readChartSourceProjection } from './chartSourceContracts';
 import { readLiveDailyPriceSource } from './dailyPriceEvidence';
 import { acquiredColumnOrigin } from './financialEvidence';
 import { requiredRecipeFields } from './settings';
@@ -34,10 +34,16 @@ function sourceIssue(dataset: WidgetDataset, fields: string[], history: boolean)
   return null;
 }
 
+export function snapshotDailyPriceIssue(dataset: WidgetDataset): string | undefined {
+  const { metadata } = dataset.provenance;
+  if (metadata?.dailyPriceRejected === true || hasDailyPriceDeclaration(metadata))
+    return 'The source cannot verify its daily-price acquisition. Reload the source to use its adjusted prices.';
+}
+
 function priceIssue(dataset: WidgetDataset, fields: PriceBindings): string | null {
   const bindings = Object.values(fields).filter((id): id is string => id !== undefined);
   if (new Set(bindings).size !== bindings.length) return 'Use distinct date, adjusted-price and symbol fields.';
-  const issue = sourceIssue(dataset, bindings, true);
+  const issue = sourceIssue(dataset, bindings, true) ?? snapshotDailyPriceIssue(dataset);
   if (issue) return issue;
   if (!dailyScope(dataset.provenance)) return 'Choose a source with documented daily interval and acquisition dates.';
   const price = dataset.columns.find(c => c.id === fields.price)!;
@@ -98,7 +104,10 @@ export const observedReturnScope = 'Observed quote-to-quote returns; exchange-se
 /** Live evidence establishes an acquired window for return summaries alone. */
 export function prepareLiveReturnPrices(dataset: WidgetDataset, fields: PriceBindings): PreparedPrices | undefined {
   const live = readLiveDailyPriceSource(dataset);
-  if (!live) return;
+  if (!live) {
+    const issue = snapshotDailyPriceIssue(dataset);
+    return issue ? refuse(issue) : undefined;
+  }
   const { receipt, scope, symbols, rawOmissions } = live;
   if (!dataset.rows.length) return refuse('No valid daily prices remain.');
   const origin = (id: string) => acquiredColumnOrigin(dataset.columns.find(c => c.id === id));
