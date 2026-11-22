@@ -5,10 +5,11 @@ import {fetchEndpoint} from '../lib/dataClient';
 import {isRecord} from '../lib/isRecord';
 import type {BackendConfig} from '../lib/types';
 import type {UdfBar} from '../lib/udf';
+const EMPTY_BARS:UdfBar[]=[];
 type Result={mode:'checking'|'stream'|'closed'|'error';symbol:string;bars:UdfBar[];date?:string;partial?:boolean;error?:string;stale?:boolean;source?:string;liveFrom?:number|null};
 function parse(value:unknown,symbol:string,interval:string):Result {
  if(!isRecord(value)||value.schema_version!==1||value.symbol!==symbol||value.interval!==interval||!Array.isArray(value.bars)||value.bars.length>2000||JSON.stringify(value).length>512*1024)throw Error('Invalid session history');
- if(value.mode==='stream'&&value.bars.length===0)return {mode:'stream',symbol,bars:[]};
+ if(value.mode==='stream'&&value.bars.length===0)return {mode:'stream',symbol,bars:EMPTY_BARS};
  const btc=value.mode==='stream'&&symbol==='BTC-USD'&&typeof value.source==='string'&&['eodhd','eodhd+kdb ticks','eodhd+coinbase','eodhd+kdb ticks+coinbase'].includes(value.source);
  if((!btc&&(value.mode!=='closed'||value.source!=='eodhd'))||!isRecord(value.session)||typeof value.session.date!=='string'||value.session.status!==(btc?'open':'closed'))throw Error('Invalid session history');
  const liveFrom=value.live_from==null?null:typeof value.live_from==='string'?Date.parse(value.live_from)/1000:NaN;
@@ -38,11 +39,11 @@ export function useClosedSession(backend:BackendConfig,symbol:string,interval:st
     const result=parse(await fetchEndpoint(connection,'closed_session',{symbol,interval},controller.signal),symbol,interval);
     if(!disposed)setState({identity,result});
    }catch{
-    if(!disposed)setState(old=>old?.identity===identity && old.result.bars.length>0?{identity,result:{...old.result,stale:true,error:'Refresh failed; showing the last successful session snapshot.'}}:{identity,result:{mode:'error',symbol,bars:[],error:'Session history is unavailable.'}});
+    if(!disposed)setState(old=>old?.identity===identity && old.result.bars.length>0?{identity,result:{...old.result,stale:true,error:'Refresh failed; showing the last successful session snapshot.'}}:{identity,result:{mode:'error',symbol,bars:EMPTY_BARS,error:'Session history is unavailable.'}});
    }finally{clearTimeout(deadline);if(!disposed)timer=setTimeout(()=>{void poll();},15000);}
   };
   void poll();
   return()=>{disposed=true;controller?.abort();clearTimeout(deadline);clearTimeout(timer);};
  },[connection,identity,symbol,interval,enabled,refreshKey]);
- return !enabled?{mode:'stream' as const,symbol,bars:[]}:state?.identity===identity?state.result:{mode:'checking' as const,symbol,bars:[]};
+ return !enabled?{mode:'stream' as const,symbol,bars:EMPTY_BARS}:state?.identity===identity?state.result:{mode:'checking' as const,symbol,bars:EMPTY_BARS};
 }
