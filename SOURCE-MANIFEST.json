@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "99495e5ddeab385971b6f25dc1507559fbbc5dd7",
-  "sourceId": "75acc72fffb690d43903299408fc5eef936cefb0e554aa1e66778fcf2c3a7869",
+  "baseCommit": "12a799f980147be6a29568cda0cfdc8c9904fb4f",
+  "sourceId": "71009e71912ba0bc7074220b3ee77e8211f3f2657d72b97c9ed33fe30bd58c02",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20796,8 +20796,8 @@
       "path": "docs/superpowers/plans/2026-11-22-day-chart-reorder.md",
       "type": "file",
       "mode": 420,
-      "size": 629,
-      "sha256": "7bebfdd45c7f1b6fd664c3f1b82f28778baf0b25c3f6d9f628e8ba38eea789cd"
+      "size": 911,
+      "sha256": "49edf7ad6a27130d76c53fdc705ad4cde4e0bc3384734b5ca22012f3d608fb4b"
     },
     {
       "path": "docs/superpowers/plans/2026-11-22-v10-day-chart.md",
@@ -22393,7 +22393,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "3140ec0252d4d41c3b2a1e36c449664b7868130681e5984fdebd30eeb08d9419"
+      "sha256": "3b437241c60819509568de361c56db2212ab37c34162725ec9183280774d3b37"
     },
     {
       "path": "source_bundle.py",
@@ -23708,15 +23708,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 11586,
-      "sha256": "5aa9f68ef46b3af26a65b0cc2f61a0ad11a578f103e5919f973ee07fa665146d"
+      "size": 13893,
+      "sha256": "fd498b574705a459b1476889ffb3bb149cff15588dbb68857565b42cdc608d7f"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 15785,
-      "sha256": "99f191ae5132ce5d2b9a5fc552cc9515d7aa94d7b93413d9eecfb8466a955c4a"
+      "size": 16985,
+      "sha256": "5402aba43a7f51bfa04fa6128017c0f9cf230265f96a677bad1df78913031928"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24296,8 +24296,8 @@
       "path": "src/components/renderers/dayChart.css",
       "type": "file",
       "mode": 420,
-      "size": 4434,
-      "sha256": "3bfe7822bc6b61ebc36a261d851a11db1e051f33dace4563a14ef5a8c69e7134"
+      "size": 4489,
+      "sha256": "230929707cfbd36d5b6d23703700c0b9d4e39ce596129754b3c3d6dd26936de1"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
