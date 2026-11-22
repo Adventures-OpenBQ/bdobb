@@ -350,7 +350,25 @@ impl AxWindow {
                     return Err("Chrome did not focus the captured player".into());
                 }
             }
-            let (button, before) = player_audio_button(player)?;
+            // Native focus is asynchronous: Chrome publishes its controls
+            // after its widget processes activation. Retry discovery only;
+            // AXPress below is still attempted exactly once.
+            let until = Instant::now() + Duration::from_millis(700);
+            let mut attempts = 0;
+            let (button, before) = loop {
+                attempts += 1;
+                match player_audio_button(player) {
+                    Ok(control) => {
+                        if toggle && cfg!(debug_assertions) { eprintln!("captured-audio discovery_attempts={attempts}"); }
+                        break control;
+                    }
+                    Err(error) => {
+                        if !toggle || Instant::now() >= until || !alive()
+                            || !focus.as_ref().is_some_and(AudioFocus::still_focused) { return Err(error); }
+                        std::thread::sleep(SETTLE_POLL);
+                    }
+                }
+            };
             if !toggle { return Ok(before); }
             let same_player = self.player()? == Some(player);
             let still_focused = focus.as_ref().is_some_and(AudioFocus::still_focused);
