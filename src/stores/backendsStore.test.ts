@@ -53,11 +53,16 @@ afterEach(async () => {
 });
 
 describe("load", () => {
-  it("seeds the default local backend on a fresh install", async () => {
-    await useBackendsStore.getState().load();
-    const backends = useBackendsStore.getState().backends;
-    expect(backends).toHaveLength(1);
-    expect(backends[0]).toMatchObject({ name: "Local", baseUrl: "http://localhost:6900" });
+  it("starts a fresh public install with no connections or discovery requests", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      await useBackendsStore.getState().load();
+      expect(useBackendsStore.getState().backends).toEqual([]);
+      expect(JSON.parse(__read("backends.json") ?? "")).toEqual([]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("restores persisted backends", async () => {

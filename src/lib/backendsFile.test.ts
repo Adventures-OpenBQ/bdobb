@@ -33,14 +33,18 @@ const valid = [
 ];
 
 describe("loadBackends", () => {
-  it("seeds one default backend pointing at the local openbb-docker stack when absent", async () => {
+  it("starts a fresh public profile with no saved connections", async () => {
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "", VITE_DEFAULT_BACKEND_AUTH: "" });
+    const loaded = await loadBackends();
+    expect(loaded).toEqual([]);
+    expect(JSON.parse(__read("backends.json") ?? "")).toEqual([]);
+  });
+
+  it("retains an explicit private review-build seed", async () => {
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://reference.example.invalid" });
     const loaded = await loadBackends();
     expect(loaded).toHaveLength(1);
-    expect(loaded[0].name).toBe("Local");
-    expect(loaded[0].baseUrl).toBe("http://localhost:6900");
-    expect(loaded[0].headerName).toBeUndefined();
-    expect(loaded[0].validateWidgets).toBe(true);
-    expect(JSON.parse(__read("backends.json") ?? "")).toEqual(loaded);
+    expect(loaded[0].baseUrl).toBe("https://reference.example.invalid");
   });
 
   it("does not reseed once backends.json exists, even as an empty array", async () => {
@@ -80,12 +84,10 @@ describe("loadBackends", () => {
     ["a non-array container", { id: "a" }],
   ])("quarantines the whole file for %s", async (_label, content) => {
     __seed("backends.json", JSON.stringify(content));
-    // Quarantine renames the bad file away, so the path is ABSENT again —
-    // same contract as any other absent file, so this reseeds the default
-    // backend rather than resurrecting an empty list.
+    // Quarantine renames the bad file away. With no embedded public seed,
+    // recovery starts with the same empty list as a fresh public profile.
     const loaded = await loadBackends();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0].name).toBe("Local");
+    expect(loaded).toEqual([]);
     expect(__read("backends.json.corrupt")).toBe(JSON.stringify(content));
   });
 });

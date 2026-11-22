@@ -71,15 +71,19 @@ export function withDefaults(stored: StoredBackend): BackendConfig {
   };
 }
 
+function buildDefaults(): Record<string, string> {
+  // The installer inspects this same serialized seed after Vite has compiled it.
+  return JSON.parse(document.querySelector<HTMLMetaElement>(
+    'meta[name="bdobb-build-defaults"]',
+  )?.content ?? "{}");
+}
+
 export function makeDefaultBackend(): BackendConfig {
   // A build can ship its own seed. The App Review build points at the
   // funnelled reference backend (deploy/review-backend/) so a reviewer who
-  // has never seen a Connections dialog still opens the app to data; every
-  // other build keeps the local openbb-docker default.
-  // The installer inspects this same serialized seed after Vite has compiled it.
-  const defaults = JSON.parse(document.querySelector<HTMLMetaElement>(
-    'meta[name="bdobb-build-defaults"]',
-  )?.content ?? "{}") as Record<string, string>;
+  // has never seen a Connections dialog still opens the app to data. Public
+  // builds start empty; their Add dialog uses the local OpenBB starting URL.
+  const defaults = buildDefaults();
   const url = defaults.VITE_DEFAULT_BACKEND_URL;
   const auth = defaults.VITE_DEFAULT_BACKEND_AUTH;
   return {
@@ -97,12 +101,10 @@ export function makeDefaultBackend(): BackendConfig {
 export async function loadBackends(): Promise<BackendConfig[]> {
   const loaded = await loadJson(PATH, isStoredBackendArray);
   if (loaded === ABSENT) {
-    // A fresh install is pre-seeded with one backend pointing at the local
-    // openbb-docker stack, so the app is populated without the user typing
-    // anything. This only fires when the file is ABSENT — once it exists,
-    // even as `[]`, it is never reseeded, so deleting the default does not
-    // resurrect it on the next launch.
-    const seeded = [makeDefaultBackend()];
+    // Public builds have no embedded URL and start with no saved connections.
+    // An explicit private review-build seed remains available; existing files,
+    // including [], always preserve the user's choice.
+    const seeded = buildDefaults().VITE_DEFAULT_BACKEND_URL ? [makeDefaultBackend()] : [];
     await saveJson(PATH, seeded);
     return seeded;
   }

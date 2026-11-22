@@ -44,13 +44,14 @@ beforeEach(() => { __reset(); __resetLoggerForTests(); __resetJsonStoreForTests(
     }
 
     /**
-     * Mount, let the seeded backend's discovery settle (it fails — the fetch
+     * Mount with an explicit saved backend, let its discovery settle (it fails — the fetch
      * mock rejects), and only THEN put the backend and its apps in the
      * stores: applyDiscovery replaces a live backend's apps, so seeding
      * before the settle would be overwritten by the very result being
      * waited for.
      */
     async function boot(app: AppManifest) {
+      __seed("backends.json", JSON.stringify([makeBackend({ id: "bootstrap-test", name: "Bootstrap" })]));
       render(<App />);
       await waitFor(() => {
         expect(Object.values(useBackendsStore.getState().statuses)).toEqual(["offline"]);
