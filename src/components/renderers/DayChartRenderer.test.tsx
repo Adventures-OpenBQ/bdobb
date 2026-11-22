@@ -54,7 +54,7 @@ it("draws a visible marker for a one-bar session",async()=>{
 it("uses vertical wheel/navigation for a column and refetches when trading days change",async()=>{
  const {container,rerender}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL,MSFT",rows:"",columns:"1",days:"1"}}/>);
  await waitFor(()=>expect(container.querySelectorAll(".day-chart-price")).toHaveLength(2));
- const strip=screen.getByRole("list",{name:"Day charts"});
+ const strip=screen.getByRole("listbox",{name:"Day charts"});
  fireEvent.wheel(strip,{deltaY:100});expect(strip.scrollLeft).toBe(0);
  Object.defineProperty(strip,"scrollHeight",{value:1000,configurable:true});
  fireEvent.click(screen.getByRole("button",{name:"End"}));expect(strip.scrollTop).toBe(1000);
@@ -87,9 +87,9 @@ it("publishes the clicked tile symbol without changing the watchlist and support
  const onSelectSymbol=vi.fn();
  render(<DayChartRenderer backend={backend} params={{symbol:"AAPL,MSFT",selected_symbol:"AAPL"}} onSelectSymbol={onSelectSymbol}/>);
  await screen.findByText("MSFT Company");
- const tiles=screen.getAllByRole("listitem");
+ const tiles=screen.getAllByRole("option");
  fireEvent.click(tiles[1]);expect(onSelectSymbol).toHaveBeenLastCalledWith("MSFT");
  fireEvent.keyDown(tiles[0],{key:"Enter"});expect(onSelectSymbol).toHaveBeenLastCalledWith("AAPL");
- expect(screen.getAllByRole("listitem")).toHaveLength(2);
- expect(tiles[0]).toHaveAttribute("aria-current","true");
+ expect(screen.getAllByRole("option")).toHaveLength(2);
+ expect(tiles[0]).toHaveAttribute("aria-selected","true");
 });
