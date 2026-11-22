@@ -1,8 +1,8 @@
 /* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
 /* SPDX-License-Identifier: AGPL-3.0-only */
 .day-chart { height:100%; min-height:0; display:flex; flex-direction:column; }
-.day-chart-strip { flex:1; min-height:0; overflow:auto; display:flex; align-items:stretch; gap:12px; padding:10px; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
-.day-chart-tile { flex:0 0 310px; min-width:310px; min-height:260px; border:1px solid var(--border); border-radius:8px; padding:12px 6px; display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; }
+.day-chart-strip { flex:1; min-height:0; overflow:auto; display:grid; align-items:stretch; gap:12px; padding:10px; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
+.day-chart-tile { min-width:0; min-height:180px; border:1px solid var(--border); border-radius:8px; padding:12px 6px; display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; }
 .day-chart-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
 .day-chart-quote { flex-shrink:0; text-align:right; }
 .day-chart-heading { flex:1; display:flex; align-items:center; gap:6px; min-width:0; }
@@ -14,8 +14,13 @@
 .day-chart-up { color:var(--positive,#21a67a); }
 .day-chart-down { color:var(--negative,#e36170); }
 .day-chart-neutral { color:var(--text-muted); }
-.day-chart-line { display:block; width:100%; min-height:90px; max-height:200px; flex:1; overflow:visible; margin:8px 0; }
-.day-chart-line text { fill:var(--text-muted,currentColor); font-size:9px; }
+.day-chart-plot { flex:1; min-height:70px; position:relative; margin-top:2px; }
+.day-chart-line { position:absolute; left:0; top:4px; width:calc(100% - 36px); height:calc(100% - 24px); overflow:visible; }
+.day-chart-plot > span { position:absolute; color:var(--text-muted); font-size:9px; }
+.day-chart-axis-high { right:0; top:8px; }
+.day-chart-axis-low { right:0; bottom:24px; }
+.day-chart-time-first { left:4px; bottom:0; }
+.day-chart-time-last { right:36px; bottom:0; }
 .day-chart-reference { stroke:var(--text-muted,currentColor); opacity:.35; stroke-dasharray:3 3; }
 .day-chart-session { font-size:11px; margin-top:3px; }
 .day-chart-status { font-size:10px; opacity:.65; margin-top:3px; }
@@ -24,3 +29,12 @@
 
 .day-chart-heading > div { min-width:0; }
 .day-chart-heading strong { font-size:12px; }
+
+.day-chart-horizontal { overscroll-behavior-x:contain; }
+.day-chart-vertical { overscroll-behavior-y:contain; }
+
+.day-chart-divider { stroke:var(--text-muted,currentColor); opacity:.6; stroke-width:1; vector-effect:non-scaling-stroke; }
+
+.day-chart-footer { gap:8px; }
+.day-chart-footer > span { min-width:0; overflow-wrap:anywhere; }
+.day-chart-footer .news-nav { flex-shrink:0; }

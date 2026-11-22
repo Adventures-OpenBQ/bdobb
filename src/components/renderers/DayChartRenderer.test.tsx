@@ -22,7 +22,7 @@ it("renders duplicate positions with real lines/session basis and initials; load
   const {container} = render(<DayChartRenderer backend={backend} params={{symbol:symbols}} />);
   await waitFor(() => expect(container.querySelectorAll(".day-chart-price")).toHaveLength(3));
   expect(screen.getAllByText("AAPL Company")).toHaveLength(2);
-  expect(screen.getAllByText(/2026-11-20.*closed/)).toHaveLength(3);
+  expect(screen.getByRole("status")).toHaveTextContent(/2026-11-20.*closed/);
   expect(screen.getAllByRole("img",{name:/intraday prices/})).toHaveLength(3);
   expect(vi.mocked(fetchEndpoint).mock.calls[0][2]).toEqual({symbol:"AAPL,MSFT"});
   const cards=container.querySelectorAll("[data-day-index]");
@@ -50,4 +50,23 @@ it("draws a visible marker for a one-bar session",async()=>{
   const {container}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL.US"}}/>);
   await waitFor(()=>expect(container.querySelector("svg circle")).not.toBeNull());
   expect(vi.mocked(fetchEndpoint).mock.calls[0][2]).toEqual({symbol:"AAPL"});
+});
+it("uses vertical wheel/navigation for a column and refetches when trading days change",async()=>{
+ const {container,rerender}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL,MSFT",rows:"",columns:"1",days:"1"}}/>);
+ await waitFor(()=>expect(container.querySelectorAll(".day-chart-price")).toHaveLength(2));
+ const strip=screen.getByRole("list",{name:"Day charts"});
+ fireEvent.wheel(strip,{deltaY:100});expect(strip.scrollLeft).toBe(0);
+ Object.defineProperty(strip,"scrollHeight",{value:1000,configurable:true});
+ fireEvent.click(screen.getByRole("button",{name:"End"}));expect(strip.scrollTop).toBe(1000);
+ rerender(<DayChartRenderer backend={backend} params={{symbol:"AAPL,MSFT",rows:"2",columns:"1",days:"2"}}/>);
+ await waitFor(()=>expect(vi.mocked(fetchEndpoint).mock.lastCall?.[2]).toEqual({symbol:"AAPL,MSFT",days:"2"}));
+});
+it("shows percent axes, dividers and a truthful missing-baseline message",async()=>{
+ vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[{...tile("AAPL"),chart_previous_close:100,sessions:[{date:"2026-11-19",opened:"2026-11-19T14:30:00Z",closed:"2026-11-19T21:00:00Z"},{date:"2026-11-20",opened:"2026-11-20T14:30:00Z",closed:"2026-11-20T21:00:00Z"}]}]});
+ const {container,rerender}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL",scale:"percent"}}/>);
+ await waitFor(()=>expect(container.querySelector(".day-chart-divider")).not.toBeNull());
+ expect(screen.getByText("2.00%")).toBeInTheDocument();
+ vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[{...tile("MSFT"),previous_close:null}]});
+ rerender(<DayChartRenderer backend={backend} params={{symbol:"MSFT",scale:"percent"}}/>);
+ await waitFor(()=>expect(screen.getByText("Previous close unavailable for % scale")).toBeInTheDocument());
 });

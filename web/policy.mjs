@@ -1,4 +1,4 @@
-// vendored from openbq-docker v11.0.0 funnel-gateway/policy.mjs sha256:714a784e192e6798951eabe615beb44f1798dcd7c00aec9eeb7d0ed963882d9d
+// vendored from openbq-docker v10.0.0 funnel-gateway/policy.mjs sha256:56fbe66848dcc0b9d8c1968fd7187d3982a6c0f055e0cb216b5df6849aadd691
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -274,7 +274,8 @@ export function upstreamPath(url, config) {
 
   // Bounded Day Chart snapshots and same-origin raster logos. No upstream URL input.
   if (url.pathname === "/grid/day_charts" || url.pathname === "/grid/symbol_logo") {
-    if (!onlyKeys(params, ["symbol"])) return null;
+    if (!onlyKeys(params, url.pathname === "/grid/day_charts" ? ["symbol", "days"] : ["symbol"])) return null;
+    if (params.has("days") && !/^[1-5]$/.test(params.get("days"))) return null;
     const symbols = (params.get("symbol") ?? "").split(",");
     const max = url.pathname === "/grid/symbol_logo" ? 1 : 20;
     if (symbols.length < 1 || symbols.length > max || symbols.some(s => !(url.pathname === "/grid/day_charts" ? TA_SYMBOL_RE : SYMBOL_RE).test(s))) return null;

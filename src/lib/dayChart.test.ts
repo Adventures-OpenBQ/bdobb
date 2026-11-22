@@ -57,3 +57,28 @@ it("uses the existing group binding for lists, updates, blank, disable/deletion 
 it("uses feed-qualified crypto and forex identities for honest unsupported tiles",()=>{
   expect(daySymbols("BTC-USD.CC,EURUSD.FOREX,EURUSD.US,AAPL.LSE")).toEqual(["BTC-USD","EURUSD","EURUSD.US","AAPL.LSE"]);
 });
+
+it("chooses scroll direction without discarding symbols beyond a fitted grid", async()=>{
+ const {dayLayout}=await import("./dayChart");
+ expect(dayLayout("1","",9)).toMatchObject({axis:"horizontal",rows:1,columns:null});
+ expect(dayLayout("","1",9)).toMatchObject({axis:"vertical",rows:null,columns:1});
+ expect(dayLayout("2","3",9)).toMatchObject({axis:"vertical",rows:2,columns:3});
+ expect(dayLayout("","",9)).toMatchObject({axis:"horizontal",rows:1});
+ expect(()=>dayLayout("0","",9)).toThrow();
+ expect(()=>dayLayout("1.5","",9)).toThrow();
+ expect(()=>dayLayout("","11",9)).toThrow();
+});
+it("percent scale uses previous close, preserves gaps and rejects absent/zero baselines", async()=>{
+ const {dayScale}=await import("./dayChart");
+ const points=[{time:"2026-11-20T14:30:00Z",value:110},{time:"2026-11-20T14:31:00Z",value:null}];
+ expect(dayScale(points,100,"percent")).toEqual({points:[{...points[0],value:10},{...points[1]}],reference:0,available:true});
+ expect(dayScale(points,0,"percent").available).toBe(false);
+ expect(dayScale(points,null,"percent").available).toBe(false);
+ expect(dayScale(points,100,"price").points).toEqual(points);
+});
+it("compresses overnight gaps and marks the boundary between trading sessions",()=>{
+ const sessions=[{opened:"2026-11-19T14:30:00Z",closed:"2026-11-19T21:00:00Z"},{opened:"2026-11-20T14:30:00Z",closed:"2026-11-20T21:00:00Z"}];
+ const line=dayLine([{time:sessions[0].opened,value:100},{time:"2026-11-19T20:59:00Z",value:101},{time:sessions[1].opened,value:102}],100,sessions);
+ expect(line.dividers).toEqual([137]);
+ expect(line.path.match(/M/g)).toHaveLength(2);
+});

@@ -6,11 +6,12 @@ import { failedDayTile, parseDayCharts, type DayTile } from "../lib/dayChart";
 import type { BackendConfig } from "../lib/types";
 
 /** Bounded snapshots, never a quote stream. Polls start after the prior pass finishes. */
-export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: string[], refreshKey = 0) {
+export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: string[], refreshKey = 0, daysInput = "1") {
+  const days=/^[1-5]$/.test(daysInput)?Number(daysInput):1;
   const backendKey = JSON.stringify(backend);
   const connection = useMemo(() => JSON.parse(backendKey) as BackendConfig, [backendKey]);
   const membership = JSON.stringify(symbols);
-  const identity = `${backendKey}:${membership}`;
+  const identity = `${backendKey}:${membership}:${days}`;
   const wanted = JSON.stringify([...new Set(nearby.filter((s) => symbols.includes(s)))]);
   const [state, setState] = useState<{identity:string; tiles:Record<string,DayTile>; fetchedAt:number|null}>({identity,tiles:{},fetchedAt:null});
   useEffect(() => {
@@ -24,12 +25,12 @@ export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: 
       setState((old) => ({ identity, fetchedAt:succeeded ? Date.now() : old.identity === identity ? old.fetchedAt : null, tiles: { ...(old.identity === identity ? old.tiles : {}), ...next } }));
     };
     const poll = async () => {
-      for (let i = 0; i < entries.length && !disposed; i += 20) {
-        const batch = entries.slice(i, i + 20);
+      for (let i = 0; i < entries.length && !disposed; i += Math.floor(20/days)) {
+        const batch = entries.slice(i, i + Math.floor(20/days));
         controller = new AbortController();
         deadline = setTimeout(() => controller?.abort(), 30000);
         try {
-          const parsed = parseDayCharts(await fetchEndpoint(connection, "day_charts", {symbol:batch.join(",")}, controller.signal));
+          const parsed = parseDayCharts(await fetchEndpoint(connection, "day_charts", {symbol:batch.join(","),...(days>1?{days:String(days)}:{})}, controller.signal));
           publish(Object.fromEntries(batch.map((symbol) => [symbol, parsed[symbol] ?? failedDayTile(symbol, "missing_response")])), true);
         } catch {
           publish(Object.fromEntries(batch.map((symbol) => [symbol, failedDayTile(symbol)])));
@@ -39,6 +40,6 @@ export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: 
     };
     if (entries.length) void poll();
     return () => { disposed = true; clearTimeout(timer); clearTimeout(deadline); controller?.abort(); };
-  }, [connection, identity, wanted, refreshKey]);
+  }, [connection, identity, wanted, refreshKey, days]);
   return { tiles: state.identity === identity ? state.tiles : {}, fetchedAt:state.identity === identity ? state.fetchedAt : null };
 }
