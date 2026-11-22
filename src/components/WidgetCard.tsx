@@ -256,6 +256,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   /** The News feed manager. Transient: closing it is the only thing it remembers. */
   const [feedsOpen, setFeedsOpen] = useState(false);
   // When a live_grid's renderer last took data (see timerTitle).
+  const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
   const [liveAt, setLiveAt] = useState<number | null>(null);
   const [liveStatus, setLiveStatus] = useState<SocketStatus>("idle");
   /**
@@ -443,6 +444,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // A live_chart without a wsEndpoint has no feed: it is a fetched chart,
     // and its tooltip is an ordinary card's, timed by the renderer's seed
     // (review F14).
+    if (widget?.type === "day_chart") {
+      return snapshotAt === null
+        ? "Not fetched yet"
+        : `Last snapshot ${relativeTime(snapshotAt)} · ${new Date(snapshotAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+    }
     if (widget?.type === "live_chart" && !widget.wsEndpoint && status !== "error") {
       return liveAt === null
         ? "Not fetched yet"
@@ -466,7 +472,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     if (completedAt === null) return "Not fetched yet";
     return `Last refresh ${relativeTime(completedAt)} · ${new Date(completedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
   })();
-  const doneAt = liveFeed ? liveAt : completedAt;
+  const doneAt = widget?.type === "day_chart" ? snapshotAt : liveFeed ? liveAt : completedAt;
   // A live grid that has data but no open socket -- retrying, a first connect
   // still waiting, or minimised -- is stale, whatever its last row's age. So
   // is a live chart, but only one that has a socket to lose: without a
@@ -1302,7 +1308,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     }
 
     if (widget?.type === "day_chart" && backend) {
-      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
+      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt} />;
     }
 
     // live-grid's Live Chart (V10-P4). The live_grid case's shape and reasons:

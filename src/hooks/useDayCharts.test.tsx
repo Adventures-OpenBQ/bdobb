@@ -51,3 +51,20 @@ it("drops cached prices immediately on credential changes", async () => {
   rerender({connection:{...backend, headerValue:"changed"}});
   expect(result.current.tiles).toEqual({});
 });
+
+it("timestamps only completed snapshots and clears on list/auth/blank without accepting late completions",async()=>{
+  const {result,rerender}=renderHook(({connection,symbols})=>useDayCharts(connection,symbols,symbols),{initialProps:{connection:backend,symbols:["AAPL"]}});
+  await waitFor(()=>expect(result.current.fetchedAt).toEqual(expect.any(Number)));
+  let finish!:(x:unknown)=>void;
+  vi.mocked(fetchEndpoint).mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve;}));
+  rerender({connection:backend,symbols:["MSFT"]});
+  expect(result.current.fetchedAt).toBeNull();
+  vi.mocked(fetchEndpoint).mockRejectedValueOnce(new Error("offline"));
+  rerender({connection:{...backend,headerValue:"new"},symbols:["MSFT"]});
+  await waitFor(()=>expect(result.current.tiles.MSFT).toBeDefined());
+  expect(result.current.fetchedAt).toBeNull();
+  await act(async()=>finish(answer("MSFT")));
+  expect(result.current.fetchedAt).toBeNull();
+  rerender({connection:backend,symbols:[]});
+  expect(result.current.fetchedAt).toBeNull();
+});

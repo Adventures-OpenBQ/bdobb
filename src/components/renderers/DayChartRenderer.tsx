@@ -35,7 +35,7 @@ function Tile({symbol,tile,nearby,logo}:{symbol:string;tile?:DayTile;nearby:bool
   </>;
 }
 
-export function DayChartRenderer({backend,params,refreshKey=0}:{backend:BackendConfig;params:Record<string,string>;refreshKey?:number}) {
+export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot}:{backend:BackendConfig;params:Record<string,string>;refreshKey?:number;onSnapshot?:(at:number|null)=>void}) {
   const input=params.symbol ?? "";
   const parsed=useMemo(() => {try {return {symbols:daySymbols(input),error:null};} catch(e) {return {symbols:[],error:(e as Error).message};}},[input]);
   const {symbols}=parsed;
@@ -44,7 +44,8 @@ export function DayChartRenderer({backend,params,refreshKey=0}:{backend:BackendC
   const [view,setView]=useState<{membership:string;indexes:number[]}>({membership,indexes:[0,1,2]});
   const indexes=view.membership===membership ? view.indexes : [0,1,2];
   const nearby=indexes.flatMap((i)=>symbols[i] ? [symbols[i]] : []);
-  const {tiles}=useDayCharts(backend,symbols,nearby,refreshKey);
+  const {tiles,fetchedAt}=useDayCharts(backend,symbols,nearby,refreshKey);
+  useEffect(()=>{onSnapshot?.(fetchedAt);},[fetchedAt,onSnapshot]);
   const logos=useDayLogos(backend,nearby.filter(symbol=>tiles[symbol]?.logo_path === `/symbol_logo?symbol=${encodeURIComponent(symbol)}`));
   useEffect(() => {
     if(!strip) return;

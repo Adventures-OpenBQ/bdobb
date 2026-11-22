@@ -171,6 +171,12 @@ vi.mock("./renderers/LiveGridRenderer", () => ({
 vi.mock("./renderers/LiveChartRenderer", () => ({
   LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
 }));
+vi.mock("./renderers/DayChartRenderer", () => ({
+  DayChartRenderer: ({onSnapshot}: {onSnapshot?: (at:number|null)=>void}) => <>
+    <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
+    <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
+  </>,
+}));
 // The stand-in keeps the real renderer's one lifecycle contract the card relies
 // on: it reports "idle" as it unmounts (LiveGridRenderer.test.tsx pins the real one).
 function LiveGridStub(props: Record<string, unknown>) {
@@ -5674,5 +5680,25 @@ describe("fiscal labels on worker and server tables", () => {
     expect(screen.getByText("Fiscal labels as reported")).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "FY ends from" })).toBeNull();
     vi.restoreAllMocks();
+  });
+});
+
+
+describe("Day Chart snapshot refresh status",()=>{
+  it("reports actual snapshot completion and clear without claiming a live feed",async()=>{
+    register({type:"day_chart",endpoint:"day_charts"});
+    useBackendsStore.setState({backends:[backend()]});
+    useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0,completedAt:null});
+    render(<WidgetCard card={{...card,params:{symbol:"AAPL"}}} onRemove={vi.fn()}/>);
+    const refresh=()=>screen.getByRole("button",{name:"Refresh"});
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-complete"}));
+    expect(refresh().getAttribute("title")).toMatch(/^Last snapshot just now · /);
+    expect(refresh().getAttribute("title")).not.toContain("Live");
+    expect(refresh()).toHaveAttribute("data-tone","fresh");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-clear"}));
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    expect(refresh()).toHaveAttribute("data-tone","idle");
+    useBackendsStore.setState({backends:[]});
   });
 });

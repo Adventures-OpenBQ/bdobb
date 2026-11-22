@@ -12,16 +12,16 @@ export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: 
   const membership = JSON.stringify(symbols);
   const identity = `${backendKey}:${membership}`;
   const wanted = JSON.stringify([...new Set(nearby.filter((s) => symbols.includes(s)))]);
-  const [state, setState] = useState<{identity:string; tiles:Record<string,DayTile>}>({identity,tiles:{}});
+  const [state, setState] = useState<{identity:string; tiles:Record<string,DayTile>; fetchedAt:number|null}>({identity,tiles:{},fetchedAt:null});
   useEffect(() => {
     const entries = JSON.parse(wanted) as string[];
     let disposed = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let deadline: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
-    const publish = (next: Record<string,DayTile>) => {
+    const publish = (next: Record<string,DayTile>, succeeded = false) => {
       if (disposed) return;
-      setState((old) => ({ identity, tiles: { ...(old.identity === identity ? old.tiles : {}), ...next } }));
+      setState((old) => ({ identity, fetchedAt:succeeded ? Date.now() : old.identity === identity ? old.fetchedAt : null, tiles: { ...(old.identity === identity ? old.tiles : {}), ...next } }));
     };
     const poll = async () => {
       for (let i = 0; i < entries.length && !disposed; i += 20) {
@@ -30,7 +30,7 @@ export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: 
         deadline = setTimeout(() => controller?.abort(), 30000);
         try {
           const parsed = parseDayCharts(await fetchEndpoint(connection, "day_charts", {symbol:batch.join(",")}, controller.signal));
-          publish(Object.fromEntries(batch.map((symbol) => [symbol, parsed[symbol] ?? failedDayTile(symbol, "missing_response")])));
+          publish(Object.fromEntries(batch.map((symbol) => [symbol, parsed[symbol] ?? failedDayTile(symbol, "missing_response")])), true);
         } catch {
           publish(Object.fromEntries(batch.map((symbol) => [symbol, failedDayTile(symbol)])));
         } finally { clearTimeout(deadline); }
@@ -40,5 +40,5 @@ export function useDayCharts(backend: BackendConfig, symbols: string[], nearby: 
     if (entries.length) void poll();
     return () => { disposed = true; clearTimeout(timer); clearTimeout(deadline); controller?.abort(); };
   }, [connection, identity, wanted, refreshKey]);
-  return { tiles: state.identity === identity ? state.tiles : {} };
+  return { tiles: state.identity === identity ? state.tiles : {}, fetchedAt:state.identity === identity ? state.fetchedAt : null };
 }
