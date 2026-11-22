@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "d701c295432ca7f799bdebc6022d056c7037e46a",
-  "sourceId": "c0b1440d604129a27e8326aeb57ae2248fd0f814b7239335706208cedf42cd54",
+  "baseCommit": "1a4ccfe46c8e128ab4150c723febb9bd8d93a9bc",
+  "sourceId": "6752ed9b3dc3793d365d526bdec62600d4ab5dc7b83feea483ade9ff6bbeb614",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -4726,6 +4726,13 @@
       "mode": 420,
       "size": 11474,
       "sha256": "8ef09d9f193b1fef972783fedb1b340a97375ad4f83cca595e8f7976785a467e"
+    },
+    {
+      "path": "docs/chart-stream-v1-client.md",
+      "type": "file",
+      "mode": 420,
+      "size": 2179,
+      "sha256": "4b447212868c4bda9e9f69a8cf124b3725a7d7fc68cf435d63e0207f93b67e38"
     },
     {
       "path": "docs/data/nyse-calendar.json",
@@ -21651,7 +21658,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "6315d5e46bcc859a110cc3f4e4fab5fc6568b5845711fa76691b49f2b8b4510b"
+      "sha256": "e50be630c832400db4610d8095ba75203574c2bc0be180721a8409a6c8c138f3"
     },
     {
       "path": "playwright.config.ts",
@@ -22344,7 +22351,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "28e48bbcea6daf342aaec3b0e383d034e685930c40ae1d58d902503c6542aafd"
+      "sha256": "63ea660f934abee51d12a25b338887e96be07bf0cd6e542ea37bd82312e3d43a"
     },
     {
       "path": "source_bundle.py",
@@ -22525,8 +22532,8 @@
       "path": "src/browser-shim/shims.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 36368,
-      "sha256": "3010a1db82094a285965b8402a346277f254586243ce2ee75a852a534da0bf31"
+      "size": 36509,
+      "sha256": "bb1d30baf0c4313545101cd434b639125dcff82d9155dec2a2b601495c59a8d9"
     },
     {
       "path": "src/browser-shim/socket.ts",
@@ -23621,6 +23628,13 @@
       "sha256": "c670c651e0d2166681fea69c7a0881b9ab510aff69eb7fdff3f5c86a969ac9d9"
     },
     {
+      "path": "src/components/renderers/ChartStreamRenderer.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 4061,
+      "sha256": "c63c0e319a17ff3cde993bc0e4e600991f45aaabcd6b5ceec1123834d7aab8ab"
+    },
+    {
       "path": "src/components/renderers/ClockRenderer.test.tsx",
       "type": "file",
       "mode": 420,
@@ -23743,15 +23757,15 @@
       "path": "src/components/renderers/LiveChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 17648,
-      "sha256": "52298d348f95efdc9eba92d459a2345a41fe78513438ce30f4014a78cb801504"
+      "size": 29623,
+      "sha256": "53cba4631dded66f5088dc19fc950a7c48eb9cd14d9a9e6faa40c4ab842e3416"
     },
     {
       "path": "src/components/renderers/LiveChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 12158,
-      "sha256": "d40bd1b845e94c4b4466d8cfffebbd29d9a60f13efc88f34a45fd76d2b260081"
+      "size": 12583,
+      "sha256": "c19ea1980bdeae06dc448c95cb42b733b2806211363e2459a73efaa720a95a27"
     },
     {
       "path": "src/components/renderers/LiveGridRenderer.test.tsx",
@@ -24842,8 +24856,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 8831,
-      "sha256": "2c6c01a33c87cb2fa2a2ef65e69ef370e39d429a9732fb980bfe11640e864a6c"
+      "size": 9580,
+      "sha256": "47ae359efbcbea75bcab2c17f7d16e3ae49cbfcb7901dff8ea38c609aa25b528"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -25710,8 +25724,8 @@
       "path": "src/help/topics/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 4783,
-      "sha256": "2e2fb67b14c4f64bc82fe76f033550db4cb8b0aaf65234df92195c2787bdd41c"
+      "size": 5258,
+      "sha256": "aeef1bf3ffe44ffddfe2a0d11afaa57188c9e6ddb201cdef8a656a15dc846eea"
     },
     {
       "path": "src/help/topics/connections.md",
@@ -25957,6 +25971,13 @@
       "mode": 420,
       "size": 11033,
       "sha256": "007f2f69957a48aa5539a5b889f9be01f168965b782d6a27dcd8dc4965c14040"
+    },
+    {
+      "path": "src/hooks/useChartStream.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 5702,
+      "sha256": "ce3d0465dbf6fb7665cd3c9691a4154da8f524dfc35bc10b80b4ad3ec4981ac5"
     },
     {
       "path": "src/hooks/useChildDialog.test.tsx",
@@ -27317,6 +27338,13 @@
       "sha256": "a933ec015c12dd142fef75eae2cd9130f4d8affe0d323a0d00648dbf154b6827"
     },
     {
+      "path": "src/lib/chart-stream-v1.examples.json",
+      "type": "file",
+      "mode": 420,
+      "size": 10933,
+      "sha256": "2fe846f2ad2ef578a7c84e4471243e7c2f6186d22be925b4321953ee7f0a3c97"
+    },
+    {
       "path": "src/lib/chartShapes.test.ts",
       "type": "file",
       "mode": 420,
@@ -27329,6 +27357,20 @@
       "mode": 420,
       "size": 13139,
       "sha256": "9fbfa5664b2bc60540171ea6d91bb6632ce00a6a37a1b94c5668d33648ba608a"
+    },
+    {
+      "path": "src/lib/chartStream.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 10850,
+      "sha256": "1565242ded8960b18441b5d9c85f6a7a8aa50cea9d1dbb446a461e9001c2935e"
+    },
+    {
+      "path": "src/lib/chartStream.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 8031,
+      "sha256": "439966fa58dbf3f19df1c13b740dca53f0c000e0aaf7ead4ad8cd13d1c0dc96f"
     },
     {
       "path": "src/lib/chatExport.test.ts",
@@ -29910,8 +29952,8 @@
       "path": "src/lib/types.ts",
       "type": "file",
       "mode": 420,
-      "size": 36880,
-      "sha256": "d830bd38f6f59723db19a3f450259f2170bbbb18602c2973b5847627e6358527"
+      "size": 36982,
+      "sha256": "9da24f4c81f6d8a71bb469a09b4eb214f1d95a9b47fb55aa0a7a8e6dcb4d9ad2"
     },
     {
       "path": "src/lib/udf.test.ts",
@@ -30078,15 +30120,15 @@
       "path": "src/lib/widgetsJson.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 57630,
-      "sha256": "8a38571d516a7c7aceb9a10e49d340b60d6ab0f4aa8b4fb75da8e1f0d145aaf0"
+      "size": 58059,
+      "sha256": "d57c0020cc24d924a770da5c9aaae0b71534a04bfdb342556b7fe890fb1fb096"
     },
     {
       "path": "src/lib/widgetsJson.ts",
       "type": "file",
       "mode": 420,
-      "size": 32014,
-      "sha256": "a52494b21c5ac0357d5698015ae3b585dcb60eae7e2398a60fea163d75d7bfb6"
+      "size": 32102,
+      "sha256": "815495fca62f9b10b97aaba99a8288f807f0252771ed32697e4315cc1c52a603"
     },
     {
       "path": "src/lib/windowTheme.test.ts",
@@ -32574,6 +32616,13 @@
       "sha256": "8282800c20893c6aef211ad615164ce899837ed215fdc2b583ded2689b70f465"
     },
     {
+      "path": "web/CHART-FUNNEL.md",
+      "type": "file",
+      "mode": 420,
+      "size": 5414,
+      "sha256": "cc17eaf349f81d3c04cd9858f28bd8ee78b8bf10b1fe4db2c1c13c5e829d7a2a"
+    },
+    {
       "path": "web/README.md",
       "type": "file",
       "mode": 420,
@@ -32600,6 +32649,13 @@
       "mode": 420,
       "size": 22763,
       "sha256": "85dbf8cd88f06ed02640604c85d4419f3add87326337ba4af097adf38b8b52c4"
+    },
+    {
+      "path": "web/chart-ticket.test.mjs",
+      "type": "file",
+      "mode": 420,
+      "size": 3923,
+      "sha256": "4a2c10722f6feaba5d9d5865008a9e5fe4bd3db55455f069f2084159085e11bc"
     },
     {
       "path": "web/config.d.mts",
@@ -32647,15 +32703,15 @@
       "path": "web/policy.mjs",
       "type": "file",
       "mode": 420,
-      "size": 32992,
-      "sha256": "09b547f04f4faa9d0c3eb2babe803a7bd41ece3c1f13ffee12f0a0602ab528cd"
+      "size": 36205,
+      "sha256": "1877b894aad9c2935645feab7b6d89db48fb56108a9f2f9449d79b9a2512f0fe"
     },
     {
       "path": "web/policy.vendored.json",
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "053f5dbc50132a0c12933a9f0389d156c4dcf6526660aa0728e1d583b1e2913d"
+      "sha256": "c76a4f1c880967e639d86bd6182df4a40afb45f90615e19967e5def67899d2a3"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
@@ -32689,8 +32745,8 @@
       "path": "web/server.mjs",
       "type": "file",
       "mode": 420,
-      "size": 37752,
-      "sha256": "4db8d57322f3ea835e536fbf69ca3c4d42c7bc041743e57ae2b864fc6bf82afb"
+      "size": 38088,
+      "sha256": "dce1278ad5b1af524ffbb177f7b4ba3689305b6ee48fa72a16e43af4279b3a86"
     },
     {
       "path": "web/ssrm-routes.test.mjs",
