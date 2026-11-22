@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "fbb237267b1f9206b71882be65906fd841c70b84",
-  "sourceId": "9fb473fb975ad1d0f63f37c1dfe501ab5fbc55b8f291fad6bbb9fb92795ccab5",
+  "baseCommit": "2fd6bef40de5897ab3d96970d7acd1a84bc34be6",
+  "sourceId": "0fea615e1bf2019e523a382e6bb48fdb3a8adde13aa6524777c6155d740ee4c9",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20779,6 +20779,13 @@
       "sha256": "d1e3ef03e980a14c3b048a81588956313b1cead14b8fc468bf3db98d5206497a"
     },
     {
+      "path": "docs/superpowers/plans/2026-11-22-day-chart-layout.md",
+      "type": "file",
+      "mode": 420,
+      "size": 1772,
+      "sha256": "34fd770757c312556aea0b15bcbf3e4cc608ecddf96e33e01308db27c98a3890"
+    },
+    {
       "path": "docs/superpowers/plans/2026-11-22-v10-day-chart.md",
       "type": "file",
       "mode": 420,
@@ -21672,7 +21679,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "4163c274a51e43d8191fa5fa1fcfbbdf0330bc7e8bdc3dca6fc6ce83ad28079d"
+      "sha256": "ce5774da1cd9551257865e95586521f20fab5a5ef48eb6ccc2119292171f5c8c"
     },
     {
       "path": "playwright.config.ts",
@@ -22365,7 +22372,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "ce816195e69241cc7e4534cee78388d4db654481ba07cb1cb2fc6c6fe2b96930"
+      "sha256": "598199dfa5eb157b90b60123189192862f8f818bc309804b431c393836857120"
     },
     {
       "path": "source_bundle.py",
@@ -23680,15 +23687,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 4166,
-      "sha256": "598ccd18a61527d8094a2f41765bcb08ec3fec6f6d7824fc317136a8baadbc3c"
+      "size": 5975,
+      "sha256": "6ca49ac5d099be1adb40b9c98ffa4e27c91bfa86d76d4833e05ffdfb086717f8"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 7263,
-      "sha256": "ab2bca6e7d5473e551b9e8fa998521383b22f53fc0df1901d09e3917d42313dd"
+      "size": 10475,
+      "sha256": "d6290ed4fea38f72663ad8473867a553cfe51715bcb35e0e96903a00f812e250"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24268,8 +24275,8 @@
       "path": "src/components/renderers/dayChart.css",
       "type": "file",
       "mode": 420,
-      "size": 2418,
-      "sha256": "dd26857ed85607a513c3ae4b223cbfebc598df1c857fa6ef916a03cb88f69b07"
+      "size": 3055,
+      "sha256": "804306cf157cbe9a6ed5d2f40c0f06a5c84c2954a96733f8571525b2966d5608"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
@@ -24891,8 +24898,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 10871,
-      "sha256": "88d082d5e6d2c8789eecaa6459098cf52047734793664b5d0b95621718907897"
+      "size": 11565,
+      "sha256": "47fa1daabe338b90eb2a49f4c29055efbe9489c16a65f942873eb8d4efb119a3"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -25759,8 +25766,8 @@
       "path": "src/help/topics/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 5806,
-      "sha256": "567621fda7e515efe2e27a51a7c7268f7db07b1f9c9cfadf781ccdae32f75722"
+      "size": 5820,
+      "sha256": "3e5a57fe4025ca93acb0df7db456b84bba5fe5584b793a93937a29c2dae9b8a5"
     },
     {
       "path": "src/help/topics/connections.md",
@@ -26053,8 +26060,8 @@
       "path": "src/hooks/useDayCharts.ts",
       "type": "file",
       "mode": 420,
-      "size": 2764,
-      "sha256": "9726bf1d0d441e354112e39b158962879f7b6c2c961e529355056a3f55d42cd5"
+      "size": 2924,
+      "sha256": "4a3be0630a72ef2f023f067d0f50b417882fc4d9fb386b6a9715302edfd64a40"
     },
     {
       "path": "src/hooks/useDayLogos.test.tsx",
@@ -26069,6 +26076,20 @@
       "mode": 420,
       "size": 1957,
       "sha256": "71f5507e564a1cbcf79dd8f501fe8739d443666eb4de35bde8d099eb80c7b71b"
+    },
+    {
+      "path": "src/hooks/useDayQuotes.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 2057,
+      "sha256": "5f53c33c7b5de78df5bad98a4d882c49d5cf4324f1435e886ef9e78b8e5b4486"
+    },
+    {
+      "path": "src/hooks/useDayQuotes.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 2585,
+      "sha256": "84521455d19ccccf4b7e3a353544c6790679c43160db05e193fdc7b6366c0ab5"
     },
     {
       "path": "src/hooks/useFiscalYearEnd.test.tsx",
@@ -27649,15 +27670,15 @@
       "path": "src/lib/dayChart.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 3622,
-      "sha256": "0b9b42529348658bf5013433a1aa9e7a889ba9f66e2a527763ee1509f9c053d6"
+      "size": 5250,
+      "sha256": "cffd2ddc6aafa072453989c197b63186e7d016a758bd02f7c112cc0ab90a4246"
     },
     {
       "path": "src/lib/dayChart.ts",
       "type": "file",
       "mode": 420,
-      "size": 5691,
-      "sha256": "bed8e6a03c20d0e28541587a7b1d535ab6c23e731ef3ceeddb9b6e88c20fb9b7"
+      "size": 7966,
+      "sha256": "f42f870cd9f8539a2d0dcc4a1f2555324588a109eddbb7e81ce95fe8918a4fb3"
     },
     {
       "path": "src/lib/dayLogo.test.ts",
@@ -32815,15 +32836,15 @@
       "path": "web/policy.mjs",
       "type": "file",
       "mode": 420,
-      "size": 37507,
-      "sha256": "fab54c9f50d728b0ee4ed9fba84540158053dd4ffd432c302261667ff98d2e50"
+      "size": 37646,
+      "sha256": "a72812fbc95d6243f17d01f3bf0a9f22b1361236e9deb05ce630440e2307b83e"
     },
     {
       "path": "web/policy.vendored.json",
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "e5715ae68e4bc9519b9a298d58230ec25e57337f6011af06994577bfc917bcb2"
+      "sha256": "b9e4822a678b71b78f6e3aeb70f8342d47cfca968efb9bd591c60fb276a13b9f"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
