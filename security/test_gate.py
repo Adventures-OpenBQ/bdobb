@@ -294,6 +294,34 @@ class GateTests(unittest.TestCase):
             t.addfile(info,io.BytesIO(b''))
         self.assert_blocked(self.run_gate('image-archive', image), 'tailscale-credential')
 
+    def whiteout_image(self, *, payload=b'', character=False):
+        image=self.root/'whiteout-image.tar'
+        with tarfile.open(image,'w') as archive:
+            data=b'{"architecture":"arm64"}'
+            info=tarfile.TarInfo('config.json');info.size=len(data)
+            archive.addfile(info,io.BytesIO(data))
+            info=tarfile.TarInfo('tmp/.wh.deleted-package.whl')
+            if character:
+                info.type=tarfile.CHRTYPE;info.devmajor=0;info.devminor=0
+            else:info.size=len(payload)
+            archive.addfile(info,io.BytesIO(payload))
+        return image
+
+    def test_container_empty_regular_whiteout_is_metadata_even_with_archive_suffix(self):
+        result=self.run_gate('image-archive',self.whiteout_image())
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def test_container_character_whiteout_is_metadata_even_with_archive_suffix(self):
+        result=self.run_gate('image-archive',self.whiteout_image(character=True))
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+    def test_container_nonempty_whiteout_fails_closed(self):
+        result=self.run_gate('image-archive',self.whiteout_image(payload=b'not metadata'))
+        self.assert_blocked(result,'invalid container whiteout metadata')
+
+    def test_source_archive_does_not_receive_container_whiteout_treatment(self):
+        self.assert_blocked(self.run_gate('artifacts',self.whiteout_image()))
+
     def vendor_wav(self, data=b'RIFF synthetic scientific fixture', member='usr/vendor/fixture.wav'):
         image=self.root/'image.tar'
         with tarfile.open(image,'w') as archive:

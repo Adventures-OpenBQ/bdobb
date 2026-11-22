@@ -397,13 +397,17 @@ class Scan:
                     if expanded>expansion_limit or self.total+m.size>MAX_TOTAL:
                         raise GateError('tar expansion budget exceeded')
                     self.validate_member(m.name)
+                    if self.container_archive and PurePosixPath(m.name).name.startswith('.wh.'):
+                        # OCI deletion markers carry no file bytes, even when the
+                        # deleted name ends in .whl/.zip. Earlier layers still scan.
+                        valid_type=m.isfile() or (m.ischr() and m.devmajor==0 and m.devminor==0)
+                        if m.size or not valid_type or PurePosixPath(m.name).name=='.wh.':
+                            raise GateError('invalid container whiteout metadata')
+                        continue
                     if m.isdir(): continue
                     if not m.isfile():
                         if self.container_archive and (m.issym() or m.islnk()):
                             self.add_text(m.linkname.encode(),label+'!'+m.name+'!link-target')
-                            continue
-                        # Docker whiteouts are layer metadata; never extracted or followed.
-                        if self.container_archive and PurePosixPath(m.name).name.startswith('.wh.'):
                             continue
                         raise GateError('archive link/device rejected')
                     if m.size>MAX_TOTAL or (m.size>MAX_FILE and not self.container_archive): raise GateError('archive member too large')
