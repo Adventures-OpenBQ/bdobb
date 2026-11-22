@@ -444,7 +444,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!cfg.backend) return reply(res, 503, "Backend ingress is not configured.");
         const response = await fetchUpstream(cfg.backend + path, {
           headers: gatewayHeaders(cfg),
-          redirect: "error", signal: AbortSignal.timeout(12000),
+          redirect: "error", signal: AbortSignal.timeout(path.startsWith("/grid/day_charts?") ? 25000 : 12000),
         });
         // Never relay backend authentication challenges, redirects, cookies, or error bodies.
         if (!response.ok) {
@@ -452,6 +452,14 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
           // The gateway's own bare 404 for an optional document, and only that.
           if (response.status === 404 && OPTIONAL_DOCS.has(url.pathname)) return reply(res, 404);
           return reply(res, 502, "Backend request failed.");
+        }
+        if (path.startsWith("/grid/symbol_logo?")) {
+          try {
+            const bytes = await boundedBody(response.body ?? [], policy.LOGO_RESPONSE_BYTES ?? 262144);
+            const mime = policy.rasterType?.(bytes, response.headers.get("content-type"));
+            if (!mime) return reply(res,502,"Invalid logo response.");
+            return reply(res,200,bytes,mime);
+          } catch { return reply(res,502,"Logo unavailable."); }
         }
         // JSON, or text/plain: the video routes answer a bare URL.
         const plain = /^text\/plain(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "");
