@@ -510,22 +510,36 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
     // Each command owns its COM apartment reference; no UIA pointer crosses threads.
     unsafe { CoInitializeEx(None, COINIT_MULTITHREADED).ok() }.map_err(|_| "Cannot initialize Chrome audio controls")?;
     let _com = Com;
-    let operation = || -> ::windows::core::Result<bool> {
+    // Debug builds retain the failing OS boundary without exposing player,
+    // account or machine identifiers. Release behavior stays unchanged.
+    let mut stage = "create-automation";
+    let mut before_state = None;
+    let mut observed_state = None;
+    let mut operation = || -> ::windows::core::Result<bool> {
         let automation: IUIAutomation2 = unsafe { CoCreateInstance(&CUIAutomation8, None, CLSCTX_INPROC_SERVER)? };
         unsafe { automation.SetConnectionTimeout(500)?; automation.SetTransactionTimeout(500)?; automation.SetAutoSetFocus(false)?; }
+        stage = "bind-player";
         let root = unsafe { automation.ElementFromHandle(HWND(key.handle as Handle))? };
         if unsafe { root.CurrentProcessId()? } as u32 != key.pid || !matches(key) {
             return Err(::windows::core::Error::from_win32());
         }
         if toggle {
+            stage = "validate-focus";
             if QUITTING.load(Ordering::SeqCst) || !matches(key) || unsafe { GetForegroundWindow() } as usize != main || unsafe { IsIconic(main as Handle) } != 0 {
                 return Err(::windows::core::Error::from_win32());
             }
             // Retain return-focus permission for this process only. Windows
             // revokes it on input elsewhere; never grant ASFW_ANY or Chrome.
-            if unsafe { AllowSetForegroundWindow(std::process::id()) } == 0
-                || unsafe { SetForegroundWindow(key.handle as Handle) } == 0
-                || !foreground_settled(key.handle) {
+            stage = "authorize-focus-return";
+            if unsafe { AllowSetForegroundWindow(std::process::id()) } == 0 {
+                return Err(::windows::core::Error::from_win32());
+            }
+            stage = "activate-player";
+            if unsafe { SetForegroundWindow(key.handle as Handle) } == 0 {
+                return Err(::windows::core::Error::from_win32());
+            }
+            stage = "settle-player-focus";
+            if !foreground_settled(key.handle) {
                 return Err(::windows::core::Error::from_win32());
             }
         }
@@ -551,6 +565,7 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
         };
         // Chrome publishes its controls after native focus has settled. Wait
         // for discovery only; Invoke below is still attempted exactly once.
+        stage = "discover-audio-control";
         let until = Instant::now() + Duration::from_millis(700);
         let (control, before) = loop {
             match button() {
@@ -564,18 +579,31 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
             }
         };
         if !toggle { return Ok(before); }
+        before_state = Some(before);
+        stage = "get-audio-action";
         let action: IUIAutomationInvokePattern = unsafe { control.GetCurrentPatternAs(UIA_InvokePatternId)? };
+        stage = "validate-audio-action";
         if !matches(key) || unsafe { GetForegroundWindow() } as usize != key.handle || QUITTING.load(Ordering::SeqCst) { return Err(::windows::core::Error::from_win32()); }
+        stage = "invoke-audio-action";
         unsafe { action.Invoke()?; }
+        stage = "confirm-audio-state";
         let until = Instant::now() + Duration::from_millis(500);
         loop {
             if !matches(key) { return Err(::windows::core::Error::from_win32()); }
-            if let Ok((_, after)) = button() { if after != before { return Ok(after); } }
+            if let Ok((_, after)) = button() {
+                observed_state = Some(after);
+                if after != before { return Ok(after); }
+            }
             if Instant::now() >= until { return Err(::windows::core::Error::from_win32()); }
             std::thread::sleep(Duration::from_millis(25));
         }
     };
-    operation().map_err(|_| "Chrome did not confirm audio for the captured player; use its Mute/Unmute control".into())
+    let result = operation();
+    if toggle && cfg!(debug_assertions) {
+        let error_code = result.as_ref().err().map(|error| error.code().0);
+        eprintln!("captured-audio stage={stage} before={before_state:?} observed={observed_state:?} error={error_code:?}");
+    }
+    result.map_err(|_| "Chrome did not confirm audio for the captured player; use its Mute/Unmute control".into())
 }
 
 #[cfg(test)]
