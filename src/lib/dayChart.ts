@@ -81,8 +81,8 @@ export function dayLine(points: DayPoint[], previousClose: number | null): {path
   let lastPoint: {x:number;y:number} | null = null;
   const path = points.map((p) => {
     if (p.value === null) { pen = false; return ""; }
-    lastPoint = {x:8 + (Date.parse(p.time) - first) / span * 254,y:y(p.value)};
-    const command = `${pen ? "L" : "M"}${(8 + (Date.parse(p.time) - first) / span * 254).toFixed(2)},${y(p.value).toFixed(2)}`;
+    lastPoint = {x:4 + (Date.parse(p.time) - first) / span * 266,y:y(p.value)};
+    const command = `${pen ? "L" : "M"}${(4 + (Date.parse(p.time) - first) / span * 266).toFixed(2)},${y(p.value).toFixed(2)}`;
     pen = true;
     return command;
   }).join(" ");

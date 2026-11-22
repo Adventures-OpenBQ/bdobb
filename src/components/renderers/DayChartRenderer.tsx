@@ -22,12 +22,12 @@ function Tile({symbol,tile,nearby,logo}:{symbol:string;tile?:DayTile;nearby:bool
       <div className="day-chart-price">{price(tile.price)}</div>
       <div className={`day-chart-change day-chart-${tone}`}>{signed(tile.change)} ({signed(tile.change_percent)}%)</div>
       {line?.path && nearby ? <svg viewBox="0 0 310 132" className={`day-chart-line day-chart-${tone}`} role="img" aria-label={`${symbol} intraday prices`}>
-        {line.referenceY !== null ? <line x1="8" x2="262" y1={line.referenceY} y2={line.referenceY} className="day-chart-reference"/> : null}
+        {line.referenceY !== null ? <line x1="4" x2="270" y1={line.referenceY} y2={line.referenceY} className="day-chart-reference"/> : null}
         <path d={line.path} fill="none" stroke="currentColor" strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
         {line.lastPoint ? <circle cx={line.lastPoint.x} cy={line.lastPoint.y} r="2.5" fill="currentColor"/> : null}
-        <text x="268" y="16">{price(line.high)}</text><text x="268" y="104">{price(line.low)}</text>
-        <text x="8" y="126">{timeLabel(tile.points[0].time,tile.session.timezone)}</text>
-        <text x="262" y="126" textAnchor="end">{timeLabel(tile.points.at(-1)!.time,tile.session.timezone)}</text>
+        <text x="276" y="16">{price(line.high)}</text><text x="276" y="104">{price(line.low)}</text>
+        <text x="4" y="126">{timeLabel(tile.points[0].time,tile.session.timezone)}</text>
+        <text x="270" y="126" textAnchor="end">{timeLabel(tile.points.at(-1)!.time,tile.session.timezone)}</text>
       </svg> : <p className="day-chart-empty">{tile.status === "error" || tile.status === "empty" || !line?.path ? `No day data${tile.error_code ? ` · ${tile.error_code}` : ""}` : "Scroll to view"}</p>}
       <div className="day-chart-session">{tile.session.date ?? "No session"} · {tile.session.status}</div>
       <div className="day-chart-status" title={tile.as_of ? `As of ${tile.as_of}` : undefined}>{tile.session.label} · {tile.source} · {tile.status}</div>
