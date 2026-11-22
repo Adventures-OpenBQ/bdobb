@@ -82,6 +82,7 @@ extern "C" {
     fn CFRelease(cf: CFTypeRef);
     fn CFRetain(cf: CFTypeRef) -> CFTypeRef;
     fn CFGetTypeID(cf: CFTypeRef) -> usize;
+    fn CFEqual(a: CFTypeRef, b: CFTypeRef) -> u8;
     fn CFStringGetTypeID() -> usize;
     fn CFNumberGetTypeID() -> usize;
     fn CFArrayGetTypeID() -> usize;
@@ -320,6 +321,95 @@ impl AxWindow {
             }),
         ).map(|player| player.map(|p| p.0))
     }
+
+    /// Audio never searches tabs or another window; this binding is the one
+    /// retained by the placement lifetime. Merely reading does not steal focus.
+    pub fn audio(&mut self, toggle: bool, alive: impl Fn() -> bool, may_focus: impl Fn() -> bool) -> (super::logic::MuteState, Option<AudioFocus>) {
+        let mut focus = None;
+        let result = (|| -> Result<bool, String> {
+            let player = self.player()?.ok_or("The captured player closed")?;
+            if toggle {
+                let (app, _) = chrome().ok_or("Chrome is not running")?;
+                let token = AudioFocus(Cf::new(unsafe { CFRetain(player) }).ok_or("The player closed")?);
+                focus = Some(token);
+                if !alive() || !may_focus() || !blur_inputs().0 { return Err("The player action lost focus".into()); }
+                let yes = Cf::new(unsafe { CFRetain(kCFBooleanTrue) }).ok_or("Cannot focus the player")?;
+                set(player, "AXMain", &yes)?;
+                set(player, "AXFocused", &yes)?;
+                if !alive() || !may_focus() || !blur_inputs().0 { return Err("The player action lost focus".into()); }
+                set(app.0, "AXFrontmost", &yes)?;
+                perform(player, "AXRaise")?;
+                if !focus.as_ref().is_some_and(AudioFocus::still_focused) {
+                    return Err("Chrome did not focus the captured player".into());
+                }
+            }
+            let (button, before) = player_audio_button(player)?;
+            if !toggle { return Ok(before); }
+            let same_player = self.player()? == Some(player);
+            let still_focused = focus.as_ref().is_some_and(AudioFocus::still_focused);
+            if !same_player || !still_focused || !alive() {
+                return Err("The captured player changed or lost focus".into());
+            }
+            perform(button.0, "AXPress")?;
+            let until = Instant::now() + SETTLE_TIMEOUT;
+            loop {
+                if let Ok((_, after)) = player_audio_button(player) {
+                    if after != before { return Ok(after); }
+                }
+                if Instant::now() >= until { return Err("Chrome did not confirm the audio change".into()); }
+                std::thread::sleep(SETTLE_POLL);
+            }
+        })();
+        let state = match result {
+            Ok(true) => super::logic::MuteState::Muted,
+            Ok(false) => super::logic::MuteState::Sound,
+            Err(reason) => super::logic::MuteState::Unavailable { reason },
+        };
+        (state, focus)
+    }
+}
+
+fn perform(element: CFTypeRef, name: &str) -> Result<(), String> {
+    let action = cfstr(name).ok_or("Cannot build an Accessibility action")?;
+    match unsafe { AXUIElementPerformAction(element, action.0) } {
+        AX_SUCCESS => Ok(()),
+        code => Err(ax_error_text(code, "Chrome refused the player action")),
+    }
+}
+
+/// Retains the exact target across the placement unlock. Restore app focus only
+/// if the user has not moved to another window in the meantime.
+pub struct AudioFocus(Cf);
+impl AudioFocus {
+    pub fn still_focused(&self) -> bool {
+        let (_, chrome_front, _) = blur_inputs();
+        chrome_front && chrome().and_then(|(app, _)| attr(app.0, "AXFocusedWindow"))
+            .is_some_and(|focused| unsafe { CFEqual(focused.0, self.0.0) != 0 })
+    }
+}
+
+fn player_audio_button(player: CFTypeRef) -> Result<(Cf, bool), String> {
+    let mut queue = VecDeque::from([Cf::new(unsafe { CFRetain(player) }).ok_or("The player closed")?]);
+    let mut buttons = Vec::new();
+    let mut names = Vec::new();
+    let until = Instant::now() + Duration::from_millis(700);
+    let mut count = 0;
+    while let Some(node) = queue.pop_front() {
+        count += 1;
+        if count > 64 || Instant::now() >= until { return Err("Chrome's audio controls did not answer in time".into()); }
+        unsafe { AXUIElementSetMessagingTimeout(node.0, 0.1); }
+        if string_attr(node.0, "AXRole").as_deref() == Some("AXButton") {
+            let name = string_attr(node.0, "AXDescription").filter(|s| !s.is_empty())
+                .or_else(|| string_attr(node.0, "AXTitle")).unwrap_or_default();
+            names.push(name);
+            buttons.push(node);
+        } else {
+            queue.extend(elements_checked(node.0, "AXChildren")?);
+        }
+    }
+    let (index, muted) = super::audio::unique_control(names.iter().map(String::as_str))
+        .ok_or("Chrome has no unique Mute/Unmute button for this player; use its audio controls")?;
+    Ok((buttons.swap_remove(index), muted))
 }
 
 impl PlayerWindow for AxWindow {

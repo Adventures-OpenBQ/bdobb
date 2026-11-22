@@ -7,7 +7,7 @@ const { invoke, owned } = vi.hoisted(() => ({ invoke: vi.fn(), owned: { open: vi
 vi.mock("@tauri-apps/api/core", () => ({ invoke: (command: string, args?: unknown) => invoke(command, args), isTauri: () => true }));
 vi.mock("../../lib/youtubePip", () => ({ desktopVideoPipAvailable: () => ["darwin","windows"].includes(import.meta.env.TAURI_ENV_PLATFORM??""), openYoutubePip: owned.open, closeYoutubePip: owned.close, youtubePipIsOpen: owned.isOpen }));
 import userEvent from "@testing-library/user-event";
-import { RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
+import { enqueuePlayerOp, RELEASE_GRACE_MS } from "../../lib/pictureInPicture";
 import { makeDefaultDocks } from "../../lib/dashboardsFile";
 import { useDashboardStore } from "../../stores/dashboardStore";
 import { useWidgetRegistryStore } from "../../stores/widgetRegistryStore";
@@ -16,6 +16,47 @@ import { YouTubeRenderer } from "./YouTubeRenderer";
 
 const marker = "bdobb:picture-in-picture";
 const url = "https://youtu.be/uYyhswnZkSw";
+
+it("uses captured-player audio without changing the saved YouTube preference", async () => {
+  const host = document.createElement("span"); document.body.appendChild(host);
+  const save = vi.fn(async () => {});
+  invoke.mockImplementation(async (command: string, args?: {toggle?: boolean}) => {
+    if (command === "picture_in_picture_captured_audio") return args?.toggle ? {state: "muted"} : {state: "unavailable", reason: "Controls hidden"};
+    return {state: "fitted"};
+  });
+  const view = render(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} onSettingsChange={save} settings={{display: "inline", autoplay: false, muted: false}} readOnly />);
+  try {
+    const button = await screen.findByRole("button", {name: "Toggle captured audio"});
+    expect(button).toBeEnabled();
+    await userEvent.click(button);
+    expect(await screen.findByRole("button", {name: "Unmute"})).toBeEnabled();
+    expect(save).not.toHaveBeenCalled();
+  } finally { view.unmount(); host.remove(); }
+});
+
+it("does not offer native captured audio to a viewer window", async () => {
+  const host = document.createElement("span"); document.body.appendChild(host);
+  const view = render(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} viewer />);
+  try {
+    expect(host.querySelector("button")).toBeNull();
+  } finally { view.unmount(); host.remove(); }
+});
+
+it.each(["menu", "unmount"])("cancels queued audio before %s can hide its captured player", async transition => {
+  const host = document.createElement("span"); document.body.appendChild(host);
+  const view = render(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} />);
+  let finish!: () => void;
+  try {
+    await waitFor(() => expect(screen.getByRole("button", {name: "Toggle captured audio"})).toBeEnabled());
+    const predecessor = enqueuePlayerOp("grab", () => new Promise<void>(resolve => { finish = resolve; }));
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
+    await userEvent.click(screen.getByRole("button", {name: "Toggle captured audio"}));
+    if (transition === "menu") view.rerender(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} menuOpen />);
+    else view.unmount();
+    await act(async () => { finish(); await predecessor; await enqueuePlayerOp("grab", async () => {}); });
+    expect(invoke.mock.calls.filter(([command, args]) => command === "picture_in_picture_captured_audio" && args?.toggle)).toEqual([]);
+  } finally { finish?.(); view.unmount(); host.remove(); }
+});
 beforeEach(() => {
   vi.stubEnv("TAURI_ENV_PLATFORM", "darwin");
   invoke.mockImplementation(async (command: string) => command === "video_wrapper_port" ? 41234 : { state: "no_player" });

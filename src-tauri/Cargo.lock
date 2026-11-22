@@ -246,6 +246,7 @@ dependencies = [
  "tauri-plugin-http",
  "tauri-plugin-mcp-bridge",
  "tauri-plugin-opener",
+ "windows 0.61.3",
 ]
 
 [[package]]

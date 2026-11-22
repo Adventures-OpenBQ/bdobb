@@ -55,6 +55,7 @@ extern "system" {
     fn SetWindowPos(hwnd: Handle, after: Handle, x: i32, y: i32, w: i32, h: i32, flags: u32)
         -> i32;
     fn GetForegroundWindow() -> Handle;
+    fn SetForegroundWindow(hwnd: Handle) -> i32;
     fn ClientToScreen(hwnd: Handle, point: *mut Point) -> i32;
     fn GetDpiForWindow(hwnd: Handle) -> u32;
     fn EnumDisplayMonitors(
@@ -457,6 +458,93 @@ pub fn release(window: &WebviewWindow, card: &str) {
 pub fn release_all() {
     QUITTING.store(true, Ordering::SeqCst);
     state(|s| s.grab.release_all());
+}
+
+pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super::logic::MuteState {
+    use super::logic::MuteState;
+    let unavailable = || MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() };
+    if window.label() != "main" { return unavailable(); }
+    let Ok(hwnd) = window.hwnd() else { return unavailable() };
+    let main = hwnd.0 as usize;
+    state(|s| {
+        if QUITTING.load(Ordering::SeqCst) { return unavailable(); }
+        if let Some(css) = s.last_css {
+            if let Some((area, scale, away)) = geometry(main, css, s.grab.player_key()) {
+                s.grab.sync(area, scale, away);
+            }
+        }
+        let Some(key) = s.grab.active_player(card) else { return unavailable() };
+        if toggle && unsafe { GetForegroundWindow() } as usize != main { return unavailable(); }
+        let result = captured_audio_control(key, main, toggle);
+        if toggle && !QUITTING.load(Ordering::SeqCst) && matches(key) && unsafe { GetForegroundWindow() } as usize == key.handle {
+            // Ordinary focus restoration only, never AttachThreadInput/force.
+            unsafe { SetForegroundWindow(main as Handle); }
+        }
+        match result {
+            Ok(true) => MuteState::Muted,
+            Ok(false) => MuteState::Sound,
+            Err(reason) => MuteState::Unavailable { reason },
+        }
+    })
+}
+
+fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<bool, String> {
+    use ::windows::Win32::{Foundation::HWND, System::Com::{CoInitializeEx, CoUninitialize, CoCreateInstance, COINIT_MULTITHREADED, CLSCTX_INPROC_SERVER}, UI::Accessibility::*};
+    use std::time::Instant;
+    struct Com;
+    impl Drop for Com { fn drop(&mut self) { unsafe { CoUninitialize(); } } }
+    // Each command owns its COM apartment reference; no UIA pointer crosses threads.
+    unsafe { CoInitializeEx(None, COINIT_MULTITHREADED).ok() }.map_err(|_| "Cannot initialize Chrome audio controls")?;
+    let _com = Com;
+    let operation = || -> ::windows::core::Result<bool> {
+        let automation: IUIAutomation2 = unsafe { CoCreateInstance(&CUIAutomation8, None, CLSCTX_INPROC_SERVER)? };
+        unsafe { automation.SetConnectionTimeout(500)?; automation.SetTransactionTimeout(500)?; automation.SetAutoSetFocus(false)?; }
+        let root = unsafe { automation.ElementFromHandle(HWND(key.handle as Handle))? };
+        if unsafe { root.CurrentProcessId()? } as u32 != key.pid || !matches(key) {
+            return Err(::windows::core::Error::from_win32());
+        }
+        if toggle {
+            if QUITTING.load(Ordering::SeqCst) || !matches(key) || unsafe { GetForegroundWindow() } as usize != main || unsafe { IsIconic(main as Handle) } != 0 {
+                return Err(::windows::core::Error::from_win32());
+            }
+            if unsafe { SetForegroundWindow(key.handle as Handle) } == 0 || unsafe { GetForegroundWindow() } as usize != key.handle {
+                return Err(::windows::core::Error::from_win32());
+            }
+        }
+        let button = || -> ::windows::core::Result<(IUIAutomationElement, bool)> {
+            let condition = unsafe { automation.CreateTrueCondition()? };
+            let nodes = unsafe { root.FindAll(TreeScope_Descendants, &condition)? };
+            let length = unsafe { nodes.Length()? };
+            if length > 64 { return Err(::windows::core::Error::from_win32()); }
+            let until = Instant::now() + Duration::from_millis(700);
+            let mut controls = Vec::new();
+            let mut names = Vec::new();
+            for i in 0..length {
+                if Instant::now() >= until { return Err(::windows::core::Error::from_win32()); }
+                let node = unsafe { nodes.GetElement(i)? };
+                if unsafe { node.CurrentControlType()? } == UIA_ButtonControlTypeId && unsafe { node.CurrentIsEnabled()? }.as_bool() {
+                    names.push(unsafe { node.CurrentName()? }.to_string());
+                    controls.push(node);
+                }
+            }
+            let (index, muted) = super::audio::unique_control(names.iter().map(String::as_str))
+                .ok_or_else(::windows::core::Error::from_win32)?;
+            Ok((controls.swap_remove(index), muted))
+        };
+        let (control, before) = button()?;
+        if !toggle { return Ok(before); }
+        let action: IUIAutomationInvokePattern = unsafe { control.GetCurrentPatternAs(UIA_InvokePatternId)? };
+        if !matches(key) || unsafe { GetForegroundWindow() } as usize != key.handle || QUITTING.load(Ordering::SeqCst) { return Err(::windows::core::Error::from_win32()); }
+        unsafe { action.Invoke()?; }
+        let until = Instant::now() + Duration::from_millis(500);
+        loop {
+            if !matches(key) { return Err(::windows::core::Error::from_win32()); }
+            if let Ok((_, after)) = button() { if after != before { return Ok(after); } }
+            if Instant::now() >= until { return Err(::windows::core::Error::from_win32()); }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    };
+    operation().map_err(|_| "Chrome did not confirm audio for the captured player; use its Mute/Unmute control".into())
 }
 
 #[cfg(test)]
