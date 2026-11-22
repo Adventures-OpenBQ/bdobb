@@ -90,6 +90,15 @@ test("Live TV keeps its channel and mute control on the same scrolling row", asy
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
   for (const width of [1024, 640]) {
     await page.setViewportSize({ width, height: 768 });
+    // react-grid-layout responds after the viewport resize. Wait for its
+    // card width to settle before scrolling against the final clip width.
+    let lastWidth = -1, stableWidths = 0;
+    await expect.poll(async () => {
+      const next = (await card.boundingBox())!.width;
+      stableWidths = next === lastWidth ? stableWidths + 1 : 0;
+      lastWidth = next;
+      return stableWidths;
+    }, { intervals: [100] }).toBeGreaterThanOrEqual(2);
     await expect.poll(async () => {
       const a = await channel.boundingBox(), b = await mute.boundingBox();
       return Math.abs(a!.y + a!.height / 2 - b!.y - b!.height / 2);
@@ -99,4 +108,25 @@ test("Live TV keeps its channel and mute control on the same scrolling row", asy
     await expect(mute).toBeInViewport();
     await expect(card.getByRole('button', { name: 'Show parameters', exact: true })).toHaveAttribute('aria-expanded', 'false');
   }
+
+  // The Live TV flex layout must not override the global collapse setting.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.locator("nav.left-rail").getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings", exact: true }).getByRole("tab", { name: "Widget", exact: true }).click();
+  await page.getByRole("switch", { name: "Collapse widget controls", exact: true }).click();
+  await page.getByRole("dialog", { name: "Settings", exact: true }).getByRole("button", { name: "Done", exact: true }).click();
+  const chevron = card.getByRole("button", { name: "Show widget controls", exact: true });
+  await expect(chevron).toHaveAttribute("aria-expanded", "false");
+  await expect(chips).toBeHidden();
+  await chevron.click();
+  await expect(chips).toBeVisible();
+  await expect(channel).toHaveCount(1);
+  await expect(mute).toHaveCount(1);
+  await card.getByRole("button", { name: "Show parameters", exact: true }).click();
+  const panel = card.getByRole("region", { name: "Parameters", exact: true });
+  await expect(panel).toBeVisible();
+  await expect(panel.locator('.param-field select')).toHaveCount(0);
+  await chevron.click();
+  await expect(chips).toBeHidden();
+  await expect(panel.locator('.param-field select')).toBeVisible();
 });
