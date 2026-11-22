@@ -63,3 +63,40 @@ test("only row zero stays in the title strip; later rows use the persisted panel
   await chips.getByRole("button", { name: "Group Symbol", exact: true }).click();
   await expect(page.getByRole("menu")).toBeVisible();
 });
+
+test("Live TV keeps its channel and mute control on the same scrolling row", async ({ page }) => {
+  await page.route("**/widgets.json", async route => {
+    const response = await route.fetch();
+    const widgets = await response.json();
+    widgets.live_tv = {
+      name: "Live TV", description: "Header layout fixture", type: "youtube",
+      endpoint: "live_video", category: "Fixture", source: [],
+      params: [{ paramName: "channel", type: "text", value: "bloomberg-tv",
+        options: [{ label: "YouTube - Bloomberg Live", value: "bloomberg-tv" }] }],
+    };
+    await route.fulfill({ response, json: widgets });
+  });
+  await page.route("**/live_video?*", route => route.fulfill({
+    contentType: "text/plain", body: "https://youtu.be/QB5BNdBFujE",
+  }));
+  await page.route("**/www.youtube.com/**", route => route.abort());
+  await seedCards(page, [{ id: "tv-header", widgetId: "live_tv", backendId: "b1",
+    params: { channel: "bloomberg-tv" }, layout: { x: 0, y: 0, w: 20, h: 12 } }]);
+  const card = page.locator('.widget-card').first();
+  const chips = card.locator('.card-chips');
+  const channel = chips.locator('select');
+  const mute = chips.getByRole('button', { name: 'Mute', exact: true });
+  await expect(mute).toHaveCount(1);
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  for (const width of [1024, 640]) {
+    await page.setViewportSize({ width, height: 768 });
+    await expect.poll(async () => {
+      const a = await channel.boundingBox(), b = await mute.boundingBox();
+      return Math.abs(a!.y + a!.height / 2 - b!.y - b!.height / 2);
+    }).toBeLessThanOrEqual(3);
+    await expect.poll(() => chips.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+    await chips.evaluate(el => { el.scrollLeft = el.scrollWidth; });
+    await expect(mute).toBeInViewport();
+    await expect(card.getByRole('button', { name: 'Show parameters', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  }
+});
