@@ -71,3 +71,15 @@ it("shows percent axes, dividers and a truthful missing-baseline message",async(
  rerender(<DayChartRenderer backend={backend} params={{symbol:"MSFT",scale:"percent"}}/>);
  await waitFor(()=>expect(screen.getByText("Previous close unavailable for % scale")).toBeInTheDocument());
 });
+it("snaps a hover crosshair to a real bar and shows date/time/price/cumulative percent",async()=>{
+ const {container}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL",scale:"percent"}}/>);
+ const plot=await screen.findByRole("img",{name:"AAPL intraday prices"});
+ vi.spyOn(plot,"getBoundingClientRect").mockReturnValue({left:0,top:0,width:274,height:112,right:274,bottom:112,x:0,y:0,toJSON(){}});
+ fireEvent(plot,new MouseEvent("pointermove",{bubbles:true,clientX:270,clientY:50}));
+ expect(await screen.findByRole("tooltip")).toHaveTextContent("102.00");
+ expect(screen.getByRole("tooltip")).toHaveTextContent("+2.00%");
+ expect(screen.getByRole("tooltip")).toHaveTextContent("2026");
+ expect(container.querySelectorAll(".day-chart-crosshair")).toHaveLength(2);
+ fireEvent.pointerLeave(plot);expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+ fireEvent.focus(plot);fireEvent.keyDown(plot,{key:"End"});expect(screen.getByRole("tooltip")).toHaveTextContent("102.00");
+});

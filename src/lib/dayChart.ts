@@ -73,11 +73,11 @@ export function parseDayCharts(value: unknown): Record<string, DayTile> {
 }
 
 /** Null bars break the line; time spacing is preserved. No quote synthesis. */
-export function dayLine(points: DayPoint[], previousClose: number | null,sessions:DaySession[]=[]): {path:string;low:number|null;high:number|null;referenceY:number|null;lastPoint:{x:number;y:number}|null;dividers:number[];references:{x1:number;x2:number;y:number}[]} {
+export function dayLine(points: DayPoint[], previousClose: number | null,sessions:DaySession[]=[]): {path:string;low:number|null;high:number|null;referenceY:number|null;lastPoint:{x:number;y:number}|null;dividers:number[];references:{x1:number;x2:number;y:number}[];samples:{index:number;x:number;y:number}[]} {
   const values = points.flatMap((p) => p.value === null ? [] : [p.value]);
   if (previousClose !== null) values.push(previousClose);
   for(const session of sessions)if(typeof session.previous_close==="number")values.push(session.previous_close);
-  if (values.length === 0 || points.length === 0) return { path: "", low: null, high: null, referenceY: null, lastPoint: null,dividers:[],references:[] };
+  if (values.length === 0 || points.length === 0) return { path: "", low: null, high: null, referenceY: null, lastPoint: null,dividers:[],references:[],samples:[] };
   const low = Math.min(...values), high = Math.max(...values);
   const pad = Math.max((high - low) * 0.08, Math.abs(high) * 0.0001, 0.001);
   const y = (v: number) => 104 - (v - low + pad) / (high - low + 2 * pad) * 96;
@@ -97,17 +97,19 @@ export function dayLine(points: DayPoint[], previousClose: number | null,session
   let pen = false;
   let priorSession=-1;
   let lastPoint: {x:number;y:number} | null = null;
-  const path = points.map((p) => {
+  const samples:{index:number;x:number;y:number}[]=[];
+  const path = points.map((p,index) => {
     if (p.value === null) { pen = false; return ""; }
     const currentSession=sessions.findIndex(s=>Date.parse(p.time)>=Date.parse(s.opened)&&Date.parse(p.time)<Date.parse(s.closed));
     if(currentSession!==priorSession)pen=false;
     priorSession=currentSession;
     lastPoint = {x:xAt(p.time),y:y(p.value)};
+    samples.push({index,...lastPoint});
     const command = `${pen ? "L" : "M"}${xAt(p.time).toFixed(2)},${y(p.value).toFixed(2)}`;
     pen = true;
     return command;
   }).join(" ");
-  return { path, low, high, lastPoint, dividers, references, referenceY: previousClose === null ? null : y(previousClose) };
+  return { path, low, high, lastPoint, dividers, references, samples, referenceY: previousClose === null ? null : y(previousClose) };
 }
 
 export function dayLayout(rowsInput:string,columnsInput:string,_count:number) {
