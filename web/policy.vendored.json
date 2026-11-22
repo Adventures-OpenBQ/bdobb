@@ -1,7 +1,7 @@
 {
   "tag": "v10.0.0",
-  "commit": "dd168380582e3c6f41058014404630c4b9dbd02a",
+  "commit": "7eb1ca0023773408bac81aa2d0ccf0cb2a4b9109",
   "repository": "https://github.com/Adventures-OpenBQ/openbq-docker",
   "path": "funnel-gateway/policy.mjs",
-  "sha256": "56fbe66848dcc0b9d8c1968fd7187d3982a6c0f055e0cb216b5df6849aadd691"
+  "sha256": "0e600caebc11719586486b6c592e76086ec833f413e4d95389cef7a733741d98"
 }

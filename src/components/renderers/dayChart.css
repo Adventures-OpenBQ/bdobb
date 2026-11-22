@@ -46,3 +46,11 @@
 .day-chart-tile[tabindex] { cursor:pointer; }
 .day-chart-selected { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }
 .day-chart-tile:focus-visible { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }
+
+.day-chart .day-chart-footer-controls { flex:0 1 auto; margin-left:auto; justify-content:flex-end; min-width:0; font-size:11px; }
+.day-chart-footer > span { flex:1 1 230px; }
+.day-chart-footer { flex-wrap:wrap; }
+.day-chart-footer-controls .param-field { font-size:11px; }
+.day-chart-footer-controls input { max-width:90px; }
+
+.day-chart > .empty-state { flex:1; min-height:0; }

@@ -444,7 +444,7 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!cfg.backend) return reply(res, 503, "Backend ingress is not configured.");
         const response = await fetchUpstream(cfg.backend + path, {
           headers: gatewayHeaders(cfg),
-          redirect: "error", signal: AbortSignal.timeout(path.startsWith("/grid/day_charts?") ? 25000 : 12000),
+          redirect: "error", signal: AbortSignal.timeout(/^\/grid\/(day_charts|closed_session)\?/.test(path) ? 25000 : 12000),
         });
         // Never relay backend authentication challenges, redirects, cookies, or error bodies.
         if (!response.ok) {

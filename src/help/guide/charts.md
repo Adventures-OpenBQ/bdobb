@@ -65,7 +65,7 @@ Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separat
 
 ## Day Chart watchlist
 
-**Day Chart** (`day_chart`) shows compact intraday lines. The symbol list and its standard parameter-group binding stay on parameter row 0. Row 1 contains **Rows**, **Columns**, **Scale** and **Trading days**. Entries retain their order and duplicates; data acquisition is shared. Clear the symbol parameter or group to clear the widget. Up to 50 entries are supported.
+**Day Chart** (`day_chart`) shows compact intraday lines. The symbol list and its standard parameter-group binding stay on parameter row 0. The bottom status bar holds **Rows**, **Columns**, **Scale**, **Trading days** and **Selected symbol**, aligned to the right. Entries retain their order and duplicates; data acquisition is shared. Clear the symbol parameter or group to clear the widget. Up to 50 entries are supported.
 
 Set only Rows for horizontal scrolling, or only Columns for vertical scrolling. Set both for a fitted grid; additional symbols continue below it. Leave both blank for the default single horizontal row. Each dimension accepts 1–10. Bind **Selected symbol** to a separate symbol parameter group, then bind a detailed Live Chart’s Symbol to that group. Clicking a tile (or focusing it and pressing Enter/Space) publishes its single symbol; the Day Chart watchlist stays intact. The input list and selection output must use different groups. Use the trackpad, touch, mouse wheel or footer arrows to scroll.
 
@@ -74,3 +74,5 @@ Trading days selects 1–5 exchange sessions, skipping weekends and holidays. A 
 Visible and nearby histories refresh every 15 seconds after the previous request completes. Lines come from backend session bars; quote updates do not invent chart points. Top-right prices and daily changes use the same live-grid WebSocket, which coalesces changed prices every 250ms; when no newer quote has arrived, the latest historical bar is shown. The bottom status bar shows session dates, market status, EODHD source, quote connection/last-price time, and history cadence. Connected means the socket is open, not that a trade arrived. On weekends the chart shows the latest completed sessions.
 
 The initial provider supports US equities. Unsupported symbols and unavailable sessions show a per-tile message; other tiles keep working. Missing company logos fall back to initials. Logos use the authenticated backend relay. Symbols and group bindings save and export with the dashboard, including the Version 10 Live Grid example's Day Chart card.
+
+When a detailed Live Chart advertises completed-session history, a closed US market shows the latest completed regular-session EODHD OHLCV candles, with the date and historical source labelled in its status line. Open sessions and crypto keep the accepted-data stream. Explicit start/end ranges keep their requested stream view. Closed-session history requires a one-minute or longer interval.

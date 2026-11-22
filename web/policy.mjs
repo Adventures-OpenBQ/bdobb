@@ -1,4 +1,4 @@
-// vendored from openbq-docker v10.0.0 funnel-gateway/policy.mjs sha256:56fbe66848dcc0b9d8c1968fd7187d3982a6c0f055e0cb216b5df6849aadd691
+// vendored from openbq-docker v10.0.0 funnel-gateway/policy.mjs sha256:0e600caebc11719586486b6c592e76086ec833f413e4d95389cef7a733741d98
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -269,6 +269,12 @@ export function upstreamPath(url, config) {
   if (url.pathname === "/grid/live_grid" || url.pathname === "/grid/symbol_meta") {
     if (!onlyKeys(params, ["symbol"])) return null;
     if (!SYMBOL_LIST_RE.test(params.get("symbol") ?? "")) return null;
+    return url.pathname + "?" + params.toString();
+  }
+
+  if (url.pathname === "/grid/closed_session") {
+    if (!onlyKeys(params, ["symbol", "interval"]) || !SYMBOL_RE.test(params.get("symbol") ?? "")) return null;
+    if (params.has("interval") && !/^(1s|1m|5m|15m|30m|1h|1d)$/.test(params.get("interval"))) return null;
     return url.pathname + "?" + params.toString();
   }
 

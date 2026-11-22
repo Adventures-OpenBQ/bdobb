@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { act, cleanup, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -172,7 +172,8 @@ vi.mock("./renderers/LiveChartRenderer", () => ({
   LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
 }));
 vi.mock("./renderers/DayChartRenderer", () => ({
-  DayChartRenderer: ({onSnapshot,onSelectSymbol,selectionError}: {onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+  DayChartRenderer: ({onSnapshot,onSelectSymbol,selectionError,footerControls}: {footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+    <div data-testid="day-footer-controls">{footerControls}</div>
     <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
     {selectionError ? <span>{selectionError}</span>:null}
     <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
@@ -5731,4 +5732,16 @@ describe("Day Chart selection output",()=>{
   expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
   useBackendsStore.setState({backends:[]});
  });
+});
+
+it("keeps the Day Chart symbol list in the header and row1 controls in its footer",()=>{
+ register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",label:"Symbols"},{paramName:"rows",type:"text",label:"Rows",row:1}]});
+ useBackendsStore.setState({backends:[backend()]});
+ const source={...card,params:{symbol:"AAPL",rows:"1"}};
+ useDashboardStore.setState({dashboards:[{id:"d1",name:"D",tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
+ render(<WidgetCard card={source} onRemove={vi.fn()}/>);
+ expect(within(screen.getByTestId("day-footer-controls")).getByRole("textbox",{name:"Rows"})).toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Symbols"})).not.toBeInTheDocument();
+ expect(screen.getByRole("textbox",{name:"Symbols"}).closest("header")).not.toBeNull();
+ useBackendsStore.setState({backends:[]});
 });

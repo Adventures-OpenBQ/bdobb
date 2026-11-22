@@ -1,5 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
+import {useState} from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DayChartRenderer } from "./DayChartRenderer";
@@ -92,4 +93,12 @@ it("publishes the clicked tile symbol without changing the watchlist and support
  fireEvent.keyDown(tiles[0],{key:"Enter"});expect(onSelectSymbol).toHaveBeenLastCalledWith("AAPL");
  expect(screen.getAllByRole("option")).toHaveLength(2);
  expect(tiles[0]).toHaveAttribute("aria-selected","true");
+});
+
+it('keeps footer controls usable while correcting invalid layout or an empty list',async()=>{
+ function Harness(){const [rows,setRows]=useState('0');return <DayChartRenderer backend={backend} params={{symbol:'AAPL',rows}} footerControls={<input aria-label="Footer rows" value={rows} onChange={e=>setRows(e.target.value)}/>}/>;}
+ render(<Harness/>);expect(screen.getByText(/Rows and columns must/)).toBeInTheDocument();
+ fireEvent.change(screen.getByRole('textbox',{name:'Footer rows'}),{target:{value:'1'}});
+ expect(screen.getByRole('listbox',{name:'Day charts'})).toBeInTheDocument();
+ expect(screen.getByRole('textbox',{name:'Footer rows'})).toBeInTheDocument();
 });
