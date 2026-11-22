@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import struct
 import subprocess
 import sys
@@ -131,6 +132,72 @@ def scan_tree(root):
             elif not path.is_dir():
                 raise GateError("Unexpected file type in package")
     return files
+
+
+def validate_appimage_link(root, link):
+    """Resolve metadata component by component, never open through a symlink."""
+    pending = list(link.relative_to(root).parts)
+    resolved = []
+    hops = 0
+    while pending:
+        part = pending.pop(0)
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            if not resolved:
+                raise GateError("AppImage link escapes its package")
+            resolved.pop()
+            continue
+        candidate = root.joinpath(*resolved, part)
+        try:
+            mode = candidate.lstat().st_mode
+        except OSError:
+            raise GateError("Dangling or unreadable AppImage link") from None
+        if stat.S_ISLNK(mode):
+            hops += 1
+            target = os.readlink(candidate)
+            if hops > 40 or not target or target.startswith("/") or "\\" in target or re.match(r"^[A-Za-z]:", target):
+                raise GateError("Unsafe or cyclic AppImage link")
+            pending = target.split("/") + pending
+        else:
+            if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)) or pending and not stat.S_ISDIR(mode):
+                raise GateError("AppImage link has an invalid target")
+            resolved.append(part)
+
+
+def appimage_scan_inputs(package, dest):
+    """Scan physical members once and scan every validated raw link as metadata."""
+    dest.mkdir()
+    regular = dest / package.name
+    regular.mkdir()
+    metadata = dest / "appimage-links.txt"
+    links = []
+
+    def unreadable(_error):
+        raise GateError("Unreadable AppImage package directory")
+
+    for directory, subdirs, names in os.walk(package, followlinks=False, onerror=unreadable):
+        for name in sorted(subdirs + names):
+            path = Path(directory) / name
+            relative = path.relative_to(package)
+            mode = path.lstat().st_mode
+            target = regular / relative
+            if stat.S_ISLNK(mode):
+                validate_appimage_link(package, path)
+                # Keep original bytes, not JSON escapes or dereferenced content.
+                links.append((os.fsencode(str(relative)), os.fsencode(os.readlink(path))))
+            elif stat.S_ISDIR(mode):
+                target.mkdir(parents=True, exist_ok=True)
+            elif stat.S_ISREG(mode):
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, target)
+            else:
+                raise GateError("Unexpected AppImage package member type")
+    metadata.write_bytes(b"".join(path + b"\n" + target + b"\n" for path, target in sorted(links)))
+    # A link-free package still needs a nonempty declared metadata scan target.
+    if not links:
+        metadata.write_bytes(b"AppImage contains no symbolic links\n")
+    return regular, metadata
 
 
 class FrontendIndex(HTMLParser):
@@ -318,7 +385,9 @@ def scan_package(asset):
         # The native gate handles DMG links and supported installer containers.
         # Linux's packages use the format-specific unpacker above, with every
         # unpacked member passed to the shared gate. All formats include raw bytes.
-        if asset.suffix in {".deb", ".rpm", ".AppImage"}:
+        if asset.suffix == ".AppImage":
+            contents = list(appimage_scan_inputs(package, root / "appimage-scan"))
+        elif asset.suffix in {".deb", ".rpm"}:
             contents = [package]
         elif asset.suffix == ".msi":
             contents = [snapshot, package / "metadata"]

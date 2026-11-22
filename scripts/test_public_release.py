@@ -58,6 +58,76 @@ def scan_installer(index, frontend_files):
 
 
 class PublicReleaseTests(unittest.TestCase):
+    def test_appimage_links_preserve_target_metadata_without_following_aliases(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root / "package"
+            (package / "contents/usr/share").mkdir(parents=True)
+            icon = package / "contents/usr/share/icon.png"
+            icon.write_bytes(b"original icon bytes")
+            (package / "contents/icon.png").symlink_to("usr/share/icon.png")
+            (package / "contents/.DirIcon").symlink_to("icon.png")
+            (package / "contents/share").symlink_to("usr/share", target_is_directory=True)
+            regular, metadata = release.appimage_scan_inputs(package, root / "scan")
+            self.assertEqual((regular / "contents/usr/share/icon.png").read_bytes(), icon.read_bytes())
+            self.assertFalse((regular / "contents/icon.png").exists())
+            self.assertFalse((regular / "contents/share").exists())
+            self.assertEqual(metadata.read_bytes(),
+                b"contents/.DirIcon\nicon.png\ncontents/icon.png\nusr/share/icon.png\ncontents/share\nusr/share\n")
+            self.assertFalse(any(path.is_symlink() for path in regular.rglob("*")))
+
+    def test_appimage_links_reject_escape_absolute_dangling_and_cycles(self):
+        targets = {
+            "escape": "../../outside",
+            "absolute": "/etc/passwd",
+            "dangling": "missing",
+            "cycle": "alias",
+        }
+        for case, target in targets.items():
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                package = root / "package"
+                package.mkdir()
+                (root / "outside").write_text("must never be read")
+                (package / "alias").symlink_to(target)
+                with self.assertRaises(release.GateError):
+                    release.appimage_scan_inputs(package, root / "scan")
+
+    def test_appimage_link_raw_target_still_reaches_shared_privacy_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root / "package"
+            package.mkdir()
+            target = "100." + "101.102.103"
+            (package / target).write_bytes(b"public payload")
+            (package / "alias").symlink_to(target)
+            regular, metadata = release.appimage_scan_inputs(package, root / "scan")
+            self.assertIn(target.encode(), metadata.read_bytes())
+            with self.assertRaises(release.GateError):
+                release.scan_artifacts(regular, metadata)
+
+    def test_appimage_package_with_internal_alias_passes_real_shared_gate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            asset = Path(tmp) / "BDOBB.AppImage"
+            asset.write_bytes(b"synthetic package bytes")
+
+            def unpack(_asset, package):
+                payload = package / "contents/usr/bin"
+                payload.mkdir(parents=True)
+                (payload / "bdobb").write_bytes(b"synthetic executable bytes")
+                (package / "contents/public.txt").write_bytes(b"public member")
+                (package / "contents/alias").symlink_to("public.txt")
+
+            def extract(_command, _operation, _binary, _option, frontend, _format):
+                (frontend / "assets").mkdir(parents=True)
+                (frontend / "index.html").write_text(metadata(json.dumps(DEFAULTS)) + ENTRY, encoding="utf-8")
+                (frontend / "assets/entry.js").write_bytes(b"console.log(1)")
+
+            with patch.object(release, "unpack", side_effect=unpack), patch.object(release, "run", side_effect=extract):
+                result = release.scan_package(asset)
+            self.assertEqual(result["package_files"], 2)
+            self.assertEqual(result["frontend_files"], 1)
+
     def test_installer_requires_exact_empty_runtime_metadata(self):
         clean = metadata(json.dumps(DEFAULTS))
         invalid = {
