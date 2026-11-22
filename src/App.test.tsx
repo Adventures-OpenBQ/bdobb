@@ -934,7 +934,7 @@ describe("App: locked widget bands", () => {
     expect(screen.getByRole("region", { name: "Locked at Bottom" })).toBe(band);
   });
 
-  it("measures --dashboard-top to the tab bar's bottom, below a mounted top band", async () => {
+  it("keeps dashboard tabs above the locked top band and maximized cards below it", async () => {
     // jsdom lays nothing out: stubbing the bar's rect is what makes the old
     // formula (area top + bar height, both 0 here) and the new one differ.
     __seed("dashboards/z.json", JSON.stringify({ id: "z", name: "Zeta", tabs: [{ id: "t1", name: "Main", cards: [] }] }));
@@ -945,12 +945,21 @@ describe("App: locked widget bands", () => {
     await waitFor(() => expect(main.querySelector(".tab-bar")).not.toBeNull());
     const bar = main.querySelector<HTMLElement>(".tab-bar");
     expect(bar).not.toBeNull();
-    expect(band.compareDocumentPosition(bar as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    (bar as HTMLElement).getBoundingClientRect = () => ({ bottom: 132 }) as DOMRect;
+    expect((bar as Node).compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(main.querySelectorAll(".tab-bar")).toHaveLength(1);
+    (bar as HTMLElement).getBoundingClientRect = () => ({ bottom: 32 }) as DOMRect;
+    band.getBoundingClientRect = () => ({ bottom: 132 }) as DOMRect;
     act(() => {
       useDashboardStore.setState((s) => ({ docks: { ...s.docks, dockRows: { top: 7, bottom: 8 } } }));
     });
     expect(main.style.getPropertyValue("--dashboard-top")).toBe("132px");
+    // A see-through band's existing overlay behavior leaves only the tabs
+    // outside a maximized card, rather than reserving its transparent room.
+    band.classList.add("dock-band-float");
+    act(() => {
+      useDashboardStore.setState((s) => ({ docks: { ...s.docks, dockRows: { top: 8, bottom: 8 } } }));
+    });
+    expect(main.style.getPropertyValue("--dashboard-top")).toBe("32px");
   });
 
   it("aims ⌘K at the dock being edited, and at the active dashboard otherwise", async () => {
