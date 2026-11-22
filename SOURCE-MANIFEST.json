@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "3cfde5f15501bb9321438a6392787e0db89f3cb6",
-  "sourceId": "f3f4ad4c6aea34600d5968d5d030c50b7e60d5bd8e0fc11c8374f86808f11506",
+  "baseCommit": "4f54be2124eaeb111b2760b51e3efcbe19ce9aa5",
+  "sourceId": "02c6d88c4407f59856c44cf5406f9c2878f1e206ba3646efaae0283e06c842e7",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21693,7 +21693,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "701c24c3b42aafe5bc271b025c881776505143be4547b3bf1e1c5e0ea38f3698"
+      "sha256": "97c8c41e0766c36bf59cb327913448183739c3b46d08c97183fa21e41cf039e4"
     },
     {
       "path": "playwright.config.ts",
@@ -22386,7 +22386,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "9b5b007c8d349144afc93ed71bb0f0c564ee1a208e5170f2eb9769210cf23947"
+      "sha256": "9b25f4d85d68031af71561a95c3fbcf64b215c3adecb4c6a97f5ee7115028621"
     },
     {
       "path": "source_bundle.py",
@@ -23701,15 +23701,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 9339,
-      "sha256": "ce8a1c7bc5ad2197a3ffa7eb417ba12a1dbb34fe631680f855b488481c180230"
+      "size": 9449,
+      "sha256": "d9eea78399f16e9d30c89c8bda2350ef3eaf26a3ec596f4dcce5be8f46f69090"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 13729,
-      "sha256": "7ff03c669794d8eb839cf2e18c2124c61821c2364bf3df3b676d6498cbfff8ae"
+      "size": 13823,
+      "sha256": "d34f10a26fffcfeb9e2542948129db6c2ad4dbe2df9f27645fcc8cb8130ab247"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24912,8 +24912,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 13032,
-      "sha256": "980000b291e29771406e016e57297220aa59ebd1a214dc93030d59450e98736e"
+      "size": 13352,
+      "sha256": "d45f385b66db9c90902a4c41c874d3e3096a41ea18b8914b7caf51bc2ff7d555"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -32872,7 +32872,7 @@
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "e83fd08c837fb64334a095df50a0cc2dd0c16731dd6208c4b3f08973f7e8c72c"
+      "sha256": "689b74b0166faeca3feab8683e05938b9c70f017ef8577ae1a21315e0d07e3eb"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
