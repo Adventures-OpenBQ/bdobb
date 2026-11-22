@@ -328,5 +328,11 @@
     "rule": "private-ip",
     "line_sha256": "d2be38a14771535c06435013999c62f5cb33915b6044a7b6fd1711c1c251609c",
     "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "frontend/assets/xlsx-DBvuKzsv.js.map",
+    "rule": "private-ip",
+    "line_sha256": "d1c549421cfef43fa82f2e4b6f5df3a83789d085c6f1c26568b9f6d96cc3b3e6",
+    "reason": "Exact compiled source-map bytes embed checksum-verified official SheetJS 0.20.3 xlsx.mjs. The sole private-IP-shaped string is an OpenDocument specification section number in the draw:object parser comment. Exact archive-member path and whole-line hash only; other data and every scanning rule remain checked."
   }
 ]
