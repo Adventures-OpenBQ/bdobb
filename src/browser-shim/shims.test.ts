@@ -534,14 +534,17 @@ describe("socket shim (web preview tickets)", () => {
   // Ep. 10: the live grid's socket, on the seeded preview-grid backend
   // (<origin>/grid + wsEndpoint live_grid_ws), asks for its own ticket the same
   // way; the vendored policy decides whether one is issued.
-  it("asks for a ticket over the live grid's /grid/live_grid_ws as for any same-origin socket", async () => {
+  it.each(["live_grid_ws", "chart_stream_ws"])("asks for a fresh ticket over /grid/%s", async (endpoint) => {
     window.__bdobbSocketTickets = true;
     const fetchSpy = ticketed();
     vi.stubGlobal("fetch", fetchSpy);
     await import("./socket");
-    new globalThis.WebSocket("wss://preview.example.com/grid/live_grid_ws");
+    new globalThis.WebSocket(`wss://preview.example.com/grid/${endpoint}`);
     await settle();
-    expect(fetchSpy.mock.calls[0][0]).toBe("/socket-ticket?for=" + encodeURIComponent("/grid/live_grid_ws"));
+    expect(fetchSpy.mock.calls[0][0]).toBe("/socket-ticket?for=" + encodeURIComponent(`/grid/${endpoint}`));
+    new globalThis.WebSocket(`wss://preview.example.com/grid/${endpoint}`);
+    await settle();
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it("closes, so the caller retries, when the ticket request never answers", async () => {

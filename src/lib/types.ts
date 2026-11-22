@@ -303,6 +303,8 @@ export type WidgetDef = {
   endpoint: string;
   /** A live_grid widget's WebSocket path; absent means "not a live grid". */
   wsEndpoint?: string;
+  /** Explicit backend capability; legacy quote folding stays separate. */
+  chartStreamV1?: boolean;
   /** The column that identifies a row for a live_grid's streamed updates. */
   wsRowIdColumn?: string;
   gridData: { w: number; h: number };

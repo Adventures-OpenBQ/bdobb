@@ -71,6 +71,13 @@ extends the newest bar from the live grid's socket as trades arrive. It charts
 the first symbol only, and with no interval, or one it cannot read, it shows
 the fetched bars with a note and stays off the socket.
 
+With the backend's chart stream capability, Live Chart instead receives an atomic
+snapshot and complete server candle replacements. Late trades can revise older
+closed candles. It retains up to 2,000 candles, resumes from its applied progress
+after reconnecting, and requests a fresh snapshot when a gap cannot be recovered.
+Quiet-market status changes do not add trades or volume. Refresh requests a new
+snapshot. This view currently displays candles for the first symbol.
+
 ## Zoom, pan and reset
 
 There is no chart toolbar — the mode bar is off.

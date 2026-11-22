@@ -289,3 +289,162 @@ describe("LiveChartRenderer", () => {
     await waitFor(() => expect(screen.getByText("HTTP 502: Bad Gateway")).toBeInTheDocument());
   });
 });
+
+it('selects the advertised chart protocol and draws full historical replacements without a quote seed', async () => {
+  const streamed = { ...widget, chartStreamV1: true, wsEndpoint: 'chart_stream_ws' };
+  const { unmount } = render(<LiveChartRenderer widget={streamed} backend={{...backend, baseUrl:'https://funnel.example/grid'}} params={{symbol:'AAPL',interval:'1m',start:'2026-11-20T14:30:00.000000000Z'}} />);
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(1));
+  expect(socket().url).toMatch(/^wss:\/\/funnel.example\/grid\/chart_stream_ws\?ticket=t[0-9]+$/);
+  act(() => socket().open());
+  expect(JSON.parse(socket().sent[0])).toMatchObject({type:'subscribe',protocol_version:1,view:{symbol:'AAPL',mode:'candles',interval:'1m'}});
+  const examples = await import('../../lib/chart-stream-v1.examples.json');
+  for (const frame of examples.default[1].frames.slice(0,4)) act(() => socket().emit({...frame,subscription_id:'chart'}));
+  await waitFor(() => expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({open:99,volume:5})]));
+  expect(fetchWidgetData).not.toHaveBeenCalled();
+  expect(handle.updateBar).not.toHaveBeenCalled();
+  await waitFor(()=>expect(socket().sent.map(x=>JSON.parse(x).type)).toContain('ack'));
+  unmount();
+  expect(socket().sent.map(x=>JSON.parse(x).type)).toContain('unsubscribe');
+});
+it('resumes the applied checkpoint with fresh desktop tickets and unsubscribes on a view change', async () => {
+  const streamed = {...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+  const keyed = {...backend,authLocation:'header',headerName:'Authorization',headerValue:'Bearer private'} as BackendConfig;
+  const {rerender} = render(<LiveChartRenderer widget={streamed} backend={keyed} params={{symbol:'AAPL',interval:'1m'}}/>);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));
+  act(()=>socket().open());
+  const examples = await import('../../lib/chart-stream-v1.examples.json');
+  for(const frame of examples.default[1].frames.slice(0,3)) act(()=>socket().emit({...frame,subscription_id:'chart'}));
+  const first = socket();
+  act(()=>first.close());
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(2),{timeout:3000});
+  expect(socket().url).not.toBe(first.url);
+  expect(socket().url).not.toContain('private');
+  act(()=>socket().open());
+  expect(JSON.parse(socket().sent[0])).toMatchObject({type:'resume',checkpoint:{cursor:{epoch:'epoch-a',seq:'9007199254740993'},retained_candle_keys:[expect.objectContaining({symbol:'AAPL'})]}});
+  const previous=socket();
+  rerender(<LiveChartRenderer widget={streamed} backend={keyed} params={{symbol:'MSFT',interval:'1m'}}/>);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(3));
+  expect(previous.sent.map(x=>JSON.parse(x).type)).toContain('unsubscribe');
+  act(()=>socket().open());
+  expect(JSON.parse(socket().sent[0])).toMatchObject({type:'subscribe',view:{symbol:'MSFT'}});
+});
+it('uses a fresh snapshot when retained candle keys would exceed the control byte limit', async () => {
+  const streamed={...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}}/>);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));
+  act(()=>socket().open());
+  const examples=await import('../../lib/chart-stream-v1.examples.json');
+  const [begin,chunk,end]=examples.default[1].frames;
+  const candle=(chunk as unknown as {items:{key:{bucket_start:string}}[]}).items[0];
+  const items=Array.from({length:1000},(_,n)=>({...candle,key:{symbol:'AAPL',interval:'1m',bucket_start:new Date(Date.UTC(2026,10,20,14,30+n)).toISOString().replace('000Z','000000000Z')}}));
+  act(()=>socket().emit({...begin,subscription_id:'chart',item_count:'1000'}));
+  act(()=>socket().emit({...chunk,subscription_id:'chart',items}));
+  act(()=>socket().emit({...end,subscription_id:'chart',item_count:'1000'}));
+  act(()=>socket().close());
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(2),{timeout:3000});
+  act(()=>socket().open());
+  expect(JSON.parse(socket().sent[0]).type).toBe('subscribe');
+  expect(new TextEncoder().encode(socket().sent[0]).length).toBeLessThan(65536);
+});
+it('coalesces acknowledgments under the gateway control-rate budget', async () => {
+  const streamed={...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}}/>);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(1)); act(()=>socket().open());
+  const examples=await import('../../lib/chart-stream-v1.examples.json');
+  for(const frame of examples.default[1].frames.slice(0,3)) act(()=>socket().emit({...frame,subscription_id:'chart'}));
+  for(let n=0;n<20;n++) act(()=>socket().emit({...examples.default[1].frames[3],subscription_id:'chart',from_cursor:{epoch:'epoch-a',seq:String(9007199254740993n+BigInt(n))},through_cursor:{epoch:'epoch-a',seq:String(9007199254740994n+BigInt(n))},candles:[]}));
+  expect(socket().sent.filter(x=>JSON.parse(x).type==='ack').length).toBeLessThanOrEqual(1);
+  await waitFor(()=>expect(socket().sent.map(x=>JSON.parse(x))).toContainEqual(expect.objectContaining({type:'ack',cursor:{epoch:'epoch-a',seq:'9007199254741013'}})));
+});
+
+it('applies a logical candle change above the snapshot chunk cap without reconnecting', async () => {
+  const streamed = {...widget, chartStreamV1: true, wsEndpoint: 'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}} />);
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(1));
+  const connection = socket();
+  act(() => connection.open());
+  const examples = await import('../../lib/chart-stream-v1.examples.json');
+  const [begin, chunk, end] = examples.default[1].frames;
+  const epoch = 'e'.repeat(64);
+  const cursor = {epoch, seq:'9007199254740993'};
+  const through = {epoch, seq:'9007199254740994'};
+  const candles = Array.from({length:2000}, (_, n) => ({
+    key:{symbol:'AAPL',interval:'1m',bucket_start:new Date(Date.UTC(2026,10,20,14,30+n)).toISOString().replace('000Z','000000000Z')},
+    open:9, high:12, low:8, close:11, volume:7, vwap:10, tickCount:'2', revision:through, status:'closed',
+  }));
+  act(() => connection.emit({...begin, subscription_id:'chart', cursor}));
+  act(() => connection.emit({...chunk, subscription_id:'chart', items:[{...candles[0],volume:3,revision:cursor}]}));
+  act(() => connection.emit({...end, subscription_id:'chart', cursor}));
+  await waitFor(() => expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({volume:3})]));
+  const change = {protocol_version:1,type:'candles',subscription_id:'chart',generation:'generation-a',from_cursor:cursor,through_cursor:through,candles};
+  const bytes = new TextEncoder().encode(JSON.stringify(change)).length;
+  expect(bytes).toBeGreaterThan(512 * 1024);
+  expect(bytes).toBeLessThan(8 * 1024 * 1024);
+  act(() => connection.emit(change));
+  await waitFor(() => expect(handle.setBars.mock.lastCall?.[0]).toHaveLength(2000));
+  expect(handle.setBars.mock.lastCall?.[0][0]).toMatchObject({open:9,volume:7});
+  await waitFor(() => expect(connection.sent.map(frame => JSON.parse(frame))).toContainEqual(expect.objectContaining({type:'ack',cursor:through})));
+  expect(connection.closed).toBe(false);
+  expect(FakeSocket.all).toHaveLength(1);
+});
+
+it.each([
+  ['snapshot_chunk',512 * 1024],
+  ['candles',8 * 1024 * 1024],
+  ['heartbeat',8 * 1024 * 1024],
+])('rejects an oversized %s frame before applying it', async (type, limit) => {
+  const streamed = {...widget, chartStreamV1:true, wsEndpoint:'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}} />);
+  await waitFor(() => expect(FakeSocket.all).toHaveLength(1));
+  const connection = socket();
+  act(() => connection.open());
+  const frame = {protocol_version:1,type,subscription_id:'chart',generation:'generation-a',padding:'x'.repeat(limit)};
+  expect(new TextEncoder().encode(JSON.stringify(frame)).length).toBeGreaterThan(limit);
+  act(() => connection.emit(frame));
+  expect(connection.closed).toBe(true);
+  expect(connection.sent.map(value => JSON.parse(value).type)).not.toContain('ack');
+});
+it('draws finite candles with zero volume and null VWAP through snapshot and replacement', async () => {
+  const streamed={...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}} />);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));
+  const connection=socket(); act(()=>connection.open());
+  const examples=await import('../../lib/chart-stream-v1.examples.json');
+  const [begin,chunk,end,change]=examples.default[1].frames;
+  const initial=(chunk as unknown as {items:Record<string,unknown>[]}).items[0];
+  const replacement=(change as unknown as {candles:Record<string,unknown>[]}).candles[0];
+  act(()=>connection.emit({...begin,subscription_id:'chart'}));
+  act(()=>connection.emit({...chunk,subscription_id:'chart',items:[{...initial,volume:0,vwap:null}]}));
+  act(()=>connection.emit({...end,subscription_id:'chart'}));
+  await waitFor(()=>expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({open:100,volume:0})]));
+  act(()=>connection.emit({...change,subscription_id:'chart',candles:[{...replacement,volume:0,vwap:null}]}));
+  await waitFor(()=>expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({open:99,volume:0})]));
+  await waitFor(()=>expect(connection.sent.map(frame=>JSON.parse(frame))).toContainEqual(expect.objectContaining({type:'ack',cursor:{epoch:'epoch-a',seq:'9007199254740994'}})));
+  expect(connection.sent.map(frame=>JSON.parse(frame).type).filter(type=>type==='subscribe')).toHaveLength(1);
+  expect(connection.closed).toBe(false);
+});
+it('acknowledges nullable candles without plotting fabricated prices or resetting the view', async () => {
+  const streamed={...widget,chartStreamV1:true,wsEndpoint:'chart_stream_ws'};
+  render(<LiveChartRenderer widget={streamed} backend={backend} params={{symbol:'AAPL',interval:'1m'}} />);
+  await waitFor(()=>expect(FakeSocket.all).toHaveLength(1));
+  const connection=socket(); act(()=>connection.open());
+  const examples=await import('../../lib/chart-stream-v1.examples.json');
+  const [begin,chunk,end,change]=examples.default[1].frames;
+  const initial=(chunk as unknown as {items:Record<string,unknown>[]}).items[0];
+  const replacement=(change as unknown as {candles:Record<string,unknown>[]}).candles[0];
+  act(()=>connection.emit({...begin,subscription_id:'chart'}));
+  act(()=>connection.emit({...chunk,subscription_id:'chart',items:[{...initial,open:null}]}));
+  act(()=>connection.emit({...end,subscription_id:'chart'}));
+  await waitFor(()=>expect(screen.getByText('No plottable bars for AAPL yet.')).toBeInTheDocument());
+  expect(handle.setBars).toHaveBeenLastCalledWith([]);
+  act(()=>connection.emit({...change,subscription_id:'chart',candles:[{...replacement,volume:null}]}));
+  await waitFor(()=>expect(connection.sent.map(frame=>JSON.parse(frame))).toContainEqual(expect.objectContaining({type:'ack',cursor:{epoch:'epoch-a',seq:'9007199254740994'}})));
+  expect(handle.setBars).toHaveBeenLastCalledWith([]);
+  const from={epoch:'epoch-a',seq:'9007199254740994'};
+  const through={epoch:'epoch-a',seq:'9007199254740995'};
+  act(()=>connection.emit({...change,subscription_id:'chart',from_cursor:from,through_cursor:through,candles:[{...replacement,revision:through}]}));
+  await waitFor(()=>expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({open:99,volume:5})]));
+  expect(screen.queryByText('No plottable bars for AAPL yet.')).not.toBeInTheDocument();
+  expect(connection.sent.map(frame=>JSON.parse(frame).type).filter(type=>type==='subscribe')).toHaveLength(1);
+  expect(connection.closed).toBe(false);
+});

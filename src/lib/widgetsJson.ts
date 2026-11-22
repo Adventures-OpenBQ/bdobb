@@ -630,6 +630,7 @@ export function normalizeWidgets(
       subCategory: str(w.subCategory, ""),
       endpoint: str(w.endpoint, ""),
       wsEndpoint: typeof w.wsEndpoint === "string" && w.wsEndpoint !== "" ? w.wsEndpoint : undefined,
+      chartStreamV1: asRecord(w.extra_metadata)?.chart_stream_v1 === true || undefined,
       wsRowIdColumn: data && typeof data.wsRowIdColumn === "string" ? data.wsRowIdColumn : undefined,
       gridData: toGridData(w.gridData),
       params,
