@@ -9,8 +9,8 @@
 .day-chart-logo { display:grid; place-items:center; width:24px; height:24px; flex-shrink:0; border-radius:50%; background:var(--bg-elevated,var(--bg)); color:var(--text-muted); font-size:12px; }
 .day-chart-logo img { width:100%; height:100%; object-fit:contain; border-radius:50%; }
 .day-chart-name { display:block; font-size:11px; opacity:.65; max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.day-chart-price { font-size:22px; font-variant-numeric:tabular-nums; margin-top:0; }
-.day-chart-change { font-size:10px; font-variant-numeric:tabular-nums; }
+.day-chart-price { font-size:20px; font-variant-numeric:tabular-nums; margin-top:0; }
+.day-chart-change { font-size:12px; font-variant-numeric:tabular-nums; }
 .day-chart-up { color:var(--positive,#21a67a); }
 .day-chart-down { color:var(--negative,#e36170); }
 .day-chart-neutral { color:var(--text-muted); }
