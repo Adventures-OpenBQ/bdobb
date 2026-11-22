@@ -303,3 +303,14 @@ test("only the canonical link query is admitted: upper case, a trailing &, or a 
   const headers = { Cookie: await cookie() };
   for (const q of [`/?inbox=${ID.toUpperCase()}`, `/?inbox=${ID}&`, `/?inbox=%30${ID.slice(1)}`]) assert.equal((await call(q, { headers })).status, 404, q);
 });
+
+test('the accepted chart source and Arts embedding coexist in the ticketed browser bootstrap',()=>{
+  const script=bootstrap(readConfig(charts),null,{charts:true,grid:true});
+  const files=seeded(script);
+  const connections=JSON.parse(files['backends.json']);
+  assert.equal(connections.find(backend=>backend.id==='preview-grid').baseUrl,'https://preview.example.com/grid');
+  assert.equal(connections.find(backend=>backend.id==='preview-arts').baseUrl,'https://preview.example.com/arts');
+  assert.match(script,/window\.__bdobbSocketTickets=true/);
+  assert.equal(script.includes(env.BACKEND_GATEWAY_TOKEN),false);
+  assert.equal(connections.some(backend=>backend.headerValue),false);
+});

@@ -93,6 +93,9 @@ export type ArtsChartsHost = {
    * step 1b). Absent: no server, and every card is the card it always was.
    */
   chartsFetch?: ChartsFetch;
+  /** Fresh ticketed accepted-data URL on EVERY reconnect. Never persist its ticket.
+   *  Used only after widgets.json advertises live_chart.extra_metadata.chart_stream_v1. */
+  chartStreamUrl?: (backend: BackendConfig) => Promise<string>;
   /**
    * The chart server's WebSocket URL (`ws:` or `wss:`, no query) for a
    * server-relative path (`/ta_series_ws`); the card adds its own parameters.

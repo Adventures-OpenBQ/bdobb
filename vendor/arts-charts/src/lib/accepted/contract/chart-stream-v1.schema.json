@@ -1,0 +1,1067 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openbq:chart-stream:1",
+  "title": "OpenBQ chart stream v1 structural wire schema",
+  "$defs": {
+    "cursor": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        }
+      },
+      "required": [
+        "epoch",
+        "seq"
+      ],
+      "additionalProperties": false
+    },
+    "view": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9._^=-]{0,63}$"
+        },
+        "mode": {
+          "enum": [
+            "ticks",
+            "candles"
+          ]
+        },
+        "start": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+        },
+        "end": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+        },
+        "interval": {
+          "enum": [
+            "1s",
+            "1m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "1d"
+          ]
+        },
+        "max_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      },
+      "required": [
+        "symbol",
+        "mode",
+        "start",
+        "max_items"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "candles"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "interval"
+            ],
+            "properties": {
+              "max_items": {
+                "maximum": 2000
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "interval"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "floor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "tick"
+            },
+            "time": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+            },
+            "seq": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,18})$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "time",
+            "seq"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "candle"
+            },
+            "bucket_start": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+            }
+          },
+          "required": [
+            "kind",
+            "bucket_start"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "available_from": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "complete_from": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "available_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "available_from",
+        "complete_from",
+        "available_to",
+        "complete"
+      ],
+      "additionalProperties": false
+    },
+    "candle_key": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "interval": {
+          "enum": [
+            "1s",
+            "1m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "1d"
+          ]
+        },
+        "bucket_start": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+        }
+      },
+      "required": [
+        "symbol",
+        "interval",
+        "bucket_start"
+      ],
+      "additionalProperties": false
+    },
+    "tick": {
+      "type": "object",
+      "properties": {
+        "tick_id": {
+          "$ref": "#/$defs/cursor"
+        },
+        "time": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+        },
+        "sym": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "price": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "size": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "tick_id",
+        "time",
+        "sym",
+        "price",
+        "size"
+      ],
+      "additionalProperties": false
+    },
+    "candle": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/candle_key"
+        },
+        "open": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "high": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "low": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "close": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "volume": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "vwap": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tickCount": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "revision": {
+          "$ref": "#/$defs/cursor"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "closed"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "vwap",
+        "tickCount",
+        "revision",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "batch": {
+      "type": "object",
+      "properties": {
+        "batch_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "accepted_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+        },
+        "ticks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tick"
+          },
+          "maxItems": 100000
+        }
+      },
+      "required": [
+        "batch_id",
+        "accepted_at",
+        "ticks"
+      ],
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/candle_key"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "closed"
+          ]
+        }
+      },
+      "required": [
+        "key",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "checkpoint": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "view_key": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "view_floor": {
+          "$ref": "#/$defs/floor"
+        },
+        "retained_candle_keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candle_key"
+          },
+          "maxItems": 2000
+        }
+      },
+      "required": [
+        "cursor",
+        "view_key",
+        "view_floor"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "subscribe"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "view": {
+          "$ref": "#/$defs/view"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "request_id",
+        "view"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "resume"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "view": {
+          "$ref": "#/$defs/view"
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/checkpoint"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "request_id",
+        "view",
+        "checkpoint"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "ack"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "cursor": {
+          "$ref": "#/$defs/cursor"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "request_id",
+        "cursor"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "unsubscribe"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "pong"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "snapshot_begin"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "view": {
+          "$ref": "#/$defs/view"
+        },
+        "view_key": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "view_floor": {
+          "$ref": "#/$defs/floor"
+        },
+        "cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "item_count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "view",
+        "view_key",
+        "view_floor",
+        "cursor",
+        "coverage",
+        "truncated",
+        "item_count"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "snapshot_chunk"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "chunk_index": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/tick"
+              },
+              {
+                "$ref": "#/$defs/candle"
+              }
+            ]
+          },
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "chunk_index",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "snapshot_end"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "chunk_count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "item_count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "cursor",
+        "chunk_count",
+        "item_count"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "ticks"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "from_cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "through_cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/batch"
+          },
+          "maxItems": 100000
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "from_cursor",
+        "through_cursor",
+        "batches"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "candles"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "from_cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "through_cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "candles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candle"
+          },
+          "maxItems": 2000
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "from_cursor",
+        "through_cursor",
+        "candles"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "candle_status"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "status_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "statuses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/status"
+          },
+          "maxItems": 2000
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "status_seq",
+        "statuses"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "resumed"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "view": {
+          "$ref": "#/$defs/view"
+        },
+        "view_key": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "view_floor": {
+          "$ref": "#/$defs/floor"
+        },
+        "status_seq": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "statuses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/status"
+          },
+          "maxItems": 2000
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "cursor",
+        "view",
+        "view_key",
+        "view_floor",
+        "status_seq",
+        "statuses"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "resync_required"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "reason": {
+          "enum": [
+            "epoch_changed",
+            "cursor_expired",
+            "cursor_ahead",
+            "catchup_limit",
+            "coverage_lost",
+            "slow_consumer",
+            "view_mismatch"
+          ]
+        },
+        "current_cursor": {
+          "$ref": "#/$defs/cursor"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "reason",
+        "current_cursor",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "unsubscribed"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "heartbeat"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "high_cursor": {
+          "$ref": "#/$defs/cursor"
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "high_cursor"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "protocol_version": {
+          "const": 1
+        },
+        "type": {
+          "const": "error"
+        },
+        "subscription_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "protocol_version",
+        "type",
+        "subscription_id",
+        "generation",
+        "code",
+        "message"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

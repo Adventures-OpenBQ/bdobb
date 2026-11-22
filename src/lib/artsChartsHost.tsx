@@ -25,7 +25,7 @@ import { useBackendsStore } from "../stores/backendsStore";
 import { useDashboardStore } from "../stores/dashboardStore";
 import { artsChartsConnections } from "./artsCharts/connection";
 import { artsChartWidget } from "./artsCharts/widget";
-import { applyAuthQuery, authHeaders, buildWidgetWsUrl as bdobbWsUrl, fetchWidgetPath, joinUrl } from "./dataClient";
+import { applyAuthQuery, authHeaders, buildWidgetWsUrl as bdobbWsUrl, fetchWidgetPath, joinUrl, ticketedWsUrl } from "./dataClient";
 import { isExpression, isRangeType, parseExpression, previewExpression, resolveExpression, resolveValue, splitRange } from "./dateExpressions";
 import { logError, logInfo } from "./logger";
 import { wireParams } from "./params";
@@ -67,6 +67,18 @@ export function chartsSocketUrl(path: string): string {
   return url.toString();
 }
 
+/** Resolve one accepted-data connection using the source's current stored credential.
+ * Browser preview sources have no machine credential: their same-origin URL is
+ * exchanged by TicketSocket for a fresh origin-bound gateway URL on each open.
+ */
+export async function chartStreamUrl(backend: Pick<BackendConfig, "id">): Promise<string> {
+  const full = useBackendsStore.getState().backends.find(source => source.id === backend.id);
+  if (!full) throw new Error("Chart source is not connected");
+  const plain = bdobbWsUrl(full, {wsEndpoint:"chart_stream_ws"} as WidgetDef);
+  if (plain === null) throw new Error("Chart stream URL is unavailable");
+  return ticketedWsUrl(full, plain);
+}
+
 /** The package types the card as its structural subset; at runtime it is the app's full card. */
 const Link = (p: GroupLinkProps) => <GroupLink {...p} card={p.card as DashboardCard} />;
 
@@ -104,6 +116,7 @@ export function buildHost({ viewer }: { viewer: boolean }): ArtsChartsHost {
   const b = active();
   const store = useDashboardStore.getState();
   return {
+    chartStreamUrl,
     fetchWidgetPath: (backend, path, params) => fetchWidgetPath(backend as BackendConfig, path, params),
     buildWidgetWsUrl: (backend, widget, params = {}) => {
       const full = useBackendsStore.getState().backends.find((x) => x.id === backend.id);

@@ -1,0 +1,9 @@
+{
+  "license": "Apache-2.0",
+  "repository": "Adventures-OpenBQ/openbq-docker",
+  "commit": "d16b71de1d0a5449ceaf79ce3f44a0ab5785321d",
+  "files": {
+    "chart-stream-v1.schema.json": "1e17758958225ffb5b1381697e1561d14f5deaf632af29c9bf177d07f43ea557",
+    "chart-stream-v1.examples.json": "2fe846f2ad2ef578a7c84e4471243e7c2f6186d22be925b4321953ee7f0a3c97"
+  }
+}

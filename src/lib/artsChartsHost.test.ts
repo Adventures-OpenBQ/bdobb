@@ -121,3 +121,34 @@ describe("the vendored client resolves dates through bdobb (spec 2026-11-04 §1)
     expect(files.filter((f) => /from "[^"]*dateExpressions"/.test(readFileSync(f, "utf8")))).toEqual([]);
   });
 });
+
+describe('accepted chart stream host URL resolver',()=>{
+  const grid:BackendConfig={...gateway,id:'grid',kind:undefined,baseUrl:'https://door.example.com/grid'};
+  beforeEach(()=>{httpFetch.mockReset();httpFetch.mockImplementation(async()=>new Response('{}'));set([gateway,grid]);});
+  it('mints a fresh canonical chart ticket per native reconnect without putting the bearer in the socket URL',async()=>{
+    httpFetch.mockResolvedValueOnce(new Response(JSON.stringify({ticket:'first'}),{headers:{'Content-Type':'application/json'}}));
+    httpFetch.mockResolvedValueOnce(new Response(JSON.stringify({ticket:'second'}),{headers:{'Content-Type':'application/json'}}));
+    const host=buildHost({viewer:false});
+    const first=await host.chartStreamUrl!(grid);
+    set([gateway,{...grid,headerValue:'Bearer rotated-token'}]);
+    const second=await host.chartStreamUrl!(grid);
+    expect(first).toBe('wss://door.example.com/grid/chart_stream_ws?ticket=first');
+    expect(second).toBe('wss://door.example.com/grid/chart_stream_ws?ticket=second');
+    expect(first).not.toContain('test-token');
+    expect(httpFetch).toHaveBeenCalledTimes(2);
+    expect(String(httpFetch.mock.calls[0][0])).toBe('https://door.example.com/grid/ws_ticket?target=%2Fgrid%2Fchart_stream_ws');
+    expect((httpFetch.mock.calls[0][1] as RequestInit).headers).toMatchObject({Authorization:'Bearer test-token'});
+    expect((httpFetch.mock.calls[1][1] as RequestInit).headers).toMatchObject({Authorization:'Bearer rotated-token'});
+    expect(second).not.toContain('rotated-token');
+  });
+  it('returns the same-origin browser target for the existing fresh-ticket socket shim',async()=>{
+    const preview={...grid,id:'preview-grid',baseUrl:'https://preview.example.com/grid',headerName:undefined,headerValue:undefined};
+    set([web,preview]);
+    expect(await buildHost({viewer:true}).chartStreamUrl!(preview)).toBe('wss://preview.example.com/grid/chart_stream_ws');
+    expect(httpFetch).not.toHaveBeenCalled();
+  });
+  it('refuses a source that is no longer connected',async()=>{
+    await expect(buildHost({viewer:false}).chartStreamUrl!({...grid,id:'removed'})).rejects.toThrow(/not connected/);
+    expect(httpFetch).not.toHaveBeenCalled();
+  });
+});

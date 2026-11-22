@@ -501,7 +501,11 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
         if (!cfg.backend || (target === "/news/ws/news" && !Object.keys(cfg.feeds).length)) {
           return reply(res, 503, "Backend ingress is not configured.");
         }
-        const ticket = socketTicket(cfg.token, target);
+        // Chart resume positions are data, not credentials. Bind this new
+        // protocol's short-lived ticket to the exact authenticated page origin
+        // as well as its target; the gateway verifies the same signed string.
+        const signedTarget = target === "/grid/chart_stream_ws" ? cfg.origin + target : target;
+        const ticket = socketTicket(cfg.token, signedTarget);
         return reply(res, 200, JSON.stringify({
           url: cfg.backend.replace("https:", "wss:") + target + (target.includes("?") ? "&" : "?") + "ticket=" + ticket,
         }), MIME[".json"]);

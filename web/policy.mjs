@@ -1,4 +1,4 @@
-// vendored from openbq-docker v11.0.0 funnel-gateway/policy.mjs sha256:cbe50fed7a0d5a673e4a0343c8fe8d68d475e2728c4e49e876029022133b72c3
+// vendored from openbq-docker v12.0.0 funnel-gateway/policy.mjs sha256:d323a69f76bb4452b63c6b3ce6a72297492b6a156bf5f4220fe85bcfec17f5cd
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -453,6 +453,7 @@ export function socketTarget(raw, origin) {
   let url; try { url = new URL(raw, origin); } catch { return null; }
   if (url.origin !== origin || url.hash) return null;
   // raw === pathname: no query (not even a bare "?"), and no "..", "%" or case folding.
+  if (url.pathname === "/grid/chart_stream_ws") return raw === url.pathname ? raw : null;
   if (url.pathname === "/ref/live_grid_ws" && raw === url.pathname) return url.pathname;
   if (url.pathname === "/news/ws/news" || url.pathname === "/grid/live_grid_ws") {
     return url.search ? null : url.pathname;
@@ -543,4 +544,41 @@ export function tableControlRoute(route, method) {
   if (!route?.managed) return false;
   return (method === "POST" && /^\/table\/sessions\/[A-Za-z0-9_-]{1,128}\/cancel$/.test(route.path)) ||
     (method === "DELETE" && /^\/table\/(?:sessions|exports)\/[A-Za-z0-9_-]{1,128}$/.test(route.path));
+}
+
+/** Chart controls are data only; the backend independently validates state and access. */
+export function chartStreamControl(data) {
+  if (data.length > 65536) return null;
+  let f; try { f = JSON.parse(data.toString()); } catch { return null; }
+  const object = x => x && typeof x === "object" && !Array.isArray(x);
+  const exact = (x, keys) => object(x) && Object.keys(x).sort().join() === [...keys].sort().join();
+  const text = (x, max) => typeof x === "string" && x.length > 0 && x.length <= max;
+  const seq = x => typeof x === "string" && /^(0|[1-9][0-9]{0,18})$/.test(x) && BigInt(x) <= 9223372036854775807n;
+  const cursor = x => exact(x, ["epoch", "seq"]) && text(x.epoch, 64) && seq(x.seq);
+  const date = x => typeof x === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(x) && Number.isFinite(Date.parse(x));
+  const intervals = new Set(["1s","1m","5m","15m","30m","1h","1d"]);
+  const key = x => exact(x, ["symbol","interval","bucket_start"]) && text(x.symbol,64) && intervals.has(x.interval) && date(x.bucket_start);
+  const floor = x => object(x) && (x.kind === "tick" ? exact(x,["kind","time","seq"]) && date(x.time) && (x.seq === null || seq(x.seq)) : x.kind === "candle" && exact(x,["kind","bucket_start"]) && date(x.bucket_start));
+  const view = x => {
+    if (!object(x) || !/^[A-Z0-9][A-Z0-9._^=-]{0,63}$/.test(x.symbol) || !["ticks","candles"].includes(x.mode) || !date(x.start)) return false;
+    const keys = ["symbol","mode","start","max_items"];
+    if (x.end !== undefined) { if (!date(x.end) || x.end.replace(/(\.\d+)?Z$/, match => (match === "Z" ? ".000000000Z" : match.slice(0,-1).padEnd(10,"0")+"Z")) <= x.start.replace(/(\.\d+)?Z$/, match => (match === "Z" ? ".000000000Z" : match.slice(0,-1).padEnd(10,"0")+"Z"))) return false; keys.push("end"); }
+    if (x.mode === "candles") { if (!intervals.has(x.interval)) return false; keys.push("interval"); }
+    return exact(x,keys) && Number.isInteger(x.max_items) && x.max_items >= 1 && x.max_items <= (x.mode === "ticks" ? 10000 : 2000);
+  };
+  if (!object(f) || f.protocol_version !== 1 || !text(f.subscription_id,64) || !text(f.request_id,128)) return null;
+  const keys = ["protocol_version","type","subscription_id","request_id"];
+  if (["subscribe","resume"].includes(f.type)) {
+    keys.push("view"); if (!view(f.view)) return null;
+    if (f.type === "resume") {
+      keys.push("checkpoint"); const c = f.checkpoint;
+      const ck = ["cursor","view_key","view_floor"];
+      if (c?.retained_candle_keys !== undefined) { ck.push("retained_candle_keys"); if (!Array.isArray(c.retained_candle_keys) || c.retained_candle_keys.length > 2000 || !c.retained_candle_keys.every(key)) return null; }
+      if (!exact(c,ck) || !cursor(c.cursor) || !/^[0-9a-f]{64}$/.test(c.view_key) || !floor(c.view_floor)) return null;
+    }
+  } else if (["ack","pong","unsubscribe"].includes(f.type)) {
+    keys.push("generation"); if (!text(f.generation,64)) return null;
+    if (f.type === "ack") { keys.push("cursor"); if (!cursor(f.cursor)) return null; }
+  } else return null;
+  return exact(f,keys) ? JSON.stringify(f) : null;
 }

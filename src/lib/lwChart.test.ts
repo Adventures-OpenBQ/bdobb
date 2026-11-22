@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import type { IPrimitivePaneRenderer, ISeriesPrimitive, SeriesAttachedParameter } from "lightweight-charts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // lightweight-charts draws to canvas, which jsdom lacks -- the same reason
@@ -8,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // options and data this module hands the library, so that is what's asserted.
 const series = () => {
   const scale = { applyOptions: vi.fn() };
-  return { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => scale) };
+  return { setData: vi.fn(), update: vi.fn(), priceScale: vi.fn(() => scale), attachPrimitive: vi.fn(), detachPrimitive: vi.fn((p:ISeriesPrimitive)=>p.detached?.()) };
 };
 const fitContent = vi.fn();
 const panes = [{ setStretchFactor: vi.fn() }, { setStretchFactor: vi.fn() }];
@@ -155,4 +156,25 @@ describe("mountCandleChart", () => {
 it("exports the credit the card shows", () => {
   expect(TRADINGVIEW_CREDIT_URL).toBe("https://www.tradingview.com/lightweight-charts/");
   expect(TRADINGVIEW_CREDIT_LABEL).toBe("Rendered by TradingView");
+});
+
+it("keeps wider-wick geometry synchronized with replacements and detaches it before chart disposal", async () => {
+  const handle = await mountCandleChart(document.createElement("div"), {theme:"dark",colors:{},showVolume:false,wickWidth:2});
+  const candles = chart.addSeries.mock.results[0].value;
+  expect(candles.attachPrimitive).toHaveBeenCalledTimes(1);
+  const primitive = candles.attachPrimitive.mock.calls[0][0] as ISeriesPrimitive & {draw:IPrimitivePaneRenderer['draw']};
+  primitive.attached?.({chart:{timeScale:()=>({getVisibleLogicalRange:()=>({from:0,to:0}),logicalToCoordinate:()=>10,options:()=>({barSpacing:6})})},series:{options:()=>({wickVisible:true,wickUpColor:'#0f0',wickDownColor:'#f00'}),priceToCoordinate:(price:number)=>100-price},requestUpdate:vi.fn()} as unknown as SeriesAttachedParameter);
+  const rectangles: number[][] = [];
+  const target = {useBitmapCoordinateSpace(callback:(scope:unknown)=>void) {callback({context:{save() {},restore() {},fillRect(...geometry:number[]) {rectangles.push(geometry);}},horizontalPixelRatio:1,verticalPixelRatio:1,bitmapSize:{width:400,height:400}});}} as unknown as Parameters<IPrimitivePaneRenderer['draw']>[0];
+  handle.setBars([{time:1,open:10,high:30,low:5,close:20,volume:1}]);
+  primitive.draw(target);
+  expect(rectangles).toEqual([[9,70,2,10],[9,90,2,5]]);
+  rectangles.length=0;
+  handle.setBars([{time:1,open:10,high:40,low:5,close:20,volume:1}]);
+  primitive.draw(target);
+  expect(rectangles[0]).toEqual([9,60,2,20]);
+  handle.dispose();
+  expect(candles.detachPrimitive).toHaveBeenCalledWith(primitive);
+  rectangles.length=0;primitive.draw(target);
+  expect(rectangles).toEqual([]);
 });

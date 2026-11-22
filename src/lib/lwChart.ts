@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import type { ChartOptions, DeepPartial, UTCTimestamp } from "lightweight-charts";
+import { CandleWicks } from "./candleWicks";
 import { CARD_BG, GRID, TEXT } from "./chartShapes";
 import type { CandleColors } from "./types";
 import type { UdfBar } from "./udf";
@@ -56,12 +57,15 @@ export async function mountCandleChart(
     colors,
     showVolume,
     barSeconds,
+    wickWidth = 1,
   }: {
     theme: "dark" | "light";
     colors: CandleColors;
     showVolume: boolean;
     /** The bar width. Under a day, the axis shows times; left out (or a day or more), dates only. */
     barSeconds?: number | null;
+    /** CSS pixels; native one-pixel wicks remain the default. */
+    wickWidth?: number;
   },
 ): Promise<CandleChartHandle> {
   const lw = await import("lightweight-charts");
@@ -114,6 +118,8 @@ export async function mountCandleChart(
   // CandleColors is, under the same names the widget's chartConfig uses.
   const { volumeUpColor = UP, volumeDownColor = DOWN, ...candleColors } = colors;
   const candles = chart.addSeries(lw.CandlestickSeries, candleColors);
+  const wicks = wickWidth > 1 ? new CandleWicks(wickWidth) : null;
+  if (wicks) candles.attachPrimitive(wicks);
   const volume = showVolume
     ? chart.addSeries(lw.HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "right", title: "Volume" }, 1)
     : null;
@@ -137,12 +143,14 @@ export async function mountCandleChart(
           color: b.close >= b.open ? volumeUpColor : volumeDownColor,
         })),
       );
+      wicks?.setBars(bars);
       if (!fitted && bars.length > 0) {
         chart.timeScale().fitContent();
         fitted = true;
       }
     },
     updateBar(b) {
+      wicks?.updateBar(b);
       candles.update({ time: b.time as UTCTimestamp, open: b.open, high: b.high, low: b.low, close: b.close });
       volume?.update({
         time: b.time as UTCTimestamp,
@@ -154,6 +162,7 @@ export async function mountCandleChart(
       chart.applyOptions(themed(t));
     },
     dispose() {
+      if (wicks) candles.detachPrimitive(wicks);
       chart.remove();
     },
   };

@@ -1,0 +1,401 @@
+[
+  {
+    "name": "byte-truncated-snapshot-equal-time-accepted-batch-resume",
+    "frames": [
+      {
+        "protocol_version": 1,
+        "type": "subscribe",
+        "subscription_id": "aapl",
+        "request_id": "r1",
+        "view": {
+          "symbol": "AAPL",
+          "mode": "ticks",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 10000
+        }
+      },
+      {
+        "protocol_version": 1,
+        "type": "snapshot_begin",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "view": {
+          "symbol": "AAPL",
+          "mode": "ticks",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 10000
+        },
+        "view_key": "a8a9e2fdedf7c40e6f28e170e6b320ccc3fc10fc96103e2a08eb58d36b413054",
+        "view_floor": {
+          "kind": "tick",
+          "time": "2026-11-20T14:30:00.000000001Z",
+          "seq": "9007199254740993"
+        },
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "coverage": {
+          "available_from": "2026-11-20T14:30:00.000000000Z",
+          "complete_from": null,
+          "available_to": "2026-11-20T14:31:00.000000000Z",
+          "complete": false
+        },
+        "truncated": true,
+        "item_count": "1"
+      },
+      {
+        "protocol_version": 1,
+        "type": "snapshot_chunk",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "chunk_index": "0",
+        "items": [
+          {
+            "tick_id": {
+              "epoch": "epoch-a",
+              "seq": "9007199254740993"
+            },
+            "time": "2026-11-20T14:30:00.000000001Z",
+            "sym": "AAPL",
+            "price": 100.0,
+            "size": 2.0
+          }
+        ]
+      },
+      {
+        "protocol_version": 1,
+        "type": "snapshot_end",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "chunk_count": "1",
+        "item_count": "1"
+      },
+      {
+        "protocol_version": 1,
+        "type": "ack",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "request_id": "r2",
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        }
+      },
+      {
+        "protocol_version": 1,
+        "type": "ticks",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "from_cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "through_cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740994"
+        },
+        "batches": [
+          {
+            "batch_id": "batch-a",
+            "accepted_at": "2026-11-20T14:30:01.000000000Z",
+            "ticks": [
+              {
+                "tick_id": {
+                  "epoch": "epoch-a",
+                  "seq": "9007199254740994"
+                },
+                "time": "2026-11-20T14:30:00.000000001Z",
+                "sym": "AAPL",
+                "price": 100.0,
+                "size": 2.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "protocol_version": 1,
+        "type": "resume",
+        "subscription_id": "aapl",
+        "request_id": "r3",
+        "view": {
+          "symbol": "AAPL",
+          "mode": "ticks",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 10000
+        },
+        "checkpoint": {
+          "cursor": {
+            "epoch": "epoch-a",
+            "seq": "9007199254740994"
+          },
+          "view_key": "a8a9e2fdedf7c40e6f28e170e6b320ccc3fc10fc96103e2a08eb58d36b413054",
+          "view_floor": {
+            "kind": "tick",
+            "time": "2026-11-20T14:30:00.000000001Z",
+            "seq": "9007199254740993"
+          }
+        }
+      },
+      {
+        "protocol_version": 1,
+        "type": "resumed",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740994"
+        },
+        "view": {
+          "symbol": "AAPL",
+          "mode": "ticks",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 10000
+        },
+        "view_key": "a8a9e2fdedf7c40e6f28e170e6b320ccc3fc10fc96103e2a08eb58d36b413054",
+        "view_floor": {
+          "kind": "tick",
+          "time": "2026-11-20T14:30:00.000000001Z",
+          "seq": "9007199254740993"
+        },
+        "status_seq": "0",
+        "statuses": []
+      }
+    ]
+  },
+  {
+    "name": "late-historical-candle-replacement-and-quiet-status",
+    "frames": [
+      {
+        "protocol_version": 1,
+        "type": "snapshot_begin",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "view": {
+          "symbol": "AAPL",
+          "mode": "candles",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 2000,
+          "interval": "1m"
+        },
+        "view_key": "c3512e36f6c9fd11263cb96e97fda3ca5a6c8f90f80ea46976d42976f51d1a2c",
+        "view_floor": {
+          "kind": "candle",
+          "bucket_start": "2026-11-20T14:30:00.000000000Z"
+        },
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "coverage": {
+          "available_from": "2026-11-20T14:30:00.000000000Z",
+          "complete_from": null,
+          "available_to": "2026-11-20T14:31:00.000000000Z",
+          "complete": false
+        },
+        "truncated": false,
+        "item_count": "1"
+      },
+      {
+        "protocol_version": 1,
+        "type": "snapshot_chunk",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "chunk_index": "0",
+        "items": [
+          {
+            "key": {
+              "symbol": "AAPL",
+              "interval": "1m",
+              "bucket_start": "2026-11-20T14:30:00.000000000Z"
+            },
+            "open": 100.0,
+            "high": 100.0,
+            "low": 100.0,
+            "close": 100.0,
+            "volume": 3.0,
+            "vwap": 100.0,
+            "tickCount": "1",
+            "revision": {
+              "epoch": "epoch-a",
+              "seq": "9007199254740993"
+            },
+            "status": "open"
+          }
+        ]
+      },
+      {
+        "protocol_version": 1,
+        "type": "snapshot_end",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "chunk_count": "1",
+        "item_count": "1"
+      },
+      {
+        "protocol_version": 1,
+        "type": "candles",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "from_cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740993"
+        },
+        "through_cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740994"
+        },
+        "candles": [
+          {
+            "key": {
+              "symbol": "AAPL",
+              "interval": "1m",
+              "bucket_start": "2026-11-20T14:30:00.000000000Z"
+            },
+            "open": 99.0,
+            "high": 100.0,
+            "low": 99.0,
+            "close": 100.0,
+            "volume": 5.0,
+            "vwap": 99.6,
+            "tickCount": "2",
+            "revision": {
+              "epoch": "epoch-a",
+              "seq": "9007199254740994"
+            },
+            "status": "closed"
+          }
+        ]
+      },
+      {
+        "protocol_version": 1,
+        "type": "candle_status",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "status_seq": "1",
+        "statuses": [
+          {
+            "key": {
+              "symbol": "AAPL",
+              "interval": "1m",
+              "bucket_start": "2026-11-20T14:30:00.000000000Z"
+            },
+            "status": "closed"
+          }
+        ]
+      },
+      {
+        "protocol_version": 1,
+        "type": "resume",
+        "subscription_id": "aapl",
+        "request_id": "r4",
+        "view": {
+          "symbol": "AAPL",
+          "mode": "candles",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 2000,
+          "interval": "1m"
+        },
+        "checkpoint": {
+          "cursor": {
+            "epoch": "epoch-a",
+            "seq": "9007199254740994"
+          },
+          "view_key": "c3512e36f6c9fd11263cb96e97fda3ca5a6c8f90f80ea46976d42976f51d1a2c",
+          "view_floor": {
+            "kind": "candle",
+            "bucket_start": "2026-11-20T14:30:00.000000000Z"
+          },
+          "retained_candle_keys": [
+            {
+              "symbol": "AAPL",
+              "interval": "1m",
+              "bucket_start": "2026-11-20T14:30:00.000000000Z"
+            }
+          ]
+        }
+      },
+      {
+        "protocol_version": 1,
+        "type": "resumed",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740994"
+        },
+        "view": {
+          "symbol": "AAPL",
+          "mode": "candles",
+          "start": "2026-11-20T14:30:00.000000000Z",
+          "max_items": 2000,
+          "interval": "1m"
+        },
+        "view_key": "c3512e36f6c9fd11263cb96e97fda3ca5a6c8f90f80ea46976d42976f51d1a2c",
+        "view_floor": {
+          "kind": "candle",
+          "bucket_start": "2026-11-20T14:30:00.000000000Z"
+        },
+        "status_seq": "0",
+        "statuses": [
+          {
+            "key": {
+              "symbol": "AAPL",
+              "interval": "1m",
+              "bucket_start": "2026-11-20T14:30:00.000000000Z"
+            },
+            "status": "closed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "slow-client-and-epoch-change",
+    "frames": [
+      {
+        "protocol_version": 1,
+        "type": "resync_required",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "reason": "slow_consumer",
+        "current_cursor": {
+          "epoch": "epoch-a",
+          "seq": "9007199254740994"
+        },
+        "coverage": {
+          "available_from": "2026-11-20T14:30:00.000000000Z",
+          "complete_from": null,
+          "available_to": "2026-11-20T14:31:00.000000000Z",
+          "complete": false
+        }
+      },
+      {
+        "protocol_version": 1,
+        "type": "resync_required",
+        "subscription_id": "aapl",
+        "generation": "generation-a",
+        "reason": "epoch_changed",
+        "current_cursor": {
+          "epoch": "epoch-b",
+          "seq": "0"
+        },
+        "coverage": {
+          "available_from": "2026-11-20T14:30:00.000000000Z",
+          "complete_from": null,
+          "available_to": "2026-11-20T14:31:00.000000000Z",
+          "complete": false
+        }
+      }
+    ]
+  }
+]

@@ -215,3 +215,11 @@ Apache License
    limitations under the License.
 ```
 
+
+## OpenBQ accepted chart protocol
+
+`src/lib/accepted/contract` contains Apache-2.0 chart-stream v1 JSON schema and
+golden transcripts from Adventures-OpenBQ/openbq-docker. Exact source commit and
+SHA-256 hashes are recorded in `PROVENANCE.json`, with the license alongside.
+The BUSL candle model and socket lifecycle are original Art's Charts code;
+no AGPL consumer/reducer implementation is included.
