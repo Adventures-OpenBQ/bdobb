@@ -83,11 +83,12 @@ export const setPlayerMuted = (source: string, label: string, muted: boolean) =>
   invoke<MuteState>("picture_in_picture_set_muted", { source, label, muted });
 export const readMuteState = (source: string, label: string) =>
   invoke<MuteState>("picture_in_picture_mute_state", { source, label });
-export async function capturedPlayerAudio(card: string, toggle = false): Promise<MuteState> {
+export type CapturedAudioState = MuteState & { lastConfirmed?: boolean };
+export async function capturedPlayerAudio(card: string, toggle = false): Promise<CapturedAudioState> {
   const raw = await invoke<unknown>("picture_in_picture_captured_audio", { card, toggle });
   if (raw && typeof raw === "object" && "state" in raw) {
     if (raw.state === "muted" || raw.state === "sound") return {state: raw.state};
-    if (raw.state === "unavailable" && "reason" in raw && typeof raw.reason === "string") return {state: "unavailable", reason: raw.reason};
+    if (raw.state === "unavailable" && "reason" in raw && typeof raw.reason === "string") return {state: "unavailable", reason: raw.reason, ...(!toggle && "last_confirmed" in raw && typeof raw.last_confirmed === "boolean" ? {lastConfirmed: raw.last_confirmed} : {})};
   }
   return {state: "unavailable", reason: "Chrome's audio control did not answer"};
 }

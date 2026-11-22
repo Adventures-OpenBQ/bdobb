@@ -300,6 +300,7 @@ pub fn ask_for_permission() {
 #[derive(Default)]
 pub struct AxWindow {
     player: super::binding::PlayerBinding<Cf>,
+    audio_history: super::audio::AudioHistory<usize>,
 }
 
 impl AxWindow {
@@ -324,21 +325,27 @@ impl AxWindow {
 
     /// Audio never searches tabs or another window; this binding is the one
     /// retained by the placement lifetime. Merely reading does not steal focus.
-    pub fn audio(&mut self, toggle: bool, alive: impl Fn() -> bool, may_focus: impl Fn() -> bool) -> (super::logic::MuteState, Option<AudioFocus>) {
+    pub fn audio(&mut self, toggle: bool, alive: impl Fn() -> bool, may_focus: impl Fn() -> bool) -> (super::audio::CapturedAudioState, Option<AudioFocus>) {
         let mut focus = None;
+        let mut bound = None;
         let result = (|| -> Result<bool, String> {
             let player = self.player()?.ok_or("The captured player closed")?;
+            bound = Some(player);
             if toggle {
                 let (app, _) = chrome().ok_or("Chrome is not running")?;
                 let token = AudioFocus(Cf::new(unsafe { CFRetain(player) }).ok_or("The player closed")?);
                 focus = Some(token);
-                if !alive() || !may_focus() || !blur_inputs().0 { return Err("The player action lost focus".into()); }
+                if !alive() || !may_focus() || !blur_inputs().0 { return Err("The card is no longer in front".into()); }
                 let yes = Cf::new(unsafe { CFRetain(kCFBooleanTrue) }).ok_or("Cannot focus the player")?;
                 set(player, "AXMain", &yes)?;
                 set(player, "AXFocused", &yes)?;
-                if !alive() || !may_focus() || !blur_inputs().0 { return Err("The player action lost focus".into()); }
-                set(app.0, "AXFrontmost", &yes)?;
-                perform(player, "AXRaise")?;
+                // AXFocused can itself activate Chrome. That expected focus
+                // change is allowed only when it reached this exact player.
+                if !focus.as_ref().is_some_and(AudioFocus::still_focused) {
+                    if !alive() || !may_focus() || !blur_inputs().0 { return Err("The captured player lost focus".into()); }
+                    set(app.0, "AXFrontmost", &yes)?;
+                    perform(player, "AXRaise")?;
+                }
                 if !focus.as_ref().is_some_and(AudioFocus::still_focused) {
                     return Err("Chrome did not focus the captured player".into());
                 }
@@ -360,10 +367,11 @@ impl AxWindow {
                 std::thread::sleep(SETTLE_POLL);
             }
         })();
-        let state = match result {
-            Ok(true) => super::logic::MuteState::Muted,
-            Ok(false) => super::logic::MuteState::Sound,
-            Err(reason) => super::logic::MuteState::Unavailable { reason },
+        let state = if let Some(player) = bound.filter(|player| alive() && self.player().ok().flatten() == Some(*player)) {
+            self.audio_history.observe(player as usize, result, toggle)
+        } else {
+            self.audio_history.clear();
+            super::logic::MuteState::Unavailable { reason: "The captured player closed or changed".into() }.into()
         };
         (state, focus)
     }
@@ -413,7 +421,7 @@ fn player_audio_button(player: CFTypeRef) -> Result<(Cf, bool), String> {
 }
 
 impl PlayerWindow for AxWindow {
-    fn reset_binding(&mut self) { self.player.reset(); }
+    fn reset_binding(&mut self) { self.player.reset(); self.audio_history.clear(); }
     fn trusted(&self) -> bool {
         // SAFETY: no arguments.
         unsafe { AXIsProcessTrusted() != 0 }

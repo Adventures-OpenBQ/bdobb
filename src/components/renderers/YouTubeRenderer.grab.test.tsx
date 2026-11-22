@@ -34,6 +34,35 @@ it("uses captured-player audio without changing the saved YouTube preference", a
   } finally { view.unmount(); host.remove(); }
 });
 
+it("keeps the confirmed mute icon when the same player's hidden controls cannot be read", async () => {
+  const intervals = vi.spyOn(globalThis, "setInterval");
+  const host = document.createElement("span"); document.body.appendChild(host);
+  let muted = false;
+  let samePlayer = true;
+  invoke.mockImplementation(async (command: string, args?: {toggle?: boolean}) => {
+    if (command !== "picture_in_picture_captured_audio") return {state: "fitted"};
+    if (args?.toggle) { muted = !muted; return {state: muted ? "muted" : "sound"}; }
+    return {state: "unavailable", reason: "Controls hidden", ...(samePlayer ? {last_confirmed: muted} : {})};
+  });
+  const view = render(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} />);
+  try {
+    await waitFor(() => expect(host.querySelector("button")).toBeEnabled());
+    await userEvent.click(host.querySelector("button")!);
+    expect(await screen.findByRole("button", {name: "Unmute"})).toBeEnabled();
+    const poll = intervals.mock.calls.find(([, delay]) => delay === 5000)![0] as () => void;
+    await act(async () => { poll(); await enqueuePlayerOp("grab", async () => {}); });
+    const stale = screen.getByRole("button", {name: "Toggle captured audio (last confirmed muted)"});
+    expect(stale.querySelectorAll("svg path")).toHaveLength(2); // Speaker plus crossed-out sound.
+    expect(stale).toHaveAttribute("title", expect.stringContaining("Last confirmed muted"));
+    await userEvent.click(stale);
+    expect(await screen.findByRole("button", {name: "Mute"})).toBeEnabled();
+    expect(host.querySelectorAll("svg path")).toHaveLength(3); // Speaker plus two sound waves.
+    samePlayer = false;
+    await act(async () => { poll(); await enqueuePlayerOp("grab", async () => {}); });
+    expect(screen.getByRole("button", {name: "Toggle captured audio"})).toHaveAttribute("title", "Controls hidden");
+  } finally { view.unmount(); host.remove(); intervals.mockRestore(); }
+});
+
 it("does not offer native captured audio to a viewer window", async () => {
   const host = document.createElement("span"); document.body.appendChild(host);
   const view = render(<YouTubeRenderer data={marker} cardId="grab" rowZeroHost={host} viewer />);
