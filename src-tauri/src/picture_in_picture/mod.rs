@@ -93,13 +93,13 @@ pub async fn picture_in_picture_mute_state(source: String, label: String) -> Mut
 /// Separate from legacy tab-slider audio: only the current captured player can
 /// answer this command. A read never brings Chrome to the front.
 #[tauri::command]
-pub async fn picture_in_picture_captured_audio(window: tauri::WebviewWindow, card: String, toggle: bool) -> MuteState {
+pub async fn picture_in_picture_captured_audio(window: tauri::WebviewWindow, card: String, toggle: bool) -> audio::CapturedAudioState {
     #[cfg(target_os = "macos")]
     return native::captured_audio(&window, &card, toggle);
     #[cfg(target_os = "windows")]
     return windows::captured_audio(&window, &card, toggle);
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-    { let _ = (window, card, toggle); unsupported() }
+    { let _ = (window, card, toggle); unsupported().into() }
 }
 
 #[tauri::command]
@@ -378,8 +378,8 @@ mod native {
         mute(|m| m.state(source, label))
     }
 
-    pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> MuteState {
-        let unavailable = || MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() };
+    pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super::audio::CapturedAudioState {
+        let unavailable = || super::audio::CapturedAudioState::from(MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() });
         if window.label() != MAIN || QUITTING.load(Ordering::SeqCst) { return unavailable(); }
         let focus_generation = FOCUS_GENERATION.load(Ordering::SeqCst);
         // Read Tauri state outside the placement lock. A user click can reveal

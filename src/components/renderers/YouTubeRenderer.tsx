@@ -9,7 +9,7 @@ import { PIP_GRAB_CHANNEL, PIP_GRAB_MARKER, youtubePlayback, youtubePlaybackUrl,
 import { closeYoutubePip, desktopVideoPipAvailable, openYoutubePip, youtubePipIsOpen } from "../../lib/youtubePip";
 import { SRC_FRAME_SANDBOX } from "./HtmlRenderer";
 import { channelCardData, PictureInPictureRenderer } from "./PictureInPictureRenderer";
-import { capturedPlayerAudio, enqueuePlayerOp, pipPlatform, type MuteState } from "../../lib/pictureInPicture";
+import { capturedPlayerAudio, enqueuePlayerOp, pipPlatform, type CapturedAudioState } from "../../lib/pictureInPicture";
 import { useParameterDropdownOpen } from "../../hooks/useParameterDropdownOpen";
 
 const grabSelection = channelCardData(PIP_GRAB_CHANNEL);
@@ -52,7 +52,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
   const wantPip = native && !inlineOnly && !grab && prefs.display === "pip";
   const focusNext = useRef(false);
   const dropdownOpen = useParameterDropdownOpen();
-  const [capturedAudio, setCapturedAudio] = useState<MuteState>({state: "unavailable", reason: "Read the captured player's audio"});
+  const [capturedAudio, setCapturedAudio] = useState<CapturedAudioState>({state: "unavailable", reason: "Read the captured player's audio"});
   const [audioBusy, setAudioBusy] = useState(false);
   const audioEpoch = useRef(0);
   const audioBusyRef = useRef(false);
@@ -64,7 +64,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
     if (!capturedAvailable || !cardId || phase !== "inline" || menuOpen || dropdownOpen) return;
     const read = () => {
       if (audioBusyRef.current) return;
-      void enqueuePlayerOp(cardId, () => audioEpoch.current === epoch && grabSelection.has(cardId) ? capturedPlayerAudio(cardId) : Promise.resolve<MuteState>({state: "unavailable", reason: "Source changed"}))
+      void enqueuePlayerOp(cardId, () => audioEpoch.current === epoch && grabSelection.has(cardId) ? capturedPlayerAudio(cardId) : Promise.resolve<CapturedAudioState>({state: "unavailable", reason: "Source changed"}))
         .then(state => { if (audioEpoch.current === epoch) setCapturedAudio(state); }).catch(() => {});
     };
     read();
@@ -77,7 +77,7 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
     const epoch = audioEpoch.current;
     audioBusyRef.current = true; setAudioBusy(true);
     try {
-      const state = await enqueuePlayerOp(cardId, () => audioEpoch.current === epoch && grabSelection.has(cardId) ? capturedPlayerAudio(cardId, true) : Promise.resolve<MuteState>({state: "unavailable", reason: "Source changed"}));
+      const state = await enqueuePlayerOp(cardId, () => audioEpoch.current === epoch && grabSelection.has(cardId) ? capturedPlayerAudio(cardId, true) : Promise.resolve<CapturedAudioState>({state: "unavailable", reason: "Source changed"}));
       if (audioEpoch.current === epoch) setCapturedAudio(state);
     } catch { if (audioEpoch.current === epoch) setCapturedAudio({state: "unavailable", reason: "Chrome's audio control did not answer"}); }
     finally { audioBusyRef.current = false; setAudioBusy(false); }
@@ -173,11 +173,12 @@ export function YouTubeRenderer({ data, cardId, settings, controlsHost, onSettin
       <label><input type="checkbox" checked={prefs.autoplay} disabled={saving} onChange={e => void change({...prefs, autoplay: e.target.checked})} /> Autoplay</label>
     </div>, controlsHost,
   ) : null;
-  const audioMuted = grab ? capturedAudio.state === "muted" : prefs.muted;
-  const audioLabel = grab && capturedAudio.state !== "muted" && capturedAudio.state !== "sound" ? "Toggle captured audio" : audioMuted ? "Unmute" : "Mute";
+  const lastConfirmed = capturedAudio.state === "unavailable" ? capturedAudio.lastConfirmed : undefined;
+  const audioMuted = grab ? capturedAudio.state === "muted" || lastConfirmed === true : prefs.muted;
+  const audioLabel = grab && capturedAudio.state === "unavailable" ? `Toggle captured audio${lastConfirmed === undefined ? "" : ` (last confirmed ${lastConfirmed ? "muted" : "sound"})`}` : audioMuted ? "Unmute" : "Mute";
   const audio = rowZeroHost && !viewer ? createPortal(
     <button type="button" className="card-action video-mute" aria-label={audioLabel}
-      title={grab && capturedAudio.state === "unavailable" ? capturedAudio.reason : audioLabel}
+      title={grab && capturedAudio.state === "unavailable" ? `${lastConfirmed === undefined ? "" : `Last confirmed ${lastConfirmed ? "muted" : "sound"}. `}${capturedAudio.reason}` : audioLabel}
       disabled={saving || audioBusy || (grab && (!capturedAvailable || phase !== "inline" || menuOpen || dropdownOpen))} onClick={() => grab ? void toggleCapturedAudio() : void change({...prefs, muted: !prefs.muted})}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M11 5 6 9H3v6h3l5 4V5Z"/>{audioMuted ? <path d="m16 9 5 6m0-6-5 6"/> : <><path d="M15 8a6 6 0 0 1 0 8"/><path d="M18 5a10 10 0 0 1 0 14"/></>}

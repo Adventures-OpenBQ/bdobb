@@ -17,7 +17,7 @@ The incoming Chrome grab works on macOS and Windows. macOS requires Accessibilit
 
 ## Live TV controls
 
-Live TV opens with its parameter panel hidden. **Show parameters** reveals playback preferences. Its row 0 speaker button mutes or unmutes the selected source: a YouTube stream or the captured Chrome player's native audio control. Captured audio is available only for the visible, held player in the main desktop window. The button explains when Chrome's control is unavailable; **Toggle captured audio** means its current state could not be read. Viewer windows do not control captured audio. Live TV has no outgoing Picture in Picture button. Older saved floating preferences return to inline playback.
+Live TV opens with its parameter panel hidden. **Show parameters** reveals playback preferences. Its row 0 speaker button mutes or unmutes the selected source: a YouTube stream or the captured Chrome player's native audio control. Captured audio is available only for the visible, held player in the main desktop window. The button explains when Chrome's control is unavailable. When Chrome hides the controls after a successful action, the icon retains the same player's last confirmed mute state and the tooltip says **Last confirmed**; this is cleared when the player is released or replaced. **Toggle captured audio** without a last-confirmed state means its audio state is unknown. Viewer windows do not control captured audio. Live TV has no outgoing Picture in Picture button. Older saved floating preferences return to inline playback.
 
 ## Other YouTube cards on macOS and Windows
 

@@ -349,6 +349,7 @@ impl Windows for Win32 {
 struct State {
     grab: Grab<Win32>,
     last_css: Option<Rect>,
+    audio_history: super::audio::AudioHistory<PlayerKey>,
 }
 static STATE: OnceLock<Mutex<State>> = OnceLock::new();
 static HOOK: Once = Once::new();
@@ -359,6 +360,7 @@ fn state<T>(f: impl FnOnce(&mut State) -> T) -> T {
             Mutex::new(State {
                 grab: Grab::new(Win32),
                 last_css: None,
+                audio_history: super::audio::AudioHistory::default(),
             })
         })
         .lock()
@@ -462,9 +464,9 @@ pub fn release_all() {
     state(|s| s.grab.release_all());
 }
 
-pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super::logic::MuteState {
+pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super::audio::CapturedAudioState {
     use super::logic::MuteState;
-    let unavailable = || MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() };
+    let unavailable = || super::audio::CapturedAudioState::from(MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() });
     if window.label() != "main" { return unavailable(); }
     let Ok(hwnd) = window.hwnd() else { return unavailable() };
     let main = hwnd.0 as usize;
@@ -478,10 +480,11 @@ pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super
         let Some(key) = s.grab.active_player(card) else { return (unavailable(), None) };
         if toggle && unsafe { GetForegroundWindow() } as usize != main { return (unavailable(), None); }
         let result = captured_audio_control(key, main, toggle);
-        let result = match result {
-            Ok(true) => MuteState::Muted,
-            Ok(false) => MuteState::Sound,
-            Err(reason) => MuteState::Unavailable { reason },
+        let result = if matches(key) {
+            s.audio_history.observe(key, result, toggle)
+        } else {
+            s.audio_history.clear();
+            unavailable()
         };
         (result, toggle.then_some(key))
     });
