@@ -172,7 +172,7 @@ class GateTests(unittest.TestCase):
     def test_reviewed_fixture_exception_cannot_hide_changed_credential(self):
         token='tskey-'+'auth-'+'Ab12Cd34'*5
         line='fixture = '+token
-        p=self.repo/'fixture.txt';p.write_text(line+'\n');self.git('add','.')
+        p=self.repo/'fixture.txt';p.write_bytes((line+'\n').encode('utf-8'));self.git('add','.')
         self.assert_blocked(self.run_gate('tree'),'tailscale-credential')
         config=self.repo/'security';config.mkdir()
         (config/'reviewed-fixtures.json').write_text(json.dumps([{'path':'fixture.txt',
