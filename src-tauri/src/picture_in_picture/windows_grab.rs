@@ -118,6 +118,13 @@ impl<W: Windows> Grab<W> {
     pub fn player_key(&self) -> Option<PlayerKey> {
         self.hold.as_ref().map(|h| h.player)
     }
+    /// Never expose another card's player or a window that has lost its claim.
+    pub fn active_player(&mut self, card: &str) -> Option<PlayerKey> {
+        self.check();
+        let h = self.hold.as_ref()?;
+        (h.card == card && !h.hidden && !h.menu && !h.away && !h.releasing)
+            .then_some(h.player)
+    }
     pub fn fit(&mut self, card: &str, area: Rect, scale: f64, away: bool) -> Status {
         let goal = match target(area, scale) {
             Ok(Some(r)) => r,
@@ -309,6 +316,28 @@ mod tests {
         started: 13,
         token: 17,
     };
+    #[test]
+    fn captured_audio_never_uses_a_hidden_or_replaced_player() {
+        let mut g = Grab::new(Desktop::default());
+        assert_eq!(g.active_player("a"), None);
+        let area = r(100., 100., 640., 400.);
+        g.fit("a", area, 1., false);
+        assert_eq!(g.active_player("a"), Some(KEY));
+        assert_eq!(g.active_player("other"), None);
+        g.park("a", true);
+        assert_eq!(g.active_player("a"), None);
+        g.fit("a", area, 1., false);
+        g.park("a", false);
+        assert_eq!(g.active_player("a"), None);
+        g.fit("a", area, 1., true);
+        assert_eq!(g.active_player("a"), None);
+        g.fit("a", area, 1., false);
+        g.hold.as_mut().unwrap().releasing = true;
+        assert_eq!(g.active_player("a"), None);
+        g.hold.as_mut().unwrap().releasing = false;
+        g.windows.player.as_mut().unwrap().key.token += 1;
+        assert_eq!(g.active_player("a"), None);
+    }
     struct Desktop {
         player: Option<Player>,
         writes: Vec<(PlayerKey, Rect)>,

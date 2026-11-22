@@ -180,6 +180,7 @@ pub fn run() {
             picture_in_picture::picture_in_picture_release,
             picture_in_picture::picture_in_picture_set_muted,
             picture_in_picture::picture_in_picture_mute_state,
+            picture_in_picture::picture_in_picture_captured_audio,
             picture_in_picture::picture_in_picture_open_settings,
         ])
         .setup(|app| {

@@ -83,6 +83,14 @@ export const setPlayerMuted = (source: string, label: string, muted: boolean) =>
   invoke<MuteState>("picture_in_picture_set_muted", { source, label, muted });
 export const readMuteState = (source: string, label: string) =>
   invoke<MuteState>("picture_in_picture_mute_state", { source, label });
+export async function capturedPlayerAudio(card: string, toggle = false): Promise<MuteState> {
+  const raw = await invoke<unknown>("picture_in_picture_captured_audio", { card, toggle });
+  if (raw && typeof raw === "object" && "state" in raw) {
+    if (raw.state === "muted" || raw.state === "sound") return {state: raw.state};
+    if (raw.state === "unavailable" && "reason" in raw && typeof raw.reason === "string") return {state: "unavailable", reason: raw.reason};
+  }
+  return {state: "unavailable", reason: "Chrome's audio control did not answer"};
+}
 export const openAccessibilitySettings = () => invoke<void>("picture_in_picture_open_settings");
 
 /**
@@ -102,8 +110,10 @@ const pendingReleases = new Map<string, ReturnType<typeof setTimeout>>();
 const watches = new Map<string, () => void>();
 
 /** Runs `op` after every earlier call for this card has settled. */
-export function enqueuePlayerOp(card: string, op: () => Promise<unknown>) {
-  queues.set(card, (queues.get(card) ?? Promise.resolve()).then(op, op));
+export function enqueuePlayerOp<T>(card: string, op: () => Promise<T>): Promise<T> {
+  const next = (queues.get(card) ?? Promise.resolve()).then(op, op);
+  queues.set(card, next);
+  return next;
 }
 
 export function releaseNow(card: string) {

@@ -226,6 +226,18 @@ impl<W: PlayerWindow> Placement<W> {
         Self { window, holder: None, saved: None, last: None, hidden: false, menu: false, away: false, releasing: false, parked: false, mute: None, hide_muted: false, handed_back: false }
     }
 
+    /// Audio controls belong only to the visible holder and its existing binding.
+    /// Do not discover a player on behalf of an unbound or parked card.
+    pub fn active_window(&mut self, card: &str) -> Option<&mut W> {
+        if self.holder.as_deref() != Some(card) || self.parks() || self.parked || self.releasing {
+            return None;
+        }
+        if !self.window.trusted() || !matches!(self.window.frame(), Ok(Some(_))) {
+            return None;
+        }
+        Some(&mut self.window)
+    }
+
     /// True once since the last call if a held player was handed back (a release, a
     /// card too small, a vanished player). The caller restores the volume
     /// then, so "player handed back" and "mute restored" cannot drift apart.
@@ -772,6 +784,29 @@ mod tests {
         fn with_player() -> Self {
             Self { trusted: true, frame: Some(ORIGINAL), ops: Vec::new(), max_width: f64::INFINITY, fail_next: 0 }
         }
+    }
+
+    #[test]
+    fn captured_audio_requires_the_visible_live_holder() {
+        let mut p = Placement::new(FakeWindow::with_player());
+        assert!(p.active_window("a").is_none());
+        p.fit("a", CARD, ORIGIN);
+        assert!(p.active_window("a").is_some());
+        assert!(p.active_window("other").is_none());
+        p.park("a", true);
+        assert!(p.active_window("a").is_none());
+        p.fit("a", CARD, ORIGIN);
+        p.park("a", false);
+        assert!(p.active_window("a").is_none());
+        p.fit("a", CARD, ORIGIN);
+        p.away = true;
+        assert!(p.active_window("a").is_none());
+        p.away = false;
+        p.releasing = true;
+        assert!(p.active_window("a").is_none());
+        p.releasing = false;
+        p.window.frame = None;
+        assert!(p.active_window("a").is_none());
     }
 
     /// The test-only face of `fit_with_mute`: the target already set is kept.

@@ -8,6 +8,7 @@
 
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 mod logic;
+mod audio;
 #[cfg(any(target_os = "macos", test))]
 mod binding;
 #[cfg(any(target_os = "windows", test))]
@@ -87,6 +88,18 @@ pub async fn picture_in_picture_mute_state(source: String, label: String) -> Mut
         let _ = (source, label);
         unsupported()
     }
+}
+
+/// Separate from legacy tab-slider audio: only the current captured player can
+/// answer this command. A read never brings Chrome to the front.
+#[tauri::command]
+pub async fn picture_in_picture_captured_audio(window: tauri::WebviewWindow, card: String, toggle: bool) -> MuteState {
+    #[cfg(target_os = "macos")]
+    return native::captured_audio(&window, &card, toggle);
+    #[cfg(target_os = "windows")]
+    return windows::captured_audio(&window, &card, toggle);
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    { let _ = (window, card, toggle); unsupported() }
 }
 
 #[tauri::command]
@@ -363,6 +376,24 @@ mod native {
 
     pub fn mute_state(source: &str, label: &str) -> MuteState {
         mute(|m| m.state(source, label))
+    }
+
+    pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> MuteState {
+        let unavailable = || MuteState::Unavailable { reason: "This card is not holding a visible Chrome player".into() };
+        if window.label() != MAIN || QUITTING.load(Ordering::SeqCst) { return unavailable(); }
+        let focus_generation = FOCUS_GENERATION.load(Ordering::SeqCst);
+        // Read Tauri state outside the placement lock. A user click can reveal
+        // Chrome's native controls, but a queued/background command cannot.
+        if toggle && !window.is_focused().unwrap_or(false) { return unavailable(); }
+        let (result, restore) = placement(|p| {
+            if QUITTING.load(Ordering::SeqCst) { return (unavailable(), None); }
+            p.active_window(card).map(|w| w.audio(toggle,
+                || !QUITTING.load(Ordering::SeqCst),
+                || FOCUS_GENERATION.load(Ordering::SeqCst) == focus_generation,
+            )).unwrap_or_else(|| (unavailable(), None))
+        });
+        if !QUITTING.load(Ordering::SeqCst) && restore.is_some_and(|token| token.still_focused()) { let _ = window.set_focus(); }
+        result
     }
 
     /// Follows the main window: a move, a resize or a change of display
