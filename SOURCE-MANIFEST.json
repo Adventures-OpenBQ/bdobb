@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "952d292b5a0a0eb5ca306ef8aa3a335eb46deba0",
-  "sourceId": "bcef837b0dac275df8490cdaa775e01367e22cb7ce3047e3027e6cb5a47332f7",
+  "baseCommit": "aa731833313d76f5cccb2649cfdd503579295031",
+  "sourceId": "9ae6593d4df57337cfa99bc25415aaa9804426b333cfe626ae43840d8b8b2320",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -22365,7 +22365,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "6a1cd07aaef9bb28917da9434d2443c741f792cf2b5f025b3716becedd9cf41f"
+      "sha256": "56241f2e41d861b338f5b3c4326dbb9702353b87a3a67b65e1a6d4b10be6797b"
     },
     {
       "path": "source_bundle.py",
@@ -24268,8 +24268,8 @@
       "path": "src/components/renderers/dayChart.css",
       "type": "file",
       "mode": 420,
-      "size": 2126,
-      "sha256": "64b6ff7cc60f1f77f1a19febf829495ee930a96443ba6a624adb1c18f0e2e700"
+      "size": 2169,
+      "sha256": "f2e0779a98456854cc4df746e88a00acca7d005fdb9539e4b73dc0b4012e64cb"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
