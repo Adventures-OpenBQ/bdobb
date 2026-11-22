@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "6331eb6c2a2aef6759c758780d650b796fe10674",
-  "sourceId": "2e3bba3e86d774632049d0dc64262cebc2fbd5dd3b88c7c4733a515a7825d709",
+  "baseCommit": "b920cfaf7dd69f4c726dd7d697fc6b85621fd424",
+  "sourceId": "2d87640de7823755beedbdfd3643d17086bc4f4e9503181528750944f8ddc9c3",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21679,7 +21679,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "6897249c633789416c76701b13051c88d0e56fd1d2ba1de9e78b857ae9e71ede"
+      "sha256": "b2c6e8f8da561f80d1278cacf9fb00d0aeed5e038e51e48537235c97ba5a39be"
     },
     {
       "path": "playwright.config.ts",
@@ -22372,7 +22372,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "c11a89bb138c497d631d90ee9bb777ef0441ee4ee7a7e8bf324a4c757519b165"
+      "sha256": "9e89be95cb47b50a39889ef8d3641e60586de9caa130c06a71d33a16d4d92f60"
     },
     {
       "path": "source_bundle.py",
@@ -22966,15 +22966,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 250422,
-      "sha256": "d848758a52a722624f73eefbcf1b8f441790b47b542c94988a78f1d89ffb2968"
+      "size": 252552,
+      "sha256": "5045cb941c1e3a89ebdfac2317a7d943dde4edd6b99e3c8d03d6e5951d8f9f0c"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 118407,
-      "sha256": "0853b903e39827d0a49d8366e2785f862bcaa7c7a35208bb4c460c260f1a32ec"
+      "size": 118906,
+      "sha256": "afbadeaa82e4f21ce5028d1980e85af5ebd0d218c53978402bbf3223d1631375"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -23687,15 +23687,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 7203,
-      "sha256": "a71b0a475fc7c8b24efddbe781d0c2168fb225bb84d4c500ff6cae7b60ab31fd"
+      "size": 7872,
+      "sha256": "de7753a7adf61ed9550e1564c93443a585598cb749c4715c4d9088d3d13b5915"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 12837,
-      "sha256": "6790a53d8a506109632f0b3a1cd58f577628706623a7953234ffc19ac7c3f080"
+      "size": 13396,
+      "sha256": "178bbbb1673caf83bdf142ebe2d950abbee12c566ef5e54fd3a1e0514755e618"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24275,8 +24275,8 @@
       "path": "src/components/renderers/dayChart.css",
       "type": "file",
       "mode": 420,
-      "size": 3649,
-      "sha256": "bac6f0467b18ca89a5ff42b9d27a18e0851460f7d6c92d34cedcc0b54344bf07"
+      "size": 3878,
+      "sha256": "f5450e15eeaad045a34516acb61c6ba68d5704f54c1a01c842ba86f77eef02f8"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
@@ -24898,8 +24898,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 11942,
-      "sha256": "544c244577ea854354c54e3373d5aa52027c0a2c550384c7f52e0758975731dd"
+      "size": 12251,
+      "sha256": "8cf99ffbb91fe97b2d5f76ad6ec6c7a9d80a6143109bf8b29326bdf757cc0897"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -32844,7 +32844,7 @@
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "e6709646422b28463609c8624e2e9b5d4050d42f0ab7da8cdff3e6719c315552"
+      "sha256": "496814ec9558aec7676ba5da7758a1acaea01a53d33b9eea96e39be280c7c354"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
