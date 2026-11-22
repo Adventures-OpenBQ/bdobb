@@ -56,6 +56,8 @@ extern "system" {
         -> i32;
     fn GetForegroundWindow() -> Handle;
     fn SetForegroundWindow(hwnd: Handle) -> i32;
+    fn AllowSetForegroundWindow(pid: u32) -> i32;
+    fn SendMessageTimeoutW(hwnd: Handle, message: u32, wparam: usize, lparam: isize, flags: u32, timeout: u32, result: *mut usize) -> isize;
     fn ClientToScreen(hwnd: Handle, point: *mut Point) -> i32;
     fn GetDpiForWindow(hwnd: Handle) -> u32;
     fn EnumDisplayMonitors(
@@ -466,26 +468,38 @@ pub fn captured_audio(window: &WebviewWindow, card: &str, toggle: bool) -> super
     if window.label() != "main" { return unavailable(); }
     let Ok(hwnd) = window.hwnd() else { return unavailable() };
     let main = hwnd.0 as usize;
-    state(|s| {
-        if QUITTING.load(Ordering::SeqCst) { return unavailable(); }
+    let (result, restore) = state(|s| {
+        if QUITTING.load(Ordering::SeqCst) { return (unavailable(), None); }
         if let Some(css) = s.last_css {
             if let Some((area, scale, away)) = geometry(main, css, s.grab.player_key()) {
                 s.grab.sync(area, scale, away);
             }
         }
-        let Some(key) = s.grab.active_player(card) else { return unavailable() };
-        if toggle && unsafe { GetForegroundWindow() } as usize != main { return unavailable(); }
+        let Some(key) = s.grab.active_player(card) else { return (unavailable(), None) };
+        if toggle && unsafe { GetForegroundWindow() } as usize != main { return (unavailable(), None); }
         let result = captured_audio_control(key, main, toggle);
-        if toggle && !QUITTING.load(Ordering::SeqCst) && matches(key) && unsafe { GetForegroundWindow() } as usize == key.handle {
-            // Ordinary focus restoration only, never AttachThreadInput/force.
-            unsafe { SetForegroundWindow(main as Handle); }
-        }
-        match result {
+        let result = match result {
             Ok(true) => MuteState::Muted,
             Ok(false) => MuteState::Sound,
             Err(reason) => MuteState::Unavailable { reason },
-        }
-    })
+        };
+        (result, toggle.then_some(key))
+    });
+    // Do not wait for our GUI thread while holding the placement lock.
+    if restore.is_some_and(|key| !QUITTING.load(Ordering::SeqCst) && matches(key)
+        && unsafe { GetForegroundWindow() } as usize == key.handle) {
+        unsafe { SetForegroundWindow(main as Handle); }
+        foreground_settled(main);
+    }
+    result
+}
+
+/// SetForegroundWindow crosses input queues asynchronously. WM_NULL is a
+/// bounded dispatch barrier, not simulated input or a forced activation.
+fn foreground_settled(hwnd: usize) -> bool {
+    let mut unused = 0;
+    unsafe { SendMessageTimeoutW(hwnd as Handle, 0, 0, 0, 2, 500, &mut unused) != 0
+        && GetForegroundWindow() as usize == hwnd }
 }
 
 fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<bool, String> {
@@ -507,7 +521,11 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
             if QUITTING.load(Ordering::SeqCst) || !matches(key) || unsafe { GetForegroundWindow() } as usize != main || unsafe { IsIconic(main as Handle) } != 0 {
                 return Err(::windows::core::Error::from_win32());
             }
-            if unsafe { SetForegroundWindow(key.handle as Handle) } == 0 || unsafe { GetForegroundWindow() } as usize != key.handle {
+            // Retain return-focus permission for this process only. Windows
+            // revokes it on input elsewhere; never grant ASFW_ANY or Chrome.
+            if unsafe { AllowSetForegroundWindow(std::process::id()) } == 0
+                || unsafe { SetForegroundWindow(key.handle as Handle) } == 0
+                || !foreground_settled(key.handle) {
                 return Err(::windows::core::Error::from_win32());
             }
         }
@@ -531,7 +549,20 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
                 .ok_or_else(::windows::core::Error::from_win32)?;
             Ok((controls.swap_remove(index), muted))
         };
-        let (control, before) = button()?;
+        // Chrome publishes its controls after native focus has settled. Wait
+        // for discovery only; Invoke below is still attempted exactly once.
+        let until = Instant::now() + Duration::from_millis(700);
+        let (control, before) = loop {
+            match button() {
+                Ok(control) => break control,
+                Err(error) => {
+                    if !toggle || Instant::now() >= until || !matches(key)
+                        || unsafe { GetForegroundWindow() } as usize != key.handle
+                        || QUITTING.load(Ordering::SeqCst) { return Err(error); }
+                    std::thread::sleep(Duration::from_millis(25));
+                }
+            }
+        };
         if !toggle { return Ok(before); }
         let action: IUIAutomationInvokePattern = unsafe { control.GetCurrentPatternAs(UIA_InvokePatternId)? };
         if !matches(key) || unsafe { GetForegroundWindow() } as usize != key.handle || QUITTING.load(Ordering::SeqCst) { return Err(::windows::core::Error::from_win32()); }
