@@ -61,3 +61,12 @@ Charts the app draws itself follow the light/dark theme. A ready-made figure fro
 ---
 
 Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+
+
+## Day Chart watchlist
+
+**Day Chart** (`day_chart`) shows a horizontal strip of compact intraday lines. Enter comma-separated symbols in **Symbol**, or bind it to a standard symbol parameter group containing one symbol or a list. Entries keep their order, including duplicates; data acquisition is shared. Clear the parameter or group to clear the strip. Up to 50 entries are supported.
+
+Use a trackpad, touch, mouse wheel or the footer arrows to scroll. Only visible and nearby tiles load and refresh, every 15 seconds after the previous request completes. The lines come from backend session bars; quote updates do not create line points. Each tile shows its actual session date, open/closed/unknown status, source and coverage status. Headline price and change use that plotted session's last bar and previous close. A weekend or holiday therefore shows the latest completed trading session rather than a synthetic current-day chart.
+
+The initial provider supports US equities. Unsupported symbols and unavailable sessions show a per-tile message; other tiles keep working. Missing company logos fall back to initials. Logos use the authenticated backend relay. Symbols and group bindings save and export with the dashboard, including the Version 10 Live Grid example's Day Chart card.

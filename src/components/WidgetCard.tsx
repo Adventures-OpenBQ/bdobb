@@ -80,6 +80,7 @@ import { DateProbeRenderer } from "./renderers/DateProbeRenderer";
 import { ParamEchoRenderer } from "./renderers/ParamEchoRenderer";
 import { YouTubeRenderer } from "./renderers/YouTubeRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
+import { DayChartRenderer } from "./renderers/DayChartRenderer";
 import { LiveChartRenderer } from "./renderers/LiveChartRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
 import { OmniRenderer } from "./renderers/OmniRenderer";
@@ -159,7 +160,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid", "live_chart"]);
+const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid", "live_chart", "day_chart"]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -1298,6 +1299,10 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           refreshKey={attempt + refreshEpoch}
         />
       );
+    }
+
+    if (widget?.type === "day_chart" && backend) {
+      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
     }
 
     // live-grid's Live Chart (V10-P4). The live_grid case's shape and reasons:
