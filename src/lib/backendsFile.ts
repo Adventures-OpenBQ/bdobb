@@ -76,8 +76,12 @@ export function makeDefaultBackend(): BackendConfig {
   // funnelled reference backend (deploy/review-backend/) so a reviewer who
   // has never seen a Connections dialog still opens the app to data; every
   // other build keeps the local openbb-docker default.
-  const url = import.meta.env.VITE_DEFAULT_BACKEND_URL;
-  const auth = import.meta.env.VITE_DEFAULT_BACKEND_AUTH;
+  // The installer inspects this same serialized seed after Vite has compiled it.
+  const defaults = JSON.parse(document.querySelector<HTMLMetaElement>(
+    'meta[name="bdobb-build-defaults"]',
+  )?.content ?? "{}") as Record<string, string>;
+  const url = defaults.VITE_DEFAULT_BACKEND_URL;
+  const auth = defaults.VITE_DEFAULT_BACKEND_AUTH;
   return {
     id: crypto.randomUUID(),
     name: url ? "Reference" : "Local",

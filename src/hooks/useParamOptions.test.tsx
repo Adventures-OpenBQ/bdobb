@@ -1,12 +1,16 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // plugin-http's fetch is a drop-in for the platform fetch; the real one here
 // exercises the mock server over genuine HTTP, as useWidgetData.test.tsx does.
-vi.mock("@tauri-apps/plugin-http", () => ({ fetch: globalThis.fetch }));
+vi.mock("@tauri-apps/plugin-http", () => ({
+  fetch: vi.fn((...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args)),
+}));
+
+import { fetch } from "@tauri-apps/plugin-http";
 
 import { __reset } from "../test/memfs";
 import { __resetLoggerForTests } from "../lib/logger";
@@ -106,6 +110,40 @@ afterEach(async () => {
 });
 
 describe("useParamOptions", () => {
+  it("cancels shared options only when the last consumer leaves and lets a replacement finish", async () => {
+    const transport = vi.mocked(fetch);
+    const source = backend({ baseUrl: "https://options-owner.test" });
+    const simple = makeWidget({ params: [widget.params[0]] });
+    let finish!: (response: Response) => void;
+    const pending = new Promise<Response>((resolve) => { finish = resolve; });
+    const response = () => new Response(JSON.stringify(CHAMBERS), {
+      headers: { "content-type": "application/json" },
+    });
+    transport.mockClear()
+      .mockImplementationOnce(() => pending)
+      .mockImplementationOnce(async () => response());
+    try {
+      const first = renderHook(() => useParamOptions(source, simple, {}));
+      const second = renderHook(() => useParamOptions(source, simple, {}));
+      await waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
+      const shared = transport.mock.calls[0][1]?.signal;
+
+      first.unmount();
+      await act(async () => {});
+      expect(shared?.aborted).not.toBe(true);
+      second.unmount();
+      await act(async () => {});
+      expect(shared?.aborted).toBe(true);
+
+      const replacement = renderHook(() => useParamOptions(source, simple, {}));
+      await waitFor(() => expect(replacement.result.current.chamber).toMatchObject({ status: "ready", options: CHAMBERS }));
+      expect(transport).toHaveBeenCalledTimes(2);
+    } finally {
+      finish(response());
+      transport.mockReset().mockImplementation((...args) => globalThis.fetch(...args));
+    }
+  });
+
   it("issues one request per endpoint param on mount, and none for a param without one", async () => {
     const server = await serve();
     const { result } = renderHook(() =>

@@ -1,0 +1,68 @@
+[
+  {
+    "path": "docs/superpowers/plans/2026-09-14-v5.3.0-openbb-docker-trading-calendar.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "87008de6c8b90db7ddcc3bc3ea9dbd6b92e020e262666f8e410338bac547f713",
+    "reason": "Fixed Basic Auth fixture for an ephemeral test container on loopback"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-15-v5.4.0-openbb-docker-fundamentals.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "c1c546d50eecb1d0d505003817b6ff3875dd2052ad0402fa2e14cf41a5bfbd78",
+    "reason": "Fixed Basic Auth fixture for an ephemeral test container on loopback"
+  },
+  {
+    "path": "deploy/reference-demo/.env.example",
+    "rule": "tailscale-credential",
+    "content_sha256": "a2c26f8c12147cf6037c7a3a4d95a4b7c30ca0f3a623fe6791c43d7f4ffaea79",
+    "reason": "Explicit placeholder in the reference demo environment template"
+  },
+  {
+    "path": "deploy/reference-demo/.env.example",
+    "rule": "tailscale-credential",
+    "content_sha256": "92bcfcda5f7f4a43b289b1d58e0055250ebc0a37eaecd382450820a68887cf08",
+    "reason": "Explicit placeholder in the reference demo environment template"
+  },
+  {
+    "path": "deploy/funnel-backend/README.md",
+    "rule": "generic-api-key",
+    "content_sha256": "6e9bf568739a65201bf44a551de13ef63d54ad66ff08a4d899ba0723975adc34",
+    "reason": "Quote API route in the ingress routing table"
+  },
+  {
+    "path": "deploy/funnel-backend/README.md",
+    "rule": "generic-api-key",
+    "content_sha256": "ae23122ad4945946d856ae1f0e2c9a122726207b7e251265f97b6c623592121a",
+    "reason": "Quote API route in the ingress routing table"
+  },
+  {
+    "path": "deploy/funnel-backend/README.md",
+    "rule": "generic-api-key",
+    "content_sha256": "19398c017f034b8b597bc9cd8d1b157848183b99b464b9c4c482bd466720c505",
+    "reason": "Quote API route in the ingress routing table"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-14-v5.3.0-openbb-docker-trading-calendar.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "759021b95903485a821e51853bf713e79ee29e756cdbfcc11570d9381e75f69d",
+    "reason": "Basic Auth fixture for an ephemeral CI container with loopback probes"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-14-v5.3.0-openbb-docker-trading-calendar.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "b8f7c3fd6e34ed497052ee2eb4d9bbe2588d4bec60b3d273c1832a235df73b68",
+    "reason": "Basic Auth fixture for an ephemeral CI container with loopback probes"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-15-v5.4.0-openbb-docker-fundamentals.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "c2a33bd9cbe380f78e982cb65213a87de17a9a3fd76690752b6a01897992e2ca",
+    "reason": "Basic Auth fixture for an ephemeral CI container with loopback probes"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-15-v5.4.0-openbb-docker-fundamentals.md",
+    "rule": "curl-auth-user",
+    "content_sha256": "22dc7423268e246016e838f57c1d4fbff5d40566d4f107bada7607d23004eb5c",
+    "reason": "Basic Auth fixture for an ephemeral CI container with loopback probes"
+  }
+]

@@ -43,12 +43,22 @@ beforeEach(() => {
 });
 
 describe("SettingsForm", () => {
+  it("cancels an in-flight settings description read on unmount", async () => {
+    fetchWidgetData.mockReturnValueOnce(new Promise(() => {}));
+    const view = render(<SettingsForm backend={svc} widget={w} />);
+    await waitFor(() => expect(fetchWidgetData).toHaveBeenCalledTimes(1));
+    const signal = fetchWidgetData.mock.calls[0][4]?.signal;
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("draws every field type from GET {endpoint}, locks read-only fields with their reason, and shows an unknown type read-only", async () => {
     fetchWidgetData.mockResolvedValue(section());
     render(<SettingsForm backend={svc} widget={w} />);
 
     expect(await screen.findByLabelText("Poll interval")).toHaveValue(60);
-    expect(fetchWidgetData).toHaveBeenCalledWith(svc, w, {});
+    expect(fetchWidgetData).toHaveBeenCalledWith(svc, w, {}, undefined, { signal: expect.any(AbortSignal) });
     expect(screen.getByText("How often feeds are read.")).toBeInTheDocument();
     expect(screen.getByLabelText("Source name")).toHaveValue("wire");
     expect(screen.getByLabelText("Paused")).not.toBeChecked();

@@ -21,10 +21,12 @@ export function LiveGridRenderer({
   widget,
   backend,
   params,
+  refreshKey = 0,
 }: {
   widget: WidgetDef;
   backend: BackendConfig;
   params: Record<string, string>;
+  refreshKey?: number;
 }) {
   const idColumn = widget.wsRowIdColumn ?? "symbol";
   const symbol = params.symbol ?? "";
@@ -32,12 +34,13 @@ export function LiveGridRenderer({
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
-  // Snapshot, re-fetched when the symbol selection changes or Retry is pressed.
+  // Only the snapshot depends on Refresh. The socket stays subscribed.
   useEffect(() => {
-    let live = true;
-    void fetchWidgetData(backend, widget, params).then(
+    const controller = new AbortController();
+    const { signal } = controller;
+    void fetchWidgetData(backend, widget, params, undefined, { signal }).then(
       (data) => {
-        if (!live) return;
+        if (signal.aborted) return;
         setError(null);
         if (Array.isArray(data)) setRows(data as Row[]);
       },
@@ -45,17 +48,15 @@ export function LiveGridRenderer({
         // The card does not fetch a live_grid (builtins.ts leaves it to this
         // renderer), so nothing else would show the failure: without this the
         // card reads "No rows." as if the snapshot were empty.
-        if (live) setError(err instanceof Error ? err.message : String(err));
+        if (!signal.aborted) setError(err instanceof Error ? err.message : String(err));
       },
     );
-    return () => {
-      live = false;
-    };
-    // Keyed on the symbol only (and Retry's attempt count): params is a fresh
+    return () => controller.abort();
+    // For query params the dependency is the symbol: params is a fresh
     // object each render, and the backend/widget identities do not change
     // while a card is mounted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backend, widget, symbol, attempt]);
+  }, [backend, widget, symbol, attempt, refreshKey]);
 
   const url = useMemo(() => buildWidgetWsUrl(backend, widget), [backend, widget]);
   const subscribe = useMemo(() => ({ params: { symbol } }), [symbol]);

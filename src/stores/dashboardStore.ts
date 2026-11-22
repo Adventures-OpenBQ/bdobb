@@ -134,6 +134,7 @@ type DashboardState = {
     tabId: string | null,
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
   ) => Promise<string | null>;
   removeCard: (cardId: string) => Promise<void>;
   updateLayouts: (layouts: GridLayoutItem[]) => Promise<void>;
@@ -777,7 +778,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       return updated ? id : null;
     },
 
-    addCardTo: async (dashboardId, tabId, widget, paramsOverride) => {
+    addCardTo: async (dashboardId, tabId, widget, paramsOverride, title) => {
+      if (dashboardId === null || removing.has(dashboardId)) return null;
       const dashboard = get().dashboards.find((d) => d.id === dashboardId);
       const tab = dashboard?.tabs.find((t) => t.id === tabId);
       if (!tab) return null;
@@ -796,6 +798,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     widgetId: widget.id,
                     backendId: widget.backendId,
                     params: { ...seedParams(widget), ...paramsOverride },
+                    ...(title !== undefined ? { title } : {}),
                     layout: {
                       x: 0,
                       y: nextY(t.cards),

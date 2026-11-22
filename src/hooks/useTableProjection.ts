@@ -5,7 +5,7 @@ import {getCoreRowModel,getFilteredRowModel,getSortedRowModel,useReactTable,type
 import {tableColumns,tableRows,type Row,type TableColumn} from "../lib/tableColumns";
 import type {TableCardState,TableSpec} from "../lib/types";
 import type {SurfaceDataset} from "../lib/linkedSurface";
-import {filterFnFor,filterKindFor,type FilterKind} from "../components/renderers/TableFilterRow";
+import {filterFnFor,filterKindFor,tableCellValue,type FilterKind} from "../components/renderers/TableFilterRow";
 const NO_ROWS: Row[]=[];
 const NO_SORTING: NonNullable<TableCardState["sorting"]>=[];
 const NO_FILTERS: NonNullable<TableCardState["columnFilters"]>=[];
@@ -50,15 +50,7 @@ function sortingFnFor(numeric: boolean, desc: boolean): SortingFn<Row> {
 export function projectionColumn(column: TableColumn, kind: FilterKind, sorting: SortingState): ColumnDef<Row> {
   return {
     id:column.field,
-    accessorFn:(row:Row)=>{
-      const value=Object.hasOwn(row,column.field)?row[column.field]:undefined;
-      const field=column.hoverCard?.cellField;
-      if(field!==undefined && typeof value==="object" && value!==null){
-        const record=value as Record<string,unknown>;
-        return Object.hasOwn(record,field)?record[field]:undefined;
-      }
-      return value;
-    },
+    accessorFn:(row)=>tableCellValue(row,column),
     filterFn:filterFnFor(kind),enableColumnFilter:kind!=="none",
     sortingFn:sortingFnFor(kind==="number",sorting.some(s=>s.id===column.field && s.desc)),sortUndefined:false,
   };

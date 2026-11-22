@@ -8,7 +8,15 @@ import { __resetLoggerForTests } from "./logger";
 import { __resetJsonStoreForTests } from "./jsonStore";
 import { loadBackends, makeDefaultBackend, saveBackends } from "./backendsFile";
 
+function buildDefaults(values: Record<string, string>) {
+  const tag = document.createElement("meta");
+  tag.name = "bdobb-build-defaults";
+  tag.content = JSON.stringify(values);
+  document.head.append(tag);
+}
+
 beforeEach(() => {
+  document.querySelectorAll('meta[name="bdobb-build-defaults"]').forEach((tag) => tag.remove());
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
@@ -119,7 +127,7 @@ describe("reading a backends.json written before the new fields existed", () => 
   });
 
   it("seeds no code-language allowance on any build", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://reference.workspace.example");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://reference.workspace.example" });
     expect(makeDefaultBackend()).not.toHaveProperty("allowedCodeLanguages");
     vi.unstubAllEnvs();
     expect(makeDefaultBackend()).not.toHaveProperty("allowedCodeLanguages");
@@ -193,6 +201,15 @@ describe("makeDefaultBackend", () => {
     vi.unstubAllEnvs();
   });
 
+  it("uses empty serialized defaults instead of inlined environment values", () => {
+    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://synthetic.example.invalid");
+    vi.stubEnv("VITE_DEFAULT_BACKEND_AUTH", "synthetic_nonempty_default");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "", VITE_DEFAULT_BACKEND_AUTH: "" });
+    const value = makeDefaultBackend();
+    expect(value.baseUrl).toBe("http://localhost:6900");
+    expect(value.headerValue).toBeUndefined();
+  });
+
   it("defaults to the local openbb-docker stack with no credential", () => {
     const b = makeDefaultBackend();
     expect(b.baseUrl).toBe("http://localhost:6900");
@@ -204,8 +221,7 @@ describe("makeDefaultBackend", () => {
   });
 
   it("takes the build's seed when one is supplied", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://demo.example.ts.net");
-    vi.stubEnv("VITE_DEFAULT_BACKEND_AUTH", "Basic cmV2aWV3ZXI6cHc=");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://demo.example.ts.net", VITE_DEFAULT_BACKEND_AUTH: "Basic cmV2aWV3ZXI6cHc=" });
     const b = makeDefaultBackend();
     expect(b.baseUrl).toBe("https://demo.example.ts.net");
     expect(b.name).toBe("Reference");
@@ -214,7 +230,7 @@ describe("makeDefaultBackend", () => {
   });
 
   it("seeds a URL without auth when the build gives no credential", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://demo.example.ts.net");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://demo.example.ts.net" });
     const b = makeDefaultBackend();
     expect(b.baseUrl).toBe("https://demo.example.ts.net");
     expect("headerValue" in b).toBe(false);

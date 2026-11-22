@@ -923,7 +923,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
       // card's data===null gate would otherwise claim it. The renderer fetches
       // its own snapshot and opens the socket. `query` carries the resolved
       // symbol selection, the same params a GET would send.
-      return <LiveGridRenderer widget={widget} backend={backend} params={query} />;
+      return <LiveGridRenderer widget={widget} backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
     }
 
     // Same shape as live_grid above, and for the same reason: fetchesData is

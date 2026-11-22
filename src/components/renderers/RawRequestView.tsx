@@ -35,19 +35,18 @@ export function RawRequestView({
   const key = paramsKey(params);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     setResult(null);
-    fetchWidgetData(backend, widget, { ...params, raw: "true" }).then(
+    void fetchWidgetData(backend, widget, { ...params, raw: "true" }, undefined, { signal }).then(
       (data) => {
-        if (!cancelled) setResult({ data });
+        if (!signal.aborted) setResult({ data });
       },
       (err: unknown) => {
-        if (!cancelled) setResult({ error: err instanceof Error ? err.message : String(err) });
+        if (!signal.aborted) setResult({ error: err instanceof Error ? err.message : String(err) });
       },
     );
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for `params`
   }, [backend, widget, key, refreshKey]);
 

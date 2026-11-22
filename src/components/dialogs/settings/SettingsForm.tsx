@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { fetchWidgetData, putSettings } from "../../../lib/dataClient";
 import { logError } from "../../../lib/logger";
 import {
@@ -46,29 +46,34 @@ export function SettingsForm({ backend, widget }: { backend: BackendConfig; widg
   const [saveError, setSaveError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const load = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const parsed = parseSettingsDescription(await fetchWidgetData(backend, widget, {}));
-      if (parsed.ok) {
-        setState({ status: "ready", section: parsed.section });
-        setDrafts({});
-        setFieldErrors({});
-      } else if (parsed.newer) {
-        setState({ status: "newer" });
-      } else {
-        setState({ status: "error", message: parsed.error });
-      }
-    } catch (err) {
-      await logError(`settings read failed for ${widget.id} on ${backend.name}: ${err}`);
-      setState({ status: "error", message: err instanceof Error ? err.message : String(err) });
-    }
-  }, [backend, widget]);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const controller = new AbortController();
+    const { signal } = controller;
+    setState({ status: "loading" });
+    void (async () => {
+      try {
+        const payload = await fetchWidgetData(backend, widget, {}, undefined, { signal });
+        if (signal.aborted) return;
+        const parsed = parseSettingsDescription(payload);
+        if (parsed.ok) {
+          setState({ status: "ready", section: parsed.section });
+          setDrafts({});
+          setFieldErrors({});
+        } else if (parsed.newer) {
+          setState({ status: "newer" });
+        } else {
+          setState({ status: "error", message: parsed.error });
+        }
+      } catch (err) {
+        if (signal.aborted) return;
+        setState({ status: "error", message: err instanceof Error ? err.message : String(err) });
+        await logError(`settings read failed for ${widget.id} on ${backend.name}: ${err}`);
+      }
+    })();
+    return () => controller.abort();
+  }, [backend, widget, attempt]);
 
   async function save(section: SettingsDescription) {
     // Null-prototype, and own-property checks on read: a field id can
@@ -123,7 +128,7 @@ export function SettingsForm({ backend, widget }: { backend: BackendConfig; widg
   }
 
   if (state.status === "loading") return <p className="empty-state">Loading…</p>;
-  if (state.status === "error") return <ErrorState message={state.message} onRetry={() => void load()} />;
+  if (state.status === "error") return <ErrorState message={state.message} onRetry={() => setAttempt((n) => n + 1)} />;
   if (state.status === "newer") return <p className="empty-state">Needs a newer app version.</p>;
 
   const { section } = state;

@@ -4,7 +4,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@tauri-apps/plugin-http", () => ({ fetch: globalThis.fetch }));
+vi.mock("@tauri-apps/plugin-http", () => ({
+  fetch: vi.fn((...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args)),
+}));
+
+import { fetch } from "@tauri-apps/plugin-http";
 
 import { startMockServer, type MockServer } from "../test/mockServer";
 import { __resetLoggerForTests } from "../lib/logger";
@@ -66,6 +70,34 @@ async function serve(routes: Record<string, unknown>) {
 }
 
 describe("useWidgetData", () => {
+  it.each(["unmount", "parameter change"])("releases all stalled widget slots on %s", async (trigger) => {
+    const transport = vi.mocked(fetch);
+    transport.mockClear().mockImplementation(async (input) => {
+      const symbol = new URL(String(input)).searchParams.get("symbol");
+      if (symbol === "AAPL") return new Promise<Response>(() => {});
+      return new Response('{"results":[{"close":2}]}', { headers: { "content-type": "application/json" } });
+    });
+    const baseUrl = `https://widget-${trigger === "unmount" ? "unmount" : "supersession"}.test`;
+    useBackendsStore.setState({ backends: [backend({ baseUrl })] });
+    registerWidget();
+
+    const mount = () => renderHook(({ symbol }) => useWidgetData(card, { symbol }), {
+      initialProps: { symbol: "AAPL" },
+    });
+    const previous = Array.from({ length: 4 }, mount);
+    try {
+      await waitFor(() => expect(transport).toHaveBeenCalledTimes(4));
+      const staleSignals = transport.mock.calls.map(([, init]) => init?.signal);
+      if (trigger === "unmount") previous.forEach((view) => view.unmount());
+      else previous.forEach((view) => view.rerender({ symbol: "MSFT" }));
+      const next = renderHook(() => useWidgetData(card, { symbol: "NVDA" }));
+      await waitFor(() => expect(next.result.current.data).toEqual([{ close: 2 }]));
+      expect(staleSignals.every((signal) => signal?.aborted)).toBe(true);
+    } finally {
+      transport.mockImplementation((...args) => globalThis.fetch(...args));
+    }
+  });
+
   it("associates missing-backend errors with the current acquisition", async () => {
     registerWidget();
     const { result } = renderHook(() => useWidgetData(card, card.params));

@@ -5,10 +5,8 @@
 //
 // Node, not jsdom: this drives a shell script through execFile.
 //
-// Only the guards and the PUBLISH step are under test. Every tool release.sh
-// calls (git, gh, pnpm, node, xcrun, codesign, spctl) is a stub on PATH that
-// records what it was asked to do, so a case can assert what would have been
-// built, pushed or published without doing any of it. The stubs read FAKE_*
+// Build, signature, scanner and GitHub commands are stubs. The release script
+// and checksum utilities run normally. The stubs read FAKE_*
 // variables so each case can put origin and GitHub into the state it needs;
 // the six signing values are dummy files under a sandbox APPLE_SIGNING_DIR.
 import { describe, it, expect } from "vitest";
@@ -41,24 +39,44 @@ function sandbox() {
   const bundle = join(root, "src-tauri", "target", "release", "bundle");
   mkdirSync(join(bundle, "macos", "BDOBB.app"), { recursive: true });
   mkdirSync(join(bundle, "dmg"), { recursive: true });
-  writeFileSync(join(bundle, "dmg", "BDOBB_1.2.3_aarch64.dmg"), "dmg");
+  const dmg = join(bundle, "dmg", "BDOBB_1.2.3_aarch64.dmg");
+  writeFileSync(dmg, "dmg");
   const secrets = join(root, "signing", "secrets");
   mkdirSync(secrets, { recursive: true });
   for (const name of SIGNING_VALUES) writeFileSync(join(secrets, name), "x");
   const log = join(root, "calls.log");
   const tools = {
     node: "echo 1.2.3",
+    python3: `echo "python3 $*" >> "${log}"
+if [ "$1" = "security/gate.py" ]; then exit "\${FAKE_GATE_CODE:-0}"; fi
+if [ "$1" = "scripts/public-release.py" ]; then
+  if [ "\${FAKE_PUBLIC_SCAN_CODE:-0}" != "0" ]; then exit "$FAKE_PUBLIC_SCAN_CODE"; fi
+  if [ "\${FAKE_REJECT_STAPLED:-}" = "1" ] && grep -q stapled "\${!#}"; then exit 23; fi
+  if [ "$3" = "--checksum" ]; then (cd "$(dirname "$4")" && shasum -a 256 "$(basename "$4")"); fi
+  exit 0
+fi
+exit 99`,
+    cargo: "exit 0",
     pnpm: `echo "pnpm $*" >> "${log}"`,
-    xcrun: "exit 0",
-    codesign: "exit 0",
-    spctl: "exit 0",
+    xcrun: `echo "xcrun $1 $2" >> "${log}"
+if [ "$1 $2" = "stapler staple" ]; then printf 'stapled' >> "$3"; fi`,
+    codesign: `echo "codesign $1" >> "${log}"`,
+    spctl: `echo "spctl $1" >> "${log}"`,
     git: `case "$1" in
   rev-parse) echo ${HEAD} ;;
   ls-remote) if [ -n "\${FAKE_REMOTE_TAG:-}" ]; then printf '%s\\trefs/tags/v1.2.3\\n' "$FAKE_REMOTE_TAG"; fi ;;
   push) echo "git $*" >> "${log}"; exit "\${FAKE_PUSH_CODE:-0}" ;;
 esac
 exit 0`,
-    gh: `if [ "$1 $2" = "release view" ]; then [ -n "\${FAKE_RELEASE_EXISTS:-}" ]; exit; fi
+    gh: `if [ "$1 $2" = "release view" ]; then
+  if [ -n "\${FAKE_REPLACE_AFTER_SCAN:-}" ]; then
+    printf 'replacement' >> "${dmg}"
+    if [ "$FAKE_REPLACE_AFTER_SCAN" = "pair" ]; then
+      (cd "$(dirname "${dmg}")" && shasum -a 256 "$(basename "${dmg}")") > "${dmg}.sha256"
+    fi
+  fi
+  [ -n "\${FAKE_RELEASE_EXISTS:-}" ]; exit
+fi
 echo "gh $*" >> "${log}"`,
   };
   for (const [name, body] of Object.entries(tools)) {
@@ -117,6 +135,52 @@ describe("release.sh", () => {
   it("stops before publishing when the tag push fails", async () => {
     const r = await run(sandbox(), { FAKE_PUSH_CODE: "1" });
     expect(r.code).not.toBe(0);
+    expect(published(r.calls)).toEqual([]);
+  });
+
+  it("stops before building or publishing when the source privacy gate fails", async () => {
+    const r = await run(sandbox(), { FAKE_GATE_CODE: "1" });
+    expect(r.code).not.toBe(0);
+    expect(r.calls).toContain("python3 security/gate.py tree");
+    expect(r.calls.some((c) => c.startsWith("pnpm tauri:build"))).toBe(false);
+    expect(published(r.calls)).toEqual([]);
+  });
+
+  it("stops before publishing when the unpacked installer privacy scan fails", async () => {
+    const r = await run(sandbox(), { FAKE_PUBLIC_SCAN_CODE: "1" });
+    expect(r.code).not.toBe(0);
+    expect(r.calls.some((c) => c.startsWith("python3 scripts/public-release.py check "))).toBe(true);
+    expect(r.calls.some((c) => c.startsWith("git push"))).toBe(false);
+    expect(published(r.calls)).toEqual([]);
+  });
+
+  it.each([undefined, "1"])("blocks a gate finding in stapled bytes for release state %s", async (releaseExists) => {
+    const r = await run(sandbox(), {
+      FAKE_REJECT_STAPLED: "1",
+      ...(releaseExists && { FAKE_RELEASE_EXISTS: releaseExists }),
+    });
+    expect(r.code, r.out).toBe(23);
+    const scan = r.calls.findIndex((c) => c.startsWith("python3 scripts/public-release.py check "));
+    for (const verification of ["codesign --verify", "xcrun stapler validate", "spctl --assess"]) {
+      expect(r.calls.indexOf(verification)).toBeGreaterThanOrEqual(0);
+      expect(r.calls.indexOf(verification)).toBeLessThan(scan);
+    }
+    expect(r.calls.some((c) => c.startsWith("git push"))).toBe(false);
+    expect(published(r.calls)).toEqual([]);
+  });
+
+  it.each([undefined, "1"])("blocks replacement of both checked files for release state %s", async (releaseExists) => {
+    const r = await run(sandbox(), {
+      FAKE_REPLACE_AFTER_SCAN: "pair",
+      ...(releaseExists && { FAKE_RELEASE_EXISTS: releaseExists }),
+    });
+    expect(r.code, r.out).not.toBe(0);
+    expect(published(r.calls)).toEqual([]);
+  });
+
+  it("blocks a changed DMG even when the checksum file stays intact", async () => {
+    const r = await run(sandbox(), { FAKE_REPLACE_AFTER_SCAN: "dmg" });
+    expect(r.code, r.out).not.toBe(0);
     expect(published(r.calls)).toEqual([]);
   });
 

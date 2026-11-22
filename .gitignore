@@ -33,3 +33,24 @@ playwright-report/
 
 # OpenBB reference backend checkout (pnpm reference-backend)
 .reference-backend/
+
+# Local credentials and generated development state are never release inputs.
+.env*
+!.env.example
+!.env.*.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.codegraph/
+.claude/
+.worktrees/
+ts-state*/
+.tailscale*/
+tailscaled.state
+*.p12
+*.pfx
+*.key
+id_rsa
+id_ed25519
+release-stage/

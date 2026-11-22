@@ -125,3 +125,30 @@ jobs:
       - run: pnpm test:reference
       - if: failure()
         run: cat reference-backend.log
+
+  public-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned scanner and publication extractors
+        run: |
+          python3 -m pip install --require-hashes -r security/requirements.txt
+          python3 security/install.py
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils tesseract-ocr
+      - name: Verify shared policy bytes
+        run: python3 security/sync.py --check
+      - name: Verify privacy and publication failure controls
+        run: python3 -m unittest discover -s security -p test_gate.py -v
+      - name: Scan current source and complete release ancestry
+        run: |
+          python3 security/gate.py tree
+          python3 security/gate.py history --revision HEAD
+      - name: Verify installer privacy controls
+        run: python3 -m unittest discover -s scripts -p test_public_release.py -v

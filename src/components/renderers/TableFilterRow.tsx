@@ -21,6 +21,17 @@ const DECLARED_KIND: Record<NonNullable<TableColumn["cellDataType"]>, FilterKind
   object: "none",
 };
 
+/** The cell value shared by rendering, filtering, sorting, and linked rows. */
+export function tableCellValue(row: Row, column: TableColumn): unknown {
+  const value = Object.hasOwn(row, column.field) ? row[column.field] : undefined;
+  const field = column.hoverCard?.cellField;
+  if (field !== undefined && typeof value === "object" && value !== null) {
+    const record = value as Row;
+    return Object.hasOwn(record, field) ? record[field] : undefined;
+  }
+  return value;
+}
+
 /**
  * `cellDataType` when the spec gives one; otherwise the type of the column's
  * first non-null value, as the design specifies. A column that is null all
@@ -30,7 +41,7 @@ export function filterKindFor(column: TableColumn, rows: Row[]): FilterKind {
   const declared = column.cellDataType;
   if (declared !== undefined && Object.hasOwn(DECLARED_KIND, declared)) return DECLARED_KIND[declared];
   for (const row of rows) {
-    const value = row[column.field];
+    const value = tableCellValue(row, column);
     if (value === null || value === undefined) continue;
     if (typeof value === "number") return "number";
     if (typeof value === "boolean") return "boolean";
@@ -50,14 +61,12 @@ const numberFilter: FilterFn<Row> = (row, columnId, value) => {
 };
 
 /**
- * Compares the leading YYYY-MM-DD as text. Deliberately never `new Date()`:
- * parsing a timezone-less date-time reads it as local time and can shift it
- * onto the next calendar day — the same contract formatCell keeps.
+ * Compares validated calendar days as text, keeping a timestamp's own day
+ * regardless of its time zone.
  */
 const dateFilter: FilterFn<Row> = (row, columnId, value) => {
-  const cell = row.getValue(columnId);
-  if (typeof cell !== "string") return false;
-  const day = cell.slice(0, 10);
+  const day = tableDateDay(row.getValue(columnId));
+  if (day === undefined) return false;
   const { from, to } = value as DateFilter;
   if (from && day < from) return false;
   if (to && day > to) return false;
@@ -205,6 +214,22 @@ export type DateBounds = { first: string; last: string };
 
 export type DateBound = { ok: true; value: string | undefined } | { ok: false };
 
+function isCalendarDay(day: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const [year, month, date] = day.split("-").map(Number);
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(year, month - 1, date);
+  return calendar.getUTCFullYear() === year &&
+    calendar.getUTCMonth() === month - 1 &&
+    calendar.getUTCDate() === date;
+}
+
+export function tableDateDay(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const day = value.slice(0, 10);
+  return isCalendarDay(day) ? day : undefined;
+}
+
 /**
  * A date box's text as a bound: blank is no bound, YYYY-MM-DD (on the
  * calendar) is that day, anything else is refused. The one place a typed
@@ -213,12 +238,7 @@ export type DateBound = { ok: true; value: string | undefined } | { ok: false };
 export function parseDateBound(text: string): DateBound {
   const t = text.trim();
   if (t === "") return { ok: true, value: undefined };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return { ok: false };
-  const [y, m, d] = t.split("-").map(Number);
-  const day = new Date(Date.UTC(y, m - 1, d));
-  return day.getUTCFullYear() === y && day.getUTCMonth() === m - 1 && day.getUTCDate() === d
-    ? { ok: true, value: t }
-    : { ok: false };
+  return isCalendarDay(t) ? { ok: true, value: t } : { ok: false };
 }
 
 /**

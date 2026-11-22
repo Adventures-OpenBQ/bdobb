@@ -40,10 +40,16 @@ export type OptionsState =
  * needs an app restart to be seen — acceptable for choice lists.
  */
 const cache = new Map<string, ParamOption[]>();
-const inFlight = new Map<string, Promise<ParamOption[]>>();
+type PendingOptions = {
+  controller: AbortController;
+  promise: Promise<ParamOption[]>;
+  consumers: number;
+};
+const inFlight = new Map<string, PendingOptions>();
 
 /** Both maps outlive any one test; every test starts from empty. */
 export function __resetParamOptionsCacheForTests(): void {
+  for (const pending of inFlight.values()) pending.controller.abort();
   cache.clear();
   inFlight.clear();
 }
@@ -143,35 +149,38 @@ export function useParamOptions(
     });
 
     let cancelled = false;
+    const subscriptions: Array<{ key: string; pending: PendingOptions }> = [];
 
     for (const r of requests) {
       if (cache.has(r.key)) continue;
 
-      // An identical request already in flight is joined, never duplicated:
-      // two strips opening at once — and React StrictMode double-invoking
-      // this effect — both issue exactly one HTTP request.
       let pending = inFlight.get(r.key);
       if (!pending) {
-        pending = fetchParamOptions(backend, r.endpoint, r.requestParams);
-        inFlight.set(r.key, pending);
-        void pending
-          .then((options) => {
+        const controller = new AbortController();
+        const promise = fetchParamOptions(backend, r.endpoint, r.requestParams, { signal: controller.signal });
+        const entry = { controller, promise, consumers: 0 };
+        inFlight.set(r.key, entry);
+        pending = entry;
+        void promise.then(
+          (options) => {
+            if (inFlight.get(r.key) !== entry) return;
             cache.set(r.key, options);
-          })
-          // Swallowed only so this bookkeeping chain is not an unhandled
-          // rejection; the per-consumer handler below is what reports it.
-          .catch(() => {})
-          .finally(() => {
             inFlight.delete(r.key);
-          });
+          },
+          () => {
+            if (inFlight.get(r.key) === entry) inFlight.delete(r.key);
+          },
+        );
       }
+      pending.consumers++;
+      subscriptions.push({ key: r.key, pending });
 
       // `cancelled` is the whole stale-response guard: a key moving is a
       // dependency change, so this run's cleanup has already flipped it before
       // the new run issues anything. A response for a key the param has moved
       // past (pick House, then Senate before House's committees land) can
       // therefore only arrive into a cancelled run, and is dropped here.
-      void pending.then(
+      void pending.promise.then(
         (options) => {
           if (cancelled) return;
           setStates((s) => ({ ...s, [r.paramName]: { status: "ready", options, key: r.key } }));
@@ -192,6 +201,16 @@ export function useParamOptions(
 
     return () => {
       cancelled = true;
+      for (const { key, pending } of subscriptions) {
+        pending.consumers--;
+        if (pending.consumers !== 0) continue;
+        // A cascade or StrictMode can resubscribe to the same key in this turn.
+        queueMicrotask(() => {
+          if (pending.consumers !== 0 || inFlight.get(key) !== pending) return;
+          inFlight.delete(key);
+          pending.controller.abort();
+        });
+      }
     };
     // `requests` and `backend` are read above; `keys` and `backendKey` are
     // their dependency-safe stand-ins — a widget object rebuilt with the same

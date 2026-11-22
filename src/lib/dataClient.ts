@@ -25,6 +25,12 @@ export const THEMED_TYPES = new Set(["chart", "html"]);
  */
 const CONNECT_TIMEOUT_MS = 10_000;
 
+// Leave room for the 165 s cold-provider lane and the 170 s API gateway
+// deadline. The client budget includes its own queue and the response body.
+const REQUEST_TIMEOUT_MS = 180_000;
+
+type RequestOptions = { signal?: AbortSignal };
+
 /**
  * apps.json's own END-TO-END deadline, which CONNECT_TIMEOUT_MS is not: that
  * one covers the connect phase only (and the browser shim cannot honour it at
@@ -280,11 +286,9 @@ export class HttpError extends Error {
  * backend is online. Matching on the status, not on describeHttpError's
  * message, so the distinction cannot be broken by a wording change.
  *
- * `signal` is the caller's own deadline, which is a DIFFERENT guarantee from
- * connectTimeout above: that one only bounds getting the connection open,
- * while this one bounds the whole exchange and aborts the request rather than
- * leaving it running unwatched. Opt-in per call -- a widget's own fetch is
- * allowed to take as long as the backend needs.
+ * The deadline starts before the slot is acquired and lasts through the body
+ * read. The optional caller signal can end the request sooner, for example
+ * when discovery times out or a card goes away.
  *
  * `onHeaders` sees the headers of the response whose body is about to be
  * parsed, and only that one: a caller may want something the payload does
@@ -301,14 +305,22 @@ async function request(
     allow404 = false,
     onHeaders,
     signal,
-  }: {
+  }: RequestOptions & {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
-    signal?: AbortSignal;
   } = {},
 ): Promise<unknown> {
-  return withRequestSlot(url, signal, async () => {
+  const controller = new AbortController();
+  const requestSignal = controller.signal;
+  const abort = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abort();
+  else signal?.addEventListener("abort", abort, { once: true });
+  const timer = setTimeout(() => {
+    controller.abort(new DOMException(`Request timed out (${stripQuery(url)})`, "TimeoutError"));
+  }, REQUEST_TIMEOUT_MS);
+
+  const exchange = async () => {
     const hasBody = method !== "GET";
     let res: Response;
     try {
@@ -317,10 +329,17 @@ async function request(
         headers: hasBody ? { ...headers, "Content-Type": "application/json" } : headers,
         ...(hasBody ? { body: JSON.stringify(body) } : {}),
         connectTimeout: CONNECT_TIMEOUT_MS,
-        ...(signal ? { signal } : {}),
+        signal: requestSignal,
       });
     } catch (err) {
+      requestSignal.throwIfAborted();
       throw new Error(safeNetworkErrorMessage(url, err));
+    }
+    if (requestSignal.aborted) {
+      // Headers may race cancellation. Release a body created after the
+      // transport's abort listener already fired.
+      void res.body?.cancel().catch(() => {});
+      requestSignal.throwIfAborted();
     }
     if (res.status === 204) return null;
     if (res.status === 404 && allow404) {
@@ -354,7 +373,14 @@ async function request(
     // case-insensitive.
     const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
     return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
-  });
+  };
+
+  try {
+    return await withRequestSlot(url, requestSignal, exchange);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", abort);
+  }
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */
@@ -455,8 +481,9 @@ export async function fetchWidgetData(
   widget: WidgetDef,
   params: Record<string, string>,
   onWarnings?: (warnings: string[]) => void,
+  options?: RequestOptions,
 ): Promise<unknown> {
-  const payload = await request("GET", buildWidgetUrl(backend, widget, params), authHeaders(backend));
+  const payload = await request("GET", buildWidgetUrl(backend, widget, params), authHeaders(backend), undefined, options);
   onWarnings?.(obbjectWarnings(payload));
   // A keys panel renders from the whole `{ tier, rows }` envelope — `tier`
   // decides whether edit controls show — so key-maint's own
@@ -646,12 +673,13 @@ export async function fetchParamOptions(
   backend: BackendConfig,
   endpoint: string,
   params: Record<string, string>,
+  options?: RequestOptions,
 ): Promise<ParamOption[]> {
   const url = new URL(joinUrl(backend.baseUrl, endpoint));
   for (const [key, value] of Object.entries(params)) {
     if (value !== "") url.searchParams.set(key, value);
   }
-  const payload = await request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend));
+  const payload = await request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend), undefined, options);
   if (!Array.isArray(payload)) throw new Error("options endpoint returned no list");
   return toOptions(payload) ?? [];
 }
@@ -676,8 +704,9 @@ export async function fetchWidgetDocuments(
   widget: WidgetDef,
   params: Record<string, string>,
   body: Record<string, string[]>,
+  options?: RequestOptions,
 ): Promise<unknown> {
-  return request("POST", buildWidgetUrl(backend, widget, params), authHeaders(backend), body);
+  return request("POST", buildWidgetUrl(backend, widget, params), authHeaders(backend), body, options);
 }
 
 /**

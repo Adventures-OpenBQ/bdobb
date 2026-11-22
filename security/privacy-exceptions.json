@@ -1,0 +1,332 @@
+[
+  {
+    "path": "security/gate.py",
+    "rule": "private-ip",
+    "line_sha256": "839c0e52d4efea3fa60e4eaa23c8ec45d0b812e9cd17645668e194224c0755e9",
+    "reason": "Reserved network range definition in scanner"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-tailnet",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "5b8b349eb916eddfa0ac39c55db1b4d902ed59767ed71d0e2f92e407995d13be",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "0ac804d9764ae0e107fef27e734366e89ae359e4344e4850a1610ba70ff793e9",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "4ef714dfd8245c004c324d446a22194a7c5123e6570d298f0fa857d2345c9e34",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "9118b97ca56d07957c45aaf639840d1511f1a7d64c3c404409ca27647ccc1736",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "docs/specs/v3.0.0-features.md",
+    "rule": "private-ip",
+    "line_sha256": "d483c2c194067f8f637efe28d9277f52e6bac8c9cc5bc86f4a94c7641685a9b7",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "4f2f399bb403b1a886de24b7eb0c2cc72c729032c4159cd1e64d32ec63bc2294",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "2bde0ca66c36281d8a9749e1612b708f647842c1915ad69c16842cf7093a31a9",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "34b7d937e8a8f985f1acbb0a8a0584986ae64b047420dd5f24f2ae4e46ae2499",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "b9823341d1ee42fc003425022dafe0feca9e40caf2e8175c9f96c35d982024f8",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "02c2505449e6d17c94eccc4f42aa1003e481cc5ed11249d3b4313a374b643e13",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "d9ede5b0ed781120906e7d349fec6f451882b2812d6571fe8b513704dbb7440b",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/specs/2026-08-23-sp4a-note-website-frameable-design.md",
+    "rule": "private-ip",
+    "line_sha256": "fe5e1435d0e7bf06e23faf7ceab9db9ddd0cabe79e4fdc0660cf673ff0a9a2b4",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "docs/superpowers/specs/2026-08-23-sp4a-note-website-frameable-design.md",
+    "rule": "private-ip",
+    "line_sha256": "e3265885037b88c268efd9fc108efb86e3935ea2ceb94079667ff24efb4cb75b",
+    "reason": "Documented network range, default gateway, or synthetic configuration example"
+  },
+  {
+    "path": "src/components/WidgetLibrary.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "02ec48876b24072a8b551b65e211ed536d1620012f2bb5258257c1f15bb2b60a",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/components/ai/McpServersTab.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "5f9c842f1f1018f474158ee6cb50a21afcdccd27cfb5dbc113b2fa8f1b2aace6",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "adb5c02b761e00ad49de19ba9a4106231851d85f53b74db04fc4f9f9955cbbe3",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "62721b69d5d63d1e06ae8c212b1b2a11f9ba02d1d70b84c9426c64165bcf3943",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "527068c0437d4a18db5f0650abfcc4424e8beaf02ddd16e266dc28d10b5eaaad",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/agent/importedMcp.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "10c8bddb899593f6ee6336a850eee080b10338ba46f639f38750214b550a7ebb",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/aiLibraryFile.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "3fcc788120bd573aa09cd67ef5201a98a49dd5c60dc61d22260cf309ee483136",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/aiLibraryFile.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "c8942c2d0f51e7fd37d5602632a5b5554d9d69b8de135754a71dda5df3614571",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "3a952955f9b001cfe5b2df8f357f9790a05e41c65e21d5b0db4d85efb6c55b0e",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "e70042490d47f4537b20fda7c0d086223dfc3bf2dd985be7dc8bf96efa978502",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "74211d6ba49d9511ffa2a19687ac1fde58f81644c3f396f21b585d8e3eacb9f3",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "17e59dbae2d86dac79fa3bd4325ff53fb79863d1e82ee3db82a6bbabd393f111",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "e11ce106d0798d84e9886343cbf665360278d1e1c671da3b2fab788aa573c861",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/privateHost.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "d8b6c6a49d6c77245ef788f4272b3cc1c842e69a183190e7dc46cad3835bb92b",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/settingsBundle.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "cdf11380772c80ee6568d7d41db86a484b280ec68192937331246d213594231a",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "src/lib/settingsBundle.test.ts",
+    "rule": "private-ip",
+    "line_sha256": "2f8c4b5fcc0a8bd1109eb2badc33eac83988c71a056569c9a0f3e19bbaca6a39",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "deploy/review-backend/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "51af557800988ef838c7c413efba167d76d203abd34faec68da1ce45a421159f",
+    "reason": "Example public hostname with an X placeholder"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-12-v3.0.0-sp1-walking-skeleton.md",
+    "rule": "private-tailnet",
+    "line_sha256": "b009f0d27dfbef578750a6e553b5c86d7177bd3f2ad53ba46019b9499442a4b4",
+    "reason": "Synthetic scrub test with a hostname assembled by printf"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-09-03-v8.0.0-news-widget.md",
+    "rule": "private-tailnet",
+    "line_sha256": "e2a733bc8e23de59582818dc07c7a7cefb176ac51e2cca2bb74628ca8e984dcd",
+    "reason": "Example from news websocket URL unit test"
+  },
+  {
+    "path": "src/lib/news.test.ts",
+    "rule": "private-tailnet",
+    "line_sha256": "e2a733bc8e23de59582818dc07c7a7cefb176ac51e2cca2bb74628ca8e984dcd",
+    "reason": "Synthetic news websocket URL transformation fixture"
+  },
+  {
+    "path": "deploy/funnel-backend/gateway.test.mjs",
+    "rule": "private-ip",
+    "line_sha256": "c3e59db3855d40bb1184b35097b8eba72f8c2bf9d87b1f2b2a632fdabe005a16",
+    "reason": "Negative test fixture for the tunnel address validator"
+  },
+  {
+    "path": "docs/superpowers/plans/2026-08-23-sp4a-note-website-frameable.md",
+    "rule": "private-ip",
+    "line_sha256": "d51846744478edf1c112feda8d7c6c6d1c3687d2b0f0b97c8776f633c2fdeff2",
+    "reason": "Private address example in a frameability test or its design"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "4f2f399bb403b1a886de24b7eb0c2cc72c729032c4159cd1e64d32ec63bc2294",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "3bb90e871e032f62dcc0e1f5423bf08594ee7a4fd91907ada9df61d14c26486c",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "34b7d937e8a8f985f1acbb0a8a0584986ae64b047420dd5f24f2ae4e46ae2499",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "b9823341d1ee42fc003425022dafe0feca9e40caf2e8175c9f96c35d982024f8",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "7adc28c39e2dd753bcce1f104c58ab717e1e358bd09c23ca00713ea42aa6341a",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "2db5c5bae32bae8c42407938f1f25cf5e4fead08ecebfa9ceeb36b848d409183",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src/components/renderers/IframeRenderer.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "02c2505449e6d17c94eccc4f42aa1003e481cc5ed11249d3b4313a374b643e13",
+    "reason": "Synthetic address in the iframe frameability unit test"
+  },
+  {
+    "path": "src/components/renderers/IframeRenderer.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "d9ede5b0ed781120906e7d349fec6f451882b2812d6571fe8b513704dbb7440b",
+    "reason": "Synthetic address in the iframe frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "c313c7a2263849e3c6e17000948ba06ab3dfcb76548f95aebefbd130027556c2",
+    "reason": "Public specification of the CGNAT range"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "d51846744478edf1c112feda8d7c6c6d1c3687d2b0f0b97c8776f633c2fdeff2",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "src-tauri/src/frameable.rs",
+    "rule": "private-ip",
+    "line_sha256": "45621e087a3d6ee624ee814f62043639d20424e24abe3e8109a5376928249545",
+    "reason": "Synthetic address in the Rust frameability unit test"
+  },
+  {
+    "path": "docs/superpowers/specs/2026-08-23-sp4a-note-website-frameable-design.md",
+    "rule": "private-ip",
+    "line_sha256": "29e068e0894f1e6ccb168173dea3692c03dd8c2f84a64e197eee223dfc2ef223",
+    "reason": "LAN and metadata service examples in the frameability design"
+  },
+  {
+    "path": "docs/releases/validation/v3-repair/dashboard-sync-2026-10-11/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "cdf7c8b1bfab79828de75320d952a067b17e244829d36a5fc8d33acd666c2a24",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.sh",
+    "rule": "private-tailnet",
+    "line_sha256": "ae6455e9d7bc89609965666cd373a683c39afce388448612e2ec67255a2704b4",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.test.mjs",
+    "rule": "private-tailnet",
+    "line_sha256": "7747394ff3880ec318ea811146964887cb72a95345dc34d134da7248b6676c7e",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "178e50b537d69cf7811f4d458aba8108f929c79b53cf4ca8d3c35c6520817894",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "d2be38a14771535c06435013999c62f5cb33915b6044a7b6fd1711c1c251609c",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  }
+]

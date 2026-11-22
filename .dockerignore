@@ -1,0 +1,22 @@
+# Shared secret exclusions: apply to every build context.
+**/.git
+**/.git/**
+**/.worktrees
+**/.claude
+**/.codegraph
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+**/.env
+**/.env.*
+**/*.env
+**/credentials.env
+**/ts-state*
+**/kdb-license
+**/*.p12
+**/*.pfx
+**/*.key
+**/scrub-private-patterns.txt
+**/*.log

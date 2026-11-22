@@ -239,7 +239,8 @@ export function useWidgetData(
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
+    const { signal } = controller;
     /** The one timer this card ever has in flight. */
     let timer: ReturnType<typeof setTimeout> | null = null;
     /** Date.now() of the last COMPLETED request; 0 while the first is in flight. */
@@ -280,12 +281,8 @@ export function useWidgetData(
     // TIMER path can never have two requests for one card in flight: the next
     // one is not scheduled until the last has landed.
     //
-    // The guarantee is deliberately that narrow. A manual Refresh, a ⌘R
-    // refresh-all, or a change to the resolved interval re-runs the effect
-    // immediately, and an older request may still be in flight when it does.
-    // That request is not aborted — its `cancelled` flag is set by the
-    // cleanup below, so its result is discarded and it can never overwrite
-    // the newer answer.
+    // Manual Refresh, refresh-all, or a change to the resolved interval
+    // re-runs the effect immediately, cancelling the previous acquisition.
     function armAfterCompletion() {
       completedAt = Date.now();
       if (document.hidden) return;
@@ -294,7 +291,7 @@ export function useWidgetData(
     }
 
     function onVisibilityChange() {
-      if (cancelled || (intervalMs === undefined && cron === null)) return;
+      if (signal.aborted || (intervalMs === undefined && cron === null)) return;
       if (document.hidden) {
         clearTimer();
         return;
@@ -329,7 +326,7 @@ export function useWidgetData(
 
     void (async () => {
       if (!backend) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         setStatus("error");
         setAcceptedAcquisition(acquisition);
         setError("Backend not configured");
@@ -342,8 +339,8 @@ export function useWidgetData(
 
       try {
         let received: string[] = [];
-        const result = await fetchWidgetData(backend, widget, fetchParams, (w) => { received = w; });
-        if (cancelled) return;
+        const result = await fetchWidgetData(backend, widget, fetchParams, (w) => { received = w; }, { signal });
+        if (signal.aborted) return;
         setAcceptedAcquisition(acquisition);
         setWarnings(received);
         setData(result);
@@ -352,7 +349,7 @@ export function useWidgetData(
         setStatus("ready");
         armAfterCompletion();
       } catch (err) {
-        if (cancelled) return;
+        if (signal.aborted) return;
         setAcceptedAcquisition(acquisition);
         const message = err instanceof Error ? err.message : String(err);
         setError(message);
@@ -369,7 +366,7 @@ export function useWidgetData(
     })();
 
     return () => {
-      cancelled = true;
+      controller.abort();
       clearTimer();
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
