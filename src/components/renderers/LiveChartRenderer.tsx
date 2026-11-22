@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { ChartStreamRenderer } from "./ChartStreamRenderer";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildWidgetWsUrl, fetchWidgetData, stripQuery, ticketedWsUrl, wantsSocketTicket } from "../../lib/dataClient";
 import { useReconnectingSocket, type SocketStatus } from "../../hooks/useReconnectingSocket";
@@ -42,7 +43,13 @@ import { openCredit } from "./TradingViewRenderer";
  * onLive and onStatus are the live grid's, so the card's refresh control
  * gets the same tooltip and the same stale tone while the socket is down.
  */
-export function LiveChartRenderer({
+export function LiveChartRenderer(props: LiveChartProps) {
+  return props.widget.chartStreamV1 ? <ChartStreamRenderer {...props} /> : <LegacyLiveChartRenderer {...props} />;
+}
+
+type LiveChartProps = {widget: WidgetDef; backend: BackendConfig; params: Record<string,string>; refreshKey?: number; onLive?: (at:number)=>void; onStatus?: (status:SocketStatus)=>void};
+
+function LegacyLiveChartRenderer({
   widget,
   backend,
   params,

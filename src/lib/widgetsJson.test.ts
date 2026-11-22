@@ -1528,3 +1528,9 @@ describe("staleTime and dataUpdateDisplay", () => {
     expect(issues).toEqual([]);
   });
 });
+it('opts into chart stream only through the explicit boolean backend capability', () => {
+  const make = (flag:unknown) => normalizeWidgets({lc:{type:'live_chart',endpoint:'series',wsEndpoint:'chart_stream_ws',extra_metadata:{chart_stream_v1:flag}}},'b').widgets[0];
+  expect(make(true).chartStreamV1).toBe(true);
+  expect(make('true').chartStreamV1).toBeUndefined();
+  expect(make(undefined).chartStreamV1).toBeUndefined();
+});
