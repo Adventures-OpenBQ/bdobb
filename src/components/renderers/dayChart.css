@@ -3,12 +3,14 @@
 .day-chart { height:100%; min-height:0; display:flex; flex-direction:column; }
 .day-chart-strip { flex:1; min-height:0; overflow:auto; display:flex; align-items:stretch; gap:12px; padding:10px; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
 .day-chart-tile { flex:0 0 310px; min-width:310px; min-height:260px; border:1px solid var(--border); border-radius:8px; padding:12px 6px; display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; }
-.day-chart-heading { display:flex; align-items:center; gap:9px; min-width:0; }
-.day-chart-logo { display:grid; place-items:center; width:32px; height:32px; flex-shrink:0; border-radius:50%; background:var(--bg-elevated,var(--bg)); color:var(--text-muted); font-size:12px; }
+.day-chart-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.day-chart-quote { flex-shrink:0; text-align:right; }
+.day-chart-heading { flex:1; display:flex; align-items:center; gap:6px; min-width:0; }
+.day-chart-logo { display:grid; place-items:center; width:24px; height:24px; flex-shrink:0; border-radius:50%; background:var(--bg-elevated,var(--bg)); color:var(--text-muted); font-size:12px; }
 .day-chart-logo img { width:100%; height:100%; object-fit:contain; border-radius:50%; }
-.day-chart-name { display:block; font-size:11px; opacity:.65; max-width:235px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.day-chart-price { font-size:25px; font-variant-numeric:tabular-nums; margin-top:10px; }
-.day-chart-change { font-size:12px; font-variant-numeric:tabular-nums; }
+.day-chart-name { display:block; font-size:11px; opacity:.65; max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.day-chart-price { font-size:22px; font-variant-numeric:tabular-nums; margin-top:0; }
+.day-chart-change { font-size:10px; font-variant-numeric:tabular-nums; }
 .day-chart-up { color:var(--positive,#21a67a); }
 .day-chart-down { color:var(--negative,#e36170); }
 .day-chart-neutral { color:var(--text-muted); }
@@ -19,3 +21,6 @@
 .day-chart-status { font-size:10px; opacity:.65; margin-top:3px; }
 .day-chart-empty { flex:1; min-height:90px; display:grid; place-items:center; font-size:12px; opacity:.65; }
 .day-chart-footer { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:4px 10px; border-top:1px solid var(--border); font-size:10px; opacity:.8; }
+
+.day-chart-heading > div { min-width:0; }
+.day-chart-heading strong { font-size:12px; }

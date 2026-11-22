@@ -17,10 +17,8 @@ function Tile({symbol,tile,nearby,logo}:{symbol:string;tile?:DayTile;nearby:bool
   const line = tile ? dayLine(tile.points, tile.previous_close) : null;
   const tone = tile?.change === null || tile?.change === undefined || tile.change === 0 ? "neutral" : tile.change > 0 ? "up" : "down";
   return <>
-    <div className="day-chart-heading"><span className="day-chart-logo" aria-hidden="true">{logo && failedLogo !== logo ? <img alt="" src={logo} onError={()=>setFailedLogo(logo)}/> : symbol.slice(0,2)}</span><div><strong>{symbol}</strong><span className="day-chart-name">{tile?.name ?? symbol}</span></div></div>
+    <div className="day-chart-top"><div className="day-chart-heading"><span className="day-chart-logo" aria-hidden="true">{logo && failedLogo !== logo ? <img alt="" src={logo} onError={()=>setFailedLogo(logo)}/> : symbol.slice(0,2)}</span><div><strong>{symbol}</strong><span className="day-chart-name">{tile?.name ?? symbol}</span></div></div>{tile ? <div className="day-chart-quote"><div className="day-chart-price">{price(tile.price)}</div><div className={`day-chart-change day-chart-${tone}`}>{signed(tile.change)} ({signed(tile.change_percent)}%)</div></div> : null}</div>
     {!tile ? <p className="day-chart-empty">{nearby ? "Loading session…" : "Scroll to load"}</p> : <>
-      <div className="day-chart-price">{price(tile.price)}</div>
-      <div className={`day-chart-change day-chart-${tone}`}>{signed(tile.change)} ({signed(tile.change_percent)}%)</div>
       {line?.path && nearby ? <svg viewBox="0 0 310 132" className={`day-chart-line day-chart-${tone}`} role="img" aria-label={`${symbol} intraday prices`}>
         {line.referenceY !== null ? <line x1="4" x2="270" y1={line.referenceY} y2={line.referenceY} className="day-chart-reference"/> : null}
         <path d={line.path} fill="none" stroke="currentColor" strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
