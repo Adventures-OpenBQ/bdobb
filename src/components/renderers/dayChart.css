@@ -55,5 +55,6 @@
 
 .day-chart > .empty-state { flex:1; min-height:0; }
 
-.day-chart-tile[draggable="true"] .day-chart-top { cursor: grab; }
+.day-chart-reorderable { user-select: none; }
+.day-chart-reorderable .day-chart-top { cursor: grab; touch-action: none; }
 .day-chart-tile.day-chart-drop-target { outline: 2px dashed var(--accent, #329b7b); outline-offset: -3px; }

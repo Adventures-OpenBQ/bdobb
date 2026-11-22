@@ -13,6 +13,10 @@ let intersect: IntersectionObserverCallback;
 let resize: ResizeObserverCallback;
 const disconnect=vi.fn();
 beforeEach(() => {
+  vi.stubGlobal("PointerEvent",class extends MouseEvent {
+    pointerId:number;isPrimary:boolean;
+    constructor(type:string,init:MouseEventInit & {pointerId?:number;isPrimary?:boolean}={}){super(type,init);this.pointerId=init.pointerId??1;this.isPrimary=init.isPrimary??true;}
+  });
   vi.mocked(fetchEndpoint).mockReset().mockImplementation(async (_b,_p,params) => ({schema_version:1,tiles:params.symbol.split(",").map(tile)}));
   vi.stubGlobal("IntersectionObserver", class { constructor(cb:IntersectionObserverCallback) {intersect=cb;} observe(){} disconnect=disconnect; });
   vi.stubGlobal("ResizeObserver", class { constructor(cb:ResizeObserverCallback){resize=cb;} observe(){} disconnect(){} });
@@ -116,15 +120,16 @@ it('reorders by chart position without selecting a symbol, including duplicate e
  const onReorder=vi.fn(), onSelectSymbol=vi.fn();
  render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,MSFT,AAPL,BTC-USD'}} onReorder={onReorder} onSelectSymbol={onSelectSymbol}/>);
  const cards=screen.getAllByRole('option');
- const dataTransfer={setData:vi.fn(),getData:vi.fn(),effectAllowed:'',dropEffect:''};
- fireEvent.dragStart(cards[0],{dataTransfer});fireEvent.dragOver(cards[3],{dataTransfer});fireEvent.drop(cards[3],{dataTransfer});
+ Object.defineProperty(document,"elementFromPoint",{configurable:true,value:vi.fn(()=>cards[3])});
+ fireEvent.pointerDown(cards[0],{button:0,clientX:0,clientY:0,pointerId:1});fireEvent.pointerMove(cards[0],{clientX:100,clientY:0,pointerId:1});fireEvent.pointerUp(cards[0],{clientX:100,clientY:0,pointerId:1});
+ fireEvent.click(cards[0]);
  expect(onReorder).toHaveBeenCalledWith('MSFT,AAPL,BTC-USD,AAPL');
  expect(onSelectSymbol).not.toHaveBeenCalled();
 });
 it('supports keyboard reorder and ignores external drops',()=>{
  const onReorder=vi.fn();render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder}/>);
  const cards=screen.getAllByRole('option');
- fireEvent.drop(cards[1],{dataTransfer:{getData:()=> '0'}});expect(onReorder).not.toHaveBeenCalled();
+ fireEvent.pointerUp(cards[1],{clientX:100,clientY:0,pointerId:1});expect(onReorder).not.toHaveBeenCalled();
  fireEvent.keyDown(cards[1],{key:'ArrowLeft',altKey:true});expect(onReorder).toHaveBeenCalledWith('BTC-USD,AAPL');
 });
 
@@ -136,7 +141,25 @@ it('keeps scroll position and moves keyboard focus with the tile',()=>{
 });
 it('ignores a drop after the symbol list changes',()=>{
  const onReorder=vi.fn();const {rerender}=render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder}/>);
- fireEvent.dragStart(screen.getAllByRole('option')[0],{dataTransfer:{setData:vi.fn(),effectAllowed:''}});
+ fireEvent.pointerDown(screen.getAllByRole('option')[0],{button:0,clientX:0,clientY:0,pointerId:1});
  rerender(<DayChartRenderer backend={backend} params={{symbol:'MSFT,BTC-USD'}} onReorder={onReorder}/>);
- fireEvent.drop(screen.getAllByRole('option')[1]);expect(onReorder).not.toHaveBeenCalled();
+ fireEvent.pointerUp(screen.getAllByRole('option')[1],{clientX:100,clientY:0,pointerId:1});expect(onReorder).not.toHaveBeenCalled();
+});
+
+it('keeps a small pointer movement as a selection click and cancels a drag safely',()=>{
+ const onReorder=vi.fn(),onSelectSymbol=vi.fn();render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder} onSelectSymbol={onSelectSymbol}/>);
+ const cards=screen.getAllByRole('option');Object.defineProperty(document,'elementFromPoint',{configurable:true,value:vi.fn(()=>cards[1])});
+ fireEvent.pointerDown(cards[0],{button:0,clientX:10,clientY:10});fireEvent.pointerMove(cards[0],{clientX:12,clientY:10});fireEvent.pointerUp(cards[0],{clientX:12,clientY:10});fireEvent.click(cards[0]);
+ expect(onReorder).not.toHaveBeenCalled();expect(onSelectSymbol).toHaveBeenCalledWith('AAPL');
+ fireEvent.pointerDown(cards[0],{button:0,clientX:10,clientY:10});fireEvent.pointerMove(cards[0],{clientX:100,clientY:10});fireEvent.pointerCancel(cards[0]);fireEvent.pointerUp(cards[0],{clientX:100,clientY:10});
+ expect(onReorder).not.toHaveBeenCalled();
+});
+
+it('does not let another pointer replace or complete the active drag',()=>{
+ const onReorder=vi.fn();render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder}/>);
+ const cards=screen.getAllByRole('option');Object.defineProperty(document,'elementFromPoint',{configurable:true,value:vi.fn(()=>cards[1])});
+ fireEvent.pointerDown(cards[0],{button:0,clientX:0,clientY:0,pointerId:1});
+ fireEvent.pointerDown(cards[1],{button:0,clientX:0,clientY:0,pointerId:2,isPrimary:false});
+ fireEvent.pointerMove(cards[1],{clientX:100,clientY:0,pointerId:2});fireEvent.pointerUp(cards[1],{clientX:100,clientY:0,pointerId:2});expect(onReorder).not.toHaveBeenCalled();
+ fireEvent.pointerMove(cards[0],{clientX:100,clientY:0,pointerId:1});fireEvent.pointerUp(cards[0],{clientX:100,clientY:0,pointerId:1});expect(onReorder).toHaveBeenCalledWith('BTC-USD,AAPL');
 });
