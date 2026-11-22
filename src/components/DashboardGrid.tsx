@@ -40,6 +40,7 @@ export function DashboardGrid({
   onOpenLibrary,
   viewer = false,
   trailing,
+  showTabs = true,
 }: {
   /** Which dashboard this grid shows. A tile passes its own; null is "none". */
   dashboardId?: string | null;
@@ -48,6 +49,8 @@ export function DashboardGrid({
   viewer?: boolean;
   /** Handed straight to the tab bar's `trailing`, from BOTH places it is rendered below. */
   trailing?: ReactNode;
+  /** The main/viewer shell places its bar above the persistent locked band. */
+  showTabs?: boolean;
 }) {
   // By id from the prop, never from the store's focused id: with more than
   // one grid mounted, the focused dashboard is not necessarily this one's.
@@ -92,7 +95,7 @@ export function DashboardGrid({
     return (
       <>
         <TableExecutionRuntime dashboard={dashboard} />
-        <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} />
+        {showTabs ? <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} /> : null}
         <p className="empty-state">No tab selected. Add one to start.</p>
       </>
     );
@@ -247,7 +250,7 @@ export function DashboardGrid({
   return (
     <>
       <TableExecutionRuntime dashboard={dashboard} />
-      <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} />
+      {showTabs ? <TabBar dashboardId={dashboard.id} onOpenLibrary={onOpenLibrary} viewer={viewer} trailing={trailing} /> : null}
       <OffTabSources dashboard={dashboard} tabId={tab.id} />
       {dock("top", dashboard.id)}
       {/* The scroll box is THIS element, not the dashboard area (v8): the
