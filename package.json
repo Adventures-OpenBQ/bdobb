@@ -43,6 +43,7 @@
     "build:web": "node scripts/build-web.mjs",
     "test:web": "node --test web/*.test.mjs scripts/charts-vendor.test.mjs scripts/third-party-notices.test.mjs",
     "web:serve": "node web/local.mjs",
+    "test:study-layout": "node --test scripts/study-meter-layout.test.mjs",
     "test:arts": "playwright test e2e/arts-charts.spec.ts",
     "test:web:browser": "node web/browser-smoke.mjs",
     "test:live": "bash scripts/rita-live-check.sh",
@@ -113,5 +114,5 @@
     "vitest": "^2.1.8"
   },
   "openbbDocker": "v3.0.1",
-  "openbqDocker": "a66f1b2160612caac432518af8a9f6bc18bb9fcb"
+  "openbqDocker": "228b95b2181348baeb9c66d233702f8fe5b73db9"
 }

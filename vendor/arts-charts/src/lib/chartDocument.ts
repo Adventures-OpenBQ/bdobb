@@ -29,7 +29,7 @@ import type { ChartCardState, ChartDrawing, ChartLevel, Series, SeriesType } fro
 export type SeriesStyle = NonNullable<Series["style"]>;
 /** One series as chart/1 stores it (S13). */
 export type ChartSeries = {
-  id?: string; type: SeriesType; name?: string; params?: Record<string, number | string | { expr: string; at: string }>;
+  id?: string; type: SeriesType; name?: string; params?: Record<string, number | string | boolean | { expr: string; at: string }>;
   panel: number; side: "left" | "right"; color?: string; style?: SeriesStyle; symbol?: string; anchor?: TimeValue;
 };
 /** A time in chart/1 (S14): a literal, or an expression with the UTC instant the host resolved it to. */

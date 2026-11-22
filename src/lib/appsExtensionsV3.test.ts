@@ -3,6 +3,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import * as appsJson from "./appsJson";
 import { card } from "../test/fixtures";
+import type { StudyColumn } from "./studyColumns";
 import type { Dashboard, TableCardState } from "./types";
 import { importApps, planAppsImport } from "./appsJson";
 import { encodeV3CardExtension } from "./appsExtensionsV3";
@@ -242,4 +243,15 @@ describe("a synced card", () => {
     const synced = card({ title: "Mine", extensions: { workspace: { widget: { id: "w1" }, layout: {}, params: {} } } });
     expect(encodeV3CardExtension(synced, "$")).toEqual({ ok: true, value: { schemaVersion: 1, profile: "v3", title: "Mine" } });
   });
+});
+it('preserves independent study specs through portable export/import and native dashboard reload',async()=>{
+ const input=dashboard();
+ const studies:StudyColumn[]=[{id:'rsi7',study:'rsi',output:'rsi',params:{period:7},interval:'1m',session:'regular',basis:'adjusted',provider:'yfinance',points:60,presentation:'latest' as const,definition_version:'v1'},{id:'slow',study:'stoch',output:'stoch_k',params:{k:21,smooth_k:5,d:3},interval:'5m',session:'24hr',basis:'raw',provider:'eodhd',points:120,presentation:'sparkline' as const}];
+ input.tabs[0].cards[0].table={...table,studyColumns:studies};
+ const encoded=appsJson.exportCompatibleApp(input);expect(encoded.ok).toBe(true);if(!encoded.ok)throw new Error(encoded.issue.message);
+ const restored=importApps([encoded.value],[]).dashboards[0];expect(restored.tabs[0].cards[0].table).toEqual({...table,studyColumns:studies});
+ await saveDashboard(input);expect((await loadDashboards())[0].tabs[0].cards[0].table).toEqual({...table,studyColumns:studies});
+ input.tabs[0].cards[0].table!.studyColumns![0].points=999;
+ expect(appsJson.exportCompatibleApp(input)).toMatchObject({ok:false,issue:{code:'INVALID_EXTENSION'}});
+ await expect(saveDashboard(input)).rejects.toThrow(/study/i);
 });

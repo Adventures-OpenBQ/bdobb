@@ -7,6 +7,9 @@ import { useReconnectingSocket, type SocketStatus } from "../../hooks/useReconne
 import { isRecord } from "../../lib/isRecord";
 import { logOnce } from "../../lib/logger";
 import { rangeBarOf, tableRows, type Row } from "../../lib/tableColumns";
+import { useStudyCatalog, useStudyColumns } from "../../hooks/useStudyColumns";
+import type { StudyColumn } from "../../lib/studyColumns";
+import { StudyColumnsControls, studyColumnLabel } from "./StudyColumnsControls";
 import { ErrorState } from "./ErrorState";
 import { TableRenderer } from "./TableRenderer";
 import type { BackendConfig, TableSpec, WidgetDef } from "../../lib/types";
@@ -306,11 +309,27 @@ export function LiveGridRenderer({
   // keeps the last "live" it heard.
   useEffect(() => () => onStatus?.("idle"), [onStatus]);
 
+  const [localStudies,setLocalStudies] = useState<StudyColumn[]>([]);
+  const studyColumns = table.state?.studyColumns ?? localStudies;
+  const studyEnabled = widget.studyColumnsV1 === true;
+  const {catalog,error:catalogError} = useStudyCatalog(backend,studyEnabled);
+  // Membership follows the edited subscription immediately, even before its quote snapshot returns.
+  const studySymbols = idColumn === 'symbol' && Object.hasOwn(params,'symbol') ? [...subscribed] : rows.map(row=>String(row[idColumn]??'')).filter(Boolean);
+  const studyResults = useStudyColumns(backend,studyEnabled,studyColumns,studySymbols);
+  const studyRows = rows.map(row=>{
+    const next={...row};const symbol=String(row[idColumn]??'').toUpperCase();
+    for(const column of studyColumns)next[`__study_${column.id}`]={...studyResults.results.get(`${column.id}:${symbol}`),...(studyResults.error?{status:'error',error_code:studyResults.error}:{}),study:column.study,output:column.output,presentation:column.presentation};
+    return next;
+  });
+  const studySpec = studyColumns.length ? {...widget.table,columns:[...(widget.table?.columns??[]),...studyColumns.map(column=>({field:`__study_${column.id}`,headerName:studyColumnLabel(column,catalog),cellDataType:'number' as const,renderFn:['studyResult'],enableCellChangeWs:false}))]} : widget.table;
+  const saveStudies=(columns:StudyColumn[])=>{if(table.onStateChange)table.onStateChange({studyColumns:columns});else setLocalStudies(columns);};
+
   if (error !== null) return <ErrorState message={error} onRetry={() => setAttempt((n) => n + 1)} />;
 
   return (
     <div className="live-grid" data-status={status}>
-      <TableRenderer key={tableKey} data={rows} spec={widget.table} rowIdColumn={idColumn} {...table} />
+      {studyEnabled||studyColumns.length>0?<StudyColumnsControls enabled={studyEnabled} catalog={catalog} error={catalogError} columns={studyColumns} onChange={saveStudies}/>:null}
+      <div className="live-grid-table"><TableRenderer key={tableKey} data={studyColumns.length?studyRows:rows} spec={studySpec} rowIdColumn={idColumn} {...table} /></div>
     </div>
   );
 }

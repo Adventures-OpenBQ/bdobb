@@ -23,8 +23,8 @@ export type ChartPreset =
   | { kind: "series"; name: string; series: Series[] }
   | { kind: "chart"; name: string; spec: unknown };
 
-function isParams(value: unknown): value is Record<string, number | string> {
-  return isRecord(value) && Object.values(value).every((v) => typeof v === "number" || typeof v === "string");
+function isParams(value: unknown): value is Record<string, number | string | boolean> {
+  return isRecord(value) && Object.values(value).every((v) => typeof v === "number" || typeof v === "string" || typeof v === "boolean");
 }
 
 /**

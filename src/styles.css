@@ -3802,3 +3802,118 @@ body {
 /* v12: openChart's flash (B8). An outline, so the card's layout does not move. */
 .card-reveal { outline: 2px solid var(--accent); outline-offset: -2px; animation: card-reveal-fade 1.2s ease-out forwards; }
 @keyframes card-reveal-fade { from { outline-color: var(--accent); } to { outline-color: transparent; } }
+
+/* Independent study configuration leaves the quote table's scroll and menus intact. */
+.live-grid { height:100%; min-height:0; display:flex; flex-direction:column; position:relative; }
+.live-grid-table { flex:1; min-height:0; }
+.study-column-controls { flex:none; padding:4px 6px; border-bottom:1px solid var(--border); max-height:35%; overflow:auto; }
+.study-column-actions { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:3px 0; }
+.study-column-actions > span { font-size:var(--font-size-11); }
+.study-column-editor { position:absolute; z-index:25; inset:8px; overflow:auto; padding:12px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; box-shadow:0 4px 20px #0005; }
+.study-column-editor form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.study-column-editor h3, .study-column-editor p, .study-column-editor .study-column-actions { grid-column:1/-1; }
+.study-column-editor label { display:flex; flex-direction:column; gap:3px; }
+.study-column-editor input, .study-column-editor select { min-width:0; width:100%; }
+.study-result-cell { display:flex; align-items:center; gap:6px; min-width:100px; }
+.study-result-cell svg { flex:1; min-width:70px; }
+
+.study-column-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; max-height:35%; font-size:var(--font-size-12); }
+.study-column-controls .bd-button { min-height:24px; padding:2px 7px; font-size:var(--font-size-11); }
+.study-column-management { min-width:0; }
+.study-column-management summary { cursor:pointer; color:var(--text-muted); padding:3px 0; }
+.study-column-management[open] { flex-basis:100%; }
+.study-column-editor .bd-input { min-height:30px; padding:4px 7px; font-size:var(--font-size-12); }
+.study-column-editor .bd-input[type="checkbox"] { width:18px; min-height:18px; justify-self:start; }
+.study-column-editor .bd-button { min-height:30px; padding:4px 10px; font-size:var(--font-size-12); }
+
+/* Apache-2.0 meter styles retained from the original bdobb RangeBar implementation. */
+/* RangeBar's meter mode: a filled bar against a fixed scale (RSI's 0-100, or
+   a signed deviation filled from centre) rather than a marker on a per-row
+   band. Same track height and inset as .cell-range for a matched row. */
+.cell-meter {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+}
+
+.cell-meter-track {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 3px;
+  background: rgba(150, 150, 150, 0.25);
+  pointer-events: none;
+}
+
+.cell-meter-fill {
+  position: absolute;
+  top: 50%;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 3px;
+  background: rgba(66, 133, 244, 0.65);
+  pointer-events: none;
+}
+
+/* The heat bar carries its reading inside it (.cell-meter-box), so it is
+   drawn tall enough to hold one -- the prototype's 16px. A signed meter has
+   no reading and stays the thinner 6px deviation bar. */
+.cell-meter--heat .cell-meter-track,
+.cell-meter--heat .cell-meter-fill {
+  height: 16px;
+  margin-top: -8px;
+}
+
+/* The reading's box: laid over the 30-70 stretch of a banded heat meter
+   (left and width are set inline against the inset track, like the fill),
+   the neutral zone made visible. Solid ground and the row's own text
+   colour, so the number reads plainly on both themes and the only colour
+   in the meter is the fill growing outward past a band. Its edges sit on
+   the 30 and 70 guides, and it covers the 50 one. */
+.cell-meter-box {
+  position: absolute;
+  top: 50%;
+  height: 16px;
+  margin-top: -8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(150, 150, 150, 0.55);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--font-size-11);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* No bands: the box spans the whole track and must not hide the fill, so it
+   is drawn as the old centred label -- no ground, no edge, a shadow to keep
+   it legible over a saturated bar. */
+.cell-meter-box[data-band="none"] {
+  border: 0;
+  background: transparent;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.95),
+    0 0 2px rgba(0, 0, 0, 0.95);
+}
+
+.cell-meter-guide {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 12px;
+  margin-top: -6px;
+  background: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+
+.study-result-cell > .cell-meter { flex:1; min-width:90px; }

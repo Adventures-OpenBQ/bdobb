@@ -331,10 +331,10 @@ function macroStyle(render: Record<string, unknown> | undefined): Series["style"
 }
 
 /** A request's params as an instance takes them; anything not a number or a string is not a param. */
-function studyParams(params: Record<string, unknown>): Record<string, number | string> {
-  const out: Record<string, number | string> = {};
+function studyParams(params: Record<string, unknown>): Record<string, number | string | boolean> {
+  const out: Record<string, number | string | boolean> = {};
   for (const [key, value] of Object.entries(params)) {
-    if (typeof value === "number" || typeof value === "string") out[key] = value;
+    if (typeof value === "number" || typeof value === "string" || typeof value === "boolean") out[key] = value;
   }
   return out;
 }
@@ -495,7 +495,7 @@ function parseVersus(
  * with no ticker parameter. The note's words are the server's (chart_body.versus_of).
  */
 export function resolveVersus(
-  s: { type: SeriesType; name?: string; params: Record<string, number | string> },
+  s: { type: SeriesType; name?: string; params: Record<string, number | string | boolean> },
   list: readonly string[],
   groups: readonly { name: string; paramName: string; value: string }[],
   lookup: (name: string) => CatalogEntry | undefined,

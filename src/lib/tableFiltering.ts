@@ -98,6 +98,7 @@ export function filterFnFor(kind: FilterKind): BuiltInFilterFn | FilterFn<Row> |
 
 export const accessorFor = (column: TableColumn) => (row: Row): unknown => {
  const value = Object.hasOwn(row, column.field) ? row[column.field] : undefined;
+ if(column.renderFn.includes("studyResult")&&typeof value==="object"&&value!==null)return (value as Record<string,unknown>).status === "ok" ? (value as Record<string,unknown>).latest : null;
  const field = column.hoverCard?.cellField;
  if (field !== undefined && typeof value === "object" && value !== null) {
  const record = value as Record<string, unknown>; return Object.hasOwn(record, field) ? record[field] : undefined;

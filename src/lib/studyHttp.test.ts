@@ -1,0 +1,9 @@
+// Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
+// SPDX-License-Identifier: AGPL-3.0-only
+import {beforeEach,expect,it,vi} from 'vitest';
+const {fetch}=vi.hoisted(()=>({fetch:vi.fn()}));vi.mock('@tauri-apps/plugin-http',()=>({fetch}));
+import {postWidgetPath} from './dataClient';
+const backend={id:'b',name:'Grid',baseUrl:'https://grid.example/grid',authLocation:'header' as const,headerName:'Authorization',headerValue:'Bearer secret',validateWidgets:false};
+beforeEach(()=>fetch.mockReset());
+it('posts one bounded JSON body behind a header and forwards cancellation without credential URL',async()=>{fetch.mockResolvedValue(new Response('{"schema_version":1,"results":[]}',{headers:{'Content-Type':'application/json'}}));const signal=new AbortController().signal;await expect(postWidgetPath(backend,'study_results',{schema_version:1,symbols:['BTC-USD'],columns:[]},{signal})).resolves.toMatchObject({schema_version:1});const [url,options]=fetch.mock.calls[0];expect(url).toBe('https://grid.example/grid/study_results');expect(options).toMatchObject({method:'POST',signal,headers:{Authorization:'Bearer secret','Content-Type':'application/json'}});expect(JSON.parse(options.body)).toMatchObject({symbols:['BTC-USD']});});
+it('refuses oversized request and response bodies and query credential placement',async()=>{await expect(postWidgetPath(backend,'study_results',{padding:'x'.repeat(65536)})).rejects.toThrow(/large/);expect(fetch).not.toHaveBeenCalled();await expect(postWidgetPath({...backend,authLocation:'query'},'study_results',{})).rejects.toThrow(/header or cookie/);fetch.mockResolvedValue(new Response('x'.repeat(2*1024*1024+1),{headers:{'Content-Type':'application/json'}}));await expect(postWidgetPath(backend,'study_results',{})).rejects.toThrow(/large/);});

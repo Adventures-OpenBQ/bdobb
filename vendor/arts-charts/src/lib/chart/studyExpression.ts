@@ -10,7 +10,7 @@ import type { StudyInstance } from "../types";
  * caught up yet simply omits the field.
  */
 type CatalogParam = {
-  name: string; default: number | string | null; text: boolean; float?: boolean;
+  name: string; default: number | string | boolean | null; text: boolean; float?: boolean;
   /**
    * v12.3.0 (slice 4): whether this param is a WINDOW -- a lookback the `bd`
    * unit may be spelled on. The same fact the entry's `windows` list carries,
@@ -27,7 +27,16 @@ type CatalogParam = {
    */
   label?: string; step?: number;
 };
+export type ParamDescriptor = {
+  type: "integer" | "number" | "string" | "boolean";
+  default?: number | string | boolean | null;
+  label?: string; minimum?: number; maximum?: number; step?: number;
+  enum?: readonly (number | string | boolean)[]; nullable?: boolean;
+};
 export type CatalogEntry = {
+  param_schema?: Record<string, ParamDescriptor>;
+  definition_version?: string;
+  outputs?: readonly string[];
   name: string; label: string; pane: "price" | "own"; price_basis: string; convention: string;
   /**
    * The names of this entry's window params, in the registry's own words
@@ -185,8 +194,8 @@ function sixDigit(color: string): string | null {
  * every keystroke.
  */
 export function unifyWindows(
-  params: Record<string, number | string>, entry: CatalogEntry,
-): Record<string, number | string> {
+  params: Record<string, number | string | boolean>, entry: CatalogEntry,
+): Record<string, number | string | boolean> {
   const carries = entry.windows.some((name) => {
     const value = params[name];
     return typeof value === "string" && BUSINESS_DAYS.test(value);
@@ -202,7 +211,7 @@ export function unifyWindows(
 
 export function parseStudyExpression(
   text: string, lookup: (name: string) => CatalogEntry | undefined, options: ParseOptions = {},
-): { name: string; params: Record<string, number | string>; color: string | null } | null {
+): { name: string; params: Record<string, number | string | boolean>; color: string | null } | null {
   if (!CHARSET.test(text)) return null;
   const match = SHAPE.exec(text);
   if (match === null) return null;
@@ -211,7 +220,7 @@ export function parseStudyExpression(
   if (entry === undefined) return null;
   const args = rawArgs.trim() === "" ? [] : rawArgs.split(",").map((a) => a.trim());
   if (args.length > entry.params.length) return null;
-  const params: Record<string, number | string> = {};
+  const params: Record<string, number | string | boolean> = {};
   for (const [i, param] of entry.params.entries()) {
     const arg = args[i];
     if (arg === undefined || arg === "") {
@@ -219,7 +228,10 @@ export function parseStudyExpression(
       params[param.name] = param.default;
       continue;
     }
-    if (param.text) {
+    if (entry.param_schema?.[param.name]?.type === "boolean") {
+      if (arg !== "true" && arg !== "false") return null;
+      params[param.name] = arg === "true";
+    } else if (param.text) {
       if (!ANCHOR.test(arg)) return null;
       params[param.name] = arg;
     } else if (BUSINESS_DAYS.test(arg)) {
@@ -243,14 +255,14 @@ export function parseStudyExpression(
 }
 
 /** A param's text in the normalised form: a float-typed param keeps `.0`. */
-export function argText(param: CatalogParam, value: number | string): string {
+export function argText(param: CatalogParam, value: number | string | boolean): string {
   if (typeof value === "string") return value;
   return param.float === true && Number.isInteger(value) ? `${value}.0` : String(value);
 }
 
 /** The identity string (addendum §2.4): name, args, and a trailing colour. */
 export function normalizeExpression(
-  name: string, params: Record<string, number | string>, entry: CatalogEntry, color?: string | null,
+  name: string, params: Record<string, number | string | boolean>, entry: CatalogEntry, color?: string | null,
 ): string {
   const args = entry.params.map((p) => argText(p, params[p.name] ?? p.default ?? "")).join(", ");
   const head = `${name.toUpperCase()}(${args})`;
@@ -268,7 +280,7 @@ export function defaultColor(entry: CatalogEntry, fallback: string): string {
 }
 
 export function instanceFromParse(
-  parsed: { name: string; params: Record<string, number | string>; color: string | null },
+  parsed: { name: string; params: Record<string, number | string | boolean>; color: string | null },
   entry: CatalogEntry, fallbackColor: string,
 ): StudyInstance {
   const color = parsed.color ?? defaultColor(entry, fallbackColor);

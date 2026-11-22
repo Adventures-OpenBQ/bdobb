@@ -309,6 +309,7 @@ export type WidgetDef = {
   wsEndpoint?: string;
   /** Explicit backend capability; legacy quote folding stays separate. */
   chartStreamV1?: boolean;
+  studyColumnsV1?: boolean;
   /** The column that identifies a row for a live_grid's streamed updates. */
   wsRowIdColumn?: string;
   gridData: { w: number; h: number };
@@ -534,6 +535,7 @@ export type PivotConfig = {
  * apps.json extension; ordinary OpenBB export omits it.
  */
 export type TableCardState = {
+  studyColumns?: import("./studyColumns").StudyColumn[];
   pivot?: PivotConfig;
   sorting?: TableSort[];
   columnFilters?: TableFilter[];

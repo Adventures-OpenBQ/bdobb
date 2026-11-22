@@ -206,8 +206,8 @@ function ordered(groups: string[]): string[] {
 }
 
 /** The registry's defaults for an entry; a param with no default (an anchor) has none to seed. */
-function defaults(entry: CatalogEntry): Record<string, number | string> {
-  const params: Record<string, number | string> = {};
+function defaults(entry: CatalogEntry): Record<string, number | string | boolean> {
+  const params: Record<string, number | string | boolean> = {};
   for (const p of entry.params) if (p.default !== null) params[p.name] = p.default;
   return params;
 }
@@ -239,10 +239,26 @@ function defaultsText(entry: CatalogEntry): string {
  */
 function paramInvalid(
   entry: CatalogEntry, p: CatalogEntry["params"][number],
-  value: number | string | undefined, allowBusinessDays: boolean,
+  value: number | string | boolean | undefined, allowBusinessDays: boolean,
 ): boolean {
   const raw = String(value ?? "").trim();
   if (raw === "") return true;
+  const descriptor = entry.param_schema?.[p.name];
+  // A descriptor is authoritative; legacy int/float guesses must not narrow it.
+  if (descriptor && !entry.tickers?.includes(p.name)) {
+    if (descriptor.enum && !descriptor.enum.includes(value as never)) return true;
+    if (descriptor.type === "boolean") return typeof value !== "boolean";
+    if (descriptor.type === "string") return typeof value !== "string";
+    const businessDays = isBusinessDays(raw);
+    if (businessDays && (!allowBusinessDays || !entry.windows.includes(p.name))) return true;
+    if (typeof value === "boolean") return true;
+    const numeric = businessDays ? Number(raw.slice(0, -2)) : Number(raw);
+    if (!Number.isFinite(numeric) || (descriptor.type === "integer" && !Number.isInteger(numeric))) return true;
+    if (descriptor.minimum !== undefined && numeric < descriptor.minimum) return true;
+    if (descriptor.maximum !== undefined && numeric > descriptor.maximum) return true;
+    if (entry.windows.includes(p.name) && !(allowBusinessDays ? /^\d+(bd)?$/ : /^\d+$/).test(raw)) return true;
+    return false;
+  }
   // A ticker parameter is a series reference (spec 2026-11-13 cross-symbol §5): the Symbol field's rule.
   if (entry.tickers?.includes(p.name)) return !symbolAllowed("study", performanceSymbol(raw));
   if (p.text) return false;
@@ -297,7 +313,7 @@ type Draft = {
   type: SeriesType;
   /** The registry name for a study; the series type's own name otherwise. */
   name: string;
-  params: Record<string, number | string>;
+  params: Record<string, number | string | boolean>;
   color: string;
   shade: string;
   width: number;
@@ -756,7 +772,7 @@ export function SeriesPalette({
   };
 
   /** A picked study's ticker parameter as a typed one is stored: `msft` -> `MSFT`, `LIST:2` -> `list:2`. */
-  const versusNormal = (params: Record<string, number | string>, found: CatalogEntry) =>
+  const versusNormal = (params: Record<string, number | string | boolean>, found: CatalogEntry) =>
     found.tickers === undefined ? params : Object.fromEntries(Object.entries(params).map(
       ([key, value]) => [key, found.tickers?.includes(key) && typeof value === "string" ? performanceSymbol(value) : value]));
 
@@ -1241,6 +1257,7 @@ export function SeriesPalette({
                     )}
                     {entry?.params.map((p) => {
                       const held = staged.params[p.name];
+                      const descriptor = entry.param_schema?.[p.name];
                       // A window param is a TEXT field wherever `bd` is spellable: a
                       // number input takes no letters, so `SMA(50bd)` could only ever be
                       // typed in the expression field otherwise. It is also text while
@@ -1266,13 +1283,25 @@ export function SeriesPalette({
                             }
                           }}
                         >
-                          <label htmlFor={`${id}-${p.name}`}>{p.label ?? p.name}</label>
-                          <input
+                          <label htmlFor={`${id}-${p.name}`}>{descriptor?.label ?? p.label ?? p.name}</label>
+                          {descriptor?.enum ? <select
+                            id={`${id}-${p.name}`}
+                            value={String(held ?? "")}
+                            onChange={(event) => {
+                              const value = descriptor.enum!.find((candidate) => String(candidate) === event.target.value);
+                              if (value !== undefined) patch({ params: { ...staged.params, [p.name]: value } });
+                            }}
+                          >{descriptor.enum.map((value) => <option key={String(value)} value={String(value)}>{String(value)}</option>)}</select>
+                          : descriptor?.type === "boolean" ? <input
+                            id={`${id}-${p.name}`} type="checkbox" checked={held === true}
+                            onChange={(event) => patch({ params: { ...staged.params, [p.name]: event.target.checked } })}
+                          /> : <input
                             id={`${id}-${p.name}`}
                             type={asText ? "text" : "number"}
                             list={entry.tickers?.includes(p.name) ? `${id}-symbols` : undefined}
-                            step={asText ? undefined : (p.step ?? (p.float === true ? "any" : 1))}
-                            value={held ?? ""}
+                            step={asText ? undefined : (descriptor?.step ?? p.step ?? (p.float === true ? "any" : 1))}
+                            min={descriptor?.minimum} max={descriptor?.maximum}
+                            value={typeof held === "boolean" ? String(held) : held ?? ""}
                             data-invalid={invalidParam(p) ? "true" : undefined}
                             // ponytail: the state holds the COERCED number, not the
                             // typed text, so a field cleared to "" is an empty string
@@ -1291,7 +1320,7 @@ export function SeriesPalette({
                                 },
                               });
                             }}
-                          />
+                          />}
                           {p.step !== undefined && !asText && <div className="chart-sel-help">steps of {p.step}</div>}
                           {/* The v5 relative-row editor, not a bare box with
                               chips (owner, 2026-09-27: "what you actually want

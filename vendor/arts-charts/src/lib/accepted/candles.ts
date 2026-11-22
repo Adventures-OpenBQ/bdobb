@@ -1,4 +1,5 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under BUSL-1.1.
+// SPDX-License-Identifier: BUSL-1.1
 // Original implementation of the Apache chart-stream v1 contract; no external reducer source.
 import type { Candle } from '../../hooks/useTickCache';
 

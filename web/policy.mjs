@@ -1,4 +1,4 @@
-// vendored from openbq-docker v12.0.0 funnel-gateway/policy.mjs sha256:d323a69f76bb4452b63c6b3ce6a72297492b6a156bf5f4220fe85bcfec17f5cd
+// vendored from openbq-docker v12.0.0 funnel-gateway/policy.mjs sha256:9e74f6c0623941f5b8f59473d6c97227a0128b618694ac9da51ad075e74b10d8
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -581,4 +581,14 @@ export function chartStreamControl(data) {
     if (f.type === "ack") { keys.push("cursor"); if (!cursor(f.cursor)) return null; }
   } else return null;
   return exact(f,keys) ? JSON.stringify(f) : null;
+}
+
+/** Read-only shared-study projection: fixed paths, no query-selected upstream. */
+export function studyRoute(url, method) {
+  if (url.search || url.hash) return null;
+  if (url.pathname === "/grid/study_catalog" && method === "GET" ||
+      url.pathname === "/grid/study_results" && method === "POST") {
+    return {path:url.pathname,method};
+  }
+  return null;
 }

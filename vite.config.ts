@@ -199,6 +199,6 @@ export default defineConfig(({ mode }) => ({
     // transitive dependency in site-packages would be collected and IMPORTED
     // by a plain `pnpm test:run`. Measured -- a canary there did run.
     // web/**: Node's test runner owns the server/auth tests (pnpm test:web).
-    exclude: [...configDefaults.exclude, "e2e/**", ".reference-backend/**", ".superpowers/**", ".worktrees/**", ".codegraph/**", "web/**", "vendor/**", "scripts/vendor-calendar-contract.test.mjs", "scripts/pivot-packaging.test.mjs", "scripts/matched-executors.test.mjs", "scripts/matched-executors-driver-utils.test.mjs", "scripts/charts-vendor.test.mjs", "scripts/third-party-notices.test.mjs"],
+    exclude: [...configDefaults.exclude, "e2e/**", ".reference-backend/**", ".superpowers/**", ".worktrees/**", ".codegraph/**", "web/**", "vendor/**", "scripts/vendor-calendar-contract.test.mjs", "scripts/pivot-packaging.test.mjs", "scripts/matched-executors.test.mjs", "scripts/matched-executors-driver-utils.test.mjs", "scripts/charts-vendor.test.mjs", "scripts/third-party-notices.test.mjs", "scripts/study-meter-layout.test.mjs"],
   },
 }));

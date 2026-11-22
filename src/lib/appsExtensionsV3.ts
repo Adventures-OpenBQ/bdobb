@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { parseStudyColumns } from "./studyColumns";
 import { isRecord } from "./isRecord";
 import type { CardView, TableCardState, DashboardCard } from "./types";
 
@@ -94,7 +95,7 @@ export function decodeV3CardExtension(value: unknown, path: string): ExtensionRe
     }
     if (Object.hasOwn(r, "table")) {
       const t = record(r.table, `${path}.table`);
-      keys(t, ["sorting", "columnFilters", "columnOrder", "hidden", "widths", "pinned"], `${path}.table`);
+      keys(t, ["sorting", "columnFilters", "columnOrder", "hidden", "widths", "pinned", "studyColumns"], `${path}.table`);
       const table: TableCardState = {};
       for (const field of ["columnOrder", "hidden"] as const) if (Object.hasOwn(t, field)) table[field] = strings(t[field], `${path}.table.${field}`);
       if (Object.hasOwn(t, "sorting")) {
@@ -122,6 +123,10 @@ export function decodeV3CardExtension(value: unknown, path: string): ExtensionRe
         const pins = record(t.pinned, `${path}.table.pinned`);
         if (Object.values(pins).some((x) => x !== null && x !== "left" && x !== "right")) extensionError(path, "Pins must be left, right or null.");
         table.pinned = { ...pins } as TableCardState["pinned"];
+      }
+      if (Object.hasOwn(t, "studyColumns")) {
+        try { table.studyColumns = parseStudyColumns(json(t.studyColumns, `${path}.table.studyColumns`)); }
+        catch { extensionError(`${path}.table.studyColumns`, "Invalid study columns."); }
       }
       out.table = table;
     }

@@ -1,4 +1,5 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under BUSL-1.1.
+// SPDX-License-Identifier: BUSL-1.1
 import { useEffect, useRef, useState } from 'react';
 import { getHost } from '../host';
 import type { BackendConfig } from '../lib/types';

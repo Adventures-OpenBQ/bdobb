@@ -28,6 +28,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { cellVisual, titleCase, type CellVisual } from "../../lib/columnRender";
 import { formatCell, type CellFormat } from "../../lib/format";
 import { fillRowTemplate } from "../../lib/rowTemplate";
+import { StudyResultCell } from "./StudyResultCell";
 import { sparklineValues } from "../../lib/sparkline";
 import { HoverCardCell } from "./HoverCardCell";
 import { SparklineCell } from "./SparklineCell";
@@ -463,6 +464,7 @@ function TableCell(ctx: CellContext<Row, unknown>) {
   if (pivotRow && pivotRow.kind !== "leaf" && value === undefined) return "";
   const leaf = !pivotRow || pivotRow.kind === "leaf";
   const original = ctx.row.original;
+  if (leaf && column.renderFn.includes("studyResult")) return <StudyResultCell value={original[column.field]} />;
   if (leaf && column.sparkline && Array.isArray(value)) {
     const nums = sparklineValues(value, column.sparkline);
     if (nums.length > 0) return <SparklineCell values={nums} config={column.sparkline} />;

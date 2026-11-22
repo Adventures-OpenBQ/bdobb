@@ -14,3 +14,7 @@ docs/superpowers/specs/
 
 # Upstream license evidence and audit records retain their own notices.
 LICENSES/dependency-evidence/
+
+# Imported Apache-2.0 RSI meter and regression tests retain their original notices.
+src/components/renderers/RangeBar.tsx
+src/components/renderers/RangeBar.test.tsx

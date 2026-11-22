@@ -55,7 +55,7 @@ import type { Series } from "../types";
 const WARMUP_FACTOR = 3;
 
 /** The leading integer of a window value (number, or a `bd` string), else null. */
-function windowInteger(value: number | string | undefined): number | null {
+function windowInteger(value: number | string | boolean | undefined): number | null {
   const n = parseInt(String(value), 10);
   return Number.isNaN(n) ? null : n;
 }

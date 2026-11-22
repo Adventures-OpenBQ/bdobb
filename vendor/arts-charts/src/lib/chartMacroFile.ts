@@ -99,7 +99,7 @@ function seriesOf(raw: unknown, name: string, panelIds: string[], lookup: (name:
   if (panel === 0) return refuse(`${name}: a series names a panel that is not in this layout.`);
   if (raw.side !== "left" && raw.side !== "right") return refuse(`${name}: a series side must be left or right.`);
   const color = raw.color === undefined || raw.color === "" ? "" : (typeof raw.color === "string" && HEX6.test(raw.color) ? raw.color : refuse(`${name}: use six-digit hex colours.`));
-  const params = isRecord(raw.params) ? (raw.params as Record<string, number | string>) : {};
+  const params = isRecord(raw.params) ? (raw.params as Record<string, number | string | boolean>) : {};
 
   // Build the placed series, then regenerate its expr from the type (E11):
   // NEVER the file's own expr, which studyExpression's own comment shows can

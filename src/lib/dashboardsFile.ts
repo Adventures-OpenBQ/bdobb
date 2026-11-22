@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
+import { parseStudyColumns } from "./studyColumns";
 import { persistedCard } from "./widgetData/persistence";
 import { loadJsonDir, removeJson, saveJson } from "./jsonStore";
 import { parseExchange } from "./calendar";
@@ -239,6 +240,7 @@ async function readOrSeed(): Promise<Dashboard[]> {
  * The viewer window never writes, so it never emits; nothing echoes.
  */
 export async function saveDashboard(dashboard: Dashboard): Promise<void> {
+  for (const tab of dashboard.tabs) for (const card of tab.cards) if (card.table?.studyColumns !== undefined) parseStudyColumns(card.table.studyColumns);
   await saveJson(pathFor(dashboard.id), storedDashboard(dashboard));
   await notifyDashboardChanged(dashboard.id);
 }

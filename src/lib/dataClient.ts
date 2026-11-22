@@ -143,12 +143,13 @@ export async function fetchWidgetPath(
   backend: BackendConfig,
   path: string,
   params: Record<string, string>,
+  options: { signal?: AbortSignal; maxResponseBytes?: number } = {},
 ): Promise<unknown> {
   const url = new URL(joinUrl(backend.baseUrl, path));
   for (const [key, value] of Object.entries(params)) {
     if (value !== "") url.searchParams.set(key, value);
   }
-  return request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend));
+  return request("GET", applyAuthQuery(url, backend).toString(), authHeaders(backend), undefined, options);
 }
 
 /**
@@ -379,11 +380,13 @@ async function request(
     allow404 = false,
     onHeaders,
     signal,
+    maxResponseBytes,
   }: {
     parse?: boolean;
     allow404?: boolean;
     onHeaders?: (headers: Headers) => void;
     signal?: AbortSignal;
+    maxResponseBytes?: number;
   } = {},
 ): Promise<unknown> {
   const hasBody = method === "POST" || method === "PUT";
@@ -399,6 +402,23 @@ async function request(
   } catch (err) {
     throw new Error(safeNetworkErrorMessage(url, err));
   }
+  const readText = async (): Promise<string> => {
+    if (maxResponseBytes === undefined) return res.text();
+    const reader = res.body?.getReader();
+    if (!reader) return '';
+    const chunks: Uint8Array[] = []; let bytes = 0;
+    try {
+      while (true) {
+        const next = await reader.read(); if (next.done) break;
+        bytes += next.value.byteLength;
+        if (bytes > maxResponseBytes) { await reader.cancel(); throw new Error('Study response is too large'); }
+        chunks.push(next.value);
+      }
+    } finally { reader.releaseLock(); }
+    const joined = new Uint8Array(bytes); let offset = 0;
+    for (const chunk of chunks) { joined.set(chunk, offset); offset += chunk.byteLength; }
+    return new TextDecoder().decode(joined);
+  };
   if (res.status === 204) return null;
   if (res.status === 404 && allow404) {
     // Read and discard: a body left unconsumed holds its connection out of
@@ -406,18 +426,18 @@ async function request(
     // an optional document — every discovery of a backend serving no
     // apps.json takes this path. Voided deliberately; the answer is "no
     // document", whatever the backend chose to say alongside it.
-    void res.text().catch(() => {});
+    void readText().catch(() => {});
     return null;
   }
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
+    const text = await readText().catch(() => "");
     throw new HttpError(describeHttpError(res.status, text), res.status, text);
   }
   onHeaders?.(res.headers);
   if (!parse) {
     // Read to the end even though nothing is parsed: an unread body holds the
     // connection open, which is why the !res.ok branch above reads it too.
-    await res.text().catch(() => "");
+    await readText().catch(() => "");
     return null;
   }
   // Content-type-aware: a widget endpoint may answer text/plain -- the youtube
@@ -429,7 +449,7 @@ async function request(
   // application/vnd.x+json) is JSON as well, and media types are
   // case-insensitive.
   const mediaType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  return mediaType === "application/json" || mediaType.endsWith("+json") ? res.json() : res.text();
+  return mediaType === "application/json" || mediaType.endsWith("+json") ? (maxResponseBytes === undefined ? res.json() : JSON.parse(await readText())) : readText();
 }
 
 /** `${widget.endpoint}/{envVar}`, with an optional trailing path segment. */
@@ -911,4 +931,11 @@ export async function readCapped(res: Response, max: number, tooLarge: () => Err
 /** Shared authenticated transport for versioned service APIs. */
 export function backendRequest(backend: BackendConfig, method: "GET" | "POST" | "PUT" | "DELETE", path: string, body?: unknown, signal?: AbortSignal): Promise<unknown> {
   return request(method, applyAuthQuery(new URL(joinUrl(backend.baseUrl, path)), backend).toString(), authHeaders(backend), body, { signal });
+}
+
+/** JSON POST sibling endpoint, with study-service transport bounds. */
+export async function postWidgetPath(backend:BackendConfig,path:string,body:unknown,options:{signal?:AbortSignal}={}):Promise<unknown>{
+  if (backend.authLocation === 'query' && backend.headerValue) throw new Error('Study requests require header or cookie authentication');
+  if (new TextEncoder().encode(JSON.stringify(body)).length > 64*1024) throw new Error('Study request is too large');
+  return request('POST', joinUrl(backend.baseUrl,path), authHeaders(backend), body, {...options,maxResponseBytes:2*1024*1024});
 }

@@ -470,6 +470,25 @@ export function createPreviewServer({ config: supplied, assets = resolve("dist/w
       }
       if (cfg.charts && url.pathname === "/arts/charts/mcp") return await relayMcp(req, res, new URL("/mcp" + url.search, cfg.origin), cfg, who, "/charts/mcp");
       if (url.pathname === "/arts" || url.pathname.startsWith("/arts/")) return await relayCharts(req, res, url, cfg);
+      const study = policy.studyRoute?.(url, req.method);
+      if (study) {
+        if (req.headers.origin && req.headers.origin !== cfg.origin || req.method !== "GET" && foreign(req,cfg)) return reply(res,403);
+        if (!cfg.backend) return reply(res,503);
+        let body;
+        if (req.method === "POST") { body = await jsonBody(req,64*1024); if (typeof body === "number") return reply(res,body); }
+        else if (req.headers["transfer-encoding"] || Number(req.headers["content-length"]??0)!==0) return reply(res,405);
+        const controller = new AbortController();
+        const timer = setTimeout(()=>controller.abort(),5000);
+        const disconnect = ()=>{if(!res.writableEnded)controller.abort();};res.once("close",disconnect);
+        try {
+          const response = await fetchUpstream(cfg.backend+study.path,{method:study.method,headers:{...gatewayHeaders(cfg),...(body!==undefined?{"Content-Type":"application/json"}:{})},body,redirect:"error",signal:controller.signal});
+          if (!response.ok) { await response.body?.cancel();return reply(res,[400,401,403,404,409,413,422,429].includes(response.status)?response.status:502,'{"error":"Study request refused"}',MIME[".json"]); }
+          if (!/^application\/json(?:\s*;|$)/i.test(response.headers.get("content-type")??"")) {await response.body?.cancel();return reply(res,502);}
+          const result = await boundedBody(response.body??[],2*1024*1024);JSON.parse(result.toString("utf8"));
+          return reply(res,200,result,MIME[".json"]);
+        } catch { return reply(res,502,'{"error":"Study service unavailable"}',MIME[".json"]); }
+        finally {clearTimeout(timer);res.off("close",disconnect);}
+      }
       // No /ai/v1/query, and no /ai family at all: openbq-docker's gateway serves
       // /api, /news and /state only (ruling R3a), so Rita is not on the preview. A POST
       // there falls through to the 405 below.

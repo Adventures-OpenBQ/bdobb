@@ -34,7 +34,7 @@ export type AnchorResolver = (text: string) => string | null;
  * keeps the prior day's `T` anchor until something changes. Upgrade path: a
  * midnight tick in the renderer that bumps the resolver's identity.
  */
-function wireValue(value: number | string, resolveAnchor: AnchorResolver | undefined): number | string | null {
+function wireValue(value: number | string | boolean, resolveAnchor: AnchorResolver | undefined): number | string | boolean | null {
   if (resolveAnchor === undefined || typeof value !== "string" || !getHost().dates.isExpression("datetime", value)) return value;
   return resolveAnchor(value);
 }
@@ -143,7 +143,7 @@ export function studiesFromParam(
     const { name, given } = splitSegment(segment);
     const entry = lookup(name);
     if (!entry) continue;                                    // the registry no longer knows it
-    const params: Record<string, number | string> = {};
+    const params: Record<string, number | string | boolean> = {};
     let refused = false;
     for (const p of entry.params) {
       const value = given[p.name];
@@ -176,7 +176,7 @@ export function studiesFromParam(
  * be compared as the instant it was sent as.
  */
 function paramsEqual(
-  a: Record<string, number | string>, b: Record<string, unknown>, resolveAnchor: AnchorResolver | undefined,
+  a: Record<string, number | string | boolean>, b: Record<string, unknown>, resolveAnchor: AnchorResolver | undefined,
 ): boolean {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);

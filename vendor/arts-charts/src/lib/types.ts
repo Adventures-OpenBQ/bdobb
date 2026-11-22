@@ -130,7 +130,7 @@ export type Series = {
   id: string;
   type: SeriesType;
   name?: string;
-  params: Record<string, number | string>;
+  params: Record<string, number | string | boolean>;
   anchor?: string;
   symbol?: string;
   panel: number;
@@ -177,7 +177,7 @@ export type Series = {
 export type StudyInstance = {
   expr: string;
   name: string;
-  params: Record<string, number | string>;
+  params: Record<string, number | string | boolean>;
   color: string;
   /**
    * v12.3.1 (user ruling 2026-09-17): a chart has ONE source of truth -- the
