@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "8714813c64f96315f8afcd3cf2b7966a576dca39",
-  "sourceId": "58b3cca3aa0da91c15ed960d390a5da4ba7e0c9c9507d205d2542547ae060872",
+  "baseCommit": "1cca004c7e708c989121e7f7db01fbf65fdd7920",
+  "sourceId": "19c760a782e0ab84152ee990e8f9014f7e677f448bc58d6a3e548d8f485f1c6b",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5809,8 +5809,8 @@
       "path": "security/privacy-exceptions.json",
       "type": "file",
       "mode": 420,
-      "size": 14358,
-      "sha256": "29660305f07f2acbdf497eb571e857922765e878910c92513b0ff94b57a91c69"
+      "size": 14858,
+      "sha256": "13b66fcec1476b53d400876276a2efe38d72b05b94875adb7b557d8cca8d1e41"
     },
     {
       "path": "security/public-user-agent-policy.json",
@@ -5866,7 +5866,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "45ca07037a8232d44b6bfb109b21dd76ef67d636c3c70678712f6401db80d90b"
+      "sha256": "9819ea78db6d59bfa141ea1ae883d78d41708cd41aa2a32aa0e9c6d6a5507e05"
     },
     {
       "path": "source_bundle.py",
