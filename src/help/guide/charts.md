@@ -78,3 +78,5 @@ The provider supports US equities and crypto such as BTC-USD. Crypto joins compl
 When a detailed Live Chart advertises completed-session history, a closed US market shows the latest completed regular-session EODHD OHLCV candles, with the date and historical source labelled in its status line. Open sessions and crypto keep the accepted-data stream. Explicit start/end ranges keep their requested stream view. Closed-session history requires a one-minute or longer interval.
 
 BTC-USD Day Chart fills missing completed minutes with cached Coinbase candles, labelled **Coinbase backfill** in the status bar. Existing EODHD history and recorded ticks take priority. Coinbase is a separate trading venue, so small price differences are possible. Backfill candles never enter the accepted tick tape.
+
+The detailed Live Chart also loads BTC-USD’s current UTC day from that backfilled history at one-minute and longer intervals, then overlays accepted live candle updates. Backfill and stream cursors remain separate; the footer identifies the sources and any partial history.

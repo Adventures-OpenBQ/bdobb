@@ -5,11 +5,14 @@ import {fetchEndpoint} from '../lib/dataClient';
 import {isRecord} from '../lib/isRecord';
 import type {BackendConfig} from '../lib/types';
 import type {UdfBar} from '../lib/udf';
-type Result={mode:'checking'|'stream'|'closed'|'error';symbol:string;bars:UdfBar[];date?:string;partial?:boolean;error?:string;stale?:boolean};
+type Result={mode:'checking'|'stream'|'closed'|'error';symbol:string;bars:UdfBar[];date?:string;partial?:boolean;error?:string;stale?:boolean;source?:string;liveFrom?:number|null};
 function parse(value:unknown,symbol:string,interval:string):Result {
  if(!isRecord(value)||value.schema_version!==1||value.symbol!==symbol||value.interval!==interval||!Array.isArray(value.bars)||value.bars.length>2000||JSON.stringify(value).length>512*1024)throw Error('Invalid session history');
- if(value.mode==='stream')return {mode:'stream',symbol,bars:[]};
- if(value.mode!=='closed'||value.source!=='eodhd'||!isRecord(value.session)||typeof value.session.date!=='string'||value.session.status!=='closed')throw Error('Invalid closed session');
+ if(value.mode==='stream'&&value.bars.length===0)return {mode:'stream',symbol,bars:[]};
+ const btc=value.mode==='stream'&&symbol==='BTC-USD'&&typeof value.source==='string'&&['eodhd','eodhd+kdb ticks','eodhd+coinbase','eodhd+kdb ticks+coinbase'].includes(value.source);
+ if((!btc&&(value.mode!=='closed'||value.source!=='eodhd'))||!isRecord(value.session)||typeof value.session.date!=='string'||value.session.status!==(btc?'open':'closed'))throw Error('Invalid session history');
+ const liveFrom=value.live_from==null?null:typeof value.live_from==='string'?Date.parse(value.live_from)/1000:NaN;
+ if(liveFrom!==null&&!Number.isFinite(liveFrom))throw Error('Invalid history seam');
  const bars:UdfBar[]=[];let last=-Infinity;
  for(const raw of value.bars){
   if(!isRecord(raw)||typeof raw.date!=='string')throw Error('Invalid historical bar');
@@ -19,7 +22,7 @@ function parse(value:unknown,symbol:string,interval:string):Result {
   if(volume<0||low>Math.min(open,close)||high<Math.max(open,close))throw Error('Invalid historical candle');
   bars.push({time,open,high,low,close,volume});last=time;
  }
- return {mode:'closed',symbol,bars,date:value.session.date,partial:value.partial===true,error:value.error_code==='subminute_history_unavailable'?'Closed-session history requires a 1-minute or longer interval.':undefined};
+ return {mode:btc?'stream':'closed',symbol,bars,source:String(value.source),liveFrom,date:value.session.date,partial:value.partial===true,error:value.error_code==='subminute_history_unavailable'?'Closed-session history requires a 1-minute or longer interval.':undefined};
 }
 export function useClosedSession(backend:BackendConfig,symbol:string,interval:string,enabled:boolean,refreshKey:number) {
  const backendKey=JSON.stringify(backend);
@@ -35,7 +38,7 @@ export function useClosedSession(backend:BackendConfig,symbol:string,interval:st
     const result=parse(await fetchEndpoint(connection,'closed_session',{symbol,interval},controller.signal),symbol,interval);
     if(!disposed)setState({identity,result});
    }catch{
-    if(!disposed)setState(old=>old?.identity===identity && old.result.mode==='closed'?{identity,result:{...old.result,stale:true,error:'Refresh failed; showing the last successful session snapshot.'}}:{identity,result:{mode:'error',symbol,bars:[],error:'Latest-session history is unavailable.'}});
+    if(!disposed)setState(old=>old?.identity===identity && old.result.bars.length>0?{identity,result:{...old.result,stale:true,error:'Refresh failed; showing the last successful session snapshot.'}}:{identity,result:{mode:'error',symbol,bars:[],error:'Session history is unavailable.'}});
    }finally{clearTimeout(deadline);if(!disposed)timer=setTimeout(()=>{void poll();},15000);}
   };
   void poll();

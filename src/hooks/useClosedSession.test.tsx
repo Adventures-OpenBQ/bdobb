@@ -35,3 +35,10 @@ it('retains the last valid session if a later refresh fails',async()=>{
  expect(result.current.mode).toBe('closed');expect(result.current.bars).toHaveLength(1);
  expect(String(result.current.error)).toContain('last successful');
 });
+
+it('loads BTC backfilled candles while keeping the live stream enabled',async()=>{
+ vi.mocked(fetchEndpoint).mockResolvedValue({...answer('BTC-USD'),mode:'stream',source:'eodhd+kdb ticks+coinbase',session:{date:'2026-11-22',status:'open'},live_from:'2026-11-22T14:31:00Z'});
+ const {result}=renderHook(()=>useClosedSession(backend,'BTC-USD','1m',true,0));
+ await waitFor(()=>expect(result.current.bars).toHaveLength(1));
+ expect(result.current.mode).toBe('stream');expect(result.current.source).toContain('coinbase');
+});
