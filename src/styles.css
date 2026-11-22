@@ -1768,6 +1768,11 @@ body {
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
 }
+/* Live TV's audio control is portalled beside ParamControls. Keep both in
+   the same scrolling row instead of flowing after its block container. */
+.card-chips:has(> .video-row-zero) { display: flex; align-items: center; gap: 4px; }
+.card-chips:has(> .video-row-zero) > .card-params { flex: 0 0 auto; min-width: 0; }
+.video-row-zero { display: inline-flex; align-items: center; flex: 0 0 auto; }
 /* Collapsed controls (see .card-controls-collapsed below) hide the chips too
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */
@@ -3949,6 +3954,10 @@ body {
   flex-wrap: wrap;
   width: 100%;
   white-space: normal;
+}
+.widget-card[data-parameter-layout="wrap"] .card-chips:has(> .video-row-zero) > .card-params {
+  flex: 1 1 0;
+  width: auto;
 }
 
 /* One owner of live video: either this frame or the native floating window. */
