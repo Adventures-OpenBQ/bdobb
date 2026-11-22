@@ -603,7 +603,13 @@ fn captured_audio_control(key: PlayerKey, main: usize, toggle: bool) -> Result<b
         let error_code = result.as_ref().err().map(|error| error.code().0);
         eprintln!("captured-audio stage={stage} before={before_state:?} observed={observed_state:?} error={error_code:?}");
     }
-    result.map_err(|_| "Chrome did not confirm audio for the captured player; use its Mute/Unmute control".into())
+    result.map_err(|_| {
+        if toggle {
+            "Chrome did not confirm audio for the captured player; use its Mute/Unmute control"
+        } else {
+            "Chrome's captured audio state is currently unavailable"
+        }.into()
+    })
 }
 
 #[cfg(test)]
