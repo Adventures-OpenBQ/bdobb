@@ -11,13 +11,13 @@ The **Live TV** widget combines YouTube playback and incoming Chrome **Picture i
 
 On macOS or Windows, start a video in Chrome and pop it out with Chrome's picture-in-picture control. Choose **Picture in Picture grab** in the Live TV card's **Channel** picker. BDOBB uses the existing Chrome parking controller described below to fit the player over the card; Chrome keeps playing the video. Switching back to a YouTube source releases Chrome's player, including when the card is hidden.
 
-The same choice works in a locked band: open **Settings ▸ Locked Widgets**, edit the top or bottom band, add **Live TV**, choose **Picture in Picture grab**, and choose **OK**. A locked card keeps its stored height. Make the band large enough for the player. Chrome's own controls operate playback and sound; Live TV's **Start muted** and **Autoplay** preferences apply to its YouTube sources.
+The same choice works in a locked band: open **Settings ▸ Locked Widgets**, edit the top or bottom band, add **Live TV**, choose **Picture in Picture grab**, and choose **OK**. A locked card keeps its stored height. Make the band large enough for the player. Chrome's own controls operate playback. Live TV's row 0 speaker button also operates the captured player's native mute control, including on locked cards; it does not change the saved YouTube **Start muted** or **Autoplay** preferences.
 
 The incoming Chrome grab works on macOS and Windows. macOS requires Accessibility permission. The iPadOS sandbox prevents moving another app's player; choose a YouTube source for inline playback instead.
 
 ## Live TV controls
 
-Live TV opens with its parameter panel hidden. **Show parameters** reveals playback preferences. Its row 0 speaker button mutes or unmutes a YouTube stream; Chrome grab uses Chrome's own sound controls. Live TV has no outgoing Picture in Picture button. Older saved floating preferences return to inline playback.
+Live TV opens with its parameter panel hidden. **Show parameters** reveals playback preferences. Its row 0 speaker button mutes or unmutes the selected source: a YouTube stream or the captured Chrome player's native audio control. Captured audio is available only for the visible, held player in the main desktop window. The button explains when Chrome's control is unavailable; **Toggle captured audio** means its current state could not be read. Viewer windows do not control captured audio. Live TV has no outgoing Picture in Picture button. Older saved floating preferences return to inline playback.
 
 ## Other YouTube cards on macOS and Windows
 
@@ -31,7 +31,7 @@ On iPad, in a browser and on other platforms, the same card plays inline. iPad's
 
 In **Live TV**, choose **Picture in Picture grab** after popping a video out in Chrome. Chrome and BDOBB must run as the same Windows user with the same privilege level. The grab uses Chrome's English **Picture in picture** window; other browser players and non-English window titles are not selected. Leave only one Chrome floating player open.
 
-The player follows the card and BDOBB's window, parks while the card or app is hidden, and returns to its original position and size when released. Display scaling is applied to the card; restoring uses the original physical position after a display-scale change. If that display has been removed, the player returns within an available display instead. Use Chrome's own playback and sound controls. No Chrome-tab accessibility or volume-slider control is used by the combined grab.
+The player follows the card and BDOBB's window, parks while the card or app is hidden, and returns to its original position and size when released. Display scaling is applied to the card; restoring uses the original physical position after a display-scale change. If that display has been removed, the player returns within an available display instead. Use Chrome's own playback controls or Live TV's row 0 speaker button for mute. The combined grab targets only the held floating player's native **Mute** or **Unmute** control; it does not search Chrome tabs or adjust their volume sliders.
 
 If BDOBB is force-terminated while holding the player, close and reopen Chrome's floating player before grabbing it again. This prevents another app instance from taking over a window still marked as held. Normal release and quit remove that marker. The standalone legacy card's macOS-specific mute options remain separate.
 
@@ -55,7 +55,7 @@ When the card cannot be seen, BDOBB moves the player off screen and brings it ba
 
 Removing the card, or quitting BDOBB, puts Chrome's player back where it was, at its old size. So does a card made smaller than 284 × 160. If BDOBB crashes, the player stays where BDOBB last put it. If it crashed while **Mute while hidden** had the sound off, the next time BDOBB runs it turns the sound back up to where it was, whether or not the card is in view then. It does this only if BDOBB last ran within a day, the card's two mute settings are unchanged, and you have not changed the volume yourself.
 
-## Mute
+## Legacy card mute
 
 The 🔊 button in the card's header mutes the stream, and 🔇 turns it back on at the volume it had. BDOBB does this by stepping the video's own **Volume Level** slider in the Chrome tab the video came from, so the button stays right when you change the volume in the player yourself. Two settings in the card's parameters find that tab and slider, and a third decides whether hiding mutes:
 
