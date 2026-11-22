@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import io
+import importlib.util
 import json
 import os
 import shutil
@@ -11,6 +12,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 HERE = Path(__file__).resolve().parent
@@ -184,6 +186,36 @@ class GateTests(unittest.TestCase):
         nested=self.repo/'production/fixture.txt';nested.parent.mkdir();nested.write_text(line+'\n')
         self.git('add','.')
         self.assert_blocked(self.run_gate('tree'),'tailscale-credential')
+
+    def test_normalized_scan_bytes_and_fixture_reviews_are_platform_independent(self):
+        # Native Windows defaults must not alter the scanner's UTF-8/LF bytes
+        # or prevent a reviewed fixture from matching its exact content hash.
+        spec=importlib.util.spec_from_file_location('normalized_gate',HERE/'gate.py')
+        gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
+        token='tskey-'+'auth-'+'Ab12Cd34'*5
+        canonical=('label = \u2603\nfixture = '+token+'\n').encode('utf-8')
+        review={('fixture.txt','tailscale-credential',hashlib.sha256(canonical).hexdigest())}
+        original_write=Path.write_text
+
+        def windows_text_write(path,text,encoding=None,errors=None,newline=None):
+            if path.parent.name=='inputs':
+                with path.open('w',encoding=encoding or 'cp1252',errors=errors,
+                               newline='\r\n' if newline is None else newline) as stream:
+                    return stream.write(text)
+            return original_write(path,text,encoding=encoding,errors=errors,newline=newline)
+
+        for changed in (False,True):
+            work=self.root/('changed' if changed else 'reviewed');work.mkdir()
+            scan=gate.Scan(self.repo,work,[],fixture_allow=review)
+            data=canonical+b'# changed fixture\n' if changed else canonical
+            with mock.patch.object(Path,'write_text',windows_text_write):
+                try: scan.add_text(data,'fixture.txt')
+                except UnicodeError as error:
+                    self.fail('Scanner inherited a platform text encoding: '+str(error))
+            self.assertEqual((work/'inputs/00000001.txt').read_bytes(),data)
+            scan.leaks(os.environ.get('GITLEAKS_BIN') or shutil.which('gitleaks'))
+            if changed: self.assertTrue(any(row['rule']=='tailscale-credential' for row in scan.findings))
+            else: self.assertEqual(scan.findings,[])
 
     def test_artifact_ignores_gitignore_and_scans_nested_archives(self):
         (self.repo / '.gitignore').write_text('release/\n')

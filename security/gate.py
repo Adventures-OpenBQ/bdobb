@@ -236,7 +236,8 @@ class Scan:
         # lockfiles and vendor directories. Scan printable binary strings too.
         text=data.replace(b'\x00',b'').decode('utf-8',errors='replace')
         text=re.sub(r'[^\x09\x0a\x0d\x20-\x7e\u00a0-\uffff]', '\n', text)
-        dest=self.inputs/f'{self.count:08d}.txt'; dest.write_text(text)
+        # Reviewed fixture hashes bind these normalized bytes on every OS.
+        dest=self.inputs/f'{self.count:08d}.txt'; dest.write_text(text,encoding='utf-8',newline='\n')
         self.mapping[dest.name]=label
         if not allow_exceptions:
             self.no_exceptions.add(dest.name)
