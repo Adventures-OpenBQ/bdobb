@@ -111,3 +111,32 @@ it('shows a crypto UTC day alongside a closed equity session without labelling b
  expect(screen.getByRole('status')).toHaveTextContent('Regular session: closed');
  expect(screen.getByRole('img',{name:'BTC-USD intraday prices'})).toBeInTheDocument();
 });
+
+it('reorders by chart position without selecting a symbol, including duplicate entries',async()=>{
+ const onReorder=vi.fn(), onSelectSymbol=vi.fn();
+ render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,MSFT,AAPL,BTC-USD'}} onReorder={onReorder} onSelectSymbol={onSelectSymbol}/>);
+ const cards=screen.getAllByRole('option');
+ const dataTransfer={setData:vi.fn(),getData:vi.fn(),effectAllowed:'',dropEffect:''};
+ fireEvent.dragStart(cards[0],{dataTransfer});fireEvent.dragOver(cards[3],{dataTransfer});fireEvent.drop(cards[3],{dataTransfer});
+ expect(onReorder).toHaveBeenCalledWith('MSFT,AAPL,BTC-USD,AAPL');
+ expect(onSelectSymbol).not.toHaveBeenCalled();
+});
+it('supports keyboard reorder and ignores external drops',()=>{
+ const onReorder=vi.fn();render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder}/>);
+ const cards=screen.getAllByRole('option');
+ fireEvent.drop(cards[1],{dataTransfer:{getData:()=> '0'}});expect(onReorder).not.toHaveBeenCalled();
+ fireEvent.keyDown(cards[1],{key:'ArrowLeft',altKey:true});expect(onReorder).toHaveBeenCalledWith('BTC-USD,AAPL');
+});
+
+it('keeps scroll position and moves keyboard focus with the tile',()=>{
+ function ReorderHarness(){const [symbol,setSymbol]=useState('AAPL,BTC-USD');return <DayChartRenderer backend={backend} params={{symbol}} onReorder={setSymbol}/>;}
+ render(<ReorderHarness/>);const list=screen.getByRole('listbox');list.scrollTop=120;
+ fireEvent.keyDown(screen.getAllByRole('option')[1],{key:'ArrowUp',altKey:true});
+ expect(screen.getAllByRole('option')[0]).toHaveFocus();expect(list.scrollTop).toBe(120);
+});
+it('ignores a drop after the symbol list changes',()=>{
+ const onReorder=vi.fn();const {rerender}=render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}} onReorder={onReorder}/>);
+ fireEvent.dragStart(screen.getAllByRole('option')[0],{dataTransfer:{setData:vi.fn(),effectAllowed:''}});
+ rerender(<DayChartRenderer backend={backend} params={{symbol:'MSFT,BTC-USD'}} onReorder={onReorder}/>);
+ fireEvent.drop(screen.getAllByRole('option')[1]);expect(onReorder).not.toHaveBeenCalled();
+});

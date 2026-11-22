@@ -172,9 +172,10 @@ vi.mock("./renderers/LiveChartRenderer", () => ({
   LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
 }));
 vi.mock("./renderers/DayChartRenderer", () => ({
-  DayChartRenderer: ({onSnapshot,onSelectSymbol,selectionError,footerControls}: {footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+  DayChartRenderer: ({onSnapshot,onSelectSymbol,onReorder,selectionError,footerControls}: {onReorder?:(symbols:string)=>void;footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
     <div data-testid="day-footer-controls">{footerControls}</div>
     <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
+    <button type="button" onClick={()=>onReorder?.("MSFT,AAPL")}>reorder-day-symbols</button>
     {selectionError ? <span>{selectionError}</span>:null}
     <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
     <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
@@ -5724,6 +5725,12 @@ describe("Day Chart selection output",()=>{
   await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("MSFT"));
   expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("MSFT");
   expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("reorders the shared watchlist while preserving the selected symbol",async()=>{
+  seed();await userEvent.click(screen.getByRole("button",{name:"reorder-day-symbols"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("MSFT,AAPL"));
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("AAPL");
   useBackendsStore.setState({backends:[]});
  });
  it("refuses to publish into the input group and explains the conflict",async()=>{

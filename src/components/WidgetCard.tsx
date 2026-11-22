@@ -1314,6 +1314,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt}
         footerControls={controlProps?<ParamControls {...controlProps} widget={{...widget,params:widget.params.filter(p=>(p.row??0)>0)}} inline idPrefix="day-footer-"/>:undefined}
         selectionError={conflict?"Choose a different group for Selected symbol so chart selection does not replace the watchlist.":undefined}
+        onReorder={(symbols)=>{void handleParamsUpdate(widget,{symbol:symbols},[]);}}
         onSelectSymbol={conflict?undefined:(symbol)=>{void handleCellClick({paramName:"selected_symbol",value:symbol,forceUpdate:false});}} />;
     }
 
