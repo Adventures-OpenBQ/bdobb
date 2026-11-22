@@ -163,3 +163,17 @@ it('does not let another pointer replace or complete the active drag',()=>{
  fireEvent.pointerMove(cards[1],{clientX:100,clientY:0,pointerId:2});fireEvent.pointerUp(cards[1],{clientX:100,clientY:0,pointerId:2});expect(onReorder).not.toHaveBeenCalled();
  fireEvent.pointerMove(cards[0],{clientX:100,clientY:0,pointerId:1});fireEvent.pointerUp(cards[0],{clientX:100,clientY:0,pointerId:1});expect(onReorder).toHaveBeenCalledWith('BTC-USD,AAPL');
 });
+
+it('scrolls under a stationary dragged pointer and drops on a newly revealed tile',()=>{
+ let frame:FrameRequestCallback=()=>{};
+ vi.stubGlobal('requestAnimationFrame',vi.fn(fn=>{frame=fn;return 1;}));vi.stubGlobal('cancelAnimationFrame',vi.fn());
+ const onReorder=vi.fn();render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,MSFT,BTC-USD',rows:'',columns:'1'}} onReorder={onReorder}/>);
+ const strip=screen.getByRole('listbox'),cards=screen.getAllByRole('option');
+ Object.defineProperties(strip,{clientHeight:{value:200},scrollHeight:{value:800}});
+ strip.getBoundingClientRect=()=>({left:0,right:300,top:0,bottom:200,width:300,height:200} as DOMRect);
+ Object.defineProperty(document,'elementFromPoint',{configurable:true,value:vi.fn(()=>strip.scrollTop>20?cards[2]:cards[1])});
+ fireEvent.pointerDown(cards[0],{button:0,clientX:100,clientY:100,pointerId:1});fireEvent.pointerMove(cards[0],{clientX:100,clientY:198,pointerId:1});
+ act(()=>{frame(0);frame(32);frame(64);});expect(strip.scrollTop).toBeGreaterThan(20);
+ fireEvent.pointerUp(cards[0],{clientX:100,clientY:198,pointerId:1});expect(onReorder).toHaveBeenCalledWith('MSFT,BTC-USD,AAPL');
+ const atDrop=strip.scrollTop;act(()=>frame(96));expect(strip.scrollTop).toBe(atDrop);
+});

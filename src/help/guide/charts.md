@@ -82,3 +82,5 @@ BTC-USD Day Chart fills missing completed minutes with cached Coinbase candles, 
 The detailed Live Chart also loads BTC-USD’s current UTC day from that backfilled history at one-minute and longer intervals, then overlays accepted live candle updates. Backfill and stream cursors remain separate; the footer identifies the sources and any partial history.
 
 Drag a Day Chart tile onto another tile to change symbol order. The change is saved to its symbol list, or to its linked parameter group so other linked widgets share that order. Selection stays unchanged. Keyboard: focus a tile and use Alt+Arrow keys to move it one position.
+
+While dragging a Day Chart tile, hold near the chart strip’s left/right edge (horizontal layout) or top/bottom edge (vertical layout) to scroll to more tiles. Scrolling accelerates toward the edge and stops when you move away or release. Drop on the newly visible tile to save the new order.

@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {startDragEdgeScroll} from "../../lib/dragEdgeScroll";
 import {useDayQuotes, type DayQuote} from "../../hooks/useDayQuotes";
 import { useDayLogos } from "../../hooks/useDayLogos";
 import { useDayCharts } from "../../hooks/useDayCharts";
@@ -55,8 +56,10 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
   const input=params.symbol ?? "";
   const parsed=useMemo(() => {try {return {symbols:daySymbols(input),error:null};} catch(e) {return {symbols:[],error:(e as Error).message};}},[input]);
   const {symbols}=parsed;
-  const drag=useRef<{index:number;input:string;pointerId:number;x:number;y:number;active:boolean}|null>(null);
+  const drag=useRef<{index:number;input:string;pointerId:number;x:number;y:number;currentX:number;currentY:number;active:boolean}|null>(null);
   const suppressClick=useRef(false);
+  const edgeScroll=useRef<(()=>void)|null>(null);
+  const stopEdgeScroll=()=>{edgeScroll.current?.();edgeScroll.current=null;};
   const pendingFocus=useRef<{membership:string;index:number}|null>(null);
   const previousMembers=useRef<string|null>(null);
   const [dropTarget,setDropTarget]=useState<number|null>(null);
@@ -69,6 +72,7 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
   const [size,setSize]=useState({width:620,height:260});
   const membership=JSON.stringify(symbols);
   const [strip,setStrip]=useState<HTMLDivElement|null>(null);
+  useEffect(()=>{setDropTarget(null);return ()=>{edgeScroll.current?.();edgeScroll.current=null;drag.current=null;};},[strip,input,layout.axis,layout.rows,layout.columns]);
   const [view,setView]=useState<{membership:string;indexes:number[]}>({membership,indexes:[0,1,2]});
   const indexes=view.membership===membership ? view.indexes : [0,1,2];
   const nearby=indexes.flatMap((i)=>symbols[i] ? [symbols[i]] : []);
@@ -127,11 +131,11 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
   return <div className="day-chart">
     {notice?<p className="empty-state">{notice}</p>:<div className={`day-chart-strip day-chart-${layout.axis}`} style={{gridAutoFlow:layout.axis==="horizontal"?"column":"row",gridTemplateColumns:layout.columns?`repeat(${layout.columns}, minmax(180px, 1fr))`:undefined,gridTemplateRows:layout.axis==="horizontal"?`repeat(${layout.rows}, ${Math.max(180,(size.height-20-12*((layout.rows??1)-1))/(layout.rows??1))}px)`:undefined,gridAutoColumns:layout.axis==="horizontal"?"310px":undefined,gridAutoRows:layout.axis==="vertical"?`${layout.rows?Math.max(180,(size.height-20-12*(layout.rows-1))/layout.rows):220}px`:undefined}} ref={setStrip} role="listbox" aria-label="Day charts">
       {symbols.map((symbol,index)=><div role="option" className={`day-chart-tile${onReorder?" day-chart-reorderable":""}${dropTarget===index?" day-chart-drop-target":""}${params.selected_symbol===symbol?" day-chart-selected":""}`} aria-selected={params.selected_symbol===symbol} tabIndex={onSelectSymbol||onReorder?0:undefined} draggable={false}
-        onPointerDown={event=>{if(!onReorder||drag.current||event.isPrimary===false||event.button!==0||(event.pointerType==="touch" && !(event.target as HTMLElement).closest(".day-chart-top")))return;event.preventDefault();event.stopPropagation();event.currentTarget.focus({preventScroll:true});drag.current={index,input,pointerId:event.pointerId,x:event.clientX,y:event.clientY,active:false};suppressClick.current=false;event.currentTarget.setPointerCapture?.(event.pointerId);}}
-        onPointerMove={event=>{const d=drag.current;if(!d||d.pointerId!==event.pointerId||d.input!==input)return;if(Math.hypot(event.clientX-d.x,event.clientY-d.y)<8&&!d.active)return;d.active=true;suppressClick.current=true;event.preventDefault();const target=document.elementFromPoint(event.clientX,event.clientY)?.closest<HTMLElement>("[data-day-index]");setDropTarget(target&&strip?.contains(target)?Number(target.dataset.dayIndex):null);}}
-        onPointerUp={event=>{const d=drag.current;if(!d||d.pointerId!==event.pointerId)return;drag.current=null;setDropTarget(null);if(d?.active&&d.input===input){event.preventDefault();event.stopPropagation();const target=document.elementFromPoint(event.clientX,event.clientY)?.closest<HTMLElement>("[data-day-index]");if(target&&strip?.contains(target))move(d.index,Number(target.dataset.dayIndex));}setTimeout(()=>{suppressClick.current=false;},0);}}
-        onPointerCancel={event=>{if(drag.current?.pointerId!==event.pointerId)return;drag.current=null;setDropTarget(null);suppressClick.current=false;}}
-        onLostPointerCapture={event=>{if(drag.current?.pointerId!==event.pointerId)return;drag.current=null;setDropTarget(null);}}
+        onPointerDown={event=>{if(!onReorder||drag.current||event.isPrimary===false||event.button!==0||(event.pointerType==="touch" && !(event.target as HTMLElement).closest(".day-chart-top")))return;event.preventDefault();event.stopPropagation();event.currentTarget.focus({preventScroll:true});drag.current={index,input,pointerId:event.pointerId,x:event.clientX,y:event.clientY,currentX:event.clientX,currentY:event.clientY,active:false};suppressClick.current=false;event.currentTarget.setPointerCapture?.(event.pointerId);}}
+        onPointerMove={event=>{const d=drag.current;if(!d||d.pointerId!==event.pointerId||d.input!==input)return;if(Math.hypot(event.clientX-d.x,event.clientY-d.y)<8&&!d.active)return;d.active=true;d.currentX=event.clientX;d.currentY=event.clientY;suppressClick.current=true;event.preventDefault();if(strip&&!edgeScroll.current)edgeScroll.current=startDragEdgeScroll(strip,layout.axis,()=>{const active=drag.current;return active?.active&&active.input===input?{x:active.currentX,y:active.currentY}:null;},()=>{const active=drag.current;if(!active)return;const hit=document.elementFromPoint(active.currentX,active.currentY)?.closest<HTMLElement>("[data-day-index]");setDropTarget(hit&&strip.contains(hit)?Number(hit.dataset.dayIndex):null);});const target=document.elementFromPoint(event.clientX,event.clientY)?.closest<HTMLElement>("[data-day-index]");setDropTarget(target&&strip?.contains(target)?Number(target.dataset.dayIndex):null);}}
+        onPointerUp={event=>{const d=drag.current;if(!d||d.pointerId!==event.pointerId)return;stopEdgeScroll();drag.current=null;setDropTarget(null);if(d?.active&&d.input===input){event.preventDefault();event.stopPropagation();const target=document.elementFromPoint(event.clientX,event.clientY)?.closest<HTMLElement>("[data-day-index]");if(target&&strip?.contains(target))move(d.index,Number(target.dataset.dayIndex));}setTimeout(()=>{suppressClick.current=false;},0);}}
+        onPointerCancel={event=>{if(drag.current?.pointerId!==event.pointerId)return;stopEdgeScroll();drag.current=null;setDropTarget(null);suppressClick.current=false;}}
+        onLostPointerCapture={event=>{if(drag.current?.pointerId!==event.pointerId)return;stopEdgeScroll();drag.current=null;setDropTarget(null);}}
         onDragStart={event=>event.preventDefault()}
         onClick={()=>{if(!suppressClick.current)onSelectSymbol?.(symbol);}} onKeyDown={event=>{if(event.target===event.currentTarget && event.altKey && ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key)){event.preventDefault();event.stopPropagation();move(index,index+(["ArrowLeft","ArrowUp"].includes(event.key)?-1:1),true);return;}if(event.target===event.currentTarget && (event.key==="Enter"||event.key===" ")){event.preventDefault();onSelectSymbol?.(symbol);}}} title={onSelectSymbol?`Select ${symbol} for detailed chart`:undefined} data-day-index={index} key={`${index}:${symbol}`}><Tile symbol={symbol} tile={tiles[symbol]} nearby={indexes.includes(index)} logo={logos[symbol]} scale={scale} quote={quotes[symbol]}/></div>)}
     </div>}
