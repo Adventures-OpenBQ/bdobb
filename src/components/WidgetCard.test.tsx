@@ -5710,15 +5710,18 @@ describe("Day Chart snapshot refresh status",()=>{
 describe("Day Chart selection output",()=>{
  function seed(shared=false){
   register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",groupType:"symbol"},{paramName:"selected_symbol",type:"text",groupType:"symbol"}]});
+  useWidgetRegistryStore.setState({widgets:[...useWidgetRegistryStore.getState().widgets,makeWidget({id:"detail-widget",type:"live_chart",endpoint:"series",params:[{paramName:"symbol",type:"text",groupType:"symbol"}]})]});
   useBackendsStore.setState({backends:[backend()]});
   useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0});
   const source={...card,params:{symbol:"AAPL,MSFT"},bindings:[{paramName:"symbol",groupId:"watch"},{paramName:"selected_symbol",groupId:shared?"watch":"selected"}]};
-  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",groups:[{id:"watch",name:"Watchlist",paramName:"symbol",groupType:"symbol",value:"AAPL,MSFT"},{id:"selected",name:"Detail",paramName:"symbol",groupType:"symbol",value:"AAPL"}],tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
-  render(<WidgetCard card={source} onRemove={vi.fn()}/>);
+  const detail={...card,id:"detail-card",widgetId:"detail-widget",params:{symbol:"AAPL"},bindings:[{paramName:"symbol",groupId:"selected"}]};
+  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",groups:[{id:"watch",name:"Watchlist",paramName:"symbol",groupType:"symbol",value:"AAPL,MSFT"},{id:"selected",name:"Detail",paramName:"symbol",groupType:"symbol",value:"AAPL"}],tabs:[{id:"t1",name:"Main",cards:[source,detail]}]}],activeId:"d1",activeTabId:"t1"});
+  render(<><WidgetCard card={source} onRemove={vi.fn()}/><WidgetCard card={detail} onRemove={vi.fn()}/></>);
  }
  it("updates only the selection group, preserving the input watchlist",async()=>{
-  seed();await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  seed();expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("AAPL");await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
   await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("MSFT"));
+  expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("MSFT");
   expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
   useBackendsStore.setState({backends:[]});
  });
