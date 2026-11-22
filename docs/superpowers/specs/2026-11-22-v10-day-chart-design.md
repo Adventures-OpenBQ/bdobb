@@ -13,13 +13,30 @@ existing v10 data infrastructure. This feature belongs in v10; v12 can inherit i
 - The same parameter can bind to an existing dashboard symbol parameter group.
   A group may contain one symbol or a comma-separated list.
 - Preserve input order, trim whitespace, normalize names through existing rules,
-  and deduplicate. An explicitly empty list means no subscriptions or charts.
+  and preserve positional entries, including repeated symbols. Fetch/cache each unique
+  symbol once without renumbering the list. An explicitly empty list means no
+  subscriptions or charts.
 - Group edits immediately replace membership and cancel obsolete requests; late
   answers cannot repopulate removed symbols. Group deletion/disable follows the
   existing parameter-binding behavior; do not create a second group system.
-- Literal `$list:0`/`$list:1` tokens were not found in the inspected v10 or v12
-  source. They are not needed for the confirmed input/group behavior and are not
-  introduced as aliases for unstable group positions.
+- Engineering-notebook confirms Claude implemented Art’s Charts symbol lists on
+  2026-11-13. The actual notation is `list:1`, `list:2`, ... (one-based, no `$`).
+  `list:0` is invalid. Positions refer to entries in the card’s resolved symbol list,
+  not numbered groups or saved-list identities.
+- The existing Art’s Charts contract keeps duplicate positions and reports missing
+  positions explicitly. Preserve that contract if position references are exposed
+  in Day Chart; the strip can enumerate the resolved list without token syntax.
+- Reuse compatible host group-binding behavior. Do not introduce the BUSL Art’s
+  Charts package into v10 just to copy its list parser; retain the license boundary.
+
+### Evidence
+
+Notebook session `3724a21c-61b8-40c0-b537-f912ab12728a` records the original request
+and completed symbol-list program. Current source confirms it in Art’s Charts
+`client/src/lib/chart/series.ts` (`parseSymbolList`, `seriesTicker`) and
+`server/arts_charts/chart_body.py` (`ticker_of`). V12 host `paramGroups.ts` has
+multi-select-aware group membership and hand-back behavior. The notebook was read
+without modifying its database, ingestion state or unrelated worktree files.
 
 ## Approach
 
@@ -65,6 +82,11 @@ no automatic movement of charts while someone reads them.
 - Requests/cache work are shared and bounded. Load visible/nearby tiles first;
   scrolling must not open unbounded sockets or trigger a full-watchlist refetch.
 - A missing day has an explicit empty/error state, not a synthetic zero-price line.
+- Headline price/change correspond to the plotted session (last bar/close against
+  its previous close). A newer extended-hours quote must not silently replace that
+  headline; any separately shown quote needs its own timestamp/status.
+- Backend response identifies each symbol, actual session date/timezone, bars,
+  previous close, source, coverage, as-of/status and safe per-symbol errors.
 
 ## Logos and web access
 
