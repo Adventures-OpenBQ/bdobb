@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "f65aef286eec81c24bd895209d556c3518536d3b",
-  "sourceId": "5e70f29e33a9a01cd3a093ae4b876b4082b132b33e40de57c12fdd29de38afd2",
+  "baseCommit": "99495e5ddeab385971b6f25dc1507559fbbc5dd7",
+  "sourceId": "75acc72fffb690d43903299408fc5eef936cefb0e554aa1e66778fcf2c3a7869",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20793,6 +20793,13 @@
       "sha256": "c4bdb6b42d6e6b69742e625f0350ef8ee3c1f67197dff75d39425863b54e9d38"
     },
     {
+      "path": "docs/superpowers/plans/2026-11-22-day-chart-reorder.md",
+      "type": "file",
+      "mode": 420,
+      "size": 629,
+      "sha256": "7bebfdd45c7f1b6fd664c3f1b82f28778baf0b25c3f6d9f628e8ba38eea789cd"
+    },
+    {
       "path": "docs/superpowers/plans/2026-11-22-v10-day-chart.md",
       "type": "file",
       "mode": 420,
@@ -22386,7 +22393,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "5027545735c26f20113a5013f62f6796f9d818132ce596e1c78688fbb1567120"
+      "sha256": "3140ec0252d4d41c3b2a1e36c449664b7868130681e5984fdebd30eeb08d9419"
     },
     {
       "path": "source_bundle.py",
@@ -22980,15 +22987,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 254227,
-      "sha256": "f99d5829d403f3c0c6690c87077bb88e6814a32983c192102f2f147d37f29f1c"
+      "size": 254826,
+      "sha256": "95877a72a99fad5082f9f4419c9e8110426e62d56fd4da241e226fe4b5b27192"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 119200,
-      "sha256": "b734262903a3f0b928e9bb2332d9b74c8e45506b527c37f5858f4108275abe5d"
+      "size": 119286,
+      "sha256": "ac21d2afba27f24fbab6bc8512154d00c03d96780237b7ff545b55ac0533168d"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -23701,15 +23708,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 9449,
-      "sha256": "d9eea78399f16e9d30c89c8bda2350ef3eaf26a3ec596f4dcce5be8f46f69090"
+      "size": 11586,
+      "sha256": "5aa9f68ef46b3af26a65b0cc2f61a0ad11a578f103e5919f973ee07fa665146d"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 13823,
-      "sha256": "d34f10a26fffcfeb9e2542948129db6c2ad4dbe2df9f27645fcc8cb8130ab247"
+      "size": 15785,
+      "sha256": "99f191ae5132ce5d2b9a5fc552cc9515d7aa94d7b93413d9eecfb8466a955c4a"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24289,8 +24296,8 @@
       "path": "src/components/renderers/dayChart.css",
       "type": "file",
       "mode": 420,
-      "size": 4258,
-      "sha256": "cf7c90f768f6b946864948b15f8dd757b3d1dbd0eca3e58b44054d96396c4601"
+      "size": 4434,
+      "sha256": "3bfe7822bc6b61ebc36a261d851a11db1e051f33dace4563a14ef5a8c69e7134"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
@@ -24912,8 +24919,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 13629,
-      "sha256": "704577047ab827e18a7bf04de220b04fc41263c0b92d1c622f36d3f867626256"
+      "size": 13907,
+      "sha256": "8f49ea9365f9f5344952c3ea4263eeeb7e01e6f722d54fbd56d1b6b159900525"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
