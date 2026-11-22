@@ -32,7 +32,7 @@ export function ChartStreamRenderer({widget,backend,params,refreshKey=0,onLive,o
     if (!element) return;
     let disposed=false;
     let handle:CandleChartHandle|undefined;
-    void mountCandleChart(element,{theme:themeRef.current,colors:{},showVolume:true,barSeconds:intervalSeconds(interval)}).then(h=>{
+    void mountCandleChart(element,{theme:themeRef.current,colors:{},showVolume:true,wickWidth:2,barSeconds:intervalSeconds(interval)}).then(h=>{
       if (disposed) {h.dispose();return;} handle=h;setChart(h);
     }).catch(()=>setError('chart library failed to load'));
     return ()=>{disposed=true;handle?.dispose();setChart(null);};
