@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v8.0.0",
-  "baseCommit": "aa4b97e68ca4aea64e01117906e5514717621bf2",
-  "sourceId": "bfeaeebb84ef1be1a071e1598ca04781944ff4dcabfa09d9806ab2fe7017d373",
+  "baseCommit": "fecfd30491e6709087bbb7249e77a4891f38a6f7",
+  "sourceId": "a69399fa5053ea2e99d15ea91f454957d2218efc3f4a6a1a42959fec0f37cff8",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20369,8 +20369,8 @@
       "path": "e2e/header-scroll.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 5885,
-      "sha256": "e298d5974de83a78ec4d5d85765049e992845b5594a11897d4cd6e7842c21456"
+      "size": 7655,
+      "sha256": "f04c873e5d92a8337bcd84ea978d7657e931f335b48d87df1da19d660aa3657d"
     },
     {
       "path": "e2e/help.spec.ts",
@@ -21966,7 +21966,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "c2c990a8b9d358d1894105c92aa70e5ff06db5154b47a760ffc8fc03f3b95aa7"
+      "sha256": "16905544dfcb915918aa789763e18a978491c0076bee61ace875ccfe8311954b"
     },
     {
       "path": "source_bundle.py",
@@ -30029,8 +30029,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 166197,
-      "sha256": "9d21b229b01a0ffe7bb1c1d97ef0c4aafca73085d001163456ae255fb3ebf817"
+      "size": 166221,
+      "sha256": "9b697e3a212d57c0e781f83a6305b3abdf58f819847be5aa0de8894ec34aad07"
     },
     {
       "path": "src/test/fakeSocket.ts",
