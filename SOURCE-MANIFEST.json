@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "1a4ccfe46c8e128ab4150c723febb9bd8d93a9bc",
-  "sourceId": "6752ed9b3dc3793d365d526bdec62600d4ab5dc7b83feea483ade9ff6bbeb614",
+  "baseCommit": "55ca7db10d3b2ca5ccf4842f2d8799bf33a57e38",
+  "sourceId": "77e054db2f9779ba9eab365dc65137e3dfabda1846765feeb1baa0f8d7671548",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -22351,7 +22351,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "63ea660f934abee51d12a25b338887e96be07bf0cd6e542ea37bd82312e3d43a"
+      "sha256": "d390db04f726b2d76e542178b8c72a8486dc524aeadebc97cf2a94fc9c3ee1f4"
     },
     {
       "path": "source_bundle.py",
@@ -23631,8 +23631,8 @@
       "path": "src/components/renderers/ChartStreamRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 4061,
-      "sha256": "c63c0e319a17ff3cde993bc0e4e600991f45aaabcd6b5ceec1123834d7aab8ab"
+      "size": 4073,
+      "sha256": "a924a1833bc6fa8fc906379a0d773874628ebc52941009b6feb5718ac9b89aa1"
     },
     {
       "path": "src/components/renderers/ClockRenderer.test.tsx",
@@ -27317,6 +27317,20 @@
       "sha256": "34a834d5791b6a8129134080f532a881f9026aa64ed7ff4eff66ea7af4ac2988"
     },
     {
+      "path": "src/lib/candleWicks.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 3515,
+      "sha256": "21573226c78442de5fc7f5a189db01c7f3a87a7cf47bb1e9cfa480538552c237"
+    },
+    {
+      "path": "src/lib/candleWicks.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 3465,
+      "sha256": "0eb9174bbcb45999ad20723713a5aa9f4d5f0904e3ee63e8c4443674bca0384b"
+    },
+    {
       "path": "src/lib/cardSourceIdentity.ts",
       "type": "file",
       "mode": 420,
@@ -27943,15 +27957,15 @@
       "path": "src/lib/lwChart.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 7593,
-      "sha256": "75fecd79595fe7b617c187862b3e3f2cb6e7993f8849bf1747888265870059b0"
+      "size": 9458,
+      "sha256": "a23d20b2effda3b60b6b15e441c991d08763b27babb9e766d8c9de9aa96e77e6"
     },
     {
       "path": "src/lib/lwChart.ts",
       "type": "file",
       "mode": 420,
-      "size": 6696,
-      "sha256": "85ab827e6f44f0268651dbf73d9e4fbb082fc87836c503118716ef85afe83b04"
+      "size": 7066,
+      "sha256": "1e0225710daa07a502dced6696090a559e862a39141f388b25725502ff9ec004"
     },
     {
       "path": "src/lib/markdownNote.test.ts",
