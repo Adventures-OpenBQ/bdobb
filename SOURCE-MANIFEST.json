@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "12a799f980147be6a29568cda0cfdc8c9904fb4f",
-  "sourceId": "71009e71912ba0bc7074220b3ee77e8211f3f2657d72b97c9ed33fe30bd58c02",
+  "baseCommit": "8dfc4c2a13c2b3cf834569dfa2b64823253c87aa",
+  "sourceId": "6fd272dfe612cdabb83408b69787652beebec44569e5e8457b398e4fd7c70ac9",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -20786,6 +20786,13 @@
       "sha256": "0519cdade0b0c5b77085e9e1c38a915743bf46b2dee82ae5cd7d858a22bc37bd"
     },
     {
+      "path": "docs/superpowers/plans/2026-11-22-day-chart-edge-scroll.md",
+      "type": "file",
+      "mode": 420,
+      "size": 606,
+      "sha256": "007190b05100c385e07426de8ecbba613592843fd38b01f5e8f96ec91dbea00c"
+    },
+    {
       "path": "docs/superpowers/plans/2026-11-22-day-chart-layout.md",
       "type": "file",
       "mode": 420,
@@ -22393,7 +22400,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "3b437241c60819509568de361c56db2212ab37c34162725ec9183280774d3b37"
+      "sha256": "0a26e342a9c77a2b46c111c447ea38b98ab787435fb3a6b04adb1839712150d9"
     },
     {
       "path": "source_bundle.py",
@@ -23708,15 +23715,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 13893,
-      "sha256": "fd498b574705a459b1476889ffb3bb149cff15588dbb68857565b42cdc608d7f"
+      "size": 15147,
+      "sha256": "73e968bfbb8d067230f7896b362b9bb09ed7ebf264b73593e6db00fae468a1e8"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 16985,
-      "sha256": "5402aba43a7f51bfa04fa6128017c0f9cf230265f96a677bad1df78913031928"
+      "size": 17971,
+      "sha256": "25d25ea814b3ddd60e09a6056a3f2611d3229a329803afa9b62872c05886e1ff"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
@@ -24919,8 +24926,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 13907,
-      "sha256": "8f49ea9365f9f5344952c3ea4263eeeb7e01e6f722d54fbd56d1b6b159900525"
+      "size": 14202,
+      "sha256": "c90939a753e813357557d44d6a5e0fcbe2a227dd20e91ddc3a0262ff66282b01"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -27833,6 +27840,20 @@
       "mode": 420,
       "size": 2173,
       "sha256": "c96cc05ca5d233af6fdb23b139c38a39e0ee08e4c13fc29cd66c1b135298416f"
+    },
+    {
+      "path": "src/lib/dragEdgeScroll.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1987,
+      "sha256": "b89a734af57592e1f5b31ff4df2f81fe96d3b4718c1fcfcd61f72bc3adfe72b9"
+    },
+    {
+      "path": "src/lib/dragEdgeScroll.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1546,
+      "sha256": "e2b7151f4f0741da74976d59af25e3075e834ae6f13ae09f9e64ee1917f92247"
     },
     {
       "path": "src/lib/envPrefix.test.ts",
