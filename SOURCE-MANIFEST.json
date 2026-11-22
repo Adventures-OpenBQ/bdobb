@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "e42188f04cfec4cb6b4975ef8452531c0a13cd09",
-  "sourceId": "fa9a3397d5a49d8da7a616705dcbc67fbf599c2db3d909f56d22a8f2434ea354",
+  "baseCommit": "8714813c64f96315f8afcd3cf2b7966a576dca39",
+  "sourceId": "58b3cca3aa0da91c15ed960d390a5da4ba7e0c9c9507d205d2542547ae060872",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5781,8 +5781,8 @@
       "path": "security/gate.py",
       "type": "file",
       "mode": 420,
-      "size": 36220,
-      "sha256": "efd0d5bc1e5c277ba3731aea5316ff230bf72ec18351eb482020e29d57c05968"
+      "size": 36558,
+      "sha256": "18705bb0d988f3ecaaf5cd8c9023722852da6bce5d060cbd5b63f623cafa31ae"
     },
     {
       "path": "security/gitleaks.toml",
@@ -5845,7 +5845,7 @@
       "type": "file",
       "mode": 420,
       "size": 852,
-      "sha256": "44536edd71fb745cd52c27448e9324390fbe2693cbedfa275d21f3f6c0f51641"
+      "sha256": "f77a673a534c35e740834f589a92cf721962b5181643f42031e3c7a66c2d32b3"
     },
     {
       "path": "security/sync.py",
@@ -5858,15 +5858,15 @@
       "path": "security/test_gate.py",
       "type": "file",
       "mode": 420,
-      "size": 35707,
-      "sha256": "d40025414fcf0554d76502afde61436660478f9cde20073e964206ffb9a2c740"
+      "size": 37171,
+      "sha256": "78e5af547b77a049338053cc02017d92c160c383865c3171399ba3bd4d5af4c6"
     },
     {
       "path": "source-offer.json",
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "bed5f473936366fd4571675169ae55aab758c3d2a1e8364bc29f888c1aad99d8"
+      "sha256": "45ca07037a8232d44b6bfb109b21dd76ef67d636c3c70678712f6401db80d90b"
     },
     {
       "path": "source_bundle.py",
