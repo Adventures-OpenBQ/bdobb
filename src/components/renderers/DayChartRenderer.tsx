@@ -16,7 +16,9 @@ function timeLabel(time: string, timezone: string) {
 function Tile({symbol,tile,nearby,logo,scale,quote}:{symbol:string;tile?:DayTile;nearby:boolean;logo?:string;scale:string;quote?:DayQuote}) {
   const [failedLogo,setFailedLogo]=useState<string|null>(null);
   const scaled = tile ? dayScale(tile.points,tile.chart_previous_close===undefined?tile.previous_close:tile.chart_previous_close,scale) : null;
-  const line = scaled ? dayLine(scaled.points, scaled.reference,tile?.sessions) : null;
+  const baseline=tile?.chart_previous_close===undefined?tile?.previous_close:tile.chart_previous_close;
+  const plotSessions=tile?.sessions?.map(s=>({...s,previous_close:scale==="percent"?typeof s.previous_close==="number" && baseline ? (s.previous_close-baseline)/baseline*100:null:s.previous_close}));
+  const line = scaled ? dayLine(scaled.points, scaled.reference,plotSessions) : null;
   const axisLabel=(v:number|null)=>`${price(v)}${scale==="percent" ? "%" : ""}`;
   const current=quote && quote.at >= Date.parse(tile?.as_of??"") ? quote : tile;
   const tone = current?.change === null || current?.change === undefined || current.change === 0 ? "neutral" : current.change > 0 ? "up" : "down";
@@ -24,7 +26,7 @@ function Tile({symbol,tile,nearby,logo,scale,quote}:{symbol:string;tile?:DayTile
     <div className="day-chart-top"><div className="day-chart-heading"><span className="day-chart-logo" aria-hidden="true">{logo && failedLogo !== logo ? <img alt="" src={logo} onError={()=>setFailedLogo(logo)}/> : symbol.slice(0,2)}</span><div><strong>{symbol}</strong><span className="day-chart-name">{tile?.name ?? symbol}</span></div></div>{tile ? <div className="day-chart-quote"><div className="day-chart-price">{price(current?.price??null)}</div><div className={`day-chart-change day-chart-${tone}`}>{signed(current?.change??null)} ({signed(current?.change_percent??null)}%)</div></div> : null}</div>
     {!tile ? <p className="day-chart-empty">{nearby ? "Loading session…" : "Scroll to load"}</p> : <>
       {line?.path && nearby ? <div className="day-chart-plot"><svg preserveAspectRatio="none" viewBox="0 0 274 112" className={`day-chart-line day-chart-${tone}`} role="img" aria-label={`${symbol} intraday prices`}>
-        {line.referenceY !== null ? <line x1="4" x2="270" y1={line.referenceY} y2={line.referenceY} className="day-chart-reference"/> : null}
+        {line.references.map((r,i)=><line key={i} x1={r.x1} x2={r.x2} y1={r.y} y2={r.y} className="day-chart-reference"/>)}
         {line.dividers.map(x=><line key={x} x1={x} x2={x} y1="4" y2="108" className="day-chart-divider"/>)}
         <path d={line.path} fill="none" stroke="currentColor" strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
         {line.lastPoint ? <circle cx={line.lastPoint.x} cy={line.lastPoint.y} r="0.01" fill="currentColor" stroke="currentColor" strokeWidth="5" vectorEffect="non-scaling-stroke"/> : null}

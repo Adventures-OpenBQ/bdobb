@@ -62,10 +62,11 @@ it("uses vertical wheel/navigation for a column and refetches when trading days 
  await waitFor(()=>expect(vi.mocked(fetchEndpoint).mock.lastCall?.[2]).toEqual({symbol:"AAPL,MSFT",days:"2"}));
 });
 it("shows percent axes, dividers and a truthful missing-baseline message",async()=>{
- vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[{...tile("AAPL"),chart_previous_close:100,sessions:[{date:"2026-11-19",opened:"2026-11-19T14:30:00Z",closed:"2026-11-19T21:00:00Z"},{date:"2026-11-20",opened:"2026-11-20T14:30:00Z",closed:"2026-11-20T21:00:00Z"}]}]});
+ vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[{...tile("AAPL"),chart_previous_close:100,sessions:[{date:"2026-11-19",previous_close:100,opened:"2026-11-19T14:30:00Z",closed:"2026-11-19T21:00:00Z"},{date:"2026-11-20",previous_close:101,opened:"2026-11-20T14:30:00Z",closed:"2026-11-20T21:00:00Z"}]}]});
  const {container,rerender}=render(<DayChartRenderer backend={backend} params={{symbol:"AAPL",scale:"percent"}}/>);
  await waitFor(()=>expect(container.querySelector(".day-chart-divider")).not.toBeNull());
  expect(screen.getByText("2.00%")).toBeInTheDocument();
+ const references=container.querySelectorAll(".day-chart-reference");expect(references).toHaveLength(2);expect(references[0].getAttribute("y1")).not.toBe(references[1].getAttribute("y1"));
  vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[{...tile("MSFT"),previous_close:null}]});
  rerender(<DayChartRenderer backend={backend} params={{symbol:"MSFT",scale:"percent"}}/>);
  await waitFor(()=>expect(screen.getByText("Previous close unavailable for % scale")).toBeInTheDocument());

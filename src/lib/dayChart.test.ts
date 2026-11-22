@@ -82,3 +82,10 @@ it("compresses overnight gaps and marks the boundary between trading sessions",(
  expect(line.dividers).toEqual([137]);
  expect(line.path.match(/M/g)).toHaveLength(2);
 });
+it("splits previous-close references at each trading day using that day's baseline",()=>{
+ const sessions=[{opened:"2026-11-19T14:30:00Z",closed:"2026-11-19T21:00:00Z",previous_close:90},{opened:"2026-11-20T14:30:00Z",closed:"2026-11-20T21:00:00Z",previous_close:100}];
+ const line=dayLine([{time:sessions[0].opened,value:95},{time:sessions[1].opened,value:101}],90,sessions);
+ expect(line.references.map(r=>[r.x1,r.x2])).toEqual([[4,137],[137,270]]);
+ expect(line.references[0].y).not.toBe(line.references[1].y);
+ expect(line.low).toBe(90);
+});

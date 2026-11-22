@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 export type DayPoint = { time: string; value: number | null };
-export type DaySession = {opened:string;closed:string;date?:string};
+export type DaySession = {opened:string;closed:string;date?:string;previous_close?:number|null};
 export type DayTile = {
   sessions?:DaySession[]; chart_previous_close?:number|null;
   symbol: string; name: string | null; logo_path: string | null;
@@ -63,7 +63,7 @@ export function parseDayCharts(value: unknown): Record<string, DayTile> {
       symbol, name: text(tile.name), logo_path: text(tile.logo_path),
       session: { date: text(session.date), timezone, label: text(session.label) ?? "Session", status: session.status === "open" || session.status === "closed" ? session.status : "unknown" },
       previous_close: number(tile.previous_close), price: number(tile.price), change: number(tile.change), change_percent: number(tile.change_percent),
-      sessions: Array.isArray(tile.sessions) ? tile.sessions.flatMap(s=>{const item=record(s);const opened=text(item?.opened),closed=text(item?.closed);return opened && closed && Number.isFinite(Date.parse(opened)) && Date.parse(closed)>Date.parse(opened)?[{opened,closed,date:text(item?.date)??undefined}]:[];}).slice(0,5):[],
+      sessions: Array.isArray(tile.sessions) ? tile.sessions.flatMap(s=>{const item=record(s);const opened=text(item?.opened),closed=text(item?.closed);return opened && closed && Number.isFinite(Date.parse(opened)) && Date.parse(closed)>Date.parse(opened)?[{opened,closed,date:text(item?.date)??undefined,previous_close:number(item?.previous_close)}]:[];}).slice(0,5):[],
       chart_previous_close: tile.chart_previous_close===undefined ? number(tile.previous_close):number(tile.chart_previous_close),
       points, as_of: text(tile.as_of), status: tile.status as DayTile["status"], source: text(tile.source) ?? "unknown", coverage: tile.coverage,
       ...(typeof tile.error_code === "string" ? { error_code: tile.error_code } : {}),
@@ -73,10 +73,11 @@ export function parseDayCharts(value: unknown): Record<string, DayTile> {
 }
 
 /** Null bars break the line; time spacing is preserved. No quote synthesis. */
-export function dayLine(points: DayPoint[], previousClose: number | null,sessions:DaySession[]=[]): {path:string;low:number|null;high:number|null;referenceY:number|null;lastPoint:{x:number;y:number}|null;dividers:number[]} {
+export function dayLine(points: DayPoint[], previousClose: number | null,sessions:DaySession[]=[]): {path:string;low:number|null;high:number|null;referenceY:number|null;lastPoint:{x:number;y:number}|null;dividers:number[];references:{x1:number;x2:number;y:number}[]} {
   const values = points.flatMap((p) => p.value === null ? [] : [p.value]);
   if (previousClose !== null) values.push(previousClose);
-  if (values.length === 0 || points.length === 0) return { path: "", low: null, high: null, referenceY: null, lastPoint: null,dividers:[] };
+  for(const session of sessions)if(typeof session.previous_close==="number")values.push(session.previous_close);
+  if (values.length === 0 || points.length === 0) return { path: "", low: null, high: null, referenceY: null, lastPoint: null,dividers:[],references:[] };
   const low = Math.min(...values), high = Math.max(...values);
   const pad = Math.max((high - low) * 0.08, Math.abs(high) * 0.0001, 0.001);
   const y = (v: number) => 104 - (v - low + pad) / (high - low + 2 * pad) * 96;
@@ -92,6 +93,7 @@ export function dayLine(points: DayPoint[], previousClose: number | null,session
     }return 270;
   };
   const dividers=sessions.slice(1).map(s=>xAt(s.opened));
+  const references=sessions.length?sessions.flatMap(s=>typeof s.previous_close==="number"?[{x1:xAt(s.opened),x2:xAt(s.closed),y:y(s.previous_close)}]:[]):previousClose===null?[]:[{x1:4,x2:270,y:y(previousClose)}];
   let pen = false;
   let priorSession=-1;
   let lastPoint: {x:number;y:number} | null = null;
@@ -105,7 +107,7 @@ export function dayLine(points: DayPoint[], previousClose: number | null,session
     pen = true;
     return command;
   }).join(" ");
-  return { path, low, high, lastPoint, dividers, referenceY: previousClose === null ? null : y(previousClose) };
+  return { path, low, high, lastPoint, dividers, references, referenceY: previousClose === null ? null : y(previousClose) };
 }
 
 export function dayLayout(rowsInput:string,columnsInput:string,_count:number) {

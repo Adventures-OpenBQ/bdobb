@@ -12,3 +12,5 @@ Tech stack: React, TypeScript, CSS grid, existing v10 manifest.
 - [ ] Publish exact corresponding source, deploy backendmanifest andVercel, verify existingdomain.
 
 User steering: Trading days1–5 onrow1, session-calendar ranges withdividers andcompressed overnightgaps; move allsession/source/updateinfo towidgetfooter. Headerquotes reuse live_grid_ws (backendFLUSH_INTERVAL=.25); historyremains15s snapshots, no syntheticbars. Percent scale baseline close beforefirst selectedsession; headerchanges keep latestsessionbasis. Reviewfixes: constrainplot togridrow, convertgridfraction×100, retainquotes forstill-nearby symbols onscroll.
+
+Final steering: previous-close reference lines are segmented per session (Wednesday close forThursday,Thursday close forFriday). Percent values remain cumulative frombeforefirstsession; translate each daily reference ontothat cumulative scale, do notreset eachday tozero.
