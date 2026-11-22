@@ -28,7 +28,7 @@ function Tile({symbol,tile,nearby,logo,scale,quote}:{symbol:string;tile?:DayTile
     if(nearest)setHoverTime(tile?.points[nearest.index].time??null);
   };
   const axisLabel=(v:number|null)=>`${price(v)}${scale==="percent" ? "%" : ""}`;
-  const current=quote && quote.at >= Date.parse(tile?.as_of??"") ? quote : tile;
+  const current=quote && (!tile?.as_of || quote.at >= Date.parse(tile.as_of)) ? quote : tile;
   const tone = current?.change === null || current?.change === undefined || current.change === 0 ? "neutral" : current.change > 0 ? "up" : "down";
   return <>
     <div className="day-chart-top"><div className="day-chart-heading"><span className="day-chart-logo" aria-hidden="true">{logo && failedLogo !== logo ? <img alt="" src={logo} onError={()=>setFailedLogo(logo)}/> : symbol.slice(0,2)}</span><div><strong>{symbol}</strong><span className="day-chart-name">{tile?.name ?? symbol}</span></div></div>{tile ? <div className="day-chart-quote"><div className="day-chart-price">{price(current?.price??null)}</div><div className={`day-chart-change day-chart-${tone}`}>{signed(current?.change??null)} ({signed(current?.change_percent??null)}%)</div></div> : null}</div>
@@ -69,7 +69,10 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
   const loaded=Object.values(tiles);
   const latestQuote=Math.max(0,...Object.values(quotes).map(q=>q.at));
   const sessionDates=[...new Set(loaded.flatMap(t=>t.sessions?.length?t.sessions.map(s=>s.date).filter(Boolean):[t.session.date]).filter(Boolean))].sort();
-  const statusText=loaded.length?`${sessionDates.join(" / ")} · ${loaded.some(t=>t.session.status==="open")?"open":"closed"} · US regular sessions · EODHD · ${loaded.filter(t=>t.status==="error"||t.status==="partial").length} partial/error`:"Loading sessions…";
+  const sessionStatuses=[...new Set(loaded.filter(t=>t.status!=="error").map(t=>`${t.session.label}: ${t.session.status}`))].join(" · ");
+  const dateRange=sessionDates.length>1?`${sessionDates[0]} – ${sessionDates.at(-1)}`:sessionDates[0]??"";
+  const sourceLabel=loaded.some(t=>t.source==='eodhd+kdb ticks')?"EODHD + recorded ticks":"EODHD";
+  const statusText=loaded.length?`${dateRange} · ${sessionStatuses} · ${sourceLabel} · ${loaded.filter(t=>t.status==="error"||t.status==="partial").length} partial/error`:"Loading sessions…";
   const logos=useDayLogos(backend,nearby.filter(symbol=>tiles[symbol]?.logo_path === `/symbol_logo?symbol=${encodeURIComponent(symbol)}`));
   useEffect(() => {
     if(!strip) return;

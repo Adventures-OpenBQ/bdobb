@@ -102,3 +102,11 @@ it('keeps footer controls usable while correcting invalid layout or an empty lis
  expect(screen.getByRole('listbox',{name:'Day charts'})).toBeInTheDocument();
  expect(screen.getByRole('textbox',{name:'Footer rows'})).toBeInTheDocument();
 });
+it('shows a crypto UTC day alongside a closed equity session without labelling both closed',async()=>{
+ vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[tile('AAPL'),{...tile('BTC-USD'),name:'Bitcoin',session:{date:'2026-11-22',timezone:'UTC',label:'Crypto UTC day',status:'open'},points:[{time:'2026-11-22T00:00:00Z',value:100},{time:'2026-11-22T01:00:00Z',value:102}]}]});
+ render(<DayChartRenderer backend={backend} params={{symbol:'AAPL,BTC-USD'}}/>);
+ await screen.findByText('Bitcoin');
+ expect(screen.getByRole('status')).toHaveTextContent('Crypto UTC day: open');
+ expect(screen.getByRole('status')).toHaveTextContent('Regular session: closed');
+ expect(screen.getByRole('img',{name:'BTC-USD intraday prices'})).toBeInTheDocument();
+});
