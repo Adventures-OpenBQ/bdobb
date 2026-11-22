@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "55ca7db10d3b2ca5ccf4842f2d8799bf33a57e38",
-  "sourceId": "77e054db2f9779ba9eab365dc65137e3dfabda1846765feeb1baa0f8d7671548",
+  "baseCommit": "952d292b5a0a0eb5ca306ef8aa3a335eb46deba0",
+  "sourceId": "bcef837b0dac275df8490cdaa775e01367e22cb7ce3047e3027e6cb5a47332f7",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3562,8 +3562,8 @@
       "path": "SOURCE_README.md",
       "type": "file",
       "mode": 420,
-      "size": 4656,
-      "sha256": "b9b2629c3da1ab561c96a57569687f44657af6e5f176a8e41775083a9f884514"
+      "size": 4825,
+      "sha256": "7409fbf4626139bd93682340dbdb718423ed7b43e6a51d7fa10b8c6534d6b8e5"
     },
     {
       "path": "SUPPLEMENTAL_THIRD_PARTY_NOTICES.md",
@@ -4745,8 +4745,8 @@
       "path": "docs/examples/v10.0.0-live-grid.apps.json",
       "type": "file",
       "mode": 420,
-      "size": 2848,
-      "sha256": "ce5709a822aed54c5630aa38797e09a731394b42614e84e1bd1a7eaa8dd20ace"
+      "size": 2977,
+      "sha256": "1e4aa8fa297a5cd85e0ee1868320120c1a154589f8ef668d30fd20b0a52536ac"
     },
     {
       "path": "docs/examples/v3.1.0-builtins.apps.json",
@@ -20779,6 +20779,13 @@
       "sha256": "d1e3ef03e980a14c3b048a81588956313b1cead14b8fc468bf3db98d5206497a"
     },
     {
+      "path": "docs/superpowers/plans/2026-11-22-v10-day-chart.md",
+      "type": "file",
+      "mode": 420,
+      "size": 5813,
+      "sha256": "fb7a618c3eaa6071b25a435b1cc50a05641f06c34163e8ed512abdcfff74903f"
+    },
+    {
       "path": "docs/superpowers/specs/2026-10-07-bdobb-clean-v6-client-design.md",
       "type": "file",
       "mode": 420,
@@ -20889,6 +20896,13 @@
       "mode": 420,
       "size": 11287,
       "sha256": "eb25a01fbbd3c0b04075d13c3a33dc86fd11016cc1ab12feed4c263cd7482325"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-11-22-v10-day-chart-design.md",
+      "type": "file",
+      "mode": 420,
+      "size": 6781,
+      "sha256": "174291d45f11668a6bc891689c76554a45af802457dafa3fe98acb0ac4e3395c"
     },
     {
       "path": "docs/test-environment.md",
@@ -21658,7 +21672,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "e50be630c832400db4610d8095ba75203574c2bc0be180721a8409a6c8c138f3"
+      "sha256": "4163c274a51e43d8191fa5fa1fcfbbdf0330bc7e8bdc3dca6fc6ce83ad28079d"
     },
     {
       "path": "playwright.config.ts",
@@ -22351,7 +22365,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "d390db04f726b2d76e542178b8c72a8486dc524aeadebc97cf2a94fc9c3ee1f4"
+      "sha256": "6a1cd07aaef9bb28917da9434d2443c741f792cf2b5f025b3716becedd9cf41f"
     },
     {
       "path": "source_bundle.py",
@@ -22945,15 +22959,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 248974,
-      "sha256": "c8a0c63cf6469d068c5f774c530d037aa090a995f8adcdd962790fc0a3e898ef"
+      "size": 250422,
+      "sha256": "d848758a52a722624f73eefbcf1b8f441790b47b542c94988a78f1d89ffb2968"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 117767,
-      "sha256": "21a721f2d98391395f8ddd2b72eb70c7f4fb4a9ab7825bcb357072405bb786f8"
+      "size": 118407,
+      "sha256": "0853b903e39827d0a49d8366e2785f862bcaa7c7a35208bb4c460c260f1a32ec"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -23663,6 +23677,20 @@
       "sha256": "d5a89778581a4bea3a06f3449dadec0a6a035cacdaa46c5231b752228a673b65"
     },
     {
+      "path": "src/components/renderers/DayChartRenderer.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 4166,
+      "sha256": "598ccd18a61527d8094a2f41765bcb08ec3fec6f6d7824fc317136a8baadbc3c"
+    },
+    {
+      "path": "src/components/renderers/DayChartRenderer.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 7185,
+      "sha256": "f6b32552a646d07745a84b61233a4bf9d8a299ca3fe0d7e0d2f1aba5b8ddcbb8"
+    },
+    {
       "path": "src/components/renderers/DocumentView.tsx",
       "type": "file",
       "mode": 420,
@@ -24235,6 +24263,13 @@
       "mode": 420,
       "size": 3456,
       "sha256": "1adf254307150cac4b2b7c73db43d8a08d10dabb4e6644070f117369bec5392e"
+    },
+    {
+      "path": "src/components/renderers/dayChart.css",
+      "type": "file",
+      "mode": 420,
+      "size": 2126,
+      "sha256": "64b6ff7cc60f1f77f1a19febf829495ee930a96443ba6a624adb1c18f0e2e700"
     },
     {
       "path": "src/components/renderers/openLinkExternally.ts",
@@ -24856,8 +24891,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 9580,
-      "sha256": "47ae359efbcbea75bcab2c17f7d16e3ae49cbfcb7901dff8ea38c609aa25b528"
+      "size": 10871,
+      "sha256": "88d082d5e6d2c8789eecaa6459098cf52047734793664b5d0b95621718907897"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -24905,8 +24940,8 @@
       "path": "src/help/guide/example-dashboards.md",
       "type": "file",
       "mode": 420,
-      "size": 24108,
-      "sha256": "541c820ec85c676ed6bdd61c7348b687a8296dab78526811b6df872d5f616bf5"
+      "size": 24241,
+      "sha256": "51a99b5d53ee77eeead8dcd84ba19278703ede5a3a66cd8e521a3e408fb06df0"
     },
     {
       "path": "src/help/guide/home.md",
@@ -25115,8 +25150,8 @@
       "path": "src/help/guide/troubleshooting-using-bdobb.md",
       "type": "file",
       "mode": 420,
-      "size": 21266,
-      "sha256": "cb653a6632cdfc172757f2803dbbe91a3a774eca8aefdd081073f1664900c609"
+      "size": 21279,
+      "sha256": "423f51d64e01a0c1c7c0b055876e04b450c6e8afa72c97df6923c0d040597955"
     },
     {
       "path": "src/help/guide/web-preview.md",
@@ -25724,8 +25759,8 @@
       "path": "src/help/topics/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 5258,
-      "sha256": "aeef1bf3ffe44ffddfe2a0d11afaa57188c9e6ddb201cdef8a656a15dc846eea"
+      "size": 5806,
+      "sha256": "567621fda7e515efe2e27a51a7c7268f7db07b1f9c9cfadf781ccdae32f75722"
     },
     {
       "path": "src/help/topics/connections.md",
@@ -26006,6 +26041,34 @@
       "mode": 420,
       "size": 10104,
       "sha256": "0c0abfe7624bd79fda9ea1a393aecf0f0116624bac1a5d9eb7556ed637e6345f"
+    },
+    {
+      "path": "src/hooks/useDayCharts.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 4630,
+      "sha256": "8be5b244e90f10013ab7d8d387a32302428d3a11c540d1b5920316f43acf6248"
+    },
+    {
+      "path": "src/hooks/useDayCharts.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 2764,
+      "sha256": "9726bf1d0d441e354112e39b158962879f7b6c2c961e529355056a3f55d42cd5"
+    },
+    {
+      "path": "src/hooks/useDayLogos.test.tsx",
+      "type": "file",
+      "mode": 420,
+      "size": 1553,
+      "sha256": "6df89c884551608dd5b22105856f911de36bacd30d973371d38b976689cf4737"
+    },
+    {
+      "path": "src/hooks/useDayLogos.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1957,
+      "sha256": "71f5507e564a1cbcf79dd8f501fe8739d443666eb4de35bde8d099eb80c7b71b"
     },
     {
       "path": "src/hooks/useFiscalYearEnd.test.tsx",
@@ -26886,8 +26949,8 @@
       "path": "src/lib/appsJson.examples.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 20675,
-      "sha256": "9d588a0c02874e78f0e202cf5fb295499e0fb9cfa25a99737889c9326209f685"
+      "size": 20768,
+      "sha256": "ecf3d4ae371f30df1559d38562e33b7ec65d50aedacdf7fc3f15dd99b6ed91bb"
     },
     {
       "path": "src/lib/appsJson.legacyV4.test.ts",
@@ -26963,8 +27026,8 @@
       "path": "src/lib/builtins.ts",
       "type": "file",
       "mode": 420,
-      "size": 14219,
-      "sha256": "94edd73d7bb7720ebfd17ac641e4b20d67891f79499c42612608fb02ff9e1007"
+      "size": 14295,
+      "sha256": "1cfb8f49ee0b27f4a107e13f9af6146595f6cafa5be202d4449fcf3af64f3133"
     },
     {
       "path": "src/lib/calendar.test.ts",
@@ -27581,6 +27644,34 @@
       "mode": 420,
       "size": 2444,
       "sha256": "6a3c7315884ac43e57e21472f46eb67f4931568ca7db4bb09b4e95388afbdff4"
+    },
+    {
+      "path": "src/lib/dayChart.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 3622,
+      "sha256": "0b9b42529348658bf5013433a1aa9e7a889ba9f66e2a527763ee1509f9c053d6"
+    },
+    {
+      "path": "src/lib/dayChart.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 5691,
+      "sha256": "6340085a82d3700d4c879db3ad9548d50460991de6fca403c88fa05415c16423"
+    },
+    {
+      "path": "src/lib/dayLogo.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 1699,
+      "sha256": "46d0a8ede93dedd2960f98ca255c8800a6baeac4d89e5210106275d76baf900c"
+    },
+    {
+      "path": "src/lib/dayLogo.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 2287,
+      "sha256": "9f43e4fbad2bc3a725b8937980a6116bddc4794d07db62c6ad936758e0bc8080"
     },
     {
       "path": "src/lib/devHost.test.ts",
@@ -30127,8 +30218,8 @@
       "path": "src/lib/widgetTypes.ts",
       "type": "file",
       "mode": 420,
-      "size": 1534,
-      "sha256": "8a9c01a652b5cb1e99c80ca5f78fa1c761d614b1f009baef29199eec12ba3975"
+      "size": 1549,
+      "sha256": "145d8db661854321a7227d167adf39a7063a826a9dad5a5da5eccc66b410dac1"
     },
     {
       "path": "src/lib/widgetsJson.test.ts",
@@ -32693,6 +32784,13 @@
       "sha256": "7ba1dba1baf88f5ffbfddfe9f8ac38cfe01ed4e88ce2facaffe4064ae17c04c2"
     },
     {
+      "path": "web/day-chart.test.mjs",
+      "type": "file",
+      "mode": 420,
+      "size": 3248,
+      "sha256": "d81691249e5af5bae8ad1a82eaed6a0129fc8e000d932d556a024a3ba62e1843"
+    },
+    {
       "path": "web/entry.mjs",
       "type": "file",
       "mode": 420,
@@ -32717,15 +32815,15 @@
       "path": "web/policy.mjs",
       "type": "file",
       "mode": 420,
-      "size": 36205,
-      "sha256": "1877b894aad9c2935645feab7b6d89db48fb56108a9f2f9449d79b9a2512f0fe"
+      "size": 37507,
+      "sha256": "fab54c9f50d728b0ee4ed9fba84540158053dd4ffd432c302261667ff98d2e50"
     },
     {
       "path": "web/policy.vendored.json",
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "c76a4f1c880967e639d86bd6182df4a40afb45f90615e19967e5def67899d2a3"
+      "sha256": "e5715ae68e4bc9519b9a298d58230ec25e57337f6011af06994577bfc917bcb2"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
@@ -32759,8 +32857,8 @@
       "path": "web/server.mjs",
       "type": "file",
       "mode": 420,
-      "size": 38088,
-      "sha256": "dce1278ad5b1af524ffbb177f7b4ba3689305b6ee48fa72a16e43af4279b3a86"
+      "size": 38591,
+      "sha256": "957039741324ed95fd5847a950caa74ee5a106565deae0439c64590e17ae936f"
     },
     {
       "path": "web/ssrm-routes.test.mjs",
