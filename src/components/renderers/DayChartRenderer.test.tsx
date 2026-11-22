@@ -83,3 +83,13 @@ it("snaps a hover crosshair to a real bar and shows date/time/price/cumulative p
  fireEvent.pointerLeave(plot);expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
  fireEvent.focus(plot);fireEvent.keyDown(plot,{key:"End"});expect(screen.getByRole("tooltip")).toHaveTextContent("102.00");
 });
+it("publishes the clicked tile symbol without changing the watchlist and supports keyboard selection",async()=>{
+ const onSelectSymbol=vi.fn();
+ render(<DayChartRenderer backend={backend} params={{symbol:"AAPL,MSFT",selected_symbol:"AAPL"}} onSelectSymbol={onSelectSymbol}/>);
+ await screen.findByText("MSFT Company");
+ const tiles=screen.getAllByRole("listitem");
+ fireEvent.click(tiles[1]);expect(onSelectSymbol).toHaveBeenLastCalledWith("MSFT");
+ fireEvent.keyDown(tiles[0],{key:"Enter"});expect(onSelectSymbol).toHaveBeenLastCalledWith("AAPL");
+ expect(screen.getAllByRole("listitem")).toHaveLength(2);
+ expect(tiles[0]).toHaveAttribute("aria-current","true");
+});

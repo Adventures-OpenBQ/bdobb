@@ -42,3 +42,7 @@
 .day-chart-crosshair { stroke:var(--text-muted,currentColor); opacity:.8; stroke-dasharray:3 3; stroke-width:1; vector-effect:non-scaling-stroke; pointer-events:none; }
 .day-chart-tooltip { position:absolute; top:2px; left:4px; max-width:calc(100% - 8px); box-sizing:border-box; z-index:2; padding:6px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg-elevated,var(--bg)); color:var(--text); font-size:11px; line-height:1.5; white-space:normal; pointer-events:none; box-shadow:0 2px 8px #0003; }
 .day-chart-line:focus-visible { outline:1px solid var(--text-muted); }
+
+.day-chart-tile[tabindex] { cursor:pointer; }
+.day-chart-selected { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }
+.day-chart-tile:focus-visible { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }

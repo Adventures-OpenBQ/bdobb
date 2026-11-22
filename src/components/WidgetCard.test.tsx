@@ -172,7 +172,9 @@ vi.mock("./renderers/LiveChartRenderer", () => ({
   LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
 }));
 vi.mock("./renderers/DayChartRenderer", () => ({
-  DayChartRenderer: ({onSnapshot}: {onSnapshot?: (at:number|null)=>void}) => <>
+  DayChartRenderer: ({onSnapshot,onSelectSymbol,selectionError}: {onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+    <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
+    {selectionError ? <span>{selectionError}</span>:null}
     <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
     <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
   </>,
@@ -281,6 +283,7 @@ import { WidgetCard } from "./WidgetCard";
 // vi.restoreAllMocks() does not undo a setState-installed mock, so real actions are
 // captured once at module load and reinstated before every test.
 const REAL_ACTIONS = {
+  applyCardParams: useDashboardStore.getState().applyCardParams,
   setCardMinimized: useDashboardStore.getState().setCardMinimized,
   setMaximized: useDashboardStore.getState().setMaximized,
   duplicateCard: useDashboardStore.getState().duplicateCard,
@@ -5701,4 +5704,28 @@ describe("Day Chart snapshot refresh status",()=>{
     expect(refresh()).toHaveAttribute("data-tone","idle");
     useBackendsStore.setState({backends:[]});
   });
+});
+
+
+describe("Day Chart selection output",()=>{
+ function seed(shared=false){
+  register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",groupType:"symbol"},{paramName:"selected_symbol",type:"text",groupType:"symbol"}]});
+  useBackendsStore.setState({backends:[backend()]});
+  useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0});
+  const source={...card,params:{symbol:"AAPL,MSFT"},bindings:[{paramName:"symbol",groupId:"watch"},{paramName:"selected_symbol",groupId:shared?"watch":"selected"}]};
+  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",groups:[{id:"watch",name:"Watchlist",paramName:"symbol",groupType:"symbol",value:"AAPL,MSFT"},{id:"selected",name:"Detail",paramName:"symbol",groupType:"symbol",value:"AAPL"}],tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
+  render(<WidgetCard card={source} onRemove={vi.fn()}/>);
+ }
+ it("updates only the selection group, preserving the input watchlist",async()=>{
+  seed();await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("MSFT"));
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("refuses to publish into the input group and explains the conflict",async()=>{
+  seed(true);await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  expect(screen.getByText(/Choose a different group for Selected symbol/)).toBeInTheDocument();
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
 });

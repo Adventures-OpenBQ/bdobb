@@ -39,7 +39,7 @@ import { importRefusal } from "../lib/importLimits";
 import { NEWS_RAIL_TITLE, defaultNewsBase, trimBase } from "../lib/news";
 import { NEWS_FILE_NAME, parseNewsFile, serializeNewsState } from "../lib/newsFile";
 import { bodyParams, paramsKey, visibleParams, wireParams } from "../lib/params";
-import { splitParamEdit, type ParamEdit } from "../lib/paramGroups";
+import { groupFor, splitParamEdit, type ParamEdit } from "../lib/paramGroups";
 import { parseFyEndMonth } from "../lib/periods";
 import { relativeTime } from "../lib/relativeTime";
 import { FISCAL_AS_REPORTED } from "../lib/statementFiscal";
@@ -1308,7 +1308,12 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     }
 
     if (widget?.type === "day_chart" && backend) {
-      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt} />;
+      const inputGroup=groupFor(card,groups,"symbol");
+      const outputGroup=groupFor(card,groups,"selected_symbol");
+      const conflict=!groupsDisabled && inputGroup && inputGroup.id===outputGroup?.id;
+      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt}
+        selectionError={conflict?"Choose a different group for Selected symbol so chart selection does not replace the watchlist.":undefined}
+        onSelectSymbol={conflict?undefined:(symbol)=>{void handleCellClick({paramName:"selected_symbol",value:symbol,forceUpdate:false});}} />;
     }
 
     // live-grid's Live Chart (V10-P4). The live_grid case's shape and reasons:
