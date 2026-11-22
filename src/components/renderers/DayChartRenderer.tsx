@@ -71,7 +71,7 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
   const sessionDates=[...new Set(loaded.flatMap(t=>t.sessions?.length?t.sessions.map(s=>s.date).filter(Boolean):[t.session.date]).filter(Boolean))].sort();
   const sessionStatuses=[...new Set(loaded.filter(t=>t.status!=="error").map(t=>`${t.session.label}: ${t.session.status}`))].join(" · ");
   const dateRange=sessionDates.length>1?`${sessionDates[0]} – ${sessionDates.at(-1)}`:sessionDates[0]??"";
-  const sourceLabel=loaded.some(t=>t.source==='eodhd+kdb ticks')?"EODHD + recorded ticks":"EODHD";
+  const sourceLabel=["EODHD",...(loaded.some(t=>t.source.includes("kdb ticks"))?["recorded ticks"]:[]),...(loaded.some(t=>t.source.includes("coinbase"))?["Coinbase backfill"]:[])].join(" + ");
   const statusText=loaded.length?`${dateRange} · ${sessionStatuses} · ${sourceLabel} · ${loaded.filter(t=>t.status==="error"||t.status==="partial").length} partial/error`:"Loading sessions…";
   const logos=useDayLogos(backend,nearby.filter(symbol=>tiles[symbol]?.logo_path === `/symbol_logo?symbol=${encodeURIComponent(symbol)}`));
   useEffect(() => {
