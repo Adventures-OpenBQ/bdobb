@@ -979,6 +979,37 @@ describe("markdown tools persist the tool input exactly (adaptation 4, #326)", (
     expect(card.widgetId).toBe("markdown");
     expect(card.params.text).toBe(tricky);
   });
+  it("refuses a copied UUID paired with another note title before any write or Undo entry", async () => {
+    const rates = await executeLocalTool("add_note", { text: "Rates draft" });
+    const oil = await executeLocalTool("add_note", { text: "Oil draft" });
+    await useDashboardStore.getState().patchCardField(String(rates.card_id), "title", "Rates answer");
+    await useDashboardStore.getState().patchCardField(String(oil.card_id), "title", "Oil answer");
+    const before = structuredClone(useDashboardStore.getState().dashboards);
+    const edits = useAgentEditsStore.getState().entries.length;
+    const result = await executeLocalTool("set_markdown_content", {
+      card_id: oil.card_id, card_title: "Rates answer", text: "Rates output",
+    });
+    expect(result).toMatchObject({ error: { code: "CARD_TITLE_MISMATCH" } });
+    expect(useDashboardStore.getState().dashboards).toEqual(before);
+    expect(useAgentEditsStore.getState().entries).toHaveLength(edits);
+  });
+  it("writes the matching named note once and keeps its existing Undo behavior", async () => {
+    const rates = await executeLocalTool("add_note", { text: "Rates draft" });
+    const oil = await executeLocalTool("add_note", { text: "Oil draft" });
+    await useDashboardStore.getState().patchCardField(String(rates.card_id), "title", "Rates answer");
+    await useDashboardStore.getState().patchCardField(String(oil.card_id), "title", "Oil answer");
+    const edits = useAgentEditsStore.getState().entries.length;
+    expect(await executeLocalTool("set_markdown_content", {
+      card_id: rates.card_id, card_title: "Rates answer", text: "Rates output",
+    })).toMatchObject({ updated: true, card_id: rates.card_id });
+    const cards = () => useDashboardStore.getState().activeDashboard()!.tabs[0].cards;
+    expect(cards().find(c => c.id === rates.card_id)?.params.text).toBe("Rates output");
+    expect(cards().find(c => c.id === oil.card_id)?.params.text).toBe("Oil draft");
+    expect(useAgentEditsStore.getState().entries).toHaveLength(edits + 1);
+    await useAgentEditsStore.getState().undoLast();
+    expect(cards().find(c => c.id === rates.card_id)?.params.text).toBe("Rates draft");
+    expect(cards().find(c => c.id === oil.card_id)?.params.text).toBe("Oil draft");
+  });
   it("set_markdown_content writes the note text unchanged", async () => {
     const out = await executeLocalTool("add_note", { text: "x" });
     await executeLocalTool("set_markdown_content", { card_id: out.card_id, text: tricky });

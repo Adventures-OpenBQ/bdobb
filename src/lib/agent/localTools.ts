@@ -182,14 +182,17 @@ export const LOCAL_TOOLS: AgentTool[] = ([
     description:
       "Replace the markdown body of a note or markdown card on the board — write an answer or summary into a card " +
       "that already exists. The whole text is replaced; one undoable step. Saved only when the result says " +
-      "updated: true. To create a new note use add_note.",
+      "updated: true. Copy both card_id and card_title from the same widget context entry; " +
+      "do not reuse another note's uuid when writing across several tabs. A title mismatch saves nothing. " +
+      "To create a new note use add_note.",
     input_schema: {
       type: "object",
       properties: {
         card_id: { type: "string", description: "The note or markdown card (its uuid in the widget context)" },
+        card_title: { type: "string", description: "The exact name paired with this uuid in the widget context; always include it to verify the intended note." },
         text: { type: "string", description: "The card's full new markdown body" },
       },
-      required: ["card_id", "text"],
+      required: ["card_id", "card_title", "text"],
     },
   },
   {
@@ -646,6 +649,14 @@ export async function executeLocalTool(
     }
     if (def.type !== "note" && def.type !== "markdown_editor") {
       return fail("NOT_MARKDOWN", `card ${cardId} is a ${def.name}, not a note or markdown card; use set_widget_params for its inputs`);
+    }
+    // Current agents supply the displayed title as an identity cross-check.
+    // Keep older callers compatible, but never let a copied valid UUID write
+    // a named answer into another visible note. Check before persistence/Undo.
+    if (args.card_title !== undefined && args.card_title !== (card.title ?? def.name)) {
+      return fail("CARD_TITLE_MISMATCH", "card_id does not match card_title. Nothing was saved; use the uuid and name from the same intended widget context entry.", {
+        card_id: cardId, card_title: card.title ?? def.name,
+      });
     }
     return executeLocalTool("set_widget_params", { card_id: cardId, params: { text: args.text } }, deps);
   }
