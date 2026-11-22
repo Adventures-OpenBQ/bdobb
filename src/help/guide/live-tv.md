@@ -34,7 +34,9 @@ In **Connections**, add a backend whose URL is the rss-ticker server: `https://o
 
 Open the widget library, find **Live TV** under the rss-ticker connection, and add it. The card's **Channel** parameter lists your channels by label; change it and the card switches stream.
 
-Live TV opens with its parameter panel hidden. Use **Show parameters** to change playback preferences; the row 0 speaker button mutes or unmutes a YouTube stream. YouTube playback stays inline, with no outgoing Picture in Picture button. Chrome grab uses Chrome's own audio controls.
+Live TV opens with its parameter panel hidden. Use **Show parameters** to change playback preferences. The row 0 speaker button mutes or unmutes the selected source. For a YouTube source, it updates **Start muted**; for **Picture in Picture grab**, it operates the captured Chrome player's native mute control without changing your saved YouTube preferences. YouTube playback stays inline, with no outgoing Picture in Picture button.
+
+The source picker and speaker button share one scrolling row. Opening the picker parks Chrome's floating player so it cannot cover the choices; moving focus away brings the player back. Captured audio requires a visible card in the main desktop window and an available native Chrome mute control. When its state cannot be read, the button says **Toggle captured audio** or explains why it is unavailable. Locked cards allow this temporary audio control without unlocking their configuration. Viewer windows do not control captured audio.
 
 The picker also includes **Picture in Picture grab**. On macOS or Windows, pop a video out in Chrome, then choose this source to fit that floating player over the card. Switching to a YouTube source releases Chrome's player. See [[picture-in-picture|Picture in Picture]] for permission, ownership and platform limits.
 
