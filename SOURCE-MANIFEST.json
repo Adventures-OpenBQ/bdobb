@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "4f54be2124eaeb111b2760b51e3efcbe19ce9aa5",
-  "sourceId": "02c6d88c4407f59856c44cf5406f9c2878f1e206ba3646efaae0283e06c842e7",
+  "baseCommit": "4ed00c0a25c84b0cf0a4a5fd02a2171779169096",
+  "sourceId": "ef0c28f30a4ab870aa3a3363adfe8e06919eee641c952059cd63561aea6e6c40",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -21693,7 +21693,7 @@
       "type": "file",
       "mode": 420,
       "size": 4678,
-      "sha256": "97c8c41e0766c36bf59cb327913448183739c3b46d08c97183fa21e41cf039e4"
+      "sha256": "ac702f7cf47b49275d70292adbdbf4d2ed1718ead62ba557587bc04bed63d1b2"
     },
     {
       "path": "playwright.config.ts",
@@ -22386,7 +22386,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "9b25f4d85d68031af71561a95c3fbcf64b215c3adecb4c6a97f5ee7115028621"
+      "sha256": "04cb42caa7ce694ea94e4c1f642c11a9ee6214fa58a3a5650996be124d339c0e"
     },
     {
       "path": "source_bundle.py",
@@ -23666,8 +23666,8 @@
       "path": "src/components/renderers/ChartStreamRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 5219,
-      "sha256": "949d54e99090587c6302fd7bfdb370d7a8b3737d8f2d26996685c8ca41018bea"
+      "size": 5955,
+      "sha256": "eeea80ab7436e655af154f0034cef71c9db0beebaebb3c32690d76da0bdaf244"
     },
     {
       "path": "src/components/renderers/ClockRenderer.test.tsx",
@@ -24912,8 +24912,8 @@
       "path": "src/help/guide/charts.md",
       "type": "file",
       "mode": 420,
-      "size": 13352,
-      "sha256": "d45f385b66db9c90902a4c41c874d3e3096a41ea18b8914b7caf51bc2ff7d555"
+      "size": 13629,
+      "sha256": "704577047ab827e18a7bf04de220b04fc41263c0b92d1c622f36d3f867626256"
     },
     {
       "path": "src/help/guide/connecting-a-backend.md",
@@ -26053,15 +26053,15 @@
       "path": "src/hooks/useClosedSession.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 2859,
-      "sha256": "3ac30cb9ad0f7f134f14358dbcc11ba75a79e7d7fc72403cf9b0a8279be1a10b"
+      "size": 3382,
+      "sha256": "c98569fdcc987a3a5933aed28cd702ec8972a4146fef5f124c91aa55e65ef9e7"
     },
     {
       "path": "src/hooks/useClosedSession.ts",
       "type": "file",
       "mode": 420,
-      "size": 3570,
-      "sha256": "a84f4dd3bd2f2eaef6770daa27f3904b924f80dfa060bbedda48c4b87cf35632"
+      "size": 4077,
+      "sha256": "682f0f9851f79e79027ff163c6c2fc33bcb706f872a5083faf5a6b7943eef134"
     },
     {
       "path": "src/hooks/useDashboardShortcuts.test.tsx",
@@ -28029,6 +28029,20 @@
       "mode": 420,
       "size": 8868,
       "sha256": "2b83d65b1b0f59252a5974e4a06a1fdba2a85c07cc540554306147372832ee59"
+    },
+    {
+      "path": "src/lib/liveHistory.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 599,
+      "sha256": "8bd35e5364f1bce850a93d30a75f014709b10db7e6e11893485e41efd882b29c"
+    },
+    {
+      "path": "src/lib/liveHistory.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 559,
+      "sha256": "f86d0cd02a77d2c122870f3baf4b68aac345e2a1e384e160bee7c27762361535"
     },
     {
       "path": "src/lib/localFiles.test.ts",
@@ -32872,7 +32886,7 @@
       "type": "file",
       "mode": 420,
       "size": 268,
-      "sha256": "689b74b0166faeca3feab8683e05938b9c70f017ef8577ae1a21315e0d07e3eb"
+      "sha256": "6cedcffab32560d4e0ac3680b247bb51a3f5da09197ed99b57d61ee958b89ec0"
     },
     {
       "path": "web/refdemo-pin.test.mjs",
