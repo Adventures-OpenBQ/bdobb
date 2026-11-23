@@ -1903,6 +1903,7 @@ td[data-flash="down"] { animation: cell-flash-down 0.7s ease-out; }
 /* PR #88 compact title strip. Only row zero mounts here; later rows live in
    the parameter card. Natural control widths scroll instead of growing headers. */
 .card-chips { flex: 1 1 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.card-chips-overflowing { padding-bottom: 16px; }
 .card-chips-hidden { display: none; }
 .card-header-spacer { flex: 1; }
 .card-chips .card-params { display: block; width: max-content; min-width: 100%; white-space: nowrap; padding: 1px 0; overflow: visible; }

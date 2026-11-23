@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // PR #88 port: V3 has native date inputs rather than main's later calendar picker.
 import { expect, test } from "@playwright/test";
-import { seedCards } from "./fixtures";
+import { dashboardSeed, seedApp, seedCards } from "./fixtures";
 
 test.use({ browserName: process.env.HEADER_WEBKIT ? "webkit" : "chromium", viewport: { width: 1280, height: 800 }, hasTouch: true });
 
@@ -70,4 +70,56 @@ test("a widget with no row zero keeps every field in the parameter card", async 
   await expect(card.locator(".card-header .param-field")).toHaveCount(0);
   await card.getByRole("button", {name: "Show parameters", exact: true}).click();
   await expect(card.getByRole("region", {name: "Parameters", exact: true}).locator(".param-field")).toHaveCount(6);
+});
+
+
+test("overflowing ordinary title controls accept mouse focus and persist select edits", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 844 });
+  const seed = dashboardSeed([{
+    id: "c-echo", widgetId: "param_echo", backendId: "builtin",
+    params: { ticker: "AAPL", date: "2026-10-03", year: "2023" },
+    layout: { x: 0, y: 0, w: 20, h: 8 },
+  }]);
+  seed["backends.json"] = "[]";
+  await seedApp(page, seed);
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  const card = page.locator(".widget-card");
+  const strip = card.locator(".card-chips");
+  await card.evaluate(async el => {
+    await Promise.all((el.closest(".react-grid-item") ?? el).getAnimations({subtree: true})
+      .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+      .map(animation => animation.finished.catch(() => undefined)));
+  });
+  const year = strip.getByRole("combobox", { name: "Year", exact: true });
+  await expect(year).toHaveValue("2023");
+  await expect(strip).toHaveClass(/card-chips-overflowing/);
+  await year.evaluate(el => {
+    const strip = el.closest(".card-chips") as HTMLElement;
+    const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+    strip.scrollLeft += box.left + box.width / 2 - (view.left + view.width / 2);
+  });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await test.info().attach("ordinary-control-hit", {contentType: "application/json", body: JSON.stringify(await year.evaluate(el => {
+    const strip = el.closest(".card-chips") as HTMLElement, box = el.getBoundingClientRect(), view = strip.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    return {box: box.toJSON(), viewport: view.toJSON(), scrollLeft: strip.scrollLeft, clientWidth: strip.clientWidth,
+      clientHeight: strip.clientHeight, offsetHeight: strip.offsetHeight, paddingBottom: getComputedStyle(strip).paddingBottom,
+      hitTag: hit?.tagName, hitClass: hit?.getAttribute("class"), containsHit: el.contains(hit)};
+  }))});
+  await expect.poll(() => year.evaluate(el => {
+    const box = el.getBoundingClientRect();
+    return el.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
+  })).toBe(true);
+  const box = (await year.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(year).toBeFocused();
+  // WebKit's native SELECT menu keyboard behavior differs in headless runs.
+  // Use its select driver only after the actual mouse hit/focus has succeeded.
+  await page.keyboard.press("Escape");
+  await year.selectOption("2024");
+  await expect(card.locator('dd[aria-label="year"]')).toHaveText("2024");
+  await expect.poll(() => page.evaluate(() => JSON.parse(window.__bdobb!.read!("dashboards/d1.json")!).tabs[0].cards[0].params.year)).toBe("2024");
+  await page.setViewportSize({ width: 1920, height: 844 });
+  await expect(strip).not.toHaveClass(/card-chips-overflowing/);
+  expect(await strip.evaluate(el => getComputedStyle(el).paddingBottom)).toBe("0px");
 });

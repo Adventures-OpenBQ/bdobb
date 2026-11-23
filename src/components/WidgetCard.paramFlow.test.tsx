@@ -13,6 +13,15 @@ vi.mock("../lib/plotly", () => ({
   REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick"]),
 }));
 
+// WidgetCard observes its title strip, while jsdom provides no layout observer.
+// Overflow geometry and lifecycle have their own controlled tests in WidgetCard.test.tsx.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+
 // Stands in for the real drag-and-drop library, exactly as
 // DashboardGrid.test.tsx does — it pulls in ResizeObserver-dependent DOM
 // machinery this test has no interest in. What's left is real:

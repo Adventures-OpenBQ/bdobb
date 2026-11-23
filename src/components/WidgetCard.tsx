@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { confirm, open as openFileDialog, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useLinkedSourcePublication } from "../hooks/useLinkedSourcePublication";
@@ -1139,6 +1139,42 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
     </button>
   );
 
+  const [titleStrip, setTitleStrip] = useState<HTMLDivElement | null>(null);
+  const [titleStripOverflows, setTitleStripOverflows] = useState(false);
+  useLayoutEffect(() => {
+    if (!titleStrip) return;
+    // WebKit's overlay scrollbar reserves no layout gutter and otherwise
+    // covers the controls. Keep clearance only while scrolling is needed.
+    const measure = () => setTitleStripOverflows(titleStrip.scrollWidth > titleStrip.clientWidth + 1);
+    const resize = new ResizeObserver(measure);
+    resize.observe(titleStrip);
+    const children = new Set<Element>();
+    const observeChildren = () => {
+      for (const child of children) {
+        if (child.parentElement !== titleStrip) {
+          resize.unobserve(child);
+          children.delete(child);
+        }
+      }
+      for (const child of titleStrip.children) {
+        if (!children.has(child)) {
+          resize.observe(child);
+          children.add(child);
+        }
+      }
+      measure();
+    };
+    observeChildren();
+    // Parameter content can mount after options arrive; observe just this strip,
+    // not the table or chart body.
+    const mutation = new MutationObserver(observeChildren);
+    mutation.observe(titleStrip, {childList: true});
+    return () => {
+      mutation.disconnect();
+      resize.disconnect();
+    };
+  }, [titleStrip]);
+
   if (headless) return hasControls && widget && dashboard ? <ParamControls placement="observer" widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={edit => void apply(edit)} /> : null;
 
   return (
@@ -1204,7 +1240,7 @@ export function WidgetCard({ card, onRemove, viewer = false, headless = false }:
           </button>
         ) : null}
         {hasControls && widget && dashboard ? (
-          <div className={`card-chips${!hasTitleParams || (collapseControls && !controlsOpen) ? " card-chips-hidden" : ""}`}>
+          <div ref={setTitleStrip} className={`card-chips${titleStripOverflows ? " card-chips-overflowing" : ""}${!hasTitleParams || (collapseControls && !controlsOpen) ? " card-chips-hidden" : ""}`}>
             <ParamControls placement={minimized ? "observer" : "header"} widget={widget} card={card} groups={dashboard.groups} groupsDisabled={groupsDisabled} effective={params} backend={backend} onApply={(edit) => void apply(edit)} />
           </div>
         ) : <div className="card-header-spacer" />}
