@@ -185,3 +185,31 @@ describe("toWorkspace round trip", () => {
     expect(exportCompatibleApp(fromWorkspace(famaFrench(), "dashboard", [])).ok).toBe(true);
   });
 });
+
+
+describe("opaque server tab keys survive the complete persisted Workspace round trip", () => {
+  for (const tabKey of ["factors", "__proto__"]) it(`keeps the existing fixture's ${tabKey} tab and navigation layout after persistence`, () => {
+    const content = famaFrench();
+    const data = body(content);
+    data.gridLayout = Object.fromEntries(Object.entries(gridOf(content)).map(([key, layout]) => [key === "factors" ? tabKey : key, layout]));
+    for (const record of widgetsOf(content)) {
+      if (record.innerTab === "factors") record.innerTab = tabKey;
+      if (record.widgetId === "navigation_bar") {
+        const tabs = (record.storage as Rec).tabs as Rec[];
+        for (const tab of tabs) if (tab.id === "factors") tab.id = tabKey;
+      }
+    }
+    if (data.currentTab === "factors") data.currentTab = tabKey;
+    // Real server JSON, then the same JSON persistence that stores the imported local dashboard.
+    const received = JSON.parse(JSON.stringify(content)) as Rec;
+    expect(Object.hasOwn(gridOf(received), tabKey)).toBe(true);
+    const local = fromWorkspace(received, "dashboard", []);
+    expect(local.tabs).toHaveLength(2);
+    expect(local.tabs[0].cards).toHaveLength(2);
+    const reopened = JSON.parse(JSON.stringify(local)) as Dashboard;
+    const uploaded = toWorkspace(reopened, "dashboard");
+    expect(Object.hasOwn(gridOf(uploaded), tabKey)).toBe(true);
+    // Includes the original navigation item's dimensions/extras, not just the widget's presence.
+    expect(normalize(uploaded)).toEqual(normalize(received));
+  });
+});

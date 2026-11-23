@@ -66,7 +66,7 @@ export function fromWorkspace(content: unknown, store: SyncStore, registry: Widg
   );
   const byId = new Map(widgets.map((w) => [w.id, w]));
   const placed = new Set<Rec>();
-  const navLayout: Record<string, Rec> = {};
+  const navLayout: Record<string, Rec> = Object.create(null);
   const tabs: Rec = {};
   const states: Omit<CardWorkspaceState, "params">[][] = [];
   keys.forEach((key, t) => {
@@ -185,7 +185,7 @@ export function toWorkspace(dashboard: Dashboard, store: SyncStore, item?: NewIt
   const ws = dashboard.extensions?.workspace;
   const keyOf = (tabId: string) => ws?.tabKeys[tabId] ?? tabId;
   const widgets: Rec[] = [];
-  const gridLayout: Record<string, Rec[]> = {};
+  const gridLayout: Record<string, Rec[]> = Object.create(null);
   const used = new Set<unknown>();
   const sourceRefs = linkedReferences(dashboard.tabs.flatMap(t => t.cards));
   for (const tab of dashboard.tabs) {
