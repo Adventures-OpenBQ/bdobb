@@ -1292,6 +1292,7 @@ body {
   overscroll-behavior-x: contain;
   scrollbar-width: thin;
 }
+.card-chips-overflowing { padding-bottom: 16px; }
 /* Collapsed controls (see .card-controls-collapsed below) hide the chips too
    -- a card collapsed to just its icon cluster showing its parameters anyway
    would defeat the whole point of collapsing. */

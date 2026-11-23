@@ -11,7 +11,7 @@ import { PivotToggle } from "./renderers/pivot-drawer/PivotToggle";
 import { PivotIcon } from "./PivotIcon";
 
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
-import { type ComponentProps, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ComponentProps, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useResolvedTheme } from "../hooks/useResolvedTheme";
@@ -1316,6 +1316,42 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
     ? <ParamControls {...controlProps} rowZeroOnly inline={analyticalHeader} />
     : undefined;
 
+  const [titleStrip, setTitleStrip] = useState<HTMLDivElement | null>(null);
+  const [titleStripOverflows, setTitleStripOverflows] = useState(false);
+  useLayoutEffect(() => {
+    if (!titleStrip) return;
+    // WebKit's overlay scrollbar reserves no layout gutter and otherwise
+    // covers the controls. Keep clearance only while scrolling is needed.
+    const measure = () => setTitleStripOverflows(titleStrip.scrollWidth > titleStrip.clientWidth + 1);
+    const resize = new ResizeObserver(measure);
+    resize.observe(titleStrip);
+    const children = new Set<Element>();
+    const observeChildren = () => {
+      for (const child of children) {
+        if (child.parentElement !== titleStrip) {
+          resize.unobserve(child);
+          children.delete(child);
+        }
+      }
+      for (const child of titleStrip.children) {
+        if (!children.has(child)) {
+          resize.observe(child);
+          children.add(child);
+        }
+      }
+      measure();
+    };
+    observeChildren();
+    // Pivot controls can mount after data arrives; observe just this strip,
+    // not the table or chart body.
+    const mutation = new MutationObserver(observeChildren);
+    mutation.observe(titleStrip, {childList: true});
+    return () => {
+      mutation.disconnect();
+      resize.disconnect();
+    };
+  }, [titleStrip]);
+
   return (
     <article
       className="widget-card"
@@ -1417,7 +1453,8 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             the header itself. */}
         {!minimized && (ordinaryTitleControls || analyticalHeader) ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
+            ref={setTitleStrip}
+            className={`card-chips${titleStripOverflows ? " card-chips-overflowing" : ""}${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
             {analyticalHeader && dashboard ? (
               <PivotParamRow

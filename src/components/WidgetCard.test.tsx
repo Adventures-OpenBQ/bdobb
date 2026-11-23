@@ -4805,3 +4805,101 @@ describe('integrated analytical title parameter ordering', () => {
     } finally {rendered.dispose();}
   });
 });
+
+
+describe('title scrollbar overflow lifecycle', () => {
+  function overflowFixture() {
+    const observers: {targets: Set<Element>; callback: ResizeObserverCallback; disconnected: boolean}[] = [];
+    const previous = globalThis.ResizeObserver;
+    class ControlledResizeObserver {
+      readonly state: typeof observers[number];
+      constructor(callback: ResizeObserverCallback) {
+        this.state = {targets: new Set(), callback, disconnected: false};
+        observers.push(this.state);
+      }
+      observe(target: Element) { this.state.targets.add(target); }
+      unobserve(target: Element) { this.state.targets.delete(target); }
+      disconnect() { this.state.targets.clear(); this.state.disconnected = true; }
+    }
+    vi.stubGlobal('ResizeObserver', ControlledResizeObserver);
+    register({type: 'table', params: [{paramName: 'symbol', label: 'Symbol', type: 'text'}]});
+    const item = {...card, params: {symbol: 'AAPL'}};
+    useBackendsStore.setState({backends: [backend()]});
+    useDashboardStore.setState({dashboards: [{id: 'd1', name: 'D', tabs: [{id: 't1', name: 'Main', cards: [item]}]}], activeId: 'd1', activeTabId: 't1'});
+    const rendered = render(<WidgetCard card={item} onRemove={vi.fn()}/>);
+    const strip = rendered.container.querySelector('.card-chips') as HTMLElement;
+    let viewport = 100, content = 100;
+    Object.defineProperties(strip, {
+      clientWidth: {configurable: true, get: () => viewport},
+      scrollWidth: {configurable: true, get: () => content},
+    });
+    function resize(target: Element, nextViewport: number, nextContent: number) {
+      viewport = nextViewport; content = nextContent;
+      act(() => {
+        for (const observer of observers.filter(o => o.targets.has(target))) {
+          observer.callback([{target} as ResizeObserverEntry], {} as ResizeObserver);
+        }
+      });
+    }
+    return {rendered, strip, item, observers, resize,
+      dimensions: (nextViewport: number, nextContent: number) => {viewport = nextViewport; content = nextContent;},
+      dispose: () => {rendered.unmount(); vi.stubGlobal('ResizeObserver', previous);},
+    };
+  }
+
+  it('reserves scrollbar space only for actual overflow and removes it when a resize fits the content', async () => {
+    const f = overflowFixture();
+    try {
+      expect(f.strip).not.toHaveClass('card-chips-overflowing');
+      f.resize(f.strip, 100, 240);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.resize(f.strip, 300, 240);
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+      f.resize(f.strip, 100, 101); // One pixel of rounding does not justify a gutter.
+      expect(f.strip).not.toHaveClass('card-chips-overflowing');
+      expect(within(f.strip).getByLabelText('Symbol')).toHaveValue('AAPL');
+    } finally {f.dispose();}
+  });
+
+  it('remeasures asynchronous direct-content growth even when the strip width does not change', async () => {
+    const f = overflowFixture();
+    try {
+      const content = f.strip.firstElementChild!;
+      await waitFor(() => expect(f.observers.some(o => o.targets.has(content))).toBe(true));
+      f.resize(content, 100, 260);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.resize(content, 100, 80);
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+    } finally {f.dispose();}
+  });
+
+  it('observes newly mounted direct content and releases it when removed', async () => {
+    const f = overflowFixture();
+    try {
+      const incoming = document.createElement('span');
+      f.dimensions(100, 250);
+      act(() => {f.strip.appendChild(incoming);});
+      await waitFor(() => expect(f.observers.some(o => o.targets.has(incoming))).toBe(true));
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.dimensions(100, 80);
+      act(() => {incoming.remove();});
+      await waitFor(() => expect(f.observers.every(o => !o.targets.has(incoming))).toBe(true));
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+    } finally {f.dispose();}
+  });
+
+  it('disconnects strip and content observation when title controls are hidden or the card unmounts', async () => {
+    const f = overflowFixture();
+    try {
+      f.resize(f.strip, 100, 220);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      const active = f.observers.filter(o => o.targets.has(f.strip));
+      expect(active.length).toBeGreaterThan(0);
+      f.rendered.rerender(<WidgetCard card={{...f.item, hideTitleParams: true}} onRemove={vi.fn()}/>);
+      expect(f.rendered.container.querySelector('.card-chips')).toBeNull();
+      await waitFor(() => expect(active.every(o => o.disconnected && o.targets.size === 0)).toBe(true));
+      f.rendered.unmount();
+      expect(f.observers.every(o => o.targets.size === 0)).toBe(true);
+    } finally {f.dispose();}
+  });
+});

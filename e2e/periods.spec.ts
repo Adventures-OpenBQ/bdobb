@@ -14,9 +14,8 @@ const NOW = new Date("2026-08-26T13:30:00Z");
 
 test.use({ timezoneId: "America/New_York" });
 
-/** seedApp with the clock pinned first: the install must precede the app's first Date read. */
+/** seedApp with the clock pinned first: the fixed Date must precede the app's first Date read. */
 async function seedAt(page: Page, files: SeedFiles): Promise<void> {
-  await page.clock.install();
   await page.clock.setFixedTime(NOW);
   await seedApp(page, files);
 }
@@ -29,6 +28,31 @@ function trackQueries(page: Page, pathname: string): string[] {
     if (url.pathname === pathname && req.method() === "GET") seen.push(url.search);
   });
   return seen;
+}
+
+/** Let native scrolling/compositing settle, then require the actual control hit. */
+async function settleTitleControl(page: Page, control: Locator): Promise<void> {
+  await control.scrollIntoViewIfNeeded();
+  await control.evaluate(el => {
+    const strip = el.closest('.card-chips') as HTMLElement | null;
+    if (!strip) throw new Error('Expected a title parameter control');
+    const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+    strip.scrollLeft += box.left + box.width / 2 - (view.left + view.width / 2);
+  });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect.poll(() => control.evaluate(el => {
+    const strip = el.closest('.card-chips') as HTMLElement;
+    const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+    const x = box.left + box.width / 2, y = box.top + box.height / 2;
+    return x >= view.left + strip.clientLeft && x <= view.left + strip.clientLeft + strip.clientWidth
+      && y >= view.top + strip.clientTop && y <= view.top + strip.clientTop + strip.clientHeight
+      && el.contains(document.elementFromPoint(x, y));
+  })).toBe(true);
+}
+
+async function clickTitleControl(page: Page, control: Locator): Promise<void> {
+  await settleTitleControl(page, control);
+  await control.click();
 }
 
 type Binding = { groupId: string; paramName: string };
@@ -80,28 +104,28 @@ test("every period control resolves T per type, and each popover pick reaches th
 
   // Since v5.3.0 a popover whose value is an expression (the seeded `T`s,
   // `2026-01-01/T`) opens on Relative (spec §4), so each pick selects Absolute first.
-  await trigger(card, "Quarter").click();
+  await clickTitleControl(page, trigger(card, "Quarter"));
   await page.getByRole("dialog", { name: "Quarter" }).getByRole("tab", { name: "Absolute" }).click();
   await page.getByRole("dialog", { name: "Quarter" }).getByRole("button", { name: "FY2026-Q1 (Jan–Mar 2026)" }).click();
   await expect(echo(card, "quarter")).toHaveText("2026-Q1");
   await expect(trigger(card, "Quarter")).toHaveText("FY2026-Q1");
 
-  await trigger(card, "Fiscal year").click();
+  await clickTitleControl(page, trigger(card, "Fiscal year"));
   await page.getByRole("dialog", { name: "Fiscal year" }).getByRole("tab", { name: "Absolute" }).click();
   await page.getByRole("dialog", { name: "Fiscal year" }).getByRole("button", { name: "FY2024 (Jan–Dec 2024)" }).click();
   await expect(echo(card, "fiscal_year")).toHaveText("2024");
 
-  await trigger(card, "Week").click();
+  await clickTitleControl(page, trigger(card, "Week"));
   await page.getByRole("dialog", { name: "Week" }).getByRole("tab", { name: "Absolute" }).click();
   await page.getByRole("dialog", { name: "Week" }).getByRole("button", { name: /August 12, 2026/ }).click();
   await expect(echo(card, "week")).toHaveText("2026-W33");
 
-  await trigger(card, "As of").click();
+  await clickTitleControl(page, trigger(card, "As of"));
   await page.getByRole("dialog", { name: "As of" }).getByRole("tab", { name: "Absolute" }).click();
   await page.getByRole("dialog", { name: "As of" }).getByRole("button", { name: /August 20, 2026/ }).click();
   await expect(echo(card, "asof")).toHaveText("2026-08-20T09:30:00-04:00");
 
-  await trigger(card, "Range").click();
+  await clickTitleControl(page, trigger(card, "Range"));
   const range = page.getByRole("dialog", { name: "Range" });
   await range.getByRole("tab", { name: "Absolute" }).click();
   await range.getByRole("button", { name: /January 5, 2026/ }).click();
@@ -111,7 +135,7 @@ test("every period control resolves T per type, and each popover pick reaches th
 
   // The time field is inline: an edited segment commits when focus leaves.
   const hour = card.getByRole("spinbutton", { name: /hour/i });
-  await hour.click();
+  await clickTitleControl(page, hour);
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
@@ -119,7 +143,7 @@ test("every period control resolves T per type, and each popover pick reaches th
   await expect(echo(card, "session")).toHaveText("10:30:00");
 
   // Escape closes without writing.
-  await trigger(card, "Quarter").click();
+  await clickTitleControl(page, trigger(card, "Quarter"));
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Quarter" })).toHaveCount(0);
   await expect(echo(card, "quarter")).toHaveText("2026-Q1");
@@ -160,7 +184,7 @@ test("a date_range arrives at the backend as two query params", async ({ page })
   // keys: no composite `start_date/end_date` value and no third range key.
   expect([...q.keys()].sort()).toEqual(["end_date", "quarter", "start_date", "symbol"]);
 
-  await trigger(card, "Range").click();
+  await clickTitleControl(page, trigger(card, "Range"));
   const range = page.getByRole("dialog", { name: "Range" });
   await range.getByRole("button", { name: /January 12, 2026/ }).click();
   await range.getByRole("button", { name: /January 16, 2026/ }).click();
@@ -190,7 +214,7 @@ test("two echoes with different year ends share one quarter group and label one 
   await expect(page.getByText("Quarter · 2026-Q3")).toBeVisible();
 
   // The September member picks its FY2027-Q1 = Oct–Dec 2026 = calendar 2026-Q4.
-  await trigger(sep, "Quarter").click();
+  await clickTitleControl(page, trigger(sep, "Quarter"));
   const dialog = page.getByRole("dialog", { name: "Quarter" });
   await dialog.getByRole("button", { name: "Next fiscal year" }).click();
   await dialog.getByRole("button", { name: "FY2027-Q1 (Oct–Dec 2026)" }).click();
@@ -252,7 +276,6 @@ test("the endpoint source drives a quarter's label, and follows the symbol", asy
 // action buttons stay inside the card, and every clipped control is reachable.
 test("narrow viewer: clipped header controls remain reachable inside their card (#13)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.clock.install();
   await page.clock.setFixedTime(new Date("2026-10-03T16:00:00Z"));
   const cards: SeedCard[] = [
     echoCard("c-echo", "September"),
@@ -287,19 +310,7 @@ test("narrow viewer: clipped header controls remain reachable inside their card 
       const controls = strip.locator('button:visible, input:visible, select:visible, [role="spinbutton"]:visible');
       expect(await controls.count()).toBeGreaterThan(0);
       for (const control of await controls.all()) {
-        await strip.scrollIntoViewIfNeeded();
-        await control.evaluate(el => {
-          const strip = el.closest(".card-chips") as HTMLElement;
-          const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
-          strip.scrollLeft += box.left + box.width / 2 - (view.left + view.width / 2);
-        });
-        const reachable = await control.evaluate(el => {
-          const view = el.closest(".card-chips")!.getBoundingClientRect();
-          const box = el.getBoundingClientRect();
-          const x = box.left + box.width / 2, y = box.top + box.height / 2;
-          return x >= view.left && x <= view.right && y >= view.top && y <= view.bottom && el.contains(document.elementFromPoint(x, y));
-        });
-        expect(reachable).toBe(true);
+        await settleTitleControl(page, control);
       }
     }
   }
