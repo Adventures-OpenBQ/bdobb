@@ -25,3 +25,8 @@ export function result(envelope) {
   assert.notEqual(value.kind,'error',value.error?.code);
   return value;
 }
+
+export function rejectedOpaqueIdentity(value) {
+  assert.equal(value.status,400);
+  assert.deepEqual(value.json,{error:{code:'upstream_refused',message:'Table request refused'}});
+}

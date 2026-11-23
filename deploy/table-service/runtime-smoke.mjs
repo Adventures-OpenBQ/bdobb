@@ -6,7 +6,7 @@ import {once} from 'node:events';
 import {mkdtemp,rm,writeFile,readFile,readdir,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {fields as rawFields,rows as rawRows,ordinaryTable,plain,result as wireResult} from './raw-field-contract.mjs';
+import {fields as rawFields,rows as rawRows,ordinaryTable,plain,result as wireResult,rejectedOpaqueIdentity} from './raw-field-contract.mjs';
 if(process.platform !== 'linux')throw new Error('This smoke requires real Linux worker containment');
 const {TABLE_SMOKE_GATEWAY,TABLE_SMOKE_SERVICE,TABLE_SMOKE_WORKER,TABLE_SMOKE_INGEST}=process.env;
 if(!TABLE_SMOKE_GATEWAY || !TABLE_SMOKE_SERVICE || !TABLE_SMOKE_WORKER || !TABLE_SMOKE_INGEST)throw new Error('Set TABLE_SMOKE_GATEWAY (canonical server.mjs), TABLE_SMOKE_SERVICE, TABLE_SMOKE_WORKER and TABLE_SMOKE_INGEST absolute paths');
@@ -77,13 +77,9 @@ try{
  assert.deepEqual(childChart.rows.map(r=>plain(r.values.hasOwnProperty)),[100,300]);
  assert.deepEqual(childChart.rows.map(r=>plain(r.values.__proto__)),[102,302]);
  // Opaque identities stay strict; do not accept server errors as successful rejection.
- async function rejected(value){
-  assert.equal(value.status,400);
-  assert.equal(value.json.error.code,'invalid_input');
- }
- await rejected(await rawCommand(rawApply,'raw-source',1,{kind:'inputSchema',requestId:''},true));
- await rejected(await call('/sessions','POST',{...rawOpen,widgetId:''}));
- await rejected(await rawCommand(rawApply,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:{pivot:{enabled:true,grouping:[],split:[],measures:[{id:'',sourceFieldId:'',aggregation:'sum'}]}},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]},true));
+ rejectedOpaqueIdentity(await rawCommand(rawApply,'raw-source',1,{kind:'inputSchema',requestId:''},true));
+ rejectedOpaqueIdentity(await call('/sessions','POST',{...rawOpen,widgetId:''}));
+ rejectedOpaqueIdentity(await rawCommand(rawApply,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:{pivot:{enabled:true,grouping:[],split:[],measures:[{id:'',sourceFieldId:'',aggregation:'sum'}]}},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]},true));
  check(await call(`/sessions/${rawChildApplied.sessionId}`,'DELETE'));
  check(await call(`/sessions/${rawApply.sessionId}`,'DELETE'));
  check(await call(`/sources/${rawUpload.sourceId}`,'DELETE'));
