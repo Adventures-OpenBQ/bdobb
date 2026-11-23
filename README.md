@@ -10,7 +10,10 @@ Read the [user guide](docs/user-guide.md) and [v4 reference manual](docs/referen
 
 The Pivot Wasm module is generated from the included Rust source; it is not checked into the repository or source archive. Install the pinned toolchain once, then generate it before running TypeScript checks. Native desktop builds also require the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
 
+The frontend build uses a 4 GB V8 heap, matching the source CI configuration. Set the build environment before the commands below.
+
 ```sh
+export NODE_OPTIONS=--max-old-space-size=4096
 rustup toolchain install 1.98.1
 rustup target add --toolchain 1.98.1 wasm32-unknown-unknown
 cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root .pivot-tools

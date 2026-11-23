@@ -48,8 +48,10 @@ test('managed full-scope consumers, header actions and persisted linked reopen',
  await expect.poll(async()=>{const saved=await read(page,'dashboards/d1.json');return saved?JSON.parse(saved).tabs[0].cards[0].table?.widths:undefined;}).toBeTruthy();
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked table'}).click();
  await root.getByRole('button',{name:'Card menu'}).click();await page.getByRole('menuitem',{name:'Create linked chart'}).click();
- await page.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
- await tickChartMeasures(page,page,'Revenue');
+ const chartCard=page.locator('.widget-card').filter({has:page.locator('.linked-chart-renderer')});
+ await chartCard.getByRole('button',{name:'Show parameters',exact:true}).click();
+ await chartCard.getByRole('combobox',{name:'Category',exact:true}).selectOption('region');
+ await tickChartMeasures(page,chartCard,'Revenue');
  await expect(page.getByTestId('chart-plot')).toBeVisible();
  await expect.poll(()=>page.getByTestId('chart-plot').evaluate(el=>(el as unknown as {data?:{x?:unknown[]}[]}).data?.[0]?.x?.length)).toBe(204);
  const proof=await page.evaluate(async()=>{

@@ -1311,6 +1311,11 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
         }
       : null;
 
+  const analyticalHeader = Boolean(dashboard && card.tableDefinition?.analytical !== undefined);
+  const ordinaryTitleControls = !minimized && hasControls && !hideTitleParams && controlProps
+    ? <ParamControls {...controlProps} rowZeroOnly inline={analyticalHeader} />
+    : undefined;
+
   return (
     <article
       className="widget-card"
@@ -1410,11 +1415,19 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && hasControls && !hideTitleParams && controlProps ? (
+        {!minimized && (ordinaryTitleControls || analyticalHeader) ? (
           <div
             className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            <ParamControls {...controlProps} rowZeroOnly />
+            {analyticalHeader && dashboard ? (
+              <PivotParamRow
+                dashboardId={dashboard.id}
+                widgetId={card.id}
+                raw={card.tableDefinition?.analytical}
+                viewer={viewer}
+                ordinary={ordinaryTitleControls}
+              />
+            ) : ordinaryTitleControls}
           </div>
         ) : null}
         <div
@@ -1790,7 +1803,6 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
             {hasChartParameters ? <button type="button" onClick={() => setChooseSource(true)}>Choose source</button> : null}
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} /> : null}
       </header>
       {exportNotice ? (
         <p className="card-notice" role="status">

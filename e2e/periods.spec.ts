@@ -248,8 +248,9 @@ test("the endpoint source drives a quarter's label, and follows the symbol", asy
 
 // Issue #13: the five cards of the v4 regression's narrow-viewer case. At
 // 390 px the grid keeps two columns, so Period echo is ~180 px wide and its
-// Week / As of / Range pills ran past the card's right edge, clipped.
-test("narrow viewer: every header control stays inside its card (#13)", async ({ page }) => {
+// Title-row parameters intentionally scroll horizontally; their viewport and
+// action buttons stay inside the card, and every clipped control is reachable.
+test("narrow viewer: clipped header controls remain reachable inside their card (#13)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.install();
   await page.clock.setFixedTime(new Date("2026-10-03T16:00:00Z"));
@@ -270,11 +271,36 @@ test("narrow viewer: every header control stays inside its card (#13)", async ({
     const edge = (await card.boundingBox())!;
     const right = edge.x + edge.width + 1;
     for (const el of await card
-      .locator("header :is(button, input, select, .param-field, .react-aria-Group):visible")
+      .locator("header :is(button, input, select):visible")
       .all()) {
+      if (await el.evaluate(node => !!node.closest(".card-chips"))) continue;
       const box = (await el.boundingBox())!;
       if (box.x + box.width > right || box.x < edge.x - 1)
         overflow.push(`${await el.evaluate((n) => n.outerHTML.slice(0, 80))}: ${box.x + box.width} > ${right}`);
+    }
+    for (const strip of await card.locator(".card-chips:visible").all()) {
+      const viewport = (await strip.boundingBox())!;
+      expect(viewport.width).toBeGreaterThan(0);
+      expect(viewport.x).toBeGreaterThanOrEqual(edge.x - 1);
+      expect(viewport.x + viewport.width).toBeLessThanOrEqual(right);
+      expect(await strip.evaluate(el => getComputedStyle(el).overflowX)).toBe("auto");
+      const controls = strip.locator('button:visible, input:visible, select:visible, [role="spinbutton"]:visible');
+      expect(await controls.count()).toBeGreaterThan(0);
+      for (const control of await controls.all()) {
+        await strip.scrollIntoViewIfNeeded();
+        await control.evaluate(el => {
+          const strip = el.closest(".card-chips") as HTMLElement;
+          const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+          strip.scrollLeft += box.left + box.width / 2 - (view.left + view.width / 2);
+        });
+        const reachable = await control.evaluate(el => {
+          const view = el.closest(".card-chips")!.getBoundingClientRect();
+          const box = el.getBoundingClientRect();
+          const x = box.left + box.width / 2, y = box.top + box.height / 2;
+          return x >= view.left && x <= view.right && y >= view.top && y <= view.bottom && el.contains(document.elementFromPoint(x, y));
+        });
+        expect(reachable).toBe(true);
+      }
     }
   }
   expect(overflow).toEqual([]);
