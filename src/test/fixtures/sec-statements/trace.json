@@ -1,0 +1,1312 @@
+{
+  "NVDA": [
+    {
+      "row_id": "sec:nvda:3336cc6afa306e9fc087deac",
+      "concept": "Revenues",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "60922000000",
+      "companyfacts_unit_index": 254,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11",
+        "c-11",
+        "c-11",
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:4064d02e3e6b599d06b30cc4",
+      "concept": "Revenues",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "130497000000",
+      "companyfacts_unit_index": 266,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:5b4178eb5de629c5d203c918",
+      "concept": "CostOfRevenue",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "16621000000",
+      "companyfacts_unit_index": 254,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:cedb6c0eee25c8c12adb8a87",
+      "concept": "CostOfRevenue",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "32639000000",
+      "companyfacts_unit_index": 266,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:df89387966e1d24c68d289cf",
+      "concept": "GrossProfit",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "44301000000",
+      "companyfacts_unit_index": 279,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:48bc09a44d113e9251b8ec03",
+      "concept": "GrossProfit",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "97858000000",
+      "companyfacts_unit_index": 291,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:6eafd0a2218e815f42d1de58",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "32972000000",
+      "companyfacts_unit_index": 199,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11",
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:407f0661f9fb4a62fb8811a4",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "81453000000",
+      "companyfacts_unit_index": 211,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1",
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:b15def22c622e0e60bb738d1",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "29760000000",
+      "companyfacts_unit_index": 285,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11",
+        "c-11",
+        "c-11",
+        "c-11",
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:218ae2204d8b7a25f0943651",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "72880000000",
+      "companyfacts_unit_index": 298,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:ac9d795d893351a8fe12ee93",
+      "concept": "Assets",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "65728000000",
+      "companyfacts_unit_index": 121,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-14"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:74542387986d631ee9717ae9",
+      "concept": "Assets",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "111601000000",
+      "companyfacts_unit_index": 125,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-13"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:4a4a3c123ef3fdf7f8dd198b",
+      "concept": "Liabilities",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "22750000000",
+      "companyfacts_unit_index": 69,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-14"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:b66477fda22910e80e56a743",
+      "concept": "Liabilities",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "32274000000",
+      "companyfacts_unit_index": 73,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-13"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:7791538188e527f6be7638e1",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "42978000000",
+      "companyfacts_unit_index": 212,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-14",
+        "c-14"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:4a2ecda696f3ccca40bf8cc7",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "79327000000",
+      "companyfacts_unit_index": 227,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-13",
+        "c-13"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:57b1b062011c963a63f151ae",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "7280000000",
+      "companyfacts_unit_index": 202,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-14"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:1c33d2a211de073dc0a5590c",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "fact_start": null,
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "8589000000",
+      "companyfacts_unit_index": 206,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-13"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:6095f3ece47d22639049e033",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "28090000000",
+      "companyfacts_unit_index": 143,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:35dd8fa4cb5d2eadfdb228f3",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "64089000000",
+      "companyfacts_unit_index": 151,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:13726878f3f20058a2f4a622",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "-10566000000",
+      "companyfacts_unit_index": 137,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:de3b9da65a5157ca43ef7612",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "-20421000000",
+      "companyfacts_unit_index": 145,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:81e2c2411a73b81b0f7561c4",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "-13633000000",
+      "companyfacts_unit_index": 143,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:9c0affda1a0192926ad65014",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "-42359000000",
+      "companyfacts_unit_index": 151,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:1b717a41f8bc4a9c85a1da1a",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "1.19",
+      "companyfacts_unit_index": 283,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11",
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:4eab530bec219f54facded2c",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "2.94",
+      "companyfacts_unit_index": 295,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1",
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:3179909a88448f0a6f140d4a",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "24940000000",
+      "companyfacts_unit_index": 205,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11",
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:011909ee0cb83627dd1b4c59",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "24804000000",
+      "companyfacts_unit_index": 217,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1",
+        "c-1"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:8c15afe6f4bc9f57a1256244",
+      "concept": "EffectiveIncomeTaxRateContinuingOperations",
+      "unit": "pure",
+      "fact_start": "2023-01-30",
+      "fact_end": "2024-01-28",
+      "report_start": "2023-01-30",
+      "report_end": "2024-01-28",
+      "fiscal_year": 2024,
+      "value_decimal": "0.12",
+      "companyfacts_unit_index": 184,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-11"
+      ]
+    },
+    {
+      "row_id": "sec:nvda:47736dc32bf06436928a0bed",
+      "concept": "EffectiveIncomeTaxRateContinuingOperations",
+      "unit": "pure",
+      "fact_start": "2024-01-29",
+      "fact_end": "2025-01-26",
+      "report_start": "2024-01-29",
+      "report_end": "2025-01-26",
+      "fiscal_year": 2025,
+      "value_decimal": "0.133",
+      "companyfacts_unit_index": 196,
+      "accession": "0001045810-25-000023",
+      "original_xbrl_context_ids": [
+        "c-1"
+      ]
+    }
+  ],
+  "AMD": [
+    {
+      "row_id": "sec:f1a0c1907085b1408010c510",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "25785000000",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:439ef6698a117ffdb5f7755e",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "13060000000",
+      "concept": "CostOfGoodsAndServicesSold",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:8f08c7ee73574a39cd383d99",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "12725000000",
+      "concept": "GrossProfit",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:619448b30db831c056f9b349",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "1900000000",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:00bc85ed4767cddd5fc4bbd5",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "1641000000",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:22e7ee5fc639fccfdea5f25f",
+      "context_ids": [
+        "c-6"
+      ],
+      "decimal": "69226000000",
+      "concept": "Assets",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:3a4928df675278a4cda7f6f6",
+      "context_ids": [
+        "c-6",
+        "c-6"
+      ],
+      "decimal": "57568000000",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:e08f8984d241c7c0766e233f",
+      "context_ids": [
+        "c-6",
+        "c-6"
+      ],
+      "decimal": "3787000000",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:c83f5042bbd8aa2e7531be83",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "3041000000",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:1ba22c08cd6709faf8aa7db0",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-1101000000",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:de72413fef2f5c48c8ad02e4",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-2062000000",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:1aba1d63bbbbae1547de8fe0",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "1",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:efddb1b7865d9f2fe9c13766",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "1637000000",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    },
+    {
+      "row_id": "sec:b5c2dddb338afa01660e29bd",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "0.19",
+      "concept": "EffectiveIncomeTaxRateContinuingOperations",
+      "unit": "pure",
+      "start": "2023-12-31",
+      "end": "2024-12-28"
+    }
+  ],
+  "AMZN": [
+    {
+      "row_id": "sec:f3ccbf9e6f61502beb789a95",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "637959000000",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:431d16b47a17324a240f9c53",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "326288000000",
+      "concept": "CostOfGoodsAndServicesSold",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:53c0483d77d7eb7520c11cdf",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "68593000000",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:bd5e726515f9c516d235c509",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "59248000000",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:6bb62f3ba40be39382b18680",
+      "context_ids": [
+        "c-9",
+        "c-9"
+      ],
+      "decimal": "624894000000",
+      "concept": "Assets",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:7413381bc714451334203bcd",
+      "context_ids": [
+        "c-9",
+        "c-9"
+      ],
+      "decimal": "285970000000",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:67f80b49fc11b357e5f12ba8",
+      "context_ids": [
+        "c-9",
+        "c-9"
+      ],
+      "decimal": "78779000000",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:6eaf85fc531121af98610a06",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "115877000000",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:8be38d1616f42717af908d10",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-94342000000",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:403d05ac997e91f5be84ca7e",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-11812000000",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:4115f23ad738d603bd0e12b8",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "5.53",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:b2d799f36b6b0b69aaa0377a",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "10721000000",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    }
+  ],
+  "GOOG": [
+    {
+      "row_id": "sec:08171568f49c365dd6b71e16",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "350018000000",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:7120b983273efd77d4e59899",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "146306000000",
+      "concept": "CostOfRevenue",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:2e6e6cdcb7434864f9b19579",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "112390000000",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:44921ffb3cd88e19c64dd397",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "100118000000",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:824eb88b1e44a6166bd5cdf5",
+      "context_ids": [
+        "c-9"
+      ],
+      "decimal": "450256000000",
+      "concept": "Assets",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:1dac8e439fe5318f5691f4fd",
+      "context_ids": [
+        "c-9"
+      ],
+      "decimal": "125172000000",
+      "concept": "Liabilities",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:d825fadb1825890803275ac5",
+      "context_ids": [
+        "c-9",
+        "c-9"
+      ],
+      "decimal": "325084000000",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:299d934d9a6eb3fb2962ffe1",
+      "context_ids": [
+        "c-9",
+        "c-9"
+      ],
+      "decimal": "23466000000",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:c014310892b4528aac8cbf95",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "125299000000",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:85ae52e81ef960f89b552898",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-45536000000",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:10d594cc3e6e1a8df68afda1",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-79733000000",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:97d7a75ef642841a05508ff8",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "8.04",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:cabbbe4f5473ca1af85cc23d",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "12447000000",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:07b5a8841106338a9c946bf2",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "0.164",
+      "concept": "EffectiveIncomeTaxRateContinuingOperations",
+      "unit": "pure",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    }
+  ],
+  "META": [
+    {
+      "row_id": "sec:98b17c8e85e52ed15322e572",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "164501000000",
+      "concept": "RevenueFromContractWithCustomerExcludingAssessedTax",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:fd2c727f7f29a5e22e3a5889",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "30161000000",
+      "concept": "CostOfRevenue",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:0cadbe919a1150c504b6a6d3",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "69380000000",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:81c1188e391dbd23e7229630",
+      "context_ids": [
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "62360000000",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:dfe76efe3bc7cc710355803e",
+      "context_ids": [
+        "c-5"
+      ],
+      "decimal": "276054000000",
+      "concept": "Assets",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:84a80f61d3e3643911ad8571",
+      "context_ids": [
+        "c-5"
+      ],
+      "decimal": "93417000000",
+      "concept": "Liabilities",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:0ae4356785c9904e90ad055d",
+      "context_ids": [
+        "c-5",
+        "c-5"
+      ],
+      "decimal": "182637000000",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:967e1812b85b06ebd22bae72",
+      "context_ids": [
+        "c-5",
+        "c-5"
+      ],
+      "decimal": "43889000000",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:46f564f19a73e4ec6635c183",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "91328000000",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:9f5f45d5af312a3d942fcbcf",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-47150000000",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:52fa365a76fe2f310b6b0e61",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-40781000000",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:25dcf464ff0a53a31b36893a",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "23.86",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:ddf0f21ee9b89f85bfdb5362",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "2614000000",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:e83b54ad427880b9ebe08a77",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "0.118",
+      "concept": "EffectiveIncomeTaxRateContinuingOperations",
+      "unit": "pure",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    }
+  ],
+  "TSLA": [
+    {
+      "row_id": "sec:1d85c6ff614b7828fec66790",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "97690000000",
+      "concept": "Revenues",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:471da034b99f3073c66038d9",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "80240000000",
+      "concept": "CostOfRevenue",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:31f2faa111b71eb37cda3c6c",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "17450000000",
+      "concept": "GrossProfit",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:d05a5ad10e4248b8fbf984f9",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "7076000000",
+      "concept": "OperatingIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:5017b0db820362e5cb76f07b",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "7091000000",
+      "concept": "NetIncomeLoss",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:8960b4edf27a951e498313a4",
+      "context_ids": [
+        "c-4"
+      ],
+      "decimal": "122070000000",
+      "concept": "Assets",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:e0da5b2167a5ebccd3e8a382",
+      "context_ids": [
+        "c-4"
+      ],
+      "decimal": "48390000000",
+      "concept": "Liabilities",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:b604e601c267a626eeac098b",
+      "context_ids": [
+        "c-4"
+      ],
+      "decimal": "72913000000",
+      "concept": "StockholdersEquity",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:4003204c5a1b7eba3b2d945a",
+      "context_ids": [
+        "c-4",
+        "c-4"
+      ],
+      "decimal": "16139000000",
+      "concept": "CashAndCashEquivalentsAtCarryingValue",
+      "unit": "USD",
+      "start": null,
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:6bdf1a0a56e54d007151e5dc",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "14923000000",
+      "concept": "NetCashProvidedByUsedInOperatingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:0ae37d7052cb4a27fb904d5c",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "-18787000000",
+      "concept": "NetCashProvidedByUsedInInvestingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:c67786ed0bec667458f913bb",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "3853000000",
+      "concept": "NetCashProvidedByUsedInFinancingActivities",
+      "unit": "USD",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:22ce106c4f2ddcc40f5ef51c",
+      "context_ids": [
+        "c-1"
+      ],
+      "decimal": "2.04",
+      "concept": "EarningsPerShareDiluted",
+      "unit": "USD/shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    },
+    {
+      "row_id": "sec:2bf48ef52b7caa6008b714d0",
+      "context_ids": [
+        "c-1",
+        "c-1"
+      ],
+      "decimal": "3498000000",
+      "concept": "WeightedAverageNumberOfDilutedSharesOutstanding",
+      "unit": "shares",
+      "start": "2024-01-01",
+      "end": "2024-12-31"
+    }
+  ]
+}

@@ -50,10 +50,16 @@ it('failed chart transport retains its completed figure and exposes the delivery
     render(<LinkedChartRenderer {...props}/>);
     await screen.findByTestId('figure');
     const old = screen.getByTestId('figure').textContent;
+    const delivery = screen.getByTestId('figure').closest('.linked-chart-renderer')!;
+    const priorRevision = store.readView('d', 'c').sourceRevision;
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
     await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'A' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     expect(screen.getByTestId('figure').textContent).toBe(old);
+    expect(store.readView('d', 'c').sourceRevision).not.toEqual(priorRevision);
+    expect(delivery).toHaveAttribute('data-delivered-revision', JSON.stringify(priorRevision));
     cleanup();
     store.disposeDashboard('d');
 });
@@ -84,6 +90,7 @@ it('binds both duplicate instances and blocks a deleted binding even after anoth
     expect(figure.data.map((t: { name: string; y: number[] }) => ({ name: t.name, y: t.y }))).toEqual([{ name: 'Revenue — Average', y: [15, 90] }, { name: 'Revenue — Total', y: [30, 90] }]);
     await act(async () => { store.updateDefinition('d', 's', { table: { pivot: { ...source.table.pivot, measures: [measures[0], { ...measures[1], id: 'new-copy' }] } }, search: '' }, { kind: 'none' }); await store.settled('d'); });
     expect(await screen.findByRole('alert')).toHaveTextContent('total-copy is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
     const totalChoices = screen.getAllByRole('checkbox', { name: 'Revenue — Total' });
     expect(totalChoices[0]).toBeChecked();
     expect(totalChoices[1]).not.toBeChecked();
@@ -142,4 +149,175 @@ it.each([false, true])('keeps split bindings through filters and fresh reopen wi
 it('discards a delivered figure when its privileged activation is evicted', async () => {
  const store=await setup();render(<LinkedChartRenderer dashboardId="d" card={chart} refreshKey={0} store={store} onSettingsChange={async()=>true}/>);
  await screen.findByTestId('figure');act(()=>store.disposeDashboard('d'));expect(screen.queryByTestId('figure')).toBeNull();
+});
+it('clears a completed figure when a successful empty linked scope loses its generated series, then restores fresh data', async () => {
+    const pivot = { enabled: true, grouping: ['region'], split: ['team'], measures: [{ id: 'sales', sourceFieldId: 'revenue', aggregation: 'sum' as const }] };
+    const data = { ...input, rows: [{ id: 'nvda', values: { region: 'FY2024', team: 'NVDA', revenue: 60922000000 } }] };
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: data }) }) });
+    const source = { ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined, table: { pivot } };
+    const selected = { ...chart, id: 'selected', widgetId: 'local_table', linkedChart: undefined };
+    const target = { ...chart, linkedSource: { kind: 'widget' as const, sourceWidgetId: 'selected' } };
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [source, selected, target] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d');
+    const columns = store.readView('d', 'selected').ready!.columns;
+    const category = columns[0].id, measures = columns.filter(column => column.measureId === 'sales').map(column => column.id);
+    expect(measures).toHaveLength(1);
+    const bound = { ...target, linkedChart: { ...settings, category, measures } };
+    render(<LinkedChartRenderer dashboardId="d" card={bound} refreshKey={0} store={store} onSettingsChange={async () => true}/>);
+    await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    const apply = async (search: string) => act(async () => { store.updateDefinition('d', 's', { table: { pivot }, search }, { kind: 'none' }); await store.settled('d'); });
+    await apply('no matching company');
+    const empty = store.readView('d', 'c');
+    expect(empty.status).toBe('empty');
+    expect(empty.ready!.columns.some(column => column.id === measures[0])).toBe(false);
+    expect((empty.ready!.chartColumns ?? empty.ready!.columns).some(column => column.id === measures[0])).toBe(false);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('No selected series match the current filter.')).toBeVisible();
+    await apply(''); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([60922000000]);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+
+// These seams hold only delivery: the real executor has already computed each chart.
+it('late_A_cannot_replace_completed_B', async () => {
+    const store = await setup();
+    const executor = store.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    let release!: () => void;
+    executor.chartData = async (...args) => {
+        const result = await real(...args);
+        executor.chartData = real;
+        await new Promise<void>(resolve => { release = resolve; });
+        return result;
+    };
+    const apply = async (id: string) => act(async () => { store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: [id] }); await store.settled('d'); });
+    await apply('r1'); await waitFor(() => expect(release).toBeDefined());
+    expect(screen.getByText(/Updating chart/)).toBeVisible();
+    await apply('r2');
+    await waitFor(() => expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([2]));
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    expect(store.readView('d', 's').active).toEqual(revision);
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('disposed_generation_cannot_publish into remounted reused widget IDs', async () => {
+    const oldStore = await setup(), executor = oldStore.readExecutor('d', 's')!, real = executor.chartData.bind(executor);
+    let release!: () => void;
+    executor.chartData = async (...args) => { const result = await real(...args); await new Promise<void>(resolve => { release = resolve; }); return result; };
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, onSettingsChange: async () => true };
+    const mounted = render(<LinkedChartRenderer {...props} store={oldStore}/>);
+    await waitFor(() => expect(release).toBeDefined());
+    mounted.unmount(); oldStore.disposeDashboard('d');
+    const store = await setup();
+    store.updateDefinition('d', 's', { table: {}, search: '' }, { kind: 'explicit', ids: ['r7'] }); await store.settled('d');
+    render(<LinkedChartRenderer {...props} store={store}/>); await screen.findByTestId('figure');
+    expect(JSON.parse(screen.getByTestId('figure').textContent!).data[0].y).toEqual([7]);
+    const completed = screen.getByTestId('figure').textContent, revision = store.readView('d', 'c').sourceRevision;
+    await act(async () => release());
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    expect(store.readView('d', 'c').sourceRevision).toEqual(revision);
+    cleanup(); store.disposeDashboard('d');
+});
+it('missing_series_marks_old_figure_stale and repairing settings restores current data', async () => {
+    const store = await setup();
+    const props = { dashboardId: 'd', card: chart, refreshKey: 0, store, onSettingsChange: async () => true };
+    const { rerender } = render(<LinkedChartRenderer {...props}/>); await screen.findByTestId('figure');
+    const completed = screen.getByTestId('figure').textContent;
+    rerender(<LinkedChartRenderer {...props} card={{ ...chart, linkedChart: { ...settings, measures: ['missing'] } }}/>);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Field missing is unavailable. Repair chart fields.');
+    expect(screen.getByText(/showing completed data \(stale\)/)).toBeVisible();
+    expect(screen.getByTestId('figure').textContent).toBe(completed);
+    rerender(<LinkedChartRenderer {...props}/>);
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(screen.queryByText(/stale/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+async function setupRows(rows: { region: string; revenue: number | null; cost?: number }[]) {
+    const store = createTableExecutionStore({ executor: id => createWorkerExecutor(id, () => new Boundary() as unknown as Worker), source: () => ({ acquire: async () => ({ kind: 'dataset', dataset: { ...input, columns: [...input.columns, { id: 'cost', label: 'Cost', dtype: 'number' as const }], rows: rows.map((r, i) => ({ id: `r${i}`, values: { cost: 1, ...r } })) } }) }) });
+    store.syncDashboard({ id: 'd', name: 'D', tabs: [{ id: 't', name: 'T', cards: [{ ...chart, id: 's', widgetId: 'local_table', params: { file: 'x' }, linkedSource: undefined, linkedChart: undefined }, chart] }] } as Dashboard);
+    store.ensureTable('d', 'c'); await store.settled('d'); return store;
+}
+const withSettings = (store: Awaited<ReturnType<typeof setup>>, s: object, commit = vi.fn(async (_: unknown) => true)) => ({ dashboardId: 'd', card: { ...chart, linkedChart: { ...settings, ...s } }, refreshKey: 0, store, onSettingsChange: commit });
+it('offers 100% stacked and series-from only for the types that use them', async () => {
+    const store = await setup();
+    const opts = () => [...screen.getByLabelText('Display').querySelectorAll('option')].map(o => o.value);
+    for (const type of ['column', 'bar']) {
+        const { unmount } = render(<LinkedChartRenderer {...withSettings(store, { type })}/>);
+        expect(opts()).toEqual(['grouped', 'stacked', 'percent']);
+        expect(screen.getByRole('option', { name: '100% stacked' })).toHaveValue('percent');
+        expect(screen.getByLabelText('Series from')).toBeTruthy();
+        unmount();
+    }
+    const line = render(<LinkedChartRenderer {...withSettings(store, { type: 'line' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.getByLabelText('Series from')).toBeTruthy(); line.unmount();
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    expect(screen.queryByLabelText('Display')).toBeNull(); expect(screen.queryByLabelText('Series from')).toBeNull();
+    expect(screen.getByRole('option', { name: 'Pie' })).toHaveValue('pie');
+    cleanup(); store.disposeDashboard('d');
+});
+it('commits new values and resets fields the new type cannot use', async () => {
+    const store = await setup(); const commit = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer {...withSettings(store, { display: 'percent', seriesFrom: 'rows' }, commit)}/>);
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'line' } });
+    await waitFor(() => expect(commit).toHaveBeenLastCalledWith({ ...settings, type: 'line', display: 'stacked', seriesFrom: 'rows' }));
+    fireEvent.change(screen.getByLabelText('Chart type'), { target: { value: 'pie' } });
+    await waitFor(() => expect(commit).toHaveBeenCalledTimes(2));
+    expect(commit.mock.lastCall![0]).toMatchObject({ type: 'pie', display: 'stacked' }); expect(commit.mock.lastCall![0]).not.toHaveProperty('seriesFrom');
+    cleanup(); const c2 = vi.fn(async (_: unknown) => true);
+    render(<LinkedChartRenderer {...withSettings(store, {}, c2)}/>);
+    fireEvent.change(screen.getByLabelText('Display'), { target: { value: 'percent' } });
+    await waitFor(() => expect(c2).toHaveBeenLastCalledWith({ ...settings, display: 'percent' }));
+    fireEvent.change(screen.getByLabelText('Series from'), { target: { value: 'rows' } });
+    await waitFor(() => expect(c2).toHaveBeenLastCalledWith({ ...settings, seriesFrom: 'rows' }));
+    cleanup(); store.disposeDashboard('d');
+});
+it('a refusal clears a drawn chart and shows a status line, not an alert', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'treasury_stock', revenue: -5 }]);
+    const { rerender } = render(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    await screen.findByTestId('figure');
+    rerender(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    await waitFor(() => expect(screen.queryByTestId('figure')).toBeNull());
+    expect(screen.getByText(/^Can't show shares of negative values: treasury_stock/)).toHaveAttribute('role', 'status');
+    expect(screen.queryByRole('alert')).toBeNull(); expect(screen.queryByText(/stale/)).toBeNull();
+    rerender(<LinkedChartRenderer {...withSettings(store, {})}/>);
+    await screen.findByTestId('figure'); expect(screen.queryByText(/^Can't show shares/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('a failed fetch after a refusal shows the load error, not the old refusal', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'treasury_stock', revenue: -5 }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    expect(await screen.findByText(/^Can't show shares of negative values/)).toBeTruthy();
+    store.readExecutor('d', 's')!.chartData = async () => { throw new Error('transport down'); };
+    await act(async () => { store.updateDefinition('d', 's', { table: {}, search: 'cash' }, { kind: 'none' }); await store.settled('d'); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('transport down');
+    expect(screen.queryByText(/^Can't show shares/)).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('pie with two measures says choose one as a status line', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie', measures: ['revenue', 'cost'] })}/>);
+    expect(await screen.findByText('Pie shows one measure — choose one')).toHaveAttribute('role', 'status');
+    expect(screen.queryByTestId('figure')).toBeNull(); expect(screen.queryByRole('alert')).toBeNull();
+    cleanup(); store.disposeDashboard('d');
+});
+it('missing values are listed under a drawn share chart', async () => {
+    const store = await setupRows([{ region: 'cash', revenue: 10 }, { region: 'inventory', revenue: null }]);
+    render(<LinkedChartRenderer {...withSettings(store, { type: 'pie' })}/>);
+    await screen.findByTestId('figure'); expect(screen.getByText(/^Missing: inventory/)).toBeTruthy();
+    cleanup(); store.disposeDashboard('d');
+});
+it('rows mode gives duplicate category values disambiguated names', async () => {
+    const store = await setup();
+    render(<LinkedChartRenderer {...withSettings(store, { seriesFrom: 'rows' })}/>);
+    await screen.findByTestId('figure'); const f = JSON.parse(screen.getByTestId('figure').textContent!);
+    expect(f.data).toHaveLength(1600); expect(f.data[0].name).toBe('A'); expect(f.data[1].name).toBe('A (2)');
+    cleanup(); store.disposeDashboard('d');
 });
