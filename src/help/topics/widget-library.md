@@ -86,7 +86,10 @@ key in **Settings ▸ Provider API Keys** re-probes — so a key you have just f
 recolours the library without a restart. A second (viewer) window never
 probes. With a **Key Maintenance** connection, the app sends a single request
 and the key service tests every provider at once, server-side; without one,
-the app tests a few vendors at a time itself, never blocking the window.
+the app tests a few vendors at a time itself, never blocking the window. It
+does not test a vendor whose key is optional (CFTC, EconDB): those answer with
+or without a key, so their badge stays plain unless a key service reports on
+the key.
 On the Key Maintenance path the colours are the results that service reports,
 and it only reports them from tier 2 up: below that every badge stays the plain
 outlined state no matter how many times you refresh.

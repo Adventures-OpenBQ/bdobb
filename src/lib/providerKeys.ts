@@ -134,6 +134,17 @@ export function needsKey(provider: string): boolean {
 }
 
 /**
+ * Registry providers whose key is optional: every route of theirs answers
+ * without one, so none ever says "Missing credential" and a per-widget probe
+ * could only read `keyed` or `unknown`, never the truth. The store does not
+ * probe them and the Library leaves them the plain badge unless key-maint,
+ * which tests the key itself, has a result. The stack's own list (key-maint's
+ * OPTIONAL_PROVIDERS, `auth: "optional"` in /providers.json). BLS is not in
+ * it: its series route requires the key.
+ */
+export const OPTIONAL_KEY_PROVIDERS: ReadonlySet<string> = new Set(["cftc", "econdb"]);
+
+/**
  * Only these three return JSON. Every other type returns a body `res.json()`
  * would throw on, and the probe would be misclassified as `unknown` instead
  * of skipped outright. `metric` cannot be dropped: a provider serving only
