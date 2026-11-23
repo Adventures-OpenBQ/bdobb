@@ -136,7 +136,8 @@ function calculate(input: WidgetDataset, definition: TableDefinition, selection:
         label: c.header,
         sourceFieldId: source?.sourceFieldId ?? c.source,
         aggregation: c.aggregation,
-        measureId: c.measureId,
+        // An implicit legacy measure is a source-field alias, not a new opaque instance.
+        measureId: config.measures === undefined && c.measureId === '' ? undefined : c.measureId,
         sourceBindingId: c.source,
         splitPath: splitKeys.length
           ? splitKeys.map((key, i) => member(key, lists.split[i], config.buckets?.[lists.split[i]]))

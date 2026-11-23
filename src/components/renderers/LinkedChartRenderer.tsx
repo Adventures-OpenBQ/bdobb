@@ -24,7 +24,7 @@ function withType(settings: LinkedChartSettings, type: LinkedChartSettings['type
         delete next.spaceRowsBy;
         delete next.spaceColumnsBy;
     }
-    if (type === 'surface' && !next.category && !next.measures.length) {
+    if (type === 'surface' && next.category === undefined && !next.measures.length) {
         const typed = hints.filter(c => offered.has(c.field));
         const axis = typed.find(c => c.chartDataType === 'time') ?? typed.find(c => c.chartDataType === 'category');
         const series = typed.filter(c => c.chartDataType === 'series').map(c => c.field);
@@ -163,13 +163,13 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
             }
             request = [LABEL_FIELD, ...requested.map(c => c.id)];
         } else {
-            const missing = [settings.category, ...settings.measures].filter((id): id is string => Boolean(id)).find(id => !available.has(id));
-            if (missing) {
+            const missing = [settings.category, ...settings.measures].filter((id): id is string => id !== undefined).find(id => !available.has(id));
+            if (missing !== undefined) {
                 setRefused(undefined);
                 setError(`Field ${missing} is unavailable. Repair chart fields.`);
                 return;
             }
-            if (!settings.category || !settings.measures.length) {
+            if (settings.category === undefined || !settings.measures.length) {
                 setRefused(undefined);
                 setError('Choose chart fields: select a category and numeric measures.');
                 return;
@@ -233,6 +233,12 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
     const order = offered.map(c => c.id);
     columns.forEach((c, i) => { if (!order.includes(c.id)) order.splice(order.indexOf(columns[i - 1]?.id) + 1, 0, c.id); });
     const fields = order.map(id => byId.get(id)!);
+    // DOM-only placeholder: every raw source key, including '', remains selectable.
+    // Include an unavailable saved key too, so it cannot collide with the placeholder.
+    const categoryValues = new Set(fields.map(c => c.id));
+    if (settings.category !== undefined) categoryValues.add(settings.category);
+    let noCategory = '__bdobb_choose_category__', categorySuffix = 0;
+    while (categoryValues.has(noCategory)) noCategory = `__bdobb_choose_category__${++categorySuffix}`;
     const pivoted = settings.type === 'surface' && isPivoted(offered);
     const values = reportValues(fields);
     // A report value: empty deletes the key. A new Height clears the ticked expiries, which belong to the old one (none ticked = all).
@@ -240,7 +246,7 @@ export function LinkedChartRenderer({ dashboardId, card, refreshKey, viewer = fa
         delete next[key]; void commit(next); }}><option value="">{lead}</option>{settings[key] && !values.some(v => v.id === settings[key]) ? <option value={settings[key]}>{settings[key]} (unavailable)</option> : null}{values.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></label>;
     const controls = <div className="chart-controls">
       <label>Chart type<select aria-label="Chart type" disabled={saving} value={settings.type} onChange={e => void commit(withType(settings, e.target.value as LinkedChartSettings['type'], hints, new Set(fields.map(c => c.id))))}><option value="column">Columns (vertical)</option><option value="bar">Bars (horizontal)</option><option value="line">Lines</option><option value="pie">Pie</option><option value="waterfall">Waterfall</option><option value="surface">Surface (3-D)</option></select></label>
-      {pivoted ? <>{valueSelect('height', 'Height', 'Choose height')}{valueSelect('spaceRowsBy', 'Space rows by', 'Default')}{valueSelect('spaceColumnsBy', 'Space columns by', 'Default')}</> : <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? ''} onChange={e => void commit({ ...settings, category: e.target.value || undefined })}><option value="">Choose category</option>{settings.category && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>}
+      {pivoted ? <>{valueSelect('height', 'Height', 'Choose height')}{valueSelect('spaceRowsBy', 'Space rows by', 'Default')}{valueSelect('spaceColumnsBy', 'Space columns by', 'Default')}</> : <label>Category<select aria-label="Category" disabled={saving} value={settings.category ?? noCategory} onChange={e => void commit({ ...settings, category: e.target.value === noCategory ? undefined : e.target.value })}><option value={noCategory}>Choose category</option>{settings.category !== undefined && !fields.some(c => c.id === settings.category) ? <option value={settings.category}>{settings.category} (unavailable)</option> : null}{fields.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select></label>}
       <MeasuresPicker disabled={saving} emptyMeansAll={pivoted} selected={settings.measures} onChange={measures => void commit({ ...settings, measures })} options={[...new Set([...(pivoted ? expiryColumns(fields, settings.height ?? '') : fields.filter(c => !c.dtype || c.dtype === 'number')).map(c => c.id), ...settings.measures])].map(id => { const field = fields.find(c => c.id === id); return field ? { id, label: pivoted && field.splitPath?.length ? field.splitPath.map(m => m.label ?? String(m.value)).join(' — ') : measureName(field) } : { id, label: `${id} (unavailable)`, unavailable: true }; })}/>
       {settings.type === 'column' || settings.type === 'bar' ? <label>Display<select aria-label="Display" disabled={saving} value={settings.display} onChange={e => void commit({ ...settings, display: e.target.value as LinkedChartSettings['display'] })}><option value="grouped">Grouped</option><option value="stacked">Stacked</option><option value="percent">100% stacked</option></select></label> : null}
       {settings.type !== 'pie' && settings.type !== 'waterfall' ? <label>Series from<select aria-label="Series from" disabled={saving} value={settings.seriesFrom ?? 'columns'} onChange={e => void commit({ ...settings, seriesFrom: e.target.value as 'columns' | 'rows' })}><option value="columns">Columns</option><option value="rows">Rows</option></select></label> : null}

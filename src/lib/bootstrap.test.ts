@@ -126,13 +126,13 @@ describe("bootstrap", () => {
   });
 
   it("leaves backends, dashboards and folders all loaded from disk", async () => {
+    __seed("backends.json", JSON.stringify([{ id: "saved", name: "Saved", baseUrl: "https://backend.example.invalid" }]));
     __seed("dashboards/z.json", dashboardFile("z", "Zeta"));
     __seed("folders.json", JSON.stringify({ ...makeEmptyFolders(), placement: { z: "f1" } }));
 
     await bootstrap();
 
-    // The fresh-install seed writes one backend; the dashboard and the
-    // placement come off the seeded files.
+    // All three stores restore the explicitly saved files.
     expect(useBackendsStore.getState().backends).toHaveLength(1);
     expect(useDashboardStore.getState().dashboards.map((d) => d.name)).toEqual(["Zeta"]);
     expect(useFoldersStore.getState().placement).toEqual({ z: "f1" });

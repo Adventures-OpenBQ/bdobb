@@ -198,6 +198,8 @@ type DashboardState = {
     tabId: string | null,
     widget: WidgetDef,
     paramsOverride?: Record<string, string>,
+    title?: string,
+    managedSource?: DashboardCard["managedSource"],
   ) => Promise<string | null>;
   addLinkedCard: (input: { dashboardId: string; tabId: string; sourceWidgetId: string; presentation: "table" | "chart" }) => Promise<string | null>;
   commitLinkedChartSettings: (dashboardId: string, cardId: string, settings: LinkedChartSettings) => Promise<boolean>;
@@ -1137,7 +1139,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
       });
     },
 
-    addCardTo: async (dashboardId, tabId, widget, paramsOverride) => {
+    addCardTo: async (dashboardId, tabId, widget, paramsOverride, title, managedSource) => {
+      if (dashboardId === null || removing.has(dashboardId)) return null;
       const dashboard = get().dashboards.find((d) => d.id === dashboardId);
       const tab = dashboard?.tabs.find((t) => t.id === tabId);
       if (!tab) return null;
@@ -1156,6 +1159,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
                     widgetId: widget.id,
                     backendId: widget.backendId,
                     params: { ...seedParams(widget), ...paramsOverride },
+                    ...(title !== undefined ? { title } : {}),
+                    ...(managedSource !== undefined ? { managedSource } : {}),
                     layout: {
                       x: 0,
                       y: nextY(t.cards),
@@ -1171,7 +1176,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => {
             : t,
         ),
       }));
-      return updated ? cardId : null;
+      return updated && get().dashboards.find(d => d.id === dashboardId)?.tabs
+        .find(t => t.id === tabId)?.cards.some(c => c.id === cardId) ? cardId : null;
     },
 
     // Delegates so the persist ordering lives in exactly one place; two copies

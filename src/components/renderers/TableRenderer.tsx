@@ -61,6 +61,7 @@ import { RawJsonView } from "./RawJsonView";
 import { FilterControl, filterFnFor, filterKindFor, type DateBounds } from "./TableFilterRow";
 import type { ResolveContext } from "../../lib/dateExpressions";
 import { filterDateContext, resolveDateFilters } from "../../lib/dateFilters";
+import { tableCellValue, tableDateDay } from "../../lib/tableFiltering";
 
 /**
  * Shallow. `b` is always the null-prototype map built below, so a field named
@@ -967,18 +968,21 @@ function VirtualTable({
   const dateBounds = useMemo(() => {
     const bounds = new Map<string, DateBounds>();
     const source = execution ? execution.boundsRows : rows;
-    if (!source) return bounds;
-    for (const [field, kind] of filterKinds) {
-      if (kind !== "date") continue;
-      const days = source
-        .map((r) => (Object.hasOwn(r, field) ? r[field] : undefined))
-        .filter((v): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v))
-        .map((v) => v.slice(0, 10))
-        .sort();
-      if (days.length > 0) bounds.set(field, { first: days[0], last: days[days.length - 1] });
+    if (!filterRow || !source) return bounds;
+    for (const column of columns) {
+      if (filterKinds.get(column.field) !== "date") continue;
+      let first: string | undefined;
+      let last: string | undefined;
+      for (const row of source) {
+        const day = tableDateDay(tableCellValue(row,column));
+        if (day === undefined) continue;
+        if (first === undefined || day < first) first = day;
+        if (last === undefined || day > last) last = day;
+      }
+      if (first !== undefined && last !== undefined) bounds.set(column.field,{first,last});
     }
     return bounds;
-  }, [execution, filterKinds, rows]);
+  }, [columns, execution, filterKinds, filterRow, rows]);
   /** Bumped by Clear, so every control starts again from its column -- a box
    * holding refused text has no applied filter for Clear to change. */
   const [clears, setClears] = useState(0);

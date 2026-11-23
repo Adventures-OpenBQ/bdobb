@@ -29,10 +29,12 @@ function dataset(v: unknown): void {
   optional(f, "lastSuccessAt", finite); optional(f, "error", text); optional(f, "diagnostics", x => array(x, text));
 }
 function scoped(v: Obj): void { if (!["input", "filtered", "selected", "presented"].includes(String(v.scope))) fail("Invalid scope"); cloneRecord(v.values); optional(v, "empty", bool); optional(v, "cellErrors", cellErrors); optional(v, "members", x => array(x, x => {const m = obj(x); str(m.key); text(m.label); cloneValue(m.value); count(m.count);})); }
-function columns(v: unknown): void { if (!Array.isArray(v)) fail("Expected columns"); v.forEach(x => { const c = obj(x); str(c.id); text(c.label); optional(c, "sourceFieldId", str); optional(c, "sourceBindingId", str); optional(c, "measureId", str); optional(c, "dtype", x => choice(x, ["text", "number", "boolean", "date", "dateString", "object"])); optional(c, "aggregation", x => choice(x, AGG_NAMES)); optional(c, "analytical", analyticalColumn); optional(c, "metadata", cloneRecord); optional(c, "splitPath", groupMembers); optional(c, "format", x => { const f = obj(x); optional(f, "formatterFn", x => choice(x, ["int", "none", "percent", "normalized", "normalizedPercent", "dateToYear"])); optional(f, "decimalPlaces", finite); }); }); }
+function columns(v: unknown): void { if (!Array.isArray(v)) fail("Expected columns"); v.forEach(x => { const c = obj(x); text(c.id); text(c.label); optional(c, "sourceFieldId", text); optional(c, "sourceBindingId", text); optional(c, "measureId", str); optional(c, "dtype", x => choice(x, ["text", "number", "boolean", "date", "dateString", "object"])); optional(c, "aggregation", x => choice(x, AGG_NAMES)); optional(c, "analytical", analyticalColumn); optional(c, "metadata", cloneRecord); optional(c, "splitPath", groupMembers); optional(c, "format", x => { const f = obj(x); optional(f, "formatterFn", x => choice(x, ["int", "none", "percent", "normalized", "normalizedPercent", "dateToYear"])); optional(f, "decimalPlaces", finite); }); }); }
 function dataRows(v: unknown): void { if (!Array.isArray(v)) fail("Expected rows"); v.forEach(x => { const r = obj(x); str(r.id); obj(r.values); optional(r, "groupPath", groupMembers); optional(r, "cellErrors", cellErrors); optional(r, "cellFormats", value => cellFormats(value, obj(r.values))); }); }
 
 function text(v: unknown): void { if (typeof v !== "string") fail("Expected string"); }
+// Source column names and their table selectors are literal JSON keys, not opaque IDs.
+function fieldNames(v: unknown): void { if (!Array.isArray(v)) fail("Expected field-name array"); v.forEach(text); }
 function bool(v: unknown): void { if (typeof v !== "boolean") fail("Expected boolean"); }
 function finite(v: unknown): void { if (typeof v !== "number" || !Number.isFinite(v)) fail("Expected finite number"); }
 function choice(v: unknown, choices: readonly unknown[]): void { if (!choices.includes(v)) fail("Invalid enumerated value"); }
@@ -53,10 +55,11 @@ function cloneValue(v: unknown, seen = new Set<object>()): void {
 function cloneRecord(v: unknown): void { obj(v); cloneValue(v); }
 function groupMembers(v: unknown): void {
   array(v, x => {
-    const g = obj(x); str(g.field);
+    const g = obj(x); text(g.field);
     if (!Object.hasOwn(g, "value")) fail("Missing group value");
     cloneValue(g.value);
-    for (const key of ["categoryId", "memberKey", "sourceBindingId"]) optional(g, key, str);
+    for (const key of ["categoryId", "memberKey"]) optional(g, key, str);
+    optional(g, "sourceBindingId", text);
     optional(g, 'transform', x => choice(x, ['native','Y','Q','M','FY','FQ']));
     optional(g, "label", text); optional(g, "bucket", x => choice(x, BUCKETS));
   });
@@ -100,13 +103,13 @@ function provenance(v: unknown): void {
 }
 function table(v: unknown): void {
   const t = obj(v);
-  for (const key of ["columnOrder", "hidden"]) optional(t, key, strings);
-  optional(t, "sorting", x => array(x, x => { const s = obj(x); str(s.id); bool(s.desc); }));
-  optional(t, "columnFilters", x => array(x, x => { const f = obj(x); str(f.id); if (!Object.hasOwn(f, "value")) fail("Missing filter value"); }));
+  for (const key of ["columnOrder", "hidden"]) optional(t, key, fieldNames);
+  optional(t, "sorting", x => array(x, x => { const s = obj(x); text(s.id); bool(s.desc); }));
+  optional(t, "columnFilters", x => array(x, x => { const f = obj(x); text(f.id); if (!Object.hasOwn(f, "value")) fail("Missing filter value"); }));
   optional(t, "widths", x => record(x, finite));
   optional(t, "pinned", x => record(x, x => choice(x, [null, "left", "right"])));
   optional(t, "pivot", x => {
-    const p = obj(x); bool(p.enabled); strings(p.grouping); strings(p.split);
+    const p = obj(x); bool(p.enabled); fieldNames(p.grouping); fieldNames(p.split);
     optional(p, "expanded", x => { if (x !== true) record(x, bool); });
     optional(p, "legacyExpanded", x => record(x, bool));
     optional(p, "keyEncoding", x => choice(x, ["typed-v1"]));
@@ -114,7 +117,7 @@ function table(v: unknown): void {
     optional(p, "measures", x => {
       const ids = new Set<string>();
       array(x, value => {
-        const m = obj(value); str(m.id); str(m.sourceFieldId);
+        const m = obj(value); str(m.id); text(m.sourceFieldId);
         if (ids.has(m.id)) fail("Duplicate measure ID");
         ids.add(m.id);
         optional(m, "aggregation", value => choice(value, AGG_NAMES));
@@ -220,7 +223,7 @@ export function validateExecutionRequest(raw: unknown): ExecutionRequest {
     }
     case "rows": { const r = obj(v.request); strings(r.groupPath); count(r.offset); count(r.limit); break; }
     case "facets": str(v.categoryId); break;
-    case "chartData": strings(v.fields); break;
+    case "chartData": fieldNames(v.fields); break;
     case "presented": str(v.transferId); optional(v, "ignoreSelection", bool); break;
     case "cancel": str(v.targetRequestId); break;
     case "inspect": inspectionRequest(v); break;

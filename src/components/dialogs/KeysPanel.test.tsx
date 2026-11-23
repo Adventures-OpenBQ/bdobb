@@ -115,6 +115,17 @@ beforeEach(() => {
 });
 
 describe("KeysPanel", () => {
+  it("cancels an in-flight provider status read on unmount", async () => {
+    connectKeyMaint();
+    fetchWidgetData.mockReturnValueOnce(new Promise(() => {}));
+    const view = render(<KeysPanel backendId="km" />);
+    await waitFor(() => expect(fetchWidgetData).toHaveBeenCalledTimes(1));
+    const signal = fetchWidgetData.mock.calls[0][5]?.signal;
+
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("renders nothing, and fetches nothing, when its backend serves no keys widget", () => {
     useBackendsStore.setState({ backends: [keysBackend], statuses: {} });
     const { container } = render(<KeysPanel backendId="km" />);

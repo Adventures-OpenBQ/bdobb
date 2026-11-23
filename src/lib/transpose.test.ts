@@ -27,6 +27,16 @@ describe("transposeRows", () => {
     });
   });
 
+  it("round-trips numeric and object cells under a __proto__ header", () => {
+    const out = transposeRows([{ key: "__proto__", amount: 42, details: { note: "original" } }])!;
+    expect(out.columns).toEqual(["Field", "__proto__"]);
+    expect(out.rows.every((row) => Object.hasOwn(row, "__proto__"))).toBe(true);
+    expect(JSON.parse(JSON.stringify(out.rows))).toEqual([
+      { Field: "amount", ["__proto__"]: 42 },
+      { Field: "details", ["__proto__"]: { note: "original" } },
+    ]);
+  });
+
   it("takes the column union in first-seen order, filling holes with undefined", () => {
     const out = transposeRows([{ k: "a", x: 1 }, { k: "b", y: 2 }]);
     expect(out).toEqual({

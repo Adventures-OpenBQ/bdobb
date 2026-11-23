@@ -14,8 +14,10 @@ test('ordinary text counts reach actual worker linked chart as numeric measures'
   await root.getByRole('button', { name: 'Card menu' }).click();
   await page.getByRole('menuitem', { name: 'Create linked chart', exact: true }).click();
   const chart = page.locator('.linked-chart-renderer');
-  await chart.getByLabel('Category', { exact: true }).selectOption({ label: 'region' });
-  await tickChartMeasures(page, chart, 'team — Count', 'team — Unique Count');
+  const chartCard = page.locator('.widget-card').filter({ has: chart });
+  await chartCard.getByRole('button', { name: 'Show parameters', exact: true }).click();
+  await chartCard.getByLabel('Category', { exact: true }).selectOption({ label: 'region' });
+  await tickChartMeasures(page, chartCard, 'team — Count', 'team — Unique Count');
   await expect(chart.locator('.js-plotly-plot')).toHaveCount(1);
   await expect.poll(() => chart.locator('.js-plotly-plot').evaluate(el => (el as unknown as { data: { y: number[] }[] }).data.map(t => t.y))).toEqual([[2, 1], [2, 1]]);
 });

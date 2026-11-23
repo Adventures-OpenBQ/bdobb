@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+exec python3 security/gate.py staged

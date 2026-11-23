@@ -1,0 +1,98 @@
+[
+  {
+    "path": "security/gate.py",
+    "rule": "private-ip",
+    "line_sha256": "839c0e52d4efea3fa60e4eaa23c8ec45d0b812e9cd17645668e194224c0755e9",
+    "reason": "Reserved network range definition in scanner"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-tailnet",
+    "line_sha256": "ad636af3eefd170d6499901c84b1d000b406655f78c54f754fad00d157a829fe",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "5b8b349eb916eddfa0ac39c55db1b4d902ed59767ed71d0e2f92e407995d13be",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "0ac804d9764ae0e107fef27e734366e89ae359e4344e4850a1610ba70ff793e9",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "4ef714dfd8245c004c324d446a22194a7c5123e6570d298f0fa857d2345c9e34",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "9118b97ca56d07957c45aaf639840d1511f1a7d64c3c404409ca27647ccc1736",
+    "reason": "Intentional synthetic input in scanner regression tests; no operator endpoint"
+  },
+  {
+    "path": "src/components/WidgetLibrary.test.tsx",
+    "rule": "private-ip",
+    "line_sha256": "02ec48876b24072a8b551b65e211ed536d1620012f2bb5258257c1f15bb2b60a",
+    "reason": "Synthetic address in a unit test for private network handling"
+  },
+  {
+    "path": "deploy/review-backend/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "51af557800988ef838c7c413efba167d76d203abd34faec68da1ce45a421159f",
+    "reason": "Example public hostname with an X placeholder"
+  },
+  {
+    "path": "docs/releases/validation/v3-repair/dashboard-sync-2026-10-11/README.md",
+    "rule": "private-tailnet",
+    "line_sha256": "cdf7c8b1bfab79828de75320d952a067b17e244829d36a5fc8d33acd666c2a24",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.sh",
+    "rule": "private-tailnet",
+    "line_sha256": "ae6455e9d7bc89609965666cd373a683c39afce388448612e2ec67255a2704b4",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "scripts/scrub-check.test.mjs",
+    "rule": "private-tailnet",
+    "line_sha256": "7747394ff3880ec318ea811146964887cb72a95345dc34d134da7248b6676c7e",
+    "reason": "Schematic MagicDNS pattern description in scanner documentation or test commentary; not an assigned operator hostname."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "178e50b537d69cf7811f4d458aba8108f929c79b53cf4ca8d3c35c6520817894",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "security/test_gate.py",
+    "rule": "private-ip",
+    "line_sha256": "d2be38a14771535c06435013999c62f5cb33915b6044a7b6fd1711c1c251609c",
+    "reason": "Synthetic privacy-gate refusal control deliberately injects a deterministic private IP into a test tar and requires it to be blocked; no operator endpoint."
+  },
+  {
+    "path": "frontend/assets/xlsx-DBvuKzsv.js.map",
+    "rule": "private-ip",
+    "line_sha256": "d1c549421cfef43fa82f2e4b6f5df3a83789d085c6f1c26568b9f6d96cc3b3e6",
+    "reason": "Exact V4 compiled source-map line contains byte-identical checksum-verified official SheetJS0.20.3 xlsx.mjs; sole private-IP shape is the public OpenDocument10.4.6.2 specification section in draw:object parser comment. Exact path and full normalized line only; all credential and other privacy rules remain scanned."
+  },
+  {
+    "path": "frontend/assets/xlsx-DT5WGBCc.js.map",
+    "rule": "private-ip",
+    "line_sha256": "c55e9c2d2167b80c4e38e8da6d38dc5688ea88bc0d95f124900993a44210302f",
+    "reason": "Exact V4 compiled source-map line contains byte-identical checksum-verified official SheetJS0.20.3 xlsx.mjs; sole private-IP shape is the public OpenDocument10.4.6.2 specification section in draw:object parser comment. Exact path and full normalized line only; all credential and other privacy rules remain scanned."
+  }
+]

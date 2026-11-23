@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test, type Page } from "@playwright/test";
-import { DEFAULT_CARDS, seedCards } from "./fixtures";
+import { DEFAULT_CARDS, defaultSeed, read, seedCards } from "./fixtures";
 
 /** Every /committees request the page made, in order, as its chamber value. */
 function trackCommitteeRequests(page: Page): string[] {
@@ -14,6 +14,18 @@ function trackCommitteeRequests(page: Page): string[] {
     }
   });
   return seen;
+}
+
+/** Put row-zero controls in the opened panel before testing its layout. */
+async function openParametersPanel(page: Page, title: string) {
+  const card = page.locator(".widget-card").filter({ hasText: title });
+  await expect(card.getByRole("region", { name: "Parameters", exact: true })).toHaveCount(0);
+  await card.getByRole("button", { name: "Show parameters", exact: true }).click();
+  const panel = card.getByRole("region", { name: "Parameters", exact: true });
+  await expect(panel).toBeVisible();
+  await panel.getByRole("checkbox", { name: "Display on title bar", exact: true }).uncheck();
+  await expect(panel.locator(".param-field").first()).toBeVisible();
+  return panel;
 }
 
 test("the committee options follow the chamber selection, fetched exactly once per chamber", async ({
@@ -65,10 +77,9 @@ test("the Parameters panel lays its fields out as a grid on a wide card", async 
       backendId: "b1",
       params: { chamber: "house", committee: "wm" },
       layout: { x: 0, y: 0, w: 40, h: 12 },
-      paramsOpen: true,
     },
   ]);
-  const panel = page.locator(".widget-card").filter({ hasText: "Congress Committees" }).getByRole("region", { name: "Parameters" });
+  const panel = await openParametersPanel(page, "Congress Committees");
   const fields = panel.locator(".param-field");
   await expect(fields).toHaveCount(2);
   const [a, b] = [await fields.nth(0).boundingBox(), await fields.nth(1).boundingBox()];
@@ -85,10 +96,9 @@ test("in the Parameters panel a date's box, picker chip and ◷ badge stay on on
       backendId: "b1",
       params: { symbol: "AAPL", trade: "T-1bd" },
       layout: { x: 0, y: 0, w: 20, h: 12 },
-      paramsOpen: true,
     },
   ]);
-  const panel = page.locator(".widget-card").filter({ hasText: "Calendar Table" }).getByRole("region", { name: "Parameters" });
+  const panel = await openParametersPanel(page, "Calendar Table");
   const entry = panel.locator(".param-entry").filter({ has: page.locator(".param-badge-expr") });
   const input = await entry.locator(".param-expr-input").boundingBox();
   const badge = await entry.locator(".param-badge-expr").boundingBox();
@@ -105,10 +115,9 @@ test("on a narrow card no Parameters panel entry spills out of its cell or the p
       backendId: "b1",
       params: { symbol: "AAPL", trade: "T-1bd" },
       layout: { x: 0, y: 0, w: 9, h: 12 },
-      paramsOpen: true,
     },
   ]);
-  const panel = page.locator(".widget-card").filter({ hasText: "Calendar Table" }).getByRole("region", { name: "Parameters" });
+  const panel = await openParametersPanel(page, "Calendar Table");
   const box = await panel.boundingBox();
   for (const field of await panel.locator(".param-field").all()) {
     const cell = await field.boundingBox();
@@ -122,7 +131,7 @@ test("on a narrow card no Parameters panel entry spills out of its cell or the p
   }
 });
 
-test("a widget's parameter rows stack on the title line (OpenBB parameter positioning)", async ({ page }) => {
+test("only row zero stays on the title while later parameter rows persist in the panel", async ({ page }, info) => {
   // The mock backend's congress widget declares a flat list; here its second
   // param is moved into a nested array, which is row 1.
   await page.route("**/widgets.json", async (route) => {
@@ -143,10 +152,33 @@ test("a widget's parameter rows stack on the title line (OpenBB parameter positi
     },
   ]);
   const card = page.locator(".widget-card").filter({ hasText: "Congress Committees" });
-  const chamber = (await card.getByLabel("Chamber", { exact: true }).boundingBox())!;
-  const committee = (await card.getByLabel("Committee", { exact: true }).boundingBox())!;
-  // Row 1 starts a line of its own, under row 0 and from the same left edge.
+  const title = card.locator(".card-chips");
+  const panel = card.getByRole("region", { name: "Parameters", exact: true });
+  const savedCard = async () => JSON.parse((await read(page, "dashboards/d1.json"))!).tabs[0].cards.find((c: { id: string }) => c.id === "c-congress");
+  await expect(title.getByLabel("Chamber", { exact: true })).toHaveValue("house");
+  await expect(title.getByLabel("Committee", { exact: true })).toHaveCount(0);
+  await expect(panel).toHaveCount(0);
+  await card.getByRole("button", { name: "Show parameters", exact: true }).click();
+  await expect(panel.getByLabel("Committee", { exact: true })).toHaveValue("wm");
+  await expect(panel.getByLabel("Chamber", { exact: true })).toHaveCount(0);
+  await expect(card.getByLabel("Chamber", { exact: true })).toHaveCount(1);
+  await expect(card.getByLabel("Committee", { exact: true })).toHaveCount(1);
+  const chamber = (await title.getByLabel("Chamber", { exact: true }).boundingBox())!;
+  const committee = (await panel.getByLabel("Committee", { exact: true }).boundingBox())!;
   expect(committee.y).toBeGreaterThanOrEqual(chamber.y + chamber.height);
-  expect(Math.abs(committee.x - chamber.x)).toBeLessThan(30);
-  await card.screenshot({ path: "e2e-results/param-rows.png" });
+  await expect.poll(async () => (await savedCard()).paramsOpen).toBe(true);
+  await card.getByRole("button", { name: "Hide parameters", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(title.getByLabel("Chamber", { exact: true })).toHaveValue("house");
+  await expect.poll(async () => (await savedCard()).paramsOpen).toBeUndefined();
+  await card.getByRole("button", { name: "Show parameters", exact: true }).click();
+  await expect.poll(async () => (await savedCard()).paramsOpen).toBe(true);
+  const persisted = (await read(page, "dashboards/d1.json"))!;
+  await page.addInitScript(seed => { window.__bdobbSeed = seed; }, { ...defaultSeed(), "dashboards/d1.json": persisted });
+  await page.reload();
+  await expect(card.getByRole("button", { name: "Hide parameters", exact: true })).toBeVisible();
+  await expect(panel.getByLabel("Committee", { exact: true })).toHaveValue("wm");
+  await expect(panel.getByLabel("Chamber", { exact: true })).toHaveCount(0);
+  await expect(title.getByLabel("Chamber", { exact: true })).toHaveValue("house");
+  await card.screenshot({ path: info.outputPath("parameter-rows-persisted.png") });
 });

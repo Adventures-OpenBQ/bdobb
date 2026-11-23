@@ -5,6 +5,8 @@
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
+!patches/
+!patches/@tanstack__table-core@8.21.3.patch
 !LICENSE
 !NOTICE
 !THIRD_PARTY_NOTICES.md
@@ -28,3 +30,26 @@ src/**/generated
 !deploy/table-service/
 !deploy/table-service/Dockerfile
 !deploy/table-service/healthcheck.mjs
+
+# Shared secret exclusions: apply to every build context.
+**/.git
+**/.git/**
+**/.worktrees
+**/.claude
+**/.codegraph
+**/node_modules
+**/.venv
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+**/.env
+**/.env.*
+**/*.env
+**/credentials.env
+**/ts-state*
+**/kdb-license
+**/*.p12
+**/*.pfx
+**/*.key
+**/scrub-private-patterns.txt
+**/*.log
