@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "67e328a7958d512110bb0e81dc197ec5b3536fb1",
-  "sourceId": "9a1a020e5be53c2279ef2e98fc48d12e87cbbaf987342d77a715e1cd3fbbd798",
+  "baseCommit": "11a54b338930f9429c5e35c2c0bc572e5853780e",
+  "sourceId": "a2520b860843e562ad9357ad3f7506ee216913f940aabe49875d024bfecce3ba",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -3793,8 +3793,8 @@
       "path": "crates/pivot-core/src/pivot.rs",
       "type": "file",
       "mode": 420,
-      "size": 33095,
-      "sha256": "f3e2be5438072c73addba97f682a2a96911af8670627f80f4f6a6368293831be"
+      "size": 33303,
+      "sha256": "895716554f11af2d0f30ce942cffd57044d5a15aa87243e6be18358ab59d046f"
     },
     {
       "path": "crates/pivot-core/src/provider_contract.rs",
@@ -3884,8 +3884,8 @@
       "path": "crates/pivot-core/src/session/validation.rs",
       "type": "file",
       "mode": 420,
-      "size": 7904,
-      "sha256": "40f5340de5e39682ba7e92a49b04563fa2891e5103e6d2a3a75b7a8a9a2f98e7"
+      "size": 7914,
+      "sha256": "b450143d7ad1756e73e881fbf259755f20742d648647046bbb9c7e9f95a0dcbc"
     },
     {
       "path": "crates/pivot-core/src/session.rs",
@@ -3933,8 +3933,8 @@
       "path": "crates/pivot-core/src/validation.rs",
       "type": "file",
       "mode": 420,
-      "size": 22087,
-      "sha256": "7fff421071c6dabc2819608b694235d75062e4f399930e737872882fd6dd3ea7"
+      "size": 22104,
+      "sha256": "6f709a1b04f2339c1b57667f534a4a3b252f07f296e9d5e282ee28c2f2b0c2db"
     },
     {
       "path": "crates/pivot-core/src/witness.rs",
@@ -3991,6 +3991,13 @@
       "mode": 420,
       "size": 6255,
       "sha256": "565dc3bef68b2094fa398b0ac7f8d20132a6ff66bf13d94ad5374a17b50a0ebe"
+    },
+    {
+      "path": "crates/pivot-core/tests/raw_fields.rs",
+      "type": "file",
+      "mode": 420,
+      "size": 13651,
+      "sha256": "9ccdf9cef86ef3bff9970b98681a83d2c2780b0b54fa26f04e068a6346797a70"
     },
     {
       "path": "crates/pivot-core/tests/resources.rs",
@@ -4395,8 +4402,8 @@
       "path": "crates/table-service/src/ingest.rs",
       "type": "file",
       "mode": 420,
-      "size": 14521,
-      "sha256": "5583525823272e199b5bf07d24de1bf1c8f3a8b58297fbe14f434070b470a4b7"
+      "size": 15724,
+      "sha256": "2adae1c1d16e1b16209e42bee12f15ef348ab1c08f4a9ceefacc57c475e1d345"
     },
     {
       "path": "crates/table-service/src/lib.rs",
@@ -9988,8 +9995,15 @@
       "path": "e2e/fixtures/rust-pivot-harness.tsx",
       "type": "file",
       "mode": 420,
-      "size": 8540,
-      "sha256": "3deceb6f97bb2bbd0553f7836229db89a80fec6823d88356db882d5b160708f4"
+      "size": 8574,
+      "sha256": "016cbc71ccf80030e8effd23927bb86d8a31d2b0a1a89482f6b1c1ea78a0b4d6"
+    },
+    {
+      "path": "e2e/fixtures/rust-pivot-raw-fields.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 4537,
+      "sha256": "723b85513d5f5d16bb73320c858edd96dc75f3dc64a94ef232a38d2544934a3a"
     },
     {
       "path": "e2e/fixtures/rust-pivot-resources.ts",
@@ -10223,6 +10237,13 @@
       "sha256": "d2d7b477ddfe79f214cdcba5f97d9c56b0da01b85b8c003042f4855acd57552a"
     },
     {
+      "path": "e2e/raw-source-fields.spec.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 8518,
+      "sha256": "d0fd51683fe92e37bfce3aafde97f2549f368a9dde8d972aab942e0f63ee9a12"
+    },
+    {
       "path": "e2e/reference-acceptance.spec.ts",
       "type": "file",
       "mode": 420,
@@ -10254,8 +10275,8 @@
       "path": "e2e/rust-pivot.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 7813,
-      "sha256": "06d12a525c08271c80d7ed455aad3e1039f00e42a7ce0d1423615f23d639b96b"
+      "size": 8763,
+      "sha256": "8f495762c313100241849b71c13a999bffb4792b99246579a705ad39663ff8a5"
     },
     {
       "path": "e2e/sec-linked-persistence.spec.ts",
@@ -11578,7 +11599,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "7d43f94aefa6f00ffe05c80a58704048cdd8fadd6c1356062ea43543e523400e"
+      "sha256": "e852794445501a95a3563b8867663461c1066e2e2d72fdba6992219da11d048f"
     },
     {
       "path": "source_bundle.py",
@@ -16281,8 +16302,8 @@
       "path": "src/lib/tableExecution/engine.ts",
       "type": "file",
       "mode": 420,
-      "size": 22529,
-      "sha256": "c20b05511c41ef1788f669733e52f59b7f26c93988c6abc53a7f367a7730044e"
+      "size": 22685,
+      "sha256": "67fd6edf7fd8526d6418082d7df92900b6e4d9e2f04a1b2a55795279468516fd"
     },
     {
       "path": "src/lib/tableExecution/finalReview.test.ts",
@@ -16337,8 +16358,8 @@
       "path": "src/lib/tableExecution/identityWitness.ts",
       "type": "file",
       "mode": 420,
-      "size": 2941,
-      "sha256": "cc19e6e1ee4a3c17e981532f6a5037e9295d265c38b582b823c127ad199c5dc0"
+      "size": 2967,
+      "sha256": "5fdf52e50a943397e3ca5658f3ead91e367d4d10ad9a36c58dfe8f8cb4ee230d"
     },
     {
       "path": "src/lib/tableExecution/inspection.test.ts",
@@ -16750,15 +16771,15 @@
       "path": "src/lib/tableExecution/validation.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 14091,
-      "sha256": "ddb3ccb4aa712b3e8b951bec1a38353a3daf0bc8caaef7a5ec284335644fe83f"
+      "size": 14129,
+      "sha256": "c43d68bb186b96960495945fe52b7ff75a8ed3d1973fc8edafa9f30eb1406a17"
     },
     {
       "path": "src/lib/tableExecution/validation.ts",
       "type": "file",
       "mode": 420,
-      "size": 29253,
-      "sha256": "2522c9cee05b85fb0cfc1105df55cb7eee2e50f8cbe5a62d8249fcc178f03e3c"
+      "size": 29500,
+      "sha256": "7ef0e1b87264d7d16e2d1047cfb3a7c17719edf14f086a61f9fae2d4e3be0d08"
     },
     {
       "path": "src/lib/tableExecution/workerClient.test.ts",
@@ -17606,6 +17627,13 @@
       "mode": 420,
       "size": 27323,
       "sha256": "c1550b84785e61528da3bbff09b42f4c5a41d07753433c4637447c99478c741a"
+    },
+    {
+      "path": "src/stores/tableExecutionStore.emptySourceFields.test.ts",
+      "type": "file",
+      "mode": 420,
+      "size": 11589,
+      "sha256": "e2409ab69832f9f0d7f3c3ee1d44862a5d63acf779e20dc2504696d45be3269a"
     },
     {
       "path": "src/stores/tableExecutionStore.managed.test.ts",
