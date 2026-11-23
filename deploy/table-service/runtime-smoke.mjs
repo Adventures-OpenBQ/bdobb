@@ -3,15 +3,22 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-import {mkdtemp,rm,writeFile,readFile,readdir} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {mkdtemp,rm,writeFile,readFile,readdir,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {fields as rawFields,rows as rawRows,ordinaryTable,plain,result as wireResult} from './raw-field-contract.mjs';
 if(process.platform !== 'linux')throw new Error('This smoke requires real Linux worker containment');
 const {TABLE_SMOKE_GATEWAY,TABLE_SMOKE_SERVICE,TABLE_SMOKE_WORKER,TABLE_SMOKE_INGEST}=process.env;
 if(!TABLE_SMOKE_GATEWAY || !TABLE_SMOKE_SERVICE || !TABLE_SMOKE_WORKER || !TABLE_SMOKE_INGEST)throw new Error('Set TABLE_SMOKE_GATEWAY (canonical server.mjs), TABLE_SMOKE_SERVICE, TABLE_SMOKE_WORKER and TABLE_SMOKE_INGEST absolute paths');
 const {createGateway}=await import(pathToFileURL(resolve(TABLE_SMOKE_GATEWAY)).href);
-const dir=await mkdtemp(join(tmpdir(),'table-gateway-smoke-'));
+const dataRoot=process.env.TABLE_SMOKE_DATA_ROOT;
+assert.equal(dataRoot,'/var/lib/table-service');
+const dataInfo=await stat(dataRoot);assert.equal(dataInfo.uid,10001);assert.equal(dataInfo.gid,10001);assert.equal(dataInfo.mode&0o777,0o700);
+const sourceManifest=JSON.parse(await readFile('/app/source.json','utf8'));
+assert.equal(sourceManifest.revision,'6c17f0f31af8dedd8ecf903719f8c8953035e43a');
+assert.equal(sourceManifest.tree,'54b8f50e0a01c06f604919c7e104759ae273ae22');
+assert.equal(sourceManifest.sourceArchiveSha256,'46af7695bef5bbb8cc874e796b3ccca2fa22176efe98d5b83f3786c4f4710787');
+const dir=await mkdtemp(join(dataRoot,'table-gateway-smoke-'));
 const servicePort=Number(process.env.TABLE_SMOKE_PORT ?? 18080);
 const token='task10_shared_test_bearer_credential_12345', relay='task10_private_relay_credential_123456789', serviceToken='task10_private_service_credential_1234567';
 const config={listen:`127.0.0.1:${servicePort}`,catalog_path:dir+'/durable-sources',catalog:{limits:{max_parse_bytes:8388608,max_upload_bytes:1048576,max_row_block_rows:2},backend_widgets:{}},auth:{desktop_tokens:{},gateway_token:serviceToken},ingestion:{node:process.execPath,entry:resolve(TABLE_SMOKE_INGEST),backend_config:null,max_concurrent_children:1,max_child_heap_mb:128},worker:{executable:resolve(TABLE_SMOKE_WORKER),memory_budget_bytes:536870912,max_frame_bytes:8392704,max_starting_workers:2},runtime:{compute_workers:2,max_admitted_jobs:4,max_http_requests:4}};
@@ -45,6 +52,41 @@ try{
  assert.ok(Math.abs(dateRow.values.ln.value-Math.log(1099))<1e-12);
  assert.ok(Math.abs(dateRow.values.sqrt.value-Math.sqrt(1099))<1e-12);
  check(await call(`/sessions/${dated.sessionId}`,'DELETE'));check(await call(`/sources/${dates.sourceId}`,'DELETE'));
+ // Actual JSON upload -> Node ingestion -> Linux Rust worker -> HTTP result/derive/chart.
+ const rawUpload=check(await call('/sources/uploads','POST',JSON.stringify(rawRows()),'github:42',{'Content-Type':'application/json','Idempotency-Key':'raw-fields-'+Date.now(),'X-Upload-Filename':'own-keys.json'}));
+ const rawOpen={sourceId:rawUpload.sourceId,protocolVersion:1,widgetId:'raw-source',locale:'en-US',inputRevision:1};
+ const rawSession=check(await call('/sessions','POST',rawOpen));
+ async function rawCommand(session,widget,input,request,withResult=false){
+  return await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,...(withResult?{resultId:session.resultId}:{}),wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{requestId:'raw-'+request.kind,revision:{widgetId:widget,input,model:1,output:1},...request}})});
+ }
+ const rawApply=check(await rawCommand(rawSession,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:ordinaryTable(),search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}));
+ assert.equal(wireResult(rawApply).kind,'viewReady');
+ assert.equal(wireResult(rawApply).topLevelCount.value,2);
+ const rawBatch=wireResult(check(await rawCommand(rawApply,'raw-source',1,{kind:'presented',transferId:'raw-source-export',ignoreSelection:false},true)));
+ assert.equal(rawBatch.kind,'subset');assert.equal(rawBatch.final,true);
+ assert.deepEqual(rawBatch.columns.map(c=>c.id),['','__proto__','hasOwnProperty','category','day','hover','m1','m2']);
+ assert.deepEqual(rawBatch.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(rawBatch.rows.map(r=>plain(r.values.__proto__)),[102,302]);
+ const rawChart=wireResult(check(await rawCommand(rawApply,'raw-source',1,{kind:'chartData',fields:['','category','m1','m2']},true)));
+ assert.deepEqual(rawChart.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(rawChart.rows.map(r=>plain(r.values.m1)),[100,300]);
+ const rawChild=check(await call(`/sessions/${rawApply.sessionId}/derive`,'POST',{parent:{sessionId:rawApply.sessionId,sourceSnapshotId:rawApply.sourceSnapshotId,resultId:rawApply.resultId},revision:{widgetId:'raw-source',input:1,model:1,output:1},requestId:'raw-derive',protocolVersion:1,widgetId:'raw-child',inputRevision:7,locale:'en-US'}));
+ const rawChildApplied=await apply(rawChild,'raw-child',7);
+ const childChart=wireResult(check(await rawCommand(rawChildApplied,'raw-child',7,{kind:'chartData',fields:['','hasOwnProperty','__proto__','m1','m2']},true)));
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values.hasOwnProperty)),[100,300]);
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values.__proto__)),[102,302]);
+ // Opaque identities stay strict; do not accept server errors as successful rejection.
+ async function rejected(value){
+  assert.equal(value.status,400);
+  assert.equal(value.json.error.code,'invalid_input');
+ }
+ await rejected(await rawCommand(rawApply,'raw-source',1,{kind:'inputSchema',requestId:''},true));
+ await rejected(await call('/sessions','POST',{...rawOpen,widgetId:''}));
+ await rejected(await rawCommand(rawApply,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:{pivot:{enabled:true,grouping:[],split:[],measures:[{id:'',sourceFieldId:'',aggregation:'sum'}]}},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]},true));
+ check(await call(`/sessions/${rawChildApplied.sessionId}`,'DELETE'));
+ check(await call(`/sessions/${rawApply.sessionId}`,'DELETE'));
+ check(await call(`/sources/${rawUpload.sourceId}`,'DELETE'));
  const upload=check(await call('/sources/uploads','POST','x,y\n1,a\n2,b\n3,c\n4,d\n5,e\n','github:42',{'Content-Type':'text/csv','Idempotency-Key':'task10-'+Date.now(),'X-Upload-Filename':'smoke.csv'}));
  const open={sourceId:upload.sourceId,protocolVersion:1,widgetId:'widget',locale:'en-US',inputRevision:1};
  check(await call('/sessions','POST',open,'github:43'),404);
@@ -65,5 +107,5 @@ try{
  const reopened=check(await call('/sessions','POST',open));const reapplied=await apply(reopened);assert.equal(JSON.parse(reapplied.wire).response.topLevelCount.value,5);
  check(await call('/sessions','POST',open,'github:43'),404);
  check(await call(`/sessions/${reopened.sessionId}`,'DELETE'));check(await call(`/sources/${upload.sourceId}`,'DELETE'));
- console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,advertisedScalarFunctions:['LN','SQRT'],nativeScalarValues:true,invalidBoundDateBlocked:true,unrelatedSumPreserved:1099,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
+ console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,rawFields:{uploadedRows:3,uploadedColumns:rawFields.length,filteredEmptyValues:[101,301],prototypeValues:[102,302],linkedEmptyValues:[101,301],chartM1:[100,300],opaqueRequestWidgetMeasureIdsRejected:true},advertisedScalarFunctions:['LN','SQRT'],nativeScalarValues:true,invalidBoundDateBlocked:true,unrelatedSumPreserved:1099,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
 }finally{if(gateway)gateway.closeGateway();if(service)await stop();await rm(dir,{recursive:true,force:true});}

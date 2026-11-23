@@ -116,7 +116,7 @@ class RetentionTests(unittest.TestCase):
                 self.assertEqual(json.loads(error.getvalue())['status'], 'QA_RETENTION_FAILED')
 
     def test_targets_and_official_age_pins_are_exact(self):
-        self.assertEqual(set(qa.TARGETS),{'mac-arm','mac-intel','table-amd64'})
+        self.assertEqual(set(qa.TARGETS),{'mac-arm','mac-intel','table-amd64','table-final-amd64','table-final-arm64'})
         self.assertEqual(len(qa.TARGETS['mac-arm']['files']),2);self.assertEqual(len(qa.TARGETS['table-amd64']['files']),1)
         self.assertEqual(qa.AGE['darwin-arm64']['binary_size'],6502258)
         self.assertEqual(qa.AGE['darwin-amd64']['binary_size'],6978992)
@@ -139,4 +139,43 @@ class RetentionTests(unittest.TestCase):
             root=Path(temporary).resolve();cipher=root/'qa-blocked-v4-mac-intel.tar.age';cipher.write_bytes(b'age-encryption.org/v1\nsynthetic ciphertext')
             r=qa.make_receipt('mac-intel',[{'filename':'BDOBB_4.0.0_x64.dmg','size':1,'sha256':'a'*64}],cipher,'b'*40,'package-scan')
             self.assertEqual(r['qualification_state'],'FAILED/BLOCKED');self.assertEqual(r['retention_days'],1);self.assertIsNone(r['image_identity']);self.assertNotIn('synthetic ciphertext',json.dumps(r));self.assertNotIn('AGE-SECRET-KEY',json.dumps(r))
+class FinalTableRetentionTests(unittest.TestCase):
+    def test_old_scope_stays_old_and_new_scopes_bind_product_offer_and_native_arch(self):
+        self.assertEqual(qa.TARGETS['table-amd64']['source'],'b963af1f9be37a1754b7f568403b8c461c5dbc72')
+        for arch,machine in [('amd64','x86_64'),('arm64','aarch64')]:
+            config=qa.TARGETS['table-final-'+arch]
+            self.assertEqual(config['machine'],machine)
+            self.assertEqual(config['source'],'6c17f0f31af8dedd8ecf903719f8c8953035e43a')
+            self.assertEqual(config['auditor'],config['source'])
+            self.assertEqual(config['offer'],'a2520b860843e562ad9357ad3f7506ee216913f940aabe49875d024bfecce3ba')
+            self.assertEqual((config['core_tests'],config['service_tests']),(218,80))
+        self.assertEqual(qa.AGE['linux-arm64']['archive_sha256'],'6b8dc4333c53a5a57c9e5834e3a48f92605d7154014cd07269ff3327db5d37f4')
+        self.assertEqual(qa.AGE['linux-arm64']['binary_sha256'],'41b072352f4561018949623c674d16ef704019b9108a9bbdbd21292efebfc94f')
+
+    def test_new_image_scopes_bind_exact_hash_arch_source_and_test_counts(self):
+        for arch in ['amd64','arm64']:
+            target='table-final-'+arch;config=qa.TARGETS[target]
+            with tempfile.TemporaryDirectory() as temporary:
+                root=Path(temporary).resolve();candidate=root/config['files'][''];candidate.write_bytes(b'synthetic saved image')
+                selected=qa.select_candidates(root,target);records=qa.snapshot_candidates(selected,root/'snapshot')
+                identity={'source_revision':config['source'],'source_tree':config['tree'],'architecture':arch,
+                  'candidate_sha256':records[0]['sha256'],'image_id':'sha256:'+'a'*64,'service_tests':80,'core_tests':218,'runtime_passed':True}
+                path=root/('candidate-table-image-'+arch+'.identity.json');path.write_text(json.dumps(identity))
+                self.assertEqual(qa.image_identity(root,records[0],target),identity)
+                for key,value in [('source_revision',qa.TARGETS['table-amd64']['source']),('source_tree','f'*40),
+                    ('architecture','arm64' if arch=='amd64' else 'amd64'),('service_tests',79),('core_tests',213),
+                    ('candidate_sha256','0'*64),('runtime_passed',False)]:
+                    path.write_text(json.dumps({**identity,key:value}))
+                    with self.subTest(arch=arch,key=key),self.assertRaises(qa.RetentionError):qa.image_identity(root,records[0],target)
+                extra=root/'candidate-table-image-other.tar.gz';extra.write_bytes(b'extra')
+                with self.assertRaises(qa.RetentionError):qa.select_candidates(root,target)
+
+    def test_new_table_retention_cannot_accept_package_stage_or_success(self):
+        from types import SimpleNamespace
+        for target in ['table-final-amd64','table-final-arm64']:
+            for outcome,stage in [('success','image-privacy'),('failure','native-qualification'),('failure','package-scan')]:
+                args=SimpleNamespace(target=target,recipient=qa.RECIPIENT,qualification_outcome=outcome,failure_stage=stage)
+                with mock.patch.object(qa,'require_hosted_native'),self.assertRaisesRegex(qa.RetentionError,'ORIGINAL_FAILURE_REQUIRED'):
+                    qa.retain(args)
+
 if __name__=='__main__':unittest.main()
