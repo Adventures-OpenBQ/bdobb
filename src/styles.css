@@ -1490,7 +1490,18 @@ body {
 
 /* One chip per group, after the tabs. The number is the same badge a bound
    control shows, so a glance ties a chip to its controls. */
-.tab-bar-groups { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; }
+.tab-bar-groups {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 4px;
+  margin-left: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tab-bar-groups > .group-chip { flex: 0 0 auto; }
 .group-chip {
   display: inline-flex;
   align-items: center;

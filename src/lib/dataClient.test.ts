@@ -24,6 +24,7 @@ import { fetch as pluginFetch } from "@tauri-apps/plugin-http";
 import { startMockServer, type MockServer } from "../test/mockServer";
 import { useSettingsStore } from "../stores/settingsStore";
 import { DEFAULT_SETTINGS } from "./settingsFile";
+import { withRequestSlot } from "./requestQueue";
 import type { AuthLocation, BackendConfig, WidgetDef } from "./types";
 import { backend as makeBackend, widget as makeWidget } from "../test/fixtures";
 import { stubMatchMedia } from "../test/matchMedia";
@@ -1279,4 +1280,89 @@ it('holds optional 404 discovery slots until their response bodies drain', async
     mock.mockImplementation((...args: Parameters<typeof globalThis.fetch>) => globalThis.fetch(...args));
   }
   expect(active).toBe(0);
+});
+
+describe("ordinary request lifetime", () => {
+  it.each(["queued", "running", "reading body"] as const)(
+    "releases a %s widget request when the caller aborts",
+    async (phase) => {
+      const source = makeBackend({ baseUrl: "https://cancel-widget.test" });
+      const controller = new AbortController();
+      const transport = vi.mocked(pluginFetch);
+      let finish!: () => void;
+      const stalled = new Promise<void>((resolve) => { finish = resolve; });
+      const bodyRead = vi.fn(async () => { await stalled; return []; });
+      const body = new Response("[]", { headers: { "content-type": "application/json" } });
+      vi.spyOn(body, "json").mockImplementation(bodyRead);
+      transport.mockClear().mockImplementation(async (input) => {
+        if (!new URL(String(input)).searchParams.has("stalled")) return new Response("fresh");
+        if (phase === "running") {
+          await stalled;
+          return new Response("old");
+        }
+        return body;
+      });
+      const held = phase === "queued"
+        ? Array.from({ length: 4 }, () => withRequestSlot(source.baseUrl, undefined, () => stalled))
+        : [];
+      const outcomes: unknown[] = [];
+      const request = fetchWidgetData(source, widget(), { stalled: "true" }, undefined, undefined, {
+        signal: controller.signal,
+      }).then((value) => outcomes.push(value), (err: unknown) => outcomes.push(err));
+
+      try {
+        if (phase === "running") await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(1));
+        if (phase === "reading body") await vi.waitFor(() => expect(bodyRead).toHaveBeenCalledTimes(1));
+        controller.abort();
+        await vi.waitFor(() => expect(outcomes).toEqual([expect.objectContaining({ name: "AbortError" })]));
+        if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+        else expect(transport.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      } finally {
+        finish();
+        await Promise.all([...held, request]);
+        transport.mockImplementation((...args) => globalThis.fetch(...args));
+      }
+      if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["queued", "running", "reading body"] as const)(
+    "enforces an end-to-end deadline on a %s option request",
+    async (phase) => {
+      vi.useFakeTimers();
+      const source = makeBackend({ baseUrl: "https://deadline-options.test" });
+      const transport = vi.mocked(pluginFetch);
+      let finish!: () => void;
+      const stalled = new Promise<void>((resolve) => { finish = resolve; });
+      const bodyRead = vi.fn(async () => { await stalled; return []; });
+      const body = new Response("[]", { headers: { "content-type": "application/json" } });
+      vi.spyOn(body, "json").mockImplementation(bodyRead);
+      transport.mockClear().mockImplementation(async () => {
+        if (phase === "running") await stalled;
+        return body;
+      });
+      const held = phase === "queued"
+        ? Array.from({ length: 4 }, () => withRequestSlot(source.baseUrl, undefined, () => stalled))
+        : [];
+      const outcomes: unknown[] = [];
+      const request = fetchParamOptions(source, "options", {}).then(
+        (value) => outcomes.push(value), (err: unknown) => outcomes.push(err),
+      );
+      try {
+        await vi.advanceTimersByTimeAsync(170_000);
+        expect(outcomes).toEqual([]);
+        if (phase === "reading body") expect(bodyRead).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(10_000);
+        expect(outcomes).toEqual([expect.objectContaining({ name: "TimeoutError" })]);
+        if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+        else expect(transport.mock.calls[0][1]?.signal?.aborted).toBe(true);
+      } finally {
+        finish();
+        await Promise.all([...held, request]);
+        transport.mockImplementation((...args) => globalThis.fetch(...args));
+        vi.useRealTimers();
+      }
+      if (phase === "queued") expect(transport).not.toHaveBeenCalled();
+    },
+  );
 });

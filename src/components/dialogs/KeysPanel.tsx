@@ -50,21 +50,28 @@ export function KeysPanel({ backendId }: { backendId: string }) {
   const [view, setView] = useState<View>({ filter: "all", sort: "name-asc" });
   const [detailsId, setDetailsId] = useState<string | null>(null); // Provider.id, not env_var
 
-  // Guards against a stale response landing after a newer request (e.g. the
-  // backend was swapped while a fetch was in flight). Bumped once per call.
-  const requestGeneration = useRef(0);
+  // A post-submit status read belongs to the same connected panel as its PUT.
+  const readOwner = useRef<{
+    backend: typeof backend;
+    widget: typeof widget;
+    controller?: AbortController;
+  } | null>(null);
   // Whether ANY load has ever reached "ready". Only the first load has
   // nothing to fall back to — see the catch branch below.
   const hasLoaded = useRef(false);
 
   const load = useCallback(
     async (runTests: boolean) => {
-      if (!widget || !backend) return;
+      const owner = readOwner.current;
+      if (!widget || !backend || !owner || owner.backend !== backend || owner.widget !== widget) return;
+      owner.controller?.abort();
+      const controller = new AbortController();
+      owner.controller = controller;
+      const { signal } = controller;
       const params = { ...seedParams(widget), run_tests: runTests ? "true" : "false" };
-      const generation = ++requestGeneration.current;
       try {
-        const payload = await fetchWidgetData(backend, widget, params);
-        if (generation !== requestGeneration.current) return; // a newer request superseded this one
+        const payload = await fetchWidgetData(backend, widget, params, undefined, undefined, { signal });
+        if (signal.aborted) return;
         setData(payload);
         setStatus("ready");
         setError(null);
@@ -100,10 +107,10 @@ export function KeysPanel({ backendId }: { backendId: string }) {
           );
         }
       } catch (err) {
-        await logError(
+        if (signal.aborted) return;
+        void logError(
           `keys status fetch failed for ${clampLogName(widget.id)} on ${clampLogName(backend.name)}: ${err}`,
         );
-        if (generation !== requestGeneration.current) return;
         // Only the FIRST load has nothing to fall back to. A refresh/re-probe
         // that fails leaves the last-good rows on screen: tearing the panel
         // down after a successful PUT would hide the restart notice for a
@@ -122,10 +129,16 @@ export function KeysPanel({ backendId }: { backendId: string }) {
   // Plain GET /keys: key-maint reads its own environment, no vendor is
   // contacted. Re-runs (fresh) if the key-maint backend changes while open.
   useEffect(() => {
+    const owner: NonNullable<typeof readOwner.current> = { backend, widget };
+    readOwner.current = owner;
     hasLoaded.current = false;
     setStatus("loading");
     void load(false);
-  }, [load]);
+    return () => {
+      readOwner.current = null;
+      owner.controller?.abort();
+    };
+  }, [backend, load, widget]);
 
   // Re-tests exactly one row (GET {endpoint}/{envVar}/test) and merges only
   // that row's test result in place, so Test this service never fans out to
@@ -184,11 +197,12 @@ export function KeysPanel({ backendId }: { backendId: string }) {
   // message dataClient already builds solely from the server's own response.
   async function submitKey(envVar: string, value: string): Promise<{ restart_required?: boolean }> {
     if (!widget || !backend) throw new Error("key-maint backend is not connected");
+    const owner = readOwner.current;
     try {
       const result = (await putProviderKey(backend, widget, envVar, value)) as {
         restart_required?: boolean;
       };
-      await load(true);
+      if (readOwner.current === owner) await load(true);
       return result;
     } catch (err) {
       await logError(`key submit failed for ${clampLogName(envVar)}: ${err}`);

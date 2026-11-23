@@ -974,7 +974,9 @@ describe("TableRenderer filter row", () => {
       meta: { i },
     }));
 
-  function Controlled({ rows = many(10_000) }: { rows?: Record<string, unknown>[] }) {
+  const filterRows = many(10_000);
+
+  function Controlled({ rows = filterRows }: { rows?: Record<string, unknown>[] }) {
     const [state, setState] = useState<TableCardState>({});
     return (
       <TableRenderer
@@ -1263,6 +1265,36 @@ describe("TableRenderer fields containing a dot", () => {
     render(<TableRenderer data={dotted} />);
     await userEvent.click(screen.getByRole("columnheader", { name: /BRK\.B/ }));
     expect(cells("sym")).toEqual(["a", "c", "b"]);
+  });
+});
+
+describe("TableRenderer arbitrary field names", () => {
+  it.each(["hasOwnProperty", "__proto__", ""])("shows, sorts and filters the own values for %j", async (field) => {
+    const data = [{ [field]: 100 }, { [field]: 3 }, { [field]: 20 }];
+    const headerName = field || "Unnamed column";
+    const spec: TableSpec = { columns: [{ field, headerName, cellDataType: "number" }] };
+    const cells = () => [...document.querySelectorAll(`td[data-field="${field}"]`)].map((cell) => cell.textContent);
+    render(<TableRenderer data={data} spec={spec} filterRow />);
+
+    expect(cells()).toEqual(["100", "3", "20"]);
+    await userEvent.click(screen.getByRole("columnheader", { name: headerName }));
+    expect(cells()).toEqual(["3", "20", "100"]);
+    fireEvent.change(screen.getByLabelText(`Minimum ${headerName}`), { target: { value: "10" } });
+    expect(cells()).toEqual(["20", "100"]);
+  });
+
+  it("applies and resizes a width for the __proto__ column", () => {
+    const data = [{ ["__proto__"]: 20 }];
+    const spec: TableSpec = { columns: [{ field: "__proto__", width: 120 }] };
+    render(<TableRenderer data={data} spec={spec} />);
+
+    const header = screen.getByRole("columnheader", { name: "__proto__" });
+    expect(header.style.width).toBe("120px");
+    fireEvent.mouseDown(header.querySelector(".column-resizer")!, { clientX: 0 });
+    fireEvent.mouseMove(document, { clientX: 40 });
+    fireEvent.mouseMove(document, { clientX: 40 });
+    fireEvent.mouseUp(document, { clientX: 40 });
+    expect(header.style.width).toBe("160px");
   });
 });
 
@@ -1836,6 +1868,24 @@ describe("hoverCard cells", () => {
   it("shows the cellField value instead of the object", () => {
     render(<TableRenderer data={rows} spec={spec} />);
     expect(document.querySelector('td[data-field="name"]')).toHaveTextContent(/^Ethereum$/);
+  });
+
+  it("prefills an inferred hover date range from valid displayed days", () => {
+    const data = [
+      { quote: {} },
+      { quote: { day: "2026-02-01T23:00:00-05:00" } },
+      { quote: { day: "2026-02-03" } },
+      { quote: { day: "2026-02-30" } },
+    ];
+    const spec: TableSpec = {
+      columns: [{ field: "quote", renderFn: ["hoverCard"], renderFnParams: {
+        hoverCard: { cellField: "day", markdown: "{day}" },
+      } }],
+    };
+    render(<TableRenderer data={data} spec={spec} filterRow />);
+
+    expect(screen.getByLabelText("From quote")).toHaveValue("2026-02-01");
+    expect(screen.getByLabelText("To quote")).toHaveValue("2026-02-03");
   });
 
   // A column can be both: the click must send the value the cell shows, not

@@ -149,7 +149,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer"]);
+const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid"]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -1084,7 +1084,7 @@ export function WidgetCard({ card, onRemove, viewer = false }: Props) {
       // card's data===null gate would otherwise claim it. The renderer fetches
       // its own snapshot and opens the socket. `query` carries the resolved
       // symbol selection, the same params a GET would send.
-      return <LiveGridRenderer widget={widget} backend={backend} params={query} />;
+      return <LiveGridRenderer widget={widget} backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
     }
 
     // Same shape as live_grid above, and for the same reason: fetchesData is

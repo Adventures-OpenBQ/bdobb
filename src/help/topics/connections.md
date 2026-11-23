@@ -94,11 +94,11 @@ or import, and connections are deliberately left out of the
 `bdobb-settings.json` bundle that carries preferences and folders to another
 machine — they hold credentials, so they stay put.
 
-A fresh install seeds one backend named `Local` at `http://localhost:6900`.
-That is a starting point, not a promise — if nothing is serving that address
-it will simply sit there with a red dot until you edit it. The seed only
-happens when the file is absent, so deleting the entry does not bring it
-back.
+A fresh public install starts with no saved connections. Choose **Add** to
+connect your backend; the dialog offers `Local` at `http://localhost:6900` as
+a starting point. For the openbq-docker stack, replace that URL with your
+Tailscale Serve address. Existing connection files, including an empty list,
+are preserved.
 
 ---
 

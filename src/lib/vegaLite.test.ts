@@ -61,6 +61,36 @@ describe("vegaLiteToPlotly", () => {
     expect(vegaLiteToPlotly({ ...bar, mark: { type: "geoshape" } }, "dark")).toBeNull(); // unknown mark
   });
 
+  it("returns null for a spec with a filter transform", () => {
+    expect(vegaLiteToPlotly({ ...bar, transform: [{ filter: "datum.tvl < 30" }] })).toBeNull();
+  });
+
+  it("returns null for a normalized bar stack", () => {
+    const spec = {
+      mark: "bar",
+      data: { values: [
+        { day: "2026-01-01", series: "A", count: 20 },
+        { day: "2026-01-01", series: "B", count: 80 },
+      ] },
+      encoding: {
+        x: { field: "day", type: "temporal" },
+        y: { field: "count", type: "quantitative", stack: "normalize" },
+        color: { field: "series", type: "nominal" },
+      },
+    };
+
+    expect(vegaLiteToPlotly(spec)).toBeNull();
+  });
+
+  it.each([
+    ["y", { field: "tvl", aggregate: "sum" }],
+    ["x", { field: "tvl", bin: true }],
+    ["color", { field: "tvl", bin: { step: 10 } }],
+    ["x", { field: "date", timeUnit: "yearmonth" }],
+  ])("returns null for a transformed %s encoding", (name, channel) => {
+    expect(vegaLiteToPlotly({ ...bar, encoding: { ...bar.encoding, [name]: channel } })).toBeNull();
+  });
+
   // data.values comes off the wire: a null or number entry must not throw
   // (that would take the card to its error boundary instead of the raw view),
   // and a field is read only as the row's own key, never off its prototype.

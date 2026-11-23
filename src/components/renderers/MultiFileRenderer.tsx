@@ -125,8 +125,8 @@ export function MultiFileRenderer({ widget, backend, params, refreshKey, exchang
   const [error, setError] = useState<string | null>(null);
   /** The selection the last Open was issued for, so Retry repeats that POST. */
   const lastRequest = useRef<string[]>([]);
-  /** Two rapid Opens are reachable; without this the slower answer can win. */
-  const sequence = useRef(0);
+  /** Open and Refresh share ownership of the current documents request. */
+  const request = useRef<AbortController | null>(null);
   /** Read by the rail's own onMouseLeave, to find focus still inside it. */
   const railRef = useRef<HTMLDivElement>(null);
 
@@ -138,14 +138,18 @@ export function MultiFileRenderer({ widget, backend, params, refreshKey, exchang
     setChecked([]);
   }, [choicesKey]);
 
+  useEffect(() => () => request.current?.abort(), []);
+
   const open = useCallback(
     async (urls: string[]) => {
       // No backend is not a state Open can be pressed in: the options hook
       // reports "Backend not configured" in the rail, so no checkbox exists,
       // so Open is disabled. The guard is here for the type, not the case.
       if (!selector || !backend || urls.length === 0) return;
-      const seq = sequence.current + 1;
-      sequence.current = seq;
+      request.current?.abort();
+      const controller = new AbortController();
+      request.current = controller;
+      const { signal } = controller;
       lastRequest.current = urls;
       setLoadingCount(urls.length);
       setError(null);
@@ -155,18 +159,18 @@ export function MultiFileRenderer({ widget, backend, params, refreshKey, exchang
           widget,
           params,
           { [selector.paramName]: urls },
-          { exchange },
+          { exchange }, { signal },
         );
+        if (signal.aborted) return;
         // 204 is how openbb-api answers an EmptyDataError, and sendJson turns
         // it into null. That is an empty answer, not a malformed one: handing
         // it to parseDocuments would throw "not a document payload" and put a
         // failure banner and a log line where "No documents came back." belongs.
         const parsed = payload === null ? [] : parseDocuments(payload);
-        if (seq !== sequence.current) return;
         setDocuments(parsed);
         setIndex(0);
       } catch (err) {
-        if (seq !== sequence.current) return;
+        if (signal.aborted) return;
         const message = err instanceof Error ? err.message : String(err);
         // The previous documents stay on screen: losing what you were reading
         // because the NEXT request failed is worse than the failure.
@@ -176,7 +180,10 @@ export function MultiFileRenderer({ widget, backend, params, refreshKey, exchang
         // document URL and no credential is written here.
         await logError(`widget ${clampLogName(widget.id)} documents fetch failed: ${message}`);
       } finally {
-        if (seq === sequence.current) setLoadingCount(0);
+        if (!signal.aborted) {
+          request.current = null;
+          setLoadingCount(0);
+        }
       }
     },
     [backend, params, selector, widget, exchange],

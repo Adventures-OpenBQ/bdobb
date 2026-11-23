@@ -1,14 +1,14 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./dialogs/ImportConflictDialog", () => ({
   decideImportConflicts: vi.fn(async () => []),
 }));
 
-import { __list, __read, __readBytes, __reset } from "../test/memfs";
+import { __list, __read, __readBytes, __reset, __writes } from "../test/memfs";
 import { makeEmptyFolders } from "../lib/foldersFile";
 import { __resetJsonStoreForTests } from "../lib/jsonStore";
 import { __resetLoggerForTests } from "../lib/logger";
@@ -65,6 +65,15 @@ function renderZone(viewer = false) {
       <div className="dashboard-grid" />
     </DropZone>,
   );
+}
+
+function dropWaitingFile() {
+  const file = new File(["symbol,close\nAAPL,190.5\n"], "prices.csv");
+  let finish!: (value: ArrayBuffer) => void;
+  const bytes = new Promise<ArrayBuffer>((resolve) => { finish = resolve; });
+  Object.defineProperty(file, "arrayBuffer", { value: () => bytes });
+  fireEvent.drop(screen.getByRole("main"), fileDrag([file]));
+  return () => finish(new TextEncoder().encode("symbol,close\nAAPL,190.5\n").buffer);
 }
 
 describe("the veil", () => {
@@ -125,6 +134,56 @@ describe("dropping a data file", () => {
     expect(decoder.decode(__readBytes(`files/${card.params.file}`))).toBe(
       "symbol,close\nAAPL,190.5\n",
     );
+  });
+
+  it.each(["dashboard", "tab"])("keeps a delayed drop on its original %s", async (target) => {
+    const { activeId, activeTabId, addDashboard, addTab, setActive } = useDashboardStore.getState();
+    const otherDashboard = await addDashboard("Other dashboard");
+    setActive(activeId!);
+    const otherTab = await addTab("Other tab");
+    renderZone();
+    const finishRead = dropWaitingFile();
+
+    act(() => {
+      if (target === "dashboard") setActive(otherDashboard!);
+      else useDashboardStore.getState().setActiveTab(otherTab!);
+    });
+    await act(async () => finishRead());
+
+    const original = useDashboardStore.getState().dashboards.find((d) => d.id === activeId);
+    const saved = JSON.parse(__read(`dashboards/${activeId}.json`) ?? "{}");
+    expect(original?.tabs.find((t) => t.id === activeTabId)?.cards).toMatchObject([{ title: "prices.csv" }]);
+    expect(saved.tabs[0].cards).toMatchObject([{ title: "prices.csv" }]);
+    expect(cards()).toEqual([]);
+    expect(decoder.decode(__readBytes(`files/${saved.tabs[0].cards[0].params.file}`))).toBe(
+      "symbol,close\nAAPL,190.5\n",
+    );
+  });
+
+  it.each(["dashboard", "tab"])("discards the copied file when its original %s is deleted", async (target) => {
+    const { activeId, activeTabId, addDashboard, addTab, setActive, removeDashboard, removeTab } =
+      useDashboardStore.getState();
+    const otherDashboard = await addDashboard("Other dashboard");
+    setActive(activeId!);
+    await addTab("Other tab");
+    renderZone();
+    const finishRead = dropWaitingFile();
+
+    await act(async () => {
+      if (target === "dashboard") {
+        setActive(otherDashboard!);
+        await removeDashboard(activeId!);
+      } else {
+        await removeTab(activeTabId!);
+      }
+      finishRead();
+    });
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Could not add prices.csv");
+    expect(cards()).toEqual([]);
+    const copies = __writes().filter((p) => p.startsWith("files/"));
+    expect(copies).toHaveLength(1);
+    expect(__readBytes(copies[0])).toBeUndefined();
   });
 
   it("stacks several files rather than piling them on one spot", async () => {
@@ -425,19 +484,39 @@ it('offers explicit server execution for file drops while keeping local executio
  expect(screen.getByRole('option',{name:'Server · Native table'})).toBeInTheDocument();
 });
 
-it('keeps an uploaded source after its card reference is saved even when the later title save fails',async()=>{
+it.each(["switch", "delete"])("keeps a managed upload bound to its original dashboard on %s", async (action) => {
  const {useBackendsStore}=await import('../stores/backendsStore');
  const managed={...useWidgetRegistryStore.getState().widgets[0],id:'managed',backendId:'server',name:'Native table',type:'table_ssrm',provider:'managed-native',protocolVersion:1};
  useWidgetRegistryStore.setState(s=>({widgets:[...s.widgets,managed]}));
  useBackendsStore.setState({backends:[{id:'server',name:'Server',baseUrl:'https://table.test',authLocation:'header',validateWidgets:true}]});
- uploadHttp.mockReset();uploadHttp.mockImplementation(async(_url,init)=>Response.json(init.method==='DELETE'?{deleted:true}:{sourceId:'owned-upload'}));
- const patch=useDashboardStore.getState().patchCardField;
- vi.spyOn(useDashboardStore.getState(),'patchCardField').mockImplementation(async(id,field,value)=>{if(field==='title')throw new Error('Title save failed');await patch<Parameters<typeof patch>[1]>(id,field,value);});
+ const origin=useDashboardStore.getState().activeId!;
+ const other=await useDashboardStore.getState().addDashboard('Other');
+ useDashboardStore.getState().setActive(origin);
+ let finish!:()=>void;
+ const held=new Promise<void>(resolve=>{finish=resolve;});
+ let started=false;
+ uploadHttp.mockReset();uploadHttp.mockImplementation(async(_url,init)=>{
+   if(init.method==='DELETE')return Response.json({deleted:true});
+   started=true;await held;return Response.json({sourceId:'owned-upload'});
+ });
+ const patch=vi.spyOn(useDashboardStore.getState(),'patchCardField');
  renderZone();fireEvent.change(screen.getByLabelText('Dropped file execution'),{target:{value:JSON.stringify(['server','managed'])}});
  fireEvent.drop(screen.getByRole('main'),fileDrag([new File(['amount\n5'],'private.csv')]));
- expect(await screen.findByRole('status')).toHaveTextContent('Title save failed');
- expect(cards()[0].managedSource).toEqual({sourceId:'owned-upload',kind:'upload',version:1});
- const saved=JSON.parse(__read(`dashboards/${useDashboardStore.getState().activeId}.json`)!);
- expect(saved.tabs[0].cards[0].managedSource.sourceId).toBe('owned-upload');
- expect(uploadHttp.mock.calls.filter(([,init])=>init.method==='DELETE')).toHaveLength(0);
+ await waitFor(()=>expect(started).toBe(true));
+ await act(async()=>{
+   useDashboardStore.getState().setActive(other!);
+   if(action==='delete')await useDashboardStore.getState().removeDashboard(origin);
+   finish();
+ });
+ if(action==='delete'){
+   expect(await screen.findByRole('status')).toHaveTextContent('No dashboard available');
+   await waitFor(()=>expect(uploadHttp.mock.calls.filter(([,init])=>init.method==='DELETE')).toHaveLength(1));
+ }else{
+   await waitFor(()=>expect(useDashboardStore.getState().dashboards.find(d=>d.id===origin)?.tabs[0].cards).toHaveLength(1));
+   const saved=JSON.parse(__read(`dashboards/${origin}.json`)!);
+   expect(saved.tabs[0].cards[0]).toMatchObject({title:'private.csv',managedSource:{sourceId:'owned-upload',kind:'upload',version:1}});
+   expect(uploadHttp.mock.calls.filter(([,init])=>init.method==='DELETE')).toHaveLength(0);
+ }
+ expect(cards()).toEqual([]);
+ expect(patch).not.toHaveBeenCalled();
 });

@@ -145,7 +145,7 @@ it('member comparisons use eligible counterparts with configured operator and no
 it('uses an explicit chronological date binding and propagates failures in that binding', () => {
   const defs = [aggregateDef('first', { kind: 'call', function: 'first', args: [ref('revenue')] }), aggregateDef('last', { kind: 'call', function: 'last', args: [ref('revenue')] })];
   const { model, scope } = aggregateFixture(defs);
-  const rows = [{ id: 'late', values: { revenue: 20, date: '2026-03-01' } }, { id: 'early', values: { revenue: 10, date: '2026-01-01' } }];
+  const rows = [{ id: 'late', values: { revenue: 20, date: '2026-03-01', badDate: '2026-03-01' } }, { id: 'early', values: { revenue: 10, date: '2026-01-01' } }];
   const pool = eligiblePool(evaluateSourceFormulas(rows, model), { columns: model.columns });
   const at = { ...scope, sourceRecordIds: new Set(['late', 'early']), temporalContext: { dateFieldId: 'date' } };
   expect(evaluateAggregateFormulas(at, pool, model).cells.get('first')).toEqual({ ok: true, value: 10 });

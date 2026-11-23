@@ -4,7 +4,7 @@ import { evaluateStatementLine } from '../statementModel/linePolicy';
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { DatasetColumn, DatasetRow } from '../widgetData/types';
 import { deriveCategories, type CategorizedRows } from './categories';
-import type { FiscalContext } from './fiscalContext';
+import { periodDate, type FiscalContext } from './fiscalContext';
 import { bindFormula, type ModelSymbols } from './formulaBinding';
 import type { GraphResult } from './formulaGraph';
 import { isAggregateFunction } from './formulaSyntax';
@@ -261,6 +261,11 @@ export function evaluateAggregateFormulas(scope: CalculationScope, pool: Eligibl
         if(upstreamError) failures.push(upstreamError);
         const cell = pool.formulaCells.get(row.id)?.get(dateField);
         if (cell && !cell.ok) failures.push({ ...cell.error, dependencyIds: [...new Set([dateField, ...(cell.error.dependencyIds ?? [])])] });
+        // Off-axis date categories store errors under category IDs, not the bound field.
+        if (!upstreamError && (!cell || cell.ok) && !periodDate(row.values[dateField])) failures.push({
+          code: 'invalid-date', message: 'The bound report date is missing or invalid.',
+          definitionId: dateField, recordIds: [row.id], dependencyIds: [dateField],
+        });
       }
     }
     if (failures.length) return fail('blocked-dependency', failures[0].message, id, at, failures);
