@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "11a54b338930f9429c5e35c2c0bc572e5853780e",
-  "sourceId": "a2520b860843e562ad9357ad3f7506ee216913f940aabe49875d024bfecce3ba",
+  "baseCommit": "b4648a186b4a328b46efb7ece18462e5ed4f03d9",
+  "sourceId": "00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -10240,8 +10240,8 @@
       "path": "e2e/raw-source-fields.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 8518,
-      "sha256": "d0fd51683fe92e37bfce3aafde97f2549f368a9dde8d972aab942e0f63ee9a12"
+      "size": 10294,
+      "sha256": "63baa36a19e4c24dcecd30f90dcab219324ef59db8fd1829b7b31a5fc2535c77"
     },
     {
       "path": "e2e/reference-acceptance.spec.ts",
@@ -11599,7 +11599,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "e852794445501a95a3563b8867663461c1066e2e2d72fdba6992219da11d048f"
+      "sha256": "bfcef1620d63175894b82d3b27bc53d316897dbbea845b75969dcd30fe51a465"
     },
     {
       "path": "source_bundle.py",
@@ -12746,15 +12746,15 @@
       "path": "src/components/renderers/LinkedChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 47311,
-      "sha256": "91ba59c9d7b150a21e1ac49a502a07bef1be7a17d9d48095e0e611f0ca7c7cb4"
+      "size": 51037,
+      "sha256": "a87a59a6b66e51305d2a0118d2fbffbb4e99751447850365abe0d5b44e18d706"
     },
     {
       "path": "src/components/renderers/LinkedChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 18775,
-      "sha256": "aeee693f10aa6cd5a5c29d8c8341d4dc8a4fe5d359260e2b82de09150d48974b"
+      "size": 19369,
+      "sha256": "00160c88e6563daa55488a6c8bcb505a1e51ec894b58c53df97aae7e87422c64"
     },
     {
       "path": "src/components/renderers/LiveGridRenderer.test.tsx",
@@ -17254,15 +17254,15 @@
       "path": "src/lib/widgetData/chartFigure.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 38401,
-      "sha256": "ca74411fd47be05b0f2d5417bd845eaf2b8a237900def853a55d3fbc9657f850"
+      "size": 39409,
+      "sha256": "ad17e44e278226b9bea0dd76fe4f450926d59cef68eab607cf3c90fa49930844"
     },
     {
       "path": "src/lib/widgetData/chartFigure.ts",
       "type": "file",
       "mode": 420,
-      "size": 22956,
-      "sha256": "97ca4bcd8317402da63890793f8a207ac9818d1fdb47352e4a2876bd21ec10bb"
+      "size": 22969,
+      "sha256": "261d0f7f17286e47c6e4ed77440a39aa57d55625fcf69213da69c31869d442b7"
     },
     {
       "path": "src/lib/widgetData/graph.test.ts",
