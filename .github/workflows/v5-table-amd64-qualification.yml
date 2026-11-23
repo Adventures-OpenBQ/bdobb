@@ -1,0 +1,118 @@
+name: V5 final managed table native qualification
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Native architecture (ARM normally qualified locally)
+        type: choice
+        options: [amd64, arm64, both]
+        default: amd64
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: v5-table-final-${{ inputs.target }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: github.repository == 'Adventures-OpenBQ/bdobb' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          rows={'amd64':{'target':'amd64','runner':'ubuntu-24.04'},'arm64':{'target':'arm64','runner':'ubuntu-24.04-arm'}}
+          target=os.environ['TARGET']
+          assert target in ['amd64','arm64','both']
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('matrix='+json.dumps({'include':list(rows.values()) if target=='both' else [rows[target]]})+'\n')
+          PY
+  qualify:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Adventures-OpenBQ/bdobb
+          ref: 75dbcec84ef82f675385dce80879e4d926e89c0a
+          fetch-depth: 2
+          path: input-source
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Adventures-OpenBQ/openbq-docker
+          ref: 787c2d0f13938bae74c5dfc61f1b497bf752c62a
+          path: backend
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Test offline boundaries before tools/build
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p test_qualify_v5_table_final.py -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .github/scripts -p test_encrypt_v5_table_candidates.py -v
+          node --test deploy/table-service/raw-field-contract.test.mjs
+      - name: Prepare exact immutable recipe source
+        run: node backend/table-service/prepare-source.mjs input-source table-context
+      - name: Install source-pinned scanner and publication extractors
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr poppler-utils 7zip
+          python3 input-source/security/install.py
+          python3 -m venv .scanner-venv
+          .scanner-venv/bin/python -m pip install --require-hashes -r input-source/security/requirements.txt
+      - name: Build and qualify exact native table image (no SDK/reference rebuild)
+        id: qualify
+        env:
+          TARGET: ${{ matrix.target }}
+        run: python3 scripts/qualify-v5-table-final-ci.py --target "$TARGET"
+      - name: Upload privacy-cleared image and gated qualification receipt only
+        if: success() && steps.qualify.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qualified-v5-table-final-${{ matrix.target }}-${{ github.run_id }}
+          path: |
+            qualification-evidence/qualification.json
+            qualification-evidence/qualified-table-image-${{ matrix.target }}.tar.gz
+          retention-days: 14
+          if-no-files-found: error
+      - name: Encrypt only the failed immutable saved image
+        id: encrypted_qa
+        if: failure() && steps.qualify.outcome == 'failure'
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          python3 .github/scripts/encrypt_v5_table_candidates.py --target "table-v5-final-$TARGET" --app input-source --auditor input-source --controller . \
+            --recipient age1vu43nd2rl5l8p7ra6kudlcdmx3kzxfz2trwa2ur7pf44f2x443gsasmee2 \
+            --outdir "$RUNNER_TEMP/v5-encrypted-qa-table-v5-final-$TARGET" --failure-stage image-privacy --qualification-outcome failure
+      - name: Gate ciphertext and safe retention receipt only
+        id: encrypted_outbound
+        if: failure() && steps.encrypted_qa.outcome == 'success'
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          .scanner-venv/bin/python input-source/security/gate.py --repo input-source artifacts \
+            "$RUNNER_TEMP/v5-encrypted-qa-table-v5-final-$TARGET/retention.json" \
+            "$RUNNER_TEMP/v5-encrypted-qa-table-v5-final-$TARGET/qa-blocked-v5-table-v5-final-$TARGET.tar.age"
+      - name: Retain encrypted failed image for one day (job stays failed)
+        if: failure() && steps.encrypted_qa.outcome == 'success' && steps.encrypted_outbound.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: QA-ENCRYPTED-BLOCKED-v5-table-final-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/v5-encrypted-qa-table-v5-final-${{ matrix.target }}/retention.json
+            ${{ runner.temp }}/v5-encrypted-qa-table-v5-final-${{ matrix.target }}/qa-blocked-v5-table-v5-final-${{ matrix.target }}.tar.age
+          retention-days: 1
+          if-no-files-found: error

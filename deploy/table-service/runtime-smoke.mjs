@@ -3,15 +3,22 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-import {mkdtemp,rm,writeFile,readFile,readdir} from 'node:fs/promises';
-import {tmpdir} from 'node:os';
+import {mkdtemp,rm,writeFile,readFile,readdir,stat} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {fields as rawFields,rows as rawRows,ordinaryTable,plain,result as wireResult,rejectedOpaqueIdentity} from './raw-field-contract.mjs';
 if(process.platform !== 'linux')throw new Error('This smoke requires real Linux worker containment');
 const {TABLE_SMOKE_GATEWAY,TABLE_SMOKE_SERVICE,TABLE_SMOKE_WORKER,TABLE_SMOKE_INGEST}=process.env;
 if(!TABLE_SMOKE_GATEWAY || !TABLE_SMOKE_SERVICE || !TABLE_SMOKE_WORKER || !TABLE_SMOKE_INGEST)throw new Error('Set TABLE_SMOKE_GATEWAY (canonical server.mjs), TABLE_SMOKE_SERVICE, TABLE_SMOKE_WORKER and TABLE_SMOKE_INGEST absolute paths');
 const {createGateway}=await import(pathToFileURL(resolve(TABLE_SMOKE_GATEWAY)).href);
-const dir=await mkdtemp(join(tmpdir(),'table-gateway-smoke-'));
+const dataRoot=process.env.TABLE_SMOKE_DATA_ROOT;
+assert.equal(dataRoot,'/var/lib/table-service');
+const dataInfo=await stat(dataRoot);assert.equal(dataInfo.uid,10001);assert.equal(dataInfo.gid,10001);assert.equal(dataInfo.mode&0o777,0o700);
+const sourceManifest=JSON.parse(await readFile('/app/source.json','utf8'));
+assert.equal(sourceManifest.revision,'1244589e3d4c32b4736f97c6a011505414baf593');
+assert.equal(sourceManifest.tree,'2d7cd23ab5329156841af84ff4fc8ab69178eb79');
+assert.equal(sourceManifest.sourceArchiveSha256,'bc2ccfe9b0e40278220d3f033cedf8f774565b756b37e591e015998ccf99c3f5');
+const dir=await mkdtemp(join(dataRoot,'table-gateway-smoke-'));
 const servicePort=Number(process.env.TABLE_SMOKE_PORT ?? 18080);
 const token='task10_shared_test_bearer_credential_12345', relay='task10_private_relay_credential_123456789', serviceToken='task10_private_service_credential_1234567';
 const config={listen:`127.0.0.1:${servicePort}`,catalog_path:dir+'/durable-sources',catalog:{limits:{max_parse_bytes:8388608,max_upload_bytes:1048576,max_row_block_rows:2},backend_widgets:{}},auth:{desktop_tokens:{},gateway_token:serviceToken},ingestion:{node:process.execPath,entry:resolve(TABLE_SMOKE_INGEST),backend_config:null,max_concurrent_children:1,max_child_heap_mb:128},worker:{executable:resolve(TABLE_SMOKE_WORKER),memory_budget_bytes:536870912,max_frame_bytes:8392704,max_starting_workers:2},runtime:{compute_workers:2,max_admitted_jobs:4,max_http_requests:4}};
@@ -24,11 +31,58 @@ async function call(path,method='GET',body,principal='github:42',extra={}){
  return {status:response.status,json:await response.json()};
 }
 const check=(result,status=200)=>{assert.equal(result.status,status,JSON.stringify(result));return result.json;};
-async function apply(session,widget='widget',input=1){return check(await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'applyModel',requestId:'apply-'+widget,revision:{widgetId:widget,input,model:1,output:1},definition:{protocolVersion:1,locale:'en-US',definition:{table:{},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}})}));}
+function tagged(value){if(value===null)return {tag:'null'};if(Array.isArray(value))return {tag:'array',value:value.map(tagged)};if(typeof value==='object')return {tag:'record',value:Object.entries(value).map(([key,v])=>[key,tagged(v)])};return {tag:typeof value==='number'?'f64':typeof value==='boolean'?'bool':typeof value,value};}
+async function apply(session,widget='widget',input=1,analytical){return check(await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'applyModel',requestId:'apply-'+widget,revision:{widgetId:widget,input,model:1,output:1},definition:{protocolVersion:1,locale:'en-US',...(analytical?{analyticalRecipeSource:tagged(analytical)}:{}),definition:{table:{},search:'',...(analytical?{analytical}:{})}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}})}));}
 try{
  await start();
  const gatewayConfig={origin:'http://127.0.0.1',token,apiAuthorization:'unused',maxConcurrent:8,tableOrigin:`http://127.0.0.1:${servicePort}`,tableGatewayToken:serviceToken,tableRelayToken:relay,tableDesktopPrincipal:'desktop:owner',tableTimeoutMs:65000,ssrmTimeoutMs:170000,ssrmRoutes:[]};gateway=createGateway(gatewayConfig);gateway.listen(0,'127.0.0.1');await once(gateway,'listening');gatewayConfig.origin=`http://127.0.0.1:${gateway.address().port}`;
  check(await call('/healthz'));const discovery=check(await call('/widgets.json'));assert.equal(discovery.managed_table.provider,'managed-native');
+ const capabilities=check(await call('/capabilities'));
+ for(const name of ['LN','SQRT'])assert.ok(capabilities.formulaFunctions.includes(name));
+ const dates=check(await call('/sources/uploads','POST','date,group,x\n2025-12-31,A,100\nzz-not-a-date,A,999\n','github:42',{'Content-Type':'text/csv','Idempotency-Key':'table-regression-'+Date.now(),'X-Upload-Filename':'date-regression.csv'}));
+ const scalar=(id,name)=>({id,name:id,scope:'aggregate',expression:`${name}(sum(x))`,ast:{kind:'call',function:name,args:[{kind:'call',function:'sum',args:[{kind:'reference',target:'field',id:'x'}]}]}});
+ const analytical={schemaVersion:1,enabled:true,params:{promotePage:false,filters:[]},categories:[{id:'d',name:'Year',sourceFieldId:'date',transform:'Y'},{id:'g',name:'Group',sourceFieldId:'group',transform:'native'}],measures:['first','last','sum'].map(id=>({id,sourceFieldId:'x',aggregation:id})),formulas:[scalar('ln','LN'),scalar('sqrt','SQRT')],layout:{rows:['g'],columns:[],values:['first','last','sum','ln','sqrt']},checklists:[],resultFilters:[],subtotals:{groups:true,grandTotal:true}};
+ const dated=await apply(check(await call('/sessions','POST',{sourceId:dates.sourceId,protocolVersion:1,widgetId:'date-regression',locale:'en-US',inputRevision:1})),'date-regression',1,analytical);
+ const dateBatch=check(await call(`/sessions/${dated.sessionId}/commands`,'POST',{sessionId:dated.sessionId,sourceSnapshotId:dated.sourceSnapshotId,resultId:dated.resultId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'presented',requestId:'date-presented',revision:{widgetId:'date-regression',input:1,model:1,output:1},transferId:'date-regression-export',ignoreSelection:true}})}));
+ const dateRows=JSON.parse(dateBatch.wire).response.rows;
+ assert.ok(dateRows.length);
+ const dateRow=dateRows.find(row=>row.values.sum?.tag==='f64'&&row.values.sum.value===1099);
+ assert.ok(dateRow,'Grouped SUM must preserve both source rows');
+ for(const id of ['first','last']){assert.deepEqual(dateRow.values[id],{tag:'string',value:'#ERROR'});assert.equal(dateRow.cellErrors[id].code,'blocked-dependency');assert.equal(dateRow.cellErrors[id].affectedRecordCount,1);assert.ok(dateRow.cellErrors[id].dependencyIds.includes('date'));}
+ assert.ok(Math.abs(dateRow.values.ln.value-Math.log(1099))<1e-12);
+ assert.ok(Math.abs(dateRow.values.sqrt.value-Math.sqrt(1099))<1e-12);
+ check(await call(`/sessions/${dated.sessionId}`,'DELETE'));check(await call(`/sources/${dates.sourceId}`,'DELETE'));
+ // Actual JSON upload -> Node ingestion -> Linux Rust worker -> HTTP result/derive/chart.
+ const rawUpload=check(await call('/sources/uploads','POST',JSON.stringify(rawRows()),'github:42',{'Content-Type':'application/json','Idempotency-Key':'raw-fields-'+Date.now(),'X-Upload-Filename':'own-keys.json'}));
+ const rawOpen={sourceId:rawUpload.sourceId,protocolVersion:1,widgetId:'raw-source',locale:'en-US',inputRevision:1};
+ const rawSession=check(await call('/sessions','POST',rawOpen));
+ async function rawCommand(session,widget,input,request,withResult=false){
+  return await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,...(withResult?{resultId:session.resultId}:{}),wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{requestId:'raw-'+request.kind,revision:{widgetId:widget,input,model:1,output:1},...request}})});
+ }
+ const rawApply=check(await rawCommand(rawSession,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:ordinaryTable(),search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}));
+ assert.equal(wireResult(rawApply).kind,'viewReady');
+ assert.equal(wireResult(rawApply).topLevelCount.value,2);
+ const rawBatch=wireResult(check(await rawCommand(rawApply,'raw-source',1,{kind:'presented',transferId:'raw-source-export',ignoreSelection:false},true)));
+ assert.equal(rawBatch.kind,'subset');assert.equal(rawBatch.final,true);
+ assert.deepEqual(rawBatch.columns.map(c=>c.id),['','__proto__','hasOwnProperty','category','day','hover','m1','m2']);
+ assert.deepEqual(rawBatch.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(rawBatch.rows.map(r=>plain(r.values.__proto__)),[102,302]);
+ const rawChart=wireResult(check(await rawCommand(rawApply,'raw-source',1,{kind:'chartData',fields:['','category','m1','m2']},true)));
+ assert.deepEqual(rawChart.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(rawChart.rows.map(r=>plain(r.values.m1)),[100,300]);
+ const rawChild=check(await call(`/sessions/${rawApply.sessionId}/derive`,'POST',{parent:{sessionId:rawApply.sessionId,sourceSnapshotId:rawApply.sourceSnapshotId,resultId:rawApply.resultId},revision:{widgetId:'raw-source',input:1,model:1,output:1},requestId:'raw-derive',protocolVersion:1,widgetId:'raw-child',inputRevision:7,locale:'en-US'}));
+ const rawChildApplied=await apply(rawChild,'raw-child',7);
+ const childChart=wireResult(check(await rawCommand(rawChildApplied,'raw-child',7,{kind:'chartData',fields:['','hasOwnProperty','__proto__','m1','m2']},true)));
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values[''])),[101,301]);
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values.hasOwnProperty)),[100,300]);
+ assert.deepEqual(childChart.rows.map(r=>plain(r.values.__proto__)),[102,302]);
+ // Opaque identities stay strict; do not accept server errors as successful rejection.
+ rejectedOpaqueIdentity(await rawCommand(rawApply,'raw-source',1,{kind:'inputSchema',requestId:''},true));
+ rejectedOpaqueIdentity(await call('/sessions','POST',{...rawOpen,widgetId:''}));
+ rejectedOpaqueIdentity(await rawCommand(rawApply,'raw-source',1,{kind:'applyModel',definition:{protocolVersion:1,locale:'en-US',definition:{table:{pivot:{enabled:true,grouping:[],split:[],measures:[{id:'',sourceFieldId:'',aggregation:'sum'}]}},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]},true));
+ check(await call(`/sessions/${rawChildApplied.sessionId}`,'DELETE'));
+ check(await call(`/sessions/${rawApply.sessionId}`,'DELETE'));
+ check(await call(`/sources/${rawUpload.sourceId}`,'DELETE'));
  const upload=check(await call('/sources/uploads','POST','x,y\n1,a\n2,b\n3,c\n4,d\n5,e\n','github:42',{'Content-Type':'text/csv','Idempotency-Key':'task10-'+Date.now(),'X-Upload-Filename':'smoke.csv'}));
  const open={sourceId:upload.sourceId,protocolVersion:1,widgetId:'widget',locale:'en-US',inputRevision:1};
  check(await call('/sessions','POST',open,'github:43'),404);
@@ -49,5 +103,5 @@ try{
  const reopened=check(await call('/sessions','POST',open));const reapplied=await apply(reopened);assert.equal(JSON.parse(reapplied.wire).response.topLevelCount.value,5);
  check(await call('/sessions','POST',open,'github:43'),404);
  check(await call(`/sessions/${reopened.sessionId}`,'DELETE'));check(await call(`/sources/${upload.sourceId}`,'DELETE'));
- console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
+ console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,rawFields:{uploadedRows:3,uploadedColumns:rawFields.length,filteredEmptyValues:[101,301],prototypeValues:[102,302],linkedEmptyValues:[101,301],chartM1:[100,300],opaqueRequestWidgetMeasureIdsRejected:true},advertisedScalarFunctions:['LN','SQRT'],nativeScalarValues:true,invalidBoundDateBlocked:true,unrelatedSumPreserved:1099,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
 }finally{if(gateway)gateway.closeGateway();if(service)await stop();await rm(dir,{recursive:true,force:true});}
