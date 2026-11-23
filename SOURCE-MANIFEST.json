@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "b4648a186b4a328b46efb7ece18462e5ed4f03d9",
-  "sourceId": "00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c",
+  "baseCommit": "a39ac0165fd28f577b28e120b8335019f9f881ab",
+  "sourceId": "134236646cd9d524ee14862e9b1bcc49201e00fc4e3a355a4f001675f3e2fa63",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -11599,7 +11599,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "bfcef1620d63175894b82d3b27bc53d316897dbbea845b75969dcd30fe51a465"
+      "sha256": "c2dc7df3314baa59846b985b05d022c128bc8a97f964e2ddc5f75ef4aa702a80"
     },
     {
       "path": "source_bundle.py",
@@ -17436,15 +17436,15 @@
       "path": "src/lib/workspaceDashboards.test.ts",
       "type": "file",
       "mode": 420,
-      "size": 13154,
-      "sha256": "64bbf50d1932bc663c915a82062555c9c936ae427145ba83286e5697ce475968"
+      "size": 14719,
+      "sha256": "ed2b1be6905e6c653d5230c46a5096411dcf901b46d6759a10b95bb343fe4ddb"
     },
     {
       "path": "src/lib/workspaceDashboards.ts",
       "type": "file",
       "mode": 420,
-      "size": 14949,
-      "sha256": "598ddba6a6900998013fefa26d99056b91ed59b57310dfde060492efc957363a"
+      "size": 14983,
+      "sha256": "521958639eb35bacf9bcd1fcf2e245aa1a46b1d72025cc540585408e677dd3e7"
     },
     {
       "path": "src/lib/youtube.test.ts",
