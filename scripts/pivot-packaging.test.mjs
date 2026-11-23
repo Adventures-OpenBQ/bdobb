@@ -84,3 +84,16 @@ test('concurrent missing/stale builds share one promise and a failed owner permi
  const invalid=await Promise.allSettled([ensurePivotWasm({root,verifyOnly:false}),ensurePivotWasm({root,verifyOnly:false}),ensurePivotWasm({root,verifyOnly:false})]);
  assert.equal(invalid.filter(value=>value.status==='rejected').length,3,'real emitted-module smoke must run even from a Node test runner');
 });
+
+// The native-service frozen install consumes the root lockfile and its declared patches.
+test('native service context explicitly includes every declared dependency patch', async () => {
+ const pkg=JSON.parse(await readFile('package.json','utf8'));
+ const rules=(await readFile('.dockerignore','utf8')).split(/\r?\n/).map(line=>line.trim());
+ const patches=Object.values(pkg.pnpm?.patchedDependencies??{});
+ assert.ok(patches.length,'Exercise the native service patch packaging contract');
+ for(const path of patches){
+  assert.ok(rules.includes(`!${path.slice(0,path.lastIndexOf('/'))}/`),`Native service context must admit patch directory for ${path}`);
+  assert.ok(rules.includes(`!${path}`),`Native service context must admit declared patch ${path}`);
+  assert.ok((await readFile(path)).length,`Declared dependency patch must exist: ${path}`);
+ }
+});

@@ -72,3 +72,17 @@ test('review regressions preserve structural tag maps, leaf metadata and old pub
  await page.goto('http://127.0.0.1:4175/built/');await expect(page.locator('#status')).toHaveText('Portable Pivot ready');
  expect(await page.evaluate(()=>window.pivotHarness.finalReviewProbe())).toEqual({structural:true,leaves:[['b','percent','b'],['a','int','a']],coercions:[{refused:true,id:'old',totalsRevision:1,exported:['old']},{refused:true,id:'old',totalsRevision:1,exported:['old']}]});
 });
+
+// This fixture reaches the real worker, wire codec and compiled Rust session, including a linked child.
+declare global {interface Window {pivotRawFieldHarness:{rawFieldsProbe():Promise<unknown>}}}
+test('raw empty JSON field survives real Wasm ordinary and linked consumers without weakening identities',async({page})=>{
+ await page.goto('http://127.0.0.1:4176/dev/rust-pivot.html');
+ await expect(page.locator('#status')).toHaveText('Portable Pivot ready');
+ expect(await page.evaluate(()=>window.pivotRawFieldHarness.rawFieldsProbe())).toEqual({
+  input:{rows:3,columns:8},order:['','category','hasOwnProperty','__proto__'],filtered:[101,301],
+  ownKeys:[[true,100,102],[true,300,302]],
+  subset:{columns:['','category','hasOwnProperty','__proto__'],values:[101,301]},linked:[301],
+  implicit:{id:'',sourceFieldId:'',sourceBindingId:'',measureIdAbsent:true,values:[101,21,301]},
+  strict:{request:true,widget:true,row:true,measure:true},
+ });
+});

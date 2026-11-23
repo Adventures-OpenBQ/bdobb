@@ -161,6 +161,17 @@ export type DateBound = { ok: true; value: string | undefined; day?: string } | 
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+function isCalendarDay(day: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+  const [year, month, date] = day.split("-").map(Number);
+  const calendar = new Date(0);
+  calendar.setUTCFullYear(year, month - 1, date);
+  return calendar.getUTCFullYear() === year &&
+    calendar.getUTCMonth() === month - 1 &&
+    calendar.getUTCDate() === date;
+}
+
+
 /**
  * A date box's text as a bound: blank is no bound, YYYY-MM-DD (on the
  * calendar) is that day, anything else is refused. The one place a typed
@@ -173,11 +184,7 @@ export function parseDateBound(text: string, ctx: ResolveContext = {}): DateBoun
   const t = text.trim();
   if (t === "") return { ok: true, value: undefined };
   if (ISO_DAY.test(t)) {
-    const [y, m, d] = t.split("-").map(Number);
-    const day = new Date(Date.UTC(y, m - 1, d));
-    return day.getUTCFullYear() === y && day.getUTCMonth() === m - 1 && day.getUTCDate() === d
-      ? { ok: true, value: t }
-      : { ok: false };
+    return isCalendarDay(t) ? { ok: true, value: t } : { ok: false };
   }
   const day = resolveDateBound(t, ctx);
   return day ? { ok: true, value: t, day } : { ok: false };

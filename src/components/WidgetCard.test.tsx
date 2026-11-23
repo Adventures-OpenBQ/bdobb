@@ -4994,3 +4994,205 @@ it('treats linked-chart source selection as saved Parameters, closed by default'
     await waitFor(() => expect(useDashboardStore.getState().dashboards[0].tabs[0].cards[0]).not.toHaveProperty('paramsOpen'));
   } finally {ensure.mockRestore();}
 });
+
+describe('integrated analytical title parameter ordering', () => {
+  async function headerFixture(over: Partial<DashboardCard> = {}, analytical = true) {
+    const {tableExecutionStore} = await import('../stores/tableExecutionStore');
+    const model = {
+      schemaVersion: 1 as const, enabled: true,
+      categories: [{id: 'year', name: 'Year', sourceFieldId: 'year', transform: 'native' as const}, {id: 'sector', name: 'Sector', sourceFieldId: 'sector', transform: 'native' as const}],
+      measures: [], formulas: [], params: {promotePage: true, filters: [{id: 'sector-param', categoryId: 'sector', label: 'Sector', multiSelect: true}]},
+      layout: {rows: [], columns: [], values: [], page: {categoryId: 'year', memberKeys: ['["number",2025]']}},
+      checklists: [{categoryId: 'sector', memberKeys: ['["string","Tech"]']}], resultFilters: [], subtotals: {grandTotal: false, groups: false},
+    };
+    const definition = {table: {}, search: '', ...(analytical ? {analytical: model} : {})};
+    const item: DashboardCard = {...card, params: {symbol: 'AAPL', market: 'NYSE'}, ...(analytical ? {tableDefinition: definition} : {}), ...over};
+    register({type: 'table', params: [{paramName: 'symbol', label: 'Symbol', type: 'text'}, {paramName: 'market', label: 'Market', type: 'text', row: 1}]});
+    const view = vi.spyOn(tableExecutionStore, 'readView').mockReturnValue({status: 'pending', requested: {widgetId: item.id, input: 0, model: 0, output: 0}, definition, selection: {kind: 'none'}, stale: false});
+    const ensure = vi.spyOn(tableExecutionStore, 'ensureTable').mockImplementation(() => {});
+    useDashboardStore.setState({dashboards: [{id: 'd1', name: 'D', tabs: [{id: 't1', name: 'Main', cards: [item]}]}], activeId: 'd1', activeTabId: 't1'});
+    try {
+      const rendered = render(<WidgetCard card={item} onRemove={vi.fn()}/>);
+      return {...rendered, dispose: () => {rendered.unmount(); view.mockRestore(); ensure.mockRestore();}};
+    } catch (error) {view.mockRestore(); ensure.mockRestore(); throw error;}
+  }
+
+  it('composes Page then ordinary row zero then filter in the real title scroller, with later rows only docked', async () => {
+    const rendered = await headerFixture();
+    try {
+      const header = rendered.container.querySelector('header')!;
+      const strip = header.querySelector('.card-chips')!;
+      expect(Array.from(header.querySelectorAll('.param-label')).map(el => el.textContent)).toEqual(['Year', 'Symbol', 'Sector']);
+      expect(Array.from(strip.querySelectorAll('.param-label')).map(el => el.textContent)).toEqual(['Year', 'Symbol', 'Sector']);
+      expect(strip.querySelectorAll('[data-pivot-param="pivot:page"]')).toHaveLength(1);
+      expect(header.querySelectorAll('[data-pivot-param="pivot:page"]')).toHaveLength(1);
+      expect(strip).toContainElement(screen.getByLabelText('Symbol'));
+      expect(strip.querySelectorAll('[data-pivot-param]')).toHaveLength(2);
+      expect(strip.compareDocumentPosition(header.querySelector('.card-controls')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.queryByRole('textbox', {name: 'Market'})).toBeNull();
+      await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+      const panel = screen.getByRole('region', {name: 'Parameters'});
+      expect(within(panel).getByRole('textbox', {name: 'Market'})).toHaveValue('NYSE');
+      expect(within(panel).queryByLabelText('Symbol')).toBeNull();
+      expect(within(strip as HTMLElement).queryByLabelText('Market')).toBeNull();
+      expect(screen.getAllByLabelText('Symbol')).toHaveLength(1);
+      expect(screen.getAllByLabelText('Market')).toHaveLength(1);
+      expect(Array.from(strip.querySelectorAll('.param-label')).map(el => el.textContent)).toEqual(['Year', 'Symbol', 'Sector']);
+    } finally {rendered.dispose();}
+  });
+
+  it('keeps an ordinary-only row-zero title and its later-row dock unchanged', async () => {
+    const rendered = await headerFixture({}, false);
+    try {
+      const strip = rendered.container.querySelector('.card-chips')!;
+      expect(Array.from(strip.querySelectorAll('.param-label')).map(el => el.textContent)).toEqual(['Symbol']);
+      expect(rendered.container.querySelectorAll('[data-pivot-param]')).toHaveLength(0);
+      await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+      const panel = screen.getByRole('region', {name: 'Parameters'});
+      expect(within(panel).getByLabelText('Market')).toHaveValue('NYSE');
+      expect(within(panel).queryByLabelText('Symbol')).toBeNull();
+      expect(screen.getAllByLabelText('Symbol')).toHaveLength(1);
+    } finally {rendered.dispose();}
+  });
+
+  it('keeps hidden ordinary title controls only in the analytical dock while preserving Page before filter', async () => {
+    const rendered = await headerFixture({hideTitleParams: true});
+    try {
+      const header = rendered.container.querySelector('header')!;
+      const strip = header.querySelector('.card-chips')!;
+      expect(Array.from(strip?.querySelectorAll('.param-label') ?? []).map(el => el.textContent)).toEqual(['Year', 'Sector']);
+      expect(within(header).queryByLabelText('Symbol')).toBeNull();
+      await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+      const panel = screen.getByRole('region', {name: 'Parameters'});
+      expect(within(panel).getByLabelText('Symbol')).toHaveValue('AAPL');
+      expect(within(panel).getByLabelText('Market')).toHaveValue('NYSE');
+      expect(screen.getAllByLabelText('Symbol')).toHaveLength(1);
+      expect(screen.getAllByLabelText('Market')).toHaveLength(1);
+    } finally {rendered.dispose();}
+  });
+
+  it('moves collapsed ordinary row zero out of the dock only when its analytical title controls open', async () => {
+    useSettingsStore.setState({settings: {...DEFAULT_SETTINGS, collapseWidgetControls: true}});
+    const rendered = await headerFixture();
+    try {
+      await userEvent.click(screen.getByRole('button', {name: 'Show parameters'}));
+      const panel = screen.getByRole('region', {name: 'Parameters'});
+      expect(within(panel).getByLabelText('Symbol')).toHaveValue('AAPL');
+      expect(within(panel).getByLabelText('Market')).toHaveValue('NYSE');
+      await userEvent.click(screen.getByRole('button', {name: 'Show widget controls'}));
+      const strip = rendered.container.querySelector('.card-chips')!;
+      expect(Array.from(strip.querySelectorAll('.param-label')).map(el => el.textContent)).toEqual(['Year', 'Symbol', 'Sector']);
+      expect(within(panel).queryByLabelText('Symbol')).toBeNull();
+      expect(within(panel).getByLabelText('Market')).toHaveValue('NYSE');
+      expect(screen.getAllByLabelText('Symbol')).toHaveLength(1);
+    } finally {rendered.dispose();}
+  });
+
+  it('does not expose analytical or ordinary parameter controls on a minimized card', async () => {
+    const rendered = await headerFixture({minimized: true});
+    try {
+      expect(rendered.container.querySelectorAll('.card-chips, [data-pivot-param]')).toHaveLength(0);
+      expect(screen.queryByLabelText('Symbol')).toBeNull();
+      expect(screen.queryByLabelText('Market')).toBeNull();
+      expect(screen.queryByRole('region', {name: 'Parameters'})).toBeNull();
+    } finally {rendered.dispose();}
+  });
+});
+
+
+describe('title scrollbar overflow lifecycle', () => {
+  function overflowFixture() {
+    const observers: {targets: Set<Element>; callback: ResizeObserverCallback; disconnected: boolean}[] = [];
+    const previous = globalThis.ResizeObserver;
+    class ControlledResizeObserver {
+      readonly state: typeof observers[number];
+      constructor(callback: ResizeObserverCallback) {
+        this.state = {targets: new Set(), callback, disconnected: false};
+        observers.push(this.state);
+      }
+      observe(target: Element) { this.state.targets.add(target); }
+      unobserve(target: Element) { this.state.targets.delete(target); }
+      disconnect() { this.state.targets.clear(); this.state.disconnected = true; }
+    }
+    vi.stubGlobal('ResizeObserver', ControlledResizeObserver);
+    register({type: 'table', params: [{paramName: 'symbol', label: 'Symbol', type: 'text'}]});
+    const item = {...card, params: {symbol: 'AAPL'}};
+    useBackendsStore.setState({backends: [backend()]});
+    useDashboardStore.setState({dashboards: [{id: 'd1', name: 'D', tabs: [{id: 't1', name: 'Main', cards: [item]}]}], activeId: 'd1', activeTabId: 't1'});
+    const rendered = render(<WidgetCard card={item} onRemove={vi.fn()}/>);
+    const strip = rendered.container.querySelector('.card-chips') as HTMLElement;
+    let viewport = 100, content = 100;
+    Object.defineProperties(strip, {
+      clientWidth: {configurable: true, get: () => viewport},
+      scrollWidth: {configurable: true, get: () => content},
+    });
+    function resize(target: Element, nextViewport: number, nextContent: number) {
+      viewport = nextViewport; content = nextContent;
+      act(() => {
+        for (const observer of observers.filter(o => o.targets.has(target))) {
+          observer.callback([{target} as ResizeObserverEntry], {} as ResizeObserver);
+        }
+      });
+    }
+    return {rendered, strip, item, observers, resize,
+      dimensions: (nextViewport: number, nextContent: number) => {viewport = nextViewport; content = nextContent;},
+      dispose: () => {rendered.unmount(); vi.stubGlobal('ResizeObserver', previous);},
+    };
+  }
+
+  it('reserves scrollbar space only for actual overflow and removes it when a resize fits the content', async () => {
+    const f = overflowFixture();
+    try {
+      expect(f.strip).not.toHaveClass('card-chips-overflowing');
+      f.resize(f.strip, 100, 240);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.resize(f.strip, 300, 240);
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+      f.resize(f.strip, 100, 101); // One pixel of rounding does not justify a gutter.
+      expect(f.strip).not.toHaveClass('card-chips-overflowing');
+      expect(within(f.strip).getByLabelText('Symbol')).toHaveValue('AAPL');
+    } finally {f.dispose();}
+  });
+
+  it('remeasures asynchronous direct-content growth even when the strip width does not change', async () => {
+    const f = overflowFixture();
+    try {
+      const content = f.strip.firstElementChild!;
+      await waitFor(() => expect(f.observers.some(o => o.targets.has(content))).toBe(true));
+      f.resize(content, 100, 260);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.resize(content, 100, 80);
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+    } finally {f.dispose();}
+  });
+
+  it('observes newly mounted direct content and releases it when removed', async () => {
+    const f = overflowFixture();
+    try {
+      const incoming = document.createElement('span');
+      f.dimensions(100, 250);
+      act(() => {f.strip.appendChild(incoming);});
+      await waitFor(() => expect(f.observers.some(o => o.targets.has(incoming))).toBe(true));
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      f.dimensions(100, 80);
+      act(() => {incoming.remove();});
+      await waitFor(() => expect(f.observers.every(o => !o.targets.has(incoming))).toBe(true));
+      await waitFor(() => expect(f.strip).not.toHaveClass('card-chips-overflowing'));
+    } finally {f.dispose();}
+  });
+
+  it('disconnects strip and content observation when title controls are hidden or the card unmounts', async () => {
+    const f = overflowFixture();
+    try {
+      f.resize(f.strip, 100, 220);
+      await waitFor(() => expect(f.strip).toHaveClass('card-chips-overflowing'));
+      const active = f.observers.filter(o => o.targets.has(f.strip));
+      expect(active.length).toBeGreaterThan(0);
+      f.rendered.rerender(<WidgetCard card={{...f.item, hideTitleParams: true}} onRemove={vi.fn()}/>);
+      expect(f.rendered.container.querySelector('.card-chips')).toBeNull();
+      await waitFor(() => expect(active.every(o => o.disconnected && o.targets.size === 0)).toBe(true));
+      f.rendered.unmount();
+      expect(f.observers.every(o => o.targets.size === 0)).toBe(true);
+    } finally {f.dispose();}
+  });
+});

@@ -9,6 +9,11 @@ overrides:
   minimatch@>=7.0.0 <11.0.1: 11.0.1
   zod@>=4.0.0 <4.6.6: 4.6.6
 
+patchedDependencies:
+  '@tanstack/table-core@8.21.3':
+    hash: 0f638ca32d2c4e0d3436601b95f767d1c5f7b9d1e6c0645c47960d91eb8532be
+    path: patches/@tanstack__table-core@8.21.3.patch
+
 importers:
 
   .:
@@ -5043,7 +5048,7 @@ snapshots:
 
   '@tanstack/react-table@8.21.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@tanstack/table-core': 8.21.3
+      '@tanstack/table-core': 8.21.3(patch_hash=0f638ca32d2c4e0d3436601b95f767d1c5f7b9d1e6c0645c47960d91eb8532be)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
@@ -5053,7 +5058,7 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  '@tanstack/table-core@8.21.3': {}
+  '@tanstack/table-core@8.21.3(patch_hash=0f638ca32d2c4e0d3436601b95f767d1c5f7b9d1e6c0645c47960d91eb8532be)': {}
 
   '@tanstack/virtual-core@3.17.8': {}
 

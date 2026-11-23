@@ -28,6 +28,7 @@ pub fn migrate_data(parent: &Path, target: &str) -> io::Result<Option<PathBuf>> 
         std::fs::remove_dir_all(&staging)?;
     }
     copy_dir(&source, &staging)?;
+    std::fs::write(staging.join(MARKER), format!("copied from {SOURCE}\n"))?;
     let backup = if dest.exists() {
         let mut aside = parent.join(format!("{target}.v1-backup"));
         let mut n = 2;
@@ -41,7 +42,6 @@ pub fn migrate_data(parent: &Path, target: &str) -> io::Result<Option<PathBuf>> 
         None
     };
     std::fs::rename(&staging, &dest)?;
-    std::fs::write(dest.join(MARKER), format!("copied from {SOURCE}\n"))?;
     Ok(backup)
 }
 
@@ -96,6 +96,23 @@ mod tests {
         // The source is copied, not moved.
         assert_eq!(fs::read_to_string(parent.join(SOURCE).join("settings.json")).unwrap(), "repair");
         assert!(parent.join(TARGET).join(MARKER).exists());
+    }
+
+    #[test]
+    fn marker_failure_leaves_the_live_data_in_place() {
+        let parent = scratch("marker-failure");
+        write(parent.join(SOURCE).join("settings.json"), "repair");
+        // An existing directory at the copied marker path makes writing a file fail.
+        fs::create_dir(parent.join(SOURCE).join(MARKER)).unwrap();
+        write(parent.join(TARGET).join("settings.json"), "original");
+
+        assert!(migrate_data(&parent, TARGET).is_err());
+        assert_eq!(
+            fs::read_to_string(parent.join(TARGET).join("settings.json")).unwrap(),
+            "original"
+        );
+        assert!(!parent.join(format!("{TARGET}.v1-backup")).exists());
+        fs::remove_dir_all(parent).unwrap();
     }
 
     #[test]

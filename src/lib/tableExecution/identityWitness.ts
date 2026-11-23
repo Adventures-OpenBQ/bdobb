@@ -20,7 +20,7 @@ export function identityWitness(input: WidgetDataset, path: TableDefinition[], i
   const hidden = new Set([rootDefinition, ...path.slice(0, -1)].flatMap(d => d.table.hidden ?? []));
   const columns = rootColumns.filter(column => !hidden.has(column.id));
   const required = [...(target.table.pivot?.enabled ? [...target.table.pivot.grouping, ...target.table.pivot.split] : [])];
-  if (required.some(field => !columns.some(c => c.id === field && !c.measureId && !c.sourceBindingId && !c.aggregation && !c.splitPath?.length && (!c.sourceFieldId || c.sourceFieldId === c.id)))) return unknown();
+  if (required.some(field => !columns.some(c => c.id === field && !c.measureId && c.sourceBindingId === undefined && !c.aggregation && !c.splitPath?.length && (c.sourceFieldId === undefined || c.sourceFieldId === c.id)))) return unknown();
   // Ordinary delivery preserves an explicit/inferred dtype once the root has
   // one. An untyped root column can instead be re-inferred from a child's
   // filtered subset (e.g. object first at root, date first at child). A date

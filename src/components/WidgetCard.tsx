@@ -12,7 +12,7 @@ import { PivotIcon } from "./PivotIcon";
 import { StatementWorkerView } from "./renderers/StatementWorkerView";
 import type { StatementSnapshot } from "../lib/statementExecution";
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
-import { type ComponentProps, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ComponentProps, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat, writeFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useResolvedTheme } from "../hooks/useResolvedTheme";
@@ -140,7 +140,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer"]);
+const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid"]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -1083,7 +1083,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       // card's data===null gate would otherwise claim it. The renderer fetches
       // its own snapshot and opens the socket. `query` carries the resolved
       // symbol selection, the same params a GET would send.
-      return <LiveGridRenderer widget={widget} backend={backend} params={query} />;
+      return <LiveGridRenderer widget={widget} backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
     }
 
     // Same shape as live_grid above, and for the same reason: fetchesData is
@@ -1317,6 +1317,47 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         }
       : null;
 
+  const analyticalHeader = Boolean(dashboard && card.tableDefinition?.analytical !== undefined);
+  const ordinaryTitleControls = !minimized && hasControls && !hideTitleParams && controlProps
+    ? <ParamControls {...controlProps} rowZeroOnly inline={analyticalHeader} />
+    : undefined;
+
+  const [titleStrip, setTitleStrip] = useState<HTMLDivElement | null>(null);
+  const [titleStripOverflows, setTitleStripOverflows] = useState(false);
+  useLayoutEffect(() => {
+    if (!titleStrip) return;
+    // WebKit's overlay scrollbar reserves no layout gutter and otherwise
+    // covers the controls. Keep clearance only while scrolling is needed.
+    const measure = () => setTitleStripOverflows(titleStrip.scrollWidth > titleStrip.clientWidth + 1);
+    const resize = new ResizeObserver(measure);
+    resize.observe(titleStrip);
+    const children = new Set<Element>();
+    const observeChildren = () => {
+      for (const child of children) {
+        if (child.parentElement !== titleStrip) {
+          resize.unobserve(child);
+          children.delete(child);
+        }
+      }
+      for (const child of titleStrip.children) {
+        if (!children.has(child)) {
+          resize.observe(child);
+          children.add(child);
+        }
+      }
+      measure();
+    };
+    observeChildren();
+    // Pivot controls can mount after data arrives; observe just this strip,
+    // not the table or chart body.
+    const mutation = new MutationObserver(observeChildren);
+    mutation.observe(titleStrip, {childList: true});
+    return () => {
+      mutation.disconnect();
+      resize.disconnect();
+    };
+  }, [titleStrip]);
+
   return (
     <article
       className="widget-card"
@@ -1417,11 +1458,20 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && hasControls && !hideTitleParams && controlProps ? (
+        {!minimized && (ordinaryTitleControls || analyticalHeader) ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
+            ref={setTitleStrip}
+            className={`card-chips${titleStripOverflows ? " card-chips-overflowing" : ""}${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            <ParamControls {...controlProps} rowZeroOnly />
+            {analyticalHeader && dashboard ? (
+              <PivotParamRow
+                dashboardId={dashboard.id}
+                widgetId={card.id}
+                raw={card.tableDefinition?.analytical}
+                viewer={viewer}
+                ordinary={ordinaryTitleControls}
+              />
+            ) : ordinaryTitleControls}
           </div>
         ) : null}
         {sharedWithRita && canShare ? (
@@ -1819,7 +1869,6 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             {hasChartParameters ? <button type="button" onClick={() => setChooseSource(true)}>Choose source</button> : null}
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={viewer} /> : null}
       </header>
       {exportNotice ? (
         <p className="card-notice" role="status">

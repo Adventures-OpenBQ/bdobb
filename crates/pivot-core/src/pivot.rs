@@ -898,7 +898,12 @@ pub fn pivot(
             let mut c = e.column(&m.source_field_id).clone();
             c.field = m.id.clone();
             c.source = Some(m.source_field_id.clone());
-            c.measure_id = Some(m.id.clone());
+            // An implicit raw-field alias is not an authored measure identity.
+            c.measure_id = if input.config.measures.is_none() && m.id.is_empty() {
+                None
+            } else {
+                Some(m.id.clone())
+            };
             c.aggregation = m.aggregation;
             if input.config.measures.is_some() {
                 c.header = measure_label(m, &c, &e.measures);
