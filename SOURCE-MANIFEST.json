@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v4.0.0",
-  "baseCommit": "999f776c99c74ee84635fe5f80f124e91b37ac8f",
-  "sourceId": "7975463c347bf1c12378f88da7bedbe27a694430fe81a9c29f0546662d9d5609",
+  "baseCommit": "67e328a7958d512110bb0e81dc197ec5b3536fb1",
+  "sourceId": "9a1a020e5be53c2279ef2e98fc48d12e87cbbaf987342d77a715e1cd3fbbd798",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -10142,8 +10142,8 @@
       "path": "e2e/periods.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 14829,
-      "sha256": "9699c6e00f980415de64d6889c2a6563f56e06af37527041ef1bcd8342443c75"
+      "size": 15556,
+      "sha256": "b548f322e4d202b5aed8e9f10be3af9b676a9b1453c7c0f8123943f7a759505d"
     },
     {
       "path": "e2e/pivot-drawer.spec.ts",
@@ -10191,8 +10191,8 @@
       "path": "e2e/pivot-params.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 11666,
-      "sha256": "9aba814e22a742e5950e103dcc7f10eda8b8b1e275ac6a510a50413c1c583436"
+      "size": 13058,
+      "sha256": "de6e18ca0827be3a752ae6eabb88ba6b3f3fc0f9a5bfe9441b8d958759c5017e"
     },
     {
       "path": "e2e/pivot-runtime.spec.ts",
@@ -11578,7 +11578,7 @@
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "7cdef900d842ff8a49686c2346b5120039aab093ac402323b56ce632f09cfeec"
+      "sha256": "7d43f94aefa6f00ffe05c80a58704048cdd8fadd6c1356062ea43543e523400e"
     },
     {
       "path": "source_bundle.py",
@@ -12130,22 +12130,22 @@
       "path": "src/components/WidgetCard.paramFlow.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 22540,
-      "sha256": "e445a43902778afc6d3c854da193cc259536ab86720dd12cc3726abbf25340ec"
+      "size": 22848,
+      "sha256": "8fb184a93032423d9d22b23a900a6038240e6f9769027d3eedba074537fbd480"
     },
     {
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 209494,
-      "sha256": "5215af9753b84f88ce0e13070da7179116642e9a07ca42707f902b39557a2854"
+      "size": 214469,
+      "sha256": "e53a2a91f2eda377c1961f81abab58c10abdbfae98779d7c379702da5d1a42f0"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 97298,
-      "sha256": "af3df19dd2a290f0aeba850200a1259486582c92f042b30f6af808d7e8ac3383"
+      "size": 98734,
+      "sha256": "a3e721dd93f8171de56d32dffc04c85bedb5545d1e39774ee87aedf9340f569b"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -17695,8 +17695,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 111883,
-      "sha256": "98f1e4335f62a104c89cea0542446e83cb0942518d55ed04077b51e83f5bbc99"
+      "size": 111933,
+      "sha256": "cccaed5e714bbaad78baeac1c6ba2f09ee9aa360951ba08b76baad459fc79f36"
     },
     {
       "path": "src/test/fakeSocket.ts",
