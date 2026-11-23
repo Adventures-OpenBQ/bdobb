@@ -3,9 +3,12 @@ from pathlib import Path
 from unittest import mock
 spec=importlib.util.spec_from_file_location('qa',Path(__file__).with_name('encrypt_qa_candidates.py'))
 qa=importlib.util.module_from_spec(spec);spec.loader.exec_module(qa)
+from test_v4_mac_qualification import binding_fixture
 class RetentionTests(unittest.TestCase):
+    RELEASE='v4.0.0'
+    def setUp(self):self.binding=binding_fixture(self.RELEASE);qa.configure_release(self.binding)
     def fixture(self,root):
-        bundle=root/'bundle';names=[('dmg','BDOBB_4.0.0_x64.dmg'),('','BDOBB_x64.app.tar.gz')]
+        bundle=root/'bundle';names=[('dmg',f"BDOBB_{self.binding['version']}_x64.dmg"),('','BDOBB_x64.app.tar.gz')]
         for index,(directory,name) in enumerate(names):
             (bundle/directory).mkdir(parents=True,exist_ok=True);(bundle/directory/name).write_bytes(('synthetic package '+str(index)).encode())
         return bundle,names
@@ -70,7 +73,7 @@ class RetentionTests(unittest.TestCase):
     def test_output_directory_is_fresh_exact_runner_temp_child(self):
             with tempfile.TemporaryDirectory() as temporary:
                 runner_temp = Path(temporary).resolve()
-                expected = runner_temp / 'v4-encrypted-qa-mac-intel'
+                expected = runner_temp / (self.RELEASE+'-encrypted-qa-mac-intel')
                 qa.prepare_output(expected, runner_temp, 'mac-intel')
                 self.assertEqual(list(expected.iterdir()), [])
                 with self.assertRaises(qa.RetentionError): qa.prepare_output(expected, runner_temp, 'mac-intel')
@@ -136,7 +139,10 @@ class RetentionTests(unittest.TestCase):
             with self.assertRaises(qa.RetentionError):qa.select_candidates(root,'table-amd64')
     def test_receipt_remains_blocked_and_contains_no_payload(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root=Path(temporary).resolve();cipher=root/'qa-blocked-v4-mac-intel.tar.age';cipher.write_bytes(b'age-encryption.org/v1\nsynthetic ciphertext')
-            r=qa.make_receipt('mac-intel',[{'filename':'BDOBB_4.0.0_x64.dmg','size':1,'sha256':'a'*64}],cipher,'b'*40,'package-scan')
+            root=Path(temporary).resolve();cipher=root/('qa-blocked-'+self.RELEASE+'-mac-intel.tar.age');cipher.write_bytes(b'age-encryption.org/v1\nsynthetic ciphertext')
+            r=qa.make_receipt('mac-intel',[{'filename':f"BDOBB_{self.binding['version']}_x64.dmg",'size':1,'sha256':'a'*64}],cipher,'b'*40,'package-scan')
             self.assertEqual(r['qualification_state'],'FAILED/BLOCKED');self.assertEqual(r['retention_days'],1);self.assertIsNone(r['image_identity']);self.assertNotIn('synthetic ciphertext',json.dumps(r));self.assertNotIn('AGE-SECRET-KEY',json.dumps(r))
+def load_tests(loader,tests,pattern):
+    return unittest.TestSuite(loader.loadTestsFromTestCase(type('Retention_'+v,(RetentionTests,),{'RELEASE':v})) for v in ['v3.0.0','v4.0.0','v5.0.0'])
+
 if __name__=='__main__':unittest.main()

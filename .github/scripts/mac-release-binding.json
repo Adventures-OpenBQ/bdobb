@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "bindings": {
+    "v3.0.0": {
+      "productCommit": "aad537fb075de224e988a0922a7c482172643ec0",
+      "auditorCommit": "aad537fb075de224e988a0922a7c482172643ec0",
+      "baseCommit": "b982c1808b553480f5856320e35fa3f612a31709",
+      "sourceId": "0f2facdc1bfa1ea8bb9c03d4c05764af3a2af207932eb4f3f722847fc6b497ca"
+    },
+    "v4.0.0": {
+      "productCommit": "311b9c24a5757de58b8082bff467c51d84e91b17",
+      "auditorCommit": "311b9c24a5757de58b8082bff467c51d84e91b17",
+      "baseCommit": "a39ac0165fd28f577b28e120b8335019f9f881ab",
+      "sourceId": "134236646cd9d524ee14862e9b1bcc49201e00fc4e3a355a4f001675f3e2fa63"
+    },
+    "v5.0.0": {
+      "productCommit": "75dbcec84ef82f675385dce80879e4d926e89c0a",
+      "auditorCommit": "75dbcec84ef82f675385dce80879e4d926e89c0a",
+      "baseCommit": "1244589e3d4c32b4736f97c6a011505414baf593",
+      "sourceId": "31fd0bc90325c12cfe43f492139976ca4659ae6f759e87b3d2a59e634fa8b16c"
+    }
+  },
+  "retention": {
+    "publicRecipient": "age1vu43nd2rl5l8p7ra6kudlcdmx3kzxfz2trwa2ur7pf44f2x443gsasmee2",
+    "fingerprint": "928a115d98738dc32c36292567fee403516ee2ac5443ec74f1d0658ca2d170c5"
+  }
+}

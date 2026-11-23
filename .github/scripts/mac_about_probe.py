@@ -13,8 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-SOURCE = 'fecff636e2389d417a320b66c9264d612ebb3a64'
-OFFER = '00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c'
+
 GAPS = {'GAP_AX_NOT_TRUSTED', 'GAP_APP_AX_UNAVAILABLE', 'GAP_APP_MENU_NOT_FOUND', 'GAP_ACTIVATION_UNAVAILABLE',
         'GAP_APP_MENU_ACTION_UNAVAILABLE', 'GAP_ABOUT_MENU_NOT_FOUND', 'GAP_ABOUT_MENU_ACTION_UNAVAILABLE',
         'GAP_ABOUT_WINDOW_NOT_FOUND', 'GAP_ABOUT_VISIBILITY_UNCONFIRMED', 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE',
@@ -32,7 +31,7 @@ def file_hash(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def classify_observation(value):
+def classify_observation(value, version):
     invalid = {'status': 'GAP_PROBE_OUTPUT_INVALID'}
     allowed = {'status', 'origin', 'ax_trusted', 'menu_invoked', 'owned_window_focused', 'name_text', 'version_text', 'nodes_visited'}
     if not isinstance(value, dict) or set(value) - allowed or value.get('origin') != 'AX_OWNED_ABOUT_STATIC_TEXT': return invalid
@@ -45,12 +44,12 @@ def classify_observation(value):
         return safe
     if status != 'AX_TEXT_OBSERVED' or value['ax_trusted'] is not True or value['menu_invoked'] is not True: return invalid
     if value['owned_window_focused'] is not True: return {'status': 'GAP_ABOUT_VISIBILITY_UNCONFIRMED'}
-    name, version = value.get('name_text'), value.get('version_text')
-    if name != 'BDOBB' or not isinstance(version, str) or len(version) > 128: return {'status': 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE'}
-    version = ' '.join(version.split())
-    if not re.fullmatch(r'Version [0-9]+(?:\.[0-9]+){1,3} \([0-9]+(?:\.[0-9]+){1,3}\)', version): return {'status': 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE'}
-    safe.update(status='OBSERVED_VERSION_MATCH' if version == 'Version 4.0.0 (4.0.0)' else 'FAIL_DISPLAYED_VERSION_MISMATCH',
-                origin='AX_OWNED_ABOUT_STATIC_TEXT', owned_window_focused=True, name_text=name, version_text=version)
+    name, captured = value.get('name_text'), value.get('version_text')
+    if name != 'BDOBB' or not isinstance(captured, str) or len(captured) > 128: return {'status': 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE'}
+    observed_version = ' '.join(captured.split())
+    if not re.fullmatch(r'Version [0-9]+(?:\.[0-9]+){1,3} \([0-9]+(?:\.[0-9]+){1,3}\)', observed_version): return {'status': 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE'}
+    safe.update(status='OBSERVED_VERSION_MATCH' if observed_version == f'Version {version} ({version})' else 'FAIL_DISPLAYED_VERSION_MISMATCH',
+                origin='AX_OWNED_ABOUT_STATIC_TEXT', owned_window_focused=True, name_text=name, version_text=observed_version)
     return safe
 
 
@@ -85,7 +84,10 @@ def validate_owned_process(pid, executable):
     if owner.returncode or owner.stdout.strip() != str(os.getuid()): raise ProbeError('ERROR_PROCESS_OWNER_MISMATCH')
 
 
-def observe(args):
+def observe(args, binding=None):
+    if binding is None:
+        from v4_mac_qualification import load_release_binding
+        binding=load_release_binding()
     require_hosted_macos(args.expected_arch)
     runner_temp = Path(os.environ['RUNNER_TEMP']).resolve(strict=True)
     workspace = Path(os.environ['GITHUB_WORKSPACE']).resolve(strict=True)
@@ -118,7 +120,7 @@ def observe(args):
             try:
                 observed = subprocess.run([str(probe), '--pid', str(args.pid), '--executable', str(executable), '--sha256', args.sha256],
                                           capture_output=True, timeout=15)
-                result = classify_observation(json.loads(observed.stdout)) if observed.stdout else {'status': 'GAP_PROBE_OUTPUT_INVALID'}
+                result = classify_observation(json.loads(observed.stdout), binding['version']) if observed.stdout else {'status': 'GAP_PROBE_OUTPUT_INVALID'}
                 if observed.returncode not in {0, 2}: result = {'status': 'GAP_PROBE_FAILED'}
             except subprocess.TimeoutExpired:
                 result = {'status': 'GAP_PROBE_TIMEOUT'}
@@ -127,7 +129,7 @@ def observe(args):
     validate_owned_process(args.pid, executable)
     validate_executable(executable, runner_temp, args.sha256, args.expected_arch)
     record = {'schema': 1, 'method': 'PID-scoped native AX app-menu About observer; no permission requests or metadata-as-UI fallback',
-              'source_commit': SOURCE, 'source_offer_id': OFFER, 'pid': args.pid, 'executable_sha256': args.sha256,
+              'source_commit': binding['product_commit'], 'source_offer_id': binding['source_id'], 'pid': args.pid, 'executable_sha256': args.sha256,
               'native_architecture': args.expected_arch, 'swift_source_sha256': file_hash(source),
               'ax_phase_timeout_seconds': 10, 'process_timeout_seconds': 15, 'maximum_nodes': 256, **result}
     with output.open('x', encoding='utf-8', newline='\n') as stream: stream.write(json.dumps(record, indent=2) + '\n')

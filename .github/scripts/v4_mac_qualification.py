@@ -1,15 +1,48 @@
 #!/usr/bin/env python3
-"""V4 Mac-only controller reusing the reviewed V3 package/runtime boundaries."""
-import argparse, hashlib, importlib.util, json, os, platform, plistlib, shutil, signal, struct, subprocess, sys, tempfile, time
+"""Mac Mac-only controller reusing the reviewed V3 package/runtime boundaries."""
+import argparse, hashlib, importlib.util, json, os, platform, plistlib, shutil, signal, struct, re, subprocess, sys, tempfile, time
 from pathlib import Path
-SOURCE_COMMIT='fecff636e2389d417a320b66c9264d612ebb3a64'
-SOURCE_ID='00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c'
-EXPECTED_OFFER={
- 'sourceId':SOURCE_ID,'baseCommit':'b4648a186b4a328b46efb7ece18462e5ed4f03d9',
- 'archiveFilename':'bdobb-v4.0.0-agpl-00b661cf92ed-source.tar.gz',
- 'archiveUrl':'https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-v4.0.0-00b661cf92ed/bdobb-v4.0.0-agpl-00b661cf92ed-source.tar.gz'}
-TARGETS={'mac-arm':('aarch64',['BDOBB_4.0.0_aarch64.dmg','BDOBB_aarch64.app.tar.gz']),
- 'mac-intel':('x86_64',['BDOBB_4.0.0_x64.dmg','BDOBB_x64.app.tar.gz'])}
+SUPPORTED_RELEASES=('v3.0.0','v4.0.0','v5.0.0')
+BINDING_PATH=Path(__file__).with_name('mac-release-binding.json')
+RELEASE_VERSION=VERSION=SOURCE_COMMIT=SOURCE_ID=AUDITOR_COMMIT=None
+EXPECTED_OFFER={}
+TARGETS={}
+BINDING=None
+
+def load_release_binding(release=None,path=None):
+    release=release or os.environ.get('BDOBB_RELEASE_VERSION')
+    if release not in SUPPORTED_RELEASES: raise ValueError('Unsupported release binding')
+    path=Path(path or BINDING_PATH)
+    if path.is_symlink() or not path.is_file(): raise ValueError('Missing physical release binding')
+    def unique(pairs):
+        result=dict(pairs)
+        if len(result)!=len(pairs):raise ValueError('Duplicate release binding field')
+        return result
+    value=json.loads(path.read_text(encoding='utf-8'),object_pairs_hook=unique)
+    if not isinstance(value,dict) or set(value)!={'schemaVersion','bindings','retention'} or type(value['schemaVersion']) is not int or value['schemaVersion']!=1:raise ValueError('Invalid release binding schema')
+    slots=value['bindings']
+    if not isinstance(slots,dict) or set(slots)!=set(SUPPORTED_RELEASES):raise ValueError('Invalid release binding versions')
+    fields={'productCommit','auditorCommit','baseCommit','sourceId'}
+    if any(not isinstance(row,dict) or set(row)!=fields for row in slots.values()):raise ValueError('Invalid release binding fields')
+    row=slots[release]
+    for key in fields:
+        size=64 if key=='sourceId' else 40
+        if not isinstance(row[key],str) or not re.fullmatch('[0-9a-f]{'+str(size)+'}',row[key]):raise ValueError('Unfrozen release binding')
+    retention=value['retention']
+    if not isinstance(retention,dict) or set(retention)!={'publicRecipient','fingerprint'}:raise ValueError('Invalid retention binding')
+    recipient=retention['publicRecipient'];fingerprint=retention['fingerprint']
+    if not isinstance(recipient,str) or not re.fullmatch('age1[0-9a-z]{58}',recipient) or not isinstance(fingerprint,str) or hashlib.sha256(recipient.encode()).hexdigest()!=fingerprint:raise ValueError('Unfrozen retention binding')
+    filename=f"bdobb-{release}-agpl-{row['sourceId'][:12]}-source.tar.gz"
+    return {'release':release,'version':release[1:],'product_commit':row['productCommit'],'auditor_commit':row['auditorCommit'],'base_commit':row['baseCommit'],'source_id':row['sourceId'],'archive_filename':filename,'archive_url':f"https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-{release}-{row['sourceId'][:12]}/{filename}",'wasm':release!='v3.0.0','recipient':recipient,'recipient_fingerprint':fingerprint}
+
+def configure_release(binding=None):
+    global BINDING,RELEASE_VERSION,VERSION,SOURCE_COMMIT,SOURCE_ID,AUDITOR_COMMIT,EXPECTED_OFFER,TARGETS
+    BINDING=binding or load_release_binding();RELEASE_VERSION=BINDING['release'];VERSION=BINDING['version'];SOURCE_COMMIT=BINDING['product_commit'];SOURCE_ID=BINDING['source_id'];AUDITOR_COMMIT=BINDING['auditor_commit']
+    EXPECTED_OFFER={'sourceId':SOURCE_ID,'baseCommit':BINDING['base_commit'],'archiveFilename':BINDING['archive_filename'],'archiveUrl':BINDING['archive_url']}
+    TARGETS={'mac-arm':('aarch64',[f'BDOBB_{VERSION}_aarch64.dmg','BDOBB_aarch64.app.tar.gz']),'mac-intel':('x86_64',[f'BDOBB_{VERSION}_x64.dmg','BDOBB_x64.app.tar.gz'])}
+    return BINDING
+
+
 
 
 def expected_names(target):
@@ -63,7 +96,7 @@ def verify_offer(frontend):
         text = path.read_text(encoding="utf-8")
         if all(value in text for value in EXPECTED_OFFER.values()):
             return
-    raise ValueError("Final executable JavaScript does not embed the exact V4 source offer")
+    raise ValueError("Final executable JavaScript does not embed the exact Mac source offer")
 
 
 def verify_empty_profile(data):
@@ -105,7 +138,7 @@ def collect(app, target, auditor=None):
         found.append(matches[0])
     if target.startswith("mac-"):
         # Tauri can remove the intermediate .app after making the DMG.
-        with tempfile.TemporaryDirectory(prefix="v4-archive-") as temp:
+        with tempfile.TemporaryDirectory(prefix="mac-archive-") as temp:
             unpacked = Path(temp)
             load_release_gate(app).unpack(found[0], unpacked)
             bundles = list(unpacked.rglob("BDOBB.app"))
@@ -174,7 +207,7 @@ def native_runtime(executable, package, work, evidence, expected_arch):
                 probe = importlib.util.module_from_spec(probe_spec)
                 probe_spec.loader.exec_module(probe)
                 observation = probe.observe(SimpleNamespace(pid=process.pid, executable=str(executable), sha256=sha256(executable),
-                                                         expected_arch=expected_arch, evidence_dir=str(evidence), temp_dir=str(work)))
+                                                         expected_arch=expected_arch, evidence_dir=str(evidence), temp_dir=str(work)), binding=BINDING)
                 receipt["displayed_about"] = observation
                 if observation["status"].startswith(("ERROR_", "FAIL_")):
                     raise ValueError("Owned native About observer rejected application identity or displayed version")
@@ -204,13 +237,13 @@ def qualify(app, target, auditor=None):
     if host_arch != expected_arch:
         raise ValueError("Runner must natively match target architecture")
     if run(["git", "rev-parse", "HEAD"], cwd=app, capture_output=True).stdout.strip() != SOURCE_COMMIT:
-        raise ValueError("App checkout is not pinned final V4 source")
+        raise ValueError("App checkout is not pinned final Mac source")
     gate = load_release_gate(auditor or app)
     stage = app / "release-stage"
     require_packages(stage, expected_names(target))
     if json.loads((app / "source-offer.json").read_text())["sourceId"] != SOURCE_ID:
         raise ValueError("App source-offer identity mismatch")
-    if json.loads((app / "src-tauri/tauri.conf.json").read_text())["version"] != "4.0.0":
+    if json.loads((app / "src-tauri/tauri.conf.json").read_text())["version"] != VERSION:
         raise ValueError("Tauri source version mismatch")
     records = {}
     scans = json.loads((stage / "scan.json").read_text())
@@ -221,7 +254,7 @@ def qualify(app, target, auditor=None):
             raise ValueError("Package changed after app-owned final scanner")
         evidence = app / "qualification-evidence" / name
         evidence.mkdir(parents=True)
-        with tempfile.TemporaryDirectory(prefix="v4-runtime-", dir=os.environ["RUNNER_TEMP"]) as temp:
+        with tempfile.TemporaryDirectory(prefix="mac-runtime-", dir=os.environ["RUNNER_TEMP"]) as temp:
             work = Path(temp)
             unpacked = work / "unpacked"
             unpacked.mkdir()
@@ -240,7 +273,7 @@ def qualify(app, target, auditor=None):
             run(["tauri-dumper", "extract", executable, "-o", frontend, "--json"], capture_output=True)
             gate.check_frontend(frontend)
             verify_offer(frontend)
-            record = {"sha256": digest, "source_commit": SOURCE_COMMIT, "source_id": SOURCE_ID, "embedded_offer": EXPECTED_OFFER, "embedded_defaults": "all six exact empty values verified by app checker", "executable_sha256": sha256(executable), "architecture": expected_arch}
+            record = {"sha256": digest, "source_commit": SOURCE_COMMIT, "source_id": SOURCE_ID, "release":RELEASE_VERSION, "embedded_offer": EXPECTED_OFFER, "embedded_defaults": "all six exact empty values verified by app checker", "executable_sha256": sha256(executable), "architecture": expected_arch}
             if auditor is not None:
                 record["auditor_commit"] = run(["git", "rev-parse", "HEAD"], cwd=auditor, capture_output=True).stdout.strip()
             record["extracted_executable_member"] = member
@@ -248,7 +281,7 @@ def qualify(app, target, auditor=None):
             if platform.system() == "Darwin":
                 bundle = executable.parents[2]
                 meta = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
-                if meta.get("CFBundleShortVersionString") != "4.0.0" or meta.get("CFBundleIdentifier") != "com.artcashin.bdobb":
+                if meta.get("CFBundleShortVersionString") != VERSION or meta.get("CFBundleIdentifier") != "com.artcashin.bdobb":
                     raise ValueError("Installed macOS bundle identity/version mismatch")
                 result = run(["codesign", "--verify", "--deep", "--strict", bundle], capture_output=True)
                 record["signature"] = "valid ad hoc; no Developer ID/notarization/Gatekeeper claim"
@@ -279,17 +312,18 @@ def aggregate(root):
             path = manifest.parent / name
             if not path.is_file() or sha256(path) != record["sha256"]:
                 raise ValueError("Downloaded installer digest does not match scanned qualification")
-            if record.get("source_commit") != SOURCE_COMMIT or record.get("source_id") != SOURCE_ID or record.get("runtime", {}).get("status") != "PASS":
+            if record.get("embedded_offer") != EXPECTED_OFFER or record.get("release") != RELEASE_VERSION or record.get("auditor_commit") != AUDITOR_COMMIT or record.get("source_commit") != SOURCE_COMMIT or record.get("source_id") != SOURCE_ID or record.get("runtime", {}).get("status") != "PASS":
                 raise ValueError("Installer source identity or runtime qualification missing")
-            if record.get("cleanup", {}).get("installed_bundle_absent") is not True or record.get("installation", {}).get("bundle_version") != "4.0.0":
+            if record.get("cleanup", {}).get("installed_bundle_absent") is not True or record.get("installation", {}).get("bundle_version") != VERSION:
                 raise ValueError("Actual app-copy installation and cleanup evidence missing")
             result[name] = record
     if set(result) != expected:
-        raise ValueError("Expected all four original Mac V4 installers")
+        raise ValueError("Expected all four original Mac Mac installers")
     return result
 
 
 def main():
+    configure_release()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["collect", "qualify", "aggregate"])
     parser.add_argument("--app", type=Path, default=Path.cwd())
@@ -307,6 +341,6 @@ def main():
         output.mkdir()
         (output / "qualification.json").write_text(json.dumps(records, indent=2) + "\n")
         (output / "SHA256SUMS").write_text("".join(f"{r['sha256']}  {n}\n" for n, r in sorted(records.items())))
-        print("Verified all 4 exact original Mac V4 installers and native-runtime receipts")
+        print("Verified all 4 exact original Mac Mac installers and native-runtime receipts")
 
 if __name__=="__main__":main()

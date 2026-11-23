@@ -2,11 +2,22 @@
 import argparse, hashlib, io, json, os, platform, re, shutil, stat, subprocess, sys, tarfile, tempfile, urllib.request
 from pathlib import Path
 AGE_VERSION='1.3.2'
-RECIPIENT='age160m7enkqn7g3gy9sm66keanjfsnkjfs2u6ce57w3jzz8egvm7erq39zaqx'
-RECIPIENT_FINGERPRINT='f4d0a6118a8a999208d0283df04268e005b0c3ece0871013ce05af7d84200102'
-TARGETS={'mac-arm': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'arm64', 'triple': 'aarch64-apple-darwin', 'age_arch': 'darwin-arm64', 'source': 'fecff636e2389d417a320b66c9264d612ebb3a64', 'auditor': 'fecff636e2389d417a320b66c9264d612ebb3a64', 'offer': '00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c', 'files': {'dmg': 'BDOBB_4.0.0_aarch64.dmg', '': 'BDOBB_aarch64.app.tar.gz'}}, 'mac-intel': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'x86_64', 'triple': 'x86_64-apple-darwin', 'age_arch': 'darwin-amd64', 'source': 'fecff636e2389d417a320b66c9264d612ebb3a64', 'auditor': 'fecff636e2389d417a320b66c9264d612ebb3a64', 'offer': '00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c', 'files': {'dmg': 'BDOBB_4.0.0_x64.dmg', '': 'BDOBB_x64.app.tar.gz'}}, 'table-amd64': {'system': 'Linux', 'runner_os': 'Linux', 'machine': 'x86_64', 'age_arch': 'linux-amd64', 'source': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'auditor': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'offer': None, 'files': {'': 'candidate-table-image-amd64.tar.gz'}}}
+RECIPIENT=None
+RELEASE_VERSION=None
+RECIPIENT_FINGERPRINT=None
+TARGETS={'mac-arm': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'arm64', 'triple': 'aarch64-apple-darwin', 'age_arch': 'darwin-arm64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}, 'mac-intel': {'system': 'Darwin', 'runner_os': 'macOS', 'machine': 'x86_64', 'triple': 'x86_64-apple-darwin', 'age_arch': 'darwin-amd64', 'source': None, 'auditor': None, 'offer': None, 'files': {}}, 'table-amd64': {'system': 'Linux', 'runner_os': 'Linux', 'machine': 'x86_64', 'age_arch': 'linux-amd64', 'source': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'auditor': 'b963af1f9be37a1754b7f568403b8c461c5dbc72', 'offer': None, 'files': {'': 'candidate-table-image-amd64.tar.gz'}}}
 AGE={'darwin-arm64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz', 'archive_sha256': 'e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5', 'archive_size': 18106798, 'binary_sha256': '4012dfc2725883beafb710894af4f599b7a94f8c8e0f51f02cc96ab8df33915e', 'binary_size': 6502258}, 'darwin-amd64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-amd64.tar.gz', 'archive_sha256': '1d1e4bc66e1427edad7739ae7616157de0e79db8b6d2a1497d7d9925fb06a539', 'archive_size': 19376787, 'binary_sha256': '0c2fbcffab91d0af398162a8ed792e096916c8c47c3c400e303904431103f492', 'binary_size': 6978992}, 'linux-amd64': {'url': 'https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz', 'archive_sha256': 'cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10', 'archive_size': 19405817, 'binary_sha256': 'eb7dd1b518f0a307c99cd97782623c5321da049154b04acd2d98d21aa7bc9b2c', 'binary_size': 6977014}}
 FAILURE_STAGES=('package-scan','native-qualification','evidence-scan','image-privacy')
+
+
+def configure_release(binding=None):
+    global RECIPIENT,RECIPIENT_FINGERPRINT,RELEASE_VERSION
+    if binding is None:
+        from v4_mac_qualification import load_release_binding
+        binding=load_release_binding()
+    RECIPIENT=binding['recipient'];RECIPIENT_FINGERPRINT=binding['recipient_fingerprint'];RELEASE_VERSION=binding['release']
+    for target,arch in [('mac-arm','aarch64'),('mac-intel','x64')]:
+        TARGETS[target].update(source=binding['product_commit'],auditor=binding['auditor_commit'],offer=binding['source_id'],files={'dmg':f"BDOBB_{binding['version']}_{arch}.dmg",'':f'BDOBB_{arch}.app.tar.gz'})
 
 
 class RetentionError(Exception):
@@ -86,7 +97,7 @@ def verify_candidates(selected, records):
 
 def prepare_output(outdir, runner_temp, target):
     physical_directory(runner_temp)
-    if outdir != runner_temp / ('v4-encrypted-qa-' + target) or outdir.exists() or outdir.is_symlink():
+    if outdir != runner_temp / (RELEASE_VERSION+'-encrypted-qa-' + target) or outdir.exists() or outdir.is_symlink():
         raise RetentionError('UNSAFE_OUTPUT_DIRECTORY')
     outdir.mkdir(mode=0o700)
 
@@ -158,6 +169,7 @@ class SafeParser(argparse.ArgumentParser):
 
 def main(argv=None):
     try:
+        if RELEASE_VERSION is None: configure_release()
         parser = SafeParser(description=__doc__, add_help=False)
         parser.add_argument('--target', required=True, choices=TARGETS)
         for name in ['app', 'auditor', 'controller', 'recipient', 'outdir']:
@@ -239,7 +251,7 @@ def retain(args):
     runner_temp=Path(os.environ['RUNNER_TEMP']).absolute()
     bundle=runner_temp if args.target=='table-amd64' else app/'src-tauri/target'/config['triple']/'release/bundle'
     selected=select_candidates(bundle,args.target);outdir=Path(args.outdir).absolute();prepare_output(outdir,runner_temp,args.target)
-    cipher_name='qa-blocked-v4-'+args.target+'.tar.age';partial=outdir/(cipher_name+'.partial');ciphertext=outdir/cipher_name;succeeded=False
+    cipher_name='qa-blocked-'+RELEASE_VERSION+'-'+args.target+'.tar.age';partial=outdir/(cipher_name+'.partial');ciphertext=outdir/cipher_name;succeeded=False
     try:
         with tempfile.TemporaryDirectory(prefix='v4-qa-private-',dir=runner_temp) as private:
             work=Path(private);records=snapshot_candidates(selected,work/'candidates')

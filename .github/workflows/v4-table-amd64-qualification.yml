@@ -1,14 +1,14 @@
-name: V4 Mac installer qualification
-run-name: V4 Mac installer qualification (${{ inputs.target }})
+name: Mac installer qualification
+run-name: Mac installer qualification (${{ inputs.target }})
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: V4 only; artifact qualification without release publication
+        description: Mac artifact qualification without release publication
         required: true
         type: choice
-        default: v4.0.0
-        options: [v4.0.0]
+        default: v5.0.0
+        options: [v3.0.0, v4.0.0, v5.0.0]
       target:
         description: Native Mac architecture; retry only the failed target
         required: true
@@ -18,11 +18,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: v4-mac-installer-${{ github.ref }}-${{ inputs.target }}
+  group: mac-installer-${{ github.ref }}-${{ inputs.version }}-${{ inputs.target }}
   cancel-in-progress: false
 env:
-  SOURCE_COMMIT: fecff636e2389d417a320b66c9264d612ebb3a64
-  AUDITOR_COMMIT: fecff636e2389d417a320b66c9264d612ebb3a64
+  BDOBB_RELEASE_VERSION: ${{ inputs.version }}
   SOURCE_REPOSITORY: https://github.com/Adventures-OpenBQ/bdobb.git
   RUSTUP_TOOLCHAIN: 1.99.1
   PYTHONUTF8: '1'
@@ -36,28 +35,39 @@ env:
   VITE_DEFAULT_BACKEND_AUTH: ''
 jobs:
   plan:
-    if: github.repository == 'Adventures-OpenBQ/bdobb' && github.event_name == 'workflow_dispatch' && inputs.version == 'v4.0.0'
+    if: github.repository == 'Adventures-OpenBQ/bdobb' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.pick.outputs.matrix }}
+      source: ${{ steps.pick.outputs.source }}
+      auditor: ${{ steps.pick.outputs.auditor }}
+      recipient: ${{ steps.pick.outputs.recipient }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: controller
+          persist-credentials: false
       - id: pick
         env:
           SELECTED_TARGET: ${{ inputs.target }}
         run: |
           python3 - <<'PYTHON'
-          import json, os
+          import json, os, sys
+          sys.path.insert(0,'controller/.github/scripts')
+          from v4_mac_qualification import load_release_binding
+          binding=load_release_binding()
           rows=[{'target':'mac-arm','os':'macos-15','rust-target':'aarch64-apple-darwin'},
                 {'target':'mac-intel','os':'macos-15-intel','rust-target':'x86_64-apple-darwin'}]
           selected=os.environ['SELECTED_TARGET']
           assert selected in {'all','mac-arm','mac-intel'}
           with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              for key,value in [('source',binding['product_commit']),('auditor',binding['auditor_commit']),('recipient',binding['recipient'])]: print(key+'='+value,file=output)
               print('matrix='+json.dumps({'include':[row for row in rows if selected=='all' or row['target']==selected]}),file=output)
           PYTHON
   bundle:
     needs: plan
-    if: github.repository == 'Adventures-OpenBQ/bdobb' && inputs.version == 'v4.0.0'
-    name: V4 ${{ matrix.target }} native install qualification
+    if: github.repository == 'Adventures-OpenBQ/bdobb'
+    name: ${{ inputs.version }} ${{ matrix.target }} native install qualification
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     strategy:
@@ -70,13 +80,16 @@ jobs:
     env:
       BDOBB_RUST_TARGET: ${{ matrix.rust-target }}
       BDOBB_TARGET: ${{ matrix.target }}
+      SOURCE_COMMIT: ${{ needs.plan.outputs.source }}
+      AUDITOR_COMMIT: ${{ needs.plan.outputs.auditor }}
+      BDOBB_QA_RECIPIENT: ${{ needs.plan.outputs.recipient }}
     steps:
       - name: Check out separate qualification controller
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           path: controller
           persist-credentials: false
-      - name: Fetch exact public V4 source and independent auditor
+      - name: Fetch exact public product source and independent auditor
         working-directory: ${{ github.workspace }}
         run: |
           set -euo pipefail
@@ -93,6 +106,16 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '22'
+      - name: Activate exact pnpm before dependency cache restore
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.34.4 --activate
+          test "$(pnpm --version)" = '10.34.4'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7; public pnpm store only
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
@@ -101,30 +124,41 @@ jobs:
           set -euo pipefail
           rustup toolchain install 1.99.1 --profile minimal
           rustup target add "$BDOBB_RUST_TARGET" --toolchain 1.99.1
-          rustup toolchain install 1.98.1 --profile minimal
-          rustup target add wasm32-unknown-unknown --toolchain 1.98.1
-          cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/v4-wasm-tools"
-          echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/v4-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
+          if [ "$BDOBB_RELEASE_VERSION" != 'v3.0.0' ]; then
+            rustup toolchain install 1.98.1 --profile minimal
+            rustup target add wasm32-unknown-unknown --toolchain 1.98.1
+            cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/mac-wasm-tools"
+            echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/mac-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
+          fi
           corepack enable
           corepack prepare pnpm@10.34.4 --activate
           test "$(pnpm --version)" = '10.34.4'
-          cargo +1.99.1 install tauri-dumper --version 0.2.2 --locked --root "$RUNNER_TEMP/v4-tools"
-          python ../auditor/security/install.py --dir "$RUNNER_TEMP/v4-tools/bin"
+          cargo +1.99.1 install tauri-dumper --version 0.2.2 --locked --root "$RUNNER_TEMP/mac-tools"
+          python ../auditor/security/install.py --dir "$RUNNER_TEMP/mac-tools/bin"
           python -m pip install --require-hashes -r ../auditor/security/requirements.txt
-          echo "$RUNNER_TEMP/v4-tools/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/mac-tools/bin" >> "$GITHUB_PATH"
           brew install tesseract poppler sevenzip
       - name: Verify pinned product, offer and all six blank defaults
         run: |
           python - <<'PYTHON'
-          import json, os, platform, subprocess
+          import json, os, platform, subprocess, sys
+          sys.path.insert(0,'../controller/.github/scripts')
+          from v4_mac_qualification import load_release_binding
+          binding=load_release_binding()
           from pathlib import Path
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['SOURCE_COMMIT']
           assert subprocess.check_output(['rustc','--version'],text=True).split()[1]=='1.99.1'
           for file in ['package.json','src-tauri/tauri.conf.json']:
-              assert json.loads(Path(file).read_text())['version']=='4.0.0'
+              assert json.loads(Path(file).read_text())['version']==binding['version']
           assert json.loads(Path('package.json').read_text())['packageManager']=='pnpm@10.34.4'
           offer=json.loads(Path('source-offer.json').read_text())
-          assert offer['sourceId']=='00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c'
+          assert offer['sourceId']==binding['source_id'] and offer['baseCommit']==binding['base_commit'] and offer['release']==binding['release']
+          assert offer['archiveFilename']==binding['archive_filename'] and offer['archiveUrl']==binding['archive_url']
+          scripts=json.loads(Path('package.json').read_text())['scripts']
+          assert all((name in scripts)==binding['wasm'] for name in ['pivot:build','pivot:verify'])
+          if binding['wasm']:
+              pins=json.loads(Path('scripts/pivot-toolchain.json').read_text())
+              assert pins['rust']=='1.98.1' and pins['wasmBindgen']=='0.2.128' and pins['target']=='wasm32-unknown-unknown'
           for key in ['VITE_OPENBB_API_URL','VITE_RITA_URL','VITE_MCP_SERVERS','VITE_SHARE_FOLDERS','VITE_DEFAULT_BACKEND_URL','VITE_DEFAULT_BACKEND_AUTH']:
               assert os.environ.get(key)=='',key
           Path('qualification-evidence').mkdir()
@@ -145,13 +179,15 @@ jobs:
           python -m unittest discover -s ../controller/.github/scripts -p test_encrypt_qa_candidates.py -v
           python ../auditor/security/gate.py --repo . tree
           python ../auditor/security/gate.py --repo . history --revision HEAD
-          python ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/release.yml ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py
+          python ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/v4-table-amd64-qualification.yml ../controller/.github/scripts/mac-release-binding.json ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py
       - name: Install locked dependencies and build current pinned WASM
         run: |
           pnpm install --frozen-lockfile
-          pnpm pivot:build
-          pnpm pivot:verify
-      - name: Build only final V4 Mac installers
+          if [ "$BDOBB_RELEASE_VERSION" != 'v3.0.0' ]; then
+            pnpm pivot:build
+            pnpm pivot:verify
+          fi
+      - name: Build only pinned Mac installers
         id: native_build
         env:
           APPLE_SIGNING_IDENTITY: '-'
@@ -176,7 +212,7 @@ jobs:
       - name: Upload scanned Mac installers and receipts only
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: qualified-v4-${{ matrix.target }}
+          name: qualified-${{ inputs.version }}-${{ matrix.target }}
           path: |
             app/release-stage/
             app/qualification-evidence/
@@ -192,21 +228,21 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$PACKAGE_OUTCOME" = failure ]; then stage=package-scan; elif [ "$NATIVE_OUTCOME" = failure ]; then stage=native-qualification; else stage=evidence-scan; fi
-          python controller/.github/scripts/encrypt_qa_candidates.py --target "$BDOBB_TARGET" --app app --auditor auditor --controller controller             --recipient age160m7enkqn7g3gy9sm66keanjfsnkjfs2u6ce57w3jzz8egvm7erq39zaqx             --outdir "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET" --failure-stage "$stage" --qualification-outcome failure
+          python controller/.github/scripts/encrypt_qa_candidates.py --target "$BDOBB_TARGET" --app app --auditor auditor --controller controller             --recipient "$BDOBB_QA_RECIPIENT"             --outdir "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET" --failure-stage "$stage" --qualification-outcome failure
       - name: Gate ciphertext and safe retention metadata only
         id: encrypted_outbound
         if: failure() && steps.encrypted_qa.outcome == 'success'
         working-directory: ${{ github.workspace }}
         run: |
-          python auditor/security/gate.py --repo app artifacts "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET/retention.json" "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET/qa-blocked-v4-$BDOBB_TARGET.tar.age"
+          python auditor/security/gate.py --repo app artifacts "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/retention.json" "$RUNNER_TEMP/${{ inputs.version }}-encrypted-qa-$BDOBB_TARGET/qa-blocked-${{ inputs.version }}-$BDOBB_TARGET.tar.age"
       - name: Retain encrypted failed QA for one day
         if: failure() && steps.encrypted_qa.outcome == 'success' && steps.encrypted_outbound.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: QA-ENCRYPTED-BLOCKED-v4-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: QA-ENCRYPTED-BLOCKED-${{ inputs.version }}-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/v4-encrypted-qa-${{ matrix.target }}/retention.json
-            ${{ runner.temp }}/v4-encrypted-qa-${{ matrix.target }}/qa-blocked-v4-${{ matrix.target }}.tar.age
+            ${{ runner.temp }}/${{ inputs.version }}-encrypted-qa-${{ matrix.target }}/retention.json
+            ${{ runner.temp }}/${{ inputs.version }}-encrypted-qa-${{ matrix.target }}/qa-blocked-${{ inputs.version }}-${{ matrix.target }}.tar.age
           if-no-files-found: error
           retention-days: 1
   verify-mac4:
@@ -223,13 +259,13 @@ jobs:
           python-version: '3.12'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          pattern: qualified-v4-*
+          pattern: qualified-${{ inputs.version }}-*
           path: staged
       - name: Bind exactly four immutable Mac packages and native install receipts
         run: python3 controller/.github/scripts/v4_mac_qualification.py aggregate --root staged
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: qualified-v4-mac4-binding
+          name: qualified-${{ inputs.version }}-mac4-binding
           path: qualification-mac4/
           if-no-files-found: error
           retention-days: 7

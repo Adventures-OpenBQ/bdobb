@@ -15,34 +15,39 @@ p = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
 
 
+from test_v4_mac_qualification import binding_fixture
 class AboutTests(unittest.TestCase):
-    def observation(self, version='Version 4.0.0 (4.0.0)'):
+    RELEASE='v4.0.0'
+    def setUp(self):self.binding=binding_fixture(self.RELEASE)
+    def classify(self,value):return p.classify_observation(value,self.binding['version'])
+    def observation(self, version=None):
+        version=version or f"Version {self.binding['version']} ({self.binding['version']})"
         return {'status': 'AX_TEXT_OBSERVED', 'origin': 'AX_OWNED_ABOUT_STATIC_TEXT', 'ax_trusted': True,
                 'menu_invoked': True, 'owned_window_focused': True, 'name_text': 'BDOBB', 'version_text': version, 'nodes_visited': 9}
 
     def test_only_owned_visible_about_static_text_proves_displayed_version(self):
-        reply = p.classify_observation(self.observation())
+        reply = self.classify(self.observation())
         self.assertEqual(reply['status'], 'OBSERVED_VERSION_MATCH')
-        self.assertEqual(reply['version_text'], 'Version 4.0.0 (4.0.0)')
-        wrong = p.classify_observation(self.observation('Version 3.0.1 (3.0.1)'))
+        self.assertEqual(reply['version_text'], f"Version {self.binding['version']} ({self.binding['version']})")
+        wrong = self.classify(self.observation('Version 3.0.1 (3.0.1)'))
         self.assertEqual(wrong['status'], 'FAIL_DISPLAYED_VERSION_MISMATCH')
 
     def test_metadata_and_unfocused_text_cannot_become_ui_proof(self):
         metadata = {'status': 'AX_TEXT_OBSERVED', 'bundle_name': 'BDOBB', 'CFBundleShortVersionString': '4.0.0'}
-        self.assertEqual(p.classify_observation(metadata)['status'], 'GAP_PROBE_OUTPUT_INVALID')
+        self.assertEqual(self.classify(metadata)['status'], 'GAP_PROBE_OUTPUT_INVALID')
         reply = self.observation()
         reply['owned_window_focused'] = False
-        result = p.classify_observation(reply)
+        result = self.classify(reply)
         self.assertEqual(result['status'], 'GAP_ABOUT_VISIBILITY_UNCONFIRMED')
         self.assertNotIn('version_text', result)
 
     def test_untrusted_gap_and_invalid_text_discard_all_captured_text(self):
         reply = self.observation()
         reply.update(status='GAP_AX_NOT_TRUSTED', ax_trusted=False, menu_invoked=False, owned_window_focused=False)
-        result = p.classify_observation(reply)
+        result = self.classify(reply)
         self.assertEqual(result['status'], 'GAP_AX_NOT_TRUSTED')
         self.assertNotIn('version_text', result)
-        bad = p.classify_observation(self.observation('PRIVATE_UNKNOWN_TEXT'))
+        bad = self.classify(self.observation('PRIVATE_UNKNOWN_TEXT'))
         self.assertEqual(bad['status'], 'GAP_ABOUT_STATIC_TEXT_UNAVAILABLE')
         self.assertNotIn('PRIVATE_UNKNOWN_TEXT', json.dumps(bad))
 
@@ -70,5 +75,8 @@ class AboutTests(unittest.TestCase):
         self.assertNotIn('PRIVATE_EXCEPTION_DETAIL', stdout.getvalue() + stderr.getvalue())
         self.assertEqual(json.loads(stderr.getvalue())['status'], 'ERROR_ABOUT_PROBE')
 
+
+def load_tests(loader,tests,pattern):
+    return unittest.TestSuite(loader.loadTestsFromTestCase(type('About_'+v,(AboutTests,),{'RELEASE':v})) for v in ['v3.0.0','v4.0.0','v5.0.0'])
 
 if __name__ == '__main__': unittest.main()
