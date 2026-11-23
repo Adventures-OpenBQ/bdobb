@@ -177,3 +177,22 @@ it('scrolls under a stationary dragged pointer and drops on a newly revealed til
  fireEvent.pointerUp(cards[0],{clientX:100,clientY:198,pointerId:1});expect(onReorder).toHaveBeenCalledWith('MSFT,BTC-USD,AAPL');
  const atDrop=strip.scrollTop;act(()=>frame(96));expect(strip.scrollTop).toBe(atDrop);
 });
+
+it.each(['list change','layout change','unmount','pointer cancel','capture loss'] as const)('stops edge scrolling after %s during an active drag',reason=>{
+ let frame:FrameRequestCallback=()=>{};
+ vi.stubGlobal('requestAnimationFrame',vi.fn(fn=>{frame=fn;return 1;}));vi.stubGlobal('cancelAnimationFrame',vi.fn());
+ const onReorder=vi.fn(),params={symbol:'AAPL,MSFT,BTC-USD',rows:'',columns:'1'};
+ const {rerender,unmount}=render(<DayChartRenderer backend={backend} params={params} onReorder={onReorder}/>);
+ const strip=screen.getByRole('listbox'),source=screen.getAllByRole('option')[0];
+ Object.defineProperties(strip,{clientHeight:{value:200},scrollHeight:{value:800}});
+ strip.getBoundingClientRect=()=>({left:0,right:300,top:0,bottom:200,width:300,height:200} as DOMRect);
+ Object.defineProperty(document,'elementFromPoint',{configurable:true,value:vi.fn(()=>source)});
+ fireEvent.pointerDown(source,{button:0,clientX:100,clientY:100,pointerId:1});fireEvent.pointerMove(source,{clientX:100,clientY:198,pointerId:1});
+ act(()=>{frame(0);frame(32);});expect(strip.scrollTop).toBeGreaterThan(0);
+ if(reason==='list change')rerender(<DayChartRenderer backend={backend} params={{...params,symbol:'AAPL,NVDA,BTC-USD'}} onReorder={onReorder}/>);
+ else if(reason==='layout change')rerender(<DayChartRenderer backend={backend} params={{...params,columns:'2'}} onReorder={onReorder}/>);
+ else if(reason==='unmount')unmount();
+ else if(reason==='pointer cancel')fireEvent.pointerCancel(source,{pointerId:1});
+ else fireEvent.lostPointerCapture(source,{pointerId:1});
+ const stoppedAt=strip.scrollTop;act(()=>frame(64));expect(strip.scrollTop).toBe(stoppedAt);expect(cancelAnimationFrame).toHaveBeenCalled();expect(onReorder).not.toHaveBeenCalled();
+});
