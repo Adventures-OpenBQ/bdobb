@@ -334,5 +334,17 @@
     "rule": "private-ip",
     "line_sha256": "d1c549421cfef43fa82f2e4b6f5df3a83789d085c6f1c26568b9f6d96cc3b3e6",
     "reason": "Exact compiled source-map bytes embed checksum-verified official SheetJS 0.20.3 xlsx.mjs. The sole private-IP-shaped string is an OpenDocument specification section number in the draw:object parser comment. Exact archive-member path and whole-line hash only; other data and every scanning rule remain checked."
+  },
+  {
+    "path": "package/contents/usr/lib/libgtk-3.so.0",
+    "rule": "private-ip",
+    "line_sha256": "111e8e665ca4dbb58fdac48deb7de2b7601fc0c5dff0a74e38ca7593ecc0072d",
+    "reason": "Exact GTK3.24.33-1ubuntu2.2 resource UI example in GtkPlacesView Server Addresses help: RFC1918 public RFC1918 documentation example, with documentation-only IPv6 companion. The exact UTF8 UI resource in official Ubuntu .rodata matches byte-for-byte; public gtk/ui/gtkplacesview.ui explains the literal. Exact normalized line/path hash only; not configured operator endpoint."
+  },
+  {
+    "path": "package/contents/usr/share/glib-2.0/schemas/org.gnome.system.proxy.gschema.xml",
+    "rule": "private-ip",
+    "line_sha256": "2787de9bfcdbb18de2c8accedd66e2259385940623febed7fe8bf4c680730e88",
+    "reason": "Official gsettings-desktop-schemas42.0-1ubuntu1 exact full schema bytes: ignore-hosts prose illustrates a subnet with a public RFC1918 subnet documentation example. Documentation example, no configured host. Exact line/path hash only."
   }
 ]

@@ -64,5 +64,89 @@
     "rule": "curl-auth-user",
     "content_sha256": "22dc7423268e246016e838f57c1d4fbff5d40566d4f107bada7607d23004eb5c",
     "reason": "Basic Auth fixture for an ephemeral CI container with loopback probes"
+  },
+  {
+    "path": "package/contents/usr/lib/libgnutls.so.30",
+    "rule": "private-key-header",
+    "content_sha256": "79699268b4539d2366a13155eaa23be6b409d00ca90cd5286ba84a5e1838e5f0",
+    "reason": "Exact bundled GnuTLS3.7.3-4ubuntu1.9 public-key self-test fixture library. All10 complete PEM blobs exactly match public crypto-selftests-pk.c declarations and drive gnutls_pk_self_test known-answer/sign/encryption checks; no unknown or operator key. Official Ubuntu .text/.rodata byte equality independently verified for this architecture. Whole normalized file hash + exact path/rule only; no directory/vendor/material wildcard."
+  },
+  {
+    "path": "package/contents/usr/lib/libgnutls.so.30",
+    "rule": "private-key",
+    "content_sha256": "79699268b4539d2366a13155eaa23be6b409d00ca90cd5286ba84a5e1838e5f0",
+    "reason": "Exact bundled GnuTLS3.7.3-4ubuntu1.9 public-key self-test fixture library. All10 complete PEM blobs exactly match public crypto-selftests-pk.c declarations and drive gnutls_pk_self_test known-answer/sign/encryption checks; no unknown or operator key. Official Ubuntu .text/.rodata byte equality independently verified for this architecture. Whole normalized file hash + exact path/rule only; no directory/vendor/material wildcard."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0.7200.4",
+    "rule": "private-key-header",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0.7200.4",
+    "rule": "private-key",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so",
+    "rule": "private-key-header",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so",
+    "rule": "private-key",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0",
+    "rule": "private-key-header",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0",
+    "rule": "private-key",
+    "content_sha256": "96039294686e9b899a42809bbb61338b7408c4e5f0a3933299d1ca07db16541d",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/share/glib-2.0/schemas/com.gexperts.Tilix.gschema.xml",
+    "rule": "generic-api-key",
+    "content_sha256": "f2e58bf5f714b751baef76713b615d0960664eb2edff8a47f26bd7f2d3905485",
+    "reason": "Official tilix1.9.4-2build1 arm64 exact full schema. Scanner matched the public cjk-utf8-ambiguous-width enum key declaration, not a credential assignment. Exact full normalized file hash + path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0",
+    "rule": "private-key-header",
+    "content_sha256": "77beebba704fdfe22c29920b5834535f1b9be2488cd1f0d92e9b29996b47f655",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so",
+    "rule": "private-key-header",
+    "content_sha256": "77beebba704fdfe22c29920b5834535f1b9be2488cd1f0d92e9b29996b47f655",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgio-2.0.so.0.7200.4",
+    "rule": "private-key-header",
+    "content_sha256": "77beebba704fdfe22c29920b5834535f1b9be2488cd1f0d92e9b29996b47f655",
+    "reason": "Exact bundled GLib2.72.4-0ubuntu2.11 GIO TLS certificate PEM parser. Matched ENCRYPTED PRIVATE KEY header is a NUL-terminated parser delimiter with no PEM/base64 private payload, bound to official Ubuntu identical .text/.rodata and gtlscertificate.c source constants. Whole normalized file hash + exact path/rule only."
+  },
+  {
+    "path": "package/contents/usr/lib/libgnutls.so.30",
+    "rule": "private-key-header",
+    "content_sha256": "2254748a5ef105aeafebe9ec469ec98fce2ef4f596d882da0ec521158283bb53",
+    "reason": "Exact bundled GnuTLS3.7.3-4ubuntu1.9 public-key self-test fixture library. All10 complete PEM blobs exactly match public crypto-selftests-pk.c declarations and drive gnutls_pk_self_test known-answer/sign/encryption checks; no unknown or operator key. Official Ubuntu .text/.rodata byte equality independently verified for this architecture. Whole normalized file hash + exact path/rule only; no directory/vendor/material wildcard."
+  },
+  {
+    "path": "package/contents/usr/lib/libgnutls.so.30",
+    "rule": "private-key",
+    "content_sha256": "2254748a5ef105aeafebe9ec469ec98fce2ef4f596d882da0ec521158283bb53",
+    "reason": "Exact bundled GnuTLS3.7.3-4ubuntu1.9 public-key self-test fixture library. All10 complete PEM blobs exactly match public crypto-selftests-pk.c declarations and drive gnutls_pk_self_test known-answer/sign/encryption checks; no unknown or operator key. Official Ubuntu .text/.rodata byte equality independently verified for this architecture. Whole normalized file hash + exact path/rule only; no directory/vendor/material wildcard."
   }
 ]
