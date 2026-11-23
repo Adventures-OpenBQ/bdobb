@@ -1,6 +1,6 @@
 # BDOBB — Adventures in OpenBQ
 
-This is the version 4.0.0 release: the reference-build desktop plus analytical Pivot, managed server tables, linked charts, waterfall charts and Statement editing. It retains documents, grouped controls, backend Apps discovery and compatible JSON interchange.
+This is the version 5.0.0 release: the reference-build desktop plus analytical Pivot, managed server tables, linked charts, waterfall charts and Statement editing. It retains documents, grouped controls, backend Apps discovery and compatible JSON interchange.
 
 Cron refetch is deferred.
 
