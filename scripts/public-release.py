@@ -5,6 +5,7 @@
 """Stage desktop release packages only after inspecting their installed bytes."""
 import argparse
 import hashlib
+import importlib.util
 from html.parser import HTMLParser
 import json
 import os
@@ -57,9 +58,22 @@ def run(*args):
         raise GateError(f"{Path(str(args[0])).name} failed with exit {result.returncode}")
 
 
-def extract_7z(source, dest):
+def archive_call(name, *args, **kwargs):
+    # Both entrypoints use the exact checked-in shared parser/extractor.
+    if name not in {"extract_7z_checked", "compound_scan_inputs"}:
+        raise GateError("Unsupported shared archive operation")
+    spec = importlib.util.spec_from_file_location("_bdobb_archive_gate", REPO / "security/gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    try:
+        return getattr(gate, name)(*args, **kwargs)
+    except gate.GateError as error:
+        raise GateError(str(error)) from None
+
+
+def extract_7z(source, dest, *, kind="default"):
     exe = shutil.which("7zz") or shutil.which("7z") or Path(r"C:\Program Files\7-Zip\7z.exe")
-    run(exe, "x", "-y", f"-o{dest}", "--", source)
+    return archive_call("extract_7z_checked", source, dest, kind=kind, tool=exe)
 
 
 def squashfs_offset(source):
@@ -108,8 +122,7 @@ def unpack(source, dest):
     elif suffix in (".msi", ".exe"):
         extract_7z(source, dest / "installer")
         if suffix == ".msi":
-            exe = shutil.which("7zz") or shutil.which("7z") or Path(r"C:\Program Files\7-Zip\7z.exe")
-            run(exe, "x", "-tCompound", "-y", f"-o{dest / 'metadata'}", "--", source)
+            return extract_7z(source, dest / "metadata", kind="msi-compound")
     else:
         raise GateError(f"Unsupported release format: {suffix}")
 
@@ -372,7 +385,7 @@ def scan_package(asset):
 
         package = root / "package"
         package.mkdir()
-        unpack(snapshot, package)
+        metadata_records = unpack(snapshot, package)
         files = scan_tree(package)
         targets = [f for f in files if f.name.lower() in {"bdobb", "bdobb.exe", "path"}]
         if len(targets) != 1 or not targets[0].stat().st_size:
@@ -390,7 +403,8 @@ def scan_package(asset):
         elif asset.suffix in {".deb", ".rpm"}:
             contents = [package]
         elif asset.suffix == ".msi":
-            contents = [snapshot, package / "metadata"]
+            contents = [snapshot, *archive_call("compound_scan_inputs", package / "metadata",
+                                               root / "compound-scan", metadata_records)]
         else:
             contents = [snapshot]
         scan_artifacts(raw, *contents, frontend, checksum)

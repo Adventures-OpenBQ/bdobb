@@ -234,5 +234,27 @@ class PublicReleaseTests(unittest.TestCase):
             self.assertEqual(json.loads(capture.read_text()), {key:"" for key in defaults})
 
 
+
+
+# Portable public-checker route controls; all extraction is mocked.
+class ArchivePublicCheckerTests(unittest.TestCase):
+
+    def test_actual_public_unpack_calls_checked_default_and_compound_routes(self):
+        expected = [{'raw_path': '!_StringPool', 'path': '!_StringPool', 'directory': False}]
+        with patch.object(release, 'archive_call', side_effect=[[], expected]) as shared:
+            result = release.unpack(Path('candidate.msi'), Path('package'))
+        self.assertEqual(result, expected)
+        self.assertEqual(shared.call_count, 2)
+        self.assertEqual(shared.call_args_list[0].args, ('extract_7z_checked', Path('candidate.msi'), Path('package/installer')))
+        self.assertEqual(shared.call_args_list[0].kwargs['kind'], 'default')
+        self.assertEqual(shared.call_args_list[1].args, ('extract_7z_checked', Path('candidate.msi'), Path('package/metadata')))
+        self.assertEqual(shared.call_args_list[1].kwargs['kind'], 'msi-compound')
+
+    def test_actual_public_nsis_unpack_uses_only_default_checked_route(self):
+        with patch.object(release, 'archive_call', return_value=[]) as shared:
+            release.unpack(Path('candidate.exe'), Path('package'))
+        self.assertEqual(shared.call_count, 1)
+        self.assertEqual(shared.call_args.kwargs['kind'], 'default')
+
 if __name__ == "__main__":
     unittest.main()

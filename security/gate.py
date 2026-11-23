@@ -10,7 +10,7 @@ import io
 import json
 import lzma
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import shutil
 import stat
@@ -198,6 +198,150 @@ def privacy(text, private_patterns=()):
     return found
 
 
+def installer_members(listing, *, kind='default', source=None, details=False):
+    """Validate every technical-list record before any external extraction."""
+    if kind not in {'default', 'msi-compound'}:
+        raise GateError('unsupported installer listing kind')
+    if kind == 'msi-compound' and (source is None or Path(source).suffix.lower() != '.msi'):
+        raise GateError('Compound listing requires an MSI source')
+    listing = listing.replace('\r\n', '\n')
+    if '\r' in listing or '\ufffd' in listing:
+        raise GateError('unreadable installer member listing')
+    lines = listing.split('\n')
+    if lines.count('----------') != 1:
+        raise GateError('installer archive has no unique member listing')
+    if kind == 'msi-compound':
+        header = lines[:lines.index('----------')]
+        if [line for line in header if line.startswith('Type = ')] != ['Type = Compound']:
+            raise GateError('Compound listing type mismatch')
+    body = '\n'.join(lines[lines.index('----------') + 1:]).strip('\n')
+    if not body or any(ord(c) < 32 and c != '\n' for c in body):
+        raise GateError('empty or malformed installer member listing')
+    reserved = {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$',
+                *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10)),
+                *(prefix + i for prefix in ('COM', 'LPT') for i in '¹²³')}
+    records = {}; prefixes = {}; names = []; typed_records = []
+    for block in body.split('\n\n'):
+        fields = {}
+        for line in block.split('\n'):
+            if ' = ' not in line:
+                raise GateError('malformed installer member record')
+            key, value = line.split(' = ', 1)
+            if not key or key.strip() != key or key in fields:
+                raise GateError('duplicate or malformed installer member field')
+            fields[key] = value
+        if 'Path' not in fields:
+            raise GateError('installer member record has no path')
+        if {'Symbolic Link', 'Hard Link', 'Copy Link', 'Link', 'Reparse Tag', 'Alternate Stream'} & fields.keys():
+            raise GateError('installer link or alternate stream rejected')
+        raw = fields['Path']
+        name = raw.replace('\\', '/')
+        parts = name.split('/')
+        if (not name or PureWindowsPath(raw).drive or PureWindowsPath(raw).root
+                or any(part in {'', '.', '..'} or part.endswith((' ', '.'))
+                       or any(ord(c) < 32 or c in ':<>"|?*\x7f' for c in part)
+                       or part.split('.')[0].rstrip(' .').upper() in reserved for part in parts)):
+            raise GateError('unsafe installer member path')
+        validation_label = name.replace('%', '%25').replace('!', '%21') if kind == 'msi-compound' else name
+        Scan.validate_member(validation_label)
+        folded = name.casefold()
+        if folded in records:
+            raise GateError('duplicate installer member path')
+        if 'Folder' in fields and fields['Folder'] not in {'+', '-'}:
+            raise GateError('invalid installer folder metadata')
+        is_directory = fields.get('Folder') == '+' or fields.get('Attributes', '').startswith('D')
+        records[folded] = is_directory
+        for i in range(1, len(parts) + 1):
+            prefix = '/'.join(parts[:i]); key = prefix.casefold()
+            if key in prefixes and prefixes[key] != prefix:
+                raise GateError('case-aliased installer path rejected')
+            prefixes[key] = prefix
+        names.append(name)
+        typed_records.append({'raw_path': raw, 'path': name, 'directory': is_directory})
+    for name in names:
+        parts = name.casefold().split('/')
+        if any('/'.join(parts[:i]) in records and not records['/'.join(parts[:i])]
+               for i in range(1, len(parts))):
+            raise GateError('installer file/directory collision rejected')
+    return typed_records if details else names
+
+
+def archive_digest(path):
+    result = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        while block := stream.read(1024 * 1024): result.update(block)
+    return result.digest()
+
+
+def extract_7z_checked(source, dest, *, kind='default', tool='7zz', runner=None):
+    """Fixed-format list-before-x plan; no caller-supplied extra extraction switches."""
+    runner = command if runner is None else runner
+    source, dest = Path(source), Path(dest)
+    if (kind not in {'default', 'msi-compound'} or source.is_symlink() or not source.is_file()
+            or not source.stat().st_size or dest.exists() or dest.is_symlink()):
+        raise GateError('invalid archive extraction request')
+    if kind == 'msi-compound' and source.suffix.lower() != '.msi':
+        raise GateError('Compound extraction requires an MSI source')
+    source_digest = archive_digest(source)
+    switches = ['-tCompound'] if kind == 'msi-compound' else []
+    raw = runner([tool, 'l', '-slt', '-sccUTF-8', *switches, '--', source])
+    try: listing = raw.decode('utf-8', errors='strict')
+    except UnicodeDecodeError:
+        raise GateError('unreadable installer member listing') from None
+    records = installer_members(listing, kind=kind, source=source, details=True)
+    if archive_digest(source) != source_digest:
+        raise GateError('installer changed during preflight')
+    dest.mkdir(mode=0o700)
+    runner([tool, 'x', '-y', *switches, '-o' + str(dest), '--', source])
+    if archive_digest(source) != source_digest:
+        raise GateError('installer changed during extraction')
+    return records
+
+
+def compound_scan_inputs(package, dest, records):
+    """Injective label mirror plus original raw names; scan both with unchanged Gate."""
+    package, dest = Path(package), Path(dest)
+    if package.is_symlink() or not package.is_dir() or dest.exists() or dest.is_symlink():
+        raise GateError('invalid Compound mirror request')
+    expected = {r['path']: r for r in records}
+    if not records or len(expected) != len(records):
+        raise GateError('invalid Compound records')
+    seen = set(); files = []; directories = []
+    def unreadable(_error): raise GateError('unreadable Compound metadata')
+    for base, dirs, names in os.walk(package, followlinks=False, onerror=unreadable):
+        for name in sorted(dirs + names):
+            path = Path(base)/name; rel = path.relative_to(package).as_posix()
+            mode = path.lstat().st_mode
+            if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+                raise GateError('Compound link or special member rejected')
+            if rel not in expected:
+                if not stat.S_ISDIR(mode) or not any(p.startswith(rel + '/') for p in expected):
+                    raise GateError('unexpected Compound extracted member')
+            else:
+                if stat.S_ISDIR(mode) != expected[rel]['directory']:
+                    raise GateError('Compound member type mismatch')
+                seen.add(rel)
+            if stat.S_ISDIR(mode): directories.append(rel)
+            else: files.append((rel, path))
+    if seen != set(expected): raise GateError('missing Compound extracted member')
+    dest.mkdir(mode=0o700); mirror=dest/'contents'; mirror.mkdir(mode=0o700)
+    def encoded(rel):
+        return Path(*(part.replace('%', '%25').replace('!', '%21') for part in rel.split('/')))
+    for rel in sorted(directories, key=lambda p: (p.count('/'), p)):
+        (mirror/encoded(rel)).mkdir(parents=True, exist_ok=True, mode=0o700)
+    for rel, path in files:
+        before = archive_digest(path)
+        target = mirror/encoded(rel); target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        with path.open('rb') as reader, target.open('xb') as output: shutil.copyfileobj(reader, output)
+        os.chmod(target,0o600)
+        if before != archive_digest(target) or before != archive_digest(path):
+            raise GateError('Compound member changed during copy')
+    metadata=dest/'raw-member-names.txt'
+    metadata.write_bytes(b''.join(r['raw_path'].encode('utf-8') + b'\n' for r in records))
+    os.chmod(metadata,0o600)
+    return mirror, metadata
+
+
 class Scan:
     def __init__(self, repo, work, allow, fixture_allow=(), vendor_media=()):
         self.repo, self.work, self.allow = repo, work, allow
@@ -372,15 +516,9 @@ class Scan:
             with tempfile.TemporaryDirectory(dir=self.work) as d:
                 # Validate names and links before the external extractor writes anything.
                 tool=shutil.which('7z') or shutil.which('7zz') or '7z'
-                listing=command([tool,'l','-slt','--',path]).decode(errors='replace')
-                members=listing.split('----------',1)
-                if len(members)!=2: raise GateError('installer archive has no member listing')
-                for block in members[1].strip().split('\n\n'):
-                    fields=dict(line.split(' = ',1) for line in block.splitlines() if ' = ' in line)
-                    if 'Path' in fields: self.validate_member(fields['Path'])
-                    if 'Symbolic Link' in fields or 'Hard Link' in fields: raise GateError('installer link rejected')
-                command([tool,'x','-y','-o'+d,'--',path])
-                self.directory(Path(d),label+'!unpacked',True,depth+1)
+                extracted=Path(d)/'contents'
+                extract_7z_checked(path,extracted,tool=tool)
+                self.directory(extracted,label+'!unpacked',True,depth+1)
         elif suffix in {'.zip','.docx','.xlsx','.pptx','.jar','.whl','.nupkg','.apk','.aab'}:
             with zipfile.ZipFile(path) as z:
                 for m in z.infolist():

@@ -672,5 +672,232 @@ class GateTests(unittest.TestCase):
                 self.assertIn('private-ip' if kind=='privacy' else 'tailscale-credential',result.stderr)
                 self.assertEqual(int(counter.read_text()),2)
 
+
+
+# Portable 7-Zip/Compound controls: no native executable or symlink privilege.
+from contextlib import nullcontext
+import stat
+from types import SimpleNamespace
+from unittest.mock import patch
+
+_archive_spec = importlib.util.spec_from_file_location('archive_gate_control', HERE / 'gate.py')
+archive_gate = importlib.util.module_from_spec(_archive_spec)
+_archive_spec.loader.exec_module(archive_gate)
+
+def archive_listing(*records, newline='\n'):
+    return ('Archive header\n----------\n' + '\n\n'.join(records) + '\n\n').replace('\n', newline)
+
+def compound_listing(*names):
+    return 'header\nType = Compound\n\n----------\n' + '\n\n'.join(('Path = ' + n + '\nSize = 1' for n in names)) + '\n\n'
+
+class ArchiveMemberParserTests(unittest.TestCase):
+
+    def test_two_crlf_records_both_validated_and_native_paths_accepted(self):
+        value = archive_listing('Path = $PLUGINSDIR\\System.dll\nSize = 1', 'Path = bdobb.exe\nSize = 2', newline='\r\n')
+        self.assertEqual(archive_gate.installer_members(value), ['$PLUGINSDIR/System.dll', 'bdobb.exe'])
+
+    def test_old_crlf_parser_loses_first_path(self):
+        value = archive_listing('Path = ../escape\nSize = 1', 'Path = bdobb.exe\nSize = 2', newline='\r\n')
+        old_blocks = value.split('----------', 1)[1].strip().split('\n\n')
+        old = [dict((line.split(' = ', 1) for line in block.splitlines() if ' = ' in line)) for block in old_blocks]
+        self.assertEqual([row['Path'] for row in old], ['bdobb.exe'])
+        with self.assertRaises(archive_gate.GateError):
+            archive_gate.installer_members(value)
+
+    def test_every_malicious_path_rejected(self):
+        for path in ['../escape', 'a/../escape', 'a\\..\\escape', '/root', '\\root', 'C:\\root', 'C:relative', '//server/share', '\\\\server\\share', '\\\\?\\C:\\root', 'file:stream', 'a//b', 'a\\\\b', './file', 'a/./b', 'a/', 'file.', 'file ', 'CON', 'con.txt', 'LPT1.txt', 'COM¹', 'LPT².txt', 'dir/COM³.log', 'a!b', 'bad\x00name', 'bad\tname', 'bad\rname', 'bad�name']:
+            with self.subTest(path=repr(path)), self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(archive_listing('Path = ' + path + '\nSize = 1'))
+
+    def test_missing_duplicate_path_and_fields_or_no_separator_rejected(self):
+        for value in ['Path = file', '----------\n', archive_listing('Size = 1'), archive_listing('Path = good\nPath = ../bad'), archive_listing('Path = good\nSize = 1\nSize = 2'), archive_listing('Path = good\nmalformed'), archive_listing('Path = good\n----------\nPath = hidden')]:
+            with self.subTest(value=value), self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(value)
+
+    def test_all_link_records_rejected_before_extract(self):
+        for field in ['Symbolic Link', 'Hard Link', 'Copy Link', 'Link', 'Reparse Tag', 'Alternate Stream']:
+            for value in ('target', ''):
+                with self.subTest(field=field, value=value), self.assertRaises(archive_gate.GateError):
+                    archive_gate.installer_members(archive_listing('Path = safe\n' + field + ' = ' + value))
+
+    def test_case_and_separator_aliases_rejected(self):
+        for names in [('File', 'file'), ('a/b', 'a\\b'), ('A/b', 'a/c'), ('file', 'file/child')]:
+            with self.subTest(names=names), self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(archive_listing(*('Path = ' + name + '\nSize = 1' for name in names)))
+
+    def test_directory_entry_with_children_and_msi_Path_name_accepted(self):
+        self.assertEqual(archive_gate.installer_members(archive_listing('Path = contents\nFolder = +\nAttributes = D', 'Path = contents\\bdobb.exe\nSize = 2')), ['contents', 'contents/bdobb.exe'])
+        self.assertEqual(archive_gate.installer_members(archive_listing('Path = Path\nSize = 2')), ['Path'])
+
+class ArchiveMemberPipelineTests(unittest.TestCase):
+
+    def test_safe_native_crlf_calls_extraction_and_directory_scan(self):
+        listing = b'header\r\n----------\r\nPath = bdobb.exe\r\nSize = 2\r\n\r\nPath = $PLUGINSDIR\\System.dll\r\nSize = 1\r\n\r\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = root / 'candidate.exe'
+            candidate.write_bytes(b'not executable')
+            scan = archive_gate.Scan.__new__(archive_gate.Scan)
+            scan.work = root
+            with patch.object(archive_gate, 'command', side_effect=[listing, b'']) as commands, patch.object(scan, 'directory') as directory:
+                scan.file(candidate, 'candidate.exe', True)
+                self.assertEqual(commands.call_count, 2)
+                self.assertIn('-sccUTF-8', commands.call_args_list[0].args[0])
+                self.assertEqual(commands.call_args_list[1].args[0][1], 'x')
+                directory.assert_called_once()
+
+    def test_unsafe_first_crlf_record_never_calls_extractor(self):
+        listing = b'header\r\n----------\r\nPath = ../escape\r\nSize = 1\r\n\r\nPath = bdobb.exe\r\nSize = 2\r\n\r\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = root / 'candidate.exe'
+            candidate.write_bytes(b'not executable')
+            scan = archive_gate.Scan.__new__(archive_gate.Scan)
+            scan.work = root
+            with patch.object(archive_gate, 'command', return_value=listing) as commands, patch.object(scan, 'directory') as directory:
+                with self.assertRaises(archive_gate.GateError):
+                    scan.file(candidate, 'candidate.exe', True)
+                self.assertEqual(commands.call_count, 1)
+                directory.assert_not_called()
+
+    def test_generic_archive_predicate_stays_strict(self):
+        with self.assertRaises(archive_gate.GateError):
+            archive_gate.Scan.validate_member('folder\\file')
+        archive_gate.Scan.validate_member('folder/file')
+
+    def test_compound_metadata_directory_still_scans_bang_named_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '!_StringPool').write_bytes(b'benign synthetic metadata')
+            scan = archive_gate.Scan.__new__(archive_gate.Scan)
+            scan.count = 0
+            labels = []
+
+            def observe(path, label, publication, depth):
+                labels.append(label)
+                scan.count += 1
+            with patch.object(scan, 'file', side_effect=observe), patch.object(archive_gate.Scan, 'validate_member', side_effect=AssertionError('generic validator not used for physical directory')):
+                scan.directory(root, 'package/metadata', True)
+            self.assertEqual(labels, ['package/metadata/!_StringPool'])
+
+class ArchiveCompoundTests(unittest.TestCase):
+
+    def test_typed_compound_accepts_bang_without_generic_waiver(self):
+        text = compound_listing('!_StringPool', '%21_StringPool')
+        with self.assertRaises(archive_gate.GateError):
+            archive_gate.installer_members(text)
+        self.assertEqual(archive_gate.installer_members(text, kind='msi-compound', source='candidate.msi'), ['!_StringPool', '%21_StringPool'])
+        for kwargs in ({'kind': 'other'}, {'kind': 'msi-compound'}, {'kind': 'msi-compound', 'source': 'candidate.exe'}):
+            with self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(text, **kwargs)
+        with self.assertRaises(archive_gate.GateError):
+            archive_gate.installer_members(text.replace('Type = Compound', 'Type = Cab'), kind='msi-compound', source='candidate.msi')
+
+    def test_typed_compound_keeps_all_security_checks(self):
+        for name in ['../!escape', 'C:\\!escape', '!file:ads', '\\\\host\\share', '!name.', 'COM¹', '!folder\\..\\escape']:
+            with self.subTest(name=name), self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(compound_listing(name), kind='msi-compound', source='candidate.msi')
+        for field in ('Copy Link', 'Hard Link', 'Symbolic Link'):
+            with self.assertRaises(archive_gate.GateError):
+                archive_gate.installer_members(compound_listing('!stream').replace('Size = 1', 'Size = 1\n' + field + ' = target'), kind='msi-compound', source='candidate.msi')
+
+    def test_both_checker_entrypoints_list_before_fixed_extraction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'candidate.msi'
+            source.write_bytes(b'synthetic')
+            calls = []
+
+            def command(args):
+                calls.append(list(map(str, args)))
+                return (compound_listing('!_StringPool') if '-tCompound' in args else compound_listing('Path')).encode()
+            archive_gate.extract_7z_checked(source, root / 'installer', runner=command)
+            archive_gate.extract_7z_checked(source, root / 'metadata', kind='msi-compound', runner=command)
+            self.assertEqual([args[1] for args in calls], ['l', 'x', 'l', 'x'])
+            self.assertTrue(all(('-tCompound' not in args for args in calls[:2])))
+            self.assertTrue(all(('-tCompound' in args for args in calls[2:])))
+            for args in (calls[0], calls[2]):
+                self.assertIn('-sccUTF-8', args)
+            wrong = root / 'candidate.exe'
+            wrong.write_bytes(b'synthetic')
+            with self.assertRaises(archive_gate.GateError):
+                archive_gate.extract_7z_checked(wrong, root / 'no', kind='msi-compound', runner=command)
+            self.assertEqual(len(calls), 4)
+
+    def test_both_checker_preflights_reject_before_any_extract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'candidate.msi'
+            source.write_bytes(b'synthetic')
+            for i, kind in enumerate(('default', 'msi-compound')):
+                calls = []
+
+                def command(args):
+                    calls.append(args)
+                    return compound_listing('../escape', 'benign').replace('\n', '\r\n').encode()
+                with self.assertRaises(archive_gate.GateError):
+                    archive_gate.extract_7z_checked(source, root / str(i), kind=kind, runner=command)
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(calls[0][1], 'l')
+                self.assertFalse((root / str(i)).exists())
+
+    def test_changed_source_after_listing_never_extracts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'candidate.msi'
+            source.write_bytes(b'original')
+            calls = []
+
+            def command(args):
+                calls.append(args)
+                source.write_bytes(b'changed')
+                return compound_listing('Path').encode()
+            with self.assertRaises(archive_gate.GateError):
+                archive_gate.extract_7z_checked(source, root / 'dest', runner=command)
+            self.assertEqual(len(calls), 1)
+            self.assertFalse((root / 'dest').exists())
+
+    def test_mirror_is_injective_complete_and_preserves_raw_names_and_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            package = root / 'metadata'
+            package.mkdir()
+            values = {'!_StringData': b'original-one', '%21_StringData': b'original-two', '%': b'original-three'}
+            for name, data in values.items():
+                (package / name).write_bytes(data)
+            records = archive_gate.installer_members(compound_listing(*values), kind='msi-compound', source='candidate.msi', details=True)
+            mirror, raw = archive_gate.compound_scan_inputs(package, root / 'mirror', records)
+            self.assertEqual({p.name for p in mirror.iterdir()}, {'%21_StringData', '%2521_StringData', '%25'})
+            for name, data in values.items():
+                self.assertEqual((mirror / name.replace('%', '%25').replace('!', '%21')).read_bytes(), data)
+            self.assertEqual(raw.read_bytes(), b''.join((name.encode() + b'\n' for name in values)))
+
+    def test_missing_extra_symlink_or_type_mismatch_never_returns_scan_inputs(self):
+        for change in ('missing', 'extra', 'symlink', 'directory'):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                package = root / 'metadata'
+                package.mkdir()
+                p = package / '!stream'
+                p.write_bytes(b'original')
+                records = archive_gate.installer_members(compound_listing('!stream'), kind='msi-compound', source='candidate.msi', details=True)
+                simulated_link = nullcontext()
+                if change == 'missing':
+                    p.unlink()
+                elif change == 'extra':
+                    (package / 'extra').write_bytes(b'extra')
+                elif change == 'symlink':
+                    original_lstat = Path.lstat
+
+                    def lstat(path):
+                        return SimpleNamespace(st_mode=stat.S_IFLNK) if path == p else original_lstat(path)
+                    simulated_link = patch.object(Path, 'lstat', lstat)
+                else:
+                    p.unlink()
+                    p.mkdir()
+                with simulated_link, self.assertRaises(archive_gate.GateError):
+                    archive_gate.compound_scan_inputs(package, root / 'mirror', records)
+                self.assertFalse((root / 'mirror').exists())
+
 if __name__ == '__main__':
     unittest.main()
