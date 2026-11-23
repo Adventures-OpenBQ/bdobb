@@ -1,5 +1,8 @@
 # Source for BDOBB v11.0.0
 
+This revision adds the v10 Day Chart watchlist strip to the existing main/v11 web
+application: session snapshots, symbol-group bindings and authenticated raster logos.
+
 Base repository: Adventures-OpenBQ/bdobb
 The source identity and preparation commit are recorded in source-offer.json;
 SOURCE-MANIFEST.json identifies the complete release tree.

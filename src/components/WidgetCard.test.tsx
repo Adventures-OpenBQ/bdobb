@@ -1,7 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { act, cleanup, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -171,6 +171,16 @@ vi.mock("./renderers/LiveGridRenderer", () => ({
 vi.mock("./renderers/LiveChartRenderer", () => ({
   LiveChartRenderer: (props: Record<string, unknown>) => <LiveGridStub {...props} />,
 }));
+vi.mock("./renderers/DayChartRenderer", () => ({
+  DayChartRenderer: ({onSnapshot,onSelectSymbol,onReorder,selectionError,footerControls}: {onReorder?:(symbols:string)=>void;footerControls?:ReactNode;onSnapshot?: (at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;selectionError?:string}) => <>
+    <div data-testid="day-footer-controls">{footerControls}</div>
+    <button type="button" onClick={()=>onSelectSymbol?.("MSFT")}>select-day-symbol</button>
+    <button type="button" onClick={()=>onReorder?.("MSFT,AAPL")}>reorder-day-symbols</button>
+    {selectionError ? <span>{selectionError}</span>:null}
+    <button type="button" onClick={()=>onSnapshot?.(Date.now())}>snapshot-complete</button>
+    <button type="button" onClick={()=>onSnapshot?.(null)}>snapshot-clear</button>
+  </>,
+}));
 // The stand-in keeps the real renderer's one lifecycle contract the card relies
 // on: it reports "idle" as it unmounts (LiveGridRenderer.test.tsx pins the real one).
 function LiveGridStub(props: Record<string, unknown>) {
@@ -275,6 +285,7 @@ import { WidgetCard } from "./WidgetCard";
 // vi.restoreAllMocks() does not undo a setState-installed mock, so real actions are
 // captured once at module load and reinstated before every test.
 const REAL_ACTIONS = {
+  applyCardParams: useDashboardStore.getState().applyCardParams,
   setCardMinimized: useDashboardStore.getState().setCardMinimized,
   setMaximized: useDashboardStore.getState().setMaximized,
   duplicateCard: useDashboardStore.getState().duplicateCard,
@@ -5675,4 +5686,74 @@ describe("fiscal labels on worker and server tables", () => {
     expect(screen.queryByRole("combobox", { name: "FY ends from" })).toBeNull();
     vi.restoreAllMocks();
   });
+});
+
+
+describe("Day Chart snapshot refresh status",()=>{
+  it("reports actual snapshot completion and clear without claiming a live feed",async()=>{
+    register({type:"day_chart",endpoint:"day_charts"});
+    useBackendsStore.setState({backends:[backend()]});
+    useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0,completedAt:null});
+    render(<WidgetCard card={{...card,params:{symbol:"AAPL"}}} onRemove={vi.fn()}/>);
+    const refresh=()=>screen.getByRole("button",{name:"Refresh"});
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-complete"}));
+    expect(refresh().getAttribute("title")).toMatch(/^Last snapshot just now · /);
+    expect(refresh().getAttribute("title")).not.toContain("Live");
+    expect(refresh()).toHaveAttribute("data-tone","fresh");
+    await userEvent.click(screen.getByRole("button",{name:"snapshot-clear"}));
+    expect(refresh()).toHaveAttribute("title","Not fetched yet");
+    expect(refresh()).toHaveAttribute("data-tone","idle");
+    useBackendsStore.setState({backends:[]});
+  });
+});
+
+
+describe("Day Chart selection output",()=>{
+ function seed(shared=false){
+  register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",groupType:"symbol"},{paramName:"selected_symbol",type:"text",groupType:"symbol"}]});
+  useWidgetRegistryStore.setState({widgets:[...useWidgetRegistryStore.getState().widgets,makeWidget({id:"detail-widget",type:"live_chart",endpoint:"series",params:[{paramName:"symbol",type:"text",groupType:"symbol"}]})]});
+  useBackendsStore.setState({backends:[backend()]});
+  useWidgetData.mockReturnValue({status:"ready",data:null,retry:vi.fn(),attempt:0});
+  const source={...card,params:{symbol:"AAPL,MSFT"},bindings:[{paramName:"symbol",groupId:"watch"},{paramName:"selected_symbol",groupId:shared?"watch":"selected"}]};
+  const detail={...card,id:"detail-card",widgetId:"detail-widget",params:{symbol:"AAPL"},bindings:[{paramName:"symbol",groupId:"selected"}]};
+  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",groups:[{id:"watch",name:"Watchlist",paramName:"symbol",groupType:"symbol",value:"AAPL,MSFT"},{id:"selected",name:"Detail",paramName:"symbol",groupType:"symbol",value:"AAPL"}],tabs:[{id:"t1",name:"Main",cards:[source,detail]}]}],activeId:"d1",activeTabId:"t1"});
+  render(<><WidgetCard card={source} onRemove={vi.fn()}/><WidgetCard card={detail} onRemove={vi.fn()}/></>);
+ }
+ it("updates only the selection group, preserving the input watchlist",async()=>{
+  seed();expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("AAPL");await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("MSFT"));
+  expect(JSON.parse(screen.getByTestId("live-grid-props").textContent!).params.symbol).toBe("MSFT");
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("reorders the shared watchlist while preserving the selected symbol",async()=>{
+  seed();await userEvent.click(screen.getByRole("button",{name:"reorder-day-symbols"}));
+  await waitFor(()=>expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("MSFT,AAPL"));
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="selected")?.value).toBe("AAPL");
+  useBackendsStore.setState({backends:[]});
+ });
+ it("refuses to publish into the input group and explains the conflict",async()=>{
+  seed(true);await userEvent.click(screen.getByRole("button",{name:"select-day-symbol"}));
+  expect(screen.getByText(/Choose a different group for Selected symbol/)).toBeInTheDocument();
+  expect(useDashboardStore.getState().dashboards[0].groups?.find(g=>g.id==="watch")?.value).toBe("AAPL,MSFT");
+  useBackendsStore.setState({backends:[]});
+ });
+});
+
+it("shows Day Chart row1 controls only in the expanded parameters panel",async()=>{
+ register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",label:"Symbols"},{paramName:"rows",type:"text",label:"Rows",row:1}]});
+ useBackendsStore.setState({backends:[backend()]});
+ const source={...card,params:{symbol:"AAPL",rows:"1"}};
+ useDashboardStore.setState({dashboards:[{id:"d1",name:"D",tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
+ render(<WidgetCard card={source} onRemove={vi.fn()}/>);
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Show parameters"}));
+ expect(within(screen.getByRole("region",{name:"Parameters"})).getByRole("textbox",{name:"Rows"})).toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Hide parameters"}));
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Symbols"})).not.toBeInTheDocument();
+ expect(screen.getByRole("textbox",{name:"Symbols"}).closest("header")).not.toBeNull();
+ useBackendsStore.setState({backends:[]});
 });

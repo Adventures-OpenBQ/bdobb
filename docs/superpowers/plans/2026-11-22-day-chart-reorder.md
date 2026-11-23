@@ -1,0 +1,4 @@
+# Day Chart tile ordering
+User requests dragging individual charts to change list order. Reuse the widget's parameter edit path: an ungrouped input writes its CSV, a linked input updates its parameter group. Keep selected_symbol separate. Move by position so duplicates remain intact. Accept only a pointer drag initiated within the same unchanged list; external drops and stale drags are ignored. Show a drop target, preserve scroll position, and provide Alt+Arrow keyboard moves with focus following the moved tile. Verify renderer events, parameter group routing and saved order in Vercel. Existing BTC full-day chart remains intact.
+
+Qualification ruling: native HTML5 drag did not reorder in the Mac browser automation, despite event-unit tests passing. Use direct pointer capture and hit testing; a distance threshold keeps simple clicks selecting, and pointer cancellation/stale membership refuse edits.

@@ -17,6 +17,7 @@ vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn(() => Promise.resol
 vi.mock("../../lib/dataClient", async (orig) => ({
   ...(await orig<typeof import("../../lib/dataClient")>()),
   fetchWidgetData: vi.fn(),
+  fetchEndpoint: vi.fn(),
   ticketedWsUrl: vi.fn(async (_backend: unknown, url: string) => `${url}?ticket=t${++tickets}`),
 }));
 let tickets = 0;
@@ -26,7 +27,7 @@ vi.mock("../../lib/logger", async (orig) => ({
 }));
 
 import { LiveChartRenderer } from "./LiveChartRenderer";
-import { fetchWidgetData, ticketedWsUrl } from "../../lib/dataClient";
+import { fetchEndpoint, fetchWidgetData, ticketedWsUrl } from "../../lib/dataClient";
 import { logOnce } from "../../lib/logger";
 import { DEFAULT_SETTINGS } from "../../lib/settingsFile";
 import { useSettingsStore } from "../../stores/settingsStore";
@@ -447,4 +448,18 @@ it('acknowledges nullable candles without plotting fabricated prices or resettin
   expect(screen.queryByText('No plottable bars for AAPL yet.')).not.toBeInTheDocument();
   expect(connection.sent.map(frame=>JSON.parse(frame).type).filter(type=>type==='subscribe')).toHaveLength(1);
   expect(connection.closed).toBe(false);
+});
+
+it('draws closed-session history and redraws a newly selected symbol without pretending it is accepted tape',async()=>{
+ const historical=(symbol:string,close:number)=>({schema_version:1,mode:'closed',symbol,interval:'1m',source:'eodhd',session:{date:'2026-11-20',status:'closed'},bars:[{date:'2026-11-20T14:30:00Z',open:close-1,high:close+1,low:close-2,close,volume:5}]});
+ vi.mocked(fetchEndpoint).mockImplementation(async(_b,_p,params)=>historical(params.symbol,params.symbol==='AAPL'?102:202));
+ const advertised={...widget,chartStreamV1:true,closedSessionHistory:true,wsEndpoint:'chart_stream_ws'};
+ const {rerender}=render(<LiveChartRenderer widget={advertised} backend={backend} params={{symbol:'AAPL',interval:'1m'}}/>);
+ await waitFor(()=>expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({close:102})]));
+ expect(screen.getByRole('status')).toHaveTextContent('EODHD historical session');
+ expect(FakeSocket.all).toHaveLength(0);
+ rerender(<LiveChartRenderer widget={advertised} backend={backend} params={{symbol:'MSFT',interval:'1m'}}/>);
+ await waitFor(()=>expect(handle.setBars).toHaveBeenLastCalledWith([expect.objectContaining({close:202})]));
+ expect(screen.getByRole('status')).toHaveTextContent('MSFT');
+ expect(fetchWidgetData).not.toHaveBeenCalled();
 });

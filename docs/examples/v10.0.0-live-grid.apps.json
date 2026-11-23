@@ -1,7 +1,7 @@
 [
   {
     "name": "Example Dashboard - Version 10.0.0 - Live Grid",
-    "description": "Episode 10 brings the live grid. Live quotes streams: a snapshot over HTTP, then each quote ticks in place over live-grid's websocket, with logos and 52-week ranges. Beside it, the subscription list, one symbol's kdb+ tick history, the Live Chart, the Cached Price Chart and an S&P 500 sector map. Add the stack's live-grid backend (its live profile) as a connection. Opens in BDOBB 10.0.0 or later.",
+    "description": "Episode 10 brings streaming quotes, subscriptions and kdb+ tick history, the Live Chart, Cached Price Chart, S&P 500 sector map, and a horizontal Day Chart watchlist. Add the stack's live-grid backend (its live profile) as a connection. Opens in BDOBB 10.0.0 or later.",
     "img": "",
     "img_dark": "",
     "img_light": "",
@@ -93,6 +93,18 @@
             "h": 12,
             "state": {
               "params": {}
+            }
+          },
+          {
+            "i": "day_chart",
+            "x": 0,
+            "y": 54,
+            "w": 40,
+            "h": 12,
+            "state": {
+              "params": {
+                "symbol": "AAPL,MSFT,NVDA"
+              }
             }
           }
         ]

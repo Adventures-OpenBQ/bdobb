@@ -107,5 +107,5 @@
     "vitest": "^2.1.8"
   },
   "openbbDocker": "v3.0.1",
-  "openbqDocker": "93aa2c91a741eb4823e08a6bfa9d33a84c22772a"
+  "openbqDocker": "c4b17e74f566df1a6e30b3bb8e2cd779b498cf22"
 }
