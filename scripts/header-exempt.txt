@@ -13,3 +13,10 @@ docs/superpowers/specs/
 
 # Upstream license evidence and audit records retain their own notices.
 LICENSES/dependency-evidence/
+
+# Shared Apache-licensed scanner; exact bytes pinned in security/shared-manifest.json.
+security/gate.py
+security/image-gate.sh
+security/install.py
+security/sync.py
+security/test_gate.py

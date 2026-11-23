@@ -48,6 +48,11 @@ function titleText(title: unknown): string | undefined {
 export function vegaLiteToPlotly(spec: unknown, theme: "dark" | "light" = "dark"): PlotlyFigure | null {
   const s = asRecord(spec);
   if (!s) return null;
+  if (Object.hasOwn(s, "transform")) return null;
+  const encoding = s.encoding;
+  if (!isRecord(encoding) || Object.values(encoding).some((definition) =>
+    isRecord(definition) && ["aggregate", "bin", "stack", "timeUnit"].some((key) => Object.hasOwn(definition, key)),
+  )) return null;
 
   // Only the object entries: a null or number in data.values would otherwise
   // throw below and take the card to its error boundary, not the raw view.
@@ -59,11 +64,11 @@ export function vegaLiteToPlotly(spec: unknown, theme: "dark" | "light" = "dark"
   const mark = type ? MARK[type] : undefined;
   if (!mark) return null;
 
-  const x = channel(s.encoding, "x");
-  const y = channel(s.encoding, "y");
+  const x = channel(encoding, "x");
+  const y = channel(encoding, "y");
   if (!x || !y) return null;
 
-  const color = channel(s.encoding, "color");
+  const color = channel(encoding, "color");
   const markColor = str(asRecord(s.mark)?.color);
 
   const trace = (rows: Row[], name?: string): Row => ({

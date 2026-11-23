@@ -1,6 +1,7 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 import './rust-pivot-resources';
+import './rust-pivot-raw-fields';
 import './matched-executors';
 import {finalReviewProbe} from './rust-pivot-final-review';
 import { decodeWire, encodeWire, type WireValue } from '../../src/lib/tableExecution/rust/wireCodec';

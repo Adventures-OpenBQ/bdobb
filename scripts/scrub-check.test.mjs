@@ -10,7 +10,7 @@
 // itself never matches the patterns it tests -- the real gate scans it too.
 import { describe, it, expect } from "vitest";
 import { execFile } from "node:child_process";
-import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync, symlinkSync, unlinkSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,9 +35,9 @@ function sandbox(files) {
   return root;
 }
 
-function run(root) {
+function run(root, env = process.env) {
   return new Promise((resolve) => {
-    execFile("bash", [join(root, "scripts", "scrub-check.sh")], (error, stdout, stderr) =>
+    execFile("bash", [join(root, "scripts", "scrub-check.sh")], { env }, (error, stdout, stderr) =>
       resolve({ code: error ? error.code ?? 1 : 0, out: stdout + stderr }),
     );
   });
@@ -113,4 +113,79 @@ describe("scrub-check", () => {
     const other = await run(sandbox({ "src/gen/x.ts": `const p = "${MAC_HOME}";\n` }));
     expect(other.code).toBe(1);
   });
+});
+
+const REVIEWED_FILES = ["security/README.md", "security/test_gate.py", "security/gate.py", "scripts/test_public_release.py"];
+function reviewedSandbox() {
+  return sandbox(Object.fromEntries(REVIEWED_FILES.map(path => [path, readFileSync(new URL(`../${path}`, import.meta.url))])));
+}
+describe("reviewed canonical fixture integration", () => {
+  it("accepts only the exact four reviewed canonical source files", async () => {
+    expect((await run(reviewedSandbox())).code).toBe(0);
+  });
+  it.each(REVIEWED_FILES)("refuses any changed bytes in %s, including a benign edit", async path => {
+    const root = reviewedSandbox();
+    writeFileSync(join(root, path), Buffer.concat([readFileSync(join(root, path)), Buffer.from("\n# changed fixture\n")]));
+    const r = await run(root);
+    expect(r.code).toBe(2);
+    expect(r.out).toContain("reviewed fixture changed");
+    expect(r.out).toContain(path);
+  });
+  it("still applies operator patterns to the exact reviewed bytes", async () => {
+    const root = reviewedSandbox();
+    writeFileSync(join(root, "scripts/scrub-private-patterns.txt"), "Requires Python\n");
+    const r = await run(root);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("security/README.md");
+    expect(r.out).not.toContain("Requires Python");
+  });
+  it("never exempts another source file in security or prints its matching value", async () => {
+    const root = reviewedSandbox();
+    writeFileSync(join(root, "security/other.py"), `token = "${GITHUB_TOKEN}"\n`);
+    const r = await run(root);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("security/other.py:1");
+    expect(r.out).not.toContain(GITHUB_TOKEN);
+  });
+  it("refuses a reviewed path replaced with a symlink even to identical bytes", async () => {
+    const root = reviewedSandbox();
+    copyFileSync(join(root, "security/README.md"), join(root, "same-bytes.md"));
+    unlinkSync(join(root, "security/README.md"));
+    symlinkSync("../same-bytes.md", join(root, "security/README.md"));
+    const r = await run(root);
+    expect(r.code).toBe(2);
+    expect(r.out).toContain("reviewed fixture is not a regular file");
+  });
+  it("refuses malformed custom regex without printing the private pattern", async () => {
+    const r = await run(sandbox({ "scripts/scrub-private-patterns.txt": "[" + GITHUB_TOKEN + "\n" }));
+    expect(r.code).toBe(2);
+    expect(r.out).toContain("malformed pattern");
+    expect(r.out).not.toContain(GITHUB_TOKEN);
+  });
+  it("preserves line-scoped markers while reporting unmarked line numbers", async () => {
+    const r = await run(sandbox({ "src/a.ts": `// ${TAILNET_HOST} scrub-allow\n// ${TAILNET_HOST}\n` }));
+    expect(r.code).toBe(1);
+    expect(r.out).toContain("src/a.ts:2");
+    expect(r.out).not.toContain("src/a.ts:1");
+    expect(r.out).not.toContain(TAILNET_HOST);
+  });
+});
+
+it("refuses a reviewed path replaced by a directory", async () => {
+  const root = reviewedSandbox();
+  unlinkSync(join(root, "security/README.md"));
+  mkdirSync(join(root, "security/README.md"));
+  const r = await run(root);
+  expect(r.code).toBe(2);
+  expect(r.out).toContain("reviewed fixture is not a regular file");
+});
+it("still fails closed when the actual tree grep errors", async () => {
+  const root = sandbox({ "src/a.ts": "clean\n" });
+  mkdirSync(join(root, "bin"));
+  writeFileSync(join(root, "bin/grep"), '#!/bin/sh\nif [ "$1" = "-rEn" ]; then exit 2; fi\nexec /usr/bin/grep "$@"\n');
+  chmodSync(join(root, "bin/grep"), 0o700);
+  const r = await run(root, { ...process.env, PATH: `${join(root, "bin")}:${process.env.PATH}` });
+  expect(r.code).toBe(2);
+  expect(r.out).toContain("tree scan errored");
+  expect(r.out).not.toContain("scrub-check: clean");
 });

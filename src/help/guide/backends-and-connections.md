@@ -23,9 +23,9 @@ With the API's auth on, `/widgets.json` and `/apps.json` stay open, so discovery
 
 Every service in the stack sits on its private bridge and is published only by Tailscale Serve (key-maint also on the host's loopback), so reaching an address at all already takes a device on your tailnet; the optional Basic auth is a second gate. Funnel is off on every port. See [[openbq-docker-stack|The openbq-docker Stack]] for the ports.
 
-## Why the seeded `Local` never works
+## Start with your own connection
 
-A fresh install seeds one connection, `Local` at `http://localhost:6900`. The stack's API does listen on 6900 — inside the container network, not on your host. openbq-docker publishes no port for it, so the entry sits red until you replace the URL with the Serve address. It is a placeholder for people who run an OpenBB backend of their own on the local machine.
+A fresh public install starts with no saved connections. The **Add** dialog offers `Local` at `http://localhost:6900` as a starting point for a backend on your own machine. The openbq-docker API listens on 6900 inside its container network and publishes no host port, so use your Tailscale Serve address instead. Existing connection files, including an empty list, are preserved.
 
 ## Where the credentials go
 

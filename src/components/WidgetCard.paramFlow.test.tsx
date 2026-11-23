@@ -13,6 +13,15 @@ vi.mock("../lib/plotly", () => ({
   REGISTERED_TRACE_TYPES: new Set(["scatter", "candlestick"]),
 }));
 
+// jsdom has no layout or ResizeObserver. This suite verifies real parameter
+// requests, while WidgetCard.test.tsx and browser tests cover overflow sizing.
+class ResizeObserverStub {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+
 // Stands in for the real drag-and-drop library, exactly as
 // DashboardGrid.test.tsx does — it pulls in ResizeObserver-dependent DOM
 // machinery this test has no interest in. What's left is real:

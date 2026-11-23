@@ -8,7 +8,8 @@
     "e2e/**/*.{ts,tsx,mjs}",
     "playwright.*.config.ts",
     "scripts/pivot-qualification/**/*.{ts,mjs}",
-    "scripts/sort-reuse-benchmark/*.mjs"
+    "scripts/sort-reuse-benchmark/*.mjs",
+    "scripts/applymodel-profile/**/*.{ts,mjs}"
   ],
   "ignore": [
     "LICENSES/**",
@@ -19,7 +20,12 @@
     "openssl"
   ],
   "ignoreDependencies": [
-    "@blocknote/core"
+    "@blocknote/core",
+    "audit-store-owned",
+    "audit-reconcile",
+    "profile-artifact",
+    "stock-artifact",
+    "before-artifact"
   ],
   "ignoreExportsUsedInFile": true,
   "rules": {
