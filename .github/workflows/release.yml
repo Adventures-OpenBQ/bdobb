@@ -1,0 +1,235 @@
+name: V4 Mac installer qualification
+run-name: V4 Mac installer qualification (${{ inputs.target }})
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: V4 only; artifact qualification without release publication
+        required: true
+        type: choice
+        default: v4.0.0
+        options: [v4.0.0]
+      target:
+        description: Native Mac architecture; retry only the failed target
+        required: true
+        type: choice
+        default: all
+        options: [all, mac-arm, mac-intel]
+permissions:
+  contents: read
+concurrency:
+  group: v4-mac-installer-${{ github.ref }}-${{ inputs.target }}
+  cancel-in-progress: false
+env:
+  SOURCE_COMMIT: fecff636e2389d417a320b66c9264d612ebb3a64
+  AUDITOR_COMMIT: fecff636e2389d417a320b66c9264d612ebb3a64
+  SOURCE_REPOSITORY: https://github.com/Adventures-OpenBQ/bdobb.git
+  RUSTUP_TOOLCHAIN: 1.99.1
+  PYTHONUTF8: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+  CARGO_INCREMENTAL: '0'
+  VITE_OPENBB_API_URL: ''
+  VITE_RITA_URL: ''
+  VITE_MCP_SERVERS: ''
+  VITE_SHARE_FOLDERS: ''
+  VITE_DEFAULT_BACKEND_URL: ''
+  VITE_DEFAULT_BACKEND_AUTH: ''
+jobs:
+  plan:
+    if: github.repository == 'Adventures-OpenBQ/bdobb' && github.event_name == 'workflow_dispatch' && inputs.version == 'v4.0.0'
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+    steps:
+      - id: pick
+        env:
+          SELECTED_TARGET: ${{ inputs.target }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, os
+          rows=[{'target':'mac-arm','os':'macos-15','rust-target':'aarch64-apple-darwin'},
+                {'target':'mac-intel','os':'macos-15-intel','rust-target':'x86_64-apple-darwin'}]
+          selected=os.environ['SELECTED_TARGET']
+          assert selected in {'all','mac-arm','mac-intel'}
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              print('matrix='+json.dumps({'include':[row for row in rows if selected=='all' or row['target']==selected]}),file=output)
+          PYTHON
+  bundle:
+    needs: plan
+    if: github.repository == 'Adventures-OpenBQ/bdobb' && inputs.version == 'v4.0.0'
+    name: V4 ${{ matrix.target }} native install qualification
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: app
+    env:
+      BDOBB_RUST_TARGET: ${{ matrix.rust-target }}
+      BDOBB_TARGET: ${{ matrix.target }}
+    steps:
+      - name: Check out separate qualification controller
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: controller
+          persist-credentials: false
+      - name: Fetch exact public V4 source and independent auditor
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          for directory in app auditor; do
+            mkdir "$directory"
+            git -C "$directory" init
+            git -C "$directory" config core.autocrlf false
+            git -C "$directory" remote add release-source "$SOURCE_REPOSITORY"
+            if [ "$directory" = app ]; then expected="$SOURCE_COMMIT"; else expected="$AUDITOR_COMMIT"; fi
+            git -C "$directory" fetch --no-tags release-source "$expected"
+            git -C "$directory" checkout --detach FETCH_HEAD
+            test "$(git -C "$directory" rev-parse HEAD)" = "$expected"
+          done
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned native, WASM, scanner and extraction tools
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup target add "$BDOBB_RUST_TARGET" --toolchain 1.99.1
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain 1.98.1
+          cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/v4-wasm-tools"
+          echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/v4-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
+          corepack enable
+          corepack prepare pnpm@10.34.4 --activate
+          test "$(pnpm --version)" = '10.34.4'
+          cargo +1.99.1 install tauri-dumper --version 0.2.2 --locked --root "$RUNNER_TEMP/v4-tools"
+          python ../auditor/security/install.py --dir "$RUNNER_TEMP/v4-tools/bin"
+          python -m pip install --require-hashes -r ../auditor/security/requirements.txt
+          echo "$RUNNER_TEMP/v4-tools/bin" >> "$GITHUB_PATH"
+          brew install tesseract poppler sevenzip
+      - name: Verify pinned product, offer and all six blank defaults
+        run: |
+          python - <<'PYTHON'
+          import json, os, platform, subprocess
+          from pathlib import Path
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['SOURCE_COMMIT']
+          assert subprocess.check_output(['rustc','--version'],text=True).split()[1]=='1.99.1'
+          for file in ['package.json','src-tauri/tauri.conf.json']:
+              assert json.loads(Path(file).read_text())['version']=='4.0.0'
+          assert json.loads(Path('package.json').read_text())['packageManager']=='pnpm@10.34.4'
+          offer=json.loads(Path('source-offer.json').read_text())
+          assert offer['sourceId']=='00b661cf92ed7bebfa52a104b99ed5e9cb52e0873a2370fad1b22a07fe58633c'
+          for key in ['VITE_OPENBB_API_URL','VITE_RITA_URL','VITE_MCP_SERVERS','VITE_SHARE_FOLDERS','VITE_DEFAULT_BACKEND_URL','VITE_DEFAULT_BACKEND_AUTH']:
+              assert os.environ.get(key)=='',key
+          Path('qualification-evidence').mkdir()
+          Path('qualification-evidence/build-identity.json').write_text(json.dumps({'source_commit':os.environ['SOURCE_COMMIT'],'source_id':offer['sourceId'],
+              'auditor_commit':os.environ['AUDITOR_COMMIT'],'controller_commit':subprocess.check_output(['git','-C','../controller','rev-parse','HEAD'],text=True).strip(),
+              'target':os.environ['BDOBB_RUST_TARGET'],'host_arch':platform.machine(),'rustc':subprocess.check_output(['rustc','--version'],text=True).strip(),
+              'pnpm':'10.34.4','node':subprocess.check_output(['node','--version'],text=True).strip(),
+              'runner_image':os.environ.get('ImageVersion'),'signing':'Ad hoc; no Developer ID/notarization/Gatekeeper claim'},indent=2)+'\n')
+          PYTHON
+      - name: Run canonical controls and source/history/controller gates
+        run: |
+          set -euo pipefail
+          python ../auditor/security/sync.py --check
+          python -m unittest discover -s ../auditor/security -p test_gate.py -v
+          python -m unittest discover -s ../auditor/scripts -p test_public_release.py -v
+          python -m unittest discover -s ../controller/.github/scripts -p test_v4_mac_qualification.py -v
+          python -m unittest discover -s ../controller/.github/scripts -p test_mac_about_probe.py -v
+          python -m unittest discover -s ../controller/.github/scripts -p test_encrypt_qa_candidates.py -v
+          python ../auditor/security/gate.py --repo . tree
+          python ../auditor/security/gate.py --repo . history --revision HEAD
+          python ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/release.yml ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py
+      - name: Install locked dependencies and build current pinned WASM
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm pivot:build
+          pnpm pivot:verify
+      - name: Build only final V4 Mac installers
+        id: native_build
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          node - <<'JAVASCRIPT'
+          const fs=require('node:fs'),v8=require('node:v8');
+          fs.writeFileSync('qualification-evidence/build-node.json',JSON.stringify({scope:'Build process only; no product runtime setting',node:process.versions.node,node_options:process.env.NODE_OPTIONS,heap_limit_bytes:v8.getHeapStatistics().heap_size_limit},null,2)+'\n');
+          JAVASCRIPT
+          pnpm tauri build --ci --target "$BDOBB_RUST_TARGET" -- --locked
+      - name: Stage four original names and scan each exact package
+        id: package_scan
+        run: python ../controller/.github/scripts/v4_mac_qualification.py collect --target "$BDOBB_TARGET" --auditor ../auditor
+      - name: Install private app copies and qualify native fresh profiles and About
+        id: native_qualification
+        run: python ../controller/.github/scripts/v4_mac_qualification.py qualify --target "$BDOBB_TARGET" --auditor ../auditor
+      - name: Gate checksums and truthful qualification evidence
+        id: evidence_scan
+        run: |
+          python ../auditor/security/gate.py --repo . artifacts release-stage/scan.json release-stage/qualification.json release-stage/SHA256SUMS qualification-evidence
+          git diff --exit-code
+      - name: Upload scanned Mac installers and receipts only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qualified-v4-${{ matrix.target }}
+          path: |
+            app/release-stage/
+            app/qualification-evidence/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Encrypt only the exact failed Mac candidates for private QA
+        id: encrypted_qa
+        if: failure() && steps.native_build.outcome == 'success' && (steps.package_scan.outcome == 'failure' || steps.native_qualification.outcome == 'failure' || steps.evidence_scan.outcome == 'failure')
+        working-directory: ${{ github.workspace }}
+        env:
+          PACKAGE_OUTCOME: ${{ steps.package_scan.outcome }}
+          NATIVE_OUTCOME: ${{ steps.native_qualification.outcome }}
+        run: |
+          set -euo pipefail
+          if [ "$PACKAGE_OUTCOME" = failure ]; then stage=package-scan; elif [ "$NATIVE_OUTCOME" = failure ]; then stage=native-qualification; else stage=evidence-scan; fi
+          python controller/.github/scripts/encrypt_qa_candidates.py --target "$BDOBB_TARGET" --app app --auditor auditor --controller controller             --recipient age160m7enkqn7g3gy9sm66keanjfsnkjfs2u6ce57w3jzz8egvm7erq39zaqx             --outdir "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET" --failure-stage "$stage" --qualification-outcome failure
+      - name: Gate ciphertext and safe retention metadata only
+        id: encrypted_outbound
+        if: failure() && steps.encrypted_qa.outcome == 'success'
+        working-directory: ${{ github.workspace }}
+        run: |
+          python auditor/security/gate.py --repo app artifacts "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET/retention.json" "$RUNNER_TEMP/v4-encrypted-qa-$BDOBB_TARGET/qa-blocked-v4-$BDOBB_TARGET.tar.age"
+      - name: Retain encrypted failed QA for one day
+        if: failure() && steps.encrypted_qa.outcome == 'success' && steps.encrypted_outbound.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: QA-ENCRYPTED-BLOCKED-v4-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/v4-encrypted-qa-${{ matrix.target }}/retention.json
+            ${{ runner.temp }}/v4-encrypted-qa-${{ matrix.target }}/qa-blocked-v4-${{ matrix.target }}.tar.age
+          if-no-files-found: error
+          retention-days: 1
+  verify-mac4:
+    if: inputs.target == 'all'
+    needs: bundle
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          path: controller
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: qualified-v4-*
+          path: staged
+      - name: Bind exactly four immutable Mac packages and native install receipts
+        run: python3 controller/.github/scripts/v4_mac_qualification.py aggregate --root staged
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: qualified-v4-mac4-binding
+          path: qualification-mac4/
+          if-no-files-found: error
+          retention-days: 7
