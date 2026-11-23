@@ -60,6 +60,7 @@ describe("docs/examples", () => {
   // added here too.
   const KNOWN = [
     "v10.0.0-live-grid.apps.json",
+    "v12.0.0-day-chart.apps.json",
     "v3.1.0-builtins.apps.json",
     "v3.1.0-demo-providers.apps.json",
     "v3.1.0-openbb-workspace.apps.json",
@@ -288,14 +289,15 @@ describe("docs/examples", () => {
   // its saved param, so the card subscribes to them on open.
   it("v10.0.0-live-grid: the live grid, its subscriptions, the tick history, both charts and the sector map", () => {
     const { apps, ids } = load("v10.0.0-live-grid.apps.json");
-    expect(ids).toEqual(["live_grid", "subscriptions", "kdb_ticks", "live_chart", "kdb_cache_chart", "sector_map"]);
+    expect(ids).toEqual(["live_grid", "subscriptions", "kdb_ticks", "live_chart", "kdb_cache_chart", "sector_map", "day_chart"]);
     expect(apps[0].description).toContain("BDOBB 10.0.0 or later");
     const { dashboards } = importApps(apps, [...new Set(ids)].map(widget));
     const [live] = dashboards[0].tabs;
     expect(live.name).toBe("Live");
     expect(live.cards[0].params).toEqual({ symbol: "AAPL,MSFT,NVDA,TSLA,BTC-USD,ETH-USD,EURUSD" });
-    expect(live.cards.map((c) => c.params.interval)).toEqual([undefined, undefined, undefined, "1m", "1d", undefined]);
+    expect(live.cards.map((c) => c.params.interval)).toEqual([undefined, undefined, undefined, "1m", "1d", undefined, undefined]);
     expect(live.cards[5].params).toEqual({});
+    expect(live.cards[6].params).toEqual({symbol:"AAPL,MSFT,NVDA"});
   });
 
   // Every example says which BDOBB it needs, in words a reader sees in the
@@ -366,4 +368,18 @@ describe("docs/examples", () => {
     }
     expect(present.has("param_echo")).toBe(true);
   });
+});
+
+
+it("v12 Day Chart example keeps watchlist and detailed symbol groups independent", () => {
+  const {apps}=load("v12.0.0-day-chart.apps.json");
+  const {dashboards}=importApps(apps,[widget("day_chart"),widget("live_chart")]);
+  const dashboard=dashboards[0];
+  const [day,detail]=dashboard.tabs[0].cards;
+  const watch=dashboard.groups!.find(g=>g.name==="Watchlist")!;
+  const selected=dashboard.groups!.find(g=>g.name==="Selected symbol")!;
+  expect(watch.value).toBe("AAPL,MSFT,NVDA,BTC-USD");
+  expect(day.bindings).toEqual(expect.arrayContaining([{paramName:"symbol",groupId:watch.id},{paramName:"selected_symbol",groupId:selected.id}]));
+  expect(detail.bindings).toEqual([{paramName:"symbol",groupId:selected.id}]);
+  expect(watch.id).not.toBe(selected.id);
 });

@@ -39,7 +39,7 @@ import { importRefusal } from "../lib/importLimits";
 import { NEWS_RAIL_TITLE, defaultNewsBase, trimBase } from "../lib/news";
 import { NEWS_FILE_NAME, parseNewsFile, serializeNewsState } from "../lib/newsFile";
 import { bodyParams, paramsKey, visibleParams, wireParams } from "../lib/params";
-import { splitParamEdit, type ParamEdit } from "../lib/paramGroups";
+import { groupFor, splitParamEdit, type ParamEdit } from "../lib/paramGroups";
 import { parseFyEndMonth } from "../lib/periods";
 import { relativeTime } from "../lib/relativeTime";
 import { FISCAL_AS_REPORTED } from "../lib/statementFiscal";
@@ -83,6 +83,7 @@ import { DateProbeRenderer } from "./renderers/DateProbeRenderer";
 import { ParamEchoRenderer } from "./renderers/ParamEchoRenderer";
 import { YouTubeRenderer } from "./renderers/YouTubeRenderer";
 import { NewsfeedRenderer } from "./renderers/NewsfeedRenderer";
+import { DayChartRenderer } from "./renderers/DayChartRenderer";
 import { LiveChartRenderer } from "./renderers/LiveChartRenderer";
 import { LiveGridRenderer } from "./renderers/LiveGridRenderer";
 import { OmniRenderer } from "./renderers/OmniRenderer";
@@ -171,8 +172,10 @@ const SELF_REFRESHING_TYPES = new Set([
   "multi_file_viewer",
   "live_grid",
   "live_chart",
+  "day_chart",
   ...(__ARTS_CHARTS__ ? ["arts_chart"] : []),
 ]);
+
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -286,6 +289,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
   /** The News feed manager. Transient: closing it is the only thing it remembers. */
   const [feedsOpen, setFeedsOpen] = useState(false);
   // When a live_grid's renderer last took data (see timerTitle).
+  const [snapshotAt, setSnapshotAt] = useState<number | null>(null);
   const [liveAt, setLiveAt] = useState<number | null>(null);
   const [liveStatus, setLiveStatus] = useState<SocketStatus>("idle");
   /**
@@ -475,6 +479,11 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     // A live_chart without a wsEndpoint has no feed: it is a fetched chart,
     // and its tooltip is an ordinary card's, timed by the renderer's seed
     // (review F14).
+    if (widget?.type === "day_chart") {
+      return snapshotAt === null
+        ? "Not fetched yet"
+        : `Last snapshot ${relativeTime(snapshotAt)} · ${new Date(snapshotAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
+    }
     if (widget?.type === "live_chart" && !widget.wsEndpoint && status !== "error") {
       return liveAt === null
         ? "Not fetched yet"
@@ -498,7 +507,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
     if (completedAt === null) return "Not fetched yet";
     return `Last refresh ${relativeTime(completedAt)} · ${new Date(completedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
   })();
-  const doneAt = liveFeed ? liveAt : completedAt;
+  const doneAt = widget?.type === "day_chart" ? snapshotAt : liveFeed ? liveAt : completedAt;
   // A live grid that has data but no open socket -- retrying, a first connect
   // still waiting, or minimised -- is stale, whatever its last row's age. So
   // is a live chart, but only one that has a socket to lose: without a
@@ -1345,6 +1354,16 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
         </Suspense>
       );
     }
+    if (widget?.type === "day_chart" && backend) {
+      const inputGroup=groupFor(card,groups,"symbol");
+      const outputGroup=groupFor(card,groups,"selected_symbol");
+      const conflict=!groupsDisabled && inputGroup && inputGroup.id===outputGroup?.id;
+      return <DayChartRenderer backend={backend} params={query} refreshKey={attempt + refreshEpoch} onSnapshot={setSnapshotAt}
+        selectionError={conflict?"Choose a different group for Selected symbol so chart selection does not replace the watchlist.":undefined}
+        onReorder={(symbols)=>{void handleParamsUpdate(widget,{symbol:symbols},[]);}}
+        onSelectSymbol={conflict?undefined:(symbol)=>{void handleCellClick({paramName:"selected_symbol",value:symbol,forceUpdate:false});}} />;
+
+    }
 
     // live-grid's Live Chart (V10-P4). The live_grid case's shape and reasons:
     // fetchesData is false, the renderer seeds itself from `/series` (the
@@ -2028,7 +2047,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
           <div
             className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}${widget && visibleParams(widget).every((p) => (p.row ?? 0) > 0) ? " card-chips-below" : ""}`}
           >
-            <ParamControls {...controlProps} />
+            <ParamControls {...controlProps} widget={widget?.type==="day_chart"?{...widget,params:widget.params.filter(p=>(p.row??0)===0)}:controlProps.widget} />
           </div>
         ) : null}
         {sharedWithRita && canShare ? (

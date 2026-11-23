@@ -341,6 +341,9 @@ const NO_FETCH_TYPES = new Set([
   "live_chart",
   // Art's Charts (v12): the card asks the chart server itself, through the host's chartsFetch.
   ...(__ARTS_CHARTS__ ? ["arts_chart"] : []),
+  // Day Chart owns bounded visible/nearby snapshot polling.
+  "day_chart",
+
   ...SSRM_TYPES,
 ]);
 

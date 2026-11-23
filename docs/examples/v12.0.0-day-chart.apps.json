@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Example Dashboard - Version 12.0.0 - Day Chart",
+    "description": "Day Chart watchlist with an independent Selected symbol group linked to a detailed Live Chart. Requires the charts/v12 live-grid backend. Edit Watchlist or click a tile to select its symbol. Opens in BDOBB 12.0.0 or later.",
+    "img": "",
+    "img_dark": "",
+    "img_light": "",
+    "allowCustomization": true,
+    "tabs": {
+      "day-chart": {
+        "id": "day-chart",
+        "name": "Day Chart",
+        "layout": [
+          {
+            "i": "day_chart",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 10,
+            "groups": [
+              "Watchlist",
+              "Selected symbol"
+            ],
+            "groupBindings": [
+              {
+                "group": "Selected symbol",
+                "paramName": "selected_symbol"
+              }
+            ],
+            "state": {
+              "params": {
+                "symbol": "AAPL,MSFT,NVDA,BTC-USD",
+                "rows": "1",
+                "columns": "",
+                "scale": "percent",
+                "days": "2",
+                "selected_symbol": "AAPL"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          },
+          {
+            "i": "live_chart",
+            "x": 0,
+            "y": 10,
+            "w": 40,
+            "h": 18,
+            "groups": [
+              "Selected symbol"
+            ],
+            "state": {
+              "params": {
+                "symbol": "AAPL",
+                "interval": "5m"
+              },
+              "chartView": {
+                "enabled": false,
+                "chartType": "line"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "groups": [
+      {
+        "name": "Watchlist",
+        "type": "param",
+        "paramName": "symbol",
+        "groupType": "symbol",
+        "defaultValue": "AAPL,MSFT,NVDA,BTC-USD"
+      },
+      {
+        "name": "Selected symbol",
+        "type": "param",
+        "paramName": "symbol",
+        "groupType": "symbol",
+        "defaultValue": "AAPL"
+      }
+    ],
+    "prompts": []
+  }
+]

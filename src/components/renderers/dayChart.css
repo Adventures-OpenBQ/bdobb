@@ -1,0 +1,60 @@
+/* Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only. */
+/* SPDX-License-Identifier: AGPL-3.0-only */
+.day-chart { height:100%; min-height:0; display:flex; flex-direction:column; }
+.day-chart-strip { flex:1; min-height:0; overflow:auto; display:grid; align-items:stretch; gap:12px; padding:10px; touch-action:pan-x pan-y; overscroll-behavior-x:contain; }
+.day-chart-tile { min-width:0; min-height:180px; border:1px solid var(--border); border-radius:8px; padding:12px 6px; display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; }
+.day-chart-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.day-chart-quote { flex-shrink:0; text-align:right; }
+.day-chart-heading { flex:1; display:flex; align-items:center; gap:6px; min-width:0; }
+.day-chart-logo { display:grid; place-items:center; width:24px; height:24px; flex-shrink:0; border-radius:50%; background:var(--bg-elevated,var(--bg)); color:var(--text-muted); font-size:12px; }
+.day-chart-logo img { width:100%; height:100%; object-fit:contain; border-radius:50%; }
+.day-chart-name { display:block; font-size:11px; opacity:.65; max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.day-chart-price { font-size:20px; font-variant-numeric:tabular-nums; margin-top:0; }
+.day-chart-change { font-size:12px; font-variant-numeric:tabular-nums; }
+.day-chart-up { color:var(--positive,#21a67a); }
+.day-chart-down { color:var(--negative,#e36170); }
+.day-chart-neutral { color:var(--text-muted); }
+.day-chart-plot { flex:1; min-height:70px; position:relative; margin-top:2px; }
+.day-chart-line { position:absolute; left:0; top:4px; width:calc(100% - 36px); height:calc(100% - 24px); overflow:visible; }
+.day-chart-plot > span { position:absolute; color:var(--text-muted); font-size:9px; }
+.day-chart-axis-high { right:0; top:8px; }
+.day-chart-axis-low { right:0; bottom:24px; }
+.day-chart-time-first { left:4px; bottom:0; }
+.day-chart-time-last { right:36px; bottom:0; }
+.day-chart-reference { stroke:var(--text-muted,currentColor); opacity:.35; stroke-dasharray:3 3; }
+.day-chart-session { font-size:11px; margin-top:3px; }
+.day-chart-status { font-size:10px; opacity:.65; margin-top:3px; }
+.day-chart-empty { flex:1; min-height:90px; display:grid; place-items:center; font-size:12px; opacity:.65; }
+.day-chart-footer { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:4px 10px; border-top:1px solid var(--border); font-size:10px; opacity:.8; }
+
+.day-chart-heading > div { min-width:0; }
+.day-chart-heading strong { font-size:12px; }
+
+.day-chart-horizontal { overscroll-behavior-x:contain; }
+.day-chart-vertical { overscroll-behavior-y:contain; }
+
+.day-chart-divider { stroke:var(--text-muted,currentColor); opacity:.6; stroke-width:1; vector-effect:non-scaling-stroke; }
+
+.day-chart-footer { gap:8px; }
+.day-chart-footer > span { min-width:0; overflow-wrap:anywhere; }
+.day-chart-footer .news-nav { flex-shrink:0; }
+
+.day-chart-crosshair { stroke:var(--text-muted,currentColor); opacity:.8; stroke-dasharray:3 3; stroke-width:1; vector-effect:non-scaling-stroke; pointer-events:none; }
+.day-chart-tooltip { position:absolute; top:2px; left:4px; max-width:calc(100% - 8px); box-sizing:border-box; z-index:2; padding:6px 8px; border:1px solid var(--border); border-radius:4px; background:var(--bg-elevated,var(--bg)); color:var(--text); font-size:11px; line-height:1.5; white-space:normal; pointer-events:none; box-shadow:0 2px 8px #0003; }
+.day-chart-line:focus-visible { outline:1px solid var(--text-muted); }
+
+.day-chart-tile[tabindex] { cursor:pointer; }
+.day-chart-selected { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }
+.day-chart-tile:focus-visible { outline:2px solid var(--accent,#4b9eff); outline-offset:-2px; }
+
+.day-chart .day-chart-footer-controls { flex:0 1 auto; margin-left:auto; justify-content:flex-end; min-width:0; font-size:11px; }
+.day-chart-footer > span { flex:1 1 230px; }
+.day-chart-footer { flex-wrap:wrap; }
+.day-chart-footer-controls .param-field { font-size:11px; }
+.day-chart-footer-controls input { max-width:90px; }
+
+.day-chart > .empty-state { flex:1; min-height:0; }
+
+.day-chart-reorderable { user-select: none; }
+.day-chart-reorderable .day-chart-top { cursor: grab; touch-action: none; }
+.day-chart-tile.day-chart-drop-target { outline: 2px dashed var(--accent, #329b7b); outline-offset: -3px; }

@@ -310,6 +310,9 @@ export type WidgetDef = {
   /** Explicit backend capability; legacy quote folding stays separate. */
   chartStreamV1?: boolean;
   studyColumnsV1?: boolean;
+  /** Bounded, explicitly labelled provider history for a completed US session. */
+  closedSessionHistory?: boolean;
+
   /** The column that identifies a row for a live_grid's streamed updates. */
   wsRowIdColumn?: string;
   gridData: { w: number; h: number };

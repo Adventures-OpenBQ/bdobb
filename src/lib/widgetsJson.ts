@@ -632,6 +632,7 @@ export function normalizeWidgets(
       wsEndpoint: typeof w.wsEndpoint === "string" && w.wsEndpoint !== "" ? w.wsEndpoint : undefined,
       studyColumnsV1: asRecord(w.extra_metadata)?.study_columns_v1 === true || undefined,
       chartStreamV1: asRecord(w.extra_metadata)?.chart_stream_v1 === true || undefined,
+      closedSessionHistory: asRecord(w.extra_metadata)?.closed_session_history === true || undefined,
       wsRowIdColumn: data && typeof data.wsRowIdColumn === "string" ? data.wsRowIdColumn : undefined,
       gridData: toGridData(w.gridData),
       params,

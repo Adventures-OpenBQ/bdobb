@@ -61,3 +61,26 @@ Charts the app draws itself follow the light/dark theme. A ready-made figure fro
 ---
 
 Copyright © 2026 SecretoftheUniverse.com LLC. Original documentation is separately restricted under the [Documentation Terms](https://github.com/Adventures-OpenBQ/bdobb/blob/v10.0.0/DOCUMENTATION_TERMS.md). Software, code examples, third-party licenses, and previously granted rights are excluded. Full terms are also included in Quick Help’s Getting started and the Reference Manual’s home page.
+
+
+## Day Chart watchlist
+
+**Day Chart** (`day_chart`) shows compact intraday lines. The symbol list and its standard parameter-group binding stay on parameter row 0. The bottom status bar holds **Rows**, **Columns**, **Scale**, **Trading days** and **Selected symbol**, aligned to the right. Entries retain their order and duplicates; data acquisition is shared. Clear the symbol parameter or group to clear the widget. Up to 50 entries are supported.
+
+Set only Rows for horizontal scrolling, or only Columns for vertical scrolling. Set both for a fitted grid; additional symbols continue below it. Leave both blank for the default single horizontal row. Each dimension accepts 1–10. Bind **Selected symbol** to a separate symbol parameter group, then bind a detailed Live Chart’s Symbol to that group. Clicking a tile (or focusing it and pressing Enter/Space) publishes its single symbol; the Day Chart watchlist stays intact. The input list and selection output must use different groups. Use the trackpad, touch, mouse wheel or footer arrows to scroll.
+
+Trading days selects 1–5 exchange sessions, skipping weekends and holidays. A vertical line separates sessions and overnight gaps are compressed. Hover a chart for a crosshair and the nearest real bar’s exchange-local date/time, price and cumulative percent change. Focus the chart and use Left/Right, Home/End or Escape for the same inspection without a mouse. Price/% change switches the plotted scale; percent change is measured from the close before the first displayed session. The dashed previous-close reference is split by session: each segment uses the close before its own day, translated onto the cumulative scale in percent mode. Without that baseline, the percent chart says it is unavailable.
+
+Visible and nearby histories refresh every 15 seconds after the previous request completes. Lines come from backend session bars; quote updates do not invent chart points. Top-right prices and daily changes use the same live-grid WebSocket, which coalesces changed prices every 250ms; when no newer quote has arrived, the latest historical bar is shown. The bottom status bar shows session dates, market status, EODHD source, quote connection/last-price time, and history cadence. Connected means the socket is open, not that a trade arrived. On weekends the chart shows the latest completed sessions.
+
+The provider supports US equities and crypto such as BTC-USD. Crypto joins completed-day EODHD history with actual recorded ticks for today, labelled **EODHD + recorded ticks**, without inventing missing points. It uses continuous UTC calendar days, including weekends; each day’s reference is the prior UTC daily close. US equities retain the exchange trading calendar. Unsupported symbols and unavailable sessions show a per-tile message; other tiles keep working. Missing company logos fall back to initials. Logos use the authenticated backend relay. Symbols and group bindings save and export with the dashboard, including the Version 10 Live Grid example's Day Chart card.
+
+When a detailed Live Chart advertises completed-session history, a closed US market shows the latest completed regular-session EODHD OHLCV candles, with the date and historical source labelled in its status line. Open sessions and crypto keep the accepted-data stream. Explicit start/end ranges keep their requested stream view. Closed-session history requires a one-minute or longer interval.
+
+BTC-USD Day Chart fills missing completed minutes with cached Coinbase candles, labelled **Coinbase backfill** in the status bar. Existing EODHD history and recorded ticks take priority. Coinbase is a separate trading venue, so small price differences are possible. Backfill candles never enter the accepted tick tape.
+
+The detailed Live Chart also loads BTC-USD’s current UTC day from that backfilled history at one-minute and longer intervals, then overlays accepted live candle updates. Backfill and stream cursors remain separate; the footer identifies the sources and any partial history.
+
+Drag a Day Chart tile onto another tile to change symbol order. The change is saved to its symbol list, or to its linked parameter group so other linked widgets share that order. Selection stays unchanged. Keyboard: focus a tile and use Alt+Arrow keys to move it one position.
+
+While dragging a Day Chart tile, hold near the chart strip’s left/right edge (horizontal layout) or top/bottom edge (vertical layout) to scroll to more tiles. Scrolling accelerates toward the edge and stops when you move away or release. Drop on the newly visible tile to save the new order.

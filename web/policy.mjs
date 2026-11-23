@@ -1,4 +1,4 @@
-// vendored from openbq-docker v12.0.0 funnel-gateway/policy.mjs sha256:9e74f6c0623941f5b8f59473d6c97227a0128b618694ac9da51ad075e74b10d8
+// vendored from openbq-docker v12.0.0 funnel-gateway/policy.mjs sha256:8253efa1fdac2bc0886be47c54c69e40518eaea4ca42522e27ed55a7805dbc9b
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the Apache License, Version 2.0.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -269,6 +269,22 @@ export function upstreamPath(url, config) {
   if (url.pathname === "/grid/live_grid" || url.pathname === "/grid/symbol_meta") {
     if (!onlyKeys(params, ["symbol"])) return null;
     if (!SYMBOL_LIST_RE.test(params.get("symbol") ?? "")) return null;
+    return url.pathname + "?" + params.toString();
+  }
+
+  if (url.pathname === "/grid/closed_session") {
+    if (!onlyKeys(params, ["symbol", "interval"]) || !SYMBOL_RE.test(params.get("symbol") ?? "")) return null;
+    if (params.has("interval") && !/^(1s|1m|5m|15m|30m|1h|1d)$/.test(params.get("interval"))) return null;
+    return url.pathname + "?" + params.toString();
+  }
+
+  // Bounded Day Chart snapshots and same-origin raster logos. No upstream URL input.
+  if (url.pathname === "/grid/day_charts" || url.pathname === "/grid/symbol_logo") {
+    if (!onlyKeys(params, url.pathname === "/grid/day_charts" ? ["symbol", "days"] : ["symbol"])) return null;
+    if (params.has("days") && !/^[1-5]$/.test(params.get("days"))) return null;
+    const symbols = (params.get("symbol") ?? "").split(",");
+    const max = url.pathname === "/grid/symbol_logo" ? 1 : 20;
+    if (symbols.length < 1 || symbols.length > max || symbols.some(s => !(url.pathname === "/grid/day_charts" ? TA_SYMBOL_RE : SYMBOL_RE).test(s))) return null;
     return url.pathname + "?" + params.toString();
   }
 
@@ -590,5 +606,18 @@ export function studyRoute(url, method) {
       url.pathname === "/grid/study_results" && method === "POST") {
     return {path:url.pathname,method};
   }
+  return null;
+}
+
+/** Raster-only logo contract shared by both authenticated HTTP relays. */
+export const LOGO_RESPONSE_BYTES = 256 * 1024;
+export function rasterType(bytes, contentType) {
+  const type = String(contentType).split(";")[0].trim().toLowerCase();
+  const signature = (values, offset = 0) => values.every((v, i) => bytes[offset + i] === v);
+  if (type === "image/png" && signature([137,80,78,71,13,10,26,10])) return type;
+  if (type === "image/jpeg" && signature([255,216,255])) return type;
+  if (type === "image/gif" && (signature([71,73,70,56,55,97]) || signature([71,73,70,56,57,97]))) return type;
+  if (type === "image/webp" && bytes.length >= 12 && signature([82,73,70,70]) && signature([87,69,66,80],8)) return type;
+
   return null;
 }
