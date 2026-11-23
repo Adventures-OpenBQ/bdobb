@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v11.0.0",
-  "baseCommit": "8dfc4c2a13c2b3cf834569dfa2b64823253c87aa",
-  "sourceId": "6fd272dfe612cdabb83408b69787652beebec44569e5e8457b398e4fd7c70ac9",
+  "baseCommit": "765890f57e240a6c40dfe27f7d22d036d635793b",
+  "sourceId": "f4d465b914c791350e877778b6c3af8515bcc45024ada095539c045d8c7d671d",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -22400,7 +22400,7 @@
       "type": "file",
       "mode": 420,
       "size": 467,
-      "sha256": "0a26e342a9c77a2b46c111c447ea38b98ab787435fb3a6b04adb1839712150d9"
+      "sha256": "bcbbc0d34452f2dd6d48e14bbf831283264965562487213f0df3496033207bc3"
     },
     {
       "path": "source_bundle.py",
@@ -22994,15 +22994,15 @@
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 254826,
-      "sha256": "95877a72a99fad5082f9f4419c9e8110426e62d56fd4da241e226fe4b5b27192"
+      "size": 255257,
+      "sha256": "cf97b59e8c3ac09eeb92d8c8a5c51c57124c42a1a06d03ab0e0e3bf0a0ec7921"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 119286,
-      "sha256": "ac21d2afba27f24fbab6bc8512154d00c03d96780237b7ff545b55ac0533168d"
+      "size": 119107,
+      "sha256": "ce7ee9c2c230be173e4a2b1a733f477feafa5f06f0473b8fdeee4ff173dd94d1"
     },
     {
       "path": "src/components/WidgetCard.workerExport.test.tsx",
@@ -23715,15 +23715,15 @@
       "path": "src/components/renderers/DayChartRenderer.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 15147,
-      "sha256": "73e968bfbb8d067230f7896b362b9bb09ed7ebf264b73593e6db00fae468a1e8"
+      "size": 16869,
+      "sha256": "c3f717cf466b35571da16467242f7ca52c4e51174ea4c57df0199e250125a3dd"
     },
     {
       "path": "src/components/renderers/DayChartRenderer.tsx",
       "type": "file",
       "mode": 420,
-      "size": 17971,
-      "sha256": "25d25ea814b3ddd60e09a6056a3f2611d3229a329803afa9b62872c05886e1ff"
+      "size": 17816,
+      "sha256": "56ce4737a008fd3e3627de7ac58338a06f8e8fd0e7405073e87d02c5ee343329"
     },
     {
       "path": "src/components/renderers/DocumentView.tsx",
