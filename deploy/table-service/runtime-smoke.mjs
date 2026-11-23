@@ -24,11 +24,27 @@ async function call(path,method='GET',body,principal='github:42',extra={}){
  return {status:response.status,json:await response.json()};
 }
 const check=(result,status=200)=>{assert.equal(result.status,status,JSON.stringify(result));return result.json;};
-async function apply(session,widget='widget',input=1){return check(await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'applyModel',requestId:'apply-'+widget,revision:{widgetId:widget,input,model:1,output:1},definition:{protocolVersion:1,locale:'en-US',definition:{table:{},search:''}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}})}));}
+function tagged(value){if(value===null)return {tag:'null'};if(Array.isArray(value))return {tag:'array',value:value.map(tagged)};if(typeof value==='object')return {tag:'record',value:Object.entries(value).map(([key,v])=>[key,tagged(v)])};return {tag:typeof value==='number'?'f64':typeof value==='boolean'?'bool':typeof value,value};}
+async function apply(session,widget='widget',input=1,analytical){return check(await call(`/sessions/${session.sessionId}/commands`,'POST',{sessionId:session.sessionId,sourceSnapshotId:session.sourceSnapshotId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'applyModel',requestId:'apply-'+widget,revision:{widgetId:widget,input,model:1,output:1},definition:{protocolVersion:1,locale:'en-US',...(analytical?{analyticalRecipeSource:tagged(analytical)}:{}),definition:{table:{},search:'',...(analytical?{analytical}:{})}},selection:{kind:'none'},reconcileMissing:false,provenAbsentIds:[],runtimeParams:[]}})}));}
 try{
  await start();
  const gatewayConfig={origin:'http://127.0.0.1',token,apiAuthorization:'unused',maxConcurrent:8,tableOrigin:`http://127.0.0.1:${servicePort}`,tableGatewayToken:serviceToken,tableRelayToken:relay,tableDesktopPrincipal:'desktop:owner',tableTimeoutMs:65000,ssrmTimeoutMs:170000,ssrmRoutes:[]};gateway=createGateway(gatewayConfig);gateway.listen(0,'127.0.0.1');await once(gateway,'listening');gatewayConfig.origin=`http://127.0.0.1:${gateway.address().port}`;
  check(await call('/healthz'));const discovery=check(await call('/widgets.json'));assert.equal(discovery.managed_table.provider,'managed-native');
+ const capabilities=check(await call('/capabilities'));
+ for(const name of ['LN','SQRT'])assert.ok(capabilities.formulaFunctions.includes(name));
+ const dates=check(await call('/sources/uploads','POST','date,group,x\n2025-12-31,A,100\nzz-not-a-date,A,999\n','github:42',{'Content-Type':'text/csv','Idempotency-Key':'table-regression-'+Date.now(),'X-Upload-Filename':'date-regression.csv'}));
+ const scalar=(id,name)=>({id,name:id,scope:'aggregate',expression:`${name}(sum(x))`,ast:{kind:'call',function:name,args:[{kind:'call',function:'sum',args:[{kind:'reference',target:'field',id:'x'}]}]}});
+ const analytical={schemaVersion:1,enabled:true,params:{promotePage:false,filters:[]},categories:[{id:'d',name:'Year',sourceFieldId:'date',transform:'Y'},{id:'g',name:'Group',sourceFieldId:'group',transform:'native'}],measures:['first','last','sum'].map(id=>({id,sourceFieldId:'x',aggregation:id})),formulas:[scalar('ln','LN'),scalar('sqrt','SQRT')],layout:{rows:['g'],columns:[],values:['first','last','sum','ln','sqrt']},checklists:[],resultFilters:[],subtotals:{groups:true,grandTotal:true}};
+ const dated=await apply(check(await call('/sessions','POST',{sourceId:dates.sourceId,protocolVersion:1,widgetId:'date-regression',locale:'en-US',inputRevision:1})),'date-regression',1,analytical);
+ const dateBatch=check(await call(`/sessions/${dated.sessionId}/commands`,'POST',{sessionId:dated.sessionId,sourceSnapshotId:dated.sourceSnapshotId,resultId:dated.resultId,wire:JSON.stringify({protocolVersion:1,sessionId:1,request:{kind:'presented',requestId:'date-presented',revision:{widgetId:'date-regression',input:1,model:1,output:1},transferId:'date-regression-export',ignoreSelection:true}})}));
+ const dateRows=JSON.parse(dateBatch.wire).response.rows;
+ assert.ok(dateRows.length);
+ const dateRow=dateRows.find(row=>row.values.sum?.tag==='f64'&&row.values.sum.value===1099);
+ assert.ok(dateRow,'Grouped SUM must preserve both source rows');
+ for(const id of ['first','last']){assert.deepEqual(dateRow.values[id],{tag:'string',value:'#ERROR'});assert.equal(dateRow.cellErrors[id].code,'blocked-dependency');assert.equal(dateRow.cellErrors[id].affectedRecordCount,1);assert.ok(dateRow.cellErrors[id].dependencyIds.includes('date'));}
+ assert.ok(Math.abs(dateRow.values.ln.value-Math.log(1099))<1e-12);
+ assert.ok(Math.abs(dateRow.values.sqrt.value-Math.sqrt(1099))<1e-12);
+ check(await call(`/sessions/${dated.sessionId}`,'DELETE'));check(await call(`/sources/${dates.sourceId}`,'DELETE'));
  const upload=check(await call('/sources/uploads','POST','x,y\n1,a\n2,b\n3,c\n4,d\n5,e\n','github:42',{'Content-Type':'text/csv','Idempotency-Key':'task10-'+Date.now(),'X-Upload-Filename':'smoke.csv'}));
  const open={sourceId:upload.sourceId,protocolVersion:1,widgetId:'widget',locale:'en-US',inputRevision:1};
  check(await call('/sessions','POST',open,'github:43'),404);
@@ -49,5 +65,5 @@ try{
  const reopened=check(await call('/sessions','POST',open));const reapplied=await apply(reopened);assert.equal(JSON.parse(reapplied.wire).response.topLevelCount.value,5);
  check(await call('/sessions','POST',open,'github:43'),404);
  check(await call(`/sessions/${reopened.sessionId}`,'DELETE'));check(await call(`/sources/${upload.sourceId}`,'DELETE'));
- console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
+ console.log(JSON.stringify({result:'PASS',node:process.versions.node,icu:process.versions.icu,containedWorkers:workers,advertisedScalarFunctions:['LN','SQRT'],nativeScalarValues:true,invalidBoundDateBlocked:true,unrelatedSumPreserved:1099,upload:true,foreignOwnerRefused:true,desktopSpoofRefused:true,deriveRows:5,exportBatchRows:2,restartReopen:true,oldSessionUnavailable:true}));
 }finally{if(gateway)gateway.closeGateway();if(service)await stop();await rm(dir,{recursive:true,force:true});}
