@@ -90,12 +90,25 @@ test('actual WidgetCard workers preserve empty and special source fields through
   await chartCard.getByLabel('Category',{exact:true}).selectOption({label:'Category'});
   await tickChartMeasures(page,chartCard,'M1','M2');
   await expect.poll(()=>traces(chart)).toEqual([{name:'M1',y:[300,100]},{name:'M2',y:[600,200]}]);
+  // The real raw empty key is distinct from the Choose category placeholder.
+  await chartCard.getByLabel('Category',{exact:true}).selectOption({label:'Empty-key numeric'});
+  await expect(chartCard.getByLabel('Category',{exact:true})).toHaveValue('');
+  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(el=>(el as unknown as {layout:{xaxis:{ticktext:string[]}}}).layout.xaxis.ticktext)).toEqual(['301','101']);
+  await expect(chart.getByRole('alert')).toHaveCount(0);
+  // Use the same raw empty field as a measure as well, not an opaque measure ID.
+  await tickChartMeasures(page,chartCard,'Empty-key numeric');
+  await expect.poll(()=>traces(chart)).toEqual([{name:'Empty-key numeric',y:[301,101]},{name:'M1',y:[300,100]},{name:'M2',y:[600,200]}]);
+  await chartCard.getByLabel('Chart type',{exact:true}).selectOption('surface');
+  await expect.poll(()=>chart.locator('.js-plotly-plot').evaluate(el=>{
+    const t=(el as unknown as {data:{type:string;x:number[];z:number[][]}[]}).data[0];
+    return {type:t.type,x:t.x,z:t.z};
+  })).toEqual({type:'surface',x:[301,101],z:[[301,101],[300,100],[600,200]]});
   await expect(source.getByText('Expected nonempty ID',{exact:true})).toHaveCount(0);
   expect(acquisitions).toBe(acquisitionBaseline); // Edits/consumers add no acquisition beyond settled startup.
   await expect.poll(async()=>JSON.parse((await read(page,'dashboards/d1.json'))!).tabs[0].cards[0].tableDefinition.table).toMatchObject({sorting:[{id:'__proto__',desc:true}],columnFilters:[{id:'',value:{min:30}}]});
   const files = await page.evaluate(()=>Object.fromEntries(window.__bdobb!.list!().map(path=>[path,window.__bdobb!.read!(path)!])));
   const written = JSON.parse(files['dashboards/d1.json']);
-  expect(written.tabs[0].cards.find((card:{linkedChart?:unknown})=>card.linkedChart).linkedChart).toMatchObject({category:'category',measures:['m1','m2']});
+  expect(written.tabs[0].cards.find((card:{linkedChart?:unknown})=>card.linkedChart).linkedChart).toMatchObject({type:'surface',category:'',measures:['','m1','m2']});
 
   const reopened = await context.newPage();
   await observeWorkers(reopened);
@@ -104,7 +117,16 @@ test('actual WidgetCard workers preserve empty and special source fields through
   const restoredLinked = reopened.locator('.widget-card').filter({hasText:'Linked table'});
   await expect(blankCells(restoredSource)).toHaveText(['301','101']);
   await expect(blankCells(restoredLinked)).toHaveText(['301','101']);
-  await expect.poll(()=>traces(reopened.locator('.linked-chart-renderer'))).toEqual([{name:'M1',y:[300,100]},{name:'M2',y:[600,200]}]);
+  const restoredChart=reopened.locator('.linked-chart-renderer');
+  await expect.poll(()=>restoredChart.locator('.js-plotly-plot').evaluate(el=>{
+    const t=(el as unknown as {data:{type:string;x:number[];z:number[][]}[]}).data[0];
+    return {type:t.type,x:t.x,z:t.z};
+  })).toEqual({type:'surface',x:[301,101],z:[[301,101],[300,100],[600,200]]});
+  const restoredChartCard=reopened.locator('.widget-card').filter({has:restoredChart});
+  const showRestoredParameters=restoredChartCard.getByRole('button',{name:'Show parameters',exact:true});
+  if(await showRestoredParameters.count()) await showRestoredParameters.click();
+  await expect(restoredChartCard.getByLabel('Category',{exact:true})).toHaveValue('');
+  await expect(restoredChart.getByRole('alert')).toHaveCount(0);
   const evidence = await reopened.evaluate(()=>(window as unknown as {rawFieldWorkerEvidence:WorkerEvidence}).rawFieldWorkerEvidence);
   expect(evidence.workers.some(url=>url.includes('/table.worker.ts'))).toBe(true);
   expect(evidence.workers.some(url=>url.includes('/rust.worker.ts'))).toBe(false);

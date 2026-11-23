@@ -38,7 +38,7 @@ export function buildLinkedFigure(dataset: WidgetDataset, settings: LinkedChartS
     if (settings.type === 'surface' && isPivoted(dataset.columns))
         return pivotSurface(dataset, settings, theme);
     const columns = new Map(dataset.columns.map(c => [c.id, c]));
-    if (!settings.category || !columns.has(settings.category))
+    if (settings.category === undefined || !columns.has(settings.category))
         return { ok: false, message: 'Choose an available category field.' };
     if (!settings.measures.length)
         return { ok: false, message: 'Choose chart fields: select one or more numeric measures.' };
