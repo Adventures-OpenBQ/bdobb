@@ -5,6 +5,8 @@
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
+!patches/
+!patches/@tanstack__table-core@8.21.3.patch
 !LICENSE
 !NOTICE
 !THIRD_PARTY_NOTICES.md
