@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "repository": "Adventures-OpenBQ/bdobb",
   "release": "v3.0.0",
-  "baseCommit": "1cca004c7e708c989121e7f7db01fbf65fdd7920",
-  "sourceId": "19c760a782e0ab84152ee990e8f9014f7e677f448bc58d6a3e548d8f485f1c6b",
+  "baseCommit": "b0aaab93b1b40076c330a49dc9f8c854ff8416ab",
+  "sourceId": "0526c7f4503d0997589f1cb8b02142fcc1b010d1abeaae6d73d5fa3cb660e8a7",
   "identityExcludes": [
     "SOURCE-MANIFEST.json",
     "source-offer.json"
@@ -5263,8 +5263,8 @@
       "path": "e2e/header-scroll.spec.ts",
       "type": "file",
       "mode": 420,
-      "size": 4949,
-      "sha256": "d9812c4a713d70eed76a0da1c2ccef4e39483063362dec94effa0318ce5455b1"
+      "size": 8176,
+      "sha256": "76e47fbb97e595394bfde4954f1eabb848ccdf153edd86297633c02e52093ffb"
     },
     {
       "path": "e2e/help.spec.ts",
@@ -5662,8 +5662,8 @@
       "path": "scripts/public-release.py",
       "type": "file",
       "mode": 420,
-      "size": 15952,
-      "sha256": "1bf6af4d8a10f140751e01a476c4d8747902cf84423de9adf8477c975a03ceb3"
+      "size": 19550,
+      "sha256": "22a789ab2304dfc0fa1f090bd344045315c39e55a1e23d6e309463c58e917fe6"
     },
     {
       "path": "scripts/reference-backend.sh",
@@ -5739,8 +5739,8 @@
       "path": "scripts/test_public_release.py",
       "type": "file",
       "mode": 420,
-      "size": 9189,
-      "sha256": "539c0017ee7e1dec1cde7026d67dd7f8c14ad90e889c6c94a46af5e788e22cbf"
+      "size": 14323,
+      "sha256": "e1d6af4a03f9ae2d218e6b25d7590326812de17279b5a54e6f5f2236e339973f"
     },
     {
       "path": "scripts/third-party-notices.mjs",
@@ -5781,8 +5781,8 @@
       "path": "security/gate.py",
       "type": "file",
       "mode": 420,
-      "size": 36558,
-      "sha256": "18705bb0d988f3ecaaf5cd8c9023722852da6bce5d060cbd5b63f623cafa31ae"
+      "size": 44229,
+      "sha256": "8d12972ea3a32ce5acbd256b61ee20e432b8de8966e5bc09f9b31571563626d6"
     },
     {
       "path": "security/gitleaks.toml",
@@ -5809,8 +5809,8 @@
       "path": "security/privacy-exceptions.json",
       "type": "file",
       "mode": 420,
-      "size": 14858,
-      "sha256": "13b66fcec1476b53d400876276a2efe38d72b05b94875adb7b557d8cca8d1e41"
+      "size": 16465,
+      "sha256": "564623e7caa028ea1a36dbe68485c503be76c228ccab5dd5576718db27176f10"
     },
     {
       "path": "security/public-user-agent-policy.json",
@@ -5830,8 +5830,8 @@
       "path": "security/reviewed-fixtures.json",
       "type": "file",
       "mode": 420,
-      "size": 3063,
-      "sha256": "dd1c3e8d9a7e48c753d2f92df2a35ee93613c0b8316b5b0bb78587780ad42984"
+      "size": 10745,
+      "sha256": "588c6138e1180f8b5c9dbbd1633761b9bc8ea6a9c616f0db452251df230e4ec5"
     },
     {
       "path": "security/reviewed-vendor-media.json",
@@ -5845,7 +5845,7 @@
       "type": "file",
       "mode": 420,
       "size": 852,
-      "sha256": "f77a673a534c35e740834f589a92cf721962b5181643f42031e3c7a66c2d32b3"
+      "sha256": "d8df6f5623aa841b0580a42b386b15f7de3471874fce3ef335b48fd108877be0"
     },
     {
       "path": "security/sync.py",
@@ -5858,15 +5858,15 @@
       "path": "security/test_gate.py",
       "type": "file",
       "mode": 420,
-      "size": 37171,
-      "sha256": "78e5af547b77a049338053cc02017d92c160c383865c3171399ba3bd4d5af4c6"
+      "size": 52755,
+      "sha256": "ec82c35890000f8d66eac4d7210501b73b30d655e946417f0e5bd151c8a0640a"
     },
     {
       "path": "source-offer.json",
       "type": "file",
       "mode": 420,
       "size": 463,
-      "sha256": "9819ea78db6d59bfa141ea1ae883d78d41708cd41aa2a32aa0e9c6d6a5507e05"
+      "sha256": "4bc9f630563a1a33093a6c8eeacebea7235b5e535bd0e29dc207d494ab4baac5"
     },
     {
       "path": "source_bundle.py",
@@ -6257,22 +6257,22 @@
       "path": "src/components/WidgetCard.paramFlow.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 10674,
-      "sha256": "7f1e27340fc523f019e2d6bd6df968537498f530babdec50ded9b1e67ebdc34c"
+      "size": 10997,
+      "sha256": "fd21c070491efba8caa42b86d61504de82c49cea509b344902bc1fa64d110150"
     },
     {
       "path": "src/components/WidgetCard.test.tsx",
       "type": "file",
       "mode": 420,
-      "size": 167173,
-      "sha256": "411acf5a46c2abeada72f6f3719fd9ee134b3658834681b9e702b052e26d2106"
+      "size": 172105,
+      "sha256": "779894d4fa7e77c774427a58a0091640ac2dc474cbc6d8e4f437511b526201ae"
     },
     {
       "path": "src/components/WidgetCard.tsx",
       "type": "file",
       "mode": 420,
-      "size": 74640,
-      "sha256": "76d010976fe977e438820514e0d0eeda3fbd74edc872a97ebb819a55f32f4262"
+      "size": 76069,
+      "sha256": "daae23775888b99384e33636e7d19eead7d6b44a55ee4554d1ab2b53f1a726ea"
     },
     {
       "path": "src/components/WidgetFormPanel.tsx",
@@ -8931,8 +8931,8 @@
       "path": "src/styles.css",
       "type": "file",
       "mode": 420,
-      "size": 74745,
-      "sha256": "6b88eaec8aeeaa37b6fe407bd51a0dc46e47e2f53850cb1016da54819a5a1fab"
+      "size": 74795,
+      "sha256": "dcc90b68154c402e5254706bbc32e62f8589597871ba33174034b3fd6ee45a0e"
     },
     {
       "path": "src/test/fakeSocket.ts",
