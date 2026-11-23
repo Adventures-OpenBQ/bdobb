@@ -1,6 +1,6 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {startDragEdgeScroll} from "../../lib/dragEdgeScroll";
 import {useDayQuotes, type DayQuote} from "../../hooks/useDayQuotes";
 import { useDayLogos } from "../../hooks/useDayLogos";
@@ -52,7 +52,7 @@ function Tile({symbol,tile,nearby,logo,scale,quote}:{symbol:string;tile?:DayTile
   </>;
 }
 
-export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelectSymbol,onReorder,selectionError,footerControls}:{backend:BackendConfig;params:Record<string,string>;refreshKey?:number;onSnapshot?:(at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;onReorder?:(symbols:string)=>void;selectionError?:string;footerControls?:ReactNode}) {
+export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelectSymbol,onReorder,selectionError}:{backend:BackendConfig;params:Record<string,string>;refreshKey?:number;onSnapshot?:(at:number|null)=>void;onSelectSymbol?:(symbol:string)=>void;onReorder?:(symbols:string)=>void;selectionError?:string}) {
   const input=params.symbol ?? "";
   const parsed=useMemo(() => {try {return {symbols:daySymbols(input),error:null};} catch(e) {return {symbols:[],error:(e as Error).message};}},[input]);
   const {symbols}=parsed;
@@ -139,6 +139,6 @@ export function DayChartRenderer({backend,params,refreshKey=0,onSnapshot,onSelec
         onDragStart={event=>event.preventDefault()}
         onClick={()=>{if(!suppressClick.current)onSelectSymbol?.(symbol);}} onKeyDown={event=>{if(event.target===event.currentTarget && event.altKey && ["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(event.key)){event.preventDefault();event.stopPropagation();move(index,index+(["ArrowLeft","ArrowUp"].includes(event.key)?-1:1),true);return;}if(event.target===event.currentTarget && (event.key==="Enter"||event.key===" ")){event.preventDefault();onSelectSymbol?.(symbol);}}} title={onSelectSymbol?`Select ${symbol} for detailed chart`:undefined} data-day-index={index} key={`${index}:${symbol}`}><Tile symbol={symbol} tile={tiles[symbol]} nearby={indexes.includes(index)} logo={logos[symbol]} scale={scale} quote={quotes[symbol]}/></div>)}
     </div>}
-    <div className="day-chart-footer"><span role="status">{selectionError?`${selectionError} · `:""}{statusText} · Quotes: {quoteStatus==="live"?"connected":quoteStatus} · 250ms flush{latestQuote ? ` · Last price ${new Date(latestQuote).toLocaleTimeString()}`:" · awaiting trade"} · History: 15s{scale==="percent"?" · % from close before first session":""}</span>{footerControls?<div className="card-chips day-chart-footer-controls">{footerControls}</div>:null}<div className="news-nav" role="group" aria-label="Scroll day charts">{([["first","Beginning","|◂"],["back","Page back","◂◂"],["forward","Page forward","▸▸"],["last","End","▸|"]] as const).map(([where,label,glyph])=><button type="button" key={where} aria-label={label} title={label} onClick={()=>nav(where)}>{glyph}</button>)}</div></div>
+    <div className="day-chart-footer"><span role="status">{selectionError?`${selectionError} · `:""}{statusText} · Quotes: {quoteStatus==="live"?"connected":quoteStatus} · 250ms flush{latestQuote ? ` · Last price ${new Date(latestQuote).toLocaleTimeString()}`:" · awaiting trade"} · History: 15s{scale==="percent"?" · % from close before first session":""}</span><div className="news-nav" role="group" aria-label="Scroll day charts">{([["first","Beginning","|◂"],["back","Page back","◂◂"],["forward","Page forward","▸▸"],["last","End","▸|"]] as const).map(([where,label,glyph])=><button type="button" key={where} aria-label={label} title={label} onClick={()=>nav(where)}>{glyph}</button>)}</div></div>
   </div>;
 }

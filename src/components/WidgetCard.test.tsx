@@ -5741,13 +5741,18 @@ describe("Day Chart selection output",()=>{
  });
 });
 
-it("keeps the Day Chart symbol list in the header and row1 controls in its footer",()=>{
+it("shows Day Chart row1 controls only in the expanded parameters panel",async()=>{
  register({type:"day_chart",endpoint:"day_charts",params:[{paramName:"symbol",type:"text",label:"Symbols"},{paramName:"rows",type:"text",label:"Rows",row:1}]});
  useBackendsStore.setState({backends:[backend()]});
  const source={...card,params:{symbol:"AAPL",rows:"1"}};
  useDashboardStore.setState({dashboards:[{id:"d1",name:"D",tabs:[{id:"t1",name:"Main",cards:[source]}]}],activeId:"d1",activeTabId:"t1"});
  render(<WidgetCard card={source} onRemove={vi.fn()}/>);
- expect(within(screen.getByTestId("day-footer-controls")).getByRole("textbox",{name:"Rows"})).toBeInTheDocument();
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Show parameters"}));
+ expect(within(screen.getByRole("region",{name:"Parameters"})).getByRole("textbox",{name:"Rows"})).toBeInTheDocument();
+ expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
+ await userEvent.click(screen.getByRole("button",{name:"Hide parameters"}));
+ expect(screen.queryByRole("textbox",{name:"Rows"})).not.toBeInTheDocument();
  expect(within(screen.getByTestId("day-footer-controls")).queryByRole("textbox",{name:"Symbols"})).not.toBeInTheDocument();
  expect(screen.getByRole("textbox",{name:"Symbols"}).closest("header")).not.toBeNull();
  useBackendsStore.setState({backends:[]});

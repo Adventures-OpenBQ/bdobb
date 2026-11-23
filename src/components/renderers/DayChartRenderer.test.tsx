@@ -99,12 +99,12 @@ it("publishes the clicked tile symbol without changing the watchlist and support
  expect(tiles[0]).toHaveAttribute("aria-selected","true");
 });
 
-it('keeps footer controls usable while correcting invalid layout or an empty list',async()=>{
- function Harness(){const [rows,setRows]=useState('0');return <DayChartRenderer backend={backend} params={{symbol:'AAPL',rows}} footerControls={<input aria-label="Footer rows" value={rows} onChange={e=>setRows(e.target.value)}/>}/>;}
+it('allows external parameter controls to correct an invalid layout',async()=>{
+ function Harness(){const [rows,setRows]=useState('0');return <><input aria-label="Layout rows" value={rows} onChange={e=>setRows(e.target.value)}/><DayChartRenderer backend={backend} params={{symbol:'AAPL',rows}}/></>;}
  render(<Harness/>);expect(screen.getByText(/Rows and columns must/)).toBeInTheDocument();
- fireEvent.change(screen.getByRole('textbox',{name:'Footer rows'}),{target:{value:'1'}});
+ fireEvent.change(screen.getByRole('textbox',{name:'Layout rows'}),{target:{value:'1'}});
  expect(screen.getByRole('listbox',{name:'Day charts'})).toBeInTheDocument();
- expect(screen.getByRole('textbox',{name:'Footer rows'})).toBeInTheDocument();
+ expect(screen.getByRole('textbox',{name:'Layout rows'})).toBeInTheDocument();
 });
 it('shows a crypto UTC day alongside a closed equity session without labelling both closed',async()=>{
  vi.mocked(fetchEndpoint).mockResolvedValue({schema_version:1,tiles:[tile('AAPL'),{...tile('BTC-USD'),name:'Bitcoin',source:'eodhd+kdb ticks+coinbase',session:{date:'2026-11-22',timezone:'UTC',label:'Crypto UTC day',status:'open'},points:[{time:'2026-11-22T00:00:00Z',value:100},{time:'2026-11-22T01:00:00Z',value:102}]}]});
