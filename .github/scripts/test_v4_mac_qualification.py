@@ -8,7 +8,7 @@ q=importlib.util.module_from_spec(spec);spec.loader.exec_module(q)
 PUBLIC_RECIPIENT='age160m7enkqn7g3gy9sm66keanjfsnkjfs2u6ce57w3jzz8egvm7erq39zaqx'
 def binding_manifest():
     import hashlib
-    return {'schemaVersion':1,'bindings':{v:{'productCommit':str(i)*40,'auditorCommit':str(i)*40,'baseCommit':str(i+6)*40,'sourceId':str(i)*64} for i,v in enumerate(['v3.0.0','v4.0.0','v5.0.0'],1)},'retention':{'publicRecipient':PUBLIC_RECIPIENT,'fingerprint':hashlib.sha256(PUBLIC_RECIPIENT.encode()).hexdigest()}}
+    return {'schemaVersion':1,'bindings':{v:{'productCommit':str(i)*40,'auditorCommit':str(i)*40,'baseCommit':str(i+6)*40,'sourceId':str(i)*64} for i,v in enumerate(['v6.0.0'],1)},'retention':{'publicRecipient':PUBLIC_RECIPIENT,'fingerprint':hashlib.sha256(PUBLIC_RECIPIENT.encode()).hexdigest()}}
 def binding_fixture(release):
     with tempfile.TemporaryDirectory() as d:
         path=Path(d)/'binding.json';path.write_text(json.dumps(binding_manifest()))
@@ -16,26 +16,30 @@ def binding_fixture(release):
 class ReleaseBindingTests(unittest.TestCase):
     def require_loader(self):
         self.assertTrue(callable(getattr(q,'load_release_binding',None)),'Reviewed helpers must share a strict release binding before any native work')
-    def test_three_exact_versions_and_derived_org_offer(self):
+    def test_only_v6_and_derived_org_offer(self):
         self.require_loader()
-        for release in ['v3.0.0','v4.0.0','v5.0.0']:
+        for release in ['v6.0.0']:
             b=binding_fixture(release);self.assertEqual(b['release'],release);self.assertEqual(b['wasm'],release!='v3.0.0')
             self.assertTrue(b['archive_url'].startswith('https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-'+release+'-'))
-    def reject(self,change,release='v5.0.0'):
+    def reject(self,change,release='v6.0.0'):
         self.require_loader();value=binding_manifest();change(value)
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'binding.json';p.write_text(json.dumps(value))
             with self.assertRaises(ValueError):q.load_release_binding(release,p)
-    def test_null_slots_fail_closed(self):self.reject(lambda v:v['bindings']['v5.0.0'].update(productCommit=None))
-    def test_wrong_source_commit_refused(self):self.reject(lambda v:v['bindings']['v5.0.0'].update(productCommit='main'))
-    def test_unknown_url_or_repository_override_refused(self):self.reject(lambda v:v['bindings']['v5.0.0'].update(repository='artcashin/bdobb'))
+    def test_null_slots_fail_closed(self):self.reject(lambda v:v['bindings']['v6.0.0'].update(productCommit=None))
+    def test_wrong_source_commit_refused(self):self.reject(lambda v:v['bindings']['v6.0.0'].update(productCommit='main'))
+    def test_unknown_url_or_repository_override_refused(self):self.reject(lambda v:v['bindings']['v6.0.0'].update(repository='artcashin/bdobb'))
     def test_wrong_recipient_fingerprint_refused(self):self.reject(lambda v:v['retention'].update(fingerprint='0'*64))
     def test_unsupported_release_refused(self):self.reject(lambda v:None,'v7.0.0')
+    def test_prior_releases_refused(self):
+        for release in ['v3.0.0','v4.0.0','v5.0.0']:
+            self.reject(lambda v:None,release)
+
     def test_duplicate_json_field_refused(self):
         self.require_loader()
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'binding.json';p.write_text('{"schemaVersion":1,"schemaVersion":1}')
-            with self.assertRaises(ValueError):q.load_release_binding('v5.0.0',p)
+            with self.assertRaises(ValueError):q.load_release_binding('v6.0.0',p)
 
     def test_actual_workflow_plan_resolves_each_binding_without_builds(self):
         import textwrap
@@ -50,6 +54,32 @@ class ReleaseBindingTests(unittest.TestCase):
                 self.assertEqual(process.returncode,0,process.stderr)
                 values=dict(line.split('=',1) for line in output.read_text().splitlines());self.assertEqual(len(json.loads(values['matrix'])['include']),2);self.assertEqual(values['source'],binding_fixture(release)['product_commit'])
 
+    def test_actual_workflow_identity_script_rejects_seed_and_build_drift(self):
+        import textwrap
+        workflow=Path(__file__).parents[1]/'workflows/v4-table-amd64-qualification.yml'
+        script=textwrap.dedent(workflow.read_text().split("python - <<'PYTHON'",1)[1].split('          PYTHON',1)[0])
+        blank=['VITE_OPENBB_API_URL','VITE_RITA_URL','VITE_MCP_SERVERS','VITE_SHARE_FOLDERS','VITE_DEFAULT_BACKEND_URL','VITE_DEFAULT_BACKEND_AUTH','VITE_DEFAULT_RITA_URL','VITE_DEFAULT_MCP_URL']
+        for changed in ['none','missing-eighth','seeded-seventh','unsafe-csp','default-bridge']:
+            with self.subTest(changed=changed),tempfile.TemporaryDirectory() as d:
+                root=Path(d);app=root/'app';app.mkdir();scripts=root/'controller/.github/scripts';scripts.mkdir(parents=True)
+                shutil.copyfile(Path(q.__file__),scripts/'v4_mac_qualification.py');(scripts/'mac-release-binding.json').write_text(json.dumps(binding_manifest()))
+                for directory in ['src-tauri/src','scripts']:(app/directory).mkdir(parents=True)
+                b=binding_fixture('v6.0.0')
+                (app/'package.json').write_text(json.dumps({'version':'6.0.0','packageManager':'pnpm@10.34.4','scripts':{'pivot:build':'build','pivot:verify':'verify'}}))
+                csp={'script-src':"'self' 'wasm-unsafe-eval'",'object-src':"'none'",'frame-ancestors':"'none'"}
+                if changed=='unsafe-csp':csp['script-src']+=" 'unsafe-eval'"
+                (app/'src-tauri/tauri.conf.json').write_text(json.dumps({'version':'6.0.0','app':{'security':{'csp':csp}}}))
+                (app/'src-tauri/Cargo.toml').write_text('[features]\ndefault = '+('["mcp-bridge"]' if changed=='default-bridge' else '[]')+'\n')
+                (app/'src-tauri/src/lib.rs').write_text('#[cfg(all(debug_assertions, feature = "mcp-bridge"))]')
+                (app/'source-offer.json').write_text(json.dumps({'sourceId':b['source_id'],'baseCommit':b['base_commit'],'release':b['release'],'archiveFilename':b['archive_filename'],'archiveUrl':b['archive_url']}))
+                (app/'scripts/pivot-toolchain.json').write_text(json.dumps({'rust':'1.98.1','wasmBindgen':'0.2.128','target':'wasm32-unknown-unknown'}))
+                env={**os.environ,**{key:'' for key in blank},'BDOBB_RELEASE_VERSION':'v6.0.0','SOURCE_COMMIT':b['product_commit'],'AUDITOR_COMMIT':b['auditor_commit'],'BDOBB_RUST_TARGET':'x86_64-apple-darwin'}
+                if changed=='missing-eighth':env.pop(blank[-1])
+                if changed=='seeded-seventh':env[blank[-2]]='synthetic-operator-seed'
+                prefix="import subprocess\nfrom unittest.mock import patch\ndef output(args,**kwargs):\n return ('rustc 1.99.1 (fixture)' if args[0]=='rustc' else 'v22.0.0' if args[0]=='node' else '1'*40)+chr(10)\n"
+                process=subprocess.run([__import__('sys').executable,'-c',prefix+"with patch.object(subprocess,'check_output',side_effect=output):\n exec("+repr(script)+")"],cwd=app,env=env,capture_output=True,text=True)
+                self.assertEqual(process.returncode==0,changed=='none',process.stderr)
+
     def test_committed_binding_has_explicit_freeze_state(self):
         value=json.loads(q.BINDING_PATH.read_text())
         for release in q.SUPPORTED_RELEASES:
@@ -60,7 +90,7 @@ class ReleaseBindingTests(unittest.TestCase):
                     with self.assertRaises(ValueError):q.load_release_binding(release)
 
 class QualificationTest(unittest.TestCase):
-    RELEASE='v4.0.0'
+    RELEASE='v6.0.0'
     def setUp(self):
         self.binding=binding_fixture(self.RELEASE);q.configure_release(self.binding)
     def test_only_four_original_mac_names_and_selected_offer(self):
@@ -75,6 +105,11 @@ class QualificationTest(unittest.TestCase):
                 header=bytearray(64);header[:4]=b'\xcf\xfa\xed\xfe';struct.pack_into('<I',header,4,cpu);path.write_bytes(header)
                 q.require_arch(path,arch)
                 with self.assertRaises(ValueError):q.require_arch(path,'x86_64' if arch=='aarch64' else 'aarch64')
+
+    def test_application_symlink_escape_refused(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);unpacked=root/'unpacked';binary=unpacked/'BDOBB.app/Contents/MacOS/BDOBB';binary.parent.mkdir(parents=True);outside=root/'outside';outside.write_bytes(b'outside');binary.symlink_to(outside)
+            with self.assertRaisesRegex(ValueError,'escapes bundle'):q.locate_executable(unpacked,None,None)
 
     def test_missing_or_extra_package_blocks(self):
             with tempfile.TemporaryDirectory() as d:
@@ -111,6 +146,8 @@ class QualificationTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     q.verify_empty_profile(root)
                 (root / 'backends.json').write_text('[]')
+                with self.assertRaises(ValueError):q.verify_empty_profile(root)
+                (root / 'settings.json').write_text(json.dumps({'ritaUrl':'','mcpServers':[],'shareTargets':[]}))
                 q.verify_empty_profile(root)
                 (root / 'workspace.json').write_text('{"connections":[{"id":"unexpected"}]}')
                 with self.assertRaises(ValueError):
@@ -119,6 +156,12 @@ class QualificationTest(unittest.TestCase):
                 (root / 'backends.json').write_text('[{"name":"unexpected"}]')
                 with self.assertRaises(ValueError):
                     q.verify_empty_profile(root)
+
+    def test_seeded_rita_mcp_or_share_profile_blocks(self):
+        for key,value in [('ritaUrl','https://rita.example'),('mcpServers',[{'url':'https://mcp.example'}]),('shareTargets',[{'name':'seed'}])]:
+            with self.subTest(key=key),tempfile.TemporaryDirectory() as d:
+                root=Path(d);(root/'backends.json').write_text('[]');settings={'ritaUrl':'','mcpServers':[],'shareTargets':[]};settings[key]=value;(root/'settings.json').write_text(json.dumps(settings))
+                with self.assertRaises(ValueError):q.verify_empty_profile(root)
 
     def test_changed_checksum_blocks_aggregation(self):
             with tempfile.TemporaryDirectory() as d:
@@ -131,7 +174,7 @@ class QualificationTest(unittest.TestCase):
                     for n in q.expected_names(t):
                         p = out / n
                         p.write_bytes(n.encode())
-                        manifest[n] = {'sha256': q.sha256(p), 'runtime': {'status': 'PASS'}, 'installation':{'bundle_version':q.VERSION}, 'cleanup':{'installed_bundle_absent':True}, 'source_commit': q.SOURCE_COMMIT, 'source_id': q.SOURCE_ID, 'auditor_commit':q.AUDITOR_COMMIT,'release':q.RELEASE_VERSION,'embedded_offer':dict(q.EXPECTED_OFFER)}
+                        manifest[n] = {'sha256': q.sha256(p), 'runtime': {'status': 'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH'}}, 'installation':{'bundle_version':q.VERSION}, 'cleanup':{'installed_bundle_absent':True}, 'source_commit': q.SOURCE_COMMIT, 'source_id': q.SOURCE_ID, 'auditor_commit':q.AUDITOR_COMMIT,'release':q.RELEASE_VERSION,'embedded_offer':dict(q.EXPECTED_OFFER)}
                     (out / 'qualification.json').write_text(json.dumps(manifest))
                 result = q.aggregate(root)
                 self.assertEqual(len(result), 4)
@@ -141,13 +184,13 @@ class QualificationTest(unittest.TestCase):
                     q.aggregate(root)
 
     def test_mixed_version_or_auditor_receipts_block_aggregation(self):
-        for key,bad in [('release','v7.0.0'),('auditor_commit','f'*40),('source_id','f'*64),('embedded_offer',{})]:
+        for key,bad in [('release','v7.0.0'),('auditor_commit','f'*40),('source_id','f'*64),('embedded_offer',{}),('runtime',{'status':'PASS','displayed_version_observed':False,'displayed_about':{'status':'GAP_AX_NOT_TRUSTED'}})]:
             with self.subTest(field=key),tempfile.TemporaryDirectory() as d:
                 root=Path(d)
                 for target in q.TARGETS:
                     out=root/target;out.mkdir();records={}
                     for n in q.expected_names(target):
-                        p=out/n;p.write_bytes(n.encode());records[n]={'sha256':q.sha256(p),'release':q.RELEASE_VERSION,'source_commit':q.SOURCE_COMMIT,'source_id':q.SOURCE_ID,'auditor_commit':q.AUDITOR_COMMIT,'embedded_offer':dict(q.EXPECTED_OFFER),'runtime':{'status':'PASS'},'installation':{'bundle_version':q.VERSION},'cleanup':{'installed_bundle_absent':True}}
+                        p=out/n;p.write_bytes(n.encode());records[n]={'sha256':q.sha256(p),'release':q.RELEASE_VERSION,'source_commit':q.SOURCE_COMMIT,'source_id':q.SOURCE_ID,'auditor_commit':q.AUDITOR_COMMIT,'embedded_offer':dict(q.EXPECTED_OFFER),'runtime':{'status':'PASS','displayed_version_observed':True,'displayed_about':{'status':'OBSERVED_VERSION_MATCH'}},'installation':{'bundle_version':q.VERSION},'cleanup':{'installed_bundle_absent':True}}
                     (out/'qualification.json').write_text(json.dumps(records))
                 self.assertEqual(len(q.aggregate(root)),4)
                 path=root/'mac-intel/qualification.json';records=json.loads(path.read_text());records[next(iter(records))][key]=bad;path.write_text(json.dumps(records))

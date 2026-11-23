@@ -5,7 +5,7 @@ spec=importlib.util.spec_from_file_location('qa',Path(__file__).with_name('encry
 qa=importlib.util.module_from_spec(spec);spec.loader.exec_module(qa)
 from test_v4_mac_qualification import binding_fixture
 class RetentionTests(unittest.TestCase):
-    RELEASE='v4.0.0'
+    RELEASE='v6.0.0'
     def setUp(self):self.binding=binding_fixture(self.RELEASE);qa.configure_release(self.binding)
     def fixture(self,root):
         bundle=root/'bundle';names=[('dmg',f"BDOBB_{self.binding['version']}_x64.dmg"),('','BDOBB_x64.app.tar.gz')]
@@ -143,6 +143,6 @@ class RetentionTests(unittest.TestCase):
             r=qa.make_receipt('mac-intel',[{'filename':f"BDOBB_{self.binding['version']}_x64.dmg",'size':1,'sha256':'a'*64}],cipher,'b'*40,'package-scan')
             self.assertEqual(r['qualification_state'],'FAILED/BLOCKED');self.assertEqual(r['retention_days'],1);self.assertIsNone(r['image_identity']);self.assertNotIn('synthetic ciphertext',json.dumps(r));self.assertNotIn('AGE-SECRET-KEY',json.dumps(r))
 def load_tests(loader,tests,pattern):
-    return unittest.TestSuite(loader.loadTestsFromTestCase(type('Retention_'+v,(RetentionTests,),{'RELEASE':v})) for v in ['v3.0.0','v4.0.0','v5.0.0'])
+    return unittest.TestSuite(loader.loadTestsFromTestCase(type('Retention_'+v,(RetentionTests,),{'RELEASE':v})) for v in ['v6.0.0'])
 
 if __name__=='__main__':unittest.main()

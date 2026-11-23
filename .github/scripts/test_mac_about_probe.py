@@ -17,7 +17,7 @@ spec.loader.exec_module(p)
 
 from test_v4_mac_qualification import binding_fixture
 class AboutTests(unittest.TestCase):
-    RELEASE='v4.0.0'
+    RELEASE='v6.0.0'
     def setUp(self):self.binding=binding_fixture(self.RELEASE)
     def classify(self,value):return p.classify_observation(value,self.binding['version'])
     def observation(self, version=None):
@@ -77,6 +77,6 @@ class AboutTests(unittest.TestCase):
 
 
 def load_tests(loader,tests,pattern):
-    return unittest.TestSuite(loader.loadTestsFromTestCase(type('About_'+v,(AboutTests,),{'RELEASE':v})) for v in ['v3.0.0','v4.0.0','v5.0.0'])
+    return unittest.TestSuite(loader.loadTestsFromTestCase(type('About_'+v,(AboutTests,),{'RELEASE':v})) for v in ['v6.0.0'])
 
 if __name__ == '__main__': unittest.main()

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Mac Mac-only controller reusing the reviewed V3 package/runtime boundaries."""
+"""V6 Mac-only controller preserving reviewed package/runtime boundaries."""
 import argparse, hashlib, importlib.util, json, os, platform, plistlib, shutil, signal, struct, re, subprocess, sys, tempfile, time
 from pathlib import Path
-SUPPORTED_RELEASES=('v3.0.0','v4.0.0','v5.0.0')
+SUPPORTED_RELEASES=('v6.0.0',)
 BINDING_PATH=Path(__file__).with_name('mac-release-binding.json')
 RELEASE_VERSION=VERSION=SOURCE_COMMIT=SOURCE_ID=AUDITOR_COMMIT=None
 EXPECTED_OFFER={}
@@ -103,6 +103,12 @@ def verify_empty_profile(data):
     backend = data / "backends.json"
     if not backend.is_file() or json.loads(backend.read_text()) != []:
         raise ValueError("Fresh runtime did not persist exactly empty backends")
+    settings = data / "settings.json"
+    if not settings.is_file():
+        raise ValueError("Fresh runtime settings were not persisted")
+    config = json.loads(settings.read_text())
+    if not isinstance(config, dict) or any(config.get(key) != empty for key, empty in [("ritaUrl", ""), ("mcpServers", []), ("shareTargets", [])]):
+        raise ValueError("Fresh runtime contains Rita, MCP or share configuration")
     workspace = data / "workspace.json"
     if workspace.exists() and json.loads(workspace.read_text()).get("connections") != []:
         raise ValueError("Fresh runtime contains Workspace connections")
@@ -115,6 +121,12 @@ def locate_executable(unpacked, package, work):
         raise ValueError("Expected exactly one final native executable")
     executable = binaries[0]
     member = str(executable.relative_to(unpacked))
+    bundle = executable.parents[2]
+    if bundle.name != "BDOBB.app" or not bundle.resolve().is_relative_to(unpacked.resolve()):
+        raise ValueError("Unsafe application bundle path")
+    for item in [bundle, *bundle.rglob("*")]:
+        if not item.resolve().is_relative_to(bundle.resolve()):
+            raise ValueError("Application member escapes bundle")
     return executable, member
 
 
@@ -182,7 +194,7 @@ def native_runtime(executable, package, work, evidence, expected_arch):
         with (evidence / "runtime.log").open("w") as log:
             process = subprocess.Popen(list(map(str, command)), env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             deadline = time.monotonic() + 60
-            while not (data / "backends.json").exists():
+            while not all((data / name).is_file() for name in ["backends.json", "settings.json"]):
                 if process.poll() is not None:
                     raise ValueError("Native app exited before seeding a fresh profile")
                 if time.monotonic() >= deadline:
@@ -193,7 +205,11 @@ def native_runtime(executable, package, work, evidence, expected_arch):
             if process.poll() is not None:
                 raise ValueError("Native app exited during startup smoke")
             receipt["pid"] = process.pid
+            verify_empty_profile(data)
             receipt["backends"] = []
+            receipt["ritaUrl"] = ""
+            receipt["mcpServers"] = []
+            receipt["shareTargets"] = []
             if system == "Darwin":
                 run(["sample", process.pid, "1", "1", "-file", evidence / "native-process.txt"], capture_output=True)
                 sample = (evidence / "native-process.txt").read_text()
@@ -209,7 +225,7 @@ def native_runtime(executable, package, work, evidence, expected_arch):
                 observation = probe.observe(SimpleNamespace(pid=process.pid, executable=str(executable), sha256=sha256(executable),
                                                          expected_arch=expected_arch, evidence_dir=str(evidence), temp_dir=str(work)), binding=BINDING)
                 receipt["displayed_about"] = observation
-                if observation["status"].startswith(("ERROR_", "FAIL_")):
+                if observation["status"] != "OBSERVED_VERSION_MATCH":
                     raise ValueError("Owned native About observer rejected application identity or displayed version")
             receipt["displayed_version_observed"] = receipt["displayed_about"].get("status") == "OBSERVED_VERSION_MATCH"
             receipt["status"] = "PASS"
@@ -273,7 +289,7 @@ def qualify(app, target, auditor=None):
             run(["tauri-dumper", "extract", executable, "-o", frontend, "--json"], capture_output=True)
             gate.check_frontend(frontend)
             verify_offer(frontend)
-            record = {"sha256": digest, "source_commit": SOURCE_COMMIT, "source_id": SOURCE_ID, "release":RELEASE_VERSION, "embedded_offer": EXPECTED_OFFER, "embedded_defaults": "all six exact empty values verified by app checker", "executable_sha256": sha256(executable), "architecture": expected_arch}
+            record = {"sha256": digest, "source_commit": SOURCE_COMMIT, "source_id": SOURCE_ID, "release":RELEASE_VERSION, "embedded_offer": EXPECTED_OFFER, "embedded_defaults": "all eight exact empty values verified by app checker", "executable_sha256": sha256(executable), "architecture": expected_arch}
             if auditor is not None:
                 record["auditor_commit"] = run(["git", "rev-parse", "HEAD"], cwd=auditor, capture_output=True).stdout.strip()
             record["extracted_executable_member"] = member
@@ -312,7 +328,7 @@ def aggregate(root):
             path = manifest.parent / name
             if not path.is_file() or sha256(path) != record["sha256"]:
                 raise ValueError("Downloaded installer digest does not match scanned qualification")
-            if record.get("embedded_offer") != EXPECTED_OFFER or record.get("release") != RELEASE_VERSION or record.get("auditor_commit") != AUDITOR_COMMIT or record.get("source_commit") != SOURCE_COMMIT or record.get("source_id") != SOURCE_ID or record.get("runtime", {}).get("status") != "PASS":
+            if record.get("embedded_offer") != EXPECTED_OFFER or record.get("release") != RELEASE_VERSION or record.get("auditor_commit") != AUDITOR_COMMIT or record.get("source_commit") != SOURCE_COMMIT or record.get("source_id") != SOURCE_ID or record.get("runtime", {}).get("status") != "PASS" or record.get("runtime", {}).get("displayed_version_observed") is not True or record.get("runtime", {}).get("displayed_about", {}).get("status") != "OBSERVED_VERSION_MATCH":
                 raise ValueError("Installer source identity or runtime qualification missing")
             if record.get("cleanup", {}).get("installed_bundle_absent") is not True or record.get("installation", {}).get("bundle_version") != VERSION:
                 raise ValueError("Actual app-copy installation and cleanup evidence missing")

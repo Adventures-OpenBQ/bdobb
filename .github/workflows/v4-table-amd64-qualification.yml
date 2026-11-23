@@ -7,8 +7,8 @@ on:
         description: Mac artifact qualification without release publication
         required: true
         type: choice
-        default: v5.0.0
-        options: [v3.0.0, v4.0.0, v5.0.0]
+        default: v6.0.0
+        options: [v6.0.0]
       target:
         description: Native Mac architecture; retry only the failed target
         required: true
@@ -33,6 +33,8 @@ env:
   VITE_SHARE_FOLDERS: ''
   VITE_DEFAULT_BACKEND_URL: ''
   VITE_DEFAULT_BACKEND_AUTH: ''
+  VITE_DEFAULT_RITA_URL: ''
+  VITE_DEFAULT_MCP_URL: ''
 jobs:
   plan:
     if: github.repository == 'Adventures-OpenBQ/bdobb' && github.event_name == 'workflow_dispatch'
@@ -124,12 +126,10 @@ jobs:
           set -euo pipefail
           rustup toolchain install 1.99.1 --profile minimal
           rustup target add "$BDOBB_RUST_TARGET" --toolchain 1.99.1
-          if [ "$BDOBB_RELEASE_VERSION" != 'v3.0.0' ]; then
-            rustup toolchain install 1.98.1 --profile minimal
-            rustup target add wasm32-unknown-unknown --toolchain 1.98.1
-            cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/mac-wasm-tools"
-            echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/mac-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
-          fi
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain 1.98.1
+          cargo +1.98.1 install wasm-bindgen-cli --version 0.2.128 --locked --root "$RUNNER_TEMP/mac-wasm-tools"
+          echo "PIVOT_WASM_BINDGEN=$RUNNER_TEMP/mac-wasm-tools/bin/wasm-bindgen" >> "$GITHUB_ENV"
           corepack enable
           corepack prepare pnpm@10.34.4 --activate
           test "$(pnpm --version)" = '10.34.4'
@@ -138,7 +138,7 @@ jobs:
           python -m pip install --require-hashes -r ../auditor/security/requirements.txt
           echo "$RUNNER_TEMP/mac-tools/bin" >> "$GITHUB_PATH"
           brew install tesseract poppler sevenzip
-      - name: Verify pinned product, offer and all six blank defaults
+      - name: Verify pinned product, offer and all eight blank defaults
         run: |
           python - <<'PYTHON'
           import json, os, platform, subprocess, sys
@@ -154,12 +154,21 @@ jobs:
           offer=json.loads(Path('source-offer.json').read_text())
           assert offer['sourceId']==binding['source_id'] and offer['baseCommit']==binding['base_commit'] and offer['release']==binding['release']
           assert offer['archiveFilename']==binding['archive_filename'] and offer['archiveUrl']==binding['archive_url']
+          config=json.loads(Path('src-tauri/tauri.conf.json').read_text())
+          assert config['app']['security']['csp']['script-src']=="'self' 'wasm-unsafe-eval'"
+          assert config['app']['security']['csp']['object-src']=="'none'"
+          assert config['app']['security']['csp']['frame-ancestors']=="'none'"
+          import tomllib
+          features=tomllib.loads(Path('src-tauri/Cargo.toml').read_text()).get('features',{})
+          assert 'mcp-bridge' not in features.get('default',[])
+          lib=Path('src-tauri/src/lib.rs').read_text()
+          assert '#[cfg(all(debug_assertions, feature = "mcp-bridge"))]' in lib
           scripts=json.loads(Path('package.json').read_text())['scripts']
           assert all((name in scripts)==binding['wasm'] for name in ['pivot:build','pivot:verify'])
           if binding['wasm']:
               pins=json.loads(Path('scripts/pivot-toolchain.json').read_text())
               assert pins['rust']=='1.98.1' and pins['wasmBindgen']=='0.2.128' and pins['target']=='wasm32-unknown-unknown'
-          for key in ['VITE_OPENBB_API_URL','VITE_RITA_URL','VITE_MCP_SERVERS','VITE_SHARE_FOLDERS','VITE_DEFAULT_BACKEND_URL','VITE_DEFAULT_BACKEND_AUTH']:
+          for key in ['VITE_OPENBB_API_URL','VITE_RITA_URL','VITE_MCP_SERVERS','VITE_SHARE_FOLDERS','VITE_DEFAULT_BACKEND_URL','VITE_DEFAULT_BACKEND_AUTH','VITE_DEFAULT_RITA_URL','VITE_DEFAULT_MCP_URL']:
               assert os.environ.get(key)=='',key
           Path('qualification-evidence').mkdir()
           Path('qualification-evidence/build-identity.json').write_text(json.dumps({'source_commit':os.environ['SOURCE_COMMIT'],'source_id':offer['sourceId'],
@@ -173,20 +182,20 @@ jobs:
           set -euo pipefail
           python ../auditor/security/sync.py --check
           python -m unittest discover -s ../auditor/security -p test_gate.py -v
-          python -m unittest discover -s ../auditor/scripts -p test_public_release.py -v
+          python -m unittest discover -s scripts -p test_public_release.py -v
           python -m unittest discover -s ../controller/.github/scripts -p test_v4_mac_qualification.py -v
           python -m unittest discover -s ../controller/.github/scripts -p test_mac_about_probe.py -v
           python -m unittest discover -s ../controller/.github/scripts -p test_encrypt_qa_candidates.py -v
           python ../auditor/security/gate.py --repo . tree
-          python ../auditor/security/gate.py --repo . history --revision HEAD
+          python ../auditor/security/gate.py --repo . --exceptions security/privacy-history-exceptions.json history --revision HEAD
           python ../auditor/security/gate.py --repo . artifacts ../controller/.github/workflows/v4-table-amd64-qualification.yml ../controller/.github/scripts/mac-release-binding.json ../controller/.github/scripts/v4_mac_qualification.py ../controller/.github/scripts/test_v4_mac_qualification.py ../controller/.github/scripts/mac_about_probe.py ../controller/.github/scripts/mac_about_probe.swift ../controller/.github/scripts/test_mac_about_probe.py ../controller/.github/scripts/encrypt_qa_candidates.py ../controller/.github/scripts/test_encrypt_qa_candidates.py
       - name: Install locked dependencies and build current pinned WASM
         run: |
           pnpm install --frozen-lockfile
-          if [ "$BDOBB_RELEASE_VERSION" != 'v3.0.0' ]; then
-            pnpm pivot:build
-            pnpm pivot:verify
-          fi
+          node --test scripts/source-offer.check.mjs
+          pnpm pivot:build
+          pnpm pivot:verify
+          pnpm test:run --exclude "**/private/**" --exclude "**/test-results/**" --exclude "**/playwright-report/**"
       - name: Build only pinned Mac installers
         id: native_build
         env:
