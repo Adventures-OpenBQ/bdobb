@@ -244,3 +244,20 @@ it('grouping many rows many ways scales with rows, not groups × rows', () => {
     expect(result.rows.find(row => row.groupPath?.length === 1 && row.groupPath[0].value === 's0')?.values.m).toBe(Array.from({ length: N / G }, (_, k) => k * G).reduce((a, b) => a + b, 0));
     expect(elapsed).toBeLessThan(8_000);
 }, 60_000);
+
+it.each(['zz-not-a-date', '!not-a-date', '2025-02-29', '2026-04-31'])('blocks First/Last on invalid bound date %s with its date category off axes', date => {
+    const raw: TableModelV1 = {
+        schemaVersion: 1, enabled: true, params: { promotePage: false, filters: [] },
+        categories: [{ id: 'd', name: 'Year', sourceFieldId: 'date', transform: 'Y' }, { id: 'g', name: 'Group', sourceFieldId: 'group', transform: 'native' }],
+        measures: [{ id: 'first', sourceFieldId: 'x', aggregation: 'first' }, { id: 'last', sourceFieldId: 'x', aggregation: 'last' }, { id: 'sum', sourceFieldId: 'x', aggregation: 'sum' }],
+        formulas: [], layout: { rows: ['g'], columns: [], values: ['first', 'last', 'sum'] }, checklists: [], resultFilters: [], subtotals: { groups: true, grandTotal: true },
+    };
+    const data: WidgetDataset = { ...source(), columns: [{ id: 'date', label: 'Date' }, { id: 'group', label: 'Group' }, { id: 'x', label: 'X' }], rows: [
+        { id: 'valid', values: { date: '2025-12-31', group: 'A', x: 100 } }, { id: 'invalid', values: { date, group: 'A', x: 999 } },
+    ] };
+    const result = calculateTable({ source: data, model: raw, table: {}, search: '' });
+    expect(result.pool.members.get('invalid')?.get('d')).toMatchObject({ ok: false, error: { code: 'invalid-date' } });
+    expect(result.totals.measures.cells.get('sum')).toEqual({ ok: true, value: 1099 });
+    for (const id of ['first', 'last']) expect(result.totals.measures.cells.get(id)).toMatchObject({ ok: false, error: { code: 'blocked-dependency', recordIds: ['invalid'], dependencyIds: ['date'] } });
+    expect(result.errors).toContainEqual(expect.objectContaining({ code: 'blocked-dependency', recordIds: ['invalid'] }));
+});

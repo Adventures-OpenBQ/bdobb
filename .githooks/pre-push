@@ -17,3 +17,6 @@ set -e
 cd "$(git rev-parse --show-toplevel)"
 pnpm lint
 pnpm typecheck
+
+python3 security/gate.py tree
+exec python3 security/gate.py --exceptions security/privacy-history-exceptions.json pre-push --remote "${2:?missing Git push destination}"

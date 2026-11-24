@@ -8,7 +8,15 @@ import { __resetLoggerForTests } from "./logger";
 import { __resetJsonStoreForTests } from "./jsonStore";
 import { loadBackends, makeDefaultBackend, saveBackends } from "./backendsFile";
 
+function buildDefaults(values: Record<string, string>) {
+  const tag = document.createElement("meta");
+  tag.name = "bdobb-build-defaults";
+  tag.content = JSON.stringify(values);
+  document.head.append(tag);
+}
+
 beforeEach(() => {
+  document.querySelectorAll('meta[name="bdobb-build-defaults"]').forEach((tag) => tag.remove());
   __reset();
   __resetLoggerForTests();
   __resetJsonStoreForTests();
@@ -25,14 +33,18 @@ const valid = [
 ];
 
 describe("loadBackends", () => {
-  it("seeds one default backend pointing at the local openbb-docker stack when absent", async () => {
+  it("starts a fresh public profile with no saved connections", async () => {
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "", VITE_DEFAULT_BACKEND_AUTH: "" });
+    const loaded = await loadBackends();
+    expect(loaded).toEqual([]);
+    expect(JSON.parse(__read("backends.json") ?? "")).toEqual([]);
+  });
+
+  it("retains an explicit private review-build seed", async () => {
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://reference.example.invalid" });
     const loaded = await loadBackends();
     expect(loaded).toHaveLength(1);
-    expect(loaded[0].name).toBe("Local");
-    expect(loaded[0].baseUrl).toBe("http://localhost:6900");
-    expect(loaded[0].headerName).toBeUndefined();
-    expect(loaded[0].validateWidgets).toBe(true);
-    expect(JSON.parse(__read("backends.json") ?? "")).toEqual(loaded);
+    expect(loaded[0].baseUrl).toBe("https://reference.example.invalid");
   });
 
   it("does not reseed once backends.json exists, even as an empty array", async () => {
@@ -72,12 +84,10 @@ describe("loadBackends", () => {
     ["a non-array container", { id: "a" }],
   ])("quarantines the whole file for %s", async (_label, content) => {
     __seed("backends.json", JSON.stringify(content));
-    // Quarantine renames the bad file away, so the path is ABSENT again —
-    // same contract as any other absent file, so this reseeds the default
-    // backend rather than resurrecting an empty list.
+    // Quarantine renames the bad file away. With no embedded public seed,
+    // recovery starts with the same empty list as a fresh public profile.
     const loaded = await loadBackends();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0].name).toBe("Local");
+    expect(loaded).toEqual([]);
     expect(__read("backends.json.corrupt")).toBe(JSON.stringify(content));
   });
 });
@@ -119,7 +129,7 @@ describe("reading a backends.json written before the new fields existed", () => 
   });
 
   it("seeds no code-language allowance on any build", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://reference.workspace.example");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://reference.workspace.example" });
     expect(makeDefaultBackend()).not.toHaveProperty("allowedCodeLanguages");
     vi.unstubAllEnvs();
     expect(makeDefaultBackend()).not.toHaveProperty("allowedCodeLanguages");
@@ -193,6 +203,15 @@ describe("makeDefaultBackend", () => {
     vi.unstubAllEnvs();
   });
 
+  it("uses empty serialized defaults instead of inlined environment values", () => {
+    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://synthetic.example.invalid");
+    vi.stubEnv("VITE_DEFAULT_BACKEND_AUTH", "synthetic_nonempty_default");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "", VITE_DEFAULT_BACKEND_AUTH: "" });
+    const value = makeDefaultBackend();
+    expect(value.baseUrl).toBe("http://localhost:6900");
+    expect(value.headerValue).toBeUndefined();
+  });
+
   it("defaults to the local openbb-docker stack with no credential", () => {
     const b = makeDefaultBackend();
     expect(b.baseUrl).toBe("http://localhost:6900");
@@ -204,19 +223,18 @@ describe("makeDefaultBackend", () => {
   });
 
   it("takes the build's seed when one is supplied", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://YOUR-TAILNET.ts.net");
-    vi.stubEnv("VITE_DEFAULT_BACKEND_AUTH", "Basic cmV2aWV3ZXI6cHc=");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://demo.example.ts.net", VITE_DEFAULT_BACKEND_AUTH: "synthetic-seed-auth-value" });
     const b = makeDefaultBackend();
-    expect(b.baseUrl).toBe("https://YOUR-TAILNET.ts.net");
+    expect(b.baseUrl).toBe("https://demo.example.ts.net");
     expect(b.name).toBe("Reference");
     expect(b.headerName).toBe("Authorization");
-    expect(b.headerValue).toBe("Basic cmV2aWV3ZXI6cHc=");
+    expect(b.headerValue).toBe("synthetic-seed-auth-value");
   });
 
   it("seeds a URL without auth when the build gives no credential", () => {
-    vi.stubEnv("VITE_DEFAULT_BACKEND_URL", "https://YOUR-TAILNET.ts.net");
+    buildDefaults({ VITE_DEFAULT_BACKEND_URL: "https://demo.example.ts.net" });
     const b = makeDefaultBackend();
-    expect(b.baseUrl).toBe("https://YOUR-TAILNET.ts.net");
+    expect(b.baseUrl).toBe("https://demo.example.ts.net");
     expect("headerValue" in b).toBe(false);
   });
 });

@@ -1162,7 +1162,7 @@ fn empty_completeness() -> pivot_core::contract::Completeness {
     serde_json::from_value(json!({"kind":"unknown","warnings":[]})).unwrap()
 }
 pub fn capabilities() -> Value {
-    json!({"protocolVersions":[1],"definitionVersions":[1,2],"aggregations":["sum","min","max","mean","median","count","uniqueCount","first","last"],"formulaFunctions":["sum","min","max","mean","median","count","uniqueCount","first","last","IF"],"fiscal":true,"inspection":true,"selection":true,"identityWitness":true,"remoteAcquisition":true,"linkedDerivation":true,"safeExactCountAdmission":true,"features":["grouping","splits","sourceFormulas","aggregateFormulas","memberScope","runtimeParams","checklists","resultFilters","statement","preview","bindFormula","memberDomain","columnProfile","chart","export"]})
+    json!({"protocolVersions":[1],"definitionVersions":[1,2],"aggregations":["sum","min","max","mean","median","count","uniqueCount","first","last"],"formulaFunctions":["sum","min","max","mean","median","count","uniqueCount","first","last","IF","LN","SQRT"],"fiscal":true,"inspection":true,"selection":true,"identityWitness":true,"remoteAcquisition":true,"linkedDerivation":true,"safeExactCountAdmission":true,"features":["grouping","splits","sourceFormulas","aggregateFormulas","memberScope","runtimeParams","checklists","resultFilters","statement","preview","bindFormula","memberDomain","columnProfile","chart","export"]})
 }
 
 impl SessionManager {
@@ -1419,6 +1419,22 @@ fn decode_command(command: &Command) -> Result<CoreRequest, ServiceError> {
 #[cfg(test)]
 mod execution_tests {
     use super::*;
+    #[test]
+    fn managed_capabilities_advertise_implemented_scalar_functions() {
+        let declaration = capabilities();
+        let functions = declaration["formulaFunctions"].as_array().unwrap();
+        for function in [
+            pivot_core::contract::FormulaFunction::Ln,
+            pivot_core::contract::FormulaFunction::Sqrt,
+        ] {
+            let name = serde_json::to_value(function).unwrap();
+            assert!(
+                functions.contains(&name),
+                "managed clients must be allowed to submit {name}"
+            );
+        }
+    }
+
     #[test]
     fn request_drop_invalidates_publication_before_control_executor_runs() {
         let runtime = tokio::runtime::Builder::new_current_thread()

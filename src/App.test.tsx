@@ -5,8 +5,8 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// The fresh-install seeded backend (localhost:6900) makes mount-time
-// discovery attempt a fetch. Rejecting it deterministically keeps this test
+// The explicit saved backend fixture makes mount-time discovery attempt a
+// fetch. Rejecting it deterministically keeps this test
 // hermetic — it must never depend on anything actually listening on that
 // port — while still exercising the same catch/offline path a real
 // unreachable backend would take.
@@ -86,6 +86,7 @@ import { backend as makeBackend, widget as makeWidget } from "./test/fixtures";
 
 beforeEach(() => {
   __reset();
+  __seed("backends.json", JSON.stringify([{ id: "local-test", name: "Local", baseUrl: "http://localhost:6900" }]));
   __resetLoggerForTests();
   __resetJsonStoreForTests();
   useBackendsStore.setState({ backends: [], statuses: {} });
@@ -108,7 +109,7 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByRole("main")).toBeInTheDocument();
 
-    // Wait for the seeded backend's mount-time discovery (mocked fetch,
+    // Wait for the saved backend's mount-time discovery (mocked fetch,
     // rejected) to settle, so the test doesn't leave a dangling async chain
     // that resolves after the next test's beforeEach has already reset state.
     await waitFor(() => {

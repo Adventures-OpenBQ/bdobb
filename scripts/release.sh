@@ -25,6 +25,10 @@
 # here; `tauri build` skips signing SILENTLY when they are missing, so their
 # presence is checked before the build, not discovered after.
 set -euo pipefail
+
+# Public installers start with reader-supplied connections, regardless of local env files.
+export VITE_OPENBB_API_URL= VITE_RITA_URL= VITE_MCP_SERVERS= VITE_SHARE_FOLDERS=
+export VITE_DEFAULT_BACKEND_URL= VITE_DEFAULT_BACKEND_AUTH= VITE_DEFAULT_RITA_URL= VITE_DEFAULT_MCP_URL=
 cd "$(dirname "$0")/.."
 
 TAG="${1:-}"
@@ -58,6 +62,8 @@ if [ "${BDOBB_RELEASE_DRY_RUN:-}" != "1" ]; then
 fi
 echo "building $TAG from $(git rev-parse --short HEAD), signing as $APPLE_SIGNING_IDENTITY"
 
+python3 security/gate.py tree
+python3 security/gate.py --exceptions security/privacy-history-exceptions.json history --revision HEAD
 pnpm typecheck
 pnpm test:run
 bash scripts/scrub-check.sh
@@ -100,9 +106,21 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 xcrun stapler validate "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG"
 
-(cd "$(dirname "$DMG")" && shasum -a 256 "$(basename "$DMG")" > "$(basename "$DMG").sha256")
+# Qualify the final stapled bytes, including their installed and decoded contents.
+# The check returns the checksum recorded for the exact bytes it scanned.
+CHECKSUM=$(python3 scripts/public-release.py check --checksum "$DMG")
+printf '%s\n' "$CHECKSUM" > "$DMG.sha256"
+
+verify_release_bytes() {
+  if ! cmp -s "$DMG.sha256" <(printf '%s\n' "$CHECKSUM"); then
+    echo "The release checksum changed after the artifact scan."
+    return 1
+  fi
+  (cd "$(dirname "$DMG")" && shasum -a 256 -c - <<< "$CHECKSUM")
+}
 
 if [ "${BDOBB_RELEASE_DRY_RUN:-}" = "1" ]; then
+  verify_release_bytes
   echo "dry run: built, signed, notarized and verified $DMG; nothing published."
   exit 0
 fi
@@ -135,10 +153,12 @@ fi
 # the tag with no release at all.
 if gh release view "$TAG" >/dev/null 2>&1; then
   echo "updating the existing release for $TAG"
+  verify_release_bytes
   gh release upload "$TAG" "$DMG" "$DMG.sha256" --clobber
 else
   # --verify-tag: without it gh would create a missing tag from the default
   # branch's HEAD instead of failing.
+  verify_release_bytes
   gh release create "$TAG" "$DMG" "$DMG.sha256" \
     --verify-tag \
     --title "$TAG" \

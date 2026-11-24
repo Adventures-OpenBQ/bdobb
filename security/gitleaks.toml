@@ -1,0 +1,21 @@
+title = "Shared publication credential policy"
+[extend]
+useDefault = true
+
+[[rules]]
+id = "tailscale-credential"
+description = "Tailscale auth/API/OAuth secret (including future tskey variants)"
+regex = '''(?i)\btskey-(?:[a-z0-9]+-)?[a-z0-9_-]{10,}'''
+keywords = ["tskey-"]
+
+[[rules]]
+id = "private-key-header"
+description = "Private key header, even if the key is incomplete"
+regex = '''-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----'''
+keywords = ["PRIVATE KEY"]
+
+[[rules]]
+id = "tailscale-private-state-key"
+description = "Tailscale node or machine private key in persisted state"
+regex = '''(?i)\bprivkey:[a-f0-9]{64}\b'''
+keywords = ["privkey:"]

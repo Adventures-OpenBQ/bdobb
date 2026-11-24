@@ -98,18 +98,71 @@ type StoredDashboard = {
   dockSeeThrough?: unknown;
 } & ({ cards: StoredCard[] } | { tabs: StoredTab[] });
 
-/**
- * `name` is shape-checked because loading sorts on it with localeCompare.
- * Each tab is checked too: a null tab, or one without a `cards` array, would
- * pass an array-only check and then throw wherever a tab's cards are read,
- * taking every dashboard down with it instead of quarantining this one file.
- */
-function isStoredDashboard(value: unknown): value is StoredDashboard {
-  if (!isRecord(value) || typeof value.id !== "string" || typeof value.name !== "string") return false;
-  if ("tabs" in value) {
-    return Array.isArray(value.tabs) && value.tabs.every((t: unknown) => isRecord(t) && Array.isArray(t.cards));
+const isString = (value: unknown): value is string => typeof value === "string";
+
+const arrayOf = (value: unknown, check: (item: unknown) => boolean): boolean =>
+  Array.isArray(value) && value.every(check);
+
+const optionalArrayOf = (value: unknown, check: (item: unknown) => boolean): boolean =>
+  value === undefined || arrayOf(value, check);
+
+function isStoredGroup(value: unknown): boolean {
+  return isRecord(value) && isString(value.id) && isString(value.name)
+    && isString(value.paramName) && isString(value.value)
+    && (value.groupType === undefined || isString(value.groupType));
+}
+
+function isStoredBinding(value: unknown): boolean {
+  return isRecord(value) && isString(value.groupId) && isString(value.paramName);
+}
+
+function isStoredColumnFilter(filter: unknown): boolean {
+  if (!isRecord(filter) || !isString(filter.id) || !Object.hasOwn(filter, "value")) return false;
+  const value = filter.value;
+  if (isString(value)) return true;
+  if (!isRecord(value)) return false;
+
+  const { min, max, from, to } = value;
+  if (min !== undefined || max !== undefined) {
+    return from === undefined && to === undefined
+      && (min === undefined || Number.isFinite(min))
+      && (max === undefined || Number.isFinite(max));
   }
-  return Array.isArray(value.cards);
+  return (from !== undefined || to !== undefined)
+    && (from === undefined || isString(from))
+    && (to === undefined || isString(to));
+}
+
+function isStoredTable(value: unknown): boolean {
+  return isRecord(value)
+    && optionalArrayOf(value.columnOrder, isString)
+    && optionalArrayOf(value.hidden, isString)
+    && optionalArrayOf(value.sorting, (sort) =>
+      isRecord(sort) && isString(sort.id) && typeof sort.desc === "boolean")
+    && optionalArrayOf(value.columnFilters, isStoredColumnFilter);
+}
+
+function isStoredCard(value: unknown): boolean {
+  if (!isRecord(value) || !isRecord(value.layout) || !isRecord(value.params)) return false;
+  const { x, y, w, h } = value.layout;
+  return isString(value.id) && isString(value.widgetId) && isString(value.backendId)
+    && Object.values(value.params).every(isString)
+    && [x, y, w, h].every(Number.isFinite)
+    && (value.title === undefined || isString(value.title))
+    && (value.table === undefined || isStoredTable(value.table))
+    && optionalArrayOf(value.bindings, isStoredBinding)
+    && optionalArrayOf(value.groupIds, isString);
+}
+
+/** Check the fields normalization and rendering depend on before accepting a file. */
+function isStoredDashboard(value: unknown): value is StoredDashboard {
+  if (!isRecord(value) || !isString(value.id) || !isString(value.name)) return false;
+  if (!optionalArrayOf(value.groups, isStoredGroup)) return false;
+  if ("tabs" in value) {
+    return arrayOf(value.tabs, (tab) =>
+      isRecord(tab) && isString(tab.id) && isString(tab.name) && arrayOf(tab.cards, isStoredCard));
+  }
+  return arrayOf(value.cards, isStoredCard);
 }
 
 /** A group written before groupType existed is keyed by its own paramName. */

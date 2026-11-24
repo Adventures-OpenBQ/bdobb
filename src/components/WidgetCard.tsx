@@ -12,7 +12,7 @@ import { PivotIcon } from "./PivotIcon";
 import { StatementWorkerView } from "./renderers/StatementWorkerView";
 import type { StatementSnapshot } from "../lib/statementExecution";
 import { LinkedChartRenderer } from "./renderers/LinkedChartRenderer";
-import { type ComponentProps, lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ComponentProps, lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { confirm, open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { readTextFile, stat } from "@tauri-apps/plugin-fs";
 import { saveBinaryFile, saveTextFile } from "../lib/saveTextFile";
@@ -159,7 +159,7 @@ const TRANSPOSABLE_TYPES = new Set(["table", "local_table"]);
  * whatever fetchesData says about the card. Kept in step with body(): every
  * renderer there handed `refreshKey={attempt + refreshEpoch}` is listed.
  */
-const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer"]);
+const SELF_REFRESHING_TYPES = new Set(["rss", "local_table", "multi_file_viewer", "live_grid"]);
 
 /** The card types that render nothing but "Waiting for widget…" until their widget is discovered. */
 const WAITS_FOR_WIDGET = new Set<string>(["iframe", "note", "markdown_editor", "clock", "rss", "local_table"]);
@@ -1239,7 +1239,7 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
       // card's data===null gate would otherwise claim it. The renderer fetches
       // its own snapshot and opens the socket. `query` carries the resolved
       // symbol selection, the same params a GET would send.
-      return <LiveGridRenderer widget={widget} backend={backend} params={query} />;
+      return <LiveGridRenderer widget={widget} backend={backend} params={query} refreshKey={attempt + refreshEpoch} />;
     }
 
     // Same shape as live_grid above, and for the same reason: fetchesData is
@@ -1492,8 +1492,49 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
 
   /** The ⋯ menu, shared by the header's toggle and (v8) the News rail's chevron. */
   const parameterLayout = import.meta.env.TAURI_ENV_PLATFORM === "ios" &&
-    (/iPad/.test(navigator.userAgent) || /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
-    ? "wrap" : "scroll";
+        (/iPad/.test(navigator.userAgent) || /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+        ? "wrap" : "scroll";
+  const analyticalHeader = !locked && Boolean(dashboard && card.tableDefinition?.analytical !== undefined);
+  const ordinaryTitleControls = !minimized && hasControls && !hideTitleParams && controlProps
+    ? <ParamControls {...controlProps} rowZeroOnly inline={analyticalHeader} />
+    : undefined;
+
+  const [titleStrip, setTitleStrip] = useState<HTMLDivElement | null>(null);
+  const [titleStripOverflows, setTitleStripOverflows] = useState(false);
+  useLayoutEffect(() => {
+    if (!titleStrip) return;
+    // WebKit's overlay scrollbar reserves no layout gutter and otherwise
+    // covers the controls. Keep clearance only while scrolling is needed.
+    const measure = () => setTitleStripOverflows(titleStrip.scrollWidth > titleStrip.clientWidth + 1);
+    const resize = new ResizeObserver(measure);
+    resize.observe(titleStrip);
+    const children = new Set<Element>();
+    const observeChildren = () => {
+      for (const child of children) {
+        if (child.parentElement !== titleStrip) {
+          resize.unobserve(child);
+          children.delete(child);
+        }
+      }
+      for (const child of titleStrip.children) {
+        if (!children.has(child)) {
+          resize.observe(child);
+          children.add(child);
+        }
+      }
+      measure();
+    };
+    observeChildren();
+    // Pivot controls can mount after data arrives; observe just this strip,
+    // not the table or chart body.
+    const mutation = new MutationObserver(observeChildren);
+    mutation.observe(titleStrip, {childList: true});
+    return () => {
+      mutation.disconnect();
+      resize.disconnect();
+    };
+  }, [titleStrip]);
+  const videoTitleControls = !minimized && !hideTitleParams && widget?.type === "youtube" && widget.id === "live_tv";
 
   const menu = exportRect ? (
 
@@ -1923,12 +1964,21 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             title stays the grid's drag handle and the header's double-click
             guard is unchanged — `e.target === e.currentTarget` is still only
             the header itself. */}
-        {!minimized && card.tableDefinition?.analytical === undefined && !hideTitleParams && ((hasControls && controlProps) || (widget?.type === "youtube" && widget.id === "live_tv")) ? (
+        {!minimized && (ordinaryTitleControls || analyticalHeader || videoTitleControls) ? (
           <div
-            className={`card-chips${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
+            ref={setTitleStrip}
+            className={`card-chips${titleStripOverflows ? " card-chips-overflowing" : ""}${collapseControls && !controlsOpen ? " card-chips-hidden" : ""}`}
           >
-            {hasControls && controlProps ? <ParamControls {...controlProps} rowZeroOnly /> : null}
-            {widget?.type === "youtube" && widget.id === "live_tv" ? <span className="video-row-zero" ref={setVideoRowZeroHost} /> : null}
+            {analyticalHeader && dashboard ? (
+              <PivotParamRow
+                dashboardId={dashboard.id}
+                widgetId={card.id}
+                raw={card.tableDefinition?.analytical}
+                viewer={readOnly}
+                ordinary={ordinaryTitleControls}
+              />
+            ) : ordinaryTitleControls}
+            {videoTitleControls ? <span className="video-row-zero" ref={setVideoRowZeroHost} /> : null}
           </div>
         ) : null}
         {sharedWithRita && canShare ? (
@@ -2083,7 +2133,6 @@ export function WidgetCard({ card, dashboardId: explicitDashboardId, onRemove, v
             {hasChartParameters ? <button type="button" onClick={() => setChooseSource(true)}>Choose source</button> : null}
           </div>
         ) : null}
-        {!minimized && dashboard && card.tableDefinition?.analytical !== undefined ? <PivotParamRow dashboardId={dashboard.id} widgetId={card.id} raw={card.tableDefinition.analytical} viewer={readOnly} ordinary={hasControls && !hideTitleParams && controlProps && (!collapseControls || controlsOpen) ? <ParamControls {...controlProps} inline /> : undefined} /> : null}
       </header>
       )}
       {railChrome ? (

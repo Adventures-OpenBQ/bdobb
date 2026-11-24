@@ -1,8 +1,33 @@
 // Copyright 2026 SecretoftheUniverse.com LLC. Licensed under the GNU Affero General Public License, version 3 only.
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import {expect,test,type Locator} from '@playwright/test';
+import {expect,test,type Locator,type Page} from '@playwright/test';
 import {seedCards,read,seedApp,defaultSeed} from './fixtures';
+/** Let native scrolling/compositing settle, then require the actual control hit. */
+async function settleTitleControl(page: Page, control: Locator): Promise<void> {
+  await control.scrollIntoViewIfNeeded();
+  await control.evaluate(el => {
+    const strip = el.closest('.card-chips') as HTMLElement | null;
+    if (!strip) throw new Error('Expected a title parameter control');
+    const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+    strip.scrollLeft += box.left + box.width / 2 - (view.left + view.width / 2);
+  });
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  await expect.poll(() => control.evaluate(el => {
+    const strip = el.closest('.card-chips') as HTMLElement;
+    const view = strip.getBoundingClientRect(), box = el.getBoundingClientRect();
+    const x = box.left + box.width / 2, y = box.top + box.height / 2;
+    return x >= view.left + strip.clientLeft && x <= view.left + strip.clientLeft + strip.clientWidth
+      && y >= view.top + strip.clientTop && y <= view.top + strip.clientTop + strip.clientHeight
+      && el.contains(document.elementFromPoint(x, y));
+  })).toBe(true);
+}
+
+async function clickTitleControl(page: Page, control: Locator): Promise<void> {
+  await settleTitleControl(page, control);
+  await control.click();
+}
+
 async function revealControl(field:Locator) {
  await field.scrollIntoViewIfNeeded();await field.evaluate(el=>{const panel=el.closest('.pivot-drawer-panel')!;const body=el.closest('.pivot-drawer-body')!;const owner=panel.closest('.pivot-drawer')!.hasAttribute('data-short')?panel:body;const head=panel.querySelector('.pivot-drawer-head')!.getBoundingClientRect();const foot=panel.querySelector('.pivot-drawer-foot')!.getBoundingClientRect();const rect=el.getBoundingClientRect();owner.scrollTop+=rect.top-(head.bottom+(foot.top-head.bottom-rect.height)/2);});
  const bounds=await field.evaluate(el=>{const p=el.closest('.pivot-drawer-panel')!;const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom,head:p.querySelector('.pivot-drawer-head')!.getBoundingClientRect().bottom,foot:p.querySelector('.pivot-drawer-foot')!.getBoundingClientRect().top};});expect(bounds.top).toBeGreaterThanOrEqual(bounds.head-1);expect(bounds.bottom).toBeLessThanOrEqual(bounds.foot+1);
@@ -30,7 +55,7 @@ for(const v of [{theme:'dark',width:1280},{theme:'light',width:1280},{theme:'dar
  const order=await root.locator('header [data-pivot-param]').first().getAttribute('data-pivot-param');expect(order).toBe('pivot:page');
  const tag=panel.locator('.pivot-category-list li').filter({hasText:'Ticker'});expect(await tag.locator('span').allTextContents()).toEqual(['Param','All']);
  await panel.getByRole('button',{name:'Done',exact:true}).click();
- await root.getByRole('button',{name:'Sector: All'}).click();const popup=page.getByRole('dialog',{name:'Sector values'});const popupBounds=(await popup.boundingBox())!;expect(popupBounds.x).toBeGreaterThanOrEqual(0);expect(popupBounds.x+popupBounds.width).toBeLessThanOrEqual(v.width);expect(popupBounds.height).toBeLessThanOrEqual(320);await page.screenshot({path:info.outputPath('parameter-popup.png')});await popup.getByLabel('Energy').uncheck();await popup.getByRole('button',{name:'Apply',exact:true}).click();await expect(root.getByRole('button',{name:'Sector: Tech'})).toBeEnabled();
+ await clickTitleControl(page, root.getByRole('button',{name:'Sector: All'}));const popup=page.getByRole('dialog',{name:'Sector values'});const popupBounds=(await popup.boundingBox())!;expect(popupBounds.x).toBeGreaterThanOrEqual(0);expect(popupBounds.x+popupBounds.width).toBeLessThanOrEqual(v.width);expect(popupBounds.height).toBeLessThanOrEqual(320);await page.screenshot({path:info.outputPath('parameter-popup.png')});await popup.getByLabel('Energy').uncheck();await popup.getByRole('button',{name:'Apply',exact:true}).click();await expect(root.getByRole('button',{name:'Sector: Tech'})).toBeEnabled();
  await root.getByRole('combobox',{name:'Ticker',exact:true}).selectOption({label:'AAPL'});await expect(root.getByRole('combobox',{name:'Ticker',exact:true})).toBeEnabled();
  await expect.poll(async()=>JSON.parse((await read(page,'dashboards/d1.json'))!).tabs[0].cards[0].tableDefinition.analytical.checklists).toEqual([{categoryId:'cat:Sector',memberKeys:['["string","Tech"]']},{categoryId:'cat:Ticker',memberKeys:['["string","AAPL"]']}]);
  expect(before).toBeGreaterThan(0);expect(await page.evaluate(()=>(window as unknown as {pivotWorkerCalls:string[]}).pivotWorkerCalls.filter(x=>x==='importFile'||x==='registerInput').length)).toBe(before);
