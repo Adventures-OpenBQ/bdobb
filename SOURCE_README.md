@@ -1,7 +1,6 @@
 # Source for the proposed v4.0.0 AGPL edition
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: c8e31b92ee354549637a62fb8146d9d51326de3c
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
 This source tree includes the proposed AGPL migration, revision-specific Help
@@ -22,9 +21,9 @@ Also download the shared package archive `dependency-pack-a1b2ab0d108e6dbb7044.t
 SHA-256: `64f4103bcdeb91c76a8cf45ab0118c574a8ceef84152de0a8c7eb958b8aa9941`.
 Prepared public URL: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-a1b2ab0d108e/dependency-pack-a1b2ab0d108e6dbb7044.tar.gz
 
-This public URL and the application's Help source URL are prepared targets,
-not a claim that anything has been uploaded. For local review use the sibling
-catalogue's download links. Its dependency manifest identifies each package,
+The shared dependency archive is published at that URL. The application's new
+revision-specific Help source offer remains a prepared target until separately
+published. Its dependency manifest identifies each package,
 original location, lockfile integrity and release coverage. Original npm .tgz
 and Cargo .crate distributions are provided separately to avoid duplicating
 the same dependency bytes in every application's source archive. Extract those
@@ -33,6 +32,25 @@ packages contain src/, and the Rust crates contain their source. The pack's
 copyleft-source report records source-member checks. Do not replace upstream
 licenses with AGPL. Recovered evidence and standard terms are reproduced in
 SUPPLEMENTAL_THIRD_PARTY_NOTICES.md and LICENSES/dependency-evidence/.
+
+## Current-lock dependency supplements (required)
+
+The authoritative exact archive inventory is DEPENDENCY-SOURCES.json,
+including additionalPacks, together with NATIVE-TLS-DEPENDENCY-SOURCES.json.
+This revision requires `dependency-supplement-8ee464578a28d424dd26.tar.gz`.
+SHA-256: `f91d0b7e758f23883cf63777288ba488baca4558adf2d2ede23c2061465f3831`.
+Public archive: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-8ee464578a28/dependency-supplement-8ee464578a28d424dd26.tar.gz
+Keep the original base archive named above; this supplement does not replace it.
+
+The native TLS patch updates also require the published supplemental archive
+`dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz`.
+SHA-256: `877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6`.
+Public archive: https://github.com/Adventures-OpenBQ/bdobb/releases/download/agpl-dependencies-native-tls-1121714ec7b0/dependency-pack-native-tls-1121714ec7b0c0b0e2ce.tar.gz
+NATIVE-TLS-DEPENDENCY-SOURCES.json identifies this separate archive;
+NATIVE-TLS-DEPENDENCY-COVERAGE.json binds its four complete upstream Cargo
+source distributions and licence evidence to this edition's native lockfile.
+Obtain the original base archive and both supplements. Their source access does
+not establish an offline build on every OS or bundle executable platform SDKs.
 
 ## Build the application
 
