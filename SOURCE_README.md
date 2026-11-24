@@ -1,10 +1,10 @@
-# Source for the proposed v8.0.0 AGPL edition
+# Corresponding source for v8.0.0
 
 Base repository: Adventures-OpenBQ/bdobb
-Base commit: c5fdb4eaa186d3c8c915a9d75ba80c9e65257044
+Base commit: d31b78109a2e3d8729f91472f0df89d5c0641f46
 Application licensing: AGPL-3.0-only, with retained third-party and earlier Apache grants.
 
-This source tree includes the proposed AGPL migration, revision-specific Help
+This source tree includes the AGPL edition, revision-specific Help
 source link, exact lockfiles, necessary build scripts, original artwork and
 vendored source where present. It is NOT the unchanged source of the old
 Apache binary. Build any new AGPL binary from this complete edition tree.
@@ -14,7 +14,7 @@ Apache binary. Build any new AGPL binary from this complete edition tree.
 Run `python3 -B verify-source.py` immediately after extraction, before creating
 node_modules, Git state or generated build output. SOURCE-MANIFEST.json lists
 the exact files and source identity. The external catalogue supplies the SHA-256
-of the compressed archive. The original tag and commit have not been moved.
+of the compressed archive. The source offer identifies this archive by its content identity and external SHA-256.
 
 ## Matching dependency distributions and license evidence
 
