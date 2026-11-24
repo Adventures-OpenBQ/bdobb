@@ -16,6 +16,9 @@ def private_workspace(parent,prefix='mac-private-install-'):
 def group_exists(pgid):
  try:os.killpg(pgid,0);return True
  except ProcessLookupError:return False
+ # Darwin can return EPERM while a terminated group has only zombies.
+ # Permission failure is present/unconfirmed; only ESRCH proves absence.
+ except PermissionError:return True
 
 def cleanup_owned_group(process,term_timeout=3,kill_timeout=5):
  require(type(process.pid) is int and process.pid>1)
