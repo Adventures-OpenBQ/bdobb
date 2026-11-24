@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "scope": "Exact four changed native TLS Cargo distributions; old shared dependency/source packs remain unchanged.",
+  "base_dependency_sources_sha256": "0457c0ce267847c9f68c8b8576e643f1ec2bf0ca533b7d712eedc7c1a187d3f5",
+  "base_dependency_coverage_sha256": "2d67a81fcf1416ead13ee32f4f23eb23210b98a9bb6df79933323eba7e0c9db4",
+  "native_cargo_lock_sha256": "15e6b0e810ea999860497c223ce1e3819f5d702af70b99877d4eafbe45297279",
+  "supplement_manifest_sha256": "1121714ec7b0c0b0e2cedcb3f2b53cc9332959d0010babb899a616466f18d20d",
+  "supplement_archive_sha256": "877fb7e2f9b54c6c879f3a9c2e6c756ae07d5bac53c435a8b9d308a8a06f93c6",
+  "packages": [
+    {
+      "id": "rust:h2@0.4.16",
+      "url": "https://static.crates.io/crates/h2/h2-0.4.16.crate",
+      "sha256": "a9f37a958b41b3b19ee2707c06439c0e9e547e847223eb791ecb0cb821c65e27",
+      "cargo_lock_checksum": "a9f37a958b41b3b19ee2707c06439c0e9e547e847223eb791ecb0cb821c65e27",
+      "bytes": 173331,
+      "declared_license": "MIT"
+    },
+    {
+      "id": "rust:rustls@0.23.45",
+      "url": "https://static.crates.io/crates/rustls/rustls-0.23.45.crate",
+      "sha256": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634",
+      "cargo_lock_checksum": "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634",
+      "bytes": 378933,
+      "declared_license": "Apache-2.0 OR ISC OR MIT"
+    },
+    {
+      "id": "rust:rustls-webpki@0.103.16",
+      "url": "https://static.crates.io/crates/rustls-webpki/rustls-webpki-0.103.16.crate",
+      "sha256": "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281",
+      "cargo_lock_checksum": "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281",
+      "bytes": 89984,
+      "declared_license": "ISC"
+    },
+    {
+      "id": "rust:webpki-roots@1.0.10",
+      "url": "https://static.crates.io/crates/webpki-roots/webpki-roots-1.0.10.crate",
+      "sha256": "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9",
+      "cargo_lock_checksum": "1c1c8e20c8a38fc7d65abfe74eb7280e4aa667e8eec8bc84996d2874810748d9",
+      "bytes": 216631,
+      "declared_license": "CDLA-Permissive-2.0"
+    }
+  ],
+  "all_four_official_source_archives_verified": true,
+  "all_four_complete_licenses_retained": true,
+  "publication_status": "PUBLISHED_VERIFIED_SUPPLEMENT"
+}
